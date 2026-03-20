@@ -51,7 +51,9 @@ impl eframe::App for App {
                     .inner_margin(egui::Margin::symmetric(12, 6)),
             )
             .show(ctx, |ui| {
+                let total_w = ui.available_width();
                 ui.horizontal(|ui| {
+                    // Tabs on the left
                     for &t in Tab::all() {
                         let selected = self.tab == t;
                         let text = egui::RichText::new(t.label(lang)).size(14.0);
@@ -66,23 +68,23 @@ impl eframe::App for App {
                         ui.add_space(2.0);
                     }
 
-                    // Language toggle on the right
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        let btn_text = match self.lang {
-                            Lang::Zh => "🌐 EN",
-                            Lang::En => "🌐 中文",
-                        };
-                        if ui
-                            .add(
-                                egui::Button::new(egui::RichText::new(btn_text).size(13.0))
-                                    .corner_radius(egui::CornerRadius::same(12)),
-                            )
-                            .on_hover_text("Switch language / 切换语言")
-                            .clicked()
-                        {
-                            self.lang = self.lang.toggle();
-                        }
-                    });
+                    // Push language toggle to the right using remaining space
+                    let remaining = total_w - ui.min_rect().width() - 80.0;
+                    if remaining > 0.0 {
+                        ui.add_space(remaining);
+                    }
+
+                    let btn_text = match self.lang {
+                        Lang::Zh => "🌐 EN",
+                        Lang::En => "🌐 中文",
+                    };
+                    if ui
+                        .button(egui::RichText::new(btn_text).size(13.0))
+                        .on_hover_text("Switch language / 切换语言")
+                        .clicked()
+                    {
+                        self.lang = self.lang.toggle();
+                    }
                 });
             });
 
