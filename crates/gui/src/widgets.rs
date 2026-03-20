@@ -3,14 +3,15 @@ use crate::state::FileInfo;
 use csv_splitter_core::Delimiter;
 
 // ===== Theme colors (centralized) =====
-pub const CARD_BG: egui::Color32 = egui::Color32::from_rgb(38, 42, 54);
-pub const CARD_BORDER: egui::Color32 = egui::Color32::from_rgb(58, 63, 80);
+pub const CARD_BG: egui::Color32 = egui::Color32::from_rgb(48, 53, 68);
+pub const CARD_BORDER: egui::Color32 = egui::Color32::from_rgb(68, 74, 92);
 pub const ACCENT: egui::Color32 = egui::Color32::from_rgb(88, 166, 255);
 pub const SUCCESS: egui::Color32 = egui::Color32::from_rgb(80, 200, 120);
 pub const WARN: egui::Color32 = egui::Color32::from_rgb(255, 180, 60);
 pub const ERROR_C: egui::Color32 = egui::Color32::from_rgb(240, 80, 80);
 pub const PURPLE: egui::Color32 = egui::Color32::from_rgb(180, 140, 255);
-pub const TEXT_DIM: egui::Color32 = egui::Color32::from_rgb(130, 138, 155);
+pub const TEXT_DIM: egui::Color32 = egui::Color32::from_rgb(170, 178, 195);
+pub const TEXT_BRIGHT: egui::Color32 = egui::Color32::from_rgb(225, 230, 240);
 
 /// Format bytes into human-readable string.
 pub fn format_bytes(b: u64) -> String {
@@ -26,7 +27,7 @@ pub fn format_bytes(b: u64) -> String {
 }
 
 /// Reusable file input card with click-to-browse + metadata display.
-/// Works for all tabs. Returns true if file was just changed.
+/// Works for all tabs.
 pub fn file_input_card(
     ui: &mut egui::Ui,
     file: &mut Option<FileInfo>,
@@ -39,6 +40,7 @@ pub fn file_input_card(
 ) {
     let has_file = file.is_some();
     let border = if has_file { accent } else { CARD_BORDER };
+    let mut remove_clicked = false;
 
     let resp = egui::Frame::new()
         .fill(CARD_BG)
@@ -53,7 +55,12 @@ pub fn file_input_card(
                 ui.horizontal(|ui| {
                     ui.label(egui::RichText::new("📄").size(16.0));
                     ui.vertical(|ui| {
-                        ui.label(egui::RichText::new(&info.name).size(12.0).strong());
+                        ui.label(
+                            egui::RichText::new(&info.name)
+                                .size(12.0)
+                                .strong()
+                                .color(TEXT_BRIGHT),
+                        );
                         ui.horizontal_wrapped(|ui| {
                             ui.spacing_mut().item_spacing.x = 8.0;
                             ui.label(
@@ -108,7 +115,7 @@ pub fn file_input_card(
                             .on_hover_text(t!(lang, RemoveFile))
                             .clicked()
                         {
-                            // handled below
+                            remove_clicked = true;
                         }
                     });
                 });
@@ -120,13 +127,25 @@ pub fn file_input_card(
             }
         });
 
-    // Hover cursor
-    if resp.response.hovered() && !has_file {
+    // Handle remove
+    if remove_clicked {
+        *file = None;
+        return;
+    }
+
+    // Make the whole card area clickable for browse
+    let card_rect = resp.response.rect;
+    let click_resp = ui.interact(
+        card_rect,
+        resp.response.id.with("click"),
+        egui::Sense::click(),
+    );
+
+    if !has_file && click_resp.hovered() {
         ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
     }
 
-    // Click to browse (only when empty — when file exists, use ✕ to remove)
-    if resp.response.clicked() && !has_file {
+    if click_resp.clicked() && !has_file {
         let mut dialog = rfd::FileDialog::new();
         for (name, exts) in filters {
             dialog = dialog.add_filter(*name, exts);
@@ -245,7 +264,7 @@ pub fn job_status(ui: &mut egui::Ui, state: &crate::state::JobState, lang: Lang)
 /// Compact stat badge: icon + label + value in a rounded pill.
 pub fn stat_badge(ui: &mut egui::Ui, icon: &str, label: &str, value: &str) {
     egui::Frame::new()
-        .fill(egui::Color32::from_rgb(44, 48, 62))
+        .fill(egui::Color32::from_rgb(52, 57, 72))
         .corner_radius(egui::CornerRadius::same(12))
         .inner_margin(egui::Margin::symmetric(8, 3))
         .show(ui, |ui| {
@@ -253,7 +272,12 @@ pub fn stat_badge(ui: &mut egui::Ui, icon: &str, label: &str, value: &str) {
                 ui.spacing_mut().item_spacing.x = 3.0;
                 ui.label(egui::RichText::new(icon).size(12.0));
                 ui.label(egui::RichText::new(label).size(11.0).color(TEXT_DIM));
-                ui.label(egui::RichText::new(value).size(11.0).strong());
+                ui.label(
+                    egui::RichText::new(value)
+                        .size(11.0)
+                        .strong()
+                        .color(TEXT_BRIGHT),
+                );
             });
         });
 }

@@ -1,5 +1,5 @@
 use crate::i18n::{t, Lang};
-use crate::state::{DecompState, JobState};
+use crate::state::{DecompState, FileInfo, JobState};
 use crate::widgets::*;
 use csv_splitter_core::ProgressEvent;
 use std::path::PathBuf;
@@ -17,23 +17,53 @@ pub fn ui_decompress(ui: &mut egui::Ui, s: &mut DecompState, lang: Lang) {
     ui.add_space(8.0);
 
     let avail_w = ui.available_width();
-    let card_w = (avail_w - 16.0).min(400.0);
+    let compact = avail_w < 600.0;
+    let card_w = if compact {
+        ((avail_w - 30.0) / 2.0).min(220.0).max(120.0)
+    } else {
+        ((avail_w - 60.0) / 3.0).min(220.0).max(140.0)
+    };
+    let card_h: f32 = 80.0;
+    let arrow_w: f32 = if compact { 12.0 } else { 18.0 };
 
-    // File input card
-    file_input_card(
-        ui,
-        &mut s.input_file,
-        t!(lang, DropFileHere),
-        ACCENT,
-        card_w,
-        70.0,
-        lang,
-        &[(
-            t!(lang, FilterArchive),
-            &["zst", "gz", "bz2", "xz", "zip", "7z", "tar", "tgz", "csv"],
-        )],
-    );
-    ui.add_space(4.0);
+    // Flow: Input → Result
+    if compact {
+        file_input_card(
+            ui,
+            &mut s.input_file,
+            t!(lang, DropFileHere),
+            ACCENT,
+            card_w,
+            card_h,
+            lang,
+            &[(
+                t!(lang, FilterArchive),
+                &["zst", "gz", "bz2", "xz", "zip", "7z", "tar", "tgz", "csv"],
+            )],
+        );
+        ui.add_space(4.0);
+        draw_decomp_result_card(ui, s, lang, card_w, card_h);
+    } else {
+        ui.horizontal(|ui| {
+            file_input_card(
+                ui,
+                &mut s.input_file,
+                t!(lang, DropFileHere),
+                ACCENT,
+                card_w,
+                card_h,
+                lang,
+                &[(
+                    t!(lang, FilterArchive),
+                    &["zst", "gz", "bz2", "xz", "zip", "7z", "tar", "tgz", "csv"],
+                )],
+            );
+            draw_arrow(ui, ACCENT, arrow_w, card_h);
+            draw_decomp_result_card(ui, s, lang, card_w, card_h);
+        });
+    }
+
+    ui.add_space(6.0);
 
     // Output dir
     dir_path_card(
@@ -64,10 +94,87 @@ pub fn ui_decompress(ui: &mut egui::Ui, s: &mut DecompState, lang: Lang) {
     log_panel(ui, &s.logs, lang);
 }
 
+fn draw_decomp_result_card(ui: &mut egui::Ui, s: &DecompState, lang: Lang, w: f32, h: f32) {
+    let border = if s.state == JobState::Done {
+        SUCCESS
+    } else {
+        CARD_BORDER
+    };
+    egui::Frame::new()
+        .fill(CARD_BG)
+        .stroke(egui::Stroke::new(1.0, border))
+        .corner_radius(egui::CornerRadius::same(8))
+        .inner_margin(8.0)
+        .show(ui, |ui| {
+            ui.set_width(w);
+            ui.set_min_height(h);
+            ui.vertical_centered(|ui| {
+                ui.label(
+                    egui::RichText::new(t!(lang, FlowResult))
+                        .size(12.0)
+                        .strong()
+                        .color(TEXT_BRIGHT),
+                );
+                ui.add_space(4.0);
+                match s.state {
+                    JobState::Done => {
+                        ui.label(egui::RichText::new("✅").size(22.0));
+                        if let Some(ref out) = s.output_file {
+                            ui.label(egui::RichText::new(&out.name).size(10.0).color(TEXT_BRIGHT));
+                            ui.label(
+                                egui::RichText::new(format_bytes(out.size))
+                                    .size(10.0)
+                                    .color(TEXT_DIM),
+                            );
+                        }
+                    }
+                    JobState::Running => {
+                        ui.spinner();
+                        ui.label(
+                            egui::RichText::new(t!(lang, Processing))
+                                .size(10.0)
+                                .color(TEXT_DIM),
+                        );
+                    }
+                    JobState::Error => {
+                        ui.label(egui::RichText::new("❌").size(22.0));
+                    }
+                    JobState::Idle => {
+                        ui.label(egui::RichText::new("📦").size(22.0).color(TEXT_DIM));
+                        ui.label(egui::RichText::new("…").size(10.0).color(TEXT_DIM));
+                    }
+                }
+            });
+        });
+}
+
+fn draw_arrow(ui: &mut egui::Ui, color: egui::Color32, w: f32, h: f32) {
+    let (rect, _) = ui.allocate_exact_size(egui::vec2(w, h), egui::Sense::hover());
+    let mid_y = rect.center().y;
+    let p = ui.painter();
+    p.line_segment(
+        [
+            egui::pos2(rect.left() + 2.0, mid_y),
+            egui::pos2(rect.right() - 6.0, mid_y),
+        ],
+        egui::Stroke::new(2.0, color),
+    );
+    let tip = egui::pos2(rect.right() - 2.0, mid_y);
+    p.line_segment(
+        [egui::pos2(tip.x - 6.0, mid_y - 4.0), tip],
+        egui::Stroke::new(2.0, color),
+    );
+    p.line_segment(
+        [egui::pos2(tip.x - 6.0, mid_y + 4.0), tip],
+        egui::Stroke::new(2.0, color),
+    );
+}
+
 fn start_decomp(s: &mut DecompState) {
     let Some(ref info) = s.input_file else { return };
     s.logs.clear();
     s.state = JobState::Running;
+    s.output_file = None;
     let input = info.path.clone();
     let out_dir = if s.output_dir.is_empty() {
         input
@@ -97,6 +204,7 @@ fn poll_decomp(s: &mut DecompState, lang: Lang) {
     while let Ok(ev) = rx.try_recv() {
         match ev {
             ProgressEvent::Finished { output } => {
+                s.output_file = FileInfo::from_path(output.clone());
                 s.logs
                     .push(format!("✅ {}: {}", t!(lang, Finished), output.display()));
                 s.state = JobState::Done;

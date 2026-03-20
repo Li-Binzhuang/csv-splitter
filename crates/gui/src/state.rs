@@ -177,6 +177,7 @@ pub struct DecompState {
     pub state: JobState,
     pub rx: Option<mpsc::Receiver<ProgressEvent>>,
     pub logs: Vec<String>,
+    pub output_file: Option<FileInfo>,
 }
 
 impl Default for DecompState {
@@ -187,6 +188,7 @@ impl Default for DecompState {
             state: JobState::Idle,
             rx: None,
             logs: Vec::new(),
+            output_file: None,
         }
     }
 }

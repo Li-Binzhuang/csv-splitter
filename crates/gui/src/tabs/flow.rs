@@ -81,19 +81,14 @@ pub fn draw_flow(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, avail_w: f32
 
     // Column filter section
     ui.add_space(6.0);
-    let col_section_w = if compact {
-        avail_w - 16.0
-    } else {
-        (avail_w - 16.0).min(500.0)
-    };
 
-    // Column filter file card
+    // Column filter file card — same width as the input card
     file_input_card(
         ui,
         &mut s.columns_file,
         t!(lang, DropColFileHere),
         PURPLE,
-        col_section_w,
+        card_w,
         46.0,
         lang,
         &[("CSV/TXT", &["csv", "txt"])],
@@ -102,7 +97,7 @@ pub fn draw_flow(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, avail_w: f32
     // Column selector from headers (only when headers are available)
     if !s.available_headers.is_empty() {
         ui.add_space(4.0);
-        draw_column_selector(ui, s, lang, col_section_w);
+        draw_column_selector(ui, s, lang, card_w);
     }
 }
 
@@ -151,7 +146,8 @@ fn draw_column_selector(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, w: f3
                 ui.label(
                     egui::RichText::new(t!(lang, ColumnSelect))
                         .size(12.0)
-                        .strong(),
+                        .strong()
+                        .color(TEXT_BRIGHT),
                 );
                 let selected_count = s.selected_columns.iter().filter(|&&v| v).count();
                 ui.label(
@@ -211,7 +207,12 @@ fn draw_split_card(ui: &mut egui::Ui, s: &SplitState, lang: Lang, w: f32, h: f32
             ui.set_width(w);
             ui.set_min_height(h);
             ui.vertical_centered(|ui| {
-                ui.label(egui::RichText::new(t!(lang, FlowSplit)).size(12.0).strong());
+                ui.label(
+                    egui::RichText::new(t!(lang, FlowSplit))
+                        .size(12.0)
+                        .strong()
+                        .color(TEXT_BRIGHT),
+                );
                 ui.add_space(4.0);
                 if s.no_split {
                     ui.label(egui::RichText::new("📄 1:1").size(18.0).color(TEXT_DIM));
@@ -262,7 +263,8 @@ fn draw_compress_card(
                 ui.label(
                     egui::RichText::new(t!(lang, FlowCompress))
                         .size(12.0)
-                        .strong(),
+                        .strong()
+                        .color(TEXT_BRIGHT),
                 );
                 ui.add_space(4.0);
                 if has_compress {
@@ -305,7 +307,8 @@ fn draw_result_card(ui: &mut egui::Ui, s: &SplitState, lang: Lang, w: f32, h: f3
                 ui.label(
                     egui::RichText::new(t!(lang, FlowResult))
                         .size(12.0)
-                        .strong(),
+                        .strong()
+                        .color(TEXT_BRIGHT),
                 );
                 ui.add_space(4.0);
                 match s.state {
