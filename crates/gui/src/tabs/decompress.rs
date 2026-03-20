@@ -1,33 +1,35 @@
+use crate::i18n::{t, Lang};
 use crate::state::{DecompState, JobState};
 use crate::widgets::*;
 use csv_splitter_core::ProgressEvent;
 use std::path::PathBuf;
 use std::sync::mpsc;
 
-pub fn ui_decompress(ui: &mut egui::Ui, s: &mut DecompState) {
-    poll_decomp(s);
+pub fn ui_decompress(ui: &mut egui::Ui, s: &mut DecompState, lang: Lang) {
+    poll_decomp(s, lang);
 
-    ui.heading("📦 解压缩");
-    ui.label(egui::RichText::new("支持: zstd, gzip, bzip2, xz, zip, 7z, tar 及其组合格式").size(12.0).weak());
+    ui.heading(t!(lang, DecompTitle));
+    ui.label(egui::RichText::new(t!(lang, DecompDesc)).size(12.0).weak());
     ui.add_space(6.0);
 
     file_picker(
-        ui, "压缩文件:", &mut s.input,
-        &[("压缩文件", &["zst", "gz", "bz2", "xz", "zip", "7z", "tar", "tgz", "csv"])],
+        ui, t!(lang, ArchiveFile), &mut s.input,
+        &[(t!(lang, FilterArchive), &["zst", "gz", "bz2", "xz", "zip", "7z", "tar", "tgz", "csv"])],
+        lang,
     );
-    dir_picker(ui, "输出目录:", &mut s.output_dir);
+    dir_picker(ui, t!(lang, OutputDir), &mut s.output_dir, lang);
 
     ui.add_space(6.0);
     let can_start = s.state != JobState::Running && !s.input.is_empty();
     ui.horizontal(|ui| {
-        let btn = egui::Button::new("📦 开始解压").min_size([120.0, 28.0].into());
+        let btn = egui::Button::new(t!(lang, StartExtract)).min_size([120.0, 28.0].into());
         if ui.add_enabled(can_start, btn).clicked() {
             start_decomp(s);
         }
-        job_status(ui, &s.state);
+        job_status(ui, &s.state, lang);
     });
 
-    log_panel(ui, &s.logs);
+    log_panel(ui, &s.logs, lang);
 }
 
 fn start_decomp(s: &mut DecompState) {
@@ -50,16 +52,16 @@ fn start_decomp(s: &mut DecompState) {
     });
 }
 
-fn poll_decomp(s: &mut DecompState) {
+fn poll_decomp(s: &mut DecompState, lang: Lang) {
     let Some(rx) = &s.rx else { return };
     while let Ok(ev) = rx.try_recv() {
         match ev {
             ProgressEvent::Finished { output } => {
-                s.logs.push(format!("✅ 完成: {}", output.display()));
+                s.logs.push(format!("✅ {}: {}", t!(lang, Finished), output.display()));
                 s.state = JobState::Done;
             }
             ProgressEvent::Error(e) => {
-                s.logs.push(format!("❌ 错误: {}", e));
+                s.logs.push(format!("❌ {}: {}", t!(lang, Error), e));
                 s.state = JobState::Error;
             }
             ProgressEvent::Info(msg) => s.logs.push(format!("ℹ {}", msg)),

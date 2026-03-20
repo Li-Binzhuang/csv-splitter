@@ -1,3 +1,4 @@
+use crate::i18n::{t, Lang};
 use crate::state::{JobState, StatsState};
 use crate::widgets::*;
 use csv_splitter_core::preview::compute_column_stats;
@@ -5,41 +6,42 @@ use csv_splitter_core::ProgressEvent;
 use std::path::PathBuf;
 use std::sync::mpsc;
 
-pub fn ui_stats(ui: &mut egui::Ui, s: &mut StatsState) {
-    poll_stats(s);
+pub fn ui_stats(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
+    poll_stats(s, lang);
 
-    ui.heading("📊 列统计");
-    ui.label(egui::RichText::new("通过采样分析各列的数据分布").size(12.0).weak());
+    ui.heading(t!(lang, StatsTitle));
+    ui.label(egui::RichText::new(t!(lang, StatsDesc)).size(12.0).weak());
     ui.add_space(6.0);
 
     file_picker(
-        ui, "CSV 文件:", &mut s.path,
-        &[("CSV", &["csv", "tsv", "txt"])],
+        ui, t!(lang, CsvFile), &mut s.path,
+        &[(t!(lang, FilterCsv), &["csv", "tsv", "txt"])],
+        lang,
     );
-    delimiter_combo(ui, &mut s.delim_idx, &mut s.custom_delim);
+    delimiter_combo(ui, &mut s.delim_idx, &mut s.custom_delim, lang);
 
     ui.horizontal(|ui| {
-        ui.label("采样行数:");
+        ui.label(t!(lang, SampleSize));
         ui.add(egui::DragValue::new(&mut s.sample_size).range(1000..=10_000_000));
     });
 
     ui.add_space(4.0);
     let can_start = s.state != JobState::Running && !s.path.is_empty();
     ui.horizontal(|ui| {
-        let btn = egui::Button::new("📊 开始分析").min_size([120.0, 28.0].into());
+        let btn = egui::Button::new(t!(lang, StartAnalysis)).min_size([120.0, 28.0].into());
         if ui.add_enabled(can_start, btn).clicked() {
             start_stats(s);
         }
-        job_status(ui, &s.state);
+        job_status(ui, &s.state, lang);
     });
 
     if let Some(ref stats) = s.stats {
-        section(ui, "📈 分析结果");
+        section(ui, t!(lang, AnalysisResult));
 
         let col_names: Vec<&str> = stats.iter().map(|s| s.name.as_str()).collect();
         if !col_names.is_empty() {
             ui.horizontal(|ui| {
-                ui.label("选择列:");
+                ui.label(t!(lang, SelectColumn));
                 egui::ComboBox::from_id_salt("stats_col")
                     .selected_text(*col_names.get(s.selected_col).unwrap_or(&""))
                     .width(200.0)
@@ -53,24 +55,22 @@ pub fn ui_stats(ui: &mut egui::Ui, s: &mut StatsState) {
             if let Some(col) = stats.get(s.selected_col) {
                 ui.add_space(4.0);
 
-                // Stats summary bar
                 egui::Frame::new()
                     .fill(ui.visuals().faint_bg_color)
                     .corner_radius(egui::CornerRadius::same(6))
                     .inner_margin(8.0)
                     .show(ui, |ui| {
                         ui.horizontal(|ui| {
-                            ui.label(format!("🔢 唯一值: {}", col.unique_count));
+                            ui.label(format!("🔢 {}: {}", t!(lang, UniqueValues), col.unique_count));
                             ui.separator();
-                            ui.label(format!("⬜ 空值: {}", col.empty_count));
+                            ui.label(format!("⬜ {}: {}", t!(lang, EmptyValues), col.empty_count));
                             ui.separator();
-                            ui.label(format!("📊 采样: {}", col.total_sampled));
+                            ui.label(format!("📊 {}: {}", t!(lang, Sampled), col.total_sampled));
                         });
                     });
 
                 ui.add_space(4.0);
 
-                // Value frequency table
                 egui::ScrollArea::vertical()
                     .auto_shrink([false, false])
                     .show(ui, |ui| {
@@ -79,9 +79,9 @@ pub fn ui_stats(ui: &mut egui::Ui, s: &mut StatsState) {
                             .min_col_width(100.0)
                             .spacing([16.0, 4.0])
                             .show(ui, |ui| {
-                                ui.label(egui::RichText::new("值").strong());
-                                ui.label(egui::RichText::new("计数").strong());
-                                ui.label(egui::RichText::new("占比").strong());
+                                ui.label(egui::RichText::new(t!(lang, ColValue)).strong());
+                                ui.label(egui::RichText::new(t!(lang, ColCount)).strong());
+                                ui.label(egui::RichText::new(t!(lang, ColPercent)).strong());
                                 ui.end_row();
 
                                 for (val, count) in &col.top_values {
@@ -90,8 +90,9 @@ pub fn ui_stats(ui: &mut egui::Ui, s: &mut StatsState) {
                                     } else {
                                         0.0
                                     };
-                                    let display = if val.len() > 60 {
-                                        format!("{}...", &val[..57])
+                                    let display = if val.chars().count() > 60 {
+                                        let truncated: String = val.chars().take(57).collect();
+                                        format!("{}...", truncated)
                                     } else {
                                         val.clone()
                                     };
@@ -106,7 +107,7 @@ pub fn ui_stats(ui: &mut egui::Ui, s: &mut StatsState) {
         }
     }
 
-    log_panel(ui, &s.logs);
+    log_panel(ui, &s.logs, lang);
 }
 
 fn start_stats(s: &mut StatsState) {
@@ -126,7 +127,7 @@ fn start_stats(s: &mut StatsState) {
     });
 }
 
-fn poll_stats(s: &mut StatsState) {
+fn poll_stats(s: &mut StatsState, lang: Lang) {
     let Some(rx) = &s.rx else { return };
     while let Ok(ev) = rx.try_recv() {
         match ev {
@@ -135,7 +136,7 @@ fn poll_stats(s: &mut StatsState) {
                 s.state = JobState::Done;
             }
             ProgressEvent::Error(e) => {
-                s.logs.push(format!("❌ 错误: {}", e));
+                s.logs.push(format!("❌ {}: {}", t!(lang, Error), e));
                 s.state = JobState::Error;
             }
             ProgressEvent::Info(msg) => s.logs.push(msg),

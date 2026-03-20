@@ -1,6 +1,8 @@
 use csv_splitter_core::*;
 use std::sync::mpsc;
 
+use crate::i18n::{t, Lang};
+
 #[derive(PartialEq, Clone, Copy)]
 pub enum Tab {
     Split,
@@ -10,12 +12,12 @@ pub enum Tab {
 }
 
 impl Tab {
-    pub fn label(&self) -> &str {
+    pub fn label(&self, lang: Lang) -> &'static str {
         match self {
-            Tab::Split => "🔪 拆分压缩",
-            Tab::Preview => "👁 数据预览",
-            Tab::Stats => "📊 列统计",
-            Tab::Decompress => "📦 解压缩",
+            Tab::Split => t!(lang, TabSplit),
+            Tab::Preview => t!(lang, TabPreview),
+            Tab::Stats => t!(lang, TabStats),
+            Tab::Decompress => t!(lang, TabDecompress),
         }
     }
 

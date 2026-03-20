@@ -1,3 +1,4 @@
+use crate::i18n::{t, Lang};
 use csv_splitter_core::Delimiter;
 
 /// Format bytes into human-readable string.
@@ -19,15 +20,16 @@ pub fn file_picker(
     label: &str,
     value: &mut String,
     filters: &[(&str, &[&str])],
+    lang: Lang,
 ) {
     ui.horizontal(|ui| {
         ui.label(label);
         let response = ui.add(
             egui::TextEdit::singleline(value)
                 .desired_width(ui.available_width() - 40.0)
-                .hint_text("点击右侧按钮选择文件..."),
+                .hint_text(t!(lang, FileHint)),
         );
-        if ui.button("📂").on_hover_text("浏览文件").clicked() {
+        if ui.button("📂").on_hover_text(t!(lang, BrowseFile)).clicked() {
             let mut dialog = rfd::FileDialog::new();
             for (name, exts) in filters {
                 dialog = dialog.add_filter(*name, exts);
@@ -41,15 +43,15 @@ pub fn file_picker(
 }
 
 /// Directory picker: label + text input + browse button.
-pub fn dir_picker(ui: &mut egui::Ui, label: &str, value: &mut String) {
+pub fn dir_picker(ui: &mut egui::Ui, label: &str, value: &mut String, lang: Lang) {
     ui.horizontal(|ui| {
         ui.label(label);
         ui.add(
             egui::TextEdit::singleline(value)
                 .desired_width(ui.available_width() - 40.0)
-                .hint_text("点击右侧按钮选择目录..."),
+                .hint_text(t!(lang, DirHint)),
         );
-        if ui.button("📂").on_hover_text("浏览目录").clicked() {
+        if ui.button("📂").on_hover_text(t!(lang, BrowseDir)).clicked() {
             if let Some(path) = rfd::FileDialog::new().pick_folder() {
                 *value = path.display().to_string();
             }
@@ -58,15 +60,15 @@ pub fn dir_picker(ui: &mut egui::Ui, label: &str, value: &mut String) {
 }
 
 /// Delimiter combo box.
-pub fn delimiter_combo(ui: &mut egui::Ui, idx: &mut usize, custom: &mut String) {
+pub fn delimiter_combo(ui: &mut egui::Ui, idx: &mut usize, custom: &mut String, lang: Lang) {
     let common = Delimiter::common();
     let labels: Vec<&str> = common
         .iter()
         .map(|d| d.label())
-        .chain(std::iter::once("自定义"))
+        .chain(std::iter::once(t!(lang, CustomDelim)))
         .collect();
     ui.horizontal(|ui| {
-        ui.label("分隔符:");
+        ui.label(t!(lang, Delimiter));
         egui::ComboBox::from_id_salt(ui.next_auto_id())
             .selected_text(labels[*idx])
             .width(160.0)
@@ -76,19 +78,19 @@ pub fn delimiter_combo(ui: &mut egui::Ui, idx: &mut usize, custom: &mut String) 
                 }
             });
         if *idx >= common.len() {
-            ui.label("自定义字符:");
+            ui.label(t!(lang, CustomChar));
             ui.add(egui::TextEdit::singleline(custom).desired_width(40.0));
         }
     });
 }
 
 /// Scrollable log area.
-pub fn log_panel(ui: &mut egui::Ui, logs: &[String]) {
+pub fn log_panel(ui: &mut egui::Ui, logs: &[String], lang: Lang) {
     if logs.is_empty() {
         return;
     }
     ui.separator();
-    ui.label("📋 日志:");
+    ui.label(t!(lang, LogTitle));
     egui::Frame::new()
         .fill(ui.visuals().extreme_bg_color)
         .corner_radius(egui::CornerRadius::same(6))
@@ -106,17 +108,17 @@ pub fn log_panel(ui: &mut egui::Ui, logs: &[String]) {
 }
 
 /// Job status indicator.
-pub fn job_status(ui: &mut egui::Ui, state: &crate::state::JobState) {
+pub fn job_status(ui: &mut egui::Ui, state: &crate::state::JobState, lang: Lang) {
     match state {
         crate::state::JobState::Running => {
             ui.spinner();
-            ui.label("处理中...");
+            ui.label(t!(lang, Processing));
         }
         crate::state::JobState::Done => {
-            ui.label(egui::RichText::new("✅ 完成").color(egui::Color32::from_rgb(80, 200, 120)));
+            ui.label(egui::RichText::new(t!(lang, Done)).color(egui::Color32::from_rgb(80, 200, 120)));
         }
         crate::state::JobState::Error => {
-            ui.label(egui::RichText::new("❌ 失败").color(egui::Color32::from_rgb(240, 80, 80)));
+            ui.label(egui::RichText::new(t!(lang, Failed)).color(egui::Color32::from_rgb(240, 80, 80)));
         }
         crate::state::JobState::Idle => {}
     }

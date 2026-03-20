@@ -9,17 +9,21 @@ pub fn apply_theme(ctx: &egui::Context) {
 fn setup_fonts(ctx: &egui::Context) {
     let mut fonts = FontDefinitions::default();
 
-    // Try to load system CJK font for Chinese support
-    let cjk_font_paths = if cfg!(target_os = "macos") {
+    // Load system CJK font for Chinese/Japanese/Korean support.
+    // Multiple candidates per platform — first match wins.
+    let cjk_font_paths: Vec<&str> = if cfg!(target_os = "macos") {
         vec![
-            "/System/Library/Fonts/PingFang.ttc",
-            "/System/Library/Fonts/STHeiti Light.ttc",
             "/System/Library/Fonts/Hiragino Sans GB.ttc",
+            "/System/Library/Fonts/STHeiti Medium.ttc",
+            "/System/Library/Fonts/STHeiti Light.ttc",
+            "/System/Library/Fonts/Supplemental/Songti.ttc",
+            "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
             "/Library/Fonts/Arial Unicode.ttf",
         ]
     } else if cfg!(target_os = "windows") {
         vec![
             "C:\\Windows\\Fonts\\msyh.ttc",
+            "C:\\Windows\\Fonts\\msyhbd.ttc",
             "C:\\Windows\\Fonts\\simsun.ttc",
             "C:\\Windows\\Fonts\\simhei.ttf",
         ]
@@ -27,6 +31,7 @@ fn setup_fonts(ctx: &egui::Context) {
         vec![
             "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
             "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/google-noto-cjk/NotoSansCJK-Regular.ttc",
             "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
             "/usr/share/fonts/wenquanyi/wqy-microhei/wqy-microhei.ttc",
         ]

@@ -1,22 +1,24 @@
+use crate::i18n::{t, Lang};
 use crate::state::PreviewState;
 use crate::widgets::*;
 use csv_splitter_core::preview::load_preview;
 use std::path::PathBuf;
 
-pub fn ui_preview(ui: &mut egui::Ui, s: &mut PreviewState) {
-    ui.heading("👁 数据预览");
-    ui.label(egui::RichText::new("快速预览 CSV 文件的前 100 行数据").size(12.0).weak());
+pub fn ui_preview(ui: &mut egui::Ui, s: &mut PreviewState, lang: Lang) {
+    ui.heading(t!(lang, PreviewTitle));
+    ui.label(egui::RichText::new(t!(lang, PreviewDesc)).size(12.0).weak());
     ui.add_space(6.0);
 
     file_picker(
-        ui, "CSV 文件:", &mut s.path,
-        &[("CSV", &["csv", "tsv", "txt"])],
+        ui, t!(lang, CsvFile), &mut s.path,
+        &[(t!(lang, FilterCsv), &["csv", "tsv", "txt"])],
+        lang,
     );
-    delimiter_combo(ui, &mut s.delim_idx, &mut s.custom_delim);
+    delimiter_combo(ui, &mut s.delim_idx, &mut s.custom_delim, lang);
 
     ui.add_space(4.0);
     let can_load = !s.path.is_empty();
-    if ui.add_enabled(can_load, egui::Button::new("📖 加载预览").min_size([120.0, 28.0].into())).clicked() {
+    if ui.add_enabled(can_load, egui::Button::new(t!(lang, LoadPreview)).min_size([120.0, 28.0].into())).clicked() {
         let path = PathBuf::from(&s.path);
         let delim = get_delimiter(s.delim_idx, &s.custom_delim);
         match load_preview(&path, 100, Some(delim)) {
@@ -35,13 +37,13 @@ pub fn ui_preview(ui: &mut egui::Ui, s: &mut PreviewState) {
             .inner_margin(8.0)
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
-                    ui.label(format!("📄 大小: {}", format_bytes(preview.file_size)));
+                    ui.label(format!("📄 {}: {}", t!(lang, FileSize), format_bytes(preview.file_size)));
                     ui.separator();
-                    ui.label(format!("📊 约 {} 行", preview.total_rows_estimate));
+                    ui.label(format!("📊 ~{} {}", preview.total_rows_estimate, t!(lang, ApproxRows)));
                     ui.separator();
-                    ui.label(format!("🔤 分隔符: {}", preview.detected_delimiter.label()));
+                    ui.label(format!("🔤 {}: {}", t!(lang, DetectedDelim), preview.detected_delimiter.label()));
                     ui.separator();
-                    ui.label(format!("📋 {} 列", preview.headers.len()));
+                    ui.label(format!("📋 {} {}", preview.headers.len(), t!(lang, ColumnCount)));
                 });
             });
 

@@ -1,8 +1,9 @@
 mod app;
+mod i18n;
 mod state;
 mod tabs;
-mod widgets;
 mod theme;
+mod widgets;
 
 fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
