@@ -5,7 +5,7 @@ use crate::tabs;
 pub struct App {
     pub lang: Lang,
     tab: Tab,
-    split: SplitState,
+    pub split: SplitState,
     preview: PreviewState,
     stats: StatsState,
     decomp: DecompState,
@@ -26,50 +26,76 @@ impl App {
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Animate continuously when running or on split tab (for flow animation)
         if self.split.state == JobState::Running
             || self.stats.state == JobState::Running
             || self.decomp.state == JobState::Running
+            || self.tab == Tab::Split
         {
             ctx.request_repaint();
         }
 
+        // Track animation time
+        self.split.anim_time = ctx.input(|i| i.time);
+
+        // Handle file drops globally
+        self.handle_drops(ctx);
+
         let lang = self.lang;
 
-        // --- Tab bar ---
-        egui::TopBottomPanel::top("tab_bar").show(ctx, |ui| {
-            ui.add_space(4.0);
-            ui.horizontal(|ui| {
-                ui.add_space(8.0);
-                for &t in Tab::all() {
-                    let selected = self.tab == t;
-                    let text = egui::RichText::new(t.label(lang)).size(14.0);
-                    let text = if selected { text.strong() } else { text };
-                    if ui.selectable_label(selected, text).clicked() {
-                        self.tab = t;
+        // --- Top bar with tabs + language toggle ---
+        egui::TopBottomPanel::top("tab_bar")
+            .frame(
+                egui::Frame::new()
+                    .fill(egui::Color32::from_rgb(24, 26, 33))
+                    .inner_margin(egui::Margin::symmetric(12, 6)),
+            )
+            .show(ctx, |ui| {
+                ui.horizontal(|ui| {
+                    for &t in Tab::all() {
+                        let selected = self.tab == t;
+                        let text = egui::RichText::new(t.label(lang)).size(14.0);
+                        let text = if selected {
+                            text.strong().color(egui::Color32::from_rgb(88, 166, 255))
+                        } else {
+                            text
+                        };
+                        if ui.selectable_label(selected, text).clicked() {
+                            self.tab = t;
+                        }
+                        ui.add_space(2.0);
                     }
-                    ui.add_space(4.0);
-                }
 
-                // Push language toggle to the right
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    let toggle_text = match self.lang {
-                        Lang::Zh => "🌐 EN",
-                        Lang::En => "🌐 中文",
-                    };
-                    if ui.button(toggle_text).on_hover_text("Switch language / 切换语言").clicked() {
-                        self.lang = self.lang.toggle();
-                    }
-                    ui.add_space(4.0);
+                    // Language toggle on the right
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        let btn_text = match self.lang {
+                            Lang::Zh => "🌐 EN",
+                            Lang::En => "🌐 中文",
+                        };
+                        if ui
+                            .add(
+                                egui::Button::new(egui::RichText::new(btn_text).size(13.0))
+                                    .corner_radius(egui::CornerRadius::same(12)),
+                            )
+                            .on_hover_text("Switch language / 切换语言")
+                            .clicked()
+                        {
+                            self.lang = self.lang.toggle();
+                        }
+                    });
                 });
             });
-            ui.add_space(2.0);
-        });
 
         // --- Content ---
         egui::CentralPanel::default().show(ctx, |ui| {
+            let avail = ui.available_size();
+            // Make content fill available space
+            ui.set_min_size(avail);
+
             egui::ScrollArea::vertical()
                 .auto_shrink([false, false])
                 .show(ui, |ui| {
+                    ui.set_min_width(avail.x - 16.0);
                     ui.add_space(4.0);
                     match self.tab {
                         Tab::Split => tabs::ui_split(ui, &mut self.split, lang),
@@ -79,5 +105,37 @@ impl eframe::App for App {
                     }
                 });
         });
+    }
+}
+
+impl App {
+    fn handle_drops(&mut self, ctx: &egui::Context) {
+        let dropped: Vec<_> = ctx.input(|i| i.raw.dropped_files.clone());
+        for file in dropped {
+            if let Some(path) = file.path {
+                if self.tab == Tab::Split {
+                    if let Some(info) = FileInfo::from_path(path) {
+                        let ext = info.extension.to_lowercase();
+                        // If it looks like a column filter file (small txt/csv), put it in columns slot
+                        // Otherwise put it in input slot
+                        if self.split.input_file.is_some()
+                            && self.split.columns_file.is_none()
+                            && (ext == "txt" || ext == "csv")
+                            && info.size < 1_000_000
+                        {
+                            self.split.columns_file = Some(info);
+                        } else {
+                            self.split.input_file = Some(info);
+                        }
+                    }
+                } else if self.tab == Tab::Preview {
+                    self.preview.path = path.display().to_string();
+                } else if self.tab == Tab::Stats {
+                    self.stats.path = path.display().to_string();
+                } else if self.tab == Tab::Decompress {
+                    self.decomp.input = path.display().to_string();
+                }
+            }
+        }
     }
 }

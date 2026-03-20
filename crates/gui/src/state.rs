@@ -1,5 +1,7 @@
 use csv_splitter_core::*;
+use std::path::PathBuf;
 use std::sync::mpsc;
+use std::time::SystemTime;
 
 use crate::i18n::{t, Lang};
 
@@ -20,13 +22,12 @@ impl Tab {
             Tab::Decompress => t!(lang, TabDecompress),
         }
     }
-
     pub fn all() -> &'static [Tab] {
         &[Tab::Split, Tab::Preview, Tab::Stats, Tab::Decompress]
     }
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone, Copy)]
 pub enum JobState {
     Idle,
     Running,
@@ -34,12 +35,42 @@ pub enum JobState {
     Error,
 }
 
+/// Metadata about a dropped/selected file.
+#[derive(Clone, Debug)]
+pub struct FileInfo {
+    pub path: PathBuf,
+    pub name: String,
+    pub size: u64,
+    pub modified: Option<SystemTime>,
+    pub extension: String,
+}
+
+impl FileInfo {
+    pub fn from_path(path: PathBuf) -> Option<Self> {
+        let meta = std::fs::metadata(&path).ok()?;
+        let name = path.file_name()?.to_string_lossy().to_string();
+        let extension = path
+            .extension()
+            .map(|e| e.to_string_lossy().to_string())
+            .unwrap_or_default()
+            .to_uppercase();
+        Some(Self {
+            path,
+            name,
+            size: meta.len(),
+            modified: meta.modified().ok(),
+            extension,
+        })
+    }
+}
+
 /// Split tab state
 pub struct SplitState {
-    pub input_path: String,
+    pub input_file: Option<FileInfo>,
+    pub columns_file: Option<FileInfo>,
     pub output_path: String,
-    pub columns_path: String,
     pub splits: usize,
+    pub no_split: bool,
     pub compress_idx: usize,
     pub compress_level: i32,
     pub buf_mb: usize,
@@ -53,15 +84,18 @@ pub struct SplitState {
     pub current_phase: String,
     pub progress_bytes: u64,
     pub progress_total: u64,
+    pub output_file: Option<FileInfo>,
+    pub anim_time: f64,
 }
 
 impl Default for SplitState {
     fn default() -> Self {
         Self {
-            input_path: String::new(),
+            input_file: None,
+            columns_file: None,
             output_path: String::new(),
-            columns_path: String::new(),
-            splits: 10,
+            splits: 3,
+            no_split: false,
             compress_idx: 0,
             compress_level: 3,
             buf_mb: 64,
@@ -75,6 +109,8 @@ impl Default for SplitState {
             current_phase: String::new(),
             progress_bytes: 0,
             progress_total: 0,
+            output_file: None,
+            anim_time: 0.0,
         }
     }
 }

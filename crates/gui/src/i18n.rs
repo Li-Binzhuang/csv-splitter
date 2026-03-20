@@ -12,18 +12,8 @@ impl Lang {
             Lang::En => Lang::Zh,
         }
     }
-
-    #[allow(dead_code)]
-    pub fn label(&self) -> &str {
-        match self {
-            Lang::Zh => "中文",
-            Lang::En => "EN",
-        }
-    }
 }
 
-/// All translatable strings in the UI.
-/// Call with current language to get the localized text.
 macro_rules! t {
     ($lang:expr, $key:ident) => {
         $crate::i18n::text($lang, $crate::i18n::Key::$key)
@@ -32,17 +22,16 @@ macro_rules! t {
 pub(crate) use t;
 
 #[derive(Clone, Copy)]
+#[allow(dead_code)]
 pub enum Key {
     // Tabs
     TabSplit,
     TabPreview,
     TabStats,
     TabDecompress,
-
-    // Split tab
+    // Split
     SplitTitle,
     SplitDesc,
-    SectionFile,
     SectionParams,
     InputFile,
     ColumnFilter,
@@ -57,8 +46,22 @@ pub enum Key {
     SortColumnHint,
     Descending,
     StartSplit,
-
-    // Preview tab
+    NoSplit,
+    // File card
+    DropFileHere,
+    DropColFileHere,
+    FileNameLabel,
+    FileSizeLabel,
+    FileModified,
+    FileType,
+    RemoveFile,
+    // Flow
+    FlowSource,
+    FlowSplit,
+    FlowCompress,
+    FlowResult,
+    SaveResult,
+    // Preview
     PreviewTitle,
     PreviewDesc,
     CsvFile,
@@ -67,8 +70,7 @@ pub enum Key {
     ApproxRows,
     DetectedDelim,
     ColumnCount,
-
-    // Stats tab
+    // Stats
     StatsTitle,
     StatsDesc,
     SampleSize,
@@ -81,15 +83,13 @@ pub enum Key {
     ColValue,
     ColCount,
     ColPercent,
-
-    // Decompress tab
+    // Decompress
     DecompTitle,
     DecompDesc,
     ArchiveFile,
     OutputDir,
     StartExtract,
-
-    // Widgets / common
+    // Common
     Delimiter,
     CustomDelim,
     CustomChar,
@@ -103,8 +103,6 @@ pub enum Key {
     Failed,
     Finished,
     Error,
-
-    // Compress format filter labels
     FilterCsvArchive,
     FilterCsvTxt,
     FilterCsv,
@@ -113,7 +111,7 @@ pub enum Key {
 
 pub fn text(lang: Lang, key: Key) -> &'static str {
     match (lang, key) {
-        // --- Tabs ---
+        // Tabs
         (Lang::Zh, Key::TabSplit) => "🔪 拆分压缩",
         (Lang::En, Key::TabSplit) => "🔪 Split",
         (Lang::Zh, Key::TabPreview) => "👁 数据预览",
@@ -123,43 +121,71 @@ pub fn text(lang: Lang, key: Key) -> &'static str {
         (Lang::Zh, Key::TabDecompress) => "📦 解压缩",
         (Lang::En, Key::TabDecompress) => "📦 Extract",
 
-        // --- Split ---
+        // Split
         (Lang::Zh, Key::SplitTitle) => "🔪 拆分 & 压缩",
         (Lang::En, Key::SplitTitle) => "🔪 Split & Compress",
-        (Lang::Zh, Key::SplitDesc) => "将大型 CSV 文件拆分为多个压缩分片",
-        (Lang::En, Key::SplitDesc) => "Split large CSV files into compressed chunks",
-        (Lang::Zh, Key::SectionFile) => "📁 文件设置",
-        (Lang::En, Key::SectionFile) => "📁 Files",
-        (Lang::Zh, Key::SectionParams) => "⚙️ 参数设置",
-        (Lang::En, Key::SectionParams) => "⚙️ Parameters",
+        (Lang::Zh, Key::SplitDesc) => "将 CSV 文件拆分为多个压缩分片，或直接压缩",
+        (Lang::En, Key::SplitDesc) => "Split CSV into compressed chunks, or compress directly",
+        (Lang::Zh, Key::SectionParams) => "⚙️ 参数",
+        (Lang::En, Key::SectionParams) => "⚙️ Params",
         (Lang::Zh, Key::InputFile) => "输入文件:",
         (Lang::En, Key::InputFile) => "Input:",
-        (Lang::Zh, Key::ColumnFilter) => "列过滤文件:",
-        (Lang::En, Key::ColumnFilter) => "Column filter:",
-        (Lang::Zh, Key::OutputFile) => "输出文件:",
+        (Lang::Zh, Key::ColumnFilter) => "列过滤:",
+        (Lang::En, Key::ColumnFilter) => "Col filter:",
+        (Lang::Zh, Key::OutputFile) => "输出:",
         (Lang::En, Key::OutputFile) => "Output:",
         (Lang::Zh, Key::OutputHint) => "留空则自动生成...",
-        (Lang::En, Key::OutputHint) => "Leave empty for auto...",
+        (Lang::En, Key::OutputHint) => "Auto if empty...",
         (Lang::Zh, Key::SaveLocation) => "选择保存位置",
-        (Lang::En, Key::SaveLocation) => "Choose save location",
-        (Lang::Zh, Key::Splits) => "拆分份数:",
+        (Lang::En, Key::SaveLocation) => "Save location",
+        (Lang::Zh, Key::Splits) => "份数:",
         (Lang::En, Key::Splits) => "Splits:",
-        (Lang::Zh, Key::BufferMb) => "缓冲区 (MB):",
+        (Lang::Zh, Key::BufferMb) => "缓冲 (MB):",
         (Lang::En, Key::BufferMb) => "Buffer (MB):",
-        (Lang::Zh, Key::CompressFormat) => "压缩格式:",
+        (Lang::Zh, Key::CompressFormat) => "压缩:",
         (Lang::En, Key::CompressFormat) => "Format:",
-        (Lang::Zh, Key::CompressLevel) => "压缩级别:",
+        (Lang::Zh, Key::CompressLevel) => "级别:",
         (Lang::En, Key::CompressLevel) => "Level:",
-        (Lang::Zh, Key::SortColumn) => "排序列名:",
-        (Lang::En, Key::SortColumn) => "Sort column:",
-        (Lang::Zh, Key::SortColumnHint) => "留空则不排序",
-        (Lang::En, Key::SortColumnHint) => "Leave empty to skip",
+        (Lang::Zh, Key::SortColumn) => "排序列:",
+        (Lang::En, Key::SortColumn) => "Sort col:",
+        (Lang::Zh, Key::SortColumnHint) => "留空不排序",
+        (Lang::En, Key::SortColumnHint) => "Empty = no sort",
         (Lang::Zh, Key::Descending) => "降序",
         (Lang::En, Key::Descending) => "Desc",
-        (Lang::Zh, Key::StartSplit) => "🚀 开始拆分",
+        (Lang::Zh, Key::StartSplit) => "🚀 开始处理",
         (Lang::En, Key::StartSplit) => "🚀 Start",
+        (Lang::Zh, Key::NoSplit) => "不拆分 (直接压缩)",
+        (Lang::En, Key::NoSplit) => "No split (compress only)",
 
-        // --- Preview ---
+        // File card
+        (Lang::Zh, Key::DropFileHere) => "拖放 CSV 文件到此处\n或点击选择",
+        (Lang::En, Key::DropFileHere) => "Drop CSV file here\nor click to browse",
+        (Lang::Zh, Key::DropColFileHere) => "拖放列过滤文件\n或点击选择 (可选)",
+        (Lang::En, Key::DropColFileHere) => "Drop column filter\nor click to browse (optional)",
+        (Lang::Zh, Key::FileNameLabel) => "文件名",
+        (Lang::En, Key::FileNameLabel) => "Name",
+        (Lang::Zh, Key::FileSizeLabel) => "大小",
+        (Lang::En, Key::FileSizeLabel) => "Size",
+        (Lang::Zh, Key::FileModified) => "修改时间",
+        (Lang::En, Key::FileModified) => "Modified",
+        (Lang::Zh, Key::FileType) => "类型",
+        (Lang::En, Key::FileType) => "Type",
+        (Lang::Zh, Key::RemoveFile) => "移除",
+        (Lang::En, Key::RemoveFile) => "Remove",
+
+        // Flow
+        (Lang::Zh, Key::FlowSource) => "源文件",
+        (Lang::En, Key::FlowSource) => "Source",
+        (Lang::Zh, Key::FlowSplit) => "拆分",
+        (Lang::En, Key::FlowSplit) => "Split",
+        (Lang::Zh, Key::FlowCompress) => "压缩",
+        (Lang::En, Key::FlowCompress) => "Compress",
+        (Lang::Zh, Key::FlowResult) => "结果",
+        (Lang::En, Key::FlowResult) => "Result",
+        (Lang::Zh, Key::SaveResult) => "💾 保存结果",
+        (Lang::En, Key::SaveResult) => "💾 Save",
+
+        // Preview
         (Lang::Zh, Key::PreviewTitle) => "👁 数据预览",
         (Lang::En, Key::PreviewTitle) => "👁 Data Preview",
         (Lang::Zh, Key::PreviewDesc) => "快速预览 CSV 文件的前 100 行数据",
@@ -177,11 +203,11 @@ pub fn text(lang: Lang, key: Key) -> &'static str {
         (Lang::Zh, Key::ColumnCount) => "列",
         (Lang::En, Key::ColumnCount) => "cols",
 
-        // --- Stats ---
+        // Stats
         (Lang::Zh, Key::StatsTitle) => "📊 列统计",
         (Lang::En, Key::StatsTitle) => "📊 Column Statistics",
         (Lang::Zh, Key::StatsDesc) => "通过采样分析各列的数据分布",
-        (Lang::En, Key::StatsDesc) => "Analyze column data distribution via sampling",
+        (Lang::En, Key::StatsDesc) => "Analyze column distribution via sampling",
         (Lang::Zh, Key::SampleSize) => "采样行数:",
         (Lang::En, Key::SampleSize) => "Sample size:",
         (Lang::Zh, Key::StartAnalysis) => "📊 开始分析",
@@ -203,11 +229,11 @@ pub fn text(lang: Lang, key: Key) -> &'static str {
         (Lang::Zh, Key::ColPercent) => "占比",
         (Lang::En, Key::ColPercent) => "Percent",
 
-        // --- Decompress ---
+        // Decompress
         (Lang::Zh, Key::DecompTitle) => "📦 解压缩",
         (Lang::En, Key::DecompTitle) => "📦 Extract",
-        (Lang::Zh, Key::DecompDesc) => "支持: zstd, gzip, bzip2, xz, zip, 7z, tar 及其组合格式",
-        (Lang::En, Key::DecompDesc) => "Supports: zstd, gzip, bzip2, xz, zip, 7z, tar and combinations",
+        (Lang::Zh, Key::DecompDesc) => "支持: zstd, gzip, bzip2, xz, zip, 7z, tar 及其组合",
+        (Lang::En, Key::DecompDesc) => "Supports: zstd, gzip, bzip2, xz, zip, 7z, tar combos",
         (Lang::Zh, Key::ArchiveFile) => "压缩文件:",
         (Lang::En, Key::ArchiveFile) => "Archive:",
         (Lang::Zh, Key::OutputDir) => "输出目录:",
@@ -215,21 +241,21 @@ pub fn text(lang: Lang, key: Key) -> &'static str {
         (Lang::Zh, Key::StartExtract) => "📦 开始解压",
         (Lang::En, Key::StartExtract) => "📦 Extract",
 
-        // --- Widgets / common ---
+        // Common
         (Lang::Zh, Key::Delimiter) => "分隔符:",
         (Lang::En, Key::Delimiter) => "Delimiter:",
         (Lang::Zh, Key::CustomDelim) => "自定义",
         (Lang::En, Key::CustomDelim) => "Custom",
-        (Lang::Zh, Key::CustomChar) => "自定义字符:",
-        (Lang::En, Key::CustomChar) => "Custom char:",
+        (Lang::Zh, Key::CustomChar) => "字符:",
+        (Lang::En, Key::CustomChar) => "Char:",
         (Lang::Zh, Key::BrowseFile) => "浏览文件",
-        (Lang::En, Key::BrowseFile) => "Browse file",
+        (Lang::En, Key::BrowseFile) => "Browse",
         (Lang::Zh, Key::BrowseDir) => "浏览目录",
-        (Lang::En, Key::BrowseDir) => "Browse folder",
-        (Lang::Zh, Key::FileHint) => "点击右侧按钮选择文件...",
-        (Lang::En, Key::FileHint) => "Click browse to select a file...",
-        (Lang::Zh, Key::DirHint) => "点击右侧按钮选择目录...",
-        (Lang::En, Key::DirHint) => "Click browse to select a folder...",
+        (Lang::En, Key::BrowseDir) => "Browse",
+        (Lang::Zh, Key::FileHint) => "点击按钮选择文件...",
+        (Lang::En, Key::FileHint) => "Click to select...",
+        (Lang::Zh, Key::DirHint) => "点击按钮选择目录...",
+        (Lang::En, Key::DirHint) => "Click to select...",
         (Lang::Zh, Key::LogTitle) => "📋 日志:",
         (Lang::En, Key::LogTitle) => "📋 Log:",
         (Lang::Zh, Key::Processing) => "处理中...",
@@ -242,8 +268,6 @@ pub fn text(lang: Lang, key: Key) -> &'static str {
         (Lang::En, Key::Finished) => "Done",
         (Lang::Zh, Key::Error) => "错误",
         (Lang::En, Key::Error) => "Error",
-
-        // --- Filter labels ---
         (Lang::Zh, Key::FilterCsvArchive) => "CSV / 压缩文件",
         (Lang::En, Key::FilterCsvArchive) => "CSV / Archives",
         (Lang::Zh, Key::FilterCsvTxt) => "CSV/TXT",
