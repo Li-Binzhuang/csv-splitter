@@ -29,7 +29,11 @@ pub fn file_picker(
                 .desired_width(ui.available_width() - 40.0)
                 .hint_text(t!(lang, FileHint)),
         );
-        if ui.button("📂").on_hover_text(t!(lang, BrowseFile)).clicked() {
+        if ui
+            .button("📂")
+            .on_hover_text(t!(lang, BrowseFile))
+            .clicked()
+        {
             let mut dialog = rfd::FileDialog::new();
             for (name, exts) in filters {
                 dialog = dialog.add_filter(*name, exts);
@@ -43,6 +47,7 @@ pub fn file_picker(
 }
 
 /// Directory picker: label + text input + browse button.
+#[allow(dead_code)]
 pub fn dir_picker(ui: &mut egui::Ui, label: &str, value: &mut String, lang: Lang) {
     ui.horizontal(|ui| {
         ui.label(label);
@@ -101,7 +106,11 @@ pub fn log_panel(ui: &mut egui::Ui, logs: &[String], lang: Lang) {
                 .stick_to_bottom(true)
                 .show(ui, |ui| {
                     for line in logs {
-                        ui.label(egui::RichText::new(line).size(12.0).family(egui::FontFamily::Monospace));
+                        ui.label(
+                            egui::RichText::new(line)
+                                .size(12.0)
+                                .family(egui::FontFamily::Monospace),
+                        );
                     }
                 });
         });
@@ -115,10 +124,14 @@ pub fn job_status(ui: &mut egui::Ui, state: &crate::state::JobState, lang: Lang)
             ui.label(t!(lang, Processing));
         }
         crate::state::JobState::Done => {
-            ui.label(egui::RichText::new(t!(lang, Done)).color(egui::Color32::from_rgb(80, 200, 120)));
+            ui.label(
+                egui::RichText::new(t!(lang, Done)).color(egui::Color32::from_rgb(80, 200, 120)),
+            );
         }
         crate::state::JobState::Error => {
-            ui.label(egui::RichText::new(t!(lang, Failed)).color(egui::Color32::from_rgb(240, 80, 80)));
+            ui.label(
+                egui::RichText::new(t!(lang, Failed)).color(egui::Color32::from_rgb(240, 80, 80)),
+            );
         }
         crate::state::JobState::Idle => {}
     }
@@ -131,6 +144,22 @@ pub fn section(ui: &mut egui::Ui, title: &str) {
     ui.add_space(4.0);
     ui.label(egui::RichText::new(title).size(14.0).strong());
     ui.add_space(2.0);
+}
+
+/// Compact stat badge: icon + label + value in a rounded pill.
+pub fn stat_badge(ui: &mut egui::Ui, icon: &str, label: &str, value: &str) {
+    egui::Frame::new()
+        .fill(egui::Color32::from_rgb(40, 44, 55))
+        .corner_radius(egui::CornerRadius::same(12))
+        .inner_margin(egui::Margin::symmetric(8, 3))
+        .show(ui, |ui| {
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 3.0;
+                ui.label(egui::RichText::new(icon).size(12.0));
+                ui.label(egui::RichText::new(label).size(11.0).weak());
+                ui.label(egui::RichText::new(value).size(11.0).strong());
+            });
+        });
 }
 
 /// Get delimiter from index + custom string.

@@ -11,103 +11,167 @@ pub fn ui_stats(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
 
     ui.heading(t!(lang, StatsTitle));
     ui.label(egui::RichText::new(t!(lang, StatsDesc)).size(12.0).weak());
-    ui.add_space(6.0);
+    ui.add_space(8.0);
 
-    file_picker(
-        ui, t!(lang, CsvFile), &mut s.path,
-        &[(t!(lang, FilterCsv), &["csv", "tsv", "txt"])],
-        lang,
-    );
-    delimiter_combo(ui, &mut s.delim_idx, &mut s.custom_delim, lang);
+    let card_bg = egui::Color32::from_rgb(35, 38, 48);
+    let card_border = egui::Color32::from_rgb(55, 60, 75);
+    let accent = egui::Color32::from_rgb(88, 166, 255);
 
-    ui.horizontal(|ui| {
-        ui.label(t!(lang, SampleSize));
-        ui.add(egui::DragValue::new(&mut s.sample_size).range(1000..=10_000_000));
-    });
+    egui::Frame::new()
+        .fill(card_bg)
+        .stroke(egui::Stroke::new(
+            1.0,
+            if s.path.is_empty() {
+                card_border
+            } else {
+                accent
+            },
+        ))
+        .corner_radius(egui::CornerRadius::same(8))
+        .inner_margin(12.0)
+        .show(ui, |ui| {
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new("📊").size(18.0));
+                ui.label(t!(lang, CsvFile));
+                let resp = ui.add(
+                    egui::TextEdit::singleline(&mut s.path)
+                        .desired_width(ui.available_width() - 80.0)
+                        .hint_text(t!(lang, FileHint)),
+                );
+                if ui
+                    .button("📂")
+                    .on_hover_text(t!(lang, BrowseFile))
+                    .clicked()
+                {
+                    if let Some(path) = rfd::FileDialog::new()
+                        .add_filter(t!(lang, FilterCsv), &["csv", "tsv", "txt"])
+                        .pick_file()
+                    {
+                        s.path = path.display().to_string();
+                        resp.request_focus();
+                    }
+                }
+            });
+            ui.add_space(4.0);
+            delimiter_combo(ui, &mut s.delim_idx, &mut s.custom_delim, lang);
+            ui.horizontal(|ui| {
+                ui.label(t!(lang, SampleSize));
+                ui.add(egui::DragValue::new(&mut s.sample_size).range(1000..=10_000_000));
+            });
+        });
 
-    ui.add_space(4.0);
+    ui.add_space(8.0);
     let can_start = s.state != JobState::Running && !s.path.is_empty();
     ui.horizontal(|ui| {
-        let btn = egui::Button::new(t!(lang, StartAnalysis)).min_size([120.0, 28.0].into());
-        if ui.add_enabled(can_start, btn).clicked() {
+        if ui
+            .add_enabled(
+                can_start,
+                egui::Button::new(egui::RichText::new(t!(lang, StartAnalysis)).size(14.0))
+                    .min_size([140.0, 32.0].into()),
+            )
+            .clicked()
+        {
             start_stats(s);
         }
         job_status(ui, &s.state, lang);
     });
 
-    if let Some(ref stats) = s.stats {
-        section(ui, t!(lang, AnalysisResult));
+    show_results(ui, s, lang, card_bg, card_border);
+    log_panel(ui, &s.logs, lang);
+}
 
-        let col_names: Vec<&str> = stats.iter().map(|s| s.name.as_str()).collect();
-        if !col_names.is_empty() {
-            ui.horizontal(|ui| {
-                ui.label(t!(lang, SelectColumn));
-                egui::ComboBox::from_id_salt("stats_col")
-                    .selected_text(*col_names.get(s.selected_col).unwrap_or(&""))
-                    .width(200.0)
-                    .show_ui(ui, |ui| {
-                        for (i, name) in col_names.iter().enumerate() {
-                            ui.selectable_value(&mut s.selected_col, i, *name);
-                        }
-                    });
-            });
+fn show_results(
+    ui: &mut egui::Ui,
+    s: &mut StatsState,
+    lang: Lang,
+    card_bg: egui::Color32,
+    card_border: egui::Color32,
+) {
+    let Some(ref stats) = s.stats else { return };
+    ui.add_space(8.0);
+    ui.label(
+        egui::RichText::new(t!(lang, AnalysisResult))
+            .size(14.0)
+            .strong(),
+    );
+    ui.add_space(4.0);
 
-            if let Some(col) = stats.get(s.selected_col) {
-                ui.add_space(4.0);
-
-                egui::Frame::new()
-                    .fill(ui.visuals().faint_bg_color)
-                    .corner_radius(egui::CornerRadius::same(6))
-                    .inner_margin(8.0)
-                    .show(ui, |ui| {
-                        ui.horizontal(|ui| {
-                            ui.label(format!("🔢 {}: {}", t!(lang, UniqueValues), col.unique_count));
-                            ui.separator();
-                            ui.label(format!("⬜ {}: {}", t!(lang, EmptyValues), col.empty_count));
-                            ui.separator();
-                            ui.label(format!("📊 {}: {}", t!(lang, Sampled), col.total_sampled));
-                        });
-                    });
-
-                ui.add_space(4.0);
-
-                egui::ScrollArea::vertical()
-                    .auto_shrink([false, false])
-                    .show(ui, |ui| {
-                        egui::Grid::new("stats_grid")
-                            .striped(true)
-                            .min_col_width(100.0)
-                            .spacing([16.0, 4.0])
-                            .show(ui, |ui| {
-                                ui.label(egui::RichText::new(t!(lang, ColValue)).strong());
-                                ui.label(egui::RichText::new(t!(lang, ColCount)).strong());
-                                ui.label(egui::RichText::new(t!(lang, ColPercent)).strong());
-                                ui.end_row();
-
-                                for (val, count) in &col.top_values {
-                                    let pct = if col.total_sampled > 0 {
-                                        *count as f64 / col.total_sampled as f64 * 100.0
-                                    } else {
-                                        0.0
-                                    };
-                                    let display = if val.chars().count() > 60 {
-                                        let truncated: String = val.chars().take(57).collect();
-                                        format!("{}...", truncated)
-                                    } else {
-                                        val.clone()
-                                    };
-                                    ui.label(&display);
-                                    ui.label(count.to_string());
-                                    ui.label(format!("{:.2}%", pct));
-                                    ui.end_row();
-                                }
-                            });
-                    });
-            }
-        }
+    let col_names: Vec<&str> = stats.iter().map(|c| c.name.as_str()).collect();
+    if col_names.is_empty() {
+        return;
     }
 
-    log_panel(ui, &s.logs, lang);
+    ui.horizontal(|ui| {
+        ui.label(t!(lang, SelectColumn));
+        egui::ComboBox::from_id_salt("stats_col")
+            .selected_text(*col_names.get(s.selected_col).unwrap_or(&""))
+            .width(200.0)
+            .show_ui(ui, |ui| {
+                for (i, name) in col_names.iter().enumerate() {
+                    ui.selectable_value(&mut s.selected_col, i, *name);
+                }
+            });
+    });
+
+    let Some(col) = stats.get(s.selected_col) else {
+        return;
+    };
+    ui.add_space(4.0);
+
+    egui::Frame::new()
+        .fill(card_bg)
+        .corner_radius(egui::CornerRadius::same(6))
+        .inner_margin(10.0)
+        .stroke(egui::Stroke::new(1.0, card_border))
+        .show(ui, |ui| {
+            ui.horizontal_wrapped(|ui| {
+                stat_badge(
+                    ui,
+                    "🔢",
+                    t!(lang, UniqueValues),
+                    &col.unique_count.to_string(),
+                );
+                stat_badge(
+                    ui,
+                    "⬜",
+                    t!(lang, EmptyValues),
+                    &col.empty_count.to_string(),
+                );
+                stat_badge(ui, "📊", t!(lang, Sampled), &col.total_sampled.to_string());
+            });
+        });
+
+    ui.add_space(4.0);
+    egui::ScrollArea::vertical()
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
+            egui::Grid::new("stats_grid")
+                .striped(true)
+                .min_col_width(100.0)
+                .spacing([16.0, 4.0])
+                .show(ui, |ui| {
+                    ui.label(egui::RichText::new(t!(lang, ColValue)).strong());
+                    ui.label(egui::RichText::new(t!(lang, ColCount)).strong());
+                    ui.label(egui::RichText::new(t!(lang, ColPercent)).strong());
+                    ui.end_row();
+                    for (val, count) in &col.top_values {
+                        let pct = if col.total_sampled > 0 {
+                            *count as f64 / col.total_sampled as f64 * 100.0
+                        } else {
+                            0.0
+                        };
+                        let display = if val.chars().count() > 60 {
+                            format!("{}...", val.chars().take(57).collect::<String>())
+                        } else {
+                            val.clone()
+                        };
+                        ui.label(&display);
+                        ui.label(count.to_string());
+                        ui.label(format!("{:.2}%", pct));
+                        ui.end_row();
+                    }
+                });
+        });
 }
 
 fn start_stats(s: &mut StatsState) {
@@ -119,12 +183,16 @@ fn start_stats(s: &mut StatsState) {
     let sample = s.sample_size;
     let (tx, rx) = mpsc::channel();
     s.rx = Some(rx);
-    std::thread::spawn(move || {
-        match compute_column_stats(&path, delim, sample, 10_000, &tx) {
-            Ok(st) => { tx.send(ProgressEvent::StatsReady(st)).ok(); }
-            Err(e) => { tx.send(ProgressEvent::Error(e.to_string())).ok(); }
-        }
-    });
+    std::thread::spawn(
+        move || match compute_column_stats(&path, delim, sample, 10_000, &tx) {
+            Ok(st) => {
+                tx.send(ProgressEvent::StatsReady(st)).ok();
+            }
+            Err(e) => {
+                tx.send(ProgressEvent::Error(e.to_string())).ok();
+            }
+        },
+    );
 }
 
 fn poll_stats(s: &mut StatsState, lang: Lang) {
