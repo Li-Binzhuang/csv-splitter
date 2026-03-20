@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/core", "crates/cli", "crates/gui"]
+members = ["crates/core", "crates/gui"]
 resolver = "2"
 
 [workspace.package]
@@ -11,8 +11,6 @@ csv-splitter-core = { path = "crates/core" }
 zstd = "0.13"
 tar = "0.4"
 memchr = "2"
-clap = { version = "4", features = ["derive"] }
-indicatif = "0.17"
 eframe = "0.31"
 egui = "0.31"
 rfd = "0.15"

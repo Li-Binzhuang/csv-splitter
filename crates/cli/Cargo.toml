@@ -1,9 +1,0 @@
-[package]
-name = "csv-splitter-cli"
-version.workspace = true
-edition.workspace = true
-
-[dependencies]
-csv-splitter-core = { workspace = true }
-clap = { workspace = true }
-indicatif = { workspace = true }

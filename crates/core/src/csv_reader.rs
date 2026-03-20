@@ -2,37 +2,34 @@ use crate::types::Delimiter;
 use std::io::{self, BufRead, BufReader, Read};
 
 /// Parse a single CSV line respecting quoted fields.
+/// Properly handles multi-byte UTF-8 characters (e.g. Chinese, Japanese, etc.).
 pub fn parse_csv_line(line: &str, delim: u8) -> Vec<String> {
     let mut fields = Vec::new();
     let mut current = String::new();
     let mut in_quotes = false;
-    let bytes = line.trim_end_matches(|c| c == '\n' || c == '\r').as_bytes();
-    let mut i = 0;
+    let trimmed = line.trim_end_matches(|c| c == '\n' || c == '\r');
+    let delim_char = delim as char;
 
-    while i < bytes.len() {
-        let b = bytes[i];
+    let mut chars = trimmed.chars().peekable();
+    while let Some(ch) = chars.next() {
         if in_quotes {
-            if b == b'"' {
-                if i + 1 < bytes.len() && bytes[i + 1] == b'"' {
+            if ch == '"' {
+                if chars.peek() == Some(&'"') {
                     current.push('"');
-                    i += 2;
-                    continue;
+                    chars.next();
                 } else {
                     in_quotes = false;
-                    i += 1;
-                    continue;
                 }
             } else {
-                current.push(b as char);
+                current.push(ch);
             }
-        } else if b == b'"' {
+        } else if ch == '"' {
             in_quotes = true;
-        } else if b == delim {
+        } else if ch == delim_char {
             fields.push(std::mem::take(&mut current));
         } else {
-            current.push(b as char);
+            current.push(ch);
         }
-        i += 1;
     }
     fields.push(current);
     fields
@@ -44,7 +41,7 @@ pub fn join_csv_line(fields: &[&str], delim: u8) -> String {
     let mut out = String::new();
     for (i, f) in fields.iter().enumerate() {
         if i > 0 { out.push(d); }
-        if f.contains(d as char) || f.contains('"') || f.contains('\n') {
+        if f.contains(d) || f.contains('"') || f.contains('\n') {
             out.push('"');
             out.push_str(&f.replace('"', "\"\""));
             out.push('"');
@@ -66,7 +63,6 @@ pub fn detect_delimiter(reader: &mut impl Read) -> io::Result<(Delimiter, String
         first_lines.push_str(&line);
     }
 
-    // Count occurrences of common delimiters in first line
     let first_line = first_lines.lines().next().unwrap_or("");
     let candidates: &[(u8, Delimiter)] = &[
         (b',', Delimiter::Comma),
