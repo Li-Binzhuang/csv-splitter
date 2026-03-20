@@ -148,6 +148,39 @@ fn start_split(s: &mut SplitState) {
 
     let delim = get_delimiter(s.delim_idx, &s.custom_delim);
     let splits = if s.no_split { 1 } else { s.splits };
+
+    // Determine columns_file: explicit file takes priority, otherwise generate from selection
+    let columns_file = if s.columns_file.is_some() {
+        s.columns_file.as_ref().map(|f| f.path.clone())
+    } else if !s.available_headers.is_empty() {
+        // Check if any columns are deselected
+        let all_selected = s.selected_columns.iter().all(|&v| v);
+        if all_selected {
+            None
+        } else {
+            // Write selected column names to a temp file
+            let selected: Vec<&str> = s
+                .available_headers
+                .iter()
+                .zip(s.selected_columns.iter())
+                .filter(|(_, &sel)| sel)
+                .map(|(h, _)| h.as_str())
+                .collect();
+            if selected.is_empty() {
+                None
+            } else {
+                let tmp = std::env::temp_dir().join("csv_splitter_columns.txt");
+                if std::fs::write(&tmp, selected.join("\n")).is_ok() {
+                    Some(tmp)
+                } else {
+                    None
+                }
+            }
+        }
+    } else {
+        None
+    };
+
     let config = SplitConfig {
         input: input.path.clone(),
         output: if s.output_path.is_empty() {
@@ -159,7 +192,7 @@ fn start_split(s: &mut SplitState) {
         compress_format: CompressFormat::all()[s.compress_idx],
         compress_level: s.compress_level,
         buf_mb: s.buf_mb,
-        columns_file: s.columns_file.as_ref().map(|f| f.path.clone()),
+        columns_file,
         delimiter: delim,
         sort_column: if s.sort_column.is_empty() {
             None

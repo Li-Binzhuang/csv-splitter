@@ -3,7 +3,6 @@ use crate::state::{JobState, StatsState};
 use crate::widgets::*;
 use csv_splitter_core::preview::compute_column_stats;
 use csv_splitter_core::ProgressEvent;
-use std::path::PathBuf;
 use std::sync::mpsc;
 
 pub fn ui_stats(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
@@ -17,14 +16,17 @@ pub fn ui_stats(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
     );
     ui.add_space(8.0);
 
-    // File input
-    file_path_card(
+    let avail_w = ui.available_width();
+    let card_w = (avail_w - 16.0).min(400.0);
+
+    // File input card
+    file_input_card(
         ui,
-        &mut s.path,
-        "📊",
-        t!(lang, CsvFile),
-        t!(lang, FileHint),
+        &mut s.input_file,
+        t!(lang, DropFileHere),
         ACCENT,
+        card_w,
+        70.0,
         lang,
         &[(t!(lang, FilterCsv), &["csv", "tsv", "txt"])],
     );
@@ -45,7 +47,7 @@ pub fn ui_stats(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
         });
 
     ui.add_space(8.0);
-    let can_start = s.state != JobState::Running && !s.path.is_empty();
+    let can_start = s.state != JobState::Running && s.input_file.is_some();
     ui.horizontal(|ui| {
         if ui
             .add_enabled(
@@ -153,10 +155,11 @@ fn show_results(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
 }
 
 fn start_stats(s: &mut StatsState) {
+    let Some(ref info) = s.input_file else { return };
     s.logs.clear();
     s.state = JobState::Running;
     s.stats = None;
-    let path = PathBuf::from(&s.path);
+    let path = info.path.clone();
     let delim = get_delimiter(s.delim_idx, &s.custom_delim);
     let sample = s.sample_size;
     let (tx, rx) = mpsc::channel();

@@ -107,24 +107,25 @@ impl App {
         let dropped: Vec<_> = ctx.input(|i| i.raw.dropped_files.clone());
         for file in dropped {
             if let Some(path) = file.path {
-                // Split tab handles its own drops via per-card detection
-                // For other tabs, set the path string
-                if self.tab == Tab::Split {
-                    // Global fallback: if a file is dropped on the split tab but not on a card,
-                    // put it in the input slot
-                    if let Some(info) = FileInfo::from_path(path) {
-                        if self.split.input_file.is_none() {
-                            self.split.input_file = Some(info);
-                        } else if self.split.columns_file.is_none() {
-                            self.split.columns_file = Some(info);
+                if let Some(info) = FileInfo::from_path(path) {
+                    match self.tab {
+                        Tab::Split => {
+                            if self.split.input_file.is_none() {
+                                self.split.input_file = Some(info);
+                            } else if self.split.columns_file.is_none() {
+                                self.split.columns_file = Some(info);
+                            }
+                        }
+                        Tab::Preview => {
+                            self.preview.input_file = Some(info);
+                        }
+                        Tab::Stats => {
+                            self.stats.input_file = Some(info);
+                        }
+                        Tab::Decompress => {
+                            self.decomp.input_file = Some(info);
                         }
                     }
-                } else if self.tab == Tab::Preview {
-                    self.preview.path = path.display().to_string();
-                } else if self.tab == Tab::Stats {
-                    self.stats.path = path.display().to_string();
-                } else if self.tab == Tab::Decompress {
-                    self.decomp.input = path.display().to_string();
                 }
             }
         }

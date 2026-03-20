@@ -107,6 +107,12 @@ pub enum Key {
     FilterCsvTxt,
     FilterCsv,
     FilterArchive,
+    // Column selection
+    ColumnSelect,
+    SearchColumns,
+    SelectAll,
+    DeselectAll,
+    SelectedCount,
 }
 
 pub fn text(lang: Lang, key: Key) -> &'static str {
@@ -276,5 +282,17 @@ pub fn text(lang: Lang, key: Key) -> &'static str {
         (Lang::En, Key::FilterCsv) => "CSV",
         (Lang::Zh, Key::FilterArchive) => "压缩文件",
         (Lang::En, Key::FilterArchive) => "Archives",
+
+        // Column selection
+        (Lang::Zh, Key::ColumnSelect) => "列筛选:",
+        (Lang::En, Key::ColumnSelect) => "Columns:",
+        (Lang::Zh, Key::SearchColumns) => "搜索列名...",
+        (Lang::En, Key::SearchColumns) => "Search columns...",
+        (Lang::Zh, Key::SelectAll) => "全选",
+        (Lang::En, Key::SelectAll) => "All",
+        (Lang::Zh, Key::DeselectAll) => "清除",
+        (Lang::En, Key::DeselectAll) => "Clear",
+        (Lang::Zh, Key::SelectedCount) => "已选",
+        (Lang::En, Key::SelectedCount) => "Selected",
     }
 }

@@ -2,7 +2,6 @@ use crate::i18n::{t, Lang};
 use crate::state::PreviewState;
 use crate::widgets::*;
 use csv_splitter_core::preview::load_preview;
-use std::path::PathBuf;
 
 pub fn ui_preview(ui: &mut egui::Ui, s: &mut PreviewState, lang: Lang) {
     ui.heading(t!(lang, PreviewTitle));
@@ -13,20 +12,23 @@ pub fn ui_preview(ui: &mut egui::Ui, s: &mut PreviewState, lang: Lang) {
     );
     ui.add_space(8.0);
 
-    // File input
-    file_path_card(
+    let avail_w = ui.available_width();
+    let card_w = (avail_w - 16.0).min(400.0);
+
+    // File input card (reuses the same card as split tab)
+    file_input_card(
         ui,
-        &mut s.path,
-        "📄",
-        t!(lang, CsvFile),
-        t!(lang, FileHint),
+        &mut s.input_file,
+        t!(lang, DropFileHere),
         ACCENT,
+        card_w,
+        70.0,
         lang,
         &[(t!(lang, FilterCsv), &["csv", "tsv", "txt"])],
     );
     ui.add_space(4.0);
 
-    // Params in a card
+    // Params card
     egui::Frame::new()
         .fill(CARD_BG)
         .stroke(egui::Stroke::new(1.0, CARD_BORDER))
@@ -37,7 +39,7 @@ pub fn ui_preview(ui: &mut egui::Ui, s: &mut PreviewState, lang: Lang) {
         });
 
     ui.add_space(8.0);
-    let can_load = !s.path.is_empty();
+    let can_load = s.input_file.is_some();
     if ui
         .add_enabled(
             can_load,
@@ -46,11 +48,12 @@ pub fn ui_preview(ui: &mut egui::Ui, s: &mut PreviewState, lang: Lang) {
         )
         .clicked()
     {
-        let path = PathBuf::from(&s.path);
-        let delim = get_delimiter(s.delim_idx, &s.custom_delim);
-        match load_preview(&path, 100, Some(delim)) {
-            Ok(p) => s.preview = Some(p),
-            Err(_) => s.preview = None,
+        if let Some(ref info) = s.input_file {
+            let delim = get_delimiter(s.delim_idx, &s.custom_delim);
+            match load_preview(&info.path, 100, Some(delim)) {
+                Ok(p) => s.preview = Some(p),
+                Err(_) => s.preview = None,
+            }
         }
     }
 

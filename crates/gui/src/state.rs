@@ -86,6 +86,10 @@ pub struct SplitState {
     pub progress_total: u64,
     pub output_file: Option<FileInfo>,
     pub anim_time: f64,
+    // Column selection from headers
+    pub available_headers: Vec<String>,
+    pub selected_columns: Vec<bool>,
+    pub column_search: String,
 }
 
 impl Default for SplitState {
@@ -111,13 +115,16 @@ impl Default for SplitState {
             progress_total: 0,
             output_file: None,
             anim_time: 0.0,
+            available_headers: Vec::new(),
+            selected_columns: Vec::new(),
+            column_search: String::new(),
         }
     }
 }
 
 /// Preview tab state
 pub struct PreviewState {
-    pub path: String,
+    pub input_file: Option<FileInfo>,
     pub delim_idx: usize,
     pub custom_delim: String,
     pub preview: Option<CsvPreview>,
@@ -126,7 +133,7 @@ pub struct PreviewState {
 impl Default for PreviewState {
     fn default() -> Self {
         Self {
-            path: String::new(),
+            input_file: None,
             delim_idx: 0,
             custom_delim: String::new(),
             preview: None,
@@ -136,7 +143,7 @@ impl Default for PreviewState {
 
 /// Stats tab state
 pub struct StatsState {
-    pub path: String,
+    pub input_file: Option<FileInfo>,
     pub delim_idx: usize,
     pub custom_delim: String,
     pub selected_col: usize,
@@ -150,7 +157,7 @@ pub struct StatsState {
 impl Default for StatsState {
     fn default() -> Self {
         Self {
-            path: String::new(),
+            input_file: None,
             delim_idx: 0,
             custom_delim: String::new(),
             selected_col: 0,
@@ -165,7 +172,7 @@ impl Default for StatsState {
 
 /// Decompress tab state
 pub struct DecompState {
-    pub input: String,
+    pub input_file: Option<FileInfo>,
     pub output_dir: String,
     pub state: JobState,
     pub rx: Option<mpsc::Receiver<ProgressEvent>>,
@@ -175,7 +182,7 @@ pub struct DecompState {
 impl Default for DecompState {
     fn default() -> Self {
         Self {
-            input: String::new(),
+            input_file: None,
             output_dir: String::new(),
             state: JobState::Idle,
             rx: None,

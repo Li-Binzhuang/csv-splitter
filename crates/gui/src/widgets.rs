@@ -137,51 +137,6 @@ pub fn file_input_card(
     }
 }
 
-/// File input card using a path string (for tabs that don't use FileInfo).
-pub fn file_path_card(
-    ui: &mut egui::Ui,
-    path: &mut String,
-    icon: &str,
-    label: &str,
-    placeholder: &str,
-    accent: egui::Color32,
-    lang: Lang,
-    filters: &[(&str, &[&str])],
-) {
-    let has_file = !path.is_empty();
-    let border = if has_file { accent } else { CARD_BORDER };
-
-    egui::Frame::new()
-        .fill(CARD_BG)
-        .stroke(egui::Stroke::new(if has_file { 1.5 } else { 1.0 }, border))
-        .corner_radius(egui::CornerRadius::same(8))
-        .inner_margin(10.0)
-        .show(ui, |ui| {
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new(icon).size(16.0));
-                ui.label(label);
-                ui.add(
-                    egui::TextEdit::singleline(path)
-                        .desired_width(ui.available_width() - 40.0)
-                        .hint_text(placeholder),
-                );
-                if ui
-                    .button("📂")
-                    .on_hover_text(t!(lang, BrowseFile))
-                    .clicked()
-                {
-                    let mut dialog = rfd::FileDialog::new();
-                    for (name, exts) in filters {
-                        dialog = dialog.add_filter(*name, exts);
-                    }
-                    if let Some(p) = dialog.pick_file() {
-                        *path = p.display().to_string();
-                    }
-                }
-            });
-        });
-}
-
 /// Directory input card.
 pub fn dir_path_card(
     ui: &mut egui::Ui,

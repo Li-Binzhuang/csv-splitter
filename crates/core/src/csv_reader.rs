@@ -40,7 +40,9 @@ pub fn join_csv_line(fields: &[&str], delim: u8) -> String {
     let d = delim as char;
     let mut out = String::new();
     for (i, f) in fields.iter().enumerate() {
-        if i > 0 { out.push(d); }
+        if i > 0 {
+            out.push(d);
+        }
         if f.contains(d) || f.contains('"') || f.contains('\n') {
             out.push('"');
             out.push_str(&f.replace('"', "\"\""));
@@ -53,13 +55,25 @@ pub fn join_csv_line(fields: &[&str], delim: u8) -> String {
     out
 }
 
+/// Read just the header row from a CSV file, returning column names.
+pub fn read_headers(path: &std::path::Path, delim: Option<Delimiter>) -> io::Result<Vec<String>> {
+    let file = std::fs::File::open(path)?;
+    let mut reader = BufReader::new(file);
+    let mut first_line = String::new();
+    reader.read_line(&mut first_line)?;
+    let d = delim.unwrap_or(Delimiter::Comma).byte();
+    Ok(parse_csv_line(&first_line, d))
+}
+
 /// Auto-detect delimiter by sampling first few lines.
 pub fn detect_delimiter(reader: &mut impl Read) -> io::Result<(Delimiter, String)> {
     let mut buf_reader = BufReader::new(reader);
     let mut first_lines = String::new();
     for _ in 0..5 {
         let mut line = String::new();
-        if buf_reader.read_line(&mut line)? == 0 { break; }
+        if buf_reader.read_line(&mut line)? == 0 {
+            break;
+        }
         first_lines.push_str(&line);
     }
 

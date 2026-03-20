@@ -16,14 +16,17 @@ pub fn ui_decompress(ui: &mut egui::Ui, s: &mut DecompState, lang: Lang) {
     );
     ui.add_space(8.0);
 
-    // File input
-    file_path_card(
+    let avail_w = ui.available_width();
+    let card_w = (avail_w - 16.0).min(400.0);
+
+    // File input card
+    file_input_card(
         ui,
-        &mut s.input,
-        "📦",
-        t!(lang, ArchiveFile),
-        t!(lang, FileHint),
+        &mut s.input_file,
+        t!(lang, DropFileHere),
         ACCENT,
+        card_w,
+        70.0,
         lang,
         &[(
             t!(lang, FilterArchive),
@@ -43,7 +46,7 @@ pub fn ui_decompress(ui: &mut egui::Ui, s: &mut DecompState, lang: Lang) {
     );
 
     ui.add_space(8.0);
-    let can_start = s.state != JobState::Running && !s.input.is_empty();
+    let can_start = s.state != JobState::Running && s.input_file.is_some();
     ui.horizontal(|ui| {
         if ui
             .add_enabled(
@@ -62,9 +65,10 @@ pub fn ui_decompress(ui: &mut egui::Ui, s: &mut DecompState, lang: Lang) {
 }
 
 fn start_decomp(s: &mut DecompState) {
+    let Some(ref info) = s.input_file else { return };
     s.logs.clear();
     s.state = JobState::Running;
-    let input = PathBuf::from(&s.input);
+    let input = info.path.clone();
     let out_dir = if s.output_dir.is_empty() {
         input
             .parent()
