@@ -10,49 +10,33 @@ pub fn ui_stats(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
     poll_stats(s, lang);
 
     ui.heading(t!(lang, StatsTitle));
-    ui.label(egui::RichText::new(t!(lang, StatsDesc)).size(12.0).weak());
+    ui.label(
+        egui::RichText::new(t!(lang, StatsDesc))
+            .size(12.0)
+            .color(TEXT_DIM),
+    );
     ui.add_space(8.0);
 
-    let card_bg = egui::Color32::from_rgb(35, 38, 48);
-    let card_border = egui::Color32::from_rgb(55, 60, 75);
-    let accent = egui::Color32::from_rgb(88, 166, 255);
+    // File input
+    file_path_card(
+        ui,
+        &mut s.path,
+        "📊",
+        t!(lang, CsvFile),
+        t!(lang, FileHint),
+        ACCENT,
+        lang,
+        &[(t!(lang, FilterCsv), &["csv", "tsv", "txt"])],
+    );
+    ui.add_space(4.0);
 
+    // Params card
     egui::Frame::new()
-        .fill(card_bg)
-        .stroke(egui::Stroke::new(
-            1.0,
-            if s.path.is_empty() {
-                card_border
-            } else {
-                accent
-            },
-        ))
+        .fill(CARD_BG)
+        .stroke(egui::Stroke::new(1.0, CARD_BORDER))
         .corner_radius(egui::CornerRadius::same(8))
-        .inner_margin(12.0)
+        .inner_margin(10.0)
         .show(ui, |ui| {
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("📊").size(18.0));
-                ui.label(t!(lang, CsvFile));
-                let resp = ui.add(
-                    egui::TextEdit::singleline(&mut s.path)
-                        .desired_width(ui.available_width() - 80.0)
-                        .hint_text(t!(lang, FileHint)),
-                );
-                if ui
-                    .button("📂")
-                    .on_hover_text(t!(lang, BrowseFile))
-                    .clicked()
-                {
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter(t!(lang, FilterCsv), &["csv", "tsv", "txt"])
-                        .pick_file()
-                    {
-                        s.path = path.display().to_string();
-                        resp.request_focus();
-                    }
-                }
-            });
-            ui.add_space(4.0);
             delimiter_combo(ui, &mut s.delim_idx, &mut s.custom_delim, lang);
             ui.horizontal(|ui| {
                 ui.label(t!(lang, SampleSize));
@@ -76,17 +60,11 @@ pub fn ui_stats(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
         job_status(ui, &s.state, lang);
     });
 
-    show_results(ui, s, lang, card_bg, card_border);
+    show_results(ui, s, lang);
     log_panel(ui, &s.logs, lang);
 }
 
-fn show_results(
-    ui: &mut egui::Ui,
-    s: &mut StatsState,
-    lang: Lang,
-    card_bg: egui::Color32,
-    card_border: egui::Color32,
-) {
+fn show_results(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
     let Some(ref stats) = s.stats else { return };
     ui.add_space(8.0);
     ui.label(
@@ -119,10 +97,10 @@ fn show_results(
     ui.add_space(4.0);
 
     egui::Frame::new()
-        .fill(card_bg)
+        .fill(CARD_BG)
         .corner_radius(egui::CornerRadius::same(6))
         .inner_margin(10.0)
-        .stroke(egui::Stroke::new(1.0, card_border))
+        .stroke(egui::Stroke::new(1.0, CARD_BORDER))
         .show(ui, |ui| {
             ui.horizontal_wrapped(|ui| {
                 stat_badge(

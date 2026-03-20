@@ -44,9 +44,9 @@ impl eframe::App for App {
         egui::TopBottomPanel::top("tab_bar")
             .frame(
                 egui::Frame::new()
-                    .fill(egui::Color32::from_rgb(30, 33, 41))
-                    .inner_margin(egui::Margin::symmetric(8, 4))
-                    .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(45, 48, 58))),
+                    .fill(egui::Color32::from_rgb(32, 36, 46))
+                    .inner_margin(egui::Margin::symmetric(10, 5))
+                    .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(50, 55, 68))),
             )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {

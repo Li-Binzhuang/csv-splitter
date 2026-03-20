@@ -9,68 +9,38 @@ pub fn ui_decompress(ui: &mut egui::Ui, s: &mut DecompState, lang: Lang) {
     poll_decomp(s, lang);
 
     ui.heading(t!(lang, DecompTitle));
-    ui.label(egui::RichText::new(t!(lang, DecompDesc)).size(12.0).weak());
+    ui.label(
+        egui::RichText::new(t!(lang, DecompDesc))
+            .size(12.0)
+            .color(TEXT_DIM),
+    );
     ui.add_space(8.0);
 
-    let card_bg = egui::Color32::from_rgb(35, 38, 48);
-    let card_border = egui::Color32::from_rgb(55, 60, 75);
-    let accent = egui::Color32::from_rgb(88, 166, 255);
+    // File input
+    file_path_card(
+        ui,
+        &mut s.input,
+        "📦",
+        t!(lang, ArchiveFile),
+        t!(lang, FileHint),
+        ACCENT,
+        lang,
+        &[(
+            t!(lang, FilterArchive),
+            &["zst", "gz", "bz2", "xz", "zip", "7z", "tar", "tgz", "csv"],
+        )],
+    );
+    ui.add_space(4.0);
 
-    // Input card
-    egui::Frame::new()
-        .fill(card_bg)
-        .stroke(egui::Stroke::new(
-            1.0,
-            if s.input.is_empty() {
-                card_border
-            } else {
-                accent
-            },
-        ))
-        .corner_radius(egui::CornerRadius::same(8))
-        .inner_margin(12.0)
-        .show(ui, |ui| {
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("📦").size(18.0));
-                ui.label(t!(lang, ArchiveFile));
-                let resp = ui.add(
-                    egui::TextEdit::singleline(&mut s.input)
-                        .desired_width(ui.available_width() - 80.0)
-                        .hint_text(t!(lang, FileHint)),
-                );
-                if ui
-                    .button("📂")
-                    .on_hover_text(t!(lang, BrowseFile))
-                    .clicked()
-                {
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter(
-                            t!(lang, FilterArchive),
-                            &["zst", "gz", "bz2", "xz", "zip", "7z", "tar", "tgz", "csv"],
-                        )
-                        .pick_file()
-                    {
-                        s.input = path.display().to_string();
-                        resp.request_focus();
-                    }
-                }
-            });
-            ui.add_space(4.0);
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("📁").size(18.0));
-                ui.label(t!(lang, OutputDir));
-                ui.add(
-                    egui::TextEdit::singleline(&mut s.output_dir)
-                        .desired_width(ui.available_width() - 80.0)
-                        .hint_text(t!(lang, DirHint)),
-                );
-                if ui.button("📂").on_hover_text(t!(lang, BrowseDir)).clicked() {
-                    if let Some(path) = rfd::FileDialog::new().pick_folder() {
-                        s.output_dir = path.display().to_string();
-                    }
-                }
-            });
-        });
+    // Output dir
+    dir_path_card(
+        ui,
+        &mut s.output_dir,
+        "📁",
+        t!(lang, OutputDir),
+        t!(lang, DirHint),
+        lang,
+    );
 
     ui.add_space(8.0);
     let can_start = s.state != JobState::Running && !s.input.is_empty();

@@ -6,50 +6,33 @@ use std::path::PathBuf;
 
 pub fn ui_preview(ui: &mut egui::Ui, s: &mut PreviewState, lang: Lang) {
     ui.heading(t!(lang, PreviewTitle));
-    ui.label(egui::RichText::new(t!(lang, PreviewDesc)).size(12.0).weak());
+    ui.label(
+        egui::RichText::new(t!(lang, PreviewDesc))
+            .size(12.0)
+            .color(TEXT_DIM),
+    );
     ui.add_space(8.0);
 
-    // File input card
-    let card_bg = egui::Color32::from_rgb(35, 38, 48);
-    let card_border = egui::Color32::from_rgb(55, 60, 75);
-    let accent = egui::Color32::from_rgb(88, 166, 255);
+    // File input
+    file_path_card(
+        ui,
+        &mut s.path,
+        "📄",
+        t!(lang, CsvFile),
+        t!(lang, FileHint),
+        ACCENT,
+        lang,
+        &[(t!(lang, FilterCsv), &["csv", "tsv", "txt"])],
+    );
+    ui.add_space(4.0);
 
+    // Params in a card
     egui::Frame::new()
-        .fill(card_bg)
-        .stroke(egui::Stroke::new(
-            1.0,
-            if s.path.is_empty() {
-                card_border
-            } else {
-                accent
-            },
-        ))
+        .fill(CARD_BG)
+        .stroke(egui::Stroke::new(1.0, CARD_BORDER))
         .corner_radius(egui::CornerRadius::same(8))
-        .inner_margin(12.0)
+        .inner_margin(10.0)
         .show(ui, |ui| {
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("📄").size(18.0));
-                ui.label(t!(lang, CsvFile));
-                let resp = ui.add(
-                    egui::TextEdit::singleline(&mut s.path)
-                        .desired_width(ui.available_width() - 80.0)
-                        .hint_text(t!(lang, FileHint)),
-                );
-                if ui
-                    .button("📂")
-                    .on_hover_text(t!(lang, BrowseFile))
-                    .clicked()
-                {
-                    if let Some(path) = rfd::FileDialog::new()
-                        .add_filter(t!(lang, FilterCsv), &["csv", "tsv", "txt"])
-                        .pick_file()
-                    {
-                        s.path = path.display().to_string();
-                        resp.request_focus();
-                    }
-                }
-            });
-            ui.add_space(4.0);
             delimiter_combo(ui, &mut s.delim_idx, &mut s.custom_delim, lang);
         });
 
@@ -74,12 +57,12 @@ pub fn ui_preview(ui: &mut egui::Ui, s: &mut PreviewState, lang: Lang) {
     if let Some(ref preview) = s.preview {
         ui.add_space(8.0);
 
-        // Stats bar
+        // Stats badges
         egui::Frame::new()
-            .fill(card_bg)
+            .fill(CARD_BG)
             .corner_radius(egui::CornerRadius::same(6))
             .inner_margin(10.0)
-            .stroke(egui::Stroke::new(1.0, card_border))
+            .stroke(egui::Stroke::new(1.0, CARD_BORDER))
             .show(ui, |ui| {
                 ui.horizontal_wrapped(|ui| {
                     stat_badge(
@@ -111,7 +94,6 @@ pub fn ui_preview(ui: &mut egui::Ui, s: &mut PreviewState, lang: Lang) {
 
         ui.add_space(6.0);
 
-        // Data table
         egui::ScrollArea::both()
             .auto_shrink([false, false])
             .show(ui, |ui| {

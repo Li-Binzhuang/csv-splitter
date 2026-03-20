@@ -1,4 +1,6 @@
-use egui::{Color32, CornerRadius, FontData, FontDefinitions, FontFamily, Shadow, Stroke, Style, Visuals};
+use egui::{
+    Color32, CornerRadius, FontData, FontDefinitions, FontFamily, Shadow, Stroke, Style, Visuals,
+};
 
 /// Apply a polished modern theme with Chinese font support.
 pub fn apply_theme(ctx: &egui::Context) {
@@ -43,11 +45,13 @@ fn setup_fonts(ctx: &egui::Context) {
                 "cjk".to_owned(),
                 std::sync::Arc::new(FontData::from_owned(data)),
             );
-            fonts.families
+            fonts
+                .families
                 .entry(FontFamily::Proportional)
                 .or_default()
                 .push("cjk".to_owned());
-            fonts.families
+            fonts
+                .families
                 .entry(FontFamily::Monospace)
                 .or_default()
                 .push("cjk".to_owned());
@@ -64,9 +68,9 @@ fn setup_visuals(ctx: &egui::Context) {
 
     *visuals = Visuals::dark();
 
-    let panel_bg = Color32::from_rgb(30, 33, 41);
-    let bg = Color32::from_rgb(24, 26, 33);
-    let widget_bg = Color32::from_rgb(40, 44, 55);
+    let panel_bg = Color32::from_rgb(32, 36, 46);
+    let bg = Color32::from_rgb(26, 29, 38);
+    let widget_bg = Color32::from_rgb(42, 46, 58);
     let accent = Color32::from_rgb(88, 166, 255);
     let accent_hover = Color32::from_rgb(110, 180, 255);
     let text_primary = Color32::from_rgb(220, 225, 235);
@@ -80,7 +84,7 @@ fn setup_visuals(ctx: &egui::Context) {
     visuals.panel_fill = panel_bg;
     visuals.window_fill = panel_bg;
     visuals.extreme_bg_color = bg;
-    visuals.faint_bg_color = Color32::from_rgb(35, 38, 48);
+    visuals.faint_bg_color = Color32::from_rgb(38, 42, 54);
 
     visuals.widgets.noninteractive.bg_fill = widget_bg;
     visuals.widgets.noninteractive.fg_stroke = Stroke::new(1.0, text_secondary);
