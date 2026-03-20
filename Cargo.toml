@@ -1,0 +1,28 @@
+[workspace]
+members = ["crates/core", "crates/cli", "crates/gui"]
+resolver = "2"
+
+[workspace.package]
+version = "1.0.0"
+edition = "2021"
+
+[workspace.dependencies]
+csv-splitter-core = { path = "crates/core" }
+zstd = "0.13"
+tar = "0.4"
+memchr = "2"
+clap = { version = "4", features = ["derive"] }
+indicatif = "0.17"
+eframe = "0.31"
+egui = "0.31"
+rfd = "0.15"
+zip = "2"
+flate2 = "1"
+bzip2 = "0.5"
+xz2 = "0.1"
+sevenz-rust = "0.6"
+rand = "0.8"
+
+[profile.release]
+opt-level = 3
+lto = true

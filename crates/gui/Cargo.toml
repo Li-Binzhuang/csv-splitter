@@ -1,0 +1,10 @@
+[package]
+name = "csv-splitter-gui"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+csv-splitter-core = { workspace = true }
+eframe = { workspace = true }
+egui = { workspace = true }
+rfd = { workspace = true }

@@ -1,0 +1,15 @@
+[package]
+name = "csv-splitter-core"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+zstd = { workspace = true }
+tar = { workspace = true }
+memchr = { workspace = true }
+zip = { workspace = true }
+flate2 = { workspace = true }
+bzip2 = { workspace = true }
+xz2 = { workspace = true }
+sevenz-rust = { workspace = true }
+rand = { workspace = true }

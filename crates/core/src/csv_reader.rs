@@ -1,0 +1,89 @@
+use crate::types::Delimiter;
+use std::io::{self, BufRead, BufReader, Read};
+
+/// Parse a single CSV line respecting quoted fields.
+pub fn parse_csv_line(line: &str, delim: u8) -> Vec<String> {
+    let mut fields = Vec::new();
+    let mut current = String::new();
+    let mut in_quotes = false;
+    let bytes = line.trim_end_matches(|c| c == '\n' || c == '\r').as_bytes();
+    let mut i = 0;
+
+    while i < bytes.len() {
+        let b = bytes[i];
+        if in_quotes {
+            if b == b'"' {
+                if i + 1 < bytes.len() && bytes[i + 1] == b'"' {
+                    current.push('"');
+                    i += 2;
+                    continue;
+                } else {
+                    in_quotes = false;
+                    i += 1;
+                    continue;
+                }
+            } else {
+                current.push(b as char);
+            }
+        } else if b == b'"' {
+            in_quotes = true;
+        } else if b == delim {
+            fields.push(std::mem::take(&mut current));
+        } else {
+            current.push(b as char);
+        }
+        i += 1;
+    }
+    fields.push(current);
+    fields
+}
+
+/// Reconstruct a CSV line from fields.
+pub fn join_csv_line(fields: &[&str], delim: u8) -> String {
+    let d = delim as char;
+    let mut out = String::new();
+    for (i, f) in fields.iter().enumerate() {
+        if i > 0 { out.push(d); }
+        if f.contains(d as char) || f.contains('"') || f.contains('\n') {
+            out.push('"');
+            out.push_str(&f.replace('"', "\"\""));
+            out.push('"');
+        } else {
+            out.push_str(f);
+        }
+    }
+    out.push('\n');
+    out
+}
+
+/// Auto-detect delimiter by sampling first few lines.
+pub fn detect_delimiter(reader: &mut impl Read) -> io::Result<(Delimiter, String)> {
+    let mut buf_reader = BufReader::new(reader);
+    let mut first_lines = String::new();
+    for _ in 0..5 {
+        let mut line = String::new();
+        if buf_reader.read_line(&mut line)? == 0 { break; }
+        first_lines.push_str(&line);
+    }
+
+    // Count occurrences of common delimiters in first line
+    let first_line = first_lines.lines().next().unwrap_or("");
+    let candidates: &[(u8, Delimiter)] = &[
+        (b',', Delimiter::Comma),
+        (b'\t', Delimiter::Tab),
+        (b';', Delimiter::Semicolon),
+        (b'|', Delimiter::Pipe),
+    ];
+
+    let mut best = Delimiter::Comma;
+    let mut best_count = 0;
+    for &(byte, delim) in candidates {
+        let count = first_line.as_bytes().iter().filter(|&&b| b == byte).count();
+        if count > best_count {
+            best_count = count;
+            best = delim;
+        }
+    }
+
+    Ok((best, first_lines))
+}
