@@ -123,22 +123,12 @@ impl Default for SplitState {
 }
 
 /// Preview tab state
+#[derive(Default)]
 pub struct PreviewState {
     pub input_file: Option<FileInfo>,
     pub delim_idx: usize,
     pub custom_delim: String,
     pub preview: Option<CsvPreview>,
-}
-
-impl Default for PreviewState {
-    fn default() -> Self {
-        Self {
-            input_file: None,
-            delim_idx: 0,
-            custom_delim: String::new(),
-            preview: None,
-        }
-    }
 }
 
 /// Stats tab state

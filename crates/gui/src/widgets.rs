@@ -28,6 +28,7 @@ pub fn format_bytes(b: u64) -> String {
 
 /// Reusable file input card with click-to-browse + metadata display.
 /// Works for all tabs.
+#[allow(clippy::too_many_arguments)]
 pub fn file_input_card(
     ui: &mut egui::Ui,
     file: &mut Option<FileInfo>,
@@ -291,6 +292,49 @@ pub fn stat_badge(ui: &mut egui::Ui, icon: &str, label: &str, value: &str) {
                 );
             });
         });
+}
+
+/// Titled section frame — groups content with a header label.
+pub fn section_frame(ui: &mut egui::Ui, title: &str, add_contents: impl FnOnce(&mut egui::Ui)) {
+    egui::Frame::new()
+        .fill(CARD_BG)
+        .stroke(egui::Stroke::new(1.0, CARD_BORDER))
+        .corner_radius(egui::CornerRadius::same(8))
+        .inner_margin(10.0)
+        .outer_margin(egui::Margin::symmetric(0, 3))
+        .show(ui, |ui| {
+            ui.label(
+                egui::RichText::new(title)
+                    .size(13.0)
+                    .strong()
+                    .color(TEXT_BRIGHT),
+            );
+            ui.add_space(4.0);
+            add_contents(ui);
+        });
+}
+
+/// Draw a horizontal arrow between flow cards.
+pub fn draw_arrow(ui: &mut egui::Ui, color: egui::Color32, w: f32, h: f32) {
+    let (rect, _) = ui.allocate_exact_size(egui::vec2(w, h), egui::Sense::hover());
+    let mid_y = rect.center().y;
+    let p = ui.painter();
+    p.line_segment(
+        [
+            egui::pos2(rect.left() + 2.0, mid_y),
+            egui::pos2(rect.right() - 6.0, mid_y),
+        ],
+        egui::Stroke::new(2.0, color),
+    );
+    let tip = egui::pos2(rect.right() - 2.0, mid_y);
+    p.line_segment(
+        [egui::pos2(tip.x - 6.0, mid_y - 4.0), tip],
+        egui::Stroke::new(2.0, color),
+    );
+    p.line_segment(
+        [egui::pos2(tip.x - 6.0, mid_y + 4.0), tip],
+        egui::Stroke::new(2.0, color),
+    );
 }
 
 /// Get delimiter from index + custom string.

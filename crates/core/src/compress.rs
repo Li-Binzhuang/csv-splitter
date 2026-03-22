@@ -7,12 +7,15 @@ const BUF_SIZE: usize = 64 * 1024 * 1024;
 
 /// Create a compressing writer for the given format.
 /// Returns a boxed Write that compresses on the fly.
-pub fn make_compressor(path: &Path, format: CompressFormat, level: i32) -> io::Result<Box<dyn Write + Send>> {
+pub fn make_compressor(
+    path: &Path,
+    format: CompressFormat,
+    level: i32,
+) -> io::Result<Box<dyn Write + Send>> {
     let file = BufWriter::with_capacity(BUF_SIZE, File::create(path)?);
     match format {
         CompressFormat::Zstd => {
-            let enc = zstd::Encoder::new(file, level)
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+            let enc = zstd::Encoder::new(file, level).map_err(io::Error::other)?;
             Ok(Box::new(ZstdFinisher(Some(enc))))
         }
         CompressFormat::Gzip => {

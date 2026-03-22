@@ -19,32 +19,16 @@ pub fn ui_decompress(ui: &mut egui::Ui, s: &mut DecompState, lang: Lang) {
     let avail_w = ui.available_width();
     let compact = avail_w < 600.0;
     let card_w = if compact {
-        ((avail_w - 30.0) / 2.0).min(220.0).max(120.0)
+        ((avail_w - 30.0) / 2.0).clamp(120.0, 220.0)
     } else {
-        ((avail_w - 60.0) / 3.0).min(220.0).max(140.0)
+        ((avail_w - 60.0) / 3.0).clamp(140.0, 220.0)
     };
     let card_h: f32 = 80.0;
     let arrow_w: f32 = if compact { 12.0 } else { 18.0 };
 
-    // Flow: Input → Result
-    if compact {
-        file_input_card(
-            ui,
-            &mut s.input_file,
-            t!(lang, DropFileHere),
-            ACCENT,
-            card_w,
-            card_h,
-            lang,
-            &[(
-                t!(lang, FilterArchive),
-                &["zst", "gz", "bz2", "xz", "zip", "7z", "tar", "tgz", "csv"],
-            )],
-        );
-        ui.add_space(4.0);
-        draw_decomp_result_card(ui, s, lang, card_w, card_h);
-    } else {
-        ui.horizontal(|ui| {
+    // Input + Flow section
+    section_frame(ui, t!(lang, SectionFlow), |ui| {
+        if compact {
             file_input_card(
                 ui,
                 &mut s.input_file,
@@ -58,37 +42,55 @@ pub fn ui_decompress(ui: &mut egui::Ui, s: &mut DecompState, lang: Lang) {
                     &["zst", "gz", "bz2", "xz", "zip", "7z", "tar", "tgz", "csv"],
                 )],
             );
-            draw_arrow(ui, ACCENT, arrow_w, card_h);
+            ui.add_space(4.0);
             draw_decomp_result_card(ui, s, lang, card_w, card_h);
-        });
-    }
-
-    ui.add_space(6.0);
-
-    // Output dir
-    dir_path_card(
-        ui,
-        &mut s.output_dir,
-        "📁",
-        t!(lang, OutputDir),
-        t!(lang, DirHint),
-        lang,
-    );
-
-    ui.add_space(8.0);
-    let can_start = s.state != JobState::Running && s.input_file.is_some();
-    ui.horizontal(|ui| {
-        if ui
-            .add_enabled(
-                can_start,
-                egui::Button::new(egui::RichText::new(t!(lang, StartExtract)).size(14.0))
-                    .min_size([140.0, 32.0].into()),
-            )
-            .clicked()
-        {
-            start_decomp(s);
+        } else {
+            ui.horizontal(|ui| {
+                file_input_card(
+                    ui,
+                    &mut s.input_file,
+                    t!(lang, DropFileHere),
+                    ACCENT,
+                    card_w,
+                    card_h,
+                    lang,
+                    &[(
+                        t!(lang, FilterArchive),
+                        &["zst", "gz", "bz2", "xz", "zip", "7z", "tar", "tgz", "csv"],
+                    )],
+                );
+                draw_arrow(ui, ACCENT, arrow_w, card_h);
+                draw_decomp_result_card(ui, s, lang, card_w, card_h);
+            });
         }
-        job_status(ui, &s.state, lang);
+
+        ui.add_space(6.0);
+        dir_path_card(
+            ui,
+            &mut s.output_dir,
+            "📁",
+            t!(lang, OutputDir),
+            t!(lang, DirHint),
+            lang,
+        );
+    });
+
+    // Action section
+    section_frame(ui, t!(lang, SectionAction), |ui| {
+        let can_start = s.state != JobState::Running && s.input_file.is_some();
+        ui.horizontal(|ui| {
+            if ui
+                .add_enabled(
+                    can_start,
+                    egui::Button::new(egui::RichText::new(t!(lang, StartExtract)).size(14.0))
+                        .min_size([140.0, 32.0].into()),
+                )
+                .clicked()
+            {
+                start_decomp(s);
+            }
+            job_status(ui, &s.state, lang);
+        });
     });
 
     log_panel(ui, &s.logs, lang);
@@ -154,28 +156,6 @@ fn draw_decomp_result_card(ui: &mut egui::Ui, s: &DecompState, lang: Lang, w: f3
                 }
             });
         });
-}
-
-fn draw_arrow(ui: &mut egui::Ui, color: egui::Color32, w: f32, h: f32) {
-    let (rect, _) = ui.allocate_exact_size(egui::vec2(w, h), egui::Sense::hover());
-    let mid_y = rect.center().y;
-    let p = ui.painter();
-    p.line_segment(
-        [
-            egui::pos2(rect.left() + 2.0, mid_y),
-            egui::pos2(rect.right() - 6.0, mid_y),
-        ],
-        egui::Stroke::new(2.0, color),
-    );
-    let tip = egui::pos2(rect.right() - 2.0, mid_y);
-    p.line_segment(
-        [egui::pos2(tip.x - 6.0, mid_y - 4.0), tip],
-        egui::Stroke::new(2.0, color),
-    );
-    p.line_segment(
-        [egui::pos2(tip.x - 6.0, mid_y + 4.0), tip],
-        egui::Stroke::new(2.0, color),
-    );
 }
 
 fn start_decomp(s: &mut DecompState) {

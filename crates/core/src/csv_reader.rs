@@ -7,7 +7,7 @@ pub fn parse_csv_line(line: &str, delim: u8) -> Vec<String> {
     let mut fields = Vec::new();
     let mut current = String::new();
     let mut in_quotes = false;
-    let trimmed = line.trim_end_matches(|c| c == '\n' || c == '\r');
+    let trimmed = line.trim_end_matches(['\n', '\r']);
     let delim_char = delim as char;
 
     let mut chars = trimmed.chars().peekable();

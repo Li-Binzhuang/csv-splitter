@@ -25,12 +25,23 @@ fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
 
     // Step 0: Decompress if needed
     let csv_path = decompress_to_csv(&config.input, &tmp_dir, tx)?;
-    tx.send(ProgressEvent::DecompressDone { csv_path: csv_path.clone() }).ok();
+    tx.send(ProgressEvent::DecompressDone {
+        csv_path: csv_path.clone(),
+    })
+    .ok();
 
     // Step 0.5: Sort if requested
     let work_path = if let Some(ref sort_col) = config.sort_column {
         let sorted = tmp_dir.join("_sorted.csv");
-        external_sort(&csv_path, &sorted, sort_col, config.sort_descending, config.delimiter, config.buf_mb, tx)?;
+        external_sort(
+            &csv_path,
+            &sorted,
+            sort_col,
+            config.sort_descending,
+            config.delimiter,
+            config.buf_mb,
+            tx,
+        )?;
         sorted
     } else {
         csv_path
@@ -40,11 +51,16 @@ fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
     let desired_cols = match &config.columns_file {
         Some(path) => {
             let content = fs::read_to_string(path)?;
-            let set: HashSet<String> = content.lines()
+            let set: HashSet<String> = content
+                .lines()
                 .map(|l| l.trim().to_string())
                 .filter(|l| !l.is_empty())
                 .collect();
-            tx.send(ProgressEvent::Info(format!("Column filter: {} desired columns", set.len()))).ok();
+            tx.send(ProgressEvent::Info(format!(
+                "Column filter: {} desired columns",
+                set.len()
+            )))
+            .ok();
             Some(set)
         }
         None => None,
@@ -52,11 +68,19 @@ fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
 
     // Phase 1: Count lines
     let file_size = fs::metadata(&work_path)?.len();
-    tx.send(ProgressEvent::PhaseStart { phase: "Counting lines".into(), total_bytes: file_size }).ok();
+    tx.send(ProgressEvent::PhaseStart {
+        phase: "Counting lines".into(),
+        total_bytes: file_size,
+    })
+    .ok();
     let total_lines = count_lines(&work_path, buf_size, file_size, tx)?;
     let data_lines = total_lines.saturating_sub(1);
-    tx.send(ProgressEvent::PhaseDone { phase: "Counting lines".into() }).ok();
-    tx.send(ProgressEvent::Info(format!("{} data lines", data_lines))).ok();
+    tx.send(ProgressEvent::PhaseDone {
+        phase: "Counting lines".into(),
+    })
+    .ok();
+    tx.send(ProgressEvent::Info(format!("{} data lines", data_lines)))
+        .ok();
 
     if data_lines == 0 {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "No data lines"));
@@ -67,43 +91,81 @@ fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
     let remainder = data_lines % splits;
 
     // Phase 2: Split + filter + compress
-    let stem = config.input.file_stem().unwrap().to_string_lossy().to_string();
-    tx.send(ProgressEvent::PhaseStart { phase: "Splitting & compressing".into(), total_bytes: file_size }).ok();
+    let stem = config
+        .input
+        .file_stem()
+        .unwrap()
+        .to_string_lossy()
+        .to_string();
+    tx.send(ProgressEvent::PhaseStart {
+        phase: "Splitting & compressing".into(),
+        total_bytes: file_size,
+    })
+    .ok();
 
     let compressed = split_filter_compress(
-        &work_path, &tmp_dir, &stem,
-        config.splits, lines_per_split, remainder,
-        &desired_cols, config.compress_format, config.compress_level,
-        config.delimiter, buf_size, tx,
+        &work_path,
+        &tmp_dir,
+        &stem,
+        config.splits,
+        lines_per_split,
+        remainder,
+        &desired_cols,
+        config.compress_format,
+        config.compress_level,
+        config.delimiter,
+        buf_size,
+        tx,
     )?;
-    tx.send(ProgressEvent::PhaseDone { phase: "Splitting & compressing".into() }).ok();
+    tx.send(ProgressEvent::PhaseDone {
+        phase: "Splitting & compressing".into(),
+    })
+    .ok();
 
     // Phase 3: Pack tar (unless zip format, which is self-contained)
-    let output_path = config.output.unwrap_or_else(|| {
-        config.input.with_file_name(format!("{}_split.tar", stem))
-    });
+    let output_path = config
+        .output
+        .unwrap_or_else(|| config.input.with_file_name(format!("{}_split.tar", stem)));
 
-    let tar_total: u64 = compressed.iter()
+    let tar_total: u64 = compressed
+        .iter()
         .map(|f| fs::metadata(f).map(|m| m.len()).unwrap_or(0))
         .sum();
-    tx.send(ProgressEvent::PhaseStart { phase: "Packing tar".into(), total_bytes: tar_total }).ok();
+    tx.send(ProgressEvent::PhaseStart {
+        phase: "Packing tar".into(),
+        total_bytes: tar_total,
+    })
+    .ok();
     pack_tar(&compressed, &output_path, buf_size, tx)?;
-    tx.send(ProgressEvent::PhaseDone { phase: "Packing tar".into() }).ok();
+    tx.send(ProgressEvent::PhaseDone {
+        phase: "Packing tar".into(),
+    })
+    .ok();
 
     // Cleanup
     fs::remove_dir_all(&tmp_dir).ok();
-    tx.send(ProgressEvent::Finished { output: output_path }).ok();
+    tx.send(ProgressEvent::Finished {
+        output: output_path,
+    })
+    .ok();
     Ok(())
 }
 
-fn count_lines(path: &Path, buf_size: usize, file_size: u64, tx: &ProgressSender) -> io::Result<u64> {
+fn count_lines(
+    path: &Path,
+    buf_size: usize,
+    file_size: u64,
+    tx: &ProgressSender,
+) -> io::Result<u64> {
     let mut file = BufReader::with_capacity(buf_size, File::open(path)?);
     let mut count: u64 = 0;
     let mut bytes: u64 = 0;
     let mut buf = vec![0u8; buf_size];
     loop {
         let n = file.read(&mut buf)?;
-        if n == 0 { break; }
+        if n == 0 {
+            break;
+        }
         count += memchr_iter(b'\n', &buf[..n]).count() as u64;
         bytes += n as u64;
         if bytes % (1 << 20) < n as u64 {
@@ -114,6 +176,7 @@ fn count_lines(path: &Path, buf_size: usize, file_size: u64, tx: &ProgressSender
     Ok(count)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn split_filter_compress(
     input: &Path,
     tmp_dir: &Path,
@@ -137,13 +200,23 @@ fn split_filter_compress(
 
     let (col_indices, new_header) = match desired_cols {
         Some(desired) => {
-            let indices: Vec<usize> = header_fields.iter().enumerate()
+            let indices: Vec<usize> = header_fields
+                .iter()
+                .enumerate()
                 .filter(|(_, name)| desired.contains(name.as_str()))
                 .map(|(i, _)| i)
                 .collect();
-            tx.send(ProgressEvent::Info(format!("Matched {}/{} columns", indices.len(), header_fields.len()))).ok();
+            tx.send(ProgressEvent::Info(format!(
+                "Matched {}/{} columns",
+                indices.len(),
+                header_fields.len()
+            )))
+            .ok();
             if indices.is_empty() {
-                return Err(io::Error::new(io::ErrorKind::InvalidData, "No matching columns"));
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "No matching columns",
+                ));
             }
             let names: Vec<&str> = indices.iter().map(|&i| header_fields[i].as_str()).collect();
             let hdr = join_csv_line(&names, delim);
@@ -188,13 +261,16 @@ fn split_filter_compress(
     loop {
         line.clear();
         let n = reader.read_line(&mut line)?;
-        if n == 0 { break; }
+        if n == 0 {
+            break;
+        }
         bytes_read += n as u64;
 
         let data = match &col_indices {
             Some(indices) => {
                 let fields = parse_csv_line(&line, delim);
-                let selected: Vec<&str> = indices.iter()
+                let selected: Vec<&str> = indices
+                    .iter()
                     .filter_map(|&i| fields.get(i).map(|s| s.as_str()))
                     .collect();
                 join_csv_line(&selected, delim).into_bytes()
@@ -223,14 +299,21 @@ fn split_filter_compress(
 
     let mut out_paths = Vec::with_capacity(splits);
     for h in handles {
-        let p = h.join().map_err(|_| io::Error::new(io::ErrorKind::Other, "thread panicked"))??;
+        let p = h
+            .join()
+            .map_err(|_| io::Error::other("thread panicked"))??;
         out_paths.push(p);
     }
 
     Ok(out_paths)
 }
 
-fn pack_tar(files: &[PathBuf], output: &Path, buf_size: usize, tx: &ProgressSender) -> io::Result<()> {
+fn pack_tar(
+    files: &[PathBuf],
+    output: &Path,
+    buf_size: usize,
+    tx: &ProgressSender,
+) -> io::Result<()> {
     let tar_file = BufWriter::with_capacity(buf_size, File::create(output)?);
     let mut archive = tar::Builder::new(tar_file);
     let mut bytes_done: u64 = 0;

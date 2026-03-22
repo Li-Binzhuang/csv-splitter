@@ -113,6 +113,13 @@ pub enum Key {
     SelectAll,
     DeselectAll,
     SelectedCount,
+    // Sections
+    SectionInput,
+    SectionFlow,
+    SectionColumns,
+    SectionAction,
+    SectionResult,
+    SortNone,
 }
 
 pub fn text(lang: Lang, key: Key) -> &'static str {
@@ -294,5 +301,19 @@ pub fn text(lang: Lang, key: Key) -> &'static str {
         (Lang::En, Key::DeselectAll) => "Clear",
         (Lang::Zh, Key::SelectedCount) => "已选",
         (Lang::En, Key::SelectedCount) => "Selected",
+
+        // Sections
+        (Lang::Zh, Key::SectionInput) => "📂 输入文件",
+        (Lang::En, Key::SectionInput) => "📂 Input",
+        (Lang::Zh, Key::SectionFlow) => "🔄 处理流程",
+        (Lang::En, Key::SectionFlow) => "🔄 Flow",
+        (Lang::Zh, Key::SectionColumns) => "📋 列选择",
+        (Lang::En, Key::SectionColumns) => "📋 Columns",
+        (Lang::Zh, Key::SectionAction) => "🚀 操作",
+        (Lang::En, Key::SectionAction) => "🚀 Action",
+        (Lang::Zh, Key::SectionResult) => "📊 结果",
+        (Lang::En, Key::SectionResult) => "📊 Result",
+        (Lang::Zh, Key::SortNone) => "(不排序)",
+        (Lang::En, Key::SortNone) => "(No sort)",
     }
 }
