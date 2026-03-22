@@ -1,5 +1,6 @@
-//! Flow visualization and column selection for the split tab.
-//! V-shaped adaptive layout: Source → Split on top, Compress → Result on bottom.
+//! Flow visualization with toggle-based pipeline.
+//! Horizontal chain: Source → [Split?] → [Compress?] → Result
+//! Users can toggle split and compress independently via switches.
 
 use super::flow_cards::{draw_compress_card, draw_result_card, draw_split_card};
 use crate::i18n::{t, Lang};
@@ -7,7 +8,7 @@ use crate::state::SplitState;
 use crate::widgets::*;
 use csv_splitter_core::CompressFormat;
 
-/// Draw the V-shaped flow + column filter below.
+/// Draw the flow pipeline with toggle switches + column filter below.
 pub fn draw_flow(
     ui: &mut egui::Ui,
     s: &mut SplitState,
@@ -16,12 +17,66 @@ pub fn draw_flow(
     dialogs: &mut Vec<PendingDialog>,
 ) {
     let n_splits = if s.no_split { 1 } else { s.splits.clamp(1, 6) };
-    let has_compress = s.compress_idx < CompressFormat::all().len() - 1;
+    let has_compress = !s.no_compress && s.compress_idx < CompressFormat::all().len() - 1;
 
-    // Adaptive card sizing: 2 cards + 1 arrow per row
-    let card_w = ((avail_w - 50.0) / 2.0).clamp(120.0, 220.0);
+    check_and_read_headers(s);
+
+    // ── Toggle switches row ──
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 16.0;
+        // Split toggle
+        let split_on = !s.no_split;
+        let split_label = if split_on {
+            egui::RichText::new(format!("✅ {}", t!(lang, EnableSplit)))
+                .size(12.0)
+                .color(ACCENT)
+        } else {
+            egui::RichText::new(format!("⬜ {}", t!(lang, EnableSplit)))
+                .size(12.0)
+                .color(TEXT_DIM)
+        };
+        if ui
+            .selectable_label(split_on, split_label)
+            .on_hover_text(t!(lang, NoSplit))
+            .clicked()
+        {
+            s.no_split = !s.no_split;
+        }
+
+        // Compress toggle
+        let compress_on = !s.no_compress;
+        let compress_label = if compress_on {
+            egui::RichText::new(format!("✅ {}", t!(lang, EnableCompress)))
+                .size(12.0)
+                .color(WARN)
+        } else {
+            egui::RichText::new(format!("⬜ {}", t!(lang, EnableCompress)))
+                .size(12.0)
+                .color(TEXT_DIM)
+        };
+        if ui
+            .selectable_label(compress_on, compress_label)
+            .on_hover_text(t!(lang, NoCompress))
+            .clicked()
+        {
+            s.no_compress = !s.no_compress;
+        }
+    });
+
+    ui.add_space(6.0);
+
+    // ── Count active steps to compute card width ──
+    let split_enabled = !s.no_split;
+    let compress_enabled = !s.no_compress;
+    // Always: Source + Result = 2 cards. Optionally +1 or +2.
+    let n_cards = 2 + split_enabled as usize + compress_enabled as usize;
+    let n_arrows = n_cards - 1;
+    let arrow_w = 24.0_f32;
+    let spacing = ui.spacing().item_spacing.x;
+    let total_arrow_space = n_arrows as f32 * (arrow_w + spacing);
+    let card_w = ((avail_w - total_arrow_space - spacing * (n_cards as f32)) / n_cards as f32)
+        .clamp(100.0, 220.0);
     let card_h = 78.0_f32;
-    let arrow_w = 20.0_f32;
 
     let csv_filters: &[(&str, &[&str])] = &[(
         "CSV",
@@ -30,13 +85,12 @@ pub fn draw_flow(
         ],
     )];
 
-    check_and_read_headers(s);
-
     let input_id = egui::Id::new("split_input");
     let col_id = egui::Id::new("split_columns");
 
-    // Row 1: Source → Split
+    // ── Horizontal flow chain ──
     ui.horizontal(|ui| {
+        // Source card
         if let Some(d) = file_input_card(
             ui,
             &mut s.input_file,
@@ -50,20 +104,22 @@ pub fn draw_flow(
         ) {
             dialogs.push(d);
         }
-        draw_arrow(ui, ACCENT, arrow_w, card_h);
-        draw_split_card(ui, s, lang, card_w, card_h, n_splits);
-    });
 
-    // Down arrow (centered)
-    draw_down_arrow(ui, if has_compress { WARN } else { ACCENT }, avail_w);
+        if split_enabled {
+            draw_arrow(ui, ACCENT, arrow_w, card_h);
+            draw_split_card(ui, s, lang, card_w, card_h, n_splits);
+        }
 
-    // Row 2: Compress → Result
-    ui.horizontal(|ui| {
-        draw_compress_card(ui, s, lang, card_w, card_h, has_compress);
+        if compress_enabled {
+            draw_arrow(ui, WARN, arrow_w, card_h);
+            draw_compress_card(ui, s, lang, card_w, card_h, has_compress);
+        }
+
         draw_arrow(ui, SUCCESS, arrow_w, card_h);
         draw_result_card(ui, s, lang, card_w, card_h);
     });
 
+    // ── Column filter file ──
     ui.add_space(6.0);
     if let Some(d) = file_input_card(
         ui,
@@ -81,32 +137,8 @@ pub fn draw_flow(
 
     if !s.available_headers.is_empty() {
         ui.add_space(4.0);
-        draw_column_selector(ui, s, lang, card_w);
+        draw_column_selector(ui, s, lang, avail_w.min(960.0));
     }
-}
-
-/// Draw a vertical down-arrow, centered in the available width.
-fn draw_down_arrow(ui: &mut egui::Ui, color: egui::Color32, avail_w: f32) {
-    let h = 20.0;
-    let (rect, _) = ui.allocate_exact_size(egui::vec2(avail_w, h), egui::Sense::hover());
-    let mid_x = rect.center().x;
-    let p = ui.painter();
-    p.line_segment(
-        [
-            egui::pos2(mid_x, rect.top() + 2.0),
-            egui::pos2(mid_x, rect.bottom() - 6.0),
-        ],
-        egui::Stroke::new(2.0, color),
-    );
-    let tip = egui::pos2(mid_x, rect.bottom() - 2.0);
-    p.line_segment(
-        [egui::pos2(mid_x - 4.0, tip.y - 6.0), tip],
-        egui::Stroke::new(2.0, color),
-    );
-    p.line_segment(
-        [egui::pos2(mid_x + 4.0, tip.y - 6.0), tip],
-        egui::Stroke::new(2.0, color),
-    );
 }
 
 fn check_and_read_headers(s: &mut SplitState) {

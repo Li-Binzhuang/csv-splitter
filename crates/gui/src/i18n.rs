@@ -121,6 +121,9 @@ pub enum Key {
     SectionResult,
     SortNone,
     ReSelect,
+    NoCompress,
+    EnableSplit,
+    EnableCompress,
 }
 
 pub fn text(lang: Lang, key: Key) -> &'static str {
@@ -318,5 +321,11 @@ pub fn text(lang: Lang, key: Key) -> &'static str {
         (Lang::En, Key::SortNone) => "(No sort)",
         (Lang::Zh, Key::ReSelect) => "重新选择",
         (Lang::En, Key::ReSelect) => "Re-select",
+        (Lang::Zh, Key::NoCompress) => "不压缩 (仅拆分)",
+        (Lang::En, Key::NoCompress) => "No compress (split only)",
+        (Lang::Zh, Key::EnableSplit) => "拆分",
+        (Lang::En, Key::EnableSplit) => "Split",
+        (Lang::Zh, Key::EnableCompress) => "压缩",
+        (Lang::En, Key::EnableCompress) => "Compress",
     }
 }

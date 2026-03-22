@@ -21,6 +21,12 @@ pub fn start_split(s: &mut SplitState) {
     let delim = get_delimiter(s.delim_idx, &s.custom_delim);
     let splits = if s.no_split { 1 } else { s.splits };
 
+    let compress_format = if s.no_compress {
+        *CompressFormat::all().last().unwrap()
+    } else {
+        CompressFormat::all()[s.compress_idx]
+    };
+
     let columns_file = if s.columns_file.is_some() {
         s.columns_file.as_ref().map(|f| f.path.clone())
     } else if !s.available_headers.is_empty() {
@@ -58,7 +64,7 @@ pub fn start_split(s: &mut SplitState) {
             Some(PathBuf::from(&s.output_path))
         },
         splits,
-        compress_format: CompressFormat::all()[s.compress_idx],
+        compress_format,
         compress_level: s.compress_level,
         buf_mb: s.buf_mb,
         columns_file,

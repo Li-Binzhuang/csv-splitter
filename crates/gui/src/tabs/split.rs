@@ -94,7 +94,6 @@ pub fn ui_split(
 }
 
 fn params_left(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang) {
-    ui.checkbox(&mut s.no_split, t!(lang, NoSplit));
     if !s.no_split {
         ui.horizontal(|ui| {
             ui.label(egui::RichText::new(t!(lang, Splits)).color(TEXT_BRIGHT));
@@ -109,23 +108,25 @@ fn params_left(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang) {
 }
 
 fn params_right(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang) {
-    ui.horizontal(|ui| {
-        let formats = CompressFormat::all();
-        let labels: Vec<&str> = formats.iter().map(|f| f.label()).collect();
-        ui.label(egui::RichText::new(t!(lang, CompressFormat)).color(TEXT_BRIGHT));
-        egui::ComboBox::from_id_salt("compress_fmt")
-            .selected_text(labels[s.compress_idx])
-            .width(160.0)
-            .show_ui(ui, |ui| {
-                for (i, l) in labels.iter().enumerate() {
-                    ui.selectable_value(&mut s.compress_idx, i, *l);
-                }
-            });
-    });
-    ui.horizontal(|ui| {
-        ui.label(egui::RichText::new(t!(lang, CompressLevel)).color(TEXT_BRIGHT));
-        ui.add(egui::DragValue::new(&mut s.compress_level).range(1..=22));
-    });
+    if !s.no_compress {
+        ui.horizontal(|ui| {
+            let formats = CompressFormat::all();
+            let labels: Vec<&str> = formats.iter().map(|f| f.label()).collect();
+            ui.label(egui::RichText::new(t!(lang, CompressFormat)).color(TEXT_BRIGHT));
+            egui::ComboBox::from_id_salt("compress_fmt")
+                .selected_text(labels[s.compress_idx])
+                .width(160.0)
+                .show_ui(ui, |ui| {
+                    for (i, l) in labels.iter().enumerate() {
+                        ui.selectable_value(&mut s.compress_idx, i, *l);
+                    }
+                });
+        });
+        ui.horizontal(|ui| {
+            ui.label(egui::RichText::new(t!(lang, CompressLevel)).color(TEXT_BRIGHT));
+            ui.add(egui::DragValue::new(&mut s.compress_level).range(1..=22));
+        });
+    }
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new(t!(lang, SortColumn)).color(TEXT_BRIGHT));
         let display = if s.sort_column.is_empty() {

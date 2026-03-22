@@ -5,7 +5,7 @@ use crate::i18n::{t, Lang};
 use crate::state::FileInfo;
 
 /// Reusable file input card with click-to-browse + metadata display.
-/// A small "clear" link is shown below the card when a file is loaded.
+/// Links ("移除 · 重新选择") appear BELOW the card vertically.
 /// Returns Some(PendingDialog) if a file dialog was spawned.
 #[allow(clippy::too_many_arguments)]
 pub fn file_input_card(
@@ -19,87 +19,94 @@ pub fn file_input_card(
     filters: &[(&str, &[&str])],
     dialog_id: egui::Id,
 ) -> Option<PendingDialog> {
+    let mut result: Option<PendingDialog> = None;
     let has_file = file.is_some();
-    let border = if has_file { accent } else { CARD_BORDER };
 
-    let frame_resp = egui::Frame::new()
-        .fill(CARD_BG)
-        .stroke(egui::Stroke::new(if has_file { 1.5 } else { 1.0 }, border))
-        .corner_radius(egui::CornerRadius::same(12))
-        .inner_margin(12.0)
-        .show(ui, |ui| {
-            let max_w = w.min(ui.available_width());
-            ui.set_width(max_w);
-            ui.set_max_width(max_w);
-            ui.set_min_height(min_h);
+    // Wrap everything in a vertical so links always appear below the card
+    ui.vertical(|ui| {
+        let border = if has_file { accent } else { CARD_BORDER };
 
-            if let Some(ref info) = file {
-                draw_file_meta(ui, info, max_w, lang);
-            } else {
-                ui.vertical_centered(|ui| {
-                    ui.add_space((min_h - 30.0).max(0.0) / 2.0);
-                    ui.label(egui::RichText::new(placeholder).size(11.0).color(TEXT_DIM));
-                });
+        let frame_resp = egui::Frame::new()
+            .fill(CARD_BG)
+            .stroke(egui::Stroke::new(if has_file { 1.5 } else { 1.0 }, border))
+            .corner_radius(egui::CornerRadius::same(12))
+            .inner_margin(12.0)
+            .show(ui, |ui| {
+                let max_w = w.min(ui.available_width());
+                ui.set_width(max_w);
+                ui.set_max_width(max_w);
+                ui.set_min_height(min_h);
+
+                if let Some(ref info) = file {
+                    draw_file_meta(ui, info, max_w, lang);
+                } else {
+                    ui.vertical_centered(|ui| {
+                        ui.add_space((min_h - 30.0).max(0.0) / 2.0);
+                        ui.label(egui::RichText::new(placeholder).size(11.0).color(TEXT_DIM));
+                    });
+                }
+            });
+
+        // Clear + re-select links below the card (only when file is loaded)
+        if has_file {
+            ui.horizontal(|ui| {
+                if ui
+                    .link(
+                        egui::RichText::new(t!(lang, RemoveFile))
+                            .size(11.0)
+                            .color(TEXT_DIM),
+                    )
+                    .clicked()
+                {
+                    *file = None;
+                }
+                ui.label(egui::RichText::new("·").size(11.0).color(TEXT_DIM));
+                if ui
+                    .link(
+                        egui::RichText::new(t!(lang, ReSelect))
+                            .size(11.0)
+                            .color(ACCENT),
+                    )
+                    .clicked()
+                {
+                    let owned_filters: Vec<(String, Vec<String>)> = filters
+                        .iter()
+                        .map(|(n, exts)| {
+                            (n.to_string(), exts.iter().map(|e| e.to_string()).collect())
+                        })
+                        .collect();
+                    result = Some(spawn_file_dialog(
+                        DialogTarget::File(dialog_id),
+                        owned_filters,
+                    ));
+                }
+            });
+            // If file was just cleared, don't process card click
+            if file.is_none() {
+                return;
             }
-        });
+        }
 
-    // Clear + re-select links below the card (only when file is loaded)
-    if has_file {
-        ui.horizontal(|ui| {
-            if ui
-                .link(
-                    egui::RichText::new(t!(lang, RemoveFile))
-                        .size(11.0)
-                        .color(TEXT_DIM),
-                )
-                .clicked()
-            {
-                *file = None;
+        // Card-level click to open file browser (only when empty)
+        if !has_file {
+            let card_resp = frame_resp.response.interact(egui::Sense::click());
+            if card_resp.hovered() {
+                ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
             }
-            ui.label(egui::RichText::new("·").size(11.0).color(TEXT_DIM));
-            if ui
-                .link(
-                    egui::RichText::new(t!(lang, ReSelect))
-                        .size(11.0)
-                        .color(ACCENT),
-                )
-                .clicked()
-            {
+            if card_resp.clicked() {
                 let owned_filters: Vec<(String, Vec<String>)> = filters
                     .iter()
                     .map(|(n, exts)| (n.to_string(), exts.iter().map(|e| e.to_string()).collect()))
                     .collect();
-                return Some(spawn_file_dialog(
+                result = Some(spawn_file_dialog(
                     DialogTarget::File(dialog_id),
                     owned_filters,
                 ));
             }
-            None
-        });
-        // If file was just cleared, don't process card click
-        if file.is_none() {
-            return None;
         }
-    }
+    });
 
-    // Card-level click to open file browser (only when empty)
-    if !has_file {
-        let card_resp = frame_resp.response.interact(egui::Sense::click());
-        if card_resp.hovered() {
-            ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
-        }
-        if card_resp.clicked() {
-            let owned_filters: Vec<(String, Vec<String>)> = filters
-                .iter()
-                .map(|(n, exts)| (n.to_string(), exts.iter().map(|e| e.to_string()).collect()))
-                .collect();
-            return Some(spawn_file_dialog(
-                DialogTarget::File(dialog_id),
-                owned_filters,
-            ));
-        }
-    }
-    None
+    result
 }
 
 fn draw_file_meta(ui: &mut egui::Ui, info: &FileInfo, max_w: f32, lang: Lang) {
