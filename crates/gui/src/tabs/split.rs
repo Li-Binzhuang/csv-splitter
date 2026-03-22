@@ -8,7 +8,11 @@ pub fn ui_split(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang) {
     super::split_job::poll_split(s, lang);
 
     ui.heading(t!(lang, SplitTitle));
-    ui.label(egui::RichText::new(t!(lang, SplitDesc)).size(12.0).weak());
+    ui.label(
+        egui::RichText::new(t!(lang, SplitDesc))
+            .size(12.0)
+            .color(TEXT_DIM),
+    );
     ui.add_space(8.0);
 
     let avail_w = ui.available_width();
@@ -68,7 +72,11 @@ pub fn ui_split(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang) {
         if s.state == JobState::Running && s.progress_total > 0 {
             ui.add_space(4.0);
             let frac = s.progress_bytes as f32 / s.progress_total as f32;
-            ui.label(egui::RichText::new(&s.current_phase).size(12.0).weak());
+            ui.label(
+                egui::RichText::new(&s.current_phase)
+                    .size(12.0)
+                    .color(TEXT_DIM),
+            );
             ui.add(
                 egui::ProgressBar::new(frac)
                     .text(format!(
@@ -88,12 +96,12 @@ fn params_left(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang) {
     ui.checkbox(&mut s.no_split, t!(lang, NoSplit));
     if !s.no_split {
         ui.horizontal(|ui| {
-            ui.label(t!(lang, Splits));
+            ui.label(egui::RichText::new(t!(lang, Splits)).color(TEXT_BRIGHT));
             ui.add(egui::DragValue::new(&mut s.splits).range(2..=1000));
         });
     }
     ui.horizontal(|ui| {
-        ui.label(t!(lang, BufferMb));
+        ui.label(egui::RichText::new(t!(lang, BufferMb)).color(TEXT_BRIGHT));
         ui.add(egui::DragValue::new(&mut s.buf_mb).range(1..=512));
     });
     delimiter_combo(ui, &mut s.delim_idx, &mut s.custom_delim, lang);
@@ -103,7 +111,7 @@ fn params_right(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang) {
     ui.horizontal(|ui| {
         let formats = CompressFormat::all();
         let labels: Vec<&str> = formats.iter().map(|f| f.label()).collect();
-        ui.label(t!(lang, CompressFormat));
+        ui.label(egui::RichText::new(t!(lang, CompressFormat)).color(TEXT_BRIGHT));
         egui::ComboBox::from_id_salt("compress_fmt")
             .selected_text(labels[s.compress_idx])
             .width(160.0)
@@ -114,11 +122,11 @@ fn params_right(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang) {
             });
     });
     ui.horizontal(|ui| {
-        ui.label(t!(lang, CompressLevel));
+        ui.label(egui::RichText::new(t!(lang, CompressLevel)).color(TEXT_BRIGHT));
         ui.add(egui::DragValue::new(&mut s.compress_level).range(1..=22));
     });
     ui.horizontal(|ui| {
-        ui.label(t!(lang, SortColumn));
+        ui.label(egui::RichText::new(t!(lang, SortColumn)).color(TEXT_BRIGHT));
         let display = if s.sort_column.is_empty() {
             t!(lang, SortNone)
         } else {

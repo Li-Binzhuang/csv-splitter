@@ -131,7 +131,7 @@ fn draw_column_selector(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, w: f3
     egui::Frame::new()
         .fill(CARD_BG)
         .stroke(egui::Stroke::new(1.0, PURPLE.linear_multiply(0.5)))
-        .corner_radius(egui::CornerRadius::same(8))
+        .corner_radius(egui::CornerRadius::same(12))
         .inner_margin(8.0)
         .show(ui, |ui| {
             ui.set_width(w.min(ui.available_width()));

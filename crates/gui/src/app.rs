@@ -44,9 +44,9 @@ impl eframe::App for App {
         egui::TopBottomPanel::top("tab_bar")
             .frame(
                 egui::Frame::new()
-                    .fill(egui::Color32::from_rgb(32, 36, 46))
-                    .inner_margin(egui::Margin::symmetric(10, 5))
-                    .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(50, 55, 68))),
+                    .fill(egui::Color32::from_rgb(36, 40, 52))
+                    .inner_margin(egui::Margin::symmetric(12, 6))
+                    .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(58, 64, 80))),
             )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
@@ -110,11 +110,9 @@ impl App {
                 if let Some(info) = FileInfo::from_path(path) {
                     match self.tab {
                         Tab::Split => {
-                            if self.split.input_file.is_none() {
-                                self.split.input_file = Some(info);
-                            } else if self.split.columns_file.is_none() {
-                                self.split.columns_file = Some(info);
-                            }
+                            // Always replace input file on drop;
+                            // use the column filter card explicitly for column files
+                            self.split.input_file = Some(info);
                         }
                         Tab::Preview => {
                             self.preview.input_file = Some(info);

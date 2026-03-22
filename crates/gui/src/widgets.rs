@@ -3,15 +3,15 @@ use crate::state::FileInfo;
 use csv_splitter_core::Delimiter;
 
 // ===== Theme colors (centralized) =====
-pub const CARD_BG: egui::Color32 = egui::Color32::from_rgb(48, 53, 68);
-pub const CARD_BORDER: egui::Color32 = egui::Color32::from_rgb(68, 74, 92);
+pub const CARD_BG: egui::Color32 = egui::Color32::from_rgb(52, 58, 76);
+pub const CARD_BORDER: egui::Color32 = egui::Color32::from_rgb(78, 86, 108);
 pub const ACCENT: egui::Color32 = egui::Color32::from_rgb(88, 166, 255);
 pub const SUCCESS: egui::Color32 = egui::Color32::from_rgb(80, 200, 120);
 pub const WARN: egui::Color32 = egui::Color32::from_rgb(255, 180, 60);
 pub const ERROR_C: egui::Color32 = egui::Color32::from_rgb(240, 80, 80);
 pub const PURPLE: egui::Color32 = egui::Color32::from_rgb(180, 140, 255);
-pub const TEXT_DIM: egui::Color32 = egui::Color32::from_rgb(170, 178, 195);
-pub const TEXT_BRIGHT: egui::Color32 = egui::Color32::from_rgb(225, 230, 240);
+pub const TEXT_DIM: egui::Color32 = egui::Color32::from_rgb(175, 185, 205);
+pub const TEXT_BRIGHT: egui::Color32 = egui::Color32::from_rgb(232, 236, 248);
 
 /// Format bytes into human-readable string.
 pub fn format_bytes(b: u64) -> String {
@@ -46,8 +46,8 @@ pub fn file_input_card(
     let resp = egui::Frame::new()
         .fill(CARD_BG)
         .stroke(egui::Stroke::new(if has_file { 1.5 } else { 1.0 }, border))
-        .corner_radius(egui::CornerRadius::same(8))
-        .inner_margin(10.0)
+        .corner_radius(egui::CornerRadius::same(12))
+        .inner_margin(12.0)
         .show(ui, |ui| {
             let max_w = w.min(ui.available_width());
             ui.set_width(max_w);
@@ -183,12 +183,12 @@ pub fn dir_path_card(
     egui::Frame::new()
         .fill(CARD_BG)
         .stroke(egui::Stroke::new(if has { 1.5 } else { 1.0 }, border))
-        .corner_radius(egui::CornerRadius::same(8))
-        .inner_margin(10.0)
+        .corner_radius(egui::CornerRadius::same(12))
+        .inner_margin(12.0)
         .show(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.label(egui::RichText::new(icon).size(16.0));
-                ui.label(label);
+                ui.label(egui::RichText::new(label).color(TEXT_BRIGHT));
                 ui.add(
                     egui::TextEdit::singleline(path)
                         .desired_width(ui.available_width() - 40.0)
@@ -212,7 +212,7 @@ pub fn delimiter_combo(ui: &mut egui::Ui, idx: &mut usize, custom: &mut String, 
         .chain(std::iter::once(t!(lang, CustomDelim)))
         .collect();
     ui.horizontal(|ui| {
-        ui.label(t!(lang, Delimiter));
+        ui.label(egui::RichText::new(t!(lang, Delimiter)).color(TEXT_BRIGHT));
         egui::ComboBox::from_id_salt(ui.next_auto_id())
             .selected_text(labels[*idx])
             .width(160.0)
@@ -222,7 +222,7 @@ pub fn delimiter_combo(ui: &mut egui::Ui, idx: &mut usize, custom: &mut String, 
                 }
             });
         if *idx >= common.len() {
-            ui.label(t!(lang, CustomChar));
+            ui.label(egui::RichText::new(t!(lang, CustomChar)).color(TEXT_BRIGHT));
             ui.add(egui::TextEdit::singleline(custom).desired_width(40.0));
         }
     });
@@ -238,7 +238,7 @@ pub fn log_panel(ui: &mut egui::Ui, logs: &[String], lang: Lang) {
     ui.label(t!(lang, LogTitle));
     egui::Frame::new()
         .fill(ui.visuals().extreme_bg_color)
-        .corner_radius(egui::CornerRadius::same(6))
+        .corner_radius(egui::CornerRadius::same(10))
         .inner_margin(8.0)
         .show(ui, |ui| {
             egui::ScrollArea::vertical()
@@ -276,7 +276,7 @@ pub fn job_status(ui: &mut egui::Ui, state: &crate::state::JobState, lang: Lang)
 /// Compact stat badge: icon + label + value in a rounded pill.
 pub fn stat_badge(ui: &mut egui::Ui, icon: &str, label: &str, value: &str) {
     egui::Frame::new()
-        .fill(egui::Color32::from_rgb(52, 57, 72))
+        .fill(egui::Color32::from_rgb(60, 66, 84))
         .corner_radius(egui::CornerRadius::same(12))
         .inner_margin(egui::Margin::symmetric(8, 3))
         .show(ui, |ui| {
@@ -299,9 +299,9 @@ pub fn section_frame(ui: &mut egui::Ui, title: &str, add_contents: impl FnOnce(&
     egui::Frame::new()
         .fill(CARD_BG)
         .stroke(egui::Stroke::new(1.0, CARD_BORDER))
-        .corner_radius(egui::CornerRadius::same(8))
-        .inner_margin(10.0)
-        .outer_margin(egui::Margin::symmetric(0, 3))
+        .corner_radius(egui::CornerRadius::same(14))
+        .inner_margin(14.0)
+        .outer_margin(egui::Margin::symmetric(0, 4))
         .show(ui, |ui| {
             ui.label(
                 egui::RichText::new(title)
@@ -309,7 +309,7 @@ pub fn section_frame(ui: &mut egui::Ui, title: &str, add_contents: impl FnOnce(&
                     .strong()
                     .color(TEXT_BRIGHT),
             );
-            ui.add_space(4.0);
+            ui.add_space(6.0);
             add_contents(ui);
         });
 }

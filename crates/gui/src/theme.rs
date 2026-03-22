@@ -11,8 +11,6 @@ pub fn apply_theme(ctx: &egui::Context) {
 fn setup_fonts(ctx: &egui::Context) {
     let mut fonts = FontDefinitions::default();
 
-    // Load system CJK font for Chinese/Japanese/Korean support.
-    // Multiple candidates per platform — first match wins.
     let cjk_font_paths: Vec<&str> = if cfg!(target_os = "macos") {
         vec![
             "/System/Library/Fonts/Hiragino Sans GB.ttc",
@@ -68,23 +66,24 @@ fn setup_visuals(ctx: &egui::Context) {
 
     *visuals = Visuals::dark();
 
-    let panel_bg = Color32::from_rgb(32, 36, 46);
-    let bg = Color32::from_rgb(26, 29, 38);
-    let widget_bg = Color32::from_rgb(50, 55, 68);
+    // ── Palette: warm slate-blue, NOT black ──
+    let panel_bg = Color32::from_rgb(40, 44, 58); // main background
+    let window_bg = Color32::from_rgb(44, 48, 62);
+    let extreme_bg = Color32::from_rgb(36, 40, 52); // log area, text inputs
+    let faint_bg = Color32::from_rgb(50, 55, 70);
+    let widget_bg = Color32::from_rgb(58, 64, 82); // buttons, combos
+    let border = Color32::from_rgb(72, 80, 100);
     let accent = Color32::from_rgb(88, 166, 255);
-    let accent_hover = Color32::from_rgb(110, 180, 255);
-    let text_primary = Color32::from_rgb(230, 235, 245);
-    let text_secondary = Color32::from_rgb(180, 188, 205);
-    let border = Color32::from_rgb(62, 68, 85);
-    let success = Color32::from_rgb(80, 200, 120);
-    let error = Color32::from_rgb(240, 80, 80);
+    let accent_hover = Color32::from_rgb(115, 185, 255);
+    let text_primary = Color32::from_rgb(235, 238, 248);
+    let text_secondary = Color32::from_rgb(190, 198, 215);
 
-    let rounding = CornerRadius::same(6);
+    let rounding = CornerRadius::same(10);
 
     visuals.panel_fill = panel_bg;
-    visuals.window_fill = panel_bg;
-    visuals.extreme_bg_color = bg;
-    visuals.faint_bg_color = Color32::from_rgb(44, 48, 60);
+    visuals.window_fill = window_bg;
+    visuals.extreme_bg_color = extreme_bg;
+    visuals.faint_bg_color = faint_bg;
 
     visuals.widgets.noninteractive.bg_fill = widget_bg;
     visuals.widgets.noninteractive.fg_stroke = Stroke::new(1.0, text_secondary);
@@ -96,7 +95,7 @@ fn setup_visuals(ctx: &egui::Context) {
     visuals.widgets.inactive.corner_radius = rounding;
     visuals.widgets.inactive.bg_stroke = Stroke::new(1.0, border);
 
-    visuals.widgets.hovered.bg_fill = Color32::from_rgb(50, 55, 70);
+    visuals.widgets.hovered.bg_fill = Color32::from_rgb(65, 72, 92);
     visuals.widgets.hovered.fg_stroke = Stroke::new(1.0, accent_hover);
     visuals.widgets.hovered.corner_radius = rounding;
     visuals.widgets.hovered.bg_stroke = Stroke::new(1.0, accent);
@@ -105,34 +104,27 @@ fn setup_visuals(ctx: &egui::Context) {
     visuals.widgets.active.fg_stroke = Stroke::new(1.0, Color32::WHITE);
     visuals.widgets.active.corner_radius = rounding;
 
-    visuals.widgets.open.bg_fill = Color32::from_rgb(50, 55, 70);
+    visuals.widgets.open.bg_fill = Color32::from_rgb(60, 66, 85);
     visuals.widgets.open.fg_stroke = Stroke::new(1.0, accent);
     visuals.widgets.open.corner_radius = rounding;
 
-    visuals.selection.bg_fill = accent.linear_multiply(0.3);
+    visuals.selection.bg_fill = accent.linear_multiply(0.25);
     visuals.selection.stroke = Stroke::new(1.0, accent);
 
     visuals.window_shadow = Shadow::NONE;
     visuals.popup_shadow = Shadow {
-        offset: [0, 4],
-        blur: 12,
-        spread: 0,
-        color: Color32::from_black_alpha(80),
+        offset: [0, 6],
+        blur: 16,
+        spread: 2,
+        color: Color32::from_black_alpha(60),
     };
 
     visuals.striped = true;
 
-    style.spacing.item_spacing = [8.0, 6.0].into();
-    style.spacing.button_padding = [12.0, 6.0].into();
-    style.spacing.window_margin = 16.0.into();
+    // ── Spacing: generous, bouncy feel ──
+    style.spacing.item_spacing = [10.0, 8.0].into();
+    style.spacing.button_padding = [14.0, 7.0].into();
+    style.spacing.window_margin = 18.0.into();
 
     ctx.set_style(style);
-
-    // Store custom colors for use in tabs
-    ctx.data_mut(|d| {
-        d.insert_temp(egui::Id::new("color_accent"), accent);
-        d.insert_temp(egui::Id::new("color_success"), success);
-        d.insert_temp(egui::Id::new("color_error"), error);
-        d.insert_temp(egui::Id::new("color_text_secondary"), text_secondary);
-    });
 }

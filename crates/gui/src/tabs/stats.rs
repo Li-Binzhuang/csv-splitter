@@ -37,7 +37,7 @@ pub fn ui_stats(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
     section_frame(ui, t!(lang, SectionParams), |ui| {
         delimiter_combo(ui, &mut s.delim_idx, &mut s.custom_delim, lang);
         ui.horizontal(|ui| {
-            ui.label(t!(lang, SampleSize));
+            ui.label(egui::RichText::new(t!(lang, SampleSize)).color(TEXT_BRIGHT));
             ui.add(egui::DragValue::new(&mut s.sample_size).range(1000..=10_000_000));
         });
     });
@@ -74,7 +74,7 @@ fn show_results(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
         }
 
         ui.horizontal(|ui| {
-            ui.label(t!(lang, SelectColumn));
+            ui.label(egui::RichText::new(t!(lang, SelectColumn)).color(TEXT_BRIGHT));
             egui::ComboBox::from_id_salt("stats_col")
                 .selected_text(*col_names.get(s.selected_col).unwrap_or(&""))
                 .width(200.0)
