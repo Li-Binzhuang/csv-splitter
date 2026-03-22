@@ -48,21 +48,34 @@ pub fn file_input_card(
         .corner_radius(egui::CornerRadius::same(8))
         .inner_margin(10.0)
         .show(ui, |ui| {
-            ui.set_width(w.min(ui.available_width()));
+            let max_w = w.min(ui.available_width());
+            ui.set_width(max_w);
+            ui.set_max_width(max_w);
             ui.set_min_height(min_h);
 
             if let Some(ref info) = file {
+                // Truncate long filenames to fit the card
+                let max_name_chars = ((max_w - 50.0) / 7.0).max(8.0) as usize;
+                let display_name = if info.name.chars().count() > max_name_chars {
+                    let truncated: String = info.name.chars().take(max_name_chars - 2).collect();
+                    format!("{}…", truncated)
+                } else {
+                    info.name.clone()
+                };
+
                 ui.horizontal(|ui| {
+                    ui.set_max_width(max_w - 4.0);
                     ui.label(egui::RichText::new("📄").size(16.0));
                     ui.vertical(|ui| {
+                        ui.set_max_width(max_w - 60.0);
                         ui.label(
-                            egui::RichText::new(&info.name)
+                            egui::RichText::new(&display_name)
                                 .size(12.0)
                                 .strong()
                                 .color(TEXT_BRIGHT),
                         );
                         ui.horizontal_wrapped(|ui| {
-                            ui.spacing_mut().item_spacing.x = 8.0;
+                            ui.spacing_mut().item_spacing.x = 6.0;
                             ui.label(
                                 egui::RichText::new(format!(
                                     "{}: {}",
@@ -109,15 +122,13 @@ pub fn file_input_card(
                         });
                     });
                     // Remove button on the right
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
-                        if ui
-                            .small_button("✕")
-                            .on_hover_text(t!(lang, RemoveFile))
-                            .clicked()
-                        {
-                            remove_clicked = true;
-                        }
-                    });
+                    if ui
+                        .small_button("✕")
+                        .on_hover_text(t!(lang, RemoveFile))
+                        .clicked()
+                    {
+                        remove_clicked = true;
+                    }
                 });
             } else {
                 ui.vertical_centered(|ui| {

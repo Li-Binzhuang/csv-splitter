@@ -70,12 +70,12 @@ fn setup_visuals(ctx: &egui::Context) {
 
     let panel_bg = Color32::from_rgb(32, 36, 46);
     let bg = Color32::from_rgb(26, 29, 38);
-    let widget_bg = Color32::from_rgb(42, 46, 58);
+    let widget_bg = Color32::from_rgb(50, 55, 68);
     let accent = Color32::from_rgb(88, 166, 255);
     let accent_hover = Color32::from_rgb(110, 180, 255);
-    let text_primary = Color32::from_rgb(220, 225, 235);
-    let text_secondary = Color32::from_rgb(150, 158, 175);
-    let border = Color32::from_rgb(55, 60, 75);
+    let text_primary = Color32::from_rgb(230, 235, 245);
+    let text_secondary = Color32::from_rgb(180, 188, 205);
+    let border = Color32::from_rgb(62, 68, 85);
     let success = Color32::from_rgb(80, 200, 120);
     let error = Color32::from_rgb(240, 80, 80);
 
@@ -84,7 +84,7 @@ fn setup_visuals(ctx: &egui::Context) {
     visuals.panel_fill = panel_bg;
     visuals.window_fill = panel_bg;
     visuals.extreme_bg_color = bg;
-    visuals.faint_bg_color = Color32::from_rgb(38, 42, 54);
+    visuals.faint_bg_color = Color32::from_rgb(44, 48, 60);
 
     visuals.widgets.noninteractive.bg_fill = widget_bg;
     visuals.widgets.noninteractive.fg_stroke = Stroke::new(1.0, text_secondary);

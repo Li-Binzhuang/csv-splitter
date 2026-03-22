@@ -107,6 +107,7 @@ fn draw_decomp_result_card(ui: &mut egui::Ui, s: &DecompState, lang: Lang, w: f3
         .inner_margin(8.0)
         .show(ui, |ui| {
             ui.set_width(w);
+            ui.set_max_width(w);
             ui.set_min_height(h);
             ui.vertical_centered(|ui| {
                 ui.label(
@@ -120,7 +121,14 @@ fn draw_decomp_result_card(ui: &mut egui::Ui, s: &DecompState, lang: Lang, w: f3
                     JobState::Done => {
                         ui.label(egui::RichText::new("✅").size(22.0));
                         if let Some(ref out) = s.output_file {
-                            ui.label(egui::RichText::new(&out.name).size(10.0).color(TEXT_BRIGHT));
+                            let max_chars = ((w - 20.0) / 7.0).max(6.0) as usize;
+                            let name = if out.name.chars().count() > max_chars {
+                                let t: String = out.name.chars().take(max_chars - 1).collect();
+                                format!("{}…", t)
+                            } else {
+                                out.name.clone()
+                            };
+                            ui.label(egui::RichText::new(&name).size(10.0).color(TEXT_BRIGHT));
                             ui.label(
                                 egui::RichText::new(format_bytes(out.size))
                                     .size(10.0)
