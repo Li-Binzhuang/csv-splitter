@@ -4,8 +4,8 @@
 >
 > 跨平台 CSV 文件拆分、压缩、预览与列统计工具，支持中英文界面。
 
-[![CI](https://github.com/user/csv-splitter-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/user/csv-splitter-pro/actions/workflows/ci.yml)
-[![Release](https://github.com/user/csv-splitter-pro/actions/workflows/release.yml/badge.svg)](https://github.com/user/csv-splitter-pro/actions/workflows/release.yml)
+[![CI](https://github.com/user/csv-splitter-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/Li-Binzhuang/csv-splitter/blob/main/.github/workflows/ci.yml)
+[![Release](https://github.com/user/csv-splitter-pro/actions/workflows/release.yml/badge.svg)](https://github.com/Li-Binzhuang/csv-splitter/blob/main/.github/workflows/release.yml)
 ![Version](https://img.shields.io/badge/version-0.1-blue)
 
 ---
