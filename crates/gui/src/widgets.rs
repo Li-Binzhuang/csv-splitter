@@ -1,6 +1,8 @@
 use crate::i18n::{t, Lang};
 use crate::state::FileInfo;
 use csv_splitter_core::Delimiter;
+use std::path::PathBuf;
+use std::sync::mpsc;
 
 // ===== Theme colors (centralized) =====
 pub const CARD_BG: egui::Color32 = egui::Color32::from_rgb(52, 58, 76);
@@ -12,6 +14,98 @@ pub const ERROR_C: egui::Color32 = egui::Color32::from_rgb(240, 80, 80);
 pub const PURPLE: egui::Color32 = egui::Color32::from_rgb(180, 140, 255);
 pub const TEXT_DIM: egui::Color32 = egui::Color32::from_rgb(175, 185, 205);
 pub const TEXT_BRIGHT: egui::Color32 = egui::Color32::from_rgb(232, 236, 248);
+
+// ===== Async file dialog helpers =====
+// rfd on macOS panics if called synchronously inside an egui paint callback.
+// We spawn the dialog on a background thread and poll the result next frame.
+
+/// Identifies which file slot a pending dialog result should fill.
+#[derive(Clone, Debug)]
+pub enum DialogTarget {
+    File(egui::Id),
+    Dir(egui::Id),
+    SaveFile { src: PathBuf },
+}
+
+/// Pending dialog result receiver — stored on App struct (not egui temp data).
+pub struct PendingDialog {
+    pub target: DialogTarget,
+    pub rx: mpsc::Receiver<Option<PathBuf>>,
+}
+
+/// Spawn a file-pick dialog on a background thread. Returns a PendingDialog.
+pub fn spawn_file_dialog(
+    target: DialogTarget,
+    filters: Vec<(String, Vec<String>)>,
+) -> PendingDialog {
+    let (tx, rx) = mpsc::channel();
+    std::thread::spawn(move || {
+        let mut dialog = rfd::FileDialog::new();
+        for (name, exts) in &filters {
+            let ext_refs: Vec<&str> = exts.iter().map(|s| s.as_str()).collect();
+            dialog = dialog.add_filter(name, &ext_refs);
+        }
+        tx.send(dialog.pick_file()).ok();
+    });
+    PendingDialog { target, rx }
+}
+
+fn spawn_dir_dialog(target: DialogTarget) -> PendingDialog {
+    let (tx, rx) = mpsc::channel();
+    std::thread::spawn(move || {
+        tx.send(rfd::FileDialog::new().pick_folder()).ok();
+    });
+    PendingDialog { target, rx }
+}
+
+fn spawn_save_dialog(name: String, src: PathBuf) -> PendingDialog {
+    let (tx, rx) = mpsc::channel();
+    std::thread::spawn(move || {
+        tx.send(rfd::FileDialog::new().set_file_name(&name).save_file())
+            .ok();
+    });
+    PendingDialog {
+        target: DialogTarget::SaveFile { src },
+        rx,
+    }
+}
+
+/// Completed dialog result ready to be applied.
+pub enum DialogResult {
+    File(egui::Id, Option<FileInfo>),
+    Dir(egui::Id, PathBuf),
+    SaveCopy { src: PathBuf, dest: PathBuf },
+}
+
+/// Poll all pending dialogs. Returns completed results; unfinished ones stay in the vec.
+pub fn poll_dialogs(pending: &mut Vec<PendingDialog>) -> Vec<DialogResult> {
+    let all: Vec<PendingDialog> = std::mem::take(pending);
+    let mut results = Vec::new();
+    for p in all {
+        match p.rx.try_recv() {
+            Ok(Some(path)) => match &p.target {
+                DialogTarget::File(id) => {
+                    results.push(DialogResult::File(*id, FileInfo::from_path(path)));
+                }
+                DialogTarget::Dir(id) => {
+                    results.push(DialogResult::Dir(*id, path));
+                }
+                DialogTarget::SaveFile { src, .. } => {
+                    results.push(DialogResult::SaveCopy {
+                        src: src.clone(),
+                        dest: path,
+                    });
+                }
+            },
+            Ok(None) => {} // user cancelled
+            Err(mpsc::TryRecvError::Empty) => {
+                pending.push(p); // still waiting
+            }
+            Err(mpsc::TryRecvError::Disconnected) => {} // thread died
+        }
+    }
+    results
+}
 
 /// Format bytes into human-readable string.
 pub fn format_bytes(b: u64) -> String {
@@ -27,7 +121,7 @@ pub fn format_bytes(b: u64) -> String {
 }
 
 /// Reusable file input card with click-to-browse + metadata display.
-/// Works for all tabs.
+/// Returns Some(PendingDialog) if a file dialog was spawned.
 #[allow(clippy::too_many_arguments)]
 pub fn file_input_card(
     ui: &mut egui::Ui,
@@ -38,7 +132,8 @@ pub fn file_input_card(
     min_h: f32,
     lang: Lang,
     filters: &[(&str, &[&str])],
-) {
+    dialog_id: egui::Id,
+) -> Option<PendingDialog> {
     let has_file = file.is_some();
     let border = if has_file { accent } else { CARD_BORDER };
     let mut remove_clicked = false;
@@ -55,7 +150,6 @@ pub fn file_input_card(
             ui.set_min_height(min_h);
 
             if let Some(ref info) = file {
-                // Truncate long filenames to fit the card
                 let max_name_chars = ((max_w - 50.0) / 7.0).max(8.0) as usize;
                 let display_name = if info.name.chars().count() > max_name_chars {
                     let truncated: String = info.name.chars().take(max_name_chars - 2).collect();
@@ -122,7 +216,6 @@ pub fn file_input_card(
                             }
                         });
                     });
-                    // Remove button on the right
                     if ui
                         .small_button("✕")
                         .on_hover_text(t!(lang, RemoveFile))
@@ -139,13 +232,12 @@ pub fn file_input_card(
             }
         });
 
-    // Handle remove
     if remove_clicked {
         *file = None;
-        return;
+        return None;
     }
 
-    // Make the whole card area clickable for browse
+    // Click-to-browse: spawn async dialog
     let card_rect = resp.response.rect;
     let click_resp = ui.interact(
         card_rect,
@@ -158,17 +250,19 @@ pub fn file_input_card(
     }
 
     if click_resp.clicked() && !has_file {
-        let mut dialog = rfd::FileDialog::new();
-        for (name, exts) in filters {
-            dialog = dialog.add_filter(*name, exts);
-        }
-        if let Some(path) = dialog.pick_file() {
-            *file = FileInfo::from_path(path);
-        }
+        let owned_filters: Vec<(String, Vec<String>)> = filters
+            .iter()
+            .map(|(n, exts)| (n.to_string(), exts.iter().map(|e| e.to_string()).collect()))
+            .collect();
+        return Some(spawn_file_dialog(
+            DialogTarget::File(dialog_id),
+            owned_filters,
+        ));
     }
+    None
 }
 
-/// Directory input card.
+/// Directory input card with async browse. Returns Some(PendingDialog) if spawned.
 pub fn dir_path_card(
     ui: &mut egui::Ui,
     path: &mut String,
@@ -176,9 +270,11 @@ pub fn dir_path_card(
     label: &str,
     placeholder: &str,
     lang: Lang,
-) {
+    dialog_id: egui::Id,
+) -> Option<PendingDialog> {
     let has = !path.is_empty();
     let border = if has { ACCENT } else { CARD_BORDER };
+    let mut spawned = false;
 
     egui::Frame::new()
         .fill(CARD_BG)
@@ -195,12 +291,16 @@ pub fn dir_path_card(
                         .hint_text(placeholder),
                 );
                 if ui.button("📂").on_hover_text(t!(lang, BrowseDir)).clicked() {
-                    if let Some(p) = rfd::FileDialog::new().pick_folder() {
-                        *path = p.display().to_string();
-                    }
+                    spawned = true;
                 }
             });
         });
+
+    if spawned {
+        Some(spawn_dir_dialog(DialogTarget::Dir(dialog_id)))
+    } else {
+        None
+    }
 }
 
 /// Delimiter combo box.
@@ -273,7 +373,7 @@ pub fn job_status(ui: &mut egui::Ui, state: &crate::state::JobState, lang: Lang)
     }
 }
 
-/// Compact stat badge: icon + label + value in a rounded pill.
+/// Compact stat badge.
 pub fn stat_badge(ui: &mut egui::Ui, icon: &str, label: &str, value: &str) {
     egui::Frame::new()
         .fill(egui::Color32::from_rgb(60, 66, 84))
@@ -294,7 +394,7 @@ pub fn stat_badge(ui: &mut egui::Ui, icon: &str, label: &str, value: &str) {
         });
 }
 
-/// Titled section frame — groups content with a header label.
+/// Titled section frame.
 pub fn section_frame(ui: &mut egui::Ui, title: &str, add_contents: impl FnOnce(&mut egui::Ui)) {
     egui::Frame::new()
         .fill(CARD_BG)
@@ -335,6 +435,11 @@ pub fn draw_arrow(ui: &mut egui::Ui, color: egui::Color32, w: f32, h: f32) {
         [egui::pos2(tip.x - 6.0, mid_y + 4.0), tip],
         egui::Stroke::new(2.0, color),
     );
+}
+
+/// Spawn a save-file dialog (async, for saving results). Returns PendingDialog.
+pub fn spawn_save_file_dialog(name: String, src: PathBuf) -> PendingDialog {
+    spawn_save_dialog(name, src)
 }
 
 /// Get delimiter from index + custom string.

@@ -3,7 +3,12 @@ use crate::state::PreviewState;
 use crate::widgets::*;
 use csv_splitter_core::preview::load_preview;
 
-pub fn ui_preview(ui: &mut egui::Ui, s: &mut PreviewState, lang: Lang) {
+pub fn ui_preview(
+    ui: &mut egui::Ui,
+    s: &mut PreviewState,
+    lang: Lang,
+    dialogs: &mut Vec<PendingDialog>,
+) {
     ui.heading(t!(lang, PreviewTitle));
     ui.label(
         egui::RichText::new(t!(lang, PreviewDesc))
@@ -17,7 +22,7 @@ pub fn ui_preview(ui: &mut egui::Ui, s: &mut PreviewState, lang: Lang) {
 
     // Input section
     section_frame(ui, t!(lang, SectionInput), |ui| {
-        file_input_card(
+        if let Some(d) = file_input_card(
             ui,
             &mut s.input_file,
             t!(lang, DropFileHere),
@@ -26,7 +31,10 @@ pub fn ui_preview(ui: &mut egui::Ui, s: &mut PreviewState, lang: Lang) {
             70.0,
             lang,
             &[(t!(lang, FilterCsv), &["csv", "tsv", "txt"])],
-        );
+            egui::Id::new("preview_input"),
+        ) {
+            dialogs.push(d);
+        }
         ui.add_space(4.0);
         delimiter_combo(ui, &mut s.delim_idx, &mut s.custom_delim, lang);
     });

@@ -5,7 +5,12 @@ use csv_splitter_core::preview::compute_column_stats;
 use csv_splitter_core::ProgressEvent;
 use std::sync::mpsc;
 
-pub fn ui_stats(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
+pub fn ui_stats(
+    ui: &mut egui::Ui,
+    s: &mut StatsState,
+    lang: Lang,
+    dialogs: &mut Vec<PendingDialog>,
+) {
     poll_stats(s, lang);
 
     ui.heading(t!(lang, StatsTitle));
@@ -21,7 +26,7 @@ pub fn ui_stats(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
 
     // Input section
     section_frame(ui, t!(lang, SectionInput), |ui| {
-        file_input_card(
+        if let Some(d) = file_input_card(
             ui,
             &mut s.input_file,
             t!(lang, DropFileHere),
@@ -30,7 +35,10 @@ pub fn ui_stats(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
             70.0,
             lang,
             &[(t!(lang, FilterCsv), &["csv", "tsv", "txt"])],
-        );
+            egui::Id::new("stats_input"),
+        ) {
+            dialogs.push(d);
+        }
     });
 
     // Params section
@@ -62,6 +70,9 @@ pub fn ui_stats(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
 
     show_results(ui, s, lang);
     log_panel(ui, &s.logs, lang);
+
+    // suppress unused warning
+    let _ = dialogs;
 }
 
 fn show_results(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {

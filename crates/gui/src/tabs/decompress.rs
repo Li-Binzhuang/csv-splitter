@@ -5,7 +5,12 @@ use csv_splitter_core::ProgressEvent;
 use std::path::PathBuf;
 use std::sync::mpsc;
 
-pub fn ui_decompress(ui: &mut egui::Ui, s: &mut DecompState, lang: Lang) {
+pub fn ui_decompress(
+    ui: &mut egui::Ui,
+    s: &mut DecompState,
+    lang: Lang,
+    dialogs: &mut Vec<PendingDialog>,
+) {
     poll_decomp(s, lang);
 
     ui.heading(t!(lang, DecompTitle));
@@ -28,8 +33,13 @@ pub fn ui_decompress(ui: &mut egui::Ui, s: &mut DecompState, lang: Lang) {
 
     // Input + Flow section
     section_frame(ui, t!(lang, SectionFlow), |ui| {
+        let decomp_input_id = egui::Id::new("decomp_input");
+        let archive_filters: &[(&str, &[&str])] = &[(
+            t!(lang, FilterArchive),
+            &["zst", "gz", "bz2", "xz", "zip", "7z", "tar", "tgz", "csv"],
+        )];
         if compact {
-            file_input_card(
+            if let Some(d) = file_input_card(
                 ui,
                 &mut s.input_file,
                 t!(lang, DropFileHere),
@@ -37,16 +47,16 @@ pub fn ui_decompress(ui: &mut egui::Ui, s: &mut DecompState, lang: Lang) {
                 card_w,
                 card_h,
                 lang,
-                &[(
-                    t!(lang, FilterArchive),
-                    &["zst", "gz", "bz2", "xz", "zip", "7z", "tar", "tgz", "csv"],
-                )],
-            );
+                archive_filters,
+                decomp_input_id,
+            ) {
+                dialogs.push(d);
+            }
             ui.add_space(4.0);
             draw_decomp_result_card(ui, s, lang, card_w, card_h);
         } else {
             ui.horizontal(|ui| {
-                file_input_card(
+                if let Some(d) = file_input_card(
                     ui,
                     &mut s.input_file,
                     t!(lang, DropFileHere),
@@ -54,25 +64,28 @@ pub fn ui_decompress(ui: &mut egui::Ui, s: &mut DecompState, lang: Lang) {
                     card_w,
                     card_h,
                     lang,
-                    &[(
-                        t!(lang, FilterArchive),
-                        &["zst", "gz", "bz2", "xz", "zip", "7z", "tar", "tgz", "csv"],
-                    )],
-                );
+                    archive_filters,
+                    decomp_input_id,
+                ) {
+                    dialogs.push(d);
+                }
                 draw_arrow(ui, ACCENT, arrow_w, card_h);
                 draw_decomp_result_card(ui, s, lang, card_w, card_h);
             });
         }
 
         ui.add_space(6.0);
-        dir_path_card(
+        if let Some(d) = dir_path_card(
             ui,
             &mut s.output_dir,
             "📁",
             t!(lang, OutputDir),
             t!(lang, DirHint),
             lang,
-        );
+            egui::Id::new("decomp_output_dir"),
+        ) {
+            dialogs.push(d);
+        }
     });
 
     // Action section

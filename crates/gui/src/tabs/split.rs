@@ -4,7 +4,12 @@ use crate::state::{JobState, SplitState};
 use crate::widgets::*;
 use csv_splitter_core::*;
 
-pub fn ui_split(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang) {
+pub fn ui_split(
+    ui: &mut egui::Ui,
+    s: &mut SplitState,
+    lang: Lang,
+    dialogs: &mut Vec<PendingDialog>,
+) {
     super::split_job::poll_split(s, lang);
 
     ui.heading(t!(lang, SplitTitle));
@@ -19,7 +24,7 @@ pub fn ui_split(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang) {
 
     // ===== FLOW VISUALIZATION =====
     section_frame(ui, t!(lang, SectionFlow), |ui| {
-        flow::draw_flow(ui, s, lang, avail_w);
+        flow::draw_flow(ui, s, lang, avail_w, dialogs);
     });
 
     // ===== PARAMETERS =====
@@ -58,11 +63,7 @@ pub fn ui_split(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang) {
                         .button(egui::RichText::new(t!(lang, SaveResult)).size(14.0))
                         .clicked()
                     {
-                        if let Some(dest) =
-                            rfd::FileDialog::new().set_file_name(&out.name).save_file()
-                        {
-                            std::fs::copy(&out.path, &dest).ok();
-                        }
+                        dialogs.push(spawn_save_file_dialog(out.name.clone(), out.path.clone()));
                     }
                 }
             }

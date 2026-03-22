@@ -1,14 +1,16 @@
 use crate::i18n::Lang;
 use crate::state::*;
 use crate::tabs;
+use crate::widgets::{self, PendingDialog};
 
 pub struct App {
     pub lang: Lang,
-    tab: Tab,
+    pub tab: Tab,
     pub split: SplitState,
-    preview: PreviewState,
-    stats: StatsState,
-    decomp: DecompState,
+    pub preview: PreviewState,
+    pub stats: StatsState,
+    pub decomp: DecompState,
+    pub pending_dialogs: Vec<PendingDialog>,
 }
 
 impl App {
@@ -20,12 +22,44 @@ impl App {
             preview: PreviewState::default(),
             stats: StatsState::default(),
             decomp: DecompState::default(),
+            pending_dialogs: Vec::new(),
         }
     }
 }
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Poll async file dialogs
+        for result in widgets::poll_dialogs(&mut self.pending_dialogs) {
+            match result {
+                widgets::DialogResult::File(id, info) => {
+                    if id == egui::Id::new("split_input") {
+                        self.split.input_file = info;
+                    } else if id == egui::Id::new("split_columns") {
+                        self.split.columns_file = info;
+                    } else if id == egui::Id::new("preview_input") {
+                        self.preview.input_file = info;
+                    } else if id == egui::Id::new("stats_input") {
+                        self.stats.input_file = info;
+                    } else if id == egui::Id::new("decomp_input") {
+                        self.decomp.input_file = info;
+                    }
+                }
+                widgets::DialogResult::Dir(id, path) => {
+                    if id == egui::Id::new("decomp_output_dir") {
+                        self.decomp.output_dir = path.display().to_string();
+                    }
+                }
+                widgets::DialogResult::SaveCopy { src, dest } => {
+                    std::fs::copy(&src, &dest).ok();
+                }
+            }
+        }
+
+        if !self.pending_dialogs.is_empty() {
+            ctx.request_repaint();
+        }
+
         if self.split.state == JobState::Running
             || self.stats.state == JobState::Running
             || self.decomp.state == JobState::Running
@@ -35,7 +69,6 @@ impl eframe::App for App {
         }
         self.split.anim_time = ctx.input(|i| i.time);
 
-        // Handle file drops globally for non-split tabs
         self.handle_drops(ctx);
 
         let lang = self.lang;
@@ -58,14 +91,13 @@ impl eframe::App for App {
                         let text = if selected {
                             text.strong().color(egui::Color32::from_rgb(88, 166, 255))
                         } else {
-                            text.color(egui::Color32::from_rgb(180, 185, 195))
+                            text.color(egui::Color32::from_rgb(190, 198, 215))
                         };
                         if ui.selectable_label(selected, text).clicked() {
                             self.tab = t;
                         }
                     }
 
-                    // Spacer to push lang button right
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         let btn_text = match self.lang {
                             Lang::Zh => "🌐 EN",
@@ -83,6 +115,7 @@ impl eframe::App for App {
             });
 
         // --- Content ---
+        let mut new_dialogs: Vec<PendingDialog> = Vec::new();
         egui::CentralPanel::default().show(ctx, |ui| {
             let avail = ui.available_size();
             ui.set_min_size(avail);
@@ -92,13 +125,18 @@ impl eframe::App for App {
                     ui.set_min_width(avail.x - 16.0);
                     ui.add_space(8.0);
                     match self.tab {
-                        Tab::Split => tabs::ui_split(ui, &mut self.split, lang),
-                        Tab::Preview => tabs::ui_preview(ui, &mut self.preview, lang),
-                        Tab::Stats => tabs::ui_stats(ui, &mut self.stats, lang),
-                        Tab::Decompress => tabs::ui_decompress(ui, &mut self.decomp, lang),
+                        Tab::Split => tabs::ui_split(ui, &mut self.split, lang, &mut new_dialogs),
+                        Tab::Preview => {
+                            tabs::ui_preview(ui, &mut self.preview, lang, &mut new_dialogs)
+                        }
+                        Tab::Stats => tabs::ui_stats(ui, &mut self.stats, lang, &mut new_dialogs),
+                        Tab::Decompress => {
+                            tabs::ui_decompress(ui, &mut self.decomp, lang, &mut new_dialogs)
+                        }
                     }
                 });
         });
+        self.pending_dialogs.extend(new_dialogs);
     }
 }
 
@@ -110,8 +148,6 @@ impl App {
                 if let Some(info) = FileInfo::from_path(path) {
                     match self.tab {
                         Tab::Split => {
-                            // Always replace input file on drop;
-                            // use the column filter card explicitly for column files
                             self.split.input_file = Some(info);
                         }
                         Tab::Preview => {

@@ -6,8 +6,14 @@ use crate::state::SplitState;
 use crate::widgets::*;
 use csv_splitter_core::CompressFormat;
 
-/// Draw the full flow: Source → Split → Compress → Result + column filter below.
-pub fn draw_flow(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, avail_w: f32) {
+/// Draw the full flow: Source -> Split -> Compress -> Result + column filter below.
+pub fn draw_flow(
+    ui: &mut egui::Ui,
+    s: &mut SplitState,
+    lang: Lang,
+    avail_w: f32,
+    dialogs: &mut Vec<PendingDialog>,
+) {
     let n_splits = if s.no_split { 1 } else { s.splits.clamp(1, 6) };
     let has_compress = s.compress_idx < CompressFormat::all().len() - 1;
 
@@ -26,12 +32,14 @@ pub fn draw_flow(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, avail_w: f32
         ],
     )];
 
-    // Auto-read headers when input file changes
     check_and_read_headers(s);
+
+    let input_id = egui::Id::new("split_input");
+    let col_id = egui::Id::new("split_columns");
 
     if compact {
         ui.horizontal(|ui| {
-            file_input_card(
+            if let Some(d) = file_input_card(
                 ui,
                 &mut s.input_file,
                 t!(lang, DropFileHere),
@@ -40,7 +48,10 @@ pub fn draw_flow(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, avail_w: f32
                 card_h,
                 lang,
                 csv_filters,
-            );
+                input_id,
+            ) {
+                dialogs.push(d);
+            }
             draw_arrow(ui, ACCENT, arrow_w, card_h);
             draw_split_card(ui, s, lang, card_w, card_h, n_splits);
         });
@@ -52,7 +63,7 @@ pub fn draw_flow(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, avail_w: f32
         });
     } else {
         ui.horizontal(|ui| {
-            file_input_card(
+            if let Some(d) = file_input_card(
                 ui,
                 &mut s.input_file,
                 t!(lang, DropFileHere),
@@ -61,7 +72,10 @@ pub fn draw_flow(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, avail_w: f32
                 card_h,
                 lang,
                 csv_filters,
-            );
+                input_id,
+            ) {
+                dialogs.push(d);
+            }
             draw_arrow(ui, ACCENT, arrow_w, card_h);
             draw_split_card(ui, s, lang, card_w, card_h, n_splits);
             draw_arrow(
@@ -76,9 +90,8 @@ pub fn draw_flow(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, avail_w: f32
         });
     }
 
-    // Column filter section
     ui.add_space(6.0);
-    file_input_card(
+    if let Some(d) = file_input_card(
         ui,
         &mut s.columns_file,
         t!(lang, DropColFileHere),
@@ -87,16 +100,17 @@ pub fn draw_flow(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, avail_w: f32
         46.0,
         lang,
         &[("CSV/TXT", &["csv", "txt"])],
-    );
+        col_id,
+    ) {
+        dialogs.push(d);
+    }
 
-    // Column selector from headers
     if !s.available_headers.is_empty() {
         ui.add_space(4.0);
         draw_column_selector(ui, s, lang, card_w);
     }
 }
 
-/// Check if input file changed and read headers if needed.
 fn check_and_read_headers(s: &mut SplitState) {
     let current_path = s.input_file.as_ref().map(|f| f.path.clone());
     let headers_match = match (&current_path, s.available_headers.is_empty()) {
@@ -126,13 +140,12 @@ fn check_and_read_headers(s: &mut SplitState) {
     }
 }
 
-/// Draw the searchable multi-select column selector.
 fn draw_column_selector(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, w: f32) {
     egui::Frame::new()
         .fill(CARD_BG)
         .stroke(egui::Stroke::new(1.0, PURPLE.linear_multiply(0.5)))
         .corner_radius(egui::CornerRadius::same(12))
-        .inner_margin(8.0)
+        .inner_margin(10.0)
         .show(ui, |ui| {
             ui.set_width(w.min(ui.available_width()));
 
