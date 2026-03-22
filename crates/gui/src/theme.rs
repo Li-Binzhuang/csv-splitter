@@ -67,10 +67,10 @@ fn setup_visuals(ctx: &egui::Context) {
     *visuals = Visuals::dark();
 
     // ── Palette: warm slate-blue, NOT black ──
-    let panel_bg = Color32::from_rgb(40, 44, 58); // main background
-    let window_bg = Color32::from_rgb(44, 48, 62);
-    let extreme_bg = Color32::from_rgb(36, 40, 52); // log area, text inputs
-    let faint_bg = Color32::from_rgb(50, 55, 70);
+    let panel_bg = Color32::from_rgb(44, 48, 64); // main background
+    let window_bg = Color32::from_rgb(48, 52, 68);
+    let extreme_bg = Color32::from_rgb(38, 42, 56); // log area, text inputs
+    let faint_bg = Color32::from_rgb(52, 57, 74);
     let widget_bg = Color32::from_rgb(58, 64, 82); // buttons, combos
     let border = Color32::from_rgb(72, 80, 100);
     let accent = Color32::from_rgb(88, 166, 255);

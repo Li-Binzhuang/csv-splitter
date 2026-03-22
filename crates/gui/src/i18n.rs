@@ -120,6 +120,7 @@ pub enum Key {
     SectionAction,
     SectionResult,
     SortNone,
+    ReSelect,
 }
 
 pub fn text(lang: Lang, key: Key) -> &'static str {
@@ -315,5 +316,7 @@ pub fn text(lang: Lang, key: Key) -> &'static str {
         (Lang::En, Key::SectionResult) => "📊 Result",
         (Lang::Zh, Key::SortNone) => "(不排序)",
         (Lang::En, Key::SortNone) => "(No sort)",
+        (Lang::Zh, Key::ReSelect) => "重新选择",
+        (Lang::En, Key::ReSelect) => "Re-select",
     }
 }

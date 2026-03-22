@@ -51,7 +51,14 @@ impl eframe::App for App {
                     }
                 }
                 widgets::DialogResult::SaveCopy { src, dest } => {
-                    std::fs::copy(&src, &dest).ok();
+                    // Copy via temp file to avoid 0KB when src == dest
+                    if src == dest {
+                        continue; // same file, nothing to do
+                    }
+                    let tmp = dest.with_extension("tmp_save");
+                    if std::fs::copy(&src, &tmp).is_ok() {
+                        std::fs::rename(&tmp, &dest).ok();
+                    }
                 }
             }
         }
@@ -116,26 +123,38 @@ impl eframe::App for App {
 
         // --- Content ---
         let mut new_dialogs: Vec<PendingDialog> = Vec::new();
-        egui::CentralPanel::default().show(ctx, |ui| {
-            let avail = ui.available_size();
-            ui.set_min_size(avail);
-            egui::ScrollArea::vertical()
-                .auto_shrink([false, false])
-                .show(ui, |ui| {
-                    ui.set_min_width(avail.x - 16.0);
-                    ui.add_space(8.0);
-                    match self.tab {
-                        Tab::Split => tabs::ui_split(ui, &mut self.split, lang, &mut new_dialogs),
-                        Tab::Preview => {
-                            tabs::ui_preview(ui, &mut self.preview, lang, &mut new_dialogs)
+        egui::CentralPanel::default()
+            .frame(
+                egui::Frame::new()
+                    .fill(egui::Color32::from_rgb(44, 48, 64))
+                    .inner_margin(egui::Margin::symmetric(12, 8)),
+            )
+            .show(ctx, |ui| {
+                let avail = ui.available_size();
+                ui.set_min_size(avail);
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
+                        // Constrain content width to prevent infinite stretching
+                        let content_w = avail.x.min(960.0);
+                        ui.set_max_width(content_w);
+                        ui.add_space(8.0);
+                        match self.tab {
+                            Tab::Split => {
+                                tabs::ui_split(ui, &mut self.split, lang, &mut new_dialogs)
+                            }
+                            Tab::Preview => {
+                                tabs::ui_preview(ui, &mut self.preview, lang, &mut new_dialogs)
+                            }
+                            Tab::Stats => {
+                                tabs::ui_stats(ui, &mut self.stats, lang, &mut new_dialogs)
+                            }
+                            Tab::Decompress => {
+                                tabs::ui_decompress(ui, &mut self.decomp, lang, &mut new_dialogs)
+                            }
                         }
-                        Tab::Stats => tabs::ui_stats(ui, &mut self.stats, lang, &mut new_dialogs),
-                        Tab::Decompress => {
-                            tabs::ui_decompress(ui, &mut self.decomp, lang, &mut new_dialogs)
-                        }
-                    }
-                });
-        });
+                    });
+            });
         self.pending_dialogs.extend(new_dialogs);
     }
 }

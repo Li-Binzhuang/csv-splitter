@@ -1,4 +1,5 @@
 //! Flow visualization and column selection for the split tab.
+//! V-shaped adaptive layout: Source → Split on top, Compress → Result on bottom.
 
 use super::flow_cards::{draw_compress_card, draw_result_card, draw_split_card};
 use crate::i18n::{t, Lang};
@@ -6,7 +7,7 @@ use crate::state::SplitState;
 use crate::widgets::*;
 use csv_splitter_core::CompressFormat;
 
-/// Draw the full flow: Source -> Split -> Compress -> Result + column filter below.
+/// Draw the V-shaped flow + column filter below.
 pub fn draw_flow(
     ui: &mut egui::Ui,
     s: &mut SplitState,
@@ -17,14 +18,11 @@ pub fn draw_flow(
     let n_splits = if s.no_split { 1 } else { s.splits.clamp(1, 6) };
     let has_compress = s.compress_idx < CompressFormat::all().len() - 1;
 
-    let compact = avail_w < 700.0;
-    let card_w = if compact {
-        ((avail_w - 40.0) / 2.0).clamp(100.0, 180.0)
-    } else {
-        ((avail_w - 100.0) / 4.0).clamp(120.0, 180.0)
-    };
-    let card_h = if compact { 66.0 } else { 82.0 };
-    let arrow_w = if compact { 12.0 } else { 18.0 };
+    // Adaptive card sizing: 2 cards + 1 arrow per row
+    let card_w = ((avail_w - 50.0) / 2.0).clamp(120.0, 220.0);
+    let card_h = 78.0_f32;
+    let arrow_w = 20.0_f32;
+
     let csv_filters: &[(&str, &[&str])] = &[(
         "CSV",
         &[
@@ -37,58 +35,34 @@ pub fn draw_flow(
     let input_id = egui::Id::new("split_input");
     let col_id = egui::Id::new("split_columns");
 
-    if compact {
-        ui.horizontal(|ui| {
-            if let Some(d) = file_input_card(
-                ui,
-                &mut s.input_file,
-                t!(lang, DropFileHere),
-                ACCENT,
-                card_w,
-                card_h,
-                lang,
-                csv_filters,
-                input_id,
-            ) {
-                dialogs.push(d);
-            }
-            draw_arrow(ui, ACCENT, arrow_w, card_h);
-            draw_split_card(ui, s, lang, card_w, card_h, n_splits);
-        });
-        ui.add_space(4.0);
-        ui.horizontal(|ui| {
-            draw_compress_card(ui, s, lang, card_w, card_h, has_compress);
-            draw_arrow(ui, SUCCESS, arrow_w, card_h);
-            draw_result_card(ui, s, lang, card_w, card_h);
-        });
-    } else {
-        ui.horizontal(|ui| {
-            if let Some(d) = file_input_card(
-                ui,
-                &mut s.input_file,
-                t!(lang, DropFileHere),
-                ACCENT,
-                card_w,
-                card_h,
-                lang,
-                csv_filters,
-                input_id,
-            ) {
-                dialogs.push(d);
-            }
-            draw_arrow(ui, ACCENT, arrow_w, card_h);
-            draw_split_card(ui, s, lang, card_w, card_h, n_splits);
-            draw_arrow(
-                ui,
-                if has_compress { WARN } else { ACCENT },
-                arrow_w,
-                card_h,
-            );
-            draw_compress_card(ui, s, lang, card_w, card_h, has_compress);
-            draw_arrow(ui, SUCCESS, arrow_w, card_h);
-            draw_result_card(ui, s, lang, card_w, card_h);
-        });
-    }
+    // Row 1: Source → Split
+    ui.horizontal(|ui| {
+        if let Some(d) = file_input_card(
+            ui,
+            &mut s.input_file,
+            t!(lang, DropFileHere),
+            ACCENT,
+            card_w,
+            card_h,
+            lang,
+            csv_filters,
+            input_id,
+        ) {
+            dialogs.push(d);
+        }
+        draw_arrow(ui, ACCENT, arrow_w, card_h);
+        draw_split_card(ui, s, lang, card_w, card_h, n_splits);
+    });
+
+    // Down arrow (centered)
+    draw_down_arrow(ui, if has_compress { WARN } else { ACCENT }, avail_w);
+
+    // Row 2: Compress → Result
+    ui.horizontal(|ui| {
+        draw_compress_card(ui, s, lang, card_w, card_h, has_compress);
+        draw_arrow(ui, SUCCESS, arrow_w, card_h);
+        draw_result_card(ui, s, lang, card_w, card_h);
+    });
 
     ui.add_space(6.0);
     if let Some(d) = file_input_card(
@@ -109,6 +83,30 @@ pub fn draw_flow(
         ui.add_space(4.0);
         draw_column_selector(ui, s, lang, card_w);
     }
+}
+
+/// Draw a vertical down-arrow, centered in the available width.
+fn draw_down_arrow(ui: &mut egui::Ui, color: egui::Color32, avail_w: f32) {
+    let h = 20.0;
+    let (rect, _) = ui.allocate_exact_size(egui::vec2(avail_w, h), egui::Sense::hover());
+    let mid_x = rect.center().x;
+    let p = ui.painter();
+    p.line_segment(
+        [
+            egui::pos2(mid_x, rect.top() + 2.0),
+            egui::pos2(mid_x, rect.bottom() - 6.0),
+        ],
+        egui::Stroke::new(2.0, color),
+    );
+    let tip = egui::pos2(mid_x, rect.bottom() - 2.0);
+    p.line_segment(
+        [egui::pos2(mid_x - 4.0, tip.y - 6.0), tip],
+        egui::Stroke::new(2.0, color),
+    );
+    p.line_segment(
+        [egui::pos2(mid_x + 4.0, tip.y - 6.0), tip],
+        egui::Stroke::new(2.0, color),
+    );
 }
 
 fn check_and_read_headers(s: &mut SplitState) {
