@@ -189,7 +189,10 @@ fn draw_column_selector(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, w: f3
                             continue;
                         }
                         if let Some(sel) = s.selected_columns.get_mut(i) {
-                            ui.checkbox(sel, egui::RichText::new(header).size(11.0));
+                            ui.checkbox(
+                                sel,
+                                egui::RichText::new(header).size(11.0).color(TEXT_BRIGHT),
+                            );
                         }
                     }
                 });
