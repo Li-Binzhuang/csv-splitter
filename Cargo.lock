@@ -884,7 +884,7 @@ dependencies = [
 
 [[package]]
 name = "csv-splitter-core"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "bzip2",
  "flate2",
@@ -899,7 +899,7 @@ dependencies = [
 
 [[package]]
 name = "csv-splitter-gui"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "csv-splitter-core",
  "eframe",

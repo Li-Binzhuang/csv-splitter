@@ -48,8 +48,8 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ matrix.target }}-cargo-
+          key: ${{ matrix.target }}-release-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ matrix.target }}-release-
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
