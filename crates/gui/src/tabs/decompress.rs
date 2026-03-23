@@ -23,9 +23,11 @@ pub fn ui_decompress(
     });
     ui.add_space(8.0);
 
-    // ── Two-column: Input (left) | Result + Action (right) ──
     let (col_w, left_rect, right_rect) = two_col_rects(ui, 8.0);
+    let inner_w = col_w - 30.0;
+    let total_w = col_w * 2.0 + 8.0;
 
+    // Draw left (input) first
     let left_h = {
         let mut col = ui.new_child(
             egui::UiBuilder::new()
@@ -42,7 +44,7 @@ pub fn ui_decompress(
             .inner_margin(14.0)
             .outer_margin(egui::Margin::symmetric(0, 4))
             .show(&mut col, |ui| {
-                ui.set_max_width(col_w - 30.0);
+                ui.set_min_width(inner_w);
                 ui.label(
                     egui::RichText::new(t!(lang, SectionInput))
                         .size(13.0)
@@ -61,7 +63,10 @@ pub fn ui_decompress(
                     lang,
                     &[(
                         t!(lang, FilterArchive),
-                        &["zst", "gz", "bz2", "xz", "zip", "7z", "tar", "tgz", "csv"],
+                        &[
+                            "zst", "gz", "bz2", "xz", "zip", "7z", "tar", "tgz", "jar", "war",
+                            "apk", "csv", "tsv", "txt",
+                        ],
                     )],
                     egui::Id::new("decomp_input"),
                 ) {
@@ -71,7 +76,7 @@ pub fn ui_decompress(
                 if let Some(d) = dir_path_card(
                     ui,
                     &mut s.output_dir,
-                    "📁",
+                    "\u{1F4C1}",
                     t!(lang, OutputDir),
                     t!(lang, DirHint),
                     lang,
@@ -83,6 +88,7 @@ pub fn ui_decompress(
         col.min_rect().height()
     };
 
+    // Draw right (result + action), matching left height
     let right_h = {
         let mut col = ui.new_child(
             egui::UiBuilder::new()
@@ -99,7 +105,8 @@ pub fn ui_decompress(
             .inner_margin(14.0)
             .outer_margin(egui::Margin::symmetric(0, 4))
             .show(&mut col, |ui| {
-                ui.set_max_width(col_w - 30.0);
+                ui.set_min_width(inner_w);
+                ui.set_min_height((left_h - 40.0).max(60.0));
                 ui.label(
                     egui::RichText::new(t!(lang, SectionResult))
                         .size(13.0)
@@ -107,8 +114,7 @@ pub fn ui_decompress(
                         .color(TEXT_BRIGHT),
                 );
                 ui.add_space(6.0);
-                let rw = ui.available_width() - 4.0;
-                draw_decomp_result(ui, s, lang, rw);
+                draw_decomp_result(ui, s, lang);
                 ui.add_space(8.0);
                 ui.separator();
                 ui.add_space(4.0);
@@ -141,58 +147,110 @@ pub fn ui_decompress(
 
     ui.allocate_space(egui::vec2(ui.available_width(), left_h.max(right_h)));
 
-    log_panel(ui, &s.logs, lang);
-}
-fn draw_decomp_result(ui: &mut egui::Ui, s: &DecompState, lang: Lang, w: f32) {
-    ui.vertical_centered(|ui| {
-        ui.set_max_width(w);
-        match s.state {
-            JobState::Done => {
-                ui.label(egui::RichText::new("✅").size(28.0));
-                if let Some(ref out) = s.output_file {
-                    let max_c = ((w - 20.0) / 7.0).max(6.0) as usize;
-                    let name = if out.name.chars().count() > max_c {
-                        let t: String = out.name.chars().take(max_c - 1).collect();
-                        format!("{}…", t)
+    // Log section: width = both columns, min height like stats result (~250)
+    let log_h = ui.available_height().max(250.0);
+    let log_inner_w = total_w - 30.0;
+    egui::Frame::new()
+        .fill(CARD_BG)
+        .stroke(egui::Stroke::new(1.0, CARD_BORDER))
+        .corner_radius(egui::CornerRadius::same(14))
+        .inner_margin(14.0)
+        .outer_margin(egui::Margin::symmetric(0, 4))
+        .show(ui, |ui| {
+            ui.set_min_width(log_inner_w);
+            ui.set_min_height((log_h - 60.0).max(180.0));
+            ui.label(
+                egui::RichText::new(t!(lang, LogTitle))
+                    .size(13.0)
+                    .strong()
+                    .color(TEXT_BRIGHT),
+            );
+            ui.add_space(6.0);
+            egui::ScrollArea::vertical()
+                .max_height((log_h - 80.0).max(160.0))
+                .stick_to_bottom(true)
+                .id_salt("decomp_log")
+                .show(ui, |ui| {
+                    if s.logs.is_empty() {
+                        ui.label(egui::RichText::new("\u{2014}").size(12.0).color(TEXT_DIM));
                     } else {
-                        out.name.clone()
-                    };
-                    ui.label(egui::RichText::new(&name).size(11.0).color(TEXT_BRIGHT));
-                    ui.label(
-                        egui::RichText::new(format_bytes(out.size))
-                            .size(10.0)
-                            .color(TEXT_DIM),
-                    );
-                }
-            }
-            JobState::Running => {
+                        for line in &s.logs {
+                            ui.label(
+                                egui::RichText::new(line)
+                                    .size(12.0)
+                                    .color(TEXT_BRIGHT)
+                                    .family(egui::FontFamily::Monospace),
+                            );
+                        }
+                    }
+                });
+        });
+}
+
+fn draw_decomp_result(ui: &mut egui::Ui, s: &DecompState, lang: Lang) {
+    match s.state {
+        JobState::Done if !s.output_files.is_empty() => {
+            ui.horizontal_wrapped(|ui| {
+                stat_badge(
+                    ui,
+                    "\u{2705}",
+                    t!(lang, Finished),
+                    &format!("{}", s.output_files.len()),
+                );
+            });
+            ui.add_space(4.0);
+            let list_h = (s.output_files.len() as f32 * 20.0).clamp(40.0, 120.0);
+            egui::ScrollArea::vertical()
+                .max_height(list_h)
+                .id_salt("decomp_file_list")
+                .show(ui, |ui| {
+                    for f in &s.output_files {
+                        ui.horizontal(|ui| {
+                            ui.spacing_mut().item_spacing.x = 4.0;
+                            ui.label(egui::RichText::new("\u{1F4C4}").size(11.0));
+                            ui.label(egui::RichText::new(&f.name).size(11.0).color(TEXT_BRIGHT));
+                            ui.label(
+                                egui::RichText::new(format_bytes(f.size))
+                                    .size(10.0)
+                                    .color(TEXT_DIM),
+                            );
+                        });
+                    }
+                });
+        }
+        JobState::Running => {
+            ui.vertical_centered(|ui| {
                 ui.spinner();
                 ui.label(
                     egui::RichText::new(t!(lang, Processing))
                         .size(11.0)
                         .color(TEXT_DIM),
                 );
-            }
-            JobState::Error => {
-                ui.label(egui::RichText::new("❌").size(28.0));
-            }
-            JobState::Idle => {
-                ui.label(egui::RichText::new("📦").size(28.0).color(TEXT_DIM));
+            });
+        }
+        JobState::Error => {
+            ui.vertical_centered(|ui| {
+                ui.label(egui::RichText::new("\u{274C}").size(28.0));
+            });
+        }
+        _ => {
+            ui.vertical_centered(|ui| {
+                ui.label(egui::RichText::new("\u{1F4E6}").size(28.0).color(TEXT_DIM));
                 ui.label(
                     egui::RichText::new(t!(lang, FlowResult))
                         .size(11.0)
                         .color(TEXT_DIM),
                 );
-            }
+            });
         }
-    });
+    }
 }
 
 fn start_decomp(s: &mut DecompState) {
     let Some(ref info) = s.input_file else { return };
     s.logs.clear();
     s.state = JobState::Running;
-    s.output_file = None;
+    s.output_files.clear();
     let input = info.path.clone();
     let out_dir = if s.output_dir.is_empty() {
         input
@@ -206,9 +264,9 @@ fn start_decomp(s: &mut DecompState) {
     s.rx = Some(rx);
     std::thread::spawn(move || {
         std::fs::create_dir_all(&out_dir).ok();
-        match csv_splitter_core::decompress::decompress_to_csv(&input, &out_dir, &tx) {
-            Ok(p) => {
-                tx.send(ProgressEvent::Finished { output: p }).ok();
+        match csv_splitter_core::decompress::decompress_file(&input, &out_dir, &tx) {
+            Ok(paths) => {
+                tx.send(ProgressEvent::DecompressFiles { paths }).ok();
             }
             Err(e) => {
                 tx.send(ProgressEvent::Error(e.to_string())).ok();
@@ -221,17 +279,35 @@ fn poll_decomp(s: &mut DecompState, lang: Lang) {
     let Some(rx) = &s.rx else { return };
     while let Ok(ev) = rx.try_recv() {
         match ev {
+            ProgressEvent::DecompressFiles { paths } => {
+                s.output_files = paths
+                    .iter()
+                    .filter_map(|p| FileInfo::from_path(p.clone()))
+                    .collect();
+                let count = s.output_files.len();
+                s.logs.push(format!(
+                    "\u{2705} {}: {} file(s)",
+                    t!(lang, Finished),
+                    count
+                ));
+                s.state = JobState::Done;
+            }
             ProgressEvent::Finished { output } => {
-                s.output_file = FileInfo::from_path(output.clone());
-                s.logs
-                    .push(format!("✅ {}: {}", t!(lang, Finished), output.display()));
+                if let Some(fi) = FileInfo::from_path(output.clone()) {
+                    s.output_files.push(fi);
+                }
+                s.logs.push(format!(
+                    "\u{2705} {}: {}",
+                    t!(lang, Finished),
+                    output.display()
+                ));
                 s.state = JobState::Done;
             }
             ProgressEvent::Error(e) => {
-                s.logs.push(format!("❌ {}: {}", t!(lang, Error), e));
+                s.logs.push(format!("\u{274C} {}: {}", t!(lang, Error), e));
                 s.state = JobState::Error;
             }
-            ProgressEvent::Info(msg) => s.logs.push(format!("ℹ {}", msg)),
+            ProgressEvent::Info(msg) => s.logs.push(format!("\u{2139}\u{FE0F} {}", msg)),
             _ => {}
         }
     }

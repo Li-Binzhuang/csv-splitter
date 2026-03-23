@@ -38,7 +38,8 @@ pub fn log_panel(ui: &mut egui::Ui, logs: &[String], lang: Lang) {
     ui.label(t!(lang, LogTitle));
     let log_h = ui.available_height().max(120.0) - 8.0;
     egui::Frame::new()
-        .fill(ui.visuals().extreme_bg_color)
+        .fill(CARD_BG)
+        .stroke(egui::Stroke::new(1.0, CARD_BORDER))
         .corner_radius(egui::CornerRadius::same(10))
         .inner_margin(8.0)
         .show(ui, |ui| {
@@ -50,6 +51,7 @@ pub fn log_panel(ui: &mut egui::Ui, logs: &[String], lang: Lang) {
                         ui.label(
                             egui::RichText::new(line)
                                 .size(12.0)
+                                .color(TEXT_BRIGHT)
                                 .family(egui::FontFamily::Monospace),
                         );
                     }

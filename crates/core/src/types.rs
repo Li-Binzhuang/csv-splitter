@@ -25,7 +25,14 @@ impl CompressFormat {
     }
 
     pub fn all() -> &'static [CompressFormat] {
-        &[Self::Zstd, Self::Gzip, Self::Bzip2, Self::Xz, Self::Zip, Self::None]
+        &[
+            Self::Zstd,
+            Self::Gzip,
+            Self::Bzip2,
+            Self::Xz,
+            Self::Zip,
+            Self::None,
+        ]
     }
 
     pub fn label(&self) -> &str {
@@ -133,18 +140,33 @@ pub struct CsvPreview {
 /// Progress events sent from core to UI/CLI.
 #[derive(Clone, Debug)]
 pub enum ProgressEvent {
-    PhaseStart { phase: String, total_bytes: u64 },
-    Progress { bytes: u64 },
+    PhaseStart {
+        phase: String,
+        total_bytes: u64,
+    },
+    Progress {
+        bytes: u64,
+    },
     Info(String),
-    PhaseDone { phase: String },
-    Finished { output: PathBuf },
+    PhaseDone {
+        phase: String,
+    },
+    Finished {
+        output: PathBuf,
+    },
     Error(String),
     /// Preview data ready
     PreviewReady(CsvPreview),
     /// Column stats ready
     StatsReady(Vec<ColumnStats>),
     /// Decompression done, extracted CSV path
-    DecompressDone { csv_path: PathBuf },
+    DecompressDone {
+        csv_path: PathBuf,
+    },
+    /// Decompression done, multiple extracted files
+    DecompressFiles {
+        paths: Vec<PathBuf>,
+    },
 }
 
 pub type ProgressSender = mpsc::Sender<ProgressEvent>;
