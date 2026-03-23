@@ -15,7 +15,7 @@ pub fn delimiter_combo(ui: &mut egui::Ui, idx: &mut usize, custom: &mut String, 
         ui.label(egui::RichText::new(t!(lang, Delimiter)).color(TEXT_BRIGHT));
         egui::ComboBox::from_id_salt(ui.next_auto_id())
             .selected_text(labels[*idx])
-            .width(160.0)
+            .width((ui.available_width() - 80.0).clamp(60.0, 160.0))
             .show_ui(ui, |ui| {
                 for (i, label) in labels.iter().enumerate() {
                     ui.selectable_value(idx, i, *label);
@@ -114,7 +114,35 @@ pub fn section_frame(ui: &mut egui::Ui, title: &str, add_contents: impl FnOnce(&
         });
 }
 
-/// Draw a horizontal arrow between flow cards.
+/// Two-column layout helper. Returns (left_w, right_w, left_rect, right_rect).
+/// `ratio` is the fraction for the left column (e.g. 0.5 = equal, 0.6 = left wider).
+/// Caller should use `ui.allocate_space()` after drawing both columns
+/// to advance the parent cursor past the taller column.
+pub fn two_col_rects_ratio(
+    ui: &egui::Ui,
+    gap: f32,
+    ratio: f32,
+) -> (f32, f32, egui::Rect, egui::Rect) {
+    let avail = ui.available_width();
+    let usable = (avail - gap).max(200.0);
+    let left_w = (usable * ratio).max(100.0);
+    let right_w = (usable - left_w).max(100.0);
+    let top = ui.cursor().min;
+    let left = egui::Rect::from_min_size(top, egui::vec2(left_w, 10.0));
+    let right = egui::Rect::from_min_size(
+        egui::pos2(top.x + left_w + gap, top.y),
+        egui::vec2(right_w, 10.0),
+    );
+    (left_w, right_w, left, right)
+}
+
+/// Convenience: equal 50/50 two-column rects.
+pub fn two_col_rects(ui: &egui::Ui, gap: f32) -> (f32, egui::Rect, egui::Rect) {
+    let (lw, _rw, l, r) = two_col_rects_ratio(ui, gap, 0.5);
+    (lw, l, r)
+}
+
+/// Draw a horizontal right-pointing arrow (→).
 pub fn draw_arrow(ui: &mut egui::Ui, color: egui::Color32, w: f32, h: f32) {
     let (rect, _) = ui.allocate_exact_size(egui::vec2(w, h), egui::Sense::hover());
     let mid_y = rect.center().y;
@@ -133,6 +161,52 @@ pub fn draw_arrow(ui: &mut egui::Ui, color: egui::Color32, w: f32, h: f32) {
     );
     p.line_segment(
         [egui::pos2(tip.x - 6.0, mid_y + 4.0), tip],
+        egui::Stroke::new(2.0, color),
+    );
+}
+
+/// Draw a horizontal left-pointing arrow (←).
+pub fn draw_arrow_left(ui: &mut egui::Ui, color: egui::Color32, w: f32, h: f32) {
+    let (rect, _) = ui.allocate_exact_size(egui::vec2(w, h), egui::Sense::hover());
+    let mid_y = rect.center().y;
+    let p = ui.painter();
+    p.line_segment(
+        [
+            egui::pos2(rect.left() + 6.0, mid_y),
+            egui::pos2(rect.right() - 2.0, mid_y),
+        ],
+        egui::Stroke::new(2.0, color),
+    );
+    let tip = egui::pos2(rect.left() + 2.0, mid_y);
+    p.line_segment(
+        [egui::pos2(tip.x + 6.0, mid_y - 4.0), tip],
+        egui::Stroke::new(2.0, color),
+    );
+    p.line_segment(
+        [egui::pos2(tip.x + 6.0, mid_y + 4.0), tip],
+        egui::Stroke::new(2.0, color),
+    );
+}
+
+/// Draw a vertical down-pointing arrow (↓), centered in given width.
+pub fn draw_arrow_down(ui: &mut egui::Ui, color: egui::Color32, w: f32, h: f32) {
+    let (rect, _) = ui.allocate_exact_size(egui::vec2(w, h), egui::Sense::hover());
+    let mid_x = rect.center().x;
+    let p = ui.painter();
+    p.line_segment(
+        [
+            egui::pos2(mid_x, rect.top() + 2.0),
+            egui::pos2(mid_x, rect.bottom() - 6.0),
+        ],
+        egui::Stroke::new(2.0, color),
+    );
+    let tip = egui::pos2(mid_x, rect.bottom() - 2.0);
+    p.line_segment(
+        [egui::pos2(mid_x - 4.0, tip.y - 6.0), tip],
+        egui::Stroke::new(2.0, color),
+    );
+    p.line_segment(
+        [egui::pos2(mid_x + 4.0, tip.y - 6.0), tip],
         egui::Stroke::new(2.0, color),
     );
 }

@@ -13,162 +13,179 @@ pub fn ui_decompress(
 ) {
     poll_decomp(s, lang);
 
-    ui.heading(t!(lang, DecompTitle));
-    ui.label(
-        egui::RichText::new(t!(lang, DecompDesc))
-            .size(12.0)
-            .color(TEXT_DIM),
-    );
+    ui.vertical_centered(|ui| {
+        ui.heading(t!(lang, DecompTitle));
+        ui.label(
+            egui::RichText::new(t!(lang, DecompDesc))
+                .size(12.0)
+                .color(TEXT_DIM),
+        );
+    });
     ui.add_space(8.0);
 
-    let avail_w = ui.available_width();
-    let compact = avail_w < 600.0;
-    let card_w = if compact {
-        ((avail_w - 30.0) / 2.0).clamp(120.0, 220.0)
-    } else {
-        ((avail_w - 60.0) / 3.0).clamp(140.0, 220.0)
-    };
-    let card_h: f32 = 80.0;
-    let arrow_w: f32 = if compact { 12.0 } else { 18.0 };
+    // ── Two-column: Input (left) | Result + Action (right) ──
+    let (col_w, left_rect, right_rect) = two_col_rects(ui, 8.0);
 
-    // Input + Flow section
-    section_frame(ui, t!(lang, SectionFlow), |ui| {
-        let decomp_input_id = egui::Id::new("decomp_input");
-        let archive_filters: &[(&str, &[&str])] = &[(
-            t!(lang, FilterArchive),
-            &["zst", "gz", "bz2", "xz", "zip", "7z", "tar", "tgz", "csv"],
-        )];
-        if compact {
-            if let Some(d) = file_input_card(
-                ui,
-                &mut s.input_file,
-                t!(lang, DropFileHere),
-                ACCENT,
-                card_w,
-                card_h,
-                lang,
-                archive_filters,
-                decomp_input_id,
-            ) {
-                dialogs.push(d);
-            }
-            ui.add_space(4.0);
-            draw_decomp_result_card(ui, s, lang, card_w, card_h);
-        } else {
-            ui.horizontal(|ui| {
+    let left_h = {
+        let mut col = ui.new_child(
+            egui::UiBuilder::new()
+                .id_salt("decomp_left")
+                .max_rect(left_rect)
+                .layout(egui::Layout::top_down(egui::Align::Min)),
+        );
+        col.set_max_width(col_w);
+        col.set_width(col_w);
+        egui::Frame::new()
+            .fill(CARD_BG)
+            .stroke(egui::Stroke::new(1.0, CARD_BORDER))
+            .corner_radius(egui::CornerRadius::same(14))
+            .inner_margin(14.0)
+            .outer_margin(egui::Margin::symmetric(0, 4))
+            .show(&mut col, |ui| {
+                ui.set_max_width(col_w - 30.0);
+                ui.label(
+                    egui::RichText::new(t!(lang, SectionInput))
+                        .size(13.0)
+                        .strong()
+                        .color(TEXT_BRIGHT),
+                );
+                ui.add_space(6.0);
+                let cw = ui.available_width() - 4.0;
                 if let Some(d) = file_input_card(
                     ui,
                     &mut s.input_file,
                     t!(lang, DropFileHere),
                     ACCENT,
-                    card_w,
-                    card_h,
+                    cw,
+                    70.0,
                     lang,
-                    archive_filters,
-                    decomp_input_id,
+                    &[(
+                        t!(lang, FilterArchive),
+                        &["zst", "gz", "bz2", "xz", "zip", "7z", "tar", "tgz", "csv"],
+                    )],
+                    egui::Id::new("decomp_input"),
                 ) {
                     dialogs.push(d);
                 }
-                draw_arrow(ui, ACCENT, arrow_w, card_h);
-                draw_decomp_result_card(ui, s, lang, card_w, card_h);
+                ui.add_space(6.0);
+                if let Some(d) = dir_path_card(
+                    ui,
+                    &mut s.output_dir,
+                    "📁",
+                    t!(lang, OutputDir),
+                    t!(lang, DirHint),
+                    lang,
+                    egui::Id::new("decomp_output_dir"),
+                ) {
+                    dialogs.push(d);
+                }
             });
-        }
-
-        ui.add_space(6.0);
-        if let Some(d) = dir_path_card(
-            ui,
-            &mut s.output_dir,
-            "📁",
-            t!(lang, OutputDir),
-            t!(lang, DirHint),
-            lang,
-            egui::Id::new("decomp_output_dir"),
-        ) {
-            dialogs.push(d);
-        }
-    });
-
-    // Action section
-    section_frame(ui, t!(lang, SectionAction), |ui| {
-        let can_start = s.state != JobState::Running && s.input_file.is_some();
-        ui.horizontal(|ui| {
-            if ui
-                .add_enabled(
-                    can_start,
-                    egui::Button::new(egui::RichText::new(t!(lang, StartExtract)).size(14.0))
-                        .min_size([140.0, 32.0].into()),
-                )
-                .clicked()
-            {
-                start_decomp(s);
-            }
-            job_status(ui, &s.state, lang);
-        });
-    });
-
-    log_panel(ui, &s.logs, lang);
-}
-
-fn draw_decomp_result_card(ui: &mut egui::Ui, s: &DecompState, lang: Lang, w: f32, h: f32) {
-    let border = if s.state == JobState::Done {
-        SUCCESS
-    } else {
-        CARD_BORDER
+        col.min_rect().height()
     };
-    egui::Frame::new()
-        .fill(CARD_BG)
-        .stroke(egui::Stroke::new(1.0, border))
-        .corner_radius(egui::CornerRadius::same(12))
-        .inner_margin(8.0)
-        .show(ui, |ui| {
-            ui.set_width(w);
-            ui.set_max_width(w);
-            ui.set_min_height(h);
-            ui.vertical_centered(|ui| {
+
+    let right_h = {
+        let mut col = ui.new_child(
+            egui::UiBuilder::new()
+                .id_salt("decomp_right")
+                .max_rect(right_rect)
+                .layout(egui::Layout::top_down(egui::Align::Min)),
+        );
+        col.set_max_width(col_w);
+        col.set_width(col_w);
+        egui::Frame::new()
+            .fill(CARD_BG)
+            .stroke(egui::Stroke::new(1.0, CARD_BORDER))
+            .corner_radius(egui::CornerRadius::same(14))
+            .inner_margin(14.0)
+            .outer_margin(egui::Margin::symmetric(0, 4))
+            .show(&mut col, |ui| {
+                ui.set_max_width(col_w - 30.0);
                 ui.label(
-                    egui::RichText::new(t!(lang, FlowResult))
-                        .size(12.0)
+                    egui::RichText::new(t!(lang, SectionResult))
+                        .size(13.0)
+                        .strong()
+                        .color(TEXT_BRIGHT),
+                );
+                ui.add_space(6.0);
+                let rw = ui.available_width() - 4.0;
+                draw_decomp_result(ui, s, lang, rw);
+                ui.add_space(8.0);
+                ui.separator();
+                ui.add_space(4.0);
+                ui.label(
+                    egui::RichText::new(t!(lang, SectionAction))
+                        .size(13.0)
                         .strong()
                         .color(TEXT_BRIGHT),
                 );
                 ui.add_space(4.0);
-                match s.state {
-                    JobState::Done => {
-                        ui.label(egui::RichText::new("✅").size(22.0));
-                        if let Some(ref out) = s.output_file {
-                            let max_chars = ((w - 20.0) / 7.0).max(6.0) as usize;
-                            let name = if out.name.chars().count() > max_chars {
-                                let t: String = out.name.chars().take(max_chars - 1).collect();
-                                format!("{}…", t)
-                            } else {
-                                out.name.clone()
-                            };
-                            ui.label(egui::RichText::new(&name).size(10.0).color(TEXT_BRIGHT));
-                            ui.label(
-                                egui::RichText::new(format_bytes(out.size))
-                                    .size(10.0)
-                                    .color(TEXT_DIM),
-                            );
-                        }
+                let can = s.state != JobState::Running && s.input_file.is_some();
+                ui.horizontal(|ui| {
+                    if ui
+                        .add_enabled(
+                            can,
+                            egui::Button::new(
+                                egui::RichText::new(t!(lang, StartExtract)).size(14.0),
+                            )
+                            .min_size([120.0, 32.0].into()),
+                        )
+                        .clicked()
+                    {
+                        start_decomp(s);
                     }
-                    JobState::Running => {
-                        ui.spinner();
-                        ui.label(
-                            egui::RichText::new(t!(lang, Processing))
-                                .size(10.0)
-                                .color(TEXT_DIM),
-                        );
-                    }
-                    JobState::Error => {
-                        ui.label(egui::RichText::new("❌").size(22.0));
-                    }
-                    JobState::Idle => {
-                        ui.label(egui::RichText::new("📦").size(22.0).color(TEXT_DIM));
-                        ui.label(egui::RichText::new("…").size(10.0).color(TEXT_DIM));
-                    }
-                }
+                    job_status(ui, &s.state, lang);
+                });
             });
-        });
+        col.min_rect().height()
+    };
+
+    ui.allocate_space(egui::vec2(ui.available_width(), left_h.max(right_h)));
+
+    log_panel(ui, &s.logs, lang);
+}
+fn draw_decomp_result(ui: &mut egui::Ui, s: &DecompState, lang: Lang, w: f32) {
+    ui.vertical_centered(|ui| {
+        ui.set_max_width(w);
+        match s.state {
+            JobState::Done => {
+                ui.label(egui::RichText::new("✅").size(28.0));
+                if let Some(ref out) = s.output_file {
+                    let max_c = ((w - 20.0) / 7.0).max(6.0) as usize;
+                    let name = if out.name.chars().count() > max_c {
+                        let t: String = out.name.chars().take(max_c - 1).collect();
+                        format!("{}…", t)
+                    } else {
+                        out.name.clone()
+                    };
+                    ui.label(egui::RichText::new(&name).size(11.0).color(TEXT_BRIGHT));
+                    ui.label(
+                        egui::RichText::new(format_bytes(out.size))
+                            .size(10.0)
+                            .color(TEXT_DIM),
+                    );
+                }
+            }
+            JobState::Running => {
+                ui.spinner();
+                ui.label(
+                    egui::RichText::new(t!(lang, Processing))
+                        .size(11.0)
+                        .color(TEXT_DIM),
+                );
+            }
+            JobState::Error => {
+                ui.label(egui::RichText::new("❌").size(28.0));
+            }
+            JobState::Idle => {
+                ui.label(egui::RichText::new("📦").size(28.0).color(TEXT_DIM));
+                ui.label(
+                    egui::RichText::new(t!(lang, FlowResult))
+                        .size(11.0)
+                        .color(TEXT_DIM),
+                );
+            }
+        }
+    });
 }
 
 fn start_decomp(s: &mut DecompState) {

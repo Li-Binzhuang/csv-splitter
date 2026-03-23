@@ -135,24 +135,36 @@ impl eframe::App for App {
                 egui::ScrollArea::vertical()
                     .auto_shrink([false, false])
                     .show(ui, |ui| {
-                        // Constrain content width to prevent infinite stretching
-                        let content_w = avail.x.min(960.0);
-                        ui.set_max_width(content_w);
+                        // Center content horizontally with max width
+                        let content_w = avail.x.min(860.0);
+                        let pad = ((ui.available_width() - content_w) / 2.0).max(0.0);
                         ui.add_space(8.0);
-                        match self.tab {
-                            Tab::Split => {
-                                tabs::ui_split(ui, &mut self.split, lang, &mut new_dialogs)
-                            }
-                            Tab::Preview => {
-                                tabs::ui_preview(ui, &mut self.preview, lang, &mut new_dialogs)
-                            }
-                            Tab::Stats => {
-                                tabs::ui_stats(ui, &mut self.stats, lang, &mut new_dialogs)
-                            }
-                            Tab::Decompress => {
-                                tabs::ui_decompress(ui, &mut self.decomp, lang, &mut new_dialogs)
-                            }
-                        }
+                        ui.horizontal(|ui| {
+                            ui.add_space(pad);
+                            ui.vertical(|ui| {
+                                ui.set_max_width(content_w);
+                                match self.tab {
+                                    Tab::Split => {
+                                        tabs::ui_split(ui, &mut self.split, lang, &mut new_dialogs)
+                                    }
+                                    Tab::Preview => tabs::ui_preview(
+                                        ui,
+                                        &mut self.preview,
+                                        lang,
+                                        &mut new_dialogs,
+                                    ),
+                                    Tab::Stats => {
+                                        tabs::ui_stats(ui, &mut self.stats, lang, &mut new_dialogs)
+                                    }
+                                    Tab::Decompress => tabs::ui_decompress(
+                                        ui,
+                                        &mut self.decomp,
+                                        lang,
+                                        &mut new_dialogs,
+                                    ),
+                                }
+                            });
+                        });
                     });
             });
         self.pending_dialogs.extend(new_dialogs);
