@@ -1,4 +1,4 @@
-<![CDATA[# CSV Splitter Pro
+# CSV Splitter Pro
 
 > Cross-platform CSV splitter, compressor, previewer & column statistics tool with bilingual (Chinese/English) UI.
 >
