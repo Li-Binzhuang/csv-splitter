@@ -127,6 +127,12 @@ pub enum Key {
     PreviewRows,
     SearchColumn,
     InvertSelect,
+    FromRow,
+    ToRow,
+    FromCol,
+    ToCol,
+    FreezeRow,
+    FreezeCol,
 }
 
 pub fn text(lang: Lang, key: Key) -> &'static str {
@@ -336,5 +342,17 @@ pub fn text(lang: Lang, key: Key) -> &'static str {
         (Lang::En, Key::SearchColumn) => "Search column...",
         (Lang::Zh, Key::InvertSelect) => "反选",
         (Lang::En, Key::InvertSelect) => "Invert",
+        (Lang::Zh, Key::FromRow) => "起始行:",
+        (Lang::En, Key::FromRow) => "From row:",
+        (Lang::Zh, Key::ToRow) => "结束行:",
+        (Lang::En, Key::ToRow) => "To row:",
+        (Lang::Zh, Key::FromCol) => "起始列:",
+        (Lang::En, Key::FromCol) => "From col:",
+        (Lang::Zh, Key::ToCol) => "结束列:",
+        (Lang::En, Key::ToCol) => "To col:",
+        (Lang::Zh, Key::FreezeRow) => "固定行:",
+        (Lang::En, Key::FreezeRow) => "Pin row:",
+        (Lang::Zh, Key::FreezeCol) => "固定列:",
+        (Lang::En, Key::FreezeCol) => "Pin col:",
     }
 }

@@ -136,6 +136,14 @@ pub struct PreviewState {
     pub delim_idx: usize,
     pub custom_delim: String,
     pub preview_rows: usize,
+    pub from_row: usize,
+    pub to_row: usize,
+    pub from_col: usize,
+    pub to_col: usize,
+    /// Which row to freeze (1 = header row, 0 = none). 1-indexed into display.
+    pub freeze_row: usize,
+    /// Which column to freeze (1 = first col, 0 = none). 1-indexed.
+    pub freeze_col: usize,
     pub preview: Option<CsvPreview>,
 }
 
@@ -145,7 +153,13 @@ impl Default for PreviewState {
             input_file: None,
             delim_idx: 0,
             custom_delim: String::new(),
-            preview_rows: 100,
+            preview_rows: 30,
+            from_row: 1,
+            to_row: 30,
+            from_col: 1,
+            to_col: 50,
+            freeze_row: 1,
+            freeze_col: 1,
             preview: None,
         }
     }

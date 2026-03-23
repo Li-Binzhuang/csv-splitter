@@ -26,47 +26,7 @@ pub fn ui_stats(
     // ── Two-column: Input (left) | Params + Action (right) ──
     let (col_w, left_rect, right_rect) = two_col_rects(ui, 8.0);
 
-    let left_h = {
-        let mut col = ui.new_child(
-            egui::UiBuilder::new()
-                .id_salt("stats_left")
-                .max_rect(left_rect)
-                .layout(egui::Layout::top_down(egui::Align::Min)),
-        );
-        col.set_max_width(col_w);
-        col.set_width(col_w);
-        egui::Frame::new()
-            .fill(CARD_BG)
-            .stroke(egui::Stroke::new(1.0, CARD_BORDER))
-            .corner_radius(egui::CornerRadius::same(14))
-            .inner_margin(14.0)
-            .outer_margin(egui::Margin::symmetric(0, 4))
-            .show(&mut col, |ui| {
-                ui.label(
-                    egui::RichText::new(t!(lang, SectionInput))
-                        .size(13.0)
-                        .strong()
-                        .color(TEXT_BRIGHT),
-                );
-                ui.add_space(6.0);
-                let cw = ui.available_width() - 4.0;
-                if let Some(d) = file_input_card(
-                    ui,
-                    &mut s.input_file,
-                    t!(lang, DropFileHere),
-                    ACCENT,
-                    cw,
-                    70.0,
-                    lang,
-                    &[(t!(lang, FilterCsv), &["csv", "tsv", "txt"])],
-                    egui::Id::new("stats_input"),
-                ) {
-                    dialogs.push(d);
-                }
-            });
-        col.min_rect().height()
-    };
-
+    // Draw right (params) first to measure its height
     let right_h = {
         let mut col = ui.new_child(
             egui::UiBuilder::new()
@@ -125,6 +85,51 @@ pub fn ui_stats(
         col.min_rect().height()
     };
 
+    // Draw left (input) second, matching right height
+    let left_h = {
+        let mut col = ui.new_child(
+            egui::UiBuilder::new()
+                .id_salt("stats_left")
+                .max_rect(left_rect)
+                .layout(egui::Layout::top_down(egui::Align::Min)),
+        );
+        col.set_max_width(col_w);
+        col.set_width(col_w);
+        let inner_w = col_w - 30.0;
+        egui::Frame::new()
+            .fill(CARD_BG)
+            .stroke(egui::Stroke::new(1.0, CARD_BORDER))
+            .corner_radius(egui::CornerRadius::same(14))
+            .inner_margin(14.0)
+            .outer_margin(egui::Margin::symmetric(0, 4))
+            .show(&mut col, |ui| {
+                ui.set_min_width(inner_w);
+                ui.set_min_height((right_h - 40.0).max(60.0));
+                ui.label(
+                    egui::RichText::new(t!(lang, SectionInput))
+                        .size(13.0)
+                        .strong()
+                        .color(TEXT_BRIGHT),
+                );
+                ui.add_space(6.0);
+                let cw = ui.available_width() - 4.0;
+                if let Some(d) = file_input_card(
+                    ui,
+                    &mut s.input_file,
+                    t!(lang, DropFileHere),
+                    ACCENT,
+                    cw,
+                    70.0,
+                    lang,
+                    &[(t!(lang, FilterCsv), &["csv", "tsv", "txt"])],
+                    egui::Id::new("stats_input"),
+                ) {
+                    dialogs.push(d);
+                }
+            });
+        col.min_rect().height()
+    };
+
     ui.allocate_space(egui::vec2(ui.available_width(), left_h.max(right_h)));
 
     show_results(ui, s, lang);
@@ -142,7 +147,7 @@ fn show_results(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
         }
         ui.horizontal(|ui| {
             ui.label(egui::RichText::new(t!(lang, SelectColumn)).color(TEXT_BRIGHT));
-            let combo_w = (ui.available_width() - 80.0).clamp(80.0, 180.0);
+            let combo_w = (ui.available_width() - 20.0).clamp(120.0, 400.0);
             ui.add(
                 egui::TextEdit::singleline(&mut s.col_search)
                     .desired_width(combo_w)
@@ -157,7 +162,7 @@ fn show_results(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
             .map(|(i, n)| (i, *n))
             .collect();
         egui::ScrollArea::vertical()
-            .max_height(80.0)
+            .max_height(120.0)
             .id_salt("stats_col_list")
             .show(ui, |ui| {
                 for (i, name) in &filtered {
