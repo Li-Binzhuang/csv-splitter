@@ -239,6 +239,7 @@ fn draw_result(ui: &mut egui::Ui, s: &PreviewState, lang: Lang) {
     });
 }
 
+#[allow(clippy::too_many_arguments)]
 fn simple_grid(
     id: &str,
     ui: &mut egui::Ui,
