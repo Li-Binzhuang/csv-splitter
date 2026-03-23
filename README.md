@@ -159,4 +159,3 @@ Release artifacts are automatically uploaded with SHA256 checksums. Tags contain
 ## License
 
 [MIT](LICENSE)
-]]>
