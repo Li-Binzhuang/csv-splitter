@@ -27,7 +27,7 @@ pub fn ui_split(
     let total_w = ui.available_width();
 
     // ===== FLOW — title row has toggles inline =====
-    egui::Frame::new()
+    let flow_resp = egui::Frame::new()
         .fill(CARD_BG)
         .stroke(egui::Stroke::new(1.0, CARD_BORDER))
         .corner_radius(egui::CornerRadius::same(14))
@@ -50,16 +50,21 @@ pub fn ui_split(
             flow::draw_flow(ui, s, lang, dialogs);
         });
 
+    // Use the flow frame's actual rendered rect as the single source of truth
+    let flow_rect = flow_resp.response.rect;
+    let flow_w = flow_rect.width();
+    let flow_left = flow_rect.left();
+
     // ===== Two-column: Columns (left, wider) | Params (right) =====
     // Params panel has a natural width ~250px; columns gets the rest.
     let gap = 8.0_f32;
-    let right_w = 250.0_f32.min((total_w - gap) * 0.38);
-    let left_w = (total_w - gap - right_w).max(100.0);
-    let top = ui.cursor().min;
-    let base_x = top.x;
-    let left_rect = egui::Rect::from_min_size(egui::pos2(base_x, top.y), egui::vec2(left_w, 10.0));
+    let right_w = 250.0_f32.min((flow_w - gap) * 0.38);
+    let left_w = (flow_w - gap - right_w).max(100.0);
+    let top_y = ui.cursor().min.y;
+    let left_rect =
+        egui::Rect::from_min_size(egui::pos2(flow_left, top_y), egui::vec2(left_w, 10.0));
     let right_rect = egui::Rect::from_min_size(
-        egui::pos2(base_x + left_w + gap, top.y),
+        egui::pos2(flow_left + left_w + gap, top_y),
         egui::vec2(right_w, 10.0),
     );
 
@@ -80,6 +85,9 @@ pub fn ui_split(
             .inner_margin(14.0)
             .outer_margin(egui::Margin::symmetric(0, 4))
             .show(&mut col, |ui| {
+                // Force content to fill the frame so right edge aligns with flow
+                let inner_w = right_w - 30.0; // 14*2 margin + 1*2 stroke
+                ui.set_min_width(inner_w);
                 ui.label(
                     egui::RichText::new(t!(lang, SectionParams))
                         .size(13.0)
@@ -110,6 +118,8 @@ pub fn ui_split(
             .inner_margin(14.0)
             .outer_margin(egui::Margin::symmetric(0, 4))
             .show(&mut col, |ui| {
+                let inner_w = left_w - 30.0;
+                ui.set_min_width(inner_w);
                 ui.set_min_height(right_h - 40.0);
                 ui.label(
                     egui::RichText::new(t!(lang, SectionColumns))
