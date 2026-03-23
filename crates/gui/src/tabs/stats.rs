@@ -14,7 +14,7 @@ pub fn ui_stats(
     poll_stats(s, lang);
 
     ui.vertical_centered(|ui| {
-        ui.heading(t!(lang, StatsTitle));
+        ui.heading(egui::RichText::new(t!(lang, StatsTitle)).color(TEXT_BRIGHT));
         ui.label(
             egui::RichText::new(t!(lang, StatsDesc))
                 .size(12.0)
@@ -134,6 +134,7 @@ pub fn ui_stats(
 fn show_results(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
     let Some(ref stats) = s.stats else { return };
 
+    let remaining_h = ui.available_height().max(250.0);
     section_frame(ui, t!(lang, SectionResult), |ui| {
         let col_names: Vec<&str> = stats.iter().map(|c| c.name.as_str()).collect();
         if col_names.is_empty() {
@@ -142,15 +143,41 @@ fn show_results(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
         ui.horizontal(|ui| {
             ui.label(egui::RichText::new(t!(lang, SelectColumn)).color(TEXT_BRIGHT));
             let combo_w = (ui.available_width() - 80.0).clamp(80.0, 180.0);
-            egui::ComboBox::from_id_salt("stats_col")
-                .selected_text(*col_names.get(s.selected_col).unwrap_or(&""))
-                .width(combo_w)
-                .show_ui(ui, |ui| {
-                    for (i, name) in col_names.iter().enumerate() {
-                        ui.selectable_value(&mut s.selected_col, i, *name);
-                    }
-                });
+            ui.add(
+                egui::TextEdit::singleline(&mut s.col_search)
+                    .desired_width(combo_w)
+                    .hint_text(t!(lang, SearchColumn)),
+            );
         });
+        let search_lower = s.col_search.to_lowercase();
+        let filtered: Vec<(usize, &str)> = col_names
+            .iter()
+            .enumerate()
+            .filter(|(_, n)| search_lower.is_empty() || n.to_lowercase().contains(&search_lower))
+            .map(|(i, n)| (i, *n))
+            .collect();
+        egui::ScrollArea::vertical()
+            .max_height(80.0)
+            .id_salt("stats_col_list")
+            .show(ui, |ui| {
+                for (i, name) in &filtered {
+                    let selected = s.selected_col == *i;
+                    if ui
+                        .selectable_label(
+                            selected,
+                            egui::RichText::new(*name).size(11.0).color(if selected {
+                                ACCENT
+                            } else {
+                                TEXT_BRIGHT
+                            }),
+                        )
+                        .clicked()
+                    {
+                        s.selected_col = *i;
+                        s.col_search.clear();
+                    }
+                }
+            });
         let Some(col) = stats.get(s.selected_col) else {
             return;
         };
@@ -173,15 +200,28 @@ fn show_results(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
         ui.add_space(4.0);
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])
+            .min_scrolled_height(remaining_h - 100.0)
             .show(ui, |ui| {
                 egui::Grid::new("stats_grid")
                     .striped(true)
                     .min_col_width(60.0)
                     .spacing([12.0, 4.0])
                     .show(ui, |ui| {
-                        ui.label(egui::RichText::new(t!(lang, ColValue)).strong());
-                        ui.label(egui::RichText::new(t!(lang, ColCount)).strong());
-                        ui.label(egui::RichText::new(t!(lang, ColPercent)).strong());
+                        ui.label(
+                            egui::RichText::new(t!(lang, ColValue))
+                                .strong()
+                                .color(TEXT_BRIGHT),
+                        );
+                        ui.label(
+                            egui::RichText::new(t!(lang, ColCount))
+                                .strong()
+                                .color(TEXT_BRIGHT),
+                        );
+                        ui.label(
+                            egui::RichText::new(t!(lang, ColPercent))
+                                .strong()
+                                .color(TEXT_BRIGHT),
+                        );
                         ui.end_row();
                         for (val, count) in &col.top_values {
                             let pct = if col.total_sampled > 0 {
@@ -194,9 +234,11 @@ fn show_results(ui: &mut egui::Ui, s: &mut StatsState, lang: Lang) {
                             } else {
                                 val.clone()
                             };
-                            ui.label(&display);
-                            ui.label(count.to_string());
-                            ui.label(format!("{:.2}%", pct));
+                            ui.label(egui::RichText::new(&display).color(TEXT_BRIGHT));
+                            ui.label(egui::RichText::new(count.to_string()).color(TEXT_BRIGHT));
+                            ui.label(
+                                egui::RichText::new(format!("{:.2}%", pct)).color(TEXT_BRIGHT),
+                            );
                             ui.end_row();
                         }
                     });

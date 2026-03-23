@@ -13,7 +13,6 @@ pub const ACCENT: egui::Color32 = egui::Color32::from_rgb(88, 166, 255);
 pub const SUCCESS: egui::Color32 = egui::Color32::from_rgb(80, 200, 120);
 pub const WARN: egui::Color32 = egui::Color32::from_rgb(255, 180, 60);
 pub const ERROR_C: egui::Color32 = egui::Color32::from_rgb(240, 80, 80);
-pub const PURPLE: egui::Color32 = egui::Color32::from_rgb(180, 140, 255);
 pub const TEXT_DIM: egui::Color32 = egui::Color32::from_rgb(175, 185, 205);
 pub const TEXT_BRIGHT: egui::Color32 = egui::Color32::from_rgb(232, 236, 248);
 

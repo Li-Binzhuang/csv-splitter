@@ -15,7 +15,7 @@ use crate::state::SplitState;
 use crate::widgets::*;
 use csv_splitter_core::CompressFormat;
 
-/// Draw the flow pipeline + column filter + column selector.
+/// Draw the flow pipeline.
 pub fn draw_flow(
     ui: &mut egui::Ui,
     s: &mut SplitState,
@@ -44,8 +44,6 @@ pub fn draw_flow(
         ],
     )];
     let input_id = egui::Id::new("split_input");
-    let col_id = egui::Id::new("split_columns");
-
     let n_active = split_on as usize + compress_on as usize;
 
     match n_active {
@@ -87,27 +85,6 @@ pub fn draw_flow(
             csv_filters,
             input_id,
         ),
-    }
-
-    // ── Column filter file ──
-    ui.add_space(6.0);
-    if let Some(d) = file_input_card(
-        ui,
-        &mut s.columns_file,
-        t!(lang, DropColFileHere),
-        PURPLE,
-        card_w,
-        46.0,
-        lang,
-        &[("CSV/TXT", &["csv", "txt"])],
-        col_id,
-    ) {
-        dialogs.push(d);
-    }
-
-    if !s.available_headers.is_empty() {
-        ui.add_space(4.0);
-        draw_column_selector(ui, s, lang, avail_w);
     }
 }
 
@@ -292,68 +269,4 @@ fn check_and_read_headers(s: &mut SplitState) {
             }
         }
     }
-}
-
-fn draw_column_selector(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, w: f32) {
-    egui::Frame::new()
-        .fill(CARD_BG)
-        .stroke(egui::Stroke::new(1.0, PURPLE.linear_multiply(0.5)))
-        .corner_radius(egui::CornerRadius::same(12))
-        .inner_margin(10.0)
-        .show(ui, |ui| {
-            ui.set_width(w.min(ui.available_width()));
-
-            ui.horizontal(|ui| {
-                ui.label(
-                    egui::RichText::new(t!(lang, ColumnSelect))
-                        .size(12.0)
-                        .strong()
-                        .color(TEXT_BRIGHT),
-                );
-                let selected_count = s.selected_columns.iter().filter(|&&v| v).count();
-                ui.label(
-                    egui::RichText::new(format!(
-                        "{}: {}/{}",
-                        t!(lang, SelectedCount),
-                        selected_count,
-                        s.available_headers.len()
-                    ))
-                    .size(10.0)
-                    .color(TEXT_DIM),
-                );
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.small_button(t!(lang, DeselectAll)).clicked() {
-                        s.selected_columns.iter_mut().for_each(|v| *v = false);
-                    }
-                    if ui.small_button(t!(lang, SelectAll)).clicked() {
-                        s.selected_columns.iter_mut().for_each(|v| *v = true);
-                    }
-                });
-            });
-
-            ui.add_space(2.0);
-            ui.add(
-                egui::TextEdit::singleline(&mut s.column_search)
-                    .desired_width(w.min(ui.available_width()) - 16.0)
-                    .hint_text(t!(lang, SearchColumns)),
-            );
-
-            ui.add_space(2.0);
-            egui::ScrollArea::vertical()
-                .max_height(150.0)
-                .show(ui, |ui| {
-                    let search = s.column_search.to_lowercase();
-                    for (i, header) in s.available_headers.iter().enumerate() {
-                        if !search.is_empty() && !header.to_lowercase().contains(&search) {
-                            continue;
-                        }
-                        if let Some(sel) = s.selected_columns.get_mut(i) {
-                            ui.checkbox(
-                                sel,
-                                egui::RichText::new(header).size(11.0).color(TEXT_BRIGHT),
-                            );
-                        }
-                    }
-                });
-        });
 }

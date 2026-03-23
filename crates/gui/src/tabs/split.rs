@@ -14,7 +14,7 @@ pub fn ui_split(
 
     // ── Title (centered) ──
     ui.vertical_centered(|ui| {
-        ui.heading(t!(lang, SplitTitle));
+        ui.heading(egui::RichText::new(t!(lang, SplitTitle)).color(TEXT_BRIGHT));
         ui.label(
             egui::RichText::new(t!(lang, SplitDesc))
                 .size(12.0)
@@ -184,6 +184,7 @@ fn draw_action(
 /// Left panel: column filter file + column checkboxes.
 fn draw_columns_panel(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, w: f32) {
     if s.available_headers.is_empty() {
+        ui.set_min_height(120.0);
         ui.label(
             egui::RichText::new(t!(lang, DropColFileHere))
                 .size(11.0)
@@ -221,6 +222,7 @@ fn draw_columns_panel(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, w: f32)
         egui::ScrollArea::vertical()
             .max_height(150.0)
             .show(ui, |ui| {
+                ui.set_width(w - 30.0);
                 let search = s.column_search.to_lowercase();
                 for (i, header) in s.available_headers.iter().enumerate() {
                     if !search.is_empty() && !header.to_lowercase().contains(&search) {
@@ -238,13 +240,14 @@ fn draw_columns_panel(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, w: f32)
 }
 
 fn params_left(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang) {
-    if !s.no_split {
+    let split_dim = if s.no_split { TEXT_DIM } else { TEXT_BRIGHT };
+    ui.add_enabled_ui(!s.no_split, |ui| {
         ui.horizontal(|ui| {
-            ui.label(egui::RichText::new(t!(lang, Splits)).color(TEXT_BRIGHT));
+            ui.label(egui::RichText::new(t!(lang, Splits)).color(split_dim));
             ui.add(egui::DragValue::new(&mut s.splits).range(2..=1000));
         });
-        ui.add_space(2.0);
-    }
+    });
+    ui.add_space(2.0);
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new(t!(lang, BufferMb)).color(TEXT_BRIGHT));
         ui.add(egui::DragValue::new(&mut s.buf_mb).range(1..=512));
@@ -255,11 +258,12 @@ fn params_left(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang) {
 
 fn params_right(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang) {
     let combo_w = (ui.available_width() - 90.0).clamp(60.0, 120.0);
-    if !s.no_compress {
+    let compress_dim = if s.no_compress { TEXT_DIM } else { TEXT_BRIGHT };
+    ui.add_enabled_ui(!s.no_compress, |ui| {
         ui.horizontal(|ui| {
             let formats = CompressFormat::all();
             let labels: Vec<&str> = formats.iter().map(|f| f.label()).collect();
-            ui.label(egui::RichText::new(t!(lang, CompressFormat)).color(TEXT_BRIGHT));
+            ui.label(egui::RichText::new(t!(lang, CompressFormat)).color(compress_dim));
             egui::ComboBox::from_id_salt("compress_fmt")
                 .selected_text(labels[s.compress_idx])
                 .width(combo_w)
@@ -271,11 +275,11 @@ fn params_right(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang) {
         });
         ui.add_space(2.0);
         ui.horizontal(|ui| {
-            ui.label(egui::RichText::new(t!(lang, CompressLevel)).color(TEXT_BRIGHT));
+            ui.label(egui::RichText::new(t!(lang, CompressLevel)).color(compress_dim));
             ui.add(egui::DragValue::new(&mut s.compress_level).range(1..=22));
         });
-        ui.add_space(2.0);
-    }
+    });
+    ui.add_space(2.0);
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new(t!(lang, SortColumn)).color(TEXT_BRIGHT));
         let display = if s.sort_column.is_empty() {
@@ -300,5 +304,8 @@ fn params_right(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang) {
             });
     });
     ui.add_space(2.0);
-    ui.checkbox(&mut s.sort_desc, t!(lang, Descending));
+    ui.checkbox(
+        &mut s.sort_desc,
+        egui::RichText::new(t!(lang, Descending)).color(TEXT_BRIGHT),
+    );
 }

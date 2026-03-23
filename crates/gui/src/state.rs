@@ -125,12 +125,24 @@ impl Default for SplitState {
 }
 
 /// Preview tab state
-#[derive(Default)]
 pub struct PreviewState {
     pub input_file: Option<FileInfo>,
     pub delim_idx: usize,
     pub custom_delim: String,
+    pub preview_rows: usize,
     pub preview: Option<CsvPreview>,
+}
+
+impl Default for PreviewState {
+    fn default() -> Self {
+        Self {
+            input_file: None,
+            delim_idx: 0,
+            custom_delim: String::new(),
+            preview_rows: 100,
+            preview: None,
+        }
+    }
 }
 
 /// Stats tab state
@@ -139,6 +151,7 @@ pub struct StatsState {
     pub delim_idx: usize,
     pub custom_delim: String,
     pub selected_col: usize,
+    pub col_search: String,
     pub sample_size: usize,
     pub state: JobState,
     pub rx: Option<mpsc::Receiver<ProgressEvent>>,
@@ -153,6 +166,7 @@ impl Default for StatsState {
             delim_idx: 0,
             custom_delim: String::new(),
             selected_col: 0,
+            col_search: String::new(),
             sample_size: 100_000,
             state: JobState::Idle,
             rx: None,

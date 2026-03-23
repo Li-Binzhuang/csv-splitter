@@ -14,7 +14,7 @@ pub fn ui_decompress(
     poll_decomp(s, lang);
 
     ui.vertical_centered(|ui| {
-        ui.heading(t!(lang, DecompTitle));
+        ui.heading(egui::RichText::new(t!(lang, DecompTitle)).color(TEXT_BRIGHT));
         ui.label(
             egui::RichText::new(t!(lang, DecompDesc))
                 .size(12.0)

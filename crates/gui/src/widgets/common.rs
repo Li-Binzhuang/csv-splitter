@@ -36,13 +36,14 @@ pub fn log_panel(ui: &mut egui::Ui, logs: &[String], lang: Lang) {
     ui.add_space(8.0);
     ui.separator();
     ui.label(t!(lang, LogTitle));
+    let log_h = ui.available_height().max(120.0) - 8.0;
     egui::Frame::new()
         .fill(ui.visuals().extreme_bg_color)
         .corner_radius(egui::CornerRadius::same(10))
         .inner_margin(8.0)
         .show(ui, |ui| {
             egui::ScrollArea::vertical()
-                .max_height(140.0)
+                .max_height(log_h)
                 .stick_to_bottom(true)
                 .show(ui, |ui| {
                     for line in logs {

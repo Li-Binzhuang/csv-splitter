@@ -124,6 +124,8 @@ pub enum Key {
     NoCompress,
     EnableSplit,
     EnableCompress,
+    PreviewRows,
+    SearchColumn,
 }
 
 pub fn text(lang: Lang, key: Key) -> &'static str {
@@ -205,8 +207,8 @@ pub fn text(lang: Lang, key: Key) -> &'static str {
         // Preview
         (Lang::Zh, Key::PreviewTitle) => "👁 数据预览",
         (Lang::En, Key::PreviewTitle) => "👁 Data Preview",
-        (Lang::Zh, Key::PreviewDesc) => "快速预览 CSV 文件的前 100 行数据",
-        (Lang::En, Key::PreviewDesc) => "Preview the first 100 rows of a CSV file",
+        (Lang::Zh, Key::PreviewDesc) => "快速预览 CSV 文件数据",
+        (Lang::En, Key::PreviewDesc) => "Preview CSV file data",
         (Lang::Zh, Key::CsvFile) => "CSV 文件:",
         (Lang::En, Key::CsvFile) => "CSV file:",
         (Lang::Zh, Key::LoadPreview) => "📖 加载预览",
@@ -327,5 +329,9 @@ pub fn text(lang: Lang, key: Key) -> &'static str {
         (Lang::En, Key::EnableSplit) => "Split",
         (Lang::Zh, Key::EnableCompress) => "压缩",
         (Lang::En, Key::EnableCompress) => "Compress",
+        (Lang::Zh, Key::PreviewRows) => "预览行数:",
+        (Lang::En, Key::PreviewRows) => "Rows:",
+        (Lang::Zh, Key::SearchColumn) => "搜索列名...",
+        (Lang::En, Key::SearchColumn) => "Search column...",
     }
 }

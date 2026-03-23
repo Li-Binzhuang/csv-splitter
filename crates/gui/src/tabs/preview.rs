@@ -11,7 +11,7 @@ pub fn ui_preview(
 ) {
     // ── Title (centered) ──
     ui.vertical_centered(|ui| {
-        ui.heading(t!(lang, PreviewTitle));
+        ui.heading(egui::RichText::new(t!(lang, PreviewTitle)).color(TEXT_BRIGHT));
         ui.label(
             egui::RichText::new(t!(lang, PreviewDesc))
                 .size(12.0)
@@ -88,6 +88,11 @@ pub fn ui_preview(
                 );
                 ui.add_space(6.0);
                 delimiter_combo(ui, &mut s.delim_idx, &mut s.custom_delim, lang);
+                ui.add_space(2.0);
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new(t!(lang, PreviewRows)).color(TEXT_BRIGHT));
+                    ui.add(egui::DragValue::new(&mut s.preview_rows).range(10..=10_000));
+                });
                 ui.add_space(8.0);
                 ui.separator();
                 ui.add_space(4.0);
@@ -109,7 +114,7 @@ pub fn ui_preview(
                 {
                     if let Some(ref info) = s.input_file {
                         let delim = get_delimiter(s.delim_idx, &s.custom_delim);
-                        match load_preview(&info.path, 100, Some(delim)) {
+                        match load_preview(&info.path, s.preview_rows, Some(delim)) {
                             Ok(p) => s.preview = Some(p),
                             Err(_) => s.preview = None,
                         }
@@ -122,6 +127,7 @@ pub fn ui_preview(
     ui.allocate_space(egui::vec2(ui.available_width(), left_h.max(right_h)));
 
     if let Some(ref preview) = s.preview {
+        let remaining_h = ui.available_height().max(250.0);
         section_frame(ui, t!(lang, SectionResult), |ui| {
             ui.horizontal_wrapped(|ui| {
                 stat_badge(
@@ -152,6 +158,7 @@ pub fn ui_preview(
             ui.add_space(6.0);
             egui::ScrollArea::both()
                 .auto_shrink([false, false])
+                .min_scrolled_height(remaining_h - 80.0)
                 .show(ui, |ui| {
                     egui::Grid::new("preview_grid")
                         .striped(true)
@@ -159,13 +166,18 @@ pub fn ui_preview(
                         .spacing([12.0, 4.0])
                         .show(ui, |ui| {
                             for h in &preview.headers {
-                                ui.label(egui::RichText::new(h).strong().size(13.0));
+                                ui.label(
+                                    egui::RichText::new(h)
+                                        .strong()
+                                        .size(13.0)
+                                        .color(TEXT_BRIGHT),
+                                );
                             }
                             ui.end_row();
                             for row in &preview.rows {
                                 for (i, _) in preview.headers.iter().enumerate() {
                                     let val = row.get(i).map(|s| s.as_str()).unwrap_or("");
-                                    ui.label(val);
+                                    ui.label(egui::RichText::new(val).color(TEXT_BRIGHT));
                                 }
                                 ui.end_row();
                             }

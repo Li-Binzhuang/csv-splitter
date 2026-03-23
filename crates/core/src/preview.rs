@@ -1,10 +1,9 @@
 use crate::csv_reader::{detect_delimiter, parse_csv_line};
 use crate::types::*;
-use memchr::memchr_iter;
 use rand::Rng;
 use std::collections::HashMap;
 use std::fs::{self, File};
-use std::io::{self, BufRead, BufReader, Read};
+use std::io::{self, BufRead, BufReader};
 use std::path::Path;
 
 /// Load CSV preview: headers + first N rows, auto-detect delimiter.
@@ -36,21 +35,25 @@ pub fn load_preview(
     let mut line = String::new();
     for _ in 0..max_rows {
         line.clear();
-        if reader.read_line(&mut line)? == 0 { break; }
+        if reader.read_line(&mut line)? == 0 {
+            break;
+        }
         rows.push(parse_csv_line(&line, delim_byte));
     }
 
     // Estimate total rows from file size and average line length
     let total_rows_estimate = if !rows.is_empty() {
-        // Quick scan for actual count
-        let mut count = rows.len() as u64;
-        let mut buf = vec![0u8; 8 * 1024 * 1024];
-        loop {
-            let n = reader.read(&mut buf)?;
-            if n == 0 { break; }
-            count += memchr_iter(b'\n', &buf[..n]).count() as u64;
+        let bytes_so_far = header_line.len() as u64
+            + rows
+                .iter()
+                .map(|r| r.iter().map(|c| c.len() as u64 + 1).sum::<u64>() + 1)
+                .sum::<u64>();
+        let avg_line = bytes_so_far as f64 / (rows.len() + 1) as f64;
+        if avg_line > 0.0 {
+            (file_size as f64 / avg_line).round() as u64
+        } else {
+            rows.len() as u64
         }
-        count
     } else {
         0
     };
@@ -78,7 +81,8 @@ pub fn compute_column_stats(
     tx.send(ProgressEvent::PhaseStart {
         phase: "Computing column stats".into(),
         total_bytes: file_size,
-    }).ok();
+    })
+    .ok();
 
     let file = File::open(path)?;
     let mut reader = BufReader::with_capacity(64 * 1024 * 1024, file);
@@ -100,7 +104,9 @@ pub fn compute_column_stats(
     loop {
         line.clear();
         let n = reader.read_line(&mut line)?;
-        if n == 0 { break; }
+        if n == 0 {
+            break;
+        }
         bytes_read += n as u64;
         total_rows += 1;
 
@@ -153,6 +159,9 @@ pub fn compute_column_stats(
         });
     }
 
-    tx.send(ProgressEvent::PhaseDone { phase: "Computing column stats".into() }).ok();
+    tx.send(ProgressEvent::PhaseDone {
+        phase: "Computing column stats".into(),
+    })
+    .ok();
     Ok(stats)
 }
