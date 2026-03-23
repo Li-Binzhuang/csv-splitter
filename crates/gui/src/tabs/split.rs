@@ -1,6 +1,6 @@
 use super::flow;
 use crate::i18n::{t, Lang};
-use crate::state::{JobState, SplitState};
+use crate::state::SplitState;
 use crate::widgets::*;
 use csv_splitter_core::*;
 
@@ -23,6 +23,9 @@ pub fn ui_split(
     });
     ui.add_space(8.0);
 
+    // Capture the total available width ONCE — everything aligns to this.
+    let total_w = ui.available_width();
+
     // ===== FLOW — title row has toggles inline =====
     egui::Frame::new()
         .fill(CARD_BG)
@@ -31,6 +34,8 @@ pub fn ui_split(
         .inner_margin(14.0)
         .outer_margin(egui::Margin::symmetric(0, 4))
         .show(ui, |ui| {
+            ui.set_max_width(total_w - 30.0); // account for frame margins + stroke
+            ui.set_min_width(total_w - 30.0); // force full width so it aligns with columns below
             ui.horizontal(|ui| {
                 ui.label(
                     egui::RichText::new(t!(lang, SectionFlow))
@@ -45,76 +50,36 @@ pub fn ui_split(
             flow::draw_flow(ui, s, lang, dialogs);
         });
 
-    // ===== Two-column: (Columns + Action) left 60% | Params right 40% =====
-    let (left_w, right_w, left_rect, right_rect) = two_col_rects_ratio(ui, 8.0, 0.55);
+    // ===== Two-column: Columns (left, wider) | Params (right) =====
+    // Params panel has a natural width ~250px; columns gets the rest.
+    let gap = 8.0_f32;
+    let right_w = 250.0_f32.min((total_w - gap) * 0.38);
+    let left_w = (total_w - gap - right_w).max(100.0);
+    let top = ui.cursor().min;
+    let base_x = top.x;
+    let left_rect = egui::Rect::from_min_size(egui::pos2(base_x, top.y), egui::vec2(left_w, 10.0));
+    let right_rect = egui::Rect::from_min_size(
+        egui::pos2(base_x + left_w + gap, top.y),
+        egui::vec2(right_w, 10.0),
+    );
 
-    // -- Left column: columns + action --
-    let left_h = {
-        let mut left_ui = ui.new_child(
-            egui::UiBuilder::new()
-                .id_salt("split_left")
-                .max_rect(left_rect)
-                .layout(egui::Layout::top_down(egui::Align::Min)),
-        );
-        left_ui.set_max_width(left_w);
-        left_ui.set_width(left_w);
-
-        egui::Frame::new()
-            .fill(CARD_BG)
-            .stroke(egui::Stroke::new(1.0, CARD_BORDER))
-            .corner_radius(egui::CornerRadius::same(14))
-            .inner_margin(14.0)
-            .outer_margin(egui::Margin::symmetric(0, 4))
-            .show(&mut left_ui, |ui| {
-                ui.label(
-                    egui::RichText::new(t!(lang, SectionColumns))
-                        .size(13.0)
-                        .strong()
-                        .color(TEXT_BRIGHT),
-                );
-                ui.add_space(6.0);
-                let w = ui.available_width();
-                draw_columns_panel(ui, s, lang, w);
-            });
-
-        egui::Frame::new()
-            .fill(CARD_BG)
-            .stroke(egui::Stroke::new(1.0, CARD_BORDER))
-            .corner_radius(egui::CornerRadius::same(14))
-            .inner_margin(14.0)
-            .outer_margin(egui::Margin::symmetric(0, 4))
-            .show(&mut left_ui, |ui| {
-                ui.label(
-                    egui::RichText::new(t!(lang, SectionAction))
-                        .size(13.0)
-                        .strong()
-                        .color(TEXT_BRIGHT),
-                );
-                ui.add_space(6.0);
-                draw_action(ui, s, lang, dialogs);
-            });
-
-        left_ui.min_rect().height()
-    };
-
-    // -- Right column: params --
+    // First pass: draw right (params) to measure its natural height
     let right_h = {
-        let mut right_ui = ui.new_child(
+        let mut col = ui.new_child(
             egui::UiBuilder::new()
                 .id_salt("split_right")
                 .max_rect(right_rect)
                 .layout(egui::Layout::top_down(egui::Align::Min)),
         );
-        right_ui.set_max_width(right_w);
-        right_ui.set_width(right_w);
-
+        col.set_max_width(right_w);
+        col.set_width(right_w);
         egui::Frame::new()
             .fill(CARD_BG)
             .stroke(egui::Stroke::new(1.0, CARD_BORDER))
             .corner_radius(egui::CornerRadius::same(14))
             .inner_margin(14.0)
             .outer_margin(egui::Margin::symmetric(0, 4))
-            .show(&mut right_ui, |ui| {
+            .show(&mut col, |ui| {
                 ui.label(
                     egui::RichText::new(t!(lang, SectionParams))
                         .size(13.0)
@@ -125,83 +90,114 @@ pub fn ui_split(
                 params_left(ui, s, lang);
                 params_right(ui, s, lang);
             });
-
-        right_ui.min_rect().height()
+        col.min_rect().height()
     };
 
-    // Advance parent cursor past the taller column
-    let max_h = left_h.max(right_h);
-    ui.allocate_space(egui::vec2(ui.available_width(), max_h));
+    // Second pass: draw left (columns) with min_height matching params
+    let left_h = {
+        let mut col = ui.new_child(
+            egui::UiBuilder::new()
+                .id_salt("split_left")
+                .max_rect(left_rect)
+                .layout(egui::Layout::top_down(egui::Align::Min)),
+        );
+        col.set_max_width(left_w);
+        col.set_width(left_w);
+        egui::Frame::new()
+            .fill(CARD_BG)
+            .stroke(egui::Stroke::new(1.0, CARD_BORDER))
+            .corner_radius(egui::CornerRadius::same(14))
+            .inner_margin(14.0)
+            .outer_margin(egui::Margin::symmetric(0, 4))
+            .show(&mut col, |ui| {
+                ui.set_min_height(right_h - 40.0);
+                ui.label(
+                    egui::RichText::new(t!(lang, SectionColumns))
+                        .size(13.0)
+                        .strong()
+                        .color(TEXT_BRIGHT),
+                );
+                ui.add_space(6.0);
+                draw_columns_panel(ui, s, lang, dialogs);
+            });
+        col.min_rect().height()
+    };
+
+    ui.allocate_space(egui::vec2(ui.available_width(), left_h.max(right_h)));
 
     log_panel(ui, &s.logs, lang);
 }
-fn draw_action(
+
+/// Column selector panel with optional filter file support.
+fn draw_columns_panel(
     ui: &mut egui::Ui,
     s: &mut SplitState,
     lang: Lang,
     dialogs: &mut Vec<PendingDialog>,
 ) {
-    let can_start = s.state != JobState::Running && s.input_file.is_some();
+    let csv_filters: &[(&str, &[&str])] = &[("CSV", &["csv", "tsv", "txt"])];
+    let col_id = egui::Id::new("split_columns");
+
+    // Filter file sub-card
     ui.horizontal(|ui| {
-        let btn = egui::Button::new(egui::RichText::new(t!(lang, StartSplit)).size(14.0))
-            .min_size([120.0, 32.0].into());
-        if ui.add_enabled(can_start, btn).clicked() {
-            super::split_job::start_split(s);
-        }
-        if s.state == JobState::Done {
-            if let Some(ref out) = s.output_file {
-                if ui
-                    .button(egui::RichText::new(t!(lang, SaveResult)).size(13.0))
-                    .clicked()
-                {
-                    dialogs.push(spawn_save_file_dialog(out.name.clone(), out.path.clone()));
-                }
-            }
-        }
-        job_status(ui, &s.state, lang);
-    });
-
-    if s.state == JobState::Running && s.progress_total > 0 {
-        ui.add_space(4.0);
-        let frac = s.progress_bytes as f32 / s.progress_total as f32;
         ui.label(
-            egui::RichText::new(&s.current_phase)
-                .size(12.0)
-                .color(TEXT_DIM),
-        );
-        ui.add(
-            egui::ProgressBar::new(frac)
-                .text(format!(
-                    "{} / {}",
-                    format_bytes(s.progress_bytes),
-                    format_bytes(s.progress_total)
-                ))
-                .animate(true),
-        );
-    }
-}
-
-/// Left panel: column filter file + column checkboxes.
-fn draw_columns_panel(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, w: f32) {
-    if s.available_headers.is_empty() {
-        ui.set_min_height(120.0);
-        ui.label(
-            egui::RichText::new(t!(lang, DropColFileHere))
+            egui::RichText::new(t!(lang, ColumnFilter))
                 .size(11.0)
                 .color(TEXT_DIM),
         );
+        if let Some(ref info) = s.columns_file {
+            ui.label(
+                egui::RichText::new(&info.name)
+                    .size(11.0)
+                    .color(TEXT_BRIGHT),
+            );
+            if ui
+                .link(
+                    egui::RichText::new(t!(lang, RemoveFile))
+                        .size(10.0)
+                        .color(TEXT_DIM),
+                )
+                .clicked()
+            {
+                s.columns_file = None;
+                s.filter_headers.clear();
+                // Reset all to selected
+                s.selected_columns.iter_mut().for_each(|v| *v = true);
+            }
+        } else if ui
+            .link(
+                egui::RichText::new(t!(lang, DropColFileHere))
+                    .size(10.0)
+                    .color(ACCENT),
+            )
+            .clicked()
+        {
+            let owned_filters: Vec<(String, Vec<String>)> = csv_filters
+                .iter()
+                .map(|(n, exts)| (n.to_string(), exts.iter().map(|e| e.to_string()).collect()))
+                .collect();
+            dialogs.push(spawn_file_dialog(DialogTarget::File(col_id), owned_filters));
+        }
+    });
+    ui.add_space(4.0);
+
+    if s.available_headers.is_empty() {
+        ui.vertical_centered(|ui| {
+            ui.add_space(20.0);
+            ui.label(
+                egui::RichText::new(t!(lang, DropFileHere))
+                    .size(11.0)
+                    .color(TEXT_DIM),
+            );
+        });
     } else {
-        let selected_count = s.selected_columns.iter().filter(|&&v| v).count();
+        let sel = s.selected_columns.iter().filter(|&&v| v).count();
+        let total = s.available_headers.len();
         ui.horizontal(|ui| {
             ui.label(
-                egui::RichText::new(format!(
-                    "{}: {}/{}",
-                    t!(lang, SelectedCount),
-                    selected_count,
-                    s.available_headers.len()
-                ))
-                .size(10.0)
-                .color(TEXT_DIM),
+                egui::RichText::new(format!("{}: {}/{}", t!(lang, SelectedCount), sel, total))
+                    .size(10.0)
+                    .color(TEXT_DIM),
             );
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.small_button(t!(lang, DeselectAll)).clicked() {
@@ -210,19 +206,22 @@ fn draw_columns_panel(ui: &mut egui::Ui, s: &mut SplitState, lang: Lang, w: f32)
                 if ui.small_button(t!(lang, SelectAll)).clicked() {
                     s.selected_columns.iter_mut().for_each(|v| *v = true);
                 }
+                if ui.small_button(t!(lang, InvertSelect)).clicked() {
+                    s.selected_columns.iter_mut().for_each(|v| *v = !*v);
+                }
             });
         });
         ui.add_space(2.0);
         ui.add(
             egui::TextEdit::singleline(&mut s.column_search)
-                .desired_width(w - 30.0)
+                .desired_width(ui.available_width() - 8.0)
                 .hint_text(t!(lang, SearchColumns)),
         );
         ui.add_space(2.0);
         egui::ScrollArea::vertical()
             .max_height(150.0)
             .show(ui, |ui| {
-                ui.set_width(w - 30.0);
+                ui.set_width(ui.available_width());
                 let search = s.column_search.to_lowercase();
                 for (i, header) in s.available_headers.iter().enumerate() {
                     if !search.is_empty() && !header.to_lowercase().contains(&search) {

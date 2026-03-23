@@ -91,6 +91,10 @@ pub struct SplitState {
     pub available_headers: Vec<String>,
     pub selected_columns: Vec<bool>,
     pub column_search: String,
+    /// Headers loaded from the column filter file
+    pub filter_headers: Vec<String>,
+    /// Track the last loaded filter file path for change detection
+    pub last_filter_path: Option<std::path::PathBuf>,
 }
 
 impl Default for SplitState {
@@ -120,6 +124,8 @@ impl Default for SplitState {
             available_headers: Vec::new(),
             selected_columns: Vec::new(),
             column_search: String::new(),
+            filter_headers: Vec::new(),
+            last_filter_path: None,
         }
     }
 }

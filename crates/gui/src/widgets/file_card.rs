@@ -24,21 +24,25 @@ pub fn file_input_card(
 
     // Wrap everything in a vertical so links always appear below the card
     ui.vertical(|ui| {
+        ui.set_max_width(w);
         let border = if has_file { accent } else { CARD_BORDER };
+        let stroke_w = if has_file { 1.5 } else { 1.0 };
+        let margin = 12.0_f32;
+        // inner content width = outer w - 2*(margin + stroke)
+        let content_w = (w - 2.0 * (margin + stroke_w)).max(40.0);
 
         let frame_resp = egui::Frame::new()
             .fill(CARD_BG)
-            .stroke(egui::Stroke::new(if has_file { 1.5 } else { 1.0 }, border))
+            .stroke(egui::Stroke::new(stroke_w, border))
             .corner_radius(egui::CornerRadius::same(12))
-            .inner_margin(12.0)
+            .inner_margin(margin)
             .show(ui, |ui| {
-                let max_w = w.min(ui.available_width());
-                ui.set_width(max_w);
-                ui.set_max_width(max_w);
+                ui.set_width(content_w);
+                ui.set_max_width(content_w);
                 ui.set_min_height(min_h);
 
                 if let Some(ref info) = file {
-                    draw_file_meta(ui, info, max_w, lang);
+                    draw_file_meta(ui, info, content_w, lang);
                 } else {
                     ui.vertical_centered(|ui| {
                         ui.add_space((min_h - 30.0).max(0.0) / 2.0);

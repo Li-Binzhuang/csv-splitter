@@ -126,6 +126,7 @@ pub enum Key {
     EnableCompress,
     PreviewRows,
     SearchColumn,
+    InvertSelect,
 }
 
 pub fn text(lang: Lang, key: Key) -> &'static str {
@@ -333,5 +334,7 @@ pub fn text(lang: Lang, key: Key) -> &'static str {
         (Lang::En, Key::PreviewRows) => "Rows:",
         (Lang::Zh, Key::SearchColumn) => "搜索列名...",
         (Lang::En, Key::SearchColumn) => "Search column...",
+        (Lang::Zh, Key::InvertSelect) => "反选",
+        (Lang::En, Key::InvertSelect) => "Invert",
     }
 }
