@@ -1834,6 +1834,7 @@ fn cmd_sort(args: &[String]) -> i32 {
     let mut by: Option<String> = None;
     let mut out: Option<PathBuf> = None;
     let mut descending = false;
+    let mut verify = false;
     let mut buf_mb = 64usize;
     let mut delim = "auto".to_string();
     let mut quiet = false;
@@ -1856,6 +1857,7 @@ fn cmd_sort(args: &[String]) -> i32 {
             },
             "--desc" => descending = true,
             "--asc" => descending = false,
+            "--verify" => verify = true,
             "--buf-mb" => match p
                 .value("--buf-mb")
                 .and_then(|v| v.parse().map_err(|_| "bad --buf-mb".to_string()))
@@ -1941,6 +1943,39 @@ fn cmd_sort(args: &[String]) -> i32 {
                 out.display(),
                 human_bytes(bytes)
             );
+            if verify {
+                // Sorting promises "same rows, reordered": check the counts on
+                // both sides rather than trusting the merge step.
+                let (tx, _rx) = mpsc::channel();
+                let before = match csv_splitter_core::check::count(&input, delimiter, &tx) {
+                    Ok(c) => c,
+                    Err(e) => {
+                        return report_failure("sort", format!("cannot read the source: {e}"))
+                    }
+                };
+                let after = match csv_splitter_core::check::count(&out, delimiter, &tx) {
+                    Ok(c) => c,
+                    Err(e) => {
+                        return report_failure("sort", format!("cannot read the result: {e}"))
+                    }
+                };
+                if before.rows != after.rows || before.columns != after.columns {
+                    let _ = report_failure(
+                        "sort",
+                        format!(
+                            "self-check failed: {} rows × {} columns became {} rows × {} columns",
+                            before.rows, before.columns, after.rows, after.columns
+                        ),
+                    );
+                    return 1;
+                }
+                if !quiet {
+                    println!(
+                        "  ✓ checked: {} rows, {} columns",
+                        after.rows, after.columns
+                    );
+                }
+            }
             0
         }
         Err(_) => 1, // the reporter already printed the reason
@@ -2262,6 +2297,7 @@ fn cmd_partition(args: &[String]) -> i32 {
     let mut level = 3i32;
     let mut buf_mb = 64usize;
     let mut max_partitions = csv_splitter_core::partition::DEFAULT_MAX_PARTITIONS;
+    let mut verify = false;
     let mut delim = "auto".to_string();
     let mut quiet = false;
 
@@ -2308,6 +2344,7 @@ fn cmd_partition(args: &[String]) -> i32 {
                     return 2;
                 }
             },
+            "--verify" => verify = true,
             "--max-partitions" => match p
                 .value("--max-partitions")
                 .and_then(|v| v.parse().map_err(|_| "bad --max-partitions".to_string()))
@@ -2397,6 +2434,83 @@ fn cmd_partition(args: &[String]) -> i32 {
             expected.display(),
             human_bytes(bytes)
         );
+        if verify {
+            // The claim: every source row lands in exactly one partition, and no
+            // partition is ragged. Unpack and count, because an archive's size
+            // says nothing about its contents.
+            let tmp = match csv_splitter_core::tempdir::TempDir::new("partition-verify") {
+                Ok(t) => t,
+                Err(e) => {
+                    return report_failure("partition", format!("cannot create a temp dir: {e}"))
+                }
+            };
+            let (tx, _rx) = mpsc::channel();
+            let files =
+                match csv_splitter_core::decompress::decompress_file(&expected, tmp.path(), &tx) {
+                    Ok(f) => f,
+                    Err(e) => {
+                        return report_failure(
+                            "partition",
+                            format!("cannot unpack {}: {e}", expected.display()),
+                        )
+                    }
+                };
+            let source = match csv_splitter_core::check::count(&input, delimiter, &tx) {
+                Ok(c) => c,
+                Err(e) => {
+                    return report_failure("partition", format!("cannot read the source: {e}"))
+                }
+            };
+            // Members may themselves be compressed (`-f zst`), so each one is
+            // unpacked to plain CSV before counting. Counting a .csv.zst directly
+            // reads binary noise and reports nonsense row counts.
+            let mut total = 0u64;
+            for (index, file) in files.iter().enumerate() {
+                let plain =
+                    match csv_splitter_core::decompress::decompress_to_csv(file, tmp.path(), &tx) {
+                        Ok(p) => p,
+                        Err(e) => {
+                            return report_failure(
+                                "partition",
+                                format!("cannot unpack {}: {e}", file.display()),
+                            )
+                        }
+                    };
+                match csv_splitter_core::check::count(&plain, delimiter, &tx) {
+                    Ok(c) => total += c.rows,
+                    Err(e) => {
+                        return report_failure(
+                            "partition",
+                            format!("cannot read {}: {e}", plain.display()),
+                        )
+                    }
+                }
+                // The unpacked copy shares a temp dir; drop it so a big archive
+                // does not double its footprint on disk.
+                if index + 1 < files.len() {
+                    std::fs::remove_file(&plain).ok();
+                }
+            }
+            if total != source.rows {
+                return report_failure(
+                    "partition",
+                    format!(
+                        "self-check failed: {} partition(s) hold {total} rows, the source has {}",
+                        files.len(),
+                        source.rows
+                    ),
+                );
+            }
+            if !quiet {
+                println!(
+                    "  ✓ checked: {} partitions hold {} rows (source {} rows × {} columns)",
+                    files.len(),
+                    total,
+                    source.rows,
+                    source.columns
+                );
+            }
+        }
         0
     } else {
         report_failure("partition", "the archive was not written")

@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.35.0] — 2026-11-10
+
+### Added
+
+- **`--verify` for `sort` and `partition`**, the two write paths that were still
+  making unchecked claims. `sort` compares row and column counts before/after;
+  `partition` unpacks the archive (including members that are themselves
+  compressed) and sums the rows of every partition against the source.
+  - This caught a real trap while being written: counting a `.csv.zst` member
+    directly reported 577 rows out of 20,120, because the counter was reading
+    binary noise. Members are now decompressed first.
+- **Documentation drift tests** (`crates/cli/tests/docs.rs`): every
+  `csv-splitter <command>` in a code block must be a real sub-command, every
+  `GET/POST /x` must be advertised by the router, and the documented default port
+  must actually serve the viewer.
+
 ## [0.34.0] — 2026-11-10
 
 ### Changed

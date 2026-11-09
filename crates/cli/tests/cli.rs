@@ -1371,3 +1371,51 @@ fn failures_use_one_shape_and_one_exit_code() {
         "duplicated error: {err}"
     );
 }
+
+#[test]
+fn sort_and_partition_verify_their_claims() {
+    let dir = TempDir::new("verify2");
+    let input = dir.join("in.csv");
+    let mut csv = String::from("city,amount\n");
+    for (city, amount) in [("CDMX", 10), ("Puebla", 500), ("CDMX", 20), ("Tijuana", 5)] {
+        csv.push_str(&format!("{city},{amount}\n"));
+    }
+    std::fs::write(&input, csv).unwrap();
+
+    // sort: same rows, same columns, just reordered.
+    let sorted = dir.join("sorted.csv");
+    let status = Command::new(bin())
+        .args([
+            "sort",
+            input.to_str().unwrap(),
+            "--by",
+            "amount",
+            "-o",
+            sorted.to_str().unwrap(),
+            "--verify",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    // partition: every source row is in exactly one partition — including when
+    // the members are themselves compressed.
+    for (tag, archive) in [("raw", dir.join("raw.tar")), ("zst", dir.join("zst.tar"))] {
+        let mut cmd = Command::new(bin());
+        cmd.args([
+            "partition",
+            input.to_str().unwrap(),
+            "--by",
+            "city",
+            "-o",
+            archive.to_str().unwrap(),
+            "--verify",
+        ]);
+        if tag == "zst" {
+            cmd.args(["-f", "zst"]);
+        }
+        let status = cmd.status().unwrap();
+        assert_eq!(status.code(), Some(0), "{tag} partition verify failed");
+        assert!(archive.exists(), "{tag} archive missing");
+    }
+}

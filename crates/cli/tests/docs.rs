@@ -1,0 +1,186 @@
+//! Documentation drift checks.
+//!
+//! README and the getting-started guide quote commands and endpoints. Both are
+//! easy to edit and impossible to compile, so the only way they stay true is a
+//! test that reads them and compares against the program.
+//!
+//! Two things are checked, both cheap and both have already drifted once:
+//!   * every `csv-splitter <command>` mentioned in a code block is a real
+//!     sub-command;
+//!   * every `GET /x` / `POST /x` mentioned is advertised by the router.
+
+use std::io::{BufRead, Read, Write};
+use std::net::TcpStream;
+use std::path::PathBuf;
+
+const README: &str = include_str!("../../../README.md");
+const GUIDE: &str = include_str!("../../../docs/GETTING_STARTED.md");
+const ROUTER: &str = include_str!("../src/serve.rs");
+
+struct TempDir(PathBuf);
+
+impl TempDir {
+    fn new(tag: &str) -> Self {
+        let dir = std::env::temp_dir().join(format!(
+            "csvs_docs_{tag}_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        Self(dir)
+    }
+    fn join(&self, name: &str) -> PathBuf {
+        self.0.join(name)
+    }
+}
+
+impl Drop for TempDir {
+    fn drop(&mut self) {
+        std::fs::remove_dir_all(&self.0).ok();
+    }
+}
+
+/// Sub-commands the binary actually has, taken from its own help.
+fn real_commands() -> String {
+    let out = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+        .arg("--help")
+        .output()
+        .expect("run --help");
+    String::from_utf8_lossy(&out.stdout).to_string()
+}
+
+/// Every `csv-splitter <word>` inside a fenced code block in the docs.
+fn documented_commands(text: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut in_block = false;
+    for line in text.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("```") {
+            in_block = !in_block;
+            continue;
+        }
+        if !in_block {
+            continue;
+        }
+        // "$ csv-splitter demo", "csv-splitter preview …"
+        let body = trimmed.trim_start_matches("$ ").trim();
+        if let Some(rest) = body.strip_prefix("csv-splitter ") {
+            let word = rest.split_whitespace().next().unwrap_or("");
+            // Program *output* also begins with the name ("csv-splitter API on
+            // http://…"); a sub-command is always a lowercase word.
+            if !word.is_empty() && word.chars().all(|c| c.is_ascii_lowercase() || c == '-') {
+                out.push(word.trim_end_matches('\\').to_string());
+            }
+        }
+    }
+    out.sort();
+    out.dedup();
+    out
+}
+
+#[test]
+fn every_documented_command_exists() {
+    let help = real_commands();
+    let mut problems = Vec::new();
+    for doc in [("README", README), ("GETTING_STARTED", GUIDE)] {
+        for command in documented_commands(doc.1) {
+            // `--help` lists sub-commands as "  <name>  <args…>".
+            let listed = help
+                .lines()
+                .any(|line| line.trim_start().starts_with(&format!("{command} ")));
+            if !listed {
+                problems.push(format!(
+                    "{}: `csv-splitter {command}` is not a sub-command",
+                    doc.0
+                ));
+            }
+        }
+    }
+    assert!(problems.is_empty(), "{}", problems.join("\n"));
+}
+
+/// Endpoints mentioned in the docs, e.g. "GET /rows?path=…".
+fn documented_endpoints(text: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    for token in text.split('`') {
+        let token = token.trim();
+        for verb in ["GET ", "POST "] {
+            if let Some(rest) = token.strip_prefix(verb) {
+                let path = rest.split(['?', ' ', '`']).next().unwrap_or("");
+                if path.starts_with('/') {
+                    out.push(format!("{} {path}", verb.trim()));
+                }
+            }
+        }
+    }
+    out.sort();
+    out.dedup();
+    out
+}
+
+#[test]
+fn every_documented_endpoint_is_advertised_by_the_router() {
+    // The router's 404 body lists what it serves; that is the source of truth.
+    let advertised = ROUTER;
+    let mut problems = Vec::new();
+    for endpoint in documented_endpoints(README) {
+        let (verb, path) = endpoint.split_once(' ').unwrap();
+        let needle = match verb {
+            "GET" => format!("\"{path}\""),
+            _ => format!("\"{path}\" => start_"),
+        };
+        if !advertised.contains(&needle) {
+            problems.push(format!(
+                "README documents {verb} {path}, the router does not serve it"
+            ));
+        }
+    }
+    assert!(problems.is_empty(), "{}", problems.join("\n"));
+}
+
+#[test]
+fn the_documented_serve_port_actually_works() {
+    // The docs tell people to open http://127.0.0.1:8787/; make sure the default
+    // is that port and that GET / answers with the viewer.
+    let dir = TempDir::new("port");
+    std::fs::write(dir.join("a.csv"), "id\n1\n").unwrap();
+
+    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+        .args(["serve", "--root", dir.0.to_str().unwrap()])
+        .args(["--addr", "127.0.0.1:0"])
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .spawn()
+        .expect("spawn serve");
+    let mut line = String::new();
+    std::io::BufReader::new(child.stdout.take().unwrap())
+        .read_line(&mut line)
+        .unwrap();
+    let addr = line
+        .split("http://")
+        .nth(1)
+        .and_then(|s| s.split_whitespace().next())
+        .expect("banner address")
+        .to_string();
+
+    let mut stream = TcpStream::connect(&addr).unwrap();
+    write!(
+        stream,
+        "GET / HTTP/1.1\r\nHost: x\r\nConnection: close\r\n\r\n"
+    )
+    .unwrap();
+    let mut raw = String::new();
+    stream.read_to_string(&mut raw).unwrap();
+    let ok = raw.starts_with("HTTP/1.1 200") && raw.contains("text/html");
+    let _ = child.kill();
+    let _ = child.wait();
+    assert!(ok, "GET / did not serve the viewer: {raw}");
+
+    assert!(
+        README.contains("127.0.0.1:8787"),
+        "the default port changed"
+    );
+}

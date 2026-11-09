@@ -165,7 +165,7 @@ csv-splitter extract chunks.tar -o ./out
 | 把文件给出去 | — | `GET /download?path=`（原始字节） |
 | 把查询结果拿出去 | — | `GET /export?sql=...`（CSV 文本） |
 | 无损自检（字节级） | `verify big.csv -n 6` | — |
-| **写操作自检（计数级）** | `filter … -o out.csv --verify` 等 | — |
+| **写操作自检（计数级）** | 写操作自检（计数级） | `filter … --verify` / `sort … --verify` / `partition … --verify` | — |
 
 ```bash
 $ csv-splitter search orders.csv refund --show 3
@@ -473,7 +473,8 @@ error: filter needs at least one --where <expr>
 | `filter -o` | 输出里正好是命中的那些行 | 重读输出，比对行数、列数、继承的 ragged 行数 |
 | `columns` | 行数不变，正好是留下的那些列 | 同上 |
 | `dedupe` | `kept + removed == scanned` | 先查算术，再重读输出查行数 |
-| `sort` | 行数不变 | （顺序要另验） |
+| `sort` | 行数、列数不变，只是顺序变了 | 重读源和结果比对计数 |
+| `partition` | 所有源行都落在某一个分区里 | 解包（含压缩成员）逐个数行，求和比对 |
 
 ```
 $ csv-splitter filter messy.csv --where "城市=CDMX" -o f.csv --verify
