@@ -345,7 +345,7 @@ fn rows(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -
     // With `sql=`, the window is taken from the query result instead of the
     // raw file: a table can page a filtered/sorted view directly.
     if let Some(statement) = params.get("sql") {
-        return match sql::page(&path, statement, start, count) {
+        return match sql::page_with(&path, statement, start, count, delimiter(params)) {
             Ok(p) => {
                 let cols: Vec<String> = p.columns.iter().map(|c| json_str(c)).collect();
                 let rows: Vec<String> = p
@@ -422,7 +422,7 @@ fn query(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) 
         .and_then(|v| v.parse().ok())
         .unwrap_or(sql::DEFAULT_LIMIT)
         .min(10_000);
-    match sql::query(&path, statement, limit) {
+    match sql::query_with(&path, statement, limit, delimiter(params)) {
         Ok(result) => {
             let cols: Vec<String> = result.columns.iter().map(|c| json_str(c)).collect();
             let rows: Vec<String> = result

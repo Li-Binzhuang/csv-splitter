@@ -11,6 +11,7 @@
 //!   * results are capped, so a `SELECT *` cannot exhaust memory;
 //!   * the file is registered as view `t`, so queries never need a path.
 
+use crate::types::Delimiter;
 use duckdb::types::Value;
 use duckdb::Connection;
 use std::io;
@@ -76,25 +77,73 @@ pub fn validate(sql: &str) -> Result<(), String> {
 }
 
 /// Open the file as view `t` in a fresh in-memory connection.
-fn connect(path: &Path) -> io::Result<Connection> {
+fn connect(path: &Path, delimiter: Delimiter) -> io::Result<Connection> {
     if !path.is_file() {
         return Err(io::Error::new(io::ErrorKind::NotFound, "file not found"));
     }
     let conn = Connection::open_in_memory().map_err(to_io)?;
     // DuckDB reads the CSV lazily through the view; the path is escaped as a
     // string literal so a quote in the file name cannot break out.
+    //
+    // `null_padding` matters: our own reader tolerates rows with more or fewer
+    // fields than the header (a stray unquoted comma is a very common export
+    // defect). Without it DuckDB refuses to bind the table at all, and `/rows`
+    // and `/rows?sql=` would disagree on the same file.
     let view = format!(
-        "CREATE VIEW t AS SELECT * FROM read_csv_auto('{}', header=true, sample_size=20000)",
-        path.to_string_lossy().replace('\'', "''")
+        "CREATE VIEW t AS SELECT * FROM read_csv_auto('{}', header=true, delim='{}', sample_size=20000, null_padding=true)",
+        path.to_string_lossy().replace('\'', "''"),
+        (delimiter.byte() as char).to_string().replace('\'', "''")
     );
     conn.execute_batch(&view).map_err(to_io)?;
+    // A single column whose name contains the delimiter means the sniffer took
+    // the whole header as one field — say so instead of failing later with a
+    // confusing "column not found".
+    let mut stmt = conn.prepare("DESCRIBE t").map_err(to_io)?;
+    let mut rows = stmt.query([]).map_err(to_io)?;
+    let mut names = Vec::new();
+    while let Some(row) = rows.next().map_err(to_io)? {
+        let name: String = row.get(0).map_err(to_io)?;
+        names.push(name);
+    }
+    drop(rows);
+    drop(stmt);
+    // One column whose name still contains a separator means the file was
+    // split on the wrong character (`id;name` read as a single column).
+    if names.len() == 1 {
+        let found: Vec<char> = b",\t;|"
+            .iter()
+            .map(|b| *b as char)
+            .filter(|c| *c != delimiter.byte() as char && names[0].contains(*c))
+            .collect();
+        if !found.is_empty() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!(
+                    "the header was parsed as a single column ({}); the file looks like it uses {:?}, not '{}' — pass the right delimiter",
+                    names[0],
+                    found,
+                    delimiter.byte() as char
+                ),
+            ));
+        }
+    }
     Ok(conn)
 }
 
 /// Run `sql` against `path` (read-only, results capped at `limit`).
 pub fn query(path: &Path, sql: &str, limit: usize) -> io::Result<QueryResult> {
+    query_with(path, sql, limit, Delimiter::Comma)
+}
+
+/// Same as [`query`], with an explicit delimiter.
+pub fn query_with(
+    path: &Path,
+    sql: &str,
+    limit: usize,
+    delimiter: Delimiter,
+) -> io::Result<QueryResult> {
     validate(sql).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-    let conn = connect(path)?;
+    let conn = connect(path, delimiter)?;
 
     let limit = limit.clamp(1, 100_000);
     let wrapped = format!("SELECT * FROM ({sql}) AS _q LIMIT {}", limit + 1);
@@ -153,8 +202,19 @@ pub struct QueryPage {
 /// rows 5000..5020 of `WHERE city='CDMX'`" and never materialises the rest.
 /// One extra row is fetched to answer `has_more` without a second COUNT query.
 pub fn page(path: &Path, sql: &str, start: u64, count: u64) -> io::Result<QueryPage> {
+    page_with(path, sql, start, count, Delimiter::Comma)
+}
+
+/// Same as [`page`], with an explicit delimiter.
+pub fn page_with(
+    path: &Path,
+    sql: &str,
+    start: u64,
+    count: u64,
+    delimiter: Delimiter,
+) -> io::Result<QueryPage> {
     validate(sql).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-    let conn = connect(path)?;
+    let conn = connect(path, delimiter)?;
     let count = count.clamp(1, 100_000);
     let wrapped = format!(
         "SELECT * FROM ({sql}) AS _q LIMIT {} OFFSET {}",
@@ -294,6 +354,51 @@ mod tests {
         assert_eq!(r.rows[0][0], "CDMX");
         assert_eq!(r.rows[0][1], "500");
         std::fs::remove_dir_all(p.parent().unwrap()).ok();
+    }
+
+    #[test]
+    fn tolerates_ragged_rows_like_the_rest_of_the_tool() {
+        // A stray unquoted comma in a free-text column is a very common export
+        // defect. Our own reader parses it as an extra field; DuckDB must not
+        // refuse to open the file.
+        let dir = std::env::temp_dir().join(format!(
+            "csvs_sql_ragged_{}_{}",
+            std::process::id(),
+            unique_seq()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let p = dir.join("ragged.csv");
+        std::fs::write(&p, "id,note\n1,ok\n2,x,y\n3,fine\n").unwrap();
+
+        let r = query(&p, "SELECT count(*) AS n FROM t", 10).unwrap();
+        assert_eq!(r.rows[0][0], "3");
+
+        // Short rows are padded with NULL rather than dropping the file.
+        std::fs::write(&p, "id,a,b\n1,x,y\n2,only\n").unwrap();
+        let r = query(&p, "SELECT count(*) AS n FROM t", 10).unwrap();
+        assert_eq!(r.rows[0][0], "2");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn explains_a_wrong_delimiter() {
+        let dir = std::env::temp_dir().join(format!(
+            "csvs_sql_delim_{}_{}",
+            std::process::id(),
+            unique_seq()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let p = dir.join("semi.csv");
+        std::fs::write(&p, "id;name\n1;a\n").unwrap();
+
+        let err = query(&p, "SELECT count(*) FROM t", 10).unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+        assert!(err.to_string().contains("single column"), "{err}");
+
+        // With the right delimiter it works.
+        let r = query_with(&p, "SELECT count(*) FROM t", 10, Delimiter::Semicolon).unwrap();
+        assert_eq!(r.rows[0][0], "1");
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]

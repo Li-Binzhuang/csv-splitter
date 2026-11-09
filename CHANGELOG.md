@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.15.0] — 2026-11-09
+
+### Verified at 10 GB
+
+Measured on a 9.9 GB / 190 M row CSV (Apple M1 Pro, release build):
+
+| Operation | Time | Peak RSS |
+|---|---|---|
+| `index` | 4.28 s | 18.3 MB |
+| jump to row 189,000,000 | 0.5–1.2 ms | 11.3 MB |
+| `split -n 8` | 20.9 s (≈490 MB/s) | 89 MB |
+| `merge` | 6.1 s | 10.7 MB |
+| SQL group-by (5 groups) | 2.78 s | — |
+| `/rows?sql=…&start=1000000` | 4.25 s (full sort) | — |
+
+Index size is 1.45 MB for 9.9 GB — 1/7000 of the file — because it stores one
+offset per 1000 rows.
+
+### Fixed
+
+- **DuckDB refused ragged CSVs.** A stray unquoted comma (very common in real
+  exports) made `read_csv_auto` bind the header as one giant column, and every
+  query then failed with "column not found". Our own reader tolerates such rows,
+  so `/rows` and `/rows?sql=` disagreed about the same file. Now opened with
+  `header=true, delim=<requested>, null_padding=true`, and a single-column
+  header that still contains a separator produces an explicit message naming the
+  likely delimiter instead of a binder error.
+- `/query` and `/rows?sql=` now honour the request's delimiter.
+
 ## [0.14.0] — 2026-11-09
 
 ### Added
