@@ -9,6 +9,7 @@
 //! three orders of magnitude smaller than an in-memory table.
 
 use crate::csv_reader::RecordReader;
+use crate::encoding::detect;
 use std::fs::File;
 use std::io::{self, BufReader, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
@@ -73,6 +74,17 @@ impl SparseIndex {
 
     pub fn build_with_buffer(path: &Path, interval: u64, buf: usize) -> io::Result<Self> {
         let interval = interval.max(1);
+        let encoding = detect(path)?;
+        if !encoding.is_ascii_compatible() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!(
+                    "{} is {}; the row index works on byte offsets and needs utf-8 or gbk",
+                    path.display(),
+                    encoding.label()
+                ),
+            ));
+        }
         let file_len = std::fs::metadata(path)?.len();
         let mut reader = RecordReader::new(BufReader::with_capacity(buf, File::open(path)?), buf);
 

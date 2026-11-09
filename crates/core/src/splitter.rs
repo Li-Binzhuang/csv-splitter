@@ -1,6 +1,7 @@
 use crate::compress::{finish_compressor, make_compressor};
 use crate::csv_reader::{join_csv_line, parse_csv_record, RecordReader};
 use crate::decompress::decompress_to_csv;
+use crate::encoding::{decode_record, detect, TextEncoding};
 use crate::pack::{pack_tar, pack_zip};
 use crate::sort::external_sort;
 use crate::tempdir::TempDir;
@@ -67,6 +68,18 @@ fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
     } else {
         csv_path
     };
+
+    let encoding = detect(&work_path)?;
+    if !encoding.is_ascii_compatible() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!(
+                "{} is {}; convert it to UTF-8 first (GBK and UTF-8 are supported)",
+                config.input.display(),
+                encoding.label()
+            ),
+        ));
+    }
 
     // Load column filter
     let desired_cols = match &config.columns_file {
@@ -140,6 +153,7 @@ fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
         data_records,
         &plan,
         &desired_cols,
+        encoding,
         config.compress_format,
         config.compress_level,
         config.delimiter,
@@ -315,6 +329,7 @@ fn split_filter_compress(
     data_records: u64,
     plan: &SplitPlan,
     desired_cols: &Option<HashSet<String>>,
+    encoding: TextEncoding,
     format: CompressFormat,
     level: i32,
     delimiter: Delimiter,
@@ -333,7 +348,7 @@ fn split_filter_compress(
     if !reader.next_record(&mut record)? {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "Empty file"));
     }
-    let mut header_text = String::from_utf8_lossy(&record).into_owned();
+    let mut header_text = decode_record(&record, encoding);
     if header_text.ends_with('\n') {
         header_text.pop();
     }
@@ -429,7 +444,9 @@ fn split_filter_compress(
 
         let data = match &col_indices {
             Some(indices) => {
-                let text = String::from_utf8_lossy(&record);
+                // Column filtering has to understand the bytes; the output is
+                // normalised to UTF-8 because the header is re-rendered too.
+                let text = decode_record(&record, encoding);
                 let fields = parse_csv_record(&text, delim);
                 let selected: Vec<&str> = indices
                     .iter()

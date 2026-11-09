@@ -119,6 +119,15 @@ csv-splitter extract chunks.tar -o ./out
 3. **内存可控**：`--buf-mb` 是**总预算**，拆成 N 片不会变成 N × 缓冲。旧版每片固定 64 MB，
    10 片时峰值接近 700 MB。
 
+## 编码 / Encoding
+
+自动识别 **UTF-8 / UTF-8 BOM / GBK / UTF-16 LE / UTF-16 BE**：
+
+- 预览、列统计、切分（含列过滤）、API 都按识别结果解码，中文不再乱码
+- UTF-8 BOM 会被剥离，不会污染第一个列名
+- 行索引基于字节偏移，适用于 **UTF-8 与 GBK**（两者的 `,` 和换行都是 ASCII，不会出现在多字节字符里）；
+  UTF-16 的换行是两字节，随机访问会明确报错而不是给出错位数据
+
 ## HTTP API / 后端接口
 
 前后端分离时的后端：一个只读 JSON API，浏览器只请求「当前屏幕上的那几十行」，
@@ -131,7 +140,7 @@ csv-splitter serve --root ~/data --addr 127.0.0.1:8787
 | 端点 | 说明 |
 |------|------|
 | `GET /health` | 存活检查 |
-| `GET /meta?path=REL` | 行数、字节数、表头、分隔符 |
+| `GET /meta?path=REL` | 行数、字节数、表头、分隔符、编码 |
 | `GET /rows?path=REL&start=N&count=M` | 任意行窗口（count ≤ 2000） |
 | `GET /stats?path=REL&sample=N` | 列统计（唯一值 / 空值 / Top N） |
 

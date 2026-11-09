@@ -8,6 +8,7 @@
 //! The logic lives in core (not egui) so it can be tested without a window.
 
 use crate::csv_reader::parse_csv_record;
+use crate::encoding::{decode_cell, detect, TextEncoding};
 use crate::index::{SparseIndex, DEFAULT_INTERVAL};
 use crate::types::Delimiter;
 use std::io;
@@ -19,6 +20,7 @@ pub const DEFAULT_WINDOW: u64 = 2_000;
 pub struct WindowViewer {
     path: PathBuf,
     delimiter: Delimiter,
+    encoding: TextEncoding,
     index: SparseIndex,
     /// First data row held in `rows` (0-based).
     start: u64,
@@ -29,6 +31,17 @@ impl WindowViewer {
     /// Open a file, using its sidecar index when it is still valid and building
     /// one otherwise (constant memory, roughly 0.5 s per 100 MB).
     pub fn open(path: &Path, delimiter: Delimiter) -> io::Result<Self> {
+        let encoding = detect(path)?;
+        if !encoding.is_ascii_compatible() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!(
+                    "{} is {}; random access needs an ASCII-compatible encoding (utf-8 / gbk)",
+                    path.display(),
+                    encoding.label()
+                ),
+            ));
+        }
         let sidecar = SparseIndex::sidecar_path(path);
         let index = match SparseIndex::load(&sidecar) {
             Ok(idx) if idx.matches(path) => idx,
@@ -42,6 +55,7 @@ impl WindowViewer {
         Ok(Self {
             path: path.to_path_buf(),
             delimiter,
+            encoding,
             index,
             start: 0,
             rows: Vec::new(),
@@ -53,6 +67,7 @@ impl WindowViewer {
         Self {
             path: path.to_path_buf(),
             delimiter,
+            encoding: TextEncoding::Utf8 { bom: false },
             index,
             start: 0,
             rows: Vec::new(),
@@ -103,7 +118,7 @@ impl WindowViewer {
         self.rows = raw
             .iter()
             .map(|r| {
-                let text = String::from_utf8_lossy(r);
+                let text = decode_cell(r, self.encoding);
                 parse_csv_record(text.trim_end_matches(['\n', '\r']), delim)
             })
             .collect();
@@ -114,8 +129,13 @@ impl WindowViewer {
     /// Header record, parsed.
     pub fn headers(&self) -> io::Result<Vec<String>> {
         let raw = self.index.read_header(&self.path)?;
-        let text = String::from_utf8_lossy(&raw);
+        let text = decode_cell(&raw, self.encoding);
         Ok(parse_csv_record(text.trim_end(), self.delimiter.byte()))
+    }
+
+    /// Encoding used to decode cells (reported by the API).
+    pub fn encoding_label(&self) -> &'static str {
+        self.encoding.label()
     }
 
     /// Bytes of the backing file (for the status line).

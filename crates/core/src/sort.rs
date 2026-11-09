@@ -1,4 +1,5 @@
 use crate::csv_reader::{parse_csv_record, RecordReader};
+use crate::encoding::{decode_cell, detect, TextEncoding};
 use crate::types::*;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
@@ -30,6 +31,17 @@ pub fn external_sort(
     })
     .ok();
 
+    let encoding = detect(input)?;
+    if !encoding.is_ascii_compatible() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!(
+                "{} is {}; sorting needs utf-8 or gbk",
+                input.display(),
+                encoding.label()
+            ),
+        ));
+    }
     let mut reader = RecordReader::new(
         BufReader::with_capacity(buf_size, File::open(input)?),
         buf_size,
@@ -41,7 +53,7 @@ pub fn external_sort(
         return Ok(());
     }
     let header_line = record.clone();
-    let headers = parse_csv_record(&String::from_utf8_lossy(&record), delim);
+    let headers = parse_csv_record(&decode_cell(&record, encoding), delim);
     let col_idx = headers.iter().position(|h| h == sort_col).ok_or_else(|| {
         io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -64,6 +76,7 @@ pub fn external_sort(
                 descending,
                 tmp_dir,
                 chunk_paths.len(),
+                encoding,
             )?;
             chunk_paths.push(p);
             records.clear();
@@ -82,6 +95,7 @@ pub fn external_sort(
             descending,
             tmp_dir,
             chunk_paths.len(),
+            encoding,
         )?;
         chunk_paths.push(p);
     }
@@ -110,6 +124,7 @@ pub fn external_sort(
         delim,
         descending,
         buf_size,
+        encoding,
     )?;
     tx.send(ProgressEvent::PhaseDone {
         phase: "Sorting: merging".into(),
@@ -124,8 +139,8 @@ pub fn external_sort(
     Ok(())
 }
 
-fn sort_key(record: &[u8], col_idx: usize, delim: u8) -> String {
-    let fields = parse_csv_record(&String::from_utf8_lossy(record), delim);
+fn sort_key(record: &[u8], col_idx: usize, delim: u8, encoding: TextEncoding) -> String {
+    let fields = parse_csv_record(&decode_cell(record, encoding), delim);
     fields.get(col_idx).cloned().unwrap_or_default()
 }
 
@@ -136,11 +151,12 @@ fn write_sorted_chunk(
     desc: bool,
     tmp_dir: &Path,
     chunk_num: usize,
+    encoding: TextEncoding,
 ) -> io::Result<PathBuf> {
     let mut indexed: Vec<(usize, String)> = records
         .iter()
         .enumerate()
-        .map(|(i, r)| (i, sort_key(r, col_idx, delim)))
+        .map(|(i, r)| (i, sort_key(r, col_idx, delim, encoding)))
         .collect();
 
     // `sort_by` is stable, so equal keys keep their original order.
@@ -221,6 +237,7 @@ fn merge_chunks(
     delim: u8,
     descending: bool,
     buf_size: usize,
+    encoding: TextEncoding,
 ) -> io::Result<()> {
     let per_reader = (buf_size / chunks.len().max(1)).max(64 * 1024);
     let mut readers: Vec<RecordReader<BufReader<File>>> = chunks
@@ -239,7 +256,7 @@ fn merge_chunks(
     // Seed the heap with the first record from each chunk.
     for (i, reader) in readers.iter_mut().enumerate() {
         if reader.next_record(&mut record)? {
-            let key = sort_key(&record, col_idx, delim);
+            let key = sort_key(&record, col_idx, delim, encoding);
             heap.push(MergeEntry {
                 record: record.clone(),
                 key,
@@ -262,7 +279,7 @@ fn merge_chunks(
         write_record(&mut writer, &entry.record)?;
 
         if readers[entry.source].next_record(&mut record)? {
-            let key = sort_key(&record, col_idx, delim);
+            let key = sort_key(&record, col_idx, delim, encoding);
             heap.push(MergeEntry {
                 record: record.clone(),
                 key,

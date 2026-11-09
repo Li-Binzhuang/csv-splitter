@@ -417,7 +417,14 @@ fn cmd_split(args: &[String]) -> i32 {
         return 2;
     }
     if let Some(list) = columns {
-        let path = std::env::temp_dir().join(format!("csvs_cols_{}.txt", std::process::id()));
+        // Unique per invocation: two concurrent runs in one process (tests) were
+        // overwriting each other's column list.
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let path =
+            std::env::temp_dir().join(format!("csvs_cols_{}_{}.txt", std::process::id(), unique));
         let text = list
             .split(',')
             .map(str::trim)

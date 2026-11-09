@@ -112,12 +112,13 @@ fn meta(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -
             let headers = viewer.headers().unwrap_or_default();
             let headers_json: Vec<String> = headers.iter().map(|h| json_str(h)).collect();
             let body = format!(
-                r#"{{"path":{},"rows":{},"bytes":{},"headers":[{}],"delimiter":{}}}"#,
+                r#"{{"path":{},"rows":{},"bytes":{},"headers":[{}],"delimiter":{},"encoding":{}}}"#,
                 json_str(&rel),
                 viewer.total_rows(),
                 viewer.file_len(),
                 headers_json.join(","),
-                json_str(&(delimiter(params).byte() as char).to_string())
+                json_str(&(delimiter(params).byte() as char).to_string()),
+                json_str(viewer.encoding_label())
             );
             respond_json(stream, 200, &body)
         }

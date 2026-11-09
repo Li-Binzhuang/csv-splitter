@@ -1,8 +1,9 @@
 use crate::csv_reader::{detect_delimiter, parse_csv_line, parse_csv_record, RecordReader};
+use crate::encoding;
 use crate::types::*;
 use rand::Rng;
 use std::collections::HashMap;
-use std::fs::{self, File};
+use std::fs;
 use std::io::{self, BufReader};
 use std::path::Path;
 
@@ -14,17 +15,16 @@ pub fn load_preview(
 ) -> io::Result<CsvPreview> {
     let file_size = fs::metadata(path)?.len();
 
-    // Detect delimiter
-    let mut detect_file = File::open(path)?;
+    // Detect delimiter (over the decoded stream, so GBK does not confuse it)
+    let mut detect_file = encoding::open_decoded(path)?;
     let (detected, _) = detect_delimiter(&mut detect_file)?;
-    drop(detect_file);
 
     let delim = delimiter_override.unwrap_or(detected);
     let delim_byte = delim.byte();
 
     // Record-aware reading: a quoted field may contain newlines, and a naive
     // `read_line` loop turns one row into two (and shifts every later column).
-    let file = File::open(path)?;
+    let file = encoding::open_decoded(path)?;
     let mut reader = RecordReader::new(
         BufReader::with_capacity(8 * 1024 * 1024, file),
         8 * 1024 * 1024,
@@ -95,7 +95,7 @@ pub fn compute_column_stats(
     })
     .ok();
 
-    let file = File::open(path)?;
+    let file = encoding::open_decoded(path)?;
     let mut reader = RecordReader::new(
         BufReader::with_capacity(8 * 1024 * 1024, file),
         8 * 1024 * 1024,

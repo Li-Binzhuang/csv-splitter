@@ -113,7 +113,7 @@ fn column_filter_produces_selected_headers() {
             "-n",
             "2",
             "-f",
-            "none",
+            "zst",
             "--columns",
         ])
         .arg("id,note")
@@ -328,4 +328,55 @@ fn preview_start_row_uses_the_index() {
     // Rows are printed with a 1-based row number; the first cell is the id.
     assert!(text.contains("500 | ok") || text.contains("500,"), "{text}");
     assert!(text.contains("501"), "{text}");
+}
+
+#[test]
+fn gbk_csv_is_decoded_for_preview_and_split() {
+    let dir = TempDir::new("gbk");
+    let input = dir.join("gbk.csv");
+    // "城市,人口\n北京,2189\n上海,2424\n" in GBK
+    let bytes: Vec<u8> = vec![
+        179, 199, 202, 208, 44, 200, 203, 191, 218, 10, 177, 177, 190, 169, 44, 50, 49, 56, 57, 10,
+        201, 207, 186, 163, 44, 50, 52, 50, 52, 10,
+    ];
+    std::fs::write(&input, &bytes).unwrap();
+
+    let preview = Command::new(bin())
+        .args(["preview", input.to_str().unwrap(), "--rows", "5"])
+        .output()
+        .unwrap();
+    assert!(preview.status.success());
+    let text = String::from_utf8_lossy(&preview.stdout);
+    assert!(text.contains("城市 | 人口"), "{text}");
+    assert!(text.contains("北京 | 2189"), "{text}");
+
+    // Column filtering on a GBK file has to decode before re-rendering.
+    let archive = dir.join("pick.tar");
+    let merged = dir.join("pick.csv");
+    Command::new(bin())
+        .args([
+            "split",
+            input.to_str().unwrap(),
+            "-n",
+            "1",
+            "-f",
+            "zst",
+            "--columns",
+        ])
+        .arg("人口")
+        .args(["-o"])
+        .arg(&archive)
+        .arg("-q")
+        .status()
+        .unwrap();
+    Command::new(bin())
+        .args(["merge"])
+        .arg(&archive)
+        .args(["-o"])
+        .arg(&merged)
+        .arg("-q")
+        .status()
+        .unwrap();
+    let picked = std::fs::read_to_string(&merged).unwrap();
+    assert_eq!(picked, "人口\n2189\n2424\n");
 }

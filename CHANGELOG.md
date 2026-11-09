@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.9.0] — 2026-11-09
+
+### Added
+
+- **Encoding detection and decoding**: UTF-8, UTF-8 with BOM, GBK (the usual
+  "ANSI" export on Chinese Windows) and UTF-16 LE/BE (BOM or NUL pattern).
+  Preview, column stats, splitting (including `--columns`), sorting and the HTTP
+  API all decode before parsing, so Chinese headers are no longer mojibake.
+- `/meta` reports the detected encoding.
+- Row index refuses UTF-16 with an explicit message: its separators are two
+  bytes, so byte offsets would silently misalign. UTF-8 and GBK are fine —
+  their `,` and `\n` never appear inside a multi-byte character.
+
+### Fixed
+
+- `--columns` wrote its temporary list to a pid-derived file, so concurrent runs
+  in one process (the test suite) overwrote each other's column names.
+
 ## [0.8.0] — 2026-11-09
 
 ### Added
