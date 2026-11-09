@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0] — 2026-11-09
+
+### Added
+
+- CLI progress now shows percentage, throughput and ETA for long phases
+  (`  46% · 83.4 MB/s · ETA 1s`), throttled to four updates a second so CI logs
+  stay readable. `--quiet` still silences everything but errors.
+
 ## [0.4.0] — 2026-11-09
 
 ### Added

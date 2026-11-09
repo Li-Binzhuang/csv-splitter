@@ -16,6 +16,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::mpsc;
 use std::thread;
+use std::time::{Duration, Instant};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -179,6 +180,27 @@ fn parse_size(spec: &str) -> Result<u64, String> {
     Ok((value * multiplier as f64) as u64)
 }
 
+fn human_rate(bytes_per_sec: f64) -> String {
+    format!("{}/s", human_bytes(bytes_per_sec as u64))
+}
+
+/// Remaining time from elapsed time and completed fraction; `?` until the
+/// estimate is meaningful (first 1% is pure noise).
+fn human_eta(elapsed: f64, frac: f64) -> String {
+    if frac < 0.01 {
+        return "--:--".to_string();
+    }
+    let remaining = elapsed * (1.0 - frac) / frac;
+    let secs = remaining.round() as u64;
+    if secs >= 3600 {
+        format!("{}h{:02}m", secs / 3600, (secs % 3600) / 60)
+    } else if secs >= 60 {
+        format!("{}m{:02}s", secs / 60, secs % 60)
+    } else {
+        format!("{secs}s")
+    }
+}
+
 fn human_bytes(bytes: u64) -> String {
     const UNITS: [&str; 5] = ["B", "KB", "MB", "GB", "TB"];
     let mut value = bytes as f64;
@@ -213,16 +235,25 @@ fn spawn_reporter(
 ) -> thread::JoinHandle<Result<PathBuf, String>> {
     thread::spawn(move || {
         let mut output: Option<PathBuf> = None;
-        let mut last_printed = 0u64;
+        let mut phase_start = Instant::now();
+        let mut phase_total = 0u64;
+        let mut last_print = Instant::now();
+        let mut progress_shown = false;
         while let Ok(event) = rx.recv() {
             match event {
-                ProgressEvent::PhaseStart { phase, .. } => {
+                ProgressEvent::PhaseStart { phase, total_bytes } => {
+                    phase_start = Instant::now();
+                    phase_total = total_bytes;
                     if !quiet {
                         eprintln!("▶ {phase}");
                     }
                 }
                 ProgressEvent::PhaseDone { phase } => {
                     if !quiet {
+                        if progress_shown {
+                            eprintln!();
+                            progress_shown = false;
+                        }
                         eprintln!("✓ {phase}");
                     }
                 }
@@ -232,9 +263,22 @@ fn spawn_reporter(
                     }
                 }
                 ProgressEvent::Progress { bytes } => {
-                    if !quiet && bytes >= last_printed + 64 * 1024 * 1024 {
-                        last_printed = bytes;
-                        eprint!("\r  {:.0} MB", bytes as f64 / (1024.0 * 1024.0));
+                    // Throttle to 4 lines/second: a per-MB print floods CI logs.
+                    if !quiet
+                        && phase_total > 0
+                        && last_print.elapsed() >= Duration::from_millis(250)
+                    {
+                        last_print = Instant::now();
+                        let elapsed = phase_start.elapsed().as_secs_f64().max(0.001);
+                        let frac = (bytes as f64 / phase_total as f64).clamp(0.0, 1.0);
+                        let rate = bytes as f64 / elapsed;
+                        eprint!(
+                            "\r  {:>3.0}% · {} · ETA {}",
+                            frac * 100.0,
+                            human_rate(rate),
+                            human_eta(elapsed, frac)
+                        );
+                        progress_shown = true;
                         let _ = std::io::stderr().flush();
                     }
                 }
