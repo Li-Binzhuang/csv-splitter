@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.10.0] — 2026-11-09
+
+### Added
+
+- **`convert` command**: streaming transcode to UTF-8 (optionally with a BOM),
+  `--from auto|utf-8|gbk|utf-16le|utf-16be`. Constant memory, so it works on the
+  same files the rest of the tool handles. This is the escape hatch for UTF-16:
+  convert once and the row index / random access work normally.
+- `encoding::parse_name` so the CLI and future API can accept encoding names.
+
+### Changed
+
+- The index error for UTF-16 now says what to run instead of only what failed.
+
 ## [0.9.0] — 2026-11-09
 
 ### Added

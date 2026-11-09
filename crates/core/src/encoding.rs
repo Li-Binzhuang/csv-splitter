@@ -13,7 +13,7 @@
 use encoding_rs::{Encoding, GBK, UTF_16BE, UTF_16LE, UTF_8};
 use encoding_rs_io::DecodeReaderBytesBuilder;
 use std::fs::File;
-use std::io::{self, BufReader, Read};
+use std::io::{self, BufReader, Read, Write};
 use std::path::Path;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -152,6 +152,78 @@ pub fn read_to_string(path: &Path) -> io::Result<String> {
     Ok(String::from_utf8_lossy(&out).into_owned())
 }
 
+/// Parse an encoding name coming from a command line / query string.
+///
+/// `auto` returns `Ok(None)` so the caller keeps sniffing.
+pub fn parse_name(name: &str) -> Option<TextEncoding> {
+    match name.trim().to_ascii_lowercase().as_str() {
+        "auto" | "" => None,
+        "utf-8" | "utf8" => Some(TextEncoding::Utf8 { bom: false }),
+        "utf-8-bom" | "utf8-bom" | "bom" => Some(TextEncoding::Utf8 { bom: true }),
+        "gbk" | "gb18030" | "ansi" => Some(TextEncoding::Gbk),
+        "utf-16le" | "utf16le" => Some(TextEncoding::Utf16Le),
+        "utf-16be" | "utf16be" => Some(TextEncoding::Utf16Be),
+        _ => None,
+    }
+}
+
+/// Stream `input` into `output` as UTF-8 (optionally with a BOM).
+///
+/// This is the escape hatch for files the index cannot handle directly: a
+/// UTF-16 export becomes a normal UTF-8 CSV, after which random access works.
+/// Constant memory — it never holds more than one read buffer.
+pub fn transcode(
+    input: &Path,
+    output: &Path,
+    from: Option<TextEncoding>,
+    to: TextEncoding,
+    buf: usize,
+) -> io::Result<u64> {
+    let encoding = match from {
+        Some(e) => e,
+        None => detect(input)?,
+    };
+    let written = match to {
+        TextEncoding::Utf8 { bom } => {
+            let mut src = decoded_reader(File::open(input)?, encoding);
+            if let Some(parent) = output.parent() {
+                if !parent.as_os_str().is_empty() {
+                    std::fs::create_dir_all(parent)?;
+                }
+            }
+            let mut out = io::BufWriter::with_capacity(1024 * 1024, File::create(output)?);
+            if bom {
+                out.write_all(&[0xEF, 0xBB, 0xBF])?;
+            }
+            let mut buf = vec![0u8; buf.clamp(64 * 1024, 8 * 1024 * 1024)];
+            let mut total = 0u64;
+            loop {
+                let n = src.read(&mut buf)?;
+                if n == 0 {
+                    break;
+                }
+                out.write_all(&buf[..n])?;
+                total += n as u64;
+            }
+            out.flush()?;
+            total
+        }
+        TextEncoding::Gbk => {
+            return Err(io::Error::new(
+                io::ErrorKind::Unsupported,
+                "writing GBK is not supported; convert to UTF-8 instead",
+            ))
+        }
+        TextEncoding::Utf16Le | TextEncoding::Utf16Be => {
+            return Err(io::Error::new(
+                io::ErrorKind::Unsupported,
+                "writing UTF-16 is not supported; convert to UTF-8 instead",
+            ))
+        }
+    };
+    Ok(written)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -220,6 +292,70 @@ mod tests {
         let text = read_to_string(&path).unwrap();
         assert_eq!(detect(&path).unwrap(), TextEncoding::Gbk);
         assert_eq!(text, "城市,人口\n北京,2189\n");
+    }
+
+    #[test]
+    fn transcodes_gbk_to_utf8() {
+        let dir = TempDir::new("tc");
+        let src = dir.join("gbk.csv");
+        let dst = dir.join("utf8.csv");
+        let text = "城市,人口\n北京,2189\n";
+        let mut bytes = Vec::new();
+        for ch in text.chars() {
+            let one = ch.to_string();
+            let (encoded, _, _) = GBK.encode(&one);
+            bytes.extend_from_slice(&encoded);
+        }
+        std::fs::write(&src, bytes).unwrap();
+
+        let written = transcode(
+            &src,
+            &dst,
+            None,
+            TextEncoding::Utf8 { bom: false },
+            64 * 1024,
+        )
+        .unwrap();
+        assert_eq!(written as usize, text.len());
+        assert_eq!(std::fs::read_to_string(&dst).unwrap(), text);
+    }
+
+    #[test]
+    fn transcode_can_emit_bom_and_utf16_input_works() {
+        let dir = TempDir::new("tc16");
+        let src = dir.join("u16.csv");
+        let dst = dir.join("u8.csv");
+        let text = "id,name\n1,北京\n";
+        // UTF-16LE with BOM
+        let mut bytes = vec![0xFF, 0xFE];
+        for unit in text.encode_utf16() {
+            bytes.extend_from_slice(&unit.to_le_bytes());
+        }
+        std::fs::write(&src, bytes).unwrap();
+        assert_eq!(detect(&src).unwrap(), TextEncoding::Utf16Le);
+
+        transcode(
+            &src,
+            &dst,
+            None,
+            TextEncoding::Utf8 { bom: true },
+            64 * 1024,
+        )
+        .unwrap();
+        let out = std::fs::read(&dst).unwrap();
+        assert_eq!(&out[..3], &[0xEF, 0xBB, 0xBF]);
+        assert_eq!(String::from_utf8_lossy(&out[3..]), text);
+    }
+
+    #[test]
+    fn parses_encoding_names() {
+        assert_eq!(parse_name("auto"), None);
+        assert_eq!(parse_name("GBK"), Some(TextEncoding::Gbk));
+        assert_eq!(
+            parse_name("utf-8-bom"),
+            Some(TextEncoding::Utf8 { bom: true })
+        );
+        assert_eq!(parse_name("nonsense"), None);
     }
 
     #[test]

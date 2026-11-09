@@ -6,6 +6,7 @@
 
 use csv_splitter_core::csv_reader::{detect_delimiter, parse_csv_record, read_headers};
 use csv_splitter_core::decompress::decompress_file;
+use csv_splitter_core::encoding::{self, parse_name, TextEncoding};
 use csv_splitter_core::index::{SparseIndex, DEFAULT_INTERVAL};
 use csv_splitter_core::merge::merge_archive;
 use csv_splitter_core::partition::{run_partition, PartitionConfig};
@@ -31,6 +32,7 @@ fn main() -> ExitCode {
         Some("preview") => cmd_preview(&args[1..]),
         Some("index") => cmd_index(&args[1..]),
         Some("serve") => cmd_serve(&args[1..]),
+        Some("convert") => cmd_convert(&args[1..]),
         Some("stats") => cmd_stats(&args[1..]),
         Some("extract") => cmd_extract(&args[1..]),
         Some("verify") => cmd_verify(&args[1..]),
@@ -64,6 +66,7 @@ COMMANDS
   preview  <input>              Print the first rows and detected delimiter
   index    <input>              Build a sparse row index for instant paging
   serve    --root <dir>          Local HTTP API (JSON) for a web front-end
+  convert  <input>               Transcode a CSV to UTF-8 (GBK / UTF-16 input)
   stats    <input>              Column statistics via reservoir sampling
   extract  <input> -o DIR       Extract any supported compressed archive
   verify   <input>              Split + merge and prove the result is lossless
@@ -89,6 +92,11 @@ SPLIT OPTIONS
 
 MERGE OPTIONS
   -o, --out <path>        Output CSV (required)
+
+CONVERT OPTIONS
+  -o, --out <path>        Output file (default: <name>.utf8.csv)
+      --from <enc>        auto | utf-8 | gbk | utf-16le | utf-16be  (default: auto)
+      --to <enc>          utf-8 | utf-8-bom                        (default: utf-8)
 
 SERVE OPTIONS
   --root <dir>            Directory the API may read (required)
@@ -813,6 +821,107 @@ fn cmd_index(args: &[String]) -> i32 {
         path.display()
     );
     0
+}
+
+fn cmd_convert(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut input: Option<PathBuf> = None;
+    let mut out: Option<PathBuf> = None;
+    let mut from = "auto".to_string();
+    let mut to = "utf-8".to_string();
+    let mut quiet = false;
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "-o" | "--out" => match p.value("--out") {
+                Ok(v) => out = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--from" => match p.value("--from") {
+                Ok(v) => from = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--to" => match p.value("--to") {
+                Ok(v) => to = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-q" | "--quiet" => quiet = true,
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => input = Some(PathBuf::from(other)),
+        }
+    }
+
+    let Some(input) = input else {
+        eprintln!("error: convert needs an <input> path");
+        return 2;
+    };
+
+    let from_enc = match from.as_str() {
+        "auto" | "" => None,
+        other => match parse_name(other) {
+            Some(e) => Some(e),
+            None => {
+                eprintln!("error: unknown encoding: {other}");
+                return 2;
+            }
+        },
+    };
+    let to_enc: TextEncoding = match to.to_ascii_lowercase().as_str() {
+        "utf-8" | "utf8" => TextEncoding::Utf8 { bom: false },
+        "utf-8-bom" | "utf8-bom" | "bom" => TextEncoding::Utf8 { bom: true },
+        other => {
+            eprintln!("error: --to only supports utf-8 or utf-8-bom (got {other})");
+            return 2;
+        }
+    };
+
+    let output = out.unwrap_or_else(|| {
+        let stem = input
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_else(|| "output".to_string());
+        input.with_file_name(format!("{stem}.utf8.csv"))
+    });
+
+    let started = Instant::now();
+    match encoding::transcode(&input, &output, from_enc, to_enc, 4 * 1024 * 1024) {
+        Ok(bytes) => {
+            if !quiet {
+                println!(
+                    "✓ {} bytes → {} ({}) in {:.2}s",
+                    bytes,
+                    output.display(),
+                    if from_enc.is_some() {
+                        "forced"
+                    } else {
+                        "detected"
+                    },
+                    started.elapsed().as_secs_f64()
+                );
+            }
+            0
+        }
+        Err(e) => {
+            eprintln!("✗ convert failed: {e}");
+            1
+        }
+    }
 }
 
 fn cmd_serve(args: &[String]) -> i32 {

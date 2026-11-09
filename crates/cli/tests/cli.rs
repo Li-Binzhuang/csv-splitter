@@ -380,3 +380,65 @@ fn gbk_csv_is_decoded_for_preview_and_split() {
     let picked = std::fs::read_to_string(&merged).unwrap();
     assert_eq!(picked, "人口\n2189\n2424\n");
 }
+
+#[test]
+fn convert_makes_utf16_files_indexable() {
+    let dir = TempDir::new("conv");
+    let input = dir.join("u16.csv");
+    let output = dir.join("u16.utf8.csv");
+
+    // UTF-16LE with BOM: "id,name\n1,北京\n2,上海\n"
+    let text = "id,name\n1,北京\n2,上海\n";
+    let mut bytes = vec![0xFF, 0xFE];
+    for unit in text.encode_utf16() {
+        bytes.extend_from_slice(&unit.to_le_bytes());
+    }
+    std::fs::write(&input, &bytes).unwrap();
+
+    let out = Command::new(bin())
+        .args(["convert", input.to_str().unwrap(), "-o"])
+        .arg(&output)
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert_eq!(std::fs::read_to_string(&output).unwrap(), text);
+
+    // The converted file is a normal UTF-8 CSV: the index works on it.
+    let out = Command::new(bin())
+        .args(["index", output.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(String::from_utf8_lossy(&out.stdout).contains("2 data rows"));
+
+    let out = Command::new(bin())
+        .args([
+            "preview",
+            output.to_str().unwrap(),
+            "--start-row",
+            "1",
+            "--rows",
+            "1",
+        ])
+        .output()
+        .unwrap();
+    assert!(out.status.success());
+    assert!(String::from_utf8_lossy(&out.stdout).contains("2 | 上海"));
+}
+
+#[test]
+fn convert_rejects_unknown_encoding() {
+    let status = Command::new(bin())
+        .args(["convert", "x.csv", "--from", "klingon"])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(2));
+}

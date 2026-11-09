@@ -36,7 +36,7 @@
 - [x] 编码探测：UTF-8 / UTF-8 BOM / GBK / UTF-16 LE/BE（BOM 与 NUL 模式）
 - [x] 预览 / 统计 / 切分 / API 全部按识别结果解码
 - [x] UTF-16 下的行索引明确拒绝（字节偏移会错位），UTF-8 与 GBK 可随机访问
-- [ ] 转码命令（GBK → UTF-8 落盘）
+- [x] 转码命令 `convert`（GBK / UTF-16 → UTF-8，流式、恒定内存）
 - [ ] 分隔符与引号风格的显式覆盖
 
 ### M4 · 分析能力 — `planned`

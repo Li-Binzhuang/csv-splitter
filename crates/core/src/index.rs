@@ -79,7 +79,7 @@ impl SparseIndex {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 format!(
-                    "{} is {}; the row index works on byte offsets and needs utf-8 or gbk",
+                    "{} is {}; the row index works on byte offsets — run `convert` to make it UTF-8 first",
                     path.display(),
                     encoding.label()
                 ),

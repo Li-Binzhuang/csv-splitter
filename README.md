@@ -127,6 +127,12 @@ csv-splitter extract chunks.tar -o ./out
 - UTF-8 BOM 会被剥离，不会污染第一个列名
 - 行索引基于字节偏移，适用于 **UTF-8 与 GBK**（两者的 `,` 和换行都是 ASCII，不会出现在多字节字符里）；
   UTF-16 的换行是两字节，随机访问会明确报错而不是给出错位数据
+- 需要随机访问 UTF-16 文件时先转码，之后就是一个普通 UTF-8 CSV：
+
+```bash
+csv-splitter convert export.csv -o export.utf8.csv     # 自动识别来源编码
+csv-splitter index export.utf8.csv
+```
 
 ## HTTP API / 后端接口
 
