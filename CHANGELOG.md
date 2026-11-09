@@ -4,21 +4,23 @@
 
 ### Added
 
-- **Multi-condition filtering** ( repeats = AND,  = OR) and
-  ****: stream the matches into a CSV instead of only listing row
-  numbers. Matched rows keep their source bytes — no re-serialisation, so quoting
-  and line endings stay exactly as they were.
-- ** command**: whole-file external sort exposed on its own
-  (); it previously only existed
-  as a  option.
-- **API**:  (predicates rendered as validated SQL, so
-  a string value can never be read as a column name) and , which runs
-  as a job like split/merge.
+- **Multi-condition filtering**: repeat `--where` for AND, add `--any` for OR.
+  The common "city=CDMX and amount>1000" no longer needs a trip to SQL.
+- **`filter --out FILE`**: stream the matches into a CSV instead of only listing
+  row numbers. Matched rows keep their source bytes — no re-serialisation, so
+  quoting and line endings stay exactly as they were.
+- **`sort` command**: whole-file external sort exposed on its own
+  (`sort in.csv --by amount --desc -o sorted.csv`); previously it was only
+  reachable as a `split` option.
+- **API**: `GET /export?where=a=1|b>2` returns the filtered CSV, and `POST /sort`
+  runs as a job like split/merge. Predicates are parsed with the CLI grammar and
+  rendered as SQL, so a value can never be read as a column name or break out of
+  its literal.
 
 ### Fixed
 
-- A  job stayed  forever after the file was complete: it never
-  sent the  event the registry waits for.
+- A `/sort` job stayed `running` forever after the file was already complete:
+  it never sent the `Finished` event the job registry waits for.
 
 ## [0.20.1] — 2026-11-09
 
