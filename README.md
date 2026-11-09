@@ -430,6 +430,9 @@ id                       64176        0     50001  text (mixed with numbers): �
 | 列名写错 | `column 'zzz' not found; available columns: ...` 或 `did you mean 'amount'`，而不是空结果 |
 | 行长与表头不一致 | `analyze` 显示 ragged 行数；行本身按原样展示（不擅自补齐） |
 | GBK / CRLF / BOM | 自动探测并解码，`/meta` 会报 `"encoding":"gbk"` |
+| **Windows-1252**（西欧 ANSI） | 探测为 `windows-1252`，`café` 不会变成乱码 |
+| 零字节 / 只有表头 | 不报错：`analyze` 说「没有列」，拆分产物合并后**字节一致** |
+| 2 MB 的单行字段 | 正常处理，不整行读进内存之外的地方 |
 | 引号内换行 | 一条记录；记录数与 Python `csv` 模块逐行比对一致 |
 
 **编码约定**（重要）：只搬运字节的命令（`split`、`merge`、`sort`、`filter -o`）**保持源编码**；

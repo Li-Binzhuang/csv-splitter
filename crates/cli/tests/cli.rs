@@ -1102,3 +1102,66 @@ fn handles_gbk_headers_with_stray_spaces_and_ragged_rows() {
     assert_eq!(status.code(), Some(0));
     assert!(archive.exists());
 }
+
+/// Edge fixtures: zero bytes, header only, and Windows-1252 accents.
+#[test]
+fn edge_cases_do_not_error() {
+    let dir = TempDir::new("edge");
+
+    // 0 bytes: nothing to say, but not a failure.
+    let empty = dir.join("empty.csv");
+    std::fs::write(&empty, "").unwrap();
+    let out = Command::new(bin())
+        .args(["analyze", empty.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+
+    // Header only: analysis reports zero rows, and split still round-trips.
+    let header = dir.join("header.csv");
+    std::fs::write(&header, "id,city\n").unwrap();
+    let archive = dir.join("h.tar");
+    let status = Command::new(bin())
+        .args([
+            "split",
+            header.to_str().unwrap(),
+            "-n",
+            "2",
+            "-o",
+            archive.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0), "header-only split should succeed");
+    let merged = dir.join("merged.csv");
+    let status = Command::new(bin())
+        .args([
+            "merge",
+            archive.to_str().unwrap(),
+            "-o",
+            merged.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    assert_eq!(
+        std::fs::read(&merged).unwrap(),
+        b"id,city\n",
+        "header-only file must round-trip byte for byte"
+    );
+
+    // Windows-1252 is not GBK: the accents must survive.
+    let latin = dir.join("latin.csv");
+    std::fs::write(&latin, b"id,caf\xe9\n1,r\xe9sum\xe9\n").unwrap();
+    let out = Command::new(bin())
+        .args(["preview", latin.to_str().unwrap(), "--rows", "5"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("café"), "{text}");
+    assert!(text.contains("résumé"), "{text}");
+}

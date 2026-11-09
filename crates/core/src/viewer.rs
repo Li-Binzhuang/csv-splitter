@@ -129,6 +129,11 @@ impl WindowViewer {
     /// Header record, parsed.
     pub fn headers(&self) -> io::Result<Vec<String>> {
         let raw = self.index.read_header(&self.path)?;
+        // A zero-byte file has no header at all: report no columns rather than
+        // a single empty one, which renders as a blank table.
+        if raw.is_empty() {
+            return Ok(Vec::new());
+        }
         let text = decode_cell(&raw, self.encoding);
         Ok(parse_csv_record(text.trim_end(), self.delimiter.byte()))
     }

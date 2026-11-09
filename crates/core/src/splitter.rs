@@ -126,8 +126,16 @@ fn run_inner(config: SplitConfig, threads: usize, tx: &ProgressSender) -> io::Re
     )))
     .ok();
 
+    // A file with only a header (or nothing at all) still deserves a
+    // round-trippable result: one chunk holding the header, so `merge` restores
+    // the original bytes. Failing here would make an empty export look broken.
     if data_records == 0 {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "No data lines"));
+        let stem = config
+            .input
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_else(|| "output".to_string());
+        return write_header_only(&work_path, tmp_dir.path(), &stem, &config, tx);
     }
 
     let plan = SplitPlan::new(config.splits, config.max_bytes, data_records, data_bytes);
@@ -309,6 +317,63 @@ fn scan_records(
     scan.records += 1; // header
     tx.send(ProgressEvent::Progress { bytes: file_size }).ok();
     Ok(scan)
+}
+
+/// Emit a single chunk containing just the header (or nothing, for a 0-byte input).
+///
+/// `merge` concatenates chunks and drops repeated headers, so a header-only
+/// archive round-trips back to the original file — which is what makes an empty
+/// export a *result*, not an error.
+fn write_header_only(
+    input: &Path,
+    tmp_dir: &Path,
+    stem: &str,
+    config: &SplitConfig,
+    tx: &ProgressSender,
+) -> io::Result<()> {
+    let ext = match config.compress_format {
+        CompressFormat::Zip | CompressFormat::None => "csv".to_string(),
+        other => format!("csv{}", other.extension()),
+    };
+    let path = tmp_dir.join(format!("{stem}_0001.{ext}"));
+    let header = {
+        let buf = 64 * 1024;
+        let mut reader = RecordReader::new(BufReader::with_capacity(buf, File::open(input)?), buf);
+        let mut scratch = Vec::with_capacity(4096);
+        if reader.next_record(&mut scratch)? {
+            scratch
+        } else {
+            Vec::new()
+        }
+    };
+
+    let mut writer: Box<dyn Write + Send> = match config.compress_format {
+        CompressFormat::Zip | CompressFormat::None => {
+            Box::new(BufWriter::with_capacity(64 * 1024, File::create(&path)?))
+        }
+        other => crate::compress::make_compressor(&path, other, config.compress_level, 64 * 1024)?,
+    };
+    if !header.is_empty() {
+        writer.write_all(&header)?;
+        if !header.ends_with(b"\n") {
+            writer.write_all(b"\n")?;
+        }
+    }
+    crate::compress::finish_compressor(writer)?;
+
+    let output = config
+        .output
+        .clone()
+        .unwrap_or_else(|| input.with_file_name(format!("{stem}.tar")));
+    crate::pack::pack(
+        std::slice::from_ref(&path),
+        &output,
+        config.compress_format == CompressFormat::Zip,
+        4 * 1024 * 1024,
+        tx,
+    )?;
+    tx.send(ProgressEvent::Finished { output }).ok();
+    Ok(())
 }
 
 /// How the file is carved up: either a fixed chunk count or a target size.

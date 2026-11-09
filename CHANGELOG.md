@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.28.0] — 2026-11-10
+
+### Fixed — extreme inputs
+
+- **Windows-1252 was silently decoded as GBK**, turning `café` into mush. Two
+  candidates are now scored: GBK wins only when it decodes cleanly *and* yields
+  CJK characters; otherwise Windows-1252 (which never fails to decode) is used.
+  Files with real Chinese text still detect as GBK, and plain UTF-8 is untouched.
+- **`split` refused a file with no data rows** ("No data lines"). A 0-byte or
+  header-only export is a legitimate thing to process, so it now produces one
+  chunk holding the header and merges back **byte for byte**.
+- **`analyze` errored on a 0-byte file**; it now reports that there are no
+  columns instead of failing.
+- `/meta` reported a phantom single empty column for a 0-byte file; it reports
+  `headers: []`.
+
+Verified against fixtures for: 0 bytes, header-only, blank lines only, no trailing
+newline, duplicate header names, NUL bytes inside a field, a 2 MB single-line
+field, UTF-8 BOM, UTF-16 (explicitly refused with a message that says what to do),
+and Windows-1252.
+
 ## [0.27.0] — 2026-11-10
 
 ### Fixed — found by running a deliberately dirty file end to end

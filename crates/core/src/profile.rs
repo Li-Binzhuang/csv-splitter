@@ -246,7 +246,13 @@ pub fn profile(
 
     let mut record = Vec::with_capacity(64 * 1024);
     if !records.next_record(&mut record)? {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "empty file"));
+        // Not an error: a 0-byte file simply has no columns, and saying so is
+        // more useful than "empty file" on a stderr line.
+        tx.send(ProgressEvent::PhaseDone {
+            phase: "Profiling columns".into(),
+        })
+        .ok();
+        return Ok(Vec::new());
     }
     let headers = parse_csv_record(&String::from_utf8_lossy(&record), delim);
     let cap = distinct_cap.max(1);

@@ -200,8 +200,10 @@ fn zero_splits_is_rejected_not_a_panic() {
     );
 }
 
+/// A 0-byte file is not an error: it becomes one header-less chunk that merges
+/// back to the same bytes. Failing here would make an empty export look broken.
 #[test]
-fn empty_input_is_reported_as_error() {
+fn empty_input_round_trips_instead_of_failing() {
     let dir = TempDir::new("empty");
     let input = dir.join("data.csv");
     let archive = dir.join("out.tar");
@@ -210,9 +212,14 @@ fn empty_input_is_reported_as_error() {
     let cfg = base_config(&input, &archive);
     let events = split(cfg);
     assert!(
-        has_error(&events),
-        "expected an Error event, got {events:?}"
+        !has_error(&events),
+        "an empty file should still produce a result: {events:?}"
     );
+
+    let merged = dir.join("merged.csv");
+    let (tx2, _rx2) = mpsc::channel();
+    merge_archive(&archive, &merged, &tx2).unwrap();
+    assert_eq!(std::fs::read(&merged).unwrap(), b"");
 }
 
 #[test]

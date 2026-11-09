@@ -10,7 +10,7 @@
 //! two. UTF-16 is different — its separators are two bytes — and is rejected with
 //! an actionable message instead of silently producing garbage.
 
-use encoding_rs::{Encoding, GBK, UTF_16BE, UTF_16LE, UTF_8};
+use encoding_rs::{Encoding, GBK, UTF_16BE, UTF_16LE, UTF_8, WINDOWS_1252};
 use encoding_rs_io::DecodeReaderBytesBuilder;
 use std::fs::File;
 use std::io::{self, BufReader, Read, Write};
@@ -26,6 +26,9 @@ pub enum TextEncoding {
     Utf16Be,
     /// GBK / GB18030 family (the usual "ANSI" export on Chinese Windows).
     Gbk,
+    /// Windows-1252 / Latin-1: the usual "ANSI" export on Western Windows. It
+    /// never fails to decode, which is what makes it a safe fallback.
+    Latin1,
 }
 
 impl TextEncoding {
@@ -36,6 +39,7 @@ impl TextEncoding {
             Self::Utf16Le => "utf-16le",
             Self::Utf16Be => "utf-16be",
             Self::Gbk => "gbk",
+            Self::Latin1 => "windows-1252",
         }
     }
 
@@ -45,13 +49,27 @@ impl TextEncoding {
             Self::Utf16Le => UTF_16LE,
             Self::Utf16Be => UTF_16BE,
             Self::Gbk => GBK,
+            Self::Latin1 => WINDOWS_1252,
         }
     }
 
     /// True when ASCII bytes (`,` `\n` `"`) keep their meaning in the raw stream,
     /// i.e. the sparse index can seek by byte offset.
     pub fn is_ascii_compatible(&self) -> bool {
-        matches!(self, Self::Utf8 { .. } | Self::Gbk)
+        matches!(self, Self::Utf8 { .. } | Self::Gbk | Self::Latin1)
+    }
+
+    /// Parse a user-supplied name, for the escape hatch below.
+    pub fn parse_name_exact(raw: &str) -> Option<Self> {
+        match raw.trim().to_ascii_lowercase().as_str() {
+            "utf-8" | "utf8" => Some(Self::Utf8 { bom: false }),
+            "utf-8-bom" | "utf8bom" => Some(Self::Utf8 { bom: true }),
+            "gbk" | "gb18030" => Some(Self::Gbk),
+            "cp1252" | "windows-1252" | "latin1" | "latin-1" | "ansi" => Some(Self::Latin1),
+            "utf-16le" | "utf16le" => Some(Self::Utf16Le),
+            "utf-16be" | "utf16be" => Some(Self::Utf16Be),
+            _ => None,
+        }
     }
 }
 
@@ -91,12 +109,23 @@ pub fn detect_bytes(sample: &[u8]) -> TextEncoding {
             return TextEncoding::Utf16Be;
         }
     }
-    match std::str::from_utf8(sample) {
-        Ok(_) => TextEncoding::Utf8 { bom: false },
-        // Not valid UTF-8: for CSV the overwhelmingly likely alternative is the
-        // Windows Chinese code page. GBK decoding never fails, it just yields
-        // replacement characters for genuinely broken input.
-        Err(_) => TextEncoding::Gbk,
+    if std::str::from_utf8(sample).is_ok() {
+        return TextEncoding::Utf8 { bom: false };
+    }
+    // Not UTF-8. Two candidates deserve a look: the Chinese code page (the usual
+    // "ANSI" export on Chinese Windows) and Windows-1252 (the usual one
+    // elsewhere). Windows-1252 never fails to decode, so it cannot be chosen by
+    // "does it work"; instead GBK wins only when it decodes cleanly into CJK.
+    let (gbk, _, _) = GBK.decode(sample);
+    let broken = gbk.contains('\u{FFFD}');
+    let cjk = gbk
+        .chars()
+        .filter(|c| matches!(u32::from(*c), 0x3400..=0x4DBF | 0x4E00..=0x9FFF | 0xF900..=0xFAFF))
+        .count();
+    if !broken && cjk > 0 {
+        TextEncoding::Gbk
+    } else {
+        TextEncoding::Latin1
     }
 }
 
@@ -127,6 +156,10 @@ pub fn decoded_reader<R: Read + Send + 'static>(
 pub fn decode_cell(bytes: &[u8], encoding: TextEncoding) -> String {
     match encoding {
         TextEncoding::Utf8 { .. } => String::from_utf8_lossy(bytes).into_owned(),
+        TextEncoding::Latin1 => {
+            let (cow, _, _) = WINDOWS_1252.decode(bytes);
+            cow.into_owned()
+        }
         TextEncoding::Gbk => {
             let (cow, _, _) = GBK.decode(bytes);
             cow.into_owned()
@@ -208,10 +241,10 @@ pub fn transcode(
             out.flush()?;
             total
         }
-        TextEncoding::Gbk => {
+        TextEncoding::Gbk | TextEncoding::Latin1 => {
             return Err(io::Error::new(
                 io::ErrorKind::Unsupported,
-                "writing GBK is not supported; convert to UTF-8 instead",
+                "writing legacy 8-bit encodings is not supported; convert to UTF-8 instead",
             ))
         }
         TextEncoding::Utf16Le | TextEncoding::Utf16Be => {
@@ -280,6 +313,23 @@ mod tests {
     fn detects_gbk_when_not_utf8() {
         // "城市" in GBK
         assert_eq!(detect_bytes(&[0xB3, 0xC7, 0xCA, 0xD0]), TextEncoding::Gbk);
+    }
+
+    #[test]
+    fn windows_1252_is_chosen_when_gbk_would_produce_garbage() {
+        // "café, résumé": 0xE9 cannot start a GBK sequence, so GBK decoding
+        // yields replacement characters and the file would render as junk.
+        let bytes = b"id,caf\xe9\n1,r\xe9sum\xe9\n";
+        assert_eq!(detect_bytes(bytes), TextEncoding::Latin1);
+        assert_eq!(decode_cell(b"caf\xe9", TextEncoding::Latin1), "café");
+    }
+
+    #[test]
+    fn gbk_still_wins_for_real_chinese_text() {
+        let mut bytes = b"id,city\n1,".to_vec();
+        bytes.extend_from_slice(&[0xB1, 0xB1, 0xBE, 0xA9]); // 北京
+        bytes.push(b'\n');
+        assert_eq!(detect_bytes(&bytes), TextEncoding::Gbk);
     }
 
     #[test]

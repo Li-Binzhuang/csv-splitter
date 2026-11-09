@@ -2370,6 +2370,10 @@ fn cmd_analyze(args: &[String]) -> i32 {
         return 0;
     }
 
+    if profiles.is_empty() {
+        println!("(file has no columns: it is empty or contains only whitespace)");
+        return 0;
+    }
     // Ragged records are the first thing worth knowing about a foreign file.
     if let Some(first) = profiles.first() {
         if first.ragged > 0 {
