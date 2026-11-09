@@ -14,6 +14,8 @@
 //!   GET /filter?path=REL&where=col=value&limit=N
 //!   GET /search?path=REL&q=text&columns=a,b&limit=N
 //!   GET /files?dir=REL&ext=csv,tsv&limit=N
+//!   GET /download?path=REL                         (raw bytes, as attachment)
+//!   GET /export?path=REL&sql=...&limit=N           (query result as CSV text)
 //!   GET /query?path=REL&sql=SELECT...&limit=N
 //!
 //! Write endpoints return a job id instead of blocking:
@@ -135,13 +137,15 @@ fn handle(
         "/filter" => filter(&mut stream, root, &params),
         "/search" => search(&mut stream, root, &params),
         "/files" => files(&mut stream, root, &params),
+        "/download" => download(&mut stream, root, &params),
+        "/export" => export(&mut stream, root, &params),
         "/query" => query(&mut stream, root, &params),
         "/job" => job_status(&mut stream, jobs, &params),
         "/jobs" => job_list(&mut stream, jobs),
         _ => respond_json(
             &mut stream,
             404,
-            r#"{"error":"unknown endpoint","endpoints":["/health","/meta","/rows","/stats","/filter","/search","/files","/query","/job","/jobs"],"writes":["POST /split","POST /merge"]}"#,
+            r#"{"error":"unknown endpoint","endpoints":["/health","/meta","/rows","/stats","/filter","/search","/files","/download","/export","/query","/job","/jobs"],"writes":["POST /split","POST /merge"]}"#,
         ),
     }
 }
@@ -565,6 +569,100 @@ fn query(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) 
     }
 }
 
+/// Stream a file under the root as a download.
+///
+/// Deliberately no range support and no content sniffing beyond the extension:
+/// a local single-user tool needs "give me the bytes", not a CDN.
+fn download(
+    stream: &mut TcpStream,
+    root: &Path,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+    };
+    let bytes = match std::fs::read(&path) {
+        Ok(b) => b,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let name = rel.rsplit('/').next().unwrap_or("download");
+    respond_bytes(
+        stream,
+        200,
+        "application/octet-stream",
+        &format!("attachment; filename=\"{}\"", name.replace('"', "'")),
+        &bytes,
+    )
+}
+
+/// Run a query and return its rows as CSV text (not JSON) so it can be piped
+/// straight into another tool.
+fn export(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
+    let (path, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+    };
+    let Some(statement) = params.get("sql") else {
+        return respond_json(stream, 400, r#"{"error":"sql is required"}"#);
+    };
+    let limit: usize = params
+        .get("limit")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(sql::DEFAULT_LIMIT)
+        .min(100_000);
+
+    match sql::query_with(&path, statement, limit, delimiter(params)) {
+        Ok(result) => {
+            let mut text = String::with_capacity(result.rows.len() * 32);
+            text.push_str(&csv_join(&result.columns));
+            text.push('\n');
+            for row in &result.rows {
+                text.push_str(&csv_join(row));
+                text.push('\n');
+            }
+            respond_bytes(
+                stream,
+                200,
+                "text/csv; charset=utf-8",
+                "attachment; filename=\"result.csv\"",
+                text.as_bytes(),
+            )
+        }
+        Err(e) if e.kind() == io::ErrorKind::InvalidInput => respond_json(
+            stream,
+            400,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+        Err(e) => respond_json(
+            stream,
+            422,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+    }
+}
+
+/// Quote cells the way a CSV reader expects.
+fn csv_join(cells: &[String]) -> String {
+    cells
+        .iter()
+        .map(|c| {
+            if c.contains(',') || c.contains('"') || c.contains('\n') || c.contains('\r') {
+                format!("\"{}\"", c.replace('"', "\"\""))
+            } else {
+                c.clone()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
 fn search(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
     let (path, _rel) = match resolve(root, params) {
         Some(v) => v,
@@ -870,12 +968,33 @@ fn json_str(s: &str) -> String {
     out
 }
 
-fn respond_json(stream: &mut TcpStream, status: u16, body: &str) -> io::Result<()> {
-    respond(stream, status, body)
+fn respond_bytes(
+    stream: &mut TcpStream,
+    status: u16,
+    content_type: &str,
+    disposition: &str,
+    body: &[u8],
+) -> io::Result<()> {
+    let reason = reason_for(status);
+    let head = format!(
+        "HTTP/1.1 {status} {reason}\r\n\
+         Content-Type: {content_type}\r\n\
+         Content-Disposition: {disposition}\r\n\
+         Content-Length: {}\r\n\
+         Access-Control-Allow-Origin: *\r\n\
+         Access-Control-Allow-Methods: GET, OPTIONS\r\n\
+         Access-Control-Allow-Headers: *\r\n\
+         Cache-Control: no-store\r\n\
+         Connection: close\r\n\r\n",
+        body.len()
+    );
+    stream.write_all(head.as_bytes())?;
+    stream.write_all(body)?;
+    stream.flush()
 }
 
-fn respond(stream: &mut TcpStream, status: u16, body: &str) -> io::Result<()> {
-    let reason = match status {
+fn reason_for(status: u16) -> &'static str {
+    match status {
         200 => "OK",
         204 => "No Content",
         400 => "Bad Request",
@@ -883,7 +1002,15 @@ fn respond(stream: &mut TcpStream, status: u16, body: &str) -> io::Result<()> {
         405 => "Method Not Allowed",
         422 => "Unprocessable Entity",
         _ => "Internal Server Error",
-    };
+    }
+}
+
+fn respond_json(stream: &mut TcpStream, status: u16, body: &str) -> io::Result<()> {
+    respond(stream, status, body)
+}
+
+fn respond(stream: &mut TcpStream, status: u16, body: &str) -> io::Result<()> {
+    let reason = reason_for(status);
     let response = format!(
         "HTTP/1.1 {status} {reason}\r\n\
          Content-Type: application/json; charset=utf-8\r\n\

@@ -465,3 +465,66 @@ fn search_and_files_endpoints() {
 
     drop(server);
 }
+
+fn get_raw(addr: &str, path: &str) -> (u16, Vec<u8>) {
+    let mut stream = TcpStream::connect(addr).unwrap();
+    write!(
+        stream,
+        "GET {path} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
+    )
+    .unwrap();
+    let mut raw = Vec::new();
+    stream.read_to_end(&mut raw).unwrap();
+    let split = raw
+        .windows(4)
+        .position(|w| w == b"\r\n\r\n")
+        .map(|i| i + 4)
+        .unwrap_or(raw.len());
+    let head = String::from_utf8_lossy(&raw[..split]).to_string();
+    let status = head
+        .split_whitespace()
+        .nth(1)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0);
+    (status, raw[split..].to_vec())
+}
+
+#[test]
+fn download_returns_the_exact_bytes() {
+    let dir = TempDir::new("dl");
+    // Include non-UTF8 bytes and a quoted newline to prove nothing is mangled.
+    let mut content = b"id,note\n1,\"a\nb\"\n".to_vec();
+    content.extend_from_slice(&[0xFF, 0xFE]);
+    std::fs::write(dir.join("data.csv"), &content).unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get_raw(&server.addr, "/download?path=data.csv");
+    assert_eq!(status, 200);
+    assert_eq!(body, content, "bytes must round-trip untouched");
+
+    let (status, _) = get_raw(&server.addr, "/download?path=../../etc/passwd");
+    assert_eq!(status, 400);
+
+    drop(server);
+}
+
+#[test]
+fn export_returns_csv_text_of_a_query() {
+    let dir = TempDir::new("exp");
+    let mut csv = String::from("city,amount,note\n");
+    csv.push_str("CDMX,10,ok\n");
+    csv.push_str("Puebla,20,\"a,b\"\n");
+    std::fs::write(dir.join("data.csv"), csv).unwrap();
+    let server = start(&dir.0.clone());
+
+    let sql = "SELECT city, note FROM t WHERE amount > 5".replace(' ', "%20");
+    let (status, body) = get_raw(&server.addr, &format!("/export?path=data.csv&sql={sql}"));
+    assert_eq!(status, 200);
+    let text = String::from_utf8_lossy(&body);
+    assert_eq!(text, "city,note\nCDMX,ok\nPuebla,\"a,b\"\n", "{text}");
+
+    let (status, _) = get_raw(&server.addr, "/export?path=data.csv&sql=DROP%20TABLE%20t");
+    assert_eq!(status, 400);
+
+    drop(server);
+}

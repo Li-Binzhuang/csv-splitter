@@ -139,6 +139,8 @@ csv-splitter extract chunks.tar -o ./out
 | 跑聚合 / 排序 | `sql big.csv "SELECT ..."` | `GET /query?sql=...` |
 | 切分 / 合并 | `split` / `merge` | `POST /split` · `POST /merge` |
 | 换编码 | `convert gbk.csv -o utf8.csv` | — |
+| 把文件给出去 | — | `GET /download?path=`（原始字节） |
+| 把查询结果拿出去 | — | `GET /export?sql=...`（CSV 文本） |
 | 无损自检 | `verify big.csv -n 6` | — |
 
 ```bash
@@ -277,6 +279,8 @@ csv-splitter serve --root ~/data --addr 127.0.0.1:8787
 | `GET /query?path=REL&sql=SELECT...` | 对文件跑只读 SQL（DuckDB） |
 | `POST /split?path=REL&splits=N&format=zst&out=REL` | 提交拆分任务，返回 job id |
 | `POST /merge?path=REL&out=REL` | 提交合并任务，返回 job id |
+| `GET /download?path=REL` | 原始字节（`Content-Disposition: attachment`） |
+| `GET /export?path=REL&sql=...` | 查询结果作为 CSV 文本，可直接喂给别的工具 |
 | `POST /warm?path=REL&sql=...` | 后台预热查询结果缓存（返回 job id） |
 | `GET /job?id=...` / `GET /jobs` | 任务状态 / 近期任务列表 |
 

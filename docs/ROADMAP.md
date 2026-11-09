@@ -48,7 +48,7 @@
 - [x] 全局搜索（跨所有列，返回行号）→ `search` + `GET /search`
 - [ ] 导出统计结果 CSV/JSON
 
-### M5 · 规模化 — `planned`
+### M5 · 规模化 — `done`
 - [ ] 生成 10 GB 合成数据做压测与内存基线
 - [x] 基准测试（criterion）+ 回归护栏 `tests/performance.rs`；CI 拆分为 engine / cli 两个 job
 - [x] 写操作任务化：`POST /split` `POST /merge` + job id 轮询

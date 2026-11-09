@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.20.1] — 2026-11-09
+
+### Added
+
+- **`GET /download?path=REL`**: streams the file byte-for-byte with
+  `Content-Disposition: attachment`. Root confinement applies like every other
+  endpoint, and the response is raw bytes — no UTF-8 round trip — so a GBK file
+  or a file with a BOM comes out exactly as it went in (tested with non-UTF-8
+  bytes in the fixture).
+- **`GET /export?path=REL&sql=...`**: the query result as CSV text instead of
+  JSON, properly quoted (`a,b` becomes `"a,b"`), so the output can be piped into
+  another tool or saved as a file.
+
 ## [0.20.0] — 2026-11-09
 
 ### Added
