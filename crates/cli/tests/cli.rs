@@ -993,3 +993,55 @@ fn partition_by_column_and_concat_files() {
         .unwrap();
     assert_eq!(status.code(), Some(1));
 }
+
+#[test]
+fn groupby_writes_an_aggregated_file() {
+    let dir = TempDir::new("gb");
+    let input = dir.join("orders.csv");
+    let mut csv = String::from("city,kind,amount\n");
+    csv.push_str("CDMX,a,10\nCDMX,a,20\nCDMX,b,5\nPuebla,a,50\n");
+    std::fs::write(&input, csv).unwrap();
+
+    let out = dir.join("agg.csv");
+    let status = Command::new(bin())
+        .args([
+            "groupby",
+            input.to_str().unwrap(),
+            "--by",
+            "city",
+            "--agg",
+            "amount:sum,amount:mean,amount:max",
+            "--order",
+            "sum_amount",
+            "--desc",
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&out).unwrap();
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines[0], "city,sum_amount,mean_amount,max_amount");
+    assert_eq!(lines[1], "Puebla,50,50,50");
+    assert_eq!(lines[2], "CDMX,35,11.666667,20");
+
+    // Multi-key grouping.
+    let out2 = dir.join("agg2.csv");
+    let status = Command::new(bin())
+        .args([
+            "groupby",
+            input.to_str().unwrap(),
+            "--by",
+            "city,kind",
+            "--agg",
+            "amount:count",
+            "-o",
+            out2.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&out2).unwrap();
+    assert_eq!(text.lines().count(), 4, "header + 3 groups: {text}");
+}

@@ -143,6 +143,7 @@ csv-splitter extract chunks.tar -o ./out
 | **整理列再发出去** | `columns big.csv --drop id --rename "city:城市"` | — |
 | **按某列拆成多个文件** | `partition big.csv --by city` | `POST /partition` |
 | **多个同构文件拼成一张表** | `concat a.csv b.csv c.csv -o all.csv` | — |
+| **分组汇总** | `groupby big.csv --by city --agg "amount:sum"` | `GET /groupby` |
 | 跑聚合 / 排序 | `sql big.csv "SELECT ..."` | `GET /query?sql=...` |
 | 切分 / 合并 | `split` / `merge` | `POST /split` · `POST /merge` |
 | 换编码 | `convert gbk.csv -o utf8.csv` | — |
@@ -178,6 +179,26 @@ note                    200000    40171         4  text: ok (40370), 多行备�
 $ csv-splitter dedupe orders.csv --by cust_no -o clean.csv
 ✓ 49124 of 200000 rows kept, 150876 removed → clean.csv (3.0 MB)
 ```
+
+### 分组汇总
+
+```bash
+$ csv-splitter groupby orders.csv --by city --agg "amount:sum,amount:mean,amount:count" --order sum_amount --desc
+✓ 200000 rows → 5 groups → orders.grouped.csv (268 B)
+
+city,sum_amount,mean_amount,count_amount
+Tijuana,1812328212.7,45095.13,40189
+Puebla,1803568070.11,45219.21,39885
+```
+
+聚合算子：`count` / `sum` / `mean` / `min` / `max`，可多列、可多 key。
+内存只跟**分组数**有关，不跟行数有关；超过 `--max-groups`（默认 100 万）会
+报错而不是把内存吃满——按 id 分组基本总是误操作。
+
+求和用了补偿求和（Kahan），否则 4 万行累加后在末位会看出偏差。
+
+文本列的 `sum`/`mean` 输出 `<mixed>` 而不是悄悄只算数字行；`min`/`max` 在
+文本列上按字典序。
 
 ### 拆分与拼接
 

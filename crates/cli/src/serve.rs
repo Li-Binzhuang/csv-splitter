@@ -14,6 +14,7 @@
 //!   GET /filter?path=REL&where=col=value&limit=N
 //!   GET /search?path=REL&q=text&columns=a,b&limit=N
 //!   GET /analyze?path=REL&distinctCap=N
+//!   GET /groupby?path=REL&by=city&agg=amount:sum,amount:count&order=sum_amount
 //!   GET /files?dir=REL&ext=csv,tsv&limit=N
 //!   GET /download?path=REL                         (raw bytes, as attachment)
 //!   GET /export?path=REL&sql=...&limit=N           (query result as CSV text)
@@ -30,6 +31,7 @@
 use csv_splitter_core::cache::ResultCache;
 use csv_splitter_core::dedupe;
 use csv_splitter_core::filter::{self, scan as filter_scan, FilterSpec};
+use csv_splitter_core::groupby;
 use csv_splitter_core::jobs::JobRegistry;
 use csv_splitter_core::listing;
 use csv_splitter_core::merge::merge_archive;
@@ -147,6 +149,7 @@ fn handle(
         "/search" => search(&mut stream, root, &params),
         "/files" => files(&mut stream, root, &params),
         "/analyze" => analyze(&mut stream, root, &params),
+        "/groupby" => group_by(&mut stream, root, cache, &params),
         "/download" => download(&mut stream, root, &params),
         "/export" => export(&mut stream, root, &params),
         "/query" => query(&mut stream, root, &params),
@@ -155,7 +158,7 @@ fn handle(
         _ => respond_json(
             &mut stream,
             404,
-            r#"{"error":"unknown endpoint","endpoints":["/health","/meta","/rows","/stats","/analyze","/filter","/search","/files","/download","/export","/query","/job","/jobs"],"writes":["POST /split","POST /merge"]}"#,
+            r#"{"error":"unknown endpoint","endpoints":["/health","/meta","/rows","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/query","/job","/jobs"],"writes":["POST /split","POST /merge"]}"#,
         ),
     }
 }
@@ -438,6 +441,140 @@ fn start_dedupe(
         }
     });
     respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
+}
+
+/// Group and aggregate, returning the result directly (not a file).
+///
+/// Writes to a rate-limited cache of recent results: a dashboard polling the
+/// same query should not rescan the file each refresh, and the file is small
+/// (one row per group) by construction.
+fn group_by(
+    stream: &mut TcpStream,
+    root: &Path,
+    cache: &ResultCache,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+    };
+    let Some(by) = params.get("by").filter(|b| !b.is_empty()) else {
+        return respond_json(stream, 400, r#"{"error":"by is required"}"#);
+    };
+    let Some(agg) = params.get("agg").filter(|a| !a.is_empty()) else {
+        return respond_json(
+            stream,
+            400,
+            r#"{"error":"agg is required (column:op,...)"}"#,
+        );
+    };
+    let keys: Vec<String> = by.split(',').map(|k| k.trim().to_string()).collect();
+    let aggs = match groupby::AggSpec::parse_list(agg) {
+        Ok(a) => a,
+        Err(e) => return respond_json(stream, 400, &format!(r#"{{"error":{}}}"#, json_str(&e))),
+    };
+    let order = params.get("order").cloned();
+    let descending = params
+        .get("desc")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false);
+    let max_groups: usize = params
+        .get("maxGroups")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(groupby::DEFAULT_MAX_GROUPS);
+
+    // Reuse the query cache: the key is path+sql, so we synthesise a stable
+    // pseudo-query that encodes every parameter.
+    let sql_key = format!(
+        "groupby|{by}|{agg}|{}|{descending}|{max_groups}",
+        order.clone().unwrap_or_default()
+    );
+    let delimiter = delimiter(params);
+    let out_dir = std::env::temp_dir();
+
+    let loaded = cache.get_or_load(&path, &sql_key, delimiter, || {
+        let unique = format!(
+            "csvs_group_{}_{}.csv",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0)
+        );
+        let out = out_dir.join(unique);
+        let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
+        drop(rx);
+        let summary = groupby::groupby(
+            &path,
+            delimiter,
+            &out,
+            &groupby::GroupOptions {
+                keys: keys.clone(),
+                aggregates: aggs.clone(),
+                order_by: order.clone(),
+                descending,
+                max_groups,
+            },
+            &tx,
+        )?;
+        let text = std::fs::read_to_string(&out)?;
+        std::fs::remove_file(&out).ok();
+        let mut rows = Vec::new();
+        let mut columns = Vec::new();
+        for (index, line) in text.lines().enumerate() {
+            let fields: Vec<String> = parse_csv_line(line);
+            if index == 0 {
+                columns = fields;
+            } else {
+                rows.push(fields);
+            }
+        }
+        let _ = summary;
+        Ok(csv_splitter_core::cache::CachedResult {
+            columns,
+            rows,
+            oversized: false,
+        })
+    });
+
+    match loaded {
+        Ok(result) => {
+            let cols: Vec<String> = result.columns.iter().map(|c| json_str(c)).collect();
+            let body: Vec<String> = result
+                .rows
+                .iter()
+                .map(|row| {
+                    let cells: Vec<String> = row.iter().map(|c| json_str(c)).collect();
+                    format!("[{}]", cells.join(","))
+                })
+                .collect();
+            respond_json(
+                stream,
+                200,
+                &format!(
+                    r#"{{"columns":[{}],"rows":[{}]}}"#,
+                    cols.join(","),
+                    body.join(",")
+                ),
+            )
+        }
+        Err(e) if e.kind() == io::ErrorKind::InvalidInput => respond_json(
+            stream,
+            400,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+        Err(e) => respond_json(
+            stream,
+            422,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+    }
+}
+
+/// Split a CSV line into cells (the aggregate output is small and machine-made,
+/// so a plain split after unquoting suffices).
+fn parse_csv_line(line: &str) -> Vec<String> {
+    csv_splitter_core::csv_reader::parse_csv_record(line, b',')
 }
 
 /// Partition the file by a column into an archive, as a background job.

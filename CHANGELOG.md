@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.26.0] — 2026-11-10
+
+### Added
+
+- **`groupby`**: `--by city --agg "amount:sum,amount:mean,amount:count"`,
+  multi-key and multi-aggregate, `--order` an output column, `--desc`. Memory
+  scales with the number of **groups**, not rows; past `--max-groups` (1M) it
+  errors instead of eating the machine, because grouping by an id column is
+  almost always a mistake. Also `GET /groupby` (served from the result cache).
+- Summation is Kahan-compensated: adding 40k values with plain f64 showed
+  visible drift in the last printed digits.
+- A text column aggregated with `sum`/`mean` renders `<mixed>` rather than
+  silently averaging only the numeric rows.
+
 ## [0.25.0] — 2026-11-10
 
 ### Added

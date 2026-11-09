@@ -6,6 +6,7 @@ pub mod decompress;
 pub mod dedupe;
 pub mod encoding;
 pub mod filter;
+pub mod groupby;
 pub mod index;
 pub mod jobs;
 pub mod listing;

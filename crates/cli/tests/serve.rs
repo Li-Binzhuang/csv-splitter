@@ -681,3 +681,49 @@ fn partition_runs_as_a_job() {
 
     drop(server);
 }
+
+#[test]
+fn groupby_endpoint_aggregates_and_caches() {
+    let dir = TempDir::new("groupby");
+    let mut csv = String::from("city,amount\n");
+    for (city, amount) in [("CDMX", 10), ("CDMX", 20), ("Puebla", 50)] {
+        csv.push_str(&format!("{city},{amount}\n"));
+    }
+    std::fs::write(dir.join("data.csv"), csv).unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(
+        &server.addr,
+        "/groupby?path=data.csv&by=city&agg=amount:sum,amount:count&order=sum_amount&desc=1",
+    );
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(r#"["CDMX","30","2"]"#), "{body}");
+    assert!(body.contains(r#"["Puebla","50","1"]"#), "{body}");
+    // Descending by sum: Puebla first.
+    let puebla = body.find("Puebla").expect("row");
+    let cdmx = body.find("CDMX").expect("row");
+    assert!(puebla < cdmx, "descending order expected: {body}");
+
+    // Same request twice must agree (result cached, not recomputed differently).
+    let (_, again) = get(
+        &server.addr,
+        "/groupby?path=data.csv&by=city&agg=amount:sum,amount:count&order=sum_amount&desc=1",
+    );
+    assert_eq!(body, again);
+
+    // Missing aggregates and unknown columns are client errors.
+    let (status, _) = get(&server.addr, "/groupby?path=data.csv&by=city");
+    assert_eq!(status, 400);
+    let (status, _) = get(
+        &server.addr,
+        "/groupby?path=data.csv&by=nope&agg=amount:sum",
+    );
+    assert_eq!(status, 400);
+    let (status, _) = get(
+        &server.addr,
+        "/groupby?path=data.csv&by=city&agg=amount:nope",
+    );
+    assert_eq!(status, 400);
+
+    drop(server);
+}

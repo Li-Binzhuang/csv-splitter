@@ -44,6 +44,7 @@ fn main() -> ExitCode {
         Some("columns") => cmd_columns(&args[1..]),
         Some("partition") => cmd_partition(&args[1..]),
         Some("concat") => cmd_concat(&args[1..]),
+        Some("groupby") => cmd_groupby(&args[1..]),
         Some("sql") => cmd_sql(&args[1..]),
         Some("search") => cmd_search(&args[1..]),
         Some("files") => cmd_files(&args[1..]),
@@ -88,6 +89,7 @@ COMMANDS
   columns  <input>                Keep/drop/rename columns (-o writes the result)
   partition <input> --by COL      One file per distinct value of COL (tar/zip)
   concat   <a.csv> <b.csv> ...    Glue same-shaped files into one (header checked)
+  groupby  <input> --by K --agg A Group and aggregate into a CSV
   search   <input> <text>        Find text anywhere (or in chosen columns)
   files    --root <dir>          List readable files under a directory
   sql      <input> "<query>"     Run SQL over the file (DuckDB, read-only)
@@ -130,6 +132,16 @@ SEARCH OPTIONS
       --exact             Match the whole cell, not a substring
       --limit <n>         Stop after n matches (default: 1000)
       --show <n>          Also print the first n matching rows
+      --json              Emit JSON
+  -d, --delim <c>         Delimiter (default: auto)
+
+GROUPBY OPTIONS
+      --by <a,b>          Key columns (required)
+      --agg <c:op,...>    Aggregates: column:count|sum|mean|min|max (required)
+      --order <col>       Output column to sort by (default: the keys)
+      --desc              Sort descending
+      --max-groups <n>    Refuse past n distinct groups (default: 1000000)
+  -o, --out <file>        Output file (default: <input>.grouped.csv)
       --json              Emit JSON
   -d, --delim <c>         Delimiter (default: auto)
 
@@ -1878,6 +1890,153 @@ fn parse_sort_columns(spec: &str, default_descending: bool) -> Result<Vec<SortCo
         return Err("no sort columns".to_string());
     }
     Ok(columns)
+}
+
+fn cmd_groupby(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut input: Option<PathBuf> = None;
+    let mut out: Option<PathBuf> = None;
+    let mut keys: Vec<String> = Vec::new();
+    let mut agg_spec = String::new();
+    let mut order: Option<String> = None;
+    let mut descending = false;
+    let mut max_groups = csv_splitter_core::groupby::DEFAULT_MAX_GROUPS;
+    let mut json = false;
+    let mut delim = "auto".to_string();
+    let mut quiet = false;
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--by" => match p.value("--by") {
+                Ok(v) => keys = v.split(',').map(|s| s.trim().to_string()).collect(),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--agg" => match p.value("--agg") {
+                Ok(v) => agg_spec = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--order" => match p.value("--order") {
+                Ok(v) => order = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--desc" => descending = true,
+            "--asc" => descending = false,
+            "--max-groups" => match p
+                .value("--max-groups")
+                .and_then(|v| v.parse().map_err(|_| "bad --max-groups".to_string()))
+            {
+                Ok(v) => max_groups = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-o" | "--out" => match p.value("--out") {
+                Ok(v) => out = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--json" => json = true,
+            "-q" | "--quiet" => quiet = true,
+            "-d" | "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => input = Some(PathBuf::from(other)),
+        }
+    }
+
+    let Some(input) = input else {
+        eprintln!("error: groupby needs <input>");
+        return 2;
+    };
+    if keys.is_empty() {
+        eprintln!("error: groupby needs --by <col[,col]>");
+        return 2;
+    }
+    let aggs = match csv_splitter_core::groupby::AggSpec::parse_list(&agg_spec) {
+        Ok(a) => a,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let output = out.unwrap_or_else(|| {
+        let stem = input
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_else(|| "grouped".to_string());
+        input.with_file_name(format!("{stem}.grouped.csv"))
+    });
+    let delimiter = match parse_delimiter(&delim, &input) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+
+    let (tx, rx) = mpsc::channel();
+    let reporter = spawn_reporter(rx, quiet || json);
+    let options = csv_splitter_core::groupby::GroupOptions {
+        keys,
+        aggregates: aggs,
+        order_by: order,
+        descending,
+        max_groups,
+    };
+    let result = csv_splitter_core::groupby::groupby(&input, delimiter, &output, &options, &tx);
+    drop(tx);
+    let _ = reporter.join();
+    match result {
+        Ok(s) => {
+            if json {
+                println!(
+                    r#"{{"rows":{},"groups":{},"bytes":{},"keyColumns":["{}"],"aggregates":["{}"]}}"#,
+                    s.rows,
+                    s.groups,
+                    s.bytes,
+                    s.key_columns.join(r#"",""#),
+                    s.aggregates.join(r#"",""#)
+                );
+            } else {
+                println!(
+                    "✓ {} rows → {} groups → {} ({})",
+                    s.rows,
+                    s.groups,
+                    output.display(),
+                    human_bytes(s.bytes)
+                );
+            }
+            0
+        }
+        Err(e) => {
+            eprintln!("✗ groupby failed: {e}");
+            1
+        }
+    }
 }
 
 fn cmd_concat(args: &[String]) -> i32 {
