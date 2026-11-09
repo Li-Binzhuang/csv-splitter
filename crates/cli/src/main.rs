@@ -13,6 +13,7 @@ use csv_splitter_core::merge::merge_archive;
 use csv_splitter_core::partition::{run_partition, PartitionConfig};
 use csv_splitter_core::preview::{compute_column_stats, load_preview};
 use csv_splitter_core::search::{search as search_scan, SearchSpec};
+use csv_splitter_core::sort::SortColumn;
 use csv_splitter_core::splitter::run_split_threads;
 use csv_splitter_core::sql::{self, DEFAULT_LIMIT};
 use csv_splitter_core::*;
@@ -78,7 +79,7 @@ COMMANDS
   serve    --root <dir>          Local HTTP API (JSON) for a web front-end
   convert  <input>               Transcode a CSV to UTF-8 (GBK / UTF-16 input)
   filter   <input> --where EXPR  Row numbers matching a column predicate
-  sort     <input> --by COL -o F Sort the whole file by one column
+  sort     <input> --by COLS -o F Sort the whole file (a,b or a:desc,b:asc)
   analyze  <input>               Per-column profile: empties, distinct, numeric summary
   dedupe   <input> -o F          Drop duplicate rows (whole row or --by columns)
   search   <input> <text>        Find text anywhere (or in chosen columns)
@@ -104,7 +105,7 @@ SPLIT OPTIONS
       --columns <a,b>     Keep only these columns (by header name)
       --columns-file <f>  One column name per line
       --sort <column>     External merge sort by column before splitting
-      --desc              Sort descending
+      --desc              Descending, for columns without an explicit :asc/:desc
       --buf-mb <n>        Total I/O buffer budget in MB (default: 64)
   -t, --threads <n>       Reader threads (default: 1; try 4 on big files)
 
@@ -1788,20 +1789,32 @@ fn cmd_sort(args: &[String]) -> i32 {
         }
     };
 
+    // `--by a,b` sorts by both; `--by a:desc,b:asc` sets direction per column.
+    let columns: Vec<SortColumn> = match parse_sort_columns(&by, descending) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter(rx, quiet);
-    let result = csv_splitter_core::sort::external_sort(
-        &input, &out, &by, descending, delimiter, buf_mb, &tx,
+    let result = csv_splitter_core::sort::external_sort_columns(
+        &input, &out, &columns, delimiter, buf_mb, &tx,
     );
     drop(tx);
     let _ = reporter.join();
     match result {
         Ok(()) => {
             let bytes = std::fs::metadata(&out).map(|m| m.len()).unwrap_or(0);
+            let described = columns
+                .iter()
+                .map(|c| format!("{} {}", c.name, if c.descending { "desc" } else { "asc" }))
+                .collect::<Vec<_>>()
+                .join(", ");
             println!(
-                "✓ sorted by {} ({}) → {} ({})",
-                by,
-                if descending { "desc" } else { "asc" },
+                "✓ sorted by {described} → {} ({})",
                 out.display(),
                 human_bytes(bytes)
             );
@@ -1812,6 +1825,33 @@ fn cmd_sort(args: &[String]) -> i32 {
             1
         }
     }
+}
+
+/// `a` / `a,b` / `a:desc,b:asc`. A bare `--desc` sets the default direction.
+fn parse_sort_columns(spec: &str, default_descending: bool) -> Result<Vec<SortColumn>, String> {
+    let mut columns = Vec::new();
+    for part in spec.split(',') {
+        let part = part.trim();
+        if part.is_empty() {
+            continue;
+        }
+        let (name, descending) = match part.split_once(':') {
+            Some((n, dir)) => match dir.trim().to_ascii_lowercase().as_str() {
+                "asc" | "a" => (n.trim().to_string(), false),
+                "desc" | "d" => (n.trim().to_string(), true),
+                other => return Err(format!("unknown sort direction '{other}' (use asc/desc)")),
+            },
+            None => (part.to_string(), default_descending),
+        };
+        if name.is_empty() {
+            return Err("empty sort column".to_string());
+        }
+        columns.push(SortColumn::new(name, descending));
+    }
+    if columns.is_empty() {
+        return Err("no sort columns".to_string());
+    }
+    Ok(columns)
 }
 
 fn cmd_analyze(args: &[String]) -> i32 {

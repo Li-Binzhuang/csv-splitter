@@ -827,6 +827,8 @@ fn sql_predicate(spec: &FilterSpec) -> Option<String> {
         filter::Op::Lte => format!("{column} <= {value}"),
         filter::Op::Empty => format!("({column} IS NULL OR {column} = '')"),
         filter::Op::NotEmpty => format!("({column} IS NOT NULL AND {column} <> '')"),
+        // DuckDB's regexp_match is RE2-like; the CLI validated the pattern.
+        filter::Op::Regex => format!("regexp_matches({column}, {})", quote(&spec.value)),
     };
     Some(sql)
 }

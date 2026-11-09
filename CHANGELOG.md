@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.23.0] — 2026-11-10
+
+### Added
+
+- **Multi-column sort**: `sort --by "city:asc,amount:desc"`. Each key carries its
+  own direction; `--desc` only sets the default for keys without one. The
+  comparison rule is resolved once into a shared plan, so the chunk writer and
+  the merge heap cannot disagree — a mismatch there would produce a "sorted" file
+  that is unsorted at chunk boundaries.
+- **Regex filtering**: `col~re:PATTERN` uses a real regex engine (`regex` crate)
+  while `col~TEXT` stays a plain substring search. Patterns are validated at
+  parse time and compiled **once per scan**, not per row. Available through
+  `filter --where`, and translated to `regexp_matches()` for `GET /export?where=`.
+
 ## [0.22.0] — 2026-11-10
 
 ### Added

@@ -27,6 +27,8 @@ pub enum Op {
     Lte,
     Empty,
     NotEmpty,
+    /// Regular expression match (`col~re:PATTERN`).
+    Regex,
 }
 
 impl Op {
@@ -41,6 +43,7 @@ impl Op {
             Self::Lte => "<=",
             Self::Empty => "empty",
             Self::NotEmpty => "notempty",
+            Self::Regex => "~re:",
         }
     }
 }
@@ -75,11 +78,26 @@ impl FilterSpec {
                 if column.is_empty() {
                     return Err(format!("missing column name in '{expr}'"));
                 }
-                return Ok(Self {
-                    column,
-                    op: *op,
-                    value: val.trim().to_string(),
-                });
+                let value = val.trim().to_string();
+                // `col~re:PATTERN` is a regex match; validated here so a typo
+                // fails immediately instead of on the first row.
+                let op = if *op == Op::Contains {
+                    match value.strip_prefix("re:") {
+                        Some(pattern) => {
+                            regex::Regex::new(pattern)
+                                .map_err(|e| format!("bad regular expression: {e}"))?;
+                            return Ok(Self {
+                                column,
+                                op: Op::Regex,
+                                value: pattern.to_string(),
+                            });
+                        }
+                        None => Op::Contains,
+                    }
+                } else {
+                    *op
+                };
+                return Ok(Self { column, op, value });
             }
         }
         // `col empty` / `col notempty`
@@ -228,17 +246,51 @@ impl FilterSet {
         Ok(out)
     }
 
-    fn holds(&self, fields: &[String], resolved: &[(String, usize)]) -> bool {
+    /// Compile every regex once, so a scan does no regex parsing per row.
+    pub fn compile(&self, headers: &[String]) -> io::Result<CompiledSet> {
+        let resolved = self.resolve(headers)?;
+        let mut regexes = Vec::with_capacity(self.specs.len());
+        for spec in &self.specs {
+            if spec.op == Op::Regex {
+                let re = regex::Regex::new(&spec.value).map_err(|e| {
+                    io::Error::new(io::ErrorKind::InvalidInput, format!("bad regex: {e}"))
+                })?;
+                regexes.push(Some(re));
+            } else {
+                regexes.push(None);
+            }
+        }
+        Ok(CompiledSet {
+            specs: self.specs.clone(),
+            regexes,
+            columns: resolved,
+            combine: self.combine,
+        })
+    }
+}
+
+/// A [`FilterSet`] with its regexes compiled once.
+pub struct CompiledSet {
+    specs: Vec<FilterSpec>,
+    regexes: Vec<Option<regex::Regex>>,
+    columns: Vec<(String, usize)>,
+    combine: Combine,
+}
+
+impl CompiledSet {
+    fn holds(&self, fields: &[String]) -> bool {
         let mut any = false;
-        for (spec, (_, idx)) in self.specs.iter().zip(resolved) {
-            let cell = fields.get(*idx).map(String::as_str).unwrap_or("");
-            let hit = matches(cell, spec);
+        for (i, spec) in self.specs.iter().enumerate() {
+            let idx = self.columns[i].1;
+            let cell = fields.get(idx).map(String::as_str).unwrap_or("");
+            let hit = match &self.regexes[i] {
+                Some(re) => re.is_match(cell),
+                None => matches(cell, spec),
+            };
             match self.combine {
                 Combine::All if !hit => return false,
                 Combine::All => {}
-                Combine::Any if hit => {
-                    return true;
-                }
+                Combine::Any if hit => return true,
                 Combine::Any => any |= hit,
             }
         }
@@ -284,7 +336,7 @@ pub fn extract(
         return Err(io::Error::new(io::ErrorKind::InvalidData, "empty file"));
     }
     let headers = parse_csv_record(&String::from_utf8_lossy(&record), delim);
-    let resolved = set.resolve(&headers)?;
+    let compiled = set.compile(&headers)?;
 
     let mut out = BufWriter::with_capacity(4 * 1024 * 1024, File::create(output)?);
     let mut header_line = record.clone();
@@ -300,7 +352,7 @@ pub fn extract(
         written += record.len() as u64;
         let text = String::from_utf8_lossy(&record);
         let fields = parse_csv_record(text.trim_end_matches(['\n', '\r']), delim);
-        if set.holds(&fields, &resolved) {
+        if compiled.holds(&fields) {
             let mut line = record.clone();
             if !line.ends_with(b"\n") {
                 line.push(b'\n');
@@ -338,6 +390,9 @@ pub fn matches(cell: &str, spec: &FilterSpec) -> bool {
         Op::Eq => cell == spec.value,
         Op::Ne => cell != spec.value,
         Op::Contains => cell.contains(&spec.value),
+        Op::Regex => regex::Regex::new(&spec.value)
+            .map(|re| re.is_match(cell))
+            .unwrap_or(false),
         Op::Gt | Op::Gte | Op::Lt | Op::Lte => {
             // Numeric when both sides parse, string order otherwise (so ISO dates
             // and zero-padded ids behave sensibly).
@@ -524,5 +579,79 @@ mod set_tests {
         let (tx, _rx) = std::sync::mpsc::channel();
         let err = extract(&p, Delimiter::Comma, &set, &out, &tx).unwrap_err();
         assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
+    }
+}
+
+#[cfg(test)]
+mod regex_tests {
+    use super::*;
+
+    struct Dir(std::path::PathBuf);
+    impl Dir {
+        fn new(tag: &str) -> Self {
+            let d = std::env::temp_dir().join(format!(
+                "csvs_re_{tag}_{}_{}",
+                std::process::id(),
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos()
+            ));
+            std::fs::create_dir_all(&d).unwrap();
+            Self(d)
+        }
+        fn join(&self, n: &str) -> std::path::PathBuf {
+            self.0.join(n)
+        }
+    }
+    impl Drop for Dir {
+        fn drop(&mut self) {
+            std::fs::remove_dir_all(&self.0).ok();
+        }
+    }
+
+    #[test]
+    fn regex_operator_is_parsed_and_validated() {
+        let spec = FilterSpec::parse("note~re:^REF").unwrap();
+        assert_eq!(spec.op, Op::Regex);
+        assert_eq!(spec.value, "^REF");
+        // A plain `~` is still a substring search.
+        assert_eq!(FilterSpec::parse("note~refund").unwrap().op, Op::Contains);
+        // A broken pattern fails at parse time, not on the first row.
+        assert!(FilterSpec::parse("note~re:[unclosed").is_err());
+    }
+
+    #[test]
+    fn regex_filters_and_combines_with_other_predicates() {
+        let d = Dir::new("run");
+        let input = d.join("in.csv");
+        let output = d.join("out.csv");
+        let mut csv = String::from("id,city,note\n");
+        csv.push_str("1,CDMX,REFUND issued\n");
+        csv.push_str("2,CDMX,paid\n");
+        csv.push_str("3,Puebla,REFUND-2\n");
+        csv.push_str("4,Puebla,ok\n");
+        std::fs::write(&input, csv).unwrap();
+
+        let set = FilterSet {
+            specs: vec![
+                FilterSpec::parse("note~re:^REF").unwrap(),
+                FilterSpec::parse("city=Puebla").unwrap(),
+            ],
+            combine: Combine::All,
+        };
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let summary = extract(&input, Delimiter::Comma, &set, &output, &tx).unwrap();
+        assert_eq!(summary.matched, 1);
+        assert_eq!(
+            std::fs::read_to_string(&output).unwrap(),
+            "id,city,note\n3,Puebla,REFUND-2\n"
+        );
+    }
+
+    #[test]
+    fn regex_matches_an_empty_cell_only_if_the_pattern_allows_it() {
+        assert!(matches("", &FilterSpec::parse("x~re:^$").unwrap()));
+        assert!(!matches("", &FilterSpec::parse("x~re:^a").unwrap()));
     }
 }

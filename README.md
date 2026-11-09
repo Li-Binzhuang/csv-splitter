@@ -190,8 +190,13 @@ csv-splitter filter orders.csv --where "city=CDMX" --where "amount>45000" -o cdm
 # --any 改成 OR
 csv-splitter filter orders.csv --where "city=Tijuana" --where "amount>49990" --any -o any.csv
 
-# 整表按任意列排序（外部归并排序，内存与文件大小无关）
+# 多列排序，逐列指定方向
+csv-splitter sort orders.csv --by "city:asc,amount:desc" -o sorted.csv
+# 单列仍是最简单的写法
 csv-splitter sort orders.csv --by amount --desc -o sorted.csv
+
+# 正则筛选（col~re: 前缀），可与其他条件用 AND / OR 组合
+csv-splitter filter orders.csv --where "note~re:^REFUND" --where "amount>1000" -o hits.csv
 ```
 
 `-o` 是「筛完留下来」的路径：流式写出，命中行的**原始字节原样保留**（不重新序列化，

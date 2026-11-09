@@ -7,6 +7,56 @@ use std::fs::File;
 use std::io::{self, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 
+/// One sort column and its direction.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SortColumn {
+    pub name: String,
+    pub descending: bool,
+}
+
+impl SortColumn {
+    pub fn new(name: impl Into<String>, descending: bool) -> Self {
+        Self {
+            name: name.into(),
+            descending,
+        }
+    }
+}
+
+/// Resolved sort order: which field index, and which direction.
+///
+/// Shared between the chunk writer and the merge heap so both agree on the
+/// comparison rule; a mismatch would produce a "sorted" file with unsorted
+/// neighbours at chunk boundaries.
+#[derive(Debug)]
+struct SortPlan {
+    columns: Vec<(usize, bool)>,
+}
+
+impl SortPlan {
+    fn key(&self, record: &[u8], delim: u8, encoding: TextEncoding) -> Vec<String> {
+        let fields = parse_csv_record(&decode_cell(record, encoding), delim);
+        self.columns
+            .iter()
+            .map(|(idx, _)| fields.get(*idx).cloned().unwrap_or_default())
+            .collect()
+    }
+
+    /// Ascending order of the requested keys, honouring per-column direction.
+    fn compare(&self, a: &[String], b: &[String]) -> Ordering {
+        for (i, (_, descending)) in self.columns.iter().enumerate() {
+            let left = a.get(i).map(String::as_str).unwrap_or("");
+            let right = b.get(i).map(String::as_str).unwrap_or("");
+            let ord = smart_cmp(left, right);
+            let ord = if *descending { ord.reverse() } else { ord };
+            if ord != Ordering::Equal {
+                return ord;
+            }
+        }
+        Ordering::Equal
+    }
+}
+
 /// External merge sort for large CSV files.
 ///
 /// Splits into sorted chunks, then merges. Records are read with
@@ -17,6 +67,26 @@ pub fn external_sort(
     output: &Path,
     sort_col: &str,
     descending: bool,
+    delimiter: Delimiter,
+    buf_mb: usize,
+    tx: &ProgressSender,
+) -> io::Result<()> {
+    external_sort_columns(
+        input,
+        output,
+        &[SortColumn::new(sort_col, descending)],
+        delimiter,
+        buf_mb,
+        tx,
+    )
+}
+
+/// Same as [`external_sort`] with several keys: `[city asc, amount desc]`
+/// sorts by city, then within each city by amount descending.
+pub fn external_sort_columns(
+    input: &Path,
+    output: &Path,
+    columns: &[SortColumn],
     delimiter: Delimiter,
     buf_mb: usize,
     tx: &ProgressSender,
@@ -54,12 +124,23 @@ pub fn external_sort(
     }
     let header_line = record.clone();
     let headers = parse_csv_record(&decode_cell(&record, encoding), delim);
-    let col_idx = headers.iter().position(|h| h == sort_col).ok_or_else(|| {
-        io::Error::new(
+    let mut resolved: Vec<(usize, bool)> = Vec::with_capacity(columns.len());
+    for col in columns {
+        let idx = headers.iter().position(|h| h == &col.name).ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("Sort column '{}' not found", col.name),
+            )
+        })?;
+        resolved.push((idx, col.descending));
+    }
+    if resolved.is_empty() {
+        return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
-            format!("Sort column '{sort_col}' not found"),
-        )
-    })?;
+            "no sort columns",
+        ));
+    }
+    let plan = std::sync::Arc::new(SortPlan { columns: resolved });
 
     // Split into sorted chunks
     let tmp_dir = output.parent().unwrap_or(Path::new("."));
@@ -69,15 +150,8 @@ pub fn external_sort(
     while reader.next_record(&mut record)? {
         records.push(record.clone());
         if records.len() >= chunk_max_lines {
-            let p = write_sorted_chunk(
-                &records,
-                col_idx,
-                delim,
-                descending,
-                tmp_dir,
-                chunk_paths.len(),
-                encoding,
-            )?;
+            let p =
+                write_sorted_chunk(&records, &plan, delim, tmp_dir, chunk_paths.len(), encoding)?;
             chunk_paths.push(p);
             records.clear();
             tx.send(ProgressEvent::Info(format!(
@@ -88,15 +162,7 @@ pub fn external_sort(
         }
     }
     if !records.is_empty() {
-        let p = write_sorted_chunk(
-            &records,
-            col_idx,
-            delim,
-            descending,
-            tmp_dir,
-            chunk_paths.len(),
-            encoding,
-        )?;
+        let p = write_sorted_chunk(&records, &plan, delim, tmp_dir, chunk_paths.len(), encoding)?;
         chunk_paths.push(p);
     }
 
@@ -120,9 +186,8 @@ pub fn external_sort(
         &chunk_paths,
         output,
         &header_line,
-        col_idx,
+        &plan,
         delim,
-        descending,
         buf_size,
         encoding,
     )?;
@@ -139,35 +204,22 @@ pub fn external_sort(
     Ok(())
 }
 
-fn sort_key(record: &[u8], col_idx: usize, delim: u8, encoding: TextEncoding) -> String {
-    let fields = parse_csv_record(&decode_cell(record, encoding), delim);
-    fields.get(col_idx).cloned().unwrap_or_default()
-}
-
 fn write_sorted_chunk(
     records: &[Vec<u8>],
-    col_idx: usize,
+    plan: &SortPlan,
     delim: u8,
-    desc: bool,
     tmp_dir: &Path,
     chunk_num: usize,
     encoding: TextEncoding,
 ) -> io::Result<PathBuf> {
-    let mut indexed: Vec<(usize, String)> = records
+    let mut indexed: Vec<(usize, Vec<String>)> = records
         .iter()
         .enumerate()
-        .map(|(i, r)| (i, sort_key(r, col_idx, delim, encoding)))
+        .map(|(i, r)| (i, plan.key(r, delim, encoding)))
         .collect();
 
     // `sort_by` is stable, so equal keys keep their original order.
-    indexed.sort_by(|a, b| {
-        let ord = smart_cmp(&a.1, &b.1);
-        if desc {
-            ord.reverse()
-        } else {
-            ord
-        }
-    });
+    indexed.sort_by(|a, b| plan.compare(&a.1, &b.1));
 
     let path = tmp_dir.join(format!("_sort_chunk_{chunk_num:04}.tmp"));
     let mut writer = BufWriter::with_capacity(1024 * 1024, File::create(&path)?);
@@ -198,9 +250,9 @@ fn smart_cmp(a: &str, b: &str) -> Ordering {
 
 struct MergeEntry {
     record: Vec<u8>,
-    key: String,
+    key: Vec<String>,
     source: usize,
-    descending: bool,
+    plan: std::sync::Arc<SortPlan>,
 }
 
 impl PartialEq for MergeEntry {
@@ -218,13 +270,8 @@ impl PartialOrd for MergeEntry {
 
 impl Ord for MergeEntry {
     fn cmp(&self, other: &Self) -> Ordering {
-        // BinaryHeap is a max-heap, so reverse for ascending order.
-        let ord = smart_cmp(&self.key, &other.key);
-        if self.descending {
-            ord
-        } else {
-            ord.reverse()
-        }
+        // BinaryHeap is a max-heap, so reverse to pop the smallest key first.
+        self.plan.compare(&self.key, &other.key).reverse()
     }
 }
 
@@ -233,9 +280,8 @@ fn merge_chunks(
     chunks: &[PathBuf],
     output: &Path,
     header: &[u8],
-    col_idx: usize,
+    plan: &std::sync::Arc<SortPlan>,
     delim: u8,
-    descending: bool,
     buf_size: usize,
     encoding: TextEncoding,
 ) -> io::Result<()> {
@@ -256,12 +302,12 @@ fn merge_chunks(
     // Seed the heap with the first record from each chunk.
     for (i, reader) in readers.iter_mut().enumerate() {
         if reader.next_record(&mut record)? {
-            let key = sort_key(&record, col_idx, delim, encoding);
+            let key = plan.key(&record, delim, encoding);
             heap.push(MergeEntry {
                 record: record.clone(),
                 key,
                 source: i,
-                descending,
+                plan: plan.clone(),
             });
         }
     }
@@ -279,12 +325,12 @@ fn merge_chunks(
         write_record(&mut writer, &entry.record)?;
 
         if readers[entry.source].next_record(&mut record)? {
-            let key = sort_key(&record, col_idx, delim, encoding);
+            let key = plan.key(&record, delim, encoding);
             heap.push(MergeEntry {
                 record: record.clone(),
                 key,
                 source: entry.source,
-                descending,
+                plan: plan.clone(),
             });
         }
     }
@@ -357,5 +403,108 @@ mod tests {
         let err = external_sort(&src, &dst, "nope", false, Delimiter::Comma, 1, &tx).unwrap_err();
         assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
         std::fs::remove_dir_all(&dir).ok();
+    }
+}
+
+#[cfg(test)]
+mod multi_tests {
+    use super::*;
+
+    struct Dir(std::path::PathBuf);
+    impl Dir {
+        fn new(tag: &str) -> Self {
+            let d = std::env::temp_dir().join(format!(
+                "csvs_msort_{tag}_{}_{}",
+                std::process::id(),
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos()
+            ));
+            std::fs::create_dir_all(&d).unwrap();
+            Self(d)
+        }
+        fn join(&self, n: &str) -> std::path::PathBuf {
+            self.0.join(n)
+        }
+    }
+    impl Drop for Dir {
+        fn drop(&mut self) {
+            std::fs::remove_dir_all(&self.0).ok();
+        }
+    }
+
+    fn sorted(csv: &str, cols: &[SortColumn], tag: &str) -> String {
+        let d = Dir::new(tag);
+        let input = d.join("in.csv");
+        let output = d.join("out.csv");
+        std::fs::write(&input, csv).unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        external_sort_columns(&input, &output, cols, Delimiter::Comma, 16, &tx).unwrap();
+        std::fs::read_to_string(&output).unwrap()
+    }
+
+    #[test]
+    fn second_key_breaks_ties_and_direction_is_per_column() {
+        let csv = "city,amount\nCDMX,30\nPuebla,10\nCDMX,10\nPuebla,30\n";
+        let cols = vec![
+            SortColumn::new("city", false),
+            SortColumn::new("amount", true),
+        ];
+        let out = sorted(csv, &cols, "mixed");
+        let lines: Vec<&str> = out.lines().collect();
+        assert_eq!(lines[0], "city,amount");
+        // CDMX ascending, then amount descending inside each city.
+        assert_eq!(lines[1], "CDMX,30");
+        assert_eq!(lines[2], "CDMX,10");
+        assert_eq!(lines[3], "Puebla,30");
+        assert_eq!(lines[4], "Puebla,10");
+    }
+
+    #[test]
+    fn descending_first_column() {
+        let csv = "city,amount\nCDMX,30\nPuebla,10\nCDMX,10\n";
+        let cols = vec![
+            SortColumn::new("city", true),
+            SortColumn::new("amount", false),
+        ];
+        let out = sorted(csv, &cols, "desc_first");
+        let lines: Vec<&str> = out.lines().collect();
+        assert_eq!(lines[1], "Puebla,10");
+        assert_eq!(lines[2], "CDMX,10");
+        assert_eq!(lines[3], "CDMX,30");
+    }
+
+    #[test]
+    fn unknown_column_is_rejected() {
+        let d = Dir::new("bad");
+        let input = d.join("in.csv");
+        std::fs::write(&input, "a,b\n1,2\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let err = external_sort_columns(
+            &input,
+            &d.join("out.csv"),
+            &[SortColumn::new("nope", false)],
+            Delimiter::Comma,
+            16,
+            &tx,
+        )
+        .unwrap_err();
+        assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
+    }
+
+    #[test]
+    fn single_column_wrapper_still_works() {
+        let csv = "amount,id\n30,a\n10,c\n20,b\n";
+        let d = Dir::new("single");
+        let input = d.join("in.csv");
+        let output = d.join("out.csv");
+        std::fs::write(&input, csv).unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        external_sort(&input, &output, "amount", false, Delimiter::Comma, 16, &tx).unwrap();
+        let text = std::fs::read_to_string(&output).unwrap();
+        let lines: Vec<&str> = text.lines().collect();
+        assert_eq!(lines[1], "10,c");
+        assert_eq!(lines[3], "30,a");
     }
 }

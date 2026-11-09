@@ -801,3 +801,65 @@ fn analyze_profiles_columns_and_dedupe_removes_rows() {
     let text = std::fs::read_to_string(&deduped).unwrap();
     assert_eq!(text.lines().count(), 4, "header + 3 distinct ids: {text}");
 }
+
+#[test]
+fn sort_by_several_columns_and_regex_filter() {
+    let dir = TempDir::new("multi");
+    let input = dir.join("in.csv");
+    let mut csv = String::from("city,amount,note\n");
+    csv.push_str("CDMX,30,REFUND\n");
+    csv.push_str("Puebla,10,ok\n");
+    csv.push_str("CDMX,10,REFUND now\n");
+    csv.push_str("Puebla,30,refund\n");
+    std::fs::write(&input, csv).unwrap();
+
+    let out = dir.join("sorted.csv");
+    let status = Command::new(bin())
+        .args([
+            "sort",
+            input.to_str().unwrap(),
+            "--by",
+            "city:asc,amount:desc",
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&out).unwrap();
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines[1], "CDMX,30,REFUND");
+    assert_eq!(lines[2], "CDMX,10,REFUND now");
+    assert_eq!(lines[3], "Puebla,30,refund");
+
+    // Regex is case-sensitive unless the pattern says otherwise.
+    let re_file = dir.join("re.csv");
+    let status = Command::new(bin())
+        .args([
+            "filter",
+            input.to_str().unwrap(),
+            "--where",
+            "note~re:^REFUND",
+            "-o",
+            re_file.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    assert_eq!(
+        std::fs::read_to_string(&re_file).unwrap(),
+        "city,amount,note\nCDMX,30,REFUND\nCDMX,10,REFUND now\n"
+    );
+
+    // A broken pattern is a usage error, not an empty result.
+    let status = Command::new(bin())
+        .args([
+            "filter",
+            input.to_str().unwrap(),
+            "--where",
+            "note~re:[oops",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(2));
+}
