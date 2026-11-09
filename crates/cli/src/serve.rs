@@ -886,9 +886,14 @@ fn rows(
         })
         .collect();
 
+    // Column names travel with every window: a client that only pages rows
+    // would otherwise have to make a second request to render a header.
+    let headers = viewer.headers().unwrap_or_default();
+    let cols: Vec<String> = headers.iter().map(|c| json_str(c)).collect();
     let body = format!(
-        r#"{{"start":{start},"total":{},"rows":[{}]}}"#,
+        r#"{{"start":{start},"total":{},"columns":[{}],"rows":[{}]}}"#,
         viewer.total_rows(),
+        cols.join(","),
         rows.join(",")
     );
     respond_json(stream, 200, &body)

@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.33.0] — 2026-11-10
+
+### Added
+
+- **A contract test for the built-in viewer** (`crates/cli/tests/viewer.rs`): it
+  extracts every `api("/x")` call from the HTML, checks each endpoint against the
+  list the router advertises, then replays the page's request sequence against a
+  live server and asserts the exact fields the JavaScript reads. A browser test
+  could not run in CI; API drift is what actually breaks the page.
+- Every `/rows` response now carries `columns`, including the plain paged path.
+
+### Fixed
+
+- The plain `/rows` window returned `rows` without `columns`, so the viewer's
+  table had no header to render — found immediately by the new contract test.
+
 ## [0.32.0] — 2026-11-10
 
 ### Added
