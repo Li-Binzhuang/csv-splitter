@@ -15,11 +15,18 @@ env:
   CARGO_PROFILE_DEV_DEBUG: "0"
   CARGO_PROFILE_TEST_DEBUG: "0"
 
+# One job, deliberately.
+#
+# It used to be two (`engine`, then `cli` via `needs`). That relied on the runner
+# creating both jobs; once the repository's cache quota was exceeded, runs came
+# back as "failure" with one job skipped and, sometimes, no jobs at all — a red X
+# with nothing to read. A single job cannot lose half of itself.
+#
+# The cost is that DuckDB compiles even when only the engine changed. With the
+# rolling cache below that is a few minutes, and it buys a signal that is always
+# complete.
 jobs:
-  # The engine is where most of the code lives and it has no heavy
-  # dependencies, so this job answers in a couple of minutes. Clippy runs here
-  # for core/gui; the workspace-wide run happens in `cli` below.
-  engine:
+  test:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -27,9 +34,9 @@ jobs:
         with:
           components: rustfmt, clippy
 
-      # Rolling cache: the key changes every run so at most one entry per job
-      # exists. A per-lockfile key accumulated two 4 GB target archives and pushed
-      # the repo over its 10 GB cache quota, after which runs started failing.
+      # Rolling key: at most one entry survives per prefix. A per-lockfile key
+      # accumulated two 4 GB target archives and pushed the repo past its 10 GB
+      # cache limit.
       - name: Cache cargo
         uses: actions/cache@v4
         with:
@@ -37,8 +44,8 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: linux-engine-rolling-${{ github.run_id }}
-          restore-keys: linux-engine-rolling-
+          key: linux-cargo-rolling-${{ github.run_id }}
+          restore-keys: linux-cargo-rolling-
 
       - name: Install Linux dependencies
         run: |
@@ -54,36 +61,8 @@ jobs:
       - name: Performance guard
         run: cargo test -p csv-splitter-core --test performance
 
-      - name: Clippy engine
-        run: cargo clippy -p csv-splitter-core -p csv-splitter-gui --all-targets -- -D warnings
-
-  # DuckDB is statically bundled and takes ~10 minutes to compile from cold, so
-  # it gets its own job: a slow engine build should not delay engine feedback.
-  cli:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-
-      - name: Cache cargo (duckdb build is the expensive part)
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: linux-cli-rolling-${{ github.run_id }}
-          restore-keys: linux-cli-rolling-
-
-      # Clippy already builds check artefacts for every target, so a separate
-      # `cargo check` step only paid the same compile cost twice.
-      - name: Clippy CLI
-        run: cargo clippy -p csv-splitter-cli --all-targets -- -D warnings
+      - name: Clippy workspace
+        run: cargo clippy --workspace --all-targets -- -D warnings
 
       - name: Test CLI (includes the HTTP API)
         run: cargo test -p csv-splitter-cli
-
-      # Benchmarks are informational and are compiled locally; building a second
-      # cargo profile here cost more than it protected.
