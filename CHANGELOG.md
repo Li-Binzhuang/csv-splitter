@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.29.0] — 2026-11-10
+
+### Added
+
+- **`--verify` on the write commands** (`filter`, `columns`, `dedupe`): re-reads
+  the output and checks the claim the operation makes — exact row count, exact
+  column count, and no raggedness beyond what the source already had.
+  `dedupe` additionally checks `kept + removed == scanned` before reading
+  anything. `split`/`merge` already had the byte-for-byte `verify`.
+- `dedupe` reports `kept_ragged` and `filter` reports `matched_ragged`, so the
+  check can distinguish "this operation wrote bad rows" from "the source was
+  already ragged and the rows were copied faithfully".
+
 ## [0.28.0] — 2026-11-10
 
 ### Fixed — extreme inputs

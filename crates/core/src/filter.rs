@@ -353,12 +353,16 @@ pub fn extract(
 
     let mut summary = ExtractSummary::default();
     let mut written: u64 = 0;
+    let width = headers.len();
     while records.next_record(&mut record)? {
         summary.scanned += 1;
         written += record.len() as u64;
         let text = String::from_utf8_lossy(&record);
         let fields = parse_csv_record(text.trim_end_matches(['\n', '\r']), delim);
         if compiled.holds(&fields) {
+            if fields.len() != width {
+                summary.matched_ragged += 1;
+            }
             let mut line = record.clone();
             if !line.ends_with(b"\n") {
                 line.push(b'\n');
@@ -386,6 +390,9 @@ pub struct ExtractSummary {
     pub scanned: u64,
     pub matched: u64,
     pub bytes: u64,
+    /// Matched rows whose field count differed from the header (inherited from
+    /// the source, and passed through verbatim).
+    pub matched_ragged: u64,
 }
 
 /// Single-cell predicate.

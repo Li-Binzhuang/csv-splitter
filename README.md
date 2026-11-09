@@ -149,7 +149,8 @@ csv-splitter extract chunks.tar -o ./out
 | 换编码 | `convert gbk.csv -o utf8.csv` | — |
 | 把文件给出去 | — | `GET /download?path=`（原始字节） |
 | 把查询结果拿出去 | — | `GET /export?sql=...`（CSV 文本） |
-| 无损自检 | `verify big.csv -n 6` | — |
+| 无损自检（字节级） | `verify big.csv -n 6` | — |
+| **写操作自检（计数级）** | `filter … -o out.csv --verify` 等 | — |
 
 ```bash
 $ csv-splitter search orders.csv refund --show 3
@@ -411,6 +412,31 @@ csv-splitter serve --root ~/data --addr 127.0.0.1:8787
 curl "http://127.0.0.1:8787/meta?path=huge.csv"
 curl "http://127.0.0.1:8787/rows?path=huge.csv&start=18000000&count=20"
 ```
+
+## 自检 / Self-checks
+
+每个写操作都会对结果做一个承诺，`--verify` 让它**去验证自己的承诺**：
+
+| 操作 | 承诺 | 怎么验 |
+|---|---|---|
+| `split` / `merge` | 字节一致 | `verify`（逐字节比较） |
+| `filter -o` | 输出里正好是命中的那些行 | 重读输出，比对行数、列数、继承的 ragged 行数 |
+| `columns` | 行数不变，正好是留下的那些列 | 同上 |
+| `dedupe` | `kept + removed == scanned` | 先查算术，再重读输出查行数 |
+| `sort` | 行数不变 | （顺序要另验） |
+
+```
+$ csv-splitter filter messy.csv --where "城市=CDMX" -o f.csv --verify
+✓ 7853 of 64176 rows matched → f.csv (372582 bytes)
+  ✓ checked: 7853 rows, 6 columns
+```
+
+**为什么 ragged 行不算失败**：`filter` 是原样搬运，源文件本来就有的错位行会一起搬过去——
+这不是它造的错。所以自检比对的是「结果 ragged 数 ≤ 源 ragged 数」，而不是「必须为 0」。
+否则这个检查会在真实脏数据上永远报警，然后没人再看它。
+
+代价是多读一遍文件，所以是可选的（`--verify`）。比起「我觉得应该没问题」，
+多花一次扫描很值。
 
 ## 脏数据 / Dirty files
 

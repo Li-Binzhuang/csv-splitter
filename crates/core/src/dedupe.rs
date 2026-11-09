@@ -34,6 +34,9 @@ pub struct DedupeSummary {
     pub kept: u64,
     pub removed: u64,
     pub bytes: u64,
+    /// Kept rows whose field count differed from the header (inherited verbatim
+    /// from the source).
+    pub kept_ragged: u64,
     /// Columns used as the key; empty means "the whole row".
     pub key_columns: Vec<String>,
 }
@@ -89,6 +92,7 @@ pub fn dedupe(
     }
     out.write_all(&header)?;
 
+    let width = headers.len();
     let mut seen: HashSet<u128> = HashSet::new();
     let mut summary = DedupeSummary {
         key_columns: summary_keys,
@@ -107,6 +111,15 @@ pub fn dedupe(
             return Err(io::Error::other(format!(
                 "more than {max_keys} distinct rows; raise --max-keys or dedupe by column"
             )));
+        }
+        if parse_csv_record(
+            String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
+            delim,
+        )
+        .len()
+            != width
+        {
+            summary.kept_ragged += 1;
         }
         let mut line = record.clone();
         if !line.ends_with(b"\n") {

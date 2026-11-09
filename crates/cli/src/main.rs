@@ -162,6 +162,7 @@ COLUMNS OPTIONS
       --drop <a,b>        Remove these columns
       --rename <a:b,c:d>  Rename columns (old:new)
   -o, --out <file>        Output file (default: <input>.reshaped.csv)
+      --verify            Re-read the output and check rows and columns
       --json              Emit JSON
   -d, --delim <c>         Delimiter (default: auto)
 
@@ -174,6 +175,7 @@ DEDUPE OPTIONS
       --by <a,b>          Columns that define a duplicate (default: the whole row)
   -o, --out <file>        Output file (default: <input>.deduped.csv)
       --max-keys <n>      Refuse to run past n distinct rows (default: 100000000)
+      --verify            Re-read the output and check the kept/removed counts
       --json              Emit JSON
   -d, --delim <c>         Delimiter (default: auto)
 
@@ -182,10 +184,11 @@ FILES OPTIONS
       --ext <csv,tsv,...> Extensions to include (default: csv,tsv,txt,gz,zst,zip)
 
 FILTER OPTIONS
-      --where <expr>      Predicate, repeatable (=, !=, ~, >, >=, <, <=, empty, notempty)
+      --where <expr>      Predicate, repeatable (=, !=, ~, >, >=, <, <=, empty,
+                          notempty, ~re:PATTERN, "col in a,b,c")
       --any               OR the predicates instead of AND
   -o, --out <file>        Write matching rows to a CSV instead of listing row numbers
-  --where <expr>          col=value | col~text | col>number | col empty
+      --verify            Re-read the output and check it holds exactly the matches
       --limit <n>         Stop after n matches (default: 10000)
       --show <n>          Also print the first n matching rows
       --json              Emit JSON instead of text
@@ -421,6 +424,38 @@ fn spawn_reporter(
         }
         output.ok_or_else(|| "job finished without an output path".to_string())
     })
+}
+
+/// Run the opted-in self-check and report it, returning false when it fails.
+fn self_check(
+    result: &Path,
+    delimiter: Delimiter,
+    expectation: csv_splitter_core::check::Expectation,
+    quiet: bool,
+) -> bool {
+    let (tx, _rx) = mpsc::channel();
+    match csv_splitter_core::check::check(result, delimiter, &expectation, &tx) {
+        Ok(report) if report.ok() => {
+            if !quiet {
+                println!(
+                    "  ✓ checked: {} rows, {} columns",
+                    report.counts.rows, report.counts.columns
+                );
+            }
+            true
+        }
+        Ok(report) => {
+            eprintln!("✗ self-check failed:");
+            for p in &report.problems {
+                eprintln!("    {p}");
+            }
+            false
+        }
+        Err(e) => {
+            eprintln!("✗ self-check could not read the result: {e}");
+            false
+        }
+    }
 }
 
 fn run_split_and_wait(config: SplitConfig, threads: usize, quiet: bool) -> Result<PathBuf, String> {
@@ -1046,6 +1081,7 @@ fn cmd_filter(args: &[String]) -> i32 {
     let mut where_exprs: Vec<String> = Vec::new();
     let mut combine = filter::Combine::All;
     let mut out: Option<PathBuf> = None;
+    let mut verify = false;
     let mut limit = 10_000usize;
     let mut json = false;
     let mut show = 0usize;
@@ -1061,6 +1097,7 @@ fn cmd_filter(args: &[String]) -> i32 {
                 }
             },
             "--any" => combine = filter::Combine::Any,
+            "--verify" => verify = true,
             "-o" | "--out" => match p.value("--out") {
                 Ok(v) => out = Some(PathBuf::from(v)),
                 Err(e) => {
@@ -1151,6 +1188,20 @@ fn cmd_filter(args: &[String]) -> i32 {
                     out.display(),
                     s.bytes
                 );
+                if verify {
+                    // The claim: exactly the matched rows, same columns, and
+                    // no raggedness beyond what the source already had.
+                    let ok = self_check(
+                        &out,
+                        delimiter,
+                        csv_splitter_core::check::Expectation::rows(s.matched)
+                            .with_ragged(s.matched_ragged),
+                        false,
+                    );
+                    if !ok {
+                        return 1;
+                    }
+                }
                 0
             }
             Err(e) => {
@@ -2468,10 +2519,12 @@ fn cmd_columns(args: &[String]) -> i32 {
     let mut drop_cols: Vec<String> = Vec::new();
     let mut rename: Vec<(String, String)> = Vec::new();
     let mut json = false;
+    let mut verify = false;
     let mut delim = "auto".to_string();
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
+            "--verify" => verify = true,
             "--keep" => match p.value("--keep") {
                 Ok(v) => keep = v.split(',').map(|s| s.trim().to_string()).collect(),
                 Err(e) => {
@@ -2579,6 +2632,19 @@ fn cmd_columns(args: &[String]) -> i32 {
                     println!("    dropped: {}", s.dropped.join(", "));
                 }
             }
+            if verify {
+                // The claim: every row kept, exactly the surviving columns.
+                let ok = self_check(
+                    &output,
+                    delimiter,
+                    csv_splitter_core::check::Expectation::rows(s.rows)
+                        .with_columns(s.columns.len()),
+                    json,
+                );
+                if !ok {
+                    return 1;
+                }
+            }
             0
         }
         Err(e) => {
@@ -2595,6 +2661,7 @@ fn cmd_dedupe(args: &[String]) -> i32 {
     let mut keys: Vec<String> = Vec::new();
     let mut max_keys = csv_splitter_core::dedupe::DEFAULT_MAX_KEYS;
     let mut json = false;
+    let mut verify = false;
     let mut delim = "auto".to_string();
 
     while let Some(arg) = p.next() {
@@ -2606,6 +2673,7 @@ fn cmd_dedupe(args: &[String]) -> i32 {
                     return 2;
                 }
             },
+            "--verify" => verify = true,
             "-o" | "--out" => match p.value("--out") {
                 Ok(v) => out = Some(PathBuf::from(v)),
                 Err(e) => {
@@ -2688,6 +2756,26 @@ fn cmd_dedupe(args: &[String]) -> i32 {
                     output.display(),
                     human_bytes(s.bytes)
                 );
+            }
+            if verify {
+                // The claim: kept + removed == scanned, and the output holds
+                // exactly the kept rows (no duplicates survived).
+                if s.kept + s.removed != s.scanned {
+                    eprintln!(
+                        "✗ self-check failed: kept {} + removed {} != scanned {}",
+                        s.kept, s.removed, s.scanned
+                    );
+                    return 1;
+                }
+                let ok = self_check(
+                    &output,
+                    delimiter,
+                    csv_splitter_core::check::Expectation::rows(s.kept).with_ragged(s.kept_ragged),
+                    json,
+                );
+                if !ok {
+                    return 1;
+                }
             }
             0
         }

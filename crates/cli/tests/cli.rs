@@ -1165,3 +1165,66 @@ fn edge_cases_do_not_error() {
     assert!(text.contains("café"), "{text}");
     assert!(text.contains("résumé"), "{text}");
 }
+
+#[test]
+fn verify_flag_confirms_the_claims_of_each_operation() {
+    let dir = TempDir::new("selfcheck");
+    let input = dir.join("in.csv");
+    let mut csv = String::from("id,city,amount\n");
+    for i in 0..20 {
+        csv.push_str(&format!("{},CDMX,{}\n", i % 5, i));
+    }
+    std::fs::write(&input, csv).unwrap();
+
+    // filter: output holds exactly the matches.
+    let filtered = dir.join("f.csv");
+    let status = Command::new(bin())
+        .args([
+            "filter",
+            input.to_str().unwrap(),
+            "--where",
+            "city=CDMX",
+            "-o",
+            filtered.to_str().unwrap(),
+            "--verify",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    // columns: same rows, fewer columns.
+    let reshaped = dir.join("c.csv");
+    let status = Command::new(bin())
+        .args([
+            "columns",
+            input.to_str().unwrap(),
+            "--drop",
+            "city",
+            "-o",
+            reshaped.to_str().unwrap(),
+            "--verify",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    // dedupe: kept + removed must equal the source rows.
+    let deduped = dir.join("d.csv");
+    let status = Command::new(bin())
+        .args([
+            "dedupe",
+            input.to_str().unwrap(),
+            "--by",
+            "id",
+            "-o",
+            deduped.to_str().unwrap(),
+            "--verify",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    assert_eq!(
+        std::fs::read_to_string(&deduped).unwrap().lines().count(),
+        6
+    );
+}
