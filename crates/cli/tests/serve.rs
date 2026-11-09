@@ -528,3 +528,74 @@ fn export_returns_csv_text_of_a_query() {
 
     drop(server);
 }
+
+#[test]
+fn filtered_export_and_sort_job() {
+    let dir = TempDir::new("exp2");
+    let mut csv = String::from("city,amount\n");
+    for (city, amount) in [
+        ("CDMX", 10),
+        ("CDMX", 500),
+        ("Puebla", 500),
+        ("Tijuana", 20),
+    ] {
+        csv.push_str(&format!("{city},{amount}\n"));
+    }
+    std::fs::write(dir.join("data.csv"), csv).unwrap();
+    let server = start(&dir.0.clone());
+
+    // `where` with `|` means AND: only the CDMX row above 100 survives.
+    let (status, body) = get_raw(
+        &server.addr,
+        "/export?path=data.csv&where=city%3DCDMX%7Camount%3E100",
+    );
+    assert_eq!(status, 200);
+    assert_eq!(
+        String::from_utf8_lossy(&body),
+        "city,amount\nCDMX,500\n",
+        "AND export"
+    );
+
+    // whereAny means OR.
+    let (status, body) = get_raw(
+        &server.addr,
+        "/export?path=data.csv&whereAny=city%3DTijuana%7Camount%3E400",
+    );
+    assert_eq!(status, 200);
+    let text = String::from_utf8_lossy(&body);
+    assert_eq!(
+        text, "city,amount\nCDMX,500\nPuebla,500\nTijuana,20\n",
+        "{text}"
+    );
+
+    // Sorting runs as a job and lands inside the root.
+    let (status, body) = post(
+        &server.addr,
+        "/sort?path=data.csv&by=amount&desc=1&out=sorted.csv",
+    );
+    assert_eq!(status, 202, "{body}");
+    let id = body
+        .split("\"job\":\"")
+        .nth(1)
+        .and_then(|s| s.split('"').next())
+        .expect("job id")
+        .to_string();
+    let done = wait_for_job(&server.addr, &id);
+    assert!(done.contains("\"state\":\"done\""), "{done}");
+    let sorted = std::fs::read_to_string(dir.join("sorted.csv")).unwrap();
+    let lines: Vec<&str> = sorted.lines().collect();
+    assert_eq!(lines[0], "city,amount");
+    assert_eq!(lines[1], "CDMX,500");
+    assert_eq!(lines[3], "Tijuana,20");
+
+    // Missing `by` and an output outside the root are client errors.
+    let (status, _) = post(&server.addr, "/sort?path=data.csv&out=x.csv");
+    assert_eq!(status, 400);
+    let (status, _) = post(
+        &server.addr,
+        "/sort?path=data.csv&by=amount&out=../escape.csv",
+    );
+    assert_eq!(status, 400);
+
+    drop(server);
+}

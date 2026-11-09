@@ -661,3 +661,97 @@ fn files_lists_the_tree_relative_to_root() {
     assert!(text.contains("\"nested/b.csv\""), "{text}");
     assert!(!text.contains("skip.md"), "{text}");
 }
+
+#[test]
+fn filter_writes_a_csv_and_sort_orders_the_file() {
+    let dir = TempDir::new("fsort");
+    let input = dir.join("in.csv");
+    let mut csv = String::from("city,amount\n");
+    for (city, amount) in [
+        ("CDMX", 10),
+        ("CDMX", 500),
+        ("Puebla", 500),
+        ("Tijuana", 20),
+    ] {
+        csv.push_str(&format!("{city},{amount}\n"));
+    }
+    std::fs::write(&input, csv).unwrap();
+
+    // AND across two predicates, written straight to a file.
+    let out = dir.join("and.csv");
+    let status = Command::new(bin())
+        .args([
+            "filter",
+            input.to_str().unwrap(),
+            "--where",
+            "city=CDMX",
+            "--where",
+            "amount>100",
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    assert_eq!(
+        std::fs::read_to_string(&out).unwrap(),
+        "city,amount\nCDMX,500\n"
+    );
+
+    // OR keeps either side.
+    let any = dir.join("any.csv");
+    let status = Command::new(bin())
+        .args([
+            "filter",
+            input.to_str().unwrap(),
+            "--where",
+            "city=Tijuana",
+            "--where",
+            "amount>400",
+            "--any",
+            "-o",
+            any.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&any).unwrap();
+    assert_eq!(text.lines().count(), 4, "{text}");
+
+    // Sorting is its own command now.
+    let sorted = dir.join("sorted.csv");
+    let status = Command::new(bin())
+        .args([
+            "sort",
+            input.to_str().unwrap(),
+            "--by",
+            "amount",
+            "--desc",
+            "-o",
+            sorted.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&sorted).unwrap();
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines[0], "city,amount");
+    assert_eq!(lines[1], "CDMX,500");
+    // Descending: 500, 500, 20, 10.
+    assert_eq!(lines[3], "Tijuana,20");
+    assert_eq!(lines[4], "CDMX,10");
+
+    // A bad column is a client error, not a silently empty file.
+    let status = Command::new(bin())
+        .args([
+            "sort",
+            input.to_str().unwrap(),
+            "--by",
+            "nope",
+            "-o",
+            dir.join("x.csv").to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(1));
+}

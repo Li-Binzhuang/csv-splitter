@@ -16,6 +16,8 @@
 //!   GET /files?dir=REL&ext=csv,tsv&limit=N
 //!   GET /download?path=REL                         (raw bytes, as attachment)
 //!   GET /export?path=REL&sql=...&limit=N           (query result as CSV text)
+//!   GET /export?path=REL&where=a=1|b>2             (filtered, kept as CSV)
+//!   POST /sort?path=REL&by=col&desc=1&out=DEST     -> {"job":"..."}
 //!   GET /query?path=REL&sql=SELECT...&limit=N
 //!
 //! Write endpoints return a job id instead of blocking:
@@ -25,7 +27,7 @@
 //!   GET  /job?id=...    (poll)      GET /jobs  (list)
 
 use csv_splitter_core::cache::ResultCache;
-use csv_splitter_core::filter::{scan as filter_scan, FilterSpec};
+use csv_splitter_core::filter::{self, scan as filter_scan, FilterSpec};
 use csv_splitter_core::jobs::JobRegistry;
 use csv_splitter_core::listing;
 use csv_splitter_core::merge::merge_archive;
@@ -122,6 +124,7 @@ fn handle(
             "/split" => start_split(&mut stream, root, jobs, &params),
             "/merge" => start_merge(&mut stream, root, jobs, &params),
             "/warm" => start_warm(&mut stream, root, jobs, cache, &params),
+            "/sort" => start_sort(&mut stream, root, jobs, &params),
             _ => respond_json(&mut stream, 404, r#"{"error":"unknown endpoint"}"#),
         };
     }
@@ -319,6 +322,56 @@ fn start_merge(
 /// On files with quoted newlines the CSV reader falls back to a serial scan
 /// (a 10 GB query then costs seconds), so a client should start warming as soon
 /// as it knows the filter, not when the user scrolls.
+/// Sort the whole file into `out` as a background job.
+fn start_sort(
+    stream: &mut TcpStream,
+    root: &Path,
+    jobs: &JobRegistry,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (input, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+    };
+    let Some(out) = resolve_out(root, params, "out") else {
+        return respond_json(stream, 400, r#"{"error":"out must stay inside root"}"#);
+    };
+    let Some(by) = params.get("by").filter(|b| !b.is_empty()) else {
+        return respond_json(stream, 400, r#"{"error":"by is required"}"#);
+    };
+    let descending = params
+        .get("desc")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false);
+    let buf_mb: usize = params
+        .get("bufMb")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(64);
+    let delimiter = delimiter(params);
+    let by_owned = by.to_string();
+    let result_path = out.clone();
+
+    let id = jobs.submit(
+        "sort",
+        move |tx| match csv_splitter_core::sort::external_sort(
+            &input, &out, &by_owned, descending, delimiter, buf_mb, &tx,
+        ) {
+            // A job only reaches `done` on Finished; without this it would stay
+            // "running" forever even though the file is already complete.
+            Ok(()) => {
+                tx.send(ProgressEvent::Finished {
+                    output: result_path,
+                })
+                .ok();
+            }
+            Err(e) => {
+                tx.send(ProgressEvent::Error(e.to_string())).ok();
+            }
+        },
+    );
+    respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
+}
+
 fn start_warm(
     stream: &mut TcpStream,
     root: &Path,
@@ -604,13 +657,63 @@ fn download(
 
 /// Run a query and return its rows as CSV text (not JSON) so it can be piped
 /// straight into another tool.
+/// Build a WHERE clause from `where` (AND) / `whereAny` (OR), `|`-separated.
+///
+/// Predicates are parsed with the same grammar as the CLI filter
+/// (`col=value`, `col~text`, `col>number`, `col empty`) and then rendered as
+/// SQL, which keeps string values quoted instead of letting them be read as
+/// column names — and keeps a value can never break out of its literal.
+fn filter_clause(params: &HashMap<String, String>) -> Option<String> {
+    let render = |raw: &str, op: &str| -> Option<String> {
+        let parts: Vec<String> = raw
+            .split('|')
+            .map(|p| p.trim())
+            .filter(|p| !p.is_empty())
+            .filter_map(|p| FilterSpec::parse(p).ok())
+            .filter_map(|spec| sql_predicate(&spec))
+            .collect();
+        if parts.is_empty() {
+            None
+        } else {
+            Some(format!("({})", parts.join(&format!(" {op} "))))
+        }
+    };
+    params
+        .get("where")
+        .and_then(|raw| render(raw, "AND"))
+        .or_else(|| params.get("whereAny").and_then(|raw| render(raw, "OR")))
+}
+
+fn sql_predicate(spec: &FilterSpec) -> Option<String> {
+    let column = &spec.column;
+    let quote = |v: &str| format!("'{}'", v.replace('\'', "''"));
+    let numeric = spec.value.trim().parse::<f64>().is_ok();
+    let value = if numeric {
+        spec.value.trim().to_string()
+    } else {
+        quote(&spec.value)
+    };
+    let sql = match spec.op {
+        filter::Op::Eq => format!("{column} = {}", quote(&spec.value)),
+        filter::Op::Ne => format!("{column} <> {}", quote(&spec.value)),
+        filter::Op::Contains => format!(
+            "{column} LIKE {}",
+            quote(&format!("%{}%", spec.value.replace('%', "\\%")))
+        ),
+        filter::Op::Gt => format!("{column} > {value}"),
+        filter::Op::Gte => format!("{column} >= {value}"),
+        filter::Op::Lt => format!("{column} < {value}"),
+        filter::Op::Lte => format!("{column} <= {value}"),
+        filter::Op::Empty => format!("({column} IS NULL OR {column} = '')"),
+        filter::Op::NotEmpty => format!("({column} IS NOT NULL AND {column} <> '')"),
+    };
+    Some(sql)
+}
+
 fn export(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
     let (path, _rel) = match resolve(root, params) {
         Some(v) => v,
         None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
-    };
-    let Some(statement) = params.get("sql") else {
-        return respond_json(stream, 400, r#"{"error":"sql is required"}"#);
     };
     let limit: usize = params
         .get("limit")
@@ -618,7 +721,16 @@ fn export(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
         .unwrap_or(sql::DEFAULT_LIMIT)
         .min(100_000);
 
-    match sql::query_with(&path, statement, limit, delimiter(params)) {
+    // Either a query, or a `where` alone (which means "SELECT * FROM t WHERE").
+    // The latter is the "filter, then keep the result" workflow.
+    let statement = match (filter_clause(params), params.get("sql")) {
+        (Some(clause), _) => format!("SELECT * FROM t WHERE {clause}"),
+        (None, Some(query)) => query.clone(),
+        (None, None) => {
+            return respond_json(stream, 400, r#"{"error":"sql or where is required"}"#)
+        }
+    };
+    match sql::query_with(&path, &statement, limit, delimiter(params)) {
         Ok(result) => {
             let mut text = String::with_capacity(result.rows.len() * 32);
             text.push_str(&csv_join(&result.columns));

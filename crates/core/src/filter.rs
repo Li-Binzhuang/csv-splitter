@@ -12,7 +12,8 @@ use crate::encoding;
 use crate::index::SparseIndex;
 use crate::types::{Delimiter, ProgressEvent, ProgressSender};
 use std::cmp::Ordering;
-use std::io::{self, BufReader};
+use std::fs::File;
+use std::io::{self, BufReader, BufWriter, Write};
 use std::path::Path;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -185,6 +186,150 @@ pub fn scan(
     Ok(result)
 }
 
+/// How several predicates combine.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Combine {
+    /// Every predicate must hold.
+    All,
+    /// Any one predicate is enough.
+    Any,
+}
+
+/// A set of predicates over one or more columns.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FilterSet {
+    pub specs: Vec<FilterSpec>,
+    pub combine: Combine,
+}
+
+impl FilterSet {
+    pub fn single(spec: FilterSpec) -> Self {
+        Self {
+            specs: vec![spec],
+            combine: Combine::All,
+        }
+    }
+
+    /// Column indices for every distinct column the set mentions.
+    fn resolve(&self, headers: &[String]) -> io::Result<Vec<(String, usize)>> {
+        let mut out = Vec::with_capacity(self.specs.len());
+        for spec in &self.specs {
+            let idx = headers
+                .iter()
+                .position(|h| h == &spec.column)
+                .ok_or_else(|| {
+                    io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        format!("column '{}' not found", spec.column),
+                    )
+                })?;
+            out.push((spec.column.clone(), idx));
+        }
+        Ok(out)
+    }
+
+    fn holds(&self, fields: &[String], resolved: &[(String, usize)]) -> bool {
+        let mut any = false;
+        for (spec, (_, idx)) in self.specs.iter().zip(resolved) {
+            let cell = fields.get(*idx).map(String::as_str).unwrap_or("");
+            let hit = matches(cell, spec);
+            match self.combine {
+                Combine::All if !hit => return false,
+                Combine::All => {}
+                Combine::Any if hit => {
+                    return true;
+                }
+                Combine::Any => any |= hit,
+            }
+        }
+        match self.combine {
+            Combine::All => true,
+            Combine::Any => any,
+        }
+    }
+}
+
+/// Write the rows matching `set` to `output` as CSV, streaming.
+///
+/// This is the "filter, then keep the result" workflow: memory stays flat
+/// because records are copied one at a time, and the header is written once.
+pub fn extract(
+    path: &Path,
+    delimiter: Delimiter,
+    set: &FilterSet,
+    output: &Path,
+    tx: &ProgressSender,
+) -> io::Result<ExtractSummary> {
+    if set.specs.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "no filter expressions",
+        ));
+    }
+    let total_bytes = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
+    tx.send(ProgressEvent::PhaseStart {
+        phase: "Filtering".into(),
+        total_bytes,
+    })
+    .ok();
+
+    let reader = encoding::open_decoded(path)?;
+    let mut records = RecordReader::new(
+        BufReader::with_capacity(4 * 1024 * 1024, reader),
+        4 * 1024 * 1024,
+    );
+    let delim = delimiter.byte();
+    let mut record = Vec::with_capacity(64 * 1024);
+    if !records.next_record(&mut record)? {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "empty file"));
+    }
+    let headers = parse_csv_record(&String::from_utf8_lossy(&record), delim);
+    let resolved = set.resolve(&headers)?;
+
+    let mut out = BufWriter::with_capacity(4 * 1024 * 1024, File::create(output)?);
+    let mut header_line = record.clone();
+    if !header_line.ends_with(b"\n") {
+        header_line.push(b'\n');
+    }
+    out.write_all(&header_line)?;
+
+    let mut summary = ExtractSummary::default();
+    let mut written: u64 = 0;
+    while records.next_record(&mut record)? {
+        summary.scanned += 1;
+        written += record.len() as u64;
+        let text = String::from_utf8_lossy(&record);
+        let fields = parse_csv_record(text.trim_end_matches(['\n', '\r']), delim);
+        if set.holds(&fields, &resolved) {
+            let mut line = record.clone();
+            if !line.ends_with(b"\n") {
+                line.push(b'\n');
+            }
+            // Keep the source bytes verbatim: re-serialising would normalise
+            // quoting and line endings for no benefit.
+            out.write_all(&line)?;
+            summary.matched += 1;
+        }
+        if summary.scanned.is_multiple_of(200_000) {
+            tx.send(ProgressEvent::Progress { bytes: written }).ok();
+        }
+    }
+    out.flush()?;
+    let bytes = std::fs::metadata(output).map(|m| m.len()).unwrap_or(0);
+    tx.send(ProgressEvent::PhaseDone {
+        phase: "Filtering".into(),
+    })
+    .ok();
+    Ok(ExtractSummary { bytes, ..summary })
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ExtractSummary {
+    pub scanned: u64,
+    pub matched: u64,
+    pub bytes: u64,
+}
+
 /// Single-cell predicate.
 pub fn matches(cell: &str, spec: &FilterSpec) -> bool {
     match spec.op {
@@ -284,5 +429,100 @@ mod tests {
         assert!(!matches("a", &spec("x empty")));
         // Non-numeric falls back to string ordering.
         assert!(matches("2026-02-01", &spec("d>2026-01-01")));
+    }
+}
+
+#[cfg(test)]
+mod set_tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    struct Dir(PathBuf);
+    impl Dir {
+        fn new(tag: &str) -> Self {
+            let d = std::env::temp_dir().join(format!(
+                "csvs_fset_{tag}_{}_{}",
+                std::process::id(),
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos()
+            ));
+            std::fs::create_dir_all(&d).unwrap();
+            Self(d)
+        }
+        fn join(&self, n: &str) -> PathBuf {
+            self.0.join(n)
+        }
+    }
+    impl Drop for Dir {
+        fn drop(&mut self) {
+            std::fs::remove_dir_all(&self.0).ok();
+        }
+    }
+
+    fn fixture() -> (Dir, PathBuf) {
+        let d = Dir::new("set");
+        let p = d.join("a.csv");
+        let mut csv = String::from("id,city,amount\n");
+        csv.push_str("1,CDMX,10\n");
+        csv.push_str("2,Puebla,500\n");
+        csv.push_str("3,CDMX,500\n");
+        csv.push_str("4,Tijuana,20\n");
+        std::fs::write(&p, csv).unwrap();
+        (d, p)
+    }
+
+    #[test]
+    fn and_combines_all_predicates() {
+        let (_d, p) = fixture();
+        let set = FilterSet {
+            specs: vec![
+                FilterSpec::parse("city=CDMX").unwrap(),
+                FilterSpec::parse("amount>=500").unwrap(),
+            ],
+            combine: Combine::All,
+        };
+        let out_dir = Dir::new("and_out");
+        let out = out_dir.join("r.csv");
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let s = extract(&p, Delimiter::Comma, &set, &out, &tx).unwrap();
+        assert_eq!(s.scanned, 4);
+        assert_eq!(s.matched, 1);
+        let text = std::fs::read_to_string(&out).unwrap();
+        assert_eq!(text, "id,city,amount\n3,CDMX,500\n");
+    }
+
+    #[test]
+    fn or_keeps_either() {
+        let (_d, p) = fixture();
+        let set = FilterSet {
+            specs: vec![
+                FilterSpec::parse("city=Tijuana").unwrap(),
+                FilterSpec::parse("amount>=500").unwrap(),
+            ],
+            combine: Combine::Any,
+        };
+        let out_dir = Dir::new("or_out");
+        let out = out_dir.join("r.csv");
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let s = extract(&p, Delimiter::Comma, &set, &out, &tx).unwrap();
+        assert_eq!(s.matched, 3);
+        let text = std::fs::read_to_string(&out).unwrap();
+        assert!(text.contains("2,Puebla,500"), "{text}");
+        assert!(text.contains("3,CDMX,500"), "{text}");
+        assert!(text.contains("4,Tijuana,20"), "{text}");
+        assert!(!text.contains("1,CDMX,10"), "{text}");
+    }
+
+    #[test]
+    fn unknown_column_is_a_client_error() {
+        let (_d, p) = fixture();
+        let set = FilterSet::single(FilterSpec::parse("nope=1").unwrap());
+        let out_dir = Dir::new("bad_col");
+        let out = out_dir.join("r.csv");
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let err = extract(&p, Delimiter::Comma, &set, &out, &tx).unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
     }
 }

@@ -135,6 +135,8 @@ csv-splitter extract chunks.tar -o ./out
 | 跳到某一行 | `preview big.csv --start-row 1500000` | `GET /rows?start=N` |
 | 找某个值（跨所有列） | `search big.csv refund` | `GET /search?q=refund` |
 | 按列筛选 | `filter big.csv --where "city=CDMX"` | `GET /filter?where=city=CDMX` |
+| **筛完直接存文件** | `filter ... -o out.csv` | `GET /export?where=...` |
+| **整表排序** | `sort big.csv --by amount -o sorted.csv` | `POST /sort` |
 | 统计列分布 | `stats big.csv --sample 50000` | `GET /stats?sample=50000` |
 | 跑聚合 / 排序 | `sql big.csv "SELECT ..."` | `GET /query?sql=...` |
 | 切分 / 合并 | `split` / `merge` | `POST /split` · `POST /merge` |
@@ -151,6 +153,26 @@ rows (1-based, header excluded): 1, 3
         1  1 | CDMX | refund issued
         3  3 | CDMX | pay refund later
 ```
+
+### 筛选与排序
+
+```bash
+# 两个条件 = AND；重复 --where 即可
+csv-splitter filter orders.csv --where "city=CDMX" --where "amount>45000" -o cdmx.csv
+# ✓ 19836 of 200000 rows matched → cdmx.csv (1195614 bytes)
+
+# --any 改成 OR
+csv-splitter filter orders.csv --where "city=Tijuana" --where "amount>49990" --any -o any.csv
+
+# 整表按任意列排序（外部归并排序，内存与文件大小无关）
+csv-splitter sort orders.csv --by amount --desc -o sorted.csv
+```
+
+`-o` 是「筛完留下来」的路径：流式写出，命中行的**原始字节原样保留**（不重新序列化，
+引号风格和换行都不变）。不带 `-o` 时仍然只列出行号，方便跳转查看。
+
+对方便前端的那一侧：`GET /export?where=city%3DCDMX|amount%3E100` 直接返回筛选后的 CSV；
+`POST /sort?by=amount&desc=1&out=sorted.csv` 起一个后台排序任务。
 
 搜索默认**不区分大小写、跨所有列做子串匹配**；`--columns city` 收窄范围，
 `--case` 区分大小写，`--exact` 要求整格相等（`--case`/`--exact` 可以和 `--columns` 组合）。

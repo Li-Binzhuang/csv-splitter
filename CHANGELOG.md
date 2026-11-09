@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.21.0] — 2026-11-09
+
+### Added
+
+- **Multi-condition filtering** ( repeats = AND,  = OR) and
+  ****: stream the matches into a CSV instead of only listing row
+  numbers. Matched rows keep their source bytes — no re-serialisation, so quoting
+  and line endings stay exactly as they were.
+- ** command**: whole-file external sort exposed on its own
+  (); it previously only existed
+  as a  option.
+- **API**:  (predicates rendered as validated SQL, so
+  a string value can never be read as a column name) and , which runs
+  as a job like split/merge.
+
+### Fixed
+
+- A  job stayed  forever after the file was complete: it never
+  sent the  event the registry waits for.
+
 ## [0.20.1] — 2026-11-09
 
 ### Added

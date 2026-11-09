@@ -7,7 +7,7 @@
 use csv_splitter_core::csv_reader::{detect_delimiter, parse_csv_record, read_headers};
 use csv_splitter_core::decompress::decompress_file;
 use csv_splitter_core::encoding::{self, parse_name, TextEncoding};
-use csv_splitter_core::filter::{scan as filter_scan, FilterSpec};
+use csv_splitter_core::filter::{self, scan as filter_scan, FilterSpec};
 use csv_splitter_core::index::{SparseIndex, DEFAULT_INTERVAL};
 use csv_splitter_core::merge::merge_archive;
 use csv_splitter_core::partition::{run_partition, PartitionConfig};
@@ -37,6 +37,7 @@ fn main() -> ExitCode {
         Some("serve") => cmd_serve(&args[1..]),
         Some("convert") => cmd_convert(&args[1..]),
         Some("filter") => cmd_filter(&args[1..]),
+        Some("sort") => cmd_sort(&args[1..]),
         Some("sql") => cmd_sql(&args[1..]),
         Some("search") => cmd_search(&args[1..]),
         Some("files") => cmd_files(&args[1..]),
@@ -75,6 +76,7 @@ COMMANDS
   serve    --root <dir>          Local HTTP API (JSON) for a web front-end
   convert  <input>               Transcode a CSV to UTF-8 (GBK / UTF-16 input)
   filter   <input> --where EXPR  Row numbers matching a column predicate
+  sort     <input> --by COL -o F Sort the whole file by one column
   search   <input> <text>        Find text anywhere (or in chosen columns)
   files    --root <dir>          List readable files under a directory
   sql      <input> "<query>"     Run SQL over the file (DuckDB, read-only)
@@ -125,6 +127,9 @@ FILES OPTIONS
       --ext <csv,tsv,...> Extensions to include (default: csv,tsv,txt,gz,zst,zip)
 
 FILTER OPTIONS
+      --where <expr>      Predicate, repeatable (=, !=, ~, >, >=, <, <=, empty, notempty)
+      --any               OR the predicates instead of AND
+  -o, --out <file>        Write matching rows to a CSV instead of listing row numbers
   --where <expr>          col=value | col~text | col>number | col empty
       --limit <n>         Stop after n matches (default: 10000)
       --show <n>          Also print the first n matching rows
@@ -977,7 +982,9 @@ fn json_quote(s: &str) -> String {
 fn cmd_filter(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
     let mut input: Option<PathBuf> = None;
-    let mut where_expr: Option<String> = None;
+    let mut where_exprs: Vec<String> = Vec::new();
+    let mut combine = filter::Combine::All;
+    let mut out: Option<PathBuf> = None;
     let mut limit = 10_000usize;
     let mut json = false;
     let mut show = 0usize;
@@ -986,7 +993,15 @@ fn cmd_filter(args: &[String]) -> i32 {
     while let Some(arg) = p.next() {
         match arg.as_str() {
             "--where" => match p.value("--where") {
-                Ok(v) => where_expr = Some(v),
+                Ok(v) => where_exprs.push(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--any" => combine = filter::Combine::Any,
+            "-o" | "--out" => match p.value("--out") {
+                Ok(v) => out = Some(PathBuf::from(v)),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -1032,17 +1047,24 @@ fn cmd_filter(args: &[String]) -> i32 {
         }
     }
 
-    let (Some(input), Some(expr)) = (input, where_expr) else {
-        eprintln!("error: filter needs <input> and --where <expr>");
+    let Some(input) = input else {
+        eprintln!("error: filter needs <input>");
         return 2;
     };
-    let spec = match FilterSpec::parse(&expr) {
-        Ok(s) => s,
-        Err(e) => {
-            eprintln!("error: {e}");
-            return 2;
+    if where_exprs.is_empty() {
+        eprintln!("error: filter needs at least one --where <expr>");
+        return 2;
+    }
+    let mut specs = Vec::with_capacity(where_exprs.len());
+    for expr in &where_exprs {
+        match FilterSpec::parse(expr) {
+            Ok(s) => specs.push(s),
+            Err(e) => {
+                eprintln!("error: {e}");
+                return 2;
+            }
         }
-    };
+    }
     let delimiter = match parse_delimiter(&delim, &input) {
         Ok(d) => d,
         Err(e) => {
@@ -1050,8 +1072,36 @@ fn cmd_filter(args: &[String]) -> i32 {
             return 2;
         }
     };
+    let set = filter::FilterSet { specs, combine };
+
+    // `--out` is the "keep the result" path: stream matches to a file.
+    if let Some(out) = out {
+        let (tx, rx) = mpsc::channel();
+        let reporter = spawn_reporter(rx, true);
+        let result = filter::extract(&input, delimiter, &set, &out, &tx);
+        drop(tx);
+        let _ = reporter.join();
+        return match result {
+            Ok(s) => {
+                println!(
+                    "✓ {} of {} rows matched → {} ({} bytes)",
+                    s.matched,
+                    s.scanned,
+                    out.display(),
+                    s.bytes
+                );
+                0
+            }
+            Err(e) => {
+                eprintln!("✗ filter failed: {e}");
+                1
+            }
+        };
+    }
 
     let (tx, _rx) = mpsc::channel();
+    let spec = set.specs.first().cloned();
+    let Some(spec) = spec else { return 2 };
     let result = match filter_scan(&input, delimiter, &spec, limit, &tx) {
         Ok(r) => r,
         Err(e) => {
@@ -1633,6 +1683,116 @@ fn cmd_extract(args: &[String]) -> i32 {
         }
         Err(e) => {
             eprintln!("✗ extract failed: {e}");
+            1
+        }
+    }
+}
+
+fn cmd_sort(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut input: Option<PathBuf> = None;
+    let mut by: Option<String> = None;
+    let mut out: Option<PathBuf> = None;
+    let mut descending = false;
+    let mut buf_mb = 64usize;
+    let mut delim = "auto".to_string();
+    let mut quiet = false;
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--by" | "-b" => match p.value("--by") {
+                Ok(v) => by = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-o" | "--out" => match p.value("--out") {
+                Ok(v) => out = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--desc" => descending = true,
+            "--asc" => descending = false,
+            "--buf-mb" => match p
+                .value("--buf-mb")
+                .and_then(|v| v.parse().map_err(|_| "bad --buf-mb".to_string()))
+            {
+                Ok(v) => buf_mb = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-q" | "--quiet" => quiet = true,
+            "-d" | "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => input = Some(PathBuf::from(other)),
+        }
+    }
+
+    let (Some(input), Some(by)) = (input, by) else {
+        eprintln!("error: sort needs <input> and --by <column>");
+        return 2;
+    };
+    let out = match out {
+        Some(o) => o,
+        None => {
+            let stem = input
+                .file_stem()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_else(|| "sorted".to_string());
+            let ext = input
+                .extension()
+                .map(|e| e.to_string_lossy().to_string())
+                .unwrap_or_else(|| "csv".to_string());
+            input.with_file_name(format!("{stem}.sorted.{ext}"))
+        }
+    };
+    let delimiter = match parse_delimiter(&delim, &input) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+
+    let (tx, rx) = mpsc::channel();
+    let reporter = spawn_reporter(rx, quiet);
+    let result = csv_splitter_core::sort::external_sort(
+        &input, &out, &by, descending, delimiter, buf_mb, &tx,
+    );
+    drop(tx);
+    let _ = reporter.join();
+    match result {
+        Ok(()) => {
+            let bytes = std::fs::metadata(&out).map(|m| m.len()).unwrap_or(0);
+            println!(
+                "✓ sorted by {} ({}) → {} ({})",
+                by,
+                if descending { "desc" } else { "asc" },
+                out.display(),
+                human_bytes(bytes)
+            );
+            0
+        }
+        Err(e) => {
+            eprintln!("✗ sort failed: {e}");
             1
         }
     }
