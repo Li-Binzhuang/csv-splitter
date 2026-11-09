@@ -549,9 +549,14 @@ mod tests {
     #[test]
     fn buffer_budget_does_not_multiply() {
         let total = 64 * 1024 * 1024;
-        assert_eq!(budget_per_chunk(total, 1), 8 * 1024 * 1024);
+        // Capped at 4 MB per chunk regardless of the shared budget.
+        assert_eq!(budget_per_chunk(total, 1), 4 * 1024 * 1024);
         assert_eq!(budget_per_chunk(total, 16), 4 * 1024 * 1024);
+        assert_eq!(budget_per_chunk(8 * 1024 * 1024, 8), 1024 * 1024);
         assert_eq!(budget_per_chunk(1024, 16), 64 * 1024);
+        // The reader gets its own capped budget, independent of chunk count.
+        assert_eq!(reader_budget(64 * 1024 * 1024), 16 * 1024 * 1024);
+        assert_eq!(reader_budget(1024), 1024 * 1024);
     }
 
     #[test]
