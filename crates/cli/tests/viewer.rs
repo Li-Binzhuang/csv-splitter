@@ -10,7 +10,7 @@
 //! cannot catch CSS or layout problems, but it catches the failure that actually
 //! happens — API drift.
 
-use std::io::{Read, Write};
+use std::io::{BufRead, Read, Write};
 use std::net::TcpStream;
 use std::path::PathBuf;
 
@@ -56,24 +56,30 @@ impl Drop for Server {
 }
 
 fn start(root: &std::path::Path) -> Server {
-    let port = 20_000 + (std::process::id() % 500) as u16;
-    let addr = format!("127.0.0.1:{port}");
+    // Bind an ephemeral port and read it from the banner. A pid-derived port
+    // collided whenever two test binaries ran at once, and `cargo test` runs them
+    // in parallel.
     let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
-        .args(["serve", "--root", root.to_str().unwrap(), "--addr", &addr])
-        .stdout(std::process::Stdio::null())
+        .args(["serve", "--root", root.to_str().unwrap()])
+        .args(["--addr", "127.0.0.1:0"])
+        .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::null())
         .spawn()
         .expect("spawn serve");
-    for _ in 0..100 {
-        if TcpStream::connect(&addr).is_ok() {
-            return Server { addr, child };
-        }
-        std::thread::sleep(std::time::Duration::from_millis(100));
-    }
-    // The child is still ours: make sure it does not outlive the panic.
-    let _ = child.kill();
-    let _ = child.wait();
-    panic!("server did not start on {addr}");
+
+    let stdout = child.stdout.take().unwrap();
+    let mut line = String::new();
+    std::io::BufReader::new(stdout)
+        .read_line(&mut line)
+        .unwrap();
+    // "csv-splitter API on http://127.0.0.1:PORT  (root: ...)"
+    let addr = line
+        .split("http://")
+        .nth(1)
+        .and_then(|s| s.split_whitespace().next())
+        .expect("address in banner")
+        .to_string();
+    Server { addr, child }
 }
 
 fn get(addr: &str, path: &str) -> (u16, String) {
