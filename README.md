@@ -441,6 +441,28 @@ curl "http://127.0.0.1:8787/meta?path=huge.csv"
 curl "http://127.0.0.1:8787/rows?path=huge.csv&start=18000000&count=20"
 ```
 
+## 错误信息 / Error output
+
+只有两种形状，脚本可以直接按前缀判断：
+
+| 类型 | 退出码 | 形态 |
+|---|---|---|
+| 用法错误 | **2** | `error: <原因>`（stderr） |
+| 运行时失败 | **1** | `✗ <命令>: <原因>`，下面可能有一行 `hint:` |
+
+```
+$ csv-splitter preview /definitely/not/here.csv
+✗ preview: No such file or directory (os error 2)
+  hint: check the path; `csv-splitter files --root DIR` lists what is readable
+
+$ csv-splitter filter orders.csv
+error: filter needs at least one --where <expr>
+```
+
+`hint` 只在**有明确下一步**时出现（编码不支持 → 告诉你用 `convert`；
+列名找不到 → 告诉你用 `analyze` 看真实列名；分组太多 → 建议换列或调上限）。
+不该有的提示语不如没有。
+
 ## 自检 / Self-checks
 
 每个写操作都会对结果做一个承诺，`--verify` 让它**去验证自己的承诺**：

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.34.0] — 2026-11-10
+
+### Changed
+
+- **One shape for every failure.** Usage errors are `error: <reason>` and exit 2;
+  runtime failures are `✗ <command>: <reason>` and exit 1, optionally followed by
+  a single `hint:` line. Previously the CLI printed five different forms, three
+  of them from the background reporter, and two commands could print the same
+  error twice.
+- `hint:` appears only when there is a concrete next step — unsupported encoding
+  points at `convert`, an unknown column at `analyze`, too many groups at
+  `--max-groups` — because a hint with nothing to do is noise.
+- A CLI test pins the contract: prefixes, exit codes, and that an error is
+  printed exactly once.
+
 ## [0.33.0] — 2026-11-10
 
 ### Added

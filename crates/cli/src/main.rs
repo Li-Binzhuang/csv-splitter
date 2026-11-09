@@ -365,6 +365,7 @@ fn parse_format(spec: &str) -> Result<CompressFormat, String> {
 
 /// Drain progress events on a helper thread and print a compact log.
 fn spawn_reporter(
+    command: &'static str,
     rx: mpsc::Receiver<ProgressEvent>,
     quiet: bool,
 ) -> thread::JoinHandle<Result<PathBuf, String>> {
@@ -422,17 +423,73 @@ fn spawn_reporter(
                     // Report here, unconditionally: most callers ignore the
                     // reporter's Result, and a swallowed error leaves the user
                     // staring at "see messages above" with nothing above.
-                    eprintln!("✗ {e}");
+                    // The shape matches every other failure in the CLI.
+                    match hint_for(&e) {
+                        Some(hint) => {
+                            eprintln!("✗ {command}: {e}");
+                            eprintln!("  hint: {hint}");
+                        }
+                        None => eprintln!("✗ {command}: {e}"),
+                    }
                     return Err(e);
                 }
                 _ => {}
             }
         }
-        output.ok_or_else(|| "job finished without an output path".to_string())
+        output.ok_or_else(|| format!("{command} finished without producing an output"))
     })
 }
 
 /// Run the opted-in self-check and report it, returning false when it fails.
+/// Print a failure in the one format the whole CLI uses, and return exit code 1.
+///
+/// `✗ <command>: <reason>` on the first line and an optional `hint:` line under
+/// it. Having exactly one shape means a script (or a person scrolling back) can
+/// find every failure with the same pattern, and the hint has a defined place
+/// instead of being smuggled into the message.
+fn fail(command: &str, reason: impl std::fmt::Display) -> i32 {
+    eprintln!("✗ {command}: {reason}");
+    1
+}
+
+/// Same as [`fail`], with a suggested next step underneath.
+fn fail_with_hint(command: &str, reason: impl std::fmt::Display, hint: &str) -> i32 {
+    eprintln!("✗ {command}: {reason}");
+    eprintln!("  hint: {hint}");
+    1
+}
+
+/// Turn a known engine error into an actionable hint.
+fn hint_for(error: &str) -> Option<&'static str> {
+    let lower = error.to_ascii_lowercase();
+    if lower.contains("no such file or directory") {
+        Some("check the path; `csv-splitter files --root DIR` lists what is readable")
+    } else if lower.contains("permission denied") {
+        Some("the file or its directory is not readable by this user")
+    } else if lower.contains("utf-16") {
+        Some("convert it first: csv-splitter convert FILE -o utf8.csv")
+    } else if lower.contains("not found") && lower.contains("column") {
+        Some("run `csv-splitter analyze FILE` to see the exact column names")
+    } else if lower.contains("more than") && lower.contains("groups") {
+        Some("group by a lower-cardinality column, or raise --max-groups")
+    } else if lower.contains("distinct rows") {
+        Some("dedupe by a column (--by) instead of the whole row, or raise --max-keys")
+    } else if lower.contains("outside root") {
+        Some("paths must stay inside the directory passed to --root")
+    } else {
+        None
+    }
+}
+
+/// The standard tail of a command that reports engine progress.
+fn report_failure(command: &str, reason: impl std::fmt::Display) -> i32 {
+    let text = reason.to_string();
+    match hint_for(&text) {
+        Some(hint) => fail_with_hint(command, &text, hint),
+        None => fail(command, text),
+    }
+}
+
 fn self_check(
     result: &Path,
     delimiter: Delimiter,
@@ -466,7 +523,7 @@ fn self_check(
 
 fn run_split_and_wait(config: SplitConfig, threads: usize, quiet: bool) -> Result<PathBuf, String> {
     let (tx, rx) = mpsc::channel();
-    let reporter = spawn_reporter(rx, quiet);
+    let reporter = spawn_reporter("split", rx, quiet);
     run_split_threads(config, threads, tx);
     let result = reporter
         .join()
@@ -624,7 +681,7 @@ fn cmd_split(args: &[String]) -> i32 {
             max_partitions: 512,
         };
         let (tx, rx) = mpsc::channel();
-        let reporter = spawn_reporter(rx, quiet);
+        let reporter = spawn_reporter("partition", rx, quiet);
         run_partition(config, tx);
         return match reporter
             .join()
@@ -636,14 +693,9 @@ fn cmd_split(args: &[String]) -> i32 {
                 }
                 0
             }
-            Ok(Err(e)) => {
-                eprintln!("✗ partition failed: {e}");
-                1
-            }
-            Err(e) => {
-                eprintln!("✗ {e}");
-                1
-            }
+            // The reporter already printed the reason with the standard shape.
+            Ok(Err(_)) => 1,
+            Err(_) => 1,
         };
     }
 
@@ -684,10 +736,7 @@ fn cmd_split(args: &[String]) -> i32 {
             }
             0
         }
-        Err(e) => {
-            eprintln!("✗ split failed: {e}");
-            1
-        }
+        Err(_) => 1, // the reporter already printed the reason
     }
 }
 
@@ -725,7 +774,7 @@ fn cmd_merge(args: &[String]) -> i32 {
     };
 
     let (tx, rx) = mpsc::channel();
-    let reporter = spawn_reporter(rx, quiet);
+    let reporter = spawn_reporter("merge", rx, quiet);
     let result = merge_archive(&input, &out, &tx);
     drop(tx);
     reporter.join().ok();
@@ -743,10 +792,7 @@ fn cmd_merge(args: &[String]) -> i32 {
             }
             0
         }
-        Err(e) => {
-            eprintln!("✗ merge failed: {e}");
-            1
-        }
+        Err(_) => 1, // the reporter already printed the reason
     }
 }
 
@@ -843,10 +889,7 @@ fn cmd_preview(args: &[String]) -> i32 {
             }
             0
         }
-        Err(e) => {
-            eprintln!("✗ preview failed: {e}");
-            1
-        }
+        Err(e) => report_failure("preview", e),
     }
 }
 
@@ -868,7 +911,7 @@ fn preview_from_index(
                 i
             }
             Err(e) => {
-                eprintln!("✗ cannot build index: {e}");
+                let _ = report_failure("index", format!("cannot build the index: {e}"));
                 return 1;
             }
         },
@@ -902,7 +945,7 @@ fn preview_from_index(
             0
         }
         Err(e) => {
-            eprintln!("✗ reading rows failed: {e}");
+            let _ = report_failure("preview", format!("reading rows: {e}"));
             1
         }
     }
@@ -953,14 +996,13 @@ fn cmd_index(args: &[String]) -> i32 {
     let idx = match SparseIndex::build(&input, interval) {
         Ok(i) => i,
         Err(e) => {
-            eprintln!("✗ index failed: {e}");
-            return 1;
+            return report_failure("index", e);
         }
     };
     let elapsed = started.elapsed();
     let path = out.unwrap_or_else(|| SparseIndex::sidecar_path(&input));
     if let Err(e) = idx.save(&path) {
-        eprintln!("✗ cannot write index {}: {e}", path.display());
+        let _ = report_failure("index", format!("cannot write {}: {e}", path.display()));
         return 1;
     }
     println!(
@@ -1025,8 +1067,7 @@ fn cmd_sql(args: &[String]) -> i32 {
     let result = match sql::query(&input, &query, limit) {
         Ok(r) => r,
         Err(e) => {
-            eprintln!("✗ {e}");
-            return 1;
+            return report_failure("sql", e);
         }
     };
 
@@ -1181,7 +1222,7 @@ fn cmd_filter(args: &[String]) -> i32 {
     // `--out` is the "keep the result" path: stream matches to a file.
     if let Some(out) = out {
         let (tx, rx) = mpsc::channel();
-        let reporter = spawn_reporter(rx, true);
+        let reporter = spawn_reporter("filter", rx, true);
         let result = filter::extract(&input, delimiter, &set, &out, &tx);
         drop(tx);
         let _ = reporter.join();
@@ -1210,10 +1251,7 @@ fn cmd_filter(args: &[String]) -> i32 {
                 }
                 0
             }
-            Err(e) => {
-                eprintln!("✗ filter failed: {e}");
-                1
-            }
+            Err(e) => report_failure("filter", e),
         };
     }
 
@@ -1223,8 +1261,7 @@ fn cmd_filter(args: &[String]) -> i32 {
     let result = match filter_scan(&input, delimiter, &spec, limit, &tx) {
         Ok(r) => r,
         Err(e) => {
-            eprintln!("✗ filter failed: {e}");
-            return 1;
+            return report_failure("filter", e);
         }
     };
 
@@ -1270,7 +1307,7 @@ fn cmd_filter(args: &[String]) -> i32 {
                 }
             }
             Err(e) => {
-                eprintln!("✗ cannot read matched rows: {e}");
+                let _ = report_failure("filter", format!("reading matched rows: {e}"));
                 return 1;
             }
         }
@@ -1371,8 +1408,7 @@ fn cmd_search(args: &[String]) -> i32 {
     let result = match search_scan(&input, delimiter, &spec, limit, &tx) {
         Ok(r) => r,
         Err(e) => {
-            eprintln!("✗ search failed: {e}");
-            return 1;
+            return report_failure("search", e);
         }
     };
 
@@ -1414,8 +1450,7 @@ fn cmd_search(args: &[String]) -> i32 {
                 }
             }
             Err(e) => {
-                eprintln!("✗ cannot read matched rows: {e}");
-                return 1;
+                return report_failure("search", format!("reading matched rows: {e}"));
             }
         }
     }
@@ -1460,8 +1495,7 @@ fn cmd_files(args: &[String]) -> i32 {
     let listing = match csv_splitter_core::listing::list(&root, &exts, 200) {
         Ok(l) => l,
         Err(e) => {
-            eprintln!("✗ {e}");
-            return 1;
+            return report_failure("files", e);
         }
     };
 
@@ -1597,10 +1631,7 @@ fn cmd_convert(args: &[String]) -> i32 {
             }
             0
         }
-        Err(e) => {
-            eprintln!("✗ convert failed: {e}");
-            1
-        }
+        Err(_) => 1, // the reporter already printed the reason
     }
 }
 
@@ -1643,10 +1674,7 @@ fn cmd_serve(args: &[String]) -> i32 {
     };
     match serve::run(serve::ServerConfig { addr, root }) {
         Ok(()) => 0,
-        Err(e) => {
-            eprintln!("✗ serve failed: {e}");
-            1
-        }
+        Err(_) => 1, // the reporter already printed the reason
     }
 }
 
@@ -1711,7 +1739,7 @@ fn cmd_stats(args: &[String]) -> i32 {
     };
 
     let (tx, rx) = mpsc::channel();
-    let reporter = spawn_reporter(rx, true);
+    let reporter = spawn_reporter("stats", rx, true);
     let result = compute_column_stats(&input, delimiter, sample, 100_000, &tx);
     drop(tx);
     reporter.join().ok();
@@ -1734,10 +1762,7 @@ fn cmd_stats(args: &[String]) -> i32 {
             }
             0
         }
-        Err(e) => {
-            eprintln!("✗ stats failed: {e}");
-            1
-        }
+        Err(_) => 1, // the reporter already printed the reason
     }
 }
 
@@ -1786,7 +1811,7 @@ fn cmd_extract(args: &[String]) -> i32 {
     }
 
     let (tx, rx) = mpsc::channel();
-    let reporter = spawn_reporter(rx, true);
+    let reporter = spawn_reporter("extract", rx, true);
     let result = decompress_file(&input, &out, &tx);
     drop(tx);
     reporter.join().ok();
@@ -1799,10 +1824,7 @@ fn cmd_extract(args: &[String]) -> i32 {
             }
             0
         }
-        Err(e) => {
-            eprintln!("✗ extract failed: {e}");
-            1
-        }
+        Err(_) => 1, // the reporter already printed the reason
     }
 }
 
@@ -1900,7 +1922,7 @@ fn cmd_sort(args: &[String]) -> i32 {
     };
 
     let (tx, rx) = mpsc::channel();
-    let reporter = spawn_reporter(rx, quiet);
+    let reporter = spawn_reporter("sort", rx, quiet);
     let result = csv_splitter_core::sort::external_sort_columns(
         &input, &out, &columns, delimiter, buf_mb, &tx,
     );
@@ -1921,10 +1943,7 @@ fn cmd_sort(args: &[String]) -> i32 {
             );
             0
         }
-        Err(e) => {
-            eprintln!("✗ sort failed: {e}");
-            1
-        }
+        Err(_) => 1, // the reporter already printed the reason
     }
 }
 
@@ -2001,10 +2020,7 @@ fn cmd_demo(args: &[String]) -> i32 {
             println!("    csv-splitter serve --root {}", dir.display());
             0
         }
-        Err(e) => {
-            eprintln!("✗ demo failed: {e}");
-            1
-        }
+        Err(_) => 1, // the reporter already printed the reason
     }
 }
 
@@ -2115,7 +2131,7 @@ fn cmd_groupby(args: &[String]) -> i32 {
     };
 
     let (tx, rx) = mpsc::channel();
-    let reporter = spawn_reporter(rx, quiet || json);
+    let reporter = spawn_reporter("groupby", rx, quiet || json);
     let options = csv_splitter_core::groupby::GroupOptions {
         keys,
         aggregates: aggs,
@@ -2148,10 +2164,7 @@ fn cmd_groupby(args: &[String]) -> i32 {
             }
             0
         }
-        Err(e) => {
-            eprintln!("✗ groupby failed: {e}");
-            1
-        }
+        Err(_) => 1, // the reporter already printed the reason
     }
 }
 
@@ -2207,7 +2220,7 @@ fn cmd_concat(args: &[String]) -> i32 {
     };
 
     let (tx, rx) = mpsc::channel();
-    let reporter = spawn_reporter(rx, json);
+    let reporter = spawn_reporter("concat", rx, json);
     let result = csv_splitter_core::concat::concat(&inputs, &output, delimiter, ignore_header, &tx);
     drop(tx);
     let _ = reporter.join();
@@ -2236,10 +2249,7 @@ fn cmd_concat(args: &[String]) -> i32 {
             }
             0
         }
-        Err(e) => {
-            eprintln!("✗ concat failed: {e}");
-            1
-        }
+        Err(_) => 1, // the reporter already printed the reason
     }
 }
 
@@ -2376,7 +2386,7 @@ fn cmd_partition(args: &[String]) -> i32 {
     };
 
     let (tx, rx) = mpsc::channel();
-    let reporter = spawn_reporter(rx, quiet);
+    let reporter = spawn_reporter("partition", rx, quiet);
     csv_splitter_core::partition::run_partition(config, tx);
     let _ = reporter.join();
 
@@ -2389,8 +2399,7 @@ fn cmd_partition(args: &[String]) -> i32 {
         );
         0
     } else {
-        eprintln!("✗ partition failed (see messages above)");
-        1
+        report_failure("partition", "the archive was not written")
     }
 }
 
@@ -2462,14 +2471,14 @@ fn cmd_analyze(args: &[String]) -> i32 {
     };
 
     let (tx, rx) = mpsc::channel();
-    let reporter = spawn_reporter(rx, true);
+    let reporter = spawn_reporter("analyze", rx, true);
     let result = csv_splitter_core::profile::profile(&input, delimiter, distinct_cap, &tx);
     drop(tx);
     let _ = reporter.join();
     let profiles = match result {
         Ok(p) => p,
-        Err(e) => {
-            eprintln!("✗ analyze failed: {e}");
+        Err(_) => {
+            // The reporter already printed the reason.
             return 1;
         }
     };
@@ -2664,7 +2673,7 @@ fn cmd_columns(args: &[String]) -> i32 {
     };
 
     let (tx, rx) = mpsc::channel();
-    let reporter = spawn_reporter(rx, json);
+    let reporter = spawn_reporter("columns", rx, json);
     let result = csv_splitter_core::reshape::reshape(&input, delimiter, &spec, &output, &tx);
     drop(tx);
     let _ = reporter.join();
@@ -2706,10 +2715,7 @@ fn cmd_columns(args: &[String]) -> i32 {
             }
             0
         }
-        Err(e) => {
-            eprintln!("✗ columns failed: {e}");
-            1
-        }
+        Err(_) => 1, // the reporter already printed the reason
     }
 }
 
@@ -2790,7 +2796,7 @@ fn cmd_dedupe(args: &[String]) -> i32 {
     };
 
     let (tx, rx) = mpsc::channel();
-    let reporter = spawn_reporter(rx, !json);
+    let reporter = spawn_reporter("dedupe", rx, !json);
     let result =
         csv_splitter_core::dedupe::dedupe(&input, delimiter, &keys, &output, max_keys, &tx);
     drop(tx);
@@ -2838,10 +2844,7 @@ fn cmd_dedupe(args: &[String]) -> i32 {
             }
             0
         }
-        Err(e) => {
-            eprintln!("✗ dedupe failed: {e}");
-            1
-        }
+        Err(_) => 1, // the reporter already printed the reason
     }
 }
 
@@ -2917,14 +2920,14 @@ fn cmd_verify(args: &[String]) -> i32 {
     };
 
     let split_ok = run_split_and_wait(config, 1, quiet);
-    if let Err(e) = split_ok {
-        eprintln!("✗ split failed: {e}");
+    if split_ok.is_err() {
         std::fs::remove_dir_all(&work).ok();
+        // The reporter already printed the reason.
         return 1;
     }
 
     let (tx, rx) = mpsc::channel();
-    let reporter = spawn_reporter(rx, true);
+    let reporter = spawn_reporter("verify", rx, true);
     let merge_result = merge_archive(&archive, &merged, &tx);
     drop(tx);
     reporter.join().ok();
@@ -2949,10 +2952,7 @@ fn cmd_verify(args: &[String]) -> i32 {
                 1
             }
         }
-        Err(e) => {
-            eprintln!("✗ merge failed: {e}");
-            1
-        }
+        Err(_) => 1, // the reporter already printed the reason
     };
 
     std::fs::remove_dir_all(&work).ok();

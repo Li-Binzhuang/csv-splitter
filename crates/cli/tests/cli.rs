@@ -1304,3 +1304,70 @@ fn the_getting_started_tour_runs_end_to_end() {
         .unwrap();
     assert_eq!(status.code(), Some(0), "verify should pass on the sample");
 }
+
+/// Two shapes only: usage errors are `error:` + exit 2, runtime failures are
+/// `✗ <command>:` + exit 1. Scripts key off this, and a hint line is allowed
+/// underneath a runtime failure.
+#[test]
+fn failures_use_one_shape_and_one_exit_code() {
+    let dir = TempDir::new("errors");
+    let input = dir.join("in.csv");
+    std::fs::write(&input, "a,b\n1,2\n").unwrap();
+
+    let run = |args: &[&str]| -> (Option<i32>, String) {
+        let out = Command::new(bin()).args(args).output().unwrap();
+        (
+            out.status.code(),
+            String::from_utf8_lossy(&out.stderr).to_string(),
+        )
+    };
+
+    // Usage problems: exit 2, `error:` prefix, no `✗`.
+    let (code, err) = run(&["filter", input.to_str().unwrap()]);
+    assert_eq!(code, Some(2), "{err}");
+    assert!(err.trim_start().starts_with("error:"), "{err}");
+
+    let (code, err) = run(&["sort", input.to_str().unwrap()]);
+    assert_eq!(code, Some(2), "{err}");
+    assert!(err.trim_start().starts_with("error:"), "{err}");
+
+    // Runtime problems: exit 1, `✗ <command>:` prefix.
+    let (code, err) = run(&["filter", input.to_str().unwrap(), "--where", "nope=1"]);
+    assert_eq!(code, Some(1), "{err}");
+    assert!(err.contains("✗ filter:"), "{err}");
+
+    let (code, err) = run(&["groupby", input.to_str().unwrap()]);
+    assert_eq!(code, Some(2), "usage error expected: {err}");
+
+    let (code, err) = run(&["search", input.to_str().unwrap(), "x", "--columns", "nope"]);
+    assert_eq!(code, Some(1), "{err}");
+    assert!(err.contains("✗ search:"), "{err}");
+
+    // A missing file is a runtime failure, and it comes with a hint.
+    let (code, err) = run(&["preview", "/definitely/not/here.csv"]);
+    assert_eq!(code, Some(1), "{err}");
+    assert!(err.contains("✗ preview:"), "{err}");
+    assert!(err.contains("hint:"), "{err}");
+
+    // The reporter's engine errors use the same shape (via a UTF-16 refusal).
+    let utf16 = dir.join("wide.csv");
+    std::fs::write(&utf16, b"\xff\xfei\x00d\x00\n\x00").unwrap();
+    let archive = dir.join("o.tar");
+    let (code, err) = run(&[
+        "split",
+        utf16.to_str().unwrap(),
+        "-n",
+        "2",
+        "-o",
+        archive.to_str().unwrap(),
+    ]);
+    assert_eq!(code, Some(1), "{err}");
+    assert!(err.contains("✗ split:"), "{err}");
+    assert!(err.contains("hint:"), "{err}");
+    // ...and it must be printed once, not twice.
+    assert_eq!(
+        err.matches("✗ split:").count(),
+        1,
+        "duplicated error: {err}"
+    );
+}
