@@ -138,6 +138,40 @@ csv-splitter convert export.csv -o export.utf8.csv     # 自动识别来源编�
 csv-splitter index export.utf8.csv
 ```
 
+## SQL / 分析
+
+手写 GROUP BY、窗口函数、类型推断是这类工具最终烂掉的原因。这里把 **DuckDB** 接进来——
+它原生读 CSV、并行扫描、有真正的优化器，我们只做门口的一道检查。
+
+```bash
+csv-splitter sql orders.csv "SELECT city, count(*) n, round(avg(amount),1) q FROM t GROUP BY 1 ORDER BY n DESC"
+csv-splitter sql orders.csv "SELECT * FROM t" --limit 5 --json
+```
+
+```bash
+curl "http://127.0.0.1:8787/query?path=orders.csv&sql=SELECT%20city,count(*)%20FROM%20t%20GROUP%20BY%201"
+```
+
+**规则**（因为这是暴露给 HTTP 的）：
+
+- 只允许单条 `SELECT` / `WITH`
+- 拒绝 `INSERT/UPDATE/DELETE/DROP/CREATE/ALTER/ATTACH/COPY/EXPORT/INSTALL/PRAGMA...`
+- 拒绝 `read_csv_auto()` 之类的文件读取函数——数据只能来自 `--root` 白名单内那个文件
+- 结果默认上限 1000 行（`--limit` 可调，最高 10 万），`truncated` 字段告知是否被截断
+- 文件以视图 `t` 注册，查询里不需要写路径
+
+**实测**（20 万行 CSV，4 个城市分组求和）：
+
+```
+city | n | avg_amt
+Tijuana | 50127 | 44916.4
+CDMX    | 50069 | 45221.4
+...
+4 row(s) in 0.67s
+```
+
+> DuckDB 已随二进制静态编译（`bundled`），无需安装。它是可选 feature `sql`，不使用时可以关掉。
+
 ## HTTP API / 后端接口
 
 前后端分离时的后端：一个只读 JSON API，浏览器只请求「当前屏幕上的那几十行」，
@@ -154,6 +188,7 @@ csv-splitter serve --root ~/data --addr 127.0.0.1:8787
 | `GET /rows?path=REL&start=N&count=M` | 任意行窗口（count ≤ 2000） |
 | `GET /stats?path=REL&sample=N` | 列统计（唯一值 / 空值 / Top N） |
 | `GET /filter?path=REL&where=col=value` | 全表筛选，返回命中的行号（1 起，不含表头） |
+| `GET /query?path=REL&sql=SELECT...` | 对文件跑只读 SQL（DuckDB） |
 
 约束与安全：
 

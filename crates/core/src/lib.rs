@@ -10,6 +10,8 @@ pub mod partition;
 pub mod preview;
 pub mod sort;
 pub mod splitter;
+#[cfg(feature = "sql")]
+pub mod sql;
 pub mod tempdir;
 pub mod types;
 pub mod viewer;

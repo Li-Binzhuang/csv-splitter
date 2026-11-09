@@ -13,6 +13,7 @@ use csv_splitter_core::merge::merge_archive;
 use csv_splitter_core::partition::{run_partition, PartitionConfig};
 use csv_splitter_core::preview::{compute_column_stats, load_preview};
 use csv_splitter_core::splitter::run_split;
+use csv_splitter_core::sql::{self, DEFAULT_LIMIT};
 use csv_splitter_core::*;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -35,6 +36,7 @@ fn main() -> ExitCode {
         Some("serve") => cmd_serve(&args[1..]),
         Some("convert") => cmd_convert(&args[1..]),
         Some("filter") => cmd_filter(&args[1..]),
+        Some("sql") => cmd_sql(&args[1..]),
         Some("stats") => cmd_stats(&args[1..]),
         Some("extract") => cmd_extract(&args[1..]),
         Some("verify") => cmd_verify(&args[1..]),
@@ -70,6 +72,7 @@ COMMANDS
   serve    --root <dir>          Local HTTP API (JSON) for a web front-end
   convert  <input>               Transcode a CSV to UTF-8 (GBK / UTF-16 input)
   filter   <input> --where EXPR  Row numbers matching a column predicate
+  sql      <input> "<query>"     Run SQL over the file (DuckDB, read-only)
   stats    <input>              Column statistics via reservoir sampling
   extract  <input> -o DIR       Extract any supported compressed archive
   verify   <input>              Split + merge and prove the result is lossless
@@ -95,6 +98,12 @@ SPLIT OPTIONS
 
 MERGE OPTIONS
   -o, --out <path>        Output CSV (required)
+
+SQL OPTIONS
+      --limit <n>         Max rows returned (default: 1000)
+      --json              Emit JSON instead of a table
+  The table is registered as `t`, e.g.:
+      SELECT city, count(*) n FROM t GROUP BY 1 ORDER BY n DESC
 
 FILTER OPTIONS
   --where <expr>          col=value | col~text | col>number | col empty
@@ -831,6 +840,112 @@ fn cmd_index(args: &[String]) -> i32 {
         path.display()
     );
     0
+}
+
+fn cmd_sql(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut input: Option<PathBuf> = None;
+    let mut query: Option<String> = None;
+    let mut limit = DEFAULT_LIMIT;
+    let mut json = false;
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--limit" => match p
+                .value("--limit")
+                .and_then(|v| v.parse().map_err(|_| "bad --limit".to_string()))
+            {
+                Ok(v) => limit = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--json" => json = true,
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => {
+                if input.is_none() {
+                    input = Some(PathBuf::from(other));
+                } else if query.is_none() {
+                    query = Some(other.to_string());
+                } else {
+                    eprintln!("error: unexpected argument: {other}");
+                    return 2;
+                }
+            }
+        }
+    }
+
+    let (Some(input), Some(query)) = (input, query) else {
+        eprintln!("error: sql needs <input> and a query");
+        return 2;
+    };
+
+    let started = Instant::now();
+    let result = match sql::query(&input, &query, limit) {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("✗ {e}");
+            return 1;
+        }
+    };
+
+    if json {
+        let rows: Vec<String> = result
+            .rows
+            .iter()
+            .map(|row| {
+                let cells: Vec<String> = row.iter().map(|c| json_quote(c)).collect();
+                format!("[{}]", cells.join(","))
+            })
+            .collect();
+        let cols: Vec<String> = result.columns.iter().map(|c| json_quote(c)).collect();
+        println!(
+            r#"{{"columns":[{}],"rows":[{}],"truncated":{}}}"#,
+            cols.join(","),
+            rows.join(","),
+            result.truncated
+        );
+        return 0;
+    }
+
+    println!("{}", result.columns.join(" | "));
+    println!("{}", "-".repeat(40));
+    for row in &result.rows {
+        println!("{}", row.join(" | "));
+    }
+    println!(
+        "{} row(s){} in {:.2}s",
+        result.rows.len(),
+        if result.truncated { " (truncated)" } else { "" },
+        started.elapsed().as_secs_f64()
+    );
+    0
+}
+
+fn json_quote(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 2);
+    out.push('"');
+    for ch in s.chars() {
+        match ch {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
 }
 
 fn cmd_filter(args: &[String]) -> i32 {

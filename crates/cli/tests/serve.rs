@@ -157,3 +157,37 @@ fn filter_endpoint_counts_matches() {
     let (status, _) = get(&server.addr, "/filter?path=data.csv&where=bogus");
     assert_eq!(status, 400);
 }
+
+#[test]
+fn query_endpoint_runs_sql_and_hides_writes() {
+    let dir = TempDir::new("sql");
+    let mut csv = String::from("city,amount\n");
+    for i in 0..50 {
+        csv.push_str(&format!(
+            "{},{}\n",
+            if i % 2 == 0 { "CDMX" } else { "Puebla" },
+            i
+        ));
+    }
+    std::fs::write(dir.join("data.csv"), csv).unwrap();
+    let server = start(&dir.0.clone());
+
+    let sql = "SELECT city, count(*) AS n FROM t GROUP BY 1 ORDER BY 1";
+    let encoded = sql
+        .replace('%', "%25")
+        .replace(' ', "%20")
+        .replace('*', "%2A")
+        .replace('(', "%28")
+        .replace(')', "%29")
+        .replace(',', "%2C");
+    let (status, body) = get(&server.addr, &format!("/query?path=data.csv&sql={encoded}"));
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("\"columns\":[\"city\",\"n\"]"), "{body}");
+    assert!(body.contains("[\"CDMX\",\"25\"]"), "{body}");
+
+    let (status, body) = get(&server.addr, "/query?path=data.csv&sql=DROP%20TABLE%20t");
+    assert_eq!(status, 400, "{body}");
+    assert!(body.contains("only SELECT"), "{body}");
+
+    drop(server);
+}

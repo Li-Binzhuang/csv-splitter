@@ -15,3 +15,8 @@ sevenz-rust = { workspace = true }
 rand = { workspace = true }
 encoding_rs = "0.8.44"
 encoding_rs_io = "0.1.8"
+duckdb = { version = "1", features = ["bundled"], optional = true }
+
+[features]
+default = []
+sql = ["dep:duckdb"]

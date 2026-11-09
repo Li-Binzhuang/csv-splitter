@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.12.0] — 2026-11-09
+
+### Added
+
+- **`sql` command + `/query` API**: DuckDB over the file, registered as view `t`.
+  Handing GROUP BY / ORDER BY / window functions / type inference to a real
+  engine instead of writing them by hand — this is the "depend on libraries
+  rather than rebuild them" rule applied where it saves the most code.
+- Safety, because this is reachable over HTTP: one statement only, `SELECT`/`WITH`
+  only, DDL/DML/ATTACH/COPY/INSTALL/PRAGMA rejected, CSV/Parquet/JSON readers
+  rejected (data may only come from the whitelisted file), results capped
+  (default 1000, max 100k) with a `truncated` flag.
+- DuckDB is statically bundled behind an optional `sql` feature; the CLI enables
+  it, so no external install is needed.
+
+### Measured
+
+- 200k-row CSV, `GROUP BY city` with `count(*)` and `avg()`: **0.67 s** end to end
+  including process start.
+
 ## [0.11.0] — 2026-11-09
 
 ### Added

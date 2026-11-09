@@ -39,10 +39,11 @@
 - [x] 转码命令 `convert`（GBK / UTF-16 → UTF-8，流式、恒定内存）
 - [ ] 分隔符与引号风格的显式覆盖
 
-### M4 · 分析能力 — `planned`
+### M4 · 分析能力 — `in progress`
 - [ ] 列统计改为索引均匀采样（百万行毫秒级）
 - [x] 按列筛选（=、~、>、<、empty）+ 返回行号，可配合 `preview --start-row` 跳转
 - [x] `/filter` 只读 API
+- [x] SQL 分析（DuckDB，只读、单语句、结果封顶）→ `sql` 命令 + `/query` API
 - [ ] 全局搜索（跨所有列）
 - [ ] 导出统计结果 CSV/JSON
 

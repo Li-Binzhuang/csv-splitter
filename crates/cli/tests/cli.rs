@@ -491,3 +491,72 @@ fn filter_returns_matching_row_numbers() {
         .unwrap();
     assert_eq!(status.code(), Some(2));
 }
+
+#[test]
+fn sql_command_answers_aggregate_questions() {
+    let dir = TempDir::new("sql");
+    let input = dir.join("s.csv");
+    let mut csv = String::from("city,amount\n");
+    for i in 0..200 {
+        csv.push_str(&format!(
+            "{},{}\n",
+            if i % 2 == 0 { "CDMX" } else { "Puebla" },
+            i
+        ));
+    }
+    std::fs::write(&input, csv).unwrap();
+
+    let out = Command::new(bin())
+        .args([
+            "sql",
+            input.to_str().unwrap(),
+            "SELECT city, count(*) AS n FROM t GROUP BY 1 ORDER BY 1",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("CDMX | 100"), "{text}");
+    assert!(text.contains("Puebla | 100"), "{text}");
+
+    // Writes are refused before they reach the engine.
+    let out = Command::new(bin())
+        .args(["sql", input.to_str().unwrap(), "DELETE FROM t"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&out.stderr).contains("only SELECT"));
+}
+
+#[test]
+fn sql_respects_the_row_cap() {
+    let dir = TempDir::new("sqlcap");
+    let input = dir.join("s.csv");
+    let mut csv = String::from("id\n");
+    for i in 0..500 {
+        csv.push_str(&format!("{i}\n"));
+    }
+    std::fs::write(&input, csv).unwrap();
+
+    let out = Command::new(bin())
+        .args([
+            "sql",
+            input.to_str().unwrap(),
+            "SELECT * FROM t",
+            "--limit",
+            "3",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(out.status.success());
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("\"truncated\":true"), "{text}");
+    // Three rows, each its own array; assert on the rendered JSON rather than a
+    // bracket count (which counts the columns array too and means nothing).
+    assert!(text.contains(r#""rows":[["0"],["1"],["2"]]"#), "{text}");
+}

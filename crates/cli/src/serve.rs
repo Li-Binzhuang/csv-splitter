@@ -11,9 +11,11 @@
 //!   GET /rows?path=REL&start=N&count=M
 //!   GET /stats?path=REL&sample=N
 //!   GET /filter?path=REL&where=col=value&limit=N
+//!   GET /query?path=REL&sql=SELECT...&limit=N
 
 use csv_splitter_core::filter::{scan as filter_scan, FilterSpec};
 use csv_splitter_core::preview::compute_column_stats;
+use csv_splitter_core::sql;
 use csv_splitter_core::viewer::WindowViewer;
 use csv_splitter_core::{Delimiter, ProgressEvent};
 use std::collections::HashMap;
@@ -78,7 +80,7 @@ fn handle(mut stream: TcpStream, root: &Path) -> io::Result<()> {
     let mut parts = request_line.split_whitespace();
     let method = parts.next().unwrap_or("");
     let target = parts.next().unwrap_or("/");
-    let (path, query) = match target.split_once('?') {
+    let (path, query_string) = match target.split_once('?') {
         Some((p, q)) => (p, q),
         None => (target, ""),
     };
@@ -90,17 +92,18 @@ fn handle(mut stream: TcpStream, root: &Path) -> io::Result<()> {
         return respond_json(&mut stream, 405, r#"{"error":"method not allowed"}"#);
     }
 
-    let params = parse_query(query);
+    let params = parse_query(query_string);
     match path {
         "/health" => respond_json(&mut stream, 200, r#"{"ok":true,"service":"csv-splitter"}"#),
         "/meta" => meta(&mut stream, root, &params),
         "/rows" => rows(&mut stream, root, &params),
         "/stats" => stats(&mut stream, root, &params),
         "/filter" => filter(&mut stream, root, &params),
+        "/query" => query(&mut stream, root, &params),
         _ => respond_json(
             &mut stream,
             404,
-            r#"{"error":"unknown endpoint","endpoints":["/health","/meta","/rows","/stats","/filter"]}"#,
+            r#"{"error":"unknown endpoint","endpoints":["/health","/meta","/rows","/stats","/filter","/query"]}"#,
         ),
     }
 }
@@ -184,6 +187,54 @@ fn rows(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -
         rows.join(",")
     );
     respond_json(stream, 200, &body)
+}
+
+fn query(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
+    let (path, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+    };
+    let Some(statement) = params.get("sql") else {
+        return respond_json(stream, 400, r#"{"error":"sql is required"}"#);
+    };
+    let limit: usize = params
+        .get("limit")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(sql::DEFAULT_LIMIT)
+        .min(10_000);
+    match sql::query(&path, statement, limit) {
+        Ok(result) => {
+            let cols: Vec<String> = result.columns.iter().map(|c| json_str(c)).collect();
+            let rows: Vec<String> = result
+                .rows
+                .iter()
+                .map(|row| {
+                    let cells: Vec<String> = row.iter().map(|c| json_str(c)).collect();
+                    format!("[{}]", cells.join(","))
+                })
+                .collect();
+            respond_json(
+                stream,
+                200,
+                &format!(
+                    r#"{{"columns":[{}],"rows":[{}],"truncated":{}}}"#,
+                    cols.join(","),
+                    rows.join(","),
+                    result.truncated
+                ),
+            )
+        }
+        Err(e) if e.kind() == io::ErrorKind::InvalidInput => respond_json(
+            stream,
+            400,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+        Err(e) => respond_json(
+            stream,
+            422,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+    }
 }
 
 fn filter(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
