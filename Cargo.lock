@@ -1163,14 +1163,14 @@ dependencies = [
 
 [[package]]
 name = "csv-splitter-cli"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "csv-splitter-core",
 ]
 
 [[package]]
 name = "csv-splitter-core"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "bzip2",
  "duckdb",
@@ -1188,7 +1188,7 @@ dependencies = [
 
 [[package]]
 name = "csv-splitter-gui"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "csv-splitter-core",
  "eframe",
