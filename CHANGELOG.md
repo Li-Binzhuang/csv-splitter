@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.17.0] — 2026-11-09
+
+### Added
+
+- **Query result cache** (`crates/core/src/cache.rs`): `/rows?sql=` materialises
+  the result once (200k rows per entry, 400k rows total) and later pages are
+  slices. On a 1 GB file with quoted newlines, page 1 costs 0.70 s and every
+  following page costs **0.00 s**.
+  - A result bigger than the cap caches only its prefix; `rowsSoFar` says how
+    much, requests inside the prefix are served, and a request past it returns
+    422 instead of pretending the query ended there.
+  - Entries are invalidated by file length or mtime, evicted LRU, and partial
+    results never masquerade as complete.
+
+### Fixed
+
+- **DuckDB could not read files with quoted newlines.** `null_padding` (needed
+  for ragged rows) is rejected by the parallel scanner when a field contains a
+  newline, so any CSV with embedded newlines failed with a raw engine error.
+  Opening now tries three option sets — parallel+padding, parallel, serial+padding
+  — and only retries on reader-shape errors, so a genuine query error is still
+  reported once.
+- The wrong-delimiter hint moved from the query result to `DESCRIBE t`; it used
+  to fire on `count(*)` (a single column by design) instead of on the table.
+
 ## [0.16.0] — 2026-11-09
 
 ### Added

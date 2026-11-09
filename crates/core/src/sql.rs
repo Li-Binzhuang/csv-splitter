@@ -76,58 +76,85 @@ pub fn validate(sql: &str) -> Result<(), String> {
     Ok(())
 }
 
-/// Open the file as view `t` in a fresh in-memory connection.
-fn connect(path: &Path, delimiter: Delimiter) -> io::Result<Connection> {
+/// Option sets tried in order when opening a CSV.
+///
+/// DuckDB refuses `null_padding` together with quoted newlines in the parallel
+/// scanner, and ragged rows need `null_padding`. The view is created lazily, so
+/// these errors only surface when rows are read — hence the ladder wraps the
+/// whole query, not just `CREATE VIEW`.
+#[derive(Clone, Copy)]
+struct OpenOptions {
+    null_padding: bool,
+    parallel: bool,
+}
+
+const OPEN_LADDER: [OpenOptions; 3] = [
+    // Fast path: parallel, ragged-tolerant. Breaks on quoted newlines.
+    OpenOptions {
+        null_padding: true,
+        parallel: true,
+    },
+    // Quoted newlines with well-formed rows: still parallel.
+    OpenOptions {
+        null_padding: false,
+        parallel: true,
+    },
+    // Last resort: handles both, at the cost of a serial scan.
+    OpenOptions {
+        null_padding: true,
+        parallel: false,
+    },
+];
+
+fn view_sql(path: &Path, delimiter: Delimiter, opts: OpenOptions) -> String {
+    let quoted = path.to_string_lossy().replace('\'', "''");
+    let delim = (delimiter.byte() as char).to_string().replace('\'', "''");
+    format!(
+        "CREATE VIEW t AS SELECT * FROM read_csv_auto('{quoted}', header=true, delim='{delim}', sample_size=20000, null_padding={np}, parallel={par})",
+        np = opts.null_padding,
+        par = opts.parallel
+    )
+}
+
+/// Run `f` against the file opened as view `t`, retrying across open options.
+///
+/// Engine errors that mean "this combination of options cannot read this file"
+/// are retried; genuine query errors simply fall through to the last attempt and
+/// are reported once.
+fn with_connection<T, F>(path: &Path, delimiter: Delimiter, f: F) -> io::Result<T>
+where
+    F: Fn(&Connection) -> io::Result<T>,
+{
     if !path.is_file() {
         return Err(io::Error::new(io::ErrorKind::NotFound, "file not found"));
     }
-    let conn = Connection::open_in_memory().map_err(to_io)?;
-    // DuckDB reads the CSV lazily through the view; the path is escaped as a
-    // string literal so a quote in the file name cannot break out.
-    //
-    // `null_padding` matters: our own reader tolerates rows with more or fewer
-    // fields than the header (a stray unquoted comma is a very common export
-    // defect). Without it DuckDB refuses to bind the table at all, and `/rows`
-    // and `/rows?sql=` would disagree on the same file.
-    let view = format!(
-        "CREATE VIEW t AS SELECT * FROM read_csv_auto('{}', header=true, delim='{}', sample_size=20000, null_padding=true)",
-        path.to_string_lossy().replace('\'', "''"),
-        (delimiter.byte() as char).to_string().replace('\'', "''")
-    );
-    conn.execute_batch(&view).map_err(to_io)?;
-    // A single column whose name contains the delimiter means the sniffer took
-    // the whole header as one field — say so instead of failing later with a
-    // confusing "column not found".
-    let mut stmt = conn.prepare("DESCRIBE t").map_err(to_io)?;
-    let mut rows = stmt.query([]).map_err(to_io)?;
-    let mut names = Vec::new();
-    while let Some(row) = rows.next().map_err(to_io)? {
-        let name: String = row.get(0).map_err(to_io)?;
-        names.push(name);
-    }
-    drop(rows);
-    drop(stmt);
-    // One column whose name still contains a separator means the file was
-    // split on the wrong character (`id;name` read as a single column).
-    if names.len() == 1 {
-        let found: Vec<char> = b",\t;|"
-            .iter()
-            .map(|b| *b as char)
-            .filter(|c| *c != delimiter.byte() as char && names[0].contains(*c))
-            .collect();
-        if !found.is_empty() {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!(
-                    "the header was parsed as a single column ({}); the file looks like it uses {:?}, not '{}' — pass the right delimiter",
-                    names[0],
-                    found,
-                    delimiter.byte() as char
-                ),
-            ));
+    let mut last: Option<io::Error> = None;
+    for opts in OPEN_LADDER {
+        let conn = Connection::open_in_memory().map_err(to_io)?;
+        conn.execute_batch(&view_sql(path, delimiter, opts))
+            .map_err(to_io)?;
+        // A wrong delimiter is not fixable by another reader option, so this
+        // failure propagates instead of continuing down the ladder.
+        check_table_shape(&conn, delimiter)?;
+        match f(&conn) {
+            Ok(value) => return Ok(value),
+            Err(e) => {
+                let retryable = is_retryable(&e.to_string());
+                last = Some(e);
+                if !retryable {
+                    break;
+                }
+            }
         }
     }
-    Ok(conn)
+    Err(last.unwrap_or_else(|| io::Error::other("cannot read the CSV")))
+}
+
+/// Errors caused by the chosen CSV reader options, not by the user's query.
+fn is_retryable(message: &str) -> bool {
+    message.contains("null_padding")
+        || message.contains("parallel scanner")
+        || message.contains("CSV Error")
 }
 
 /// Run `sql` against `path` (read-only, results capped at `limit`).
@@ -143,46 +170,116 @@ pub fn query_with(
     delimiter: Delimiter,
 ) -> io::Result<QueryResult> {
     validate(sql).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-    let conn = connect(path, delimiter)?;
-
     let limit = limit.clamp(1, 100_000);
     let wrapped = format!("SELECT * FROM ({sql}) AS _q LIMIT {}", limit + 1);
 
-    // Column names are only available after execution in duckdb-rs, so ask the
-    // planner via DESCRIBE (binds the query without scanning the file).
+    with_connection(path, delimiter, |conn| {
+        let columns = describe_query(conn, sql)?;
+        let rows = collect_rows(conn, &wrapped, columns.len())?;
+        let mut result = QueryResult {
+            columns,
+            rows,
+            truncated: false,
+        };
+        if result.rows.len() > limit {
+            result.rows.truncate(limit);
+            result.truncated = true;
+        }
+        Ok(result)
+    })
+}
+
+/// Detect the classic "wrong delimiter" shape: the whole header became one
+/// column, e.g. `id;name` read with `delim=','`.
+///
+/// Checked on the table (`DESCRIBE t`), not on the query result — `count(*)`
+/// returns a single column too, and that is perfectly valid.
+fn check_table_shape(conn: &Connection, delimiter: Delimiter) -> io::Result<()> {
+    let mut stmt = conn.prepare("DESCRIBE t").map_err(to_io)?;
+    let mut rows = stmt.query([]).map_err(to_io)?;
+    let mut names: Vec<String> = Vec::new();
+    while let Some(row) = rows.next().map_err(to_io)? {
+        let name: String = row.get(0).map_err(to_io)?;
+        names.push(name);
+    }
+    if names.len() != 1 {
+        return Ok(());
+    }
+    let found: Vec<char> = b",\t;|"
+        .iter()
+        .map(|b| *b as char)
+        .filter(|c| *c != delimiter.byte() as char && names[0].contains(*c))
+        .collect();
+    if found.is_empty() {
+        return Ok(());
+    }
+    Err(io::Error::new(
+        io::ErrorKind::InvalidData,
+        format!(
+            "the header was parsed as a single column ({}); the file looks like it uses {:?}, not '{}' — pass the right delimiter",
+            names[0],
+            found,
+            delimiter.byte() as char
+        ),
+    ))
+}
+
+/// Column names for a query, via DESCRIBE (binds without scanning the file).
+fn describe_query(conn: &Connection, sql: &str) -> io::Result<Vec<String>> {
     let describe = format!("DESCRIBE SELECT * FROM ({sql}) AS _q");
-    let mut describe_stmt = conn.prepare(&describe).map_err(to_io)?;
-    let mut describe_rows = describe_stmt.query([]).map_err(to_io)?;
-    let mut columns: Vec<String> = Vec::new();
-    while let Some(row) = describe_rows.next().map_err(to_io)? {
+    let mut stmt = conn.prepare(&describe).map_err(to_io)?;
+    let mut rows = stmt.query([]).map_err(to_io)?;
+    let mut columns = Vec::new();
+    while let Some(row) = rows.next().map_err(to_io)? {
         let name: String = row.get(0).map_err(to_io)?;
         columns.push(name);
     }
-    drop(describe_rows);
-    drop(describe_stmt);
+    Ok(columns)
+}
 
-    let mut stmt = conn.prepare(&wrapped).map_err(to_io)?;
-    let mut rows: Vec<Vec<String>> = Vec::new();
-    let mut result_rows = stmt.query([]).map_err(to_io)?;
-    while let Some(row) = result_rows.next().map_err(to_io)? {
-        let mut cells = Vec::with_capacity(columns.len());
-        for i in 0..columns.len() {
+/// Execute `sql` and pull every row into memory (the caller sets the cap).
+fn collect_rows(conn: &Connection, sql: &str, width: usize) -> io::Result<Vec<Vec<String>>> {
+    let mut stmt = conn.prepare(sql).map_err(to_io)?;
+    let mut result = stmt.query([]).map_err(to_io)?;
+    let mut out = Vec::new();
+    while let Some(row) = result.next().map_err(to_io)? {
+        let mut cells = Vec::with_capacity(width);
+        for i in 0..width {
             let value: Value = row.get(i).map_err(to_io)?;
             cells.push(value_to_string(&value));
         }
-        rows.push(cells);
+        out.push(cells);
     }
+    Ok(out)
+}
 
-    let mut result = QueryResult {
-        columns,
-        rows,
-        truncated: false,
-    };
-    if result.rows.len() > limit {
-        result.rows.truncate(limit);
-        result.truncated = true;
-    }
-    Ok(result)
+/// Run `sql` and materialise up to `row_cap` rows, for the result cache.
+///
+/// Returns `oversized = true` when the query produced more rows than the cap;
+/// the caller must not cache that, but may still serve the rows it has.
+pub fn collect(
+    path: &Path,
+    sql: &str,
+    delimiter: Delimiter,
+    row_cap: usize,
+) -> io::Result<crate::cache::CachedResult> {
+    validate(sql).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+    let cap = row_cap.max(1);
+    let wrapped = format!("SELECT * FROM ({sql}) AS _q LIMIT {}", cap + 1);
+
+    with_connection(path, delimiter, |conn| {
+        let columns = describe_query(conn, sql)?;
+        let mut rows = collect_rows(conn, &wrapped, columns.len())?;
+        let oversized = rows.len() > cap;
+        if oversized {
+            rows.truncate(cap);
+        }
+        Ok(crate::cache::CachedResult {
+            columns,
+            rows,
+            oversized,
+        })
+    })
 }
 
 /// A window into a query result, for a viewer that pages instead of loading.
@@ -214,7 +311,6 @@ pub fn page_with(
     delimiter: Delimiter,
 ) -> io::Result<QueryPage> {
     validate(sql).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-    let conn = connect(path, delimiter)?;
     let count = count.clamp(1, 100_000);
     let wrapped = format!(
         "SELECT * FROM ({sql}) AS _q LIMIT {} OFFSET {}",
@@ -222,40 +318,21 @@ pub fn page_with(
         start
     );
 
-    let describe = format!("DESCRIBE SELECT * FROM ({sql}) AS _q");
-    let mut describe_stmt = conn.prepare(&describe).map_err(to_io)?;
-    let mut describe_rows = describe_stmt.query([]).map_err(to_io)?;
-    let mut columns: Vec<String> = Vec::new();
-    while let Some(row) = describe_rows.next().map_err(to_io)? {
-        let name: String = row.get(0).map_err(to_io)?;
-        columns.push(name);
-    }
-    drop(describe_rows);
-    drop(describe_stmt);
-
-    let mut stmt = conn.prepare(&wrapped).map_err(to_io)?;
-    let mut rows: Vec<Vec<String>> = Vec::new();
-    let mut result_rows = stmt.query([]).map_err(to_io)?;
-    while let Some(row) = result_rows.next().map_err(to_io)? {
-        let mut cells = Vec::with_capacity(columns.len());
-        for i in 0..columns.len() {
-            let value: Value = row.get(i).map_err(to_io)?;
-            cells.push(value_to_string(&value));
+    with_connection(path, delimiter, |conn| {
+        let columns = describe_query(conn, sql)?;
+        let rows = collect_rows(conn, &wrapped, columns.len())?;
+        let mut page = QueryPage {
+            columns,
+            rows,
+            start,
+            has_more: false,
+        };
+        if page.rows.len() as u64 > count {
+            page.rows.truncate(count as usize);
+            page.has_more = true;
         }
-        rows.push(cells);
-    }
-
-    let mut page = QueryPage {
-        columns,
-        rows,
-        start,
-        has_more: false,
-    };
-    if page.rows.len() as u64 > count {
-        page.rows.truncate(count as usize);
-        page.has_more = true;
-    }
-    Ok(page)
+        Ok(page)
+    })
 }
 
 fn value_to_string(value: &Value) -> String {

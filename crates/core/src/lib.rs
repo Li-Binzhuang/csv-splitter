@@ -1,3 +1,4 @@
+pub mod cache;
 pub mod compress;
 pub mod csv_reader;
 pub mod decompress;

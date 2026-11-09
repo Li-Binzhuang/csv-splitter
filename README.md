@@ -138,6 +138,28 @@ csv-splitter convert export.csv -o export.utf8.csv     # 自动识别来源编�
 csv-splitter index export.utf8.csv
 ```
 
+### 查询结果缓存 / Result cache
+
+滚动不该每次都重扫文件。`/rows?sql=` 第一次执行会把结果物化（默认上限 20 万行、
+总预算 40 万行），之后翻页直接切片：
+
+```bash
+# 第一页：真正跑查询
+time curl ".../rows?path=big1g.csv&sql=SELECT city,amount FROM t ORDER BY amount DESC&start=0&count=20"
+# 0.70s   {"start":0,"hasMore":true,"rowsSoFar":200000,...}
+
+# 第二页：命中缓存
+time curl "...&start=20&count=20"
+# 0.00s   {"start":20,"hasMore":true,"rowsSoFar":200000,...}
+```
+
+语义上诚实的三点：
+
+- 结果超过上限时只物化前缀，`rowsSoFar` 告诉你缓存里有多少行；
+  请求落在前缀内照常切片，**越过前缀则返回 422 让你收窄查询**，而不是假装结果就这么多
+- 文件长度或 mtime 变了就失效
+- 预算超了按 LRU 淘汰；超限的结果不进缓存（避免把「不完整」当「完整」）
+
 ### 长任务 / Long-running jobs
 
 拆分、合并这类动辄几分钟的操作不占连接：POST 提交，立刻拿到 job id，之后轮询。
@@ -206,7 +228,7 @@ csv-splitter serve --root ~/data --addr 127.0.0.1:8787
 | `GET /health` | 存活检查 |
 | `GET /meta?path=REL` | 行数、字节数、表头、分隔符、编码 |
 | `GET /rows?path=REL&start=N&count=M` | 任意行窗口（count ≤ 2000） |
-| `GET /rows?path=REL&sql=...&start=N&count=M` | **查询结果的第 K 页**——表格不必先物化整个结果 |
+| `GET /rows?path=REL&sql=...&start=N&count=M` | **查询结果的第 K 页**（结果物化一次后走缓存，翻页 0 ms） |
 | `GET /stats?path=REL&sample=N` | 列统计（唯一值 / 空值 / Top N） |
 | `GET /filter?path=REL&where=col=value` | 全表筛选，返回命中的行号（1 起，不含表头） |
 | `GET /query?path=REL&sql=SELECT...` | 对文件跑只读 SQL（DuckDB） |

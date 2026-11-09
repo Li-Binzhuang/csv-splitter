@@ -357,6 +357,15 @@ fn rows_can_page_a_query_result() {
     // Row 5 (0-based) of the CDMX subset is amount 10 (evens only).
     assert!(body.contains("[\"CDMX\",\"10\"]"), "{body}");
 
+    // Second page comes from the cache: rowsSoFar stays at the materialised
+    // size instead of growing, and the answer is identical.
+    let (status, again) = get(
+        &server.addr,
+        &format!("/rows?path=data.csv&sql={encoded}&start=5&count=5"),
+    );
+    assert_eq!(status, 200);
+    assert_eq!(again, body, "cached page should be identical");
+
     // Writes are refused through this path too.
     let (status, body) = get(&server.addr, "/rows?path=data.csv&sql=DROP%20TABLE%20t");
     assert_eq!(status, 400, "{body}");

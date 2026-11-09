@@ -19,6 +19,7 @@
 //!   POST /merge?path=REL&out=REL                        -> {"job":"..."}
 //!   GET  /job?id=...    (poll)      GET /jobs  (list)
 
+use csv_splitter_core::cache::ResultCache;
 use csv_splitter_core::filter::{scan as filter_scan, FilterSpec};
 use csv_splitter_core::jobs::JobRegistry;
 use csv_splitter_core::merge::merge_archive;
@@ -60,6 +61,7 @@ pub fn run(cfg: ServerConfig) -> io::Result<()> {
 pub fn serve_on(listener: TcpListener, root: PathBuf) -> io::Result<()> {
     let root = Arc::new(root);
     let jobs = JobRegistry::new();
+    let cache = ResultCache::default();
     for stream in listener.incoming() {
         let stream = match stream {
             Ok(s) => s,
@@ -67,14 +69,20 @@ pub fn serve_on(listener: TcpListener, root: PathBuf) -> io::Result<()> {
         };
         let root = Arc::clone(&root);
         let jobs = jobs.clone();
+        let cache = cache.clone();
         std::thread::spawn(move || {
-            let _ = handle(stream, &root, &jobs);
+            let _ = handle(stream, &root, &jobs, &cache);
         });
     }
     Ok(())
 }
 
-fn handle(mut stream: TcpStream, root: &Path, jobs: &JobRegistry) -> io::Result<()> {
+fn handle(
+    mut stream: TcpStream,
+    root: &Path,
+    jobs: &JobRegistry,
+    cache: &ResultCache,
+) -> io::Result<()> {
     let mut reader = BufReader::new(stream.try_clone()?);
     let mut request_line = String::new();
     if reader.read_line(&mut request_line)? == 0 {
@@ -116,7 +124,7 @@ fn handle(mut stream: TcpStream, root: &Path, jobs: &JobRegistry) -> io::Result<
     match path {
         "/health" => respond_json(&mut stream, 200, r#"{"ok":true,"service":"csv-splitter"}"#),
         "/meta" => meta(&mut stream, root, &params),
-        "/rows" => rows(&mut stream, root, &params),
+        "/rows" => rows(&mut stream, root, &params, cache),
         "/stats" => stats(&mut stream, root, &params),
         "/filter" => filter(&mut stream, root, &params),
         "/query" => query(&mut stream, root, &params),
@@ -317,7 +325,12 @@ fn meta(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -
     }
 }
 
-fn rows(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
+fn rows(
+    stream: &mut TcpStream,
+    root: &Path,
+    params: &HashMap<String, String>,
+    cache: &ResultCache,
+) -> io::Result<()> {
     let (path, _rel) = match resolve(root, params) {
         Some(v) => v,
         None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
@@ -343,13 +356,32 @@ fn rows(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -
         }
     };
     // With `sql=`, the window is taken from the query result instead of the
-    // raw file: a table can page a filtered/sorted view directly.
+    // raw file: a table can page a filtered/sorted view directly. The result is
+    // materialised once (up to a cap) and later pages are slices, so scrolling
+    // does not re-scan a 10 GB file per frame.
     if let Some(statement) = params.get("sql") {
-        return match sql::page_with(&path, statement, start, count, delimiter(params)) {
-            Ok(p) => {
-                let cols: Vec<String> = p.columns.iter().map(|c| json_str(c)).collect();
-                let rows: Vec<String> = p
-                    .rows
+        let loaded = cache.get_or_load(&path, statement, delimiter(params), || {
+            sql::collect(&path, statement, delimiter(params), cache.row_cap())
+        });
+        return match loaded {
+            Ok(cached) => {
+                let (rows, has_more) = match cached.try_window(start as usize, count as usize) {
+                    Some(w) => w,
+                    // The request starts past what was materialised: answer
+                    // honestly rather than pretending the result ended.
+                    None => {
+                        return respond_json(
+                            stream,
+                            422,
+                            &format!(
+                                r#"{{"error":"result is larger than the cache prefix ({} rows); rerun the query or narrow it"}}"#,
+                                cached.total()
+                            ),
+                        )
+                    }
+                };
+                let cols: Vec<String> = cached.columns.iter().map(|c| json_str(c)).collect();
+                let body_rows: Vec<String> = rows
                     .iter()
                     .map(|row| {
                         let cells: Vec<String> = row.iter().map(|c| json_str(c)).collect();
@@ -360,11 +392,11 @@ fn rows(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -
                     stream,
                     200,
                     &format!(
-                        r#"{{"start":{},"hasMore":{},"columns":[{}],"rows":[{}]}}"#,
-                        p.start,
-                        p.has_more,
+                        r#"{{"start":{start},"hasMore":{},"rowsSoFar":{},"columns":[{}],"rows":[{}]}}"#,
+                        has_more,
+                        cached.total(),
                         cols.join(","),
-                        rows.join(",")
+                        body_rows.join(",")
                     ),
                 )
             }
