@@ -37,3 +37,16 @@ cargo clippy -p csv-splitter-core -p csv-splitter-gui --all-targets -- -D warnin
 CARGO_PROFILE_TEST_DEBUG=0 cargo clippy -p csv-splitter-cli --all-targets -- -D warnings
 CARGO_PROFILE_TEST_DEBUG=0 cargo test -p csv-splitter-cli
 ```
+
+## 实测
+
+两次连续提交的 CI 墙钟时间：
+
+| 改动 | engine | cli | 总墙钟 |
+|------|--------|-----|--------|
+| 拆分 job 后首次（含冷编译） | 427 s | ~1750 s | ≈29 min |
+| 去掉 debug info + 去重后 | **220 s** | **783 s** | **1009 s（17 min）** |
+
+engine 减半是因为它本来就不碰 DuckDB，只是时间被 fmt/clippy 的缓存状态影响；
+cli 减半主要来自 `liblibduckdb_sys.rlib` 从 1.6 GB 降到 **346 MB**——缓存省的不是编译时间，
+而是每个 job 结束时那段「打包/上传 target」。
