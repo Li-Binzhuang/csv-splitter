@@ -159,6 +159,39 @@ impl SparseIndex {
         Ok(out)
     }
 
+    /// Read arbitrary data rows (0-based) in one file handle.
+    ///
+    /// Filtered views ask for scattered rows; opening the file per row would be
+    /// slower than the index save. Seek order is preserved by seeking per row,
+    /// which is cheap on SSD and never allocates a window we do not need.
+    pub fn read_rows_at(&self, path: &Path, rows: &[u64]) -> io::Result<Vec<(u64, Vec<u8>)>> {
+        let mut file = File::open(path)?;
+        let mut out = Vec::with_capacity(rows.len());
+        for &row in rows {
+            if row >= self.data_rows() {
+                continue;
+            }
+            let (offset, skip) = self.seek_point(row);
+            file.seek(SeekFrom::Start(offset))?;
+            let mut reader = RecordReader::new(
+                BufReader::with_capacity(64 * 1024, file.try_clone()?),
+                64 * 1024,
+            );
+            let mut scratch = Vec::with_capacity(64 * 1024);
+            let mut ok = false;
+            for _ in 0..=skip {
+                if !reader.next_record(&mut scratch)? {
+                    break;
+                }
+                ok = true;
+            }
+            if ok {
+                out.push((row, scratch.clone()));
+            }
+        }
+        Ok(out)
+    }
+
     /// Raw bytes of the header record.
     pub fn read_header(&self, path: &Path) -> io::Result<Vec<u8>> {
         let file = File::open(path)?;

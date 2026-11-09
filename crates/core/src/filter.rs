@@ -9,6 +9,7 @@
 
 use crate::csv_reader::{parse_csv_record, RecordReader};
 use crate::encoding;
+use crate::index::SparseIndex;
 use crate::types::{Delimiter, ProgressEvent, ProgressSender};
 use std::cmp::Ordering;
 use std::io::{self, BufReader};
@@ -207,6 +208,44 @@ pub fn matches(cell: &str, spec: &FilterSpec) -> bool {
             }
         }
     }
+}
+
+/// One matched row, decoded and split into cells.
+#[derive(Clone, Debug)]
+pub struct MatchedRow {
+    /// 0-based data row.
+    pub row: u64,
+    pub cells: Vec<String>,
+}
+
+/// Load specific rows (usually filter hits) through the sparse index.
+///
+/// The index is built on first use and cached in the sidecar file, so repeated
+/// filtered views only pay for the rows they display.
+pub fn read_rows(path: &Path, delimiter: Delimiter, rows: &[u64]) -> io::Result<Vec<MatchedRow>> {
+    if rows.is_empty() {
+        return Ok(Vec::new());
+    }
+    let encoding = encoding::detect(path)?;
+    let sidecar = SparseIndex::sidecar_path(path);
+    let index = match SparseIndex::load(&sidecar) {
+        Ok(idx) if idx.matches(path) => idx,
+        _ => {
+            let idx = SparseIndex::build(path, crate::index::DEFAULT_INTERVAL)?;
+            idx.save(&sidecar).ok();
+            idx
+        }
+    };
+    let raw = index.read_rows_at(path, rows)?;
+    let delim = delimiter.byte();
+    Ok(raw
+        .into_iter()
+        .map(|(row, bytes)| {
+            let text = encoding::decode_cell(&bytes, encoding);
+            let cells = parse_csv_record(text.trim_end_matches(['\n', '\r']), delim);
+            MatchedRow { row, cells }
+        })
+        .collect())
 }
 
 #[cfg(test)]

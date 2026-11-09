@@ -99,6 +99,7 @@ MERGE OPTIONS
 FILTER OPTIONS
   --where <expr>          col=value | col~text | col>number | col empty
       --limit <n>         Stop after n matches (default: 10000)
+      --show <n>          Also print the first n matching rows
       --json              Emit JSON instead of text
   -d, --delim <c>         Delimiter (default: auto)
 
@@ -838,6 +839,7 @@ fn cmd_filter(args: &[String]) -> i32 {
     let mut where_expr: Option<String> = None;
     let mut limit = 10_000usize;
     let mut json = false;
+    let mut show = 0usize;
     let mut delim = "auto".to_string();
 
     while let Some(arg) = p.next() {
@@ -860,6 +862,16 @@ fn cmd_filter(args: &[String]) -> i32 {
                 }
             },
             "--json" => json = true,
+            "--show" => match p
+                .value("--show")
+                .and_then(|v| v.parse().map_err(|_| "bad --show".to_string()))
+            {
+                Ok(v) => show = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "-d" | "--delim" => match p.value("--delim") {
                 Ok(v) => delim = v,
                 Err(e) => {
@@ -938,6 +950,21 @@ fn cmd_filter(args: &[String]) -> i32 {
             "... {} more; use --json for the full list",
             result.matched - 50
         );
+    }
+    if show > 0 {
+        let picked = &result.rows[..result.rows.len().min(show)];
+        match csv_splitter_core::filter::read_rows(&input, delimiter, picked) {
+            Ok(rows) => {
+                println!();
+                for r in rows {
+                    println!("{:>9}  {}", r.row + 1, r.cells.join(" | "));
+                }
+            }
+            Err(e) => {
+                eprintln!("✗ cannot read matched rows: {e}");
+                return 1;
+            }
+        }
     }
     0
 }
