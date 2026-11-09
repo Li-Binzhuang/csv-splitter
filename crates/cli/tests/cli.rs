@@ -273,3 +273,59 @@ fn by_column_and_by_size_conflict() {
         .unwrap();
     assert_eq!(status.code(), Some(2));
 }
+
+fn indexed_csv(dir: &TempDir) -> PathBuf {
+    let path = dir.join("rows.csv");
+    let mut csv = String::from("id,note\n");
+    for i in 0..1000 {
+        if i % 97 == 0 {
+            csv.push_str(&format!("{i},\"a\nb\"\n"));
+        } else {
+            csv.push_str(&format!("{i},ok\n"));
+        }
+    }
+    std::fs::write(&path, csv).unwrap();
+    path
+}
+
+#[test]
+fn index_builds_a_sidecar_and_reports_rows() {
+    let dir = TempDir::new("idx");
+    let input = indexed_csv(&dir);
+
+    let out = Command::new(bin())
+        .args(["index", input.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(out.status.success());
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("1000 data rows"), "{text}");
+    assert!(input.with_file_name("rows.csv.idx").exists());
+}
+
+#[test]
+fn preview_start_row_uses_the_index() {
+    let dir = TempDir::new("jump");
+    let input = indexed_csv(&dir);
+
+    let out = Command::new(bin())
+        .args([
+            "preview",
+            input.to_str().unwrap(),
+            "--start-row",
+            "500",
+            "--rows",
+            "2",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let text = String::from_utf8_lossy(&out.stdout);
+    // Rows are printed with a 1-based row number; the first cell is the id.
+    assert!(text.contains("500 | ok") || text.contains("500,"), "{text}");
+    assert!(text.contains("501"), "{text}");
+}

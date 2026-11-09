@@ -4,8 +4,9 @@
 //! binary that can be piped into cron/Makefile/CI. Every subcommand here shares
 //! the exact same core pipeline as the GUI, so behaviour cannot drift.
 
-use csv_splitter_core::csv_reader::{detect_delimiter, read_headers};
+use csv_splitter_core::csv_reader::{detect_delimiter, parse_csv_record, read_headers};
 use csv_splitter_core::decompress::decompress_file;
+use csv_splitter_core::index::{SparseIndex, DEFAULT_INTERVAL};
 use csv_splitter_core::merge::merge_archive;
 use csv_splitter_core::partition::{run_partition, PartitionConfig};
 use csv_splitter_core::preview::{compute_column_stats, load_preview};
@@ -26,6 +27,7 @@ fn main() -> ExitCode {
         Some("split") => cmd_split(&args[1..]),
         Some("merge") => cmd_merge(&args[1..]),
         Some("preview") => cmd_preview(&args[1..]),
+        Some("index") => cmd_index(&args[1..]),
         Some("stats") => cmd_stats(&args[1..]),
         Some("extract") => cmd_extract(&args[1..]),
         Some("verify") => cmd_verify(&args[1..]),
@@ -57,6 +59,7 @@ COMMANDS
   split    <input>              Split a CSV (optionally compress) into chunks
   merge    <archive|dir> -o F   Re-assemble chunks produced by `split`
   preview  <input>              Print the first rows and detected delimiter
+  index    <input>              Build a sparse row index for instant paging
   stats    <input>              Column statistics via reservoir sampling
   extract  <input> -o DIR       Extract any supported compressed archive
   verify   <input>              Split + merge and prove the result is lossless
@@ -82,6 +85,15 @@ SPLIT OPTIONS
 
 MERGE OPTIONS
   -o, --out <path>        Output CSV (required)
+
+INDEX OPTIONS
+  --interval <n>          Checkpoint every n records (default: 1000)
+  -o, --out <path>        Index path (default: <input>.idx)
+
+PREVIEW OPTIONS
+  --rows <n>              How many rows to print (default: 10)
+  --start-row <n>         Jump to this data row (0-based) using the row index;
+                          the index is loaded from <input>.idx or built once
 
 EXAMPLES
   csv-splitter split big.csv -n 8 -f zst
@@ -568,6 +580,8 @@ fn cmd_preview(args: &[String]) -> i32 {
     let mut input: Option<PathBuf> = None;
     let mut rows = 10usize;
     let mut delim = "auto".to_string();
+    let mut start_row: u64 = 0;
+    let mut index_path: Option<PathBuf> = None;
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
@@ -576,6 +590,23 @@ fn cmd_preview(args: &[String]) -> i32 {
                 .and_then(|v| v.parse().map_err(|_| "bad --rows".to_string()))
             {
                 Ok(v) => rows = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--start-row" => match p
+                .value("--start-row")
+                .and_then(|v| v.parse().map_err(|_| "bad --start-row".to_string()))
+            {
+                Ok(v) => start_row = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--index" => match p.value("--index") {
+                Ok(v) => index_path = Some(PathBuf::from(v)),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -617,6 +648,10 @@ fn cmd_preview(args: &[String]) -> i32 {
         }
     };
 
+    if start_row > 0 {
+        return preview_from_index(&input, rows, start_row, override_delim, index_path);
+    }
+
     match load_preview(&input, rows, override_delim) {
         Ok(preview) => {
             println!(
@@ -638,6 +673,131 @@ fn cmd_preview(args: &[String]) -> i32 {
             1
         }
     }
+}
+
+/// Print a window of rows by seeking into the file through the sparse index.
+fn preview_from_index(
+    input: &Path,
+    rows: usize,
+    start_row: u64,
+    delim: Option<Delimiter>,
+    index_path: Option<PathBuf>,
+) -> i32 {
+    let sidecar = index_path.unwrap_or_else(|| SparseIndex::sidecar_path(input));
+    let started = Instant::now();
+    let idx = match SparseIndex::load(&sidecar) {
+        Ok(i) if i.matches(input) => i,
+        _ => match SparseIndex::build(input, DEFAULT_INTERVAL) {
+            Ok(i) => {
+                i.save(&sidecar).ok();
+                i
+            }
+            Err(e) => {
+                eprintln!("✗ cannot build index: {e}");
+                return 1;
+            }
+        },
+    };
+    let delim_byte = match delim {
+        Some(d) => d.byte(),
+        None => detect_delimiter(&mut std::fs::File::open(input).unwrap())
+            .map(|(d, _)| d.byte())
+            .unwrap_or(b','),
+    };
+
+    let header = idx.read_header(input).unwrap_or_default();
+    println!(
+        "{} — {} data rows, index ready in {:?} (interval {}), from row {}",
+        input.display(),
+        idx.data_rows(),
+        started.elapsed(),
+        idx.interval(),
+        start_row
+    );
+    println!("{}", String::from_utf8_lossy(&header).trim_end());
+    println!("{}", "-".repeat(40));
+
+    match idx.read_rows(input, start_row, rows as u64) {
+        Ok(found) => {
+            for (i, raw) in found.iter().enumerate() {
+                let text = String::from_utf8_lossy(raw);
+                let fields = parse_csv_record(text.trim_end(), delim_byte);
+                println!("{:>9}  {}", start_row + i as u64 + 1, fields.join(" | "));
+            }
+            0
+        }
+        Err(e) => {
+            eprintln!("✗ reading rows failed: {e}");
+            1
+        }
+    }
+}
+
+fn cmd_index(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut input: Option<PathBuf> = None;
+    let mut interval = DEFAULT_INTERVAL;
+    let mut out: Option<PathBuf> = None;
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--interval" => match p
+                .value("--interval")
+                .and_then(|v| v.parse::<u64>().map_err(|_| "bad --interval".to_string()))
+            {
+                Ok(v) => interval = v.max(1),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-o" | "--out" => match p.value("--out") {
+                Ok(v) => out = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => input = Some(PathBuf::from(other)),
+        }
+    }
+
+    let Some(input) = input else {
+        eprintln!("error: index needs an <input> path");
+        return 2;
+    };
+    let started = Instant::now();
+    let idx = match SparseIndex::build(&input, interval) {
+        Ok(i) => i,
+        Err(e) => {
+            eprintln!("✗ index failed: {e}");
+            return 1;
+        }
+    };
+    let elapsed = started.elapsed();
+    let path = out.unwrap_or_else(|| SparseIndex::sidecar_path(&input));
+    if let Err(e) = idx.save(&path) {
+        eprintln!("✗ cannot write index {}: {e}", path.display());
+        return 1;
+    }
+    println!(
+        "✓ {} data rows indexed in {:.2}s (interval {}, {} checkpoints, {:.1} KB) → {}",
+        idx.data_rows(),
+        elapsed.as_secs_f64(),
+        idx.interval(),
+        idx.data_rows().div_ceil(idx.interval()) + 1,
+        idx.size_bytes() as f64 / 1024.0,
+        path.display()
+    );
+    0
 }
 
 fn cmd_stats(args: &[String]) -> i32 {

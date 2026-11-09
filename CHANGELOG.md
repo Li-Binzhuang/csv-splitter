@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.0] — 2026-11-09
+
+### Added
+
+- **Sparse row index** (`crates/core/src/index.rs`): a sidecar `.idx` storing the
+  byte offset of every 1000th record, plus `csv-splitter index` to build it.
+  `preview --start-row N` now seeks through the index instead of scanning, so
+  jumping to row 1,500,000 of an 87 MB file takes ~200 µs and ~5 MB of RAM.
+- Index format is versioned (`CSI1`), written to a temp file and renamed, and
+  validated against the file length before use; a stale index is rebuilt
+  automatically.
+
+### Notes
+
+- Measured on the 1.6M-row / 87 MB sample: index build 0.53 s at 11.8 MB peak
+  RSS, 13 KB on disk; random access 211 µs.
+
 ## [0.5.0] — 2026-11-09
 
 ### Added

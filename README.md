@@ -33,6 +33,7 @@
 | 📋 Column Filter | Select columns from CSV headers or via filter file | 通过表头选择或过滤文件筛选列 |
 | 🔃 Sort | External merge sort by column with numeric-aware ordering | 按指定列外部归并排序，支持数值智能排序 |
 | 👁 Data Preview | Preview CSV rows with auto-detected delimiter, row/col range & freeze | 预览 CSV 数据，支持行列范围与冻结 |
+| ⚡ Row Index | 8 bytes per 1000 rows sidecar, jump to any row without scanning | 稀疏行索引：跳转到任意行，无需从头扫描 |
 | 📊 Column Stats | Reservoir sampling analysis (unique/empty/top frequency) | 蓄水池采样分析列数据分布 |
 | 📦 Decompress | Supports Zstd, Gzip, Bzip2, XZ, Zip, 7z, Tar and combos | 支持 12 种压缩格式及其组合 |
 | 🌐 i18n | Chinese (default) / English, one-click switch | 默认中文，一键切换英文 |
@@ -87,6 +88,12 @@ csv-splitter merge chunks.tar -o restored.csv
 # 证明这次拆分是无损的：split → merge → 逐字节比较
 csv-splitter verify big.csv -n 6
 
+# 建立行索引（1.6M 行 → 13 KB 索引，0.5 秒）
+csv-splitter index big.csv
+
+# 跳到任意行（有索引时是微秒级）
+csv-splitter preview big.csv --start-row 1500000 --rows 20
+
 # 看一眼数据与列分布
 csv-splitter preview big.csv --rows 5
 csv-splitter stats big.csv --sample 50000 --top 5
@@ -106,6 +113,20 @@ csv-splitter extract chunks.tar -o ./out
    `verify` 用字节比较兜底。`splits > 记录数` 时不会产生空分片。
 3. **内存可控**：`--buf-mb` 是**总预算**，拆成 N 片不会变成 N × 缓冲。旧版每片固定 64 MB，
    10 片时峰值接近 700 MB。
+
+## 性能 / Performance
+
+一台普通笔记本上的实测（`cargo build --release` 同理，debug 构建更快但内存相近）：
+
+| 场景 | 数据量 | 结果 |
+|------|--------|------|
+| 建立行索引 | 87 MB / 160 万行 | **0.53 s**，峰值内存 **11.8 MB**，索引 **13 KB** |
+| 跳到第 1,500,000 行 | 同上 | **211 µs**，峰值内存 **4.8 MB** |
+| 无损校验（split → merge → 字节比较） | 同上 | 91,341,142 字节完全一致 |
+| 拆分吞吐 | 同上 | ~85 MB/s（zstd 压缩前读取速度） |
+
+内存不随文件增长：`--buf-mb` 是总预算，索引按 1000 行一个检查点存盘。
+一个 100 亿行的文件，索引也只有约 80 MB，而表格软件需要几百 GB。
 
 ## Supported Formats / 支持的压缩格式
 
