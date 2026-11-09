@@ -649,3 +649,35 @@ fn export_understands_in_lists() {
 
     drop(server);
 }
+
+#[test]
+fn partition_runs_as_a_job() {
+    let dir = TempDir::new("part");
+    let mut csv = String::from("city,amount\n");
+    for (city, amount) in [("CDMX", 10), ("Puebla", 500), ("CDMX", 20)] {
+        csv.push_str(&format!("{city},{amount}\n"));
+    }
+    std::fs::write(dir.join("data.csv"), csv).unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/partition?path=data.csv&by=city&out=by_city.tar&format=none",
+    );
+    assert_eq!(status, 202, "{body}");
+    let id = body
+        .split("\"job\":\"")
+        .nth(1)
+        .and_then(|s| s.split('"').next())
+        .expect("job id")
+        .to_string();
+    let done = wait_for_job(&server.addr, &id);
+    assert!(done.contains("\"state\":\"done\""), "{done}");
+    assert!(dir.join("by_city.tar").exists());
+
+    // Missing `by` is a client error, not an empty archive.
+    let (status, _) = post(&server.addr, "/partition?path=data.csv&out=x.tar");
+    assert_eq!(status, 400);
+
+    drop(server);
+}

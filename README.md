@@ -141,6 +141,8 @@ csv-splitter extract chunks.tar -o ./out
 | **摸清一份陌生数据** | `analyze big.csv` | `GET /analyze` |
 | **去重** | `dedupe big.csv --by id -o clean.csv` | `POST /dedupe` |
 | **整理列再发出去** | `columns big.csv --drop id --rename "city:城市"` | — |
+| **按某列拆成多个文件** | `partition big.csv --by city` | `POST /partition` |
+| **多个同构文件拼成一张表** | `concat a.csv b.csv c.csv -o all.csv` | — |
 | 跑聚合 / 排序 | `sql big.csv "SELECT ..."` | `GET /query?sql=...` |
 | 切分 / 合并 | `split` / `merge` | `POST /split` · `POST /merge` |
 | 换编码 | `convert gbk.csv -o utf8.csv` | — |
@@ -176,6 +178,25 @@ note                    200000    40171         4  text: ok (40370), 多行备�
 $ csv-splitter dedupe orders.csv --by cust_no -o clean.csv
 ✓ 49124 of 200000 rows kept, 150876 removed → clean.csv (3.0 MB)
 ```
+
+### 拆分与拼接
+
+```bash
+# 每个 city 一个文件，打包成 tar（不按大小切，按值切）
+$ csv-splitter partition orders.csv --by city -o per_city.tar
+✓ partitioned by city → per_city.tar (12.1 MB)
+
+# 多个月的导出拼成一张表；表头会自动核对
+$ csv-splitter concat march.csv april.csv may.csv -o q2.csv
+✓ 3 files, 2100000 rows → q2.csv (280 MB)
+```
+
+`partition` 内部先按该列做外部排序（等值聚到一起，一次只开一个写句柄），
+所以高基数列不会撞上文件句柄上限；超过 `--max-partitions`（默认 512）会拒绝，
+因为按 `id` 分区基本总是误操作。
+
+`concat` **默认核对表头**：列名不一致直接报错并指出是哪个文件。想强行拼接加
+`--ignore-header`——它会拼，但会把不一致的文件列出来。
 
 ### 整理列
 

@@ -33,6 +33,7 @@ use csv_splitter_core::filter::{self, scan as filter_scan, FilterSpec};
 use csv_splitter_core::jobs::JobRegistry;
 use csv_splitter_core::listing;
 use csv_splitter_core::merge::merge_archive;
+use csv_splitter_core::partition;
 use csv_splitter_core::preview::compute_column_stats;
 use csv_splitter_core::profile;
 use csv_splitter_core::search::{search as search_scan, SearchSpec};
@@ -129,6 +130,7 @@ fn handle(
             "/warm" => start_warm(&mut stream, root, jobs, cache, &params),
             "/sort" => start_sort(&mut stream, root, jobs, &params),
             "/dedupe" => start_dedupe(&mut stream, root, jobs, &params),
+            "/partition" => start_partition(&mut stream, root, jobs, &params),
             _ => respond_json(&mut stream, 404, r#"{"error":"unknown endpoint"}"#),
         };
     }
@@ -434,6 +436,62 @@ fn start_dedupe(
                 tx.send(ProgressEvent::Error(e.to_string())).ok();
             }
         }
+    });
+    respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
+}
+
+/// Partition the file by a column into an archive, as a background job.
+fn start_partition(
+    stream: &mut TcpStream,
+    root: &Path,
+    jobs: &JobRegistry,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (input, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+    };
+    let Some(out) = resolve_out(root, params, "out") else {
+        return respond_json(stream, 400, r#"{"error":"out must stay inside root"}"#);
+    };
+    let Some(by) = params.get("by").filter(|b| !b.is_empty()) else {
+        return respond_json(stream, 400, r#"{"error":"by is required"}"#);
+    };
+    let format = match params.get("format").map(String::as_str) {
+        Some("zst") | None => CompressFormat::Zstd,
+        Some("gz") => CompressFormat::Gzip,
+        Some("bz2") => CompressFormat::Bzip2,
+        Some("xz") => CompressFormat::Xz,
+        Some("zip") => CompressFormat::Zip,
+        Some("none") => CompressFormat::None,
+        Some(other) => {
+            return respond_json(
+                stream,
+                400,
+                &format!(
+                    r#"{{"error":{}}}"#,
+                    json_str(&format!("unknown format {other}"))
+                ),
+            )
+        }
+    };
+    let max_partitions: usize = params
+        .get("maxPartitions")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(partition::DEFAULT_MAX_PARTITIONS);
+
+    let config = partition::PartitionConfig {
+        input,
+        output: Some(out.clone()),
+        column: by.clone(),
+        compress_format: format,
+        compress_level: 3,
+        buf_mb: 64,
+        delimiter: delimiter(params),
+        max_partitions,
+    };
+    let id = jobs.submit("partition", move |tx| {
+        partition::run_partition(config, tx);
     });
     respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
 }

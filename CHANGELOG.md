@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.25.0] — 2026-11-10
+
+### Added
+
+- **`partition --by COLUMN`**: one file per distinct value, packed into a tar/zip.
+  The engine already existed; it is now a command and `POST /partition`. It sorts
+  by the column first so only one writer is open at a time, and refuses to exceed
+  `--max-partitions` (512) because partitioning by `id` is almost always an
+  accident.
+- **`concat a.csv b.csv ...`**: glue same-shaped files into one table.
+  Headers are **checked**, not assumed: a mismatch is an error naming the file and
+  its columns, because silently appending amounts under an id column corrupts the
+  table invisibly. `--ignore-header` opts into that on purpose and still reports
+  which files differed.
+
 ## [0.24.0] — 2026-11-10
 
 ### Added

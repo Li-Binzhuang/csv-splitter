@@ -42,6 +42,8 @@ fn main() -> ExitCode {
         Some("analyze") => cmd_analyze(&args[1..]),
         Some("dedupe") => cmd_dedupe(&args[1..]),
         Some("columns") => cmd_columns(&args[1..]),
+        Some("partition") => cmd_partition(&args[1..]),
+        Some("concat") => cmd_concat(&args[1..]),
         Some("sql") => cmd_sql(&args[1..]),
         Some("search") => cmd_search(&args[1..]),
         Some("files") => cmd_files(&args[1..]),
@@ -84,6 +86,8 @@ COMMANDS
   analyze  <input>               Per-column profile: empties, distinct, numeric summary
   dedupe   <input> -o F          Drop duplicate rows (whole row or --by columns)
   columns  <input>                Keep/drop/rename columns (-o writes the result)
+  partition <input> --by COL      One file per distinct value of COL (tar/zip)
+  concat   <a.csv> <b.csv> ...    Glue same-shaped files into one (header checked)
   search   <input> <text>        Find text anywhere (or in chosen columns)
   files    --root <dir>          List readable files under a directory
   sql      <input> "<query>"     Run SQL over the file (DuckDB, read-only)
@@ -128,6 +132,18 @@ SEARCH OPTIONS
       --show <n>          Also print the first n matching rows
       --json              Emit JSON
   -d, --delim <c>         Delimiter (default: auto)
+
+CONCAT OPTIONS
+      --ignore-header     Append even when headers differ (reported, but done)
+  -o, --out <file>        Output file (default: combined.csv next to the input)
+      --json              Emit JSON
+  -d, --delim <c>         Delimiter (default: auto)
+
+PARTITION OPTIONS
+      --by <col>          Column whose values become file names (required)
+  -o, --out <file.tar>    Archive path (format follows -f: tar, or zip)
+  -f, --format <fmt>      Per-part compression: none|zst|gz|bz2|xz|zip (default: none)
+      --max-partitions <n> Refuse to create more than n files (default: 512)
 
 COLUMNS OPTIONS
       --keep <a,b>        Only these columns, in this order
@@ -1862,6 +1878,261 @@ fn parse_sort_columns(spec: &str, default_descending: bool) -> Result<Vec<SortCo
         return Err("no sort columns".to_string());
     }
     Ok(columns)
+}
+
+fn cmd_concat(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut inputs: Vec<PathBuf> = Vec::new();
+    let mut out: Option<PathBuf> = None;
+    let mut ignore_header = false;
+    let mut json = false;
+    let mut delim = "auto".to_string();
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "-o" | "--out" => match p.value("--out") {
+                Ok(v) => out = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--ignore-header" => ignore_header = true,
+            "--json" => json = true,
+            "-d" | "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => inputs.push(PathBuf::from(other)),
+        }
+    }
+
+    if inputs.len() < 2 {
+        eprintln!("error: concat needs at least two <input> files");
+        return 2;
+    }
+    let output = out.unwrap_or_else(|| inputs[0].with_file_name("combined.csv"));
+    let delimiter = match parse_delimiter(&delim, &inputs[0]) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+
+    let (tx, rx) = mpsc::channel();
+    let reporter = spawn_reporter(rx, json);
+    let result = csv_splitter_core::concat::concat(&inputs, &output, delimiter, ignore_header, &tx);
+    drop(tx);
+    let _ = reporter.join();
+    match result {
+        Ok(s) => {
+            if json {
+                println!(
+                    r#"{{"files":{},"rows":{},"bytes":{},"columns":["{}"],"mismatched":{}}}"#,
+                    s.files,
+                    s.rows,
+                    s.bytes,
+                    s.columns.join(r#"",""#),
+                    s.mismatched.len()
+                );
+            } else {
+                println!(
+                    "✓ {} files, {} rows → {} ({})",
+                    s.files,
+                    s.rows,
+                    output.display(),
+                    human_bytes(s.bytes)
+                );
+                for f in &s.mismatched {
+                    eprintln!("  ⚠ header differs, appended anyway: {}", f.display());
+                }
+            }
+            0
+        }
+        Err(e) => {
+            eprintln!("✗ concat failed: {e}");
+            1
+        }
+    }
+}
+
+fn cmd_partition(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut input: Option<PathBuf> = None;
+    let mut out: Option<PathBuf> = None;
+    let mut by: Option<String> = None;
+    let mut format = "none".to_string();
+    let mut level = 3i32;
+    let mut buf_mb = 64usize;
+    let mut max_partitions = csv_splitter_core::partition::DEFAULT_MAX_PARTITIONS;
+    let mut delim = "auto".to_string();
+    let mut quiet = false;
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--by" => match p.value("--by") {
+                Ok(v) => by = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-o" | "--out" => match p.value("--out") {
+                Ok(v) => out = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-f" | "--format" => match p.value("--format") {
+                Ok(v) => format = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--level" => match p
+                .value("--level")
+                .and_then(|v| v.parse().map_err(|_| "bad --level".to_string()))
+            {
+                Ok(v) => level = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--buf-mb" => match p
+                .value("--buf-mb")
+                .and_then(|v| v.parse().map_err(|_| "bad --buf-mb".to_string()))
+            {
+                Ok(v) => buf_mb = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--max-partitions" => match p
+                .value("--max-partitions")
+                .and_then(|v| v.parse().map_err(|_| "bad --max-partitions".to_string()))
+            {
+                Ok(v) => max_partitions = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-q" | "--quiet" => quiet = true,
+            "-d" | "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => input = Some(PathBuf::from(other)),
+        }
+    }
+
+    let (Some(input), Some(by)) = (input, by) else {
+        eprintln!("error: partition needs <input> and --by <column>");
+        return 2;
+    };
+    let compress_format = match format.as_str() {
+        "none" | "raw" => CompressFormat::None,
+        "zst" | "zstd" => CompressFormat::Zstd,
+        "gz" | "gzip" => CompressFormat::Gzip,
+        "bz2" => CompressFormat::Bzip2,
+        "xz" => CompressFormat::Xz,
+        "zip" => CompressFormat::Zip,
+        other => {
+            eprintln!("error: unknown format '{other}'");
+            return 2;
+        }
+    };
+    let delimiter = match parse_delimiter(&delim, &input) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+
+    // Remember where the archive will land: the engine reports success by
+    // writing the file, not by returning a value.
+    let expected = match &out {
+        Some(path) => path.clone(),
+        None => match out_path_or_default(&input, &by, compress_format) {
+            Ok(p) => p,
+            Err(e) => {
+                eprintln!("error: {e}");
+                return 2;
+            }
+        },
+    };
+    let config = csv_splitter_core::partition::PartitionConfig {
+        input: input.clone(),
+        output: out,
+        column: by.clone(),
+        compress_format,
+        compress_level: level,
+        buf_mb,
+        delimiter,
+        max_partitions,
+    };
+
+    let (tx, rx) = mpsc::channel();
+    let reporter = spawn_reporter(rx, quiet);
+    csv_splitter_core::partition::run_partition(config, tx);
+    let _ = reporter.join();
+
+    if expected.exists() {
+        let bytes = std::fs::metadata(&expected).map(|m| m.len()).unwrap_or(0);
+        println!(
+            "✓ partitioned by {by} → {} ({})",
+            expected.display(),
+            human_bytes(bytes)
+        );
+        0
+    } else {
+        eprintln!("✗ partition failed (see messages above)");
+        1
+    }
+}
+
+fn out_path_or_default(input: &Path, by: &str, format: CompressFormat) -> Result<PathBuf, String> {
+    let stem = input
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .ok_or_else(|| "input has no file stem".to_string())?;
+    let ext = if format == CompressFormat::Zip {
+        "zip"
+    } else {
+        "tar"
+    };
+    Ok(input.with_file_name(format!(
+        "{stem}_by_{}.{ext}",
+        csv_splitter_core::partition::sanitize(by)
+    )))
 }
 
 fn cmd_analyze(args: &[String]) -> i32 {

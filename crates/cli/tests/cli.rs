@@ -926,3 +926,70 @@ fn columns_reshapes_and_in_filter_combines() {
         .unwrap();
     assert_eq!(status.code(), Some(1));
 }
+
+#[test]
+fn partition_by_column_and_concat_files() {
+    let dir = TempDir::new("parts");
+    let input = dir.join("orders.csv");
+    let mut csv = String::from("city,amount\n");
+    for (city, amount) in [("CDMX", 10), ("Puebla", 500), ("CDMX", 20), ("Tijuana", 5)] {
+        csv.push_str(&format!("{city},{amount}\n"));
+    }
+    std::fs::write(&input, csv).unwrap();
+
+    // One file per city, packed into a tar.
+    let archive = dir.join("by_city.tar");
+    let status = Command::new(bin())
+        .args([
+            "partition",
+            input.to_str().unwrap(),
+            "--by",
+            "city",
+            "-o",
+            archive.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let names = std::process::Command::new("tar")
+        .args(["-tf", archive.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let listing = String::from_utf8_lossy(&names.stdout);
+    assert!(listing.contains("CDMX.csv"), "{listing}");
+    assert!(listing.contains("Puebla.csv"), "{listing}");
+    assert!(listing.contains("Tijuana.csv"), "{listing}");
+
+    // Concat refuses a header mismatch, and accepts it when told to.
+    let b = dir.join("more.csv");
+    std::fs::write(&b, "city,amount\nMonterrey,7\n").unwrap();
+    let out = dir.join("all.csv");
+    let ok = Command::new(bin())
+        .args([
+            "concat",
+            input.to_str().unwrap(),
+            b.to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(ok.code(), Some(0));
+    let text = std::fs::read_to_string(&out).unwrap();
+    assert_eq!(text.lines().count(), 6, "one header + 5 rows: {text}");
+
+    let bad = dir.join("bad.csv");
+    std::fs::write(&bad, "city,total\nMonterrey,7\n").unwrap();
+    let out2 = dir.join("bad_out.csv");
+    let status = Command::new(bin())
+        .args([
+            "concat",
+            input.to_str().unwrap(),
+            bad.to_str().unwrap(),
+            "-o",
+            out2.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(1));
+}

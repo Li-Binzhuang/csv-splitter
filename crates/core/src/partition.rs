@@ -232,7 +232,7 @@ fn finish(writer: &mut Option<Box<dyn Write + Send>>) {
 /// Keeps letters/digits (including CJK), `-` and `_`; everything else becomes
 /// `_`. Empty values become `_empty`, and duplicates (case-insensitive, as on
 /// macOS) get a numeric suffix.
-fn sanitize(value: &str) -> String {
+pub fn sanitize(value: &str) -> String {
     let trimmed = value.trim();
     let mut out = String::new();
     for ch in trimmed.chars().take(48) {
