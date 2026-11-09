@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.27.0] — 2026-11-10
+
+### Fixed — found by running a deliberately dirty file end to end
+
+A GBK file with CRLF endings, stray spaces in the header (`城市 `), ragged rows
+and quoted newlines exposed four things:
+
+- **`partition` could not read a GBK file at all.** It parsed the sorted chunk's
+  header as UTF-8, so the partition column looked missing and the error named
+  mojibake candidates. It now decodes while reading.
+- **Reported errors were swallowed.** `spawn_reporter` folded the engine's error
+  into the reporter's return value, and every caller discarded it — commands
+  failed with "see messages above" and nothing above. The reporter now prints the
+  reason itself.
+- **Column names with stray spaces were unusable.** `--where "城市=CDMX"` could
+  never match a header literally named `城市 `. Names now resolve exact →
+  unique-trimmed → unique-case-insensitive, and an ambiguous match is refused
+  rather than guessed. A missing name reports the available columns, or the
+  closest one when there is a plausible spelling difference.
+- **Ragged rows were invisible.** `analyze` now reports how many rows have a
+  field count different from the header, which is the first thing worth knowing
+  about a foreign file.
+
+Verified: record counts match Python's `csv` module exactly on the dirty fixture,
+and `verify` still round-trips the file byte-for-byte.
+
 ## [0.26.0] — 2026-11-10
 
 ### Added

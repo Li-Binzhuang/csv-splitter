@@ -409,7 +409,13 @@ fn spawn_reporter(
                     }
                 }
                 ProgressEvent::Finished { output: p } => output = Some(p),
-                ProgressEvent::Error(e) => return Err(e),
+                ProgressEvent::Error(e) => {
+                    // Report here, unconditionally: most callers ignore the
+                    // reporter's Result, and a swallowed error leaves the user
+                    // staring at "see messages above" with nothing above.
+                    eprintln!("✗ {e}");
+                    return Err(e);
+                }
                 _ => {}
             }
         }
@@ -2364,6 +2370,15 @@ fn cmd_analyze(args: &[String]) -> i32 {
         return 0;
     }
 
+    // Ragged records are the first thing worth knowing about a foreign file.
+    if let Some(first) = profiles.first() {
+        if first.ragged > 0 {
+            println!(
+                "⚠ {} of {} rows have a field count different from the header — columns may be shifted on those rows",
+                first.ragged, first.rows
+            );
+        }
+    }
     println!(
         "{:<20} {:>9} {:>8} {:>9}  summary",
         "column", "rows", "empty", "distinct"
@@ -2427,9 +2442,10 @@ fn profile_json(c: &csv_splitter_core::profile::ColumnProfile) -> String {
         .map(|(v, n)| format!(r#"["{}",{}]"#, json_quote(v).trim_matches('"'), n))
         .collect();
     format!(
-        r#"{{"name":"{}","rows":{},"empty":{},"nonEmpty":{},"distinct":{},"distinctTruncated":{},"numeric":{},"mixedTypes":{},"top":[{}]}}"#,
+        r#"{{"name":"{}","rows":{},"ragged":{},"empty":{},"nonEmpty":{},"distinct":{},"distinctTruncated":{},"numeric":{},"mixedTypes":{},"top":[{}]}}"#,
         json_quote(&c.name).trim_matches('"'),
         c.rows,
+        c.ragged,
         c.empty,
         c.non_empty,
         c.distinct,

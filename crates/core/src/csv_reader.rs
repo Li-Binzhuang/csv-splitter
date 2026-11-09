@@ -279,6 +279,90 @@ pub fn count_records<R: Read>(reader: R, capacity: usize) -> io::Result<u64> {
     Ok(count)
 }
 
+/// Resolve a column name against a header, tolerating the noise real files carry.
+///
+/// Order: exact → trimmed-equal (unique) → trimmed case-insensitive (unique).
+/// A near match is only accepted when it is unambiguous, so a file with both
+/// `name` and `name ` still refuses rather than guessing.
+pub fn resolve_column(name: &str, headers: &[String]) -> Result<usize, String> {
+    if let Some(idx) = headers.iter().position(|h| h == name) {
+        return Ok(idx);
+    }
+    let target = name.trim();
+    let trimmed: Vec<usize> = headers
+        .iter()
+        .enumerate()
+        .filter(|(_, h)| h.trim() == target)
+        .map(|(i, _)| i)
+        .collect();
+    if trimmed.len() == 1 {
+        return Ok(trimmed[0]);
+    }
+    let case_folded: Vec<usize> = headers
+        .iter()
+        .enumerate()
+        .filter(|(_, h)| h.trim().eq_ignore_ascii_case(target))
+        .map(|(i, _)| i)
+        .collect();
+    if case_folded.len() == 1 && trimmed.is_empty() {
+        return Ok(case_folded[0]);
+    }
+    if trimmed.len() > 1 || case_folded.len() > 1 {
+        let shown: Vec<String> = headers[trimmed.first().copied().unwrap_or(0)..]
+            .iter()
+            .take(3)
+            .map(|h| format!("'{h}'"))
+            .collect();
+        return Err(format!(
+            "column '{name}' is ambiguous: {} match after trimming",
+            shown.join(", ")
+        ));
+    }
+    Err(column_candidates(name, headers))
+}
+
+/// Turn "column not found" into something the user can act on.
+///
+/// Real-world headers carry stray spaces (`城市 `), BOM remnants and casing
+/// differences, so a bare "not found" makes people hunt. This names the closest
+/// candidates — trimmed equality first, then case-insensitive, then a substring —
+/// without ever *silently* accepting the near match, because a file may
+/// legitimately contain two columns differing only by case or spacing.
+pub fn column_candidates(name: &str, headers: &[String]) -> String {
+    let target = name.trim();
+    let mut exact_trimmed: Vec<&String> = Vec::new();
+    let mut case: Vec<&String> = Vec::new();
+    let mut contains: Vec<&String> = Vec::new();
+    for header in headers {
+        if header.trim() == target {
+            exact_trimmed.push(header);
+        } else if header.trim().eq_ignore_ascii_case(target) {
+            case.push(header);
+        } else if header.contains(target) || target.contains(header.trim()) {
+            contains.push(header);
+        }
+    }
+    if exact_trimmed.is_empty() && case.is_empty() && contains.is_empty() {
+        let listing: Vec<&str> = headers.iter().take(12).map(String::as_str).collect();
+        return format!(
+            "column '{name}' not found; available columns: {}",
+            listing.join(", ")
+        );
+    }
+    let mut picks: Vec<&String> = exact_trimmed.clone();
+    picks.extend(case.iter().take(3));
+    picks.extend(contains.iter().take(3));
+    let shown: Vec<String> = picks
+        .into_iter()
+        .take(3)
+        .map(|h| format!("'{h}'"))
+        .collect();
+    format!(
+        "column '{name}' not found; did you mean {}",
+        shown.join(" or ")
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -356,5 +440,54 @@ mod tests {
             n += 1;
         }
         assert_eq!(n, 2);
+    }
+}
+
+#[cfg(test)]
+mod column_tests {
+    use super::*;
+
+    fn headers(list: &[&str]) -> Vec<String> {
+        list.iter().map(|s| s.to_string()).collect()
+    }
+
+    #[test]
+    fn exact_names_win_without_trimming() {
+        let h = headers(&["id", "城市 ", "城市"]);
+        assert_eq!(resolve_column("城市", &h).unwrap(), 2);
+        assert_eq!(resolve_column("城市 ", &h).unwrap(), 1);
+    }
+
+    #[test]
+    fn a_unique_trimmed_match_is_accepted() {
+        let h = headers(&["id", "客户编号 ", "金额"]);
+        assert_eq!(resolve_column("客户编号", &h).unwrap(), 1);
+    }
+
+    #[test]
+    fn ambiguity_is_reported_rather_than_guessed() {
+        let h = headers(&["id", "城市 ", "城市 "]);
+        let err = resolve_column("城市", &h).unwrap_err();
+        assert!(err.contains("ambiguous"), "{err}");
+    }
+
+    #[test]
+    fn a_near_name_gets_a_suggestion_and_a_stranger_gets_the_list() {
+        let h = headers(&["id", "客户编号 ", "amount"]);
+        // `amountx` contains `amount`, so it is worth suggesting.
+        let err = resolve_column("amountx", &h).unwrap_err();
+        assert!(err.contains("did you mean"), "{err}");
+        assert!(err.contains("'amount'"), "{err}");
+        // `zzz` resembles nothing: list what is actually there.
+        let err = resolve_column("zzz", &h).unwrap_err();
+        assert!(err.contains("available columns"), "{err}");
+        assert!(err.contains("amount"), "{err}");
+    }
+
+    #[test]
+    fn case_differences_are_tolerated_when_unique() {
+        let h = headers(&["ID", "City"]);
+        assert_eq!(resolve_column("city", &h).unwrap(), 1);
+        assert_eq!(resolve_column("id", &h).unwrap(), 0);
     }
 }

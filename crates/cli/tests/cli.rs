@@ -1045,3 +1045,60 @@ fn groupby_writes_an_aggregated_file() {
     let text = std::fs::read_to_string(&out2).unwrap();
     assert_eq!(text.lines().count(), 4, "header + 3 groups: {text}");
 }
+
+/// The dirty-data path: GBK bytes, stray spaces in headers, ragged rows.
+#[test]
+fn handles_gbk_headers_with_stray_spaces_and_ragged_rows() {
+    let dir = TempDir::new("dirty");
+    let input = dir.join("messy.csv");
+    // GBK bytes, CRLF endings, header names with trailing spaces, and one row
+    // with an extra unquoted comma.
+    let text = "id,城市 ,金额\r\n1,CDMX,10\r\n2,Puebla,20,x\r\n3,CDMX,30\r\n";
+    let bytes = encoding_rs::GBK.encode(text).0;
+    std::fs::write(&input, bytes.as_ref()).unwrap();
+
+    // A column given without its trailing space still resolves.
+    let out = Command::new(bin())
+        .args([
+            "filter",
+            input.to_str().unwrap(),
+            "--where",
+            "城市=CDMX",
+            "-o",
+            dir.join("c.csv").to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let filtered = std::fs::read_to_string(dir.join("c.csv")).unwrap();
+    assert_eq!(filtered.lines().count(), 3, "{filtered}");
+
+    // `analyze` reports the ragged row instead of silently shifting columns.
+    let out = Command::new(bin())
+        .args(["analyze", input.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("field count"), "{text}");
+    assert!(text.contains("1 of 3 rows"), "{text}");
+
+    // Partitioning a GBK file must decode, not mojibake the header.
+    let archive = dir.join("parts.tar");
+    let status = Command::new(bin())
+        .args([
+            "partition",
+            input.to_str().unwrap(),
+            "--by",
+            "城市",
+            "-o",
+            archive.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    assert!(archive.exists());
+}

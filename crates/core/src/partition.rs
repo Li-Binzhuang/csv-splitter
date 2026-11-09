@@ -143,26 +143,21 @@ fn write_partitions(
 ) -> io::Result<Vec<PathBuf>> {
     let delim = config.delimiter.byte();
     let file_size = std::fs::metadata(sorted)?.len();
-    let mut reader = RecordReader::new(
-        BufReader::with_capacity(buf_size, File::open(sorted)?),
-        buf_size,
-    );
+    // The sorted file keeps the source encoding, so decode while reading —
+    // otherwise a GBK file's header arrives as mojibake and the partition column
+    // is "not found".
+    let decoded = crate::encoding::open_decoded(sorted)?;
+    let mut reader = RecordReader::new(BufReader::with_capacity(buf_size, decoded), buf_size);
 
     let mut record = Vec::with_capacity(64 * 1024);
     if !reader.next_record(&mut record)? {
         return Ok(Vec::new());
     }
     let header = record.clone();
+    // `open_decoded` already produced UTF-8, so no second decode.
     let header_fields = parse_csv_record(&String::from_utf8_lossy(&header), delim);
-    let col_idx = header_fields
-        .iter()
-        .position(|h| h == &config.column)
-        .ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("Partition column '{}' not found", config.column),
-            )
-        })?;
+    let col_idx = crate::csv_reader::resolve_column(&config.column, &header_fields)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
 
     let ext = match config.compress_format {
         CompressFormat::Zip | CompressFormat::None => "csv".to_string(),

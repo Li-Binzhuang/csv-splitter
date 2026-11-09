@@ -108,14 +108,9 @@ pub fn search(
     } else {
         let mut found = Vec::new();
         for name in &spec.columns {
-            match headers.iter().position(|h| h == name) {
-                Some(i) => found.push(i),
-                None => {
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidInput,
-                        format!("column '{name}' not found"),
-                    ))
-                }
+            match crate::csv_reader::resolve_column(name, &headers) {
+                Ok(i) => found.push(i),
+                Err(e) => return Err(io::Error::new(io::ErrorKind::InvalidInput, e)),
             }
         }
         found

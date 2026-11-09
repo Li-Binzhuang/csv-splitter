@@ -126,12 +126,8 @@ pub fn external_sort_columns(
     let headers = parse_csv_record(&decode_cell(&record, encoding), delim);
     let mut resolved: Vec<(usize, bool)> = Vec::with_capacity(columns.len());
     for col in columns {
-        let idx = headers.iter().position(|h| h == &col.name).ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("Sort column '{}' not found", col.name),
-            )
-        })?;
+        let idx = crate::csv_reader::resolve_column(&col.name, &headers)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
         resolved.push((idx, col.descending));
     }
     if resolved.is_empty() {

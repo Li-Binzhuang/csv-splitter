@@ -57,6 +57,9 @@ pub struct ColumnProfile {
     pub longest: Option<String>,
     /// True when some value was rejected as non-numeric while parsing.
     pub mixed_types: bool,
+    /// Rows whose field count differed from the header. Reported on the first
+    /// column only (it is a property of the record, not of a field).
+    pub ragged: u64,
 }
 
 struct Acc {
@@ -198,6 +201,7 @@ impl Acc {
         ColumnProfile {
             name: name.to_string(),
             rows: self.rows,
+            ragged: 0,
             empty: self.empty,
             non_empty: self.non_empty,
             distinct: self.distinct.len() as u64,
@@ -249,10 +253,15 @@ pub fn profile(
     let mut cols: Vec<Acc> = (0..headers.len()).map(|_| Acc::new()).collect();
 
     let mut bytes_read = record.len() as u64;
+    let mut ragged: u64 = 0;
+    let width = headers.len();
     while records.next_record(&mut record)? {
         bytes_read += record.len() as u64;
         let text = String::from_utf8_lossy(&record);
         let fields = parse_csv_record(text.trim_end_matches(['\n', '\r']), delim);
+        if fields.len() != width {
+            ragged += 1;
+        }
         for (i, acc) in cols.iter_mut().enumerate() {
             let value = fields.get(i).map(String::as_str).unwrap_or("");
             acc.observe(value, cap);
@@ -262,11 +271,16 @@ pub fn profile(
         }
     }
 
-    let profiles: Vec<ColumnProfile> = headers
+    let mut profiles: Vec<ColumnProfile> = headers
         .iter()
         .zip(cols.iter_mut())
         .map(|(name, acc)| acc.finish(name))
         .collect();
+    // Report the ragged count once, on the first column: it describes the
+    // records, and repeating it per column would just be noise.
+    if let Some(first) = profiles.first_mut() {
+        first.ragged = ragged;
+    }
 
     tx.send(ProgressEvent::PhaseDone {
         phase: "Profiling columns".into(),
@@ -359,6 +373,14 @@ mod tests {
         let prof = profile(&p, Delimiter::Comma, 10, &tx).unwrap();
         assert!(prof[0].distinct_truncated);
         assert!(prof[0].distinct <= 10);
+    }
+
+    #[test]
+    fn ragged_rows_are_counted_once_on_the_first_column() {
+        // The middle row has an extra field: a real-world export defect.
+        let p = run("a,b\n1,x\n2,y,extra\n3,z\n", "ragged");
+        assert_eq!(p[0].ragged, 1);
+        assert_eq!(p[1].ragged, 0, "reported once, not per column");
     }
 
     #[test]

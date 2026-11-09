@@ -370,9 +370,10 @@ fn analyze(
                         .map(|(v, n)| format!(r#"[{},{}]"#, json_str(v), n))
                         .collect();
                     format!(
-                        r#"{{"name":{},"rows":{},"empty":{},"nonEmpty":{},"distinct":{},"distinctTruncated":{},"numeric":{},"mixedTypes":{},"top":[{}]}}"#,
+                        r#"{{"name":{},"rows":{},"ragged":{},"empty":{},"nonEmpty":{},"distinct":{},"distinctTruncated":{},"numeric":{},"mixedTypes":{},"top":[{}]}}"#,
                         json_str(&c.name),
                         c.rows,
+                        c.ragged,
                         c.empty,
                         c.non_empty,
                         c.distinct,

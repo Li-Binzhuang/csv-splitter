@@ -74,12 +74,8 @@ pub fn resolve(spec: &ReshapeSpec, headers: &[String]) -> io::Result<(Vec<usize>
     } else {
         let mut list = Vec::new();
         for name in &spec.keep {
-            let idx = headers.iter().position(|h| h == name).ok_or_else(|| {
-                io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    format!("column '{name}' not found"),
-                )
-            })?;
+            let idx = crate::csv_reader::resolve_column(name, headers)
+                .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
             list.push(idx);
         }
         list
@@ -97,12 +93,8 @@ pub fn resolve(spec: &ReshapeSpec, headers: &[String]) -> io::Result<(Vec<usize>
     }
 
     for name in &spec.drop {
-        let idx = headers.iter().position(|h| h == name).ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("column '{name}' not found"),
-            )
-        })?;
+        let idx = crate::csv_reader::resolve_column(name, headers)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
         indices.retain(|&i| i != idx);
         if indices.is_empty() {
             return Err(io::Error::new(
@@ -114,11 +106,8 @@ pub fn resolve(spec: &ReshapeSpec, headers: &[String]) -> io::Result<(Vec<usize>
 
     let mut names: Vec<String> = indices.iter().map(|&i| headers[i].clone()).collect();
     for (old, new) in &spec.rename {
-        let idx = names.iter().position(|n| n == old).ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("cannot rename '{old}': not in the output columns"),
-            )
+        let idx = crate::csv_reader::resolve_column(old, &names).map_err(|e| {
+            io::Error::new(io::ErrorKind::InvalidInput, format!("cannot rename: {e}"))
         })?;
         names[idx] = new.clone();
     }

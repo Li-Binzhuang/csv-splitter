@@ -74,12 +74,8 @@ pub fn dedupe(
     } else {
         let mut found = Vec::with_capacity(keys.len());
         for name in keys {
-            let idx = headers.iter().position(|h| h == name).ok_or_else(|| {
-                io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    format!("column '{name}' not found"),
-                )
-            })?;
+            let idx = crate::csv_reader::resolve_column(name, &headers)
+                .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
             found.push(idx);
         }
         found

@@ -412,6 +412,30 @@ curl "http://127.0.0.1:8787/meta?path=huge.csv"
 curl "http://127.0.0.1:8787/rows?path=huge.csv&start=18000000&count=20"
 ```
 
+## 脏数据 / Dirty files
+
+真实世界的 CSV 不是教科书里的样子。这一行是为了让工具**告诉你哪里脏**，
+而不是悄悄算出一个错答案：
+
+```bash
+$ csv-splitter analyze messy.csv
+⚠ 27474 of 64176 rows have a field count different from the header — columns may be shifted on those rows
+column                    rows    empty  distinct  summary
+id                       64176        0     50001  text (mixed with numbers): 备注 (9176), 1098 (2), ...
+```
+
+| 情况 | 现在的行为 |
+|---|---|
+| 表头带多余空格（`城市 `） | 按精确名找；找不到时**唯一**的 trim 匹配会被接受，多个匹配则报 ambiguous |
+| 列名写错 | `column 'zzz' not found; available columns: ...` 或 `did you mean 'amount'`，而不是空结果 |
+| 行长与表头不一致 | `analyze` 显示 ragged 行数；行本身按原样展示（不擅自补齐） |
+| GBK / CRLF / BOM | 自动探测并解码，`/meta` 会报 `"encoding":"gbk"` |
+| 引号内换行 | 一条记录；记录数与 Python `csv` 模块逐行比对一致 |
+
+**编码约定**（重要）：只搬运字节的命令（`split`、`merge`、`sort`、`filter -o`）**保持源编码**；
+改变列或值的命令（`columns`、`groupby`、`partition`、`dedupe`）输出 **UTF-8**。
+混着用时请留意。
+
 ## 基准 / Benchmarks
 
 ```bash

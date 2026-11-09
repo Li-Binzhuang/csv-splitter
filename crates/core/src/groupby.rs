@@ -421,12 +421,8 @@ pub fn groupby(
 fn resolve(headers: &[String], names: &[String]) -> io::Result<Vec<usize>> {
     let mut out = Vec::with_capacity(names.len());
     for name in names {
-        let idx = headers.iter().position(|h| h == name).ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("column '{name}' not found"),
-            )
-        })?;
+        let idx = crate::csv_reader::resolve_column(name, headers)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
         out.push(idx);
     }
     Ok(out)

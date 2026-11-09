@@ -179,15 +179,8 @@ pub fn scan(
         return Err(io::Error::new(io::ErrorKind::InvalidData, "empty file"));
     }
     let headers = parse_csv_record(&String::from_utf8_lossy(&record), delim);
-    let col_idx = headers
-        .iter()
-        .position(|h| h == &spec.column)
-        .ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!("column '{}' not found", spec.column),
-            )
-        })?;
+    let col_idx = crate::csv_reader::resolve_column(&spec.column, &headers)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
     tx.send(ProgressEvent::PhaseStart {
         phase: format!("Filtering {}", spec.column),
         total_bytes: std::fs::metadata(path).map(|m| m.len()).unwrap_or(0),
@@ -252,15 +245,8 @@ impl FilterSet {
     fn resolve(&self, headers: &[String]) -> io::Result<Vec<(String, usize)>> {
         let mut out = Vec::with_capacity(self.specs.len());
         for spec in &self.specs {
-            let idx = headers
-                .iter()
-                .position(|h| h == &spec.column)
-                .ok_or_else(|| {
-                    io::Error::new(
-                        io::ErrorKind::InvalidInput,
-                        format!("column '{}' not found", spec.column),
-                    )
-                })?;
+            let idx = crate::csv_reader::resolve_column(&spec.column, headers)
+                .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
             out.push((spec.column.clone(), idx));
         }
         Ok(out)
