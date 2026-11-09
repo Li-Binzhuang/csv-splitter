@@ -228,6 +228,32 @@ curl "http://127.0.0.1:8787/meta?path=huge.csv"
 curl "http://127.0.0.1:8787/rows?path=huge.csv&start=18000000&count=20"
 ```
 
+## 基准 / Benchmarks
+
+```bash
+cargo bench -p csv-splitter-core          # 输出真实数字（criterion）
+cargo test -p csv-splitter-core --test performance   # 回归护栏，0.2 秒
+```
+
+criterion 只报告不判定——共享 CI 跑者的抖动会让硬阈值变成噪声源。
+真正会让构建失败的是 `tests/performance.rs`，它的阈值刻意放宽约 50 倍，
+只为拦住**病态退化**（误写成 O(n²)、丢了缓冲、每行一次系统调用）：
+
+| 护栏 | 断言 |
+|------|------|
+| 索引构建 | > 20 MB/s（实测 ~2 GB/s 热缓存） |
+| 随机访问 | 尾行绝对 < 100 ms，且不比首行慢 20 倍以上 |
+| 拆分 | > 10 MB/s，产物大小 > 输入一半 |
+
+本机 criterion 基线（500k 行 / 14 MB）：
+
+```
+index_build/100000    ~60 ms     (~230 MB/s 冷)
+random_access/middle  ~39 µs     (20 行)
+split/1               ~34 ms     (414 MiB/s)
+split/4               ~47 ms     (299 MiB/s)
+```
+
 ## 性能 / Performance
 
 一台普通笔记本上的实测（`cargo build --release` 同理，debug 构建更快但内存相近）：

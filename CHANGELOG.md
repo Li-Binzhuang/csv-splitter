@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.16.0] — 2026-11-09
+
+### Added
+
+- **criterion benchmarks** (`crates/core/benches/throughput.rs`): index build,
+  random access at head/middle/tail, and split throughput at 1 and 4 chunks.
+  Informational only — shared runners are too noisy for thresholds.
+- **Performance guard** (`crates/core/tests/performance.rs`, runs in 0.2 s):
+  fails the build only on pathological regressions (~50x slower than measured),
+  so it catches an accidental O(n²) or a lost buffer without flaking on CI.
+
+### Changed
+
+- **CI split into two jobs.** DuckDB is statically bundled and takes ~10 minutes
+  to compile from cold, which used to delay feedback on the engine — the part
+  that changes most. `engine` (core + gui, no DuckDB, includes fmt/clippy/perf
+  guard) now runs independently and finishes in minutes; `cli` (DuckDB, HTTP API
+  tests, benchmark compile check) follows it.
+
 ## [0.15.0] — 2026-11-09
 
 ### Verified at 10 GB

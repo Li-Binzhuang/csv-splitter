@@ -10,13 +10,16 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  check:
+  # The engine is where most of the code lives and it has no heavy
+  # dependencies, so this job answers in a couple of minutes. Clippy runs here
+  # for core/gui; the workspace-wide run happens in `cli` below.
+  engine:
     runs-on: ubuntu-22.04
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
 
       - name: Cache cargo
         uses: actions/cache@v4
@@ -25,19 +28,59 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: linux-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: linux-cargo-
+          key: linux-engine-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            linux-engine-
+            linux-cargo-
 
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libxdo-dev fonts-noto-cjk
 
-      - name: Check
-        run: cargo check --workspace
+      - name: Format
+        run: cargo fmt --all -- --check
 
-      - name: Clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Test engine (no DuckDB)
+        run: cargo test -p csv-splitter-core -p csv-splitter-gui
 
-      - name: Test
-        run: cargo test --workspace
+      - name: Performance guard
+        run: cargo test -p csv-splitter-core --test performance
+
+      - name: Clippy engine
+        run: cargo clippy -p csv-splitter-core -p csv-splitter-gui --all-targets -- -D warnings
+
+  # DuckDB is statically bundled and takes ~10 minutes to compile from cold, so
+  # it gets its own job: a slow engine build should not delay engine feedback.
+  cli:
+    runs-on: ubuntu-22.04
+    needs: engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Cache cargo (duckdb build is the expensive part)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: linux-cli-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            linux-cli-
+            linux-cargo-
+
+      - name: Check CLI
+        run: cargo check -p csv-splitter-cli --all-targets
+
+      - name: Clippy CLI
+        run: cargo clippy -p csv-splitter-cli --all-targets -- -D warnings
+
+      - name: Test CLI (includes the HTTP API)
+        run: cargo test -p csv-splitter-cli
+
+      - name: Benchmarks compile
+        run: cargo bench -p csv-splitter-core --no-run

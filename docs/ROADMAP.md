@@ -50,7 +50,7 @@
 
 ### M5 · 规模化 — `planned`
 - [ ] 生成 10 GB 合成数据做压测与内存基线
-- [ ] 基准测试（criterion）纳入 CI
+- [x] 基准测试（criterion）+ 回归护栏 `tests/performance.rs`；CI 拆分为 engine / cli 两个 job
 - [x] 写操作任务化：`POST /split` `POST /merge` + job id 轮询
 - [ ] 多线程切分（当前单读多写）
 - [ ] Windows / Linux 上的容错（路径、文件锁）

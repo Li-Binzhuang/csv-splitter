@@ -20,3 +20,10 @@ duckdb = { version = "1", features = ["bundled"], optional = true }
 [features]
 default = []
 sql = ["dep:duckdb"]
+
+[dev-dependencies]
+criterion = "0.8.2"
+
+[[bench]]
+name = "throughput"
+harness = false
