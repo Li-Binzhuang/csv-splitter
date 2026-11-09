@@ -25,7 +25,7 @@ use csv_splitter_core::filter::{scan as filter_scan, FilterSpec};
 use csv_splitter_core::jobs::JobRegistry;
 use csv_splitter_core::merge::merge_archive;
 use csv_splitter_core::preview::compute_column_stats;
-use csv_splitter_core::splitter::run_split;
+use csv_splitter_core::splitter::run_split_threads;
 use csv_splitter_core::sql;
 use csv_splitter_core::viewer::WindowViewer;
 use csv_splitter_core::{CompressFormat, Delimiter, ProgressEvent, SplitConfig};
@@ -243,6 +243,11 @@ fn start_split(
         }
     };
 
+    let threads: usize = params
+        .get("threads")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(1)
+        .max(1);
     let config = SplitConfig {
         input,
         output: Some(output),
@@ -260,7 +265,7 @@ fn start_split(
         sort_descending: false,
     };
 
-    let id = jobs.submit("split", move |tx| run_split(config, tx));
+    let id = jobs.submit("split", move |tx| run_split_threads(config, threads, tx));
     respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
 }
 

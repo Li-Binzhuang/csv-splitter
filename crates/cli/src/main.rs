@@ -12,7 +12,7 @@ use csv_splitter_core::index::{SparseIndex, DEFAULT_INTERVAL};
 use csv_splitter_core::merge::merge_archive;
 use csv_splitter_core::partition::{run_partition, PartitionConfig};
 use csv_splitter_core::preview::{compute_column_stats, load_preview};
-use csv_splitter_core::splitter::run_split;
+use csv_splitter_core::splitter::run_split_threads;
 use csv_splitter_core::sql::{self, DEFAULT_LIMIT};
 use csv_splitter_core::*;
 use std::io::Write;
@@ -95,6 +95,7 @@ SPLIT OPTIONS
       --sort <column>     External merge sort by column before splitting
       --desc              Sort descending
       --buf-mb <n>        Total I/O buffer budget in MB (default: 64)
+  -t, --threads <n>       Reader threads (default: 1; try 4 on big files)
 
 MERGE OPTIONS
   -o, --out <path>        Output CSV (required)
@@ -338,10 +339,10 @@ fn spawn_reporter(
     })
 }
 
-fn run_split_and_wait(config: SplitConfig, quiet: bool) -> Result<PathBuf, String> {
+fn run_split_and_wait(config: SplitConfig, threads: usize, quiet: bool) -> Result<PathBuf, String> {
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter(rx, quiet);
-    run_split(config, tx);
+    run_split_threads(config, threads, tx);
     let result = reporter
         .join()
         .map_err(|_| "reporter thread panicked".to_string())?;
@@ -368,6 +369,7 @@ fn cmd_split(args: &[String]) -> i32 {
     let mut desc = false;
     let mut delim = "auto".to_string();
     let mut buf_mb = 64usize;
+    let mut threads = 1usize;
     let mut quiet = false;
 
     while let Some(arg) = p.next() {
@@ -394,6 +396,12 @@ fn cmd_split(args: &[String]) -> i32 {
                 "--sort" => sort = Some(p.value("--sort")?),
                 "--desc" => desc = true,
                 "-d" | "--delim" => delim = p.value("--delim")?,
+                "-t" | "--threads" => {
+                    threads = p
+                        .value("--threads")?
+                        .parse()
+                        .map_err(|_| "--threads must be a number".to_string())?
+                }
                 "--buf-mb" => {
                     buf_mb = p
                         .value("--buf-mb")?
@@ -539,7 +547,7 @@ fn cmd_split(args: &[String]) -> i32 {
         sort_descending: desc,
     };
 
-    let result = run_split_and_wait(config, quiet);
+    let result = run_split_and_wait(config, threads.max(1), quiet);
     if let Some(p) = temp_columns {
         std::fs::remove_file(p).ok();
     }
@@ -1458,7 +1466,7 @@ fn cmd_verify(args: &[String]) -> i32 {
         sort_descending: false,
     };
 
-    let split_ok = run_split_and_wait(config, quiet);
+    let split_ok = run_split_and_wait(config, 1, quiet);
     if let Err(e) = split_ok {
         eprintln!("✗ split failed: {e}");
         std::fs::remove_dir_all(&work).ok();

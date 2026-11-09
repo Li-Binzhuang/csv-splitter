@@ -4,6 +4,7 @@ use crate::decompress::decompress_to_csv;
 use crate::encoding::{decode_record, detect, TextEncoding};
 use crate::pack::{pack_tar, pack_zip};
 use crate::sort::external_sort;
+use crate::split_parallel::CHECKPOINT_INTERVAL;
 use crate::tempdir::TempDir;
 use crate::types::*;
 use std::collections::HashSet;
@@ -30,12 +31,17 @@ fn reader_budget(total: usize) -> usize {
 
 /// Run the full split pipeline. Blocking — call from background thread.
 pub fn run_split(config: SplitConfig, tx: ProgressSender) {
-    if let Err(e) = run_inner(config, &tx) {
+    run_split_threads(config, 1, tx);
+}
+
+/// Split with `threads` reader threads. `1` is the sequential path.
+pub fn run_split_threads(config: SplitConfig, threads: usize, tx: ProgressSender) {
+    if let Err(e) = run_inner(config, threads.max(1), &tx) {
         let _ = tx.send(ProgressEvent::Error(e.to_string()));
     }
 }
 
-fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
+fn run_inner(config: SplitConfig, threads: usize, tx: &ProgressSender) -> io::Result<()> {
     if config.splits == 0 {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -145,21 +151,41 @@ fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
     })
     .ok();
 
-    let compressed = split_filter_compress(
-        &work_path,
-        tmp_dir.path(),
-        &stem,
-        splits,
-        data_records,
-        &plan,
-        &desired_cols,
-        encoding,
-        config.compress_format,
-        config.compress_level,
-        config.delimiter,
-        buf_size,
-        tx,
-    )?;
+    let compressed = if threads > 1 {
+        split_filter_compress_parallel(
+            &work_path,
+            tmp_dir.path(),
+            &stem,
+            splits,
+            data_records,
+            &plan,
+            &desired_cols,
+            encoding,
+            config.compress_format,
+            config.compress_level,
+            config.delimiter,
+            buf_size,
+            threads,
+            &scan.checkpoints,
+            tx,
+        )?
+    } else {
+        split_filter_compress(
+            &work_path,
+            tmp_dir.path(),
+            &stem,
+            splits,
+            data_records,
+            &plan,
+            &desired_cols,
+            encoding,
+            config.compress_format,
+            config.compress_level,
+            config.delimiter,
+            buf_size,
+            tx,
+        )?
+    };
     tx.send(ProgressEvent::PhaseDone {
         phase: "Splitting & compressing".into(),
     })
@@ -235,12 +261,15 @@ fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
 }
 
 /// What a single pass over the file learned about it.
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Debug, Default)]
 struct Scan {
     /// Logical records, header included.
     records: u64,
     /// Bytes of data records (header excluded).
     data_bytes: u64,
+    /// Absolute offset of every CHECKPOINT_INTERVAL-th data record. These are
+    /// known-safe seek targets because the scanner was outside quotes there.
+    checkpoints: Vec<u64>,
 }
 
 fn scan_records(
@@ -258,14 +287,21 @@ fn scan_records(
     let mut scan = Scan::default();
     let mut header = true;
     let mut bytes: u64 = 0;
+    // Absolute position of the record we are about to read.
+    let mut pos: u64 = 0;
     while reader.next_record(&mut scratch)? {
         if header {
             header = false;
+            pos += scratch.len() as u64;
             continue;
+        }
+        if scan.records.is_multiple_of(CHECKPOINT_INTERVAL) {
+            scan.checkpoints.push(pos);
         }
         scan.records += 1;
         scan.data_bytes += scratch.len() as u64;
         bytes += scratch.len() as u64;
+        pos += scratch.len() as u64;
         if bytes % (1 << 20) < scratch.len() as u64 {
             tx.send(ProgressEvent::Progress { bytes }).ok();
         }
@@ -514,6 +550,126 @@ fn split_filter_compress(
 
 /// Distribute `total` records over `parts` chunks, front-loading the remainder so
 /// the difference between the largest and smallest chunk is exactly one record.
+/// Parallel variant of [`split_filter_compress`]: one reader per group of chunks.
+#[allow(clippy::too_many_arguments)]
+fn split_filter_compress_parallel(
+    input: &Path,
+    tmp_dir: &Path,
+    stem: &str,
+    splits: usize,
+    data_records: u64,
+    _plan: &SplitPlan,
+    desired_cols: &Option<HashSet<String>>,
+    encoding: TextEncoding,
+    format: CompressFormat,
+    level: i32,
+    delimiter: Delimiter,
+    buf_size: usize,
+    threads: usize,
+    checkpoints: &[u64],
+    tx: &ProgressSender,
+) -> io::Result<Vec<PathBuf>> {
+    let delim = delimiter.byte();
+    let (col_indices, header) = read_header_and_indices(input, desired_cols, delim, encoding, tx)?;
+    let targets = split_targets(data_records, splits);
+    let jobs = crate::split_parallel::plan_readers(&targets, threads, checkpoints);
+
+    let mut handles = Vec::with_capacity(jobs.len());
+    for job in jobs {
+        let sender = tx.clone();
+        let opts = crate::split_parallel::ReaderOptions {
+            input: input.to_path_buf(),
+            tmp_dir: tmp_dir.to_path_buf(),
+            stem: stem.to_string(),
+            header: header.clone(),
+            col_indices: col_indices.clone(),
+            encoding,
+            format,
+            level,
+            delimiter,
+            buf_size,
+        };
+        handles.push(thread::spawn(move || {
+            let first = job.chunks.first().map(|c| c.index).unwrap_or(0);
+            crate::split_parallel::run_reader(&job, &opts, &sender).map(|paths| (first, paths))
+        }));
+    }
+
+    let mut ordered: Vec<(usize, Vec<PathBuf>)> = Vec::with_capacity(handles.len());
+    for h in handles {
+        ordered.push(
+            h.join()
+                .map_err(|_| io::Error::other("reader panicked"))??,
+        );
+    }
+    ordered.sort_by_key(|(first, _)| *first);
+
+    let mut out = Vec::with_capacity(splits);
+    for (_, paths) in ordered {
+        out.extend(paths);
+    }
+    if out.len() != splits {
+        return Err(io::Error::other(format!(
+            "produced {} chunks, expected {splits}",
+            out.len()
+        )));
+    }
+    Ok(out)
+}
+
+/// Header bytes (as written to every chunk) plus the column indices to keep.
+fn read_header_and_indices(
+    input: &Path,
+    desired_cols: &Option<HashSet<String>>,
+    delim: u8,
+    encoding: TextEncoding,
+    tx: &ProgressSender,
+) -> io::Result<(Option<Vec<usize>>, Vec<u8>)> {
+    let buf = 4 * 1024 * 1024;
+    let mut reader = RecordReader::new(BufReader::with_capacity(buf, File::open(input)?), buf);
+    let mut record = Vec::with_capacity(64 * 1024);
+    if !reader.next_record(&mut record)? {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "Empty file"));
+    }
+    let mut header_text = decode_record(&record, encoding);
+    while header_text.ends_with(['\n', '\r']) {
+        header_text.pop();
+    }
+    let header_fields = parse_csv_record(&header_text, delim);
+
+    match desired_cols {
+        Some(desired) => {
+            let indices: Vec<usize> = header_fields
+                .iter()
+                .enumerate()
+                .filter(|(_, name)| desired.contains(name.as_str()))
+                .map(|(i, _)| i)
+                .collect();
+            tx.send(ProgressEvent::Info(format!(
+                "Matched {}/{} columns",
+                indices.len(),
+                header_fields.len()
+            )))
+            .ok();
+            if indices.is_empty() {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "No matching columns",
+                ));
+            }
+            let names: Vec<&str> = indices.iter().map(|&i| header_fields[i].as_str()).collect();
+            Ok((Some(indices), join_csv_line(&names, delim).into_bytes()))
+        }
+        None => {
+            let mut raw = record.clone();
+            if !raw.ends_with(b"\n") {
+                raw.push(b'\n');
+            }
+            Ok((None, raw))
+        }
+    }
+}
+
 fn split_targets(total: u64, parts: usize) -> Vec<u64> {
     let parts = parts.max(1) as u64;
     let base = total / parts;

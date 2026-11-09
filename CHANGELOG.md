@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.19.0] — 2026-11-09
+
+### Added
+
+- **Parallel splitting** (`--threads N`, `threads=` on `POST /split`): several
+  readers, each owning a contiguous run of chunks. 1 GB / 8 chunks went from
+  2.8 s to **1.0 s** with 4 threads (zstd: 3.5 s → 1.5 s); 8 threads add nothing
+  on an M1 Pro.
+  - The hard part is not parallelism but *where to start*: seeking to
+    `file_len/n` lands mid-record, possibly inside a quoted field containing a
+    newline. The counting pass now records checkpoints (byte offset every 1000
+    records, known outside quotes), readers start from one and each owns whole
+    chunks, so no record is split, duplicated or reordered.
+  - Verified by a test that splits the same file with 1/2/4/8 threads and
+    requires byte-identical output after merging.
+
+### Fixed
+
+- The performance guard was flaky when the whole workspace ran in parallel: all
+  three tests built their own 10 MB fixture while measuring throughput. One
+  shared fixture plus best-of-three measurement removed the noise (three
+  consecutive full runs clean).
+
 ## [0.18.0] — 2026-11-09
 
 ### Added

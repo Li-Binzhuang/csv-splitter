@@ -259,3 +259,65 @@ fn by_size_produces_roughly_equal_chunks() {
     merge_archive(&archive, &merged, &tx).unwrap();
     assert_eq!(std::fs::read(&merged).unwrap(), csv.as_bytes());
 }
+
+/// Parallel splits must produce the same bytes as a sequential one — no record
+/// duplicated, dropped or reordered at a reader boundary.
+#[test]
+fn parallel_split_round_trips_like_sequential() {
+    use csv_splitter_core::splitter::run_split_threads;
+
+    let dir = TempDir::new("par");
+
+    // Trailing field sometimes contains a quoted newline: that is exactly the
+    // case a naive byte-range split would tear in half.
+    let mut csv = String::from("id,city,note\n");
+    for i in 0..5_000 {
+        let note = if i % 7 == 0 { "\"a\nb\"" } else { "ok" };
+        csv.push_str(&format!("{i},C{},{note}\n", i % 5));
+    }
+    let input = dir.join("data.csv");
+    std::fs::write(&input, &csv).unwrap();
+
+    let mut baseline: Option<Vec<u8>> = None;
+    for threads in [1usize, 2, 4, 8] {
+        let archive = dir.join(&format!("out_{threads}.tar"));
+        let merged = dir.join(&format!("merged_{threads}.csv"));
+        let mut cfg = base_config(&input, &archive);
+        cfg.splits = 8;
+        cfg.compress_format = CompressFormat::None;
+
+        let (tx, rx) = mpsc::channel();
+        let handle = std::thread::spawn(move || run_split_threads(cfg, threads, tx));
+        let events: Vec<ProgressEvent> = rx.iter().collect();
+        handle.join().unwrap();
+        assert!(!has_error(&events), "threads={threads}: {events:?}");
+
+        let (tx2, _rx2) = mpsc::channel();
+        merge_archive(&archive, &merged, &tx2).unwrap();
+        let text = std::fs::read_to_string(&merged).unwrap();
+
+        // Records are in file order and complete.
+        assert_eq!(text.lines().filter(|l| l.starts_with("id,")).count(), 1);
+        match &baseline {
+            None => {
+                // Sequential output is the reference (already proven lossless
+                // for this fixture by the other tests in this file).
+                let seq_archive = dir.join("seq.tar");
+                let seq_merged = dir.join("seq.csv");
+                let mut cfg = base_config(&input, &seq_archive);
+                cfg.splits = 8;
+                cfg.compress_format = CompressFormat::None;
+                let (tx, rx) = mpsc::channel();
+                let h = std::thread::spawn(move || run_split(cfg, tx));
+                let _: Vec<ProgressEvent> = rx.iter().collect();
+                h.join().unwrap();
+                let (tx2, _rx2) = mpsc::channel();
+                merge_archive(&seq_archive, &seq_merged, &tx2).unwrap();
+                let seq = std::fs::read(&seq_merged).unwrap();
+                baseline = Some(seq.clone());
+                assert_eq!(std::fs::read(&merged).unwrap(), seq, "threads={threads}");
+            }
+            Some(seq) => assert_eq!(std::fs::read(&merged).unwrap(), *seq, "threads={threads}"),
+        }
+    }
+}

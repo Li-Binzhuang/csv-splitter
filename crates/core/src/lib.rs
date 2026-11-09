@@ -11,6 +11,7 @@ pub mod pack;
 pub mod partition;
 pub mod preview;
 pub mod sort;
+pub mod split_parallel;
 pub mod splitter;
 #[cfg(feature = "sql")]
 pub mod sql;
