@@ -229,6 +229,17 @@ mod tests {
     use super::*;
     use std::path::PathBuf;
 
+    /// Per-process unique suffix for temp directories.
+    ///
+    /// `SystemTime::now()` only has microsecond resolution on macOS, so a dozen
+    /// tests starting at once can read the same value and share a directory — one
+    /// test's cleanup then deletes the other's files mid-run.
+    fn unique_seq() -> u64 {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static SEQ: AtomicU64 = AtomicU64::new(0);
+        SEQ.fetch_add(1, Ordering::Relaxed)
+    }
+
     struct TempDir(PathBuf);
     impl TempDir {
         fn new(tag: &str) -> Self {
@@ -239,6 +250,7 @@ mod tests {
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
                     .as_nanos()
+                    + unique_seq() as u128
             ));
             std::fs::create_dir_all(&dir).unwrap();
             Self(dir)

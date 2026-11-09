@@ -4,6 +4,7 @@ pub mod decompress;
 pub mod encoding;
 pub mod filter;
 pub mod index;
+pub mod jobs;
 pub mod merge;
 pub mod pack;
 pub mod partition;

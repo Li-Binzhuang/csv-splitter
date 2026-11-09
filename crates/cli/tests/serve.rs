@@ -5,6 +5,17 @@ use std::net::TcpStream;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 
+/// Per-process unique suffix for temp directories.
+///
+/// `SystemTime::now()` only has microsecond resolution on macOS, so a dozen
+/// tests starting at once can read the same value and share a directory — one
+/// test's cleanup then deletes the other's files mid-run.
+fn unique_seq() -> u64 {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static SEQ: AtomicU64 = AtomicU64::new(0);
+    SEQ.fetch_add(1, Ordering::Relaxed)
+}
+
 struct TempDir(PathBuf);
 impl TempDir {
     fn new(tag: &str) -> Self {
@@ -15,6 +26,7 @@ impl TempDir {
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_nanos()
+                + unique_seq() as u128
         ));
         std::fs::create_dir_all(&dir).unwrap();
         Self(dir)
@@ -188,6 +200,127 @@ fn query_endpoint_runs_sql_and_hides_writes() {
     let (status, body) = get(&server.addr, "/query?path=data.csv&sql=DROP%20TABLE%20t");
     assert_eq!(status, 400, "{body}");
     assert!(body.contains("only SELECT"), "{body}");
+
+    drop(server);
+}
+
+fn post(addr: &str, path: &str) -> (u16, String) {
+    let mut stream = TcpStream::connect(addr).unwrap();
+    write!(
+        stream,
+        "POST {path} HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+    )
+    .unwrap();
+    let mut raw = String::new();
+    stream.read_to_string(&mut raw).unwrap();
+    let status: u16 = raw
+        .split_whitespace()
+        .nth(1)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0);
+    let body = raw.split("\r\n\r\n").nth(1).unwrap_or("").to_string();
+    (status, body)
+}
+
+fn wait_for_job(addr: &str, id: &str) -> String {
+    let mut last = String::new();
+    for _ in 0..200 {
+        let (status, body) = get(addr, &format!("/job?id={id}"));
+        assert_eq!(status, 200, "{body}");
+        if body.contains("\"state\":\"done\"") || body.contains("\"state\":\"failed\"") {
+            return body;
+        }
+        last = body;
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
+    panic!("job {id} did not finish; last status: {last}");
+}
+
+#[test]
+fn split_runs_as_a_job() {
+    let dir = TempDir::new("jobsplit");
+    let mut csv = String::from("id,city\n");
+    for i in 0..5_000 {
+        csv.push_str(&format!("{i},C{}\n", i % 7));
+    }
+    std::fs::write(dir.join("data.csv"), csv).unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/split?path=data.csv&splits=3&format=none&out=parts.tar",
+    );
+    assert_eq!(status, 202, "{body}");
+    let id = body
+        .split("\"job\":\"")
+        .nth(1)
+        .and_then(|s| s.split('"').next())
+        .expect("job id")
+        .to_string();
+
+    let done = wait_for_job(&server.addr, &id);
+    assert!(done.contains("\"state\":\"done\""), "{done}");
+    assert!(done.contains("parts.tar"), "{done}");
+    assert!(dir.join("parts.tar").exists());
+
+    drop(server);
+}
+
+#[test]
+fn merge_job_round_trips_the_file() {
+    let dir = TempDir::new("jobmerge");
+    let mut csv = String::from("id,city\n");
+    for i in 0..2_000 {
+        csv.push_str(&format!("{i},C{}\n", i % 5));
+    }
+    std::fs::write(dir.join("data.csv"), csv.clone()).unwrap();
+    let server = start(&dir.0.clone());
+
+    let (_, body) = post(
+        &server.addr,
+        "/split?path=data.csv&splits=2&format=none&out=p.tar",
+    );
+    let id = body
+        .split("\"job\":\"")
+        .nth(1)
+        .and_then(|s| s.split('"').next())
+        .unwrap()
+        .to_string();
+    let done = wait_for_job(&server.addr, &id);
+    assert!(done.contains("\"state\":\"done\""), "{done}");
+
+    let (status, body) = post(&server.addr, "/merge?path=p.tar&out=restored.csv");
+    assert_eq!(status, 202, "{body}");
+    let mid = body
+        .split("\"job\":\"")
+        .nth(1)
+        .and_then(|s| s.split('"').next())
+        .unwrap()
+        .to_string();
+    let done = wait_for_job(&server.addr, &mid);
+    assert!(done.contains("\"state\":\"done\""), "{done}");
+
+    assert_eq!(
+        std::fs::read_to_string(dir.join("restored.csv")).unwrap(),
+        csv
+    );
+    drop(server);
+}
+
+#[test]
+fn write_endpoints_refuse_paths_outside_root() {
+    let dir = TempDir::new("jobescape");
+    std::fs::write(dir.join("data.csv"), "id\n1\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, _) = post(&server.addr, "/split?path=data.csv&out=../../tmp/evil.tar");
+    assert_eq!(status, 400);
+
+    let (status, _) = post(&server.addr, "/split?path=../../etc/passwd&out=x.tar");
+    assert_eq!(status, 400);
+
+    let (status, _) = get(&server.addr, "/job?id=nope");
+    assert_eq!(status, 404);
 
     drop(server);
 }

@@ -138,6 +138,26 @@ csv-splitter convert export.csv -o export.utf8.csv     # 自动识别来源编�
 csv-splitter index export.utf8.csv
 ```
 
+### 长任务 / Long-running jobs
+
+拆分、合并这类动辄几分钟的操作不占连接：POST 提交，立刻拿到 job id，之后轮询。
+
+```bash
+# 提交
+curl -X POST "http://127.0.0.1:8787/split?path=big.csv&splits=8&format=zst&out=parts.tar"
+# => {"job":"job1a2b3c4d"}
+
+# 轮询（fraction 0..1，elapsed 秒，messages 是最近 20 条阶段信息）
+curl "http://127.0.0.1:8787/job?id=job1a2b3c4d"
+# => {"state":"running","phase":"Splitting & compressing","progress":52428800,"total":134217728,"fraction":0.391,...}
+
+curl "http://127.0.0.1:8787/jobs"     # 最近 50 个任务
+```
+
+- 输出路径同样受 `--root` 约束：`out=../../tmp/x.tar` 返回 400
+- 任务跑在自己线程上，客户端断开不影响它
+- 完成的任务保留最近 50 个，运行中的不会被回收
+
 ## SQL / 分析
 
 手写 GROUP BY、窗口函数、类型推断是这类工具最终烂掉的原因。这里把 **DuckDB** 接进来——
@@ -189,6 +209,9 @@ csv-splitter serve --root ~/data --addr 127.0.0.1:8787
 | `GET /stats?path=REL&sample=N` | 列统计（唯一值 / 空值 / Top N） |
 | `GET /filter?path=REL&where=col=value` | 全表筛选，返回命中的行号（1 起，不含表头） |
 | `GET /query?path=REL&sql=SELECT...` | 对文件跑只读 SQL（DuckDB） |
+| `POST /split?path=REL&splits=N&format=zst&out=REL` | 提交拆分任务，返回 job id |
+| `POST /merge?path=REL&out=REL` | 提交合并任务，返回 job id |
+| `GET /job?id=...` / `GET /jobs` | 任务状态 / 近期任务列表 |
 
 约束与安全：
 

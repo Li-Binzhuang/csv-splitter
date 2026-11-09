@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.13.0] — 2026-11-09
+
+### Added
+
+- **Background jobs** (`crates/core/src/jobs.rs`): a job registry with progress,
+  phase, fraction, messages, output and error. A 10 GB split takes minutes, so
+  the HTTP handler returns a job id and the client polls — the work is not tied
+  to the connection.
+- Write endpoints: `POST /split`, `POST /merge` (both 202 + job id),
+  `GET /job?id=`, `GET /jobs`. Output paths must stay inside `--root`, same rule
+  as reads. Finished jobs are retained (50) and running ones are never evicted.
+
+### Fixed
+
+- **Flaky integration test**: every test used `SystemTime::now().as_nanos()` for
+  its temp directory, and macOS only resolves to microseconds — a dozen parallel
+  tests could read the same value, share a directory, and delete each other's
+  files mid-run. `roundtrip_plain` failed once this way. All helpers now mix in
+  an atomic counter; the suite ran clean four times in a row afterwards.
+
 ## [0.12.0] — 2026-11-09
 
 ### Added

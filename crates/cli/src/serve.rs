@@ -12,12 +12,20 @@
 //!   GET /stats?path=REL&sample=N
 //!   GET /filter?path=REL&where=col=value&limit=N
 //!   GET /query?path=REL&sql=SELECT...&limit=N
+//!
+//! Write endpoints return a job id instead of blocking:
+//!   POST /split?path=REL&splits=N&format=zst&out=REL   -> {"job":"..."}
+//!   POST /merge?path=REL&out=REL                        -> {"job":"..."}
+//!   GET  /job?id=...    (poll)      GET /jobs  (list)
 
 use csv_splitter_core::filter::{scan as filter_scan, FilterSpec};
+use csv_splitter_core::jobs::JobRegistry;
+use csv_splitter_core::merge::merge_archive;
 use csv_splitter_core::preview::compute_column_stats;
+use csv_splitter_core::splitter::run_split;
 use csv_splitter_core::sql;
 use csv_splitter_core::viewer::WindowViewer;
-use csv_splitter_core::{Delimiter, ProgressEvent};
+use csv_splitter_core::{CompressFormat, Delimiter, ProgressEvent, SplitConfig};
 use std::collections::HashMap;
 use std::io::{self, BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
@@ -50,20 +58,22 @@ pub fn run(cfg: ServerConfig) -> io::Result<()> {
 /// Serve until the listener fails. Exposed for tests, which bind port 0.
 pub fn serve_on(listener: TcpListener, root: PathBuf) -> io::Result<()> {
     let root = Arc::new(root);
+    let jobs = JobRegistry::new();
     for stream in listener.incoming() {
         let stream = match stream {
             Ok(s) => s,
             Err(_) => continue,
         };
         let root = Arc::clone(&root);
+        let jobs = jobs.clone();
         std::thread::spawn(move || {
-            let _ = handle(stream, &root);
+            let _ = handle(stream, &root, &jobs);
         });
     }
     Ok(())
 }
 
-fn handle(mut stream: TcpStream, root: &Path) -> io::Result<()> {
+fn handle(mut stream: TcpStream, root: &Path, jobs: &JobRegistry) -> io::Result<()> {
     let mut reader = BufReader::new(stream.try_clone()?);
     let mut request_line = String::new();
     if reader.read_line(&mut request_line)? == 0 {
@@ -88,11 +98,20 @@ fn handle(mut stream: TcpStream, root: &Path) -> io::Result<()> {
     if method == "OPTIONS" {
         return respond(&mut stream, 204, "");
     }
+    let params = parse_query(query_string);
+
+    // Writes are POST; everything else is a read.
+    if method == "POST" {
+        return match path {
+            "/split" => start_split(&mut stream, root, jobs, &params),
+            "/merge" => start_merge(&mut stream, root, jobs, &params),
+            _ => respond_json(&mut stream, 404, r#"{"error":"unknown endpoint"}"#),
+        };
+    }
     if method != "GET" {
         return respond_json(&mut stream, 405, r#"{"error":"method not allowed"}"#);
     }
 
-    let params = parse_query(query_string);
     match path {
         "/health" => respond_json(&mut stream, 200, r#"{"ok":true,"service":"csv-splitter"}"#),
         "/meta" => meta(&mut stream, root, &params),
@@ -100,12 +119,173 @@ fn handle(mut stream: TcpStream, root: &Path) -> io::Result<()> {
         "/stats" => stats(&mut stream, root, &params),
         "/filter" => filter(&mut stream, root, &params),
         "/query" => query(&mut stream, root, &params),
+        "/job" => job_status(&mut stream, jobs, &params),
+        "/jobs" => job_list(&mut stream, jobs),
         _ => respond_json(
             &mut stream,
             404,
-            r#"{"error":"unknown endpoint","endpoints":["/health","/meta","/rows","/stats","/filter","/query"]}"#,
+            r#"{"error":"unknown endpoint","endpoints":["/health","/meta","/rows","/stats","/filter","/query","/job","/jobs"],"writes":["POST /split","POST /merge"]}"#,
         ),
     }
+}
+
+fn job_status(
+    stream: &mut TcpStream,
+    jobs: &JobRegistry,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let Some(id) = params.get("id") else {
+        return respond_json(stream, 400, r#"{"error":"id is required"}"#);
+    };
+    match jobs.status(id) {
+        Some(status) => respond_json(stream, 200, &job_json(&status)),
+        None => respond_json(stream, 404, r#"{"error":"unknown job"}"#),
+    }
+}
+
+fn job_list(stream: &mut TcpStream, jobs: &JobRegistry) -> io::Result<()> {
+    let items: Vec<String> = jobs.list().iter().map(job_json).collect();
+    respond_json(stream, 200, &format!(r#"{{"jobs":[{}]}}"#, items.join(",")))
+}
+
+fn job_json(status: &csv_splitter_core::jobs::JobStatus) -> String {
+    let fraction = match status.fraction() {
+        Some(f) => format!("{:.3}", f),
+        None => "null".to_string(),
+    };
+    format!(
+        r#"{{"id":{},"kind":{},"state":{},"phase":{},"progress":{},"total":{},"fraction":{},"elapsed":{},"output":{},"error":{},"messages":[{}]}}"#,
+        json_str(&status.id),
+        json_str(&status.kind),
+        json_str(status.state.as_str()),
+        json_str(&status.phase),
+        status.progress,
+        status.total,
+        fraction,
+        status.elapsed_secs(),
+        match &status.output {
+            Some(p) => json_str(&p.to_string_lossy()),
+            None => "null".to_string(),
+        },
+        match &status.error {
+            Some(e) => json_str(e),
+            None => "null".to_string(),
+        },
+        status
+            .messages
+            .iter()
+            .map(|m| json_str(m))
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+/// Resolve an output path inside the root, creating nothing yet: the caller
+/// writes there. Refuses paths that leave the root.
+fn resolve_out(root: &Path, params: &HashMap<String, String>, key: &str) -> Option<PathBuf> {
+    let rel = params.get(key)?.trim_start_matches(['/', '\\']).to_string();
+    if rel.is_empty() {
+        return None;
+    }
+    let candidate = root.join(&rel);
+    // The file may not exist yet, so canonicalise the parent directory instead.
+    let parent = candidate.parent()?.canonicalize().ok()?;
+    if !parent.starts_with(root) {
+        return None;
+    }
+    Some(candidate)
+}
+
+fn start_split(
+    stream: &mut TcpStream,
+    root: &Path,
+    jobs: &JobRegistry,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (input, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+    };
+    let Some(output) = resolve_out(root, params, "out") else {
+        return respond_json(stream, 400, r#"{"error":"out must stay inside root"}"#);
+    };
+    let splits: usize = params
+        .get("splits")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(10);
+    let format = match params.get("format").map(String::as_str) {
+        Some("zst") | None => CompressFormat::Zstd,
+        Some("gz") => CompressFormat::Gzip,
+        Some("bz2") => CompressFormat::Bzip2,
+        Some("xz") => CompressFormat::Xz,
+        Some("zip") => CompressFormat::Zip,
+        Some("none") => CompressFormat::None,
+        Some(other) => {
+            return respond_json(
+                stream,
+                400,
+                &format!(
+                    r#"{{"error":{}}}"#,
+                    json_str(&format!("unknown format {other}"))
+                ),
+            )
+        }
+    };
+
+    let config = SplitConfig {
+        input,
+        output: Some(output),
+        splits,
+        max_bytes: None,
+        compress_format: format,
+        compress_level: params
+            .get("level")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(3),
+        buf_mb: 32,
+        columns_file: None,
+        delimiter: delimiter(params),
+        sort_column: None,
+        sort_descending: false,
+    };
+
+    let id = jobs.submit("split", move |tx| run_split(config, tx));
+    respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
+}
+
+fn start_merge(
+    stream: &mut TcpStream,
+    root: &Path,
+    jobs: &JobRegistry,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (input, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+    };
+    let Some(output) = resolve_out(root, params, "out") else {
+        return respond_json(stream, 400, r#"{"error":"out must stay inside root"}"#);
+    };
+
+    let id = jobs.submit("merge", move |tx| {
+        match merge_archive(&input, &output, &tx) {
+            Ok(report) => {
+                tx.send(ProgressEvent::Info(format!(
+                    "merged {} chunk(s), {} records",
+                    report.chunks, report.records
+                )))
+                .ok();
+                tx.send(ProgressEvent::Finished {
+                    output: report.output,
+                })
+                .ok();
+            }
+            Err(e) => {
+                tx.send(ProgressEvent::Error(e.to_string())).ok();
+            }
+        }
+    });
+    respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
 }
 
 fn meta(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
