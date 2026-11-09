@@ -10,7 +10,9 @@
 //!   GET /meta?path=REL
 //!   GET /rows?path=REL&start=N&count=M
 //!   GET /stats?path=REL&sample=N
+//!   GET /filter?path=REL&where=col=value&limit=N
 
+use csv_splitter_core::filter::{scan as filter_scan, FilterSpec};
 use csv_splitter_core::preview::compute_column_stats;
 use csv_splitter_core::viewer::WindowViewer;
 use csv_splitter_core::{Delimiter, ProgressEvent};
@@ -94,10 +96,11 @@ fn handle(mut stream: TcpStream, root: &Path) -> io::Result<()> {
         "/meta" => meta(&mut stream, root, &params),
         "/rows" => rows(&mut stream, root, &params),
         "/stats" => stats(&mut stream, root, &params),
+        "/filter" => filter(&mut stream, root, &params),
         _ => respond_json(
             &mut stream,
             404,
-            r#"{"error":"unknown endpoint","endpoints":["/health","/meta","/rows","/stats"]}"#,
+            r#"{"error":"unknown endpoint","endpoints":["/health","/meta","/rows","/stats","/filter"]}"#,
         ),
     }
 }
@@ -181,6 +184,48 @@ fn rows(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -
         rows.join(",")
     );
     respond_json(stream, 200, &body)
+}
+
+fn filter(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
+    let (path, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+    };
+    let Some(expr) = params.get("where") else {
+        return respond_json(stream, 400, r#"{"error":"where is required"}"#);
+    };
+    let spec = match FilterSpec::parse(expr) {
+        Ok(s) => s,
+        Err(e) => return respond_json(stream, 400, &format!(r#"{{"error":{}}}"#, json_str(&e))),
+    };
+    let limit: usize = params
+        .get("limit")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(10_000)
+        .min(MAX_ROWS_PER_REQUEST as usize * 10);
+    let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
+    drop(rx);
+    match filter_scan(&path, delimiter(params), &spec, limit, &tx) {
+        Ok(result) => {
+            let rows: Vec<String> = result.row_numbers().iter().map(|n| n.to_string()).collect();
+            respond_json(
+                stream,
+                200,
+                &format!(
+                    r#"{{"scanned":{},"matched":{},"truncated":{},"rows":[{}]}}"#,
+                    result.scanned,
+                    result.matched,
+                    result.truncated,
+                    rows.join(",")
+                ),
+            )
+        }
+        Err(e) => respond_json(
+            stream,
+            422,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+    }
 }
 
 fn stats(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {

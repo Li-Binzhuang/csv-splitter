@@ -99,6 +99,10 @@ csv-splitter index big.csv
 # 跳到任意行（有索引时是微秒级）
 csv-splitter preview big.csv --start-row 1500000 --rows 20
 
+# 筛选：返回行号，再用 preview --start-row 跳过去看
+csv-splitter filter orders.csv --where "city=CDMX"
+csv-splitter filter orders.csv --where "amount>1000" --json
+
 # 看一眼数据与列分布
 csv-splitter preview big.csv --rows 5
 csv-splitter stats big.csv --sample 50000 --top 5
@@ -149,6 +153,7 @@ csv-splitter serve --root ~/data --addr 127.0.0.1:8787
 | `GET /meta?path=REL` | 行数、字节数、表头、分隔符、编码 |
 | `GET /rows?path=REL&start=N&count=M` | 任意行窗口（count ≤ 2000） |
 | `GET /stats?path=REL&sample=N` | 列统计（唯一值 / 空值 / Top N） |
+| `GET /filter?path=REL&where=col=value` | 全表筛选，返回命中的行号（1 起，不含表头） |
 
 约束与安全：
 

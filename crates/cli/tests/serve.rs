@@ -135,3 +135,25 @@ fn stats_endpoint_reports_columns() {
 
     drop(server);
 }
+
+#[test]
+fn filter_endpoint_counts_matches() {
+    let dir = TempDir::new("flt");
+    let mut csv = String::from("id,city\n");
+    for i in 0..50 {
+        csv.push_str(&format!(
+            "{i},{}\n",
+            if i % 5 == 0 { "CDMX" } else { "Puebla" }
+        ));
+    }
+    std::fs::write(dir.join("data.csv"), csv).unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(&server.addr, "/filter?path=data.csv&where=city%3DCDMX");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("\"matched\":10"), "{body}");
+    assert!(body.contains("\"rows\":[1,6,11"), "{body}");
+
+    let (status, _) = get(&server.addr, "/filter?path=data.csv&where=bogus");
+    assert_eq!(status, 400);
+}

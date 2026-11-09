@@ -7,6 +7,7 @@
 use csv_splitter_core::csv_reader::{detect_delimiter, parse_csv_record, read_headers};
 use csv_splitter_core::decompress::decompress_file;
 use csv_splitter_core::encoding::{self, parse_name, TextEncoding};
+use csv_splitter_core::filter::{scan as filter_scan, FilterSpec};
 use csv_splitter_core::index::{SparseIndex, DEFAULT_INTERVAL};
 use csv_splitter_core::merge::merge_archive;
 use csv_splitter_core::partition::{run_partition, PartitionConfig};
@@ -33,6 +34,7 @@ fn main() -> ExitCode {
         Some("index") => cmd_index(&args[1..]),
         Some("serve") => cmd_serve(&args[1..]),
         Some("convert") => cmd_convert(&args[1..]),
+        Some("filter") => cmd_filter(&args[1..]),
         Some("stats") => cmd_stats(&args[1..]),
         Some("extract") => cmd_extract(&args[1..]),
         Some("verify") => cmd_verify(&args[1..]),
@@ -67,6 +69,7 @@ COMMANDS
   index    <input>              Build a sparse row index for instant paging
   serve    --root <dir>          Local HTTP API (JSON) for a web front-end
   convert  <input>               Transcode a CSV to UTF-8 (GBK / UTF-16 input)
+  filter   <input> --where EXPR  Row numbers matching a column predicate
   stats    <input>              Column statistics via reservoir sampling
   extract  <input> -o DIR       Extract any supported compressed archive
   verify   <input>              Split + merge and prove the result is lossless
@@ -92,6 +95,12 @@ SPLIT OPTIONS
 
 MERGE OPTIONS
   -o, --out <path>        Output CSV (required)
+
+FILTER OPTIONS
+  --where <expr>          col=value | col~text | col>number | col empty
+      --limit <n>         Stop after n matches (default: 10000)
+      --json              Emit JSON instead of text
+  -d, --delim <c>         Delimiter (default: auto)
 
 CONVERT OPTIONS
   -o, --out <path>        Output file (default: <name>.utf8.csv)
@@ -820,6 +829,116 @@ fn cmd_index(args: &[String]) -> i32 {
         idx.size_bytes() as f64 / 1024.0,
         path.display()
     );
+    0
+}
+
+fn cmd_filter(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut input: Option<PathBuf> = None;
+    let mut where_expr: Option<String> = None;
+    let mut limit = 10_000usize;
+    let mut json = false;
+    let mut delim = "auto".to_string();
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--where" => match p.value("--where") {
+                Ok(v) => where_expr = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--limit" => match p
+                .value("--limit")
+                .and_then(|v| v.parse().map_err(|_| "bad --limit".to_string()))
+            {
+                Ok(v) => limit = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--json" => json = true,
+            "-d" | "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => input = Some(PathBuf::from(other)),
+        }
+    }
+
+    let (Some(input), Some(expr)) = (input, where_expr) else {
+        eprintln!("error: filter needs <input> and --where <expr>");
+        return 2;
+    };
+    let spec = match FilterSpec::parse(&expr) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let delimiter = match parse_delimiter(&delim, &input) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+
+    let (tx, _rx) = mpsc::channel();
+    let result = match filter_scan(&input, delimiter, &spec, limit, &tx) {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("✗ filter failed: {e}");
+            return 1;
+        }
+    };
+
+    if json {
+        let rows: Vec<String> = result.row_numbers().iter().map(|n| n.to_string()).collect();
+        println!(
+            r#"{{"scanned":{},"matched":{},"truncated":{},"rows":[{}]}}"#,
+            result.scanned,
+            result.matched,
+            result.truncated,
+            rows.join(",")
+        );
+        return 0;
+    }
+
+    println!(
+        "scanned {} rows, matched {} ({} shown){}",
+        result.scanned,
+        result.matched,
+        result.rows.len(),
+        if result.truncated { ", truncated" } else { "" }
+    );
+    let shown: Vec<String> = result
+        .row_numbers()
+        .iter()
+        .take(50)
+        .map(|n| n.to_string())
+        .collect();
+    println!("rows (1-based, header excluded): {}", shown.join(", "));
+    if result.matched > 50 {
+        println!(
+            "... {} more; use --json for the full list",
+            result.matched - 50
+        );
+    }
     0
 }
 

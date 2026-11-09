@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.0] — 2026-11-09
+
+### Added
+
+- **`filter` command + `/filter` API**: `col=value`, `col~text`, `col>number`,
+  `col empty` / `col notempty`. Scans sequentially (decoding GBK/UTF-16 on the
+  way) and returns **row numbers**, so a client can jump to a hit with
+  `preview --start-row` instead of loading the file.
+- Numeric comparisons fall back to string order when a cell is not a number, so
+  ISO dates and zero-padded ids sort correctly.
+- `--json` on the CLI for scripting; `/filter` returns the same shape.
+
 ## [0.10.0] — 2026-11-09
 
 ### Added

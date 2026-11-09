@@ -442,3 +442,52 @@ fn convert_rejects_unknown_encoding() {
         .unwrap();
     assert_eq!(status.code(), Some(2));
 }
+
+#[test]
+fn filter_returns_matching_row_numbers() {
+    let dir = TempDir::new("filter");
+    let input = dir.join("f.csv");
+    let mut csv = String::from("id,city,amount\n");
+    for i in 0..100 {
+        let city = if i % 10 == 0 { "CDMX" } else { "Puebla" };
+        csv.push_str(&format!("{i},{city},{}\n", i * 10));
+    }
+    std::fs::write(&input, csv).unwrap();
+
+    let out = Command::new(bin())
+        .args([
+            "filter",
+            input.to_str().unwrap(),
+            "--where",
+            "city=CDMX",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("\"matched\":10"), "{text}");
+    // Rows 1, 11, 21, ... in 1-based row numbering.
+    assert!(text.contains("\"rows\":[1,11,21"), "{text}");
+
+    let out = Command::new(bin())
+        .args(["filter", input.to_str().unwrap(), "--where", "amount>900"])
+        .output()
+        .unwrap();
+    assert!(out.status.success());
+    assert!(
+        String::from_utf8_lossy(&out.stdout).contains("matched 9"),
+        "{}",
+        String::from_utf8_lossy(&out.stdout)
+    );
+
+    let status = Command::new(bin())
+        .args(["filter", input.to_str().unwrap(), "--where", "nonsense"])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(2));
+}

@@ -2,6 +2,7 @@ pub mod compress;
 pub mod csv_reader;
 pub mod decompress;
 pub mod encoding;
+pub mod filter;
 pub mod index;
 pub mod merge;
 pub mod pack;
