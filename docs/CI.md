@@ -1,23 +1,29 @@
 # CI notes / 持续集成说明
 
-两个 job，按「反馈速度」而不是「模块」划分：
+**现在是一个 job。** 这是被一次事故逼回来的：
 
-| job | 内容 | 依赖 |
-|-----|------|------|
-| `engine` | fmt、core+gui 的测试、性能护栏、clippy | 无（**不含 DuckDB**） |
-| `cli` | clippy、CLI 与 HTTP API 测试 | DuckDB（静态编译，冷缓存约 10 分钟） |
+| 时间 | 结构 | 现象 |
+|---|---|---|
+| 早期 | `engine` + `cli`（`needs` 串联） | 正常，engine 先绿 |
+| 2026-11-10 | 同上 | CI 红，但 **cli job 被跳过、0 个步骤** |
+| 随后 | 同上 | 红，且 **jobs 列表为空** |
+| 现在 | 单个 `test` job | 完整信号 |
 
-## 为什么 DuckDB 要单独一个 job
+根因是**缓存配额**：当时仓库里有两条 4.1 GB 的 `cli` target 缓存，加上 engine 的两条约
+9.5 GB，超过 GitHub 每仓库 10 GB 的上限。之后运行开始"红而没有可读原因"——
+一个红叉，点进去什么都没有。
 
-`duckdb` crate 用 `bundled` 特性，CI 上要从 C++ 源码编译一遍。把它和引擎测试放在同一个
-job，意味着改一行 `cache.rs` 也要等十分钟才知道结果。拆开后，引擎的问题几分钟内就有答案。
+`needs` 把两个 job 绑在一起，于是"少了一半"看起来像整体失败；而**单 job 不会丢失一半的自己**。
+
+代价是引擎改动也要编一次 DuckDB。用滚动缓存后是几分钟，换一个永远完整的绿叉，值。
 
 ## 三条让 CI 不变慢的规则
 
-1. **不要在提交里随手改版本号。**
-   `Cargo.lock` 的哈希是 cargo 缓存键的一部分；改一次版本号就等于换一次键，
-   DuckDB 得从头再编。版本号按里程碑批量升（0.18.0 → 0.19.0 一次），
-   中间的功能提交保持 lock 不动。
+1. **缓存键用滚动式，不要用 lockfile 哈希。**
+   `key: linux-cargo-rolling-${{ github.run_id }}` + `restore-keys: linux-cargo-rolling-`
+   = 每个 job 只保留**一条**缓存。用 lockfile 哈希时每条提交都会存一份新的 4 GB target，
+   两条就撑爆配额，然后 CI 开始红得莫名其妙。
+   （版本号仍然按里程碑批量升，减少无谓的完整重编。）
 
 2. **压缩产物**：`CARGO_PROFILE_DEV_DEBUG=0` / `CARGO_PROFILE_TEST_DEBUG=0`。
    DuckDB 的 rlib 带调试信息是 **1.6 GB**，去掉后 **346 MB**。缓存能存下、传输也快。
