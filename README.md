@@ -3,6 +3,8 @@
 > Cross-platform CSV splitter, compressor, previewer & column statistics tool with bilingual (Chinese/English) UI.
 >
 > 跨平台 CSV 文件拆分、压缩、预览与列统计工具，支持中英文界面。
+>
+> **刚上手？** 跑一句 `csv-splitter demo` 生成示例文件，然后看 [10 分钟上手](docs/GETTING_STARTED.md)。
 
 [![CI](https://github.com/Li-Binzhuang/csv-splitter/actions/workflows/ci.yml/badge.svg)](https://github.com/Li-Binzhuang/csv-splitter/actions/workflows/ci.yml)
 [![Release](https://github.com/Li-Binzhuang/csv-splitter/actions/workflows/release.yml/badge.svg)](https://github.com/Li-Binzhuang/csv-splitter/actions/workflows/release.yml)
@@ -10,6 +12,19 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ---
+
+## Quick start / 快速开始
+
+```bash
+$ csv-splitter demo            # 生成一份带脏数据的示例文件
+$ cd csv-splitter-demo
+$ csv-splitter preview orders.csv
+$ csv-splitter analyze orders.csv
+$ csv-splitter groupby orders.csv --by city --agg "amount:sum,amount:count" --order sum_amount --desc
+$ csv-splitter serve --root .  # 给前端用的本地 JSON API
+```
+
+每一步的真实输出、以及从筛选到交付的完整流程，见 **[10 分钟上手](docs/GETTING_STARTED.md)**。
 
 ## Download / 下载
 

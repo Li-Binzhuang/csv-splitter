@@ -1228,3 +1228,79 @@ fn verify_flag_confirms_the_claims_of_each_operation() {
         6
     );
 }
+
+/// The documented tour must actually work on the documented sample.
+#[test]
+fn the_getting_started_tour_runs_end_to_end() {
+    let dir = TempDir::new("tour");
+    let demo_dir = dir.join("demo");
+
+    let out = Command::new(bin())
+        .args(["demo", "-o", demo_dir.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let sample = demo_dir.join("orders.csv");
+    assert!(sample.exists());
+
+    // 1. analyze names the ragged rows (the guide's first lesson).
+    let out = Command::new(bin())
+        .args(["analyze", sample.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("city"), "{text}");
+    assert!(
+        text.contains("field count"),
+        "ragged warning missing: {text}"
+    );
+
+    // 2. filter + verify.
+    let filtered = dir.join("cdmx.csv");
+    let status = Command::new(bin())
+        .args([
+            "filter",
+            sample.to_str().unwrap(),
+            "--where",
+            "city=CDMX",
+            "-o",
+            filtered.to_str().unwrap(),
+            "--verify",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    // 3. groupby writes the documented shape.
+    let grouped = dir.join("per_city.csv");
+    let status = Command::new(bin())
+        .args([
+            "groupby",
+            sample.to_str().unwrap(),
+            "--by",
+            "city",
+            "--agg",
+            "amount:sum,amount:count",
+            "--order",
+            "sum_amount",
+            "--desc",
+            "-o",
+            grouped.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&grouped).unwrap();
+    assert_eq!(text.lines().next().unwrap(), "city,sum_amount,count_amount");
+
+    // 4. verify proves the split is lossless.
+    let status = Command::new(bin())
+        .args(["verify", sample.to_str().unwrap(), "-n", "4"])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0), "verify should pass on the sample");
+}

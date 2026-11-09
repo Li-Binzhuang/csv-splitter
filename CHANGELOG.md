@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.31.0] — 2026-11-10
+
+### Added
+
+- **`csv-splitter demo`**: writes a realistic sample file (20,120 rows, 918 KB)
+  with the defects real exports have — duplicate rows, empty cells, a quoted
+  field containing a newline, and rows with an extra unquoted comma. Deterministic,
+  so the documentation can quote its output and keep it true.
+- **[docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)**: a ten-step tour that
+  starts at `demo` and ends at `serve`, with the real output of every step, plus
+  a one-page command table. The README now opens with a quick start that points
+  at it.
+- A CLI test runs the *documented* tour end to end, so the guide cannot silently
+  drift away from the program.
+
 ## [0.30.0] — 2026-11-10
 
 ### Field run on a 1 GB file

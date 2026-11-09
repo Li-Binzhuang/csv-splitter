@@ -5,6 +5,7 @@ pub mod concat;
 pub mod csv_reader;
 pub mod decompress;
 pub mod dedupe;
+pub mod demo;
 pub mod encoding;
 pub mod filter;
 pub mod groupby;
