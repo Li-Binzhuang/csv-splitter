@@ -58,7 +58,6 @@ jobs:
   # it gets its own job: a slow engine build should not delay engine feedback.
   cli:
     runs-on: ubuntu-22.04
-    needs: engine
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
