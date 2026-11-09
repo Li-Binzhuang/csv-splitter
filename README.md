@@ -140,6 +140,7 @@ csv-splitter extract chunks.tar -o ./out
 | 统计列分布 | `stats big.csv --sample 50000` | `GET /stats?sample=50000` |
 | **摸清一份陌生数据** | `analyze big.csv` | `GET /analyze` |
 | **去重** | `dedupe big.csv --by id -o clean.csv` | `POST /dedupe` |
+| **整理列再发出去** | `columns big.csv --drop id --rename "city:城市"` | — |
 | 跑聚合 / 排序 | `sql big.csv "SELECT ..."` | `GET /query?sql=...` |
 | 切分 / 合并 | `split` / `merge` | `POST /split` · `POST /merge` |
 | 换编码 | `convert gbk.csv -o utf8.csv` | — |
@@ -176,6 +177,21 @@ $ csv-splitter dedupe orders.csv --by cust_no -o clean.csv
 ✓ 49124 of 200000 rows kept, 150876 removed → clean.csv (3.0 MB)
 ```
 
+### 整理列
+
+```bash
+$ csv-splitter columns orders.csv --drop internal_id --rename "city:城市,amount:金额" -o share.csv
+✓ 200000 rows × 5 columns → share.csv (9.8 MB)
+    columns: id, cust_no, 城市, 金额, ts
+    dropped: note
+```
+
+`--keep a,b` 只保留并重排，`--drop a,b` 删掉，`--rename old:new` 改名。
+既要保留又要删同一列会**直接报错**，而不是让某一方悄悄赢。
+
+和 `filter --out` 不同，这里**必须重新序列化**（列集合变了）：含逗号、引号、
+换行的单元格会按 CSV 规则重新加引号，多行字段进去是一条记录、出来也是一条。
+
 按整行去重（默认）或按 `--by` 指定的列去重，保留**首次出现**的那条。
 内存只存 128 位哈希（每条 16 字节），1000 万条约 160 MB；超过 `--max-keys`
 会**报错而不是悄悄丢行**。
@@ -194,6 +210,9 @@ csv-splitter filter orders.csv --where "city=Tijuana" --where "amount>49990" --a
 csv-splitter sort orders.csv --by "city:asc,amount:desc" -o sorted.csv
 # 单列仍是最简单的写法
 csv-splitter sort orders.csv --by amount --desc -o sorted.csv
+
+# 枚举几个值
+csv-splitter filter orders.csv --where "city in CDMX,Puebla,Tijuana" -o in.csv
 
 # 正则筛选（col~re: 前缀），可与其他条件用 AND / OR 组合
 csv-splitter filter orders.csv --where "note~re:^REFUND" --where "amount>1000" -o hits.csv

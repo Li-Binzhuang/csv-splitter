@@ -13,6 +13,7 @@ pub mod pack;
 pub mod partition;
 pub mod preview;
 pub mod profile;
+pub mod reshape;
 pub mod search;
 pub mod sort;
 pub mod split_parallel;

@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.24.0] — 2026-11-10
+
+### Added
+
+- **`columns`**: reshape before handing data to someone else — `--keep a,b`
+  (also reorders), `--drop a,b`, `--rename old:new`. Unlike `filter --out`, this
+  must re-serialise each row because the column set changed, so quoting is
+  applied consistently and a multi-line cell stays one field. A column that is
+  both kept and dropped is an explicit error rather than a silent winner.
+- **`in (a,b,c)` filter**: `--where "city in CDMX,Puebla"` — one condition
+  instead of a chain of ORs. Values are trimmed and matched case-insensitively;
+  rendered as a quoted `IN (...)` list for `GET /export?where=`.
+
 ## [0.23.0] — 2026-11-10
 
 ### Added

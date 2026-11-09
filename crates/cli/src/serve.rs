@@ -827,6 +827,11 @@ fn sql_predicate(spec: &FilterSpec) -> Option<String> {
         filter::Op::Lte => format!("{column} <= {value}"),
         filter::Op::Empty => format!("({column} IS NULL OR {column} = '')"),
         filter::Op::NotEmpty => format!("({column} IS NOT NULL AND {column} <> '')"),
+        // `in a,b,c` becomes a quoted SQL list.
+        filter::Op::In => {
+            let list: Vec<String> = spec.value.split(',').map(|v| quote(v.trim())).collect();
+            format!("{column} IN ({})", list.join(", "))
+        }
         // DuckDB's regexp_match is RE2-like; the CLI validated the pattern.
         filter::Op::Regex => format!("regexp_matches({column}, {})", quote(&spec.value)),
     };

@@ -29,6 +29,8 @@ pub enum Op {
     NotEmpty,
     /// Regular expression match (`col~re:PATTERN`).
     Regex,
+    /// Membership: `col in a,b,c` (values are trimmed; no escaping).
+    In,
 }
 
 impl Op {
@@ -44,6 +46,7 @@ impl Op {
             Self::Empty => "empty",
             Self::NotEmpty => "notempty",
             Self::Regex => "~re:",
+            Self::In => "in",
         }
     }
 }
@@ -62,6 +65,23 @@ impl FilterSpec {
         if expr.is_empty() {
             return Err("empty filter expression".to_string());
         }
+        // `col in a,b,c` has no operator symbol, so match it first.
+        if let Some(pos) = expr.to_ascii_lowercase().find(" in ") {
+            let column = expr[..pos].trim().to_string();
+            if column.is_empty() {
+                return Err(format!("missing column name in '{expr}'"));
+            }
+            let value = expr[pos + 4..].trim().to_string();
+            if value.is_empty() {
+                return Err(format!("'in' needs at least one value: {expr}"));
+            }
+            return Ok(Self {
+                column,
+                op: Op::In,
+                value,
+            });
+        }
+
         // Longest operators first so `>=` beats `>`.
         const OPS: &[(&str, Op)] = &[
             ("!=", Op::Ne),
@@ -390,6 +410,15 @@ pub fn matches(cell: &str, spec: &FilterSpec) -> bool {
         Op::Eq => cell == spec.value,
         Op::Ne => cell != spec.value,
         Op::Contains => cell.contains(&spec.value),
+        Op::In => {
+            let cell_trimmed = cell.trim();
+            spec.value
+                .split(',')
+                .map(|v| v.trim())
+                // Matching is case-insensitive, like `=value` is exact and `~`
+                // is literal; the list form is the friendly one.
+                .any(|v| v.eq_ignore_ascii_case(cell_trimmed))
+        }
         Op::Regex => regex::Regex::new(&spec.value)
             .map(|re| re.is_match(cell))
             .unwrap_or(false),
@@ -653,5 +682,44 @@ mod regex_tests {
     fn regex_matches_an_empty_cell_only_if_the_pattern_allows_it() {
         assert!(matches("", &FilterSpec::parse("x~re:^$").unwrap()));
         assert!(!matches("", &FilterSpec::parse("x~re:^a").unwrap()));
+    }
+}
+
+#[cfg(test)]
+mod in_tests {
+    use super::*;
+
+    #[test]
+    fn in_lists_are_trimmed_and_case_insensitive() {
+        let spec = FilterSpec::parse("city in CDMX, Puebla , Tijuana").unwrap();
+        assert_eq!(spec.op, Op::In);
+        assert!(matches("CDMX", &spec));
+        assert!(matches(" puebla ", &spec));
+        assert!(!matches("Monterrey", &spec));
+    }
+
+    #[test]
+    fn in_needs_values_and_a_column() {
+        assert!(FilterSpec::parse(" in a,b").is_err());
+        assert!(FilterSpec::parse("city in ").is_err());
+    }
+
+    #[test]
+    fn in_combines_with_other_predicates() {
+        let set = FilterSet {
+            specs: vec![
+                FilterSpec::parse("city in CDMX,Puebla").unwrap(),
+                FilterSpec::parse("amount>100").unwrap(),
+            ],
+            combine: Combine::All,
+        };
+        let headers = vec!["city".to_string(), "amount".to_string()];
+        let compiled = set.compile(&headers).unwrap();
+        let yes = vec!["CDMX".to_string(), "500".to_string()];
+        let too_small = vec!["CDMX".to_string(), "50".to_string()];
+        let wrong_city = vec!["Tijuana".to_string(), "500".to_string()];
+        assert!(compiled.holds(&yes));
+        assert!(!compiled.holds(&too_small));
+        assert!(!compiled.holds(&wrong_city));
     }
 }

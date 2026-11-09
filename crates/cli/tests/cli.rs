@@ -863,3 +863,66 @@ fn sort_by_several_columns_and_regex_filter() {
         .unwrap();
     assert_eq!(status.code(), Some(2));
 }
+
+#[test]
+fn columns_reshapes_and_in_filter_combines() {
+    let dir = TempDir::new("cols");
+    let input = dir.join("in.csv");
+    let mut csv = String::from("internal_id,city,amount\n");
+    csv.push_str("7,CDMX,10\n");
+    csv.push_str("8,Puebla,500\n");
+    csv.push_str("9,Tijuana,20\n");
+    std::fs::write(&input, csv).unwrap();
+
+    // Drop the private column, rename the Chinese-facing ones.
+    let out = dir.join("share.csv");
+    let status = Command::new(bin())
+        .args([
+            "columns",
+            input.to_str().unwrap(),
+            "--drop",
+            "internal_id",
+            "--rename",
+            "city:城市",
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&out).unwrap();
+    assert_eq!(text.lines().next().unwrap(), "城市,amount", "{text}");
+    assert_eq!(text.lines().count(), 4);
+
+    // `in (a,b)` behaves like an OR of equalities.
+    let hits = dir.join("hits.csv");
+    let status = Command::new(bin())
+        .args([
+            "filter",
+            input.to_str().unwrap(),
+            "--where",
+            "city in CDMX,Puebla",
+            "-o",
+            hits.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&hits).unwrap();
+    assert_eq!(text.lines().count(), 3, "{text}");
+    assert!(!text.contains("Tijuana"), "{text}");
+
+    // A conflicting spec is refused instead of silently dropping the column.
+    let status = Command::new(bin())
+        .args([
+            "columns",
+            input.to_str().unwrap(),
+            "--keep",
+            "city",
+            "--drop",
+            "city",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(1));
+}

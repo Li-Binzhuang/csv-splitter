@@ -630,3 +630,22 @@ fn analyze_endpoint_and_dedupe_job() {
 
     drop(server);
 }
+
+#[test]
+fn export_understands_in_lists() {
+    let dir = TempDir::new("inlist");
+    let mut csv = String::from("city,amount\n");
+    csv.push_str("CDMX,10\nPuebla,500\nTijuana,20\n");
+    std::fs::write(dir.join("data.csv"), csv).unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get_raw(
+        &server.addr,
+        "/export?path=data.csv&where=city%20in%20CDMX,Puebla",
+    );
+    assert_eq!(status, 200);
+    let text = String::from_utf8_lossy(&body);
+    assert_eq!(text, "city,amount\nCDMX,10\nPuebla,500\n", "{text}");
+
+    drop(server);
+}
