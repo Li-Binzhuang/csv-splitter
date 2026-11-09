@@ -10,5 +10,6 @@ pub mod sort;
 pub mod splitter;
 pub mod tempdir;
 pub mod types;
+pub mod viewer;
 
 pub use types::*;
