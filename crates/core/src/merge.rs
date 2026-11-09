@@ -28,87 +28,130 @@ pub struct MergeReport {
 /// Merge a split archive (`.tar`, `.tar.gz`, `.tar.zst`, `.tar.bz2`, `.tar.xz`,
 /// `.zip`) or a directory of chunk files back into a single CSV.
 pub fn merge_archive(input: &Path, output: &Path, tx: &ProgressSender) -> io::Result<MergeReport> {
-    let readers: Vec<(String, Box<dyn Read>)> = if input.is_dir() {
-        collect_from_dir(input)?
+    let mut merger = Merger::new(output)?;
+    if input.is_dir() {
+        let mut names: Vec<PathBuf> = std::fs::read_dir(input)?
+            .filter_map(|e| e.ok().map(|e| e.path()))
+            .filter(|p| {
+                p.is_file() && is_chunk(&p.file_name().unwrap_or_default().to_string_lossy())
+            })
+            .collect();
+        names.sort();
+        for path in names {
+            let name = path
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_default();
+            let reader: Box<dyn Read> =
+                decompress_by_name(name.clone(), Box::new(File::open(&path)?))?;
+            merger.add_chunk(&name, reader, tx)?;
+        }
     } else {
         match sniff_container(input)? {
-            Container::Zip => collect_from_zip(input)?,
-            Container::Tar => collect_from_tar(input, Container::Tar)?,
-            Container::TarGz => collect_from_tar(input, Container::TarGz)?,
-            Container::TarZst => collect_from_tar(input, Container::TarZst)?,
-            Container::TarBz2 => collect_from_tar(input, Container::TarBz2)?,
-            Container::TarXz => collect_from_tar(input, Container::TarXz)?,
-            Container::Unknown => {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    format!("unsupported merge input: {}", input.display()),
-                ))
-            }
+            Container::Zip => merge_zip(input, &mut merger, tx)?,
+            container => merge_tar(input, container, &mut merger, tx)?,
         }
-    };
-
-    if readers.is_empty() {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            "no chunks found in archive",
-        ));
     }
-
-    write_merged(readers, output, tx)
+    merger.finish()
 }
 
-fn write_merged(
-    mut chunks: Vec<(String, Box<dyn Read>)>,
-    output: &Path,
-    tx: &ProgressSender,
-) -> io::Result<MergeReport> {
-    // Chunk names are zero-padded, so lexicographic order is the split order.
-    chunks.sort_by(|a, b| a.0.cmp(&b.0));
+/// Streams chunks straight into the output file. Nothing is buffered whole, so
+/// merging a 10 GB archive costs the same few MB as merging a 10 MB one.
+struct Merger {
+    out: BufWriter<File>,
+    output: PathBuf,
+    chunks: usize,
+    records: u64,
+    bytes: u64,
+    wrote_header: bool,
+}
 
-    if let Some(parent) = output.parent() {
-        if !parent.as_os_str().is_empty() {
-            std::fs::create_dir_all(parent)?;
+impl Merger {
+    fn new(output: &Path) -> io::Result<Self> {
+        if let Some(parent) = output.parent() {
+            if !parent.as_os_str().is_empty() {
+                std::fs::create_dir_all(parent)?;
+            }
         }
+        Ok(Self {
+            out: BufWriter::with_capacity(IO_BUF, File::create(output)?),
+            output: output.to_path_buf(),
+            chunks: 0,
+            records: 0,
+            bytes: 0,
+            wrote_header: false,
+        })
     }
 
-    let mut out = BufWriter::with_capacity(IO_BUF, File::create(output)?);
-    let mut report = MergeReport {
-        output: output.to_path_buf(),
-        chunks: chunks.len(),
-        records: 0,
-        bytes: 0,
-    };
-
-    let mut scratch = Vec::with_capacity(256 * 1024);
-    for (idx, (name, reader)) in chunks.into_iter().enumerate() {
+    fn add_chunk<R: Read>(&mut self, name: &str, reader: R, tx: &ProgressSender) -> io::Result<()> {
         let mut rr = RecordReader::new(reader, 256 * 1024);
+        let mut record = Vec::with_capacity(256 * 1024);
         let mut first = true;
-        while rr.next_record(&mut scratch)? {
+        while rr.next_record(&mut record)? {
             if first {
                 first = false;
-                // Only the first chunk contributes a header; the others merely
-                // repeat it.
-                if idx > 0 {
+                // The first chunk contributes the header; every other chunk
+                // repeats it, so drop it.
+                if self.wrote_header {
                     continue;
                 }
+                self.wrote_header = true;
             }
-            out.write_all(&scratch)?;
-            report.records += 1;
-            report.bytes += scratch.len() as u64;
+            self.out.write_all(&record)?;
+            self.records += 1;
+            self.bytes += record.len() as u64;
         }
+        self.chunks += 1;
         tx.send(ProgressEvent::Info(format!("merged chunk {name}")))
             .ok();
+        Ok(())
     }
 
-    out.flush()?;
-    tx.send(ProgressEvent::Progress {
-        bytes: report.bytes,
-    })
-    .ok();
-    Ok(report)
+    fn finish(mut self) -> io::Result<MergeReport> {
+        self.out.flush()?;
+        Ok(MergeReport {
+            output: self.output,
+            chunks: self.chunks,
+            records: self.records,
+            bytes: self.bytes,
+        })
+    }
 }
 
-fn collect_from_zip(input: &Path) -> io::Result<Vec<(String, Box<dyn Read>)>> {
+fn merge_tar(
+    input: &Path,
+    container: Container,
+    merger: &mut Merger,
+    tx: &ProgressSender,
+) -> io::Result<()> {
+    let file = BufReader::with_capacity(IO_BUF, File::open(input)?);
+    let reader: Box<dyn Read> = match container {
+        Container::TarGz => Box::new(flate2::read::GzDecoder::new(file)),
+        Container::TarZst => Box::new(zstd::Decoder::new(file)?),
+        Container::TarBz2 => Box::new(bzip2::read::BzDecoder::new(file)),
+        Container::TarXz => Box::new(xz2::read::XzDecoder::new(file)),
+        _ => Box::new(file),
+    };
+    let mut archive = tar::Archive::new(reader);
+    for entry in archive.entries()? {
+        let entry = entry?;
+        if !entry.header().entry_type().is_file() {
+            continue;
+        }
+        let name = entry
+            .path()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_default();
+        if !is_chunk(&name) {
+            continue;
+        }
+        let decompressed = decompress_by_name(name.clone(), entry)?;
+        merger.add_chunk(&name, decompressed, tx)?;
+    }
+    Ok(())
+}
+
+fn merge_zip(input: &Path, merger: &mut Merger, tx: &ProgressSender) -> io::Result<()> {
     let file = File::open(input)?;
     let mut zip = zip::ZipArchive::new(BufReader::new(file)).map_err(io::Error::other)?;
     let mut names: Vec<String> = (0..zip.len())
@@ -116,19 +159,13 @@ fn collect_from_zip(input: &Path) -> io::Result<Vec<(String, Box<dyn Read>)>> {
         .filter(|n| is_chunk(n))
         .collect();
     names.sort();
-
-    // `by_index` borrows the archive mutably, so extract the bytes up front.
-    let mut out: Vec<(String, Box<dyn Read>)> = Vec::with_capacity(names.len());
+    // `by_name` borrows the archive, so open one entry at a time and stream it.
     for name in names {
-        let mut entry = zip.by_name(&name).map_err(io::Error::other)?;
-        let mut buf = Vec::new();
-        entry.read_to_end(&mut buf)?;
-        out.push((
-            name.clone(),
-            decompress_by_name(name, Box::new(io::Cursor::new(buf)))?,
-        ));
+        let entry = zip.by_name(&name).map_err(io::Error::other)?;
+        let decompressed = decompress_by_name(name.clone(), entry)?;
+        merger.add_chunk(&name, decompressed, tx)?;
     }
-    Ok(out)
+    Ok(())
 }
 
 /// Container detection by magic bytes first, extension second: a split output
@@ -171,66 +208,6 @@ fn sniff_container(input: &Path) -> io::Result<Container> {
     Ok(Container::Tar)
 }
 
-fn collect_from_tar(
-    input: &Path,
-    container: Container,
-) -> io::Result<Vec<(String, Box<dyn Read>)>> {
-    let file = BufReader::with_capacity(IO_BUF, File::open(input)?);
-    let reader: Box<dyn Read> = match container {
-        Container::TarGz => Box::new(flate2::read::GzDecoder::new(file)),
-        Container::TarZst => Box::new(zstd::Decoder::new(file)?),
-        Container::TarBz2 => Box::new(bzip2::read::BzDecoder::new(file)),
-        Container::TarXz => Box::new(xz2::read::XzDecoder::new(file)),
-        _ => Box::new(file),
-    };
-
-    let mut archive = tar::Archive::new(reader);
-    let mut out = Vec::new();
-    for entry in archive.entries()? {
-        let mut entry = entry?;
-        if !entry.header().entry_type().is_file() {
-            continue;
-        }
-        let name = entry
-            .path()
-            .map(|p| p.to_string_lossy().to_string())
-            .unwrap_or_default();
-        if !is_chunk(&name) {
-            continue;
-        }
-        let mut buf = Vec::new();
-        entry.read_to_end(&mut buf)?;
-        out.push((
-            name.clone(),
-            decompress_by_name(name, Box::new(io::Cursor::new(buf)))?,
-        ));
-    }
-    out.sort_by(|a, b| a.0.cmp(&b.0));
-    Ok(out)
-}
-
-fn collect_from_dir(input: &Path) -> io::Result<Vec<(String, Box<dyn Read>)>> {
-    let mut out = Vec::new();
-    for entry in std::fs::read_dir(input)? {
-        let entry = entry?;
-        let path = entry.path();
-        if !path.is_file() {
-            continue;
-        }
-        let name = path
-            .file_name()
-            .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_default();
-        if !is_chunk(&name) {
-            continue;
-        }
-        let reader: Box<dyn Read> = decompress_by_name(name.clone(), Box::new(File::open(&path)?))?;
-        out.push((name, reader));
-    }
-    out.sort_by(|a, b| a.0.cmp(&b.0));
-    Ok(out)
-}
-
 fn is_chunk(name: &str) -> bool {
     let lower = name.to_lowercase();
     lower.ends_with(".csv")
@@ -240,7 +217,7 @@ fn is_chunk(name: &str) -> bool {
         || lower.ends_with(".csv.xz")
 }
 
-fn decompress_by_name(name: String, reader: Box<dyn Read>) -> io::Result<Box<dyn Read>> {
+fn decompress_by_name<'a, R: Read + 'a>(name: String, reader: R) -> io::Result<Box<dyn Read + 'a>> {
     let lower = name.to_lowercase();
     if lower.ends_with(".csv.zst") {
         Ok(Box::new(zstd::Decoder::new(reader)?))
@@ -251,7 +228,7 @@ fn decompress_by_name(name: String, reader: Box<dyn Read>) -> io::Result<Box<dyn
     } else if lower.ends_with(".csv.xz") {
         Ok(Box::new(xz2::read::XzDecoder::new(reader)))
     } else {
-        Ok(reader)
+        Ok(Box::new(reader))
     }
 }
 

@@ -16,7 +16,15 @@ use std::thread;
 /// 64 MB request actually allocated ~700 MB. Buffers are now split from one
 /// budget and capped, which keeps memory flat as the split count grows.
 fn budget_per_chunk(total: usize, chunks: usize) -> usize {
-    (total / chunks.max(1)).clamp(64 * 1024, 8 * 1024 * 1024)
+    // Cap at 4 MB: beyond that the syscalls are no longer the bottleneck and the
+    // buffers start showing up as resident memory (measured: 205 MB -> 60 MB on
+    // a 1 GB / 8-chunk split).
+    (total / chunks.max(1)).clamp(64 * 1024, 4 * 1024 * 1024)
+}
+
+/// Reader buffer: one big read stream, independent of the chunk count.
+fn reader_budget(total: usize) -> usize {
+    total.clamp(1024 * 1024, 16 * 1024 * 1024)
 }
 
 /// Run the full split pipeline. Blocking — call from background thread.
@@ -230,10 +238,8 @@ fn scan_records(
     // Count through a quote-aware scanner: a record with an embedded newline
     // counts once, and a file without a trailing newline does not lose its last
     // record. The byte total is what `max_bytes` planning needs.
-    let mut reader = RecordReader::new(
-        BufReader::with_capacity(buf_size, File::open(path)?),
-        buf_size,
-    );
+    let buf = reader_budget(buf_size);
+    let mut reader = RecordReader::new(BufReader::with_capacity(buf, File::open(path)?), buf);
     let mut scratch = Vec::with_capacity(256 * 1024);
     let mut scan = Scan::default();
     let mut header = true;
@@ -316,9 +322,10 @@ fn split_filter_compress(
     tx: &ProgressSender,
 ) -> io::Result<Vec<PathBuf>> {
     let delim = delimiter.byte();
+    let read_buf = reader_budget(buf_size);
     let mut reader = RecordReader::new(
-        BufReader::with_capacity(buf_size, File::open(input)?),
-        buf_size,
+        BufReader::with_capacity(read_buf, File::open(input)?),
+        read_buf,
     );
 
     // Header

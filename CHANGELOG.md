@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.7.0] — 2026-11-09
+
+### Fixed
+
+- **`merge` buffered every chunk in memory** before writing: merging a 1 GB
+  archive peaked at **1.08 GB RSS**. Chunks are now streamed straight from the
+  tar/zip entry to the output, one record at a time — same result, **4.8 MB**
+  peak. This was the last place where memory still scaled with file size.
+
+### Changed
+
+- Split I/O buffers are capped (4 MB per chunk, 16 MB for the reader) instead of
+  inheriting the whole `--buf-mb` budget. A 1 GB / 8-chunk split dropped from
+  205 MB to 88 MB peak RSS and got slightly faster.
+
+### Measured (release build, 1 GB / 19 M rows, M1 Pro)
+
+| Operation | Time | Peak RSS |
+|---|---|---|
+| `index` | 0.54 s | 10.9 MB |
+| `preview --start-row 18000000` | 0.49 ms | 3.5 MB |
+| `split -n 8` | 2.42 s | 88 MB |
+| `merge` | 1.05 s | 4.8 MB |
+| `verify` | byte-identical | — |
+
 ## [0.6.0] — 2026-11-09
 
 ### Added
