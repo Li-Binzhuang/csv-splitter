@@ -42,6 +42,7 @@
 | 🧩 Merge | Re-assemble chunks back into one CSV (inverse of split) | 把分片重新合并回单个 CSV（拆分的逆操作） |
 | ✅ Verify | Split → merge round-trip check that proves a split is lossless | 拆分后合并做字节级校验，证明拆分无损 |
 | 💻 CLI | Full headless interface for cron / CI / servers, no GUI needed | 完整命令行，适合 cron / CI / 服务器 |
+| 🌐 HTTP API | Read-only JSON API for a web front-end, pages huge files by row | 只读 JSON 接口，供前端分页浏览超大文件 |
 
 ## Roadmap / 路线图
 
@@ -117,6 +118,36 @@ csv-splitter extract chunks.tar -o ./out
    `verify` 用字节比较兜底。`splits > 记录数` 时不会产生空分片。
 3. **内存可控**：`--buf-mb` 是**总预算**，拆成 N 片不会变成 N × 缓冲。旧版每片固定 64 MB，
    10 片时峰值接近 700 MB。
+
+## HTTP API / 后端接口
+
+前后端分离时的后端：一个只读 JSON API，浏览器只请求「当前屏幕上的那几十行」，
+文件再大也不进内存。
+
+```bash
+csv-splitter serve --root ~/data --addr 127.0.0.1:8787
+```
+
+| 端点 | 说明 |
+|------|------|
+| `GET /health` | 存活检查 |
+| `GET /meta?path=REL` | 行数、字节数、表头、分隔符 |
+| `GET /rows?path=REL&start=N&count=M` | 任意行窗口（count ≤ 2000） |
+| `GET /stats?path=REL&sample=N` | 列统计（唯一值 / 空值 / Top N） |
+
+约束与安全：
+
+- 只绑定回环地址（传入非回环地址会打印警告）
+- 所有 `path` 都相对 `--root` 解析，`canonicalize` 后必须仍在根目录内，`../` 直接 400
+- 已带 `Access-Control-Allow-Origin: *`，任意前端可直接跨域调用
+- 无写操作；split/merge 的任务化 API 在路线图 M3
+
+示例：
+
+```bash
+curl "http://127.0.0.1:8787/meta?path=huge.csv"
+curl "http://127.0.0.1:8787/rows?path=huge.csv&start=18000000&count=20"
+```
 
 ## 性能 / Performance
 

@@ -19,6 +19,8 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
 
+mod serve;
+
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() -> ExitCode {
@@ -28,6 +30,7 @@ fn main() -> ExitCode {
         Some("merge") => cmd_merge(&args[1..]),
         Some("preview") => cmd_preview(&args[1..]),
         Some("index") => cmd_index(&args[1..]),
+        Some("serve") => cmd_serve(&args[1..]),
         Some("stats") => cmd_stats(&args[1..]),
         Some("extract") => cmd_extract(&args[1..]),
         Some("verify") => cmd_verify(&args[1..]),
@@ -60,6 +63,7 @@ COMMANDS
   merge    <archive|dir> -o F   Re-assemble chunks produced by `split`
   preview  <input>              Print the first rows and detected delimiter
   index    <input>              Build a sparse row index for instant paging
+  serve    --root <dir>          Local HTTP API (JSON) for a web front-end
   stats    <input>              Column statistics via reservoir sampling
   extract  <input> -o DIR       Extract any supported compressed archive
   verify   <input>              Split + merge and prove the result is lossless
@@ -85,6 +89,10 @@ SPLIT OPTIONS
 
 MERGE OPTIONS
   -o, --out <path>        Output CSV (required)
+
+SERVE OPTIONS
+  --root <dir>            Directory the API may read (required)
+  --addr <ip:port>        Listen address (default: 127.0.0.1:8787)
 
 INDEX OPTIONS
   --interval <n>          Checkpoint every n records (default: 1000)
@@ -798,6 +806,52 @@ fn cmd_index(args: &[String]) -> i32 {
         path.display()
     );
     0
+}
+
+fn cmd_serve(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut root: Option<PathBuf> = None;
+    let mut addr = "127.0.0.1:8787".to_string();
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--root" => match p.value("--root") {
+                Ok(v) => root = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--addr" => match p.value("--addr") {
+                Ok(v) => addr = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => root = Some(PathBuf::from(other)),
+        }
+    }
+
+    let Some(root) = root else {
+        eprintln!("error: serve needs --root <dir>");
+        return 2;
+    };
+    match serve::run(serve::ServerConfig { addr, root }) {
+        Ok(()) => 0,
+        Err(e) => {
+            eprintln!("✗ serve failed: {e}");
+            1
+        }
+    }
 }
 
 fn cmd_stats(args: &[String]) -> i32 {

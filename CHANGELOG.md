@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.8.0] — 2026-11-09
+
+### Added
+
+- **`csv-splitter serve`**: a dependency-free local HTTP API for a separated
+  front-end. Read-only endpoints `/health`, `/meta`, `/rows`, `/stats`, backed by
+  the sparse index so a browser can request rows 4,300,000..4,300,040 of a 10 GB
+  file in ~1 ms.
+- Path safety: every request resolves inside `--root`, canonicalised, `../`
+  rejected with 400. Binds loopback by default and warns otherwise. CORS enabled.
+- 4 black-box tests that start the real binary on port 0 and speak HTTP to it.
+
+### Changed
+
+- Project direction: GUI is frozen; the roadmap now targets the engine, CLI and
+  HTTP API. Front-end work is out of scope.
+
 ## [0.7.0] — 2026-11-09
 
 ### Fixed

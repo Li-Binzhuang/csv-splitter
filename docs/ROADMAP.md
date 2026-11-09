@@ -21,7 +21,10 @@
 - [x] `index` 命令 + `preview --start-row`
 - [x] 索引格式版本化、原子写入、文件变更自动重建
 
-### M2 · 查看体验 — `in progress`
+### M2 · 查看体验（GUI 冻结，转为 API） — `done / frozen`
+- [x] HTTP API：`/health` `/meta` `/rows` `/stats`，根目录白名单 + CORS + 回环绑定
+- [ ] ~~GUI 跳转行~~（已完成，但不再投入）
+
 - [ ] GUI 预览接入行索引：滚到哪读到哪（窗口化，不整表载入）
 - [ ] 跳转到指定行、首/尾/上/下页
 - [ ] 列宽自适应 + 长文本截断提示
