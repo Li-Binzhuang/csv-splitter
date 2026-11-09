@@ -176,6 +176,27 @@ impl ResultCache {
         }
     }
 
+    /// True when `path`/`sql` is already cached (and still valid).
+    pub fn contains(&self, path: &Path, sql: &str, delimiter: Delimiter) -> bool {
+        match key_for(path, sql, delimiter) {
+            Ok(key) => self.inner.lock().unwrap().entries.contains_key(&key),
+            Err(_) => false,
+        }
+    }
+
+    /// Store a result under the key derived from `path`/`sql`.
+    pub fn put(
+        &self,
+        path: &Path,
+        sql: &str,
+        delimiter: Delimiter,
+        value: &CachedResult,
+    ) -> io::Result<()> {
+        let key = key_for(path, sql, delimiter)?;
+        self.store(key, value);
+        Ok(())
+    }
+
     /// Number of cached results (mostly for tests and diagnostics).
     pub fn len(&self) -> usize {
         self.inner.lock().unwrap().entries.len()

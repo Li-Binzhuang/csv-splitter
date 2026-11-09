@@ -153,6 +153,19 @@ time curl "...&start=20&count=20"
 # 0.00s   {"start":20,"hasMore":true,"rowsSoFar":200000,...}
 ```
 
+**预热**：含引号换行的文件会回退到串行扫描，10 GB 上首次查询要几秒。
+客户端一确定筛选条件就先 `POST /warm`，用户开始滚动时缓存已经就绪：
+
+```bash
+curl -X POST "http://127.0.0.1:8787/warm?path=big1g.csv&sql=SELECT city,amount FROM t ORDER BY amount DESC"
+# {"job":"job1a1c094da0d0"}     然后轮询 /job?id=...
+
+# 预热完成后再取第一页
+# 0.03s  {"start":0,"hasMore":true,"rowsSoFar":200000,...}
+```
+
+已缓存时 `/warm` 返回 `200 {"cached":true}` 而不是再起一个任务；非法 SQL 在起任务前就 400。
+
 语义上诚实的三点：
 
 - 结果超过上限时只物化前缀，`rowsSoFar` 告诉你缓存里有多少行；
@@ -234,6 +247,7 @@ csv-splitter serve --root ~/data --addr 127.0.0.1:8787
 | `GET /query?path=REL&sql=SELECT...` | 对文件跑只读 SQL（DuckDB） |
 | `POST /split?path=REL&splits=N&format=zst&out=REL` | 提交拆分任务，返回 job id |
 | `POST /merge?path=REL&out=REL` | 提交合并任务，返回 job id |
+| `POST /warm?path=REL&sql=...` | 后台预热查询结果缓存（返回 job id） |
 | `GET /job?id=...` / `GET /jobs` | 任务状态 / 近期任务列表 |
 
 约束与安全：

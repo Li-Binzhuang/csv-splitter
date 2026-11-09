@@ -53,6 +53,7 @@
 - [x] 基准测试（criterion）+ 回归护栏 `tests/performance.rs`；CI 拆分为 engine / cli 两个 job
 - [x] 写操作任务化：`POST /split` `POST /merge` + job id 轮询
 - [x] 查询结果缓存：重复翻页 0 ms，前缀语义明确
+- [x] `/warm` 后台预热：用户开始滚动时缓存已就绪
 - [ ] 多线程切分（当前单读多写）
 - [ ] Windows / Linux 上的容错（路径、文件锁）
 

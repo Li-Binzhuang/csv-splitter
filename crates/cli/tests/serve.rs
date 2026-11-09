@@ -372,3 +372,56 @@ fn rows_can_page_a_query_result() {
 
     drop(server);
 }
+
+#[test]
+fn warm_preloads_the_cache_for_the_first_scroll() {
+    let dir = TempDir::new("warm");
+    let mut csv = String::from("id,city\n");
+    for i in 0..2_000 {
+        csv.push_str(&format!(
+            "{i},{}\n",
+            if i % 3 == 0 { "CDMX" } else { "Puebla" }
+        ));
+    }
+    std::fs::write(dir.join("data.csv"), csv).unwrap();
+    let server = start(&dir.0.clone());
+
+    let sql = "SELECT id, city FROM t WHERE city='CDMX' ORDER BY id";
+    let encoded = sql
+        .replace('%', "%25")
+        .replace(' ', "%20")
+        .replace('\'', "%27")
+        .replace('=', "%3D");
+
+    // Warm runs as a job; polling it to completion is enough.
+    let (status, body) = post(&server.addr, &format!("/warm?path=data.csv&sql={encoded}"));
+    assert_eq!(status, 202, "{body}");
+    let id = body
+        .split("\"job\":\"")
+        .nth(1)
+        .and_then(|s| s.split('"').next())
+        .expect("job id")
+        .to_string();
+    let done = wait_for_job(&server.addr, &id);
+    assert!(done.contains("\"state\":\"done\""), "{done}");
+    assert!(done.contains("materialised"), "{done}");
+
+    // The window is served from the warmed cache.
+    let (status, rows) = get(
+        &server.addr,
+        &format!("/rows?path=data.csv&sql={encoded}&start=0&count=5"),
+    );
+    assert_eq!(status, 200, "{rows}");
+    assert!(rows.contains(r#""rowsSoFar":667"#), "{rows}");
+
+    // Warming again is a no-op, not another job.
+    let (status, again) = post(&server.addr, &format!("/warm?path=data.csv&sql={encoded}"));
+    assert_eq!(status, 200, "{again}");
+    assert!(again.contains("\"cached\":true"), "{again}");
+
+    // A bad query is rejected before any job starts.
+    let (status, body) = post(&server.addr, "/warm?path=data.csv&sql=DROP%20TABLE%20t");
+    assert_eq!(status, 400, "{body}");
+
+    drop(server);
+}

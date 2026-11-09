@@ -17,6 +17,7 @@
 //! Write endpoints return a job id instead of blocking:
 //!   POST /split?path=REL&splits=N&format=zst&out=REL   -> {"job":"..."}
 //!   POST /merge?path=REL&out=REL                        -> {"job":"..."}
+//!   POST /warm?path=REL&sql=...                       -> {"job":"..."}
 //!   GET  /job?id=...    (poll)      GET /jobs  (list)
 
 use csv_splitter_core::cache::ResultCache;
@@ -114,6 +115,7 @@ fn handle(
         return match path {
             "/split" => start_split(&mut stream, root, jobs, &params),
             "/merge" => start_merge(&mut stream, root, jobs, &params),
+            "/warm" => start_warm(&mut stream, root, jobs, cache, &params),
             _ => respond_json(&mut stream, 404, r#"{"error":"unknown endpoint"}"#),
         };
     }
@@ -286,6 +288,69 @@ fn start_merge(
                 .ok();
                 tx.send(ProgressEvent::Finished {
                     output: report.output,
+                })
+                .ok();
+            }
+            Err(e) => {
+                tx.send(ProgressEvent::Error(e.to_string())).ok();
+            }
+        }
+    });
+    respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
+}
+
+/// Pre-load a query into the result cache so the first scroll is already fast.
+///
+/// On files with quoted newlines the CSV reader falls back to a serial scan
+/// (a 10 GB query then costs seconds), so a client should start warming as soon
+/// as it knows the filter, not when the user scrolls.
+fn start_warm(
+    stream: &mut TcpStream,
+    root: &Path,
+    jobs: &JobRegistry,
+    cache: &ResultCache,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+    };
+    let Some(statement) = params.get("sql") else {
+        return respond_json(stream, 400, r#"{"error":"sql is required"}"#);
+    };
+    // Fail fast on a bad query instead of hiding it inside a job.
+    if let Err(e) = sql::validate(statement) {
+        return respond_json(stream, 400, &format!(r#"{{"error":{}}}"#, json_str(&e)));
+    }
+    if cache.contains(&path, statement, delimiter(params)) {
+        return respond_json(stream, 200, r#"{"job":null,"cached":true}"#);
+    }
+
+    let cache = cache.clone();
+    let sql_owned = statement.to_string();
+    let delim = delimiter(params);
+    let id = jobs.submit("warm", move |tx| {
+        tx.send(ProgressEvent::PhaseStart {
+            phase: "warming query".into(),
+            total_bytes: 0,
+        })
+        .ok();
+        match cache.get_or_load(&path, &sql_owned, delim, || {
+            sql::collect(&path, &sql_owned, delim, cache.row_cap())
+        }) {
+            Ok(result) => {
+                let note = if result.oversized {
+                    " (prefix only)"
+                } else {
+                    ""
+                };
+                tx.send(ProgressEvent::Info(format!(
+                    "materialised {} rows{note}",
+                    result.total()
+                )))
+                .ok();
+                tx.send(ProgressEvent::Finished {
+                    output: path.clone(),
                 })
                 .ok();
             }

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.18.0] — 2026-11-09
+
+### Added
+
+- **`POST /warm`**: pre-load a query into the result cache as a background job.
+  Files with quoted newlines fall back to a serial CSV scan, so the first page of
+  a 10 GB query costs seconds — a client that knows its filter can warm it up
+  while the user is still reading the empty table. Warmed page: **0.03 s**
+  instead of 0.70 s.
+  - `200 {"cached":true}` when already warm, so polling clients do not spawn
+    duplicate jobs; invalid SQL is rejected with 400 before a job exists.
+
 ## [0.17.0] — 2026-11-09
 
 ### Added
