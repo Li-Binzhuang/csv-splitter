@@ -8,6 +8,10 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  # DuckDB is compiled from C++ source; keeping debug info for it multiplies
+  # artefact size and link time without helping any test here.
+  CARGO_PROFILE_DEV_DEBUG: "0"
+  CARGO_PROFILE_TEST_DEBUG: "0"
 
 jobs:
   # The engine is where most of the code lives and it has no heavy
@@ -73,14 +77,13 @@ jobs:
             linux-cli-
             linux-cargo-
 
-      - name: Check CLI
-        run: cargo check -p csv-splitter-cli --all-targets
-
+      # Clippy already builds check artefacts for every target, so a separate
+      # `cargo check` step only paid the same compile cost twice.
       - name: Clippy CLI
         run: cargo clippy -p csv-splitter-cli --all-targets -- -D warnings
 
       - name: Test CLI (includes the HTTP API)
         run: cargo test -p csv-splitter-cli
 
-      - name: Benchmarks compile
-        run: cargo bench -p csv-splitter-core --no-run
+      # Benchmarks are informational and are compiled locally; building a second
+      # cargo profile here cost more than it protected.

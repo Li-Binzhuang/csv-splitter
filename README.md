@@ -408,6 +408,8 @@ csv-splitter/
 | Tag `v*` push | Release | Build all platforms → GitHub Release |
 | Manual dispatch | Release | Optional tag input, build with/without release |
 
+CI 为什么拆成两个 job、怎么让它不变慢，见 [docs/CI.md](docs/CI.md)。
+
 To create a release:
 
 ```bash
