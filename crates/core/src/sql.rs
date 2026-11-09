@@ -75,9 +75,8 @@ pub fn validate(sql: &str) -> Result<(), String> {
     Ok(())
 }
 
-/// Run `sql` against `path` (read-only, results capped at `limit`).
-pub fn query(path: &Path, sql: &str, limit: usize) -> io::Result<QueryResult> {
-    validate(sql).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+/// Open the file as view `t` in a fresh in-memory connection.
+fn connect(path: &Path) -> io::Result<Connection> {
     if !path.is_file() {
         return Err(io::Error::new(io::ErrorKind::NotFound, "file not found"));
     }
@@ -89,6 +88,13 @@ pub fn query(path: &Path, sql: &str, limit: usize) -> io::Result<QueryResult> {
         path.to_string_lossy().replace('\'', "''")
     );
     conn.execute_batch(&view).map_err(to_io)?;
+    Ok(conn)
+}
+
+/// Run `sql` against `path` (read-only, results capped at `limit`).
+pub fn query(path: &Path, sql: &str, limit: usize) -> io::Result<QueryResult> {
+    validate(sql).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+    let conn = connect(path)?;
 
     let limit = limit.clamp(1, 100_000);
     let wrapped = format!("SELECT * FROM ({sql}) AS _q LIMIT {}", limit + 1);
@@ -128,6 +134,68 @@ pub fn query(path: &Path, sql: &str, limit: usize) -> io::Result<QueryResult> {
         result.truncated = true;
     }
     Ok(result)
+}
+
+/// A window into a query result, for a viewer that pages instead of loading.
+#[derive(Clone, Debug, Default)]
+pub struct QueryPage {
+    pub columns: Vec<String>,
+    pub rows: Vec<Vec<String>>,
+    /// 1-based position of the first returned row in the full result.
+    pub start: u64,
+    /// True when more rows exist after this window.
+    pub has_more: bool,
+}
+
+/// Run `sql`, then return only rows `[start, start + count)`.
+///
+/// This is the endpoint a table UI actually needs: the client says "give me
+/// rows 5000..5020 of `WHERE city='CDMX'`" and never materialises the rest.
+/// One extra row is fetched to answer `has_more` without a second COUNT query.
+pub fn page(path: &Path, sql: &str, start: u64, count: u64) -> io::Result<QueryPage> {
+    validate(sql).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+    let conn = connect(path)?;
+    let count = count.clamp(1, 100_000);
+    let wrapped = format!(
+        "SELECT * FROM ({sql}) AS _q LIMIT {} OFFSET {}",
+        count + 1,
+        start
+    );
+
+    let describe = format!("DESCRIBE SELECT * FROM ({sql}) AS _q");
+    let mut describe_stmt = conn.prepare(&describe).map_err(to_io)?;
+    let mut describe_rows = describe_stmt.query([]).map_err(to_io)?;
+    let mut columns: Vec<String> = Vec::new();
+    while let Some(row) = describe_rows.next().map_err(to_io)? {
+        let name: String = row.get(0).map_err(to_io)?;
+        columns.push(name);
+    }
+    drop(describe_rows);
+    drop(describe_stmt);
+
+    let mut stmt = conn.prepare(&wrapped).map_err(to_io)?;
+    let mut rows: Vec<Vec<String>> = Vec::new();
+    let mut result_rows = stmt.query([]).map_err(to_io)?;
+    while let Some(row) = result_rows.next().map_err(to_io)? {
+        let mut cells = Vec::with_capacity(columns.len());
+        for i in 0..columns.len() {
+            let value: Value = row.get(i).map_err(to_io)?;
+            cells.push(value_to_string(&value));
+        }
+        rows.push(cells);
+    }
+
+    let mut page = QueryPage {
+        columns,
+        rows,
+        start,
+        has_more: false,
+    };
+    if page.rows.len() as u64 > count {
+        page.rows.truncate(count as usize);
+        page.has_more = true;
+    }
+    Ok(page)
 }
 
 fn value_to_string(value: &Value) -> String {
@@ -225,6 +293,41 @@ mod tests {
         assert_eq!(r.rows.len(), 2);
         assert_eq!(r.rows[0][0], "CDMX");
         assert_eq!(r.rows[0][1], "500");
+        std::fs::remove_dir_all(p.parent().unwrap()).ok();
+    }
+
+    #[test]
+    fn pages_without_materialising_the_result() {
+        let p = sample();
+        let q = "SELECT city, amount FROM t ORDER BY amount";
+        let first = page(&p, q, 0, 5).unwrap();
+        assert_eq!(first.columns, vec!["city", "amount"]);
+        assert_eq!(first.rows.len(), 5);
+        assert_eq!(first.start, 0);
+        assert!(first.has_more);
+        assert_eq!(first.rows[0][1], "0");
+
+        let second = page(&p, q, 5, 5).unwrap();
+        assert_eq!(second.start, 5);
+        assert_eq!(second.rows[0][1], "5");
+
+        // The last page reports the end.
+        let last = page(&p, q, 995, 10).unwrap();
+        assert_eq!(last.rows.len(), 5);
+        assert!(!last.has_more);
+
+        // Paging past the end is empty, not an error.
+        let past = page(&p, q, 5_000, 10).unwrap();
+        assert!(past.rows.is_empty());
+        assert!(!past.has_more);
+
+        std::fs::remove_dir_all(p.parent().unwrap()).ok();
+    }
+
+    #[test]
+    fn page_rejects_writes_too() {
+        let p = sample();
+        assert!(page(&p, "DELETE FROM t", 0, 10).is_err());
         std::fs::remove_dir_all(p.parent().unwrap()).ok();
     }
 

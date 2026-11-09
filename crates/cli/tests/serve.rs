@@ -324,3 +324,42 @@ fn write_endpoints_refuse_paths_outside_root() {
 
     drop(server);
 }
+
+#[test]
+fn rows_can_page_a_query_result() {
+    let dir = TempDir::new("sqlrows");
+    let mut csv = String::from("city,amount\n");
+    for i in 0..200 {
+        csv.push_str(&format!(
+            "{},{}\n",
+            if i % 2 == 0 { "CDMX" } else { "Puebla" },
+            i
+        ));
+    }
+    std::fs::write(dir.join("data.csv"), csv).unwrap();
+    let server = start(&dir.0.clone());
+
+    // Sorted view, second page of 5 rows.
+    let sql = "SELECT city, amount FROM t WHERE city='CDMX' ORDER BY amount";
+    let encoded = sql
+        .replace('%', "%25")
+        .replace(' ', "%20")
+        .replace('\'', "%27")
+        .replace('=', "%3D");
+    let (status, body) = get(
+        &server.addr,
+        &format!("/rows?path=data.csv&sql={encoded}&start=5&count=5"),
+    );
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("\"start\":5"), "{body}");
+    assert!(body.contains("\"hasMore\":true"), "{body}");
+    assert!(body.contains("\"columns\":[\"city\",\"amount\"]"), "{body}");
+    // Row 5 (0-based) of the CDMX subset is amount 10 (evens only).
+    assert!(body.contains("[\"CDMX\",\"10\"]"), "{body}");
+
+    // Writes are refused through this path too.
+    let (status, body) = get(&server.addr, "/rows?path=data.csv&sql=DROP%20TABLE%20t");
+    assert_eq!(status, 400, "{body}");
+
+    drop(server);
+}

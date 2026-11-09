@@ -9,6 +9,7 @@
 //!   GET /health
 //!   GET /meta?path=REL
 //!   GET /rows?path=REL&start=N&count=M
+//!   GET /rows?path=REL&sql=SELECT...&start=N&count=M   (window over a query)
 //!   GET /stats?path=REL&sample=N
 //!   GET /filter?path=REL&where=col=value&limit=N
 //!   GET /query?path=REL&sql=SELECT...&limit=N
@@ -341,6 +342,45 @@ fn rows(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -
             )
         }
     };
+    // With `sql=`, the window is taken from the query result instead of the
+    // raw file: a table can page a filtered/sorted view directly.
+    if let Some(statement) = params.get("sql") {
+        return match sql::page(&path, statement, start, count) {
+            Ok(p) => {
+                let cols: Vec<String> = p.columns.iter().map(|c| json_str(c)).collect();
+                let rows: Vec<String> = p
+                    .rows
+                    .iter()
+                    .map(|row| {
+                        let cells: Vec<String> = row.iter().map(|c| json_str(c)).collect();
+                        format!("[{}]", cells.join(","))
+                    })
+                    .collect();
+                respond_json(
+                    stream,
+                    200,
+                    &format!(
+                        r#"{{"start":{},"hasMore":{},"columns":[{}],"rows":[{}]}}"#,
+                        p.start,
+                        p.has_more,
+                        cols.join(","),
+                        rows.join(",")
+                    ),
+                )
+            }
+            Err(e) if e.kind() == io::ErrorKind::InvalidInput => respond_json(
+                stream,
+                400,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            ),
+            Err(e) => respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            ),
+        };
+    }
+
     if let Err(e) = viewer.ensure_range(start, count) {
         return respond_json(
             stream,

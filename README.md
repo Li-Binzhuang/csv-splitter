@@ -206,6 +206,7 @@ csv-splitter serve --root ~/data --addr 127.0.0.1:8787
 | `GET /health` | 存活检查 |
 | `GET /meta?path=REL` | 行数、字节数、表头、分隔符、编码 |
 | `GET /rows?path=REL&start=N&count=M` | 任意行窗口（count ≤ 2000） |
+| `GET /rows?path=REL&sql=...&start=N&count=M` | **查询结果的第 K 页**——表格不必先物化整个结果 |
 | `GET /stats?path=REL&sample=N` | 列统计（唯一值 / 空值 / Top N） |
 | `GET /filter?path=REL&where=col=value` | 全表筛选，返回命中的行号（1 起，不含表头） |
 | `GET /query?path=REL&sql=SELECT...` | 对文件跑只读 SQL（DuckDB） |

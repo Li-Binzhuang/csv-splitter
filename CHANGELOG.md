@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.14.0] — 2026-11-09
+
+### Added
+
+- **`/rows?sql=...`**: page through a query result instead of the raw file.
+  `GET /rows?path=REL&sql=SELECT ...&start=500&count=50` returns rows 500..550 of
+  the query — a table can scroll a filtered/sorted view without materialising it.
+- `sql::page()` in core: `LIMIT count+1 OFFSET start`, so `has_more` comes from
+  one extra row rather than a second `COUNT(*)`. Same validation as `/query`
+  (one statement, SELECT/WITH only, no file readers).
+
 ## [0.13.0] — 2026-11-09
 
 ### Added
