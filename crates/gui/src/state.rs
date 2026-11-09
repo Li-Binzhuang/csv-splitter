@@ -1,3 +1,4 @@
+use csv_splitter_core::viewer::WindowViewer;
 use csv_splitter_core::*;
 use std::path::PathBuf;
 use std::sync::mpsc;
@@ -145,6 +146,13 @@ pub struct PreviewState {
     /// Which column to freeze (1 = first col, 0 = none). 1-indexed.
     pub freeze_col: usize,
     pub preview: Option<CsvPreview>,
+    /// Random-access reader; available once the sidecar index is ready.
+    pub viewer: Option<WindowViewer>,
+    /// Worker building the index for a large file.
+    pub index_rx: Option<mpsc::Receiver<Result<WindowViewer, String>>>,
+    pub indexing: bool,
+    /// 1-based row the user wants to jump to.
+    pub jump_row: u64,
 }
 
 impl Default for PreviewState {
@@ -161,6 +169,10 @@ impl Default for PreviewState {
             freeze_row: 1,
             freeze_col: 1,
             preview: None,
+            viewer: None,
+            index_rx: None,
+            indexing: false,
+            jump_row: 1,
         }
     }
 }

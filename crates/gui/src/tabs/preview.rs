@@ -2,6 +2,9 @@ use crate::i18n::{t, Lang};
 use crate::state::PreviewState;
 use crate::widgets::*;
 use csv_splitter_core::preview::load_preview;
+use csv_splitter_core::viewer::WindowViewer;
+use csv_splitter_core::CsvPreview;
+use std::sync::mpsc;
 
 pub fn ui_preview(
     ui: &mut egui::Ui,
@@ -17,6 +20,10 @@ pub fn ui_preview(
                 .color(TEXT_DIM),
         );
     });
+    // Index worker: building it off-thread keeps the window responsive on 10 GB
+    // files (roughly half a second per 100 MB).
+    poll_index_worker(s);
+
     ui.add_space(8.0);
 
     let total_w = ui.available_width();
@@ -58,7 +65,139 @@ pub fn ui_preview(
     };
 
     ui.allocate_space(egui::vec2(total_w, left_h.max(right_h)));
+    draw_nav(ui, s, lang);
     draw_result(ui, s, lang);
+}
+
+/// Drain the index-build worker without blocking the frame.
+fn poll_index_worker(s: &mut PreviewState) {
+    let Some(rx) = s.index_rx.take() else {
+        return;
+    };
+    match rx.try_recv() {
+        Ok(Ok(viewer)) => {
+            s.indexing = false;
+            s.jump_row = 1;
+            s.viewer = Some(viewer);
+            sync_window_to_preview(s);
+        }
+        Ok(Err(_)) => {
+            // Index failed (permissions, exotic file); sequential preview still works.
+            s.indexing = false;
+        }
+        Err(mpsc::TryRecvError::Empty) => s.index_rx = Some(rx),
+        Err(mpsc::TryRecvError::Disconnected) => s.indexing = false,
+    }
+}
+
+/// Replace the visible rows with the viewer's current window.
+fn sync_window_to_preview(s: &mut PreviewState) {
+    let Some(viewer) = s.viewer.as_ref() else {
+        return;
+    };
+    let delim = get_delimiter(s.delim_idx, &s.custom_delim);
+    let rows = viewer.rows().to_vec();
+    let headers = viewer.headers().unwrap_or_default();
+    let total = viewer.total_rows();
+    s.preview = Some(CsvPreview {
+        headers,
+        rows,
+        total_rows_estimate: total,
+        file_size: viewer.file_len(),
+        detected_delimiter: delim,
+    });
+    s.from_row = 1;
+    s.to_row = s.preview.as_ref().map(|p| p.rows.len()).unwrap_or(0).max(1);
+}
+
+/// Jump controls: first / previous / next / last / go-to-row.
+fn draw_nav(ui: &mut egui::Ui, s: &mut PreviewState, lang: Lang) {
+    let zh = matches!(lang, Lang::Zh);
+    if s.indexing {
+        ui.add_space(4.0);
+        ui.horizontal(|ui| {
+            ui.spinner();
+            ui.label(
+                egui::RichText::new(if zh {
+                    "正在建立行索引，完成后可跳转任意行…"
+                } else {
+                    "Building row index — you will be able to jump anywhere…"
+                })
+                .size(12.0)
+                .color(TEXT_DIM),
+            );
+        });
+        return;
+    }
+    let Some(viewer) = s.viewer.as_ref() else {
+        return;
+    };
+
+    let total = viewer.total_rows();
+    let start = viewer.window_start();
+    let shown = viewer.rows().len() as u64;
+    let page = 2_000u64;
+    s.jump_row = s.jump_row.clamp(1, total.max(1));
+
+    let mut target: Option<u64> = None;
+    ui.add_space(4.0);
+    ui.horizontal(|ui| {
+        ui.label(
+            egui::RichText::new(if zh {
+                format!("共 {total} 行 · 显示 {}–{}", start + 1, start + shown)
+            } else {
+                format!("{total} rows · showing {}–{}", start + 1, start + shown)
+            })
+            .size(12.0)
+            .color(TEXT_DIM),
+        );
+        ui.separator();
+        if ui
+            .button("⏮")
+            .on_hover_text(if zh { "第一行" } else { "First" })
+            .clicked()
+        {
+            target = Some(0);
+        }
+        if ui
+            .button("◀")
+            .on_hover_text(if zh { "上一页" } else { "Previous page" })
+            .clicked()
+        {
+            target = Some(start.saturating_sub(page));
+        }
+        if ui
+            .button("▶")
+            .on_hover_text(if zh { "下一页" } else { "Next page" })
+            .clicked()
+        {
+            target = Some(start + page);
+        }
+        if ui
+            .button("⏭")
+            .on_hover_text(if zh { "最后一行" } else { "Last" })
+            .clicked()
+        {
+            target = Some(total.saturating_sub(1));
+        }
+        ui.separator();
+        ui.add(
+            egui::DragValue::new(&mut s.jump_row)
+                .range(1..=total.max(1))
+                .speed(50.0),
+        );
+        if ui.button(if zh { "跳转" } else { "Go" }).clicked() {
+            target = Some(s.jump_row.saturating_sub(1));
+        }
+    });
+
+    if let Some(t) = target {
+        if let Some(viewer) = s.viewer.as_mut() {
+            if viewer.ensure_range(t, page).is_ok() {
+                sync_window_to_preview(s);
+            }
+        }
+    }
 }
 
 fn draw_input_frame(
@@ -160,9 +299,9 @@ fn draw_params_frame(ui: &mut egui::Ui, s: &mut PreviewState, lang: Lang, w: f32
                 )
                 .clicked()
             {
-                if let Some(ref info) = s.input_file {
+                if let Some(path) = s.input_file.as_ref().map(|i| i.path.clone()) {
                     let delim = get_delimiter(s.delim_idx, &s.custom_delim);
-                    match load_preview(&info.path, s.preview_rows, Some(delim)) {
+                    match load_preview(&path, s.preview_rows, Some(delim)) {
                         Ok(p) => {
                             s.from_row = 1;
                             s.to_row = p.rows.len();
@@ -171,6 +310,28 @@ fn draw_params_frame(ui: &mut egui::Ui, s: &mut PreviewState, lang: Lang, w: f32
                             s.preview = Some(p);
                         }
                         Err(_) => s.preview = None,
+                    }
+
+                    // Random access: small files index instantly, big ones get a
+                    // worker so the window never freezes on a 10 GB scan.
+                    s.viewer = None;
+                    s.index_rx = None;
+                    s.indexing = false;
+                    s.jump_row = 1;
+                    let big = std::fs::metadata(&path)
+                        .map(|m| m.len() > 4 * 1024 * 1024)
+                        .unwrap_or(false);
+                    if big {
+                        let (tx, rx) = mpsc::channel();
+                        let p = path.clone();
+                        std::thread::spawn(move || {
+                            let res = WindowViewer::open(&p, delim).map_err(|e| e.to_string());
+                            tx.send(res).ok();
+                        });
+                        s.index_rx = Some(rx);
+                        s.indexing = true;
+                    } else if let Ok(v) = WindowViewer::open(&path, delim) {
+                        s.viewer = Some(v);
                     }
                 }
             }
