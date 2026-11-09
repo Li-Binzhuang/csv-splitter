@@ -300,6 +300,17 @@ csv-splitter convert export.csv -o export.utf8.csv     # 自动识别来源编�
 csv-splitter index export.utf8.csv
 ```
 
+### 错误形状 / Error shape
+
+客户端错误统一返回 400 + 机器可读字段：
+
+```json
+{"error":"by is required","parameter":"by","hint":"pass by=<column name>"}
+```
+
+`parameter` 让前端能定位到具体输入框，`hint` 告诉调用方该传什么。
+服务端/文件问题返回 422，错误信息来自引擎原文。
+
 ### 内置页面 / Built-in viewer
 
 `serve` 起来后直接打开 `http://127.0.0.1:8787/`，有一个单文件 HTML 页面：

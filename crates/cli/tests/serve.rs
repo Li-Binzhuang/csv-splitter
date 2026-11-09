@@ -773,3 +773,63 @@ fn serves_a_builtin_viewer_and_rows_supports_where() {
 
     drop(server);
 }
+
+/// Every client-side rejection has the same machine-readable shape, so a
+/// front-end can point at the offending input instead of printing prose.
+#[test]
+fn bad_requests_are_structured() {
+    let dir = TempDir::new("badreq");
+    std::fs::write(dir.join("a.csv"), "id\n1\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let cases = [
+        ("/groupby?path=a.csv", "by"),
+        ("/search?path=a.csv", "q"),
+        ("/sort?path=a.csv&out=o.csv", "by"),
+        ("/rows?path=../../etc/passwd", "path"),
+        ("/job", "id"),
+    ];
+    for (path, parameter) in cases {
+        let out = if path.starts_with("/sort") {
+            post(&server.addr, path).1
+        } else {
+            get(&server.addr, path).1
+        };
+        assert!(
+            out.contains(&format!("\"parameter\":\"{parameter}\"")),
+            "{path} did not name parameter {parameter}: {out}"
+        );
+        assert!(out.contains("\"hint\":"), "{path} has no hint: {out}");
+        assert!(
+            out.contains("\"error\":"),
+            "{path} has no error text: {out}"
+        );
+    }
+
+    // The router advertises everything it serves, including the viewer and the
+    // newer write endpoints.
+    let (_, body) = get(&server.addr, "/nope");
+    for endpoint in [
+        "/",
+        "/analyze",
+        "/groupby",
+        "/files",
+        "/download",
+        "/export",
+    ] {
+        assert!(
+            body.contains(&format!("\"{endpoint}\"")),
+            "{endpoint} missing: {body}"
+        );
+    }
+    for write in [
+        "POST /sort",
+        "POST /dedupe",
+        "POST /partition",
+        "POST /warm",
+    ] {
+        assert!(body.contains(write), "{write} missing: {body}");
+    }
+
+    drop(server);
+}

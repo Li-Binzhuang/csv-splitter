@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.36.0] — 2026-11-10
+
+### Changed
+
+- **HTTP client errors are structured**: 400 now returns
+  `{"error":…,"parameter":…,"hint":…}` so a front-end can highlight the offending
+  input instead of showing prose, and a test can assert on `parameter` rather than
+  on wording. Applied to path/out resolution, and to the required `by` / `agg` /
+  `sql` / `q` / `id` parameters across every endpoint.
+- The router's advertised endpoint list was stale: it omitted `/` and the newer
+  `POST /sort`, `/dedupe`, `/partition`, `/warm`. A test now asserts the
+  advertisement covers everything the docs mention.
+
+### Docs
+
+- `docs/ROADMAP.md` brought up to date: milestones closed or re-scoped, north-star
+  numbers refreshed with the latest runs, and a new "known gaps" table that names
+  what is *not* done (browser-verified UI, fast `analyze`, quote-style overrides,
+  Windows, partial doc sync).
+
 ## [0.35.0] — 2026-11-10
 
 ### Added

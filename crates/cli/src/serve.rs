@@ -160,7 +160,7 @@ fn handle(
         _ => respond_json(
             &mut stream,
             404,
-            r#"{"error":"unknown endpoint","endpoints":["/health","/meta","/rows","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/query","/job","/jobs"],"writes":["POST /split","POST /merge"]}"#,
+            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm"]}"#,
         ),
     }
 }
@@ -171,7 +171,12 @@ fn job_status(
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
     let Some(id) = params.get("id") else {
-        return respond_json(stream, 400, r#"{"error":"id is required"}"#);
+        return bad_request(
+            stream,
+            "id is required",
+            "id",
+            "poll the job id returned by a write endpoint",
+        );
     };
     match jobs.status(id) {
         Some(status) => respond_json(stream, 200, &job_json(&status)),
@@ -240,10 +245,10 @@ fn start_split(
 ) -> io::Result<()> {
     let (input, _rel) = match resolve(root, params) {
         Some(v) => v,
-        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+        None => return bad_path(stream),
     };
     let Some(output) = resolve_out(root, params, "out") else {
-        return respond_json(stream, 400, r#"{"error":"out must stay inside root"}"#);
+        return bad_out(stream);
     };
     let splits: usize = params
         .get("splits")
@@ -302,10 +307,10 @@ fn start_merge(
 ) -> io::Result<()> {
     let (input, _rel) = match resolve(root, params) {
         Some(v) => v,
-        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+        None => return bad_path(stream),
     };
     let Some(output) = resolve_out(root, params, "out") else {
-        return respond_json(stream, 400, r#"{"error":"out must stay inside root"}"#);
+        return bad_out(stream);
     };
 
     let id = jobs.submit("merge", move |tx| {
@@ -337,7 +342,7 @@ fn analyze(
 ) -> io::Result<()> {
     let (path, _rel) = match resolve(root, params) {
         Some(v) => v,
-        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+        None => return bad_path(stream),
     };
     let cap: usize = params
         .get("distinctCap")
@@ -409,10 +414,10 @@ fn start_dedupe(
 ) -> io::Result<()> {
     let (input, _rel) = match resolve(root, params) {
         Some(v) => v,
-        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+        None => return bad_path(stream),
     };
     let Some(out) = resolve_out(root, params, "out") else {
-        return respond_json(stream, 400, r#"{"error":"out must stay inside root"}"#);
+        return bad_out(stream);
     };
     let keys: Vec<String> = params
         .get("by")
@@ -459,16 +464,16 @@ fn group_by(
 ) -> io::Result<()> {
     let (path, _rel) = match resolve(root, params) {
         Some(v) => v,
-        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+        None => return bad_path(stream),
     };
     let Some(by) = params.get("by").filter(|b| !b.is_empty()) else {
-        return respond_json(stream, 400, r#"{"error":"by is required"}"#);
+        return bad_request(stream, "by is required", "by", "pass by=<column name>");
     };
     let Some(agg) = params.get("agg").filter(|a| !a.is_empty()) else {
         return respond_json(
             stream,
             400,
-            r#"{"error":"agg is required (column:op,...)"}"#,
+            r#"{"error":"agg is required","parameter":"agg","hint":"pass agg=column:sum,column:count"}"#,
         );
     };
     let keys: Vec<String> = by.split(',').map(|k| k.trim().to_string()).collect();
@@ -589,13 +594,13 @@ fn start_partition(
 ) -> io::Result<()> {
     let (input, _rel) = match resolve(root, params) {
         Some(v) => v,
-        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+        None => return bad_path(stream),
     };
     let Some(out) = resolve_out(root, params, "out") else {
-        return respond_json(stream, 400, r#"{"error":"out must stay inside root"}"#);
+        return bad_out(stream);
     };
     let Some(by) = params.get("by").filter(|b| !b.is_empty()) else {
-        return respond_json(stream, 400, r#"{"error":"by is required"}"#);
+        return bad_request(stream, "by is required", "by", "pass by=<column name>");
     };
     let format = match params.get("format").map(String::as_str) {
         Some("zst") | None => CompressFormat::Zstd,
@@ -650,13 +655,13 @@ fn start_sort(
 ) -> io::Result<()> {
     let (input, _rel) = match resolve(root, params) {
         Some(v) => v,
-        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+        None => return bad_path(stream),
     };
     let Some(out) = resolve_out(root, params, "out") else {
-        return respond_json(stream, 400, r#"{"error":"out must stay inside root"}"#);
+        return bad_out(stream);
     };
     let Some(by) = params.get("by").filter(|b| !b.is_empty()) else {
-        return respond_json(stream, 400, r#"{"error":"by is required"}"#);
+        return bad_request(stream, "by is required", "by", "pass by=<column name>");
     };
     let descending = params
         .get("desc")
@@ -700,10 +705,10 @@ fn start_warm(
 ) -> io::Result<()> {
     let (path, _rel) = match resolve(root, params) {
         Some(v) => v,
-        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+        None => return bad_path(stream),
     };
     let Some(statement) = params.get("sql") else {
-        return respond_json(stream, 400, r#"{"error":"sql is required"}"#);
+        return bad_request(stream, "sql is required", "sql", "pass sql=<SELECT ...>");
     };
     // Fail fast on a bad query instead of hiding it inside a job.
     if let Err(e) = sql::validate(statement) {
@@ -752,7 +757,7 @@ fn start_warm(
 fn meta(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
     let (path, rel) = match resolve(root, params) {
         Some(v) => v,
-        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+        None => return bad_path(stream),
     };
     match WindowViewer::open(&path, delimiter(params)) {
         Ok(viewer) => {
@@ -785,7 +790,7 @@ fn rows(
 ) -> io::Result<()> {
     let (path, _rel) = match resolve(root, params) {
         Some(v) => v,
-        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+        None => return bad_path(stream),
     };
     let start: u64 = params
         .get("start")
@@ -902,10 +907,10 @@ fn rows(
 fn query(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
     let (path, _rel) = match resolve(root, params) {
         Some(v) => v,
-        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+        None => return bad_path(stream),
     };
     let Some(statement) = params.get("sql") else {
-        return respond_json(stream, 400, r#"{"error":"sql is required"}"#);
+        return bad_request(stream, "sql is required", "sql", "pass sql=<SELECT ...>");
     };
     let limit: usize = params
         .get("limit")
@@ -958,7 +963,7 @@ fn download(
 ) -> io::Result<()> {
     let (path, rel) = match resolve(root, params) {
         Some(v) => v,
-        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+        None => return bad_path(stream),
     };
     let bytes = match std::fs::read(&path) {
         Ok(b) => b,
@@ -1045,7 +1050,7 @@ fn sql_predicate(spec: &FilterSpec) -> Option<String> {
 fn export(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
     let (path, _rel) = match resolve(root, params) {
         Some(v) => v,
-        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+        None => return bad_path(stream),
     };
     let limit: usize = params
         .get("limit")
@@ -1059,7 +1064,12 @@ fn export(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
         (Some(clause), _) => format!("SELECT * FROM t WHERE {clause}"),
         (None, Some(query)) => query.clone(),
         (None, None) => {
-            return respond_json(stream, 400, r#"{"error":"sql or where is required"}"#)
+            return bad_request(
+                stream,
+                "sql or where is required",
+                "sql",
+                "pass sql=<SELECT ...>, or where=<column=value>",
+            )
         }
     };
     match sql::query_with(&path, &statement, limit, delimiter(params)) {
@@ -1183,10 +1193,10 @@ fn respond_rows_from_cache(
 fn search(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
     let (path, _rel) = match resolve(root, params) {
         Some(v) => v,
-        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+        None => return bad_path(stream),
     };
     let Some(query) = params.get("q").filter(|q| !q.is_empty()) else {
-        return respond_json(stream, 400, r#"{"error":"q is required"}"#);
+        return bad_request(stream, "q is required", "q", "pass q=<text to search for>");
     };
     let mut spec = SearchSpec::new(query.clone());
     if let Some(columns) = params.get("columns").filter(|c| !c.is_empty()) {
@@ -1311,7 +1321,7 @@ fn files(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) 
 fn filter(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
     let (path, _rel) = match resolve(root, params) {
         Some(v) => v,
-        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+        None => return bad_path(stream),
     };
     let Some(expr) = params.get("where") else {
         return respond_json(stream, 400, r#"{"error":"where is required"}"#);
@@ -1353,7 +1363,7 @@ fn filter(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
 fn stats(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
     let (path, _rel) = match resolve(root, params) {
         Some(v) => v,
-        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+        None => return bad_path(stream),
     };
     let sample: usize = params
         .get("sample")
@@ -1490,6 +1500,44 @@ fn json_str(s: &str) -> String {
 /// It exists so "the backend is done" is something you can *look at*: it calls
 /// only the public endpoints, so anything it can do, a real front-end can too.
 const VIEWER_HTML: &str = include_str!("web/index.html");
+
+/// A 400 with a machine-readable reason.
+///
+/// Every client-side mistake gets the same shape:
+/// `{"error":"<sentence>","parameter":"<name>","hint":"<what to pass>"}`.
+/// A front-end can point at the offending input instead of showing a wall of
+/// text, and a test can assert on `parameter` rather than on wording.
+fn bad_request(stream: &mut TcpStream, error: &str, parameter: &str, hint: &str) -> io::Result<()> {
+    respond_json(
+        stream,
+        400,
+        &format!(
+            r#"{{"error":{},"parameter":{},"hint":{}}}"#,
+            json_str(error),
+            json_str(parameter),
+            json_str(hint)
+        ),
+    )
+}
+
+/// `path` missing, or pointing outside `--root`.
+fn bad_path(stream: &mut TcpStream) -> io::Result<()> {
+    bad_request(
+        stream,
+        "path missing or outside root",
+        "path",
+        "pass path=<relative path inside the served directory>",
+    )
+}
+
+fn bad_out(stream: &mut TcpStream) -> io::Result<()> {
+    bad_request(
+        stream,
+        "out must stay inside root",
+        "out",
+        "pass out=<relative path inside the served directory>",
+    )
+}
 
 fn respond_html(stream: &mut TcpStream, status: u16, body: &str) -> io::Result<()> {
     let reason = reason_for(status);
