@@ -8,6 +8,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  # Incremental artefacts are large and useless in CI.
+  CARGO_INCREMENTAL: "0"
   # DuckDB is compiled from C++ source; keeping debug info for it multiplies
   # artefact size and link time without helping any test here.
   CARGO_PROFILE_DEV_DEBUG: "0"
@@ -25,6 +27,9 @@ jobs:
         with:
           components: rustfmt, clippy
 
+      # Rolling cache: the key changes every run so at most one entry per job
+      # exists. A per-lockfile key accumulated two 4 GB target archives and pushed
+      # the repo over its 10 GB cache quota, after which runs started failing.
       - name: Cache cargo
         uses: actions/cache@v4
         with:
@@ -32,10 +37,8 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: linux-engine-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            linux-engine-
-            linux-cargo-
+          key: linux-engine-rolling-${{ github.run_id }}
+          restore-keys: linux-engine-rolling-
 
       - name: Install Linux dependencies
         run: |
@@ -71,10 +74,8 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: linux-cli-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            linux-cli-
-            linux-cargo-
+          key: linux-cli-rolling-${{ github.run_id }}
+          restore-keys: linux-cli-rolling-
 
       # Clippy already builds check artefacts for every target, so a separate
       # `cargo check` step only paid the same compile cost twice.
