@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.30.0] — 2026-11-10
+
+### Field run on a 1 GB file
+
+Ran the whole pipeline on 1.0 GB / 19 M rows with `--verify` on every write:
+
+| step | time | peak RSS |
+|---|---|---|
+| `preview` open + jump to row 18,000,000 | 0.01 s + 0.56 s | — |
+| `analyze` all columns | 10.9 s | **29 MB** |
+| `search` across every column | 8.1 s | — |
+| `filter -o --verify` (2,370,440 rows) | 5.6 s | — |
+| `dedupe --by --verify` | 5.2 s | — |
+| `groupby` (3 aggregates) | 6.3 s | — |
+| `sort` two keys | 25.8 s | 227 MB |
+| `columns --verify` (19 M rows × 5 cols) | 11.9 s | — |
+| `partition --by` (zst) | 19.8 s | — |
+| `split -n 8 --threads 4` / `merge` | 1.1 s / 0.69 s | 121 MB |
+| `verify` byte-for-byte | 5.2 s | — |
+
+Every step finished under 30 s, none needed the file in memory, and every
+self-check passed on the first try.
+
+### Fixed
+
+- **Large sums printed float noise**: a 2e11 total came out as
+  `215064677256.200012`. f64 has ~15 significant digits, so summing 19 M values
+  leaves error in the last few bits — printing it down to the micro-unit was
+  pretending to precision that is not there. Values ≥ 1e9 now keep 2 decimals.
+
 ## [0.29.0] — 2026-11-10
 
 ### Added

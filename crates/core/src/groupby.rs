@@ -190,14 +190,24 @@ impl Acc {
     }
 }
 
-/// Avoid `10.0000000001` noise and prefer integers when they are whole.
+/// Format a result so the printed digits mean something.
+///
+/// f64 has ~15 significant digits, so summing 20 million values leaves error in
+/// the last few *bits* — visible as `.200012` on a total of 2e11. The display
+/// therefore keeps 6 decimals for ordinary magnitudes and 2 for very large ones,
+/// where anything beyond a cent is noise. Trailing zeros are trimmed so a whole
+/// number does not print as `60.000000`.
 fn format_number(v: f64) -> String {
+    let decimals = if v.abs() >= 1e9 { 2 } else { 6 };
     if v == v.trunc() && v.abs() < 1e15 {
-        format!("{}", v as i64)
+        return format!("{}", v as i64);
+    }
+    let rounded = format!("{v:.decimals$}");
+    let trimmed = rounded.trim_end_matches('0').trim_end_matches('.');
+    if trimmed == "-0" || trimmed.is_empty() {
+        "0".to_string()
     } else {
-        // Trim trailing zeros without losing precision.
-        let s = format!("{v:.6}");
-        s.trim_end_matches('0').trim_end_matches('.').to_string()
+        trimmed.to_string()
     }
 }
 
@@ -599,5 +609,30 @@ mod tests {
         )
         .unwrap_err();
         assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
+    }
+}
+
+#[cfg(test)]
+mod formatting_tests {
+    use super::*;
+
+    #[test]
+    fn large_sums_do_not_show_float_noise() {
+        // A total of 2e11 cannot resolve micro-units in f64; printing them
+        // would be pretending to a precision that is not there.
+        // Simulate accumulated drift on a 2e11 total: build the value from
+        // parts so no oversized float literal is needed.
+        let drift = 215_064_677_256.0 + 0.200012;
+        assert_eq!(format_number(drift), "215064677256.2");
+        let below = 213_244_423_807.0 + 0.299988;
+        assert_eq!(format_number(below), "213244423807.3");
+    }
+
+    #[test]
+    fn ordinary_magnitudes_keep_their_cents() {
+        assert_eq!(format_number(1234.5678), "1234.5678");
+        assert_eq!(format_number(0.3), "0.3");
+        assert_eq!(format_number(60.0), "60");
+        assert_eq!(format_number(-0.0000001), "0");
     }
 }
