@@ -43,6 +43,10 @@
 | ✅ Verify | Split → merge round-trip check that proves a split is lossless | 拆分后合并做字节级校验，证明拆分无损 |
 | 💻 CLI | Full headless interface for cron / CI / servers, no GUI needed | 完整命令行，适合 cron / CI / 服务器 |
 
+## Roadmap / 路线图
+
+当前进度、北极星指标与后续里程碑见 [docs/ROADMAP.md](docs/ROADMAP.md)。
+
 ## Screenshots / 截图
 
 ### 🔪 拆分压缩 / Split & Compress
