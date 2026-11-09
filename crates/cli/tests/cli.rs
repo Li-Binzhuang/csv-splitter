@@ -572,3 +572,92 @@ fn sql_respects_the_row_cap() {
     // bracket count (which counts the columns array too and means nothing).
     assert!(text.contains(r#""rows":[["0"],["1"],["2"]]"#), "{text}");
 }
+
+#[test]
+fn search_finds_text_anywhere_in_the_row() {
+    let dir = TempDir::new("search");
+    let input = dir.join("s.csv");
+    let mut csv = String::from("id,city,note\n");
+    csv.push_str("1,CDMX,refund issued\n");
+    csv.push_str("2,Puebla,ok\n");
+    csv.push_str("3,CDMX,pay refund later\n");
+    std::fs::write(&input, csv).unwrap();
+
+    let out = Command::new(bin())
+        .args(["search", input.to_str().unwrap(), "refund", "--json"])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("\"matched\":2"), "{text}");
+    assert!(text.contains("\"rows\":[1,3]"), "{text}");
+
+    // Column narrowing and case sensitivity are honoured.
+    let out = Command::new(bin())
+        .args([
+            "search",
+            input.to_str().unwrap(),
+            "cdmx",
+            "--columns",
+            "city",
+            "--case",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    assert!(String::from_utf8_lossy(&out.stdout).contains("matched 0"));
+
+    let out = Command::new(bin())
+        .args([
+            "search",
+            input.to_str().unwrap(),
+            "CDMX",
+            "--columns",
+            "city",
+            "--case",
+        ])
+        .output()
+        .unwrap();
+    assert!(String::from_utf8_lossy(&out.stdout).contains("matched 2"));
+
+    // Missing text is a usage error, not a silent scan.
+    let status = Command::new(bin())
+        .args(["search", input.to_str().unwrap()])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(2));
+}
+
+#[test]
+fn files_lists_the_tree_relative_to_root() {
+    let dir = TempDir::new("files");
+    std::fs::create_dir_all(dir.join("nested")).unwrap();
+    std::fs::write(dir.join("a.csv"), "id\n1\n").unwrap();
+    std::fs::write(dir.join("nested/b.csv"), "id\n1\n").unwrap();
+    std::fs::write(dir.join("skip.md"), "x").unwrap();
+
+    let out = Command::new(bin())
+        .args([
+            "files",
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--ext",
+            "csv",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("\"a.csv\""), "{text}");
+    assert!(text.contains("\"nested/b.csv\""), "{text}");
+    assert!(!text.contains("skip.md"), "{text}");
+}

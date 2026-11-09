@@ -45,7 +45,7 @@
 - [x] `/filter` 只读 API
 - [x] SQL 分析（DuckDB，只读、单语句、结果封顶）→ `sql` 命令 + `/query` API
 - [x] `/rows?sql=` 分页：查询结果按窗口返回，`has_more` 无需 COUNT
-- [ ] 全局搜索（跨所有列）
+- [x] 全局搜索（跨所有列，返回行号）→ `search` + `GET /search`
 - [ ] 导出统计结果 CSV/JSON
 
 ### M5 · 规模化 — `planned`

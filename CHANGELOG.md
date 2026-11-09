@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.20.0] — 2026-11-09
+
+### Added
+
+- **`search`** (`crates/core/src/search.rs`): case-insensitive substring across
+  every column (or `--columns a,b`), `--case`, `--exact`, `--limit`, `--show`.
+  Returns row numbers, so hits can be jumped to through the sparse index.
+  Exposed as `GET /search?q=...`. Matches inside quoted multi-line fields count
+  once and do not shift later row numbers.
+- **`files`** (`crates/core/src/listing.rs`): list the tree under `--root` by
+  extension, relative paths, size and mtime — what a front-end needs to render
+  a file picker. Exposed as `GET /files?dir=...&ext=...`; unreadable
+  subdirectories are skipped and symlinked directories are not descended.
+
+### Changed
+
+- README now opens with a "what do I actually want to do" table mapping each basic
+  task to its command and its HTTP endpoint.
+
 ## [0.19.0] — 2026-11-09
 
 ### Added

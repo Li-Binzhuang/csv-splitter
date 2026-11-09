@@ -12,6 +12,8 @@
 //!   GET /rows?path=REL&sql=SELECT...&start=N&count=M   (window over a query)
 //!   GET /stats?path=REL&sample=N
 //!   GET /filter?path=REL&where=col=value&limit=N
+//!   GET /search?path=REL&q=text&columns=a,b&limit=N
+//!   GET /files?dir=REL&ext=csv,tsv&limit=N
 //!   GET /query?path=REL&sql=SELECT...&limit=N
 //!
 //! Write endpoints return a job id instead of blocking:
@@ -23,8 +25,10 @@
 use csv_splitter_core::cache::ResultCache;
 use csv_splitter_core::filter::{scan as filter_scan, FilterSpec};
 use csv_splitter_core::jobs::JobRegistry;
+use csv_splitter_core::listing;
 use csv_splitter_core::merge::merge_archive;
 use csv_splitter_core::preview::compute_column_stats;
+use csv_splitter_core::search::{search as search_scan, SearchSpec};
 use csv_splitter_core::splitter::run_split_threads;
 use csv_splitter_core::sql;
 use csv_splitter_core::viewer::WindowViewer;
@@ -129,13 +133,15 @@ fn handle(
         "/rows" => rows(&mut stream, root, &params, cache),
         "/stats" => stats(&mut stream, root, &params),
         "/filter" => filter(&mut stream, root, &params),
+        "/search" => search(&mut stream, root, &params),
+        "/files" => files(&mut stream, root, &params),
         "/query" => query(&mut stream, root, &params),
         "/job" => job_status(&mut stream, jobs, &params),
         "/jobs" => job_list(&mut stream, jobs),
         _ => respond_json(
             &mut stream,
             404,
-            r#"{"error":"unknown endpoint","endpoints":["/health","/meta","/rows","/stats","/filter","/query","/job","/jobs"],"writes":["POST /split","POST /merge"]}"#,
+            r#"{"error":"unknown endpoint","endpoints":["/health","/meta","/rows","/stats","/filter","/search","/files","/query","/job","/jobs"],"writes":["POST /split","POST /merge"]}"#,
         ),
     }
 }
@@ -551,6 +557,134 @@ fn query(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) 
             400,
             &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
         ),
+        Err(e) => respond_json(
+            stream,
+            422,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+    }
+}
+
+fn search(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
+    let (path, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+    };
+    let Some(query) = params.get("q").filter(|q| !q.is_empty()) else {
+        return respond_json(stream, 400, r#"{"error":"q is required"}"#);
+    };
+    let mut spec = SearchSpec::new(query.clone());
+    if let Some(columns) = params.get("columns").filter(|c| !c.is_empty()) {
+        spec.columns = columns
+            .split(',')
+            .map(|c| c.trim().to_string())
+            .filter(|c| !c.is_empty())
+            .collect();
+    }
+    spec.case_sensitive = params
+        .get("case")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false);
+    spec.whole_cell = params
+        .get("exact")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false);
+
+    let limit: usize = params
+        .get("limit")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(10_000)
+        .min(MAX_ROWS_PER_REQUEST as usize * 10);
+    let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
+    drop(rx);
+    match search_scan(&path, delimiter(params), &spec, limit, &tx) {
+        Ok(result) => {
+            let rows: Vec<String> = result.row_numbers().iter().map(|n| n.to_string()).collect();
+            let cols: Vec<String> = result.columns.iter().map(|c| json_str(c)).collect();
+            respond_json(
+                stream,
+                200,
+                &format!(
+                    r#"{{"scanned":{},"matched":{},"truncated":{},"columns":[{}],"rows":[{}]}}"#,
+                    result.scanned,
+                    result.matched,
+                    result.truncated,
+                    cols.join(","),
+                    rows.join(",")
+                ),
+            )
+        }
+        Err(e) if e.kind() == io::ErrorKind::InvalidInput => respond_json(
+            stream,
+            400,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+        Err(e) => respond_json(
+            stream,
+            422,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+    }
+}
+
+fn files(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
+    // `dir` is optional and defaults to the root itself.
+    let dir = match params.get("dir") {
+        None => root.to_path_buf(),
+        Some(rel) => {
+            let rel = rel.trim_start_matches(['/', '\\']);
+            let candidate = if rel.is_empty() {
+                root.to_path_buf()
+            } else {
+                root.join(rel)
+            };
+            match candidate.canonicalize() {
+                Ok(p) if p.starts_with(root) && p.is_dir() => p,
+                _ => {
+                    return respond_json(
+                        stream,
+                        400,
+                        r#"{"error":"dir must be a directory inside root"}"#,
+                    )
+                }
+            }
+        }
+    };
+    let exts = params
+        .get("ext")
+        .cloned()
+        .unwrap_or_else(|| "csv,tsv,txt,gz,zst,zip,bz2,xz".to_string());
+    let limit: usize = params
+        .get("limit")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(200)
+        .min(10_000);
+
+    match listing::list(&dir, &exts, limit) {
+        Ok(list) => {
+            let items: Vec<String> = list
+                .files
+                .iter()
+                .map(|f| {
+                    format!(
+                        r#"{{"path":{},"bytes":{},"modified":{}}}"#,
+                        json_str(&f.relative),
+                        f.bytes,
+                        f.modified_secs
+                    )
+                })
+                .collect();
+            respond_json(
+                stream,
+                200,
+                &format!(
+                    r#"{{"root":{},"truncated":{},"files":[{}]}}"#,
+                    json_str(&list.root.to_string_lossy()),
+                    list.truncated,
+                    items.join(",")
+                ),
+            )
+        }
         Err(e) => respond_json(
             stream,
             422,

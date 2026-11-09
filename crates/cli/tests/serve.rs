@@ -425,3 +425,43 @@ fn warm_preloads_the_cache_for_the_first_scroll() {
 
     drop(server);
 }
+
+#[test]
+fn search_and_files_endpoints() {
+    let dir = TempDir::new("basic");
+    std::fs::create_dir_all(dir.join("sub")).unwrap();
+    let mut csv = String::from("id,city,note\n");
+    csv.push_str("1,CDMX,\"refund issued\"\n");
+    csv.push_str("2,Puebla,ok\n");
+    csv.push_str("3,CDMX,refund again\n");
+    std::fs::write(dir.join("data.csv"), csv).unwrap();
+    std::fs::write(dir.join("sub/other.csv"), "id\n1\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    // Search matches rows, not columns; quoted field with a space still matches.
+    let (status, body) = get(&server.addr, "/search?path=data.csv&q=refund");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("\"matched\":2"), "{body}");
+    assert!(body.contains("\"rows\":[1,3]"), "{body}");
+
+    // Narrowing to a column that has no match returns zero, not an error.
+    let (status, body) = get(&server.addr, "/search?path=data.csv&q=refund&columns=city");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("\"matched\":0"), "{body}");
+
+    // Unknown column is a client error.
+    let (status, body) = get(&server.addr, "/search?path=data.csv&q=x&columns=nope");
+    assert_eq!(status, 400, "{body}");
+
+    // File listing walks the tree and keeps paths relative.
+    let (status, body) = get(&server.addr, "/files?ext=csv");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("\"path\":\"data.csv\""), "{body}");
+    assert!(body.contains("\"path\":\"sub/other.csv\""), "{body}");
+
+    // Escaping the root is refused.
+    let (status, _) = get(&server.addr, "/files?dir=../../etc&ext=csv");
+    assert_eq!(status, 400);
+
+    drop(server);
+}

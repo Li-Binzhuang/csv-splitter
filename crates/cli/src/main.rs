@@ -12,6 +12,7 @@ use csv_splitter_core::index::{SparseIndex, DEFAULT_INTERVAL};
 use csv_splitter_core::merge::merge_archive;
 use csv_splitter_core::partition::{run_partition, PartitionConfig};
 use csv_splitter_core::preview::{compute_column_stats, load_preview};
+use csv_splitter_core::search::{search as search_scan, SearchSpec};
 use csv_splitter_core::splitter::run_split_threads;
 use csv_splitter_core::sql::{self, DEFAULT_LIMIT};
 use csv_splitter_core::*;
@@ -37,6 +38,8 @@ fn main() -> ExitCode {
         Some("convert") => cmd_convert(&args[1..]),
         Some("filter") => cmd_filter(&args[1..]),
         Some("sql") => cmd_sql(&args[1..]),
+        Some("search") => cmd_search(&args[1..]),
+        Some("files") => cmd_files(&args[1..]),
         Some("stats") => cmd_stats(&args[1..]),
         Some("extract") => cmd_extract(&args[1..]),
         Some("verify") => cmd_verify(&args[1..]),
@@ -72,6 +75,8 @@ COMMANDS
   serve    --root <dir>          Local HTTP API (JSON) for a web front-end
   convert  <input>               Transcode a CSV to UTF-8 (GBK / UTF-16 input)
   filter   <input> --where EXPR  Row numbers matching a column predicate
+  search   <input> <text>        Find text anywhere (or in chosen columns)
+  files    --root <dir>          List readable files under a directory
   sql      <input> "<query>"     Run SQL over the file (DuckDB, read-only)
   stats    <input>              Column statistics via reservoir sampling
   extract  <input> -o DIR       Extract any supported compressed archive
@@ -105,6 +110,19 @@ SQL OPTIONS
       --json              Emit JSON instead of a table
   The table is registered as `t`, e.g.:
       SELECT city, count(*) n FROM t GROUP BY 1 ORDER BY n DESC
+
+SEARCH OPTIONS
+      --columns <a,b>     Only look in these columns (default: all)
+      --case              Case-sensitive
+      --exact             Match the whole cell, not a substring
+      --limit <n>         Stop after n matches (default: 1000)
+      --show <n>          Also print the first n matching rows
+      --json              Emit JSON
+  -d, --delim <c>         Delimiter (default: auto)
+
+FILES OPTIONS
+      --root <dir>        Directory to list (required)
+      --ext <csv,tsv,...> Extensions to include (default: csv,tsv,txt,gz,zst,zip)
 
 FILTER OPTIONS
   --where <expr>          col=value | col~text | col>number | col empty
@@ -1088,6 +1106,231 @@ fn cmd_filter(args: &[String]) -> i32 {
                 return 1;
             }
         }
+    }
+    0
+}
+
+fn cmd_search(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut input: Option<PathBuf> = None;
+    let mut query: Option<String> = None;
+    let mut columns: Vec<String> = Vec::new();
+    let mut case_sensitive = false;
+    let mut exact = false;
+    let mut limit = 1_000usize;
+    let mut show = 0usize;
+    let mut json = false;
+    let mut delim = "auto".to_string();
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--columns" => match p.value("--columns") {
+                Ok(v) => columns = v.split(',').map(|s| s.trim().to_string()).collect(),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--case" => case_sensitive = true,
+            "--exact" => exact = true,
+            "--limit" => match p
+                .value("--limit")
+                .and_then(|v| v.parse().map_err(|_| "bad --limit".to_string()))
+            {
+                Ok(v) => limit = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--show" => match p
+                .value("--show")
+                .and_then(|v| v.parse().map_err(|_| "bad --show".to_string()))
+            {
+                Ok(v) => show = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--json" => json = true,
+            "-d" | "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => {
+                if input.is_none() {
+                    input = Some(PathBuf::from(other));
+                } else if query.is_none() {
+                    query = Some(other.to_string());
+                } else {
+                    eprintln!("error: unexpected argument: {other}");
+                    return 2;
+                }
+            }
+        }
+    }
+
+    let (Some(input), Some(query)) = (input, query) else {
+        eprintln!("error: search needs <input> and <text>");
+        return 2;
+    };
+    let delimiter = match parse_delimiter(&delim, &input) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+
+    let mut spec = SearchSpec::new(query);
+    spec.columns = columns;
+    spec.case_sensitive = case_sensitive;
+    spec.whole_cell = exact;
+
+    let (tx, _rx) = mpsc::channel();
+    let result = match search_scan(&input, delimiter, &spec, limit, &tx) {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("✗ search failed: {e}");
+            return 1;
+        }
+    };
+
+    if json {
+        let rows: Vec<String> = result.row_numbers().iter().map(|n| n.to_string()).collect();
+        println!(
+            r#"{{"scanned":{},"matched":{},"truncated":{},"columns":["{}"],"rows":[{}]}}"#,
+            result.scanned,
+            result.matched,
+            result.truncated,
+            result.columns.join(r#"",""#),
+            rows.join(",")
+        );
+        return 0;
+    }
+
+    println!(
+        "scanned {} rows, matched {} ({} shown){}",
+        result.scanned,
+        result.matched,
+        result.rows.len(),
+        if result.truncated { ", truncated" } else { "" }
+    );
+    let shown: Vec<String> = result
+        .row_numbers()
+        .iter()
+        .take(50)
+        .map(|n| n.to_string())
+        .collect();
+    println!("rows (1-based, header excluded): {}", shown.join(", "));
+
+    if show > 0 {
+        let picked = &result.rows[..result.rows.len().min(show)];
+        match csv_splitter_core::filter::read_rows(&input, delimiter, picked) {
+            Ok(rows) => {
+                println!();
+                for r in rows {
+                    println!("{:>9}  {}", r.row + 1, r.cells.join(" | "));
+                }
+            }
+            Err(e) => {
+                eprintln!("✗ cannot read matched rows: {e}");
+                return 1;
+            }
+        }
+    }
+    0
+}
+
+fn cmd_files(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut root: Option<PathBuf> = None;
+    let mut exts = "csv,tsv,txt,gz,zst,zip,bz2,xz".to_string();
+    let mut json = false;
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--root" => match p.value("--root") {
+                Ok(v) => root = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--ext" => match p.value("--ext") {
+                Ok(v) => exts = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--json" => json = true,
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other => root = Some(PathBuf::from(other)),
+        }
+    }
+
+    let Some(root) = root else {
+        eprintln!("error: files needs --root <dir>");
+        return 2;
+    };
+    let listing = match csv_splitter_core::listing::list(&root, &exts, 200) {
+        Ok(l) => l,
+        Err(e) => {
+            eprintln!("✗ {e}");
+            return 1;
+        }
+    };
+
+    if json {
+        let items: Vec<String> = listing
+            .files
+            .iter()
+            .map(|f| {
+                format!(
+                    r#"{{"path":"{}","bytes":{},"modified":{}}}"#,
+                    f.relative.replace('"', "\\\""),
+                    f.bytes,
+                    f.modified_secs
+                )
+            })
+            .collect();
+        println!(
+            r#"{{"root":"{}","truncated":{},"files":[{}]}}"#,
+            listing.root.display(),
+            listing.truncated,
+            items.join(",")
+        );
+        return 0;
+    }
+
+    println!(
+        "{} file(s) under {}{}",
+        listing.files.len(),
+        listing.root.display(),
+        if listing.truncated {
+            " (truncated)"
+        } else {
+            ""
+        }
+    );
+    for f in listing.files {
+        println!("{:>12}  {}", human_bytes(f.bytes), f.relative);
     }
     0
 }

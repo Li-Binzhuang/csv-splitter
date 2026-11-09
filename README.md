@@ -42,7 +42,8 @@
 | 🧩 Merge | Re-assemble chunks back into one CSV (inverse of split) | 把分片重新合并回单个 CSV（拆分的逆操作） |
 | ✅ Verify | Split → merge round-trip check that proves a split is lossless | 拆分后合并做字节级校验，证明拆分无损 |
 | 💻 CLI | Full headless interface for cron / CI / servers, no GUI needed | 完整命令行，适合 cron / CI / 服务器 |
-| 🌐 HTTP API | Read-only JSON API for a web front-end, pages huge files by row | 只读 JSON 接口，供前端分页浏览超大文件 |
+| 🌐 HTTP API | JSON API for a web front-end: browse, search, filter, aggregate, split | 供前端的 JSON 接口：浏览、搜索、筛选、聚合、切分 |
+| 🔍 Search | Find text anywhere, or in chosen columns; returns row numbers | 跨列搜索，返回行号（可用 `--start-row` 跳过去） |
 
 ## Roadmap / 路线图
 
@@ -122,6 +123,35 @@ csv-splitter extract chunks.tar -o ./out
    `verify` 用字节比较兜底。`splits > 记录数` 时不会产生空分片。
 3. **内存可控**：`--buf-mb` 是**总预算**，拆成 N 片不会变成 N × 缓冲。旧版每片固定 64 MB，
    10 片时峰值接近 700 MB。
+
+## 基础能力 / Basics
+
+一个 CSV 工具首先得能「打开、看见、找到、拿出去」。对应的最小命令集：
+
+| 想做的事 | 命令行 | HTTP |
+|---|---|---|
+| 看看有什么文件 | `files --root ~/data` | `GET /files?ext=csv` |
+| 打开看一眼 | `preview big.csv --rows 20` | `GET /meta` + `GET /rows` |
+| 跳到某一行 | `preview big.csv --start-row 1500000` | `GET /rows?start=N` |
+| 找某个值（跨所有列） | `search big.csv refund` | `GET /search?q=refund` |
+| 按列筛选 | `filter big.csv --where "city=CDMX"` | `GET /filter?where=city=CDMX` |
+| 统计列分布 | `stats big.csv --sample 50000` | `GET /stats?sample=50000` |
+| 跑聚合 / 排序 | `sql big.csv "SELECT ..."` | `GET /query?sql=...` |
+| 切分 / 合并 | `split` / `merge` | `POST /split` · `POST /merge` |
+| 换编码 | `convert gbk.csv -o utf8.csv` | — |
+| 无损自检 | `verify big.csv -n 6` | — |
+
+```bash
+$ csv-splitter search orders.csv refund --show 3
+scanned 200000 rows, matched 2 (2 shown)
+rows (1-based, header excluded): 1, 3
+
+        1  1 | CDMX | refund issued
+        3  3 | CDMX | pay refund later
+```
+
+搜索默认**不区分大小写、跨所有列做子串匹配**；`--columns city` 收窄范围，
+`--case` 区分大小写，`--exact` 要求整格相等（`--case`/`--exact` 可以和 `--columns` 组合）。
 
 ## 编码 / Encoding
 
