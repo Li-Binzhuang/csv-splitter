@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.4.0] — 2026-11-09
+
+### Added
+
+- `split --by-column <name>`: one file per distinct value of a column, e.g.
+  `--by-column city` gives `orders_CDMX.csv`, `orders_Puebla.csv`, …
+  Implemented as external-sort + sequential grouping, so only one writer is open
+  no matter how many values the column has. Values are sanitised for file names
+  (`New York` → `New_York`, empty → `_empty`, case-insensitive duplicates get a
+  suffix), and a cardinality guard fails the job instead of creating thousands
+  of files.
+- `--by-column` and `--by-size` are mutually exclusive; both are rejected with a
+  usage error rather than silently ignoring one.
+
+### Changed
+
+- Archive packing and the scratch-directory guard moved into `pack.rs` and
+  `tempdir.rs`, shared by split and partition.
+
 ## [0.3.0] — 2026-11-09
 
 ### Added

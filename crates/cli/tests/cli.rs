@@ -231,3 +231,45 @@ fn by_size_rejects_garbage() {
         .unwrap();
     assert_eq!(status.code(), Some(2));
 }
+
+#[test]
+fn by_column_writes_one_file_per_value() {
+    let dir = TempDir::new("bycol");
+    let input = dir.join("orders.csv");
+    let archive = dir.join("parts.tar");
+    std::fs::write(&input, "id,city\n1,CDMX\n2,Puebla\n3,CDMX\n").unwrap();
+
+    let status = Command::new(bin())
+        .args([
+            "split",
+            input.to_str().unwrap(),
+            "--by-column",
+            "city",
+            "-f",
+            "none",
+            "-o",
+        ])
+        .arg(&archive)
+        .arg("-q")
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let listing = Command::new("tar")
+        .arg("tf")
+        .arg(&archive)
+        .output()
+        .unwrap();
+    let names = String::from_utf8_lossy(&listing.stdout);
+    assert!(names.contains("CDMX.csv"), "{names}");
+    assert!(names.contains("Puebla.csv"), "{names}");
+}
+
+#[test]
+fn by_column_and_by_size_conflict() {
+    let status = Command::new(bin())
+        .args(["split", "x.csv", "--by-column", "city", "--by-size", "10MB"])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(2));
+}

@@ -1,7 +1,9 @@
 use crate::compress::{finish_compressor, make_compressor};
 use crate::csv_reader::{join_csv_line, parse_csv_record, RecordReader};
 use crate::decompress::decompress_to_csv;
+use crate::pack::{pack_tar, pack_zip};
 use crate::sort::external_sort;
+use crate::tempdir::TempDir;
 use crate::types::*;
 use std::collections::HashSet;
 use std::fs::{self, File};
@@ -15,40 +17,6 @@ use std::thread;
 /// budget and capped, which keeps memory flat as the split count grows.
 fn budget_per_chunk(total: usize, chunks: usize) -> usize {
     (total / chunks.max(1)).clamp(64 * 1024, 8 * 1024 * 1024)
-}
-
-/// Removes the scratch directory even when the job fails half way through.
-struct TempDir(PathBuf);
-
-static TEMP_SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-
-impl TempDir {
-    fn new(tag: &str) -> io::Result<Self> {
-        // pid + nanos + a per-process sequence: two jobs started in the same
-        // millisecond used to share a directory and delete each other's chunks.
-        let seq = TEMP_SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        let dir = std::env::temp_dir().join(format!(
-            "csv_split_{tag}_{}_{}_{}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map(|d| d.as_nanos())
-                .unwrap_or(0),
-            seq
-        ));
-        fs::create_dir_all(&dir)?;
-        Ok(Self(dir))
-    }
-
-    fn path(&self) -> &Path {
-        &self.0
-    }
-}
-
-impl Drop for TempDir {
-    fn drop(&mut self) {
-        fs::remove_dir_all(&self.0).ok();
-    }
 }
 
 /// Run the full split pipeline. Blocking — call from background thread.
@@ -527,66 +495,6 @@ fn split_targets(total: u64, parts: usize) -> Vec<u64> {
     let base = total / parts;
     let rem = total % parts;
     (0..parts).map(|i| base + u64::from(i < rem)).collect()
-}
-
-fn pack_tar(
-    files: &[PathBuf],
-    output: &Path,
-    buf_size: usize,
-    tx: &ProgressSender,
-) -> io::Result<()> {
-    let io_buf = buf_size.clamp(256 * 1024, 8 * 1024 * 1024);
-    let tar_file = BufWriter::with_capacity(io_buf, File::create(output)?);
-    let mut archive = tar::Builder::new(tar_file);
-    let mut bytes_done: u64 = 0;
-
-    for path in files {
-        let name = path
-            .file_name()
-            .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_else(|| "chunk.csv".to_string());
-        let fsize = fs::metadata(path)?.len();
-
-        let mut header = tar::Header::new_gnu();
-        header.set_size(fsize);
-        header.set_mode(0o644);
-        header.set_cksum();
-
-        let r = BufReader::with_capacity(io_buf, File::open(path)?);
-        archive.append_data(&mut header, &name, r)?;
-
-        bytes_done += fsize;
-        tx.send(ProgressEvent::Progress { bytes: bytes_done }).ok();
-    }
-
-    archive.finish()?;
-    Ok(())
-}
-
-/// Pack the already-written CSV chunks into a single real zip archive.
-fn pack_zip(files: &[PathBuf], output: &Path, buf_size: usize) -> io::Result<()> {
-    use zip::write::SimpleFileOptions;
-    use zip::{CompressionMethod, ZipWriter};
-
-    let io_buf = buf_size.clamp(256 * 1024, 8 * 1024 * 1024);
-    let file = File::create(output)?;
-    let mut zip = ZipWriter::new(BufWriter::with_capacity(io_buf, file));
-    let options = SimpleFileOptions::default()
-        .compression_method(CompressionMethod::Deflated)
-        .large_file(true);
-
-    for path in files {
-        let name = path
-            .file_name()
-            .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_else(|| "chunk.csv".to_string());
-        zip.start_file(name, options)
-            .map_err(|e| io::Error::other(e.to_string()))?;
-        let mut f = BufReader::with_capacity(io_buf, File::open(path)?);
-        io::copy(&mut f, &mut zip)?;
-    }
-    zip.finish().map_err(|e| io::Error::other(e.to_string()))?;
-    Ok(())
 }
 
 #[cfg(test)]

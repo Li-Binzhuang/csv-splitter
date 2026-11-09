@@ -7,6 +7,7 @@
 use csv_splitter_core::csv_reader::{detect_delimiter, read_headers};
 use csv_splitter_core::decompress::decompress_file;
 use csv_splitter_core::merge::merge_archive;
+use csv_splitter_core::partition::{run_partition, PartitionConfig};
 use csv_splitter_core::preview::{compute_column_stats, load_preview};
 use csv_splitter_core::splitter::run_split;
 use csv_splitter_core::*;
@@ -69,6 +70,7 @@ SPLIT OPTIONS
   -o, --out <path>        Output archive (default: <name>_split.tar)
   -n, --splits <n>        Number of chunks (default: 10)
       --by-size <size>    Split by target chunk size instead (e.g. 100MB, 1.5GB)
+      --by-column <name>  One file per distinct value of <name> (e.g. city)
   -f, --format <fmt>      zst | gz | bz2 | xz | zip | none   (default: zst)
   -l, --level <n>         Compression level (default: 3)
       --columns <a,b>     Keep only these columns (by header name)
@@ -83,6 +85,7 @@ MERGE OPTIONS
 EXAMPLES
   csv-splitter split big.csv -n 8 -f zst
   csv-splitter split huge.csv --by-size 100MB -f zip
+  csv-splitter split orders.csv --by-column city -f zst
   csv-splitter split big.csv --columns id,phone,score -n 4 -f none -o keep.tar
   csv-splitter merge big_split.tar -o restored.csv
   csv-splitter verify big.csv --splits 6
@@ -265,6 +268,7 @@ fn cmd_split(args: &[String]) -> i32 {
     let mut out: Option<PathBuf> = None;
     let mut splits = 10usize;
     let mut by_size: Option<u64> = None;
+    let mut by_column: Option<String> = None;
     let mut format = CompressFormat::Zstd;
     let mut level = 3;
     let mut columns: Option<String> = None;
@@ -293,6 +297,7 @@ fn cmd_split(args: &[String]) -> i32 {
                         .map_err(|_| "--level must be a number".to_string())?
                 }
                 "--by-size" => by_size = Some(parse_size(&p.value("--by-size")?)?),
+                "--by-column" => by_column = Some(p.value("--by-column")?),
                 "--columns" => columns = Some(p.value("--columns")?),
                 "--columns-file" => columns_file = Some(PathBuf::from(p.value("--columns-file")?)),
                 "--sort" => sort = Some(p.value("--sort")?),
@@ -332,6 +337,10 @@ fn cmd_split(args: &[String]) -> i32 {
         eprintln!("error: split needs an <input> path");
         return 2;
     };
+    if by_column.is_some() && by_size.is_some() {
+        eprintln!("error: --by-column and --by-size are mutually exclusive");
+        return 2;
+    }
     if !input.exists() {
         eprintln!("error: input not found: {}", input.display());
         return 1;
@@ -365,6 +374,47 @@ fn cmd_split(args: &[String]) -> i32 {
             return 2;
         }
     };
+
+    if let Some(column) = by_column {
+        if let Some(p) = temp_columns {
+            std::fs::remove_file(p).ok();
+        }
+        if !quiet {
+            eprintln!("partitioning {} by column '{}'", input.display(), column);
+        }
+        let config = PartitionConfig {
+            input,
+            output: out,
+            column,
+            compress_format: format,
+            compress_level: level,
+            buf_mb,
+            delimiter,
+            max_partitions: 512,
+        };
+        let (tx, rx) = mpsc::channel();
+        let reporter = spawn_reporter(rx, quiet);
+        run_partition(config, tx);
+        return match reporter
+            .join()
+            .map_err(|_| "reporter thread panicked".to_string())
+        {
+            Ok(Ok(path)) => {
+                if !quiet {
+                    println!("✓ wrote {}", path.display());
+                }
+                0
+            }
+            Ok(Err(e)) => {
+                eprintln!("✗ partition failed: {e}");
+                1
+            }
+            Err(e) => {
+                eprintln!("✗ {e}");
+                1
+            }
+        };
+    }
 
     if !quiet {
         match by_size {

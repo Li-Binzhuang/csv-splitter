@@ -75,6 +75,9 @@ csv-splitter split big.csv -n 8 -f zst -o chunks.tar
 # 按目标大小切：每片约 100 MB（片数由数据量决定）
 csv-splitter split huge.csv --by-size 100MB -f zip -o huge.zip
 
+# 按列值分区：一个城市一个文件
+csv-splitter split orders.csv --by-column city -f zst
+
 # 只要几列，并在拆分前按列排序
 csv-splitter split big.csv --columns id,phone,score --sort score --desc -n 4 -f zip
 
@@ -96,9 +99,9 @@ csv-splitter extract chunks.tar -o ./out
 
 ### 设计上的三个保证 / Three guarantees
 
-1. **两种切法**：`-n/--splits` 按片数均分（片差 ≤ 1 条记录），`--by-size` 按目标大小切
-   （片数由 `ceil(数据量 / 目标)` 决定，单片最多超出目标一条记录）。不知道总量时用前者，
-   按存储/传输限制切片时用后者。
+1. **三种切法**：`-n/--splits` 按片数均分（片差 ≤ 1 条记录）；`--by-size` 按目标大小切
+   （片数由 `ceil(数据量 / 目标)` 决定，单片最多超出目标一条记录）；`--by-column` 按某列的
+   取值分区，一个值一个文件（空值落 `_empty`，文件名自动清洗，值过多会报警而不是生成上千个文件）。
 2. **无损**：`split` 按*逻辑记录*切分（引号内换行的字段算一条记录），`merge` 去掉重复表头后按序拼接，
    `verify` 用字节比较兜底。`splits > 记录数` 时不会产生空分片。
 3. **内存可控**：`--buf-mb` 是**总预算**，拆成 N 片不会变成 N × 缓冲。旧版每片固定 64 MB，
