@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.0] — 2026-11-09
+
+### Added
+
+- `split --by-size <size>`: split by target chunk size (`100MB`, `1.5GiB`, `512k`, …)
+  instead of a fixed chunk count. The chunk count is derived from
+  `ceil(csv_bytes / target)`; a chunk may overshoot the target by at most one
+  record. `-n` remains the default and keeps exact record counts per chunk.
+
+### Changed
+
+- The planning pass now reports CSV size as well as record count, so the job
+  log states which strategy produced how many chunks.
+- Chunk writers report their record counts back; a job fails loudly if the
+  written total does not match the scanned total, instead of trusting the plan.
+
 ## [0.2.0] — 2026-11-09
 
 ### Added

@@ -64,6 +64,7 @@ pub fn start_split(s: &mut SplitState) {
             Some(PathBuf::from(&s.output_path))
         },
         splits,
+        max_bytes: None,
         compress_format,
         compress_level: s.compress_level,
         buf_mb: s.buf_mb,

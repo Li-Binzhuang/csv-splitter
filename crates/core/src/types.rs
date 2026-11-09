@@ -90,6 +90,9 @@ pub struct SplitConfig {
     pub input: PathBuf,
     pub output: Option<PathBuf>,
     pub splits: usize,
+    /// Split by target chunk size instead of chunk count. When set, `splits` is
+    /// ignored and the chunk count is derived from the data size.
+    pub max_bytes: Option<u64>,
     pub compress_format: CompressFormat,
     pub compress_level: i32,
     pub buf_mb: usize,
@@ -105,6 +108,7 @@ impl Default for SplitConfig {
             input: PathBuf::new(),
             output: None,
             splits: 10,
+            max_bytes: None,
             compress_format: CompressFormat::Zstd,
             compress_level: 3,
             buf_mb: 64,

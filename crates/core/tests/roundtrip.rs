@@ -41,6 +41,7 @@ fn base_config(input: &Path, output: &Path) -> SplitConfig {
         input: input.to_path_buf(),
         output: Some(output.to_path_buf()),
         splits: 3,
+        max_bytes: None,
         compress_format: CompressFormat::None,
         compress_level: 3,
         buf_mb: 1,
@@ -200,4 +201,49 @@ fn empty_input_is_reported_as_error() {
         has_error(&events),
         "expected an Error event, got {events:?}"
     );
+}
+
+#[test]
+fn by_size_produces_roughly_equal_chunks() {
+    use csv_splitter_core::decompress::decompress_file;
+
+    let dir = TempDir::new("bysize");
+    let input = dir.join("data.csv");
+    let archive = dir.join("out.tar");
+    let merged = dir.join("merged.csv");
+    let extracted = dir.join("chunks");
+
+    // 2000 records of roughly 500 bytes => ~1 MB of CSV.
+    let mut csv = String::from("id,payload\n");
+    for i in 0..2000 {
+        csv.push_str(&format!("{i},{}\n", "x".repeat(480)));
+    }
+    std::fs::write(&input, &csv).unwrap();
+
+    let mut cfg = base_config(&input, &archive);
+    cfg.splits = 64; // ignored: max_bytes drives the plan
+    cfg.max_bytes = Some(100 * 1024);
+    let events = split(cfg);
+    assert!(!has_error(&events), "split failed: {events:?}");
+
+    std::fs::create_dir_all(&extracted).unwrap();
+    let (tx, _rx) = mpsc::channel();
+    let files = decompress_file(&archive, &extracted, &tx).unwrap();
+    assert!(
+        (8..=12).contains(&files.len()),
+        "expected ~10 chunks, got {}",
+        files.len()
+    );
+    // Every chunk must stay near the target: the last record may overshoot once.
+    for f in &files {
+        let size = std::fs::metadata(f).unwrap().len();
+        assert!(
+            size <= 100 * 1024 + 600,
+            "chunk {f:?} is {size} bytes, target was 102400"
+        );
+    }
+
+    let (tx, _rx) = mpsc::channel();
+    merge_archive(&archive, &merged, &tx).unwrap();
+    assert_eq!(std::fs::read(&merged).unwrap(), csv.as_bytes());
 }

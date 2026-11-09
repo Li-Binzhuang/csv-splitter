@@ -181,3 +181,53 @@ fn missing_input_exits_nonzero() {
     let status = Command::new(bin()).args(["split"]).status().unwrap();
     assert_eq!(status.code(), Some(2));
 }
+
+#[test]
+fn by_size_controls_chunk_count() {
+    let dir = TempDir::new("bysize");
+    let input = dir.join("big.csv");
+    let archive = dir.join("parts.tar");
+    let merged = dir.join("merged.csv");
+
+    let mut csv = String::from("id,payload\n");
+    for i in 0..2000 {
+        csv.push_str(&format!("{i},{}\n", "y".repeat(480)));
+    }
+    std::fs::write(&input, &csv).unwrap();
+
+    let status = Command::new(bin())
+        .args([
+            "split",
+            input.to_str().unwrap(),
+            "--by-size",
+            "100KB",
+            "-f",
+            "none",
+            "-o",
+        ])
+        .arg(&archive)
+        .arg("-q")
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    Command::new(bin())
+        .args(["merge"])
+        .arg(&archive)
+        .args(["-o"])
+        .arg(&merged)
+        .arg("-q")
+        .status()
+        .unwrap();
+
+    assert_eq!(std::fs::read_to_string(&merged).unwrap(), csv);
+}
+
+#[test]
+fn by_size_rejects_garbage() {
+    let status = Command::new(bin())
+        .args(["split", "x.csv", "--by-size", "banana"])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(2));
+}

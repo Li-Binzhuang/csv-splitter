@@ -118,22 +118,31 @@ fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
         total_bytes: file_size,
     })
     .ok();
-    let total_records = count_records(&work_path, buf_size, file_size, tx)?;
-    let data_records = total_records.saturating_sub(1);
+    let scan = scan_records(&work_path, buf_size, file_size, tx)?;
+    let data_records = scan.records.saturating_sub(1);
+    let data_bytes = scan.data_bytes;
     tx.send(ProgressEvent::PhaseDone {
         phase: "Counting lines".into(),
     })
     .ok();
-    tx.send(ProgressEvent::Info(format!("{data_records} data records")))
-        .ok();
+    tx.send(ProgressEvent::Info(format!(
+        "{data_records} data records, {:.1} MB of CSV",
+        data_bytes as f64 / (1024.0 * 1024.0)
+    )))
+    .ok();
 
     if data_records == 0 {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "No data lines"));
     }
 
-    // Never create more chunks than records: `splits > records` used to produce
-    // empty files and an uneven tail.
-    let splits = (config.splits as u64).min(data_records) as usize;
+    let plan = SplitPlan::new(config.splits, config.max_bytes, data_records, data_bytes);
+    let splits = plan.chunks;
+    tx.send(ProgressEvent::Info(format!(
+        "{} chunk(s), {}",
+        splits,
+        plan.describe()
+    )))
+    .ok();
 
     // Phase 2: Split + filter + compress
     let stem = config
@@ -153,6 +162,7 @@ fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
         &stem,
         splits,
         data_records,
+        &plan,
         &desired_cols,
         config.compress_format,
         config.compress_level,
@@ -234,31 +244,92 @@ fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
     Ok(())
 }
 
-fn count_records(
+/// What a single pass over the file learned about it.
+#[derive(Clone, Copy, Debug, Default)]
+struct Scan {
+    /// Logical records, header included.
+    records: u64,
+    /// Bytes of data records (header excluded).
+    data_bytes: u64,
+}
+
+fn scan_records(
     path: &Path,
     buf_size: usize,
     file_size: u64,
     tx: &ProgressSender,
-) -> io::Result<u64> {
-    // Count newlines through a quote-aware scanner: a record with an embedded
-    // newline must count once, and a file without a trailing newline must not
-    // lose its last record.
+) -> io::Result<Scan> {
+    // Count through a quote-aware scanner: a record with an embedded newline
+    // counts once, and a file without a trailing newline does not lose its last
+    // record. The byte total is what `max_bytes` planning needs.
     let mut reader = RecordReader::new(
         BufReader::with_capacity(buf_size, File::open(path)?),
         buf_size,
     );
     let mut scratch = Vec::with_capacity(256 * 1024);
-    let mut count = 0u64;
+    let mut scan = Scan::default();
+    let mut header = true;
     let mut bytes: u64 = 0;
     while reader.next_record(&mut scratch)? {
-        count += 1;
+        if header {
+            header = false;
+            continue;
+        }
+        scan.records += 1;
+        scan.data_bytes += scratch.len() as u64;
         bytes += scratch.len() as u64;
         if bytes % (1 << 20) < scratch.len() as u64 {
             tx.send(ProgressEvent::Progress { bytes }).ok();
         }
     }
+    scan.records += 1; // header
     tx.send(ProgressEvent::Progress { bytes: file_size }).ok();
-    Ok(count)
+    Ok(scan)
+}
+
+/// How the file is carved up: either a fixed chunk count or a target size.
+#[derive(Clone, Copy, Debug)]
+struct SplitPlan {
+    chunks: usize,
+    mode: PlanMode,
+}
+
+#[derive(Clone, Copy, Debug)]
+enum PlanMode {
+    /// Exact record counts per chunk (front-loaded remainder).
+    Records,
+    /// Start a new chunk when this many bytes have been written.
+    Bytes(u64),
+}
+
+impl SplitPlan {
+    fn new(splits: usize, max_bytes: Option<u64>, data_records: u64, data_bytes: u64) -> Self {
+        // Never create more chunks than records: more chunks means empty files.
+        let ceiling = data_records.max(1) as usize;
+        match max_bytes.filter(|b| *b > 0) {
+            Some(target) => {
+                let chunks = (data_bytes.div_ceil(target).max(1) as usize).min(ceiling);
+                SplitPlan {
+                    chunks,
+                    mode: PlanMode::Bytes(data_bytes.div_ceil(chunks as u64).max(1)),
+                }
+            }
+            None => SplitPlan {
+                chunks: (splits as u64).min(data_records.max(1) as u64).max(1) as usize,
+                mode: PlanMode::Records,
+            },
+        }
+    }
+
+    fn describe(&self) -> String {
+        match self.mode {
+            PlanMode::Records => "split by record count".to_string(),
+            PlanMode::Bytes(b) => format!(
+                "split by size, target {:.1} MB each",
+                b as f64 / (1024.0 * 1024.0)
+            ),
+        }
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -268,6 +339,7 @@ fn split_filter_compress(
     stem: &str,
     splits: usize,
     data_records: u64,
+    plan: &SplitPlan,
     desired_cols: &Option<HashSet<String>>,
     format: CompressFormat,
     level: i32,
@@ -342,7 +414,7 @@ fn split_filter_compress(
     let mut senders = Vec::with_capacity(splits);
     let mut handles = Vec::with_capacity(splits);
 
-    for (i, target) in targets.iter().enumerate() {
+    for i in 0..splits {
         let (stx, srx) = std::sync::mpsc::sync_channel::<Vec<u8>>(4096);
         senders.push(stx);
 
@@ -351,9 +423,8 @@ fn split_filter_compress(
         let fmt = format;
         let lvl = level;
         let capacity = per_chunk_buf;
-        let expected = *target;
 
-        handles.push(thread::spawn(move || -> io::Result<PathBuf> {
+        handles.push(thread::spawn(move || -> io::Result<(PathBuf, u64)> {
             let mut writer: Box<dyn Write + Send> = match fmt {
                 CompressFormat::Zip | CompressFormat::None => {
                     Box::new(BufWriter::with_capacity(capacity, File::create(&out_path)?))
@@ -367,20 +438,16 @@ fn split_filter_compress(
                 written += 1;
             }
             finish_compressor(writer)?;
-            if written != expected {
-                return Err(io::Error::other(format!(
-                    "chunk {out_path:?} record mismatch: expected {expected}, wrote {written}"
-                )));
-            }
-            Ok(out_path)
+            Ok((out_path, written))
         }));
     }
 
     // Read + filter + distribute
     let mut bytes_read = record.len() as u64;
     let mut split_idx: usize = 0;
-    let mut lines_in_current: u64 = 0;
-    let mut current_target = targets[0];
+    let mut used_records: u64 = 0;
+    let mut used_bytes: u64 = 0;
+    let mut total_written: u64 = 0;
 
     while reader.next_record(&mut record)? {
         bytes_read += record.len() as u64;
@@ -398,15 +465,29 @@ fn split_filter_compress(
             None => record.clone(),
         };
 
+        let data_len = data.len() as u64;
         if senders[split_idx].send(data).is_err() {
             return Err(io::Error::new(io::ErrorKind::BrokenPipe, "compressor died"));
         }
 
-        lines_in_current += 1;
-        if lines_in_current >= current_target && split_idx + 1 < splits {
-            split_idx += 1;
-            lines_in_current = 0;
-            current_target = targets[split_idx];
+        total_written += 1;
+        used_records += 1;
+        used_bytes += data_len;
+
+        if split_idx + 1 < splits {
+            let reached = match plan.mode {
+                PlanMode::Records => used_records >= targets[split_idx],
+                PlanMode::Bytes(quota) => used_bytes >= quota,
+            };
+            // Leave at least one record for each remaining chunk.
+            let remaining = data_records.saturating_sub(total_written);
+            let chunks_left = (splits - split_idx) as u64;
+            let must_advance = remaining < chunks_left;
+            if reached || must_advance {
+                split_idx += 1;
+                used_records = 0;
+                used_bytes = 0;
+            }
         }
 
         if bytes_read % (1 << 20) < record.len() as u64 {
@@ -417,11 +498,23 @@ fn split_filter_compress(
     drop(senders);
 
     let mut out_paths = Vec::with_capacity(splits);
+    let mut written_total = 0u64;
     for h in handles {
-        let p = h
+        let (p, written) = h
             .join()
             .map_err(|_| io::Error::other("thread panicked"))??;
+        if written == 0 {
+            return Err(io::Error::other(format!(
+                "chunk {p:?} is empty; refusing to emit a header-only file"
+            )));
+        }
+        written_total += written;
         out_paths.push(p);
+    }
+    if written_total != data_records {
+        return Err(io::Error::other(format!(
+            "record mismatch: scanned {data_records}, wrote {written_total}"
+        )));
     }
 
     Ok(out_paths)
@@ -509,6 +602,36 @@ mod tests {
     }
 
     #[test]
+    fn plan_from_record_count_never_exceeds_records() {
+        let p = SplitPlan::new(10, None, 3, 1_000);
+        assert_eq!(p.chunks, 3);
+        assert!(matches!(p.mode, PlanMode::Records));
+
+        let p = SplitPlan::new(10, None, 100, 1_000);
+        assert_eq!(p.chunks, 10);
+    }
+
+    #[test]
+    fn plan_from_size_derives_chunk_count() {
+        let mb = 1024 * 1024;
+        // 10 MB of CSV, 3 MB target -> 4 chunks of ~2.5 MB
+        let p = SplitPlan::new(10, Some(3 * mb), 10_000, 10 * mb);
+        assert_eq!(p.chunks, 4);
+        match p.mode {
+            PlanMode::Bytes(quota) => assert_eq!(quota, (10 * mb).div_ceil(4)),
+            PlanMode::Records => panic!("expected byte quota"),
+        }
+
+        // Target larger than the file -> a single chunk.
+        let p = SplitPlan::new(10, Some(100 * mb), 10, mb);
+        assert_eq!(p.chunks, 1);
+
+        // Never more chunks than records, even if the target is tiny.
+        let p = SplitPlan::new(10, Some(1), 3, 10_000);
+        assert_eq!(p.chunks, 3);
+    }
+
+    #[test]
     fn buffer_budget_does_not_multiply() {
         let total = 64 * 1024 * 1024;
         assert_eq!(budget_per_chunk(total, 1), 8 * 1024 * 1024);
@@ -524,8 +647,9 @@ mod tests {
         std::fs::write(&p, "h\n1\n\"2\n3\"\n4\n").unwrap();
 
         let (tx, _rx) = std::sync::mpsc::channel();
-        let n = count_records(&p, 8 * 1024, 0, &tx).unwrap();
-        assert_eq!(n, 4);
+        let n = scan_records(&p, 8 * 1024, 0, &tx).unwrap();
+        assert_eq!(n.records, 4);
+        assert!(n.data_bytes > 0);
         std::fs::remove_dir_all(&dir).ok();
     }
 }

@@ -68,6 +68,7 @@ COMMON OPTIONS
 SPLIT OPTIONS
   -o, --out <path>        Output archive (default: <name>_split.tar)
   -n, --splits <n>        Number of chunks (default: 10)
+      --by-size <size>    Split by target chunk size instead (e.g. 100MB, 1.5GB)
   -f, --format <fmt>      zst | gz | bz2 | xz | zip | none   (default: zst)
   -l, --level <n>         Compression level (default: 3)
       --columns <a,b>     Keep only these columns (by header name)
@@ -81,6 +82,7 @@ MERGE OPTIONS
 
 EXAMPLES
   csv-splitter split big.csv -n 8 -f zst
+  csv-splitter split huge.csv --by-size 100MB -f zip
   csv-splitter split big.csv --columns id,phone,score -n 4 -f none -o keep.tar
   csv-splitter merge big_split.tar -o restored.csv
   csv-splitter verify big.csv --splits 6
@@ -137,6 +139,55 @@ fn parse_delimiter(spec: &str, input: &Path) -> Result<Delimiter, String> {
                 Err(format!("unknown delimiter: {spec}"))
             }
         }
+    }
+}
+
+/// Parse human sizes: `512k`, `100MB`, `1.5G`, `1048576`.
+/// Decimal units (KB/MB/GB = 1000^n) and binary units (KiB/MiB/GiB = 1024^n)
+/// are both accepted, plus the bare `K/M/G` shorthand which means binary.
+fn parse_size(spec: &str) -> Result<u64, String> {
+    let text = spec.trim().to_ascii_lowercase();
+    if text.is_empty() {
+        return Err("--by-size needs a value".to_string());
+    }
+    let units: &[(&str, u64)] = &[
+        ("gib", 1u64 << 30),
+        ("mib", 1u64 << 20),
+        ("kib", 1u64 << 10),
+        ("gb", 1_000_000_000),
+        ("mb", 1_000_000),
+        ("kb", 1_000),
+        ("g", 1u64 << 30),
+        ("m", 1u64 << 20),
+        ("k", 1u64 << 10),
+        ("b", 1),
+    ];
+    let (number, multiplier) = units
+        .iter()
+        .find_map(|(suffix, mult)| text.strip_suffix(suffix).map(|n| (n, *mult)))
+        .unwrap_or((text.as_str(), 1));
+    let value: f64 = number
+        .trim()
+        .parse()
+        .map_err(|_| format!("bad size: {spec}"))?;
+    if value <= 0.0 {
+        return Err(format!("size must be positive: {spec}"));
+    }
+    Ok((value * multiplier as f64) as u64)
+}
+
+fn human_bytes(bytes: u64) -> String {
+    const UNITS: [&str; 5] = ["B", "KB", "MB", "GB", "TB"];
+    let mut value = bytes as f64;
+    let mut unit = 0;
+    while value >= 1024.0 && unit + 1 < UNITS.len() {
+        value /= 1024.0;
+        unit += 1;
+    }
+    if unit == 0 {
+        format!("{bytes} B")
+    } else {
+        format!("{value:.1} {}", UNITS[unit])
     }
 }
 
@@ -213,6 +264,7 @@ fn cmd_split(args: &[String]) -> i32 {
     let mut input: Option<PathBuf> = None;
     let mut out: Option<PathBuf> = None;
     let mut splits = 10usize;
+    let mut by_size: Option<u64> = None;
     let mut format = CompressFormat::Zstd;
     let mut level = 3;
     let mut columns: Option<String> = None;
@@ -240,6 +292,7 @@ fn cmd_split(args: &[String]) -> i32 {
                         .parse()
                         .map_err(|_| "--level must be a number".to_string())?
                 }
+                "--by-size" => by_size = Some(parse_size(&p.value("--by-size")?)?),
                 "--columns" => columns = Some(p.value("--columns")?),
                 "--columns-file" => columns_file = Some(PathBuf::from(p.value("--columns-file")?)),
                 "--sort" => sort = Some(p.value("--sort")?),
@@ -314,13 +367,21 @@ fn cmd_split(args: &[String]) -> i32 {
     };
 
     if !quiet {
-        eprintln!("splitting {} → {} chunk(s)", input.display(), splits);
+        match by_size {
+            Some(bytes) => eprintln!(
+                "splitting {} → target {} per chunk",
+                input.display(),
+                human_bytes(bytes)
+            ),
+            None => eprintln!("splitting {} → {} chunk(s)", input.display(), splits),
+        }
     }
 
     let config = SplitConfig {
         input: input.clone(),
         output: out,
         splits,
+        max_bytes: by_size,
         compress_format: format,
         compress_level: level,
         buf_mb,
@@ -696,6 +757,7 @@ fn cmd_verify(args: &[String]) -> i32 {
         input: input.clone(),
         output: Some(archive.clone()),
         splits,
+        max_bytes: None,
         compress_format: CompressFormat::Zstd,
         compress_level: 3,
         buf_mb: 8,
