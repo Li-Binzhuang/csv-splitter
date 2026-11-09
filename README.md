@@ -138,6 +138,8 @@ csv-splitter extract chunks.tar -o ./out
 | **筛完直接存文件** | `filter ... -o out.csv` | `GET /export?where=...` |
 | **整表排序** | `sort big.csv --by amount -o sorted.csv` | `POST /sort` |
 | 统计列分布 | `stats big.csv --sample 50000` | `GET /stats?sample=50000` |
+| **摸清一份陌生数据** | `analyze big.csv` | `GET /analyze` |
+| **去重** | `dedupe big.csv --by id -o clean.csv` | `POST /dedupe` |
 | 跑聚合 / 排序 | `sql big.csv "SELECT ..."` | `GET /query?sql=...` |
 | 切分 / 合并 | `split` / `merge` | `POST /split` · `POST /merge` |
 | 换编码 | `convert gbk.csv -o utf8.csv` | — |
@@ -153,6 +155,30 @@ rows (1-based, header excluded): 1, 3
         1  1 | CDMX | refund issued
         3  3 | CDMX | pay refund later
 ```
+
+### 认识一份数据
+
+```bash
+$ csv-splitter analyze orders.csv
+column                    rows    empty  distinct  summary
+id                      200000        0  ≥100000  min 0.00  max 199999.00  mean 99999.50  median 99760.00  sum 19999900000.00
+city                    200000        0         5  text: Tijuana (40189), CDMX (40116), Guadalajara (39987)
+note                    200000    40171         4  text: ok (40370), 多行备注 (40034), quote"inside (39797)
+```
+
+一个流式 pass 出全部结论：空值数、去重数、数值列的 min/max/均值/中位数/求和、
+文本列的长度极值与高频值。**数值列必须有全部非空值都是数字**才算数值列——
+一个 `N/A` 就会让它退回文本列并标注 `mixed`。去重数超过上限会显示 `≥N`，
+而不是假装自己精确。
+
+```bash
+$ csv-splitter dedupe orders.csv --by cust_no -o clean.csv
+✓ 49124 of 200000 rows kept, 150876 removed → clean.csv (3.0 MB)
+```
+
+按整行去重（默认）或按 `--by` 指定的列去重，保留**首次出现**的那条。
+内存只存 128 位哈希（每条 16 字节），1000 万条约 160 MB；超过 `--max-keys`
+会**报错而不是悄悄丢行**。
 
 ### 筛选与排序
 

@@ -755,3 +755,49 @@ fn filter_writes_a_csv_and_sort_orders_the_file() {
         .unwrap();
     assert_eq!(status.code(), Some(1));
 }
+
+#[test]
+fn analyze_profiles_columns_and_dedupe_removes_rows() {
+    let dir = TempDir::new("prof");
+    let input = dir.join("p.csv");
+    let mut csv = String::from("id,city,amount\n");
+    for i in 0..6 {
+        csv.push_str(&format!("{},CDMX,{}\n", i % 3, 10 * (i + 1)));
+    }
+    std::fs::write(&input, csv).unwrap();
+
+    let out = Command::new(bin())
+        .args(["analyze", input.to_str().unwrap(), "--json"])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("\"distinct\":3"), "{text}");
+    assert!(text.contains("\"numeric\":{\"count\":6"), "{text}");
+    // sum of 10,20,30,40,50,60
+    assert!(text.contains("\"sum\":210"), "{text}");
+
+    let deduped = dir.join("clean.csv");
+    let out = Command::new(bin())
+        .args([
+            "dedupe",
+            input.to_str().unwrap(),
+            "--by",
+            "id",
+            "-o",
+            deduped.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let text = std::fs::read_to_string(&deduped).unwrap();
+    assert_eq!(text.lines().count(), 4, "header + 3 distinct ids: {text}");
+}

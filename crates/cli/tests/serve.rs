@@ -599,3 +599,34 @@ fn filtered_export_and_sort_job() {
 
     drop(server);
 }
+
+#[test]
+fn analyze_endpoint_and_dedupe_job() {
+    let dir = TempDir::new("prof2");
+    let mut csv = String::from("id,city\n");
+    for i in 0..6 {
+        csv.push_str(&format!("{},CDMX\n", i % 3));
+    }
+    std::fs::write(dir.join("data.csv"), csv).unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(&server.addr, "/analyze?path=data.csv");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("\"distinct\":3"), "{body}");
+    assert!(body.contains("\"city\""), "{body}");
+
+    let (status, body) = post(&server.addr, "/dedupe?path=data.csv&by=id&out=clean.csv");
+    assert_eq!(status, 202, "{body}");
+    let id = body
+        .split("\"job\":\"")
+        .nth(1)
+        .and_then(|s| s.split('"').next())
+        .expect("job id")
+        .to_string();
+    let done = wait_for_job(&server.addr, &id);
+    assert!(done.contains("\"state\":\"done\""), "{done}");
+    let text = std::fs::read_to_string(dir.join("clean.csv")).unwrap();
+    assert_eq!(text.lines().count(), 4, "{text}");
+
+    drop(server);
+}

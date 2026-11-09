@@ -38,6 +38,8 @@ fn main() -> ExitCode {
         Some("convert") => cmd_convert(&args[1..]),
         Some("filter") => cmd_filter(&args[1..]),
         Some("sort") => cmd_sort(&args[1..]),
+        Some("analyze") => cmd_analyze(&args[1..]),
+        Some("dedupe") => cmd_dedupe(&args[1..]),
         Some("sql") => cmd_sql(&args[1..]),
         Some("search") => cmd_search(&args[1..]),
         Some("files") => cmd_files(&args[1..]),
@@ -77,6 +79,8 @@ COMMANDS
   convert  <input>               Transcode a CSV to UTF-8 (GBK / UTF-16 input)
   filter   <input> --where EXPR  Row numbers matching a column predicate
   sort     <input> --by COL -o F Sort the whole file by one column
+  analyze  <input>               Per-column profile: empties, distinct, numeric summary
+  dedupe   <input> -o F          Drop duplicate rows (whole row or --by columns)
   search   <input> <text>        Find text anywhere (or in chosen columns)
   files    --root <dir>          List readable files under a directory
   sql      <input> "<query>"     Run SQL over the file (DuckDB, read-only)
@@ -119,6 +123,18 @@ SEARCH OPTIONS
       --exact             Match the whole cell, not a substring
       --limit <n>         Stop after n matches (default: 1000)
       --show <n>          Also print the first n matching rows
+      --json              Emit JSON
+  -d, --delim <c>         Delimiter (default: auto)
+
+ANALYZE OPTIONS
+      --distinct-cap <n>  Stop counting distinct values per column at n (default: 100000)
+      --json              Emit JSON
+  -d, --delim <c>         Delimiter (default: auto)
+
+DEDUPE OPTIONS
+      --by <a,b>          Columns that define a duplicate (default: the whole row)
+  -o, --out <file>        Output file (default: <input>.deduped.csv)
+      --max-keys <n>      Refuse to run past n distinct rows (default: 100000000)
       --json              Emit JSON
   -d, --delim <c>         Delimiter (default: auto)
 
@@ -1793,6 +1809,262 @@ fn cmd_sort(args: &[String]) -> i32 {
         }
         Err(e) => {
             eprintln!("✗ sort failed: {e}");
+            1
+        }
+    }
+}
+
+fn cmd_analyze(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut input: Option<PathBuf> = None;
+    let mut distinct_cap = csv_splitter_core::profile::DEFAULT_DISTINCT_CAP;
+    let mut json = false;
+    let mut delim = "auto".to_string();
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--distinct-cap" => match p
+                .value("--distinct-cap")
+                .and_then(|v| v.parse().map_err(|_| "bad --distinct-cap".to_string()))
+            {
+                Ok(v) => distinct_cap = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--json" => json = true,
+            "-d" | "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => input = Some(PathBuf::from(other)),
+        }
+    }
+
+    let Some(input) = input else {
+        eprintln!("error: analyze needs <input>");
+        return 2;
+    };
+    let delimiter = match parse_delimiter(&delim, &input) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+
+    let (tx, rx) = mpsc::channel();
+    let reporter = spawn_reporter(rx, true);
+    let result = csv_splitter_core::profile::profile(&input, delimiter, distinct_cap, &tx);
+    drop(tx);
+    let _ = reporter.join();
+    let profiles = match result {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("✗ analyze failed: {e}");
+            return 1;
+        }
+    };
+
+    if json {
+        let cols: Vec<String> = profiles.iter().map(profile_json).collect();
+        println!(r#"{{"columns":[{}]}}"#, cols.join(","));
+        return 0;
+    }
+
+    println!(
+        "{:<20} {:>9} {:>8} {:>9}  summary",
+        "column", "rows", "empty", "distinct"
+    );
+    for c in &profiles {
+        let distinct = if c.distinct_truncated {
+            format!("≥{}", c.distinct)
+        } else {
+            c.distinct.to_string()
+        };
+        let summary = match &c.numeric {
+            Some(n) => format!(
+                "min {:.2}  max {:.2}  mean {:.2}  median {:.2}  sum {:.2}",
+                n.min,
+                n.max,
+                n.mean,
+                n.median.unwrap_or(f64::NAN),
+                n.sum
+            ),
+            None => {
+                let top = c
+                    .top
+                    .iter()
+                    .take(3)
+                    .map(|(v, n)| format!("{v} ({n})"))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                if c.mixed_types {
+                    format!("text (mixed with numbers): {top}")
+                } else {
+                    format!("text: {top}")
+                }
+            }
+        };
+        println!(
+            "{:<20} {:>9} {:>8} {:>9}  {}",
+            c.name, c.rows, c.empty, distinct, summary
+        );
+    }
+    0
+}
+
+fn profile_json(c: &csv_splitter_core::profile::ColumnProfile) -> String {
+    let numeric = match &c.numeric {
+        Some(n) => format!(
+            r#"{{"count":{},"min":{},"max":{},"sum":{},"mean":{},"median":{}}}"#,
+            n.count,
+            n.min,
+            n.max,
+            n.sum,
+            n.mean,
+            n.median
+                .map(|m| m.to_string())
+                .unwrap_or_else(|| "null".to_string())
+        ),
+        None => "null".to_string(),
+    };
+    let top: Vec<String> = c
+        .top
+        .iter()
+        .map(|(v, n)| format!(r#"["{}",{}]"#, json_quote(v).trim_matches('"'), n))
+        .collect();
+    format!(
+        r#"{{"name":"{}","rows":{},"empty":{},"nonEmpty":{},"distinct":{},"distinctTruncated":{},"numeric":{},"mixedTypes":{},"top":[{}]}}"#,
+        json_quote(&c.name).trim_matches('"'),
+        c.rows,
+        c.empty,
+        c.non_empty,
+        c.distinct,
+        c.distinct_truncated,
+        numeric,
+        c.mixed_types,
+        top.join(",")
+    )
+}
+
+fn cmd_dedupe(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut input: Option<PathBuf> = None;
+    let mut out: Option<PathBuf> = None;
+    let mut keys: Vec<String> = Vec::new();
+    let mut max_keys = csv_splitter_core::dedupe::DEFAULT_MAX_KEYS;
+    let mut json = false;
+    let mut delim = "auto".to_string();
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--by" => match p.value("--by") {
+                Ok(v) => keys = v.split(',').map(|s| s.trim().to_string()).collect(),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-o" | "--out" => match p.value("--out") {
+                Ok(v) => out = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--max-keys" => match p
+                .value("--max-keys")
+                .and_then(|v| v.parse().map_err(|_| "bad --max-keys".to_string()))
+            {
+                Ok(v) => max_keys = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--json" => json = true,
+            "-d" | "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => input = Some(PathBuf::from(other)),
+        }
+    }
+
+    let Some(input) = input else {
+        eprintln!("error: dedupe needs <input>");
+        return 2;
+    };
+    let output = out.unwrap_or_else(|| {
+        let stem = input
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_else(|| "deduped".to_string());
+        input.with_file_name(format!("{stem}.deduped.csv"))
+    });
+    let delimiter = match parse_delimiter(&delim, &input) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+
+    let (tx, rx) = mpsc::channel();
+    let reporter = spawn_reporter(rx, !json);
+    let result =
+        csv_splitter_core::dedupe::dedupe(&input, delimiter, &keys, &output, max_keys, &tx);
+    drop(tx);
+    let _ = reporter.join();
+    match result {
+        Ok(s) => {
+            if json {
+                println!(
+                    r#"{{"scanned":{},"kept":{},"removed":{},"bytes":{},"keyColumns":["{}"]}}"#,
+                    s.scanned,
+                    s.kept,
+                    s.removed,
+                    s.bytes,
+                    s.key_columns.join(r#"",""#)
+                );
+            } else {
+                println!(
+                    "✓ {} of {} rows kept, {} removed → {} ({})",
+                    s.kept,
+                    s.scanned,
+                    s.removed,
+                    output.display(),
+                    human_bytes(s.bytes)
+                );
+            }
+            0
+        }
+        Err(e) => {
+            eprintln!("✗ dedupe failed: {e}");
             1
         }
     }

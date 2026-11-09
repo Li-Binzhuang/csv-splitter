@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.22.0] — 2026-11-10
+
+### Added
+
+- **`analyze`** (`crates/core/src/profile.rs`): a per-column profile in one
+  streaming pass — empty counts, distinct counts (exact up to a cap, then `≥N`),
+  numeric min/max/mean/sum/median, and for text columns the common values plus
+  length extremes. A column counts as numeric only when *every* non-empty value
+  parses; one `N/A` demotes it to text and is reported as `mixed`. Also
+  `GET /analyze`.
+- **`dedupe`** (`crates/core/src/dedupe.rs`): drop duplicate rows by the whole
+  record or by chosen columns, keeping the first occurrence. Only 128-bit hashes
+  are retained (16 bytes per distinct row), and passing `--max-keys` fails loudly
+  instead of silently dropping unique rows. Also `POST /dedupe` as a job.
+
 ## [0.21.0] — 2026-11-09
 
 ### Added

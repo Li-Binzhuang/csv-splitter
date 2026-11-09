@@ -13,6 +13,7 @@
 //!   GET /stats?path=REL&sample=N
 //!   GET /filter?path=REL&where=col=value&limit=N
 //!   GET /search?path=REL&q=text&columns=a,b&limit=N
+//!   GET /analyze?path=REL&distinctCap=N
 //!   GET /files?dir=REL&ext=csv,tsv&limit=N
 //!   GET /download?path=REL                         (raw bytes, as attachment)
 //!   GET /export?path=REL&sql=...&limit=N           (query result as CSV text)
@@ -27,11 +28,13 @@
 //!   GET  /job?id=...    (poll)      GET /jobs  (list)
 
 use csv_splitter_core::cache::ResultCache;
+use csv_splitter_core::dedupe;
 use csv_splitter_core::filter::{self, scan as filter_scan, FilterSpec};
 use csv_splitter_core::jobs::JobRegistry;
 use csv_splitter_core::listing;
 use csv_splitter_core::merge::merge_archive;
 use csv_splitter_core::preview::compute_column_stats;
+use csv_splitter_core::profile;
 use csv_splitter_core::search::{search as search_scan, SearchSpec};
 use csv_splitter_core::splitter::run_split_threads;
 use csv_splitter_core::sql;
@@ -125,6 +128,7 @@ fn handle(
             "/merge" => start_merge(&mut stream, root, jobs, &params),
             "/warm" => start_warm(&mut stream, root, jobs, cache, &params),
             "/sort" => start_sort(&mut stream, root, jobs, &params),
+            "/dedupe" => start_dedupe(&mut stream, root, jobs, &params),
             _ => respond_json(&mut stream, 404, r#"{"error":"unknown endpoint"}"#),
         };
     }
@@ -140,6 +144,7 @@ fn handle(
         "/filter" => filter(&mut stream, root, &params),
         "/search" => search(&mut stream, root, &params),
         "/files" => files(&mut stream, root, &params),
+        "/analyze" => analyze(&mut stream, root, &params),
         "/download" => download(&mut stream, root, &params),
         "/export" => export(&mut stream, root, &params),
         "/query" => query(&mut stream, root, &params),
@@ -148,7 +153,7 @@ fn handle(
         _ => respond_json(
             &mut stream,
             404,
-            r#"{"error":"unknown endpoint","endpoints":["/health","/meta","/rows","/stats","/filter","/search","/files","/download","/export","/query","/job","/jobs"],"writes":["POST /split","POST /merge"]}"#,
+            r#"{"error":"unknown endpoint","endpoints":["/health","/meta","/rows","/stats","/analyze","/filter","/search","/files","/download","/export","/query","/job","/jobs"],"writes":["POST /split","POST /merge"]}"#,
         ),
     }
 }
@@ -306,6 +311,122 @@ fn start_merge(
                 .ok();
                 tx.send(ProgressEvent::Finished {
                     output: report.output,
+                })
+                .ok();
+            }
+            Err(e) => {
+                tx.send(ProgressEvent::Error(e.to_string())).ok();
+            }
+        }
+    });
+    respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
+}
+
+/// Per-column profile: empties, distinct counts, numeric summary.
+fn analyze(
+    stream: &mut TcpStream,
+    root: &Path,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+    };
+    let cap: usize = params
+        .get("distinctCap")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(profile::DEFAULT_DISTINCT_CAP)
+        .max(1);
+    let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
+    drop(rx);
+    match profile::profile(&path, delimiter(params), cap, &tx) {
+        Ok(cols) => {
+            let items: Vec<String> = cols
+                .iter()
+                .map(|c| {
+                    let numeric = match &c.numeric {
+                        Some(n) => format!(
+                            r#"{{"count":{},"min":{},"max":{},"sum":{},"mean":{},"median":{}}}"#,
+                            n.count,
+                            n.min,
+                            n.max,
+                            n.sum,
+                            n.mean,
+                            match n.median {
+                                Some(m) => m.to_string(),
+                                None => "null".to_string(),
+                            }
+                        ),
+                        None => "null".to_string(),
+                    };
+                    let top: Vec<String> = c
+                        .top
+                        .iter()
+                        .map(|(v, n)| format!(r#"[{},{}]"#, json_str(v), n))
+                        .collect();
+                    format!(
+                        r#"{{"name":{},"rows":{},"empty":{},"nonEmpty":{},"distinct":{},"distinctTruncated":{},"numeric":{},"mixedTypes":{},"top":[{}]}}"#,
+                        json_str(&c.name),
+                        c.rows,
+                        c.empty,
+                        c.non_empty,
+                        c.distinct,
+                        c.distinct_truncated,
+                        numeric,
+                        c.mixed_types,
+                        top.join(",")
+                    )
+                })
+                .collect();
+            respond_json(
+                stream,
+                200,
+                &format!(r#"{{"columns":[{}]}}"#, items.join(",")),
+            )
+        }
+        Err(e) => respond_json(
+            stream,
+            422,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+    }
+}
+
+/// Deduplicate into `out` as a background job.
+fn start_dedupe(
+    stream: &mut TcpStream,
+    root: &Path,
+    jobs: &JobRegistry,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (input, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return respond_json(stream, 400, r#"{"error":"path missing or outside root"}"#),
+    };
+    let Some(out) = resolve_out(root, params, "out") else {
+        return respond_json(stream, 400, r#"{"error":"out must stay inside root"}"#);
+    };
+    let keys: Vec<String> = params
+        .get("by")
+        .map(|raw| raw.split(',').map(|s| s.trim().to_string()).collect())
+        .unwrap_or_default();
+    let max_keys: usize = params
+        .get("maxKeys")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(dedupe::DEFAULT_MAX_KEYS);
+    let delimiter = delimiter(params);
+    let result_path = out.clone();
+
+    let id = jobs.submit("dedupe", move |tx| {
+        match dedupe::dedupe(&input, delimiter, &keys, &out, max_keys, &tx) {
+            Ok(summary) => {
+                tx.send(ProgressEvent::Info(format!(
+                    "kept {} of {} rows",
+                    summary.kept, summary.scanned
+                )))
+                .ok();
+                tx.send(ProgressEvent::Finished {
+                    output: result_path,
                 })
                 .ok();
             }
