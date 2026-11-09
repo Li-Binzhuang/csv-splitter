@@ -152,6 +152,12 @@ $ csv-splitter serve --root . --addr 127.0.0.1:8787
 csv-splitter API on http://127.0.0.1:8787  (root: …)
 ```
 
+然后在浏览器打开 **http://127.0.0.1:8787/** —— 有一个内置的单文件页面，
+可以浏览文件、翻页、筛选、搜索、看列画像、跑分组汇总。它只用公开端点，
+可以当作前端接手的参考实现。
+
+也可以直接用 curl：
+
 ```bash
 $ curl "http://127.0.0.1:8787/files?ext=csv"
 {"root":"…/csv-splitter-demo","truncated":false,"files":[{"path":"orders.csv","bytes":939996,…}]}

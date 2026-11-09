@@ -727,3 +727,49 @@ fn groupby_endpoint_aggregates_and_caches() {
 
     drop(server);
 }
+
+#[test]
+fn serves_a_builtin_viewer_and_rows_supports_where() {
+    let dir = TempDir::new("viewer");
+    let mut csv = String::from("city,amount\n");
+    for (city, amount) in [("CDMX", 10), ("CDMX", 500), ("Puebla", 20)] {
+        csv.push_str(&format!("{city},{amount}\n"));
+    }
+    std::fs::write(dir.join("data.csv"), csv).unwrap();
+    let server = start(&dir.0.clone());
+
+    // The page is one self-contained file: no build step, no bundled assets.
+    let (status, body) = get_raw(&server.addr, "/");
+    assert_eq!(status, 200);
+    let html = String::from_utf8_lossy(&body);
+    assert!(html.contains("<!DOCTYPE html>"), "not html");
+    assert!(html.contains("csv-splitter"), "{html}");
+    // It must talk to the public API only.
+    for endpoint in [
+        "/files", "/meta", "/rows", "/search", "/analyze", "/groupby",
+    ] {
+        assert!(
+            html.contains(&format!("api(\"{endpoint}\"")),
+            "viewer misses {endpoint}"
+        );
+    }
+
+    // `where` on /rows turns the raw scan into a filtered view.
+    let (status, body) = get(
+        &server.addr,
+        "/rows?path=data.csv&where=city%3DCDMX&count=5",
+    );
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("\"rowsSoFar\":2"), "{body}");
+    assert!(!body.contains("Puebla"), "{body}");
+
+    // Ordering works too.
+    let (status, body) = get(
+        &server.addr,
+        "/rows?path=data.csv&where=city%3DCDMX&order=amount&desc=1&count=1",
+    );
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(r#"["CDMX","500"]"#), "{body}");
+
+    drop(server);
+}

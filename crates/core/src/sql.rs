@@ -131,8 +131,16 @@ where
     let mut last: Option<io::Error> = None;
     for opts in OPEN_LADDER {
         let conn = Connection::open_in_memory().map_err(to_io)?;
-        conn.execute_batch(&view_sql(path, delimiter, opts))
-            .map_err(to_io)?;
+        // Sniffing happens here, and it can fail for shapes the previous option
+        // set could not parse — so this error must also continue down the ladder.
+        if let Err(e) = conn.execute_batch(&view_sql(path, delimiter, opts)) {
+            let message = e.to_string();
+            last = Some(to_io(e));
+            if is_retryable(&message) {
+                continue;
+            }
+            break;
+        }
         // A wrong delimiter is not fixable by another reader option, so this
         // failure propagates instead of continuing down the ladder.
         check_table_shape(&conn, delimiter)?;

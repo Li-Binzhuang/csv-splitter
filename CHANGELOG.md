@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.32.0] — 2026-11-10
+
+### Added
+
+- **A built-in viewer at `GET /`**: one self-contained HTML file (no build step,
+  no dependencies, ~13 KB) with a file list, row paging, jumping to a row, filtering,
+  cross-column search, the column profile, and group-by. It calls only the public
+  endpoints, so it doubles as a reference implementation for a real front-end.
+- **`/rows` understands `where` and `order`** (plus `desc`), served through the
+  same cached SQL path as `/rows?sql=` so the two cannot disagree.
+
+### Fixed
+
+- **DuckDB sniffing failures did not fall through the reader ladder.** Errors
+  raised while creating the view (where sniffing happens) aborted immediately
+  instead of trying the next option set, so a file with ragged rows *and* quoted
+  newlines could not be queried at all. `null_padding` + serial is now reachable.
+
 ## [0.31.0] — 2026-11-10
 
 ### Added

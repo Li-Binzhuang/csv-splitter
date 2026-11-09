@@ -21,7 +21,7 @@ $ cd csv-splitter-demo
 $ csv-splitter preview orders.csv
 $ csv-splitter analyze orders.csv
 $ csv-splitter groupby orders.csv --by city --agg "amount:sum,amount:count" --order sum_amount --desc
-$ csv-splitter serve --root .  # 给前端用的本地 JSON API
+$ csv-splitter serve --root .  # 本地 JSON API，打开 http://127.0.0.1:8787/ 就能看
 ```
 
 每一步的真实输出、以及从筛选到交付的完整流程，见 **[10 分钟上手](docs/GETTING_STARTED.md)**。
@@ -299,6 +299,19 @@ csv-splitter filter orders.csv --where "note~re:^REFUND" --where "amount>1000" -
 csv-splitter convert export.csv -o export.utf8.csv     # 自动识别来源编码
 csv-splitter index export.utf8.csv
 ```
+
+### 内置页面 / Built-in viewer
+
+`serve` 起来后直接打开 `http://127.0.0.1:8787/`，有一个单文件 HTML 页面：
+
+- 文件列表（来自 `/files`，只列根目录内的文件）
+- 行浏览：翻页、跳行、按条件筛选、跨列搜索
+- 列画像：一键跑 `/analyze`，ragged 行会红字提示
+- 分组汇总：填分组列和聚合表达式
+
+它只用公开端点（`/files` `/meta` `/rows` `/search` `/analyze` `/groupby`），
+**不做任何私有通道**——所以它能做到的，任何真正的前端都能做到；它也能当成
+「后端做完了」的可视化证明，以及前端接手的参考实现。
 
 ### 查询结果缓存 / Result cache
 

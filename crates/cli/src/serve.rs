@@ -6,6 +6,7 @@
 //! bound to loopback, restricted to one directory tree.
 //!
 //! Endpoints (all read-only):
+//!   GET /                          (built-in HTML viewer, no build step)
 //!   GET /health
 //!   GET /meta?path=REL
 //!   GET /rows?path=REL&start=N&count=M
@@ -141,6 +142,7 @@ fn handle(
     }
 
     match path {
+        "/" | "/index.html" => respond_html(&mut stream, 200, VIEWER_HTML),
         "/health" => respond_json(&mut stream, 200, r#"{"ok":true,"service":"csv-splitter"}"#),
         "/meta" => meta(&mut stream, root, &params),
         "/rows" => rows(&mut stream, root, &params, cache),
@@ -795,6 +797,47 @@ fn rows(
         .unwrap_or(100)
         .min(MAX_ROWS_PER_REQUEST);
 
+    // `where` / `order` turn a raw scan into a filtered, ordered view. They are
+    // synonyms for the SQL endpoint, so the two cannot drift apart.
+    if params.contains_key("where") || params.contains_key("order") {
+        let mut query = String::from("SELECT * FROM t");
+        if let Some(clause) = filter_clause(params) {
+            query.push_str(" WHERE ");
+            query.push_str(&clause);
+        }
+        if let Some(order) = params.get("order").filter(|o| !o.is_empty()) {
+            // Column names come from the caller; strip anything that could end
+            // the clause early rather than passing it through.
+            let clean: String = order
+                .chars()
+                .filter(|c| c.is_alphanumeric() || matches!(c, ' ' | '_' | '-' | ',' | '.' | ':'))
+                .collect();
+            if clean.trim().is_empty() {
+                return respond_json(stream, 400, r#"{"error":"order must name a column"}"#);
+            }
+            query.push_str(" ORDER BY ");
+            query.push_str(&clean);
+            if params
+                .get("desc")
+                .map(|v| v == "1" || v == "true")
+                .unwrap_or(false)
+            {
+                query.push_str(" DESC");
+            }
+        }
+        return respond_rows_from_cache(
+            stream,
+            cache,
+            RowWindow {
+                path: &path,
+                statement: &query,
+                start,
+                count,
+            },
+            params,
+        );
+    }
+
     let mut viewer = match WindowViewer::open(&path, delimiter(params)) {
         Ok(v) => v,
         Err(e) => {
@@ -810,57 +853,17 @@ fn rows(
     // materialised once (up to a cap) and later pages are slices, so scrolling
     // does not re-scan a 10 GB file per frame.
     if let Some(statement) = params.get("sql") {
-        let loaded = cache.get_or_load(&path, statement, delimiter(params), || {
-            sql::collect(&path, statement, delimiter(params), cache.row_cap())
-        });
-        return match loaded {
-            Ok(cached) => {
-                let (rows, has_more) = match cached.try_window(start as usize, count as usize) {
-                    Some(w) => w,
-                    // The request starts past what was materialised: answer
-                    // honestly rather than pretending the result ended.
-                    None => {
-                        return respond_json(
-                            stream,
-                            422,
-                            &format!(
-                                r#"{{"error":"result is larger than the cache prefix ({} rows); rerun the query or narrow it"}}"#,
-                                cached.total()
-                            ),
-                        )
-                    }
-                };
-                let cols: Vec<String> = cached.columns.iter().map(|c| json_str(c)).collect();
-                let body_rows: Vec<String> = rows
-                    .iter()
-                    .map(|row| {
-                        let cells: Vec<String> = row.iter().map(|c| json_str(c)).collect();
-                        format!("[{}]", cells.join(","))
-                    })
-                    .collect();
-                respond_json(
-                    stream,
-                    200,
-                    &format!(
-                        r#"{{"start":{start},"hasMore":{},"rowsSoFar":{},"columns":[{}],"rows":[{}]}}"#,
-                        has_more,
-                        cached.total(),
-                        cols.join(","),
-                        body_rows.join(",")
-                    ),
-                )
-            }
-            Err(e) if e.kind() == io::ErrorKind::InvalidInput => respond_json(
-                stream,
-                400,
-                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
-            ),
-            Err(e) => respond_json(
-                stream,
-                422,
-                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
-            ),
-        };
+        return respond_rows_from_cache(
+            stream,
+            cache,
+            RowWindow {
+                path: &path,
+                statement,
+                start,
+                count,
+            },
+            params,
+        );
     }
 
     if let Err(e) = viewer.ensure_range(start, count) {
@@ -1097,6 +1100,79 @@ fn csv_join(cells: &[String]) -> String {
         })
         .collect::<Vec<_>>()
         .join(",")
+}
+
+/// The window a caller asked for, plus everything needed to render it.
+struct RowWindow<'a> {
+    path: &'a Path,
+    statement: &'a str,
+    start: u64,
+    count: u64,
+}
+
+/// Render a window of a materialised query result, caching it by (path, SQL).
+fn respond_rows_from_cache(
+    stream: &mut TcpStream,
+    cache: &ResultCache,
+    window: RowWindow<'_>,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let RowWindow {
+        path,
+        statement,
+        start,
+        count,
+    } = window;
+    let delimiter = delimiter(params);
+    let loaded = cache.get_or_load(path, statement, delimiter, || {
+        sql::collect(path, statement, delimiter, cache.row_cap())
+    });
+    match loaded {
+        Ok(cached) => {
+            let (rows, has_more) = match cached.try_window(start as usize, count as usize) {
+                Some(w) => w,
+                None => {
+                    return respond_json(
+                        stream,
+                        422,
+                        &format!(
+                            r#"{{"error":"result is larger than the cache prefix ({} rows); rerun the query or narrow it"}}"#,
+                            cached.total()
+                        ),
+                    )
+                }
+            };
+            let cols: Vec<String> = cached.columns.iter().map(|c| json_str(c)).collect();
+            let body_rows: Vec<String> = rows
+                .iter()
+                .map(|row| {
+                    let cells: Vec<String> = row.iter().map(|c| json_str(c)).collect();
+                    format!("[{}]", cells.join(","))
+                })
+                .collect();
+            respond_json(
+                stream,
+                200,
+                &format!(
+                    r#"{{"start":{start},"hasMore":{},"rowsSoFar":{},"columns":[{}],"rows":[{}]}}"#,
+                    has_more,
+                    cached.total(),
+                    cols.join(","),
+                    body_rows.join(",")
+                ),
+            )
+        }
+        Err(e) if e.kind() == io::ErrorKind::InvalidInput => respond_json(
+            stream,
+            400,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+        Err(e) => respond_json(
+            stream,
+            422,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+    }
 }
 
 fn search(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
@@ -1402,6 +1478,28 @@ fn json_str(s: &str) -> String {
     }
     out.push('"');
     out
+}
+
+/// The built-in viewer: one file, no build step, no dependencies.
+///
+/// It exists so "the backend is done" is something you can *look at*: it calls
+/// only the public endpoints, so anything it can do, a real front-end can too.
+const VIEWER_HTML: &str = include_str!("web/index.html");
+
+fn respond_html(stream: &mut TcpStream, status: u16, body: &str) -> io::Result<()> {
+    let reason = reason_for(status);
+    let response = format!(
+        "HTTP/1.1 {status} {reason}\r\n\
+         Content-Type: text/html; charset=utf-8\r\n\
+         Content-Length: {}\r\n\
+         Access-Control-Allow-Origin: *\r\n\
+         Cache-Control: no-store\r\n\
+         Connection: close\r\n\r\n{}",
+        body.len(),
+        body
+    );
+    stream.write_all(response.as_bytes())?;
+    stream.flush()
 }
 
 fn respond_bytes(

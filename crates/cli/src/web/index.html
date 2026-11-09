@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>csv-splitter</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --line: #262b36; --text: #e6e9ef;
+    --muted: #8b93a7; --accent: #4f9cf9; --warn: #f0b429;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  header {
+    display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+    border-bottom: 1px solid var(--line); background: var(--panel);
+    position: sticky; top: 0; z-index: 10;
+  }
+  header h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: .3px; }
+  header .meta { color: var(--muted); font-size: 12px; }
+  .wrap { padding: 16px; max-width: 1400px; margin: 0 auto; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  input, select, button {
+    background: #10131a; color: var(--text); border: 1px solid var(--line);
+    border-radius: 6px; padding: 7px 10px; font-size: 13px; font-family: inherit;
+  }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #06101f; font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td {
+    border-bottom: 1px solid var(--line); padding: 6px 10px; text-align: left;
+    white-space: pre-wrap; max-width: 520px; overflow-wrap: anywhere;
+  }
+  th { position: sticky; top: 53px; background: #13161d; font-weight: 600; color: #b9c2d4; }
+  td.num { text-align: right; }
+  .muted { color: var(--muted); }
+  .err { color: #ff6b6b; }
+  .list { display: flex; flex-direction: column; gap: 2px; }
+  .list button { text-align: left; border: none; background: none; padding: 6px 4px; border-radius: 4px; }
+  .list button:hover { background: #1b1f29; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .tabs button.active { border-color: var(--accent); color: var(--accent); }
+  .pill { font-size: 11px; padding: 2px 7px; border: 1px solid var(--line); border-radius: 99px; color: var(--muted); }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+  .hidden { display: none; }
+  .foot { color: var(--muted); font-size: 12px; padding: 16px 4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>csv-splitter</h1>
+  <span class="meta" id="status">未连接</span>
+</header>
+
+<div class="wrap">
+  <div id="picker">
+    <div class="row">
+      <strong>选择一个文件</strong>
+      <span class="muted">（来自 <code>GET /files</code>，只列出服务根目录内的文件）</span>
+    </div>
+    <div class="panel"><div class="list" id="filelist">加载中…</div></div>
+  </div>
+
+  <div id="viewer" class="hidden">
+    <div class="row">
+      <button onclick="backToFiles()">← 文件列表</button>
+      <strong id="filename"></strong>
+      <span class="pill" id="filemeta"></span>
+    </div>
+
+    <div class="tabs">
+      <button class="active" data-tab="rows" onclick="setTab('rows')">行浏览</button>
+      <button data-tab="analyze" onclick="setTab('analyze')">列画像</button>
+      <button data-tab="groupby" onclick="setTab('groupby')">分组汇总</button>
+    </div>
+
+    <!-- rows -->
+    <div id="tab-rows">
+      <div class="row">
+        <input id="where" placeholder="筛选：city=CDMX，可写 city in a,b 或 note~re:^x" style="min-width:320px">
+        <button onclick="applyFilter()">筛选</button>
+        <button onclick="clearFilter()">清除</button>
+        <input id="q" placeholder="搜索所有列…" style="min-width:200px">
+        <button onclick="doSearch()">搜索</button>
+      </div>
+      <div class="row">
+        <button onclick="page(-1)">← 上一页</button>
+        <span class="muted" id="range">—</span>
+        <button onclick="page(1)">下一页 →</button>
+        <input id="jump" type="number" placeholder="跳到行号（从 0 开始）" style="width:190px">
+        <button onclick="jumpTo()">跳转</button>
+        <select id="pageSize" onchange="reloadRows()">
+          <option>50</option><option selected>100</option><option>200</option><option>500</option>
+        </select>
+      </div>
+      <div class="panel"><table id="rowsTable"></table></div>
+      <div class="foot" id="rowsNote"></div>
+    </div>
+
+    <!-- analyze -->
+    <div id="tab-analyze" class="hidden">
+      <div class="row"><button class="primary" onclick="loadProfile()">分析所有列</button><span class="muted">一次全表扫描，给出空值数、去重数、数值统计</span></div>
+      <div class="panel"><table id="profileTable"></table></div>
+    </div>
+
+    <!-- groupby -->
+    <div id="tab-groupby" class="hidden">
+      <div class="row">
+        <input id="gbBy" placeholder="分组列，如 city" style="width:170px">
+        <input id="gbAgg" placeholder="聚合，如 amount:sum,amount:count" style="min-width:280px">
+        <input id="gbOrder" placeholder="排序输出列（可选）" style="width:190px">
+        <button class="primary" onclick="loadGroupby()">汇总</button>
+      </div>
+      <div class="panel"><table id="groupTable"></table></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let current = "";      // path of the open file
+let start = 0;         // first row of the current page
+let where = "";        // active filter expression
+let matches = null;    // row numbers from /search, when searching
+
+const qs = (o) => Object.entries(o)
+  .filter(([, v]) => v !== "" && v != null)
+  .map(([k, v]) => k + "=" + encodeURIComponent(v)).join("&");
+
+async function api(path, params) {
+  const url = path + (params ? "?" + qs(params) : "");
+  const res = await fetch(url, { headers: { accept: "application/json" } });
+  const body = await res.text();
+  let json;
+  try { json = JSON.parse(body); } catch { throw new Error(body.slice(0, 200)); }
+  if (!res.ok || json.error) throw new Error(json.error || res.status);
+  return json;
+}
+
+function setStatus(text, bad) {
+  const el = document.getElementById("status");
+  el.textContent = text;
+  el.className = "meta" + (bad ? " err" : "");
+}
+
+async function loadFiles() {
+  try {
+    const data = await api("/files", { ext: "csv,tsv,tsv.gz,csv.gz" });
+    const list = document.getElementById("filelist");
+    list.innerHTML = "";
+    if (!data.files.length) {
+      list.innerHTML = '<span class="muted">这个目录里没有 CSV。把文件放进服务根目录后刷新。</span>';
+    }
+    for (const f of data.files) {
+      const b = document.createElement("button");
+      b.textContent = f.path + "  ·  " + bytes(f.bytes);
+      b.onclick = () => openFile(f.path);
+      list.appendChild(b);
+    }
+    setStatus(data.files.length + " 个文件");
+  } catch (e) {
+    setStatus("读取文件列表失败：" + e.message, true);
+  }
+}
+
+function bytes(n) {
+  const u = ["B", "KB", "MB", "GB", "TB"];
+  let i = 0;
+  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+  return n.toFixed(i ? 1 : 0) + " " + u[i];
+}
+
+async function openFile(path) {
+  current = path; start = 0; where = ""; matches = null;
+  document.getElementById("where").value = "";
+  document.getElementById("q").value = "";
+  document.getElementById("picker").classList.add("hidden");
+  document.getElementById("viewer").classList.remove("hidden");
+  document.getElementById("filename").textContent = path;
+  setTab("rows");
+  try {
+    const meta = await api("/meta", { path });
+    document.getElementById("filemeta").textContent =
+      meta.rows.toLocaleString() + " 行 · " + bytes(meta.bytes) + " · " + meta.encoding;
+    setStatus("已打开 " + path);
+  } catch (e) {
+    setStatus(e.message, true);
+  }
+  reloadRows();
+}
+
+function backToFiles() {
+  document.getElementById("viewer").classList.add("hidden");
+  document.getElementById("picker").classList.remove("hidden");
+  current = "";
+}
+
+function setTab(name) {
+  for (const t of ["rows", "analyze", "groupby"]) {
+    document.getElementById("tab-" + t).classList.toggle("hidden", t !== name);
+    document.querySelector('[data-tab="' + t + '"]').classList.toggle("active", t === name);
+  }
+}
+
+async function reloadRows() {
+  if (!current) return;
+  const count = parseInt(document.getElementById("pageSize").value, 10);
+  try {
+    const data = await api("/rows", {
+      path: current, start, count,
+      where: where ? where : undefined,
+    });
+    renderTable(document.getElementById("rowsTable"), data.columns, data.rows);
+    document.getElementById("range").textContent =
+      "第 " + (start + 1).toLocaleString() + " – " + (start + data.rows.length).toLocaleString() + " 行" +
+      (data.rowsSoFar != null ? "（结果 " + data.rowsSoFar.toLocaleString() + " 行）" : "");
+    document.getElementById("rowsNote").textContent = where ? "筛选：" + where : "";
+  } catch (e) {
+    document.getElementById("rowsTable").innerHTML =
+      '<tr><td class="err">' + escapeHtml(e.message) + "</td></tr>";
+  }
+}
+
+function renderTable(table, columns, rows) {
+  if (!columns || !columns.length) {
+    table.innerHTML = '<tr><td class="muted">（没有列）</td></tr>';
+    return;
+  }
+  const head = "<tr>" + columns.map((c) => "<th>" + escapeHtml(c) + "</th>").join("") + "</tr>";
+  const body = rows.map((r) => "<tr>" + r.map((cell) => {
+    const num = /^-?\d+(\.\d+)?$/.test(cell);
+    return '<td class="' + (num ? "num" : "") + '">' + escapeHtml(cell) + "</td>";
+  }).join("") + "</tr>").join("");
+  table.innerHTML = head + body;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function page(dir) {
+  const count = parseInt(document.getElementById("pageSize").value, 10);
+  if (dir < 0) start = Math.max(0, start - count);
+  else start += count;
+  reloadRows();
+}
+
+function jumpTo() {
+  const v = parseInt(document.getElementById("jump").value, 10);
+  if (!isNaN(v) && v >= 0) { start = v; reloadRows(); }
+}
+
+function clearFilter() {
+  where = ""; start = 0;
+  document.getElementById("where").value = "";
+  reloadRows();
+}
+
+function applyFilter() {
+  where = document.getElementById("where").value.trim();
+  start = 0;
+  reloadRows();
+}
+
+async function doSearch() {
+  const q = document.getElementById("q").value.trim();
+  if (!current || !q) return;
+  try {
+    const data = await api("/search", { path: current, q, limit: 1000 });
+    setStatus("找到 " + data.matched.toLocaleString() + " 行" +
+      (data.truncated ? "（只取前 " + data.rows.length + " 个）" : ""));
+    if (data.rows.length) {
+      start = data.rows[0] - 1;
+      reloadRows();
+    } else {
+      document.getElementById("rowsTable").innerHTML =
+        '<tr><td class="muted">没有匹配的行</td></tr>';
+    }
+  } catch (e) {
+    setStatus(e.message, true);
+  }
+}
+
+async function loadProfile() {
+  if (!current) return;
+  const table = document.getElementById("profileTable");
+  table.innerHTML = '<tr><td class="muted">分析中…</td></tr>';
+  try {
+    const data = await api("/analyze", { path: current });
+    const rows = data.columns.map((c) => [
+      c.name,
+      c.rows.toLocaleString(),
+      c.empty.toLocaleString(),
+      (c.distinctTruncated ? "≥" : "") + c.distinct.toLocaleString(),
+      c.numeric
+        ? "min " + c.numeric.min + " · max " + c.numeric.max + " · mean " + c.numeric.mean.toFixed(2) +
+          (c.numeric.median != null ? " · median " + c.numeric.median : "") + " · sum " + c.numeric.sum
+        : (c.top || []).slice(0, 3).map(([v, n]) => v + " (" + n + ")").join(", "),
+    ]);
+    renderTable(table, ["列", "行数", "空值", "去重", "概要"], rows);
+    const ragged = data.columns[0] && data.columns[0].ragged;
+    if (ragged) {
+      setStatus("⚠ " + ragged.toLocaleString() + " 行的字段数与表头不同，这些行的列可能错位", true);
+    } else {
+      setStatus("分析完成");
+    }
+  } catch (e) {
+    table.innerHTML = '<tr><td class="err">' + escapeHtml(e.message) + "</td></tr>";
+  }
+}
+
+async function loadGroupby() {
+  if (!current) return;
+  const by = document.getElementById("gbBy").value.trim();
+  const agg = document.getElementById("gbAgg").value.trim();
+  if (!by || !agg) { setStatus("需要分组列和聚合表达式", true); return; }
+  const table = document.getElementById("groupTable");
+  table.innerHTML = '<tr><td class="muted">计算中…</td></tr>';
+  try {
+    const data = await api("/groupby", {
+      path: current, by, agg,
+      order: document.getElementById("gbOrder").value.trim() || undefined,
+      desc: "1",
+    });
+    renderTable(table, data.columns, data.rows);
+    setStatus(data.rows.length + " 组");
+  } catch (e) {
+    table.innerHTML = '<tr><td class="err">' + escapeHtml(e.message) + "</td></tr>";
+  }
+}
+
+// "筛选" button and Enter in the where box share the same handler.
+document.getElementById("where").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") applyFilter();
+});
+document.getElementById("q").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") doSearch();
+});
+
+loadFiles();
+</script>
+</body>
+</html>
