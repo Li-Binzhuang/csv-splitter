@@ -38,6 +38,9 @@
 | 🌐 i18n | Chinese (default) / English, one-click switch | 默认中文，一键切换英文 |
 | 📁 Drag & Drop | Drop files onto cards, shows file metadata | 拖放文件到卡片区域，显示文件元数据 |
 | 🎞 Flow Visualization | Animated pipeline: Source → Split → Compress → Result | 动画流程图，动态显示活跃步骤 |
+| 🧩 Merge | Re-assemble chunks back into one CSV (inverse of split) | 把分片重新合并回单个 CSV（拆分的逆操作） |
+| ✅ Verify | Split → merge round-trip check that proves a split is lossless | 拆分后合并做字节级校验，证明拆分无损 |
+| 💻 CLI | Full headless interface for cron / CI / servers, no GUI needed | 完整命令行，适合 cron / CI / 服务器 |
 
 ## Screenshots / 截图
 
@@ -56,6 +59,44 @@
 ### 📦 解压缩 / Extract
 
 ![Extract](docs/extract.png)
+
+## CLI / 命令行
+
+桌面版适合手动处理，服务器和脚本需要的是无界面入口。`crates/cli` 与 GUI 共用同一套核心管线，
+行为不会漂移。
+
+```bash
+# 安装到 ~/.cargo/bin
+cargo install --path crates/cli
+
+# 拆分（默认 zstd、10 片）
+csv-splitter split big.csv -n 8 -f zst -o chunks.tar
+
+# 只要几列，并在拆分前按列排序
+csv-splitter split big.csv --columns id,phone,score --sort score --desc -n 4 -f zip
+
+# 合并回单文件（支持 tar / tar.gz / tar.zst / tar.bz2 / tar.xz / zip）
+csv-splitter merge chunks.tar -o restored.csv
+
+# 证明这次拆分是无损的：split → merge → 逐字节比较
+csv-splitter verify big.csv -n 6
+
+# 看一眼数据与列分布
+csv-splitter preview big.csv --rows 5
+csv-splitter stats big.csv --sample 50000 --top 5
+
+# 解压任意支持的归档
+csv-splitter extract chunks.tar -o ./out
+```
+
+所有子命令都支持 `-d/--delim auto|comma|tab|semicolon|pipe|<char>`、`-q/--quiet`、`-h/--help`。
+
+### 设计上的两个保证 / Two guarantees
+
+1. **无损**：`split` 按*逻辑记录*切分（引号内换行的字段算一条记录），`merge` 去掉重复表头后按序拼接，
+   `verify` 用字节比较兜底。`splits > 记录数` 时不会产生空分片。
+2. **内存可控**：`--buf-mb` 是**总预算**，拆成 N 片不会变成 N × 缓冲。旧版每片固定 64 MB，
+   10 片时峰值接近 700 MB。
 
 ## Supported Formats / 支持的压缩格式
 
@@ -88,8 +129,11 @@ cargo build
 # Release build (with LTO)
 cargo build --release
 
-# Run
+# Run the GUI
 cargo run --release -p csv-splitter-gui
+
+# Run the CLI
+cargo run --release -p csv-splitter-cli -- --help
 ```
 
 ### Platform Dependencies / 平台依赖
@@ -128,6 +172,8 @@ csv-splitter/
 │   │       ├── decompress.rs  # Decompression (12 format combos)
 │   │       ├── preview.rs     # Data preview + column stats (reservoir sampling)
 │   │       └── sort.rs        # External merge sort
+│   ├── cli/                   # Headless CLI (split / merge / verify / stats)
+│   │   └── src/main.rs
 │   └── gui/                   # GUI application (egui / eframe)
 │       └── src/
 │           ├── main.rs        # Entry point
@@ -143,7 +189,7 @@ csv-splitter/
 
 | Trigger | Workflow | Description |
 |---------|----------|-------------|
-| Push to `main` / PR | CI | Check, Clippy, Build, Format |
+| Push to `main` / PR | CI | Check, Clippy (-D warnings), Tests |
 | Tag `v*` push | Release | Build all platforms → GitHub Release |
 | Manual dispatch | Release | Optional tag input, build with/without release |
 
