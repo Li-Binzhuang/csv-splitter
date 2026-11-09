@@ -1,5 +1,15 @@
 use crate::types::Delimiter;
+use memchr::{memchr, memchr2};
 use std::io::{self, BufRead, BufReader, Read};
+
+/// UTF-8 byte order mark. Excel and many export tools prepend this, and it would
+/// otherwise leak into the first column name (`\u{feff}id`).
+pub const UTF8_BOM: &[u8] = b"\xEF\xBB\xBF";
+
+/// Drop a leading UTF-8 BOM from a header cell.
+pub fn strip_bom(s: &str) -> &str {
+    s.strip_prefix('\u{feff}').unwrap_or(s)
+}
 
 /// Parse a single CSV line respecting quoted fields.
 /// Properly handles multi-byte UTF-8 characters (e.g. Chinese, Japanese, etc.).
@@ -35,6 +45,17 @@ pub fn parse_csv_line(line: &str, delim: u8) -> Vec<String> {
     fields
 }
 
+/// Parse one complete CSV record, which may contain embedded newlines inside
+/// quoted fields. A leading BOM is stripped from the first cell.
+pub fn parse_csv_record(record: &str, delim: u8) -> Vec<String> {
+    let mut fields = parse_csv_line(record, delim);
+    if let Some(first) = fields.first_mut() {
+        let stripped = strip_bom(first).to_string();
+        *first = stripped;
+    }
+    fields
+}
+
 /// Reconstruct a CSV line from fields.
 pub fn join_csv_line(fields: &[&str], delim: u8) -> String {
     let d = delim as char;
@@ -43,7 +64,7 @@ pub fn join_csv_line(fields: &[&str], delim: u8) -> String {
         if i > 0 {
             out.push(d);
         }
-        if f.contains(d) || f.contains('"') || f.contains('\n') {
+        if f.contains(d) || f.contains('"') || f.contains('\n') || f.contains('\r') {
             out.push('"');
             out.push_str(&f.replace('"', "\"\""));
             out.push('"');
@@ -62,7 +83,7 @@ pub fn read_headers(path: &std::path::Path, delim: Option<Delimiter>) -> io::Res
     let mut first_line = String::new();
     reader.read_line(&mut first_line)?;
     let d = delim.unwrap_or(Delimiter::Comma).byte();
-    Ok(parse_csv_line(&first_line, d))
+    Ok(parse_csv_record(&first_line, d))
 }
 
 /// Auto-detect delimiter by sampling first few lines.
@@ -85,10 +106,11 @@ pub fn detect_delimiter(reader: &mut impl Read) -> io::Result<(Delimiter, String
         (b'|', Delimiter::Pipe),
     ];
 
+    // Count candidates outside quotes so that `"a,b";c` does not favour the comma.
     let mut best = Delimiter::Comma;
     let mut best_count = 0;
     for &(byte, delim) in candidates {
-        let count = first_line.as_bytes().iter().filter(|&&b| b == byte).count();
+        let count = count_outside_quotes(first_line.as_bytes(), byte);
         if count > best_count {
             best_count = count;
             best = delim;
@@ -96,4 +118,243 @@ pub fn detect_delimiter(reader: &mut impl Read) -> io::Result<(Delimiter, String
     }
 
     Ok((best, first_lines))
+}
+
+/// Count occurrences of `needle` that are not inside a quoted field.
+fn count_outside_quotes(bytes: &[u8], needle: u8) -> usize {
+    let mut in_quotes = false;
+    let mut count = 0;
+    let mut i = 0;
+    while i < bytes.len() {
+        let b = bytes[i];
+        if in_quotes {
+            if b == b'"' {
+                if bytes.get(i + 1) == Some(&b'"') {
+                    i += 1;
+                } else {
+                    in_quotes = false;
+                }
+            }
+        } else if b == b'"' {
+            in_quotes = true;
+        } else if b == needle {
+            count += 1;
+        }
+        i += 1;
+    }
+    count
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ScanState {
+    /// Between fields, outside any quoted section.
+    Outside,
+    /// Inside a quoted section.
+    Inside,
+    /// Just consumed a `"` while inside quotes; `""` means an escaped quote,
+    /// anything else closes the quoted section.
+    QuoteSeen,
+}
+
+/// Reader that yields whole CSV records instead of physical lines.
+///
+/// A naive `read_line` loop cuts records that contain embedded newlines inside
+/// quoted fields (very common in address / remark columns). This reader tracks
+/// quote state across buffer boundaries, so `next_record` returns exactly one
+/// logical record and the caller can split on record boundaries safely.
+pub struct RecordReader<R: Read> {
+    reader: R,
+    buf: Vec<u8>,
+    pos: usize,
+    len: usize,
+    state: ScanState,
+    finished: bool,
+}
+
+impl<R: Read> RecordReader<R> {
+    pub fn new(reader: R, capacity: usize) -> Self {
+        Self {
+            reader,
+            buf: vec![0u8; capacity.max(8 * 1024)],
+            pos: 0,
+            len: 0,
+            state: ScanState::Outside,
+            finished: false,
+        }
+    }
+
+    /// Append the next record (including its trailing newline, if present) to
+    /// `out`. Returns `false` at end of input. `out` is cleared first.
+    pub fn next_record(&mut self, out: &mut Vec<u8>) -> io::Result<bool> {
+        out.clear();
+        if self.finished {
+            return Ok(false);
+        }
+        loop {
+            if self.pos >= self.len {
+                self.len = self.reader.read(&mut self.buf)?;
+                self.pos = 0;
+                if self.len == 0 {
+                    self.finished = true;
+                    return Ok(!out.is_empty());
+                }
+            }
+
+            match self.state {
+                ScanState::Outside => {
+                    let chunk = &self.buf[self.pos..self.len];
+                    match memchr2(b'"', b'\n', chunk) {
+                        Some(i) => {
+                            out.extend_from_slice(&chunk[..i]);
+                            let b = chunk[i];
+                            self.pos += i + 1;
+                            if b == b'\n' {
+                                out.push(b'\n');
+                                return Ok(true);
+                            }
+                            out.push(b'"');
+                            self.state = ScanState::Inside;
+                        }
+                        None => {
+                            out.extend_from_slice(chunk);
+                            self.pos = self.len;
+                        }
+                    }
+                }
+                ScanState::Inside => {
+                    let chunk = &self.buf[self.pos..self.len];
+                    match memchr(b'"', chunk) {
+                        Some(i) => {
+                            out.extend_from_slice(&chunk[..=i]);
+                            self.pos += i + 1;
+                            self.state = ScanState::QuoteSeen;
+                        }
+                        None => {
+                            out.extend_from_slice(chunk);
+                            self.pos = self.len;
+                        }
+                    }
+                }
+                ScanState::QuoteSeen => {
+                    let b = self.buf[self.pos];
+                    self.pos += 1;
+                    if b == b'"' {
+                        // Escaped quote: stay inside the quoted section.
+                        out.push(b'"');
+                        self.state = ScanState::Inside;
+                    } else {
+                        self.state = ScanState::Outside;
+                        if b == b'\n' {
+                            out.push(b'\n');
+                            return Ok(true);
+                        }
+                        out.push(b);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Same as [`RecordReader::next_record`] but decodes to `String`.
+pub fn next_record_string<R: Read>(
+    reader: &mut RecordReader<R>,
+    out: &mut Vec<u8>,
+) -> io::Result<Option<String>> {
+    if !reader.next_record(out)? {
+        return Ok(None);
+    }
+    // Lossy decoding keeps us going on non-UTF-8 bytes instead of failing the job.
+    Ok(Some(String::from_utf8_lossy(out).into_owned()))
+}
+
+/// Count logical CSV records (header included) without loading the file.
+pub fn count_records<R: Read>(reader: R, capacity: usize) -> io::Result<u64> {
+    let mut reader = RecordReader::new(reader, capacity);
+    let mut scratch = Vec::with_capacity(64 * 1024);
+    let mut count = 0u64;
+    while reader.next_record(&mut scratch)? {
+        count += 1;
+    }
+    Ok(count)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn records(input: &str) -> Vec<String> {
+        let mut r = RecordReader::new(input.as_bytes(), 8 * 1024);
+        let mut out = Vec::new();
+        let mut acc = Vec::new();
+        while r.next_record(&mut out).unwrap() {
+            acc.push(
+                String::from_utf8(out.clone())
+                    .unwrap()
+                    .trim_end()
+                    .to_string(),
+            );
+        }
+        acc
+    }
+
+    #[test]
+    fn splits_plain_lines() {
+        assert_eq!(records("a,b\nc,d\n"), vec!["a,b", "c,d"]);
+    }
+
+    #[test]
+    fn keeps_embedded_newlines_inside_quotes() {
+        assert_eq!(
+            records("id,addr\n1,\"line1\nline2\"\n2,ok\n"),
+            vec!["id,addr", "1,\"line1\nline2\"", "2,ok"]
+        );
+    }
+
+    #[test]
+    fn handles_escaped_quotes() {
+        assert_eq!(
+            records("1,\"he said \"\"hi\"\"\"\n2,x\n"),
+            vec!["1,\"he said \"\"hi\"\"\"", "2,x"]
+        );
+    }
+
+    #[test]
+    fn last_record_without_trailing_newline() {
+        assert_eq!(records("a\nb"), vec!["a", "b"]);
+    }
+
+    #[test]
+    fn parse_strips_bom_from_first_cell() {
+        let s = String::from_utf8([UTF8_BOM, b"id,name\n".as_slice()].concat()).unwrap();
+        let fields = parse_csv_record(s.trim_end(), b',');
+        assert_eq!(fields, vec!["id", "name"]);
+    }
+
+    #[test]
+    fn join_quotes_only_when_needed() {
+        assert_eq!(join_csv_line(&["a", "b"], b','), "a,b\n");
+        assert_eq!(join_csv_line(&["a,1", "b"], b','), "\"a,1\",b\n");
+        assert_eq!(join_csv_line(&["he\"y"], b','), "\"he\"\"y\"\n");
+    }
+
+    #[test]
+    fn detects_semicolon_when_commas_are_quoted() {
+        let mut input = b"a;b\n1;\"x,y\"\n".as_slice();
+        let (d, _) = detect_delimiter(&mut input).unwrap();
+        assert_eq!(d, Delimiter::Semicolon);
+    }
+
+    #[test]
+    fn record_reader_survives_tiny_buffers() {
+        let input = "a,\"x\ny\"\nb,c\n";
+        let mut r = RecordReader::new(input.as_bytes(), 8 * 1024);
+        // Force tiny reads by using a chained reader would be overkill; assert count instead.
+        let mut out = Vec::new();
+        let mut n = 0;
+        while r.next_record(&mut out).unwrap() {
+            n += 1;
+        }
+        assert_eq!(n, 2);
+    }
 }

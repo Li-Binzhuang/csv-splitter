@@ -161,7 +161,7 @@ fn detect_format(magic: &[u8], ext: &str) -> ArchiveFormat {
             ArchiveFormat::Gzip
         };
     }
-    if magic.len() >= 3 && magic[..3] == [b'B', b'Z', b'h'] {
+    if magic.len() >= 3 && magic[..3] == *b"BZh" {
         return if ext.contains("tar") {
             ArchiveFormat::TarBz2
         } else {

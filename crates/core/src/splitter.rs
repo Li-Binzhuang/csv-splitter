@@ -1,15 +1,55 @@
 use crate::compress::{finish_compressor, make_compressor};
-use crate::csv_reader::{join_csv_line, parse_csv_line};
+use crate::csv_reader::{join_csv_line, parse_csv_record, RecordReader};
 use crate::decompress::decompress_to_csv;
 use crate::sort::external_sort;
 use crate::types::*;
-use memchr::memchr_iter;
 use std::collections::HashSet;
 use std::fs::{self, File};
-use std::io::{self, BufRead, BufReader, BufWriter, Read, Write};
+use std::io::{self, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
-use std::sync::mpsc;
 use std::thread;
+
+/// Per-chunk write buffer when the caller asks for `buf_mb` total.
+/// The old code gave *every* chunk its own 64 MB buffer, so `--splits 10` on a
+/// 64 MB request actually allocated ~700 MB. Buffers are now split from one
+/// budget and capped, which keeps memory flat as the split count grows.
+fn budget_per_chunk(total: usize, chunks: usize) -> usize {
+    (total / chunks.max(1)).clamp(64 * 1024, 8 * 1024 * 1024)
+}
+
+/// Removes the scratch directory even when the job fails half way through.
+struct TempDir(PathBuf);
+
+static TEMP_SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+impl TempDir {
+    fn new(tag: &str) -> io::Result<Self> {
+        // pid + nanos + a per-process sequence: two jobs started in the same
+        // millisecond used to share a directory and delete each other's chunks.
+        let seq = TEMP_SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let dir = std::env::temp_dir().join(format!(
+            "csv_split_{tag}_{}_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0),
+            seq
+        ));
+        fs::create_dir_all(&dir)?;
+        Ok(Self(dir))
+    }
+
+    fn path(&self) -> &Path {
+        &self.0
+    }
+}
+
+impl Drop for TempDir {
+    fn drop(&mut self) {
+        fs::remove_dir_all(&self.0).ok();
+    }
+}
 
 /// Run the full split pipeline. Blocking — call from background thread.
 pub fn run_split(config: SplitConfig, tx: ProgressSender) {
@@ -19,12 +59,17 @@ pub fn run_split(config: SplitConfig, tx: ProgressSender) {
 }
 
 fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
-    let buf_size = config.buf_mb * 1024 * 1024;
-    let tmp_dir = std::env::temp_dir().join(format!("csv_split_{}", std::process::id()));
-    fs::create_dir_all(&tmp_dir)?;
+    if config.splits == 0 {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "splits must be >= 1",
+        ));
+    }
+    let buf_size = config.buf_mb.clamp(1, 4096) * 1024 * 1024;
+    let tmp_dir = TempDir::new("job")?;
 
     // Step 0: Decompress if needed
-    let csv_path = decompress_to_csv(&config.input, &tmp_dir, tx)?;
+    let csv_path = decompress_to_csv(&config.input, tmp_dir.path(), tx)?;
     tx.send(ProgressEvent::DecompressDone {
         csv_path: csv_path.clone(),
     })
@@ -32,7 +77,7 @@ fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
 
     // Step 0.5: Sort if requested
     let work_path = if let Some(ref sort_col) = config.sort_column {
-        let sorted = tmp_dir.join("_sorted.csv");
+        let sorted = tmp_dir.path().join("_sorted.csv");
         external_sort(
             &csv_path,
             &sorted,
@@ -53,7 +98,7 @@ fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
             let content = fs::read_to_string(path)?;
             let set: HashSet<String> = content
                 .lines()
-                .map(|l| l.trim().to_string())
+                .map(|l| crate::csv_reader::strip_bom(l.trim()).to_string())
                 .filter(|l| !l.is_empty())
                 .collect();
             tx.send(ProgressEvent::Info(format!(
@@ -66,37 +111,36 @@ fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
         None => None,
     };
 
-    // Phase 1: Count lines
+    // Phase 1: Count records (quote-aware: a record may span physical lines)
     let file_size = fs::metadata(&work_path)?.len();
     tx.send(ProgressEvent::PhaseStart {
         phase: "Counting lines".into(),
         total_bytes: file_size,
     })
     .ok();
-    let total_lines = count_lines(&work_path, buf_size, file_size, tx)?;
-    let data_lines = total_lines.saturating_sub(1);
+    let total_records = count_records(&work_path, buf_size, file_size, tx)?;
+    let data_records = total_records.saturating_sub(1);
     tx.send(ProgressEvent::PhaseDone {
         phase: "Counting lines".into(),
     })
     .ok();
-    tx.send(ProgressEvent::Info(format!("{} data lines", data_lines)))
+    tx.send(ProgressEvent::Info(format!("{data_records} data records")))
         .ok();
 
-    if data_lines == 0 {
+    if data_records == 0 {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "No data lines"));
     }
 
-    let splits = config.splits as u64;
-    let lines_per_split = data_lines / splits;
-    let remainder = data_lines % splits;
+    // Never create more chunks than records: `splits > records` used to produce
+    // empty files and an uneven tail.
+    let splits = (config.splits as u64).min(data_records) as usize;
 
     // Phase 2: Split + filter + compress
     let stem = config
         .input
         .file_stem()
-        .unwrap()
-        .to_string_lossy()
-        .to_string();
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| "output".to_string());
     tx.send(ProgressEvent::PhaseStart {
         phase: "Splitting & compressing".into(),
         total_bytes: file_size,
@@ -105,11 +149,10 @@ fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
 
     let compressed = split_filter_compress(
         &work_path,
-        &tmp_dir,
+        tmp_dir.path(),
         &stem,
-        config.splits,
-        lines_per_split,
-        remainder,
+        splits,
+        data_records,
         &desired_cols,
         config.compress_format,
         config.compress_level,
@@ -122,28 +165,68 @@ fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
     })
     .ok();
 
-    // Phase 3: Pack tar (unless zip format, which is self-contained)
-    let output_path = config
-        .output
-        .unwrap_or_else(|| config.input.with_file_name(format!("{}_split.tar", stem)));
+    // Phase 3: pack the result
+    let output_path = config.output.clone().unwrap_or_else(|| {
+        let ext = match config.compress_format {
+            CompressFormat::Zip => "zip",
+            _ => "tar",
+        };
+        config.input.with_file_name(format!("{stem}_split.{ext}"))
+    });
 
-    let tar_total: u64 = compressed
+    // A single uncompressed chunk is just the CSV itself — no point wrapping it.
+    if splits == 1 && config.compress_format == CompressFormat::None {
+        if let Some(parent) = output_path.parent() {
+            if !parent.as_os_str().is_empty() {
+                fs::create_dir_all(parent)?;
+            }
+        }
+        fs::rename(&compressed[0], &output_path).or_else(|_| {
+            fs::copy(&compressed[0], &output_path)?;
+            Ok::<(), io::Error>(())
+        })?;
+        tx.send(ProgressEvent::Finished {
+            output: output_path,
+        })
+        .ok();
+        return Ok(());
+    }
+
+    if let Some(parent) = output_path.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+
+    let total: u64 = compressed
         .iter()
         .map(|f| fs::metadata(f).map(|m| m.len()).unwrap_or(0))
         .sum();
-    tx.send(ProgressEvent::PhaseStart {
-        phase: "Packing tar".into(),
-        total_bytes: tar_total,
-    })
-    .ok();
-    pack_tar(&compressed, &output_path, buf_size, tx)?;
-    tx.send(ProgressEvent::PhaseDone {
-        phase: "Packing tar".into(),
-    })
-    .ok();
 
-    // Cleanup
-    fs::remove_dir_all(&tmp_dir).ok();
+    if config.compress_format == CompressFormat::Zip {
+        tx.send(ProgressEvent::PhaseStart {
+            phase: "Packing zip".into(),
+            total_bytes: total,
+        })
+        .ok();
+        pack_zip(&compressed, &output_path, buf_size)?;
+        tx.send(ProgressEvent::PhaseDone {
+            phase: "Packing zip".into(),
+        })
+        .ok();
+    } else {
+        tx.send(ProgressEvent::PhaseStart {
+            phase: "Packing tar".into(),
+            total_bytes: total,
+        })
+        .ok();
+        pack_tar(&compressed, &output_path, buf_size, tx)?;
+        tx.send(ProgressEvent::PhaseDone {
+            phase: "Packing tar".into(),
+        })
+        .ok();
+    }
+
     tx.send(ProgressEvent::Finished {
         output: output_path,
     })
@@ -151,24 +234,26 @@ fn run_inner(config: SplitConfig, tx: &ProgressSender) -> io::Result<()> {
     Ok(())
 }
 
-fn count_lines(
+fn count_records(
     path: &Path,
     buf_size: usize,
     file_size: u64,
     tx: &ProgressSender,
 ) -> io::Result<u64> {
-    let mut file = BufReader::with_capacity(buf_size, File::open(path)?);
-    let mut count: u64 = 0;
+    // Count newlines through a quote-aware scanner: a record with an embedded
+    // newline must count once, and a file without a trailing newline must not
+    // lose its last record.
+    let mut reader = RecordReader::new(
+        BufReader::with_capacity(buf_size, File::open(path)?),
+        buf_size,
+    );
+    let mut scratch = Vec::with_capacity(256 * 1024);
+    let mut count = 0u64;
     let mut bytes: u64 = 0;
-    let mut buf = vec![0u8; buf_size];
-    loop {
-        let n = file.read(&mut buf)?;
-        if n == 0 {
-            break;
-        }
-        count += memchr_iter(b'\n', &buf[..n]).count() as u64;
-        bytes += n as u64;
-        if bytes % (1 << 20) < n as u64 {
+    while reader.next_record(&mut scratch)? {
+        count += 1;
+        bytes += scratch.len() as u64;
+        if bytes % (1 << 20) < scratch.len() as u64 {
             tx.send(ProgressEvent::Progress { bytes }).ok();
         }
     }
@@ -182,8 +267,7 @@ fn split_filter_compress(
     tmp_dir: &Path,
     stem: &str,
     splits: usize,
-    lines_per_split: u64,
-    remainder: u64,
+    data_records: u64,
     desired_cols: &Option<HashSet<String>>,
     format: CompressFormat,
     level: i32,
@@ -192,11 +276,24 @@ fn split_filter_compress(
     tx: &ProgressSender,
 ) -> io::Result<Vec<PathBuf>> {
     let delim = delimiter.byte();
-    let mut reader = BufReader::with_capacity(buf_size, File::open(input)?);
+    let mut reader = RecordReader::new(
+        BufReader::with_capacity(buf_size, File::open(input)?),
+        buf_size,
+    );
 
-    let mut header_line = String::new();
-    reader.read_line(&mut header_line)?;
-    let header_fields = parse_csv_line(&header_line, delim);
+    // Header
+    let mut record = Vec::with_capacity(64 * 1024);
+    if !reader.next_record(&mut record)? {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "Empty file"));
+    }
+    let mut header_text = String::from_utf8_lossy(&record).into_owned();
+    if header_text.ends_with('\n') {
+        header_text.pop();
+    }
+    if header_text.ends_with('\r') {
+        header_text.pop();
+    }
+    let header_fields = parse_csv_record(&header_text, delim);
 
     let (col_indices, new_header) = match desired_cols {
         Some(desired) => {
@@ -222,60 +319,83 @@ fn split_filter_compress(
             let hdr = join_csv_line(&names, delim);
             (Some(indices), hdr.into_bytes())
         }
-        None => (None, header_line.as_bytes().to_vec()),
+        None => {
+            // Passthrough keeps the original header bytes (BOM, quoting, CRLF).
+            let mut raw = record.clone();
+            if !raw.ends_with(b"\n") {
+                raw.push(b'\n');
+            }
+            (None, raw)
+        }
     };
 
-    let ext = format!("csv{}", format.extension());
+    // Splits are compressed as raw CSV chunks; a Zip container is built later
+    // from those files (the previous code wrote raw bytes into a `.csv.zip`).
+    let ext = match format {
+        CompressFormat::Zip | CompressFormat::None => "csv".to_string(),
+        other => format!("csv{}", other.extension()),
+    };
 
-    // Spawn compressor threads
-    let mut senders: Vec<mpsc::SyncSender<Vec<u8>>> = Vec::with_capacity(splits);
-    let mut handles: Vec<thread::JoinHandle<io::Result<PathBuf>>> = Vec::with_capacity(splits);
+    let per_chunk_buf = budget_per_chunk(buf_size, splits);
+    let targets = split_targets(data_records, splits);
 
-    for i in 0..splits {
-        let (stx, srx) = mpsc::sync_channel::<Vec<u8>>(4096);
+    let mut senders = Vec::with_capacity(splits);
+    let mut handles = Vec::with_capacity(splits);
+
+    for (i, target) in targets.iter().enumerate() {
+        let (stx, srx) = std::sync::mpsc::sync_channel::<Vec<u8>>(4096);
         senders.push(stx);
 
-        let out_path = tmp_dir.join(format!("{}_{:04}.{}", stem, i + 1, ext));
+        let out_path = tmp_dir.join(format!("{stem}_{:04}.{ext}", i + 1));
         let hdr = new_header.clone();
         let fmt = format;
         let lvl = level;
+        let capacity = per_chunk_buf;
+        let expected = *target;
 
         handles.push(thread::spawn(move || -> io::Result<PathBuf> {
-            let mut writer = make_compressor(&out_path, fmt, lvl)?;
+            let mut writer: Box<dyn Write + Send> = match fmt {
+                CompressFormat::Zip | CompressFormat::None => {
+                    Box::new(BufWriter::with_capacity(capacity, File::create(&out_path)?))
+                }
+                other => make_compressor(&out_path, other, lvl, capacity)?,
+            };
             writer.write_all(&hdr)?;
+            let mut written = 0u64;
             for data in srx {
                 writer.write_all(&data)?;
+                written += 1;
             }
             finish_compressor(writer)?;
+            if written != expected {
+                return Err(io::Error::other(format!(
+                    "chunk {out_path:?} record mismatch: expected {expected}, wrote {written}"
+                )));
+            }
             Ok(out_path)
         }));
     }
 
     // Read + filter + distribute
-    let mut bytes_read = header_line.len() as u64;
+    let mut bytes_read = record.len() as u64;
     let mut split_idx: usize = 0;
     let mut lines_in_current: u64 = 0;
-    let mut current_target = lines_per_split + if 0 < remainder { 1 } else { 0 };
+    let mut current_target = targets[0];
 
-    let mut line = String::new();
-    loop {
-        line.clear();
-        let n = reader.read_line(&mut line)?;
-        if n == 0 {
-            break;
-        }
-        bytes_read += n as u64;
+    while reader.next_record(&mut record)? {
+        bytes_read += record.len() as u64;
 
         let data = match &col_indices {
             Some(indices) => {
-                let fields = parse_csv_line(&line, delim);
+                let text = String::from_utf8_lossy(&record);
+                let fields = parse_csv_record(&text, delim);
                 let selected: Vec<&str> = indices
                     .iter()
                     .filter_map(|&i| fields.get(i).map(|s| s.as_str()))
                     .collect();
                 join_csv_line(&selected, delim).into_bytes()
             }
-            None => line.as_bytes().to_vec(),
+            None => record.clone(),
         };
 
         if senders[split_idx].send(data).is_err() {
@@ -286,11 +406,10 @@ fn split_filter_compress(
         if lines_in_current >= current_target && split_idx + 1 < splits {
             split_idx += 1;
             lines_in_current = 0;
-            let extra = if (split_idx as u64) < remainder { 1 } else { 0 };
-            current_target = lines_per_split + extra;
+            current_target = targets[split_idx];
         }
 
-        if bytes_read % (1 << 20) < n as u64 {
+        if bytes_read % (1 << 20) < record.len() as u64 {
             tx.send(ProgressEvent::Progress { bytes: bytes_read }).ok();
         }
     }
@@ -308,18 +427,31 @@ fn split_filter_compress(
     Ok(out_paths)
 }
 
+/// Distribute `total` records over `parts` chunks, front-loading the remainder so
+/// the difference between the largest and smallest chunk is exactly one record.
+fn split_targets(total: u64, parts: usize) -> Vec<u64> {
+    let parts = parts.max(1) as u64;
+    let base = total / parts;
+    let rem = total % parts;
+    (0..parts).map(|i| base + u64::from(i < rem)).collect()
+}
+
 fn pack_tar(
     files: &[PathBuf],
     output: &Path,
     buf_size: usize,
     tx: &ProgressSender,
 ) -> io::Result<()> {
-    let tar_file = BufWriter::with_capacity(buf_size, File::create(output)?);
+    let io_buf = buf_size.clamp(256 * 1024, 8 * 1024 * 1024);
+    let tar_file = BufWriter::with_capacity(io_buf, File::create(output)?);
     let mut archive = tar::Builder::new(tar_file);
     let mut bytes_done: u64 = 0;
 
     for path in files {
-        let name = path.file_name().unwrap().to_string_lossy().to_string();
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| "chunk.csv".to_string());
         let fsize = fs::metadata(path)?.len();
 
         let mut header = tar::Header::new_gnu();
@@ -327,7 +459,7 @@ fn pack_tar(
         header.set_mode(0o644);
         header.set_cksum();
 
-        let r = BufReader::with_capacity(buf_size, File::open(path)?);
+        let r = BufReader::with_capacity(io_buf, File::open(path)?);
         archive.append_data(&mut header, &name, r)?;
 
         bytes_done += fsize;
@@ -336,4 +468,64 @@ fn pack_tar(
 
     archive.finish()?;
     Ok(())
+}
+
+/// Pack the already-written CSV chunks into a single real zip archive.
+fn pack_zip(files: &[PathBuf], output: &Path, buf_size: usize) -> io::Result<()> {
+    use zip::write::SimpleFileOptions;
+    use zip::{CompressionMethod, ZipWriter};
+
+    let io_buf = buf_size.clamp(256 * 1024, 8 * 1024 * 1024);
+    let file = File::create(output)?;
+    let mut zip = ZipWriter::new(BufWriter::with_capacity(io_buf, file));
+    let options = SimpleFileOptions::default()
+        .compression_method(CompressionMethod::Deflated)
+        .large_file(true);
+
+    for path in files {
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| "chunk.csv".to_string());
+        zip.start_file(name, options)
+            .map_err(|e| io::Error::other(e.to_string()))?;
+        let mut f = BufReader::with_capacity(io_buf, File::open(path)?);
+        io::copy(&mut f, &mut zip)?;
+    }
+    zip.finish().map_err(|e| io::Error::other(e.to_string()))?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn targets_are_balanced() {
+        assert_eq!(split_targets(10, 3), vec![4, 3, 3]);
+        assert_eq!(split_targets(9, 3), vec![3, 3, 3]);
+        assert_eq!(split_targets(1, 1), vec![1]);
+        assert_eq!(split_targets(5, 5), vec![1, 1, 1, 1, 1]);
+    }
+
+    #[test]
+    fn buffer_budget_does_not_multiply() {
+        let total = 64 * 1024 * 1024;
+        assert_eq!(budget_per_chunk(total, 1), 8 * 1024 * 1024);
+        assert_eq!(budget_per_chunk(total, 16), 4 * 1024 * 1024);
+        assert_eq!(budget_per_chunk(1024, 16), 64 * 1024);
+    }
+
+    #[test]
+    fn counts_newlines_inside_quotes_as_one_record() {
+        let dir = std::env::temp_dir().join(format!("csvs_test_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let p = dir.join("a.csv");
+        std::fs::write(&p, "h\n1\n\"2\n3\"\n4\n").unwrap();
+
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let n = count_records(&p, 8 * 1024, 0, &tx).unwrap();
+        assert_eq!(n, 4);
+        std::fs::remove_dir_all(&dir).ok();
+    }
 }

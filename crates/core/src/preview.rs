@@ -1,9 +1,9 @@
-use crate::csv_reader::{detect_delimiter, parse_csv_line};
+use crate::csv_reader::{detect_delimiter, parse_csv_line, parse_csv_record, RecordReader};
 use crate::types::*;
 use rand::Rng;
 use std::collections::HashMap;
 use std::fs::{self, File};
-use std::io::{self, BufRead, BufReader};
+use std::io::{self, BufReader};
 use std::path::Path;
 
 /// Load CSV preview: headers + first N rows, auto-detect delimiter.
@@ -22,37 +22,48 @@ pub fn load_preview(
     let delim = delimiter_override.unwrap_or(detected);
     let delim_byte = delim.byte();
 
+    // Record-aware reading: a quoted field may contain newlines, and a naive
+    // `read_line` loop turns one row into two (and shifts every later column).
     let file = File::open(path)?;
-    let mut reader = BufReader::with_capacity(8 * 1024 * 1024, file);
+    let mut reader = RecordReader::new(
+        BufReader::with_capacity(8 * 1024 * 1024, file),
+        8 * 1024 * 1024,
+    );
 
-    // Read header
-    let mut header_line = String::new();
-    reader.read_line(&mut header_line)?;
-    let headers = parse_csv_line(&header_line, delim_byte);
+    let mut record = Vec::with_capacity(64 * 1024);
+    let headers = if reader.next_record(&mut record)? {
+        parse_csv_record(&String::from_utf8_lossy(&record), delim_byte)
+    } else {
+        Vec::new()
+    };
+    let header_len = record.len() as u64;
 
-    // Read preview rows
     let mut rows = Vec::with_capacity(max_rows);
-    let mut line = String::new();
-    for _ in 0..max_rows {
-        line.clear();
-        if reader.read_line(&mut line)? == 0 {
+    let mut bytes = header_len;
+    let mut sampled_records: u64 = 0;
+    // Read a wider window than we display: an estimate based on the first three
+    // short rows is wildly wrong on files that mix short and long records.
+    let estimate_window = max_rows.max(2_000);
+    while sampled_records < estimate_window as u64 {
+        if !reader.next_record(&mut record)? {
             break;
         }
-        rows.push(parse_csv_line(&line, delim_byte));
+        bytes += record.len() as u64;
+        sampled_records += 1;
+        if rows.len() < max_rows {
+            rows.push(parse_csv_record(
+                &String::from_utf8_lossy(&record),
+                delim_byte,
+            ));
+        }
     }
 
-    // Estimate total rows from file size and average line length
-    let total_rows_estimate = if !rows.is_empty() {
-        let bytes_so_far = header_line.len() as u64
-            + rows
-                .iter()
-                .map(|r| r.iter().map(|c| c.len() as u64 + 1).sum::<u64>() + 1)
-                .sum::<u64>();
-        let avg_line = bytes_so_far as f64 / (rows.len() + 1) as f64;
-        if avg_line > 0.0 {
-            (file_size as f64 / avg_line).round() as u64
+    let total_rows_estimate = if sampled_records > 0 && bytes > 0 {
+        let avg_record = bytes as f64 / (sampled_records + 1) as f64;
+        if avg_record > 0.0 {
+            (file_size as f64 / avg_record).round() as u64
         } else {
-            rows.len() as u64
+            sampled_records
         }
     } else {
         0
@@ -85,49 +96,50 @@ pub fn compute_column_stats(
     .ok();
 
     let file = File::open(path)?;
-    let mut reader = BufReader::with_capacity(64 * 1024 * 1024, file);
+    let mut reader = RecordReader::new(
+        BufReader::with_capacity(8 * 1024 * 1024, file),
+        8 * 1024 * 1024,
+    );
     let delim_byte = delimiter.byte();
 
-    // Read header
-    let mut header_line = String::new();
-    reader.read_line(&mut header_line)?;
-    let headers = parse_csv_line(&header_line, delim_byte);
+    let mut record = Vec::with_capacity(64 * 1024);
+    if !reader.next_record(&mut record)? {
+        tx.send(ProgressEvent::PhaseDone {
+            phase: "Computing column stats".into(),
+        })
+        .ok();
+        return Ok(Vec::new());
+    }
+    let headers = parse_csv_record(&String::from_utf8_lossy(&record), delim_byte);
     let num_cols = headers.len();
 
-    // Reservoir sampling: read all lines but only keep `sample_size` random ones
+    // Reservoir sampling: stream every record, keep `sample_size` at random.
     let mut rng = rand::thread_rng();
     let mut sampled_rows: Vec<Vec<String>> = Vec::with_capacity(sample_size);
     let mut total_rows: u64 = 0;
-    let mut bytes_read = header_line.len() as u64;
+    let mut bytes_read = record.len() as u64;
 
-    let mut line = String::new();
-    loop {
-        line.clear();
-        let n = reader.read_line(&mut line)?;
-        if n == 0 {
-            break;
-        }
-        bytes_read += n as u64;
+    while reader.next_record(&mut record)? {
+        bytes_read += record.len() as u64;
         total_rows += 1;
 
+        let parsed = || parse_csv_record(&String::from_utf8_lossy(&record), delim_byte);
         if sampled_rows.len() < sample_size {
-            sampled_rows.push(parse_csv_line(&line, delim_byte));
+            sampled_rows.push(parsed());
         } else {
-            // Reservoir sampling: replace with probability sample_size/total_rows
             let j = rng.gen_range(0..total_rows as usize);
             if j < sample_size {
-                sampled_rows[j] = parse_csv_line(&line, delim_byte);
+                sampled_rows[j] = parsed();
             }
         }
 
-        if bytes_read % (1 << 22) < n as u64 {
+        if bytes_read % (1 << 22) < record.len() as u64 {
             tx.send(ProgressEvent::Progress { bytes: bytes_read }).ok();
         }
     }
 
     tx.send(ProgressEvent::Progress { bytes: file_size }).ok();
 
-    // Compute stats per column from sampled rows
     let mut stats: Vec<ColumnStats> = Vec::with_capacity(num_cols);
     for (col_idx, col_name) in headers.iter().enumerate() {
         let mut freq: HashMap<String, u64> = HashMap::new();
@@ -137,18 +149,15 @@ pub fn compute_column_stats(
             let val = row.get(col_idx).map(|s| s.as_str()).unwrap_or("");
             if val.is_empty() {
                 empty_count += 1;
-            } else {
-                // Limit unique tracking to avoid memory blow-up
-                if freq.len() < max_unique_per_col || freq.contains_key(val) {
-                    *freq.entry(val.to_string()).or_insert(0) += 1;
-                }
+            } else if freq.len() < max_unique_per_col || freq.contains_key(val) {
+                *freq.entry(val.to_string()).or_insert(0) += 1;
             }
         }
 
         let unique_count = freq.len() as u64;
         let mut top_values: Vec<(String, u64)> = freq.into_iter().collect();
-        top_values.sort_by(|a, b| b.1.cmp(&a.1));
-        top_values.truncate(100); // Keep top 100
+        top_values.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+        top_values.truncate(100);
 
         stats.push(ColumnStats {
             name: col_name.clone(),
@@ -164,4 +173,44 @@ pub fn compute_column_stats(
     })
     .ok();
     Ok(stats)
+}
+
+/// Kept for API compatibility: parse a plain line without record awareness.
+pub fn parse_plain_line(line: &str, delimiter: Delimiter) -> Vec<String> {
+    parse_csv_line(line, delimiter.byte())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn preview_does_not_shift_columns_on_embedded_newlines() {
+        let dir = std::env::temp_dir().join(format!("csvs_prev_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let p = dir.join("x.csv");
+        std::fs::write(&p, "id,note\n1,\"a\nb\"\n2,ok\n").unwrap();
+
+        let preview = load_preview(&p, 10, None).unwrap();
+        assert_eq!(preview.headers, vec!["id", "note"]);
+        assert_eq!(preview.rows.len(), 2);
+        assert_eq!(preview.rows[0], vec!["1", "a\nb"]);
+        assert_eq!(preview.rows[1], vec!["2", "ok"]);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn stats_count_empty_cells_without_column_shift() {
+        let dir = std::env::temp_dir().join(format!("csvs_stats_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let p = dir.join("x.csv");
+        std::fs::write(&p, "a,b\n1,\"x\ny\"\n2,\n").unwrap();
+
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let stats = compute_column_stats(&p, Delimiter::Comma, 100, 1000, &tx).unwrap();
+        assert_eq!(stats.len(), 2);
+        assert_eq!(stats[1].empty_count, 1);
+        assert_eq!(stats[0].unique_count, 2);
+        std::fs::remove_dir_all(&dir).ok();
+    }
 }

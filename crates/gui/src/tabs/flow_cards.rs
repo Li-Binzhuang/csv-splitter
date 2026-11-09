@@ -18,7 +18,7 @@ pub fn draw_split_card(
     let content_w = (w - 2.0 * (margin + 1.0)).max(40.0);
     egui::Frame::new()
         .fill(CARD_BG)
-        .stroke(egui::Stroke::new(1.0, border))
+        .stroke(egui::Stroke::new(1.0_f32, border))
         .corner_radius(egui::CornerRadius::same(12))
         .inner_margin(margin)
         .show(ui, |ui| {
@@ -76,7 +76,7 @@ pub fn draw_compress_card(
     let content_w = (w - 2.0 * (margin + 1.0)).max(40.0);
     egui::Frame::new()
         .fill(CARD_BG)
-        .stroke(egui::Stroke::new(1.0, border))
+        .stroke(egui::Stroke::new(1.0_f32, border))
         .corner_radius(egui::CornerRadius::same(12))
         .inner_margin(margin)
         .show(ui, |ui| {
@@ -139,7 +139,7 @@ pub fn draw_result_card(
     let content_w = (w - 2.0 * (margin + 1.0)).max(40.0);
     egui::Frame::new()
         .fill(CARD_BG)
-        .stroke(egui::Stroke::new(1.0, border))
+        .stroke(egui::Stroke::new(1.0_f32, border))
         .corner_radius(egui::CornerRadius::same(12))
         .inner_margin(margin)
         .show(ui, |ui| {

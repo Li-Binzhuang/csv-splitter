@@ -29,7 +29,7 @@ pub fn ui_split(
     // ===== FLOW — title row has toggles inline =====
     let flow_resp = egui::Frame::new()
         .fill(CARD_BG)
-        .stroke(egui::Stroke::new(1.0, CARD_BORDER))
+        .stroke(egui::Stroke::new(1.0_f32, CARD_BORDER))
         .corner_radius(egui::CornerRadius::same(14))
         .inner_margin(14.0)
         .outer_margin(egui::Margin::symmetric(0, 4))
@@ -80,7 +80,7 @@ pub fn ui_split(
         col.set_width(right_w);
         egui::Frame::new()
             .fill(CARD_BG)
-            .stroke(egui::Stroke::new(1.0, CARD_BORDER))
+            .stroke(egui::Stroke::new(1.0_f32, CARD_BORDER))
             .corner_radius(egui::CornerRadius::same(14))
             .inner_margin(14.0)
             .outer_margin(egui::Margin::symmetric(0, 4))
@@ -113,7 +113,7 @@ pub fn ui_split(
         col.set_width(left_w);
         egui::Frame::new()
             .fill(CARD_BG)
-            .stroke(egui::Stroke::new(1.0, CARD_BORDER))
+            .stroke(egui::Stroke::new(1.0_f32, CARD_BORDER))
             .corner_radius(egui::CornerRadius::same(14))
             .inner_margin(14.0)
             .outer_margin(egui::Margin::symmetric(0, 4))

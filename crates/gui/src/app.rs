@@ -86,7 +86,10 @@ impl eframe::App for App {
                 egui::Frame::new()
                     .fill(egui::Color32::from_rgb(36, 40, 52))
                     .inner_margin(egui::Margin::symmetric(12, 6))
-                    .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(58, 64, 80))),
+                    .stroke(egui::Stroke::new(
+                        1.0_f32,
+                        egui::Color32::from_rgb(58, 64, 80),
+                    )),
             )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {

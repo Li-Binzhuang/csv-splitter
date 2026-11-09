@@ -39,7 +39,7 @@ pub fn ui_decompress(
         col.set_width(col_w);
         egui::Frame::new()
             .fill(CARD_BG)
-            .stroke(egui::Stroke::new(1.0, CARD_BORDER))
+            .stroke(egui::Stroke::new(1.0_f32, CARD_BORDER))
             .corner_radius(egui::CornerRadius::same(14))
             .inner_margin(14.0)
             .outer_margin(egui::Margin::symmetric(0, 4))
@@ -100,7 +100,7 @@ pub fn ui_decompress(
         col.set_width(col_w);
         egui::Frame::new()
             .fill(CARD_BG)
-            .stroke(egui::Stroke::new(1.0, CARD_BORDER))
+            .stroke(egui::Stroke::new(1.0_f32, CARD_BORDER))
             .corner_radius(egui::CornerRadius::same(14))
             .inner_margin(14.0)
             .outer_margin(egui::Margin::symmetric(0, 4))
@@ -152,7 +152,7 @@ pub fn ui_decompress(
     let log_inner_w = total_w - 30.0;
     egui::Frame::new()
         .fill(CARD_BG)
-        .stroke(egui::Stroke::new(1.0, CARD_BORDER))
+        .stroke(egui::Stroke::new(1.0_f32, CARD_BORDER))
         .corner_radius(egui::CornerRadius::same(14))
         .inner_margin(14.0)
         .outer_margin(egui::Margin::symmetric(0, 4))

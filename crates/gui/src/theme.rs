@@ -86,30 +86,30 @@ fn setup_visuals(ctx: &egui::Context) {
     visuals.faint_bg_color = faint_bg;
 
     visuals.widgets.noninteractive.bg_fill = widget_bg;
-    visuals.widgets.noninteractive.fg_stroke = Stroke::new(1.0, text_secondary);
+    visuals.widgets.noninteractive.fg_stroke = Stroke::new(1.0_f32, text_secondary);
     visuals.widgets.noninteractive.corner_radius = rounding;
-    visuals.widgets.noninteractive.bg_stroke = Stroke::new(1.0, border);
+    visuals.widgets.noninteractive.bg_stroke = Stroke::new(1.0_f32, border);
 
     visuals.widgets.inactive.bg_fill = widget_bg;
-    visuals.widgets.inactive.fg_stroke = Stroke::new(1.0, text_primary);
+    visuals.widgets.inactive.fg_stroke = Stroke::new(1.0_f32, text_primary);
     visuals.widgets.inactive.corner_radius = rounding;
-    visuals.widgets.inactive.bg_stroke = Stroke::new(1.0, border);
+    visuals.widgets.inactive.bg_stroke = Stroke::new(1.0_f32, border);
 
     visuals.widgets.hovered.bg_fill = Color32::from_rgb(65, 72, 92);
-    visuals.widgets.hovered.fg_stroke = Stroke::new(1.0, accent_hover);
+    visuals.widgets.hovered.fg_stroke = Stroke::new(1.0_f32, accent_hover);
     visuals.widgets.hovered.corner_radius = rounding;
-    visuals.widgets.hovered.bg_stroke = Stroke::new(1.0, accent);
+    visuals.widgets.hovered.bg_stroke = Stroke::new(1.0_f32, accent);
 
     visuals.widgets.active.bg_fill = accent;
-    visuals.widgets.active.fg_stroke = Stroke::new(1.0, Color32::WHITE);
+    visuals.widgets.active.fg_stroke = Stroke::new(1.0_f32, Color32::WHITE);
     visuals.widgets.active.corner_radius = rounding;
 
     visuals.widgets.open.bg_fill = Color32::from_rgb(60, 66, 85);
-    visuals.widgets.open.fg_stroke = Stroke::new(1.0, accent);
+    visuals.widgets.open.fg_stroke = Stroke::new(1.0_f32, accent);
     visuals.widgets.open.corner_radius = rounding;
 
     visuals.selection.bg_fill = accent.linear_multiply(0.25);
-    visuals.selection.stroke = Stroke::new(1.0, accent);
+    visuals.selection.stroke = Stroke::new(1.0_f32, accent);
 
     visuals.window_shadow = Shadow::NONE;
     visuals.popup_shadow = Shadow {

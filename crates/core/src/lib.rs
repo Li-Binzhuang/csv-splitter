@@ -1,9 +1,10 @@
-pub mod types;
-pub mod decompress;
+pub mod compress;
 pub mod csv_reader;
+pub mod decompress;
+pub mod merge;
 pub mod preview;
 pub mod sort;
 pub mod splitter;
-pub mod compress;
+pub mod types;
 
 pub use types::*;

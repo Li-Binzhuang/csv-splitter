@@ -39,7 +39,7 @@ pub fn log_panel(ui: &mut egui::Ui, logs: &[String], lang: Lang) {
     let log_h = ui.available_height().max(120.0) - 8.0;
     egui::Frame::new()
         .fill(CARD_BG)
-        .stroke(egui::Stroke::new(1.0, CARD_BORDER))
+        .stroke(egui::Stroke::new(1.0_f32, CARD_BORDER))
         .corner_radius(egui::CornerRadius::same(10))
         .inner_margin(8.0)
         .show(ui, |ui| {
@@ -101,7 +101,7 @@ pub fn stat_badge(ui: &mut egui::Ui, icon: &str, label: &str, value: &str) {
 pub fn section_frame(ui: &mut egui::Ui, title: &str, add_contents: impl FnOnce(&mut egui::Ui)) {
     egui::Frame::new()
         .fill(CARD_BG)
-        .stroke(egui::Stroke::new(1.0, CARD_BORDER))
+        .stroke(egui::Stroke::new(1.0_f32, CARD_BORDER))
         .corner_radius(egui::CornerRadius::same(14))
         .inner_margin(14.0)
         .outer_margin(egui::Margin::symmetric(0, 4))
@@ -155,16 +155,16 @@ pub fn draw_arrow(ui: &mut egui::Ui, color: egui::Color32, w: f32, h: f32) {
             egui::pos2(rect.left() + 2.0, mid_y),
             egui::pos2(rect.right() - 6.0, mid_y),
         ],
-        egui::Stroke::new(2.0, color),
+        egui::Stroke::new(2.0_f32, color),
     );
     let tip = egui::pos2(rect.right() - 2.0, mid_y);
     p.line_segment(
         [egui::pos2(tip.x - 6.0, mid_y - 4.0), tip],
-        egui::Stroke::new(2.0, color),
+        egui::Stroke::new(2.0_f32, color),
     );
     p.line_segment(
         [egui::pos2(tip.x - 6.0, mid_y + 4.0), tip],
-        egui::Stroke::new(2.0, color),
+        egui::Stroke::new(2.0_f32, color),
     );
 }
 
@@ -178,16 +178,16 @@ pub fn draw_arrow_left(ui: &mut egui::Ui, color: egui::Color32, w: f32, h: f32) 
             egui::pos2(rect.left() + 6.0, mid_y),
             egui::pos2(rect.right() - 2.0, mid_y),
         ],
-        egui::Stroke::new(2.0, color),
+        egui::Stroke::new(2.0_f32, color),
     );
     let tip = egui::pos2(rect.left() + 2.0, mid_y);
     p.line_segment(
         [egui::pos2(tip.x + 6.0, mid_y - 4.0), tip],
-        egui::Stroke::new(2.0, color),
+        egui::Stroke::new(2.0_f32, color),
     );
     p.line_segment(
         [egui::pos2(tip.x + 6.0, mid_y + 4.0), tip],
-        egui::Stroke::new(2.0, color),
+        egui::Stroke::new(2.0_f32, color),
     );
 }
 
@@ -201,15 +201,15 @@ pub fn draw_arrow_down(ui: &mut egui::Ui, color: egui::Color32, w: f32, h: f32) 
             egui::pos2(mid_x, rect.top() + 2.0),
             egui::pos2(mid_x, rect.bottom() - 6.0),
         ],
-        egui::Stroke::new(2.0, color),
+        egui::Stroke::new(2.0_f32, color),
     );
     let tip = egui::pos2(mid_x, rect.bottom() - 2.0);
     p.line_segment(
         [egui::pos2(mid_x - 4.0, tip.y - 6.0), tip],
-        egui::Stroke::new(2.0, color),
+        egui::Stroke::new(2.0_f32, color),
     );
     p.line_segment(
         [egui::pos2(mid_x + 4.0, tip.y - 6.0), tip],
-        egui::Stroke::new(2.0, color),
+        egui::Stroke::new(2.0_f32, color),
     );
 }

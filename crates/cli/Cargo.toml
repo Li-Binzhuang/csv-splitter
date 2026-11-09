@@ -1,0 +1,11 @@
+[package]
+name = "csv-splitter-cli"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "csv-splitter"
+path = "src/main.rs"
+
+[dependencies]
+csv-splitter-core = { workspace = true }

@@ -144,7 +144,7 @@ fn draw_file_meta(ui: &mut egui::Ui, info: &FileInfo, max_w: f32, lang: Lang) {
                 );
                 if !info.extension.is_empty() {
                     ui.label(
-                        egui::RichText::new(format!("{}: {}", t!(lang, FileType), &info.extension))
+                        egui::RichText::new(format!("{}: {}", t!(lang, FileType), info.extension))
                             .size(10.0)
                             .color(TEXT_DIM),
                     );
@@ -189,7 +189,10 @@ pub fn dir_path_card(
 
     egui::Frame::new()
         .fill(CARD_BG)
-        .stroke(egui::Stroke::new(if has { 1.5 } else { 1.0 }, border))
+        .stroke(egui::Stroke::new(
+            if has { 1.5_f32 } else { 1.0_f32 },
+            border,
+        ))
         .corner_radius(egui::CornerRadius::same(12))
         .inner_margin(12.0)
         .show(ui, |ui| {

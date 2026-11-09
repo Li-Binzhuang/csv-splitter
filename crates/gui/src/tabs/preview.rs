@@ -72,7 +72,7 @@ fn draw_input_frame(
     let inner_w = w - 30.0;
     egui::Frame::new()
         .fill(CARD_BG)
-        .stroke(egui::Stroke::new(1.0, CARD_BORDER))
+        .stroke(egui::Stroke::new(1.0_f32, CARD_BORDER))
         .corner_radius(egui::CornerRadius::same(14))
         .inner_margin(14.0)
         .outer_margin(egui::Margin::symmetric(0, 4))
@@ -107,7 +107,7 @@ fn draw_params_frame(ui: &mut egui::Ui, s: &mut PreviewState, lang: Lang, w: f32
     let inner_w = w - 30.0;
     egui::Frame::new()
         .fill(CARD_BG)
-        .stroke(egui::Stroke::new(1.0, CARD_BORDER))
+        .stroke(egui::Stroke::new(1.0_f32, CARD_BORDER))
         .corner_radius(egui::CornerRadius::same(14))
         .inner_margin(14.0)
         .outer_margin(egui::Margin::symmetric(0, 4))
