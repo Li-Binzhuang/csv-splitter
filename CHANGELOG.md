@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.9.0] — 2026-11-10
+
+### Fixed
+
+- **`order=amount:desc` on `/rows` reached DuckDB verbatim**, so the client got
+  `Parser Error: syntax error at or near ":" … DESCRIBE SELECT …` — a message about SQL
+  it never wrote. The API accepted only the older `order=amount&desc=1` shape while the
+  CLI and `edit export` accepted `amount:desc`; two callers had their own copy of the
+  clause builder and only one knew the shorthand.
+  - One `order_clause` now serves both, accepting `col`, `col:asc`, `col:desc` and
+    comma-separated lists, and refusing anything that is not a column name with a 400
+    naming `order`. The injection attempt `order=amount;DROP` is rejected before it
+    reaches the engine and no longer produces a raw parser error.
+
+### Verified
+
+- The three window modifiers compose: `order=amount:desc` + `columns=id,amount,note`
+  + `start-col=1&count-cols=1` returns exactly one column and the two highest amounts.
+  A test pins that combination, and another pins `where=` with `columns=`.
+
 ## [2.8.0] — 2026-11-10
 
 ### Added

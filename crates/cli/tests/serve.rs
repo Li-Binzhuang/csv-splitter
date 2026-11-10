@@ -2095,3 +2095,69 @@ fn every_edit_action_is_advertised_in_the_hint() {
         );
     }
 }
+
+/// Ordering accepts the same `col:desc` shorthand the CLI uses, and refuses anything
+/// that is not a column name with a 400 of its own rather than a raw SQL error.
+#[test]
+fn order_parsing_is_the_cli_shorthand_and_refuses_sql() {
+    let dir = TempDir::new("orderparse");
+    std::fs::write(
+        dir.join("t.csv"),
+        "id,city,amount\n1,A,10\n2,B,20\n3,C,30\n",
+    )
+    .unwrap();
+    let server = start(&dir.0);
+
+    // `amount:desc` is the CLI shorthand, and it works here too.
+    let (code, body) = get(&server.addr, "/rows?path=t.csv&order=amount:desc&count=2");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""30""#), "{body}");
+    assert!(body.contains(r#""20""#), "{body}");
+
+    // The legacy form still works.
+    let (code, body) = get(&server.addr, "/rows?path=t.csv&order=amount&desc=1&count=1");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""30""#), "{body}");
+
+    // A direction that is not asc/desc is a 400 naming the parameter.
+    let (code, body) = get(&server.addr, "/rows?path=t.csv&order=amount:sideways");
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains(r#""parameter":"order""#), "{body}");
+
+    // A name that is not a column never reaches the SQL engine.
+    let (code, body) = get(&server.addr, "/rows?path=t.csv&order=amount;DROP");
+    assert_eq!(code, 400, "{body}");
+    assert!(
+        !body.contains("Parser Error"),
+        "raw SQL error leaked: {body}"
+    );
+    assert!(body.contains("is not a column name"), "{body}");
+}
+
+/// The three window modifiers compose: filter or order, then columns, then a slice.
+#[test]
+fn window_modifiers_compose() {
+    let dir = TempDir::new("compose");
+    std::fs::write(
+        dir.join("t.csv"),
+        "id,city,amount,note\n1,A,10,n1\n2,A,20,n2\n3,B,30,n3\n4,B,40,n4\n",
+    )
+    .unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = get(
+        &server.addr,
+        "/rows?path=t.csv&order=amount:desc&columns=id,amount,note&start-col=1&count-cols=1&count=2",
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""columns":["amount"]"#), "{body}");
+    assert!(body.contains(r#"["40"]"#), "{body}");
+    assert!(body.contains(r#"["30"]"#), "{body}");
+
+    let (code, body) = get(
+        &server.addr,
+        "/rows?path=t.csv&where=city%3DB&columns=amount,note&count=1",
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""columns":["amount","note"]"#), "{body}");
+}

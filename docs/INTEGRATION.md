@@ -64,6 +64,9 @@ curl "…/rows?path=big.csv&start=1000&count=50"
 | `edited` / `operations` | 这一屏是否套用了 journal，套用了几条 |
 
 **横向翻 782 列**：`&start-col=5&count-cols=10`（只返回这一段的字节）。
+
+**排序**：`&order=amount:desc`（和 CLI 的 `--order` 同一种写法），多列用逗号：
+`&order=city:asc,amount:desc`。方向或列名不合法会返回 400，不会把 SQL 错误透出来。
 **只要几列**：`&columns=cust_no,model_prob`（顺序按你给的）。
 
 ## 4. 读一个单元格 / 改一个单元格

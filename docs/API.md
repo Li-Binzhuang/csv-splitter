@@ -338,6 +338,32 @@ curl "/rows?path=t.csv&keys=b:2,b:0,b:99"
 - 不存在的 key 进 `missing`（被删掉的行是「没有了」，不是错误）；
 - 一次最多 200 个 key，写错的 key 是 400，`parameter` 为 `keys`。
 
+## `order=` 与窗口修饰符 / window modifiers
+
+`/rows` 支持三组修饰符，可以叠加使用：
+
+| 参数 | 作用 |
+|---|---|
+| `where=city=CDMX` | 过滤（对**编辑后的值**求值）|
+| `order=amount:desc,id:asc` | 排序，`col` / `col:asc` / `col:desc`，逗号多列；`desc=1` 是旧写法，仍可用 |
+| `columns=id,amount` | 只要这些列（顺序按你给的）|
+| `start-col=5&count-cols=10` | 横向翻列 |
+
+三者同时用是合法的：
+
+```bash
+curl "/rows?path=t.csv&order=amount:desc&columns=id,amount,note&start-col=1&count-cols=1&count=2"
+{"columns":["amount"],"rows":[["290"],["280"]],…}
+```
+
+**排序方向写错或列名里带非法字符时返回 400**，`parameter` 为 `order`，不会把原样的
+SQL 错误透给客户端：
+
+```json
+{"error":"order must name a column: \"amount;DROP\" is not a column name","parameter":"order",
+ "hint":"order=amount or order=amount:desc,id:asc"}
+```
+
 ## 行身份 / Row identity
 
 | key | 含义 |

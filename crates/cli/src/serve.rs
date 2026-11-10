@@ -2793,21 +2793,20 @@ fn rows(
             query.push_str(&clause);
         }
         if let Some(order) = params.get("order").filter(|o| !o.is_empty()) {
-            let clean: String = order
-                .chars()
-                .filter(|c| c.is_alphanumeric() || matches!(c, ' ' | '_' | '-' | ',' | '.' | ':'))
-                .collect();
-            if clean.trim().is_empty() {
-                return respond_json(stream, 400, r#"{"error":"order must name a column"}"#);
-            }
-            query.push_str(" ORDER BY ");
-            query.push_str(&clean);
-            if params
+            let default_desc = params
                 .get("desc")
                 .map(|v| v == "1" || v == "true")
-                .unwrap_or(false)
-            {
-                query.push_str(" DESC");
+                .unwrap_or(false);
+            match order_clause(order, default_desc) {
+                Ok(clause) => query.push_str(&clause),
+                Err(e) => {
+                    return bad_request(
+                        stream,
+                        &e,
+                        "order",
+                        "order=amount or order=amount:desc,id:asc",
+                    )
+                }
             }
         }
         let guard = material_cache()
@@ -2839,23 +2838,20 @@ fn rows(
             query.push_str(&clause);
         }
         if let Some(order) = params.get("order").filter(|o| !o.is_empty()) {
-            // Column names come from the caller; strip anything that could end
-            // the clause early rather than passing it through.
-            let clean: String = order
-                .chars()
-                .filter(|c| c.is_alphanumeric() || matches!(c, ' ' | '_' | '-' | ',' | '.' | ':'))
-                .collect();
-            if clean.trim().is_empty() {
-                return respond_json(stream, 400, r#"{"error":"order must name a column"}"#);
-            }
-            query.push_str(" ORDER BY ");
-            query.push_str(&clean);
-            if params
+            let default_desc = params
                 .get("desc")
                 .map(|v| v == "1" || v == "true")
-                .unwrap_or(false)
-            {
-                query.push_str(" DESC");
+                .unwrap_or(false);
+            match order_clause(order, default_desc) {
+                Ok(clause) => query.push_str(&clause),
+                Err(e) => {
+                    return bad_request(
+                        stream,
+                        &e,
+                        "order",
+                        "order=amount or order=amount:desc,id:asc",
+                    )
+                }
             }
         }
         return respond_rows_from_cache(
@@ -3238,6 +3234,52 @@ fn row_keys_json(keys: &[csv_splitter_core::workbook::RowId]) -> String {
         })
         .collect();
     format!("[{}]", items.join(","))
+}
+
+/// Build `ORDER BY` from `order=amount:desc,id` and the legacy `desc=1`.
+///
+/// Two callers had their own copy of this, and one of them passed `amount:desc` straight
+/// to DuckDB — the client got a raw parser error naming an SQL statement it never wrote.
+/// Accepted forms: `col`, `col:asc`, `col:desc`, comma-separated. Anything with a
+/// character that is not part of a column name, a comma or a direction is a 400.
+fn order_clause(order: &str, default_desc: bool) -> Result<String, String> {
+    let mut parts: Vec<String> = Vec::new();
+    for raw in order.split(',') {
+        let item = raw.trim();
+        if item.is_empty() {
+            continue;
+        }
+        let (column, direction) = match item.split_once(':') {
+            Some((column, direction)) => {
+                let direction = direction.trim().to_ascii_lowercase();
+                if !matches!(direction.as_str(), "asc" | "desc") {
+                    return Err(format!(
+                        "order direction must be asc or desc, not {direction:?}"
+                    ));
+                }
+                (column.trim(), Some(direction))
+            }
+            None => (item, None),
+        };
+        let allowed = column
+            .chars()
+            .all(|c| c.is_alphanumeric() || matches!(c, '_' | '-' | '.'));
+        if column.is_empty() || !allowed {
+            return Err(format!(
+                "order must name a column: {item:?} is not a column name (order=amount or order=amount:desc)"
+            ));
+        }
+        let suffix = match direction {
+            Some(direction) => format!(" {}", direction.to_ascii_uppercase()),
+            None if default_desc => " DESC".to_string(),
+            None => String::new(),
+        };
+        parts.push(format!("{column}{suffix}"));
+    }
+    if parts.is_empty() {
+        return Err("order is empty".to_string());
+    }
+    Ok(format!(" ORDER BY {}", parts.join(", ")))
 }
 
 /// `columns=a,b,c` narrows a window to those columns, in that order.
