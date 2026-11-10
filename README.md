@@ -453,6 +453,10 @@ curl "http://127.0.0.1:8787/meta?path=huge.csv"
 curl "http://127.0.0.1:8787/rows?path=huge.csv&start=18000000&count=20"
 ```
 
+## 能力全貌 / Capabilities
+
+一页看完能做什么、边界在哪：[docs/CAPABILITIES.md](docs/CAPABILITIES.md)。
+
 ## 清理 / Cleanup
 
 压测会留下大文件，构建会留下 `target/`：

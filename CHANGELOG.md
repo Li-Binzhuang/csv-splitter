@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.47.0] — 2026-11-10
+
+### Added
+
+- **Workbook view** (`crates/core/src/book.rs`): a directory is a workbook —
+  `book <dir>` / `GET /book` lists every CSV with size, header width, row count
+  (when an index exists), pending edits, and whether it carries layout metadata.
+  Row counts come from the sparse index rather than a scan, so listing a folder
+  never turns into reading the folder.
+- **`docs/CAPABILITIES.md`**: one page covering what every capability does, which
+  CLI command and endpoint serve it, and where each one's ceiling is (max groups,
+  max cells, max keys, max points). Scattered README sections were the reason
+  "can this do X?" required reading four files.
+
 ## [0.46.0] — 2026-11-10
 
 ### Added

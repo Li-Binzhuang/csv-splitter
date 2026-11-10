@@ -1009,3 +1009,22 @@ fn filtered_rows_see_the_edits() {
         "the filter should exclude Puebla: {body}"
     );
 }
+
+#[test]
+fn book_endpoint_lists_every_sheet() {
+    let dir = TempDir::new("bookapi");
+    std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n").unwrap();
+    std::fs::write(dir.join("customers.csv"), "id,name,city\n1,Ana,CDMX\n").unwrap();
+    std::fs::write(dir.join("notes.txt"), "not a sheet").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(&server.addr, "/book");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(r#""name":"orders.csv""#), "{body}");
+    assert!(body.contains(r#""name":"customers.csv""#), "{body}");
+    assert!(
+        !body.contains("notes.txt"),
+        "non-CSV files are not sheets: {body}"
+    );
+    assert!(body.contains(r#""sheets":["#), "{body}");
+}

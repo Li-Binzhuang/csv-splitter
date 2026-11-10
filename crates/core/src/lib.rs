@@ -1,4 +1,5 @@
 pub mod aggregate;
+pub mod book;
 pub mod cache;
 pub mod chart;
 pub mod check;

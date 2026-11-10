@@ -192,6 +192,7 @@ fn handle(
         "/style" => style_endpoint(&mut stream, root, &params),
         "/chart" => chart_endpoint(&mut stream, root, &params),
         "/layout" => layout_endpoint(&mut stream, root, &params),
+        "/book" => book_endpoint(&mut stream, root, &params),
         "/download" => download(&mut stream, root, &params),
         "/export" => export(&mut stream, root, &params),
         "/query" => query(&mut stream, root, &params),
@@ -200,7 +201,7 @@ fn handle(
         _ => respond_json(
             &mut stream,
             404,
-            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/sheet","/pivot","/style","/chart","/layout","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/edit","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
+            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/sheet","/book","/pivot","/style","/chart","/layout","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/edit","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
         ),
     }
 }
@@ -738,6 +739,49 @@ fn edit_apply(
 /// Writes to a rate-limited cache of recent results: a dashboard polling the
 /// same query should not rescan the file each refresh, and the file is small
 /// (one row per group) by construction.
+/// The workbook view: every sheet under the served root (GET /book).
+fn book_endpoint(
+    stream: &mut TcpStream,
+    root: &Path,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let max: usize = params
+        .get("max")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(csv_splitter_core::book::DEFAULT_MAX_SHEETS);
+    match csv_splitter_core::book::scan(root, max) {
+        Ok(book) => {
+            let sheets: Vec<String> = book.sheets.iter().map(|s| s.to_json()).collect();
+            let unreadable: Vec<String> = book
+                .unreadable
+                .iter()
+                .map(|(path, reason)| {
+                    format!(
+                        r#"{{"path":{},"error":{}}}"#,
+                        json_str(&path.to_string_lossy()),
+                        json_str(reason)
+                    )
+                })
+                .collect();
+            respond_json(
+                stream,
+                200,
+                &format!(
+                    r#"{{"root":{},"sheets":[{}],"unreadable":[{}]}}"#,
+                    json_str(&root.to_string_lossy()),
+                    sheets.join(","),
+                    unreadable.join(",")
+                ),
+            )
+        }
+        Err(e) => respond_json(
+            stream,
+            422,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+    }
+}
+
 /// Column metadata: names, widths, frozen columns, number formats.
 fn layout_endpoint(
     stream: &mut TcpStream,
