@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.13.0] — 2026-11-10
+
+### Docs
+
+- **`docs/TROUBLESHOOTING.md`**: the messages the tool actually prints, grouped by
+  symptom — typo'd column, formula naming something that does not exist, files that will
+  not open, index refusals, shifted fields, missing edits, a vanished edit, the overwrite
+  guard, every limit, 1-based rows, and "why is it slow".
+  - Every quoted sentence is reproduced by a test (`troubleshooting_quotes_are_real`),
+    including the two `hint:` lines and the journal-damage warning. A guide that has
+    drifted teaches the reader to look for a sentence that no longer exists, so it is
+    checked against the binary that ships with it rather than trusted.
+  - The speed section separates the three kinds of slowness the engine really has:
+    index building (once), filter materialisation (once per query), and the bounded
+    buffers that `sort`/`duplicate`-removal hold on purpose.
+
 ## [1.12.0] — 2026-11-10
 
 ### Docs

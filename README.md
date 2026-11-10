@@ -82,6 +82,11 @@ $ csv-splitter serve --root .  # 本地 JSON API，打开 http://127.0.0.1:8787/
 
 ![Extract](docs/extract.png)
 
+## 卡住了 / When something goes wrong
+
+`docs/TROUBLESHOOTING.md` 按「它说了什么 → 为什么 → 怎么办」组织，覆盖列名打错、
+公式报错、编码/引号问题、编辑看不见、上限报错、速度问题。**每段引文都有测试复现。**
+
 ## 想改代码 / For contributors
 
 `docs/ARCHITECTURE.md` 有一张**改一处要看哪里**的表：编辑模型的两条身份轴、

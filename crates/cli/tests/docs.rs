@@ -674,3 +674,104 @@ fn the_architecture_map_names_every_core_module() {
         "modules absent from the map: {missing:?}"
     );
 }
+
+/// The troubleshooting guide quotes real behaviour: reproduce each case and compare.
+///
+/// A troubleshooting doc that has drifted is worse than none: it teaches the reader to
+/// look for a sentence the tool no longer prints. These cases are cheap to run, so the
+/// guide is checked against the binary that shipped with it.
+#[test]
+fn troubleshooting_quotes_are_real() {
+    let dir = std::env::temp_dir().join(format!("csvs_trouble_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let csv = dir.join("t.csv");
+    std::fs::write(&csv, "id,city,amount\n1,CDMX,10\n2,Puebla,20\n").unwrap();
+    let path = csv.to_str().unwrap();
+
+    let run = |args: &[&str]| {
+        let out = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+            .args(args)
+            .output()
+            .unwrap();
+        format!(
+            "{}{}",
+            String::from_utf8_lossy(&out.stdout),
+            String::from_utf8_lossy(&out.stderr)
+        )
+    };
+
+    // Each case: how to trigger it, and the sentence the guide promises.
+    let cases: Vec<(Vec<&str>, &str)> = vec![
+        (
+            vec!["filter", path, "--where", "amounts>5"],
+            "not found; did you mean",
+        ),
+        (
+            vec!["edit", "formula", path, "--name", "x", "--value", "nope*2"],
+            "unknown column",
+        ),
+        (
+            vec![
+                "edit",
+                "formula",
+                path,
+                "--name",
+                "x",
+                "--value",
+                r#"ref("nope.csv","id","amount")"#,
+            ],
+            "not found next to",
+        ),
+        (
+            vec!["preview", "/definitely/not/here.csv"],
+            "No such file or directory",
+        ),
+        (
+            vec![
+                "edit", "set", path, "--row", "0", "--col", "city", "--value", "X",
+            ],
+            "rows are 1-based",
+        ),
+        (
+            vec!["dedupe", path, "--by", "id", "--max-keys", "1"],
+            "raise --max-keys",
+        ),
+        (
+            vec![
+                "chart",
+                path,
+                "--x",
+                "id",
+                "--y",
+                "amount:sum",
+                "--max-points",
+                "1",
+            ],
+            "raise --max-points",
+        ),
+    ];
+
+    let mut problems = Vec::new();
+    for (args, expected) in cases {
+        let text = run(&args);
+        if !text.contains(expected) {
+            problems.push(format!("{args:?} did not say {expected:?}: {text}"));
+        }
+    }
+
+    // Refusing to overwrite the input.
+    let text = run(&["filter", path, "--where", "city=CDMX", "-o", path]);
+    if !text.contains("refusing to write over the input file") {
+        problems.push(format!("overwrite guard: {text}"));
+    }
+
+    // A journal cut off mid-write.
+    std::fs::write(dir.join("t.csv.journal"), "set,0,city,Z\nset,1,ci").unwrap();
+    let text = run(&["view", path, "--count", "2"]);
+    if !text.contains("could not be read") {
+        problems.push(format!("journal damage warning: {text}"));
+    }
+
+    let _ = std::fs::remove_dir_all(&dir);
+    assert!(problems.is_empty(), "{problems:#?}");
+}
