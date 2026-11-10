@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.74.0] — 2026-11-10
+
+### Added
+
+- **The server keeps opened sheets across requests** (`Pager` cache, keyed by path,
+  journal hash, base file stamp and delimiter). Scrolling no longer re-reads the
+  journal and recompiles formulas per page.
+
+### Fixed
+
+- **The API counted rows differently from the CLI.** After the CLI moved to 1-based
+  rows, `POST /edit?row=1` still meant "the second data row": one number, two meanings
+  depending on which side you asked. The API is 1-based now and `row=0` returns 400
+  explaining why.
+- **The cache could serve a stale page.** Keying on the journal's `(mtime, len)` missed
+  same-tick writes — exactly what the first test did — so the page came from the pre-edit
+  sheet. The journal is small and append-only, so its contents are hashed instead:
+  a change detector, not a timestamp guess.
+
 ## [0.73.0] — 2026-11-10
 
 ### Changed

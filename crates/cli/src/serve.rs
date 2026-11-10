@@ -648,7 +648,25 @@ fn edit_apply(
         };
     }
 
-    let number = |name: &str| -> Option<u64> { params.get(name).and_then(|v| v.parse().ok()) };
+    // Rows are 1-based on the wire, the same as the CLI and the same as A1
+    // references. The journal stores 0-based physical indices, so the translation
+    // happens here and nowhere else.
+    let number = |name: &str| -> Option<u64> {
+        params
+            .get(name)
+            .and_then(|v| v.parse::<u64>().ok())
+            .and_then(|n| n.checked_sub(1))
+    };
+    // `row=0` means "before the first row", which does not exist; say so instead of
+    // letting it fall through to "set needs row".
+    if params.get("row").is_some_and(|v| v.trim() == "0") {
+        return bad_request(
+            stream,
+            "rows are 1-based; row 1 is the first data row",
+            "row",
+            "pass row=1 for the first row",
+        );
+    }
     let op = match action.as_str() {
         "set" => {
             let (Some(row), Some(column), Some(value)) =
@@ -1619,10 +1637,65 @@ fn material_cache() -> &'static MaterialTable {
     CACHE.get_or_init(|| std::sync::Mutex::new(HashMap::new()))
 }
 
-/// Journal identity: changed mtime or size means the edits moved on.
+/// Journal identity: a hash of its contents.
+///
+/// Modification time is not enough. Two writes inside the same timestamp tick leave
+/// the same mtime and the same size, and the cache then serves the previous sheet —
+/// which is exactly what happened the first time this used `(mtime, len)`. The
+/// journal is small and append-only, so hashing it is cheap and exact.
 fn journal_fingerprint(path: &Path) -> (u64, u64) {
     let sidecar = Journal::sidecar(path);
-    match std::fs::metadata(&sidecar) {
+    let Ok(bytes) = std::fs::read(&sidecar) else {
+        return (0, 0);
+    };
+    // FNV-1a: not cryptographic, just a change detector.
+    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    for byte in &bytes {
+        hash ^= *byte as u64;
+        hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+    }
+    (hash, bytes.len() as u64)
+}
+
+/// Serve a window of the edited sheet (base + journal).
+/// Open sheets kept across requests.
+///
+/// Building a pager means reading the journal, the sparse index and compiling the
+/// formulas — a few milliseconds, but the viewer asks for a page on every scroll.
+/// The cache key carries the journal fingerprint and the base file's size/mtime, so
+/// a stale entry can never be served: it is compared before use, and rebuilt if it
+/// differs. Prefer a rebuild over a wrong page.
+type PagerCache = std::sync::Mutex<HashMap<PagerKey, std::sync::Arc<workbook::Pager>>>;
+
+#[derive(Clone, PartialEq, Eq, Hash)]
+struct PagerKey {
+    path: String,
+    journal: (u64, u64),
+    base: (u64, u64),
+    delimiter: String,
+}
+
+fn pager_cache() -> &'static PagerCache {
+    static CACHE: std::sync::OnceLock<PagerCache> = std::sync::OnceLock::new();
+    CACHE.get_or_init(|| std::sync::Mutex::new(HashMap::new()))
+}
+
+/// Keep the cache small: an editor opens a handful of files, not hundreds.
+const MAX_CACHED_PAGERS: usize = 8;
+
+fn pager_key(path: &Path, journal: (u64, u64), delimiter: &str) -> PagerKey {
+    PagerKey {
+        path: path.to_string_lossy().to_string(),
+        journal,
+        base: base_stamp(path),
+        delimiter: delimiter.to_string(),
+    }
+}
+
+/// Size and modification time of the base file, which is what changes when someone
+/// rewrites it underneath us.
+fn base_stamp(path: &Path) -> (u64, u64) {
+    match std::fs::metadata(path) {
         Ok(meta) => {
             let modified = meta
                 .modified()
@@ -1636,7 +1709,35 @@ fn journal_fingerprint(path: &Path) -> (u64, u64) {
     }
 }
 
-/// Serve a window of the edited sheet (base + journal).
+fn cached_pager(
+    path: &Path,
+    ops: &[workbook::Op],
+    delimiter: csv_splitter_core::types::Delimiter,
+    delimiter_name: &str,
+) -> io::Result<std::sync::Arc<workbook::Pager>> {
+    let key = pager_key(path, journal_fingerprint(path), delimiter_name);
+    {
+        let guard = pager_cache()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if let Some(pager) = guard.get(&key) {
+            return Ok(pager.clone());
+        }
+    }
+    let pager = std::sync::Arc::new(workbook::Pager::open(path, ops, delimiter)?);
+    let mut guard = pager_cache()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    if guard.len() >= MAX_CACHED_PAGERS {
+        // Any eviction is fine: the next request rebuilds what it needs.
+        if let Some(stale) = guard.keys().next().cloned() {
+            guard.remove(&stale);
+        }
+    }
+    guard.insert(key, pager.clone());
+    Ok(pager)
+}
+
 fn respond_sheet_window(
     stream: &mut TcpStream,
     path: &Path,
@@ -1644,11 +1745,11 @@ fn respond_sheet_window(
     count: u64,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
-    let options = csv_splitter_core::sheet::ReadOptions {
-        delimiter: delimiter(params),
-    };
-    let sheet = match csv_splitter_core::sheet::Sheet::open(path, options) {
-        Ok(s) => s,
+    // A cached pager is reused across scrolls; the key includes the journal
+    // fingerprint and the base file's stamp, so an edit invalidates it rather than
+    // serving the previous page from a stale sheet.
+    let ops = match Journal::load(&Journal::sidecar(path)) {
+        Ok(journal) => journal.ops().to_vec(),
         Err(e) => {
             return respond_json(
                 stream,
@@ -1657,7 +1758,18 @@ fn respond_sheet_window(
             )
         }
     };
-    let window = match sheet.window(start, count) {
+    let delimiter_name = params.get("delim").cloned().unwrap_or_default();
+    let pager = match cached_pager(path, &ops, delimiter(params), &delimiter_name) {
+        Ok(p) => p,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let window = match pager.page(start, count) {
         Ok(w) => w,
         Err(e) => {
             return respond_json(
@@ -1696,7 +1808,7 @@ fn respond_sheet_window(
             cols.join(","),
             frozen.join(","),
             rows.join(","),
-            sheet.op_count()
+            ops.len()
         ),
     )
 }
@@ -1780,7 +1892,7 @@ fn sheet_meta(
             frozen_names.join(","),
             rows,
             !sheet.is_pristine(),
-            sheet.op_count(),
+            ops.len(),
             caps.join(","),
             layout_json,
             json_str(&sheet.journal_path().to_string_lossy()),

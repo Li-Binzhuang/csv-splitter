@@ -852,7 +852,7 @@ fn rows_show_the_edits_and_sheet_advertises_capabilities() {
     // Record an edit through the API.
     let (_, body) = post(
         &server.addr,
-        "/edit?path=t.csv&action=set&row=0&col=city&value=Monterrey",
+        "/edit?path=t.csv&action=set&row=1&col=city&value=Monterrey",
     );
     assert!(body.contains("\"op\":\"set\""), "{body}");
 
@@ -988,7 +988,7 @@ fn filtered_rows_see_the_edits() {
 
     let (_, body) = post(
         &server.addr,
-        "/edit?path=t.csv&action=set&row=0&col=amount&value=999",
+        "/edit?path=t.csv&action=set&row=1&col=amount&value=999",
     );
     assert!(body.contains("\"op\":\"set\""), "{body}");
 
@@ -1241,4 +1241,66 @@ fn the_api_agrees_with_export_about_previous_rows() {
     // Rows 3 and 4 of the file, each showing the row before it.
     assert!(body.contains(r#"["3","30","20"]"#), "{body}");
     assert!(body.contains(r#"["4","40","30"]"#), "{body}");
+}
+
+/// The pager cache must never serve a page from a sheet that has since changed.
+#[test]
+fn editing_invalidates_the_cached_page() {
+    let dir = TempDir::new("pagercache");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,CDMX\n2,Puebla\n3,Tijuana\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&start=1&count=1");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("Puebla"), "{body}");
+
+    // Edit that row through the API, then read the same page again.
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=2&col=city&value=Edited",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&start=1&count=1");
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.contains("Edited"),
+        "the cached pager served a stale sheet: {body}"
+    );
+    assert!(!body.contains("Puebla"), "{body}");
+}
+
+/// CLI and API must agree about what `row 1` means — it is the first data row in both.
+#[test]
+fn the_api_counts_rows_the_same_way_the_cli_does() {
+    let dir = TempDir::new("rowbase");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,CDMX\n2,Puebla\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=city&value=First",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    // Export through the CLI path: the first data row carries the edit.
+    let status = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+        .args(["edit", "export", "t.csv", "-o", "out.csv"])
+        .current_dir(&dir.0)
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(dir.join("out.csv")).unwrap();
+    assert!(
+        text.contains("1,First"),
+        "row 1 is the first data row: {text}"
+    );
+
+    // And `row=0` is refused, naming the reason.
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=0&col=city&value=Nope",
+    );
+    assert_eq!(status, 400, "{body}");
+    assert!(body.contains("1-based"), "{body}");
 }
