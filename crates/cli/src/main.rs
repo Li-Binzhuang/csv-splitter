@@ -1885,6 +1885,9 @@ fn cmd_filter(args: &[String]) -> i32 {
 
         let (tx, rx) = mpsc::channel();
         let reporter = spawn_reporter("filter", rx, true);
+        if let Err(code) = check_output(Some(&input), &target) {
+            return code;
+        }
         let result = filter::extract_style(&input, delimiter, &set, &target, quotes, &tx);
         drop(tx);
         let _ = reporter.join();
@@ -2294,6 +2297,9 @@ fn cmd_convert(args: &[String]) -> i32 {
         input.with_file_name(format!("{stem}.utf8.csv"))
     });
 
+    if let Err(code) = check_output(Some(&input), &output) {
+        return code;
+    }
     let started = Instant::now();
     match encoding::transcode(&input, &output, from_enc, to_enc, 4 * 1024 * 1024) {
         Ok(bytes) => {
@@ -2624,6 +2630,9 @@ fn cmd_sort(args: &[String]) -> i32 {
         }
     };
 
+    if let Err(code) = check_output(Some(&input), &out) {
+        return code;
+    }
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("sort", rx, quiet);
     let result = csv_splitter_core::sort::external_sort_columns(
@@ -2963,6 +2972,9 @@ fn cmd_lookup(args: &[String]) -> i32 {
             return 2;
         }
     };
+    if let Err(code) = check_output(Some(&input), &output) {
+        return code;
+    }
     let result =
         csv_splitter_core::lookup::lookup_quotes(&input, delimiter, &output, &options, quotes, &tx);
     drop(tx);
@@ -3665,6 +3677,9 @@ fn cmd_pivot(args: &[String]) -> i32 {
             return 2;
         }
     };
+    if let Err(code) = check_output(Some(&input), &output) {
+        return code;
+    }
     let result =
         csv_splitter_core::pivot::pivot_quotes(&input, delimiter, &output, &options, quotes, &tx);
     drop(tx);
@@ -3880,6 +3895,9 @@ fn cmd_groupby(args: &[String]) -> i32 {
             return 2;
         }
     };
+    if let Err(code) = check_output(Some(&input), &output) {
+        return code;
+    }
     let result = csv_splitter_core::groupby::groupby_quotes(
         &input, delimiter, &output, &options, quotes, &tx,
     );
@@ -4285,6 +4303,33 @@ fn journal_push(
     }
 }
 
+/// Refuse to write over the input file, and say so when overwriting anything else.
+///
+/// Overwriting an output is normal (rerunning a pipeline), but writing to the file
+/// being read is data loss, and it is easy to do by accident when the names differ by
+/// one character. So: the input is protected, everything else is announced.
+fn check_output(input: Option<&Path>, output: &Path) -> Result<(), i32> {
+    let same = match (input, output.canonicalize()) {
+        (Some(input), Ok(out)) => input.canonicalize().map(|i| i == out).unwrap_or(false),
+        _ => false,
+    };
+    if same {
+        report_failure(
+            "output",
+            format!(
+                "refusing to write over the input file {} (it is being read right now)",
+                output.display()
+            ),
+        );
+        eprintln!("hint: choose a different -o path; the input is never modified by design");
+        return Err(1);
+    }
+    if output.exists() {
+        eprintln!("note: overwriting existing {}", output.display());
+    }
+    Ok(())
+}
+
 /// Warn when a file looks like it uses a different quote escape than RFC 4180.
 ///
 /// Reading such a file as RFC does not fail — it silently merges or splits fields —
@@ -4613,6 +4658,9 @@ fn cmd_edit(args: &[String]) -> i32 {
             });
             let (tx, rx) = mpsc::channel();
             let reporter = spawn_reporter("edit", rx, json);
+            if let Err(code) = check_output(Some(&input), &output) {
+                return code;
+            }
             let result = csv_splitter_core::workbook::export_quotes(
                 &input,
                 journal.ops(),
@@ -5146,6 +5194,9 @@ fn cmd_columns(args: &[String]) -> i32 {
         }
     };
 
+    if let Err(code) = check_output(Some(&input), &output) {
+        return code;
+    }
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("columns", rx, json);
     let result = csv_splitter_core::reshape::reshape(&input, delimiter, &spec, &output, &tx);
@@ -5286,6 +5337,9 @@ fn cmd_dedupe(args: &[String]) -> i32 {
             return 2;
         }
     };
+    if let Err(code) = check_output(Some(&input), &output) {
+        return code;
+    }
     let result = csv_splitter_core::dedupe::dedupe_quotes(
         &input, delimiter, &keys, &output, max_keys, quotes, &tx,
     );

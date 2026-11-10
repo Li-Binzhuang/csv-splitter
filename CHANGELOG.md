@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.77.0] — 2026-11-10
+
+### Added
+
+- **The input file is protected from `-o`.** Writing to the file being read is data
+  loss waiting for a typo — `filter big.csv --where … -o big.csv` used to succeed and
+  destroy the source. Nine commands now refuse it with exit 1 and an explanation.
+- Overwriting *another* existing file is still allowed (rerunning a pipeline is normal),
+  but it is announced: `note: overwriting existing out.csv`.
+
 ## [0.76.0] — 2026-11-10
 
 ### Added

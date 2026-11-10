@@ -169,3 +169,12 @@
 它本来就该不可变。
 
 实测（20 万行、1 条编辑）：首个请求 41 ms，之后任意页 **6 ms**（含第 15 万行）。
+
+## 输出保护 / Output safety
+
+`-o` 指向**正在读的输入文件**时直接拒绝（exit 1，说明原因）——那是数据丢失，
+而且改错一个字符就会发生。指向其他已存在文件时允许覆盖，但会在 stderr 说明
+`note: overwriting existing out.csv`，这样交互使用时不会在不知情下清掉旧结果。
+
+覆盖保护覆盖：`filter` / `sort` / `columns` / `dedupe` / `lookup` / `groupby` /
+`pivot` / `convert` / `edit export`。

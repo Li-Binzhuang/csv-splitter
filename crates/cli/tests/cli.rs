@@ -2879,3 +2879,49 @@ fn view_can_jump_to_the_second_match() {
         .unwrap();
     assert_eq!(out.status.code(), Some(2));
 }
+
+/// The input file is protected; overwriting anything else is announced.
+#[test]
+fn writing_over_the_input_is_refused() {
+    let dir = TempDir::new("overwrite");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,city\n1,CDMX\n2,Puebla\n").unwrap();
+    let path = input.to_str().unwrap();
+
+    // `-o` pointing at the input is data loss waiting to happen: refuse it.
+    let cases: Vec<Vec<&str>> = vec![
+        vec!["filter", path, "--where", "city=CDMX", "-o", path],
+        vec!["sort", path, "--by", "city", "-o", path],
+        vec!["columns", path, "--keep", "id", "-o", path],
+        vec!["edit", "export", path, "-o", path],
+    ];
+    for args in cases {
+        let out = Command::new(bin()).args(&args).output().unwrap();
+        assert_eq!(out.status.code(), Some(1), "{args:?}");
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert!(stderr.contains("refusing"), "{args:?} said: {stderr}");
+    }
+    // And the input survived every attempt.
+    assert_eq!(
+        std::fs::read_to_string(&input).unwrap(),
+        "id,city\n1,CDMX\n2,Puebla\n"
+    );
+
+    // Writing over a different existing file is allowed, but said out loud.
+    let out_path = dir.join("out.csv");
+    std::fs::write(&out_path, "old\n").unwrap();
+    let out = Command::new(bin())
+        .args([
+            "filter",
+            path,
+            "--where",
+            "city=CDMX",
+            "-o",
+            out_path.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("overwriting existing"), "{stderr}");
+}
