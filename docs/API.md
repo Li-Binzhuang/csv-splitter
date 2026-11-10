@@ -196,6 +196,20 @@ curl "http://127.0.0.1:7811/columns?path=big.csv&sample=10"
   first `sample` rows (default 10) — enough to choose an editor, without a full scan.
 - `empty` counts the sampled blank cells.
 
+### Filtering the list
+
+```bash
+curl "…/columns?path=t.csv&kind=number&sample=50"
+# {"count":2,"totalColumns":3,"shown":2,"kindFilter":"number","columns":[…]}
+
+curl "…/columns?path=t.csv&limit=20"
+# first 20 columns, with totalColumns and shown so nothing is silently lost
+```
+
+`kind=` takes one of `number`/`date`/`text`/`empty`/`mixed` (anything else is a 400
+listing the options). `limit=` truncates for rendering but always reports
+`totalColumns` and `shown`.
+
 ### Existence check
 
 ```bash

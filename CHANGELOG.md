@@ -1,5 +1,32 @@
 # Changelog
 
+## [2.7.0] — 2026-11-10
+
+### Added
+
+- **`schema --diff OTHER`**: compare two files' column sets — what only the first has
+  (removed), what only the second has (added), and what exists in both but at a different
+  position. `--json` for machines, exit 1 when anything differs, so a pipeline can gate
+  on "did the upstream table change shape?" without parsing text.
+- **`/columns?kind=` and `?limit=`**: list only columns of one kind (a 400 listing the
+  five when the name is wrong), or truncate for rendering — `limit` still reports
+  `totalColumns` and `shown`, because a truncated list that hides its own truncation is
+  worse than a long one.
+
+### Fixed
+
+- **`start-col`/`count-cols` were ignored on filtered windows.** `/rows?where=…` went
+  through the SQL path, which had its own copy of the projection block; the horizontal
+  slice had been wired into the other copy. Both now share the same two helpers, and a
+  test asserts the combination (`where` + `start-col` + `count-cols`).
+
+### Docs
+
+- `docs/INTEGRATION.md` gained "一个完整的编辑循环": the six calls a front-end actually
+  makes, with the three rules that follow from this backend's design — re-read instead
+  of predicting, remember keys instead of positions, and treat 409 as "re-read and ask"
+  rather than a retry.
+
 ## [2.6.0] — 2026-11-10
 
 ### Added

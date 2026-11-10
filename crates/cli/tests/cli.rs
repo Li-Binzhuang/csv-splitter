@@ -4860,3 +4860,51 @@ fn schema_reports_kind_empty_and_distinct() {
     assert!(stdout.contains(r#""kind":"date""#), "{stdout}");
     assert!(stdout.contains("distinctCapped"), "{stdout}");
 }
+
+/// `schema --diff` reports added, removed and moved columns between two files.
+#[test]
+fn schema_diff_reports_column_set_changes() {
+    let dir = TempDir::new("schemadiff");
+    let a = dir.join("a.csv");
+    let b = dir.join("b.csv");
+    std::fs::write(&a, "id,city,amount\n1,A,10\n").unwrap();
+    std::fs::write(&b, "id,note,city,amount\n1,x,A,10\n").unwrap();
+    let a_path = a.to_str().unwrap();
+    let b_path = b.to_str().unwrap();
+
+    let out = Command::new(bin())
+        .args(["schema", a_path, "--diff", b_path, "--json"])
+        .output()
+        .unwrap();
+    assert_eq!(
+        out.status.code(),
+        Some(1),
+        "differences must be visible in the exit code"
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains(r#""added":["note"]"#), "{stdout}");
+    assert!(stdout.contains(r#""removed":[]"#), "{stdout}");
+    assert!(
+        stdout.contains(r#""name":"amount","here":3,"there":4"#),
+        "{stdout}"
+    );
+
+    // Same set: exit 0 and "same".
+    let out = Command::new(bin())
+        .args(["schema", a_path, "--diff", a_path])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("same column set"), "{stdout}");
+
+    // A column that only the first file has is "removed", not "moved".
+    let c = dir.join("c.csv");
+    std::fs::write(&c, "id,city\n1,A\n").unwrap();
+    let out = Command::new(bin())
+        .args(["schema", a_path, "--diff", c.to_str().unwrap(), "--json"])
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains(r#""removed":["amount"]"#), "{stdout}");
+}

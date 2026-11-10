@@ -138,3 +138,26 @@ curl "…/rows?path=big.csv&keys=b:12,v:3"
 ```
 
 `parameter` 指明该改哪个参数，`hint` 说怎么改。**照着 hint 做就够。**
+
+## 10. 一个完整的编辑循环
+
+把上面几步串起来，这是前端真正要做的事：
+
+```text
+1. GET /columns?path=big.csv          → 列清单（画表头）
+2. GET /rows?start=0&count=50         → 第一屏（带 rowKeys）
+3. 用户改了第 3 行 city → 记住 key b:2 和旧值
+4. POST /edit?action=set&row=3&col=city&value=CDMX&expect=旧值
+   ├─ 200 → 重新拉那一屏（不要本地猜结果）
+   └─ 409 → 有人先改了：GET /cell?row=3&col=city 拿到 actual，
+              再问用户「现在是 X，还要改成 Y 吗」
+5. 插入/删除行之后 → GET /rows?keys=b:2  找回原来的行号
+6. 需要交付 → POST /edit?action=export&out=clean.csv
+```
+
+**三条规矩**：
+
+1. **不要本地推算结果**——改完重新拉窗口，服务端是唯一真相；
+2. **不要按「第几行」记选中**——用 `rowKeys`，插入后位置会变；
+3. **不要重试 409**——先读 `actual`，再决定。
+

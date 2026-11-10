@@ -358,6 +358,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         "schema",
         &[
             ("--delim", "Field delimiter (default: auto)"),
+            ("--diff", "Compare the column set with another file"),
             ("--json", "Emit JSON"),
             (
                 "--require",
@@ -6861,6 +6862,7 @@ fn cmd_schema(args: &[String]) -> i32 {
     let mut input: Option<PathBuf> = None;
     let mut has: Option<String> = None;
     let mut require: Vec<String> = Vec::new();
+    let mut diff_with: Option<PathBuf> = None;
     let mut sample: u64 = 10;
     let mut json = false;
     let mut delim = "auto".to_string();
@@ -6869,6 +6871,13 @@ fn cmd_schema(args: &[String]) -> i32 {
         match arg.as_str() {
             "--has" => match p.value("--has") {
                 Ok(v) => has = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--diff" => match p.value("--diff") {
+                Ok(v) => diff_with = Some(PathBuf::from(v)),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -6934,6 +6943,76 @@ fn cmd_schema(args: &[String]) -> i32 {
         Ok(sheet) => sheet,
         Err(e) => return report_failure("schema", format!("cannot open the sheet: {e}")),
     };
+
+    if let Some(other) = &diff_with {
+        let other_sheet = match csv_splitter_core::sheet::Sheet::open(
+            other,
+            csv_splitter_core::sheet::ReadOptions { delimiter },
+        ) {
+            Ok(sheet) => sheet,
+            Err(e) => {
+                return report_failure("schema", format!("cannot open {}: {e}", other.display()))
+            }
+        };
+        let mine = sheet.columns().unwrap_or_default();
+        let theirs = other_sheet.columns().unwrap_or_default();
+        let removed: Vec<&String> = mine.iter().filter(|c| !theirs.contains(c)).collect();
+        let added: Vec<&String> = theirs.iter().filter(|c| !mine.contains(c)).collect();
+        let moved: Vec<(&String, usize, usize)> = mine
+            .iter()
+            .filter_map(|name| {
+                let here = mine.iter().position(|c| c == name)? + 1;
+                let there = theirs.iter().position(|c| c == name)? + 1;
+                (here != there).then_some((name, here, there))
+            })
+            .collect();
+        let same = removed.is_empty() && added.is_empty();
+        if json {
+            let list = |items: &[&String]| {
+                items
+                    .iter()
+                    .map(|c| serve::json_str(c))
+                    .collect::<Vec<_>>()
+                    .join(",")
+            };
+            let moved_json: Vec<String> = moved
+                .iter()
+                .map(|(name, here, there)| {
+                    format!(
+                        r#"{{"name":{},"here":{here},"there":{there}}}"#,
+                        serve::json_str(name)
+                    )
+                })
+                .collect();
+            println!(
+                r#"{{"same":{same},"removed":[{}],"added":[{}],"moved":[{}]}}"#,
+                list(&removed),
+                list(&added),
+                moved_json.join(",")
+            );
+        } else {
+            println!(
+                "{} ({} columns) vs {} ({} columns)",
+                input.display(),
+                mine.len(),
+                other.display(),
+                theirs.len()
+            );
+            if same {
+                println!("✓ same column set");
+            }
+            for name in &removed {
+                println!("  − {name}   only in {}", input.display());
+            }
+            for name in &added {
+                println!("  + {name}   only in {}", other.display());
+            }
+            for (name, here, there) in &moved {
+                println!("  → {name}   position {here} here, {there} there");
+            }
+        }
+        return if same { 0 } else { 1 };
+    }
 
     if !require.is_empty() {
         let columns = sheet.columns().unwrap_or_default();

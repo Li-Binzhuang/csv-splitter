@@ -1999,3 +1999,36 @@ fn row_keys_resolve_through_inserts() {
     assert_eq!(code, 400, "{body}");
     assert!(body.contains(r#""parameter":"keys""#), "{body}");
 }
+
+/// `/columns` filters by kind and truncates with a limit, saying what it left out.
+#[test]
+fn columns_filter_and_limit() {
+    let dir = TempDir::new("kindfilter");
+    let mut text = String::from("id,city,when\n1,A,2026-03-01\n2,B,2026-03-02\n");
+    for i in 3..=5 {
+        text.push_str(&format!("{i},C,2026-03-0{i}\n"));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = get(&server.addr, "/columns?path=t.csv&kind=number&sample=5");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""count":1"#), "{body}");
+    assert!(body.contains(r#""kindFilter":"number""#), "{body}");
+    assert!(!body.contains(r#""name":"city""#), "{body}");
+
+    let (code, body) = get(&server.addr, "/columns?path=t.csv&kind=date&sample=5");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""name":"when""#), "{body}");
+
+    // A kind that is not real is a 400 that lists the options.
+    let (code, body) = get(&server.addr, "/columns?path=t.csv&kind=blah");
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains("number, date, text"), "{body}");
+
+    // A limit truncates but reports the totals so the caller knows what it lost.
+    let (code, body) = get(&server.addr, "/columns?path=t.csv&limit=1&sample=5");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""shown":1"#), "{body}");
+    assert!(body.contains(r#""totalColumns":3"#), "{body}");
+}

@@ -2348,7 +2348,23 @@ fn columns_endpoint(
         .get("sample")
         .and_then(|v| v.parse().ok())
         .unwrap_or(10);
-    let schema = match sheet.schema(sample) {
+    let known_kinds = ["number", "date", "text", "empty", "mixed"];
+    let kind_filter: Option<String> = params.get("kind").map(|k| k.trim().to_ascii_lowercase());
+    if let Some(kind) = &kind_filter {
+        if !known_kinds.contains(&kind.as_str()) {
+            return bad_request(
+                stream,
+                &format!("unknown kind '{kind}'"),
+                "kind",
+                &format!("one of: {}", known_kinds.join(", ")),
+            );
+        }
+    }
+    let limit: Option<usize> = match params.get("limit").and_then(|v| v.parse::<usize>().ok()) {
+        Some(0) => return bad_request(stream, "limit must be positive", "limit", "limit=50"),
+        other => other,
+    };
+    let mut schema = match sheet.schema(sample) {
         Ok(schema) => schema,
         Err(e) => {
             return respond_json(
@@ -2357,6 +2373,18 @@ fn columns_endpoint(
                 &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
             )
         }
+    };
+    let total_columns = schema.len();
+    if let Some(kind) = &kind_filter {
+        schema.retain(|column| column.kind.as_str() == kind);
+    }
+    let matched = schema.len();
+    let shown = match limit {
+        Some(limit) if limit < schema.len() => {
+            schema.truncate(limit);
+            limit
+        }
+        _ => schema.len(),
     };
     let rows = sheet.rows().unwrap_or(0);
     let body: Vec<String> = schema
@@ -2378,9 +2406,13 @@ fn columns_endpoint(
         stream,
         200,
         &format!(
-            r#"{{"path":{},"rows":{rows},"count":{},"columns":[{}]}}"#,
+            r#"{{"path":{},"rows":{rows},"count":{},"totalColumns":{total_columns},"shown":{shown},"kindFilter":{},"columns":[{}]}}"#,
             json_str(&params.get("path").cloned().unwrap_or_default()),
-            schema.len(),
+            matched,
+            match &kind_filter {
+                Some(kind) => json_str(kind),
+                None => "null".to_string(),
+            },
             body.join(",")
         ),
     )
@@ -3208,13 +3240,14 @@ fn respond_rows_from_cache(
                     )
                 }
             };
-            let (display_columns, display_rows) = match requested_columns(params) {
+            let projected = match requested_columns(params) {
                 None => (cached.columns.clone(), rows.clone()),
                 Some(wanted) => match project_window(&cached.columns, &rows, &wanted) {
                     Ok(pair) => pair,
                     Err(e) => return bad_request(stream, &e, "columns", "columns=a,b,c"),
                 },
             };
+            let (display_columns, display_rows) = slice_columns(projected.0, projected.1, params);
             let cols: Vec<String> = display_columns.iter().map(|c| json_str(c)).collect();
             // The same context the plain window carries: a client should be able to
             // render frozen columns and say "edits applied" whichever path answered.
