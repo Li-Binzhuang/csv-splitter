@@ -141,3 +141,15 @@
 | `analyze` 全表扫描（1 GB 约 11 s） | 用 `--sample N` 可以快 5 倍，但那只是**前 N 行的估算** |
 | Windows 未实测 | 路径处理可能有坑 |
 | 多 sheet 工作簿只有列表，没有跨表引用 | 还不能 `=customers!B2` |
+
+## 大文件拆分 / Module layout
+
+| 文件 | 行数 | 内容 |
+|---|---|---|
+| `crates/core/src/workbook/mod.rs` | ~1075 | `Op`、`Sheet`、列布局、公开接口 |
+| `crates/core/src/workbook/rows.rs` | ~832 | 行身份、逻辑↔物理映射、单元格编辑、公式编译 |
+| `crates/core/src/workbook/journal.rs` | ~346 | journal 结构、文本格式、撤销/重做栈 |
+| `crates/core/src/workbook/export.rs` | ~379 | 导出、窗口读取、行装配 |
+
+`workbook.rs` 曾经超过 2500 行。拆分的判据不是行数本身，而是**改动的边界**：
+导出和窗口读取会接触每一行，是最常变的部分；journal 的文本格式几乎不变。
