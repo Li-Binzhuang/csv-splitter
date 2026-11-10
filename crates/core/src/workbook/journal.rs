@@ -120,6 +120,60 @@ impl Journal {
         std::fs::rename(&tmp, path)
     }
 
+    /// Read-modify-write the journal while holding an exclusive lock.
+    ///
+    /// Two `edit` processes on the same file is a normal thing to do (a script and a
+    /// person, or two tabs of a front-end). Without a lock both load the same ops,
+    /// both append their own, and the last rename wins — one edit disappears with no
+    /// error anywhere. The lock makes the read and the write one step, so a concurrent
+    /// writer either waits or fails loudly.
+    pub fn update_locked<F>(sidecar: &Path, apply: F) -> io::Result<Self>
+    where
+        F: FnOnce(&mut Journal) -> io::Result<()>,
+    {
+        let lock = sidecar.with_extension("journal.lock");
+        let mut held = None;
+        let started = std::time::Instant::now();
+        while held.is_none() {
+            match std::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&lock)
+            {
+                Ok(file) => held = Some(file),
+                Err(e) if e.kind() == io::ErrorKind::AlreadyExists => {
+                    // A lock left behind by a killed process must not wedge the file
+                    // forever: after ten seconds it is presumed stale.
+                    if let Ok(meta) = std::fs::metadata(&lock) {
+                        if let Ok(modified) = meta.modified() {
+                            if modified.elapsed().map(|d| d.as_secs()).unwrap_or(0) > 10 {
+                                let _ = std::fs::remove_file(&lock);
+                                continue;
+                            }
+                        }
+                    }
+                    if started.elapsed() > std::time::Duration::from_secs(5) {
+                        return Err(io::Error::new(
+                            io::ErrorKind::WouldBlock,
+                            format!("another writer holds {}; retry in a moment", lock.display()),
+                        ));
+                    }
+                    std::thread::sleep(std::time::Duration::from_millis(10));
+                }
+                Err(e) => return Err(e),
+            }
+        }
+        let result = (|| {
+            let mut journal = Self::load(sidecar)?;
+            apply(&mut journal)?;
+            journal.save(sidecar)?;
+            Ok(journal)
+        })();
+        drop(held.take());
+        let _ = std::fs::remove_file(&lock);
+        result
+    }
+
     /// Record a new operation.
     ///
     /// Any new edit discards the redo stack, the way a spreadsheet does: once you

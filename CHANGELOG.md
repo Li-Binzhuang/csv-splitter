@@ -1,5 +1,30 @@
 # Changelog
 
+## [2.3.0] — 2026-11-10
+
+Framework round: discovery, projection, and the one race that could lose an edit.
+
+### Added
+
+- **`GET /capabilities`**: reads, writes, edit actions, limits and write guards in one
+  response, generated from the same constants the handlers use. A front-end no longer
+  learns the surface from a document that can drift.
+- **`/rows?columns=a,b,c`**: a window can ask for three columns of a 782-column sheet.
+  Same rows, same numbers, **87 KB → 529 bytes**. Unknown names get a 400 naming
+  `columns` and listing what exists; `frozenColumns` narrows with the selection.
+
+### Fixed
+
+- **Two concurrent edits could lose one another.** `Journal::save` writes a temp file
+  and renames it, so two processes that both loaded the old journal and both saved
+  ended with the last rename winning — one edit gone, no error anywhere. All writes
+  (set, insert, delete, paste, rename, undo, redo) now go through
+  `Journal::update_locked`: a lock file, a fresh read inside it, then the save. Ten
+  concurrent writers leave ten operations, and each lands on its own row. A lock left
+  by a killed process is presumed stale after ten seconds so a crash cannot wedge a file.
+  - The lock is not a substitute for `expect=`: the lock keeps both edits, `expect`
+  decides whether yours should happen.
+
 ## [2.2.0] — 2026-11-10
 
 The project is now a **CLI and a backend**, not a GUI application. The framework is what

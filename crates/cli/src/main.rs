@@ -5106,9 +5106,16 @@ fn journal_push(
     op: csv_splitter_core::workbook::Op,
 ) -> Result<i32, i32> {
     let description = op.describe();
-    journal.push(op);
-    match journal.save(sidecar) {
-        Ok(()) => {
+    // A concurrent writer may have appended since this journal was loaded, so the
+    // append happens under a lock and on a freshly loaded journal: two edits become
+    // two operations instead of one lost rename.
+    let outcome = csv_splitter_core::workbook::Journal::update_locked(sidecar, |fresh| {
+        fresh.push(op);
+        Ok(())
+    });
+    match outcome {
+        Ok(fresh) => {
+            *journal = fresh;
             println!("✓ {description}");
             Ok(0)
         }
@@ -6044,9 +6051,8 @@ fn cmd_edit(args: &[String]) -> i32 {
             rows: block,
         };
         let description = op.describe();
-        journal.push(op);
-        if let Err(e) = journal.save(&sidecar) {
-            return report_failure("edit", format!("cannot save the journal: {e}"));
+        if let Err(e) = journal_push(&mut journal, &sidecar, op) {
+            return e;
         }
         println!("✓ {description} ({height_cells} × {width} block)");
         return 0;
@@ -6242,7 +6248,12 @@ fn cmd_edit(args: &[String]) -> i32 {
         "undo" => {
             return match journal.undo() {
                 Some(op) => {
-                    if let Err(e) = journal.save(&sidecar) {
+                    if let Err(e) =
+                        csv_splitter_core::workbook::Journal::update_locked(&sidecar, |fresh| {
+                            fresh.undo();
+                            Ok(())
+                        })
+                    {
                         return report_failure("edit", format!("cannot save the journal: {e}"));
                     }
                     println!("✓ undone: {}", op.describe());
@@ -6260,7 +6271,12 @@ fn cmd_edit(args: &[String]) -> i32 {
         "redo" => {
             return match journal.redo() {
                 Some(op) => {
-                    if let Err(e) = journal.save(&sidecar) {
+                    if let Err(e) =
+                        csv_splitter_core::workbook::Journal::update_locked(&sidecar, |fresh| {
+                            fresh.redo();
+                            Ok(())
+                        })
+                    {
                         return report_failure("edit", format!("cannot save the journal: {e}"));
                     }
                     println!("✓ redone: {}", op.describe());
@@ -6397,9 +6413,8 @@ fn cmd_edit(args: &[String]) -> i32 {
                     );
                 }
                 let op = csv_splitter_core::workbook::Op::DeleteRanges { runs };
-                journal.push(op);
-                if let Err(e) = journal.save(&sidecar) {
-                    return report_failure("edit", format!("cannot save the journal: {e}"));
+                if let Err(e) = journal_push(&mut journal, &sidecar, op) {
+                    return e;
                 }
                 if json {
                     println!(r#"{{"op":"dels","rows":{removed}"}}"#);
@@ -6440,9 +6455,8 @@ fn cmd_edit(args: &[String]) -> i32 {
                 }
                 // One operation, so one `edit undo` brings back every deleted row.
                 let op = csv_splitter_core::workbook::Op::DeleteRanges { runs: runs.clone() };
-                journal.push(op.clone());
-                if let Err(e) = journal.save(&sidecar) {
-                    return report_failure("edit", format!("cannot save the journal: {e}"));
+                if let Err(e) = journal_push(&mut journal, &sidecar, op) {
+                    return e;
                 }
                 let removed: u64 = runs.iter().map(|(_, count)| *count).sum();
                 if json {
@@ -6608,9 +6622,8 @@ fn cmd_edit(args: &[String]) -> i32 {
         }
     };
 
-    journal.push(op.clone());
-    if let Err(e) = journal.save(&sidecar) {
-        return report_failure("edit", format!("cannot save the journal: {e}"));
+    if let Err(e) = journal_push(&mut journal, &sidecar, op.clone()) {
+        return e;
     }
     if json {
         println!(

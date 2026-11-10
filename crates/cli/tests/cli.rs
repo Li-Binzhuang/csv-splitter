@@ -4783,3 +4783,57 @@ fn expect_turns_a_set_into_compare_and_set() {
     assert!(stdout.contains('Z'), "{stdout}");
     assert!(!stdout.contains("Z2"), "{stdout}");
 }
+
+/// Two writers on the same file both survive: the journal append is locked.
+#[test]
+fn concurrent_edits_do_not_lose_each_other() {
+    let dir = TempDir::new("concurrent");
+    let input = dir.join("t.csv");
+    let mut text = String::from("id,city\n");
+    for i in 1..=40 {
+        text.push_str(&format!("{i},C{i}\n"));
+    }
+    std::fs::write(&input, text).unwrap();
+    let path = input.to_str().unwrap().to_string();
+
+    let mut children = Vec::new();
+    for row in 1..=10 {
+        let child = Command::new(bin())
+            .args([
+                "edit",
+                "set",
+                &path,
+                "--row",
+                &row.to_string(),
+                "--col",
+                "city",
+                "--value",
+                &format!("W{row}"),
+            ])
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .unwrap();
+        children.push(child);
+    }
+    for mut child in children {
+        assert!(child.wait().unwrap().success());
+    }
+
+    // Every edit is in the journal: nothing was overwritten by a racing rename.
+    let journal = std::fs::read_to_string(dir.join("t.csv.journal")).unwrap();
+    assert_eq!(journal.lines().count(), 10, "{journal}");
+
+    // And each landed on its own row.
+    let out = Command::new(bin())
+        .args(["view", &path, "--count", "10", "--columns", "city"])
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    for row in 1..=10 {
+        assert!(
+            stdout.contains(&format!("W{row}")),
+            "row {row} missing: {stdout}"
+        );
+    }
+}

@@ -226,6 +226,51 @@ curl -X POST "http://127.0.0.1:7811/edit?path=t.csv&action=set&row=1&col=city&va
 `409` is distinct from `400`: the request is well-formed, the world moved. Nothing is
 written on refusal, and `actual` says what the value is now.
 
+
+## `GET /capabilities`
+
+One call that tells a front-end what this backend can do — generated from the same
+constants the handlers use, so it cannot drift from the routes.
+
+```json
+{"version":"2.2.0",
+ "reads":["/","/health","/meta","/rows","/columns","/sheet","/capabilities","…"],
+ "writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit","POST /index"],
+ "editActions":["set","insert","delete","replace","copy","formula","drop","rename","undo","redo","export"],
+ "limits":{"rowsPerRequest":2000,"columnsProjection":true},
+ "writeGuards":["expect=compare-and-set"],
+ "notes":"rows are 1-based; columns= narrows a window; expect= refuses a write unless the cell still holds that value (409)"}
+```
+
+## `GET /rows?columns=…`
+
+A window can ask for a few columns instead of all of them:
+
+```bash
+curl "/rows?path=real.csv&start=680000&count=10"
+# 782 columns → 87 KB
+
+curl "/rows?path=real.csv&start=680000&count=10&columns=cust_no,model_prob,predict_status"
+# 3 columns → 529 bytes   (same rows, same numbers)
+```
+
+The order is the order asked for, the names must exist (`400` with the available list
+otherwise), and `frozenColumns` is narrowed the same way.
+
+## 并发写入 / Concurrent writers
+
+`POST /edit` and `csv-splitter edit` take a lock on `<file>.journal` around
+read-modify-write, so two clients appending at the same moment both survive:
+
+```bash
+for i in $(seq 1 10); do csv-splitter edit set t.csv --row $i --col city --value W$i & done; wait
+# journal now holds 10 operations, one per writer
+```
+
+A lock left by a killed process is treated as stale after ten seconds, so a crash
+cannot wedge the file. For "did this value change under me?" the answer is not the lock
+but `expect=` — the lock keeps both edits, `expect` decides whether yours should happen.
+
 ## 已知限制
 
 - `where` / `order` 走 DuckDB：对**有编辑的文件**会先物化到临时表（每份源文件最多一份，

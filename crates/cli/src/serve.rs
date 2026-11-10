@@ -189,6 +189,7 @@ fn handle(
         "/edit" => edit_state(&mut stream, root, &params),
         "/sheet" => sheet_meta(&mut stream, root, &params),
         "/columns" => columns_endpoint(&mut stream, root, &params),
+        "/capabilities" => capabilities_endpoint(&mut stream),
         "/groupby" => group_by(&mut stream, root, cache, &params),
         "/pivot" => pivot_endpoint(&mut stream, root, cache, &params),
         "/style" => style_endpoint(&mut stream, root, &params),
@@ -203,9 +204,69 @@ fn handle(
         _ => respond_json(
             &mut stream,
             404,
-            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/columns","/sheet","/book","/pivot","/style","/chart","/layout","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/edit","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
+            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/columns","/sheet","/capabilities","/book","/pivot","/style","/chart","/layout","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
         ),
     }
+}
+
+/// `GET /capabilities` — one call that tells a front-end what this backend can do.
+///
+/// A client should not have to read a document to learn which writes exist, how many
+/// rows a window may ask for, or that a write can be made conditional. Everything here
+/// is generated from the same constants the handlers use, so it cannot drift.
+fn capabilities_endpoint(stream: &mut TcpStream) -> io::Result<()> {
+    let reads = [
+        "/",
+        "/health",
+        "/meta",
+        "/rows",
+        "/columns",
+        "/sheet",
+        "/capabilities",
+        "/book",
+        "/pivot",
+        "/style",
+        "/chart",
+        "/layout",
+        "/stats",
+        "/analyze",
+        "/groupby",
+        "/filter",
+        "/search",
+        "/files",
+        "/download",
+        "/export",
+        "/query",
+        "/job",
+        "/jobs",
+    ];
+    let writes = [
+        "POST /split",
+        "POST /merge",
+        "POST /sort",
+        "POST /dedupe",
+        "POST /partition",
+        "POST /warm",
+        "POST /edit",
+        "POST /index",
+    ];
+    let reads_json: Vec<String> = reads.iter().map(|r| json_str(r)).collect();
+    let writes_json: Vec<String> = writes.iter().map(|w| json_str(w)).collect();
+    let actions: Vec<String> = EDIT_ACTIONS.iter().map(|a| json_str(a)).collect();
+    respond_json(
+        stream,
+        200,
+        &format!(
+            r#"{{"version":{},"reads":[{}],"writes":[{}],"editActions":[{}],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"columnsProjection":true}},"writeGuards":["expect=compare-and-set"],"notes":{}}}"#,
+            json_str(env!("CARGO_PKG_VERSION")),
+            reads_json.join(","),
+            writes_json.join(","),
+            actions.join(","),
+            json_str(
+                "rows are 1-based; columns= narrows a window; expect= refuses a write unless the cell still holds that value (409)"
+            )
+        ),
+    )
 }
 
 fn job_status(
@@ -2084,21 +2145,26 @@ fn respond_sheet_window(
             )
         }
     };
-    let cols: Vec<String> = window.columns.iter().map(|c| json_str(c)).collect();
-    let rows: Vec<String> = window
-        .rows
+    let (display_columns, display_rows) = match requested_columns(params) {
+        None => (window.columns.clone(), window.rows.clone()),
+        Some(wanted) => match project_window(&window.columns, &window.rows, &wanted) {
+            Ok(pair) => pair,
+            Err(e) => return bad_request(stream, &e, "columns", "columns=a,b,c"),
+        },
+    };
+    let cols: Vec<String> = display_columns.iter().map(|c| json_str(c)).collect();
+    let rows: Vec<String> = display_rows
         .iter()
         .map(|row| {
             let cells: Vec<String> = row.iter().map(|c| json_str(c)).collect();
             format!("[{}]", cells.join(","))
         })
         .collect();
-    let rows_count = window.rows.len();
+    let rows_count = display_rows.len();
     let frozen: Vec<String> = csv_splitter_core::layout::Layout::load(path)
         .map(|l| {
-            let count = l.frozen_prefix(&window.columns);
-            window
-                .columns
+            let count = l.frozen_prefix(&display_columns);
+            display_columns
                 .iter()
                 .take(count)
                 .map(|c| json_str(c))
@@ -2502,11 +2568,23 @@ fn rows(
     }
 
     let offset = start.saturating_sub(viewer.window_start()) as usize;
-    let rows: Vec<String> = viewer
+    let headers = viewer.headers().unwrap_or_default();
+    let windowed: Vec<Vec<String>> = viewer
         .rows()
         .iter()
         .skip(offset)
         .take(count as usize)
+        .cloned()
+        .collect();
+    let (display_columns, display_rows) = match requested_columns(params) {
+        None => (headers.clone(), windowed),
+        Some(wanted) => match project_window(&headers, &windowed, &wanted) {
+            Ok(pair) => pair,
+            Err(e) => return bad_request(stream, &e, "columns", "columns=a,b,c"),
+        },
+    };
+    let rows: Vec<String> = display_rows
+        .iter()
         .map(|row| {
             let cells: Vec<String> = row.iter().map(|c| json_str(c)).collect();
             format!("[{}]", cells.join(","))
@@ -2515,7 +2593,7 @@ fn rows(
 
     // Column names travel with every window: a client that only pages rows
     // would otherwise have to make a second request to render a header.
-    let headers = viewer.headers().unwrap_or_default();
+    let headers = display_columns.clone();
     let cols: Vec<String> = headers.iter().map(|c| json_str(c)).collect();
     let frozen: Vec<String> = csv_splitter_core::layout::Layout::load(&path)
         .map(|l| {
@@ -2759,6 +2837,50 @@ struct RowWindow<'a> {
 }
 
 /// Render a window of a materialised query result, caching it by (path, SQL).
+/// `columns=a,b,c` narrows a window to those columns, in that order.
+///
+/// A 782-column row is 3.6 KB of JSON; a client that renders three columns should not
+/// pay for the other 779. Unknown names are refused rather than silently dropped.
+fn requested_columns(params: &HashMap<String, String>) -> Option<Vec<String>> {
+    params.get("columns").map(|value| {
+        value
+            .split(',')
+            .map(|c| c.trim().to_string())
+            .filter(|c| !c.is_empty())
+            .collect::<Vec<_>>()
+    })
+}
+
+fn project_window(
+    columns: &[String],
+    rows: &[Vec<String>],
+    wanted: &[String],
+) -> Result<(Vec<String>, Vec<Vec<String>>), String> {
+    let mut slots = Vec::with_capacity(wanted.len());
+    for name in wanted {
+        match columns.iter().position(|c| c == name) {
+            Some(slot) => slots.push(slot),
+            None => {
+                return Err(format!(
+                    "column '{name}' is not in this sheet; available: {}",
+                    columns.join(", ")
+                ))
+            }
+        }
+    }
+    let picked_columns = slots.iter().map(|i| columns[*i].clone()).collect();
+    let picked_rows = rows
+        .iter()
+        .map(|row| {
+            slots
+                .iter()
+                .map(|slot| row.get(*slot).cloned().unwrap_or_default())
+                .collect()
+        })
+        .collect();
+    Ok((picked_columns, picked_rows))
+}
+
 fn respond_rows_from_cache(
     stream: &mut TcpStream,
     cache: &ResultCache,
@@ -2791,7 +2913,14 @@ fn respond_rows_from_cache(
                     )
                 }
             };
-            let cols: Vec<String> = cached.columns.iter().map(|c| json_str(c)).collect();
+            let (display_columns, display_rows) = match requested_columns(params) {
+                None => (cached.columns.clone(), rows.clone()),
+                Some(wanted) => match project_window(&cached.columns, &rows, &wanted) {
+                    Ok(pair) => pair,
+                    Err(e) => return bad_request(stream, &e, "columns", "columns=a,b,c"),
+                },
+            };
+            let cols: Vec<String> = display_columns.iter().map(|c| json_str(c)).collect();
             // The same context the plain window carries: a client should be able to
             // render frozen columns and say "edits applied" whichever path answered.
             let frozen: Vec<String> = csv_splitter_core::layout::Layout::load(path)
@@ -2809,7 +2938,7 @@ fn respond_rows_from_cache(
             let operations = Journal::load(&Journal::sidecar(path))
                 .map(|j| j.len())
                 .unwrap_or(0);
-            let body_rows: Vec<String> = rows
+            let body_rows: Vec<String> = display_rows
                 .iter()
                 .map(|row| {
                     let cells: Vec<String> = row.iter().map(|c| json_str(c)).collect();

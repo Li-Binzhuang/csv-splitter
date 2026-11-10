@@ -1851,3 +1851,63 @@ fn columns_and_compare_and_set() {
     assert!(body.contains(r#"Z"#), "{body}");
     assert!(!body.contains("Z2"), "{body}");
 }
+
+/// Discovery: one call lists what the backend can do, generated from the same
+/// constants the handlers use.
+#[test]
+fn capabilities_describe_the_backend() {
+    let dir = TempDir::new("caps");
+    let server = start(&dir.0);
+    let (code, body) = get(&server.addr, "/capabilities");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""version""#), "{body}");
+    assert!(body.contains(r#""/columns""#), "{body}");
+    assert!(body.contains(r#""rowsPerRequest":2000"#), "{body}");
+    assert!(body.contains("compare-and-set"), "{body}");
+    // Every edit action the handler accepts is advertised.
+    for action in ["set", "insert", "delete", "replace", "export"] {
+        assert!(
+            body.contains(&format!(r#""{action}""#)),
+            "missing {action}: {body}"
+        );
+    }
+}
+
+/// A window can ask for a few columns instead of all of them.
+#[test]
+fn rows_can_be_narrowed_to_selected_columns() {
+    let dir = TempDir::new("rowscols");
+    let mut header = String::from("id");
+    for i in 0..100 {
+        header.push_str(&format!(",c{i}"));
+    }
+    let mut body = String::new();
+    for r in 0..10 {
+        body.push_str(&format!("{r}"));
+        for i in 0..100 {
+            body.push_str(&format!(",{}", i * 10 + r));
+        }
+        body.push('\n');
+    }
+    std::fs::write(dir.join("w.csv"), format!("{header}\n{body}")).unwrap();
+    let server = start(&dir.0);
+
+    let (code, wide) = get(&server.addr, "/rows?path=w.csv&start=0&count=10");
+    assert_eq!(code, 200, "{wide}");
+    let (code, narrow) = get(
+        &server.addr,
+        "/rows?path=w.csv&start=0&count=10&columns=id,c7",
+    );
+    assert_eq!(code, 200, "{narrow}");
+    assert!(
+        narrow.len() < wide.len() / 10,
+        "projection should shrink the body"
+    );
+    assert!(narrow.contains(r#""columns":["id","c7"]"#), "{narrow}");
+    assert!(narrow.contains(r#"["0","70"]"#), "{narrow}");
+
+    // A name that is not there is a 400 naming the parameter, not an empty row.
+    let (code, body) = get(&server.addr, "/rows?path=w.csv&count=1&columns=nosuch");
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains(r#""parameter":"columns""#), "{body}");
+}
