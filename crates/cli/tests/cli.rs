@@ -3069,3 +3069,57 @@ fn a_column_can_be_split_into_several() {
     // Fewer pieces than columns leaves the rest empty rather than shifting values.
     assert_eq!(lines[2], "2,Solo,,", "{text}");
 }
+
+/// `edit export --where` keeps the filtered rows, edits included.
+#[test]
+fn export_can_be_filtered() {
+    let dir = TempDir::new("filteredexport");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,city\n1,CDMX\n2,Puebla\n3,CDMX\n").unwrap();
+    let path = input.to_str().unwrap();
+
+    let out = dir.join("sel.csv");
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            path,
+            "--where",
+            "city=CDMX",
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&out).unwrap();
+    assert_eq!(
+        text.lines().count(),
+        3,
+        "header + two matching rows: {text}"
+    );
+
+    // An edit that turns a Puebla row into CDMX makes it part of the export: the
+    // predicate sees the finished row, not the raw bytes.
+    Command::new(bin())
+        .args([
+            "edit", "set", path, "--row", "2", "--col", "city", "--value", "CDMX",
+        ])
+        .status()
+        .unwrap();
+    let out = dir.join("sel2.csv");
+    Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            path,
+            "--where",
+            "city=CDMX",
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    let text = std::fs::read_to_string(&out).unwrap();
+    assert_eq!(text.lines().count(), 4, "all three rows now match: {text}");
+}

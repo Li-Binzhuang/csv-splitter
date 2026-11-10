@@ -578,8 +578,62 @@ fn edit_apply(
         let delimiter = delimiter(params);
         let base = path.clone();
         let result_path = out.clone();
+        // `where=` narrows the export, evaluated against the finished row so a filter
+        // on a computed column behaves like the spreadsheet.
+        let only = match params.get("where").filter(|w| !w.is_empty()) {
+            None => None,
+            Some(expr) => {
+                match workbook::column_layout(&ops, &workbook::base_header(&base, delimiter)?) {
+                    Ok(layout) => {
+                        let columns: Vec<String> = layout.into_iter().map(|(n, _)| n).collect();
+                        let spec = match csv_splitter_core::filter::FilterSpec::parse(expr) {
+                            Ok(spec) => spec,
+                            Err(e) => {
+                                return respond_json(
+                                    stream,
+                                    400,
+                                    &format!(
+                                        r#"{{"error":{},"parameter":"where","hint":"pass where=<column><op><value>"}}"#,
+                                        json_str(&e)
+                                    ),
+                                )
+                            }
+                        };
+                        let set = csv_splitter_core::filter::FilterSet::single(spec);
+                        match set.compile(&columns) {
+                            Ok(compiled) => Some(compiled),
+                            Err(e) => {
+                                return respond_json(
+                                    stream,
+                                    400,
+                                    &format!(
+                                        r#"{{"error":{},"parameter":"where"}}"#,
+                                        json_str(&e.to_string())
+                                    ),
+                                )
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        return respond_json(
+                            stream,
+                            422,
+                            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                        )
+                    }
+                }
+            }
+        };
         let id = jobs.submit("edit-export", move |tx| {
-            match workbook::export(&base, &ops, &out, delimiter, &tx) {
+            match workbook::export_filtered(
+                &base,
+                &ops,
+                &out,
+                delimiter,
+                csv_splitter_core::csv_reader::QuoteStyle::Rfc4180,
+                only.as_ref(),
+                &tx,
+            ) {
                 Ok(summary) => {
                     tx.send(ProgressEvent::Info(format!(
                         "{} rows × {} columns",

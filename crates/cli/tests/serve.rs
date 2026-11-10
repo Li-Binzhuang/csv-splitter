@@ -1357,3 +1357,27 @@ fn rewriting_the_base_file_is_noticed_by_both_paths() {
         "the paged path served the old file: {body}"
     );
 }
+
+#[test]
+fn the_export_job_honours_a_where_clause() {
+    let dir = TempDir::new("apiexportwhere");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,CDMX\n2,Puebla\n3,CDMX\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=export&out=sel.csv&where=city%3DCDMX",
+    );
+    assert_eq!(status, 202, "{body}");
+    let job = body.split('"').nth(3).unwrap_or_default().to_string();
+
+    for _ in 0..100 {
+        let (_, state) = get(&server.addr, &format!("/job?id={job}"));
+        if state.contains("\"done\"") || state.contains("failed") {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
+    let text = std::fs::read_to_string(dir.join("sel.csv")).unwrap();
+    assert_eq!(text.lines().count(), 3, "header + two rows: {text}");
+}

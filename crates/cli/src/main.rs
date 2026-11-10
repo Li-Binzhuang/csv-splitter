@@ -4664,6 +4664,38 @@ fn cmd_edit(args: &[String]) -> i32 {
             return 0;
         }
         "export" => {
+            let only = match &where_expr {
+                None => None,
+                Some(expr) => {
+                    let spec = match csv_splitter_core::filter::FilterSpec::parse(expr) {
+                        Ok(s) => s,
+                        Err(e) => {
+                            eprintln!("error: {e}");
+                            return 2;
+                        }
+                    };
+                    let set = csv_splitter_core::filter::FilterSet::single(spec);
+                    let columns = match csv_splitter_core::workbook::column_layout(
+                        journal.ops(),
+                        &match csv_splitter_core::workbook::base_header(&input, delimiter) {
+                            Ok(c) => c,
+                            Err(e) => {
+                                return report_failure(
+                                    "edit",
+                                    format!("cannot read the header: {e}"),
+                                )
+                            }
+                        },
+                    ) {
+                        Ok(layout) => layout.into_iter().map(|(name, _)| name).collect::<Vec<_>>(),
+                        Err(e) => return report_failure("edit", e.to_string()),
+                    };
+                    match set.compile(&columns) {
+                        Ok(compiled) => Some(compiled),
+                        Err(e) => return report_failure("edit", e.to_string()),
+                    }
+                }
+            };
             let output = out.unwrap_or_else(|| {
                 let stem = input
                     .file_stem()
@@ -4676,12 +4708,13 @@ fn cmd_edit(args: &[String]) -> i32 {
             if let Err(code) = check_output(Some(&input), &output) {
                 return code;
             }
-            let result = csv_splitter_core::workbook::export_quotes(
+            let result = csv_splitter_core::workbook::export_filtered(
                 &input,
                 journal.ops(),
                 &output,
                 delimiter,
                 quotes,
+                only.as_ref(),
                 &tx,
             );
             drop(tx);

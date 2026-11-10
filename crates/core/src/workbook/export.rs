@@ -38,6 +38,22 @@ pub fn export_quotes(
     quotes: QuoteStyle,
     tx: &ProgressSender,
 ) -> io::Result<ExportSummary> {
+    export_filtered(base, ops, output, delimiter, quotes, None, tx)
+}
+
+/// Export, optionally keeping only rows that satisfy `keep`.
+///
+/// The predicate sees the finished row — edits and formulas applied — because a
+/// filter on a column that was just computed should behave like the spreadsheet.
+pub fn export_filtered(
+    base: &Path,
+    ops: &[Op],
+    output: &Path,
+    delimiter: Delimiter,
+    quotes: QuoteStyle,
+    only: Option<&crate::filter::CompiledSet>,
+    tx: &ProgressSender,
+) -> io::Result<ExportSummary> {
     let delim = delimiter.byte();
     let base_columns = base_header(base, delimiter)?;
     if base_columns.is_empty() {
@@ -100,15 +116,17 @@ pub fn export_quotes(
         match map.row(logical) {
             None => break,
             Some(RowRef::Virtual { id, cells }) => {
-                write_row(
+                if write_row(
                     &mut out,
                     &mut pipeline,
                     &cells,
                     RowId::Virtual(id),
                     logical,
                     delim,
-                )?;
-                summary.rows += 1;
+                    only,
+                )? {
+                    summary.rows += 1;
+                }
                 logical += 1;
             }
             Some(RowRef::Base(target)) => {
@@ -128,15 +146,17 @@ pub fn export_quotes(
                     delim,
                     quotes,
                 );
-                write_row(
+                if write_row(
                     &mut out,
                     &mut pipeline,
                     &cells,
                     RowId::Base(target),
                     logical,
                     delim,
-                )?;
-                summary.rows += 1;
+                    only,
+                )? {
+                    summary.rows += 1;
+                }
                 logical += 1;
             }
         }
@@ -225,7 +245,7 @@ impl<'a> RowPipeline<'a> {
     }
 }
 
-/// Assemble one row and write it.
+/// Assemble one row and write it, unless a predicate rejects it.
 fn write_row(
     out: &mut impl Write,
     pipeline: &mut RowPipeline<'_>,
@@ -233,10 +253,17 @@ fn write_row(
     id: RowId,
     row_number: u64,
     delim: u8,
-) -> io::Result<()> {
+    only: Option<&crate::filter::CompiledSet>,
+) -> io::Result<bool> {
+    // The predicate sees the finished row: edits and formulas applied, so a filter on
+    // a computed column behaves the way the spreadsheet does.
     let cells = pipeline.row(base_cells, id, row_number);
+    if only.is_some_and(|set| !set.holds(&cells)) {
+        return Ok(false);
+    }
     let fields: Vec<&str> = cells.iter().map(String::as_str).collect();
-    out.write_all(join_csv_line(&fields, delim).as_bytes())
+    out.write_all(join_csv_line(&fields, delim).as_bytes())?;
+    Ok(true)
 }
 
 /// Column name → value, the shape formula evaluation wants.

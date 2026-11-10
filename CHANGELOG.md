@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.80.0] — 2026-11-10
+
+### Added
+
+- **`edit export --where`** (`POST /edit?action=export&where=…`): materialise only the
+  rows that match. The predicate sees the finished row — edits and formulas applied —
+  so a filter on a computed column behaves the way the spreadsheet does, and an edit
+  that makes a row match puts it in the export.
+  - Streaming: rows that do not match are skipped as they are read, so a selective
+    filter costs nothing extra.
+
 ## [0.79.0] — 2026-11-10
 
 ### Added
