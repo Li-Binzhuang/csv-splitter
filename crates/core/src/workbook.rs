@@ -25,6 +25,7 @@
 
 use crate::csv_reader::{join_csv_line, parse_csv_record, RecordReader};
 use crate::encoding;
+use crate::formula::Formula;
 use crate::types::{Delimiter, ProgressEvent, ProgressSender};
 use std::collections::HashMap;
 use std::fs::File;
@@ -648,6 +649,92 @@ impl CellEdits {
     }
 }
 
+/// The output columns, each pointing at its base column (or `None` if computed).
+///
+/// This is the single place that understands renames and drops: matching an
+/// output name against the *original* header is wrong as soon as a column is
+/// renamed, which silently blanked every renamed column before this existed.
+pub fn column_layout(
+    ops: &[Op],
+    base_columns: &[String],
+) -> io::Result<Vec<(String, Option<usize>)>> {
+    let mut layout: Vec<(String, Option<usize>)> = base_columns
+        .iter()
+        .enumerate()
+        .map(|(i, name)| (name.clone(), Some(i)))
+        .collect();
+    for op in ops {
+        match op {
+            Op::RenameColumn { from, to } => {
+                let slot = layout
+                    .iter_mut()
+                    .find(|(name, _)| name == from)
+                    .ok_or_else(|| {
+                        io::Error::new(
+                            io::ErrorKind::InvalidInput,
+                            format!("cannot rename: no column '{from}'"),
+                        )
+                    })?;
+                slot.0 = to.clone();
+            }
+            Op::DropColumn { name } => {
+                let idx = layout.iter().position(|(n, _)| n == name).ok_or_else(|| {
+                    io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        format!("cannot drop: no column '{name}'"),
+                    )
+                })?;
+                layout.remove(idx);
+                if layout.is_empty() {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        "the journal drops every column",
+                    ));
+                }
+            }
+            Op::AddColumn { name, .. } => layout.push((name.clone(), None)),
+            _ => {}
+        }
+    }
+    Ok(layout)
+}
+
+/// Every `AddColumn` operation, with its parsed formula.
+///
+/// Parsed once per sheet, not per row: a formula that fails to parse or reads a
+/// column that does not exist is a configuration error, and should be reported
+/// before a million rows are written.
+pub fn formulas(ops: &[Op], columns: &[String]) -> io::Result<Vec<(String, Formula)>> {
+    let mut out = Vec::new();
+    for op in ops {
+        if let Op::AddColumn { name, formula } = op {
+            let parsed = Formula::parse(formula).map_err(|e| {
+                io::Error::new(io::ErrorKind::InvalidInput, format!("column '{name}': {e}"))
+            })?;
+            for reference in parsed.references() {
+                if !columns.iter().any(|c| c == &reference) {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        format!("column '{name}': formula reads unknown column '{reference}'"),
+                    ));
+                }
+            }
+            out.push((name.clone(), parsed));
+        }
+    }
+    Ok(out)
+}
+
+/// Evaluate a computed column for one row.
+fn eval_formula(formula: &Formula, columns: &[String], cells: &[String]) -> String {
+    let row: HashMap<String, String> = columns
+        .iter()
+        .zip(cells.iter())
+        .map(|(c, v)| (c.clone(), v.clone()))
+        .collect();
+    formula.eval(&row).render()
+}
+
 /// The compiled sheet: final row map plus the cell edits resolved to identities.
 #[derive(Clone, Debug, Default)]
 pub struct Sheet {
@@ -764,10 +851,16 @@ pub fn export(
             "the base file has no header",
         ));
     }
-    let columns = resolve_columns(ops, &base_columns)?;
+    let layout = column_layout(ops, &base_columns)?;
+    let columns: Vec<String> = layout.iter().map(|(n, _)| n.clone()).collect();
     let sheet = compile(ops, u64::MAX);
     let edits = &sheet.edits;
     let map = &sheet.map;
+    let formulas = formulas(ops, &columns)?;
+    let formula_index: Vec<Option<&Formula>> = columns
+        .iter()
+        .map(|c| formulas.iter().find(|(n, _)| n == c).map(|(_, f)| f))
+        .collect();
 
     tx.send(ProgressEvent::PhaseStart {
         phase: "Exporting edits".into(),
@@ -779,23 +872,7 @@ pub fn export(
     let header: Vec<&str> = columns.iter().map(String::as_str).collect();
     out.write_all(join_csv_line(&header, delim).as_bytes())?;
 
-    // Column mapping: kept base columns by index, added ones evaluated later.
-    let mut keep: Vec<Option<usize>> = Vec::new(); // output index -> base index
-    let mut added: Vec<(usize, String)> = Vec::new(); // output index -> formula
-    for (out_idx, name) in columns.iter().enumerate() {
-        match base_columns.iter().position(|b| b == name) {
-            Some(base_idx) => keep.push(Some(base_idx)),
-            None => {
-                keep.push(None);
-                if let Some(Op::AddColumn { formula, .. }) = ops
-                    .iter()
-                    .find(|op| matches!(op, Op::AddColumn { name: n, .. } if n == name))
-                {
-                    added.push((out_idx, formula.clone()));
-                }
-            }
-        }
-    }
+    let keep: Vec<Option<usize>> = layout.iter().map(|(_, idx)| *idx).collect();
 
     let reader_bytes = encoding::open_decoded(base)?;
     let mut records = RecordReader::new(
@@ -827,6 +904,7 @@ pub fn export(
                     &cells,
                     edits,
                     RowId::Virtual(id),
+                    &formula_index,
                     delim,
                 )?;
                 summary.rows += 1;
@@ -855,6 +933,7 @@ pub fn export(
                     &cells,
                     edits,
                     RowId::Base(target),
+                    &formula_index,
                     delim,
                 )?;
                 summary.rows += 1;
@@ -865,7 +944,6 @@ pub fn export(
 
     // Anything still in the file but not addressed by the map is unreachable;
     // report it rather than silently dropping rows.
-    let _ = &added;
     out.flush()?;
     summary.bytes = std::fs::metadata(output).map(|m| m.len()).unwrap_or(0);
     tx.send(ProgressEvent::PhaseDone {
@@ -883,6 +961,7 @@ fn emit(
     base_cells: &[String],
     edits: &CellEdits,
     id: RowId,
+    formulas: &[Option<&Formula>],
     delim: u8,
 ) -> io::Result<()> {
     let mut cells: Vec<String> = Vec::with_capacity(columns.len());
@@ -896,6 +975,13 @@ fn emit(
             None => edits.substitute(column, &raw),
         };
         cells.push(value);
+    }
+    // Computed columns are evaluated last, against the finished row, so a
+    // formula may read a value that was just edited.
+    for (idx, formula) in formulas.iter().enumerate() {
+        if let Some(f) = formula {
+            cells[idx] = eval_formula(f, columns, &cells);
+        }
     }
     let refs: Vec<&str> = cells.iter().map(String::as_str).collect();
     out.write_all(join_csv_line(&refs, delim).as_bytes())
@@ -1033,24 +1119,27 @@ mod tests {
         let dir = Dir::new("cols");
         let base = base_with(&dir, BASE);
         let ops = vec![
-            Op::DropColumn {
-                name: "amount".into(),
-            },
+            Op::DropColumn { name: "id".into() },
             Op::RenameColumn {
                 from: "city".into(),
                 to: "城市".into(),
             },
             Op::AddColumn {
-                name: "tag".into(),
-                formula: "".into(),
+                name: "double".into(),
+                formula: "amount * 2".into(),
             },
         ];
         let text = export_with(&dir, &base, ops);
         assert_eq!(
             text.lines().next().unwrap(),
-            "id,城市,tag",
+            "城市,amount,double",
             "header should follow the operations"
         );
+        // The computed column is evaluated per row, and the renamed column keeps
+        // its data (it used to come out blank when matched by its old name).
+        let lines: Vec<&str> = text.lines().collect();
+        assert_eq!(lines[1], "CDMX,10,20", "{text}");
+        assert_eq!(lines[4], "Tijuana,40,80", "{text}");
     }
 
     #[test]
@@ -1244,6 +1333,47 @@ mod tests {
     }
 
     #[test]
+    fn a_formula_that_reads_a_dropped_column_is_refused() {
+        let dir = Dir::new("badformula");
+        let base = base_with(&dir, BASE);
+        let ops = vec![
+            Op::DropColumn {
+                name: "amount".into(),
+            },
+            Op::AddColumn {
+                name: "double".into(),
+                formula: "amount * 2".into(),
+            },
+        ];
+        let out = dir.join("o.csv");
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let err = export(&base, &ops, &out, Delimiter::Comma, &tx).unwrap_err();
+        // Failing before writing beats writing #VALUE! into a million rows.
+        assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
+        assert!(err.to_string().contains("amount"), "{err}");
+    }
+
+    #[test]
+    fn formulas_see_edited_values() {
+        let dir = Dir::new("formulaedit");
+        let base = base_with(&dir, BASE);
+        let ops = vec![
+            Op::SetCell {
+                row: 0,
+                column: "amount".into(),
+                value: "100".into(),
+            },
+            Op::AddColumn {
+                name: "double".into(),
+                formula: "amount * 2".into(),
+            },
+        ];
+        let text = export_with(&dir, &base, ops);
+        assert_eq!(text.lines().nth(1).unwrap(), "1,CDMX,100,200", "{text}");
+        assert_eq!(text.lines().nth(2).unwrap(), "2,Puebla,20,40", "{text}");
+    }
+
+    #[test]
     fn unknown_column_operations_are_refused() {
         let dir = Dir::new("badcols");
         let base = base_with(&dir, BASE);
@@ -1299,7 +1429,8 @@ pub fn window(
     if base_columns.is_empty() {
         return Ok(Window::default());
     }
-    let columns = resolve_columns(ops, &base_columns)?;
+    let layout = column_layout(ops, &base_columns)?;
+    let columns: Vec<String> = layout.iter().map(|(n, _)| n.clone()).collect();
 
     let sidecar = crate::index::SparseIndex::sidecar_path(base);
     let index = match crate::index::SparseIndex::load(&sidecar) {
@@ -1309,6 +1440,11 @@ pub fn window(
     let sheet = compile(ops, index.data_rows());
     let map = &sheet.map;
     let edits = &sheet.edits;
+    let formulas = formulas(ops, &columns)?;
+    let formula_index: Vec<Option<&Formula>> = columns
+        .iter()
+        .map(|c| formulas.iter().find(|(n, _)| n == c).map(|(_, f)| f))
+        .collect();
 
     let mut rows = Vec::new();
     for run in map.physical_runs(start, count) {
@@ -1321,12 +1457,12 @@ pub fn window(
                         delim,
                     );
                     rows.push(shape(
-                        columns.len(),
                         &columns,
                         &base_columns,
                         &cells,
                         edits,
                         RowId::Base(physical + i as u64),
+                        &formula_index,
                     ));
                 }
             }
@@ -1337,12 +1473,12 @@ pub fn window(
             } => {
                 for cells in &virtual_rows {
                     rows.push(shape(
-                        columns.len(),
                         &columns,
                         &base_columns,
                         cells,
                         edits,
                         RowId::Virtual(id),
+                        &formula_index,
                     ));
                 }
             }
@@ -1358,14 +1494,14 @@ pub fn window(
 
 /// Project a base row (or an inserted one) onto the journal's column layout.
 fn shape(
-    width: usize,
     columns: &[String],
     base_columns: &[String],
     base_cells: &[String],
     edits: &CellEdits,
     id: RowId,
+    formulas: &[Option<&Formula>],
 ) -> Vec<String> {
-    let mut out = Vec::with_capacity(width);
+    let mut out = Vec::with_capacity(columns.len());
     for column in columns {
         let raw = base_columns
             .iter()
@@ -1378,6 +1514,11 @@ fn shape(
             None => edits.substitute(column, &raw),
         };
         out.push(value);
+    }
+    for (idx, formula) in formulas.iter().enumerate() {
+        if let Some(f) = formula {
+            out[idx] = eval_formula(f, columns, &out);
+        }
     }
     out
 }

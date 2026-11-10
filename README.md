@@ -509,6 +509,30 @@ $ csv-splitter edit export orders.csv -o fixed.csv
 | 查看日志 | `edit status` | `GET /edit` |
 | 物化输出 | `edit export [-o F]` | `POST /edit?action=export&out=` |
 
+### 公式列 / Computed columns
+
+```bash
+$ csv-splitter edit formula orders.csv --name total --value "round(amount * qty, 2)"
+✓ add column 'total' = round(amount * qty, 2) (1 operation(s) pending)
+
+$ csv-splitter edit export orders.csv -o out.csv
+id,city,amount,qty,total
+1,CDMX,10,3,30
+```
+
+公式**不落盘**：导出或读窗口时逐行现算，所以给一亿行加一列计算列，也不多占一个字节。
+
+支持的语法（刻意保持小，够用且可预测）：
+
+| 类别 | 写法 |
+|---|---|
+| 算术 | `+ - * / %`，括号 |
+| 列引用 | `amount`，带空格或中文用 `[客户编号]` |
+| 函数 | `round(x[, 位数])` `abs` `min` `max` `len` `upper` `lower` |
+
+语义跟电子表格对齐：**空单元格当 0**，**非数字文本得 `#VALUE!`**，
+**除零得 `#VALUE!`**，**引用不存在的列 = 导出前直接报错**（而不是给一亿行写满 `#VALUE!`）。
+
 ### 为什么是日志，而不是覆盖写
 
 - **撤销是免费的**：弹掉最后一条。

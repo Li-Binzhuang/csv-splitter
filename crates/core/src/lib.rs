@@ -8,6 +8,7 @@ pub mod dedupe;
 pub mod demo;
 pub mod encoding;
 pub mod filter;
+pub mod formula;
 pub mod groupby;
 pub mod index;
 pub mod jobs;

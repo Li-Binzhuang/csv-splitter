@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.38.0] — 2026-11-10
+
+### Added
+
+- **Formula columns** (`crates/core/src/formula.rs`): `edit formula --name total
+  --value "round(amount * qty, 2)"`. Expressions are parsed once and evaluated per
+  row at read/export time — nothing is stored, so a computed column costs no disk
+  and no extra memory however many rows the file has.
+  - Grammar: `+ - * / %`, parentheses, unary minus, column references (bracketed
+    form `[客户编号]` for names with spaces), `round/abs/min/max/len/upper/lower`.
+  - Spreadsheet-faithful edges: empty cell counts as 0, non-numeric text and
+    division by zero give `#VALUE!`, and a formula reading a column that the
+    journal dropped fails **before** the export writes anything.
+- Formatted output keeps six significant decimals, not float noise
+  (`0.1 + 0.2` → `0.3`, `100 / 3` → `33.333333`).
+
+### Fixed
+
+- **Renaming a column blanked its data.** The export mapped output columns onto
+  the *original* header, so a renamed column no longer matched and every value
+  came out empty. Column layout is now resolved once, in one place
+  (`workbook::column_layout`), and both export and windowed reads use it.
+
 ## [0.37.0] — 2026-11-10
 
 ### Added
