@@ -3857,3 +3857,72 @@ fn export_can_select_columns_and_order_rows() {
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(stderr.contains("cannot export column 'nope'"), "{stderr}");
 }
+
+/// `edit set --find` locates the row by content, and the message numbers rows 1-based.
+#[test]
+fn edit_can_locate_a_row_by_content() {
+    let dir = TempDir::new("editfind");
+    let input = dir.join("t.csv");
+    let mut text = String::from("id,city,qty\n");
+    for i in 1..=20 {
+        let city = if i == 7 { "Puebla" } else { "CDMX" };
+        text.push_str(&format!("{i},{city},{}\n", i * 10));
+    }
+    std::fs::write(&input, text).unwrap();
+    let path = input.to_str().unwrap();
+
+    let run = |args: &[&str]| {
+        assert_eq!(
+            Command::new(bin()).args(args).status().unwrap().code(),
+            Some(0),
+            "{args:?}"
+        );
+    };
+
+    // Change the row that says Puebla, without knowing its number.
+    let out = Command::new(bin())
+        .args([
+            "edit",
+            "set",
+            path,
+            "--find",
+            "Puebla",
+            "--col",
+            "city",
+            "--value",
+            "Puebla, MX",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains("set row 7"),
+        "rows are 1-based here: {stdout}"
+    );
+
+    // The second match is a different CDMX row, and `--nth` says which.
+    run(&[
+        "edit", "set", path, "--find", "CDMX", "--nth", "2", "--col", "qty", "--value", "999",
+    ]);
+    let exported = dir.join("o.csv");
+    run(&["edit", "export", path, "-o", exported.to_str().unwrap()]);
+    let text = std::fs::read_to_string(&exported).unwrap();
+    let lines: Vec<&str> = text.lines().collect();
+    // The value with a comma survived the journal round-trip.
+    assert!(lines.iter().any(|l| l.contains("Puebla, MX")), "{text}");
+    // `--nth 2` on CDMX is the second data row: row 2, not row 3.
+    assert_eq!(lines[2], "2,CDMX,999", "{text}");
+    assert_eq!(lines[3], "3,CDMX,30", "{text}");
+
+    // Not found is an error that says so, not a no-op.
+    let out = Command::new(bin())
+        .args([
+            "edit", "set", path, "--find", "Nowhere", "--col", "city", "--value", "x",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("no row contains 'Nowhere'"), "{stderr}");
+}

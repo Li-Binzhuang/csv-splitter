@@ -175,7 +175,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--count", "How many rows"),
             ("--delim", "Field delimiter (default: auto)"),
             ("--formula", "Formula for the new column, e.g. \"qty*2\""),
-            ("--from", "Source encoding"),
+            ("--from", "Old column name / text to replace"),
             ("--into", "New column names for split-column"),
             ("--json", "Emit JSON"),
             ("--name", "Column name"),
@@ -186,8 +186,12 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
                 "Treat the pattern as a pattern: . * + ? ^ $ [a-z]",
             ),
             ("--row", "Data row (1-based)"),
-            ("--to", "Target encoding"),
+            ("--to", "New column name / replacement text"),
             ("--value", "Value to write"),
+            ("--find", "Locate a row by its content instead of by number"),
+            ("--nth", "Which match to edit (default 1)"),
+            ("--match-case", "Case-sensitive when locating"),
+            ("--find-col", "Only look in these columns when locating"),
             ("--columns", "Columns to write / keep, comma separated"),
             ("--order", "Sort rows, e.g. \"amount:desc\""),
             ("--from-row", "First data row of a range (1-based)"),
@@ -5248,6 +5252,10 @@ fn cmd_edit(args: &[String]) -> i32 {
     let mut row_from: Option<u64> = None;
     let mut row_to: Option<u64> = None;
     let mut columns: Option<Vec<String>> = None;
+    let mut find: Option<String> = None;
+    let mut find_col: Option<Vec<String>> = None;
+    let mut find_nth: u64 = 1;
+    let mut match_case = false;
     let mut order: Option<Vec<csv_splitter_core::sort::SortColumn>> = None;
     let mut count: Option<u64> = None;
     let mut regex = false;
@@ -5360,6 +5368,38 @@ fn cmd_edit(args: &[String]) -> i32 {
                     return 2;
                 }
             },
+            "--find-col" => match p.value("--find-col") {
+                Ok(v) => {
+                    find_col = Some(
+                        v.split(',')
+                            .map(|c| c.trim().to_string())
+                            .filter(|c| !c.is_empty())
+                            .collect(),
+                    )
+                }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--find" => match p.value("--find") {
+                Ok(v) => find = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--nth" => match p
+                .value("--nth")
+                .and_then(|v| v.parse().map_err(|_| "bad --nth".to_string()))
+            {
+                Ok(v) => find_nth = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--match-case" => match_case = true,
             "--columns" => match p.value("--columns") {
                 Ok(v) => {
                     columns = Some(
@@ -5760,12 +5800,50 @@ fn cmd_edit(args: &[String]) -> i32 {
         _ => {}
     }
 
+    // `--find` locates the row, so the caller does not have to copy a number out of a
+    // viewer and risk miscounting. It is resolved once, before the action is chosen.
+    let located_row: Option<u64> = match (&find, row) {
+        (Some(needle), None) => {
+            // `--col` is the column to *write*, not where to look: a search narrowed to
+            // it would find nothing whenever the target column does not contain the
+            // needle. `--find-col` is the narrow-the-search flag.
+            let columns_filter: Option<Vec<String>> = find_col.clone();
+            match csv_splitter_core::workbook::find_row(
+                &input,
+                journal.ops(),
+                needle,
+                columns_filter.as_deref(),
+                match_case,
+                find_nth,
+                delimiter,
+            ) {
+                Ok(Some(at)) => Some(at),
+                Ok(None) => {
+                    eprintln!(
+                        "error: no row contains '{}'{}",
+                        needle,
+                        if find_nth > 1 {
+                            format!(" (match {find_nth})")
+                        } else {
+                            String::new()
+                        }
+                    );
+                    return 1;
+                }
+                Err(e) => return report_failure("edit", e),
+            }
+        }
+        _ => None,
+    };
+
     let op = match action.as_str() {
         "set" => {
             let (Some(column), Some(value)) = (col, value) else {
                 eprintln!("error: set needs --col and --value");
                 return 2;
             };
+            // A row located by `--find` fills in for `--row`; both are 0-based here.
+            let row = row.or(located_row);
             match (row, where_expr) {
                 // Bulk edit: one rule, however many rows it touches.
                 (None, Some(filter)) => {
@@ -5793,6 +5871,7 @@ fn cmd_edit(args: &[String]) -> i32 {
             }
         }
         "delete" => {
+            let row = row.or(located_row);
             let (Some(row), Some(count)) = (row, count) else {
                 eprintln!("error: delete needs --row and --count");
                 return 2;

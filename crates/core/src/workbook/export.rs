@@ -345,6 +345,59 @@ pub fn export_filtered(
     )
 }
 
+/// Find the Nth data row whose cells contain `needle`, applying the journal.
+///
+/// "Look at it, then change it" is one workflow, and copying a row number from a viewer
+/// into an edit is where people miscount. This returns the 0-based logical row so the
+/// caller can hand it straight to an edit.
+pub fn find_row(
+    base: &Path,
+    ops: &[Op],
+    needle: &str,
+    columns: Option<&[String]>,
+    case_sensitive: bool,
+    nth: u64,
+    delimiter: Delimiter,
+) -> io::Result<Option<u64>> {
+    let pager = Pager::open(base, ops, delimiter)?;
+    let total = pager.total();
+    let haystack = if case_sensitive {
+        needle.to_string()
+    } else {
+        needle.to_lowercase()
+    };
+    let mut seen: u64 = 0;
+    let mut at: u64 = 0;
+    while at < total {
+        let window = pager.page(at, 2_000)?;
+        for (offset, row) in window.rows.iter().enumerate() {
+            let hit = row.iter().enumerate().any(|(slot, cell)| {
+                let named = window.columns.get(slot);
+                let allowed = match columns {
+                    None => true,
+                    Some(names) => named.is_some_and(|n| names.iter().any(|want| want == n)),
+                };
+                if !allowed {
+                    return false;
+                }
+                if case_sensitive {
+                    cell.contains(&haystack)
+                } else {
+                    cell.to_lowercase().contains(&haystack)
+                }
+            });
+            if hit {
+                seen += 1;
+                if seen == nth {
+                    return Ok(Some(at + offset as u64));
+                }
+            }
+        }
+        at += 2_000;
+    }
+    Ok(None)
+}
+
 /// Assemble one row and write it, unless a predicate rejects it.
 /// Everything the row writer needs that is the same for every row.
 struct RowSpec<'a> {

@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.3.0] — 2026-11-10
+
+### Added
+
+- **`edit set --find`** (and `edit delete --find`): locate the row by its content instead
+  of copying a number out of a viewer.
+  ```
+  edit set t.csv --find Puebla --col city --value "Puebla, MX"
+  edit set t.csv --find CDMX --nth 2 --col qty --value 999
+  ```
+  `--find-col` narrows the search; `--col` is the column to write, not where to look
+  (an early version confused the two, and a search restricted to the target column
+  finds nothing whenever the needle is elsewhere). Not found exits 1 with the text it
+  looked for.
+
+### Fixed
+
+- **Operation descriptions printed 0-based rows.** `edit set --row 1` reported
+  "set row 0", and `insert`/`delete` said "at 0" — the journal's internal index leaking
+  into text meant for people. Found while using `--find`, whose whole point is that the
+  user does not have to hold a row number in their head.
+
 ## [1.2.0] — 2026-11-10
 
 ### Added

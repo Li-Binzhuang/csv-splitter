@@ -43,8 +43,8 @@ pub use rows::{
 };
 
 pub use export::{
-    export, export_filtered, export_quotes, export_selected, logical_rows, window, ExportOptions,
-    ExportSummary, Pager, Window,
+    export, export_filtered, export_quotes, export_selected, find_row, logical_rows, window,
+    ExportOptions, ExportSummary, Pager, Window,
 };
 
 use std::io::{self, BufReader, BufWriter, Write};
@@ -185,10 +185,14 @@ impl Op {
     pub fn describe(&self) -> String {
         match self {
             Self::SetCell { row, column, value } => {
-                format!("set row {row} '{column}' = '{}'", truncate(value, 40))
+                // Printed for people: rows are 1-based everywhere they look, and the
+                // journal's 0-based index must not leak here.
+                format!("set row {} '{column}' = '{}'", row + 1, truncate(value, 40))
             }
-            Self::InsertRows { at, rows } => format!("insert {} row(s) at {at}", rows.len()),
-            Self::DeleteRows { at, count } => format!("delete {count} row(s) at {at}"),
+            Self::InsertRows { at, rows } => {
+                format!("insert {} row(s) at {}", rows.len(), at + 1)
+            }
+            Self::DeleteRows { at, count } => format!("delete {count} row(s) at {}", at + 1),
             Self::SetWhere {
                 filter,
                 column,
