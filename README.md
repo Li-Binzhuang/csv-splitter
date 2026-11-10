@@ -453,6 +453,15 @@ curl "http://127.0.0.1:8787/meta?path=huge.csv"
 curl "http://127.0.0.1:8787/rows?path=huge.csv&start=18000000&count=20"
 ```
 
+## 清理 / Cleanup
+
+压测会留下大文件，构建会留下 `target/`：
+
+```bash
+scripts/clean.sh          # 清压测残留
+scripts/clean.sh --all    # 连构建产物一起清
+```
+
 ## 错误信息 / Error output
 
 只有两种形状，脚本可以直接按前缀判断：

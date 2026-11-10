@@ -20,6 +20,7 @@ pub mod preview;
 pub mod profile;
 pub mod reshape;
 pub mod search;
+pub mod sheet;
 pub mod sort;
 pub mod split_parallel;
 pub mod splitter;

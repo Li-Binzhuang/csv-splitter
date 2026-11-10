@@ -158,6 +158,7 @@ fn handle(
         "/files" => files(&mut stream, root, &params),
         "/analyze" => analyze(&mut stream, root, &params),
         "/edit" => edit_state(&mut stream, root, &params),
+        "/sheet" => sheet_meta(&mut stream, root, &params),
         "/groupby" => group_by(&mut stream, root, cache, &params),
         "/download" => download(&mut stream, root, &params),
         "/export" => export(&mut stream, root, &params),
@@ -167,7 +168,7 @@ fn handle(
         _ => respond_json(
             &mut stream,
             404,
-            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/edit","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
+            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/sheet","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/edit","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
         ),
     }
 }
@@ -1031,6 +1032,123 @@ fn meta(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -
     }
 }
 
+/// Serve a window of the edited sheet (base + journal).
+fn respond_sheet_window(
+    stream: &mut TcpStream,
+    path: &Path,
+    start: u64,
+    count: u64,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let options = csv_splitter_core::sheet::ReadOptions {
+        delimiter: delimiter(params),
+    };
+    let sheet = match csv_splitter_core::sheet::Sheet::open(path, options) {
+        Ok(s) => s,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let window = match sheet.window(start, count) {
+        Ok(w) => w,
+        Err(e) => {
+            return respond_json(
+                stream,
+                500,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let cols: Vec<String> = window.columns.iter().map(|c| json_str(c)).collect();
+    let rows: Vec<String> = window
+        .rows
+        .iter()
+        .map(|row| {
+            let cells: Vec<String> = row.iter().map(|c| json_str(c)).collect();
+            format!("[{}]", cells.join(","))
+        })
+        .collect();
+    respond_json(
+        stream,
+        200,
+        &format!(
+            r#"{{"start":{start},"total":{},"columns":[{}],"rows":[{}],"edited":true,"operations":{}}}"#,
+            window.total,
+            cols.join(","),
+            rows.join(","),
+            sheet.op_count()
+        ),
+    )
+}
+
+/// Everything a front-end needs to render the sheet chrome (GET /sheet).
+fn sheet_meta(
+    stream: &mut TcpStream,
+    root: &Path,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return bad_path(stream),
+    };
+    let options = csv_splitter_core::sheet::ReadOptions {
+        delimiter: delimiter(params),
+    };
+    let sheet = match csv_splitter_core::sheet::Sheet::open(&path, options) {
+        Ok(s) => s,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let columns = match sheet.columns() {
+        Ok(c) => c,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let rows = sheet.rows().unwrap_or(0);
+    let cols: Vec<String> = columns.iter().map(|c| json_str(c)).collect();
+    let caps: Vec<String> = sheet.capabilities().iter().map(|c| json_str(c)).collect();
+    let ops: Vec<String> = sheet
+        .ops()
+        .iter()
+        .map(|op| {
+            format!(
+                r#"{{"op":{},"description":{}}}"#,
+                json_str(op.tag()),
+                json_str(&op.describe())
+            )
+        })
+        .collect();
+    respond_json(
+        stream,
+        200,
+        &format!(
+            r#"{{"path":{},"columns":[{}],"rows":{},"edited":{},"operations":{},"capabilities":[{}],"journal":{},"ops":[{}]}}"#,
+            json_str(&params.get("path").cloned().unwrap_or_default()),
+            cols.join(","),
+            rows,
+            !sheet.is_pristine(),
+            sheet.op_count(),
+            caps.join(","),
+            json_str(&sheet.journal_path().to_string_lossy()),
+            ops.join(",")
+        ),
+    )
+}
+
 fn rows(
     stream: &mut TcpStream,
     root: &Path,
@@ -1090,6 +1208,13 @@ fn rows(
             },
             params,
         );
+    }
+
+    // A file with a journal is a sheet: the window must show the edits, not the
+    // raw bytes. This is the same code path the CLI uses, so the two cannot
+    // disagree about what a row means.
+    if csv_splitter_core::sheet::has_edits(&path) {
+        return respond_sheet_window(stream, &path, start, count, params);
     }
 
     let mut viewer = match WindowViewer::open(&path, delimiter(params)) {

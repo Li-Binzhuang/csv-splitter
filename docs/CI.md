@@ -61,3 +61,20 @@ cli 减半主要来自 `liblibduckdb_sys.rlib` 从 1.6 GB 降到 **346 MB**—�
 第三行是关键验证：**只要 `Cargo.lock` 不动，下一次推送就是 3.8 分钟**。
 这也解释了为什么第一条规则（别随手升版本号）比任何构建技巧都重要——
 以前每轮都升版本，等于每轮都吃一次 17–29 分钟的冷启动。
+
+## 本地磁盘 / Local disk
+
+压测文件和构建产物是这台机器上最大的两块占用，前者曾经累积到 8 GB，后者到 72 GB。
+
+```bash
+scripts/clean.sh          # 清掉压测残留（几秒）
+scripts/clean.sh --all    # 连 target/ 一起清（下次构建要重来，约 2 分钟）
+```
+
+`target/` 之所以能到几十 GB：DuckDB 是 bundled 编译的静态库，每个 profile
+各存一份，再加上默认的 DWARF 调试信息。`Cargo.toml` 里把 `[profile.dev]` 和
+`[profile.test]` 的 `debug` 关掉了，同样的测试全量运行后 `target/` 是 **3 GB**
+而不是 72 GB。
+
+写压测脚本时用 `TempDir`（测试里已经在用），手工造的大文件用完立刻 `rm -rf`。
+

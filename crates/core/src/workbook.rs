@@ -1458,7 +1458,7 @@ pub fn window(
                     );
                     rows.push(shape(
                         &columns,
-                        &base_columns,
+                        &layout,
                         &cells,
                         edits,
                         RowId::Base(physical + i as u64),
@@ -1474,7 +1474,7 @@ pub fn window(
                 for cells in &virtual_rows {
                     rows.push(shape(
                         &columns,
-                        &base_columns,
+                        &layout,
                         cells,
                         edits,
                         RowId::Virtual(id),
@@ -1495,18 +1495,18 @@ pub fn window(
 /// Project a base row (or an inserted one) onto the journal's column layout.
 fn shape(
     columns: &[String],
-    base_columns: &[String],
+    layout: &[(String, Option<usize>)],
     base_cells: &[String],
     edits: &CellEdits,
     id: RowId,
     formulas: &[Option<&Formula>],
 ) -> Vec<String> {
     let mut out = Vec::with_capacity(columns.len());
-    for column in columns {
-        let raw = base_columns
-            .iter()
-            .position(|b| b == column)
-            .and_then(|idx| base_cells.get(idx))
+    for (idx, column) in columns.iter().enumerate() {
+        let raw = layout
+            .get(idx)
+            .and_then(|(_, base_idx)| *base_idx)
+            .and_then(|base_idx| base_cells.get(base_idx))
             .cloned()
             .unwrap_or_default();
         let value = match edits.cell(id, column) {

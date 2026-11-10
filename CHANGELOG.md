@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.39.0] — 2026-11-10
+
+### Added
+
+- **A `Sheet` abstraction** (`crates/core/src/sheet.rs`): one CSV plus its journal,
+  with `columns()`, `rows()`, `window()`, `apply()`, `undo()`, `export()`,
+  `formulas()` and `capabilities()`. Editing, viewing and exporting now go through
+  the same type instead of each re-deriving the model.
+- `GET /sheet` returns the sheet's columns, logical row count, operation list and
+  a **capability list**, so a front-end can decide which controls to show without
+  guessing at what the server supports.
+- `/rows` applies the journal when the file has edits: the viewer shows the edited
+  table, not the raw bytes, and the response reports `edited` + `operations`.
+- `scripts/clean.sh` and `[profile.dev] debug = 0`: stress fixtures and build
+  output had grown to ~83 GB on this machine. Fixtures are removed by the script;
+  dropping debug info took `target/` from 72 GB to 3 GB for a full test run.
+
+### Fixed
+
+- **Renamed columns came out blank in windows** (the export path was fixed in
+  0.38.0, the `/rows` path was still matching by the original header). Both paths
+  now share `column_layout`, and a `Sheet` test covers it.
+
 ## [0.38.0] — 2026-11-10
 
 ### Added

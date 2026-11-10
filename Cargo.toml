@@ -3,7 +3,7 @@ members = ["crates/core", "crates/gui", "crates/cli"]
 resolver = "2"
 
 [workspace.package]
-version = "0.38.0"
+version = "0.39.0"
 edition = "2021"
 
 [workspace.dependencies]
@@ -24,3 +24,12 @@ rand = "0.8"
 [profile.release]
 opt-level = 3
 lto = true
+
+# Debug info is most of the size of target/: a full rebuild with it produced
+# ~70 GB of artifacts for this workspace (DuckDB is bundled). Tests and
+# benchmarks do not need DWARF, so drop it.
+[profile.dev]
+debug = 0
+
+[profile.test]
+debug = 0
