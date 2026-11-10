@@ -682,6 +682,92 @@ fn edit_apply(
                 to: to.clone(),
             }
         }
+        "copy" => {
+            let (Some(from), Some(to)) = (params.get("from"), params.get("to")) else {
+                return bad_request(stream, "copy needs from and to", "from", "from=A1:B2&to=B3");
+            };
+            let columns = match workbook::column_layout(
+                journal.ops(),
+                &workbook::base_header(&path, delimiter(params))?,
+            ) {
+                Ok(layout) => layout.into_iter().map(|(name, _)| name).collect::<Vec<_>>(),
+                Err(e) => {
+                    return respond_json(
+                        stream,
+                        422,
+                        &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                    )
+                }
+            };
+            let (start_row, start_col, end_row, end_col) =
+                match workbook::parse_a1_range(from, &columns) {
+                    Ok(r) => r,
+                    Err(e) => {
+                        return respond_json(
+                            stream,
+                            400,
+                            &format!(r#"{{"error":{}}}"#, json_str(&e)),
+                        )
+                    }
+                };
+            let (target_row, target_col) = match workbook::parse_a1(to, &columns) {
+                Ok(r) => r,
+                Err(e) => {
+                    return respond_json(stream, 400, &format!(r#"{{"error":{}}}"#, json_str(&e)))
+                }
+            };
+            let width = end_col - start_col + 1;
+            let height = (end_row - start_row + 1) as usize;
+            if width * height > workbook::MAX_BLOCK_CELLS {
+                return respond_json(
+                    stream,
+                    400,
+                    r#"{"error":"the block is too large to record as a paste","parameter":"from","hint":"use action=set with where= for bulk changes"}"#,
+                );
+            }
+            if target_col + width > columns.len() {
+                return respond_json(
+                    stream,
+                    400,
+                    r#"{"error":"the pasted block does not fit","parameter":"to","hint":"move the target left or widen the sheet"}"#,
+                );
+            }
+            let window = match workbook::window(
+                &path,
+                journal.ops(),
+                start_row,
+                height as u64,
+                delimiter(params),
+            ) {
+                Ok(w) => w,
+                Err(e) => {
+                    return respond_json(
+                        stream,
+                        422,
+                        &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                    )
+                }
+            };
+            if window.rows.len() < height {
+                return respond_json(
+                    stream,
+                    400,
+                    r#"{"error":"the source range is taller than the sheet","parameter":"from","hint":"check the range against /sheet"}"#,
+                );
+            }
+            let mut block = Vec::with_capacity(height);
+            for row in &window.rows {
+                let cells: Vec<String> = (0..width)
+                    .map(|offset| row.get(start_col + offset).cloned().unwrap_or_default())
+                    .collect();
+                block.push(cells);
+            }
+            Op::PasteBlock {
+                row: target_row,
+                column: columns[target_col].clone(),
+                rows: block,
+            }
+        }
         "insert-column" | "insertcolumn" => {
             let Some(name) = params.get("name").filter(|v| !v.is_empty()) else {
                 return bad_request(

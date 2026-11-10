@@ -149,12 +149,32 @@ impl Formula {
     /// Evaluate against one row.
     /// Evaluate against one row, without cross-sheet references.
     pub fn eval(&self, row: &HashMap<String, String>) -> Value {
-        eval(&self.expr, row, &Refs::default())
+        let refs = Refs::default();
+        eval(
+            &self.expr,
+            &Ctx {
+                cells: row,
+                refs: &refs,
+                row: 0,
+            },
+        )
     }
 
     /// Evaluate against one row, resolving `ref(...)` against loaded sheets.
     pub fn eval_with(&self, row: &HashMap<String, String>, refs: &Refs) -> Value {
-        eval(&self.expr, row, refs)
+        self.eval_at(row, refs, 0)
+    }
+
+    /// Evaluate for a specific row number, which `row()` reports.
+    pub fn eval_at(&self, row: &HashMap<String, String>, refs: &Refs, row_number: u64) -> Value {
+        eval(
+            &self.expr,
+            &Ctx {
+                cells: row,
+                refs,
+                row: row_number,
+            },
+        )
     }
 
     /// The `ref(...)` calls this formula makes, so they can be loaded up front.
@@ -490,11 +510,20 @@ impl Parser {
 }
 
 /// Evaluate one expression against a row.
-pub(crate) fn eval(expr: &Expr, row: &HashMap<String, String>, refs: &Refs) -> Value {
+/// Everything an expression may look at while it is evaluated for one row.
+pub(crate) struct Ctx<'a> {
+    pub cells: &'a HashMap<String, String>,
+    pub refs: &'a Refs,
+    /// 0-based logical row; `row()` reports it as the 1-based number a spreadsheet
+    /// would show, because that is what people type (`row() = 1` for the first row).
+    pub row: u64,
+}
+
+pub(crate) fn eval(expr: &Expr, ctx: &Ctx<'_>) -> Value {
     match expr {
         Expr::Number(n) => Value::Number(*n),
         Expr::Text(t) => Value::Text(t.clone()),
-        Expr::Column(name) => match row.get(name) {
+        Expr::Column(name) => match ctx.cells.get(name) {
             None => Value::Error,
             Some(raw) => match raw.trim().parse::<f64>() {
                 Ok(n) if n.is_finite() => Value::Number(n),
@@ -502,14 +531,14 @@ pub(crate) fn eval(expr: &Expr, row: &HashMap<String, String>, refs: &Refs) -> V
                 _ => Value::Text(raw.clone()),
             },
         },
-        Expr::Negate(x) => match eval(x, row, refs) {
+        Expr::Negate(x) => match eval(x, ctx) {
             Value::Number(n) => Value::Number(-n),
             _ => Value::Error,
         },
-        Expr::Not(x) => Value::Bool(!truthy(&eval(x, row, refs))),
+        Expr::Not(x) => Value::Bool(!truthy(&eval(x, ctx))),
         Expr::Binary(op, l, r) => {
-            let a = eval(l, row, refs);
-            let b = eval(r, row, refs);
+            let a = eval(l, ctx);
+            let b = eval(r, ctx);
             match op {
                 '&' => Value::Text(format!("{}{}", a.text(), b.text())),
                 '+' | '-' | '*' | '/' | '%' => {
@@ -541,8 +570,8 @@ pub(crate) fn eval(expr: &Expr, row: &HashMap<String, String>, refs: &Refs) -> V
             }
         }
         Expr::Compare(op, l, r) => {
-            let a = eval(l, row, refs);
-            let b = eval(r, row, refs);
+            let a = eval(l, ctx);
+            let b = eval(r, ctx);
             let ordering = match (a.number(), b.number()) {
                 (Some(x), Some(y)) => x.partial_cmp(&y),
                 _ => Some(a.text().cmp(&b.text())),
@@ -560,7 +589,7 @@ pub(crate) fn eval(expr: &Expr, row: &HashMap<String, String>, refs: &Refs) -> V
                 _ => false,
             })
         }
-        Expr::Call(name, args) => functions::call(name, args, row, refs),
+        Expr::Call(name, args) => functions::call(name, args, ctx),
     }
 }
 
@@ -751,6 +780,31 @@ mod tests {
         assert_eq!(eval_str("mod(7, 3)", &[]), "1");
         assert_eq!(eval_str("mod(7, 0)", &[]), "#VALUE!");
         assert_eq!(eval_str("iferror(mod(7,0), 0)", &[]), "0");
+    }
+
+    #[test]
+    fn row_numbers_are_one_based_like_a_spreadsheet() {
+        let formula = Formula::parse("row()").unwrap();
+        let row = row(&[]);
+        assert_eq!(formula.eval_with(&row, &Refs::default()).render(), "1");
+        assert_eq!(
+            formula.eval_at(&row, &Refs::default(), 41).render(),
+            "42",
+            "0-based internally, 1-based to the user"
+        );
+    }
+
+    #[test]
+    fn a_sequence_column_can_be_built_from_row() {
+        // `seq` = the row number; `odd` = parity flag. Both are per-row values with
+        // no per-row storage.
+        let seq = Formula::parse("[id] & \"-\" & row()").unwrap();
+        let odd = Formula::parse("if(row() % 2 = 1, \"odd\", \"even\")").unwrap();
+        let mut cells = HashMap::new();
+        cells.insert("id".to_string(), "A".to_string());
+        assert_eq!(seq.eval_at(&cells, &Refs::default(), 0).render(), "A-1");
+        assert_eq!(odd.eval_at(&cells, &Refs::default(), 0).render(), "odd");
+        assert_eq!(odd.eval_at(&cells, &Refs::default(), 1).render(), "even");
     }
 
     #[test]

@@ -705,7 +705,7 @@ $ csv-splitter edit export orders.csv -o fixed.csv
 | 删列 / 改名 | `edit drop --name C` / `edit rename --from A --to B` | `action=drop` / `rename` |
 | **插入列（常量）** | `edit insert-column --name N --value V [--after C]` | `action=insert-column&name=&value=&after=` |
 | **插入列（公式）** | `edit insert-column --name N --formula E [--after C]` | `action=insert-column&name=&formula=&after=` |
-| **区域复制** | `edit copy --from "A2:C5" --to "B10"` | — |
+| **区域复制** | `edit copy --from "A2:C5" --to "B10"` | `action=copy&from=&to=` |
 | 撤销 | `edit undo` | `action=undo` |
 | 查看日志 | `edit status` | `GET /edit` |
 | 物化输出 | `edit export [-o F]` | `POST /edit?action=export&out=` |
@@ -733,6 +733,7 @@ id,city,amount,qty,total
 | 文本 | `&` 拼接、`left` `right` `mid` `len` `upper` `lower` `trim` `replace` `concat` |
 | 数字 | `round(x[,位数])` `abs` `floor` `ceil` `int` `sqrt` `mod` `min` `max` |
 | 日期 | `year(d)` `month(d)` `day(d)` —— 取 ISO 前缀（`2024-03-15` 和带时间的都行） |
+| 行号 | `row()` —— 第 1 行是 1，用来做序号 / 奇偶交替 / 交替配色 |
 | 列引用 | `amount`，带空格或中文用 `[客户编号]` |
 | 跨表引用 | `ref("customers.csv", "cust_no", "name")` —— 本行的 cust_no 去那张表查 name |
 | 字符串 | 双引号或单引号：`"缺货"` |

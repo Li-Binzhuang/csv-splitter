@@ -3528,54 +3528,6 @@ fn warn_pending_edits(input: &std::path::Path) {
     }
 }
 
-/// Parse an A1-style range: `A2:C5` → (start_row, start_col, end_row, end_col).
-///
-/// Rows are 1-based and columns are letters, like a spreadsheet. Both halves are
-/// optional only in the sense that a single cell (`B3`) is a 1×1 range.
-fn parse_a1(range: &str, columns: &[String]) -> Result<(u64, usize, u64, usize), String> {
-    let (start, end) = match range.split_once(':') {
-        Some((a, b)) => (a.trim(), b.trim()),
-        None => (range.trim(), range.trim()),
-    };
-    let parse_cell = |text: &str| -> Result<(u64, usize), String> {
-        let letters: String = text
-            .chars()
-            .take_while(|c| c.is_ascii_alphabetic())
-            .collect();
-        let digits: String = text
-            .chars()
-            .skip_while(|c| c.is_ascii_alphabetic())
-            .collect();
-        if letters.is_empty() || digits.is_empty() {
-            return Err(format!("'{text}' is not a cell like B3"));
-        }
-        let mut column = 0usize;
-        for ch in letters.to_ascii_uppercase().chars() {
-            column = column * 26 + (ch as usize - 'A' as usize + 1);
-        }
-        let column = column.saturating_sub(1);
-        if column >= columns.len() {
-            return Err(format!(
-                "'{text}' is beyond the last column ({} columns)",
-                columns.len()
-            ));
-        }
-        let row: u64 = digits
-            .parse()
-            .map_err(|_| format!("'{text}' has no row number"))?;
-        if row == 0 {
-            return Err("rows are 1-based; row 0 does not exist".to_string());
-        }
-        Ok((row - 1, column))
-    };
-    let (start_row, start_col) = parse_cell(start)?;
-    let (end_row, end_col) = parse_cell(end)?;
-    if end_row < start_row || end_col < start_col {
-        return Err(format!("'{range}' ends before it starts"));
-    }
-    Ok((start_row, start_col, end_row, end_col))
-}
-
 fn cmd_edit(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
     let mut action: Option<String> = None;
@@ -3742,15 +3694,16 @@ fn cmd_edit(args: &[String]) -> i32 {
             Ok(c) => c,
             Err(e) => return report_failure("edit", e),
         };
-        let (start_row, start_col, end_row, end_col) = match parse_a1(&from, &columns) {
-            Ok(r) => r,
-            Err(e) => {
-                eprintln!("error: {e}");
-                return 2;
-            }
-        };
-        let (target_row, target_col) = match parse_a1(&to, &columns) {
-            Ok((r, c, _, _)) => (r, c),
+        let (start_row, start_col, end_row, end_col) =
+            match csv_splitter_core::workbook::parse_a1_range(&from, &columns) {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            };
+        let (target_row, target_col) = match csv_splitter_core::workbook::parse_a1(&to, &columns) {
+            Ok((r, c)) => (r, c),
             Err(e) => {
                 eprintln!("error: {e}");
                 return 2;

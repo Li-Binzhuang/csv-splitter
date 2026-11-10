@@ -2047,3 +2047,49 @@ fn copy_pastes_a_block_by_range() {
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(stderr.contains("beyond the last column"), "{stderr}");
 }
+
+/// `row()` makes per-row values possible without storing anything.
+#[test]
+fn row_function_builds_a_sequence() {
+    let dir = TempDir::new("rowfn");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "order,amount\nA,10\nB,20\nC,30\n").unwrap();
+
+    for (name, expr) in [
+        ("seq", r#"order & "-" & row()"#),
+        ("parity", r#"if(row() % 2 = 1, "odd", "even")"#),
+    ] {
+        let status = Command::new(bin())
+            .args([
+                "edit",
+                "formula",
+                input.to_str().unwrap(),
+                "--name",
+                name,
+                "--value",
+                expr,
+            ])
+            .status()
+            .unwrap();
+        assert_eq!(status.code(), Some(0), "{name}");
+    }
+
+    let out = dir.join("out.csv");
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            input.to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&out).unwrap();
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines[0], "order,amount,seq,parity");
+    assert_eq!(lines[1], "A,10,A-1,odd");
+    assert_eq!(lines[2], "B,20,B-2,even");
+    assert_eq!(lines[3], "C,30,C-3,odd");
+}

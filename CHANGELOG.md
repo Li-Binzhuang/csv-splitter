@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.53.0] — 2026-11-10
+
+### Added
+
+- **`row()` in formulas**: the 1-based row number, so per-row values no longer need
+  per-row storage. `order & "-" & row()` builds a sequence column;
+  `if(row() % 2 = 1, "odd", "even")` alternates; both cost one evaluation per row.
+  - Evaluation now carries a small context (cells, references, row number) instead
+    of two loose parameters, which is what made adding row awareness mechanical
+    rather than a rewrite.
+- **`POST /edit?action=copy&from=A1:B2&to=B3`**: the block-copy CLI capability, now
+  reachable from the API, sharing the same range parser
+  (`workbook::parse_a1_range`) so the two cannot disagree about what `A1:B2` means.
+
 ## [0.52.0] — 2026-11-10
 
 ### Added

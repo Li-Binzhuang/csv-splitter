@@ -1088,3 +1088,26 @@ fn insert_column_endpoint_places_a_constant_column() {
     );
     assert_eq!(status, 400, "{body}");
 }
+
+#[test]
+fn copy_endpoint_pastes_a_named_range() {
+    let dir = TempDir::new("copyapi");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,CDMX\n2,Puebla\n3,X\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=copy&from=A1:B2&to=A3",
+    );
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("paste"), "{body}");
+
+    let (_, body) = get(&server.addr, "/rows?path=t.csv");
+    assert!(body.contains(r#"["1","CDMX"]"#), "{body}");
+    assert!(body.contains(r#"["2","Puebla"]"#), "{body}");
+
+    // A bad range names the parameter that was wrong.
+    let (status, body) = post(&server.addr, "/edit?path=t.csv&action=copy&from=Z9&to=A1");
+    assert_eq!(status, 400, "{body}");
+    assert!(body.contains("beyond the last column"), "{body}");
+}

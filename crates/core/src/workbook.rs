@@ -992,13 +992,68 @@ fn eval_formula(
     columns: &[String],
     cells: &[String],
     refs: &crate::formula::Refs,
+    row_number: u64,
 ) -> String {
     let row: HashMap<String, String> = columns
         .iter()
         .zip(cells.iter())
         .map(|(c, v)| (c.clone(), v.clone()))
         .collect();
-    formula.eval_with(&row, refs).render()
+    formula.eval_at(&row, refs, row_number).render()
+}
+
+/// Parse an A1-style reference: `B3`, `AA10`.
+///
+/// Rows are 1-based and columns are letters, which is how people write them; the
+/// result is 0-based on both axes so it can index the sheet directly.
+pub fn parse_a1(cell: &str, columns: &[String]) -> Result<(u64, usize), String> {
+    let text = cell.trim();
+    let letters: String = text
+        .chars()
+        .take_while(|c| c.is_ascii_alphabetic())
+        .collect();
+    let digits: String = text
+        .chars()
+        .skip_while(|c| c.is_ascii_alphabetic())
+        .collect();
+    if letters.is_empty() || digits.is_empty() {
+        return Err(format!("'{text}' is not a cell like B3"));
+    }
+    let mut column = 0usize;
+    for ch in letters.to_ascii_uppercase().chars() {
+        column = column * 26 + (ch as usize - 'A' as usize + 1);
+    }
+    let column = column.saturating_sub(1);
+    if column >= columns.len() {
+        return Err(format!(
+            "'{text}' is beyond the last column ({} columns)",
+            columns.len()
+        ));
+    }
+    let row: u64 = digits
+        .parse()
+        .map_err(|_| format!("'{text}' has no row number"))?;
+    if row == 0 {
+        return Err("rows are 1-based; row 0 does not exist".to_string());
+    }
+    Ok((row - 1, column))
+}
+
+/// Parse a range `A2:C5` (or a single cell) into a rectangle.
+pub fn parse_a1_range(range: &str, columns: &[String]) -> Result<(u64, usize, u64, usize), String> {
+    let (start, end) = match range.split_once(':') {
+        Some((a, b)) => (a.trim(), b.trim()),
+        None => {
+            let (row, column) = parse_a1(range, columns)?;
+            return Ok((row, column, row, column));
+        }
+    };
+    let (start_row, start_col) = parse_a1(start, columns)?;
+    let (end_row, end_col) = parse_a1(end, columns)?;
+    if end_row < start_row || end_col < start_col {
+        return Err(format!("'{range}' ends before it starts"));
+    }
+    Ok((start_row, start_col, end_row, end_col))
 }
 
 /// How each output column gets its value.
@@ -1040,7 +1095,13 @@ impl ColumnPlan {
     }
 
     /// Fill derived columns into a finished row.
-    pub fn apply(&self, columns: &[String], cells: &mut [String], refs: &crate::formula::Refs) {
+    pub fn apply(
+        &self,
+        columns: &[String],
+        cells: &mut [String],
+        refs: &crate::formula::Refs,
+        row_number: u64,
+    ) {
         for (index, literal) in self.literals.iter().enumerate() {
             if let Some(value) = literal {
                 if let Some(cell) = cells.get_mut(index) {
@@ -1050,7 +1111,7 @@ impl ColumnPlan {
         }
         for (index, formula) in self.formulas.iter().enumerate() {
             if let Some(f) = formula {
-                let rendered = eval_formula(f, columns, cells, refs);
+                let rendered = eval_formula(f, columns, cells, refs, row_number);
                 if let Some(cell) = cells.get_mut(index) {
                     *cell = rendered;
                 }
@@ -1263,6 +1324,7 @@ pub fn export(
                     &cells,
                     edits,
                     RowId::Virtual(id),
+                    logical,
                     &plan,
                     refs,
                     delim,
@@ -1293,6 +1355,7 @@ pub fn export(
                     &cells,
                     edits,
                     RowId::Base(target),
+                    logical,
                     &plan,
                     refs,
                     delim,
@@ -1322,6 +1385,7 @@ fn emit(
     base_cells: &[String],
     edits: &CellEdits,
     id: RowId,
+    row_number: u64,
     plan: &ColumnPlan,
     refs: &crate::formula::Refs,
     delim: u8,
@@ -1343,7 +1407,7 @@ fn emit(
 
     // Derived columns are evaluated last, against the finished row, so a formula
     // may read a value that was just edited.
-    plan.apply(columns, &mut cells, refs);
+    plan.apply(columns, &mut cells, refs, row_number);
     let refs: Vec<&str> = cells.iter().map(String::as_str).collect();
     out.write_all(join_csv_line(&refs, delim).as_bytes())
 }
@@ -2023,10 +2087,21 @@ pub fn window(
     let refs = &compiled.refs;
     let plan = ColumnPlan::build(ops, &columns, &compiled);
 
+    let row_shape = RowShape {
+        columns: &columns,
+        layout: &layout,
+        edits,
+        plan: &plan,
+        refs,
+    };
     let mut rows = Vec::new();
     for run in map.physical_runs(start, count) {
         match run {
-            Run::Base { physical, len, .. } => {
+            Run::Base {
+                physical,
+                len,
+                logical,
+            } => {
                 let records = index.read_rows(base, physical, len)?;
                 for (i, record) in records.iter().enumerate() {
                     let cells = parse_csv_record(
@@ -2034,30 +2109,24 @@ pub fn window(
                         delim,
                     );
                     rows.push(shape(
-                        &columns,
-                        &layout,
+                        &row_shape,
                         &cells,
-                        edits,
                         RowId::Base(physical + i as u64),
-                        &plan,
-                        refs,
+                        logical + i as u64,
                     ));
                 }
             }
             Run::Virtual {
                 id,
+                logical,
                 rows: virtual_rows,
-                ..
             } => {
-                for cells in &virtual_rows {
+                for (i, cells) in virtual_rows.iter().enumerate() {
                     rows.push(shape(
-                        &columns,
-                        &layout,
+                        &row_shape,
                         cells,
-                        edits,
                         RowId::Virtual(id),
-                        &plan,
-                        refs,
+                        logical + i as u64,
                     ));
                 }
             }
@@ -2072,15 +2141,24 @@ pub fn window(
 }
 
 /// Project a base row (or an inserted one) onto the journal's column layout.
-fn shape(
-    columns: &[String],
-    layout: &[(String, Option<usize>)],
-    base_cells: &[String],
-    edits: &CellEdits,
-    id: RowId,
-    plan: &ColumnPlan,
-    refs: &crate::formula::Refs,
-) -> Vec<String> {
+/// What every row needs to be assembled: the same for all rows except the row
+/// identity itself.
+struct RowShape<'a> {
+    columns: &'a [String],
+    layout: &'a [(String, Option<usize>)],
+    edits: &'a CellEdits,
+    plan: &'a ColumnPlan,
+    refs: &'a crate::formula::Refs,
+}
+
+fn shape(shape: &RowShape<'_>, base_cells: &[String], id: RowId, row_number: u64) -> Vec<String> {
+    let RowShape {
+        columns,
+        layout,
+        edits,
+        plan,
+        refs,
+    } = shape;
     let mut out = Vec::with_capacity(columns.len());
     for (idx, column) in columns.iter().enumerate() {
         let raw = layout
@@ -2097,6 +2175,6 @@ fn shape(
     }
     edits.apply_blocks(columns, id, &mut out);
     edits.apply_rules(columns, &mut out);
-    plan.apply(columns, &mut out, refs);
+    plan.apply(columns, &mut out, refs, row_number);
     out
 }
