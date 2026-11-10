@@ -1,6 +1,7 @@
 # 交付说明 / Handover
 
-**版本 2.0.0**，80 轮开发后的状态：这个软件是什么、能做什么、边界在哪、怎么接着做。
+**版本 3.13.0**：一个 CLI + HTTP 后端（**没有 GUI**）。这份文档说明它是什么、能给前端
+什么、边界在哪、怎么接着做。验收对照见 [`ACCEPTANCE.md`](ACCEPTANCE.md)。
 
 ---
 
@@ -16,6 +17,18 @@ csv-splitter edit set orders.csv --row 3 --col city --value CDMX
 csv-splitter edit formula orders.csv --name vat --value "amount*0.16"
 csv-splitter edit export orders.csv -o clean.csv
 ```
+
+## 给前端的三个接口 / the framework
+
+前端只需要问三件事，这三件都有库、CLI、HTTP 三层：
+
+| 问题 | 库 | CLI | HTTP |
+|---|---|---|---|
+| 有哪些列、这一列在不在 | `sheet::schema()` / `column_index()` | `schema --has`（存在 0 / 不存在 1）| `GET /columns`（全列）+ `?name=`（**2.8 ms** 于 782 列文件）|
+| 这一屏是什么 | `Pager::page` + `Window.keys` | `view --columns` | `GET /rows`（1-based、深偏移**常数时间**、`rowKeys`、`count/requested/limit`）|
+| 我能安全地改吗 | `expect` 比较后再写 | `edit set --expect` | `POST /edit?action=set&expect=` → 不符 **409** 带 `actual`/`expected` |
+
+细节见 [`INTEGRATION.md`](INTEGRATION.md)（含错误码速查与并发约定），字段含义见 [`API.md`](API.md)。
 
 ## 对 Excel / WPS 的覆盖
 
@@ -79,6 +92,9 @@ API：`/rows` 首屏 66 ms（含建索引），之后 **6–7 ms**，任意偏�
    `lookup` 读**文件**而非编辑后的表；`groupby`/`pivot`/`chart` 可加 `--apply-edits`。
 5. `dedupe` 内存随不同键数增长；`sort`/`partition` 随 `--buf-mb` 增长。
 6. 内置查看页未在真实浏览器里验证过；Windows 未测。
+7. 查询有 **30 秒**上限（引擎中断），不是无限等待；`/rows?where=` 在 2.5 GB 上首屏约 8–9 秒。
+8. 并发：写入有文件锁（不会丢编辑），但**两次编辑不是事务**；`expect=` 只挡「你读完之后被改」，
+   `stamp` 是变更探测器而不是版本号。
 
 ## 怎么接着做
 
@@ -88,7 +104,7 @@ API：`/rows` 首屏 66 ms（含建索引），之后 **6–7 ms**，任意偏�
 | 加一条命令 | ARCHITECTURE 的「改一处要看哪里」：帮助表、README、CAPABILITIES、`scripts/regress.sh` —— **四处都有测试盯着** |
 | 加一个 API 端点 | `docs/API.md`、`/sheet` 的 capabilities、`EDIT_ACTIONS` |
 | 改内存行为 | 用 `/usr/bin/time -l` 复测，数字写进 CAPABILITIES |
-| 不写代码、只验证 | `scripts/dev.sh gate`（fmt+clippy+454 测试）、`smoke.sh`（43 步）、`regress.sh`（33 项）、`bench.sh` |
+| 不写代码、只验证 | `scripts/dev.sh gate`（fmt+clippy+**494 测试**，含 core 的 sql 特性）、`smoke.sh`（43 步）、`regress.sh`（39 项）、`backend-smoke.sh`（**44 项**，起真服务）、`bench.sh` |
 
 **日常开发节奏**（用户明确要求）：
 `scripts/dev.sh check`（约 3 秒）→ 相关单测（约 5 秒）→ 攒够 1–3 个提交跑一次
@@ -121,7 +137,7 @@ crates/core/   引擎：编辑模型、公式、查询、拆分、格式（40 �
 crates/cli/    30 条命令 + HTTP API + 内置查看页
 crates/cli/    命令行 + HTTP 后端（前端由别的项目接）
 docs/          README 之外的 7 份文档，6 条一致性测试链
-scripts/       dev.sh / smoke.sh / regress.sh / bench.sh / clean.sh
+scripts/       dev.sh / smoke.sh / regress.sh / backend-smoke.sh / bench.sh / clean.sh
 ```
 
 ## 一句话交接

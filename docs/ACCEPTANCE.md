@@ -21,7 +21,7 @@
 | CLI | `schema FILE`、`schema --has COL`（存在 0 / 不存在 1）、`--json`、`--sample`、`--diff`、`--require` |
 | HTTP | `GET /columns`、`/columns?name=`、`?kind=`、`?limit=`；`/schema` 为别名 |
 | 测试 | `schema_lists_columns_and_answers_existence`、`schema_require_asserts_a_column_set`、`schema_diff_reports_column_set_changes`、`columns_filter_and_limit`、`columns_and_compare_and_set` |
-| 782 列不被截断 | `backend-smoke.sh` 断言 `"count":6`；真实 2.5 GB 文件实测返回 782 条、107 KB |
+| 782 列不被截断 | `backend-smoke.sh` 断言 `"count":6`；真实 2.5 GB 文件实测返回 **782 条、107 KB、0.67 s** |
 
 ## 3. 行列交前端
 
@@ -31,7 +31,7 @@
 | CLI | `view --columns`、`preview --columns` |
 | HTTP | `GET /rows`：`start/count/requested/limit/total/pastEnd/totalExact/columns/frozenColumns/rows/rowKeys`；`columns=`、`start-col=`、`count-cols=`、`keys=`、`order=`、`where=` |
 | 测试 | `the_row_cap_is_stated_in_the_response`、`window_modifiers_compose`、`keys_compose_with_projection_and_paging`、`cell_keys_and_horizontal_paging`、`an_empty_page_says_why_it_is_empty`、`a_filtered_page_says_when_its_total_is_exact` |
-| 深偏移常数时间 | 真实 2.5 GB 文件：第 680 000 行 **2.0 ms**（全列 87 KB）、3 列 **0.9 ms**（651 字节）|
+| 深偏移常数时间 | 真实 2.5 GB 文件：第 680 000 行 **2.4 ms**（全列 88 KB）、3 列 **0.9 ms**（667 字节）|
 
 ## 4. 写入约束
 
@@ -52,7 +52,22 @@
 | 文档引文 ↔ 二进制实际输出 | `troubleshooting_quotes_are_real` |
 | 原文件不可变 | `no_command_modifies_the_input_file`；2.5 GB 文件 sha256 在全部操作后不变 |
 | 大文件实测 | `docs/CAPABILITIES.md` 的实测表：index 0.31 s / 15.9 MB / 5.4 KB；导出 2.5 GB 从 40.7 s → **2.2 s**（字节相同）|
-| 一套可跑的门 | `scripts/dev.sh gate`、`smoke.sh`（43）、`regress.sh`（40）、`backend-smoke.sh`（44）|
+| 文档 → 代码（反向） | `every_documented_flag_exists`、`every_documented_route_is_served`：文档里提到的每个 flag/端点都必须真实存在（这两条抓到过 `serve --port` 不存在）|
+| 状态码契约 | `failure_kinds_have_one_status_code_each`：17 种失败各自的码 |
+| 一套可跑的门 | `scripts/dev.sh gate`（**494 测试**）、`smoke.sh`（43）、`regress.sh`（39）、`backend-smoke.sh`（**44**）|
+
+## 框架自身的契约
+
+| 契约 | 钉住它的东西 |
+|---|---|
+| 状态码一类一码 | `failure_kinds_have_one_status_code_each`（17 例）|
+| 窗口上限 2000 三字段一致 | `the_row_cap_is_stated_in_the_response` + `backend-smoke.sh` |
+| 过滤页 `total` 是下界时明说 | `a_filtered_page_says_when_its_total_is_exact` |
+| 空页面区分「空文件 / 翻过头」 | `an_empty_page_says_why_it_is_empty` |
+| 过滤页不给会指错行的 `rowKeys` | `a_filtered_page_says_when_its_total_is_exact` |
+| 变更探测器（`stamp`）会动 | `the_sheet_carries_a_stamp_that_moves_after_a_write` |
+| 查询超时会真的中断 | `a_zero_timeout_interrupts_the_engine_and_says_so` |
+| 文档不撒谎 | `every_documented_flag_exists`、`every_documented_route_is_served` |
 
 ## 怎么复现
 
@@ -62,6 +77,10 @@ bash scripts/dev.sh gate            # 全量测试（含 core 的 sql 特性）
 bash scripts/smoke.sh               # CLI 主路径
 bash scripts/regress.sh             # 每条命令一次
 bash scripts/backend-smoke.sh       # 起真服务，44 项断言
+
+# 数字（2026-11-10，本版）
+#   workspace 测试 494（core 带 sql 特性时为 275 个库测试）
+#   冒烟 43 步 / 全命令扫 39 项 / 后端 44 项
 ```
 
 四项脚本全绿，就是这份对照表的证据。

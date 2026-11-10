@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.14.0] — 2026-11-10
+
+### Docs
+
+- **`HANDOVER.md` and `ACCEPTANCE.md` brought to 3.13.0.** The handover now opens with
+  "a CLI and an HTTP backend, no GUI", states the framework's three questions with the
+  three layers that answer each, and lists the two limits this phase added (a 30-second
+  query ceiling and what concurrency does and does not promise). The acceptance map
+  gained a "framework's own contract" table: one table row per promise, each pointing at
+  the test that holds it.
+- Final numbers recorded: 494 workspace tests (275 core library tests with the `sql`
+  feature), smoke 43, full command sweep 39, backend 44.
+
 ## [3.13.0] — 2026-11-10
 
 ### Fixed
