@@ -4837,3 +4837,55 @@ fn concurrent_edits_do_not_lose_each_other() {
         );
     }
 }
+
+/// `--require` asserts several columns at once, and says which are missing.
+#[test]
+fn schema_require_asserts_a_column_set() {
+    let dir = TempDir::new("require");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,city,amount\n1,CDMX,10\n").unwrap();
+    let path = input.to_str().unwrap();
+
+    let out = Command::new(bin())
+        .args(["schema", path, "--require", "id,city,amount"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0), "{:?}", out);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("3 required column(s) present"), "{stdout}");
+
+    let out = Command::new(bin())
+        .args(["schema", path, "--require", "id,nosuch"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("missing 1 of 2"), "{stderr}");
+    assert!(stderr.contains("nosuch"), "{stderr}");
+}
+
+/// Sampled column metadata carries what a front-end needs to pick an editor.
+#[test]
+fn schema_reports_kind_empty_and_distinct() {
+    let dir = TempDir::new("kinds");
+    let input = dir.join("t.csv");
+    let mut text = String::from("id,city,when\n");
+    for i in 1..=20 {
+        text.push_str(&format!("{i},C{},2026-03-{:02}\n", i % 2, (i % 27) + 1));
+    }
+    std::fs::write(&input, text).unwrap();
+    let path = input.to_str().unwrap();
+
+    let out = Command::new(bin())
+        .args(["schema", path, "--json", "--sample", "20"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains(r#""name":"city""#), "{stdout}");
+    assert!(stdout.contains(r#""kind":"text""#), "{stdout}");
+    assert!(stdout.contains(r#""distinct":2"#), "{stdout}");
+    assert!(stdout.contains(r#""name":"when""#), "{stdout}");
+    assert!(stdout.contains(r#""kind":"date""#), "{stdout}");
+    assert!(stdout.contains("distinctCapped"), "{stdout}");
+}

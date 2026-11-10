@@ -87,6 +87,11 @@ $ csv-splitter serve --root .  # 本地 JSON API，打开 http://127.0.0.1:8787/
 `docs/HANDOVER.md`：这个软件是什么、对 Excel 的覆盖、三条承诺的证据位置、
 已知限制、怎么接着做，以及 80 轮里最有价值的六条教训。
 
+## 前端怎么接 / For front-end developers
+
+`docs/INTEGRATION.md`：起服务、拿列、翻行、读一格、有条件地改一格、按 key 记选中。
+**每个调用都有测试，不是示意。**
+
 ## 卡住了 / When something goes wrong
 
 `docs/TROUBLESHOOTING.md` 按「它说了什么 → 为什么 → 怎么办」组织，覆盖列名打错、

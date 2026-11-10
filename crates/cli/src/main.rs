@@ -360,6 +360,10 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--delim", "Field delimiter (default: auto)"),
             ("--json", "Emit JSON"),
             (
+                "--require",
+                "Assert these columns all exist (comma-separated)",
+            ),
+            (
                 "--sample",
                 "How many rows to sample for column kinds (default 10)",
             ),
@@ -2968,6 +2972,7 @@ fn cmd_stats(args: &[String]) -> i32 {
                     return 2;
                 }
             },
+
             "--sample" => match p
                 .value("--sample")
                 .and_then(|v| v.parse().map_err(|_| "bad --sample".to_string()))
@@ -6671,6 +6676,7 @@ fn cmd_analyze(args: &[String]) -> i32 {
                     return 2;
                 }
             },
+
             "--sample" => match p
                 .value("--sample")
                 .and_then(|v| v.parse().map_err(|_| "bad --sample".to_string()))
@@ -6854,6 +6860,7 @@ fn cmd_schema(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
     let mut input: Option<PathBuf> = None;
     let mut has: Option<String> = None;
+    let mut require: Vec<String> = Vec::new();
     let mut sample: u64 = 10;
     let mut json = false;
     let mut delim = "auto".to_string();
@@ -6862,6 +6869,19 @@ fn cmd_schema(args: &[String]) -> i32 {
         match arg.as_str() {
             "--has" => match p.value("--has") {
                 Ok(v) => has = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--require" => match p.value("--require") {
+                Ok(v) => {
+                    require = v
+                        .split(',')
+                        .map(|c| c.trim().to_string())
+                        .filter(|c| !c.is_empty())
+                        .collect()
+                }
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -6915,6 +6935,29 @@ fn cmd_schema(args: &[String]) -> i32 {
         Err(e) => return report_failure("schema", format!("cannot open the sheet: {e}")),
     };
 
+    if !require.is_empty() {
+        let columns = sheet.columns().unwrap_or_default();
+        let missing: Vec<&String> = require
+            .iter()
+            .filter(|name| !columns.iter().any(|c| c.as_str() == name.as_str()))
+            .collect();
+        if missing.is_empty() {
+            println!("✓ all {} required column(s) present", require.len());
+            return 0;
+        }
+        eprintln!(
+            "✗ missing {} of {} required column(s):",
+            missing.len(),
+            require.len()
+        );
+        for name in &missing {
+            eprintln!(
+                "  {name} — {}",
+                csv_splitter_core::csv_reader::column_candidates(name, &columns)
+            );
+        }
+        return 1;
+    }
     if let Some(name) = &has {
         let index = match sheet.column_index(name) {
             Ok(index) => index,
@@ -6958,12 +7001,14 @@ fn cmd_schema(args: &[String]) -> i32 {
                 .iter()
                 .map(|c| {
                     format!(
-                        r#"{{"name":{},"index":{},"kind":{},"empty":{},"sampled":{}}}"#,
+                        r#"{{"name":{},"index":{},"kind":{},"empty":{},"sampled":{},"distinct":{},"distinctCapped":{}}}"#,
                         serve::json_str(&c.name),
                         c.index,
                         serve::json_str(c.kind.as_str()),
                         c.empty,
-                        c.sampled
+                        c.sampled,
+                        c.distinct,
+                        c.distinct_capped
                     )
                 })
                 .collect();
@@ -6979,16 +7024,22 @@ fn cmd_schema(args: &[String]) -> i32 {
             input.display(),
             schema.len()
         );
-        let mut table =
-            String::from("  #    name                                     kind    empty\n");
+        let mut table = String::from(
+            "  #    name                                     kind    empty   distinct\n",
+        );
         for column in &schema {
             let empty = if column.sampled == 0 {
                 "-".to_string()
             } else {
                 format!("{}/{}", column.empty, column.sampled)
             };
+            let distinct = if column.distinct_capped {
+                format!("{}+", column.distinct)
+            } else {
+                column.distinct.to_string()
+            };
             table.push_str(&format!(
-                "  {:<4} {:<40} {:<7} {empty}\n",
+                "  {:<4} {:<40} {:<7} {empty:<7} {distinct}\n",
                 column.index,
                 truncate_for_display(&column.name, 40),
                 column.kind.as_str()

@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.5.0] — 2026-11-10
+
+### Added
+
+- **`schema --require a,b,c`**: assert a whole column set at once — exit 0 when all are
+  there, exit 1 naming the missing ones with the same "did you mean" candidates every
+  other lookup uses. A pipeline can check its inputs before doing any work.
+- **`distinct` on every column**: `/columns` and `schema` now report how many distinct
+  values the sample held (capped at 64, flagged `distinctCapped`). That is the question
+  a front-end actually asks — "is a dropdown plausible here, or is this free text?" —
+  and sampling answers it in the same pass that already computes the kind.
+- **`docs/INTEGRATION.md`**: the one page a front-end developer needs — start the
+  server, get the columns, page rows, horizontal scroll, read one cell, write one cell
+  conditionally, and understand row keys. It ends with a "do not assume" table (rows
+  can be shorter than `count`, `kind` is a sample, writes can 409, the cap is 2000, the
+  original file is never touched) and the error shapes.
+  - A test checks the guide against `serve.rs`: every route it names is served and every
+    parameter it promises is read somewhere. Documentation that cannot drift.
+
 ## [2.4.0] — 2026-11-10
 
 Framework, round two: the reads a front-end needs to render a huge wide sheet.

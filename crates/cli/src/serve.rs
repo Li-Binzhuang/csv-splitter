@@ -2363,12 +2363,14 @@ fn columns_endpoint(
         .iter()
         .map(|column| {
             format!(
-                r#"{{"name":{},"index":{},"kind":{},"empty":{},"sampled":{}}}"#,
+                r#"{{"name":{},"index":{},"kind":{},"empty":{},"sampled":{},"distinct":{},"distinctCapped":{}}}"#,
                 json_str(&column.name),
                 column.index,
                 json_str(column.kind.as_str()),
                 column.empty,
-                column.sampled
+                column.sampled,
+                column.distinct,
+                column.distinct_capped
             )
         })
         .collect();

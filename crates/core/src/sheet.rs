@@ -116,7 +116,18 @@ pub struct ColumnInfo {
     pub kind: ColumnKind,
     pub empty: u64,
     pub sampled: u64,
+    /// Distinct values among the sampled rows, capped at [`DISTINCT_CAP`].
+    ///
+    /// A front-end uses this to decide "is a dropdown plausible here?" — a column with
+    /// two values in the sample is a filter, one with a hundred is free text.
+    pub distinct: u64,
+    /// True when the sample had more distinct values than the cap, so `distinct` is a
+    /// floor rather than a count.
+    pub distinct_capped: bool,
 }
+
+/// How many distinct values a sampled column reports before it stops counting.
+pub const DISTINCT_CAP: usize = 64;
 
 impl Sheet {
     /// Open a sheet. A missing journal means "no edits", not "error".
@@ -191,11 +202,17 @@ impl Sheet {
             })
             .collect();
         let mut empties = vec![0u64; columns.len()];
+        let mut seen: Vec<std::collections::HashSet<String>> = columns
+            .iter()
+            .map(|_| std::collections::HashSet::new())
+            .collect();
         for row in &window.rows {
             for (slot, tally) in tallies.iter_mut().enumerate() {
                 let value = row.get(slot).map(String::as_str).unwrap_or("");
                 if value.trim().is_empty() {
                     empties[slot] += 1;
+                } else if seen[slot].len() < DISTINCT_CAP {
+                    seen[slot].insert(value.to_string());
                 }
                 ColumnKind::observe(tally, value);
             }
@@ -209,6 +226,8 @@ impl Sheet {
                 kind: ColumnKind::finish(&tallies[slot]),
                 empty: empties[slot],
                 sampled: window.rows.len() as u64,
+                distinct: seen[slot].len() as u64,
+                distinct_capped: seen[slot].len() >= DISTINCT_CAP,
             })
             .collect())
     }

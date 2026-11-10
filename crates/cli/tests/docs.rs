@@ -933,3 +933,53 @@ fn api_md_lists_every_route() {
         .collect();
     assert!(missing.is_empty(), "routes not in API.md: {missing:?}");
 }
+
+/// The integration guide's endpoint list must match the code, and its claims must be
+/// among the ones the tests prove.
+#[test]
+fn integration_guide_names_real_parameters() {
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let doc = std::fs::read_to_string(manifest.join("../../docs/INTEGRATION.md")).unwrap();
+    let serve = std::fs::read_to_string(manifest.join("src/serve.rs")).unwrap();
+
+    // Every `…/name` or `http://…/name` the guide uses is a real route.
+    let mut problems = Vec::new();
+    for token in doc
+        .split('"')
+        .filter(|t| t.contains('/') && t.contains('?'))
+    {
+        let route = token
+            .split('?')
+            .next()
+            .unwrap_or("")
+            .rsplit('/')
+            .next()
+            .unwrap_or("");
+        if route.is_empty() {
+            continue;
+        }
+        let quoted = format!("\"/{route}\"");
+        if !serve.contains(&quoted) {
+            problems.push(format!(
+                "guide names /{route}, which the server does not serve"
+            ));
+        }
+    }
+
+    // The parameters the guide promises are the ones the handlers read.
+    for param in [
+        "columns",
+        "start-col",
+        "count-cols",
+        "expect",
+        "sample",
+        "name",
+    ] {
+        assert!(
+            serve.contains(&format!("\"{param}\"")) || serve.contains(param),
+            "parameter {param} is not read anywhere: the guide would be wrong"
+        );
+        assert!(doc.contains(param), "the guide does not mention {param}");
+    }
+    assert!(problems.is_empty(), "{problems:#?}");
+}
