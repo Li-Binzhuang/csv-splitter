@@ -2831,3 +2831,51 @@ fn view_can_jump_to_a_match() {
     let text = String::from_utf8_lossy(&out.stdout);
     assert!(text.contains("no row contains"), "{text}");
 }
+
+/// `--nth` walks through repeated matches without re-running the search.
+#[test]
+fn view_can_jump_to_the_second_match() {
+    let dir = TempDir::new("viewnth");
+    let input = dir.join("t.csv");
+    let mut text = String::from("id,city\n");
+    for i in 0..30 {
+        let city = if i % 10 == 5 { "CDMX" } else { "Other" };
+        text.push_str(&format!("{i},{city}\n"));
+    }
+    std::fs::write(&input, text).unwrap();
+    let path = input.to_str().unwrap();
+
+    let out = Command::new(bin())
+        .args([
+            "view",
+            path,
+            "--find",
+            "CDMX",
+            "--nth",
+            "2",
+            "--context",
+            "1",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&out.stdout);
+    // The second CDMX is row 16 (ids 5 and 15).
+    assert!(text.contains("15"), "{text}");
+    assert!(text.contains("(match 2)"), "should say which match: {text}");
+
+    // Asking past the last match explains itself.
+    let out = Command::new(bin())
+        .args(["view", path, "--find", "CDMX", "--nth", "9"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("only 3 row(s)"), "{text}");
+
+    // `--nth 0` is a usage error.
+    let out = Command::new(bin())
+        .args(["view", path, "--find", "CDMX", "--nth", "0"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+}

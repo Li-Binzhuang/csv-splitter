@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.76.0] — 2026-11-10
+
+### Added
+
+- **`view --find TEXT --nth N`** walks to the second, third, … match without re-running
+  the search — the "find next" a spreadsheet has. Asking past the last match explains
+  itself: `(only 3 row(s) contain "CDMX" — --nth 9 is past the last one)`.
+- A `--find` page is now sized to the context (`--context 3` shows seven rows) instead
+  of a full 20-row page, unless `--count` was given explicitly.
+
 ## [0.75.0] — 2026-11-10
 
 ### Added

@@ -1251,11 +1251,13 @@ fn cmd_view(args: &[String]) -> i32 {
     let mut input: Option<PathBuf> = None;
     let mut start: u64 = 0;
     let mut count: u64 = 20;
+    let mut count_given = false;
     let mut delim = "auto".to_string();
     let mut where_expr: Option<String> = None;
     let mut order: Option<String> = None;
     let mut order_descending = false;
     let mut find: Option<String> = None;
+    let mut nth: u64 = 1;
     let mut context: u64 = 3;
     let mut match_case = false;
     let mut json = false;
@@ -1281,7 +1283,10 @@ fn cmd_view(args: &[String]) -> i32 {
                         eprintln!("error: --count must be at least 1");
                         return 2;
                     }
-                    Ok(n) => count = n,
+                    Ok(n) => {
+                        count = n;
+                        count_given = true;
+                    }
                     Err(_) => {
                         eprintln!("error: --count needs a number");
                         return 2;
@@ -1314,6 +1319,23 @@ fn cmd_view(args: &[String]) -> i32 {
                 }
             },
             "--desc" => order_descending = true,
+            "--nth" => match p.value("--nth") {
+                Ok(v) => match v.parse::<u64>() {
+                    Ok(0) => {
+                        eprintln!("error: --nth starts at 1");
+                        return 2;
+                    }
+                    Ok(n) => nth = n,
+                    Err(_) => {
+                        eprintln!("error: --nth needs a number");
+                        return 2;
+                    }
+                },
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--find" => match p.value("--find") {
                 Ok(v) => find = Some(v),
                 Err(e) => {
@@ -1542,6 +1564,7 @@ fn cmd_view(args: &[String]) -> i32 {
                 Err(e) => return report_failure("view", e.to_string()),
             };
             let mut at: u64 = 0;
+            let mut seen_matches: u64 = 0;
             let found = 'scan: loop {
                 let win = match scan_pager.page(at, 2_000) {
                     Ok(w) => w,
@@ -1559,7 +1582,10 @@ fn cmd_view(args: &[String]) -> i32 {
                         }
                     });
                     if hit {
-                        break 'scan Some(at + i as u64);
+                        seen_matches += 1;
+                        if seen_matches == nth {
+                            break 'scan Some(at + i as u64);
+                        }
                     }
                 }
                 at += win.rows.len() as u64;
@@ -1570,11 +1596,22 @@ fn cmd_view(args: &[String]) -> i32 {
             match found {
                 Some(index) => {
                     start = index.saturating_sub(context);
-                    count = count.max(context + 1 + context);
+                    if !count_given {
+                        // A find should show the match and its context, not a page.
+                        count = context + 1 + context;
+                    }
                     highlight = Some(index);
                 }
                 None => {
-                    println!("(no row contains \"{}\")", find.clone().unwrap_or_default());
+                    let needle = find.clone().unwrap_or_default();
+                    if seen_matches > 0 {
+                        println!(
+                            "(only {} row(s) contain \"{needle}\" — --nth {nth} is past the last one)",
+                            seen_matches
+                        );
+                    } else {
+                        println!("(no row contains \"{needle}\")");
+                    }
                     return 0;
                 }
             }
@@ -1650,12 +1687,18 @@ fn cmd_view(args: &[String]) -> i32 {
         // Print a marker beside the row `--find` landed on, so the eye finds it.
         let offset = index.saturating_sub(start) as usize;
         print_table(&columns, &rows);
+        let which = if nth > 1 {
+            format!(" (match {nth})")
+        } else {
+            String::new()
+        };
         println!(
-            "\n(^ row {} of {} matched{})",
+            "\n(^ row {} of {}{}{})",
             index + 1,
             page_total
                 .map(|t| t.to_string())
                 .unwrap_or_else(|| "?".into()),
+            which,
             if offset < rows.len() {
                 ""
             } else {
