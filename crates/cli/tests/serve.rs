@@ -833,3 +833,42 @@ fn bad_requests_are_structured() {
 
     drop(server);
 }
+
+/// A file with a journal is a sheet: /rows shows the edits, /sheet advertises what
+/// the server can do.
+#[test]
+fn rows_show_the_edits_and_sheet_advertises_capabilities() {
+    let dir = TempDir::new("sheetapi");
+    let path = dir.join("t.csv");
+    std::fs::write(&path, "id,city\n1,CDMX\n2,Puebla\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    // No journal yet: the sheet is pristine.
+    let (_, body) = get(&server.addr, "/sheet?path=t.csv");
+    assert!(body.contains(r#""edited":false"#), "{body}");
+    assert!(body.contains(r#""rows":2"#), "{body}");
+    assert!(body.contains("\"window\""), "capabilities missing: {body}");
+
+    // Record an edit through the API.
+    let (_, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=0&col=city&value=Monterrey",
+    );
+    assert!(body.contains("\"op\":\"set\""), "{body}");
+
+    // /rows now serves the edited value.
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=10");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("Monterrey"), "{body}");
+    assert!(body.contains(r#""edited":true"#), "{body}");
+    assert!(body.contains("\"columns\":[\"id\",\"city\"]"), "{body}");
+
+    // /sheet reports the operation.
+    let (_, body) = get(&server.addr, "/sheet?path=t.csv");
+    assert!(body.contains(r#""edited":true"#), "{body}");
+    assert!(body.contains(r#""operations":1"#), "{body}");
+    assert!(
+        body.contains("Monterrey"),
+        "operation description missing: {body}"
+    );
+}
