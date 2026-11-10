@@ -187,3 +187,73 @@ fn the_documented_serve_port_actually_works() {
         "the default port changed"
     );
 }
+
+/// The API reference must not describe endpoints the server does not serve.
+const API_DOC: &str = include_str!("../../../docs/API.md");
+const JOBS: &str = include_str!("../../../crates/core/src/jobs.rs");
+
+#[test]
+fn api_reference_matches_the_router() {
+    let mut documented: Vec<String> = Vec::new();
+    for token in API_DOC.split('`') {
+        let token = token.trim();
+        for verb in ["GET ", "POST "] {
+            if let Some(rest) = token.strip_prefix(verb) {
+                let path = rest.split(['?', ' ', '`']).next().unwrap_or("");
+                // The root route and the "these are the writes" summary line are
+                // prose, not endpoint references.
+                if path.starts_with('/') && !path.contains('|') {
+                    documented.push(format!("{} {path}", verb.trim()));
+                }
+            }
+        }
+    }
+    documented.sort();
+    documented.dedup();
+
+    let mut problems = Vec::new();
+    for entry in &documented {
+        let (_verb, path) = entry.split_once(' ').unwrap();
+        // `GET /` is served by a dedicated arm (`"/" => page(...)`), not by the
+        // route table, so check the source for the literal path.
+        let needle = format!("\"{path}\"");
+        if !ROUTER.contains(&needle) {
+            problems.push(format!(
+                "docs/API.md documents {entry}, the router does not serve it"
+            ));
+        }
+    }
+    assert!(problems.is_empty(), "{}", problems.join("\n"));
+    assert!(
+        !documented.is_empty(),
+        "the API doc should mention endpoints"
+    );
+}
+
+#[test]
+fn api_reference_names_only_parameters_the_server_reads() {
+    // Words in backticks inside the parameter column, plus a list of words that
+    // appear in prose rather than as parameters.
+    let prose = ["canonicalize", "done"];
+    let mut missing = Vec::new();
+    for token in API_DOC.split('`') {
+        let word = token.trim();
+        if word.len() < 2 || !word.chars().all(|c| c.is_ascii_alphanumeric()) {
+            continue;
+        }
+        if prose.contains(&word) {
+            continue;
+        }
+        // Only consider words that look like parameters (camelCase or short names).
+        let needle = format!("\"{word}\"");
+        if !ROUTER.contains(&needle) && !JOBS.contains(&needle) {
+            missing.push(word.to_string());
+        }
+    }
+    missing.sort();
+    missing.dedup();
+    assert!(
+        missing.is_empty(),
+        "docs name parameters nobody reads: {missing:?}"
+    );
+}

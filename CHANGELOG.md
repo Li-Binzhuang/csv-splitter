@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.54.0] — 2026-11-10
+
+### Docs
+
+- **`docs/API.md`**: the HTTP surface written for someone building a front-end —
+  conventions first (error shape, window shape, job shape), then every endpoint with
+  its parameters, then copy-pasteable examples for the ten things people actually do.
+  Answering "what does /style expect?" used to mean reading `serve.rs`.
+- Two tests keep it honest: every endpoint in the doc must exist in the router, and
+  every parameter named in the doc must be read by the server somewhere. Documentation
+  drift was the first bug this project ever had and it will not be the last.
+
 ## [0.53.0] — 2026-11-10
 
 ### Added

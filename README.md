@@ -453,6 +453,11 @@ curl "http://127.0.0.1:8787/meta?path=huge.csv"
 curl "http://127.0.0.1:8787/rows?path=huge.csv&start=18000000&count=20"
 ```
 
+## HTTP API
+
+20+ 端点的完整说明（参数、响应形状、错误约定、可直接复制的 curl）：
+[docs/API.md](docs/API.md)。
+
 ## 能力全貌 / Capabilities
 
 一页看完能做什么、边界在哪：[docs/CAPABILITIES.md](docs/CAPABILITIES.md)。
