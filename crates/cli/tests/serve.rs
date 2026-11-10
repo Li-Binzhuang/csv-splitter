@@ -2365,3 +2365,51 @@ fn an_empty_page_says_why_it_is_empty() {
     assert_eq!(code, 200, "{body}");
     assert!(body.contains(r#""pastEnd":false"#), "{body}");
 }
+
+/// Four path mistakes stay four messages, and a named directory that does not exist is
+/// an error rather than a silent fallback to the served root.
+#[test]
+fn path_errors_stay_distinct_and_roots_are_checked() {
+    let dir = TempDir::new("pathreasons");
+    std::fs::write(dir.join("t.csv"), "id\n1\n").unwrap();
+    std::fs::create_dir_all(dir.join("sub")).unwrap();
+    std::fs::write(dir.join("sub/other.csv"), "id\n2\n").unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = get(&server.addr, "/download?path=nope.csv");
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains("no such file"), "{body}");
+
+    let (code, body) = get(&server.addr, "/download?path=sub");
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains("is a directory"), "{body}");
+
+    // A file that exists *outside* the root: the reason is "outside", not "missing".
+    let outside = dir.0.parent().unwrap().join(format!(
+        "csvs_outside_{}_{}.csv",
+        std::process::id(),
+        dir.0.file_name().unwrap().to_string_lossy()
+    ));
+    std::fs::write(&outside, "id\n9\n").unwrap();
+    let outside_name = outside.file_name().unwrap().to_string_lossy().to_string();
+    let (code, body) = get(&server.addr, &format!("/download?path=../{outside_name}"));
+    let _ = std::fs::remove_file(&outside);
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains("outside"), "{body}");
+
+    let (code, body) = get(&server.addr, "/download?path=t.csv");
+    assert_eq!(code, 200, "{body}");
+
+    // A root that is not there: 400 naming the parameter, not this directory's sheets.
+    let (code, body) = get(&server.addr, "/book?root=nope");
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains(r#""parameter":"root""#), "{body}");
+    assert!(
+        !body.contains("t.csv"),
+        "fell back to the served root: {body}"
+    );
+
+    let (code, body) = get(&server.addr, "/book?root=sub");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains("other.csv"), "{body}");
+}

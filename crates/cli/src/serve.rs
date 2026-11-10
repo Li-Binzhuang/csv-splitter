@@ -204,13 +204,68 @@ fn handle(
         "/query" => query(&mut stream, root, &params),
         "/job" => job_status(&mut stream, jobs, &params),
         "/jobs" => job_list(&mut stream, jobs),
-        _ => respond_json(
-            &mut stream,
-            404,
-            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/columns","/schema","/cell","/sheet","/capabilities","/book","/pivot","/style","/chart","/layout","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
-        ),
+        _ => {
+            // Same list the capabilities call publishes, built the same way.
+            let endpoints: Vec<String> = READ_ROUTES.iter().map(|r| json_str(r)).collect();
+            let writes: Vec<String> = WRITE_ROUTES.iter().map(|w| json_str(w)).collect();
+            respond_json(
+                &mut stream,
+                404,
+                &format!(
+                    r#"{{"error":"unknown endpoint","endpoints":[{}],"writes":[{}]}}"#,
+                    endpoints.join(","),
+                    writes.join(",")
+                ),
+            )
+        }
     }
 }
+
+/// Every GET route this server answers, in one place.
+///
+/// The dispatcher, the capabilities response and the 404 fallback all read this list,
+/// because three copies of the same route list is how a new endpoint ends up served but
+/// unadvertised (insert-column had exactly that problem in 2.8.0).
+const READ_ROUTES: &[&str] = &[
+    "/",
+    "/health",
+    "/meta",
+    "/rows",
+    "/columns",
+    "/schema",
+    "/cell",
+    "/journal",
+    "/sheet",
+    "/capabilities",
+    "/book",
+    "/pivot",
+    "/style",
+    "/chart",
+    "/layout",
+    "/stats",
+    "/analyze",
+    "/groupby",
+    "/filter",
+    "/search",
+    "/files",
+    "/download",
+    "/export",
+    "/query",
+    "/job",
+    "/jobs",
+];
+
+/// Every POST route, same rule.
+const WRITE_ROUTES: &[&str] = &[
+    "POST /split",
+    "POST /merge",
+    "POST /sort",
+    "POST /dedupe",
+    "POST /partition",
+    "POST /warm",
+    "POST /edit",
+    "POST /index",
+];
 
 /// `GET /capabilities` — one call that tells a front-end what this backend can do.
 ///
@@ -384,43 +439,8 @@ fn journal_endpoint(
 }
 
 fn capabilities_endpoint(stream: &mut TcpStream) -> io::Result<()> {
-    let reads = [
-        "/",
-        "/health",
-        "/meta",
-        "/rows",
-        "/columns",
-        "/sheet",
-        "/capabilities",
-        "/book",
-        "/pivot",
-        "/style",
-        "/chart",
-        "/layout",
-        "/stats",
-        "/analyze",
-        "/groupby",
-        "/filter",
-        "/search",
-        "/files",
-        "/download",
-        "/export",
-        "/query",
-        "/job",
-        "/jobs",
-    ];
-    let writes = [
-        "POST /split",
-        "POST /merge",
-        "POST /sort",
-        "POST /dedupe",
-        "POST /partition",
-        "POST /warm",
-        "POST /edit",
-        "POST /index",
-    ];
-    let reads_json: Vec<String> = reads.iter().map(|r| json_str(r)).collect();
-    let writes_json: Vec<String> = writes.iter().map(|w| json_str(w)).collect();
+    let reads_json: Vec<String> = READ_ROUTES.iter().map(|r| json_str(r)).collect();
+    let writes_json: Vec<String> = WRITE_ROUTES.iter().map(|w| json_str(w)).collect();
     let actions: Vec<String> = EDIT_ACTIONS.iter().map(|a| json_str(a)).collect();
     respond_json(
         stream,
@@ -1381,6 +1401,26 @@ fn book_endpoint(
     root: &Path,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
+    // A named directory that does not exist must not silently become the served root:
+    // a client asking for "/other" would get this directory's sheets and believe it.
+    let scan_root: PathBuf = match params
+        .get("root")
+        .filter(|r| !r.trim().is_empty() && r.trim() != ".")
+    {
+        None => root.to_path_buf(),
+        Some(requested) => {
+            let candidate = root.join(requested.trim_start_matches('/'));
+            if !candidate.is_dir() {
+                return bad_request(
+                    stream,
+                    "no such directory inside the served root",
+                    "root",
+                    "root=. for the whole tree, or root=<subdirectory>",
+                );
+            }
+            candidate
+        }
+    };
     // A malformed number is a bad request, not something to ignore: silently
     // falling back to the default would make `max=nope` look like it worked.
     let max = match params.get("max") {
@@ -1397,7 +1437,7 @@ fn book_endpoint(
             }
         },
     };
-    match csv_splitter_core::book::scan(root, max) {
+    match csv_splitter_core::book::scan(&scan_root, max) {
         Ok(book) => {
             let sheets: Vec<String> = book.sheets.iter().map(|s| s.to_json()).collect();
             let unreadable: Vec<String> = book
@@ -3106,9 +3146,9 @@ fn download(
     root: &Path,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
-    let (path, rel) = match resolve(root, params) {
-        Some(v) => v,
-        None => return bad_path(stream),
+    let (path, rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
     };
     let bytes = match std::fs::read(&path) {
         Ok(b) => b,

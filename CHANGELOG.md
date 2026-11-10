@@ -1,5 +1,28 @@
 # Changelog
 
+## [3.5.0] — 2026-11-10
+
+### Fixed
+
+- **`/book?root=<subdir>` scanned the served root instead of the subdirectory**, and a
+  root that did not exist fell back to the root silently — a client asking for one
+  directory was handed another's sheets and had no way to tell. The path is validated
+  (`400` naming `root`) and the scan uses it.
+- **`/download` answered one message for four path mistakes.** It was still on the older
+  resolver while the rest of the server used `resolve_reason`, so "file not found",
+  "that is a directory" and "outside the served root" all read
+  `path missing or outside root`. Each now gets its own message, which is what the
+  documentation already claimed.
+
+### Changed
+
+- **One route list instead of three.** `READ_ROUTES` and `WRITE_ROUTES` feed the
+  dispatcher's 404 fallback and the `/capabilities` response, and a test walks the
+  dispatcher's own arms to prove nothing is served without being advertised. The old
+  copies had already drifted: `/schema`, `/cell` and `/journal` were served but absent
+  from `/capabilities` and from the 404 list.
+- A second test compares `READ_ROUTES` with `docs/API.md`'s endpoint index.
+
 ## [3.4.0] — 2026-11-10
 
 ### Added

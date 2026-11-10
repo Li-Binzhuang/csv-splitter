@@ -983,3 +983,109 @@ fn integration_guide_names_real_parameters() {
     }
     assert!(problems.is_empty(), "{problems:#?}");
 }
+
+/// The capabilities response, the 404 fallback and the dispatcher agree on the route set.
+///
+/// Three lists of "what this server serves" is how an endpoint ends up working but not
+/// advertised (insert-column was exactly that). They come from one constant now, and this
+/// test walks the dispatcher's own arms to prove nothing was added without it.
+#[test]
+fn every_served_route_is_advertised() {
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let source = std::fs::read_to_string(manifest.join("src/serve.rs")).unwrap();
+
+    let list = |name: &str| -> Vec<String> {
+        let start = source
+            .find(&format!("const {name}: &[&str] = &["))
+            .unwrap_or_else(|| panic!("missing {name}"));
+        let end = source[start..].find("];").unwrap() + start;
+        source[start..end]
+            .split('"')
+            .skip(1)
+            .step_by(2)
+            .map(|s| s.to_string())
+            .collect()
+    };
+    let reads = list("READ_ROUTES");
+    let writes = list("WRITE_ROUTES");
+    assert!(reads.len() >= 20, "{reads:?}");
+    assert!(writes.len() >= 6, "{writes:?}");
+
+    // GET arms in the dispatch (`"/name" => handler`).
+    let mut served: Vec<String> = Vec::new();
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if let Some(rest) = trimmed.strip_prefix('"') {
+            if let Some(name) = rest.split('"').next() {
+                if name.starts_with('/') && rest.contains("=>") {
+                    served.push(name.to_string());
+                }
+            }
+        }
+    }
+    let mut missing: Vec<String> = served
+        .iter()
+        .filter(|route| route.as_str() != "/index.html")
+        .filter(|route| {
+            !reads.contains(route)
+                && !writes
+                    .iter()
+                    .any(|w| w.strip_prefix("POST ") == Some(route.as_str()))
+        })
+        .cloned()
+        .collect();
+    missing.sort();
+    missing.dedup();
+    assert!(
+        missing.is_empty(),
+        "served but not in READ_ROUTES: {missing:?}"
+    );
+
+    // And the write arms are POST routes in their own list.
+    for route in [
+        "/split",
+        "/merge",
+        "/sort",
+        "/dedupe",
+        "/partition",
+        "/warm",
+        "/edit",
+        "/index",
+    ] {
+        assert!(
+            writes
+                .iter()
+                .any(|w| w.strip_prefix("POST ") == Some(route)),
+            "{route} is served as a POST but not listed"
+        );
+    }
+}
+
+/// API.md's endpoint index names every advertised route.
+#[test]
+fn the_endpoint_index_covers_the_capabilities() {
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let source = std::fs::read_to_string(manifest.join("src/serve.rs")).unwrap();
+    let doc = std::fs::read_to_string(manifest.join("../../docs/API.md")).unwrap();
+
+    let start = source
+        .find("const READ_ROUTES: &[&str] = &[")
+        .expect("READ_ROUTES");
+    let end = source[start..].find("];").unwrap() + start;
+    let routes: Vec<String> = source[start..end]
+        .split('"')
+        .skip(1)
+        .step_by(2)
+        .filter(|r| *r != "/")
+        .map(|r| r.to_string())
+        .collect();
+
+    let missing: Vec<&String> = routes
+        .iter()
+        .filter(|r| !doc.contains(r.as_str()))
+        .collect();
+    assert!(
+        missing.is_empty(),
+        "routes missing from API.md: {missing:?}"
+    );
+}

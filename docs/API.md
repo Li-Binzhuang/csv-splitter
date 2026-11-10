@@ -244,6 +244,17 @@ written on refusal, and `actual` says what the value is now.
 
 ## 端点总表 / Endpoint index
 
+### 路径错误的四种消息
+
+| 消息 | 意思 |
+|---|---|
+| `path is required` | 没传 `path` |
+| `no such file inside the served directory` | 文件不存在 |
+| `path is a directory, not a file` | 传了目录 |
+| `path is outside the served directory` | 越界 |
+
+**四种错分开说**，因为客户端处理方式不同（补参数 / 提示用户 / 换接口 / 拒绝）。
+
 | 方法 | 路径 | 作用 |
 |---|---|---|
 | GET | `/health` | 存活 |
@@ -261,7 +272,7 @@ written on refusal, and `actual` says what the value is now.
 | GET | `/query` | SQL（只读，`limit` 上限 1 万并回显）|
 | GET | `/stats` `/analyze` `/filter` `/search` | 画像与检索 |
 | GET | `/groupby` `/pivot` `/style` `/chart` `/layout` | 聚合与展示元数据 |
-| GET | `/book` `/files` `/download` | 目录、书、下载 |
+| GET | `/book` `/files` `/download` | 目录、书、下载（`book?root=<子目录>` 不存在时 400，不会回退到根）|
 | GET | `/job` `/jobs` | 异步任务状态 |
 | POST | `/split` `/merge` `/sort` `/dedupe` `/partition` `/warm` `/index` | 拆分与后台任务 |
 
