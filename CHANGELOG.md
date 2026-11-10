@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.0.1] — 2026-11-10
+
+### Verified
+
+- **The backend measured on the real 2.5 GB / 782-column file**, through HTTP, release:
+  - `GET /columns?name=model_prob` **3.3 ms**, 47 bytes — the column-existence question.
+  - `GET /columns` (all 782) 0.66 s, 107 KB.
+  - `GET /rows` at row 680 000: **2.0 ms** for the full 782-column window (87 KB), **0.9 ms**
+    and 651 bytes with `&columns=cust_no,model_prob,predict_status`.
+  - `GET /cell` 0.8 ms, `GET /journal` 0.3 ms.
+  - `GET /query?sql=SELECT count(*) FROM t` 7.9 s — one full scan, as expected.
+  - `POST /edit?action=export` returns a job (202) and finishes in 33 s; the file it
+    writes keeps the input's BOM.
+  - The original file's sha256 is unchanged after all of it.
+- `scripts/backend-smoke.sh` grew the async-export path: queue the job, poll `GET /job`,
+  assert the file exists and starts with the header. 32 checks now.
+
 ## [3.0.0] — 2026-11-10
 
 ### Added

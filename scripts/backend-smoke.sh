@@ -92,6 +92,21 @@ has "journal: count"             "$JOURNAL" '"count":1'
 has "journal: description"       "$JOURNAL" "set row 1 'city'"
 has "journal: canUndo"           "$JOURNAL" '"canUndo":true'
 
+echo "== async export =="
+JOB="$(curl -s -X POST "$URL/edit?path=orders.csv&action=export&out=exported.csv&where=city=CDMX" | sed -n 's/.*"job":"\([^"]*\)".*/\1/p')"
+if [ -n "$JOB" ]; then printf '  ok   export queued a job (%s)\n' "$JOB"
+else printf '  FAIL export did not queue a job\n'; failed=$((failed + 1)); fi
+for _ in $(seq 1 60); do
+  STATE="$(curl -s "$URL/job?id=$JOB")"
+  printf '%s' "$STATE" | grep -q '"done"' && break
+  sleep 0.5
+done
+has "export job finished"  "$STATE" '"done"'
+has "export job output"    "$STATE" '"output"'
+if [ -s exported.csv ]; then printf '  ok   exported file written (%s bytes)\n' "$(wc -c < exported.csv | tr -d ' ')"
+else printf '  FAIL exported file is missing or empty\n'; failed=$((failed + 1)); fi
+has "exported file has a header" "$(head -1 exported.csv)" "id,"
+
 echo "== error shapes =="
 want_code "400 on unknown endpoint"  404 "/nope"
 want_code "400 on bad column"        400 "/rows?path=orders.csv&order=nosuch"

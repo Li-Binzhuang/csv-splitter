@@ -263,6 +263,19 @@
 | `edit export`（1 个公式列）| 69 s |
 | `preview` | 0.9 s，内存 9 MB |
 
+**后端在这份文件上的实测（release，本机 HTTP）**：
+
+| 调用 | 结果 |
+|---|---|
+| `GET /columns?name=model_prob` | **3.3 ms**，47 字节 |
+| `GET /columns`（782 列全量） | **0.66 s**，107 KB |
+| `GET /rows?start=680000&count=10`（全列）| **2.0 ms**，87 KB |
+| 同一窗口 `&columns=…`（3 列）| **0.9 ms**，651 字节 |
+| `GET /cell?row=3&col=…` | **0.8 ms** |
+| `GET /journal` | **0.3 ms** |
+| `GET /query?sql=SELECT count(*) FROM t` | 7.9 s（整表扫描）|
+| `POST /edit?action=export`（带 where）| 33 s（一条异步 job，`GET /job?id=` 轮询）|
+
 **慢的两种，原因都清楚**：
 
 1. **宽表逐个单元格物化**。`export` / `validate` / `analyze` 走的是「每行物化成
