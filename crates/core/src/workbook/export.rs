@@ -345,6 +345,46 @@ pub fn export_filtered(
     )
 }
 
+/// Contiguous runs of rows that match a filter, as `(at, count)` pairs.
+///
+/// Used by "delete everything that matches": the journal stores ranges (like every
+/// other row operation), so the deleted rows are identified once, when the edit is
+/// made, and replaying the journal later needs no scanning.
+pub fn runs_matching(
+    base: &Path,
+    ops: &[Op],
+    filter: &str,
+    delimiter: Delimiter,
+) -> io::Result<Vec<(u64, u64)>> {
+    let pager = Pager::open(base, ops, delimiter)?;
+    let columns = pager.columns().to_vec();
+    let spec = crate::filter::FilterSpec::parse(filter)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+    let set = crate::filter::FilterSet::single(spec)
+        .compile(&columns)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e.to_string()))?;
+
+    let total = pager.total();
+    let mut runs: Vec<(u64, u64)> = Vec::new();
+    let mut at = 0u64;
+    while at < total {
+        let window = pager.page(at, 2_000)?;
+        for (offset, row) in window.rows.iter().enumerate() {
+            if !set.holds(row) {
+                continue;
+            }
+            let index = at + offset as u64;
+            match runs.last_mut() {
+                // Consecutive matches extend the run instead of starting a new one.
+                Some((start, count)) if *start + *count == index => *count += 1,
+                _ => runs.push((index, 1)),
+            }
+        }
+        at += 2_000;
+    }
+    Ok(runs)
+}
+
 /// Find the Nth data row whose cells contain `needle`, applying the journal.
 ///
 /// "Look at it, then change it" is one workflow, and copying a row number from a viewer

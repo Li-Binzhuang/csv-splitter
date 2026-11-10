@@ -26,6 +26,11 @@ impl RowMap {
             match op {
                 Op::InsertRows { at, rows } => insert(&mut segments, *at, rows.clone(), u64::MAX),
                 Op::DeleteRows { at, count } => delete(&mut segments, *at, *count),
+                Op::DeleteRanges { runs } => {
+                    for (at, count) in runs.iter().rev() {
+                        delete(&mut segments, *at, *count);
+                    }
+                }
                 _ => {}
             }
         }
@@ -883,6 +888,14 @@ pub fn compile(ops: &[Op], base_rows: u64) -> Sheet {
                 delete(&mut map.segments, *at, *count);
                 map.refresh();
             }
+            Op::DeleteRanges { runs } => {
+                // Bottom-up: deleting the earlier ranges first would shift the later
+                // ones onto different rows.
+                for (at, count) in runs.iter().rev() {
+                    delete(&mut map.segments, *at, *count);
+                }
+                map.refresh();
+            }
             Op::SetCell { row, column, value } => {
                 if let Some(id) = map.id_at(*row) {
                     cells.insert((id, column.clone()), value.clone());
@@ -1125,5 +1138,41 @@ mod fill_tests {
         assert_eq!(sheet.edits.fill_for(5, "qty"), None);
         // The explicit edit is a separate, higher-priority record.
         assert_eq!(sheet.edits.cell(RowId::Base(3), "qty"), Some("9"));
+    }
+}
+
+#[cfg(test)]
+mod delete_ranges_tests {
+    use super::*;
+
+    #[test]
+    fn ranges_are_applied_bottom_up_so_earlier_ones_keep_their_place() {
+        let ops = vec![Op::DeleteRanges {
+            runs: vec![(1, 2), (5, 1)],
+        }];
+        let sheet = compile(&ops, 8);
+        // Eight rows minus three.
+        assert_eq!(sheet.map.len(), 5);
+        // Rows 2 and 3 (0-based 1, 2) are gone; row 6 (0-based 5) too.
+        let kept: Vec<u64> = (0..5)
+            .filter_map(|logical| match sheet.map.row(logical) {
+                Some(RowRef::Base(at)) => Some(at),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(kept, vec![0, 3, 4, 6, 7], "{kept:?}");
+    }
+
+    #[test]
+    fn a_journal_line_round_trips_the_ranges() {
+        let op = Op::DeleteRanges {
+            runs: vec![(3, 2), (9, 1)],
+        };
+        let rendered = crate::workbook::journal::render_op(&op);
+        let parsed = crate::workbook::journal::parse_op(rendered.as_bytes()).expect("round trip");
+        match parsed {
+            Op::DeleteRanges { runs } => assert_eq!(runs, vec![(3, 2), (9, 1)]),
+            other => panic!("parsed as {other:?}"),
+        }
     }
 }

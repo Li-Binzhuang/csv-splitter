@@ -68,6 +68,7 @@
 | 改单元格 | `edit set --row N --col C --value V` | `POST /edit?action=set` |
 | 插入行 | `edit insert --row N --value "a,b,c"` | `action=insert` |
 | 删除行 | `edit delete --row N --count K` | `action=delete` |
+| 按条件删除 | `edit delete --where "city=Puebla"`（一次操作，一次撤销） | `action=delete-where` |
 | 按内容定位后修改 | `edit set --find Puebla --col city --value "..."` | — |
 | 区间填充 | `edit fill --col qty --from-row 5 --to-row 10 --value 0` | `action=fill` |
 | 一列拆成多列 | `edit split-column f.csv --col full --by "," --into "first,last,addr"` | — |

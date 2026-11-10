@@ -3926,3 +3926,50 @@ fn edit_can_locate_a_row_by_content() {
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(stderr.contains("no row contains 'Nowhere'"), "{stderr}");
 }
+
+/// `edit delete --where` removes every matching row as one undoable operation.
+#[test]
+fn delete_by_condition_is_one_operation() {
+    let dir = TempDir::new("deletewhere");
+    let input = dir.join("t.csv");
+    let mut text = String::from("id,city,qty\n");
+    for i in 1..=20 {
+        let city = if matches!(i, 3 | 4 | 5 | 12) {
+            "Puebla"
+        } else {
+            "CDMX"
+        };
+        text.push_str(&format!("{i},{city},{}\n", i * 10));
+    }
+    std::fs::write(&input, text).unwrap();
+    let path = input.to_str().unwrap();
+
+    let run = |args: &[&str]| {
+        assert_eq!(
+            Command::new(bin()).args(args).status().unwrap().code(),
+            Some(0),
+            "{args:?}"
+        );
+    };
+    let rows = |name: &str| {
+        let out = dir.join(name);
+        run(&["edit", "export", path, "-o", out.to_str().unwrap()]);
+        std::fs::read_to_string(&out).unwrap().lines().count()
+    };
+
+    run(&["edit", "delete", path, "--where", "city=Puebla"]);
+    // Two stretches (rows 3-5 and row 12) become one operation.
+    assert_eq!(rows("after.csv"), 17, "header + 16 rows");
+
+    // One undo brings all four rows back — that is the point of one operation.
+    run(&["edit", "undo", path]);
+    assert_eq!(rows("undo.csv"), 21, "all four rows are back");
+
+    // And redo takes them away again.
+    run(&["edit", "redo", path]);
+    assert_eq!(rows("redo.csv"), 17);
+
+    // The journal format survives a reload: the ranges are data, not a closure.
+    let journal = std::fs::read_to_string(dir.join("t.csv.journal")).unwrap();
+    assert!(journal.contains("dels"), "{journal}");
+}

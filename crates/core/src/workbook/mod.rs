@@ -43,8 +43,8 @@ pub use rows::{
 };
 
 pub use export::{
-    export, export_filtered, export_quotes, export_selected, find_row, logical_rows, window,
-    ExportOptions, ExportSummary, Pager, Window,
+    export, export_filtered, export_quotes, export_selected, find_row, logical_rows, runs_matching,
+    window, ExportOptions, ExportSummary, Pager, Window,
 };
 
 use std::io::{self, BufReader, BufWriter, Write};
@@ -102,6 +102,13 @@ pub enum Op {
         column: Option<String>,
         from: String,
         to: String,
+    },
+    /// Delete several row ranges as one operation, so one undo brings them all back.
+    ///
+    /// Stretches are stored in ascending order; replaying applies them bottom-up so the
+    /// earlier ranges keep their positions.
+    DeleteRanges {
+        runs: Vec<(u64, u64)>,
     },
     /// Fill a range of rows in one column with the same value.
     ///
@@ -173,6 +180,7 @@ impl Op {
             Self::SubstituteRegex { .. } => "subst-rx",
             Self::SplitColumn { .. } => "split-col",
             Self::FillRange { .. } => "fill",
+            Self::DeleteRanges { .. } => "dels",
             Self::AddColumn { .. } => "addcolumn",
             Self::AddColumnAt { .. } => "addcolumnat",
             Self::PasteBlock { .. } => "pasteblock",
@@ -204,6 +212,10 @@ impl Op {
                 truncate(to, 20),
                 column.as_deref().unwrap_or("every column")
             ),
+            Self::DeleteRanges { runs } => {
+                let total: u64 = runs.iter().map(|(_, count)| *count).sum();
+                format!("delete {total} row(s) in {} range(s)", runs.len())
+            }
             Self::FillRange {
                 column,
                 from,

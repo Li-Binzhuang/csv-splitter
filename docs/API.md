@@ -87,6 +87,7 @@
 | `copy` | `from=A1:B2` `to=B3` | 区域复制（A1 风格范围） |
 | `split-column` | `col` `by` `into` | 一列拆成多列（最后一片吃下剩余部分） |
 | `fill` | `col` `from-row` `to-row` `value` | 区间填充（1-based，闭区间）；精确 `set` 优先于填充 |
+| `delete-where` | `where` | 删除所有命中行，**一条操作**（一次 undo 全恢复）；命中点超过 1000 段会拒绝并建议改用 `/filter` |
 | `undo` / `redo` | — | 撤销最后一条 / 重做 |
 | `export` | `out` | 物化到文件（返回 job） |
 

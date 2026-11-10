@@ -1709,3 +1709,38 @@ fn the_api_can_split_a_column() {
     );
     assert_eq!(status, 400, "{body}");
 }
+
+/// `delete-where` over HTTP: one operation, and the row count follows.
+#[test]
+fn the_api_can_delete_by_condition() {
+    let dir = TempDir::new("apideletewhere");
+    let mut text = String::from("id,city\n");
+    for i in 1..=10 {
+        let city = if matches!(i, 2 | 3 | 7) {
+            "Puebla"
+        } else {
+            "CDMX"
+        };
+        text.push_str(&format!("{i},{city}\n"));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=delete-where&where=city%3DPuebla",
+    );
+    assert!(status == 200 || status == 202, "{body}");
+    assert!(body.contains("delete 3 row(s) in 2 range(s)"), "{body}");
+
+    let (_, sheet) = get(&server.addr, "/sheet?path=t.csv");
+    assert!(sheet.contains("\"rows\":7"), "{sheet}");
+
+    // Nothing left to delete answers honestly instead of inventing an operation.
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=delete-where&where=city%3DPuebla",
+    );
+    assert!(status == 200 || status == 202, "{body}");
+    assert!(body.contains("nothing matched"), "{body}");
+}

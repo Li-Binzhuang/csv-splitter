@@ -918,6 +918,43 @@ fn edit_apply(
                 source,
             }
         }
+        "delete-where" | "deletewhere" => {
+            let Some(filter) = params.get("where").cloned() else {
+                return bad_request(
+                    stream,
+                    "delete-where needs where",
+                    "where",
+                    "where=<column>=<value>",
+                );
+            };
+            let runs =
+                match workbook::runs_matching(&path, journal.ops(), &filter, delimiter(params)) {
+                    Ok(runs) => runs,
+                    Err(e) => {
+                        return respond_json(
+                            stream,
+                            422,
+                            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                        )
+                    }
+                };
+            if runs.is_empty() {
+                return respond_json(
+                    stream,
+                    200,
+                    r#"{"op":"dels","rows":0,"note":"nothing matched; the journal is unchanged"}"#,
+                );
+            }
+            if runs.len() > 1_000 {
+                return bad_request(
+                    stream,
+                    "the condition matches too many separate stretches",
+                    "where",
+                    "use a narrower condition, or GET /filter to export the rows you want",
+                );
+            }
+            Op::DeleteRanges { runs }
+        }
         "fill" => {
             let (Some(column), Some(from), Some(to)) = (
                 params.get("col").cloned(),

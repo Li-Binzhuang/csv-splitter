@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.4.0] — 2026-11-10
+
+### Added
+
+- **`edit delete --where`** (`POST /edit?action=delete-where&where=`): remove every row
+  that matches, as **one** journal operation — one `edit undo` brings all of them back.
+  ```
+  edit delete t.csv --where "city=Puebla"
+  ```
+  - Matching is resolved **when the edit is made**, then stored as row ranges, so
+    replaying the journal later needs no scanning and the journal stays a description
+    of what happened rather than a program to re-run.
+  - Ranges are applied bottom-up during replay; the top-down version deleted the wrong
+    rows, which is the failure this tests first.
+  - A condition that matches more than 1 000 separate stretches is refused: an
+    alternating match would otherwise turn one edit into a million journal entries.
+
 ## [1.3.0] — 2026-11-10
 
 ### Added

@@ -189,6 +189,10 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--to", "New column name / replacement text"),
             ("--value", "Value to write"),
             ("--find", "Locate a row by its content instead of by number"),
+            (
+                "--where",
+                "Filter expression; with delete, removes every match",
+            ),
             ("--nth", "Which match to edit (default 1)"),
             ("--match-case", "Case-sensitive when locating"),
             ("--find-col", "Only look in these columns when locating"),
@@ -5238,6 +5242,12 @@ fn warn_quote_style(input: &std::path::Path) {
     }
 }
 
+/// How many separate stretches `delete --where` will write before refusing.
+///
+/// A condition that matches alternating rows would otherwise turn one edit into a
+/// million journal entries, which is the memory promise broken from the other side.
+const MAX_DELETE_RUNS: usize = 1_000;
+
 fn cmd_edit(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
     let mut quotes_text = String::new();
@@ -5871,6 +5881,54 @@ fn cmd_edit(args: &[String]) -> i32 {
             }
         }
         "delete" => {
+            // `--where` deletes everything that matches, as journal ranges.
+            if let Some(filter) = &where_expr {
+                if row.is_some() {
+                    eprintln!("error: delete takes either --row or --where, not both");
+                    return 2;
+                }
+                let runs = match csv_splitter_core::workbook::runs_matching(
+                    &input,
+                    journal.ops(),
+                    filter,
+                    delimiter,
+                ) {
+                    Ok(runs) => runs,
+                    Err(e) => return report_failure("edit", e),
+                };
+                if runs.is_empty() {
+                    eprintln!("note: nothing matches '{filter}'; the journal is unchanged");
+                    return 0;
+                }
+                if runs.len() > MAX_DELETE_RUNS {
+                    eprintln!(
+                        "error: '{filter}' matches {} separate stretches (limit {MAX_DELETE_RUNS}); \
+                         delete them one condition at a time, or use `filter` to export the rows you want instead",
+                        runs.len()
+                    );
+                    return 2;
+                }
+                // One operation, so one `edit undo` brings back every deleted row.
+                let op = csv_splitter_core::workbook::Op::DeleteRanges { runs: runs.clone() };
+                journal.push(op.clone());
+                if let Err(e) = journal.save(&sidecar) {
+                    return report_failure("edit", format!("cannot save the journal: {e}"));
+                }
+                let removed: u64 = runs.iter().map(|(_, count)| *count).sum();
+                if json {
+                    println!(
+                        r#"{{"op":"delete","runs":{},"rows":{removed},"journal":"{}"}}"#,
+                        runs.len(),
+                        sidecar.display()
+                    );
+                } else {
+                    println!(
+                        "✓ deleted {removed} row(s) matching '{filter}' ({} operation(s) pending)",
+                        journal.len()
+                    );
+                }
+                return 0;
+            }
             let row = row.or(located_row);
             let (Some(row), Some(count)) = (row, count) else {
                 eprintln!("error: delete needs --row and --count");

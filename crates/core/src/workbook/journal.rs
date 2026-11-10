@@ -161,6 +161,17 @@ pub(crate) fn render_op(op: &Op) -> String {
             column,
             value,
         } => join_csv_line(&[op.tag(), filter, column, value], b','),
+        Op::DeleteRanges { runs } => join_csv_line(
+            &[
+                op.tag(),
+                &runs
+                    .iter()
+                    .map(|(at, count)| format!("{at}:{count}"))
+                    .collect::<Vec<_>>()
+                    .join(";"),
+            ],
+            b',',
+        ),
         Op::FillRange {
             column,
             from,
@@ -250,6 +261,15 @@ pub(crate) fn parse_op(record: &[u8]) -> Option<Op> {
             filter: fields[1].clone(),
             column: fields[2].clone(),
             value: fields[3].clone(),
+        }),
+        "dels" if fields.len() >= 2 => Some(Op::DeleteRanges {
+            runs: fields[1]
+                .split(';')
+                .filter_map(|pair| {
+                    let (at, count) = pair.split_once(':')?;
+                    Some((at.trim().parse().ok()?, count.trim().parse().ok()?))
+                })
+                .collect(),
         }),
         "fill" if fields.len() >= 5 => Some(Op::FillRange {
             from: fields[1].parse().ok()?,
