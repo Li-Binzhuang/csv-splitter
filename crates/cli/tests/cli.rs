@@ -2300,3 +2300,64 @@ fn backslash_files_keep_their_records() {
     assert_eq!(lines[1], "CDMX,\"a \"\"b,c\"", "{text}");
     assert_eq!(lines[2], "Puebla,plain", "{text}");
 }
+
+/// A failing command must say why, on stderr, without the caller's help.
+#[test]
+fn every_failure_prints_a_reason() {
+    let dir = TempDir::new("reasons");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "city,amount\nCDMX,10\n").unwrap();
+
+    // Engine-returned errors used to exit 1 silently (the reporter only prints
+    // errors that arrive through the progress channel).
+    let cases: Vec<Vec<&str>> = vec![
+        vec![
+            "pivot",
+            input.to_str().unwrap(),
+            "--rows",
+            "nope",
+            "--values",
+            "amount:sum",
+        ],
+        vec![
+            "groupby",
+            input.to_str().unwrap(),
+            "--by",
+            "nope",
+            "--agg",
+            "amount:sum",
+        ],
+        vec![
+            "chart",
+            input.to_str().unwrap(),
+            "--x",
+            "nope",
+            "--y",
+            "amount:sum",
+        ],
+        vec![
+            "lookup",
+            input.to_str().unwrap(),
+            "--key",
+            "nope",
+            "--from",
+            input.to_str().unwrap(),
+            "--get",
+            "amount",
+        ],
+        vec!["columns", input.to_str().unwrap(), "--drop", "nope"],
+    ];
+    for args in cases {
+        let out = Command::new(bin()).args(&args).output().unwrap();
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert_eq!(out.status.code(), Some(1), "{args:?} should fail");
+        assert!(
+            stderr.contains('✗'),
+            "{args:?} failed silently: stderr={stderr:?}"
+        );
+        assert!(
+            stderr.contains("nope"),
+            "{args:?} should name the column: {stderr}"
+        );
+    }
+}

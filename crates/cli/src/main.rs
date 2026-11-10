@@ -1749,7 +1749,8 @@ fn cmd_convert(args: &[String]) -> i32 {
             }
             0
         }
-        Err(_) => 1, // the reporter already printed the reason
+        // `transcode` returns the error itself; nothing else printed it.
+        Err(e) => report_failure("convert", format!("cannot convert: {e}")),
     }
 }
 
@@ -1898,7 +1899,7 @@ fn cmd_stats(args: &[String]) -> i32 {
             }
             0
         }
-        Err(_) => 1, // the reporter already printed the reason
+        Err(e) => report_failure("stats", e), // engine returned the error itself
     }
 }
 
@@ -1960,7 +1961,8 @@ fn cmd_extract(args: &[String]) -> i32 {
             }
             0
         }
-        Err(_) => 1, // the reporter already printed the reason
+        // `transcode` returns the error itself; nothing else printed it.
+        Err(e) => report_failure("convert", format!("cannot convert: {e}")),
     }
 }
 
@@ -2404,7 +2406,7 @@ fn cmd_lookup(args: &[String]) -> i32 {
     let _ = reporter.join();
     let summary = match result {
         Ok(s) => s,
-        Err(_) => return 1,
+        Err(e) => return report_failure("lookup", e),
     };
 
     if json {
@@ -2730,7 +2732,7 @@ fn cmd_chart(args: &[String]) -> i32 {
     let _ = reporter.join();
     let data = match result {
         Ok(d) => d,
-        Err(_) => return 1,
+        Err(e) => return report_failure("chart", e),
     };
 
     let json = data.to_json();
@@ -3106,7 +3108,8 @@ fn cmd_pivot(args: &[String]) -> i32 {
     let _ = reporter.join();
     let summary = match result {
         Ok(s) => s,
-        Err(_) => return 1, // the reporter already printed the reason
+        // The engine returns the error itself; nothing else printed it.
+        Err(e) => return report_failure("pivot", e),
     };
 
     if json {
@@ -3179,7 +3182,7 @@ fn cmd_demo(args: &[String]) -> i32 {
             println!("    csv-splitter serve --root {}", dir.display());
             0
         }
-        Err(_) => 1, // the reporter already printed the reason
+        Err(e) => report_failure("pivot", e), // engine returned the error itself
     }
 }
 
@@ -3341,7 +3344,7 @@ fn cmd_groupby(args: &[String]) -> i32 {
             }
             0
         }
-        Err(_) => 1, // the reporter already printed the reason
+        Err(e) => report_failure("groupby", e), // engine returned the error itself
     }
 }
 
@@ -3426,7 +3429,7 @@ fn cmd_concat(args: &[String]) -> i32 {
             }
             0
         }
-        Err(_) => 1, // the reporter already printed the reason
+        Err(e) => report_failure("chart", e), // engine returned the error itself
     }
 }
 
@@ -4542,7 +4545,7 @@ fn cmd_columns(args: &[String]) -> i32 {
             }
             0
         }
-        Err(_) => 1, // the reporter already printed the reason
+        Err(e) => report_failure("lookup", e), // engine returned the error itself
     }
 }
 
@@ -4687,7 +4690,7 @@ fn cmd_dedupe(args: &[String]) -> i32 {
             }
             0
         }
-        Err(_) => 1, // the reporter already printed the reason
+        Err(e) => report_failure("dedupe", e), // engine returned the error itself
     }
 }
 
@@ -4795,7 +4798,7 @@ fn cmd_verify(args: &[String]) -> i32 {
                 1
             }
         }
-        Err(_) => 1, // the reporter already printed the reason
+        Err(e) => report_failure("analyze", e), // engine returned the error itself
     };
 
     std::fs::remove_dir_all(&work).ok();
