@@ -56,7 +56,7 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Test engine (no DuckDB)
-        run: cargo test -p csv-splitter-core -p csv-splitter-gui
+        run: cargo test -p csv-splitter-core -p csv-splitter-cli
 
       - name: Performance guard
         run: cargo test -p csv-splitter-core --test performance

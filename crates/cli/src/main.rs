@@ -34,6 +34,7 @@ fn main() -> ExitCode {
         Some("split") => cmd_split(&args[1..]),
         Some("merge") => cmd_merge(&args[1..]),
         Some("preview") => cmd_preview(&args[1..]),
+        Some("schema") => cmd_schema(&args[1..]),
         Some("index") => cmd_index(&args[1..]),
         Some("serve") => cmd_serve(&args[1..]),
         Some("convert") => cmd_convert(&args[1..]),
@@ -193,6 +194,10 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
                 "--invalid",
                 "With delete: remove rows a validation rule rejects",
             ),
+            (
+                "--expect",
+                "With set: write only if the cell still holds this value",
+            ),
             ("--find", "Locate a row by its content instead of by number"),
             (
                 "--where",
@@ -347,6 +352,21 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--quotes", "Quote style: rfc4180 | backslash | none"),
             ("--rows", "Pivot row keys (comma separated)"),
             ("--values", "Pivot measures, e.g. \"amount:sum\""),
+        ],
+    ),
+    (
+        "schema",
+        &[
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--json", "Emit JSON"),
+            (
+                "--sample",
+                "How many rows to sample for column kinds (default 10)",
+            ),
+            (
+                "--has",
+                "Print whether this column exists; exit 1 when it does not",
+            ),
         ],
     ),
     (
@@ -5502,6 +5522,72 @@ fn warn_journal_damage(input: &std::path::Path) {
     }
 }
 
+/// Compare-and-set: refuse to overwrite a cell whose current value is not what the
+/// caller expected.
+///
+/// A front-end that edits a window it fetched earlier can race with another writer; a
+/// blind `set` would then replace a value nobody looked at. `--expect` turns the write
+/// into "change x to y only if it is still x", and says what it found when it is not.
+fn check_expect(
+    input: &Path,
+    delimiter: Delimiter,
+    row: u64,
+    column: &str,
+    expect: &str,
+) -> Result<(), i32> {
+    let sheet = match csv_splitter_core::sheet::Sheet::open(
+        input,
+        csv_splitter_core::sheet::ReadOptions { delimiter },
+    ) {
+        Ok(sheet) => sheet,
+        Err(e) => {
+            return Err(report_failure(
+                "edit",
+                format!("cannot open the sheet: {e}"),
+            ))
+        }
+    };
+    let columns = match sheet.columns() {
+        Ok(columns) => columns,
+        Err(e) => {
+            return Err(report_failure(
+                "edit",
+                format!("cannot read the columns: {e}"),
+            ))
+        }
+    };
+    let Some(slot) = columns.iter().position(|c| c == column) else {
+        eprintln!(
+            "error: column '{column}' not found; available: {}",
+            columns.join(", ")
+        );
+        return Err(2);
+    };
+    let window = match sheet.window(row, 1) {
+        Ok(window) => window,
+        Err(e) => {
+            return Err(report_failure(
+                "edit",
+                format!("cannot read row {}: {e}", row + 1),
+            ))
+        }
+    };
+    let Some(cells) = window.rows.first() else {
+        eprintln!("error: row {} is past the end of the sheet", row + 1);
+        return Err(1);
+    };
+    let actual = cells.get(slot).map(String::as_str).unwrap_or("");
+    if actual != expect {
+        eprintln!(
+            "error: row {} column '{column}' is {actual:?}, not {expect:?} (--expect); nothing was written",
+            row + 1
+        );
+        eprintln!("hint: re-read the row (the value may have changed since you fetched it) and retry without --expect");
+        return Err(1);
+    }
+    Ok(())
+}
+
 /// Check a formula before it becomes a journal step: unknown columns and missing
 /// sheets are cheap to spot now and expensive to discover after an export.
 ///
@@ -5592,6 +5678,7 @@ fn cmd_edit(args: &[String]) -> i32 {
     let mut row_to: Option<u64> = None;
     let mut columns: Option<Vec<String>> = None;
     let mut invalid_rule: Option<String> = None;
+    let mut expect_value: Option<String> = None;
     let mut find: Option<String> = None;
     let mut find_col: Option<Vec<String>> = None;
     let mut find_nth: u64 = 1;
@@ -5717,6 +5804,13 @@ fn cmd_edit(args: &[String]) -> i32 {
                             .collect(),
                     )
                 }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--expect" => match p.value("--expect") {
+                Ok(v) => expect_value = Some(v),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -6246,6 +6340,11 @@ fn cmd_edit(args: &[String]) -> i32 {
                     }
                 }
                 (Some(row), None) => {
+                    if let Some(expect) = &expect_value {
+                        if let Err(code) = check_expect(&input, delimiter, row, &column, expect) {
+                            return code;
+                        }
+                    }
                     csv_splitter_core::workbook::Op::SetCell { row, column, value }
                 }
                 (Some(_), Some(_)) => {
@@ -6731,6 +6830,160 @@ fn profile_json(c: &csv_splitter_core::profile::ColumnProfile) -> String {
         c.mixed_types,
         top.join(",")
     )
+}
+
+/// `schema FILE [--has COL] [--sample N] [--json]`
+///
+/// The question a front-end asks before drawing anything: which columns exist, in what
+/// order, and what is in them. `--has` answers one column and exits non-zero when it is
+/// missing, so a shell script can branch on it the way `grep -q` does.
+fn cmd_schema(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut input: Option<PathBuf> = None;
+    let mut has: Option<String> = None;
+    let mut sample: u64 = 10;
+    let mut json = false;
+    let mut delim = "auto".to_string();
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--has" => match p.value("--has") {
+                Ok(v) => has = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--sample" => match p
+                .value("--sample")
+                .and_then(|v| v.parse().map_err(|_| "bad --sample".to_string()))
+            {
+                Ok(v) => sample = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--json" => json = true,
+            "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_command_help("schema");
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => input = Some(PathBuf::from(other)),
+        }
+    }
+    let Some(input) = input else {
+        eprintln!("error: schema needs an <input> path");
+        return 2;
+    };
+    let delimiter = match parse_delimiter(&delim, &input) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let sheet = match csv_splitter_core::sheet::Sheet::open(
+        &input,
+        csv_splitter_core::sheet::ReadOptions { delimiter },
+    ) {
+        Ok(sheet) => sheet,
+        Err(e) => return report_failure("schema", format!("cannot open the sheet: {e}")),
+    };
+
+    if let Some(name) = &has {
+        let index = match sheet.column_index(name) {
+            Ok(index) => index,
+            Err(e) => return report_failure("schema", format!("cannot read the columns: {e}")),
+        };
+        match index {
+            Some(index) => {
+                if json {
+                    println!(
+                        r#"{{"name":{},"exists":true,"index":{index}}}"#,
+                        serve::json_str(name)
+                    );
+                } else {
+                    println!("✓ column {name:?} exists at position {index}");
+                }
+                0
+            }
+            None => {
+                if json {
+                    println!(r#"{{"name":{},"exists":false}}"#, serve::json_str(name));
+                } else {
+                    let columns = sheet.columns().unwrap_or_default();
+                    eprintln!("✗ no column {name:?} in {} column(s)", columns.len());
+                    // The same candidate logic every other column lookup uses.
+                    eprintln!(
+                        "  {}",
+                        csv_splitter_core::csv_reader::column_candidates(name, &columns)
+                    );
+                }
+                1
+            }
+        }
+    } else {
+        let schema = match sheet.schema(sample) {
+            Ok(schema) => schema,
+            Err(e) => return report_failure("schema", format!("cannot profile the columns: {e}")),
+        };
+        let rows = sheet.rows().unwrap_or(0);
+        if json {
+            let body: Vec<String> = schema
+                .iter()
+                .map(|c| {
+                    format!(
+                        r#"{{"name":{},"index":{},"kind":{},"empty":{},"sampled":{}}}"#,
+                        serve::json_str(&c.name),
+                        c.index,
+                        serve::json_str(c.kind.as_str()),
+                        c.empty,
+                        c.sampled
+                    )
+                })
+                .collect();
+            println!(
+                r#"{{"rows":{rows},"count":{},"columns":[{}]}}"#,
+                schema.len(),
+                body.join(",")
+            );
+            return 0;
+        }
+        println!(
+            "{} — {rows} rows, {} column(s), kinds sampled from the first {sample}",
+            input.display(),
+            schema.len()
+        );
+        let mut table =
+            String::from("  #    name                                     kind    empty\n");
+        for column in &schema {
+            let empty = if column.sampled == 0 {
+                "-".to_string()
+            } else {
+                format!("{}/{}", column.empty, column.sampled)
+            };
+            table.push_str(&format!(
+                "  {:<4} {:<40} {:<7} {empty}\n",
+                column.index,
+                truncate_for_display(&column.name, 40),
+                column.kind.as_str()
+            ));
+        }
+        print!("{table}");
+        0
+    }
 }
 
 fn cmd_columns(args: &[String]) -> i32 {

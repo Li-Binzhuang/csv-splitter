@@ -50,6 +50,74 @@ pub struct Sheet {
     base_columns: Vec<String>,
 }
 
+/// What a column holds, as far as a sample can tell.
+///
+/// Sampling rather than a full scan on purpose: a front-end needs this to choose an
+/// editor (text box, number spinner, date picker) and it needs it now, not after a
+/// pass over 2.5 GB.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ColumnKind {
+    Number,
+    Date,
+    Text,
+    Empty,
+    Mixed,
+}
+
+impl ColumnKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Number => "number",
+            Self::Date => "date",
+            Self::Text => "text",
+            Self::Empty => "empty",
+            Self::Mixed => "mixed",
+        }
+    }
+
+    fn observe(values: &mut KindTally, value: &str) {
+        if value.trim().is_empty() {
+            return;
+        }
+        let kind = if value.parse::<f64>().is_ok() && !value.contains(',') {
+            Self::Number
+        } else if crate::validate::is_date(value.trim()) {
+            Self::Date
+        } else {
+            Self::Text
+        };
+        match &mut values.seen {
+            None => values.seen = Some(kind),
+            Some(previous) if *previous != kind => values.mixed = true,
+            Some(_) => {}
+        }
+    }
+
+    fn finish(values: &KindTally) -> Self {
+        match values.seen {
+            None => Self::Empty,
+            Some(_) if values.mixed => Self::Mixed,
+            Some(kind) => kind,
+        }
+    }
+}
+
+struct KindTally {
+    seen: Option<ColumnKind>,
+    mixed: bool,
+}
+
+/// One column as a front-end sees it: a name, a position, a kind, and how many sampled
+/// cells were empty. `index` is 1-based, like every row and column number on the wire.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ColumnInfo {
+    pub name: String,
+    pub index: usize,
+    pub kind: ColumnKind,
+    pub empty: u64,
+    pub sampled: u64,
+}
+
 impl Sheet {
     /// Open a sheet. A missing journal means "no edits", not "error".
     pub fn open(base: &Path, options: ReadOptions) -> io::Result<Self> {
@@ -107,6 +175,56 @@ impl Sheet {
     }
 
     /// Logical row count (base rows minus deletions plus insertions).
+    /// The full column list, in order, with 1-based indices and sampled kinds.
+    ///
+    /// Never truncated: a 782-column table reports 782 columns, because a front-end
+    /// that silently lost columns cannot offer them for editing.
+    pub fn schema(&self, sample: u64) -> io::Result<Vec<ColumnInfo>> {
+        let columns = self.columns()?;
+        let sample = sample.max(1);
+        let window = self.window(0, sample.min(self.rows().unwrap_or(0).max(1)))?;
+        let mut tallies: Vec<KindTally> = columns
+            .iter()
+            .map(|_| KindTally {
+                seen: None,
+                mixed: false,
+            })
+            .collect();
+        let mut empties = vec![0u64; columns.len()];
+        for row in &window.rows {
+            for (slot, tally) in tallies.iter_mut().enumerate() {
+                let value = row.get(slot).map(String::as_str).unwrap_or("");
+                if value.trim().is_empty() {
+                    empties[slot] += 1;
+                }
+                ColumnKind::observe(tally, value);
+            }
+        }
+        Ok(columns
+            .into_iter()
+            .enumerate()
+            .map(|(slot, name)| ColumnInfo {
+                name,
+                index: slot + 1,
+                kind: ColumnKind::finish(&tallies[slot]),
+                empty: empties[slot],
+                sampled: window.rows.len() as u64,
+            })
+            .collect())
+    }
+
+    /// 1-based index of a column by name, or `None` when it is not there.
+    ///
+    /// This is the question a front-end asks before it renders a column it was told
+    /// about: "does this sheet still have `cust_no`?"
+    pub fn column_index(&self, name: &str) -> io::Result<Option<usize>> {
+        Ok(self
+            .columns()?
+            .iter()
+            .position(|column| column == name)
+            .map(|slot| slot + 1))
+    }
+
     pub fn rows(&self) -> io::Result<u64> {
         workbook::logical_rows(&self.base, self.journal.ops())
     }

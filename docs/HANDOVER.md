@@ -119,7 +119,7 @@ API：`/rows` 首屏 66 ms（含建索引），之后 **6–7 ms**，任意偏�
 ```
 crates/core/   引擎：编辑模型、公式、查询、拆分、格式（40 个模块，19600 行）
 crates/cli/    30 条命令 + HTTP API + 内置查看页
-crates/gui/    egui 前端（冻结，与 core 共用，不由此项目改动）
+crates/cli/    命令行 + HTTP 后端（前端由别的项目接）
 docs/          README 之外的 7 份文档，6 条一致性测试链
 scripts/       dev.sh / smoke.sh / regress.sh / bench.sh / clean.sh
 ```

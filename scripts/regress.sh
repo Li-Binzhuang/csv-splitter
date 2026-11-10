@@ -41,6 +41,9 @@ check "analyze"    "$BIN" analyze orders.csv --sample 1000
 check "validate"   "$BIN" validate orders.csv --check "city:not-empty"
 check "dedupe"     "$BIN" dedupe orders.csv --by cust_no -o d.csv
 check "columns"    "$BIN" columns orders.csv --keep id,city -o c.csv
+check "schema"      "$BIN" schema orders.csv --sample 5
+check "schema --has" "$BIN" schema orders.csv --has city
+check "expect"      "$BIN" edit set orders.csv --row 1 --col city --expect "$(head -2 orders.csv | tail -1 | cut -d, -f3)" --value Z
 check "concat"     "$BIN" concat small.csv small.csv -o cc.csv
 check "partition"  "$BIN" partition orders.csv --by city -o parts.tar
 check "sort"       "$BIN" sort orders.csv --by amount -o s.csv

@@ -4701,3 +4701,85 @@ fn a_wide_file_is_not_printed_column_by_column() {
         .unwrap();
     assert_eq!(out.status.code(), Some(2));
 }
+
+/// `schema` answers "is this column here?" and "what is in it?".
+#[test]
+fn schema_lists_columns_and_answers_existence() {
+    let dir = TempDir::new("schema");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,city,amount\n1,CDMX,10\n2,Puebla,20\n3,CDMX,\n").unwrap();
+    let path = input.to_str().unwrap();
+
+    // A column that exists: exit 0, and it says where.
+    let out = Command::new(bin())
+        .args(["schema", path, "--has", "city"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("position 2"), "{stdout}");
+
+    // A column that does not: exit 1, so a script can branch on it.
+    let out = Command::new(bin())
+        .args(["schema", path, "--has", "nope"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("2 of 3") || stderr.contains("no column"),
+        "{stderr}"
+    );
+
+    // The full list: every column, with kinds sampled from the data.
+    let out = Command::new(bin())
+        .args(["schema", path, "--json", "--sample", "3"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains(r#""count":3"#), "{stdout}");
+    assert!(stdout.contains(r#""name":"city""#), "{stdout}");
+    assert!(stdout.contains(r#""kind":"number""#), "{stdout}");
+    assert!(stdout.contains(r#""index":3"#), "{stdout}");
+}
+
+/// `--expect` makes a write conditional, and refuses instead of guessing.
+#[test]
+fn expect_turns_a_set_into_compare_and_set() {
+    let dir = TempDir::new("expect");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,city\n1,CDMX\n2,Puebla\n").unwrap();
+    let path = input.to_str().unwrap();
+
+    // Correct expectation: written.
+    let out = Command::new(bin())
+        .args([
+            "edit", "set", path, "--row", "1", "--col", "city", "--expect", "CDMX", "--value", "Z",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0), "{:?}", out);
+
+    // The old value is gone: the same expectation now fails, and says what it found.
+    let out = Command::new(bin())
+        .args([
+            "edit", "set", path, "--row", "1", "--col", "city", "--expect", "CDMX", "--value", "Z2",
+        ])
+        .output()
+        .unwrap();
+    assert_ne!(out.status.code(), Some(0));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("not \"CDMX\""), "{stderr}");
+    assert!(stderr.contains("\"Z\""), "{stderr}");
+    assert!(stderr.contains("nothing was written"), "{stderr}");
+
+    // And the refused write really did nothing.
+    let out = Command::new(bin())
+        .args(["view", path, "--count", "1", "--columns", "city"])
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains('Z'), "{stdout}");
+    assert!(!stdout.contains("Z2"), "{stdout}");
+}

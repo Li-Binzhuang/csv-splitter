@@ -360,9 +360,41 @@ pub enum RowId {
     Virtual(u64),
 }
 
+/// Which base rows the journal touches, and whether it touches every row.
+///
+/// The export loop asks this per row. Answering it by scanning `cells`, `blocks` and
+/// `fills` would be O(edits) per row; building the set once is O(edits) in total.
+pub struct RowTouches {
+    ids: std::collections::HashSet<RowId>,
+    global: bool,
+}
+
+impl RowTouches {
+    /// True when this row needs the full pipeline: an explicit edit, a paste, a fill,
+    /// or a rule/substitution that applies to every row.
+    pub fn needs_pipeline(&self, id: RowId) -> bool {
+        self.global || self.ids.contains(&id)
+    }
+}
+
 impl CellEdits {
     pub fn is_empty(&self) -> bool {
         self.cells.is_empty() && self.subs.is_empty()
+    }
+
+    /// Every row this journal touches. Rules and substitutions apply to all rows,
+    /// so any of those makes the whole file "touched".
+    pub fn row_touches(&self) -> RowTouches {
+        let mut ids: std::collections::HashSet<RowId> =
+            self.cells.keys().map(|(row, _)| *row).collect();
+        for (row, _, _) in &self.blocks {
+            ids.insert(*row);
+        }
+        let global = !self.rules.is_empty()
+            || !self.subs.is_empty()
+            || !self.regex_subs.is_empty()
+            || !self.fills.is_empty();
+        RowTouches { ids, global }
     }
 
     /// New value for a cell, if an edit touched it.

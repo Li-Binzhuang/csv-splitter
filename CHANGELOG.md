@@ -1,5 +1,43 @@
 # Changelog
 
+## [2.2.0] — 2026-11-10
+
+The project is now a **CLI and a backend**, not a GUI application. The framework is what
+matters; a front-end is someone else's job.
+
+### Removed
+
+- **The GUI crate is gone** (`crates/gui`, egui/eframe/rfd, ~950 lines and every Linux
+  font/GTK dependency). Keeping a frozen front-end compiling for its own sake was work
+  that produced nothing the user asked for. The workspace is now `core` (engine) and
+  `cli` (commands + HTTP backend). CI and the release workflow build `csv-splitter`.
+
+### Added — the three questions a front-end asks
+
+- **`sheet::schema()` and `sheet::column_index()`** in the library: the full column list
+  with 1-based index, sampled kind (`number`/`date`/`text`/`empty`/`mixed`) and blank
+  count, plus "does this column exist, and where".
+- **`csv-splitter schema FILE [--has COL] [--json] [--sample N]`**: the same two answers
+  on the command line. `--has` exits 0 when the column exists and 1 when it does not,
+  so a script can branch on it.
+- **`GET /columns`**: the column list, never truncated (782 columns return 782 entries),
+  and `?name=` for a single existence answer — 9 ms on a 2.5 GB / 782-column file,
+  instead of downloading the list to find one missing name.
+- **Compare-and-set writes**: `edit set --expect VALUE` and
+  `POST /edit?action=set&expect=…`. If the cell is not holding the expected value the
+  write is refused, `actual` says what it holds, and the API answers **409** rather than
+  a silent overwrite. A front-end editing a window it fetched a moment ago no longer
+  races the writer.
+
+### Fixed
+
+- **A wide CSV export ran at 62 MB/s** because every row was materialised as 782 owned
+  strings before being written. Rows the journal does not touch are now copied byte for
+  byte: a 2.5 GB / 782-column export went from **40.7 s to 2.2 s**, and the output is
+  byte-identical to the input (`sha256` matches). The fast path is off when the file's
+  quoting style differs from what export writes (a backslash file is still normalised
+  to RFC 4180, as it always was).
+
 ## [2.1.0] — 2026-11-10
 
 First run on **real business data** — a 2.5 GB, 685 k-row, 782-column result file:

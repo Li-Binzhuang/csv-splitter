@@ -167,6 +167,21 @@ pub fn export_selected(
     };
     let mut pipeline = RowPipeline::new(&columns, &keep, edits, &plan, refs, state);
 
+    // A row the journal does not touch can be copied as bytes: no cell ever has to
+    // become an owned String. On a 782-column file the pipeline cost 40 s for 2.5 GB
+    // (all of it allocation), while a byte-level pass runs at four times the rate.
+    let touches = edits.row_touches();
+    let plan_is_plain = plan.formulas.iter().all(Option::is_none)
+        && plan.literals.iter().all(Option::is_none)
+        && plan.splits.is_empty();
+    let writes_every_column = selected.is_none();
+    // A verbatim copy keeps the input's bytes, which is only faithful when the input
+    // already quotes the way this tool writes: RFC 4180 or not at all. A backslash file
+    // is re-emitted as RFC — that normalisation is part of the export contract.
+    let quoting_matches_output = matches!(quotes, QuoteStyle::Rfc4180 | QuoteStyle::None);
+    let fast_path =
+        plan_is_plain && writes_every_column && only.is_none() && quoting_matches_output;
+
     loop {
         // Which logical row sits at `logical`? Ask the map so inserted blocks and
         // deleted ranges are handled by the same code path as normal rows.
@@ -196,6 +211,19 @@ pub fn export_selected(
                 }
                 if physical == u64::MAX {
                     break;
+                }
+                if fast_path && !touches.needs_pipeline(RowId::Base(target)) {
+                    // Byte-for-byte: the original quoting and spacing are preserved,
+                    // which is also the most faithful "copy" possible.
+                    let mut end = record.len();
+                    while end > 0 && matches!(record[end - 1], b'\n' | b'\r') {
+                        end -= 1;
+                    }
+                    out.write_all(&record[..end])?;
+                    out.write_all(b"\n")?;
+                    summary.rows += 1;
+                    logical += 1;
+                    continue;
                 }
                 let cells = parse_csv_record_with(
                     String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),

@@ -165,6 +165,7 @@ csv-splitter extract chunks.tar -o ./out
 | `analyze` | 全列画像：类型、空值、基数、异常 |
 | `validate` | 检查脏数据：非空/数值/日期/唯一/任意比较 |
 | `dedupe` | 去重 |
+| `schema` | 列清单与存在性检查（`--has COL`）| 前端要的第一件事 |
 | `columns` | 保留/删除/改名/重排 |
 | `concat` | 多个同构 CSV 拼成一个 |
 | `partition` | 按列值拆成多个文件 |
@@ -1062,11 +1063,10 @@ cargo build
 # Release build (with LTO)
 cargo build --release
 
-# Run the GUI
-cargo run --release -p csv-splitter-gui
-
-# Run the CLI
+# Run it
 cargo run --release -p csv-splitter-cli -- --help
+cargo run --release -p csv-splitter-cli -- serve --root .   # HTTP backend
+
 ```
 
 ### Platform Dependencies / 平台依赖
@@ -1075,20 +1075,9 @@ cargo run --release -p csv-splitter-cli -- --help
 |----------|-------------|
 | macOS | None |
 | Windows | None |
-| Linux | CJK font + GTK3 dev libs |
+| Linux | A C toolchain for the bundled database library (any distro package) |
 
-Linux setup:
-
-```bash
-# Ubuntu / Debian
-sudo apt install fonts-noto-cjk libgtk-3-dev libxdo-dev
-
-# Arch
-sudo pacman -S noto-fonts-cjk gtk3
-
-# Fedora
-sudo dnf install google-noto-sans-cjk-fonts gtk3-devel
-```
+No GUI toolkit, no fonts: this is a CLI and an HTTP backend.
 
 ## Project Structure / 项目结构
 
@@ -1096,46 +1085,22 @@ sudo dnf install google-noto-sans-cjk-fonts gtk3-devel
 csv-splitter/
 ├── Cargo.toml                 # Workspace root
 ├── crates/
-│   ├── core/                  # Core library (no GUI dependency)
+│   ├── core/                  # The engine (a library, no front-end dependency)
 │   │   └── src/
-│   │       ├── types.rs       # SplitConfig, ProgressEvent, etc.
-│   │       ├── csv_reader.rs  # CSV parsing, header reading, delimiter detection
-│   │       ├── splitter.rs    # Split + column filter + compress pipeline
-│   │       ├── compress.rs    # Compressor factory (Zstd/Gzip/Bzip2/XZ)
-│   │       ├── decompress.rs  # Decompression (12 format combos)
-│   │       ├── preview.rs     # Data preview + column stats (reservoir sampling)
-│   │       └── sort.rs        # External merge sort
-│   ├── cli/                   # Headless CLI (split / merge / verify / stats)
-│   │   └── src/main.rs
-│   └── gui/                   # GUI application (egui / eframe)
-│       └── src/
-│           ├── main.rs        # Entry point
-│           ├── app.rs         # App framework + drag-drop handling
-│           ├── state.rs       # Per-tab state definitions
-│           ├── theme.rs       # Dark theme + CJK font loading
-│           ├── i18n.rs        # Chinese / English i18n
-│           ├── widgets/       # Shared UI components
-│           └── tabs/          # Feature pages (split, preview, stats, decompress)
+│   │       ├── workbook/      # base + journal: editing a huge file without rewriting it
+│   │       ├── csv_reader.rs  # CSV records, headers, delimiter and quote detection
+│   │       ├── index.rs       # Sparse row index: jump to any row
+│   │       ├── sheet.rs       # The seam features hang off: columns, rows, windows
+│   │       └── …              # filter, sort, groupby, pivot, validate, …
+│   └── cli/                   # `csv-splitter` (CLI) and its HTTP backend (`serve`)
+│       ├── src/main.rs        # commands
+│       └── src/serve.rs       # HTTP API for a front-end
+├── docs/                      # API, architecture, capabilities, troubleshooting
+└── scripts/                   # dev / smoke / regress / bench / clean
 ```
 
-## CI/CD
-
-| Trigger | Workflow | Description |
-|---------|----------|-------------|
-| Push to `main` / PR | CI | Check, Clippy (-D warnings), Tests |
-| Tag `v*` push | Release | Build all platforms → GitHub Release |
-| Manual dispatch | Release | Optional tag input, build with/without release |
-
-CI 为什么拆成两个 job、怎么让它不变慢，见 [docs/CI.md](docs/CI.md)。
-
-To create a release:
-
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-Release artifacts are automatically uploaded with SHA256 checksums. Tags containing `-alpha`, `-beta`, `-rc` are marked as pre-release.
+**No GUI here.** A front-end talks to `serve`; this repository is the engine, the CLI
+and the API behind it.
 
 ## License
 

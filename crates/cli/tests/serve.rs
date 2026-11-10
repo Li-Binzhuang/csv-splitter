@@ -1800,3 +1800,54 @@ fn all_window_paths_agree_on_shape_and_on_edits() {
     );
     assert!(body.contains("\"999\""), "{body}");
 }
+
+/// The backend's two framework questions: which columns exist, and a guarded write.
+#[test]
+fn columns_and_compare_and_set() {
+    let dir = TempDir::new("columnsand");
+    std::fs::write(
+        dir.join("t.csv"),
+        "id,city,amount\n1,CDMX,10\n2,Puebla,20\n",
+    )
+    .unwrap();
+    let server = start(&dir.0);
+
+    // The column list: complete, 1-based, with kinds.
+    let (code, body) = get(&server.addr, "/columns?path=t.csv&sample=2");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""count":3"#), "{body}");
+    assert!(body.contains(r#""index":1"#), "{body}");
+    assert!(body.contains(r#""kind":"text""#), "{body}");
+    assert!(body.contains(r#""kind":"number""#), "{body}");
+
+    // Existence: one answer, no 782-column download.
+    let (code, body) = get(&server.addr, "/columns?path=t.csv&name=city");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""exists":true"#), "{body}");
+    assert!(body.contains(r#""index":2"#), "{body}");
+
+    let (code, body) = get(&server.addr, "/columns?path=t.csv&name=nosuch");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""exists":false"#), "{body}");
+
+    // Compare-and-set: the first write succeeds, the second is refused with 409 and
+    // says what the value actually is.
+    let (code, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=city&value=Z&expect=CDMX",
+    );
+    assert_eq!(code, 200, "{body}");
+
+    let (code, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=city&value=Z2&expect=CDMX",
+    );
+    assert_eq!(code, 409, "{body}");
+    assert!(body.contains(r#""actual":"Z""#), "{body}");
+    assert!(body.contains(r#""expected":"CDMX""#), "{body}");
+
+    // The refused write left the sheet alone.
+    let (_, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=1");
+    assert!(body.contains(r#"Z"#), "{body}");
+    assert!(!body.contains("Z2"), "{body}");
+}

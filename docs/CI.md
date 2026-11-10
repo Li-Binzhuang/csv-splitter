@@ -36,9 +36,9 @@
 
 ```bash
 cargo fmt --all -- --check
-cargo test -p csv-splitter-core -p csv-splitter-gui
+cargo test -p csv-splitter-core -p csv-splitter-cli
 cargo test -p csv-splitter-core --test performance
-cargo clippy -p csv-splitter-core -p csv-splitter-gui --all-targets -- -D warnings
+cargo clippy -p csv-splitter-core -p csv-splitter-cli --all-targets -- -D warnings
 
 CARGO_PROFILE_TEST_DEBUG=0 cargo clippy -p csv-splitter-cli --all-targets -- -D warnings
 CARGO_PROFILE_TEST_DEBUG=0 cargo test -p csv-splitter-cli

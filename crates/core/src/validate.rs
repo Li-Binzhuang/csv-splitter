@@ -121,7 +121,8 @@ impl Rule {
     }
 }
 
-fn is_date(text: &str) -> bool {
+/// A real calendar date in `YYYY-MM-DD` form (2026-02-30 is not one).
+pub fn is_date(text: &str) -> bool {
     let bytes = text.as_bytes();
     if bytes.len() != 10 || bytes[4] != b'-' || bytes[7] != b'-' {
         return false;

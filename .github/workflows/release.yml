@@ -13,7 +13,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  APP_NAME: csv-splitter-gui
+  APP_NAME: csv-splitter
 
 permissions:
   contents: write
@@ -91,24 +91,24 @@ jobs:
           sudo apt-get install -y libgtk-3-dev libxdo-dev fonts-noto-cjk
 
       - name: Build release
-        run: cargo build --release --target ${{ matrix.target }} -p csv-splitter-gui
+        run: cargo build --release --target ${{ matrix.target }} -p csv-splitter-cli
 
       - name: Package (Unix)
         if: runner.os != 'Windows'
         run: |
           mkdir -p staging
-          cp target/${{ matrix.target }}/release/csv-splitter-gui staging/
+          cp target/${{ matrix.target }}/release/csv-splitter staging/
           cd staging
-          chmod +x csv-splitter-gui
-          tar czf ../${{ matrix.artifact }}${{ matrix.ext }} csv-splitter-gui
+          chmod +x csv-splitter
+          tar czf ../${{ matrix.artifact }}${{ matrix.ext }} csv-splitter
 
       - name: Package (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path staging
-          Copy-Item "target/${{ matrix.target }}/release/csv-splitter-gui.exe" "staging/"
-          Compress-Archive -Path "staging/csv-splitter-gui.exe" -DestinationPath "${{ matrix.artifact }}${{ matrix.ext }}"
+          Copy-Item "target/${{ matrix.target }}/release/csv-splitter.exe" "staging/"
+          Compress-Archive -Path "staging/csv-splitter.exe" -DestinationPath "${{ matrix.artifact }}${{ matrix.ext }}"
 
       - name: Generate SHA256 checksum (Unix)
         if: runner.os != 'Windows'

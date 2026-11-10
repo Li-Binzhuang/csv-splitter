@@ -174,6 +174,58 @@ GET  /job?id=job123        →  state: done
 
 `count` 上限 2000，超了会报 `requested` / `count` / `limit` 三个字段。
 
+
+## `GET /columns`
+
+The framework's first question: which columns does this sheet have?
+
+```bash
+curl "http://127.0.0.1:7811/columns?path=big.csv&sample=10"
+```
+
+```json
+{"path":"big.csv","rows":684917,"count":782,
+ "columns":[{"name":"base_time","index":1,"kind":"text","empty":0,"sampled":10},
+            {"name":"apply_id","index":2,"kind":"number","empty":0,"sampled":10},
+            ...]}
+```
+
+- **Never truncated**: 782 columns come back as 782 entries.
+- `index` is 1-based, like every row and column number on the wire.
+- `kind` is one of `number` / `date` / `text` / `empty` / `mixed`, sampled from the
+  first `sample` rows (default 10) — enough to choose an editor, without a full scan.
+- `empty` counts the sampled blank cells.
+
+### Existence check
+
+```bash
+curl "http://127.0.0.1:7811/columns?path=big.csv&name=cust_no"
+{"name":"cust_no","exists":true,"index":3}
+
+curl "http://127.0.0.1:7811/columns?path=big.csv&name=nosuch"
+{"name":"nosuch","exists":false}
+```
+
+One question, one answer: a client does not download 782 columns to learn that one is
+missing. On a 2.5 GB / 782-column file this answers in **9 ms**.
+
+## `POST /edit?action=set&expect=…` (compare-and-set)
+
+A front-end edits a window it fetched a moment ago. Without a guard, a blind write can
+replace a value nobody looked at. `expect=` makes the write conditional:
+
+```bash
+curl -X POST "http://127.0.0.1:7811/edit?path=t.csv&action=set&row=1&col=city&value=Z&expect=CDMX"
+# 200 -> written
+
+curl -X POST "http://127.0.0.1:7811/edit?path=t.csv&action=set&row=1&col=city&value=Z2&expect=CDMX"
+# 409 -> {"error":"the value changed; nothing was written","parameter":"expect",
+#         "hint":"re-read the row and retry without expect=","actual":"Z","expected":"CDMX"}
+```
+
+`409` is distinct from `400`: the request is well-formed, the world moved. Nothing is
+written on refusal, and `actual` says what the value is now.
+
 ## 已知限制
 
 - `where` / `order` 走 DuckDB：对**有编辑的文件**会先物化到临时表（每份源文件最多一份，

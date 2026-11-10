@@ -128,6 +128,8 @@
 | 切分 | `split f.csv -n N` / `--by-size` | `POST /split` |
 | 合并 | `merge chunks.tar -o out.csv` | `POST /merge` |
 | 排序 | `sort --by C -o out.csv` | `POST /sort` |
+| 列存在性 / 列元数据 | `schema --has COL`（存在 0 / 不存在 1）· `schema --json` | `GET /columns` |
+| 写入约束 | `edit set --expect VALUE`（不匹配则拒绝）| `POST /edit?action=set&expect=`（409）|
 | 数据校验 | `validate --check "qty>=0" --check "city:not-empty"` | — |
 | 删掉不合格的行 | `edit delete --invalid "ts:date"`（一次操作，一次撤销） | — |
 | 去重 | `dedupe -o out.csv [--by C]` | `POST /dedupe` |

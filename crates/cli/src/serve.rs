@@ -188,6 +188,7 @@ fn handle(
         "/analyze" => analyze(&mut stream, root, &params),
         "/edit" => edit_state(&mut stream, root, &params),
         "/sheet" => sheet_meta(&mut stream, root, &params),
+        "/columns" => columns_endpoint(&mut stream, root, &params),
         "/groupby" => group_by(&mut stream, root, cache, &params),
         "/pivot" => pivot_endpoint(&mut stream, root, cache, &params),
         "/style" => style_endpoint(&mut stream, root, &params),
@@ -202,7 +203,7 @@ fn handle(
         _ => respond_json(
             &mut stream,
             404,
-            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/sheet","/book","/pivot","/style","/chart","/layout","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/edit","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
+            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/columns","/sheet","/book","/pivot","/style","/chart","/layout","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/edit","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
         ),
     }
 }
@@ -747,6 +748,69 @@ fn edit_apply(
                     "row=<n>&col=<name>&value=<text>",
                 );
             };
+            // `expect=` makes the write compare-and-set: a client that fetched this
+            // window earlier must not overwrite a value it never saw.
+            if let Some(expect) = params.get("expect") {
+                let sheet = match csv_splitter_core::sheet::Sheet::open(
+                    &path,
+                    csv_splitter_core::sheet::ReadOptions {
+                        delimiter: delimiter(params),
+                    },
+                ) {
+                    Ok(sheet) => sheet,
+                    Err(e) => {
+                        return respond_json(
+                            stream,
+                            422,
+                            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                        )
+                    }
+                };
+                let columns = match sheet.columns() {
+                    Ok(columns) => columns,
+                    Err(e) => {
+                        return respond_json(
+                            stream,
+                            422,
+                            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                        )
+                    }
+                };
+                let Some(slot) = columns.iter().position(|c| c == column) else {
+                    return bad_request(
+                        stream,
+                        "column not found",
+                        "col",
+                        &format!("available: {}", columns.join(", ")),
+                    );
+                };
+                let actual = match sheet.window(row, 1) {
+                    Ok(window) => window
+                        .rows
+                        .first()
+                        .and_then(|cells| cells.get(slot).cloned())
+                        .unwrap_or_default(),
+                    Err(e) => {
+                        return respond_json(
+                            stream,
+                            422,
+                            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                        )
+                    }
+                };
+                if actual != *expect {
+                    return respond_json(
+                        stream,
+                        409,
+                        &format!(
+                            r#"{{"error":"the value changed; nothing was written","parameter":"expect","hint":{},"actual":{},"expected":{}}}"#,
+                            json_str("re-read the row and retry without expect="),
+                            json_str(&actual),
+                            json_str(expect)
+                        ),
+                    );
+                }
+            }
             Op::SetCell {
                 row,
                 column: column.clone(),
@@ -2057,6 +2121,95 @@ fn respond_sheet_window(
 }
 
 /// Everything a front-end needs to render the sheet chrome (GET /sheet).
+/// `GET /columns?path=f.csv[&name=city][&sample=100]`
+///
+/// The column list a front-end renders from, and the existence check it asks before
+/// drawing a column it was told about. `name` answers one question and nothing else,
+/// so a client does not have to fetch 782 columns to learn that one is missing.
+fn columns_endpoint(
+    stream: &mut TcpStream,
+    root: &Path,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
+    };
+    let options = csv_splitter_core::sheet::ReadOptions {
+        delimiter: delimiter(params),
+    };
+    let sheet = match csv_splitter_core::sheet::Sheet::open(&path, options) {
+        Ok(s) => s,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+
+    if let Some(name) = params.get("name") {
+        let index = match sheet.column_index(name) {
+            Ok(index) => index,
+            Err(e) => {
+                return respond_json(
+                    stream,
+                    422,
+                    &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                )
+            }
+        };
+        let body = match index {
+            Some(index) => format!(
+                r#"{{"name":{},"exists":true,"index":{index}}}"#,
+                json_str(name)
+            ),
+            None => format!(r#"{{"name":{},"exists":false}}"#, json_str(name)),
+        };
+        return respond_json(stream, 200, &body);
+    }
+
+    let sample: u64 = params
+        .get("sample")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(10);
+    let schema = match sheet.schema(sample) {
+        Ok(schema) => schema,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let rows = sheet.rows().unwrap_or(0);
+    let body: Vec<String> = schema
+        .iter()
+        .map(|column| {
+            format!(
+                r#"{{"name":{},"index":{},"kind":{},"empty":{},"sampled":{}}}"#,
+                json_str(&column.name),
+                column.index,
+                json_str(column.kind.as_str()),
+                column.empty,
+                column.sampled
+            )
+        })
+        .collect();
+    respond_json(
+        stream,
+        200,
+        &format!(
+            r#"{{"path":{},"rows":{rows},"count":{},"columns":[{}]}}"#,
+            json_str(&params.get("path").cloned().unwrap_or_default()),
+            schema.len(),
+            body.join(",")
+        ),
+    )
+}
+
 fn sheet_meta(
     stream: &mut TcpStream,
     root: &Path,
