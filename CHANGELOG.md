@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.82.0] — 2026-11-10
+
+### Changed
+
+- **`pivot` prints the matrix by default**; `-o` still writes a file. A pivot is
+  something you look at, and "write a file, then open the file" was a step nobody
+  asked for. The matrix is bounded by `--max-cells`, so printing it is safe.
+  - `core::pivot` now separates `pivot_rows` (returns the table) from `pivot_quotes`
+    (writes it), so the two cannot drift and the API can return the same table later.
+
 ## [0.81.0] — 2026-11-10
 
 ### Added

@@ -90,14 +90,22 @@ pub fn pivot(
 }
 
 /// Same as [`pivot`], with an explicit quote style.
-pub fn pivot_quotes(
+pub struct PivotTable {
+    pub header: Vec<String>,
+    pub rows: Vec<Vec<String>>,
+    pub summary: PivotSummary,
+}
+
+/// The matrix itself, without a file: the CLI prints it and the API returns it.
+pub fn pivot_rows(
     path: &Path,
     delimiter: Delimiter,
-    output: &Path,
     options: &PivotOptions,
     quotes: QuoteStyle,
     tx: &ProgressSender,
-) -> io::Result<PivotSummary> {
+) -> io::Result<PivotTable> {
+    let delim = delimiter.byte();
+    let _ = delim;
     if options.rows.is_empty() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -295,14 +303,7 @@ pub fn pivot_quotes(
         rendered.reverse();
     }
 
-    let mut out = BufWriter::with_capacity(4 * 1024 * 1024, File::create(output)?);
-    out.write_all(
-        join_csv_line(
-            &header_out.iter().map(String::as_str).collect::<Vec<_>>(),
-            delim,
-        )
-        .as_bytes(),
-    )?;
+    let mut body: Vec<Vec<String>> = Vec::with_capacity(rendered.len());
     for (_, row) in &rendered {
         let mut line: Vec<String> = row.key.clone();
         for column in &summary_columns {
@@ -325,28 +326,54 @@ pub fn pivot_quotes(
                 }
             }
         }
-        let refs: Vec<&str> = line.iter().map(String::as_str).collect();
-        out.write_all(join_csv_line(&refs, delim).as_bytes())?;
+        body.push(line);
     }
-    out.flush()?;
 
-    let bytes = std::fs::metadata(output).map(|m| m.len()).unwrap_or(0);
     tx.send(ProgressEvent::PhaseDone {
         phase: "Pivoting".into(),
     })
     .ok();
-    let _ = width;
+    let _ = (width, join_csv_line);
 
-    Ok(PivotSummary {
-        input_rows,
-        row_keys: rendered.len() as u64,
-        column_keys: summary_columns.len() as u64,
-        output_rows: rendered.len() as u64,
-        bytes,
-        row_columns: options.rows.clone(),
-        column_values: summary_columns,
-        measures: options.values.iter().map(AggSpec::output_name).collect(),
+    Ok(PivotTable {
+        header: header_out,
+        summary: PivotSummary {
+            input_rows,
+            row_keys: rendered.len() as u64,
+            column_keys: summary_columns.len() as u64,
+            output_rows: rendered.len() as u64,
+            bytes: 0,
+            row_columns: options.rows.clone(),
+            column_values: summary_columns,
+            measures: options.values.iter().map(AggSpec::output_name).collect(),
+        },
+        rows: body,
     })
+}
+
+/// Write the matrix to a CSV file.
+pub fn pivot_quotes(
+    path: &Path,
+    delimiter: Delimiter,
+    output: &Path,
+    options: &PivotOptions,
+    quotes: QuoteStyle,
+    tx: &ProgressSender,
+) -> io::Result<PivotSummary> {
+    let table = pivot_rows(path, delimiter, options, quotes, tx)?;
+    let delim = delimiter.byte();
+    let mut out = BufWriter::with_capacity(4 * 1024 * 1024, File::create(output)?);
+    let header: Vec<&str> = table.header.iter().map(String::as_str).collect();
+    out.write_all(join_csv_line(&header, delim).as_bytes())?;
+    for row in &table.rows {
+        let refs: Vec<&str> = row.iter().map(String::as_str).collect();
+        out.write_all(join_csv_line(&refs, delim).as_bytes())?;
+    }
+    out.flush()?;
+    let bytes = std::fs::metadata(output).map(|m| m.len()).unwrap_or(0);
+    let mut summary = table.summary;
+    summary.bytes = bytes;
+    Ok(summary)
 }
 
 fn cell_text(cell: Option<&Vec<Accumulator>>, slot: usize, values: &[AggSpec]) -> String {

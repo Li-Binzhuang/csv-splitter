@@ -3688,13 +3688,8 @@ fn cmd_pivot(args: &[String]) -> i32 {
             return 2;
         }
     };
-    let output = out.unwrap_or_else(|| {
-        let stem = input
-            .file_stem()
-            .map(|s| s.to_string_lossy().to_string())
-            .unwrap_or_else(|| "pivot".to_string());
-        input.with_file_name(format!("{stem}.pivot.csv"))
-    });
+    // Keep the requested path, if any: printing to the terminal is the default.
+    let out_was_given: Option<PathBuf> = out;
     let options = csv_splitter_core::pivot::PivotOptions {
         rows,
         columns,
@@ -3715,17 +3710,36 @@ fn cmd_pivot(args: &[String]) -> i32 {
             return 2;
         }
     };
-    if let Err(code) = check_output(Some(&input), &output) {
-        return code;
+    if let Some(out) = &out_was_given {
+        if let Err(code) = check_output(Some(&input), out) {
+            return code;
+        }
     }
-    let result =
-        csv_splitter_core::pivot::pivot_quotes(&input, delimiter, &output, &options, quotes, &tx);
-    drop(tx);
-    let _ = reporter.join();
-    let summary = match result {
-        Ok(s) => s,
-        // The engine returns the error itself; nothing else printed it.
-        Err(e) => return report_failure("pivot", e),
+    // Without `-o` the matrix goes to the terminal: a pivot is something you look at,
+    // and writing a file only to open it again is a step nobody asked for.
+    let table = if let Some(output) = out_was_given.clone() {
+        let result = csv_splitter_core::pivot::pivot_quotes(
+            &input, delimiter, &output, &options, quotes, &tx,
+        );
+        drop(tx);
+        let _ = reporter.join();
+        match result {
+            Ok(summary) => Some((summary, None)),
+            // The engine returns the error itself; nothing else printed it.
+            Err(e) => return report_failure("pivot", e),
+        }
+    } else {
+        let result = csv_splitter_core::pivot::pivot_rows(&input, delimiter, &options, quotes, &tx);
+        drop(tx);
+        let _ = reporter.join();
+        match result {
+            Ok(table) => Some((table.summary.clone(), Some(table))),
+            Err(e) => return report_failure("pivot", e),
+        }
+    };
+
+    let Some((summary, table)) = table else {
+        return 1;
     };
 
     if json {
@@ -3739,12 +3753,21 @@ fn cmd_pivot(args: &[String]) -> i32 {
             summary.column_values.join(r#"",""#),
             summary.measures.join(r#"",""#)
         );
+    } else if let Some(table) = table {
+        print_table(&table.header, &table.rows);
+        println!(
+            "\n({} row(s) × {} column(s), {} input rows)",
+            summary.row_keys, summary.column_keys, summary.input_rows
+        );
     } else {
         println!(
             "✓ {} rows × {} columns → {} ({}, {} cells)",
             summary.row_keys,
             summary.column_values.len() * summary.measures.len(),
-            output.display(),
+            out_was_given
+                .as_ref()
+                .map(|p| p.display().to_string())
+                .unwrap_or_default(),
             human_bytes(summary.bytes),
             summary.row_keys * (summary.column_keys * summary.measures.len() as u64)
         );

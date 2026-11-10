@@ -3159,3 +3159,41 @@ fn view_marks_cells_that_match_a_formatting_rule() {
     let text = String::from_utf8_lossy(&out.stdout);
     assert!(!text.contains("matched the formatting"), "{text}");
 }
+
+/// A pivot with no `-o` prints the matrix instead of writing a file next to the input.
+#[test]
+fn pivot_prints_the_matrix_by_default() {
+    let dir = TempDir::new("pivotprint");
+    let input = dir.join("t.csv");
+    std::fs::write(
+        &input,
+        "city,status,amount\nCDMX,paid,10\nCDMX,free,20\nPuebla,paid,30\n",
+    )
+    .unwrap();
+    let path = input.to_str().unwrap();
+
+    let out = Command::new(bin())
+        .args([
+            "pivot",
+            path,
+            "--rows",
+            "city",
+            "--cols",
+            "status",
+            "--values",
+            "amount:sum",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("city"), "{text}");
+    assert!(text.contains("paid"), "{text}");
+    assert!(text.contains("Puebla"), "{text}");
+    assert!(text.contains("2 row(s) × 2 column(s)"), "{text}");
+    // Nothing was written next to the input.
+    assert!(
+        !dir.join("t.pivot.csv").exists(),
+        "no file should be created"
+    );
+}
