@@ -2576,6 +2576,7 @@ fn search(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
             .filter(|c| !c.is_empty())
             .collect();
     }
+    spec.regex = params.get("regex").is_some_and(|v| v == "1" || v == "true");
     spec.case_sensitive = params
         .get("case")
         .map(|v| v == "1" || v == "true")

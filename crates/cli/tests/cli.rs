@@ -3584,3 +3584,54 @@ fn an_empty_page_says_why_it_is_empty() {
     let text = String::from_utf8_lossy(&out.stdout);
     assert!(text.contains("no data rows"), "{text}");
 }
+
+/// `--regex` searches with the same pattern subset conditional formatting uses.
+#[test]
+fn search_and_find_accept_a_pattern() {
+    let dir = TempDir::new("regexfind");
+    let input = dir.join("t.csv");
+    // 100 rows over 20 cities, so `C1[0-9]` (C10..C19) has something to match.
+    let mut text = String::from("id,city\n");
+    for i in 1..=100 {
+        text.push_str(&format!("{i},C{}\n", i % 20));
+    }
+    std::fs::write(&input, text).unwrap();
+    let path = input.to_str().unwrap();
+
+    // A range matches several cities; the literal text matches none.
+    let out = Command::new(bin())
+        .args(["search", path, "C1[0-9]", "--regex"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        text.contains("matched 50"),
+        "ten cities × five rows: {text}"
+    );
+
+    let out = Command::new(bin())
+        .args(["search", path, "C1[0-9]"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        text.contains("matched 0"),
+        "without --regex it is literal: {text}"
+    );
+
+    // Anchors work, and `--find` agrees with `search` on the same pattern.
+    let out = Command::new(bin())
+        .args(["search", path, "^C3$", "--regex"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("matched 5"), "{text}");
+
+    let out = Command::new(bin())
+        .args(["view", path, "--find", "C1[0-9]", "--regex"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    // The first city in C10..C19 is C10, on data row 10.
+    assert!(text.contains("row 10"), "{text}");
+}

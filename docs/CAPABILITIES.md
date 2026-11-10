@@ -52,7 +52,7 @@
 | 图表数据 | `chart --x C --y c:op [--series S]` | `GET /chart` | `--max-points` 5000 |
 | SQL | `sql f.csv "SELECT ..."` | `GET /query`、`/rows?sql=` | DuckDB，只读单语句，结果封顶 |
 | 筛选 | `filter --where "c=v"` | `GET /filter`、`/rows?where=` | 支持 `= != > >= < <= ~ in empty` |
-| 搜索 | `search f.csv "text"` | `GET /search` | 返回行号，可配合跳转 |
+| 搜索 | `search f.csv "text" [--regex]` | `GET /search?regex=1` | 返回行号；`--regex` 用条件格式那套模式子集 |
 | 跨表查找 | `lookup --key C --from R --get cols` | — | `--max-keys` 默认 500 万（公式里的 `ref()` 默认 200 万） |
 
 聚合的算子统一是 `count / sum / mean / min / max`；`sum`/`mean` 用 Kahan 补偿求和。
@@ -65,7 +65,7 @@
 | 插入行 | `edit insert --row N --value "a,b,c"` | `action=insert` |
 | 删除行 | `edit delete --row N --count K` | `action=delete` |
 | 一列拆成多列 | `edit split-column f.csv --col full --by "," --into "first,last,addr"` | — |
-| 分页浏览（套用编辑） | `view f.csv [--where EXPR] [--order COL[--desc]] [--find TEXT [--nth N] [--context N]] [--start N] [--count M] [--json]` | `GET /rows?where=` |
+| 分页浏览（套用编辑） | `view f.csv [--where EXPR] [--order COL[--desc]] [--find TEXT [--regex] [--nth N] [--context N]] [--start N] [--count M] [--json]` | `GET /rows?where=` |
 | 查找替换 | `edit replace --from X --to Y [--col C]` | `action=replace` |
 | 删列/改名 | `edit drop --name C` / `edit rename` | `action=drop/rename` |
 | 公式列 | `edit formula --name N --value "EXPR"` | — |

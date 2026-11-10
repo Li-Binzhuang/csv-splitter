@@ -110,6 +110,11 @@ pub fn pattern_is_valid(pattern: &str) -> Option<()> {
     compile(&body).map(|_| ())
 }
 
+/// Does `value` contain a match for this pattern (anywhere, honouring `^`/`$`)?
+pub fn pattern_matches(pattern: &str, value: &str) -> bool {
+    find_span(pattern, value, 0).is_some()
+}
+
 pub(crate) fn find_span(pattern: &str, value: &str, from: usize) -> Option<(usize, usize)> {
     let anchored_start = pattern.starts_with('^');
     let anchored_end = pattern.ends_with('$') && !pattern.ends_with(r"\$");

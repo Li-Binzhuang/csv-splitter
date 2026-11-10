@@ -1261,6 +1261,7 @@ fn cmd_view(args: &[String]) -> i32 {
     let mut nth: u64 = 1;
     let mut context: u64 = 3;
     let mut match_case = false;
+    let mut find_regex = false;
     let mut json = false;
 
     while let Some(arg) = p.next() {
@@ -1358,6 +1359,7 @@ fn cmd_view(args: &[String]) -> i32 {
                 }
             },
             "--match-case" => match_case = true,
+            "--regex" => find_regex = true,
             "--rule" => match p.value("--rule") {
                 Ok(v) => rules_text.push(v),
                 Err(e) => {
@@ -1584,6 +1586,18 @@ fn cmd_view(args: &[String]) -> i32 {
                 }
                 for (i, row) in win.rows.iter().enumerate() {
                     let hit = row.iter().any(|cell| {
+                        if find_regex {
+                            // Same pattern subset as conditional formatting, so `--find`
+                            // and `format --rule` agree on what a pattern means.
+                            return if match_case {
+                                csv_splitter_core::format::pattern_matches(&needle, cell)
+                            } else {
+                                csv_splitter_core::format::pattern_matches(
+                                    &needle,
+                                    &cell.to_lowercase(),
+                                )
+                            };
+                        }
                         if match_case {
                             cell.contains(&needle)
                         } else {
@@ -2056,6 +2070,7 @@ fn cmd_search(args: &[String]) -> i32 {
     let mut query: Option<String> = None;
     let mut columns: Vec<String> = Vec::new();
     let mut case_sensitive = false;
+    let mut regex = false;
     let mut exact = false;
     let mut limit = 1_000usize;
     let mut show = 0usize;
@@ -2071,6 +2086,7 @@ fn cmd_search(args: &[String]) -> i32 {
                     return 2;
                 }
             },
+            "--regex" => regex = true,
             "--quotes" => match p.value("--quotes") {
                 Ok(v) => quotes_text = v,
                 Err(e) => {
@@ -2145,6 +2161,7 @@ fn cmd_search(args: &[String]) -> i32 {
     spec.columns = columns;
     spec.case_sensitive = case_sensitive;
     spec.whole_cell = exact;
+    spec.regex = regex;
 
     let (tx, _rx) = mpsc::channel();
     let quotes = match parse_quotes(&quotes_text) {

@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.94.0] — 2026-11-10
+
+### Added
+
+- **`search --regex` and `view --find --regex`** (`GET /search?regex=1`): the pattern
+  subset conditional formatting already uses — `. * + ? ^ $ [a-z] \d` — now also
+  searches. `--find "C1[0-9]"` locates the first city in C10..C19 instead of reporting
+  that no cell contains that literal string.
+  - One pattern engine, so a rule and a search agree on what a pattern means.
+  - Anchors follow the same rules: `^C3$` matches the whole cell.
+
+### Verified
+
+- Every limit in the surface is honest: `/search`, `/filter` and `/query` report
+  `truncated`, `chart`, `groupby`, `pivot`, `dedupe` and `lookup` refuse to run past
+  their cap with an actionable message, and `sql` prints "(truncated)" beside the row
+  count. This round checked them one by one rather than assuming.
+
 ## [0.93.0] — 2026-11-10
 
 ### Fixed

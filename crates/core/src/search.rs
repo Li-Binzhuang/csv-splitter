@@ -24,6 +24,9 @@ pub struct SearchSpec {
     pub case_sensitive: bool,
     /// Match the whole cell instead of a substring.
     pub whole_cell: bool,
+    /// Treat `query` as a pattern from the conditional-formatting subset instead of
+    /// literal text, so `--find "C1[0-9]"` works the way people expect.
+    pub regex: bool,
 }
 
 impl SearchSpec {
@@ -33,10 +36,24 @@ impl SearchSpec {
             columns: Vec::new(),
             case_sensitive: false,
             whole_cell: false,
+            regex: false,
         }
     }
 
     fn matches(&self, cell: &str) -> bool {
+        if self.regex {
+            let pattern = if self.case_sensitive {
+                self.query.clone()
+            } else {
+                self.query.to_lowercase()
+            };
+            let cell = if self.case_sensitive {
+                cell.to_string()
+            } else {
+                cell.to_lowercase()
+            };
+            return crate::format::pattern_matches(&pattern, &cell);
+        }
         if self.whole_cell {
             if self.case_sensitive {
                 cell == self.query
