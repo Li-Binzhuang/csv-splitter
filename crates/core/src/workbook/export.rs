@@ -135,6 +135,7 @@ pub fn export_selected(
     let summary_columns = header.clone();
     let mut out = BufWriter::with_capacity(8 * 1024 * 1024, File::create(output)?);
     let header_fields: Vec<&str> = header.iter().map(String::as_str).collect();
+    crate::encoding::keep_bom(&mut out, base)?;
     out.write_all(join_csv_line(&header_fields, delim).as_bytes())?;
 
     let keep: Vec<Option<usize>> = layout.iter().map(|(_, idx)| *idx).collect();

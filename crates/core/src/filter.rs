@@ -367,6 +367,9 @@ pub fn extract_style(
     let compiled = set.compile(&headers)?;
 
     let mut out = BufWriter::with_capacity(4 * 1024 * 1024, File::create(output)?);
+    // The decoded reader strips the BOM, so put it back: Excel reads a BOM-less UTF-8
+    // file as the system code page.
+    crate::encoding::keep_bom(&mut out, path)?;
     let mut header_line = record.clone();
     if !header_line.ends_with(b"\n") {
         header_line.push(b'\n');

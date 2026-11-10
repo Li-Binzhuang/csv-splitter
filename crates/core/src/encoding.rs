@@ -244,6 +244,32 @@ pub fn transcode(
     Ok(written)
 }
 
+/// Does this file start with a UTF-8 BOM?
+///
+/// Excel reads a BOM-less UTF-8 file as the system code page, which turns Chinese text
+/// into mojibake. Preserving the input's BOM on output is the difference between "opens
+/// correctly in Excel" and "looks broken".
+pub fn starts_with_bom(path: &Path) -> bool {
+    use std::io::Read;
+    let Ok(mut file) = File::open(path) else {
+        return false;
+    };
+    let mut head = [0u8; 3];
+    match file.read_exact(&mut head) {
+        Ok(()) => head == [0xEF, 0xBB, 0xBF],
+        Err(_) => false,
+    }
+}
+
+/// Write a BOM when the source had one, so the output opens in Excel the way the
+/// input did.
+pub fn keep_bom(out: &mut impl std::io::Write, source: &Path) -> std::io::Result<()> {
+    if starts_with_bom(source) {
+        out.write_all(&[0xEF, 0xBB, 0xBF])?;
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

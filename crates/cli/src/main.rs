@@ -352,6 +352,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
     (
         "preview",
         &[
+            ("--columns", "Show only these columns (comma-separated)"),
             ("--delim", "Field delimiter (default: auto)"),
             ("--index", "Rebuild the index first"),
             ("--quotes", "Quote style: rfc4180 | backslash | none"),
@@ -461,6 +462,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         &[
             ("--context", "Rows of context around the match"),
             ("--count", "How many rows"),
+            ("--columns", "Show only these columns (comma-separated)"),
             ("--delim", "Field delimiter (default: auto)"),
             ("--desc", "Descending order"),
             (
@@ -1276,10 +1278,24 @@ fn cmd_preview(args: &[String]) -> i32 {
     let mut rows = 10usize;
     let mut delim = "auto".to_string();
     let mut start_row: u64 = 0;
+    let mut shown_columns: Vec<String> = Vec::new();
     let mut index_path: Option<PathBuf> = None;
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
+            "--columns" => match p.value("--columns") {
+                Ok(v) => {
+                    shown_columns = v
+                        .split(',')
+                        .map(|c| c.trim().to_string())
+                        .filter(|c| !c.is_empty())
+                        .collect()
+                }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--rows" => match p
                 .value("--rows")
                 .and_then(|v| v.parse().map_err(|_| "bad --rows".to_string()))
@@ -1372,7 +1388,12 @@ fn cmd_preview(args: &[String]) -> i32 {
                 preview.total_rows_estimate,
                 preview.detected_delimiter
             );
-            print_table(&preview.headers, &preview.rows);
+            let mut headers = preview.headers.clone();
+            let mut shown = preview.rows.clone();
+            if let Err(code) = project_columns(&mut headers, &mut shown, &shown_columns) {
+                return code;
+            }
+            print_table(&headers, &shown);
             0
         }
         Err(e) => report_failure("preview", e),
@@ -1635,6 +1656,9 @@ fn display_width(text: &str) -> usize {
 
 /// Print rows as an aligned table, with padding measured in terminal columns.
 fn print_table(columns: &[String], rows: &[Vec<String>]) {
+    let (columns, rows, hidden) = fit_to_terminal(columns, rows);
+    let columns = &columns;
+    let rows = &rows;
     let mut widths: Vec<usize> = columns.iter().map(|c| display_width(c)).collect();
     for row in rows {
         for (i, cell) in row.iter().enumerate() {
@@ -1663,6 +1687,7 @@ fn print_table(columns: &[String], rows: &[Vec<String>]) {
     for row in rows {
         println!("{}", render(row));
     }
+    note_hidden_columns(hidden);
 }
 
 /// `view`: paged look at the edited sheet, optionally filtered.
@@ -1683,6 +1708,7 @@ fn cmd_view(args: &[String]) -> i32 {
     let mut order: Option<String> = None;
     let mut order_descending = false;
     let mut find: Option<String> = None;
+    let mut shown_columns: Vec<String> = Vec::new();
     let mut rules_text: Vec<String> = Vec::new();
     let mut nth: u64 = 1;
     let mut context: u64 = 3;
@@ -1759,6 +1785,19 @@ fn cmd_view(args: &[String]) -> i32 {
                         return 2;
                     }
                 },
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--columns" => match p.value("--columns") {
+                Ok(v) => {
+                    shown_columns = v
+                        .split(',')
+                        .map(|c| c.trim().to_string())
+                        .filter(|c| !c.is_empty())
+                        .collect()
+                }
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -2120,6 +2159,9 @@ fn cmd_view(args: &[String]) -> i32 {
         }
     }
 
+    if let Err(code) = project_columns(&mut columns, &mut rows, &shown_columns) {
+        return code;
+    }
     if json {
         let body = rows
             .iter()
@@ -5127,6 +5169,75 @@ fn format_number_short(value: f64) -> String {
 ///
 /// Terminals get colour when they support it; a pipe gets brackets, because colour
 /// codes in a captured file are noise and the marker still says which cell matched.
+/// Narrow the printed rows to the columns the caller asked for.
+///
+/// A real file can have 782 columns; the terminal shows twenty, and `--columns` is how
+/// someone reads the rest. Unknown names fail with the columns that do exist.
+fn project_columns(
+    columns: &mut Vec<String>,
+    rows: &mut [Vec<String>],
+    wanted: &[String],
+) -> Result<(), i32> {
+    if wanted.is_empty() {
+        return Ok(());
+    }
+    let mut slots = Vec::with_capacity(wanted.len());
+    for name in wanted {
+        match columns.iter().position(|c| c == name) {
+            Some(slot) => slots.push(slot),
+            None => {
+                eprintln!(
+                    "error: column '{name}' not found; available: {}",
+                    columns.join(", ")
+                );
+                return Err(2);
+            }
+        }
+    }
+    let kept: Vec<String> = slots.iter().map(|i| columns[*i].clone()).collect();
+    for row in rows.iter_mut() {
+        // Take the old row, then build the new one from it: clearing in place would
+        // destroy the cells the selection reads.
+        let original = std::mem::take(row);
+        *row = slots
+            .iter()
+            .map(|slot| original.get(*slot).cloned().unwrap_or_default())
+            .collect();
+    }
+    *columns = kept;
+    Ok(())
+}
+
+/// How many columns a terminal table shows before it stops.
+///
+/// A real file can have 782 columns; printing them all produces a screen of noise in
+/// which the first three columns — the ones anyone reads — are lost. The hidden count
+/// is printed underneath, so nothing is silently missing.
+const MAX_DISPLAY_COLUMNS: usize = 20;
+
+/// Narrow the columns and rows to what is worth showing, and say what was hidden.
+fn fit_to_terminal(
+    columns: &[String],
+    rows: &[Vec<String>],
+) -> (Vec<String>, Vec<Vec<String>>, usize) {
+    if columns.len() <= MAX_DISPLAY_COLUMNS {
+        return (columns.to_vec(), rows.to_vec(), 0);
+    }
+    let shown = MAX_DISPLAY_COLUMNS;
+    let kept_columns = columns[..shown].to_vec();
+    let kept_rows = rows
+        .iter()
+        .map(|row| row[..row.len().min(shown)].to_vec())
+        .collect();
+    (kept_columns, kept_rows, columns.len() - shown)
+}
+
+fn note_hidden_columns(hidden: usize) {
+    if hidden > 0 {
+        println!("(+{hidden} more column(s) not shown; use --columns or --json to see them all)");
+    }
+}
+
 fn print_table_styled(
     columns: &[String],
     rows: &[Vec<String>],
@@ -5134,6 +5245,9 @@ fn print_table_styled(
     marks: &[(u64, String, csv_splitter_core::format::Style)],
 ) {
     use std::io::IsTerminal;
+    let (columns, rows, hidden) = fit_to_terminal(columns, rows);
+    let columns = &columns;
+    let rows = &rows;
     let colour = std::io::stdout().is_terminal();
     let mut widths: Vec<usize> = columns.iter().map(|c| display_width(c)).collect();
     for (row_index, row) in rows.iter().enumerate() {
@@ -5198,6 +5312,7 @@ fn print_table_styled(
     if !marks.is_empty() {
         println!("\n{} cell(s) matched the formatting rule(s)", marks.len());
     }
+    note_hidden_columns(hidden);
 }
 
 /// Minimal colour mapping: named colours and `#rrggbb`.

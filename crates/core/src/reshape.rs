@@ -158,6 +158,7 @@ pub fn reshape_quotes(
     let mut out = BufWriter::with_capacity(4 * 1024 * 1024, File::create(output)?);
     let names_ref: Vec<&str> = names.iter().map(String::as_str).collect();
     // `join_csv_line` already ends with a newline.
+    crate::encoding::keep_bom(&mut out, path)?;
     out.write_all(join_csv_line(&names_ref, delim).as_bytes())?;
 
     let mut summary = ReshapeSummary {

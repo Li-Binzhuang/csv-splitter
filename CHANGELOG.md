@@ -1,5 +1,33 @@
 # Changelog
 
+## [2.1.0] — 2026-11-10
+
+First run on **real business data** — a 2.5 GB, 685 k-row, 782-column result file:
+
+### Fixed
+
+- **A UTF-8 BOM was silently dropped.** The original starts with `EF BB BF`; every
+  output started with `base_time`. Excel reads a BOM-less UTF-8 file as the system code
+  page, so a file with Chinese text would have opened as mojibake — the exact thing
+  "works like Excel" means. `export`, `filter -o` and `columns` now keep the input's BOM,
+  and a test asserts both directions: keep it when present, never invent one.
+- **A 782-column file flooded the terminal.** `preview` printed all 782 columns (38 KB
+  for one page), burying the three columns anyone reads. Terminal tables now show
+  twenty and say `(+762 more column(s) not shown ...)`. `preview` and `view` gained
+  `--columns` so the rest is reachable — the note names an option that exists, which is
+  the lesson from 2.0.2 applied before it could bite again.
+- **`validate` rebuilt a full-width probe for every row, for every compare rule** — 782
+  empty `String`s × 2 rules × 685 k rows. One probe per rule, reused: 72 s → 61 s on the
+  real file.
+
+### Measured on the real file
+
+`index` 0.31 s / 15.9 MB / 5.4 KB of index for a 2.5 GB file; any offset pages in 12 ms;
+`groupby` 14.6 s at 9.0 MB; `filter` 13.5 s writing 1.28 GB. `export` is 40.7 s (62 MB/s)
+because the pipeline materialises all 782 cells per row as owned `String`s — the
+structural cost of the row API, written down in CAPABILITIES with the improvement it
+would need.
+
 ## [2.0.2] — 2026-11-10
 
 ### Fixed

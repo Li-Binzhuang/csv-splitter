@@ -4599,3 +4599,105 @@ fn damaged_sidecars_are_rebuilt() {
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(stdout.contains("width"), "{stdout}");
 }
+
+/// A UTF-8 BOM is preserved, because Excel reads a BOM-less file as the system code page.
+#[test]
+fn a_bom_survives_every_output() {
+    let dir = TempDir::new("bom");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "\u{feff}id,city,amount\n1,CDMX,10\n2,Puebla,20\n").unwrap();
+    let path = input.to_str().unwrap();
+    let run = |args: &[&str]| {
+        assert_eq!(
+            Command::new(bin()).args(args).status().unwrap().code(),
+            Some(0),
+            "{args:?}"
+        );
+    };
+
+    let filtered = dir.join("f.csv");
+    run(&[
+        "filter",
+        path,
+        "--where",
+        "city=CDMX",
+        "-o",
+        filtered.to_str().unwrap(),
+    ]);
+    let kept = dir.join("k.csv");
+    run(&[
+        "columns",
+        path,
+        "--keep",
+        "id,city",
+        "-o",
+        kept.to_str().unwrap(),
+    ]);
+    let exported = dir.join("e.csv");
+    run(&["edit", "export", path, "-o", exported.to_str().unwrap()]);
+
+    for output in [filtered, kept, exported] {
+        let bytes = std::fs::read(&output).unwrap();
+        assert_eq!(
+            &bytes[..3],
+            &[0xEF, 0xBB, 0xBF],
+            "{} lost its BOM",
+            output.display()
+        );
+    }
+
+    // And a file without a BOM does not gain one.
+    let plain = dir.join("plain.csv");
+    std::fs::write(&plain, "id,city\n1,CDMX\n").unwrap();
+    let out = dir.join("plain_out.csv");
+    run(&[
+        "edit",
+        "export",
+        plain.to_str().unwrap(),
+        "-o",
+        out.to_str().unwrap(),
+    ]);
+    let bytes = std::fs::read(&out).unwrap();
+    assert_eq!(&bytes[..3], b"id,", "a BOM was invented");
+}
+
+/// A wide file is shown twenty columns at a time, and `--columns` picks the rest.
+#[test]
+fn a_wide_file_is_not_printed_column_by_column() {
+    let dir = TempDir::new("wide");
+    let input = dir.join("wide.csv");
+    let mut header: Vec<String> = (0..300).map(|i| format!("c{i}")).collect();
+    header.insert(0, "id".to_string());
+    let mut text = header.join(",") + "\n";
+    text.push_str(&format!("{},", 1));
+    text.push_str(&vec!["7"; 300].join(","));
+    text.push('\n');
+    std::fs::write(&input, text).unwrap();
+    let path = input.to_str().unwrap();
+
+    let out = Command::new(bin())
+        .args(["preview", path, "--rows", "1"])
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("more column"), "{stdout}");
+    // 301 columns: twenty shown, 281 hidden.
+    assert!(stdout.contains("+281"), "{stdout}");
+
+    // Selecting the columns explicitly shows exactly those.
+    let out = Command::new(bin())
+        .args(["preview", path, "--rows", "1", "--columns", "id,c299"])
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("id"), "{stdout}");
+    assert!(stdout.contains("c299"), "{stdout}");
+    assert!(!stdout.contains("more column"), "{stdout}");
+
+    // A name that is not there is an error, not an empty table.
+    let out = Command::new(bin())
+        .args(["preview", path, "--rows", "1", "--columns", "nope"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+}
