@@ -1879,6 +1879,7 @@ fn respond_sheet_window(
     path: &Path,
     start: u64,
     count: u64,
+    requested: u64,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
     // A cached pager is reused across scrolls; the key includes the journal
@@ -1924,6 +1925,7 @@ fn respond_sheet_window(
             format!("[{}]", cells.join(","))
         })
         .collect();
+    let rows_count = window.rows.len();
     let frozen: Vec<String> = csv_splitter_core::layout::Layout::load(path)
         .map(|l| {
             let count = l.frozen_prefix(&window.columns);
@@ -1939,7 +1941,8 @@ fn respond_sheet_window(
         stream,
         200,
         &format!(
-            r#"{{"start":{start},"total":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}],"edited":true,"operations":{}}}"#,
+            r#"{{"start":{start},"count":{},"requested":{requested},"limit":{MAX_ROWS_PER_REQUEST},"total":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}],"edited":true,"operations":{}}}"#,
+            rows_count,
             window.total,
             cols.join(","),
             frozen.join(","),
@@ -2066,6 +2069,7 @@ fn rows(
     let Some(count) = number_param(stream, params, "count", 100)? else {
         return Ok(());
     };
+    let requested = count;
     let count = count.min(MAX_ROWS_PER_REQUEST);
 
     // `where` / `order` turn a raw scan into a filtered, ordered view. They are
@@ -2198,7 +2202,7 @@ fn rows(
     // raw bytes. This is the same code path the CLI uses, so the two cannot
     // disagree about what a row means.
     if csv_splitter_core::sheet::has_edits(&path) {
-        return respond_sheet_window(stream, &path, start, count, params);
+        return respond_sheet_window(stream, &path, start, count, requested, params);
     }
 
     let mut viewer = match WindowViewer::open(&path, delimiter(params)) {
@@ -2260,7 +2264,8 @@ fn rows(
         })
         .unwrap_or_default();
     let body = format!(
-        r#"{{"start":{start},"total":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}]}}"#,
+        r#"{{"start":{start},"count":{},"requested":{requested},"limit":{MAX_ROWS_PER_REQUEST},"total":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}]}}"#,
+        rows.len(),
         viewer.total_rows(),
         cols.join(","),
         frozen.join(","),

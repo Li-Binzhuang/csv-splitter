@@ -1534,3 +1534,28 @@ fn delete_removes_exactly_the_count_asked_for() {
     let (status, body) = post(&server.addr, "/edit?path=t.csv&action=delete&row=1&count=0");
     assert_eq!(status, 400, "{body}");
 }
+
+/// `/rows` reports how many rows it returned and the ceiling it applies, so a client
+/// that asked for a million rows is not left wondering whether it got them.
+#[test]
+fn row_pages_report_their_own_size_and_limit() {
+    let dir = TempDir::new("pagelimit");
+    let mut text = String::from("id,city\n");
+    for i in 1..2500 {
+        text.push_str(&format!("{i},C{}\n", i % 5));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=1000000000");
+    assert_eq!(status, 200, "{body}");
+    // The page is capped, and the response says so rather than silently truncating.
+    assert!(body.contains("\"limit\":2000"), "{body}");
+    assert!(body.contains("\"requested\":1000000000"), "{body}");
+    assert!(body.contains("\"count\":2000"), "{body}");
+
+    // Asking for fewer rows than the cap returns exactly what was asked for.
+    let (_, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=7");
+    assert!(body.contains("\"count\":7"), "{body}");
+    assert!(body.contains("\"requested\":7"), "{body}");
+}

@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.93.0] — 2026-11-10
+
+### Fixed
+
+- **`/rows` silently capped the page size.** `count` is clamped to 2000 — correctly, it
+  is what keeps a request from materialising a million rows — but the response said
+  nothing about it, so a client asking for a million got 2000 rows and no way to know.
+  Every page now carries `count` (rows actually returned), `requested` (what was asked
+  for) and `limit` (the ceiling), on both the raw and the edited path.
+
+Verified while probing the boundaries: `count=0` returns an empty page, negative or
+non-numeric `start`/`count` are 400 with an actionable hint, and the clamp holds
+regardless of what is asked for.
 ## [0.92.0] — 2026-11-10
 
 ### Fixed
