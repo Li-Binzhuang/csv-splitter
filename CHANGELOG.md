@@ -1,5 +1,67 @@
 # Changelog
 
+## [2.0.0] — 2026-11-10
+
+79 rounds of work, and the reason this is a major version rather than 1.15.1: three
+things that were promises became tested facts.
+
+### The three promises, each with the test that holds it
+
+| Promise | Test |
+|---|---|
+| The input file is never modified | `no_command_modifies_the_input_file` — hash, size and mtime across every writing command, including one that fails on purpose |
+| Memory does not grow with rows | measured per command (77 MB fixture: 8-25 MB except the buffers), plus an export of 5 M rows with a formula column at 17.3 MB peak |
+| Anything that could mislead says so | error contract, `truncated` flags, `#VALUE!` cells, journal-damage warnings, four distinct path messages, and `troubleshooting_quotes_are_real` |
+
+### What is actually here
+
+Thirty commands. Twenty-one read endpoints and eleven write actions. Editing without
+rewriting the file: set, fill, insert, delete (by row, by condition, by validation rule,
+by content), replace, split-column, formulas with `lag`/`running_total`/cross-sheet
+`ref`, undo and redo. Analysis: filter, search (with patterns), sort, dedupe, groupby,
+pivot, chart, profile, validate, conditional formatting, layout metadata. Delivery:
+split, merge, verify, extract, partition, concat, lookup, export with filter/columns/
+order, and a local HTTP API with a built-in viewer.
+
+### What the last twenty rounds were
+
+Not features. They were the price of the first sixty: combination semantics (renames,
+split pieces, fills, deletes) that only broke when two correct things met; documentation
+that had drifted from the code, including an API reference that had been the changelog
+for twenty-nine versions; and performance claims that turned out to be false on one of
+their two paths — deep paging took 5 s at offset 3.9 M, and `verify` held both files in
+memory.
+
+Every one of those now has a test built from the source of truth rather than from a
+list someone maintains: command names from `main.rs`, flags from the parser, routes from
+`serve.rs`, modules from the filesystem, messages from the binary.
+
+### Known limits, stated rather than implied
+
+- `running_total` is `#VALUE!` in a windowed view (it needs every row before the start).
+- A1 references that need another row report `#VALUE!`; only same-row references work.
+- `sort` / `concat` / `sql` do not accept `--quotes`.
+- `analyze` / `stats` / `search` / `sort` / `dedupe` / `concat` / `columns` / `split` /
+  `partition` / `lookup` read the file, not the edited sheet (`groupby` / `pivot` /
+  `chart` take `--apply-edits`).
+- `dedupe` memory grows with distinct keys, `sort`/`partition` with `--buf-mb`.
+- The built-in page has not been exercised in a real browser; Windows is untested.
+
+## [1.15.0] — 2026-11-10
+
+### Removed
+
+- **Dead public API**: ten names that nothing called, found by scanning every `.rs` file
+  for identifiers with a single occurrence — `sheet::count_data_rows`, `sheet::row_id`,
+  `csv_reader::count_records`, `csv_reader::next_record_string`,
+  `encoding::parse_name_exact`, `preview::parse_plain_line`, `aggregate::render_parts`,
+  `viewer::with_index`, plus the imports they had been keeping alive.
+  - Two carried comments describing features that do not exist: `parse_plain_line` was
+    "kept for API compatibility" (nothing kept it) and `with_index` was "e.g. one built
+    on a worker thread" (nothing builds on a worker thread). A comment promising a caller
+    who is not there survives every refactor as false evidence.
+  - Dependencies were checked the same way: seventeen in core, all used.
+
 ## [1.14.0] — 2026-11-10
 
 ### Docs
