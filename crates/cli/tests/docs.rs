@@ -257,3 +257,42 @@ fn api_reference_names_only_parameters_the_server_reads() {
         "docs name parameters nobody reads: {missing:?}"
     );
 }
+
+/// The help's task index may only name real sub-commands.
+#[test]
+fn the_task_index_names_real_commands() {
+    let out = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+        .arg("--help")
+        .output()
+        .unwrap();
+    let help = String::from_utf8_lossy(&out.stdout).to_string();
+    let block = match help.split_once("WHAT DO YOU WANT TO DO?") {
+        Some((_, rest)) => rest.split("\nCOMMANDS").next().unwrap_or("").to_string(),
+        None => panic!("the help lost its task index"),
+    };
+    let known = crate::real_commands();
+    let mut unknown = Vec::new();
+    // Only the right-hand column names commands; the left is prose.
+    for line in block.lines() {
+        let Some((_, commands)) = line.rsplit_once("  ") else {
+            continue;
+        };
+        for word in commands.split(|c: char| c == ',' || c.is_whitespace() || c == '/') {
+            let word = word.trim();
+            if word.is_empty() || !word.chars().all(|c| c.is_ascii_lowercase() || c == '-') {
+                continue;
+            }
+            let listed = known
+                .lines()
+                .any(|line| line.trim_start().starts_with(&format!("{word} ")));
+            if !listed && !["set", "insert-column", "rename", "drop", "where", "-o"].contains(&word)
+            {
+                unknown.push(word.to_string());
+            }
+        }
+    }
+    assert!(
+        unknown.is_empty(),
+        "task index names unknown commands: {unknown:?}"
+    );
+}

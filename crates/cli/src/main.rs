@@ -83,6 +83,20 @@ fn print_help() {
 USAGE
   csv-splitter <command> [options]
 
+WHAT DO YOU WANT TO DO?
+  open a huge file without loading it      preview, index
+  find rows worth looking at                filter, search
+  understand a column's shape              stats, analyze
+  change data without touching the file    edit set, edit insert-column
+  add a computed column                    edit formula
+  reorganise columns                       columns, edit rename/drop
+  summarise                                groupby, pivot, chart
+  bring in another table                   lookup
+  highlight cells                          format
+  export a clean copy                      edit export, filter -o
+  split for upload / merge back            split, merge, verify
+  let a front-end read it                  serve
+
 COMMANDS
   split    <input>              Split a CSV (optionally compress) into chunks
   merge    <archive|dir> -o F   Re-assemble chunks produced by `split`

@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.61.0] — 2026-11-10
+
+### Added
+
+- **`scripts/smoke.sh`**: 26 steps covering one user's session — demo → view →
+  filter → sort → groupby → pivot → chart → format → layout → edit → export →
+  lookup → split/verify/merge/partition → server. Plus combination paths: GBK with a
+  semicolon delimiter, a multi-line quoted field round-tripped byte for byte, and the
+  edited-file warning.
+
+### Fixed
+
+- **Six commands failed without printing anything.** `pivot`, `groupby`, `chart`,
+  `convert`, `lookup` and `columns` return their error instead of sending it through
+  the progress channel, so the reporter stayed silent and the match arm discarded it:
+  a misspelled column produced exit code 1 and a blank screen. All now print
+  `✗ <command>: <reason>` with a hint, and two tests keep it that way —
+  `every_failure_prints_a_reason` and `usage_errors_are_never_silent` (which walks
+  every sub-command with no arguments).
+
+### Changed
+
+- `--help` opens with **"what do you want to do?"** — a task index mapping goals to
+  commands, because 22 sub-commands listed by name is a reference, not an
+  introduction. A test checks the index only names commands that exist.
+
 ## [0.60.0] — 2026-11-10
 
 ### Added

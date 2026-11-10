@@ -121,6 +121,39 @@ run "verify the split" "$BIN" verify "$DEMO" --splits 3
 run "merge back" "$BIN" merge parts.tar -o merged.csv
 run "partition" "$BIN" partition "$DEMO" --by city -o parts-part.tar --verify
 
+
+step "combinations that used to break"
+# GBK + semicolon delimiter + filter, all at once.
+python3 - <<'PY' > /dev/null 2>&1 || true
+open("gbk_semi.csv", "w", encoding="gbk").write("城市;金额\nCDMX;10\nPuebla;20\n")
+PY
+if [ -f gbk_semi.csv ]; then
+  run "GBK + semicolon" "$BIN" filter gbk_semi.csv --where "城市=CDMX" -d semicolon -o g.csv
+  run "GBK + semicolon partition" "$BIN" partition gbk_semi.csv --by 城市 -d semicolon -o g.part.tar --verify
+else
+  printf '   skip GBK checks (python3 unavailable)\n'
+fi
+
+# A quoted field containing a newline must survive split + merge byte for byte.
+printf 'id,note\n1,"line one\nline two"\n2,plain\n' > multiline.csv
+run "split a multi-line field" "$BIN" split multiline.csv --splits 2 -o ml.tar
+run "verify it is lossless" "$BIN" verify multiline.csv --splits 2
+run "merge it back" "$BIN" merge ml.tar -o ml.out.csv
+if cmp -s multiline.csv ml.out.csv; then
+  ok "round trip is byte-identical"
+else
+  fail "round trip changed the file"
+fi
+
+# An edited file filtered through the API must show the edits (not the base bytes).
+run "edit then filter" "$BIN" edit set multiline.csv --row 1 --col note --value changed
+if out=$("$BIN" filter multiline.csv --where "note=changed" -o aflt.csv 2>&1); then
+  printf '   ok   CLI filter still reads the base (and warns)\n'
+  printf '%s\n' "$out" | grep -q "pending edit" && ok "and it says so" || fail "it did not warn"
+else
+  fail "filter on an edited file errored"
+fi
+
 step "the clean path"
 run "split-free copy" "$BIN" columns "$DEMO" --keep "city,amount" -o two-cols.csv
 

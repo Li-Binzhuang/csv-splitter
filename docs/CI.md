@@ -92,6 +92,9 @@ scripts/smoke.sh          # 约 15 秒
 scripts/smoke.sh --keep   # 保留工作目录以便查看
 ```
 
+现在它也覆盖组合路径：GBK + 分号分隔 + `partition`、跨行的引号字段走 `split`/`merge`
+再逐字节比对、编辑过的文件走 `filter` 并确认它会提示未套用编辑。
+
 写它的当天就抓到 6 个「命令失败但什么都不打印」的问题：引擎返回 `Err`、而进度线程只
 打印通过通道来的错误，于是退出码是 1、屏幕上什么都没有。现在 `every_failure_prints_a_reason`
 把它们钉住了。

@@ -2361,3 +2361,49 @@ fn every_failure_prints_a_reason() {
         );
     }
 }
+
+/// Every sub-command that needs arguments says so when called without them.
+///
+/// A command that exits non-zero and prints nothing leaves the user with no way
+/// forward except guessing. This checks the whole surface at once.
+#[test]
+fn usage_errors_are_never_silent() {
+    // `demo` writes a sample to the current directory, so it is deliberately
+    // argument-free; `--help` and `serve` are excluded for the same reason.
+    let exempt = ["demo", "serve"];
+    let help = Command::new(bin()).arg("--help").output().unwrap();
+    let help_text = String::from_utf8_lossy(&help.stdout);
+    let commands: Vec<&str> = help_text
+        .lines()
+        .skip_while(|line| !line.starts_with("COMMANDS"))
+        .skip(1)
+        .take_while(|line| !line.trim().is_empty())
+        .filter_map(|line| line.split_whitespace().next())
+        .filter(|word| word.chars().all(|c| c.is_ascii_lowercase() || c == '-'))
+        .collect();
+    assert!(
+        commands.len() > 15,
+        "expected the help to list commands: {commands:?}"
+    );
+
+    let dir = TempDir::new("usage");
+    let mut silent = Vec::new();
+    for command in commands {
+        if exempt.contains(&command) {
+            continue;
+        }
+        let out = Command::new(bin())
+            .arg(command)
+            .current_dir(&dir.0)
+            .output()
+            .unwrap();
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        if out.status.code() != Some(0) && stderr.trim().is_empty() {
+            silent.push(command.to_string());
+        }
+    }
+    assert!(
+        silent.is_empty(),
+        "these commands fail without saying why: {silent:?}"
+    );
+}
