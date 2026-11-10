@@ -873,3 +873,30 @@ fn looks_like_command(word: &str) -> bool {
             | "verify"
     )
 }
+
+/// `--freeze-first` takes a count, and the help must say so.
+#[test]
+fn freeze_first_says_it_takes_a_count() {
+    let help = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+        .args(["layout", "--help"])
+        .output()
+        .unwrap();
+    let help = String::from_utf8_lossy(&help.stdout);
+    assert!(
+        help.contains("first N columns"),
+        "help must not imply a column list: {help}"
+    );
+
+    let dir = std::env::temp_dir().join(format!("csvs_freeze_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let csv = dir.join("t.csv");
+    std::fs::write(&csv, "id,city,amount\n1,CDMX,10\n").unwrap();
+    let out = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+        .args(["layout", csv.to_str().unwrap(), "--freeze-first", "id,city"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("takes a count"), "{stderr}");
+    let _ = std::fs::remove_dir_all(&dir);
+}

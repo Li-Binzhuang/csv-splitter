@@ -278,7 +278,10 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
     (
         "layout",
         &[
-            ("--freeze-first", "Freeze these leading columns"),
+            (
+                "--freeze-first",
+                "Freeze the first N columns (a number, e.g. 2)",
+            ),
             ("--json", "Emit JSON"),
             (
                 "--set",
@@ -3558,10 +3561,10 @@ fn cmd_layout(args: &[String]) -> i32 {
                     return 2;
                 }
             },
-            "--freeze-first" => match p
-                .value("--freeze-first")
-                .and_then(|v| v.parse().map_err(|_| "bad --freeze-first".to_string()))
-            {
+            "--freeze-first" => match p.value("--freeze-first").and_then(|v| {
+                v.parse()
+                    .map_err(|_| format!("--freeze-first takes a count, e.g. 2, not {v:?}"))
+            }) {
                 Ok(v) => freeze_first = Some(v),
                 Err(e) => {
                     eprintln!("error: {e}");

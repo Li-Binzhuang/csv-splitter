@@ -91,6 +91,18 @@ hint: choose a different -o path; the input is never modified by design
 `-o` 指向正在读的文件会被拒绝——那是数据丢失。换个路径；覆盖**别的**文件是允许的，
 只会提示 `note: overwriting existing out.csv`。
 
+## 参数写法 / a flag wants a different shape
+
+```
+error: --freeze-first takes a count, e.g. 2, not "id,cust_no"
+error: 'currency' is not a number format (use #,##0.00, 0.00, 0%, $#,##0.00)
+error: 'amber' is not a colour (use red/green/yellow/… or #rgb / #rrggbb)
+```
+
+**报错里总是给出可用的写法**，照抄即可。常见三处：`--freeze-first` 要数字（冻结前
+N 列）不是列名；`layout --set <column>:format=` 要格式串（`$#,##0.00`）不是 `currency`
+这种名字；`format --rule` 的颜色要 `red/green/yellow/…` 或 `#rrggbb`。
+
 ## 上限报错 / a limit was reached
 
 ```

@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.0.2] — 2026-11-10
+
+### Fixed
+
+- **`layout --freeze-first` said "Freeze these leading columns"** and took a number,
+  so `--freeze-first "id,cust_no"` failed with `bad --freeze-first` — the help implied a
+  list and the error said nothing about what was wanted. It now reads "Freeze the first
+  N columns (a number, e.g. 2)" and the error is
+  `--freeze-first takes a count, e.g. 2, not "id,cust_no"`.
+  - Found by walking the roadmap items one last time: pivot, conditional formatting,
+    chart data, layout metadata and filtered editing all worked, and then `layout`
+    refused an argument its own help had suggested.
+
 ## [2.0.1] — 2026-11-10
 
 ### Docs
