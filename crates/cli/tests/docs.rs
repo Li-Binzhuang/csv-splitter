@@ -128,10 +128,10 @@ fn every_documented_endpoint_is_advertised_by_the_router() {
     let mut problems = Vec::new();
     for endpoint in documented_endpoints(README) {
         let (verb, path) = endpoint.split_once(' ').unwrap();
-        let needle = match verb {
-            "GET" => format!("\"{path}\""),
-            _ => format!("\"{path}\" => start_"),
-        };
+        // GET routes live in the read match; POST routes in the write match.
+        // Both are plain `"<path>" => handler(..)`, so the path itself is the
+        // thing to find — the handler name is not part of the contract.
+        let needle = format!("\"{path}\" =>");
         if !advertised.contains(&needle) {
             problems.push(format!(
                 "README documents {verb} {path}, the router does not serve it"
