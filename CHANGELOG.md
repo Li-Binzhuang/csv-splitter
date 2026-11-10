@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.74.1] — 2026-11-10
+
+### Changed
+
+- **Both caches share one invalidation type** (`Stamp`): the journal is identified by
+  a hash of its contents, the base file by size and modification time (it can be 10 GB,
+  and it is supposed to be immutable). Two caches asking "has this changed?" now
+  cannot answer it differently.
+
+### Verified
+
+- The materialised copy behind `/rows?where=` was *already* invalidating correctly —
+  but that was luck, not design: it compared the same tuple the pager cache had been
+  comparing wrongly. A test now pins it, and another pins that replacing the base file
+  is noticed.
+
+Measured on 200 k rows with one edit: first request 41 ms, every later page 6 ms,
+including a page at row 150 000.
+
 ## [0.74.0] — 2026-11-10
 
 ### Added

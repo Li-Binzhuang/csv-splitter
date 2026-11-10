@@ -1624,7 +1624,7 @@ fn meta(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -
 }
 
 /// A materialised copy plus the journal fingerprint it was built from.
-type MaterialEntry = (u64, u64, csv_splitter_core::sheet::Materialized);
+type MaterialEntry = (Stamp, csv_splitter_core::sheet::Materialized);
 type MaterialTable = std::sync::Mutex<HashMap<String, MaterialEntry>>;
 
 /// Materialised copies of edited sheets, at most one per source file.
@@ -1637,24 +1637,59 @@ fn material_cache() -> &'static MaterialTable {
     CACHE.get_or_init(|| std::sync::Mutex::new(HashMap::new()))
 }
 
-/// Journal identity: a hash of its contents.
+/// Identity of a file, for cache invalidation.
 ///
-/// Modification time is not enough. Two writes inside the same timestamp tick leave
-/// the same mtime and the same size, and the cache then serves the previous sheet —
-/// which is exactly what happened the first time this used `(mtime, len)`. The
-/// journal is small and append-only, so hashing it is cheap and exact.
-fn journal_fingerprint(path: &Path) -> (u64, u64) {
-    let sidecar = Journal::sidecar(path);
-    let Ok(bytes) = std::fs::read(&sidecar) else {
-        return (0, 0);
-    };
-    // FNV-1a: not cryptographic, just a change detector.
+/// Two caches ask the same question — "has this changed since I built it?" — so the
+/// answer lives in one place. The journal is hashed (it is small and append-only);
+/// the base file is not, because it can be 10 GB, and its size plus modification time
+/// is enough: the base is supposed to be immutable.
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+struct Stamp {
+    hash: u64,
+    len: u64,
+}
+
+impl Stamp {
+    /// A journal's identity: the hash of its contents, so two writes inside one
+    /// timestamp tick are still distinguished.
+    fn journal(path: &Path) -> Self {
+        let sidecar = Journal::sidecar(path);
+        let Ok(bytes) = std::fs::read(&sidecar) else {
+            return Self { hash: 0, len: 0 };
+        };
+        Self {
+            hash: fnv1a(&bytes),
+            len: bytes.len() as u64,
+        }
+    }
+
+    /// A base file's identity: size and modification time, without reading it.
+    fn base(path: &Path) -> Self {
+        match std::fs::metadata(path) {
+            Ok(meta) => {
+                let modified = meta
+                    .modified()
+                    .ok()
+                    .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                    .map(|d| d.as_nanos() as u64)
+                    .unwrap_or(0);
+                Self {
+                    hash: modified,
+                    len: meta.len(),
+                }
+            }
+            Err(_) => Self { hash: 0, len: 0 },
+        }
+    }
+}
+
+fn fnv1a(bytes: &[u8]) -> u64 {
     let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
-    for byte in &bytes {
+    for byte in bytes {
         hash ^= *byte as u64;
         hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
     }
-    (hash, bytes.len() as u64)
+    hash
 }
 
 /// Serve a window of the edited sheet (base + journal).
@@ -1670,8 +1705,8 @@ type PagerCache = std::sync::Mutex<HashMap<PagerKey, std::sync::Arc<workbook::Pa
 #[derive(Clone, PartialEq, Eq, Hash)]
 struct PagerKey {
     path: String,
-    journal: (u64, u64),
-    base: (u64, u64),
+    journal: Stamp,
+    base: Stamp,
     delimiter: String,
 }
 
@@ -1683,29 +1718,12 @@ fn pager_cache() -> &'static PagerCache {
 /// Keep the cache small: an editor opens a handful of files, not hundreds.
 const MAX_CACHED_PAGERS: usize = 8;
 
-fn pager_key(path: &Path, journal: (u64, u64), delimiter: &str) -> PagerKey {
+fn pager_key(path: &Path, journal: Stamp, delimiter: &str) -> PagerKey {
     PagerKey {
         path: path.to_string_lossy().to_string(),
         journal,
-        base: base_stamp(path),
+        base: Stamp::base(path),
         delimiter: delimiter.to_string(),
-    }
-}
-
-/// Size and modification time of the base file, which is what changes when someone
-/// rewrites it underneath us.
-fn base_stamp(path: &Path) -> (u64, u64) {
-    match std::fs::metadata(path) {
-        Ok(meta) => {
-            let modified = meta
-                .modified()
-                .ok()
-                .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-                .map(|d| d.as_nanos() as u64)
-                .unwrap_or(0);
-            (modified, meta.len())
-        }
-        Err(_) => (0, 0),
     }
 }
 
@@ -1715,7 +1733,7 @@ fn cached_pager(
     delimiter: csv_splitter_core::types::Delimiter,
     delimiter_name: &str,
 ) -> io::Result<std::sync::Arc<workbook::Pager>> {
-    let key = pager_key(path, journal_fingerprint(path), delimiter_name);
+    let key = pager_key(path, Stamp::journal(path), delimiter_name);
     {
         let guard = pager_cache()
             .lock()
@@ -1932,14 +1950,14 @@ fn rows(
         let options = csv_splitter_core::sheet::ReadOptions {
             delimiter: delimiter(params),
         };
-        let fingerprint = journal_fingerprint(&path);
+        let fingerprint = Stamp::journal(&path);
         let key = path.to_string_lossy().to_string();
         {
             let mut guard = material_cache()
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
             let stale = match guard.get(&key) {
-                Some((stamp, len, _)) => (*stamp, *len) != fingerprint,
+                Some((stamp, _)) => *stamp != fingerprint,
                 None => true,
             };
             if stale {
@@ -1949,7 +1967,7 @@ fn rows(
                 drop(rx);
                 match csv_splitter_core::sheet::materialize(&path, &options, &tx) {
                     Ok(materialised) => {
-                        guard.insert(key.clone(), (fingerprint.0, fingerprint.1, materialised));
+                        guard.insert(key.clone(), (fingerprint, materialised));
                     }
                     Err(e) => {
                         return respond_json(
@@ -1990,7 +2008,7 @@ fn rows(
             .unwrap_or_else(|poisoned| poisoned.into_inner());
         let path_buf = guard
             .get(&key)
-            .map(|(_, _, m)| m.path().to_path_buf())
+            .map(|(_, m)| m.path().to_path_buf())
             .unwrap_or_else(|| path.clone());
         drop(guard);
         let statement = query;

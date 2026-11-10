@@ -1304,3 +1304,56 @@ fn the_api_counts_rows_the_same_way_the_cli_does() {
     assert_eq!(status, 400, "{body}");
     assert!(body.contains("1-based"), "{body}");
 }
+
+/// The SQL path materialises the edited sheet; an edit must invalidate it too.
+#[test]
+fn filtering_invalidates_the_materialised_copy() {
+    let dir = TempDir::new("materialstale");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,CDMX\n2,Puebla\n3,CDMX\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    // Filter through the materialised path.
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&where=city%3DCDMX");
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(body.matches("CDMX").count(), 2, "{body}");
+
+    // Edit a Puebla row into CDMX, then ask again.
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=2&col=city&value=CDMX",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&where=city%3DCDMX");
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(
+        body.matches("CDMX").count(),
+        3,
+        "the materialised copy was stale: {body}"
+    );
+}
+
+/// Both caches answer "has this changed?" the same way, so a file rewritten under
+/// the server is picked up whichever endpoint the client uses next.
+#[test]
+fn rewriting_the_base_file_is_noticed_by_both_paths() {
+    let dir = TempDir::new("rewrites");
+    let base = dir.join("t.csv");
+    std::fs::write(&base, "id,city\n1,CDMX\n2,Puebla\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=10");
+    assert_eq!(status, 200, "{body}");
+    let (_, filtered) = get(&server.addr, "/rows?path=t.csv&where=city%3DCDMX");
+    assert!(filtered.contains("CDMX"), "{filtered}");
+
+    // Replace the base file with different content, same name.
+    std::fs::write(&base, "id,city\n9,Zacatecas\n").unwrap();
+
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=10");
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.contains("Zacatecas"),
+        "the paged path served the old file: {body}"
+    );
+}
