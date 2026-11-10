@@ -2194,3 +2194,50 @@ fn sql_and_order_errors_are_structured() {
     assert!(body.contains("available columns: id, city"), "{body}");
     assert!(!body.contains("DESCRIBE"), "no SQL leaked: {body}");
 }
+
+/// A filtered page reports whether its `total` is exact, and stops as early as it can.
+#[test]
+fn a_filtered_page_says_when_its_total_is_exact() {
+    let dir = TempDir::new("filteredpage");
+    let mut text = String::from("id,city\n");
+    for i in 1..=100 {
+        text.push_str(&format!(
+            "{i},{}\n",
+            if i % 10 == 0 { "CDMX" } else { "Puebla" }
+        ));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0);
+
+    // Ten matches, ask for five: more rows exist, so the total is a lower bound.
+    let (code, body) = get(&server.addr, "/rows?path=t.csv&where=city%3DCDMX&count=5");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""totalExact":false"#), "{body}");
+    assert!(
+        body.contains(r#""total":5"#),
+        "a lower bound, not a wrong count: {body}"
+    );
+    assert!(body.contains(r#""hasMore":true"#), "{body}");
+    assert!(body.contains(r#""count":5"#), "{body}");
+
+    // Three matches at the end of the file: the page reaches the end, total is exact.
+    let (code, body) = get(&server.addr, "/rows?path=t.csv&where=id%3E97&count=10");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""totalExact":true"#), "{body}");
+    assert!(body.contains(r#""total":3"#), "{body}");
+    assert!(body.contains(r#""hasMore":false"#), "{body}");
+    // A filtered page has no row keys: its rows are not start+i of the base file.
+    assert!(
+        !body.contains("rowKeys"),
+        "keys would point at the wrong rows: {body}"
+    );
+
+    // A deep offset past the matches: no rows, exact total.
+    let (code, body) = get(
+        &server.addr,
+        "/rows?path=t.csv&where=city%3DCDMX&start=20&count=10",
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""count":0"#), "{body}");
+    assert!(body.contains(r#""totalExact":true"#), "{body}");
+}

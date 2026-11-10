@@ -339,6 +339,20 @@ curl "/rows?path=t.csv&keys=b:2,b:0,b:99"
 - 不存在的 key 进 `missing`（被删掉的行是「没有了」，不是错误）；
 - 一次最多 200 个 key，写错的 key 是 400，`parameter` 为 `keys`。
 
+### 过滤页的总数 / total on a filtered page
+
+```bash
+curl "/rows?path=t.csv&where=city=CDMX&count=5"
+{"start":0,"count":5,"total":5,"totalExact":false,"hasMore":true, …}
+```
+
+- `totalExact: true` → `total` 就是命中总数（这一页读到了结果末尾）；
+- `totalExact: false` → `total` 是**下界**（至少这么多），别拿它当总数显示；
+- 过滤页**不带 `rowKeys`**：行是引擎挑出来的，不是 base 文件的 `start+i`，
+  给 key 会指向错的行。要 key 就别过滤。
+
+无 `where` 的窗口 `rowKeys` 恒有；带 `order=` 的窗口走缓存路径，也不带 key。
+
 ## `order=` 与窗口修饰符 / window modifiers
 
 `/rows` 支持三组修饰符，可以叠加使用：

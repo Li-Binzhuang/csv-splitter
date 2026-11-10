@@ -29,7 +29,9 @@ pub struct QueryResult {
 }
 
 /// Words that must not appear anywhere in a query.
-const FORBIDDEN: &[&str] = &[
+/// Statement keywords: matched as whole words, so `OFFSET` (which contains `set`) and
+/// a column called `offset` are not mistaken for the `SET` statement.
+const FORBIDDEN_WORDS: &[&str] = &[
     "insert",
     "update",
     "delete",
@@ -47,13 +49,12 @@ const FORBIDDEN: &[&str] = &[
     "call",
     "vacuum",
     "checkpoint",
-    "set ",
-    "read_csv",
-    "read_parquet",
-    "read_json",
-    "read_text",
-    "glob",
+    "set",
 ];
+
+/// Table functions that read outside the served file: matched as prefixes, because
+/// they take arguments (`read_csv_auto('…')`) and the name is only the start.
+const FORBIDDEN_PREFIXES: &[&str] = &["read_csv", "read_parquet", "read_json", "read_text", "glob"];
 
 /// Validate a user query before it reaches DuckDB.
 pub fn validate(sql: &str) -> Result<(), String> {
@@ -68,12 +69,40 @@ pub fn validate(sql: &str) -> Result<(), String> {
     if !(upper.starts_with("select") || upper.starts_with("with")) {
         return Err("only SELECT / WITH queries are allowed".to_string());
     }
-    for word in FORBIDDEN {
-        if upper.contains(word) {
+    for word in FORBIDDEN_WORDS {
+        if contains_word(&upper, word) {
             return Err(format!("'{word}' is not allowed in a query"));
         }
     }
+    for prefix in FORBIDDEN_PREFIXES {
+        if upper.contains(prefix) {
+            return Err(format!("'{prefix}' is not allowed in a query"));
+        }
+    }
     Ok(())
+}
+
+/// Whole-word search, because a substring test rejects legitimate SQL.
+///
+/// `OFFSET 0` contains the letters `set `, and the old `contains` check refused it —
+/// so "SELECT * FROM t WHERE x LIMIT 10 OFFSET 20" failed with "'set ' is not allowed
+/// in a query". Keywords only matter as words: `offset` and `reset` are not `set`.
+fn contains_word(haystack: &str, word: &str) -> bool {
+    let is_word_char = |c: char| c.is_alphanumeric() || c == '_';
+    let bytes = haystack.as_bytes();
+    let mut at = 0;
+    while let Some(index) = haystack[at..].find(word) {
+        let start = at + index;
+        let end = start + word.len();
+        let before_ok = start == 0 || !is_word_char(bytes[start - 1] as char);
+        let after_ok =
+            end == bytes.len() || bytes[end] == b' ' || !is_word_char(bytes[end] as char);
+        if before_ok && after_ok {
+            return true;
+        }
+        at = end;
+    }
+    false
 }
 
 /// Option sets tried in order when opening a CSV.
@@ -542,5 +571,32 @@ mod tests {
         assert_eq!(r.rows.len(), 5);
         assert!(r.truncated);
         std::fs::remove_dir_all(p.parent().unwrap()).ok();
+    }
+}
+
+#[cfg(test)]
+mod guard_tests {
+    use super::*;
+
+    #[test]
+    fn offset_is_not_a_forbidden_statement() {
+        // `OFFSET 20` used to be refused because it contains the letters of `set `.
+        assert!(validate("SELECT * FROM t LIMIT 10 OFFSET 20").is_ok());
+        assert!(validate("WITH x AS (SELECT 1) SELECT * FROM x").is_ok());
+    }
+
+    #[test]
+    fn real_write_statements_are_still_refused() {
+        for sql in [
+            "DROP TABLE t",
+            "DELETE FROM t",
+            "INSERT INTO t VALUES (1)",
+            "UPDATE t SET a = 1",
+            "SET x = 1",
+            "PRAGMA database_list",
+            "COPY t TO 'x.csv'",
+        ] {
+            assert!(validate(sql).is_err(), "{sql} should be refused");
+        }
     }
 }

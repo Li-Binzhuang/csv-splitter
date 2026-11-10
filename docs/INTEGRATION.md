@@ -62,6 +62,8 @@ curl "…/rows?path=big.csv&start=1000&count=50"
 | `rows` | 二维字符串数组 |
 | `rowKeys` | 与 `rows` 等长：`b:<index>`（base 行）或 `v:<id>`（插入行）|
 | `edited` / `operations` | 这一屏是否套用了 journal，套用了几条 |
+| `totalExact` | `true` 时 `total` 是命中总数；`false` 时是**下界** |
+| `rowKeys` | 只在**不过滤**的窗口里有：过滤页的行不是 `start+i`，给 key 会指错 |
 
 **横向翻 782 列**：`&start-col=5&count-cols=10`（只返回这一段的字节）。
 

@@ -1,5 +1,38 @@
 # Changelog
 
+## [3.1.0] — 2026-11-10
+
+### Fixed
+
+- **`/rows?where=` reported a fake total.** It returned the cache prefix
+  (`total: 200000, hasMore: true`) for a filter that matches 684 917 rows — a front-end
+  would render "200000 rows" and be wrong by a factor of three. Filtered pages now carry
+  `totalExact`: when the page reached the end of the result, `total` is the count; when
+  it did not, `total` is a lower bound and says so.
+- **A filtered page was handed `rowKeys` it could not honour.** The keys were computed as
+  `b:<start+i>`, which is only correct for an unfiltered window; for a filtered page the
+  rows come from the engine and row 98 of the file is not row 1 of the result. Filtered
+  pages no longer include keys, and the docs say where keys are meaningful.
+- **`OFFSET` was a forbidden word.** `validate` matched forbidden keywords as substrings,
+  so `SELECT * FROM t LIMIT 10 OFFSET 20` failed with "'set ' is not allowed in a query".
+  Keywords are matched as whole words now; the table-function names that must catch
+  `read_csv_auto(...)` stay prefix matches, because that is what they are.
+
+### Performance
+
+- A filter without an order now asks DuckDB for `LIMIT count+1 OFFSET start` instead of
+  collecting the whole result: on the 2.5 GB / 782-column file the first page of a
+  selective filter went from **15 s to 9 s**, and a page that matches everything from
+  19 s to 8 s. It is still a scan — a filter over 2.5 GB costs a scan — but it no longer
+  materialises 200 000 rows to show ten.
+
+### Build
+
+- **`scripts/dev.sh gate` now runs core's own tests with `--features sql`.** `sql` is an
+  optional feature that only the CLI enables, so `cargo test --workspace` built core
+  without it and skipped the module's tests entirely — including the read-only guard
+  above. That is how the `OFFSET` regression survived until the guard was exercised.
+
 ## [3.0.1] — 2026-11-10
 
 ### Verified

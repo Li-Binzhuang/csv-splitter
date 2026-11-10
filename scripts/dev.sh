@@ -40,9 +40,15 @@ case "${1:-check}" in
     echo "== fmt =="
     cargo fmt --all -- --check
     echo "== clippy =="
-    cargo clippy --workspace --all-targets -- -D warnings
+    cargo clippy --workspace --all-targets --features sql -p csv-splitter-core -- -D warnings
+    cargo clippy --workspace --all-targets -p csv-splitter-cli -- -D warnings
     echo "== tests =="
     cargo test --workspace --quiet
+    # `sql` is an optional feature of core, and the CLI turns it on. Testing the
+    # workspace alone builds core *without* it, so core's own SQL tests — the read-only
+    # guard, the query wrapper — used to be skipped by the gate entirely.
+    echo "== tests (core with sql) =="
+    cargo test -p csv-splitter-core --features sql --quiet
     echo "== gate passed =="
     ;;
   *)
