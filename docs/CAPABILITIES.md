@@ -111,7 +111,7 @@
 | 能力 | CLI | API |
 |---|---|---|
 | 切分 | `split f.csv -n N` / `--by-size` | `POST /split` |
-| 合并 | `merge -i part*.tar -o out.csv` | `POST /merge` |
+| 合并 | `merge chunks.tar -o out.csv` | `POST /merge` |
 | 排序 | `sort --by C -o out.csv` | `POST /sort` |
 | 数据校验 | `validate --check "qty>=0" --check "city:not-empty"` | — |
 | 去重 | `dedupe -o out.csv [--by C]` | `POST /dedupe` |
@@ -119,6 +119,9 @@
 | 拼接 | `concat a.csv b.csv ...` | — |
 | 导列/改名 | `columns --keep/--drop/--rename` | — |
 | 下载/导出 | — | `GET /download`、`/export` |
+| 起本地服务 | `serve --root DIR` | 全部端点 |
+| 列出可读文件 | `files --root DIR` | `GET /files` |
+| 生成示例 | `demo [-o DIR]` | — |
 
 切分/合并是**字节级无损**（`verify` 逐字节比对）；其他写操作支持 `--verify` 计数级自检。
 

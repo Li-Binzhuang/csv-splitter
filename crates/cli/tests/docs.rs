@@ -545,3 +545,84 @@ fn the_readme_names_every_command() {
     }
     assert!(missing.is_empty(), "README never mentions: {missing:?}");
 }
+
+/// Every command named in CAPABILITIES.md must exist, and every command must be named.
+///
+/// Both directions matter: a doc that names a removed command sends people to a dead
+/// end, and one that omits a command leaves it undiscoverable. The command list comes
+/// from `main.rs`, so this cannot be satisfied by editing the doc alone.
+#[test]
+fn capabilities_names_real_commands_and_all_of_them() {
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let source = std::fs::read_to_string(manifest.join("src/main.rs")).unwrap();
+    let doc = std::fs::read_to_string(manifest.join("../../docs/CAPABILITIES.md")).unwrap();
+
+    let mut commands: Vec<String> = Vec::new();
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if let Some(rest) = trimmed.strip_prefix(r#"Some(""#) {
+            if rest.contains(") => cmd_") {
+                if let Some(name) = rest.split('"').next() {
+                    if !name.is_empty() && name.chars().all(|c| c.is_ascii_lowercase()) {
+                        commands.push(name.to_string());
+                    }
+                }
+            }
+        }
+    }
+    commands.sort();
+    assert!(commands.len() > 20, "{commands:?}");
+
+    let word_at = |text: &str, at: usize, len: usize| {
+        let before = text[..at].chars().next_back();
+        let after = text[at + len..].chars().next();
+        let edge =
+            |c: Option<char>| !c.is_some_and(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
+        edge(before) && edge(after)
+    };
+
+    let mut missing = Vec::new();
+    for command in &commands {
+        let found = doc
+            .match_indices(command.as_str())
+            .any(|(at, _)| word_at(&doc, at, command.len()));
+        if !found {
+            missing.push(command.clone());
+        }
+    }
+
+    // Commands mentioned as `cmd` in a table must be real. Only the left-hand column of
+    // a table row is checked, since that is where this doc names commands.
+    let mut phantom = Vec::new();
+    for line in doc.lines() {
+        let Some(row) = line.strip_prefix('|') else {
+            continue;
+        };
+        for cell in row.split('|') {
+            let cell = cell.trim();
+            // A cell like "`split f.csv -n N` / `--by-size`" names `split` first.
+            if let Some(rest) = cell.strip_prefix('`') {
+                let name: String = rest
+                    .chars()
+                    .take_while(|c| c.is_ascii_lowercase() || *c == '-')
+                    .collect();
+                // A command cell reads `cmd …` — a bare word followed by a space or a
+                // tick. `crates/core`, `lag(...)`, `where=…` are not commands.
+                let rest_after = &rest[name.len()..];
+                let looks_like_a_command = !name.is_empty()
+                    && !name.starts_with("--")
+                    && (rest_after.starts_with(' ') || rest_after.starts_with('`'));
+                if looks_like_a_command && !commands.iter().any(|c| c == &name) {
+                    phantom.push(name);
+                }
+            }
+        }
+    }
+    phantom.sort();
+    phantom.dedup();
+
+    assert!(
+        missing.is_empty() && phantom.is_empty(),
+        "not documented: {missing:?}; documented but not a command: {phantom:?}"
+    );
+}

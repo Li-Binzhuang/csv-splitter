@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.0.2] — 2026-11-10
+
+### Fixed (docs)
+
+- **`docs/CAPABILITIES.md` documented a flag that does not exist**: it showed
+  `merge -i part*.tar`, and `merge` takes the archive positionally and rejects `-i`
+  with "unknown option". A reader following that line got an error before anything
+  worked.
+- The page also never mentioned `serve`, `demo` or `files` — three commands missing
+  from the page that claims to list capabilities.
+
+### Added
+
+- A test checks both directions against the command list in `main.rs`: every command
+  named here must exist, and every command must be named. The first version flagged
+  `crates/core`, `lag(...)`, `where=…` as phantom commands, so the check now only
+  accepts a cell that reads like `cmd …`.
+
 ## [1.0.1] — 2026-11-10
 
 ### Fixed (docs)
