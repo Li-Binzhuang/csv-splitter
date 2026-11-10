@@ -347,6 +347,47 @@ curl "/rows?path=t.csv&keys=b:2,b:0,b:99"
 
 **编辑就是按这个身份存的**，所以 key 是唯一能跨插入/删除稳定的行标识。
 
+
+## `GET /journal` — 撤销栈 / the undo stack
+
+A front-end that shows "undo this change" needs the stack, not a guess. Each operation
+carries the same 1-based description the CLI prints:
+
+```bash
+curl "/journal?path=t.csv"
+{"path":"t.csv",
+ "operations":[{"tag":"set","description":"set row 1 'city' = 'X'"}],
+ "count":1,
+ "redo":[{"tag":"set","description":"set row 2 'city' = 'Y'"}],
+ "redoCount":1,"canUndo":true,"canRedo":true,
+ "damaged":{"operations":0,"redo":0}}
+```
+
+`damaged` is non-zero only when a journal record could not be read (the same fact the CLI
+warns about) — a UI can show "the history is incomplete" instead of pretending.
+
+## Write actions / 写入动作
+
+`POST /edit?action=` 接受这些（与 `GET /capabilities` 的 `editActions` 同源）：
+
+| action | 参数 |
+|---|---|
+| `set` | `row`, `col`, `value`, 可选 `expect`（compare-and-set，409）|
+| `insert` | `row`, `value=a,b,c` |
+| `delete` | `row`, `count` |
+| `replace` | `col` 或 `from…`（见 CLI `edit replace --help`）|
+| `copy` | `from`, `to`（A1 范围）|
+| `fill` | `col`, `from-row`, `to-row`, `value` |
+| `insert-column` | `name`，以及 `value` 或 `formula`，可选 `after` |
+| `split-column` | `col`, `by`, `into=a,b` |
+| `formula` | `name`, `value=<expr>` |
+| `drop` | `name` |
+| `rename` | `from`, `to` |
+| `undo` / `redo` | — |
+| `export` | `out`，可选 `where` |
+
+猜错动作名时，`hint` 会把这张表列出来——有测试保证它不会漏。
+
 ## 已知限制
 
 - `where` / `order` 走 DuckDB：对**有编辑的文件**会先物化到临时表（每份源文件最多一份，

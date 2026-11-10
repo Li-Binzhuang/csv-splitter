@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.8.0] — 2026-11-10
+
+### Added
+
+- **`GET /journal`**: the undo stack, described. Each operation carries the same
+  1-based sentence the CLI prints (`set row 1 'city' = 'X'`), plus `count`,
+  `redo`/`redoCount`, `canUndo`/`canRedo`, and a `damaged` block that is non-zero only
+  when a journal record could not be read. A toolbar can label its buttons from this
+  instead of re-deriving or remembering anything.
+- `Journal::redo_ops()` so callers can read the redo stack without popping it.
+
+### Fixed
+
+- **`POST /edit?action=insert-column` worked but was not advertised.** The action
+  existed in the handler and was missing from `EDIT_ACTIONS`, so the "unknown action"
+  hint — the list a client reads when it guesses wrong — omitted it (and
+  `split-column`, and `fill`). The constant now carries all fourteen, and a test posts a
+  bogus action and asserts every real one appears in the hint.
+
 ## [2.7.0] — 2026-11-10
 
 ### Added

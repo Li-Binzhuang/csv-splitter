@@ -201,6 +201,11 @@ impl Journal {
         self.ops.len()
     }
 
+    /// The redo stack, for callers that render "undo this change" buttons.
+    pub fn redo_ops(&self) -> &[Op] {
+        &self.redo
+    }
+
     pub fn redo_len(&self) -> usize {
         self.redo.len()
     }

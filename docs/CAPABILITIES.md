@@ -130,6 +130,7 @@
 | 排序 | `sort --by C -o out.csv` | `POST /sort` |
 | 列集合对比 | `schema a.csv --diff b.csv`（新增/缺失/移位，退出码 1）| — |
 | 列过滤/截断 | — | `/columns?kind=number&limit=20`（带 totalColumns）|
+| 撤销栈查询 | `edit status` | `GET /journal`（含 redo 栈与损坏提示）|
 | 按 key 定位行 | `/rows?keys=b:12,v:3`（插入/删除后仍指向同一行）| — |
 | 并发写入 | 两个进程同时 `edit` | journal 加锁，双方操作都保留（实测 10 并发 → 10 条）|
 | 窗口选列 | `/rows?columns=a,b`（782 列 → 3 列，87 KB → 529 字节）| — |

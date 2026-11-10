@@ -192,6 +192,7 @@ fn handle(
         "/capabilities" => capabilities_endpoint(&mut stream),
         "/schema" => columns_endpoint(&mut stream, root, &params),
         "/cell" => cell_endpoint(&mut stream, root, &params),
+        "/journal" => journal_endpoint(&mut stream, root, &params),
         "/groupby" => group_by(&mut stream, root, cache, &params),
         "/pivot" => pivot_endpoint(&mut stream, root, cache, &params),
         "/style" => style_endpoint(&mut stream, root, &params),
@@ -315,6 +316,69 @@ fn cell_endpoint(
                 None => String::new(),
             }),
             window.total
+        ),
+    )
+}
+
+/// `GET /journal?path=t.csv` — what is pending, and what could be undone.
+///
+/// A front-end shows an undo stack; this is the stack. Each operation carries its
+/// human description (1-based rows, the same text the CLI prints), so a UI can label a
+/// button without re-deriving anything.
+fn journal_endpoint(
+    stream: &mut TcpStream,
+    root: &Path,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
+    };
+    let sidecar = Journal::sidecar(&path);
+    let (journal, skipped, skipped_redo) = match Journal::load_reporting(&sidecar) {
+        Ok(v) => v,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let ops: Vec<String> = journal
+        .ops()
+        .iter()
+        .map(|op| {
+            format!(
+                r#"{{"tag":{},"description":{}}}"#,
+                json_str(op.tag()),
+                json_str(&op.describe())
+            )
+        })
+        .collect();
+    let redo: Vec<String> = journal
+        .redo_ops()
+        .iter()
+        .map(|op| {
+            format!(
+                r#"{{"tag":{},"description":{}}}"#,
+                json_str(op.tag()),
+                json_str(&op.describe())
+            )
+        })
+        .collect();
+    respond_json(
+        stream,
+        200,
+        &format!(
+            r#"{{"path":{},"operations":[{}],"count":{},"redo":[{}],"redoCount":{},"canUndo":{},"canRedo":{},"damaged":{{"operations":{skipped},"redo":{skipped_redo}}}}}"#,
+            json_str(&rel),
+            ops.join(","),
+            journal.len(),
+            redo.join(","),
+            journal.redo_len(),
+            !journal.is_empty(),
+            journal.redo_len() > 0
         ),
     )
 }
@@ -714,7 +778,19 @@ fn edit_state(
 /// They used to be written separately and disagreed — each omitted different actions,
 /// so the error text could not be trusted as a description of the endpoint.
 const EDIT_ACTIONS: &[&str] = &[
-    "set", "insert", "delete", "replace", "copy", "formula", "drop", "rename", "undo", "redo",
+    "set",
+    "insert",
+    "delete",
+    "replace",
+    "copy",
+    "fill",
+    "insert-column",
+    "split-column",
+    "formula",
+    "drop",
+    "rename",
+    "undo",
+    "redo",
     "export",
 ];
 

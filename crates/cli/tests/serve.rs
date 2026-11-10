@@ -2032,3 +2032,66 @@ fn columns_filter_and_limit() {
     assert!(body.contains(r#""shown":1"#), "{body}");
     assert!(body.contains(r#""totalColumns":3"#), "{body}");
 }
+
+/// `/journal` is the undo stack a front-end renders, and it names each step the way
+/// the CLI does.
+#[test]
+fn journal_reports_the_undo_stack() {
+    let dir = TempDir::new("journalapi");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n2,B\n").unwrap();
+    let server = start(&dir.0);
+
+    // Empty to begin with, and honest about it.
+    let (code, body) = get(&server.addr, "/journal?path=t.csv");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""count":0"#), "{body}");
+    assert!(body.contains(r#""canUndo":false"#), "{body}");
+
+    let (code, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=city&value=X",
+    );
+    assert_eq!(code, 200, "{body}");
+    let (code, body) = post(&server.addr, "/edit?path=t.csv&action=undo");
+    assert_eq!(code, 200, "{body}");
+
+    let (code, body) = get(&server.addr, "/journal?path=t.csv");
+    assert_eq!(code, 200, "{body}");
+    // The undo moved the operation into the redo stack, described the same way.
+    assert!(body.contains(r#""count":0"#), "{body}");
+    assert!(body.contains(r#""redoCount":1"#), "{body}");
+    assert!(body.contains("set row 1 'city' = 'X'"), "{body}");
+    assert!(body.contains(r#""canRedo":true"#), "{body}");
+}
+
+/// Every write action the handler accepts is listed in the hint a client sees when it
+/// guesses wrong — so the list cannot drift from the code.
+#[test]
+fn every_edit_action_is_advertised_in_the_hint() {
+    let dir = TempDir::new("actions");
+    std::fs::write(dir.join("t.csv"), "id\n1\n").unwrap();
+    let server = start(&dir.0);
+    let (code, body) = post(&server.addr, "/edit?path=t.csv&action=nope");
+    assert_eq!(code, 400, "{body}");
+    for action in [
+        "set",
+        "insert",
+        "delete",
+        "replace",
+        "copy",
+        "fill",
+        "insert-column",
+        "split-column",
+        "formula",
+        "drop",
+        "rename",
+        "undo",
+        "redo",
+        "export",
+    ] {
+        assert!(
+            body.contains(action),
+            "hint does not offer {action}: {body}"
+        );
+    }
+}

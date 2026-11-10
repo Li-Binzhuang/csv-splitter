@@ -139,6 +139,18 @@ curl "…/rows?path=big.csv&keys=b:12,v:3"
 
 `parameter` 指明该改哪个参数，`hint` 说怎么改。**照着 hint 做就够。**
 
+## 9.5 撤销栈
+
+工具栏上的「撤销」直接读服务端，不要在前端自己维护：
+
+```bash
+curl "…/journal?path=big.csv"
+{"operations":[{"tag":"set","description":"set row 1 'city' = 'X'"}],"count":1,
+ "redo":[],"canUndo":true,"canRedo":false}
+```
+
+`description` 就是 CLI 打印的那句话（1-based），可以直接当按钮的 tooltip。
+
 ## 10. 一个完整的编辑循环
 
 把上面几步串起来，这是前端真正要做的事：
