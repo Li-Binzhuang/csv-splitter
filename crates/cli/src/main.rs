@@ -280,7 +280,10 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         &[
             ("--freeze-first", "Freeze these leading columns"),
             ("--json", "Emit JSON"),
-            ("--set", "Layout settings, e.g. \"width=20\""),
+            (
+                "--set",
+                "Layout settings as <column>:<key>=<value>, e.g. \"amount:width=120\"",
+            ),
         ],
     ),
     (
@@ -2071,36 +2074,44 @@ fn cmd_view(args: &[String]) -> i32 {
             Err(e) => return report_failure("view", e.to_string()),
         };
         page_total = Some(pager.total());
-        let mut seen: u64 = 0;
-        let mut scanned: u64 = 0;
-        let chunk = count.max(1_000);
-        loop {
-            let win = match pager.page(seen, chunk) {
-                Ok(w) => w,
-                Err(e) => return report_failure("view", e.to_string()),
-            };
-            if win.rows.is_empty() {
-                break;
-            }
-            if columns.is_empty() {
-                columns = pager.columns().to_vec();
-            }
-            for row in &win.rows {
-                scanned += 1;
-                let keep = match &compiled {
-                    None => scanned > start,
-                    Some(set) => set.holds(row),
+        columns = pager.columns().to_vec();
+        match &compiled {
+            // No filter: jump straight to the offset. Scanning forward from row zero
+            // to reach `--start 3900000` read the whole file to show one page.
+            None => {
+                let win = match pager.page(start, count) {
+                    Ok(w) => w,
+                    Err(e) => return report_failure("view", e.to_string()),
                 };
-                if keep {
-                    rows.push(row.clone());
-                    if rows.len() as u64 >= count {
+                rows = win.rows;
+            }
+            // A filter has to look at every row until it has enough matches, so it
+            // scans — but it starts counting from zero, which is what `--start` means
+            // for a filtered view: skip the first `start` matches.
+            Some(set) => {
+                let mut seen: u64 = 0;
+                let chunk = count.max(1_000);
+                loop {
+                    let win = match pager.page(seen, chunk) {
+                        Ok(w) => w,
+                        Err(e) => return report_failure("view", e.to_string()),
+                    };
+                    if win.rows.is_empty() {
+                        break;
+                    }
+                    for row in &win.rows {
+                        if set.holds(row) {
+                            rows.push(row.clone());
+                            if rows.len() as u64 >= count {
+                                break;
+                            }
+                        }
+                    }
+                    seen += win.rows.len() as u64;
+                    if rows.len() as u64 >= count || win.rows.len() < chunk as usize {
                         break;
                     }
                 }
-            }
-            seen += win.rows.len() as u64;
-            if rows.len() as u64 >= count || win.rows.len() < chunk as usize {
-                break;
             }
         }
     }
@@ -5814,13 +5825,23 @@ fn cmd_edit(args: &[String]) -> i32 {
             if let Err(code) = check_output(Some(&input), &output) {
                 return code;
             }
-            // `--order` needs the data on disk to sort it; `--columns` is applied
-            // during the export, so the sort sees only the columns being written.
-            let staging = order.is_some();
+            // Ordering happens on disk, and it may name a column that `--columns` does
+            // not keep — "sort by amount, deliver id and city" is a normal request. So
+            // when both are given the export keeps every column, the sort does its
+            // work, and a final pass drops the rest. `--columns` alone is applied
+            // during the export, which is the cheap path.
+            let ordered = order.is_some();
+            let project_after = ordered && columns.is_some();
+            let staging = ordered;
             let target = if staging {
                 output.with_extension("csvs-staging")
             } else {
                 output.clone()
+            };
+            let export_columns: Option<&[String]> = if project_after {
+                None
+            } else {
+                columns.as_deref()
             };
             let result = csv_splitter_core::workbook::export_selected(
                 &input,
@@ -5830,13 +5851,13 @@ fn cmd_edit(args: &[String]) -> i32 {
                 quotes,
                 csv_splitter_core::workbook::ExportOptions {
                     only: only.as_ref(),
-                    columns: columns.as_deref(),
+                    columns: export_columns,
                 },
                 &tx,
             );
             drop(tx);
             let _ = reporter.join();
-            let summary = match result {
+            let mut summary = match result {
                 Ok(summary) => summary,
                 Err(e) => {
                     if staging {
@@ -5848,16 +5869,46 @@ fn cmd_edit(args: &[String]) -> i32 {
             // Sorting happens after the export, on the staged file: the sort command
             // already streams with bounded memory, so this adds no new machinery.
             if let Some(keys) = &order {
+                let sorted = if project_after {
+                    output.with_extension("csvs-sorted")
+                } else {
+                    output.clone()
+                };
                 let (stx, srx) = mpsc::channel();
                 let reporter = spawn_reporter("sort", srx, true);
                 let outcome = csv_splitter_core::sort::external_sort_columns(
-                    &target, &output, keys, delimiter, 256, &stx,
+                    &target, &sorted, keys, delimiter, 256, &stx,
                 );
                 drop(stx);
                 let _ = reporter.join();
                 let _ = std::fs::remove_file(&target);
                 if let Err(e) = outcome {
+                    let _ = std::fs::remove_file(&sorted);
                     return report_failure("edit", format!("cannot order the export: {e}"));
+                }
+                if project_after {
+                    // The file now has only the selected columns, so the summary must
+                    // say so rather than repeating the staging width.
+                    if let Some(selected) = &columns {
+                        summary.columns = selected.clone();
+                    }
+                    // Drop the columns that were only there to sort by.
+                    let spec = csv_splitter_core::reshape::ReshapeSpec {
+                        keep: columns.clone().unwrap_or_default(),
+                        drop: Vec::new(),
+                        rename: Vec::new(),
+                    };
+                    let (ptx, prx) = mpsc::channel();
+                    let reporter = spawn_reporter("columns", prx, true);
+                    let projected = csv_splitter_core::reshape::reshape(
+                        &sorted, delimiter, &spec, &output, &ptx,
+                    );
+                    drop(ptx);
+                    let _ = reporter.join();
+                    let _ = std::fs::remove_file(&sorted);
+                    if let Err(e) = projected {
+                        return report_failure("edit", format!("cannot select columns: {e}"));
+                    }
                 }
             }
             return {

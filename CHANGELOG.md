@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.8.0] — 2026-11-10
+
+### Fixed
+
+- **A page at a deep offset cost a scan of everything before it.** `view --start 3900000`
+  on a 77 MB file took 5.1 s and scaled with the offset (1.0 M → 1.5 s, 2.0 M → 2.7 s,
+  3.9 M → 5.1 s): the unfiltered path looped forward from row zero to reach the offset
+  instead of jumping to it. It now jumps: 0.31 s at every offset. A filter still scans,
+  because that is what a filter means.
+- **`edit export --columns … --order …` refused to order by a column it was told to
+  drop.** "Sort by amount, deliver id and city" is a normal request; it now exports
+  every column, sorts, and then drops the rest, and the summary reports the width
+  actually delivered.
+- **`layout --set`'s help example was wrong**: it said `width=20`, and the real syntax
+  is `column:key=value` — the example failed if pasted.
+
+### Added
+
+- **`scripts/regress.sh`**: every command once, on a generated file, checking that
+  each one answers. This round's sweep found the three problems above, two of which
+  (`--order` on a dropped column, the `layout` example) had never been exercised by any
+  test because they read like reasonable requests rather than edge cases.
+
 ## [1.7.0] — 2026-11-10
 
 ### Added
