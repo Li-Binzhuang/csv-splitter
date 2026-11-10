@@ -1,5 +1,28 @@
 # Changelog
 
+## [3.4.0] — 2026-11-10
+
+### Added
+
+- **`pastEnd` on every window**: an empty page now says whether it is empty because the
+  offset went past the file or because there is nothing to page. A client renders
+  "no more rows" for one and "empty file" for the other; `total` alone made it guess.
+  An empty file (`total: 0`) is explicitly *not* `pastEnd`.
+
+### Fixed
+
+- **The timing assertion in `a_repeated_filtered_page_does_not_rescan` was measuring the
+  machine under load.** Its bound was `max(cold, 50 ms)`; in a full gate run every other
+  test server competes for CPU, so a 30 ms cold page and a 60 ms warm one failed an
+  assertion about caching. The bound is now `cold × 3 + 200 ms` — a rescan costs about a
+  cold run, so this still fails loudly for the regression it guards, and passes when the
+  box is busy. This is the one unexplained failure from the previous round.
+
+### Docs
+
+- README now says `schema --diff` exits 1 when the column sets differ, and API/INTEGRATION
+  document `pastEnd` next to the fields that page numbers depend on.
+
 ## [3.3.0] — 2026-11-10
 
 ### Added

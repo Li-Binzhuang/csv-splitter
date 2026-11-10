@@ -2358,9 +2358,10 @@ fn respond_sheet_window(
         stream,
         200,
         &format!(
-            r#"{{"start":{start},"count":{},"requested":{requested},"limit":{MAX_ROWS_PER_REQUEST},"total":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}],"rowKeys":{},"edited":true,"operations":{}}}"#,
+            r#"{{"start":{start},"count":{},"requested":{requested},"limit":{MAX_ROWS_PER_REQUEST},"total":{},"pastEnd":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}],"rowKeys":{},"edited":true,"operations":{}}}"#,
             rows_count,
             window.total,
+            window.total > 0 && start >= window.total,
             cols.join(","),
             frozen.join(","),
             rows.join(","),
@@ -3025,10 +3026,11 @@ fn rows(
             headers.iter().take(count).map(|c| json_str(c)).collect()
         })
         .unwrap_or_default();
+    let total = viewer.total_rows();
     let body = format!(
-        r#"{{"start":{start},"count":{},"requested":{requested},"limit":{MAX_ROWS_PER_REQUEST},"total":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}],"rowKeys":{}}}"#,
+        r#"{{"start":{start},"count":{},"requested":{requested},"limit":{MAX_ROWS_PER_REQUEST},"total":{total},"pastEnd":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}],"rowKeys":{}}}"#,
         rows.len(),
-        viewer.total_rows(),
+        total > 0 && start >= total,
         cols.join(","),
         frozen.join(","),
         rows.join(","),

@@ -64,6 +64,7 @@ curl "…/rows?path=big.csv&start=1000&count=50"
 | `edited` / `operations` | 这一屏是否套用了 journal，套用了几条 |
 | `totalExact` | `true` 时 `total` 是命中总数；`false` 时是**下界** |
 | `rowKeys` | 只在**不过滤**的窗口里有：过滤页的行不是 `start+i`，给 key 会指错 |
+| `pastEnd` | `true`：这是「翻过头了」；空文件不是这种情况，看 `total` |
 
 **横向翻 782 列**：`&start-col=5&count-cols=10`（只返回这一段的字节）。
 
