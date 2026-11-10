@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.46.0] — 2026-11-10
+
+### Added
+
+- **Cross-table lookup** (`crates/core/src/lookup.rs`): `lookup orders.csv --key
+  cust_no --from customers.csv --get name,city` — the VLOOKUP a spreadsheet user
+  reaches for first.
+  - The reference table is loaded, the main table is streamed: two sequential passes
+    over bytes regardless of how large the main file is.
+  - Misses are `#N/A`, not blanks (a blank cell reads as real data).
+  - Duplicate reference keys keep the first row, like VLOOKUP; a column-name clash
+    gets a `_ref` suffix instead of producing two identical headers.
+  - `--max-keys` (default 5 M) refuses an oversized reference with the parameter to
+    raise; `--from-key` covers a differently named reference key.
+
 ## [0.45.0] — 2026-11-10
 
 ### Added

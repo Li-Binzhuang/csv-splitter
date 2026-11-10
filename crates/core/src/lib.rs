@@ -17,6 +17,7 @@ pub mod index;
 pub mod jobs;
 pub mod layout;
 pub mod listing;
+pub mod lookup;
 pub mod merge;
 pub mod pack;
 pub mod partition;

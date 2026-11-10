@@ -609,6 +609,31 @@ note: 1 pending edit(s) in orders.csv.journal are not applied by this command;
 因为前端不该看到两套数。物化走临时文件（**每份源文件最多一个**，日志变了就替换旧的），
 并且有 **2 GB 上限**——超了直接报错让你先 `edit export`，而不是悄悄把磁盘写满。
 
+## 跨表查找 / Lookup (VLOOKUP)
+
+```bash
+$ csv-splitter lookup orders.csv --key cust_no --from customers.csv --get name,city
+✓ 2 of 3 rows matched (1 missing) → orders.lookup.csv (84 B)
+
+order,cust_no,amount,name,city
+A,1,100,Ana,CDMX
+B,2,50,Beto,Puebla
+C,9,10,#N/A,#N/A
+```
+
+**不对称是有意的**：参照表（客户、商品、编码）读进内存，主表流式扫描。参照表天然小，
+要补的那张表才可能是上亿行。
+
+| 行为 | 说明 |
+|---|---|
+| 未匹配 | 写 `#N/A`，**不是空单元格** —— 空值会被当成真实数据 |
+| 重复键 | 取**第一条**（跟 VLOOKUP 一致） |
+| 列名冲突 | 加 `_ref` 后缀，不会出现两个同名列 |
+| 参照表过大 | 超过 `--max-keys`（默认 500 万）报错并说明调哪个参数 |
+| 编码 | 主表和参照表各自探测，结果写 UTF-8 |
+
+参照表的键默认与主表同名列；不同名时用 `--from-key`。
+
 ## 错误信息 / Error output
 
 只有两种形状，脚本可以直接按前缀判断：

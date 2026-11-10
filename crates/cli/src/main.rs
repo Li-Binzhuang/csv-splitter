@@ -50,6 +50,7 @@ fn main() -> ExitCode {
         Some("format") => cmd_format(&args[1..]),
         Some("chart") => cmd_chart(&args[1..]),
         Some("layout") => cmd_layout(&args[1..]),
+        Some("lookup") => cmd_lookup(&args[1..]),
         Some("demo") => cmd_demo(&args[1..]),
         Some("sql") => cmd_sql(&args[1..]),
         Some("search") => cmd_search(&args[1..]),
@@ -101,6 +102,7 @@ COMMANDS
   format   <input> --rule R          Conditional formatting: which cells to paint
   chart    <input> --x C --y C:op    Chart data (categories + series) as JSON
   layout   <input> [--set C:k=v]    Column widths, names, freeze and number formats
+  lookup   <input> --key C --from R Join a reference table onto the file (VLOOKUP)
   demo     [-o <dir>]           Write a sample file to try the commands on
   search   <input> <text>        Find text anywhere (or in chosen columns)
   files    --root <dir>          List readable files under a directory
@@ -2032,6 +2034,171 @@ fn parse_sort_columns(spec: &str, default_descending: bool) -> Result<Vec<SortCo
         return Err("no sort columns".to_string());
     }
     Ok(columns)
+}
+
+fn cmd_lookup(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut input: Option<PathBuf> = None;
+    let mut out: Option<PathBuf> = None;
+    let mut key: Option<String> = None;
+    let mut reference: Option<PathBuf> = None;
+    let mut reference_key = String::new();
+    let mut take = String::new();
+    let mut max_keys = csv_splitter_core::lookup::DEFAULT_MAX_KEYS;
+    let mut json = false;
+    let mut quiet = false;
+    let mut delim = "auto".to_string();
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--key" => match p.value("--key") {
+                Ok(v) => key = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--from" | "--reference" => match p.value("--from") {
+                Ok(v) => reference = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--from-key" => match p.value("--from-key") {
+                Ok(v) => reference_key = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--get" => match p.value("--get") {
+                Ok(v) => take = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--max-keys" => match p
+                .value("--max-keys")
+                .and_then(|v| v.parse().map_err(|_| "bad --max-keys".to_string()))
+            {
+                Ok(v) => max_keys = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--json" => json = true,
+            "--quiet" | "-q" => quiet = true,
+            "-o" | "--out" => match p.value("--out") {
+                Ok(v) => out = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-d" | "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => {
+                if input.is_none() {
+                    input = Some(PathBuf::from(other));
+                } else {
+                    eprintln!("error: unexpected argument: {other}");
+                    return 2;
+                }
+            }
+        }
+    }
+
+    let Some(input) = input else {
+        eprintln!("error: lookup needs an <input> file");
+        return 2;
+    };
+    let Some(key) = key else {
+        eprintln!("error: lookup needs --key <column>");
+        return 2;
+    };
+    let Some(reference) = reference else {
+        eprintln!("error: lookup needs --from <reference.csv>");
+        return 2;
+    };
+    if reference_key.trim().is_empty() {
+        // Default: the reference key has the same name as the main key. That is
+        // the common case, and demanding it explicitly is pointless ceremony.
+        reference_key = key.clone();
+    }
+    if take.trim().is_empty() {
+        eprintln!("error: lookup needs --get <columns from the reference>");
+        return 2;
+    }
+    let delimiter = match parse_delimiter(&delim, &input) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let output = out.unwrap_or_else(|| {
+        let stem = input
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_else(|| "lookup".to_string());
+        input.with_file_name(format!("{stem}.lookup.csv"))
+    });
+    warn_pending_edits(&input);
+
+    let options = csv_splitter_core::lookup::LookupOptions {
+        key,
+        reference,
+        reference_key,
+        take: take.split(',').map(|s| s.trim().to_string()).collect(),
+        max_keys,
+    };
+    let (tx, rx) = mpsc::channel();
+    let reporter = spawn_reporter("lookup", rx, quiet || json);
+    let result = csv_splitter_core::lookup::lookup(&input, delimiter, &output, &options, &tx);
+    drop(tx);
+    let _ = reporter.join();
+    let summary = match result {
+        Ok(s) => s,
+        Err(_) => return 1,
+    };
+
+    if json {
+        println!(
+            r#"{{"mainRows":{},"matched":{},"missing":{},"referenceKeys":{},"bytes":{},"columns":["{}"]}}"#,
+            summary.main_rows,
+            summary.matched,
+            summary.missing,
+            summary.reference_keys,
+            summary.bytes,
+            summary.columns.join(r#"",""#)
+        );
+    } else {
+        println!(
+            "✓ {} of {} rows matched ({} missing) → {} ({})",
+            summary.matched,
+            summary.main_rows,
+            summary.missing,
+            output.display(),
+            human_bytes(summary.bytes)
+        );
+    }
+    0
 }
 
 fn cmd_layout(args: &[String]) -> i32 {

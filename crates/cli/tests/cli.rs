@@ -1772,3 +1772,49 @@ fn read_commands_warn_about_pending_edits() {
     assert_eq!(status.code(), Some(0));
     assert!(std::fs::read_to_string(&out).unwrap().contains("999"));
 }
+
+/// Cross-table lookup: reference loaded, main file streamed, misses visible.
+#[test]
+fn lookup_enriches_rows_and_marks_misses() {
+    let dir = TempDir::new("lookup");
+    let main = dir.join("orders.csv");
+    let reference = dir.join("customers.csv");
+    std::fs::write(&main, "order,cust_no,amount\nA,1,100\nB,2,50\nC,9,10\n").unwrap();
+    std::fs::write(&reference, "cust_no,name,city\n1,Ana,CDMX\n2,Beto,Puebla\n").unwrap();
+
+    let out = dir.join("joined.csv");
+    let status = Command::new(bin())
+        .args([
+            "lookup",
+            main.to_str().unwrap(),
+            "--key",
+            "cust_no",
+            "--from",
+            reference.to_str().unwrap(),
+            "--get",
+            "name,city",
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    let text = std::fs::read_to_string(&out).unwrap();
+    assert_eq!(
+        text.lines().next().unwrap(),
+        "order,cust_no,amount,name,city"
+    );
+    assert_eq!(text.lines().nth(1).unwrap(), "A,1,100,Ana,CDMX");
+    // A miss is #N/A, not blank: blank would look like real data.
+    assert_eq!(text.lines().nth(3).unwrap(), "C,9,10,#N/A,#N/A");
+
+    // Missing required flags are usage errors.
+    let out = Command::new(bin())
+        .args(["lookup", main.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("--key"), "{stderr}");
+}
