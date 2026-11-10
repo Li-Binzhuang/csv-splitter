@@ -2241,3 +2241,67 @@ fn a_filtered_page_says_when_its_total_is_exact() {
     assert!(body.contains(r#""count":0"#), "{body}");
     assert!(body.contains(r#""totalExact":true"#), "{body}");
 }
+
+/// `/sheet` describes the sheet; `/journal` is the stack. One place per fact.
+#[test]
+fn sheet_carries_counts_and_journal_carries_the_stack() {
+    let dir = TempDir::new("sheetsummary");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n2,B\n").unwrap();
+    let server = start(&dir.0);
+    let _ = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=city&value=X",
+    );
+    let _ = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=2&col=city&value=Y",
+    );
+
+    let (code, body) = get(&server.addr, "/sheet?path=t.csv");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""operations":2"#), "{body}");
+    assert!(body.contains(r#""lastOperation""#), "{body}");
+    assert!(body.contains("set row 2 'city' = 'Y'"), "{body}");
+    // The full list is not duplicated here any more.
+    assert!(
+        !body.contains(r#""ops":"#),
+        "ops should live at /journal: {body}"
+    );
+
+    let (code, body) = get(&server.addr, "/journal?path=t.csv");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""count":2"#), "{body}");
+    assert!(body.contains("set row 1 'city' = 'X'"), "{body}");
+    assert!(body.contains("set row 2 'city' = 'Y'"), "{body}");
+}
+
+/// `keys=` composes with `columns=` and `start-col=`: ask for the rows you kept,
+/// then ask for a slice of them.
+#[test]
+fn keys_compose_with_projection_and_paging() {
+    let dir = TempDir::new("keyscompose");
+    let mut header = String::from("id");
+    for i in 0..8 {
+        header.push_str(&format!(",c{i}"));
+    }
+    std::fs::write(
+        dir.join("t.csv"),
+        format!("{header}\n1,a,b,c,d,e,f,g,h\n2,a,b,c,d,e,f,g,h\n3,a,b,c,d,e,f,g,h\n"),
+    )
+    .unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = get(&server.addr, "/rows?path=t.csv&keys=b:2,b:0&columns=id,c3");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""rowNumbers":[3,1]"#), "{body}");
+    // c3 is the fourth feature column: id,c0,c1,c2,c3 → "d".
+    assert!(body.contains(r#"["3","d"]"#), "{body}");
+
+    // Horizontal paging applies to the keys result too: same rows, narrower columns.
+    let (code, body) = get(
+        &server.addr,
+        "/rows?path=t.csv&keys=b:1&start-col=2&count-cols=2",
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""columns":["c1","c2"]"#), "{body}");
+}

@@ -2529,17 +2529,14 @@ fn sheet_meta(
     let rows = sheet.rows().unwrap_or(0);
     let cols: Vec<String> = columns.iter().map(|c| json_str(c)).collect();
     let caps: Vec<String> = sheet.capabilities().iter().map(|c| json_str(c)).collect();
-    let ops: Vec<String> = sheet
-        .ops()
-        .iter()
-        .map(|op| {
-            format!(
-                r#"{{"op":{},"description":{}}}"#,
-                json_str(op.tag()),
-                json_str(&op.describe())
-            )
-        })
-        .collect();
+    let last_op: String = match sheet.ops().last() {
+        Some(op) => format!(
+            r#"{{"tag":{},"description":{}}}"#,
+            json_str(op.tag()),
+            json_str(&op.describe())
+        ),
+        None => "null".to_string(),
+    };
     // Chrome travels with the data: a client should not need a second request to
     // learn a column's width or how its numbers print.
     let layout_json = match csv_splitter_core::layout::Layout::load(&path) {
@@ -2577,19 +2574,19 @@ fn sheet_meta(
         stream,
         200,
         &format!(
-            r#"{{"path":{},"columns":[{}],"frozenColumns":[{}],"rows":{},"edited":{},"operations":{},"capabilities":[{}],"layout":{},"journal":{},"indexed":{},"indexBytes":{},"ops":[{}]}}"#,
+            r#"{{"path":{},"columns":[{}],"frozenColumns":[{}],"rows":{},"edited":{},"operations":{},"lastOperation":{},"capabilities":[{}],"layout":{},"journal":{},"indexed":{},"indexBytes":{}}}"#,
             json_str(&params.get("path").cloned().unwrap_or_default()),
             cols.join(","),
             frozen_names.join(","),
             rows,
             !sheet.is_pristine(),
-            ops.len(),
+            sheet.op_count(),
+            last_op,
             caps.join(","),
             layout_json,
             json_str(&sheet.journal_path().to_string_lossy()),
             indexed,
-            index_bytes,
-            ops.join(",")
+            index_bytes
         ),
     )
 }
@@ -2689,14 +2686,24 @@ fn rows_by_keys_endpoint(
             csv_splitter_core::workbook::RowId::Virtual(i) => format!("v:{i}"),
         })
         .collect();
-    let rows_json: Vec<String> = resolved
+    // The same projection and horizontal slice every other window offers.
+    let cells: Vec<Vec<String>> = resolved.iter().map(|(_, _, cells)| cells.clone()).collect();
+    let projected = match requested_columns(params) {
+        None => (columns, cells),
+        Some(wanted) => match project_window(&columns, &cells, &wanted) {
+            Ok(pair) => pair,
+            Err(e) => return bad_request(stream, &e, "columns", "columns=a,b,c"),
+        },
+    };
+    let (display_columns, display_rows) = slice_columns(projected.0, projected.1, params);
+    let rows_json: Vec<String> = display_rows
         .iter()
-        .map(|(_, _, cells)| {
+        .map(|cells| {
             let items: Vec<String> = cells.iter().map(|c| json_str(c)).collect();
             format!("[{}]", items.join(","))
         })
         .collect();
-    let cols_json: Vec<String> = columns.iter().map(|c| json_str(c)).collect();
+    let cols_json: Vec<String> = display_columns.iter().map(|c| json_str(c)).collect();
     respond_json(
         stream,
         200,

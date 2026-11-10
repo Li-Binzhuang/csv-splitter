@@ -1,5 +1,28 @@
 # Changelog
 
+## [3.2.0] — 2026-11-10
+
+### Changed
+
+- **`/sheet` no longer repeats the operation list.** Two endpoints returned the same
+  facts with different shapes, which is how a client ends up depending on one and the
+  other drifts. `/sheet` gives the summary — `operations` (count), `lastOperation`,
+  capabilities, layout, `indexed` — and `/journal` gives the stack, the redo side and
+  the damage counts.
+
+### Fixed
+
+- **`/rows?keys=` ignored `columns=` and `start-col`.** Asking for a kept selection and
+  then narrowing it returned every column, because the keys endpoint had its own
+  response builder without the shared projection helpers. It uses them now, so a
+  selection can be projected and sliced like any other window.
+
+### Docs
+
+- INTEGRATION.md gained "表的概况" — what `/sheet` answers before the first row is drawn
+  (pending operations, whether random access is paid for) — and API.md now states which
+  endpoint owns which fact.
+
 ## [3.1.0] — 2026-11-10
 
 ### Fixed

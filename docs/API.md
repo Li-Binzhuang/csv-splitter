@@ -287,6 +287,15 @@ cannot wedge the file. For "did this value change under me?" the answer is not t
 but `expect=` — the lock keeps both edits, `expect` decides whether yours should happen.
 
 
+## `/sheet` 与 `/journal`：两件事各说一次
+
+| 调用 | 给什么 |
+|---|---|
+| `GET /sheet` | 这个表的**概况**：`operations`（待应用操作数）、`lastOperation`（最后一条）、capabilities、layout、indexed |
+| `GET /journal` | **栈本身**：全部操作 + redo 栈 + 损坏计数 |
+
+`/sheet` 不再重复整个操作列表——一个事实只有一个地方给，两个地方迟早会不一致。
+
 ## `GET /cell?row=&col=`
 
 One cell, by column name and 1-based row — the read half of a constrained write:
