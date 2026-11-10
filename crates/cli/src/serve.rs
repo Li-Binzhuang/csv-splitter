@@ -163,6 +163,7 @@ fn handle(
         "/pivot" => pivot_endpoint(&mut stream, root, cache, &params),
         "/style" => style_endpoint(&mut stream, root, &params),
         "/chart" => chart_endpoint(&mut stream, root, &params),
+        "/layout" => layout_endpoint(&mut stream, root, &params),
         "/download" => download(&mut stream, root, &params),
         "/export" => export(&mut stream, root, &params),
         "/query" => query(&mut stream, root, &params),
@@ -171,7 +172,7 @@ fn handle(
         _ => respond_json(
             &mut stream,
             404,
-            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/sheet","/pivot","/style","/chart","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/edit","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
+            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/sheet","/pivot","/style","/chart","/layout","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/edit","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
         ),
     }
 }
@@ -709,6 +710,85 @@ fn edit_apply(
 /// Writes to a rate-limited cache of recent results: a dashboard polling the
 /// same query should not rescan the file each refresh, and the file is small
 /// (one row per group) by construction.
+/// Column metadata: names, widths, frozen columns, number formats.
+fn layout_endpoint(
+    stream: &mut TcpStream,
+    root: &Path,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return bad_path(stream),
+    };
+    let mut layout = match csv_splitter_core::layout::Layout::load(&path) {
+        Ok(l) => l,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+
+    // A POST-shaped call carries column/key/value as query parameters here, so the
+    // router stays one code path for reads and writes.
+    if let Some(column) = params.get("column").filter(|v| !v.is_empty()) {
+        let key = params.get("key").map(String::as_str).unwrap_or("width");
+        let value = params.get("value").cloned().unwrap_or_default();
+        if let Err(e) = layout.set(column, key, &value) {
+            return respond_json(
+                stream,
+                400,
+                &format!(
+                    r#"{{"error":{},"parameter":"value","hint":"name, width, frozen, format"}}"#,
+                    json_str(&e)
+                ),
+            );
+        }
+        if let Err(e) = layout.save(&path) {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            );
+        }
+    }
+
+    let base_columns = match workbook::base_header(&path, delimiter(params)) {
+        Ok(c) => c,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let journal = Journal::load(&Journal::sidecar(&path)).unwrap_or_default();
+    let columns: Vec<String> = match workbook::column_layout(journal.ops(), &base_columns) {
+        Ok(layout) => layout.into_iter().map(|(name, _)| name).collect(),
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let resolved = layout.resolve(&columns);
+    let items: Vec<String> = resolved
+        .iter()
+        .zip(&columns)
+        .map(|(meta, original)| meta.to_json(original))
+        .collect();
+    respond_json(
+        stream,
+        200,
+        &format!(r#"{{"columns":[{}]}}"#, items.join(",")),
+    )
+}
+
 /// Chart data for the client to draw (GET /chart).
 fn chart_endpoint(
     stream: &mut TcpStream,
@@ -1401,17 +1481,32 @@ fn sheet_meta(
             )
         })
         .collect();
+    // Chrome travels with the data: a client should not need a second request to
+    // learn a column's width or how its numbers print.
+    let layout_json = match csv_splitter_core::layout::Layout::load(&path) {
+        Ok(layout) => {
+            let resolved = layout.resolve(&columns);
+            let items: Vec<String> = resolved
+                .iter()
+                .zip(&columns)
+                .map(|(meta, original)| meta.to_json(original))
+                .collect();
+            format!("[{}]", items.join(","))
+        }
+        Err(_) => "[]".to_string(),
+    };
     respond_json(
         stream,
         200,
         &format!(
-            r#"{{"path":{},"columns":[{}],"rows":{},"edited":{},"operations":{},"capabilities":[{}],"journal":{},"ops":[{}]}}"#,
+            r#"{{"path":{},"columns":[{}],"rows":{},"edited":{},"operations":{},"capabilities":[{}],"layout":{},"journal":{},"ops":[{}]}}"#,
             json_str(&params.get("path").cloned().unwrap_or_default()),
             cols.join(","),
             rows,
             !sheet.is_pristine(),
             sheet.op_count(),
             caps.join(","),
+            layout_json,
             json_str(&sheet.journal_path().to_string_lossy()),
             ops.join(",")
         ),

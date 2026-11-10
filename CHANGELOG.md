@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.43.0] — 2026-11-10
+
+### Added
+
+- **Column metadata** (`crates/core/src/layout.rs`): display names, widths, frozen
+  columns and number formats, stored in a `<file>.view` sidecar.
+  - Deliberately separate from the journal: an edit changes what a cell *is* and
+    belongs in the audit trail; a width changes how it *looks* and should be cheap
+    to throw away. Merging them would turn "reset column widths" into an edit with
+    an undo step.
+  - Number formats: `#,##0.00`, `0.00`, `0`, `0%`, `0.0%`, `$#,##0.00`. A format
+    promise applies to numbers only — `N/A` stays `N/A`.
+  - `/sheet` returns the layout alongside the columns, so a client does not need a
+    second request to render chrome; `GET /layout` reads and sets properties.
+
 ## [0.42.0] — 2026-11-10
 
 ### Added

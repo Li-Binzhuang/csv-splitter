@@ -49,6 +49,7 @@ fn main() -> ExitCode {
         Some("pivot") => cmd_pivot(&args[1..]),
         Some("format") => cmd_format(&args[1..]),
         Some("chart") => cmd_chart(&args[1..]),
+        Some("layout") => cmd_layout(&args[1..]),
         Some("demo") => cmd_demo(&args[1..]),
         Some("sql") => cmd_sql(&args[1..]),
         Some("search") => cmd_search(&args[1..]),
@@ -99,6 +100,7 @@ COMMANDS
   pivot    <input> --rows R --values A Rows × columns × measures matrix
   format   <input> --rule R          Conditional formatting: which cells to paint
   chart    <input> --x C --y C:op    Chart data (categories + series) as JSON
+  layout   <input> [--set C:k=v]    Column widths, names, freeze and number formats
   demo     [-o <dir>]           Write a sample file to try the commands on
   search   <input> <text>        Find text anywhere (or in chosen columns)
   files    --root <dir>          List readable files under a directory
@@ -2027,6 +2029,119 @@ fn parse_sort_columns(spec: &str, default_descending: bool) -> Result<Vec<SortCo
         return Err("no sort columns".to_string());
     }
     Ok(columns)
+}
+
+fn cmd_layout(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut input: Option<PathBuf> = None;
+    let mut settings: Vec<String> = Vec::new();
+    let mut json = false;
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--set" => match p.value("--set") {
+                Ok(v) => settings.push(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--json" => json = true,
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => {
+                if input.is_none() {
+                    input = Some(PathBuf::from(other));
+                } else {
+                    eprintln!("error: unexpected argument: {other}");
+                    return 2;
+                }
+            }
+        }
+    }
+
+    let Some(input) = input else {
+        eprintln!("error: layout needs an <input> file");
+        return 2;
+    };
+    let mut layout = match csv_splitter_core::layout::Layout::load(&input) {
+        Ok(l) => l,
+        Err(e) => return report_failure("layout", format!("cannot read the layout: {e}")),
+    };
+
+    // `--set amount:format=#,##0.00` — one property per invocation, repeatable.
+    for setting in &settings {
+        let Some((column, property)) = setting.split_once(':') else {
+            eprintln!("error: --set needs <column>:<key>=<value> (got '{setting}')");
+            return 2;
+        };
+        let Some((key, value)) = property.split_once('=') else {
+            eprintln!("error: --set needs <column>:<key>=<value> (got '{setting}')");
+            return 2;
+        };
+        if let Err(e) = layout.set(column.trim(), key.trim(), value.trim()) {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    }
+    if !settings.is_empty() {
+        if let Err(e) = layout.save(&input) {
+            return report_failure("layout", format!("cannot save the layout: {e}"));
+        }
+    }
+
+    // Report the layout for the columns the sheet actually has.
+    let delimiter = csv_splitter_core::types::Delimiter::Comma;
+    let base_columns = match csv_splitter_core::workbook::base_header(&input, delimiter) {
+        Ok(c) => c,
+        Err(e) => return report_failure("layout", format!("cannot read the header: {e}")),
+    };
+    let sidecar = csv_splitter_core::workbook::Journal::sidecar(&input);
+    let journal = csv_splitter_core::workbook::Journal::load(&sidecar).unwrap_or_default();
+    let columns = match csv_splitter_core::workbook::column_layout(journal.ops(), &base_columns) {
+        Ok(layout) => layout.into_iter().map(|(name, _)| name).collect::<Vec<_>>(),
+        Err(e) => return report_failure("layout", e),
+    };
+    let resolved = layout.resolve(&columns);
+
+    if json {
+        let items: Vec<String> = resolved
+            .iter()
+            .zip(&columns)
+            .map(|(meta, original)| meta.to_json(original))
+            .collect();
+        println!(r#"{{"columns":[{}]}}"#, items.join(","));
+    } else {
+        println!("{}", input.display());
+        for (meta, original) in resolved.iter().zip(&columns) {
+            let name = meta
+                .display_name
+                .clone()
+                .unwrap_or_else(|| original.clone());
+            let width = meta.width.map(|w| format!("{w}px")).unwrap_or_default();
+            let frozen = if meta.frozen { " frozen" } else { "" };
+            println!(
+                "  {:<16} width {:<6} format {:<12}{frozen}",
+                name,
+                if width.is_empty() {
+                    "-".to_string()
+                } else {
+                    width
+                },
+                meta.format.name()
+            );
+        }
+        if layout.is_empty() {
+            println!("  (no layout set; use --set column:key=value)");
+        }
+    }
+    0
 }
 
 fn cmd_chart(args: &[String]) -> i32 {

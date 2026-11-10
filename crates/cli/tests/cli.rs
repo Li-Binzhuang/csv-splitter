@@ -1664,3 +1664,49 @@ fn chart_emits_json_with_categories_and_series() {
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(stdout.contains("null"), "{stdout}");
 }
+
+/// Display metadata lives in its own sidecar and never touches cell values.
+#[test]
+fn layout_sidecar_does_not_change_the_data() {
+    let dir = TempDir::new("layout");
+    let input = dir.join("t.csv");
+    let original = "city,amount\nCDMX,1234.5\n";
+    std::fs::write(&input, original).unwrap();
+
+    let status = Command::new(bin())
+        .args([
+            "layout",
+            input.to_str().unwrap(),
+            "--set",
+            "amount:format=#,##0.00",
+            "--set",
+            "city:width=160",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    // The CSV is byte-identical; only the view sidecar appeared.
+    assert_eq!(std::fs::read_to_string(&input).unwrap(), original);
+    assert!(dir.join("t.csv.view").exists());
+
+    let out = Command::new(bin())
+        .args(["layout", input.to_str().unwrap(), "--json"])
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("\"format\":\"#,##0.00\""), "{stdout}");
+    assert!(stdout.contains(r#""width":160"#), "{stdout}");
+
+    // A bad property is a usage error.
+    let out = Command::new(bin())
+        .args([
+            "layout",
+            input.to_str().unwrap(),
+            "--set",
+            "amount:colour=red",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+}

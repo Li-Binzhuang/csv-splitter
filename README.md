@@ -559,6 +559,38 @@ $ csv-splitter chart sales.csv --x month --y "amount:sum" --series city --type b
 
 API：`GET /chart?path=&x=&y=&series=&type=`。
 
+## 显示元数据 / Column metadata
+
+列宽、表头显示名、冻结列、数字格式——这些**不改单元格的值**，所以放在单独的
+`<file>.view` 里，不跟编辑日志混在一起：
+
+| 文件 | 变的是 | 丢弃的代价 |
+|---|---|---|
+| `.journal` | 单元格**是什么** | 数据没了 |
+| `.view` | 单元格**长什么样** | 重新调一下就行 |
+
+合并它们会让「重置列宽」变成一次需要撤销的编辑操作。
+
+```bash
+$ csv-splitter layout orders.csv --set "amount:format=#,##0.00" --set "city:width=160"
+$ csv-splitter layout orders.csv
+orders.csv
+  城市               width 160px  format plain
+  amount           width -      format #,##0.00
+```
+
+| 属性 | 写法 |
+|---|---|
+| `name` | `city:name=城市` |
+| `width` | `city:width=160`（24–2000） |
+| `frozen` | `id:frozen=true` |
+| `format` | `#,##0.00` / `0.00` / `0%` / `0.0%` / `$#,##0.00` |
+
+数字格式只对**数字**生效：`N/A` 原样显示——格式是对数字的承诺，对文本瞎改更糟。
+
+API：`GET /layout?path=`，`GET /layout?path=&column=&key=&value=`（设置），
+`/sheet` 的响应里带 `layout`，前端一次请求拿到数据和列宽。
+
 ## 错误信息 / Error output
 
 只有两种形状，脚本可以直接按前缀判断：

@@ -942,3 +942,38 @@ fn chart_endpoint_returns_series_json() {
     let (_, body) = get(&server.addr, "/chart?path=s.csv");
     assert!(body.contains(r#""parameter":"x""#), "{body}");
 }
+
+#[test]
+fn layout_endpoint_reports_and_sets_column_metadata() {
+    let dir = TempDir::new("layoutapi");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,1234.5\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    // Defaults first.
+    let (status, body) = get(&server.addr, "/layout?path=t.csv");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(r#""column":"city""#), "{body}");
+    assert!(body.contains(r#""width":null"#), "{body}");
+
+    // Set width and format through the API.
+    let (_, body) = get(
+        &server.addr,
+        "/layout?path=t.csv&column=amount&key=format&value=%23%2C%23%230.00",
+    );
+    assert!(body.contains("#,##0.00"), "format should be stored: {body}");
+
+    // And the sheet response now carries it.
+    let (_, body) = get(&server.addr, "/sheet?path=t.csv");
+    assert!(
+        body.contains(r#""layout":["#) || body.contains(r#""layout":[{"#),
+        "{body}"
+    );
+    assert!(body.contains("#,##0.00"), "{body}");
+
+    // A bad property names itself.
+    let (_, body) = get(
+        &server.addr,
+        "/layout?path=t.csv&column=city&key=colour&value=red",
+    );
+    assert!(body.contains(r#""parameter":"value""#), "{body}");
+}
