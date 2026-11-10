@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.58.0] — 2026-11-10
+
+### Added
+
+- **`--quotes` reaches `filter`**, not just `preview`. Reading a backslash-escaped
+  file as RFC changes what a filter *matches*, not merely how output looks: the note
+  field ends at the escaped quote, so `note~c` misses a row that contains `c`. A test
+  pins both outcomes.
+- `filter::extract_style` is the style-aware entry point; `extract` keeps the RFC
+  default so every existing caller is unchanged.
+
 ## [0.57.0] — 2026-11-10
 
 ### Added

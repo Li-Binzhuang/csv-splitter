@@ -1172,6 +1172,7 @@ fn json_quote(s: &str) -> String {
 
 fn cmd_filter(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut quotes_text = String::new();
     let mut order_by: Option<String> = None;
     let mut order_descending = false;
     let mut input: Option<PathBuf> = None;
@@ -1194,6 +1195,13 @@ fn cmd_filter(args: &[String]) -> i32 {
                 }
             },
             "--any" => combine = filter::Combine::Any,
+            "--quotes" => match p.value("--quotes") {
+                Ok(v) => quotes_text = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--order" => match p.value("--order") {
                 Ok(v) => order_by = Some(v),
                 Err(e) => {
@@ -1276,6 +1284,13 @@ fn cmd_filter(args: &[String]) -> i32 {
             return 2;
         }
     };
+    let quotes = match csv_splitter_core::csv_reader::QuoteStyle::parse(&quotes_text) {
+        Ok(q) => q,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
     let set = filter::FilterSet { specs, combine };
 
     // `--out` is the "keep the result" path: stream matches to a file.
@@ -1307,7 +1322,7 @@ fn cmd_filter(args: &[String]) -> i32 {
 
         let (tx, rx) = mpsc::channel();
         let reporter = spawn_reporter("filter", rx, true);
-        let result = filter::extract(&input, delimiter, &set, &target, &tx);
+        let result = filter::extract_style(&input, delimiter, &set, &target, quotes, &tx);
         drop(tx);
         let _ = reporter.join();
         let sorted = match (result, &sort_columns, &stage) {

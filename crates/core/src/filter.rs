@@ -7,7 +7,7 @@
 //! Matching is deliberately simple — equality, contains, numeric comparison and
 //! empty checks. Anything more elaborate belongs in SQL, not in a file tool.
 
-use crate::csv_reader::{parse_csv_record, RecordReader};
+use crate::csv_reader::{parse_csv_record_with, QuoteStyle, RecordReader};
 use crate::encoding;
 use crate::index::SparseIndex;
 use crate::types::{Delimiter, ProgressEvent, ProgressSender};
@@ -178,7 +178,11 @@ pub fn scan(
     if !records.next_record(&mut record)? {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "empty file"));
     }
-    let headers = parse_csv_record(&String::from_utf8_lossy(&record), delim);
+    let headers = parse_csv_record_with(
+        &String::from_utf8_lossy(&record),
+        delim,
+        QuoteStyle::Rfc4180,
+    );
     let col_idx = crate::csv_reader::resolve_column(&spec.column, &headers)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
     tx.send(ProgressEvent::PhaseStart {
@@ -192,7 +196,11 @@ pub fn scan(
     while records.next_record(&mut record)? {
         result.scanned += 1;
         let text = String::from_utf8_lossy(&record);
-        let fields = parse_csv_record(text.trim_end_matches(['\n', '\r']), delim);
+        let fields = parse_csv_record_with(
+            text.trim_end_matches(['\n', '\r']),
+            delim,
+            QuoteStyle::Rfc4180,
+        );
         let cell = fields.get(col_idx).map(String::as_str).unwrap_or("");
         if matches(cell, spec) {
             result.matched += 1;
@@ -318,6 +326,18 @@ pub fn extract(
     output: &Path,
     tx: &ProgressSender,
 ) -> io::Result<ExtractSummary> {
+    extract_style(path, delimiter, set, output, QuoteStyle::Rfc4180, tx)
+}
+
+/// Same as [`extract`], with an explicit quote style.
+pub fn extract_style(
+    path: &Path,
+    delimiter: Delimiter,
+    set: &FilterSet,
+    output: &Path,
+    quotes: QuoteStyle,
+    tx: &ProgressSender,
+) -> io::Result<ExtractSummary> {
     if set.specs.is_empty() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -341,7 +361,7 @@ pub fn extract(
     if !records.next_record(&mut record)? {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "empty file"));
     }
-    let headers = parse_csv_record(&String::from_utf8_lossy(&record), delim);
+    let headers = parse_csv_record_with(&String::from_utf8_lossy(&record), delim, quotes);
     let compiled = set.compile(&headers)?;
 
     let mut out = BufWriter::with_capacity(4 * 1024 * 1024, File::create(output)?);
@@ -358,7 +378,7 @@ pub fn extract(
         summary.scanned += 1;
         written += record.len() as u64;
         let text = String::from_utf8_lossy(&record);
-        let fields = parse_csv_record(text.trim_end_matches(['\n', '\r']), delim);
+        let fields = parse_csv_record_with(text.trim_end_matches(['\n', '\r']), delim, quotes);
         if compiled.holds(&fields) {
             if fields.len() != width {
                 summary.matched_ragged += 1;
@@ -464,7 +484,11 @@ pub fn read_rows(path: &Path, delimiter: Delimiter, rows: &[u64]) -> io::Result<
         .into_iter()
         .map(|(row, bytes)| {
             let text = encoding::decode_cell(&bytes, encoding);
-            let cells = parse_csv_record(text.trim_end_matches(['\n', '\r']), delim);
+            let cells = parse_csv_record_with(
+                text.trim_end_matches(['\n', '\r']),
+                delim,
+                QuoteStyle::Rfc4180,
+            );
             MatchedRow { row, cells }
         })
         .collect())

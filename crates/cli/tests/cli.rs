@@ -2220,3 +2220,50 @@ fn quote_style_is_detected_and_can_be_overridden() {
         "RFC file should not warn: {stderr}"
     );
 }
+
+/// `--quotes` changes what a filter matches, not just how it prints.
+#[test]
+fn filter_reads_the_quote_style_it_is_given() {
+    let dir = TempDir::new("quotefilter");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,note\n1,\"a \\\"b,c\"\n").unwrap();
+
+    // Read as RFC, the note field ends at the escaped quote, so it holds `a \b`
+    // and no `c` — the row does not match.
+    let out = dir.join("rfc.csv");
+    let status = Command::new(bin())
+        .args([
+            "filter",
+            input.to_str().unwrap(),
+            "--where",
+            "note~c",
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    assert_eq!(
+        std::fs::read_to_string(&out).unwrap().lines().count(),
+        1,
+        "header only"
+    );
+
+    // Read with backslash escaping, note is `a "b,c` and the row matches.
+    let out = dir.join("bs.csv");
+    let status = Command::new(bin())
+        .args([
+            "filter",
+            input.to_str().unwrap(),
+            "--where",
+            "note~c",
+            "--quotes",
+            "backslash",
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    assert_eq!(std::fs::read_to_string(&out).unwrap().lines().count(), 2);
+}
