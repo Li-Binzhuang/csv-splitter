@@ -1522,6 +1522,7 @@ fn cmd_view(args: &[String]) -> i32 {
 
     // Two paths: a windowed read when nothing needs sorting (cheap, edits applied),
     // and paging a materialised+sorted copy when `--order` was asked for.
+    note_index_build(&input);
     let mut rows: Vec<Vec<String>> = Vec::new();
     let mut columns: Vec<String> = Vec::new();
     let mut highlight: Option<u64> = None;
@@ -3515,6 +3516,7 @@ fn cmd_format(args: &[String]) -> i32 {
         return 0;
     }
 
+    note_index_build(&input);
     let cells = match csv_splitter_core::format::styled_window(
         &input,
         journal.ops(),
@@ -4543,6 +4545,27 @@ fn ansi_colour(name: &str, foreground: bool) -> String {
         (Some(c), _) => format!("{c};"),
         (None, _) => "39;".to_string(),
     }
+}
+
+/// Say so before building a row index, because it is not instant on a big file.
+///
+/// A missing `.idx` is created on first use — fine for 50 MB, minutes for 10 GB. The
+/// worst outcome is a silent wait: the user presses Enter, nothing happens, and they
+/// assume it hung.
+fn note_index_build(input: &Path) {
+    let sidecar = csv_splitter_core::index::SparseIndex::sidecar_path(input);
+    if sidecar.exists() {
+        return;
+    }
+    let size = std::fs::metadata(input).map(|m| m.len()).unwrap_or(0);
+    if size < 50 * 1024 * 1024 {
+        return;
+    }
+    eprintln!(
+        "note: building a row index for {} ({}) — one-time; run `csv-splitter index` earlier to avoid the wait",
+        input.display(),
+        human_bytes(size)
+    );
 }
 
 /// Refuse to write over the input file, and say so when overwriting anything else.

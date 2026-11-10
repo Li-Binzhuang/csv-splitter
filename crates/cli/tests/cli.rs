@@ -3227,3 +3227,38 @@ fn chart_draws_in_the_terminal() {
     assert!(text.starts_with('{'), "{text}");
     assert!(text.contains("\"points\""), "{text}");
 }
+
+/// A big file without an index is announced, and the index it builds is kept.
+#[test]
+fn the_first_page_says_it_is_building_an_index() {
+    let dir = TempDir::new("indexnote");
+    let large = dir.join("big.csv");
+    let mut text = String::from("id,city\n");
+    while text.len() < 60 * 1024 * 1024 {
+        text.push_str("1,CDMX\n");
+    }
+    std::fs::write(&large, text).unwrap();
+    let path = large.to_str().unwrap();
+    let index = dir.join("big.csv.idx");
+    assert!(!index.exists());
+
+    let out = Command::new(bin())
+        .args(["view", path, "--count", "5"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("building a row index"),
+        "the wait should be explained: {stderr}"
+    );
+
+    // The index is written, so the next run is quiet and fast.
+    assert!(index.exists(), "the built index should be saved");
+    let out = Command::new(bin())
+        .args(["view", path, "--count", "5"])
+        .output()
+        .unwrap();
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(!stderr.contains("building a row index"), "{stderr}");
+}

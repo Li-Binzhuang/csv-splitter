@@ -353,7 +353,13 @@ impl Pager {
         let sidecar = crate::index::SparseIndex::sidecar_path(base);
         let index = match crate::index::SparseIndex::load(&sidecar) {
             Ok(idx) if idx.matches(base) => idx,
-            _ => crate::index::SparseIndex::build(base, crate::index::DEFAULT_INTERVAL)?,
+            _ => {
+                // Save what we just built: without this, every page of a big file pays
+                // the scan again, and the next process pays it from scratch.
+                let idx = crate::index::SparseIndex::build(base, crate::index::DEFAULT_INTERVAL)?;
+                idx.save(&sidecar).ok();
+                idx
+            }
         };
         let sheet = compile(ops, index.data_rows());
         let compiled = compile_formulas_at(base, ops, &columns)?;
