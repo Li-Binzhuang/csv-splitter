@@ -469,7 +469,7 @@ fn capabilities_endpoint(stream: &mut TcpStream) -> io::Result<()> {
         stream,
         200,
         &format!(
-            r#"{{"version":{},"reads":[{}],"pathRequired":{},"writes":[{}],"editActions":[{}],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"columnsProjection":true,"horizontalPaging":true,"queryRows":10000}},"writeGuards":["expect=compare-and-set"],"notes":{}}}"#,
+            r#"{{"version":{},"reads":[{}],"pathRequired":{},"writes":[{}],"editActions":[{}],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"columnsProjection":true,"horizontalPaging":true,"queryRows":10000,"querySeconds":30}},"writeGuards":["expect=compare-and-set"],"notes":{}}}"#,
             json_str(env!("CARGO_PKG_VERSION")),
             reads_json.join(","),
             PATH_REQUIRED.iter().map(|r| json_str(r)).collect::<Vec<_>>().join(","),
@@ -3121,7 +3121,13 @@ fn query(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) 
         .unwrap_or(sql::DEFAULT_LIMIT);
     // Truncation that hides itself is how a client ends up believing it saw every row.
     let limit = asked.min(QUERY_LIMIT);
-    match sql::query_with(&path, statement, limit, delimiter(params)) {
+    match sql::query_with_timeout(
+        &path,
+        statement,
+        limit,
+        delimiter(params),
+        sql::DEFAULT_TIMEOUT_MS,
+    ) {
         Ok(result) => {
             let cols: Vec<String> = result.columns.iter().map(|c| json_str(c)).collect();
             let requested_limit = asked;
@@ -3144,6 +3150,17 @@ fn query(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) 
                 ),
             )
         }
+        // A timeout is neither the caller's mistake nor a broken file: 504 says the
+        // engine was stopped, and the hint names the knob that produced it.
+        Err(e) if e.kind() == io::ErrorKind::TimedOut => respond_json(
+            stream,
+            504,
+            &format!(
+                r#"{{"error":"the query was interrupted","parameter":"sql","hint":{},"detail":{}}}"#,
+                json_str("add LIMIT or a WHERE clause, or ask for less data"),
+                json_str(&e.to_string())
+            ),
+        ),
         // An SQL mistake is the caller's mistake: say so with the same three-field
         // shape every other 400 uses, and keep the engine's own wording in `detail` —
         // DuckDB's message is the useful part, but it is not a whole response.
@@ -3461,8 +3478,25 @@ fn respond_filtered_page(
     count: u64,
     requested: u64,
 ) -> io::Result<()> {
-    let result = match sql::query_with(path, statement, count as usize + 1, delimiter(params)) {
+    let result = match sql::query_with_timeout(
+        path,
+        statement,
+        count as usize + 1,
+        delimiter(params),
+        sql::DEFAULT_TIMEOUT_MS,
+    ) {
         Ok(result) => result,
+        Err(e) if e.kind() == io::ErrorKind::TimedOut => {
+            return respond_json(
+                stream,
+                504,
+                &format!(
+                    r#"{{"error":"the query was interrupted","parameter":"where","hint":{},"detail":{}}}"#,
+                    json_str("narrow the filter or page through without a filter"),
+                    json_str(&e.to_string())
+                ),
+            )
+        }
         Err(e) if e.kind() == io::ErrorKind::InvalidInput => {
             return respond_json(
                 stream,

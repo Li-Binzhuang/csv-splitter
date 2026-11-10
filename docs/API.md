@@ -269,7 +269,7 @@ written on refusal, and `actual` says what the value is now.
 | POST | `/edit` | 写入（`action=` 见下表，`expect=` 可用）|
 | GET | `/export` | 把查询结果当 CSV 直接下载（不写文件）|
 | POST | `/edit?action=export` | 物化到文件（异步 job）|
-| GET | `/query` | SQL（只读，`limit` 上限 1 万并回显）|
+| GET | `/query` | SQL（只读，`limit` 上限 1 万并回显，30 秒超时后中断）|
 | GET | `/stats` `/analyze` `/filter` `/search` | 画像与检索 |
 | GET | `/groupby` `/pivot` `/style` `/chart` `/layout` | 聚合与展示元数据 |
 | GET | `/book` `/files` `/download` | 目录、书、下载（`book?root=` 不存在时 400；`max`/`limit` 截断时带 `total`/`hidden`）|

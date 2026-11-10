@@ -51,6 +51,7 @@ CAPS="$(curl -s "$URL/capabilities")"
 has "capabilities list reads"    "$CAPS" '"/rows"'
 has "capabilities list writes"   "$CAPS" '"POST /edit"'
 has "capabilities list actions"  "$CAPS" '"set"'
+has "capabilities query timeout" "$CAPS" '"querySeconds":30'
 
 COLS="$(curl -s "$URL/columns?path=orders.csv&sample=10")"
 has "columns: full count"        "$COLS" '"count":6'

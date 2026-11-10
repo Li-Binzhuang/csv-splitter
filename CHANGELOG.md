@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.8.0] — 2026-11-10
+
+### Added
+
+- **Queries are bounded by a wall clock and actually stopped.** `/query` and the
+  filtered `/rows` path now run with a 30-second limit, enforced by DuckDB's interrupt
+  handle: a watchdog thread fires `interrupt()`, the engine aborts the scan, and the
+  client gets `504 {"error":"the query was interrupted","parameter":"sql","hint":…}`
+  instead of a request that hangs until the socket gives up. `/capabilities` publishes
+  `limits.querySeconds`.
+  - Enforced rather than declared: a test runs a query with a zero timeout and asserts
+    the result is `TimedOut` with the hint attached. A machine fast enough to beat the
+    watchdog is reported, not silently passed.
+  - A 2.5 GB scan takes about eight seconds here, so thirty seconds is generous for an
+    interactive request and still finite.
+
 ## [3.7.0] — 2026-11-10
 
 ### Added

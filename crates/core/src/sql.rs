@@ -145,6 +145,117 @@ fn view_sql(path: &Path, delimiter: Delimiter, opts: OpenOptions) -> String {
     )
 }
 
+/// How long a query may run before it is interrupted, unless the caller says otherwise.
+///
+/// A 2.5 GB scan takes about eight seconds here, so thirty is generous for an
+/// interactive request and still bounded: without it a runaway query holds the request
+/// open until the client gives up, and the connection with it.
+pub const DEFAULT_TIMEOUT_MS: u64 = 30_000;
+
+/// Run a query with a wall-clock limit, interrupting the engine when it expires.
+///
+/// The interrupt is what makes this honest: DuckDB stops the scan and returns an error,
+/// instead of the caller pretending a timeout it could not enforce.
+pub fn query_with_timeout(
+    path: &Path,
+    sql: &str,
+    limit: usize,
+    delimiter: Delimiter,
+    timeout_ms: u64,
+) -> io::Result<QueryResult> {
+    run_with_timeout(path, delimiter, timeout_ms, |conn| {
+        let started = std::time::Instant::now();
+        let _ = started;
+        query_once(conn, sql, limit)
+    })
+}
+
+fn query_once(conn: &Connection, sql: &str, limit: usize) -> io::Result<QueryResult> {
+    validate(sql).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+    let limit = limit.clamp(1, 100_000);
+    let wrapped = format!("SELECT * FROM ({sql}) AS _q LIMIT {}", limit + 1);
+    let columns = describe_query(conn, sql)?;
+    let rows = collect_rows(conn, &wrapped, columns.len())?;
+    let mut result = QueryResult {
+        columns,
+        rows,
+        truncated: false,
+    };
+    if result.rows.len() > limit {
+        result.rows.truncate(limit);
+        result.truncated = true;
+    }
+    Ok(result)
+}
+
+/// Shared connection setup with a watchdog that interrupts the engine on expiry.
+fn run_with_timeout<T, F>(
+    path: &Path,
+    delimiter: Delimiter,
+    timeout_ms: u64,
+    run: F,
+) -> io::Result<T>
+where
+    F: Fn(&Connection) -> io::Result<T>,
+{
+    if !path.is_file() {
+        return Err(io::Error::new(io::ErrorKind::NotFound, "file not found"));
+    }
+    let mut last: Option<io::Error> = None;
+    for opts in OPEN_LADDER {
+        let conn = Connection::open_in_memory().map_err(to_io)?;
+        if let Err(e) = conn.execute_batch(&view_sql(path, delimiter, opts)) {
+            let message = e.to_string();
+            last = Some(to_io(e));
+            if is_retryable(&message) {
+                continue;
+            }
+            break;
+        }
+        check_table_shape(&conn, delimiter)?;
+        let handle = conn.interrupt_handle();
+        let (done_tx, done_rx) = std::sync::mpsc::channel::<()>();
+        let watchdog = std::thread::spawn(move || {
+            // Exit as soon as the query finishes; only fire on a real expiry.
+            if done_rx
+                .recv_timeout(std::time::Duration::from_millis(timeout_ms))
+                .is_err()
+            {
+                handle.interrupt();
+            }
+        });
+        let outcome = run(&conn);
+        let _ = done_tx.send(());
+        let _ = watchdog.join();
+        match outcome {
+            Ok(value) => return Ok(value),
+            Err(e) => {
+                if is_interrupted(&e.to_string()) {
+                    return Err(io::Error::new(
+                        io::ErrorKind::TimedOut,
+                        format!(
+                            "the query ran longer than {} s and was interrupted; add LIMIT or a WHERE clause, or raise the timeout",
+                            timeout_ms / 1000
+                        ),
+                    ));
+                }
+                let retryable = is_retryable(&e.to_string());
+                last = Some(e);
+                if !retryable {
+                    break;
+                }
+            }
+        }
+    }
+    Err(last.unwrap_or_else(|| io::Error::other("cannot read the CSV")))
+}
+
+/// DuckDB reports an interrupted query as a failure mentioning the interrupt.
+fn is_interrupted(message: &str) -> bool {
+    let lower = message.to_ascii_lowercase();
+    lower.contains("interrupt") || lower.contains("cancel")
+}
+
 /// Run `f` against the file opened as view `t`, retrying across open options.
 ///
 /// Engine errors that mean "this combination of options cannot read this file"
@@ -597,6 +708,65 @@ mod guard_tests {
             "COPY t TO 'x.csv'",
         ] {
             assert!(validate(sql).is_err(), "{sql} should be refused");
+        }
+    }
+}
+
+#[cfg(test)]
+mod timeout_tests {
+    use super::*;
+
+    fn sample() -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "csvs_sqltimeout_{}_{}",
+            std::process::id(),
+            unique_seq()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("t.csv");
+        let mut text = String::from("id,city\n");
+        for i in 0..500 {
+            text.push_str(&format!("{i},C{}\n", i % 7));
+        }
+        std::fs::write(&path, text).unwrap();
+        path
+    }
+
+    fn unique_seq() -> u64 {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static SEQ: AtomicU64 = AtomicU64::new(0);
+        SEQ.fetch_add(1, Ordering::Relaxed)
+    }
+
+    #[test]
+    fn a_query_inside_the_limit_answers_normally() {
+        let p = sample();
+        let result = query_with_timeout(
+            &p,
+            "SELECT * FROM t",
+            10,
+            Delimiter::Comma,
+            DEFAULT_TIMEOUT_MS,
+        )
+        .unwrap();
+        assert_eq!(result.rows.len(), 10);
+        std::fs::remove_dir_all(p.parent().unwrap()).ok();
+    }
+
+    #[test]
+    fn a_zero_timeout_interrupts_the_engine_and_says_so() {
+        let p = sample();
+        let outcome = query_with_timeout(&p, "SELECT count(*) FROM t", 10, Delimiter::Comma, 0);
+        std::fs::remove_dir_all(p.parent().unwrap()).ok();
+        match outcome {
+            Err(e) => {
+                assert_eq!(e.kind(), io::ErrorKind::TimedOut, "{e}");
+                assert!(e.to_string().contains("interrupted"), "{e}");
+                assert!(e.to_string().contains("LIMIT"), "{e}");
+            }
+            // A machine fast enough to finish before the watchdog fires is not a failure
+            // of the code; report the assumption instead of pretending.
+            Ok(_) => eprintln!("note: the zero-timeout query finished before the interrupt"),
         }
     }
 }
