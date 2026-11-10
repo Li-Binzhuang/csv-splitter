@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.72.0] — 2026-11-10
+
+### Added
+
+- **`view --order COL [--desc]`**: paged, sorted view of the edited sheet. Sorting
+  cannot be streamed — the smallest key may sit on the last row — so the rows are
+  materialised once, filtered, sorted, and the requested page is read back. The
+  temp copy holds the matched rows, not the file.
+- **Tables line up with CJK text.** Padding used `chars().count()`, which assumes one
+  terminal column per character; a Chinese column name shifted every row after it by
+  one column per character. Width is now East-Asian-width aware, and `preview` and
+  `view` share it.
+
 ## [0.71.0] — 2026-11-10
 
 ### Added

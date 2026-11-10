@@ -2671,8 +2671,12 @@ fn view_applies_edits_and_filters() {
         .output()
         .unwrap();
     let text = String::from_utf8_lossy(&out.stdout);
-    assert!(text.contains("id | city | amount"), "{text}");
-    assert!(text.contains("1 | CDMX | 10"), "{text}");
+    // The columns are padded, so check the header names and the values separately.
+    assert!(text.contains("id"), "{text}");
+    assert!(text.contains("city"), "{text}");
+    assert!(text.contains("amount"), "{text}");
+    assert!(text.contains("CDMX"), "{text}");
+    assert!(text.contains("10"), "{text}");
 
     // Edit one row, then look again: the value must be the edited one.
     Command::new(bin())
@@ -2686,10 +2690,8 @@ fn view_applies_edits_and_filters() {
         .output()
         .unwrap();
     let text = String::from_utf8_lossy(&out.stdout);
-    assert!(
-        text.contains("2 | Puebla | 999"),
-        "edits must be visible: {text}"
-    );
+    assert!(text.contains("Puebla"), "{text}");
+    assert!(text.contains("999"), "edits must be visible: {text}");
     assert!(text.contains("1 edit(s) applied"), "{text}");
 
     // Paging past the end says nothing matched rather than failing.
@@ -2711,4 +2713,50 @@ fn view_applies_edits_and_filters() {
         text.starts_with(r#"{"columns":["id","city","amount"]"#),
         "{text}"
     );
+}
+
+/// Tables line up even with CJK column values, and `--order` pages sorted rows.
+#[test]
+fn view_aligns_columns_and_can_order() {
+    let dir = TempDir::new("vieworder");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "城市,金额\nCDMX,10\nPuebla,30\n蒂华纳,20\n").unwrap();
+    let path = input.to_str().unwrap();
+
+    let out = Command::new(bin())
+        .args(["view", path, "--count", "3"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    // 城市 is two terminal columns per character, so the separator sits three cells
+    // after "CDMX" rather than one.
+    let header = text.lines().next().unwrap_or("");
+    assert!(header.contains("城市"), "{header}");
+    // Every row's first cell must occupy the same number of terminal columns.
+    let mut widths = Vec::new();
+    for line in text.lines().filter(|l| l.contains(" | ")) {
+        let first = line.split(" | ").next().unwrap();
+        let columns: usize = first
+            .chars()
+            .map(|c| if c as u32 >= 0x2E80 { 2 } else { 1 })
+            .sum();
+        widths.push((first.to_string(), columns));
+    }
+    let expected = widths.first().map(|(_, w)| *w).unwrap_or(0);
+    for (cell, width) in &widths {
+        assert_eq!(
+            *width, expected,
+            "'{cell}' is {width} columns, expected {expected}"
+        );
+    }
+
+    // Ordered view: the smallest amount comes first, and the page is sorted too.
+    let out = Command::new(bin())
+        .args(["view", path, "--order", "金额", "--count", "2"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    let rows: Vec<&str> = text.lines().skip(2).collect();
+    assert!(rows[0].contains("CDMX"), "10 should be first: {text}");
+    assert!(rows[1].contains("蒂华纳"), "20 should be second: {text}");
 }

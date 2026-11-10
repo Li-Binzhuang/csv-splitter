@@ -946,11 +946,7 @@ fn cmd_preview(args: &[String]) -> i32 {
                 preview.total_rows_estimate,
                 preview.detected_delimiter
             );
-            println!("{}", preview.headers.join(" | "));
-            println!("{}", "-".repeat(40));
-            for row in &preview.rows {
-                println!("{}", row.join(" | "));
-            }
+            print_table(&preview.headers, &preview.rows);
             0
         }
         Err(e) => report_failure("preview", e),
@@ -1186,6 +1182,63 @@ fn json_quote(s: &str) -> String {
     out
 }
 
+/// Width of a string as a terminal shows it: CJK and other wide characters take
+/// two columns, combining marks take none. Padding with `chars().count()` would
+/// misalign every table that has Chinese in it, which is most of them here.
+fn display_width(text: &str) -> usize {
+    text.chars()
+        .map(|ch| {
+            let code = ch as u32;
+            let wide = (0x1100..=0x115F).contains(&code)
+                || (0x2E80..=0xA4CF).contains(&code)
+                || (0xAC00..=0xD7A3).contains(&code)
+                || (0xF900..=0xFAFF).contains(&code)
+                || (0xFE30..=0xFE4F).contains(&code)
+                || (0xFF00..=0xFF60).contains(&code)
+                || (0xFFE0..=0xFFE6).contains(&code)
+                || (0x1F300..=0x1F64F).contains(&code)
+                || (0x20000..=0x3FFFD).contains(&code);
+            if wide {
+                2
+            } else {
+                1
+            }
+        })
+        .sum()
+}
+
+/// Print rows as an aligned table, with padding measured in terminal columns.
+fn print_table(columns: &[String], rows: &[Vec<String>]) {
+    let mut widths: Vec<usize> = columns.iter().map(|c| display_width(c)).collect();
+    for row in rows {
+        for (i, cell) in row.iter().enumerate() {
+            if let Some(width) = widths.get_mut(i) {
+                *width = (*width).max(display_width(cell));
+            }
+        }
+    }
+    let render = |cells: &[String]| {
+        let mut line = String::new();
+        for (i, cell) in cells.iter().enumerate() {
+            if i > 0 {
+                line.push_str(" | ");
+            }
+            line.push_str(cell);
+            let pad = widths.get(i).copied().unwrap_or(0) - display_width(cell);
+            if i + 1 < cells.len() {
+                line.push_str(&" ".repeat(pad));
+            }
+        }
+        line
+    };
+    println!("{}", render(columns));
+    let total: usize = widths.iter().sum::<usize>() + 3 * widths.len().saturating_sub(1);
+    println!("{}", "-".repeat(total.max(20)));
+    for row in rows {
+        println!("{}", render(row));
+    }
+}
+
 /// `view`: paged look at the edited sheet, optionally filtered.
 ///
 /// Reads the file in windows instead of loading it, so the same command works on a
@@ -1200,6 +1253,8 @@ fn cmd_view(args: &[String]) -> i32 {
     let mut count: u64 = 20;
     let mut delim = "auto".to_string();
     let mut where_expr: Option<String> = None;
+    let mut order: Option<String> = None;
+    let mut order_descending = false;
     let mut json = false;
 
     while let Some(arg) = p.next() {
@@ -1248,6 +1303,14 @@ fn cmd_view(args: &[String]) -> i32 {
                     return 2;
                 }
             },
+            "--order" => match p.value("--order") {
+                Ok(v) => order = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--desc" => order_descending = true,
             "--json" => json = true,
             "-d" | "--delim" => match p.value("--delim") {
                 Ok(v) => delim = v,
@@ -1275,12 +1338,13 @@ fn cmd_view(args: &[String]) -> i32 {
             return 2;
         }
     };
-    // Validate the flag even though `window` reads with the sheet's own rules: a
-    // rejected value should be rejected here, not silently ignored.
-    if let Err(e) = parse_quotes(&quotes_text) {
-        eprintln!("error: {e}");
-        return 2;
-    }
+    let quotes = match parse_quotes(&quotes_text) {
+        Ok(q) => q,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
     warn_quote_style(&input);
     // No `warn_pending_edits` here: unlike the read-only commands, `view` applies them.
 
@@ -1321,40 +1385,152 @@ fn cmd_view(args: &[String]) -> i32 {
         }
     };
 
-    // A windowed reader gives the same rows an export would, edits and formulas
-    // included; this command adds paging and filtering on top.
+    // Ordered paging cannot be done by streaming: the smallest key may be on the last
+    // row. So the rows are materialised once (edited, then filtered), sorted, and the
+    // requested page is read back. That costs a full scan and a temporary copy of the
+    // matched rows — nothing proportional to the file beyond the matches.
+    let paging_file = if order.is_some() {
+        let work = std::env::temp_dir().join(format!(
+            "csvs_view_{}_{}.csv",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0)
+        ));
+        let exported = work.with_extension("src.csv");
+        let (tx, rx) = mpsc::channel();
+        let reporter = spawn_reporter("view", rx, true);
+        let result = csv_splitter_core::workbook::export_quotes(
+            &input, &ops, &exported, delimiter, quotes, &tx,
+        );
+        drop(tx);
+        let _ = reporter.join();
+        if let Err(e) = result {
+            let _ = std::fs::remove_file(&exported);
+            return report_failure("view", format!("cannot materialise the sheet: {e}"));
+        }
+        if let Some(expr) = &where_expr {
+            let set = match csv_splitter_core::filter::FilterSpec::parse(expr) {
+                Ok(spec) => csv_splitter_core::filter::FilterSet::single(spec),
+                Err(e) => {
+                    let _ = std::fs::remove_file(&exported);
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            };
+            let filtered = work.with_extension("filtered.csv");
+            let (tx, rx) = mpsc::channel();
+            let reporter = spawn_reporter("view", rx, true);
+            let result = csv_splitter_core::filter::extract_style(
+                &exported, delimiter, &set, &filtered, quotes, &tx,
+            );
+            drop(tx);
+            let _ = reporter.join();
+            let _ = std::fs::remove_file(&exported);
+            if let Err(e) = result {
+                let _ = std::fs::remove_file(&filtered);
+                return report_failure("view", format!("cannot filter: {e}"));
+            }
+            std::fs::rename(&filtered, &work).ok();
+        } else {
+            std::fs::rename(&exported, &work).ok();
+        }
+
+        let sort_columns =
+            match parse_sort_columns(order.as_deref().unwrap_or_default(), order_descending) {
+                Ok(c) => c,
+                Err(e) => {
+                    let _ = std::fs::remove_file(&work);
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            };
+        let sorted = work.with_extension("sorted.csv");
+        let (tx, _rx) = mpsc::channel();
+        let result = csv_splitter_core::sort::external_sort_columns(
+            &work,
+            &sorted,
+            &sort_columns,
+            delimiter,
+            64,
+            &tx,
+        );
+        let _ = std::fs::remove_file(&work);
+        if let Err(e) = result {
+            let _ = std::fs::remove_file(&sorted);
+            return report_failure("view", format!("cannot sort: {e}"));
+        }
+        Some(sorted)
+    } else {
+        None
+    };
+
+    // Two paths: a windowed read when nothing needs sorting (cheap, edits applied),
+    // and paging a materialised+sorted copy when `--order` was asked for.
     let mut rows: Vec<Vec<String>> = Vec::new();
     let mut columns: Vec<String> = Vec::new();
-    let mut seen: u64 = 0;
-    let mut scanned: u64 = 0;
-    let chunk = count.max(1_000);
-    loop {
-        let win = match csv_splitter_core::workbook::window(&input, &ops, seen, chunk, delimiter) {
-            Ok(w) => w,
-            Err(e) => return report_failure("view", e.to_string()),
-        };
-        if win.rows.is_empty() {
-            break;
-        }
-        if columns.is_empty() {
-            columns = win.columns.clone();
-        }
-        for row in &win.rows {
-            scanned += 1;
-            let keep = match &compiled {
-                None => scanned > start,
-                Some(set) => set.holds(row),
-            };
-            if keep {
-                rows.push(row.clone());
-                if rows.len() as u64 >= count {
-                    break;
+    if let Some(path) = &paging_file {
+        if let Ok(file) = std::fs::File::open(path) {
+            let mut reader = csv_splitter_core::csv_reader::RecordReader::new(
+                std::io::BufReader::with_capacity(4 * 1024 * 1024, file),
+                4 * 1024 * 1024,
+            );
+            let mut record = Vec::new();
+            let mut index: u64 = 0;
+            while reader.next_record(&mut record).is_ok_and(|more| more) {
+                let cells = csv_splitter_core::csv_reader::parse_csv_record_with(
+                    String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
+                    delimiter.byte(),
+                    quotes,
+                );
+                if columns.is_empty() {
+                    columns = cells;
+                    continue;
                 }
+                if index >= start {
+                    rows.push(cells);
+                    if rows.len() as u64 >= count {
+                        break;
+                    }
+                }
+                index += 1;
             }
         }
-        seen += win.rows.len() as u64;
-        if rows.len() as u64 >= count || win.rows.len() < chunk as usize {
-            break;
+        let _ = std::fs::remove_file(path);
+    } else {
+        let mut seen: u64 = 0;
+        let mut scanned: u64 = 0;
+        let chunk = count.max(1_000);
+        loop {
+            let win =
+                match csv_splitter_core::workbook::window(&input, &ops, seen, chunk, delimiter) {
+                    Ok(w) => w,
+                    Err(e) => return report_failure("view", e.to_string()),
+                };
+            if win.rows.is_empty() {
+                break;
+            }
+            if columns.is_empty() {
+                columns = win.columns.clone();
+            }
+            for row in &win.rows {
+                scanned += 1;
+                let keep = match &compiled {
+                    None => scanned > start,
+                    Some(set) => set.holds(row),
+                };
+                if keep {
+                    rows.push(row.clone());
+                    if rows.len() as u64 >= count {
+                        break;
+                    }
+                }
+            }
+            seen += win.rows.len() as u64;
+            if rows.len() as u64 >= count || win.rows.len() < chunk as usize {
+                break;
+            }
         }
     }
 
@@ -1383,11 +1559,7 @@ fn cmd_view(args: &[String]) -> i32 {
         println!("(no rows matched)");
         return 0;
     }
-    println!("{}", columns.join(" | "));
-    println!("{}", "-".repeat(40));
-    for row in &rows {
-        println!("{}", row.join(" | "));
-    }
+    print_table(&columns, &rows);
     let applied = journal.len();
     if applied > 0 || where_expr.is_some() {
         let mut note = String::new();

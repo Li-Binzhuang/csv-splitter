@@ -1290,7 +1290,7 @@ dependencies = [
 
 [[package]]
 name = "csv-splitter-cli"
-version = "0.71.0"
+version = "0.72.0"
 dependencies = [
  "csv-splitter-core",
  "encoding_rs",
@@ -1298,7 +1298,7 @@ dependencies = [
 
 [[package]]
 name = "csv-splitter-core"
-version = "0.71.0"
+version = "0.72.0"
 dependencies = [
  "bzip2",
  "criterion",
@@ -1318,7 +1318,7 @@ dependencies = [
 
 [[package]]
 name = "csv-splitter-gui"
-version = "0.71.0"
+version = "0.72.0"
 dependencies = [
  "csv-splitter-core",
  "eframe",
