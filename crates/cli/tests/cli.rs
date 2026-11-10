@@ -3635,3 +3635,57 @@ fn search_and_find_accept_a_pattern() {
     // The first city in C10..C19 is C10, on data row 10.
     assert!(text.contains("row 10"), "{text}");
 }
+
+/// `validate` reports what is wrong and exits 1; it never edits anything.
+#[test]
+fn validate_reports_bad_rows_without_changing_them() {
+    let dir = TempDir::new("validate");
+    let input = dir.join("t.csv");
+    let original =
+        "id,city,qty,date\n1,CDMX,10,2026-01-01\n2,,abc,2026-13-01\n3,Puebla,30,2026-02-30\n";
+    std::fs::write(&input, original).unwrap();
+    let path = input.to_str().unwrap();
+
+    let out = Command::new(bin())
+        .args([
+            "validate",
+            path,
+            "--check",
+            "city:not-empty",
+            "--check",
+            "qty>=0",
+            "--check",
+            "date:date",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(
+        out.status.code(),
+        Some(1),
+        "violations should fail the command"
+    );
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("row 2"), "{text}");
+    assert!(text.contains("3 violation(s)"), "{text}");
+
+    // The file is untouched — validation is a read, not a cleanup.
+    assert_eq!(std::fs::read_to_string(&input).unwrap(), original);
+
+    // A clean file exits 0.
+    let clean = dir.join("ok.csv");
+    std::fs::write(&clean, "id,city,qty\n1,CDMX,10\n2,Puebla,20\n").unwrap();
+    let out = Command::new(bin())
+        .args([
+            "validate",
+            clean.to_str().unwrap(),
+            "--check",
+            "city:not-empty",
+            "--check",
+            "qty>=0",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("0 violation(s)"), "{text}");
+}

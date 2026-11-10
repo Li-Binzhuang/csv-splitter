@@ -55,6 +55,10 @@
 | 搜索 | `search f.csv "text" [--regex]` | `GET /search?regex=1` | 返回行号；`--regex` 用条件格式那套模式子集 |
 | 跨表查找 | `lookup --key C --from R --get cols` | — | `--max-keys` 默认 500 万（公式里的 `ref()` 默认 200 万） |
 
+校验的检查类型：`not-empty` / `numeric` / `int` / `date` / `unique` / 任意比较（`qty>=0`、`city in a,b`）。
+`validate` **只读不写**：违规行数和每类计数是精确的，违规明细最多 1000 条（超了会明说），
+`unique` 记得住 500 万个不同值（超了也会明说）。
+
 聚合的算子统一是 `count / sum / mean / min / max`；`sum`/`mean` 用 Kahan 补偿求和。
 
 ## 编辑（不重写原文件）
@@ -109,6 +113,7 @@
 | 切分 | `split f.csv -n N` / `--by-size` | `POST /split` |
 | 合并 | `merge -i part*.tar -o out.csv` | `POST /merge` |
 | 排序 | `sort --by C -o out.csv` | `POST /sort` |
+| 数据校验 | `validate --check "qty>=0" --check "city:not-empty"` | — |
 | 去重 | `dedupe -o out.csv [--by C]` | `POST /dedupe` |
 | 分文件 | `partition --by C -o parts.tar` | `POST /partition` |
 | 拼接 | `concat a.csv b.csv ...` | — |

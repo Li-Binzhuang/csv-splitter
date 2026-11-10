@@ -35,6 +35,7 @@ pub mod splitter;
 pub mod sql;
 pub mod tempdir;
 pub mod types;
+pub mod validate;
 pub mod viewer;
 pub mod workbook;
 

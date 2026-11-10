@@ -48,6 +48,7 @@ fn main() -> ExitCode {
         Some("concat") => cmd_concat(&args[1..]),
         Some("groupby") => cmd_groupby(&args[1..]),
         Some("pivot") => cmd_pivot(&args[1..]),
+        Some("validate") => cmd_validate(&args[1..]),
         Some("format") => cmd_format(&args[1..]),
         Some("chart") => cmd_chart(&args[1..]),
         Some("layout") => cmd_layout(&args[1..]),
@@ -3825,6 +3826,170 @@ fn cmd_pivot(args: &[String]) -> i32 {
         );
     }
     0
+}
+
+/// Cut a value for one-line display, with an ellipsis when it was cut.
+fn truncate_for_display(text: &str, width: usize) -> String {
+    if text.chars().count() <= width {
+        return text.to_string();
+    }
+    let kept: String = text.chars().take(width.saturating_sub(1)).collect();
+    format!("{kept}…")
+}
+
+fn cmd_validate(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut quotes_text = String::new();
+    let mut input: Option<PathBuf> = None;
+    let mut rules_text: Vec<String> = Vec::new();
+    let mut json = false;
+    let mut quiet = false;
+    let mut delim = "auto".to_string();
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--check" | "--rule" => match p.value("--check") {
+                Ok(v) => rules_text.push(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--checks" => match p.value("--checks") {
+                Ok(v) => rules_text.extend(v.split(';').map(|r| r.trim().to_string())),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--json" => json = true,
+            "-q" | "--quiet" => quiet = true,
+            "--quotes" => match p.value("--quotes") {
+                Ok(v) => quotes_text = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-d" | "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => input = Some(PathBuf::from(other)),
+        }
+    }
+
+    let Some(input) = input else {
+        eprintln!("error: validate needs a file");
+        return 2;
+    };
+    if rules_text.is_empty() {
+        eprintln!("error: validate needs at least one --check (e.g. --check \"qty>=0\")");
+        return 2;
+    }
+    let rules: Vec<csv_splitter_core::validate::Rule> = {
+        let mut parsed = Vec::new();
+        for text in &rules_text {
+            match csv_splitter_core::validate::Rule::parse(text) {
+                Ok(rule) => parsed.push(rule),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            }
+        }
+        parsed
+    };
+    let delimiter = match parse_delimiter(&delim, &input) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let quotes = match parse_quotes(&quotes_text) {
+        Ok(q) => q,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let ops = match csv_splitter_core::workbook::Journal::load(
+        &csv_splitter_core::workbook::Journal::sidecar(&input),
+    ) {
+        Ok(journal) => journal.ops().to_vec(),
+        Err(e) => return report_failure("validate", e.to_string()),
+    };
+
+    let (tx, rx) = mpsc::channel();
+    let reporter = spawn_reporter("validate", rx, quiet || json);
+    let result = csv_splitter_core::validate::validate(&input, &ops, &rules, delimiter, &tx);
+    drop(tx);
+    let _ = reporter.join();
+    let _ = quotes;
+    let report = match result {
+        Ok(r) => r,
+        Err(e) => return report_failure("validate", e),
+    };
+
+    if json {
+        println!("{}", report.to_json());
+        return if report.failed() { 1 } else { 0 };
+    }
+
+    let failed = report.failed();
+    for (rule, count) in &report.counts {
+        let mark = if *count == 0 { "✓" } else { "✗" };
+        println!("{mark} {rule}: {count} violation(s)");
+    }
+    if report.unique_full {
+        println!(
+            "✗ unique ran out of room after {} distinct values; raise the cap or check a narrower range",
+            csv_splitter_core::validate::MAX_UNIQUE_VALUES
+        );
+    }
+    if !report.violations.is_empty() {
+        println!();
+        for violation in report.violations.iter().take(20) {
+            println!(
+                "  row {}  {}  ({})  value: {}",
+                violation.row,
+                violation.column,
+                violation.rule,
+                truncate_for_display(&violation.value, 40)
+            );
+        }
+        if report.violations.len() > 20 {
+            println!("  ... and {} more", report.violations.len() - 20);
+        }
+        if report.truncated {
+            println!(
+                "  (violations cap reached at {}; counts above are exact)",
+                csv_splitter_core::validate::MAX_VIOLATIONS
+            );
+        }
+    }
+    println!(
+        "\n{} rows checked, {} violation(s)",
+        report.rows,
+        report.total()
+    );
+    if failed {
+        1
+    } else {
+        0
+    }
 }
 
 fn cmd_demo(args: &[String]) -> i32 {

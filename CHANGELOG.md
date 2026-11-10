@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.95.0] — 2026-11-10
+
+### Added
+
+- **`validate`**: column constraints for dirty data. `--check "qty>=0"`, `--check
+  "city:not-empty"`, `--check "date:date"`, `--check "id:unique"` — or any comparison
+  the filter syntax understands (`city in CDMX,Puebla`).
+  - **Read-only by design**: it applies the journal like every other read, so it checks
+    what you would export, and writes nothing. The test asserts the file is
+    byte-identical afterwards.
+  - Memory stays flat: rows are checked in pages of 2 000 through the pager. Per-rule
+    counts are exact even when the detail list is capped at 1 000, and `unique` says so
+    when it runs out of room instead of quietly forgetting values.
+  - Dates are checked against the calendar, not just the shape: `2026-02-30` is
+    refused, `2024-02-29` is accepted, `2026-02-29` is not.
+  - Exit 1 when anything is wrong, so `validate && …` works in a pipeline.
+
 ## [0.94.0] — 2026-11-10
 
 ### Added
