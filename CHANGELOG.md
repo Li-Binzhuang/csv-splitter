@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.1] — 2026-11-10
+
+### Fixed (docs)
+
+- **The README never named `validate` or `book`**, and `view` only appeared by accident
+  of the word "previewer". Three working commands were invisible from the front page —
+  which is the page a new reader actually reads.
+
+### Added
+
+- **A command index in the README**: thirty commands, one line each, plus the note that
+  `<command> --help` lists the flags. A test derives the command list from `main.rs` and
+  fails when a command is not named here, so the next one added cannot repeat this.
+
 ## [1.0.0] — 2026-11-10
 
 ### Added

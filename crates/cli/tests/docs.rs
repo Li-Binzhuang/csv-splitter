@@ -496,3 +496,52 @@ fn the_api_reference_lists_every_route() {
         "routes absent from docs/API.md: {missing:?}"
     );
 }
+
+/// The README must name every command the binary dispatches.
+///
+/// The command list is derived from `main.rs`, not from a table someone maintains: a
+/// command added without a line in the README fails here. `view`, `validate` and `book`
+/// were all in that state at some point — implemented, documented nowhere.
+#[test]
+fn the_readme_names_every_command() {
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let source = std::fs::read_to_string(manifest.join("src/main.rs")).unwrap();
+    let readme = std::fs::read_to_string(manifest.join("../../README.md")).unwrap();
+
+    let mut commands: Vec<String> = Vec::new();
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if let Some(rest) = trimmed.strip_prefix(r#"Some(""#) {
+            if rest.contains(") => cmd_") {
+                if let Some(name) = rest.split('"').next() {
+                    if !name.is_empty() && name.chars().all(|c| c.is_ascii_lowercase()) {
+                        commands.push(name.to_string());
+                    }
+                }
+            }
+        }
+    }
+    commands.sort();
+    commands.dedup();
+    assert!(
+        commands.len() > 20,
+        "command extraction broke: {commands:?}"
+    );
+
+    let mut missing = Vec::new();
+    for command in &commands {
+        // A word-boundary check, so `view` is not satisfied by `previewer`.
+        let occurrences = readme.match_indices(command.as_str()).any(|(at, _)| {
+            let before = readme[..at].chars().next_back();
+            let after = readme[at + command.len()..].chars().next();
+            let word = |c: Option<char>| {
+                !c.is_some_and(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+            };
+            word(before) && word(after)
+        });
+        if !occurrences {
+            missing.push(command.clone());
+        }
+    }
+    assert!(missing.is_empty(), "README never mentions: {missing:?}");
+}

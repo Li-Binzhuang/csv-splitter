@@ -129,6 +129,44 @@ csv-splitter extract chunks.tar -o ./out
 
 所有子命令都支持 `-d/--delim auto|comma|tab|semicolon|pipe|<char>`、`-q/--quiet`、`-h/--help`。
 
+
+### 命令总览 / Commands
+
+三十条命令，每条一句话。`csv-splitter <command> --help` 给出该命令的全部参数。
+
+| 命令 | 做什么 |
+|---|---|
+| `split` | 切成若干份（按片数、按大小、按列值），可压缩 |
+| `merge` | 把分片合回单文件 |
+| `verify` | 证明 split → merge 逐字节无损 |
+| `extract` | 解压 tar/zip/7z（成员路径越界会被拒绝） |
+| `preview` | 打开看一下，可跳任意行 |
+| `view` | 看**套用编辑后**的表：翻页、筛选、排序、查找、条件格式 |
+| `index` | 建稀疏行索引 |
+| `filter` | 按条件筛选，返回行号或写文件 |
+| `search` | 跨列搜索（支持 `--regex`） |
+| `stats` | 采样列统计 |
+| `analyze` | 全列画像：类型、空值、基数、异常 |
+| `validate` | 检查脏数据：非空/数值/日期/唯一/任意比较 |
+| `dedupe` | 去重 |
+| `columns` | 保留/删除/改名/重排 |
+| `concat` | 多个同构 CSV 拼成一个 |
+| `partition` | 按列值拆成多个文件 |
+| `sort` | 外部排序（恒定内存） |
+| `groupby` | 分组聚合 |
+| `pivot` | 行×列矩阵（默认直接打印） |
+| `chart` | 图表数据 / 终端条形图 |
+| `lookup` | 跨表联接（VLOOKUP） |
+| `sql` | 对文件跑只读 SQL（DuckDB） |
+| `format` | 条件格式：哪些格子该上色 |
+| `layout` | 列宽、显示名、冻结、数字格式 |
+| `book` | 把一个目录里的 CSV 当成一个工作簿列出来 |
+| `files` | 列出可读文件 |
+| `edit` | 改数据但不改原文件（set/insert/delete/replace/drop/rename/formula/split-column/undo/redo/export） |
+| `convert` | 转码（GBK → UTF-8 等），流式 |
+| `demo` | 生成一份带脏数据的示例文件 |
+| `serve` | 本地 HTTP API + 内置浏览页面 |
+
 ### 设计上的三个保证 / Three guarantees
 
 1. **三种切法**：`-n/--splits` 按片数均分（片差 ≤ 1 条记录）；`--by-size` 按目标大小切
