@@ -1,5 +1,6 @@
 pub mod aggregate;
 pub mod cache;
+pub mod chart;
 pub mod check;
 pub mod compress;
 pub mod concat;

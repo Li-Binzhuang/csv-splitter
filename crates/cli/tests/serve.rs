@@ -919,3 +919,26 @@ fn style_endpoint_paints_only_matching_cells() {
     let (_, body) = get(&server.addr, "/style?path=t.csv");
     assert!(body.contains(r#""parameter":"rules""#), "{body}");
 }
+
+#[test]
+fn chart_endpoint_returns_series_json() {
+    let dir = TempDir::new("chartapi");
+    std::fs::write(
+        dir.join("s.csv"),
+        "month,city,amount\nJan,CDMX,10\nFeb,CDMX,20\nJan,Puebla,30\n",
+    )
+    .unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(
+        &server.addr,
+        "/chart?path=s.csv&x=month&y=amount:sum&series=city&type=bar",
+    );
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(r#""type":"bar""#), "{body}");
+    assert!(body.contains(r#""categories":["Jan","Feb"]"#), "{body}");
+    assert!(body.contains(r#""name":"CDMX""#), "{body}");
+
+    let (_, body) = get(&server.addr, "/chart?path=s.csv");
+    assert!(body.contains(r#""parameter":"x""#), "{body}");
+}

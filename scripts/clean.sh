@@ -7,7 +7,8 @@
 # plus `target/` when asked.
 #
 #   scripts/clean.sh          fixtures only (default: fast)
-#   scripts/clean.sh --all    fixtures + cargo target (slow to rebuild)
+#   scripts/clean.sh --deps   fixtures + compiled objects (keeps registry/build cache)
+#   scripts/clean.sh --all    fixtures + the whole target directory
 set -euo pipefail
 
 TMPDIR_BASE="${TMPDIR:-/tmp}"
@@ -31,6 +32,14 @@ done
 if [ "${1:-}" = "--all" ]; then
   echo "  cargo clean"
   cargo clean
+fi
+
+if [ "${1:-}" = "--deps" ]; then
+  # Keep the build graph, drop the objects: the next build re-links but does not
+  # recompile dependencies. target/debug/deps is usually the largest part after a
+  # few days of `--all-targets` runs.
+  echo "  removing target/debug/deps and target/debug/incremental"
+  rm -rf target/debug/deps target/debug/incremental
 fi
 
 if [ "$removed" -eq 0 ] && [ "${1:-}" != "--all" ]; then

@@ -533,6 +533,32 @@ $ csv-splitter format orders.csv --rule "amount>50:bg=yellow" --summary
 
 API：`GET /style?path=&rules=rule1;rule2&start=&count=`。
 
+## 图表数据 / Chart data
+
+不改行、不搬数据——服务端只给「类别 + 每个系列的数值」，怎么画是前端的事。
+
+```bash
+$ csv-splitter chart sales.csv --x month --y "amount:sum" --series city --type bar
+{"type":"bar","rows":5,"categories":["Jan","Feb"],
+ "series":[{"name":"CDMX","points":[15,20]},{"name":"Puebla","points":[30,40]}]}
+```
+
+| 参数 | 说明 |
+|---|---|
+| `--x` | 类别轴（横轴）列 |
+| `--y` | 度量 `列:op`（count/sum/mean/min/max） |
+| `--series` | 分组列，每个值一条线/一根柱 |
+| `--type` | `line` / `bar` / `pie` / `area` |
+| `--sort-by-value` | 按总量排序（饼图几乎总要） |
+| `--max-points` | 类别上限（默认 5000） |
+
+**缺失的点是 `null`，不是 0** —— 折线图会画出断口，而不是掉到零。
+这条如果错了，图上会出现一段"业务归零"的假象。
+
+**成本跟类别数走**：100 万行按月 = 12 个点，一遍流式扫描。
+
+API：`GET /chart?path=&x=&y=&series=&type=`。
+
 ## 错误信息 / Error output
 
 只有两种形状，脚本可以直接按前缀判断：

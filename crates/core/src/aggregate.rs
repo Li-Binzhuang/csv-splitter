@@ -162,6 +162,24 @@ impl Accumulator {
         self.count
     }
 
+    /// The numeric result of `op`, for callers that need a number rather than a
+    /// formatted string (chart points).
+    pub fn value(&self, op: AggOp) -> f64 {
+        match op {
+            AggOp::Count => self.count as f64,
+            AggOp::Sum => self.sum,
+            AggOp::Mean => {
+                if self.count == 0 {
+                    0.0
+                } else {
+                    self.sum / self.count as f64
+                }
+            }
+            AggOp::Min => self.min,
+            AggOp::Max => self.max,
+        }
+    }
+
     /// Render the final cell.
     ///
     /// A numeric aggregate over a column that turns out to hold text reports

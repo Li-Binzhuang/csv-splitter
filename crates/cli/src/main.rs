@@ -48,6 +48,7 @@ fn main() -> ExitCode {
         Some("groupby") => cmd_groupby(&args[1..]),
         Some("pivot") => cmd_pivot(&args[1..]),
         Some("format") => cmd_format(&args[1..]),
+        Some("chart") => cmd_chart(&args[1..]),
         Some("demo") => cmd_demo(&args[1..]),
         Some("sql") => cmd_sql(&args[1..]),
         Some("search") => cmd_search(&args[1..]),
@@ -97,6 +98,7 @@ COMMANDS
   groupby  <input> --by K --agg A Group and aggregate into a CSV
   pivot    <input> --rows R --values A Rows × columns × measures matrix
   format   <input> --rule R          Conditional formatting: which cells to paint
+  chart    <input> --x C --y C:op    Chart data (categories + series) as JSON
   demo     [-o <dir>]           Write a sample file to try the commands on
   search   <input> <text>        Find text anywhere (or in chosen columns)
   files    --root <dir>          List readable files under a directory
@@ -2025,6 +2027,173 @@ fn parse_sort_columns(spec: &str, default_descending: bool) -> Result<Vec<SortCo
         return Err("no sort columns".to_string());
     }
     Ok(columns)
+}
+
+fn cmd_chart(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut input: Option<PathBuf> = None;
+    let mut out: Option<PathBuf> = None;
+    let mut x: Option<String> = None;
+    let mut series: Option<String> = None;
+    let mut y = String::new();
+    let mut kind = "line".to_string();
+    let mut sort_by_value = false;
+    let mut descending = false;
+    let mut max_points = csv_splitter_core::chart::DEFAULT_MAX_POINTS;
+    let mut delim = "auto".to_string();
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--x" => match p.value("--x") {
+                Ok(v) => x = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--series" | "--by" => match p.value("--series") {
+                Ok(v) => series = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--y" => match p.value("--y") {
+                Ok(v) => y = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--type" => match p.value("--type") {
+                Ok(v) => kind = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--sort-by-value" => sort_by_value = true,
+            "--desc" => descending = true,
+            "--max-points" => match p
+                .value("--max-points")
+                .and_then(|v| v.parse().map_err(|_| "bad --max-points".to_string()))
+            {
+                Ok(v) => max_points = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-o" | "--out" => match p.value("--out") {
+                Ok(v) => out = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-d" | "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => {
+                if input.is_none() {
+                    input = Some(PathBuf::from(other));
+                } else {
+                    eprintln!("error: unexpected argument: {other}");
+                    return 2;
+                }
+            }
+        }
+    }
+
+    let Some(input) = input else {
+        eprintln!("error: chart needs an <input> file");
+        return 2;
+    };
+    let Some(x) = x else {
+        eprintln!("error: chart needs --x <column>");
+        return 2;
+    };
+    if y.trim().is_empty() {
+        eprintln!("error: chart needs --y <column:op>");
+        return 2;
+    }
+    let spec = match csv_splitter_core::aggregate::AggSpec::parse_list(&y) {
+        Ok(mut v) if !v.is_empty() => v.remove(0),
+        Ok(_) => {
+            eprintln!("error: --y needs one column:op measure");
+            return 2;
+        }
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let chart_kind = match csv_splitter_core::chart::ChartKind::parse(&kind) {
+        Ok(k) => k,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let delimiter = match parse_delimiter(&delim, &input) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let options = csv_splitter_core::chart::ChartOptions {
+        x,
+        series,
+        y: spec,
+        kind: chart_kind,
+        sort_by_value,
+        descending,
+        max_points,
+    };
+
+    let (tx, rx) = mpsc::channel();
+    // Writing JSON to stdout means stderr must stay quiet enough to pipe.
+    let reporter = spawn_reporter("chart", rx, out.is_none());
+    let result = csv_splitter_core::chart::chart(&input, delimiter, &options, &tx);
+    drop(tx);
+    let _ = reporter.join();
+    let data = match result {
+        Ok(d) => d,
+        Err(_) => return 1,
+    };
+
+    let json = data.to_json();
+    match out {
+        Some(path) => match std::fs::write(&path, &json) {
+            Ok(()) => {
+                println!(
+                    "✓ {} categories × {} series → {}",
+                    data.categories.len(),
+                    data.series.len(),
+                    path.display()
+                );
+                0
+            }
+            Err(e) => report_failure("chart", format!("cannot write {}: {e}", path.display())),
+        },
+        None => {
+            println!("{json}");
+            0
+        }
+    }
 }
 
 fn cmd_format(args: &[String]) -> i32 {

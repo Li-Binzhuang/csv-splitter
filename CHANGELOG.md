@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.42.0] — 2026-11-10
+
+### Added
+
+- **Chart data** (`crates/core/src/chart.rs`): `chart --x month --y amount:sum --series
+  city` returns the JSON every charting library already accepts — categories plus
+  one array per series. Cost follows the number of categories, not the rows.
+  - Missing category/series combinations are `null`, not `0`, so a line chart draws
+    a gap instead of a fake drop to zero.
+  - `--type line|bar|pie|area`, `--sort-by-value`, `--max-points` (default 5000,
+    refused with the parameter to raise rather than allocating unbounded).
+  - `GET /chart` serves the same shape.
+
 ## [0.41.0] — 2026-11-10
 
 ### Added

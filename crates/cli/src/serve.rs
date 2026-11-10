@@ -162,6 +162,7 @@ fn handle(
         "/groupby" => group_by(&mut stream, root, cache, &params),
         "/pivot" => pivot_endpoint(&mut stream, root, cache, &params),
         "/style" => style_endpoint(&mut stream, root, &params),
+        "/chart" => chart_endpoint(&mut stream, root, &params),
         "/download" => download(&mut stream, root, &params),
         "/export" => export(&mut stream, root, &params),
         "/query" => query(&mut stream, root, &params),
@@ -170,7 +171,7 @@ fn handle(
         _ => respond_json(
             &mut stream,
             404,
-            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/sheet","/pivot","/style","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/edit","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
+            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/sheet","/pivot","/style","/chart","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/edit","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
         ),
     }
 }
@@ -708,6 +709,68 @@ fn edit_apply(
 /// Writes to a rate-limited cache of recent results: a dashboard polling the
 /// same query should not rescan the file each refresh, and the file is small
 /// (one row per group) by construction.
+/// Chart data for the client to draw (GET /chart).
+fn chart_endpoint(
+    stream: &mut TcpStream,
+    root: &Path,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return bad_path(stream),
+    };
+    let Some(x) = params.get("x").filter(|v| !v.is_empty()) else {
+        return bad_request(stream, "x is required", "x", "pass x=<category column>");
+    };
+    let Some(y) = params.get("y").filter(|v| !v.is_empty()) else {
+        return bad_request(stream, "y is required", "y", "pass y=<column:op>");
+    };
+    let spec = match csv_splitter_core::aggregate::AggSpec::parse_list(y) {
+        Ok(mut v) if !v.is_empty() => v.remove(0),
+        _ => {
+            return respond_json(
+                stream,
+                400,
+                r#"{"error":"y must be one column:op measure","parameter":"y","hint":"pass y=amount:sum"}"#,
+            )
+        }
+    };
+    let kind = match csv_splitter_core::chart::ChartKind::parse(
+        params.get("type").map(String::as_str).unwrap_or("line"),
+    ) {
+        Ok(k) => k,
+        Err(e) => return respond_json(stream, 400, &format!(r#"{{"error":{}}}"#, json_str(&e))),
+    };
+    let options = csv_splitter_core::chart::ChartOptions {
+        x: x.clone(),
+        series: params.get("series").cloned().filter(|v| !v.is_empty()),
+        y: spec,
+        kind,
+        sort_by_value: params
+            .get("sortByValue")
+            .map(|v| v == "1" || v == "true")
+            .unwrap_or(false),
+        descending: params
+            .get("desc")
+            .map(|v| v == "1" || v == "true")
+            .unwrap_or(false),
+        max_points: params
+            .get("maxPoints")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(csv_splitter_core::chart::DEFAULT_MAX_POINTS),
+    };
+    let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
+    drop(rx);
+    match csv_splitter_core::chart::chart(&path, delimiter(params), &options, &tx) {
+        Ok(data) => respond_json(stream, 200, &data.to_json()),
+        Err(e) => respond_json(
+            stream,
+            422,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+    }
+}
+
 /// Conditional formatting for a window: which cells to paint (GET /style).
 fn style_endpoint(
     stream: &mut TcpStream,

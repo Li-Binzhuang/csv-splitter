@@ -1608,3 +1608,59 @@ fn format_reports_matching_cells_and_a_summary() {
         .unwrap();
     assert_eq!(out.status.code(), Some(2));
 }
+
+/// Chart data: categories, one array per series, nulls for missing points.
+#[test]
+fn chart_emits_json_with_categories_and_series() {
+    let dir = TempDir::new("chart");
+    let input = dir.join("s.csv");
+    std::fs::write(
+        &input,
+        "month,city,amount\nJan,CDMX,10\nFeb,CDMX,20\nJan,Puebla,30\nFeb,Puebla,40\nJan,CDMX,5\n",
+    )
+    .unwrap();
+
+    let out = Command::new(bin())
+        .args([
+            "chart",
+            input.to_str().unwrap(),
+            "--x",
+            "month",
+            "--y",
+            "amount:sum",
+            "--series",
+            "city",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains(r#""categories":["Jan","Feb"]"#), "{stdout}");
+    assert!(
+        stdout.contains(r#""name":"CDMX","points":[15,20]"#),
+        "{stdout}"
+    );
+    assert!(
+        stdout.contains(r#""name":"Puebla","points":[30,40]"#),
+        "{stdout}"
+    );
+
+    // A gap in one series stays null rather than becoming a fake zero.
+    let sparse = dir.join("sparse.csv");
+    std::fs::write(&sparse, "month,city,amount\nJan,A,1\nFeb,B,2\n").unwrap();
+    let out = Command::new(bin())
+        .args([
+            "chart",
+            sparse.to_str().unwrap(),
+            "--x",
+            "month",
+            "--y",
+            "amount:sum",
+            "--series",
+            "city",
+        ])
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("null"), "{stdout}");
+}
