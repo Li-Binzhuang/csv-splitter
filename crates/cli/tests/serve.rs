@@ -1559,3 +1559,57 @@ fn row_pages_report_their_own_size_and_limit() {
     assert!(body.contains("\"count\":7"), "{body}");
     assert!(body.contains("\"requested\":7"), "{body}");
 }
+
+/// Every endpoint answers a bad request the same way: JSON with `error`, and for
+/// parameter problems also `parameter` and `hint`. A client that has to special-case
+/// one endpoint's error shape cannot write a generic error handler.
+#[test]
+fn error_responses_have_one_shape() {
+    let dir = TempDir::new("errorshape");
+    std::fs::write(dir.join("t.csv"), "a,b\n1,2\n").unwrap();
+    std::fs::create_dir_all(dir.join("sub")).unwrap();
+    let server = start(&dir.0.clone());
+
+    let reads = [
+        "meta", "rows", "stats", "filter", "search", "analyze", "edit", "sheet", "groupby",
+        "pivot", "style", "chart", "layout", "download", "export", "query", "job",
+    ];
+    let mut problems = Vec::new();
+    for endpoint in reads {
+        // No path at all: the answer must name the parameter and say what to pass.
+        let (status, body) = get(&server.addr, &format!("/{endpoint}"));
+        if status != 400 {
+            problems.push(format!("{endpoint} missing-path status {status}: {body}"));
+            continue;
+        }
+        for needle in [r#""error":"#, r#""parameter":"#, r#""hint":"#] {
+            if !body.contains(needle) {
+                problems.push(format!("{endpoint} missing {needle}: {body}"));
+            }
+        }
+    }
+
+    // A file that does not exist says so, rather than blaming the sandbox.
+    let (status, body) = get(&server.addr, "/rows?path=nope.csv");
+    assert_eq!(status, 400, "{body}");
+    assert!(body.contains("no such file"), "{body}");
+
+    // A directory is not a file, and the message says that instead.
+    let (_, body) = get(&server.addr, "/rows?path=sub");
+    assert!(body.contains("directory, not a file"), "{body}");
+
+    // Escaping the root is its own message. The file has to exist, or the answer is
+    // (correctly) "no such file" — so place one just outside the root.
+    let outside = dir.0.parent().unwrap().join("csvs_escape_probe.csv");
+    std::fs::write(&outside, "a,b\n1,2\n").unwrap();
+    let (_, body) = get(&server.addr, "/rows?path=../csvs_escape_probe.csv");
+    assert!(body.contains("outside the served directory"), "{body}");
+    let _ = std::fs::remove_file(&outside);
+
+    // Unknown endpoint and wrong method still carry an `error`.
+    let (status, body) = get(&server.addr, "/nope");
+    assert_eq!(status, 404, "{body}");
+    assert!(body.contains(r#""error":"#), "{body}");
+
+    assert!(problems.is_empty(), "{problems:?}");
+}

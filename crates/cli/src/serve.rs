@@ -382,9 +382,9 @@ fn analyze(
     root: &Path,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
-    let (path, _rel) = match resolve(root, params) {
-        Some(v) => v,
-        None => return bad_path(stream),
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
     };
     let cap: usize = params
         .get("distinctCap")
@@ -499,9 +499,9 @@ fn edit_state(
     root: &Path,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
-    let (path, _rel) = match resolve(root, params) {
-        Some(v) => v,
-        None => return bad_path(stream),
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
     };
     let sidecar = Journal::sidecar(&path);
     let journal = match Journal::load(&sidecar) {
@@ -547,9 +547,9 @@ fn edit_apply(
     jobs: &JobRegistry,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
-    let (path, _rel) = match resolve(root, params) {
-        Some(v) => v,
-        None => return bad_path(stream),
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
     };
     let Some(action) = params.get("action") else {
         return bad_request(
@@ -1026,9 +1026,9 @@ fn layout_endpoint(
     root: &Path,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
-    let (path, _rel) = match resolve(root, params) {
-        Some(v) => v,
-        None => return bad_path(stream),
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
     };
     let mut layout = match csv_splitter_core::layout::Layout::load(&path) {
         Ok(l) => l,
@@ -1105,9 +1105,9 @@ fn chart_endpoint(
     root: &Path,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
-    let (path, _rel) = match resolve(root, params) {
-        Some(v) => v,
-        None => return bad_path(stream),
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
     };
     let Some(x) = params.get("x").filter(|v| !v.is_empty()) else {
         return bad_request(stream, "x is required", "x", "pass x=<category column>");
@@ -1167,9 +1167,9 @@ fn style_endpoint(
     root: &Path,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
-    let (path, _rel) = match resolve(root, params) {
-        Some(v) => v,
-        None => return bad_path(stream),
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
     };
     let Some(rules_text) = params.get("rules").filter(|v| !v.is_empty()) else {
         return bad_request(
@@ -1242,9 +1242,9 @@ fn pivot_endpoint(
     cache: &ResultCache,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
-    let (path, _rel) = match resolve(root, params) {
-        Some(v) => v,
-        None => return bad_path(stream),
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
     };
     let Some(rows) = params.get("rows").filter(|v| !v.is_empty()) else {
         return bad_request(
@@ -1369,9 +1369,9 @@ fn group_by(
     cache: &ResultCache,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
-    let (path, _rel) = match resolve(root, params) {
-        Some(v) => v,
-        None => return bad_path(stream),
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
     };
     let Some(by) = params.get("by").filter(|b| !b.is_empty()) else {
         return bad_request(stream, "by is required", "by", "pass by=<column name>");
@@ -1614,9 +1614,9 @@ fn start_index(
     jobs: &JobRegistry,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
-    let (path, _rel) = match resolve(root, params) {
-        Some(v) => v,
-        None => return bad_path(stream),
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
     };
     let interval = params
         .get("interval")
@@ -1662,9 +1662,9 @@ fn start_warm(
     cache: &ResultCache,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
-    let (path, _rel) = match resolve(root, params) {
-        Some(v) => v,
-        None => return bad_path(stream),
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
     };
     let Some(statement) = params.get("sql") else {
         return bad_request(stream, "sql is required", "sql", "pass sql=<SELECT ...>");
@@ -1958,9 +1958,9 @@ fn sheet_meta(
     root: &Path,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
-    let (path, _rel) = match resolve(root, params) {
-        Some(v) => v,
-        None => return bad_path(stream),
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
     };
     let options = csv_splitter_core::sheet::ReadOptions {
         delimiter: delimiter(params),
@@ -2059,9 +2059,9 @@ fn rows(
     params: &HashMap<String, String>,
     cache: &ResultCache,
 ) -> io::Result<()> {
-    let (path, _rel) = match resolve(root, params) {
-        Some(v) => v,
-        None => return bad_path(stream),
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
     };
     let Some(start) = number_param(stream, params, "start", 0)? else {
         return Ok(());
@@ -2275,9 +2275,9 @@ fn rows(
 }
 
 fn query(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
-    let (path, _rel) = match resolve(root, params) {
-        Some(v) => v,
-        None => return bad_path(stream),
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
     };
     let Some(statement) = params.get("sql") else {
         return bad_request(stream, "sql is required", "sql", "pass sql=<SELECT ...>");
@@ -2418,9 +2418,9 @@ fn sql_predicate(spec: &FilterSpec) -> Option<String> {
 }
 
 fn export(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
-    let (path, _rel) = match resolve(root, params) {
-        Some(v) => v,
-        None => return bad_path(stream),
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
     };
     let limit: usize = params
         .get("limit")
@@ -2561,9 +2561,9 @@ fn respond_rows_from_cache(
 }
 
 fn search(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
-    let (path, _rel) = match resolve(root, params) {
-        Some(v) => v,
-        None => return bad_path(stream),
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
     };
     let Some(query) = params.get("q").filter(|q| !q.is_empty()) else {
         return bad_request(stream, "q is required", "q", "pass q=<text to search for>");
@@ -2690,9 +2690,9 @@ fn files(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) 
 }
 
 fn filter(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
-    let (path, _rel) = match resolve(root, params) {
-        Some(v) => v,
-        None => return bad_path(stream),
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
     };
     let Some(expr) = params.get("where") else {
         return respond_json(stream, 400, r#"{"error":"where is required"}"#);
@@ -2732,9 +2732,9 @@ fn filter(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
 }
 
 fn stats(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -> io::Result<()> {
-    let (path, _rel) = match resolve(root, params) {
-        Some(v) => v,
-        None => return bad_path(stream),
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
     };
     let sample: usize = params
         .get("sample")
@@ -2915,6 +2915,60 @@ fn bad_request(stream: &mut TcpStream, error: &str, parameter: &str, hint: &str)
             json_str(parameter),
             json_str(hint)
         ),
+    )
+}
+
+/// Why a `path` did not resolve: missing, not found, or outside the root.
+///
+/// Three different mistakes deserve three different sentences — "outside root" for a
+/// typo'd filename sends people looking for a sandbox problem that does not exist.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum PathError {
+    Missing,
+    NotFound,
+    OutsideRoot,
+    NotAFile,
+}
+
+impl PathError {
+    fn message(self) -> &'static str {
+        match self {
+            Self::Missing => "path is required",
+            Self::NotFound => "no such file inside the served directory",
+            Self::OutsideRoot => "path is outside the served directory",
+            Self::NotAFile => "path is a directory, not a file",
+        }
+    }
+}
+
+fn resolve_reason(
+    root: &Path,
+    params: &HashMap<String, String>,
+) -> Result<(PathBuf, String), PathError> {
+    let rel = params
+        .get("path")
+        .map(|p| p.trim_start_matches(['/', '\\']).to_string())
+        .ok_or(PathError::Missing)?;
+    if rel.is_empty() {
+        return Err(PathError::Missing);
+    }
+    let candidate = root.join(&rel);
+    let canonical = candidate.canonicalize().map_err(|_| PathError::NotFound)?;
+    if !canonical.starts_with(root) {
+        return Err(PathError::OutsideRoot);
+    }
+    if !canonical.is_file() {
+        return Err(PathError::NotAFile);
+    }
+    Ok((canonical, rel))
+}
+
+fn bad_path_reason(stream: &mut TcpStream, reason: PathError) -> io::Result<()> {
+    bad_request(
+        stream,
+        reason.message(),
+        "path",
+        "pass path=<relative path inside the served directory>",
     )
 }
 

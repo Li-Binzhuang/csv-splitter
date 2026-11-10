@@ -1174,3 +1174,26 @@ offset per 1000 rows.
 
 Initial release: split + compress pipeline, preview, column stats, decompress,
 bilingual GUI.
+
+## 错误响应 / Error responses
+
+所有 4xx / 5xx 都是同一个形状：
+
+```json
+{"error": "...", "parameter": "path", "hint": "pass path=<relative path inside the served directory>"}
+```
+
+`error` 一定有（人读的句子）；参数问题额外带 `parameter`（哪个参数）和 `hint`（怎么改）。
+有测试逐条跑 17 个读端点，确认这条契约没有被某个端点悄悄破坏。
+
+`path` 不解析时有四种不同的说法，因为它们是四种不同的错误：
+
+| 情况 | 消息 |
+|---|---|
+| 没给 `path` | `path is required` |
+| 文件不存在 | `no such file inside the served directory` |
+| 指向目录 | `path is a directory, not a file` |
+| 逃出 root | `path is outside the served directory` |
+
+（早先这四种都报「path missing or outside root」，把「文件名打错」说成「沙箱问题」，
+会让人找错方向。）

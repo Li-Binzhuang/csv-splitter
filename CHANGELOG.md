@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.96.0] — 2026-11-10
+
+### Fixed
+
+- **`?path=` reported one message for four different mistakes.** A typo'd filename,
+  a directory, a path outside the root and a missing parameter all said "path missing
+  or outside root" — which sends people looking for a sandbox problem that does not
+  exist. Each now has its own sentence, and all 17 read endpoints use the same
+  resolver, so the improvement is not partial.
+  - `path is required` / `no such file inside the served directory` /
+    `path is a directory, not a file` / `path is outside the served directory`.
+
+### Verified
+
+- The error contract holds across the whole surface: every 4xx carries `error`, and
+  parameter problems also carry `parameter` and `hint`. A test walks the 17 read
+  endpoints and checks the shape rather than trusting that each handler remembered.
+
 ## [0.95.0] — 2026-11-10
 
 ### Added
