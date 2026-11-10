@@ -98,6 +98,15 @@ curl -X POST "…/edit?path=big.csv&action=set&row=3&col=city&value=CDMX&expect=
 
 **选中状态、批量操作、乐观更新都应该按 key 记，不要按「第几行」记。**
 
+行的位置变了之后，用 key 问它现在在哪：
+
+```bash
+curl "…/rows?path=big.csv&keys=b:12,v:3"
+{"rowKeys":["b:12","v:3"],"rowNumbers":[20,1],"rows":[[…],[…]],"missing":[]}
+```
+
+被删掉的行会出现在 `missing` 里——那不是错误，是「这一行没有了」。
+
 ## 6. 写完之后
 
 - 编辑进 `<file>.journal`，**原文件不动**；页面刷新后 `/rows` 仍然带编辑。

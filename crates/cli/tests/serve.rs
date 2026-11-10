@@ -1967,3 +1967,35 @@ fn cell_keys_and_horizontal_paging() {
     assert_eq!(code, 200, "{body}");
     assert!(body.contains(r#""index":5"#), "{body}");
 }
+
+/// Row keys survive an insert: the question a selection asks after the table moved.
+#[test]
+fn row_keys_resolve_through_inserts() {
+    let dir = TempDir::new("keyresolve");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n2,B\n3,C\n").unwrap();
+    let server = start(&dir.0);
+
+    // Before any edit: keys resolve, and a stale key is reported rather than dropped.
+    let (code, body) = get(&server.addr, "/rows?path=t.csv&keys=b:2,b:0,b:99");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""rowNumbers":[3,1]"#), "{body}");
+    assert!(body.contains(r#"["3","C"]"#), "{body}");
+    assert!(body.contains(r#""missing":["b:99"]"#), "{body}");
+
+    // An insert at the top shifts everything down by one, but b:0 is still row "1,A".
+    let (code, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=insert&row=1&value=9,Z",
+    );
+    assert_eq!(code, 200, "{body}");
+    let (code, body) = get(&server.addr, "/rows?path=t.csv&keys=b:0,v:0");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#"["1","A"]"#), "{body}");
+    assert!(body.contains(r#"["9","Z"]"#), "{body}");
+    assert!(body.contains(r#""rowNumbers":[2,1]"#), "{body}");
+
+    // A key that cannot be parsed is a 400 naming the parameter, not a silent skip.
+    let (code, body) = get(&server.addr, "/rows?path=t.csv&keys=zzz");
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains(r#""parameter":"keys""#), "{body}");
+}

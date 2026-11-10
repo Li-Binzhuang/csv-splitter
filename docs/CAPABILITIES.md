@@ -128,6 +128,7 @@
 | 切分 | `split f.csv -n N` / `--by-size` | `POST /split` |
 | 合并 | `merge chunks.tar -o out.csv` | `POST /merge` |
 | 排序 | `sort --by C -o out.csv` | `POST /sort` |
+| 按 key 定位行 | `/rows?keys=b:12,v:3`（插入/删除后仍指向同一行）| — |
 | 并发写入 | 两个进程同时 `edit` | journal 加锁，双方操作都保留（实测 10 并发 → 10 条）|
 | 窗口选列 | `/rows?columns=a,b`（782 列 → 3 列，87 KB → 529 字节）| — |
 | 列存在性 / 列元数据 | `schema --has COL`（存在 0 / 不存在 1）· `schema --json` | `GET /columns` |

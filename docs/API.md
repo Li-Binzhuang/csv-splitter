@@ -306,6 +306,33 @@ Every window carries `rowKeys`, parallel to `rows`: `b:<index>` for a row of the
 file, `v:<id>` for an inserted row. A selection that survives an insert or a delete is
 a selection by key, never by position.
 
+
+## `GET /rows?keys=b:2,b:0` — 按 key 找行 / resolving a selection
+
+`rowKeys` 的反函数。前端保存的是 key，插入/删除之后位置变了，用这个问「它现在在第几行」：
+
+```bash
+curl "/rows?path=t.csv&keys=b:2,b:0,b:99"
+{"columns":["id","city"],
+ "rowKeys":["b:2","b:0"],
+ "rowNumbers":[3,1],
+ "rows":[["3","C"],["1","A"]],
+ "missing":["b:99"]}
+```
+
+- 返回顺序就是你给的顺序；
+- 不存在的 key 进 `missing`（被删掉的行是「没有了」，不是错误）；
+- 一次最多 200 个 key，写错的 key 是 400，`parameter` 为 `keys`。
+
+## 行身份 / Row identity
+
+| key | 含义 |
+|---|---|
+| `b:<n>` | 原始文件里的第 n 行（0-based，表头不算）|
+| `v:<id>` | 插入块 `<id>` 的一行 |
+
+**编辑就是按这个身份存的**，所以 key 是唯一能跨插入/删除稳定的行标识。
+
 ## 已知限制
 
 - `where` / `order` 走 DuckDB：对**有编辑的文件**会先物化到临时表（每份源文件最多一份，

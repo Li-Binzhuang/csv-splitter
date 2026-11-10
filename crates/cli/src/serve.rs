@@ -2486,6 +2486,131 @@ fn sheet_meta(
     )
 }
 
+/// `GET /rows?keys=b:12,v:3` — resolve stable row keys to their current rows.
+///
+/// The order is the order asked for. A key that no longer exists is reported in
+/// `missing`, not silently dropped, so a front-end can clear its selection.
+fn rows_by_keys_endpoint(
+    stream: &mut TcpStream,
+    path: &Path,
+    params: &HashMap<String, String>,
+    keys: &str,
+) -> io::Result<()> {
+    const MAX_KEYS: usize = 200;
+    let mut wanted: Vec<csv_splitter_core::workbook::RowId> = Vec::new();
+    let mut malformed: Vec<String> = Vec::new();
+    for raw in keys.split(',').map(str::trim).filter(|k| !k.is_empty()) {
+        match raw.split_once(':') {
+            Some(("b", n)) => match n.parse::<u64>() {
+                Ok(index) => wanted.push(csv_splitter_core::workbook::RowId::Base(index)),
+                Err(_) => malformed.push(raw.to_string()),
+            },
+            Some(("v", n)) => match n.parse::<u64>() {
+                Ok(id) => wanted.push(csv_splitter_core::workbook::RowId::Virtual(id)),
+                Err(_) => malformed.push(raw.to_string()),
+            },
+            _ => malformed.push(raw.to_string()),
+        }
+    }
+    if !malformed.is_empty() {
+        return bad_request(
+            stream,
+            &format!("unreadable key(s): {}", malformed.join(", ")),
+            "keys",
+            "keys=b:12,b:13 or keys=v:3",
+        );
+    }
+    if wanted.len() > MAX_KEYS {
+        return bad_request(
+            stream,
+            &format!("at most {MAX_KEYS} keys per request"),
+            "keys",
+            "ask for a smaller selection",
+        );
+    }
+    let sidecar = Journal::sidecar(path);
+    let journal = match Journal::load(&sidecar) {
+        Ok(journal) => journal,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let resolved = match workbook::rows_by_keys(path, journal.ops(), delimiter(params), &wanted) {
+        Ok(rows) => rows,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let columns: Vec<String> = match workbook::column_layout(
+        journal.ops(),
+        &workbook::base_header(path, delimiter(params))?,
+    ) {
+        Ok(layout) => layout.into_iter().map(|(name, _)| name).collect(),
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let found_keys: Vec<String> = resolved
+        .iter()
+        .map(|(_, key, _)| match key {
+            csv_splitter_core::workbook::RowId::Base(i) => format!("b:{i}"),
+            csv_splitter_core::workbook::RowId::Virtual(i) => format!("v:{i}"),
+        })
+        .collect();
+    let row_numbers: Vec<String> = resolved
+        .iter()
+        .map(|(logical, _, _)| (logical + 1).to_string())
+        .collect();
+    let missing: Vec<String> = wanted
+        .iter()
+        .filter(|key| !resolved.iter().any(|(_, found, _)| *found == **key))
+        .map(|key| match key {
+            csv_splitter_core::workbook::RowId::Base(i) => format!("b:{i}"),
+            csv_splitter_core::workbook::RowId::Virtual(i) => format!("v:{i}"),
+        })
+        .collect();
+    let rows_json: Vec<String> = resolved
+        .iter()
+        .map(|(_, _, cells)| {
+            let items: Vec<String> = cells.iter().map(|c| json_str(c)).collect();
+            format!("[{}]", items.join(","))
+        })
+        .collect();
+    let cols_json: Vec<String> = columns.iter().map(|c| json_str(c)).collect();
+    respond_json(
+        stream,
+        200,
+        &format!(
+            r#"{{"columns":[{}],"rowKeys":[{}],"rowNumbers":[{}],"rows":[{}],"missing":[{}]}}"#,
+            cols_json.join(","),
+            found_keys
+                .iter()
+                .map(|k| json_str(k))
+                .collect::<Vec<_>>()
+                .join(","),
+            row_numbers.join(","),
+            rows_json.join(","),
+            missing
+                .iter()
+                .map(|k| json_str(k))
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+    )
+}
+
 fn rows(
     stream: &mut TcpStream,
     root: &Path,
@@ -2504,6 +2629,12 @@ fn rows(
     };
     let requested = count;
     let count = count.min(MAX_ROWS_PER_REQUEST);
+
+    // `keys=` answers "where did my selection go?" — the inverse of `rowKeys`. A client
+    // that kept `b:12` through an insert asks for it and gets the row number back.
+    if let Some(keys) = params.get("keys") {
+        return rows_by_keys_endpoint(stream, &path, params, keys);
+    }
 
     // `where` / `order` turn a raw scan into a filtered, ordered view. They are
     // synonyms for the SQL endpoint, so the two cannot drift apart.

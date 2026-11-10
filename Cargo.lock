@@ -635,7 +635,7 @@ dependencies = [
 
 [[package]]
 name = "csv-splitter-cli"
-version = "2.5.0"
+version = "2.6.0"
 dependencies = [
  "csv-splitter-core",
  "encoding_rs",
@@ -643,7 +643,7 @@ dependencies = [
 
 [[package]]
 name = "csv-splitter-core"
-version = "2.5.0"
+version = "2.6.0"
 dependencies = [
  "bzip2",
  "criterion",

@@ -97,6 +97,38 @@ impl RowMap {
         }
     }
 
+    /// The logical row a stable identity currently sits on, if it still exists.
+    ///
+    /// This is the inverse of [`RowMap::row`]: a front-end that remembers a selection by
+    /// key ("b:12") asks this after an insert moved it, and gets the row number to scroll
+    /// to. Cost is proportional to the number of structural operations, not to rows.
+    pub fn logical_of(&self, id: RowId) -> Option<u64> {
+        for seg in &self.segments {
+            match seg {
+                Segment::Base { physical, len, .. } => {
+                    if let RowId::Base(target) = id {
+                        let start = *physical;
+                        let end = start.saturating_add(*len);
+                        if target >= start && target < end {
+                            return Some(seg.logical_start() + (target - start));
+                        }
+                    }
+                }
+                Segment::Virtual {
+                    id: block, rows, ..
+                } => {
+                    if let RowId::Virtual(target) = id {
+                        if target == *block {
+                            return Some(seg.logical_start());
+                        }
+                    }
+                    let _ = rows;
+                }
+            }
+        }
+        None
+    }
+
     /// Physical row ranges backing the logical window `[start, start+count)`.
     ///
     /// Returned as `(physical_start, physical_len, logical_offset)` runs so a

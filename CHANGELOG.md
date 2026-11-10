@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.6.0] — 2026-11-10
+
+### Added
+
+- **`GET /rows?keys=b:12,v:3`** — the inverse of `rowKeys`. A front-end keeps a
+  selection by key; after an insert moved the table it asks where the key is now and
+  gets `rowNumbers`, in the order asked for. Keys that are gone (a deleted row) come
+  back in `missing` rather than being silently dropped. Up to 200 keys, and an
+  unreadable key is a 400 naming `keys`.
+  - `RowMap::logical_of` does the lookup in time proportional to the structural
+    operations, not to the rows: an insert or delete is what changes a position.
+- Two tests: keys resolve before any edit and report stale ones; after an insert at the
+  top, `b:0` still points at the same *row*, with row number 2 instead of 1.
+- `docs/INTEGRATION.md` gained the "where did my selection go" call, and API.md the
+  endpoint plus a table of what the two key shapes mean.
+
 ## [2.5.0] — 2026-11-10
 
 ### Added

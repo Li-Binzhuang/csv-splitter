@@ -617,6 +617,11 @@ impl Pager {
         })
     }
 
+    /// The logical→physical map, for callers that resolve row identities.
+    pub fn map(&self) -> &RowMap {
+        &self.map
+    }
+
     pub fn total(&self) -> u64 {
         self.map.len()
     }
@@ -717,6 +722,32 @@ impl Pager {
         }
         Ok(())
     }
+}
+
+/// Resolve stable row keys to their current rows.
+///
+/// Returns `(logical row, key, cells)` in the order the keys were given, skipping keys
+/// that no longer exist (a deleted row is gone, not an error). Each lookup is a window
+/// read, so a handful of keys costs a handful of seeks.
+pub fn rows_by_keys(
+    base: &Path,
+    ops: &[Op],
+    delimiter: Delimiter,
+    keys: &[RowId],
+) -> io::Result<Vec<(u64, RowId, Vec<String>)>> {
+    let pager = Pager::open(base, ops, delimiter)?;
+    let mut out = Vec::with_capacity(keys.len());
+    for key in keys {
+        let logical = match pager.map().logical_of(*key) {
+            Some(logical) => logical,
+            None => continue,
+        };
+        let window = pager.page(logical, 1)?;
+        if let Some(row) = window.rows.into_iter().next() {
+            out.push((logical, *key, row));
+        }
+    }
+    Ok(out)
 }
 
 pub fn window(

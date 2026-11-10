@@ -43,8 +43,8 @@ pub use rows::{
 };
 
 pub use export::{
-    export, export_filtered, export_quotes, export_selected, find_row, logical_rows, runs_matching,
-    window, ExportOptions, ExportSummary, Pager, Window,
+    export, export_filtered, export_quotes, export_selected, find_row, logical_rows, rows_by_keys,
+    runs_matching, window, ExportOptions, ExportSummary, Pager, Window,
 };
 
 use std::io::{self, BufReader, BufWriter, Write};
