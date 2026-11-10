@@ -1859,3 +1859,70 @@ fn formulas_can_reference_another_sheet() {
     assert_eq!(text.lines().nth(1).unwrap(), "A,1,Ana");
     assert_eq!(text.lines().nth(2).unwrap(), "B,9,#N/A");
 }
+
+/// A bulk edit is one journal entry however many rows it changes.
+#[test]
+fn bulk_edit_matches_a_filter_and_stays_one_operation() {
+    let dir = TempDir::new("bulk");
+    let input = dir.join("t.csv");
+    std::fs::write(
+        &input,
+        "id,city,amount\n1,CDMX,10\n2,Puebla,20\n3,CDMX,30\n",
+    )
+    .unwrap();
+
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "set",
+            input.to_str().unwrap(),
+            "--where",
+            "city=CDMX",
+            "--col",
+            "amount",
+            "--value",
+            "0",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    // Two rows changed, one operation, tiny journal.
+    let journal = std::fs::read_to_string(dir.join("t.csv.journal")).unwrap();
+    assert_eq!(journal.lines().count(), 1, "{journal}");
+    assert!(journal.len() < 64, "journal stayed small: {journal}");
+
+    let out = dir.join("out.csv");
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            input.to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&out).unwrap();
+    assert_eq!(text, "id,city,amount\n1,CDMX,0\n2,Puebla,20\n3,CDMX,0\n");
+
+    // row and where together is a usage error, not a guess.
+    let out = Command::new(bin())
+        .args([
+            "edit",
+            "set",
+            input.to_str().unwrap(),
+            "--row",
+            "1",
+            "--where",
+            "city=CDMX",
+            "--col",
+            "amount",
+            "--value",
+            "5",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+}

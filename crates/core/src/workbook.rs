@@ -51,6 +51,18 @@ pub enum Op {
         at: u64,
         count: u64,
     },
+    /// Set a value in every row that matches a filter.
+    ///
+    /// Recorded as a **rule**, not as one operation per matching row: a bulk edit
+    /// over a million rows would otherwise turn a 60-byte journal into megabytes.
+    /// The rule is evaluated while the sheet is read, so it applies to the data as
+    /// it stands at that moment — which is also how a spreadsheet's "fill down"
+    /// behaves when rows are inserted afterwards.
+    SetWhere {
+        filter: String,
+        column: String,
+        value: String,
+    },
     /// Replace a substring in one column (`None` = every column).
     Substitute {
         column: Option<String>,
@@ -78,6 +90,7 @@ impl Op {
             Self::SetCell { .. } => "set",
             Self::InsertRows { .. } => "insert",
             Self::DeleteRows { .. } => "delete",
+            Self::SetWhere { .. } => "setwhere",
             Self::Substitute { .. } => "substitute",
             Self::AddColumn { .. } => "addcolumn",
             Self::DropColumn { .. } => "dropcolumn",
@@ -93,6 +106,11 @@ impl Op {
             }
             Self::InsertRows { at, rows } => format!("insert {} row(s) at {at}", rows.len()),
             Self::DeleteRows { at, count } => format!("delete {count} row(s) at {at}"),
+            Self::SetWhere {
+                filter,
+                column,
+                value,
+            } => format!("set '{column}' = '{}' where {filter}", truncate(value, 30)),
             Self::Substitute { column, from, to } => format!(
                 "substitute '{}' → '{}' in {}",
                 truncate(from, 20),
@@ -216,6 +234,11 @@ fn render_op(op: &Op) -> String {
         Op::DeleteRows { at, count } => {
             join_csv_line(&[op.tag(), &at.to_string(), &count.to_string()], b',')
         }
+        Op::SetWhere {
+            filter,
+            column,
+            value,
+        } => join_csv_line(&[op.tag(), filter, column, value], b','),
         Op::Substitute { column, from, to } => join_csv_line(
             &[op.tag(), column.as_deref().unwrap_or("*"), from, to],
             b',',
@@ -254,6 +277,11 @@ fn parse_op(record: &[u8]) -> Option<Op> {
         "delete" if fields.len() >= 3 => Some(Op::DeleteRows {
             at: fields[1].trim().parse().ok()?,
             count: fields[2].trim().parse().ok()?,
+        }),
+        "setwhere" if fields.len() >= 4 => Some(Op::SetWhere {
+            filter: fields[1].clone(),
+            column: fields[2].clone(),
+            value: fields[3].clone(),
         }),
         "substitute" if fields.len() >= 4 => Some(Op::Substitute {
             column: match fields[1].trim() {
@@ -612,6 +640,8 @@ pub struct CellEdits {
     cells: HashMap<(RowId, String), String>,
     /// Substring replacements, applied in journal order.
     subs: Vec<(Option<String>, String, String)>,
+    /// Bulk-edit rules: (filter expression, column, value).
+    rules: Vec<(String, String, String)>,
 }
 
 /// Stable identity of a row: a position in the base file, or an insert block.
@@ -631,6 +661,31 @@ impl CellEdits {
         self.cells
             .get(&(row, column.to_string()))
             .map(String::as_str)
+    }
+
+    /// Apply bulk-edit rules to a whole row.
+    ///
+    /// Called after the row is assembled and before formulas run, so a rule can
+    /// reference values from other columns and a formula can read the result.
+    pub fn apply_rules(&self, columns: &[String], cells: &mut [String]) {
+        for (filter, column, value) in &self.rules {
+            let Ok(spec) = crate::filter::FilterSpec::parse(filter) else {
+                continue;
+            };
+            let Some(target) = columns.iter().position(|c| c == column) else {
+                continue;
+            };
+            let Some(source) = columns.iter().position(|c| c == &spec.column) else {
+                continue;
+            };
+            let matches = cells
+                .get(source)
+                .map(|cell| crate::filter::matches(cell, &spec))
+                .unwrap_or(false);
+            if matches {
+                cells[target] = value.clone();
+            }
+        }
     }
 
     /// Apply substitutions to one value.
@@ -798,6 +853,7 @@ pub fn compile(ops: &[Op], base_rows: u64) -> Sheet {
     let mut map = RowMap::build(&[], base_rows);
     let mut cells: HashMap<(RowId, String), String> = HashMap::new();
     let mut subs: Vec<(Option<String>, String, String)> = Vec::new();
+    let mut rules: Vec<(String, String, String)> = Vec::new();
 
     for (index, op) in ops.iter().enumerate() {
         match op {
@@ -817,13 +873,18 @@ pub fn compile(ops: &[Op], base_rows: u64) -> Sheet {
             Op::Substitute { column, from, to } => {
                 subs.push((column.clone(), from.clone(), to.clone()));
             }
+            Op::SetWhere {
+                filter,
+                column,
+                value,
+            } => rules.push((filter.clone(), column.clone(), value.clone())),
             _ => {}
         }
     }
 
     Sheet {
         map,
-        edits: CellEdits { cells, subs },
+        edits: CellEdits { cells, subs, rules },
     }
 }
 
@@ -1027,6 +1088,8 @@ fn emit(
         };
         cells.push(value);
     }
+    edits.apply_rules(columns, &mut cells);
+
     // Computed columns are evaluated last, against the finished row, so a
     // formula may read a value that was just edited.
     for (idx, formula) in formulas.iter().enumerate() {
@@ -1464,6 +1527,71 @@ mod tests {
     }
 
     #[test]
+    fn a_bulk_edit_touches_every_matching_row_and_stays_small() {
+        let dir = Dir::new("bulk");
+        let base = base_with(&dir, BASE);
+        let ops = vec![Op::SetWhere {
+            filter: "city=CDMX".into(),
+            column: "amount".into(),
+            value: "0".into(),
+        }];
+        let text = export_with(&dir, &base, ops);
+        // CDMX rows (1 and 3) get amount 0; the others keep theirs.
+        assert_eq!(
+            text,
+            "id,city,amount\n1,CDMX,0\n2,Puebla,20\n3,CDMX,0\n4,Tijuana,40\n"
+        );
+    }
+
+    #[test]
+    fn a_bulk_edit_is_one_operation_however_many_rows_it_touches() {
+        // The journal must not grow with the match count: this is a rule, not a
+        // list of per-row operations.
+        let dir = Dir::new("bulkjournal");
+        let base = base_with(&dir, BASE);
+        let path = Journal::sidecar(&base);
+        let mut journal = Journal::new();
+        journal.push(Op::SetWhere {
+            filter: "city=CDMX".into(),
+            column: "amount".into(),
+            value: "0".into(),
+        });
+        journal.save(&path).unwrap();
+        let raw = std::fs::read_to_string(&path).unwrap();
+        assert_eq!(raw.lines().count(), 1, "{raw}");
+        assert!(raw.len() < 64, "journal must stay tiny: {raw}");
+
+        let loaded = Journal::load(&path).unwrap();
+        assert_eq!(loaded.len(), 1);
+        let text = export_with(&dir, &base, loaded.ops().to_vec());
+        assert!(text.contains("1,CDMX,0"), "{text}");
+    }
+
+    #[test]
+    fn a_bulk_edit_sees_edited_values() {
+        let dir = Dir::new("bulkorder");
+        let base = base_with(&dir, BASE);
+        let ops = vec![
+            // First make row 1 CDMX, then the bulk rule should catch it.
+            Op::SetCell {
+                row: 1,
+                column: "city".into(),
+                value: "CDMX".into(),
+            },
+            Op::SetWhere {
+                filter: "city=CDMX".into(),
+                column: "amount".into(),
+                value: "0".into(),
+            },
+        ];
+        let text = export_with(&dir, &base, ops);
+        assert_eq!(
+            text,
+            "id,city,amount\n1,CDMX,0\n2,CDMX,0\n3,CDMX,0\n4,Tijuana,40\n"
+        );
+    }
+
+    #[test]
     fn unknown_column_operations_are_refused() {
         let dir = Dir::new("badcols");
         let base = base_with(&dir, BASE);
@@ -1610,6 +1738,7 @@ fn shape(
         };
         out.push(value);
     }
+    edits.apply_rules(columns, &mut out);
     for (idx, formula) in formulas.iter().enumerate() {
         if let Some(f) = formula {
             out[idx] = eval_formula(f, columns, &out, refs);

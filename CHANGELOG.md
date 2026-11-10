@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.50.0] — 2026-11-10
+
+### Added
+
+- **Bulk edit by filter**: `edit set --where "city=CDMX" --col amount --value 0`
+  changes every matching row, and the API accepts `action=set&where=…`.
+  - Recorded as **one rule**, not one operation per row: a million-row bulk edit is
+    a 28-byte journal entry. The rule is evaluated while the sheet is read, so it
+    sees values created by earlier edits and formulas can read its result.
+  - `--row` and `--where` together are a usage error rather than a guess.
+
 ## [0.49.0] — 2026-11-10
 
 ### Added

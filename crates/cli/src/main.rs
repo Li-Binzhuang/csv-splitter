@@ -153,6 +153,7 @@ SEARCH OPTIONS
 
 EDIT ACTIONS  (the base file is never modified; edits live in <file>.journal)
   set      --row N --col C --value V     Change one cell
+           --where "c=v" --col C --value V  Change every matching row
   insert   --row N --value "a,b,c"       Insert a row at logical position N
   delete   --row N --count K             Delete K rows from position N
   replace  --from X --to Y [--col C]     Replace text in one column or every column
@@ -3535,6 +3536,7 @@ fn cmd_edit(args: &[String]) -> i32 {
     let mut count: Option<u64> = None;
     let mut name: Option<String> = None;
     let mut out: Option<PathBuf> = None;
+    let mut where_expr: Option<String> = None;
     let mut json = false;
     let mut delim = "auto".to_string();
 
@@ -3583,6 +3585,13 @@ fn cmd_edit(args: &[String]) -> i32 {
                 .and_then(|v| v.parse().map_err(|_| "bad --count".to_string()))
             {
                 Ok(v) => count = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--where" => match p.value("--where") {
+                Ok(v) => where_expr = Some(v),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -3740,14 +3749,34 @@ fn cmd_edit(args: &[String]) -> i32 {
 
     let op = match action.as_str() {
         "set" => {
-            let (Some(row), Some(col), Some(value)) = (row, col, value) else {
-                eprintln!("error: set needs --row, --col and --value");
+            let (Some(column), Some(value)) = (col, value) else {
+                eprintln!("error: set needs --col and --value");
                 return 2;
             };
-            csv_splitter_core::workbook::Op::SetCell {
-                row,
-                column: col,
-                value,
+            match (row, where_expr) {
+                // Bulk edit: one rule, however many rows it touches.
+                (None, Some(filter)) => {
+                    if let Err(e) = csv_splitter_core::filter::FilterSpec::parse(&filter) {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                    csv_splitter_core::workbook::Op::SetWhere {
+                        filter,
+                        column,
+                        value,
+                    }
+                }
+                (Some(row), None) => {
+                    csv_splitter_core::workbook::Op::SetCell { row, column, value }
+                }
+                (Some(_), Some(_)) => {
+                    eprintln!("error: set takes either --row or --where, not both");
+                    return 2;
+                }
+                (None, None) => {
+                    eprintln!("error: set needs --row <n> or --where \"column=value\"");
+                    return 2;
+                }
             }
         }
         "delete" => {

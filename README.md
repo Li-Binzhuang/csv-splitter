@@ -698,6 +698,7 @@ $ csv-splitter edit export orders.csv -o fixed.csv
 | 操作 | CLI | API |
 |---|---|---|
 | 改单元格 | `edit set --row N --col C --value V` | `POST /edit?action=set&row=&col=&value=` |
+| **条件批量改** | `edit set --where "city=CDMX" --col C --value V` | `action=set&where=city%3DCDMX&col=&value=` |
 | 插入行 | `edit insert --row N --value "a,b,c"` | `action=insert` |
 | 删除行 | `edit delete --row N --count K` | `action=delete` |
 | 查找替换 | `edit replace --from X --to Y [--col C]` | `action=replace` |
@@ -745,6 +746,7 @@ id,city,amount,qty,total
 ### 为什么是日志，而不是覆盖写
 
 - **撤销是免费的**：弹掉最后一条。
+- **批量编辑记成一条规则**：改一百万行匹配的数据，日志仍然只有一行（28 字节）。
 - **日志是 CSV**，能在编辑器里打开、能 diff、能跟着数据一起提交。
 - **体积跟操作数走，不跟行数走**：100 万行文件 + 3 次编辑 = **60 字节**。
 - **原文件还在**：改错了直接撤销，或者干脆不导出。
