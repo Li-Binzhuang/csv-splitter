@@ -1156,6 +1156,8 @@ fn json_quote(s: &str) -> String {
 
 fn cmd_filter(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut order_by: Option<String> = None;
+    let mut order_descending = false;
     let mut input: Option<PathBuf> = None;
     let mut where_exprs: Vec<String> = Vec::new();
     let mut combine = filter::Combine::All;
@@ -1176,6 +1178,14 @@ fn cmd_filter(args: &[String]) -> i32 {
                 }
             },
             "--any" => combine = filter::Combine::Any,
+            "--order" => match p.value("--order") {
+                Ok(v) => order_by = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--desc" => order_descending = true,
             "--verify" => verify = true,
             "-o" | "--out" => match p.value("--out") {
                 Ok(v) => out = Some(PathBuf::from(v)),
@@ -1254,12 +1264,56 @@ fn cmd_filter(args: &[String]) -> i32 {
 
     // `--out` is the "keep the result" path: stream matches to a file.
     if let Some(out) = out {
+        // Ordering needs the whole match set before the first row can be written,
+        // so matches go to a temp file and are sorted into place. Filtering stays
+        // streaming; only the matched rows touch disk twice.
+        let sort_columns = match &order_by {
+            None => None,
+            Some(spec) => match parse_sort_columns(spec, order_descending) {
+                Ok(columns) => Some(columns),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+        };
+        let stage = sort_columns.as_ref().map(|_| {
+            std::env::temp_dir().join(format!(
+                "csvs_filter_{}_{}.csv",
+                std::process::id(),
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|d| d.as_nanos())
+                    .unwrap_or(0)
+            ))
+        });
+        let target = stage.clone().unwrap_or_else(|| out.clone());
+
         let (tx, rx) = mpsc::channel();
         let reporter = spawn_reporter("filter", rx, true);
-        let result = filter::extract(&input, delimiter, &set, &out, &tx);
+        let result = filter::extract(&input, delimiter, &set, &target, &tx);
         drop(tx);
         let _ = reporter.join();
-        return match result {
+        let sorted = match (result, &sort_columns, &stage) {
+            (Ok(summary), Some(columns), Some(stage)) => {
+                let (tx, _rx) = mpsc::channel();
+                match csv_splitter_core::sort::external_sort_columns(
+                    stage, &out, columns, delimiter, 64, &tx,
+                ) {
+                    Ok(()) => {
+                        std::fs::remove_file(stage).ok();
+                        Ok(summary)
+                    }
+                    Err(e) => {
+                        std::fs::remove_file(stage).ok();
+                        Err(e)
+                    }
+                }
+            }
+            (Ok(summary), _, _) => Ok(summary),
+            (Err(e), _, _) => Err(e),
+        };
+        return match sorted {
             Ok(s) => {
                 println!(
                     "✓ {} of {} rows matched → {} ({} bytes)",

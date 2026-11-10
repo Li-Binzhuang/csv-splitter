@@ -156,6 +156,8 @@ csv-splitter extract chunks.tar -o ./out
 | **摸清一份陌生数据** | `analyze big.csv` | `GET /analyze` |
 | **去重** | `dedupe big.csv --by id -o clean.csv` | `POST /dedupe` |
 | **整理列再发出去** | `columns big.csv --drop id --rename "city:城市"` | — |
+| **筛选后按多列排序** | `filter big.csv --where "amount>100" --order "city,amount:desc" -o out.csv` | `GET /rows?where=&order=` |
+| **多列排序** | `sort big.csv --by "city,amount:desc"` | `POST /sort` |
 | **改数据（不重写原文件）** | `edit set …` / `edit insert …` / `edit export -o fixed.csv` | `POST /edit` |
 | **按某列拆成多个文件** | `partition big.csv --by city` | `POST /partition` |
 | **多个同构文件拼成一张表** | `concat a.csv b.csv c.csv -o all.csv` | — |

@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.55.0] — 2026-11-10
+
+### Added
+
+- **`filter --order`**: filter and sort in one command —
+  `filter big.csv --where "amount>100" --order "city,amount:desc" -o out.csv`.
+  Filtering stays streaming; the matched rows are staged to a temp file and sorted
+  into place, so only matches touch disk twice.
+- Multi-key sorting (`--by city,amount:desc`) was already implemented in `sort` but
+  undocumented; the help and README now say so, and a test covers both paths.
+
 ## [0.54.0] — 2026-11-10
 
 ### Docs

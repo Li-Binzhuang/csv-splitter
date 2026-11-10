@@ -2093,3 +2093,57 @@ fn row_function_builds_a_sequence() {
     assert_eq!(lines[2], "B,20,B-2,even");
     assert_eq!(lines[3], "C,30,C-3,odd");
 }
+
+/// Filtering can order its output, and sorting takes several keys.
+#[test]
+fn filter_can_order_and_sort_takes_several_keys() {
+    let dir = TempDir::new("order");
+    let input = dir.join("t.csv");
+    std::fs::write(
+        &input,
+        "city,amount\nCDMX,10\nPuebla,30\nCDMX,20\nTijuana,5\nCDMX,40\n",
+    )
+    .unwrap();
+
+    let out = dir.join("filtered.csv");
+    let status = Command::new(bin())
+        .args([
+            "filter",
+            input.to_str().unwrap(),
+            "--where",
+            "amount>6",
+            "--order",
+            "city,amount:desc",
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&out).unwrap();
+    // Only rows above 6, ordered by city then amount descending.
+    assert_eq!(
+        text, "city,amount\nCDMX,40\nCDMX,20\nCDMX,10\nPuebla,30\n",
+        "{text}"
+    );
+
+    // Multi-key sort on its own file.
+    let sorted = dir.join("sorted.csv");
+    let status = Command::new(bin())
+        .args([
+            "sort",
+            input.to_str().unwrap(),
+            "--by",
+            "city,amount:desc",
+            "-o",
+            sorted.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&sorted).unwrap();
+    assert_eq!(
+        text, "city,amount\nCDMX,40\nCDMX,20\nCDMX,10\nPuebla,30\nTijuana,5\n",
+        "{text}"
+    );
+}
