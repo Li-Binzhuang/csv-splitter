@@ -58,19 +58,6 @@ impl TextEncoding {
     pub fn is_ascii_compatible(&self) -> bool {
         matches!(self, Self::Utf8 { .. } | Self::Gbk | Self::Latin1)
     }
-
-    /// Parse a user-supplied name, for the escape hatch below.
-    pub fn parse_name_exact(raw: &str) -> Option<Self> {
-        match raw.trim().to_ascii_lowercase().as_str() {
-            "utf-8" | "utf8" => Some(Self::Utf8 { bom: false }),
-            "utf-8-bom" | "utf8bom" => Some(Self::Utf8 { bom: true }),
-            "gbk" | "gb18030" => Some(Self::Gbk),
-            "cp1252" | "windows-1252" | "latin1" | "latin-1" | "ansi" => Some(Self::Latin1),
-            "utf-16le" | "utf16le" => Some(Self::Utf16Le),
-            "utf-16be" | "utf16be" => Some(Self::Utf16Be),
-            _ => None,
-        }
-    }
 }
 
 /// Sniff the encoding from the first bytes of a file.

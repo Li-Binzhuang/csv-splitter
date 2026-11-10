@@ -5,8 +5,6 @@
 //! if pivot re-implemented it slightly differently the two commands would print
 //! different totals for the same file.
 
-use std::fmt::Write as _;
-
 /// One aggregate over one column: `amount:sum` means "sum of amount".
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AggOp {
@@ -244,13 +242,6 @@ pub fn format_number(v: f64) -> String {
     } else {
         rounded
     }
-}
-
-/// Build a value from its parts, so no literal carries more precision than f64.
-pub fn render_parts(integer: i64) -> String {
-    let mut out = String::new();
-    let _ = write!(out, "{integer}");
-    out
 }
 
 #[cfg(test)]

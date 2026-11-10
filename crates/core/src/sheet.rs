@@ -19,12 +19,10 @@
 //! questions of every feature — *what are the columns*, *how many rows*, *what
 //! is in this window* — and the answers must not depend on which command asked.
 
-use crate::csv_reader::RecordReader;
-use crate::encoding;
 use crate::formula::Formula;
 use crate::types::Delimiter;
-use crate::workbook::{self, Journal, Op, RowId};
-use std::io::{self, BufReader};
+use crate::workbook::{self, Journal, Op};
+use std::io;
 use std::path::{Path, PathBuf};
 
 /// Options that change how a sheet is read, without changing its contents.
@@ -287,44 +285,10 @@ fn unique_stamp() -> u128 {
     nanos * 1000 + seq
 }
 
-/// Count the records in a file, header excluded (used when a caller only needs
-/// the row count and has no index).
-pub fn count_data_rows(base: &Path) -> io::Result<u64> {
-    let mut records = RecordReader::new(
-        BufReader::with_capacity(256 * 1024, encoding::open_decoded(base)?),
-        256 * 1024,
-    );
-    let mut record = Vec::with_capacity(4096);
-    let mut rows = 0u64;
-    let mut first = true;
-    while records.next_record(&mut record)? {
-        if first {
-            first = false;
-            continue;
-        }
-        rows += 1;
-    }
-    Ok(rows)
-}
-
 /// Whether a base file has any recorded edits — cheap check for callers that
 /// only want to know if the overlay path is needed.
 pub fn has_edits(base: &Path) -> bool {
     Journal::sidecar(base).exists()
-}
-
-/// Identity of the row a caller is looking at.
-///
-/// Exposed so edit handlers can report *which* row an operation landed on
-/// (useful when rows shift under an insert).
-pub fn row_id(sheet: &Sheet, logical: u64) -> Option<RowId> {
-    let sidecar = crate::index::SparseIndex::sidecar_path(sheet.base());
-    let index = match crate::index::SparseIndex::load(&sidecar) {
-        Ok(idx) if idx.matches(sheet.base()) => idx,
-        _ => return None,
-    };
-    let map = workbook::RowMap::build(sheet.ops(), index.data_rows());
-    map.id_at(logical)
 }
 
 #[cfg(test)]

@@ -1,6 +1,4 @@
-use crate::csv_reader::{
-    detect_delimiter, parse_csv_line, parse_csv_record_with, QuoteStyle, RecordReader,
-};
+use crate::csv_reader::{detect_delimiter, parse_csv_record_with, QuoteStyle, RecordReader};
 use crate::encoding;
 use crate::types::*;
 use rand::Rng;
@@ -206,11 +204,6 @@ pub fn compute_column_stats_with(
     })
     .ok();
     Ok(stats)
-}
-
-/// Kept for API compatibility: parse a plain line without record awareness.
-pub fn parse_plain_line(line: &str, delimiter: Delimiter) -> Vec<String> {
-    parse_csv_line(line, delimiter.byte())
 }
 
 #[cfg(test)]

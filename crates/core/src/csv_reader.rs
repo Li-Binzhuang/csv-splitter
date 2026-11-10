@@ -359,29 +359,6 @@ impl<R: Read> RecordReader<R> {
     }
 }
 
-/// Same as [`RecordReader::next_record`] but decodes to `String`.
-pub fn next_record_string<R: Read>(
-    reader: &mut RecordReader<R>,
-    out: &mut Vec<u8>,
-) -> io::Result<Option<String>> {
-    if !reader.next_record(out)? {
-        return Ok(None);
-    }
-    // Lossy decoding keeps us going on non-UTF-8 bytes instead of failing the job.
-    Ok(Some(String::from_utf8_lossy(out).into_owned()))
-}
-
-/// Count logical CSV records (header included) without loading the file.
-pub fn count_records<R: Read>(reader: R, capacity: usize) -> io::Result<u64> {
-    let mut reader = RecordReader::new(reader, capacity);
-    let mut scratch = Vec::with_capacity(64 * 1024);
-    let mut count = 0u64;
-    while reader.next_record(&mut scratch)? {
-        count += 1;
-    }
-    Ok(count)
-}
-
 /// Resolve a column name against a header, tolerating the noise real files carry.
 ///
 /// Order: exact → trimmed-equal (unique) → trimmed case-insensitive (unique).

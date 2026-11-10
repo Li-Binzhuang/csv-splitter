@@ -62,18 +62,6 @@ impl WindowViewer {
         })
     }
 
-    /// Open with an already-built index (e.g. one built on a worker thread).
-    pub fn with_index(path: &Path, delimiter: Delimiter, index: SparseIndex) -> Self {
-        Self {
-            path: path.to_path_buf(),
-            delimiter,
-            encoding: TextEncoding::Utf8 { bom: false },
-            index,
-            start: 0,
-            rows: Vec::new(),
-        }
-    }
-
     pub fn total_rows(&self) -> u64 {
         self.index.data_rows()
     }
