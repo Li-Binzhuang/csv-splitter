@@ -591,6 +591,24 @@ orders.csv
 API：`GET /layout?path=`，`GET /layout?path=&column=&key=&value=`（设置），
 `/sheet` 的响应里带 `layout`，前端一次请求拿到数据和列宽。
 
+## 编辑与只读命令的关系
+
+只读命令（`filter` / `sort` / `search` / `sql` / `analyze` / `stats` / `groupby` /
+`pivot` / `chart` / `preview`）读的是**原始字节**，不会套用日志里的编辑——这是
+「原始文件不可变」的直接后果。它们会明说：
+
+```
+$ csv-splitter filter orders.csv --where "city=CDMX"
+note: 1 pending edit(s) in orders.csv.journal are not applied by this command;
+      run `csv-splitter edit export orders.csv` to materialise them
+```
+
+要走编辑后的数据，先 `edit export`，再对导出的文件操作。
+
+**HTTP API 不一样**：`/rows` 的 `where` / `order` 会先物化编辑后的表再查，
+因为前端不该看到两套数。物化走临时文件（**每份源文件最多一个**，日志变了就替换旧的），
+并且有 **2 GB 上限**——超了直接报错让你先 `edit export`，而不是悄悄把磁盘写满。
+
 ## 错误信息 / Error output
 
 只有两种形状，脚本可以直接按前缀判断：

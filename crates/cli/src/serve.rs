@@ -66,6 +66,10 @@ pub struct ServerConfig {
 
 pub fn run(cfg: ServerConfig) -> io::Result<()> {
     let root = cfg.root.canonicalize()?;
+    // A previous run may have left materialised copies behind (the process was
+    // killed before their Drop ran). Sweep anything older than an hour: bounded
+    // junk is acceptable, silent accumulation is not.
+    sweep_stale_temp();
     let listener = TcpListener::bind(&cfg.addr)?;
     let local = listener.local_addr()?;
     if !local.ip().is_loopback() {
@@ -76,6 +80,30 @@ pub fn run(cfg: ServerConfig) -> io::Result<()> {
         root.display()
     );
     serve_on(listener, root)
+}
+
+/// Remove materialised sheet copies left by an earlier, killed server.
+fn sweep_stale_temp() {
+    let Ok(entries) = std::fs::read_dir(std::env::temp_dir()) else {
+        return;
+    };
+    let now = std::time::SystemTime::now();
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if !name.starts_with("csvs_sheet_") || !name.ends_with(".csv") {
+            continue;
+        }
+        let too_old = entry
+            .metadata()
+            .ok()
+            .and_then(|m| m.modified().ok())
+            .and_then(|t| now.duration_since(t).ok())
+            .is_some_and(|age| age.as_secs() > 3600);
+        if too_old {
+            std::fs::remove_file(entry.path()).ok();
+        }
+    }
 }
 
 /// Serve until the listener fails. Exposed for tests, which bind port 0.
@@ -1381,6 +1409,37 @@ fn meta(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -
     }
 }
 
+/// A materialised copy plus the journal fingerprint it was built from.
+type MaterialEntry = (u64, u64, csv_splitter_core::sheet::Materialized);
+type MaterialTable = std::sync::Mutex<HashMap<String, MaterialEntry>>;
+
+/// Materialised copies of edited sheets, at most one per source file.
+///
+/// SQL needs a real file, and a temp copy is discarded as soon as the journal
+/// changes. Keeping exactly one is deliberate: the entry exists so paging stays
+/// cheap, not so disk fills up.
+fn material_cache() -> &'static MaterialTable {
+    static CACHE: std::sync::OnceLock<MaterialTable> = std::sync::OnceLock::new();
+    CACHE.get_or_init(|| std::sync::Mutex::new(HashMap::new()))
+}
+
+/// Journal identity: changed mtime or size means the edits moved on.
+fn journal_fingerprint(path: &Path) -> (u64, u64) {
+    let sidecar = Journal::sidecar(path);
+    match std::fs::metadata(&sidecar) {
+        Ok(meta) => {
+            let modified = meta
+                .modified()
+                .ok()
+                .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                .map(|d| d.as_nanos() as u64)
+                .unwrap_or(0);
+            (modified, meta.len())
+        }
+        Err(_) => (0, 0),
+    }
+}
+
 /// Serve a window of the edited sheet (base + journal).
 fn respond_sheet_window(
     stream: &mut TcpStream,
@@ -1535,6 +1594,91 @@ fn rows(
 
     // `where` / `order` turn a raw scan into a filtered, ordered view. They are
     // synonyms for the SQL endpoint, so the two cannot drift apart.
+    //
+    // A file with a journal makes this harder: SQL reads the base bytes, so it
+    // would answer with pre-edit values. The edited sheet is materialised to a temp
+    // file first (and refused above a size ceiling rather than quietly filling the
+    // disk), so filtering and sorting agree with what /rows shows.
+    if (params.contains_key("where") || params.contains_key("order"))
+        && csv_splitter_core::sheet::has_edits(&path)
+    {
+        let options = csv_splitter_core::sheet::ReadOptions {
+            delimiter: delimiter(params),
+        };
+        let fingerprint = journal_fingerprint(&path);
+        let key = path.to_string_lossy().to_string();
+        {
+            let mut guard = material_cache()
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            let stale = match guard.get(&key) {
+                Some((stamp, len, _)) => (*stamp, *len) != fingerprint,
+                None => true,
+            };
+            if stale {
+                // Dropping the old entry removes its temp file.
+                guard.remove(&key);
+                let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
+                drop(rx);
+                match csv_splitter_core::sheet::materialize(&path, &options, &tx) {
+                    Ok(materialised) => {
+                        guard.insert(key.clone(), (fingerprint.0, fingerprint.1, materialised));
+                    }
+                    Err(e) => {
+                        return respond_json(
+                            stream,
+                            422,
+                            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                        )
+                    }
+                }
+            }
+        }
+
+        let mut query = String::from("SELECT * FROM t");
+        if let Some(clause) = filter_clause(params) {
+            query.push_str(" WHERE ");
+            query.push_str(&clause);
+        }
+        if let Some(order) = params.get("order").filter(|o| !o.is_empty()) {
+            let clean: String = order
+                .chars()
+                .filter(|c| c.is_alphanumeric() || matches!(c, ' ' | '_' | '-' | ',' | '.' | ':'))
+                .collect();
+            if clean.trim().is_empty() {
+                return respond_json(stream, 400, r#"{"error":"order must name a column"}"#);
+            }
+            query.push_str(" ORDER BY ");
+            query.push_str(&clean);
+            if params
+                .get("desc")
+                .map(|v| v == "1" || v == "true")
+                .unwrap_or(false)
+            {
+                query.push_str(" DESC");
+            }
+        }
+        let guard = material_cache()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let path_buf = guard
+            .get(&key)
+            .map(|(_, _, m)| m.path().to_path_buf())
+            .unwrap_or_else(|| path.clone());
+        drop(guard);
+        let statement = query;
+        return respond_rows_from_cache(
+            stream,
+            cache,
+            RowWindow {
+                path: &path_buf,
+                statement: &statement,
+                start,
+                count,
+            },
+            params,
+        );
+    }
     if params.contains_key("where") || params.contains_key("order") {
         let mut query = String::from("SELECT * FROM t");
         if let Some(clause) = filter_clause(params) {

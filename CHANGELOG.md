@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.44.0] — 2026-11-10
+
+### Added
+
+- **`/rows?where=|order=` now sees the journal.** A filtered view of an edited sheet
+  used to answer with pre-edit bytes, because SQL reads the file. The edited sheet
+  is materialised to a temp CSV first, cached per source (replaced when the journal
+  changes) and refused above 2 GB with the instruction to `edit export` — better
+  than quietly filling a disk.
+- **Read-only CLI commands warn about pending edits** (`filter`, `sort`, `search`,
+  `sql`, `analyze`, `stats`, `groupby`, `pivot`, `chart`, `preview`): one line naming
+  the journal and the command that materialises it. Silent pre-edit answers were
+  the biggest remaining source of "why does this row still say CDMX".
+- Stale `csvs_sheet_*` temp copies from a killed server are swept at startup (older
+  than an hour).
+
 ## [0.43.0] — 2026-11-10
 
 ### Added

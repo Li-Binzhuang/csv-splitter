@@ -1710,3 +1710,65 @@ fn layout_sidecar_does_not_change_the_data() {
         .unwrap();
     assert_eq!(out.status.code(), Some(2));
 }
+
+/// Read-only commands say when they are ignoring recorded edits, instead of
+/// quietly answering with pre-edit bytes.
+#[test]
+fn read_commands_warn_about_pending_edits() {
+    let dir = TempDir::new("warn");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "city,amount\nCDMX,10\n").unwrap();
+
+    let before = Command::new(bin())
+        .args(["filter", input.to_str().unwrap(), "--where", "city=CDMX"])
+        .output()
+        .unwrap();
+    assert!(
+        !String::from_utf8_lossy(&before.stderr).contains("pending edit"),
+        "no warning without a journal"
+    );
+
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "set",
+            input.to_str().unwrap(),
+            "--row",
+            "0",
+            "--col",
+            "amount",
+            "--value",
+            "999",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    let after = Command::new(bin())
+        .args(["filter", input.to_str().unwrap(), "--where", "city=CDMX"])
+        .output()
+        .unwrap();
+    let stderr = String::from_utf8_lossy(&after.stderr);
+    assert!(stderr.contains("pending edit"), "{stderr}");
+    assert!(
+        stderr.contains("edit export"),
+        "the warning names the fix: {stderr}"
+    );
+    // Exactly one line, not one per code path.
+    assert_eq!(stderr.matches("pending edit").count(), 1, "{stderr}");
+
+    // `edit export` is the documented escape hatch, and it works.
+    let out = dir.join("fixed.csv");
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            input.to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    assert!(std::fs::read_to_string(&out).unwrap().contains("999"));
+}

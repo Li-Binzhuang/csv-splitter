@@ -977,3 +977,35 @@ fn layout_endpoint_reports_and_sets_column_metadata() {
     );
     assert!(body.contains(r#""parameter":"value""#), "{body}");
 }
+
+/// Filtering an edited sheet must see the edits: SQL reads bytes, the journal is
+/// the only place the edits exist, so the sheet is materialised before the query.
+#[test]
+fn filtered_rows_see_the_edits() {
+    let dir = TempDir::new("filteredits");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (_, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=0&col=amount&value=999",
+    );
+    assert!(body.contains("\"op\":\"set\""), "{body}");
+
+    // Unfiltered window: edited value.
+    let (_, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=10");
+    assert!(body.contains("999"), "{body}");
+
+    // Filtered window: same value, because the query runs on the edited sheet.
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&where=city%3DCDMX");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("999"), "filter should see the edit: {body}");
+    assert!(
+        !body.contains("CDMX\",\"10"),
+        "pre-edit value should be gone: {body}"
+    );
+    assert!(
+        !body.contains("Puebla"),
+        "the filter should exclude Puebla: {body}"
+    );
+}

@@ -878,6 +878,7 @@ fn cmd_preview(args: &[String]) -> i32 {
         eprintln!("error: preview needs an <input> path");
         return 2;
     };
+    warn_pending_edits(&input);
 
     let override_delim = if delim == "auto" {
         None
@@ -1218,6 +1219,7 @@ fn cmd_filter(args: &[String]) -> i32 {
         eprintln!("error: filter needs <input>");
         return 2;
     };
+    warn_pending_edits(&input);
     if where_exprs.is_empty() {
         eprintln!("error: filter needs at least one --where <expr>");
         return 2;
@@ -1752,6 +1754,7 @@ fn cmd_stats(args: &[String]) -> i32 {
         eprintln!("error: stats needs an <input> path");
         return 2;
     };
+    warn_pending_edits(&input);
     let delimiter = match parse_delimiter(&delim, &input) {
         Ok(d) => d,
         Err(e) => {
@@ -2070,6 +2073,7 @@ fn cmd_layout(args: &[String]) -> i32 {
         eprintln!("error: layout needs an <input> file");
         return 2;
     };
+    warn_pending_edits(&input);
     let mut layout = match csv_splitter_core::layout::Layout::load(&input) {
         Ok(l) => l,
         Err(e) => return report_failure("layout", format!("cannot read the layout: {e}")),
@@ -2236,6 +2240,7 @@ fn cmd_chart(args: &[String]) -> i32 {
         eprintln!("error: chart needs an <input> file");
         return 2;
     };
+    warn_pending_edits(&input);
     let Some(x) = x else {
         eprintln!("error: chart needs --x <column>");
         return 2;
@@ -2599,6 +2604,7 @@ fn cmd_pivot(args: &[String]) -> i32 {
         eprintln!("error: pivot needs an <input> file");
         return 2;
     };
+    warn_pending_edits(&input);
     if rows.is_empty() {
         eprintln!("error: pivot needs --rows <column[,column]>");
         return 2;
@@ -2803,6 +2809,7 @@ fn cmd_groupby(args: &[String]) -> i32 {
         eprintln!("error: groupby needs <input>");
         return 2;
     };
+    warn_pending_edits(&input);
     if keys.is_empty() {
         eprintln!("error: groupby needs --by <col[,col]>");
         return 2;
@@ -3197,6 +3204,25 @@ fn out_path_or_default(input: &Path, by: &str, format: CompressFormat) -> Result
     )))
 }
 
+/// Remind the user when a read-only command is about to ignore recorded edits.
+///
+/// Filtering a file that has a journal answers with pre-edit bytes, which is
+/// correct but surprising. Saying so costs one line; staying silent costs someone
+/// an hour of "why does this row still say CDMX".
+fn warn_pending_edits(input: &std::path::Path) {
+    let sidecar = csv_splitter_core::workbook::Journal::sidecar(input);
+    if let Ok(journal) = csv_splitter_core::workbook::Journal::load(&sidecar) {
+        if !journal.is_empty() {
+            eprintln!(
+                "note: {} pending edit(s) in {} are not applied by this command; run `csv-splitter edit export {}` to materialise them",
+                journal.len(),
+                sidecar.display(),
+                input.display()
+            );
+        }
+    }
+}
+
 fn cmd_edit(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
     let mut action: Option<String> = None;
@@ -3553,6 +3579,7 @@ fn cmd_analyze(args: &[String]) -> i32 {
         eprintln!("error: analyze needs <input>");
         return 2;
     };
+    warn_pending_edits(&input);
     let delimiter = match parse_delimiter(&delim, &input) {
         Ok(d) => d,
         Err(e) => {

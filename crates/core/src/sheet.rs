@@ -188,6 +188,91 @@ impl Sheet {
     }
 }
 
+/// Where a materialised sheet can live: a temp file next to nothing in particular.
+///
+/// `materialize` exists for the few operations that need a real file rather than a
+/// window: SQL, sorting, anything DuckDB does. It is deliberately *not* the default
+/// path — a 10 GB export should never be copied to disk just to be looked at.
+pub struct Materialized {
+    path: PathBuf,
+    owned: bool,
+}
+
+impl Materialized {
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+}
+
+impl Drop for Materialized {
+    fn drop(&mut self) {
+        if self.owned {
+            std::fs::remove_file(&self.path).ok();
+        }
+    }
+}
+
+/// Ceiling on how much can be materialised implicitly.
+///
+/// Two of these can exist during a query (source and result), so the limit is set
+/// where that still fits comfortably in a laptop's temp directory.
+pub const MAX_MATERIALIZE_BYTES: u64 = 2 * 1024 * 1024 * 1024;
+
+/// Return a path that reflects the journal.
+///
+/// Without edits this is the base file itself (zero cost). With edits the sheet is
+/// written to a temp CSV once and removed when the value is dropped — the caller
+/// gets a plain path to hand to SQL, sort, or anything else that wants a file.
+pub fn materialize(
+    base: &Path,
+    options: &ReadOptions,
+    tx: &crate::types::ProgressSender,
+) -> io::Result<Materialized> {
+    if !has_edits(base) {
+        return Ok(Materialized {
+            path: base.to_path_buf(),
+            owned: false,
+        });
+    }
+    let journal = Journal::load(&Journal::sidecar(base))?;
+    if journal.is_empty() {
+        return Ok(Materialized {
+            path: base.to_path_buf(),
+            owned: false,
+        });
+    }
+    let size = std::fs::metadata(base).map(|m| m.len()).unwrap_or(0);
+    if size > MAX_MATERIALIZE_BYTES {
+        return Err(io::Error::other(format!(
+            "{} is {:.1} GB with {} pending edit(s); materialise it first with `edit export`, because applying edits to a file this size needs that much temp space",
+            base.display(),
+            size as f64 / (1024.0 * 1024.0 * 1024.0),
+            journal.len()
+        )));
+    }
+    let out = std::env::temp_dir().join(format!(
+        "csvs_sheet_{}_{}.csv",
+        std::process::id(),
+        unique_stamp()
+    ));
+    workbook::export(base, journal.ops(), &out, options.delimiter, tx)?;
+    Ok(Materialized {
+        path: out,
+        owned: true,
+    })
+}
+
+fn unique_stamp() -> u128 {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static SEQ: AtomicU64 = AtomicU64::new(0);
+    let seq = SEQ.fetch_add(1, Ordering::Relaxed) as u128;
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    nanos * 1000 + seq
+}
+
 /// Count the records in a file, header excluded (used when a caller only needs
 /// the row count and has no index).
 pub fn count_data_rows(base: &Path) -> io::Result<u64> {
