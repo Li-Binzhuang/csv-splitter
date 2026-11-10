@@ -172,7 +172,7 @@ fn the_page_request_sequence_returns_the_fields_it_reads() {
         "/rows?path=orders.csv&start=0&count=100&where=city%3DCDMX",
     );
     assert_eq!(status, 200, "{body}");
-    assert!(body.contains("\"rowsSoFar\":2"), "{body}");
+    assert!(body.contains("\"total\":2"), "{body}");
     assert!(body.contains("\"hasMore\""), "{body}");
     assert!(!body.contains("Puebla"), "filter leaked other rows: {body}");
 

@@ -40,7 +40,7 @@
 |---|---|---|
 | `GET /health` | — | 存活检查 + 根目录 |
 | `GET /meta` | `path` | 编码、行数、列数、分隔符、是否 ragged |
-| `GET /rows` | `path` `start` `count` `where` `order` `desc` `sql` `format` | 分页窗口；`where`/`order` 走 SQL，**会套用编辑**。响应带 `count`（实际返回行数）、`requested`（请求的）与 `limit`（上限 2000） |
+| `GET /rows` | `path` `start` `count` `where` `order` `desc` `sql` `format` | 分页窗口；`where`/`order` 走 SQL，**套用编辑与公式列**。三条路径（普通/筛选/排序）返回同一组字段：`start` `count` `requested` `limit` `total` `columns` `frozenColumns` `rows` `edited` `operations`（筛选/排序额外有 `hasMore`） |
 | `GET /sheet` | `path` | 列、行数、编辑数、能力清单、列布局、冻结列、是否已建索引（`indexed` / `indexBytes`） |
 | `GET /book` | — | 工作簿：根目录下所有 CSV 及其状态 |
 | `GET /stats` | `path` `sample` | 采样统计 |

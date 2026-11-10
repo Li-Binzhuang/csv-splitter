@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.6.0] — 2026-11-10
+
+### Fixed
+
+- **The three `/rows` paths answered with different fields.** The plain window reported
+  `edited` / `operations` / `frozenColumns` and no `hasMore`; the filtered and ordered
+  windows reported `hasMore` and none of the context. A client reading pages needed two
+  parsers depending on whether a filter was active.
+  All three now report the same set, and the filtered ones say `edited` too, since they
+  materialise a table that includes the journal.
+
+### Verified
+
+- **Read paths see edits.** `view --where`, `view --order` and `/rows?where=` /
+  `/rows?order=` all use edited values: turning the only Puebla row into CDMX makes ten
+  rows match instead of nine, and raising one `qty` to 999 puts it first when ordering
+  descending. A formula column can be filtered on the same way a formatting rule can
+  match it — the filter runs on the finished row in every path.
+
 ## [1.5.0] — 2026-11-10
 
 ### Fixed

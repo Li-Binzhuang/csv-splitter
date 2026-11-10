@@ -72,7 +72,7 @@
 | 按内容定位后修改 | `edit set --find Puebla --col city --value "..."` | — |
 | 区间填充（跟着行走） | `edit fill --col qty --from-row 5 --to-row 10 --value 0` | `action=fill` |
 | 一列拆成多列 | `edit split-column f.csv --col full --by "," --into "first,last,addr"` | — |
-| 分页浏览（套用编辑） | `view f.csv [--where EXPR] [--order COL[--desc]] [--find TEXT [--regex] [--nth N] [--context N]] [--start N] [--count M] [--json]` | `GET /rows?where=` |
+| 分页浏览（筛选/排序都看编辑后的值） | `view f.csv [--where EXPR] [--order COL[--desc]] [--find TEXT [--regex] [--nth N] [--context N]] [--start N] [--count M] [--json]` | `GET /rows?where=` |
 | 查找替换 | `edit replace --from X --to Y [--col C]` | `action=replace` |
 | 删列/改名 | `edit drop --name C` / `edit rename` | `action=drop/rename` |
 | 公式列 | `edit formula --name N --value "EXPR"` | — |

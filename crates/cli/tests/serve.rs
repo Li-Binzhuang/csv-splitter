@@ -412,7 +412,7 @@ fn warm_preloads_the_cache_for_the_first_scroll() {
         &format!("/rows?path=data.csv&sql={encoded}&start=0&count=5"),
     );
     assert_eq!(status, 200, "{rows}");
-    assert!(rows.contains(r#""rowsSoFar":667"#), "{rows}");
+    assert!(rows.contains(r#""total":667"#), "{rows}");
 
     // Warming again is a no-op, not another job.
     let (status, again) = post(&server.addr, &format!("/warm?path=data.csv&sql={encoded}"));
@@ -760,7 +760,7 @@ fn serves_a_builtin_viewer_and_rows_supports_where() {
         "/rows?path=data.csv&where=city%3DCDMX&count=5",
     );
     assert_eq!(status, 200, "{body}");
-    assert!(body.contains("\"rowsSoFar\":2"), "{body}");
+    assert!(body.contains("\"total\":2"), "{body}");
     assert!(!body.contains("Puebla"), "{body}");
 
     // Ordering works too.
@@ -1743,4 +1743,60 @@ fn the_api_can_delete_by_condition() {
     );
     assert!(status == 200 || status == 202, "{body}");
     assert!(body.contains("nothing matched"), "{body}");
+}
+
+/// Every `/rows` path answers with the same fields, and all of them see edits.
+#[test]
+fn all_window_paths_agree_on_shape_and_on_edits() {
+    let dir = TempDir::new("windowshapes");
+    let mut text = String::from("id,city,qty\n");
+    for i in 1..=10 {
+        text.push_str(&format!("{i},CDMX,{}\n", i * 10));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0.clone());
+
+    // An edit that changes what a filter and an order should return.
+    let (status, _) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=2&col=qty&value=999",
+    );
+    assert!(status == 200 || status == 202);
+
+    let paths = [
+        "/rows?path=t.csv&start=0&count=2",
+        "/rows?path=t.csv&where=city%3DCDMX&start=0&count=2",
+        "/rows?path=t.csv&order=qty&desc=1&start=0&count=2",
+    ];
+    let mut shapes = Vec::new();
+    for path in paths {
+        let (status, body) = get(&server.addr, path);
+        assert_eq!(status, 200, "{path}: {body}");
+        let keys: Vec<&str> = [
+            "start",
+            "count",
+            "requested",
+            "limit",
+            "total",
+            "columns",
+            "frozenColumns",
+            "rows",
+            "edited",
+        ]
+        .into_iter()
+        .filter(|key| body.contains(&format!("\"{key}\":")))
+        .collect();
+        shapes.push((path, keys));
+    }
+    let first = &shapes[0].1;
+    for (path, keys) in &shapes {
+        assert_eq!(keys, first, "{path} has a different shape");
+    }
+
+    // Ordering really uses the edited value: 999 must come first.
+    let (_, body) = get(
+        &server.addr,
+        "/rows?path=t.csv&order=qty&desc=1&start=0&count=1",
+    );
+    assert!(body.contains("\"999\""), "{body}");
 }

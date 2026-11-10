@@ -4055,3 +4055,60 @@ fn a_fill_sticks_to_the_rows_it_covered() {
         "the inserted row was not filled: {text}"
     );
 }
+
+/// Filtering and ordering in `view` must use the edited values, not the file's.
+#[test]
+fn view_filters_and_orders_on_edited_values() {
+    let dir = TempDir::new("viewedits");
+    let input = dir.join("t.csv");
+    let mut text = String::from("id,city,qty\n");
+    for i in 1..=10 {
+        let city = if i == 5 { "Puebla" } else { "CDMX" };
+        text.push_str(&format!("{i},{city},{}\n", i * 10));
+    }
+    std::fs::write(&input, text).unwrap();
+    let path = input.to_str().unwrap();
+
+    let run = |args: &[&str]| {
+        assert_eq!(
+            Command::new(bin()).args(args).status().unwrap().code(),
+            Some(0),
+            "{args:?}"
+        );
+    };
+
+    // Turn the one Puebla row into CDMX: now every row matches the filter.
+    run(&[
+        "edit", "set", path, "--row", "5", "--col", "city", "--value", "CDMX",
+    ]);
+    let out = Command::new(bin())
+        .args(["view", path, "--where", "city=CDMX", "--count", "20"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("10 row(s)"), "all ten rows match now: {text}");
+
+    // Raise one value: ordering must put it first.
+    run(&[
+        "edit", "set", path, "--row", "1", "--col", "qty", "--value", "999",
+    ]);
+    let out = Command::new(bin())
+        .args(["view", path, "--order", "qty:desc", "--count", "2"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    let first_row = text
+        .lines()
+        .find(|line| line.contains("999"))
+        .unwrap_or_default();
+    assert!(first_row.starts_with('1'), "999 must sort first: {text}");
+
+    // A computed column can be filtered on, the same way a rule can match it.
+    run(&["edit", "formula", path, "--name", "big", "--value", "qty*2"]);
+    let out = Command::new(bin())
+        .args(["view", path, "--where", "big>1000", "--count", "5"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("row(s) where big>1000"), "{text}");
+}

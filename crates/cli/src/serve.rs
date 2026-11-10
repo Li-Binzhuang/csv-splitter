@@ -2259,6 +2259,7 @@ fn rows(
                 statement: &statement,
                 start,
                 count,
+                requested,
             },
             params,
         );
@@ -2297,6 +2298,7 @@ fn rows(
                 statement: &query,
                 start,
                 count,
+                requested,
             },
             params,
         );
@@ -2332,6 +2334,7 @@ fn rows(
                 statement,
                 start,
                 count,
+                requested,
             },
             params,
         );
@@ -2597,6 +2600,9 @@ struct RowWindow<'a> {
     statement: &'a str,
     start: u64,
     count: u64,
+    /// What the client asked for, before the page cap — reported so a truncated
+    /// answer is not mistaken for a complete one.
+    requested: u64,
 }
 
 /// Render a window of a materialised query result, caching it by (path, SQL).
@@ -2611,6 +2617,7 @@ fn respond_rows_from_cache(
         statement,
         start,
         count,
+        requested,
     } = window;
     let delimiter = delimiter(params);
     let loaded = cache.get_or_load(path, statement, delimiter, || {
@@ -2632,6 +2639,23 @@ fn respond_rows_from_cache(
                 }
             };
             let cols: Vec<String> = cached.columns.iter().map(|c| json_str(c)).collect();
+            // The same context the plain window carries: a client should be able to
+            // render frozen columns and say "edits applied" whichever path answered.
+            let frozen: Vec<String> = csv_splitter_core::layout::Layout::load(path)
+                .map(|l| {
+                    let prefix = l.frozen_prefix(&cached.columns);
+                    cached
+                        .columns
+                        .iter()
+                        .take(prefix)
+                        .map(|c| json_str(c))
+                        .collect()
+                })
+                .unwrap_or_default();
+            let edited = csv_splitter_core::sheet::has_edits(path);
+            let operations = Journal::load(&Journal::sidecar(path))
+                .map(|j| j.len())
+                .unwrap_or(0);
             let body_rows: Vec<String> = rows
                 .iter()
                 .map(|row| {
@@ -2643,10 +2667,14 @@ fn respond_rows_from_cache(
                 stream,
                 200,
                 &format!(
-                    r#"{{"start":{start},"hasMore":{},"rowsSoFar":{},"columns":[{}],"rows":[{}]}}"#,
-                    has_more,
+                    // Same fields the plain path reports: a client that reads one window
+                    // shape should not need a second parser for the filtered one.
+                    r#"{{"start":{start},"count":{},"requested":{requested},"limit":{MAX_ROWS_PER_REQUEST},"total":{},"hasMore":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}],"edited":{edited},"operations":{operations}}}"#,
+                    rows.len(),
                     cached.total(),
+                    has_more,
                     cols.join(","),
+                    frozen.join(","),
                     body_rows.join(",")
                 ),
             )
