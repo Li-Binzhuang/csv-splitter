@@ -1832,6 +1832,7 @@ fn cmd_view(args: &[String]) -> i32 {
     // No `warn_pending_edits` here: unlike the read-only commands, `view` applies them.
 
     let sidecar = csv_splitter_core::workbook::Journal::sidecar(&input);
+    warn_journal_damage(&input);
     let journal = match csv_splitter_core::workbook::Journal::load(&sidecar) {
         Ok(j) => j,
         Err(e) => return report_failure("view", format!("cannot read the journal: {e}")),
@@ -5359,6 +5360,30 @@ fn sheet_path(input: &Path, apply_edits: bool, delimiter: Delimiter) -> Result<S
     })
 }
 
+/// Say when the journal lost records on the way in.
+///
+/// A journal cut off mid-write silently loses its last operation, which reads as "my
+/// edit vanished". Naming it costs one line and turns a mystery into an explanation.
+fn warn_journal_damage(input: &std::path::Path) {
+    let sidecar = csv_splitter_core::workbook::Journal::sidecar(input);
+    if let Ok((_, skipped, skipped_redo)) =
+        csv_splitter_core::workbook::Journal::load_reporting(&sidecar)
+    {
+        for (count, file) in [
+            (skipped, sidecar.clone()),
+            (skipped_redo, sidecar.with_extension("journal.redo")),
+        ] {
+            if count > 0 {
+                eprintln!(
+                    "warning: {count} record(s) in {} could not be read and were ignored \
+                     (a journal cut off mid-write looks like this)",
+                    file.display()
+                );
+            }
+        }
+    }
+}
+
 /// Check a formula before it becomes a journal step: unknown columns and missing
 /// sheets are cheap to spot now and expensive to discover after an export.
 ///
@@ -5727,6 +5752,7 @@ fn cmd_edit(args: &[String]) -> i32 {
         }
     };
     let sidecar = csv_splitter_core::workbook::Journal::sidecar(&input);
+    warn_journal_damage(&input);
     let mut journal = match csv_splitter_core::workbook::Journal::load(&sidecar) {
         Ok(j) => j,
         Err(e) => return report_failure("edit", format!("cannot read {}: {e}", sidecar.display())),

@@ -4517,3 +4517,85 @@ fn a_formula_is_checked_before_it_is_recorded() {
         .unwrap();
     assert_eq!(out.status.code(), Some(0));
 }
+
+/// A journal cut off mid-write loses a record — and says so instead of pretending.
+#[test]
+fn a_truncated_journal_is_reported_not_ignored() {
+    let dir = TempDir::new("truncatedJournal");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,city\n1,A\n2,B\n3,C\n").unwrap();
+    let path = input.to_str().unwrap();
+
+    for row in ["2", "3"] {
+        assert_eq!(
+            Command::new(bin())
+                .args(["edit", "set", path, "--row", row, "--col", "city", "--value", "Z"])
+                .status()
+                .unwrap()
+                .code(),
+            Some(0)
+        );
+    }
+
+    // Cut the journal in the middle of its last record, as an interrupted write would.
+    let journal = dir.join("t.csv.journal");
+    let full = std::fs::read_to_string(&journal).unwrap();
+    let cut = &full[..full.len() - 8];
+    std::fs::write(&journal, cut).unwrap();
+
+    let out = Command::new(bin())
+        .args(["view", path, "--count", "3"])
+        .output()
+        .unwrap();
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("could not be read"),
+        "a lost edit must be reported: {stderr}"
+    );
+    // The readable operations still apply: the first edit survived, the cut one did not.
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains('Z'), "{stdout}");
+}
+
+/// A damaged index or layout sidecar is rebuilt, not trusted.
+#[test]
+fn damaged_sidecars_are_rebuilt() {
+    let dir = TempDir::new("damagedSidecars");
+    let input = dir.join("t.csv");
+    let mut text = String::from("id,city\n");
+    for i in 1..=100 {
+        text.push_str(&format!("{i},C{}\n", i % 5));
+    }
+    std::fs::write(&input, text).unwrap();
+    let path = input.to_str().unwrap();
+
+    assert_eq!(
+        Command::new(bin())
+            .args(["index", path])
+            .status()
+            .unwrap()
+            .code(),
+        Some(0)
+    );
+    let index = dir.join("t.csv.idx");
+    std::fs::write(&index, b"garbage").unwrap();
+
+    // The page still has the right rows: a rebuilt index, not an error and not a wrong
+    // answer.
+    let out = Command::new(bin())
+        .args(["preview", path, "--start-row", "90", "--rows", "2"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("91"), "{stdout}");
+
+    // A layout file full of nonsense falls back to defaults instead of refusing to open
+    // the file.
+    let layout = dir.join("t.csv.view");
+    std::fs::write(&layout, b"\x00garbage\n").unwrap();
+    let out = Command::new(bin()).args(["layout", path]).output().unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("width"), "{stdout}");
+}

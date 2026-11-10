@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.11.0] — 2026-11-10
+
+### Fixed
+
+- **A journal cut off mid-write dropped its last operation without a word.** The records
+  that could be read still applied, and the partial one was silently ignored — which
+  reads as "my edit vanished". It now says
+  `warning: 1 record(s) in t.csv.journal could not be read and were ignored`,
+  naming the file, and separately for the redo sidecar.
+
+### Verified
+
+- Damage handling, one sidecar at a time: a truncated journal keeps the readable
+  operations and reports the rest; a garbage or truncated `.idx` is rebuilt and the
+  rebuilt index still points at the right rows; a nonsense `.view` falls back to
+  defaults; nine failure modes leave no partial output. Append-only lines are why an
+  interruption costs one operation rather than the whole history.
+
 ## [1.10.0] — 2026-11-10
 
 ### Verified

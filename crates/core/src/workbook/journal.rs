@@ -44,6 +44,38 @@ impl Journal {
         })
     }
 
+    /// Load, and say how many records could not be read.
+    ///
+    /// A journal cut off mid-write loses its last operation — that is unavoidable — but
+    /// it should not be lost *silently*: the caller can then tell the user that a step
+    /// was dropped, which is the difference between "my edit vanished" and "the tool
+    /// said the journal ended early".
+    pub fn load_reporting(path: &Path) -> io::Result<(Self, usize, usize)> {
+        let (ops, skipped_ops) = Self::read_ops_reporting(path)?;
+        let (redo, skipped_redo) = Self::read_ops_reporting(&path.with_extension("journal.redo"))?;
+        Ok((Self { ops, redo }, skipped_ops, skipped_redo))
+    }
+
+    fn read_ops_reporting(path: &Path) -> io::Result<(Vec<Op>, usize)> {
+        if !path.exists() {
+            return Ok((Vec::new(), 0));
+        }
+        let mut reader = RecordReader::new(
+            BufReader::with_capacity(1024 * 1024, File::open(path)?),
+            1024 * 1024,
+        );
+        let mut record = Vec::with_capacity(4096);
+        let mut ops = Vec::new();
+        let mut skipped = 0usize;
+        while reader.next_record(&mut record)? {
+            match parse_op(&record) {
+                Some(op) => ops.push(op),
+                None => skipped += 1,
+            }
+        }
+        Ok((ops, skipped))
+    }
+
     fn read_ops(path: &Path) -> io::Result<Vec<Op>> {
         if !path.exists() {
             return Ok(Vec::new());
