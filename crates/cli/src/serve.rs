@@ -7,6 +7,10 @@
 //!
 //! Endpoints (all read-only):
 //!   GET /                          (built-in HTML viewer, no build step)
+//!   GET  /edit?path=REL                            (pending edits, or the edited window)
+//!   POST /edit?path=REL&action=set&row=N&col=C&value=V   (record an edit)
+//!   POST /edit?path=REL&action=undo                (undo the last edit)
+//!   POST /edit?path=REL&action=export&out=DEST     (materialise into a CSV job)
 //!   GET /health
 //!   GET /meta?path=REL
 //!   GET /rows?path=REL&start=N&count=M
@@ -43,6 +47,7 @@ use csv_splitter_core::search::{search as search_scan, SearchSpec};
 use csv_splitter_core::splitter::run_split_threads;
 use csv_splitter_core::sql;
 use csv_splitter_core::viewer::WindowViewer;
+use csv_splitter_core::workbook::{self, Journal, Op};
 use csv_splitter_core::{CompressFormat, Delimiter, ProgressEvent, SplitConfig};
 use std::collections::HashMap;
 use std::io::{self, BufRead, BufReader, Write};
@@ -134,6 +139,7 @@ fn handle(
             "/sort" => start_sort(&mut stream, root, jobs, &params),
             "/dedupe" => start_dedupe(&mut stream, root, jobs, &params),
             "/partition" => start_partition(&mut stream, root, jobs, &params),
+            "/edit" => edit_apply(&mut stream, root, jobs, &params),
             _ => respond_json(&mut stream, 404, r#"{"error":"unknown endpoint"}"#),
         };
     }
@@ -151,6 +157,7 @@ fn handle(
         "/search" => search(&mut stream, root, &params),
         "/files" => files(&mut stream, root, &params),
         "/analyze" => analyze(&mut stream, root, &params),
+        "/edit" => edit_state(&mut stream, root, &params),
         "/groupby" => group_by(&mut stream, root, cache, &params),
         "/download" => download(&mut stream, root, &params),
         "/export" => export(&mut stream, root, &params),
@@ -160,7 +167,7 @@ fn handle(
         _ => respond_json(
             &mut stream,
             404,
-            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm"]}"#,
+            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/edit","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
         ),
     }
 }
@@ -449,6 +456,248 @@ fn start_dedupe(
         }
     });
     respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
+}
+
+/// Report the pending edits for a file (GET /edit).
+fn edit_state(
+    stream: &mut TcpStream,
+    root: &Path,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return bad_path(stream),
+    };
+    let sidecar = Journal::sidecar(&path);
+    let journal = match Journal::load(&sidecar) {
+        Ok(j) => j,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let logical_rows = workbook::logical_rows(&path, journal.ops()).unwrap_or(0);
+    let ops: Vec<String> = journal
+        .ops()
+        .iter()
+        .map(|op| {
+            format!(
+                r#"{{"op":{},"description":{}}}"#,
+                json_str(op.tag()),
+                json_str(&op.describe())
+            )
+        })
+        .collect();
+    respond_json(
+        stream,
+        200,
+        &format!(
+            r#"{{"path":{},"journal":{},"operations":{},"logicalRows":{},"ops":[{}]}}"#,
+            json_str(&params.get("path").cloned().unwrap_or_default()),
+            json_str(&sidecar.to_string_lossy()),
+            journal.len(),
+            logical_rows,
+            ops.join(",")
+        ),
+    )
+}
+
+/// Record an edit (POST /edit?action=...), or start the export job.
+fn edit_apply(
+    stream: &mut TcpStream,
+    root: &Path,
+    jobs: &JobRegistry,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return bad_path(stream),
+    };
+    let Some(action) = params.get("action") else {
+        return bad_request(
+            stream,
+            "action is required",
+            "action",
+            "set|insert|delete|replace|undo|export",
+        );
+    };
+    let sidecar = Journal::sidecar(&path);
+    let mut journal = match Journal::load(&sidecar) {
+        Ok(j) => j,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+
+    if action == "export" {
+        let Some(out) = resolve_out(root, params, "out") else {
+            return bad_out(stream);
+        };
+        let ops = journal.ops().to_vec();
+        let delimiter = delimiter(params);
+        let base = path.clone();
+        let result_path = out.clone();
+        let id = jobs.submit("edit-export", move |tx| {
+            match workbook::export(&base, &ops, &out, delimiter, &tx) {
+                Ok(summary) => {
+                    tx.send(ProgressEvent::Info(format!(
+                        "{} rows × {} columns",
+                        summary.rows,
+                        summary.columns.len()
+                    )))
+                    .ok();
+                    tx.send(ProgressEvent::Finished {
+                        output: result_path,
+                    })
+                    .ok();
+                }
+                Err(e) => {
+                    tx.send(ProgressEvent::Error(e.to_string())).ok();
+                }
+            }
+        });
+        return respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)));
+    }
+
+    if action == "undo" {
+        return match journal.undo() {
+            Some(op) => match journal.save(&sidecar) {
+                Ok(()) => respond_json(
+                    stream,
+                    200,
+                    &format!(
+                        r#"{{"undone":{},"operations":{}}}"#,
+                        json_str(&op.describe()),
+                        journal.len()
+                    ),
+                ),
+                Err(e) => respond_json(
+                    stream,
+                    422,
+                    &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                ),
+            },
+            None => respond_json(stream, 409, r#"{"error":"nothing to undo"}"#),
+        };
+    }
+
+    let number = |name: &str| -> Option<u64> { params.get(name).and_then(|v| v.parse().ok()) };
+    let op = match action.as_str() {
+        "set" => {
+            let (Some(row), Some(column), Some(value)) =
+                (number("row"), params.get("col"), params.get("value"))
+            else {
+                return bad_request(
+                    stream,
+                    "set needs row, col and value",
+                    "row",
+                    "row=<n>&col=<name>&value=<text>",
+                );
+            };
+            Op::SetCell {
+                row,
+                column: column.clone(),
+                value: value.clone(),
+            }
+        }
+        "delete" => {
+            let (Some(row), Some(count)) = (number("row"), number("count")) else {
+                return bad_request(
+                    stream,
+                    "delete needs row and count",
+                    "row",
+                    "row=<n>&count=<k>",
+                );
+            };
+            Op::DeleteRows { at: row, count }
+        }
+        "insert" => {
+            let Some(row) = number("row") else {
+                return bad_request(stream, "insert needs row", "row", "row=<n>&value=a,b,c");
+            };
+            let raw = params.get("value").cloned().unwrap_or_default();
+            let cells = if raw.trim().is_empty() {
+                Vec::new()
+            } else {
+                csv_splitter_core::csv_reader::parse_csv_record(&raw, b',')
+            };
+            Op::InsertRows {
+                at: row,
+                rows: vec![cells],
+            }
+        }
+        "replace" => {
+            let (Some(from), Some(to)) = (params.get("from"), params.get("to")) else {
+                return bad_request(
+                    stream,
+                    "replace needs from and to",
+                    "from",
+                    "from=<old>&to=<new>&col=<name>",
+                );
+            };
+            Op::Substitute {
+                column: params.get("col").cloned(),
+                from: from.clone(),
+                to: to.clone(),
+            }
+        }
+        "drop" => {
+            let Some(name) = params.get("name") else {
+                return bad_request(stream, "drop needs name", "name", "name=<column>");
+            };
+            Op::DropColumn { name: name.clone() }
+        }
+        "rename" => {
+            let (Some(from), Some(to)) = (params.get("from"), params.get("to")) else {
+                return bad_request(
+                    stream,
+                    "rename needs from and to",
+                    "from",
+                    "from=<old>&to=<new>",
+                );
+            };
+            Op::RenameColumn {
+                from: from.clone(),
+                to: to.clone(),
+            }
+        }
+        other => {
+            return respond_json(
+                stream,
+                400,
+                &format!(
+                    r#"{{"error":{},"parameter":"action","hint":"set|insert|delete|replace|drop|rename|undo|export"}}"#,
+                    json_str(&format!("unknown action {other}"))
+                ),
+            )
+        }
+    };
+
+    journal.push(op.clone());
+    match journal.save(&sidecar) {
+        Ok(()) => respond_json(
+            stream,
+            200,
+            &format!(
+                r#"{{"op":{},"description":{},"operations":{}}}"#,
+                json_str(op.tag()),
+                json_str(&op.describe()),
+                journal.len()
+            ),
+        ),
+        Err(e) => respond_json(
+            stream,
+            422,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+    }
 }
 
 /// Group and aggregate, returning the result directly (not a file).

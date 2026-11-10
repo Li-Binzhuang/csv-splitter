@@ -42,6 +42,7 @@ fn main() -> ExitCode {
         Some("analyze") => cmd_analyze(&args[1..]),
         Some("dedupe") => cmd_dedupe(&args[1..]),
         Some("columns") => cmd_columns(&args[1..]),
+        Some("edit") => cmd_edit(&args[1..]),
         Some("partition") => cmd_partition(&args[1..]),
         Some("concat") => cmd_concat(&args[1..]),
         Some("groupby") => cmd_groupby(&args[1..]),
@@ -88,6 +89,7 @@ COMMANDS
   analyze  <input>               Per-column profile: empties, distinct, numeric summary
   dedupe   <input> -o F          Drop duplicate rows (whole row or --by columns)
   columns  <input>                Keep/drop/rename columns (-o writes the result)
+  edit     <action> <input>      Spreadsheet-style edits over an immutable base
   partition <input> --by COL      One file per distinct value of COL (tar/zip)
   concat   <a.csv> <b.csv> ...    Glue same-shaped files into one (header checked)
   groupby  <input> --by K --agg A Group and aggregate into a CSV
@@ -136,6 +138,18 @@ SEARCH OPTIONS
       --show <n>          Also print the first n matching rows
       --json              Emit JSON
   -d, --delim <c>         Delimiter (default: auto)
+
+EDIT ACTIONS  (the base file is never modified; edits live in <file>.journal)
+  set      --row N --col C --value V     Change one cell
+  insert   --row N --value "a,b,c"       Insert a row at logical position N
+  delete   --row N --count K             Delete K rows from position N
+  replace  --from X --to Y [--col C]     Replace text in one column or every column
+  formula  --name N --value EXPR         Append a computed column (EXPR parsed later)
+  drop     --name C                      Drop a column
+  rename   --from A --to B               Rename a column
+  undo                                   Remove the last edit
+  status                                 Show the pending edits
+  export   [-o FILE]                     Materialise base + edits into a CSV
 
 GROUPBY OPTIONS
       --by <a,b>          Key columns (required)
@@ -2531,6 +2545,319 @@ fn out_path_or_default(input: &Path, by: &str, format: CompressFormat) -> Result
         "{stem}_by_{}.{ext}",
         csv_splitter_core::partition::sanitize(by)
     )))
+}
+
+fn cmd_edit(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut action: Option<String> = None;
+    let mut input: Option<PathBuf> = None;
+    let mut row: Option<u64> = None;
+    let mut col: Option<String> = None;
+    let mut value: Option<String> = None;
+    let mut from: Option<String> = None;
+    let mut to: Option<String> = None;
+    let mut count: Option<u64> = None;
+    let mut name: Option<String> = None;
+    let mut out: Option<PathBuf> = None;
+    let mut json = false;
+    let mut delim = "auto".to_string();
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--row" => match p
+                .value("--row")
+                .and_then(|v| v.parse().map_err(|_| "bad --row".to_string()))
+            {
+                Ok(v) => row = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--col" => match p.value("--col") {
+                Ok(v) => col = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--value" => match p.value("--value") {
+                Ok(v) => value = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--from" => match p.value("--from") {
+                Ok(v) => from = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--to" => match p.value("--to") {
+                Ok(v) => to = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--count" => match p
+                .value("--count")
+                .and_then(|v| v.parse().map_err(|_| "bad --count".to_string()))
+            {
+                Ok(v) => count = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--name" => match p.value("--name") {
+                Ok(v) => name = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-o" | "--out" => match p.value("--out") {
+                Ok(v) => out = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--json" => json = true,
+            "-d" | "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => {
+                if action.is_none() {
+                    action = Some(other.to_string());
+                } else if input.is_none() {
+                    input = Some(PathBuf::from(other));
+                } else {
+                    eprintln!("error: unexpected argument: {other}");
+                    return 2;
+                }
+            }
+        }
+    }
+
+    let Some(action) = action else {
+        eprintln!(
+            "error: edit needs an action: set | insert | delete | replace | undo | status | export"
+        );
+        return 2;
+    };
+    let Some(input) = input else {
+        eprintln!("error: edit needs a base file");
+        return 2;
+    };
+    let delimiter = match parse_delimiter(&delim, &input) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let sidecar = csv_splitter_core::workbook::Journal::sidecar(&input);
+    let mut journal = match csv_splitter_core::workbook::Journal::load(&sidecar) {
+        Ok(j) => j,
+        Err(e) => return report_failure("edit", format!("cannot read {}: {e}", sidecar.display())),
+    };
+
+    // Actions that do not modify the journal are handled before any save.
+    match action.as_str() {
+        "status" => {
+            let logical =
+                csv_splitter_core::workbook::logical_rows(&input, journal.ops()).unwrap_or(0);
+            if json {
+                println!(
+                    r#"{{"file":"{}","ops":{},"logicalRows":{},"journal":"{}"}}"#,
+                    input.display(),
+                    journal.len(),
+                    logical,
+                    sidecar.display()
+                );
+            } else {
+                println!("{}", input.display());
+                println!(
+                    "  journal: {} ({} operations)",
+                    sidecar.display(),
+                    journal.len()
+                );
+                for (i, op) in journal.ops().iter().enumerate() {
+                    println!("  {:>3}. {}", i + 1, op.describe());
+                }
+                if journal.is_empty() {
+                    println!("  (no edits yet)");
+                }
+            }
+            return 0;
+        }
+        "export" => {
+            let output = out.unwrap_or_else(|| {
+                let stem = input
+                    .file_stem()
+                    .map(|s| s.to_string_lossy().to_string())
+                    .unwrap_or_else(|| "edited".to_string());
+                input.with_file_name(format!("{stem}.edited.csv"))
+            });
+            let (tx, rx) = mpsc::channel();
+            let reporter = spawn_reporter("edit", rx, json);
+            let result =
+                csv_splitter_core::workbook::export(&input, journal.ops(), &output, delimiter, &tx);
+            drop(tx);
+            let _ = reporter.join();
+            return match result {
+                Ok(summary) => {
+                    if json {
+                        println!(
+                            r#"{{"rows":{},"bytes":{},"columns":["{}"]}}"#,
+                            summary.rows,
+                            summary.bytes,
+                            summary.columns.join(r#"",""#)
+                        );
+                    } else {
+                        println!(
+                            "✓ {} rows × {} columns → {} ({})",
+                            summary.rows,
+                            summary.columns.len(),
+                            output.display(),
+                            human_bytes(summary.bytes)
+                        );
+                    }
+                    0
+                }
+                Err(e) => report_failure("edit", e),
+            };
+        }
+        "undo" => {
+            return match journal.undo() {
+                Some(op) => {
+                    if let Err(e) = journal.save(&sidecar) {
+                        return report_failure("edit", format!("cannot save the journal: {e}"));
+                    }
+                    println!("✓ undone: {}", op.describe());
+                    0
+                }
+                None => {
+                    eprintln!("nothing to undo");
+                    1
+                }
+            };
+        }
+        _ => {}
+    }
+
+    let op = match action.as_str() {
+        "set" => {
+            let (Some(row), Some(col), Some(value)) = (row, col, value) else {
+                eprintln!("error: set needs --row, --col and --value");
+                return 2;
+            };
+            csv_splitter_core::workbook::Op::SetCell {
+                row,
+                column: col,
+                value,
+            }
+        }
+        "delete" => {
+            let (Some(row), Some(count)) = (row, count) else {
+                eprintln!("error: delete needs --row and --count");
+                return 2;
+            };
+            csv_splitter_core::workbook::Op::DeleteRows { at: row, count }
+        }
+        "replace" => {
+            let (Some(from), Some(to)) = (from, to) else {
+                eprintln!("error: replace needs --from and --to");
+                return 2;
+            };
+            csv_splitter_core::workbook::Op::Substitute {
+                column: col,
+                from,
+                to,
+            }
+        }
+        "insert" => {
+            let Some(row) = row else {
+                eprintln!("error: insert needs --row (and --value as a CSV row)");
+                return 2;
+            };
+            let raw = value.unwrap_or_default();
+            let cells: Vec<String> = if raw.trim().is_empty() {
+                Vec::new()
+            } else {
+                csv_splitter_core::csv_reader::parse_csv_record(&raw, b',')
+            };
+            csv_splitter_core::workbook::Op::InsertRows {
+                at: row,
+                rows: vec![cells],
+            }
+        }
+        "formula" => {
+            let (Some(name), Some(value)) = (name, value) else {
+                eprintln!("error: formula needs --name and --value");
+                return 2;
+            };
+            csv_splitter_core::workbook::Op::AddColumn {
+                name,
+                formula: value,
+            }
+        }
+        "drop" => {
+            let Some(name) = name else {
+                eprintln!("error: drop needs --name");
+                return 2;
+            };
+            csv_splitter_core::workbook::Op::DropColumn { name }
+        }
+        "rename" => {
+            let (Some(from), Some(to)) = (from, to) else {
+                eprintln!("error: rename needs --from and --to");
+                return 2;
+            };
+            csv_splitter_core::workbook::Op::RenameColumn { from, to }
+        }
+        other => {
+            eprintln!("error: unknown edit action '{other}'");
+            return 2;
+        }
+    };
+
+    journal.push(op.clone());
+    if let Err(e) = journal.save(&sidecar) {
+        return report_failure("edit", format!("cannot save the journal: {e}"));
+    }
+    if json {
+        println!(
+            r#"{{"op":"{}","ops":{},"journal":"{}"}}"#,
+            op.tag(),
+            journal.len(),
+            sidecar.display()
+        );
+    } else {
+        println!(
+            "✓ {} ({} operation(s) pending)",
+            op.describe(),
+            journal.len()
+        );
+        println!("  journal: {}", sidecar.display());
+    }
+    0
 }
 
 fn cmd_analyze(args: &[String]) -> i32 {

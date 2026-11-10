@@ -27,5 +27,6 @@ pub mod sql;
 pub mod tempdir;
 pub mod types;
 pub mod viewer;
+pub mod workbook;
 
 pub use types::*;

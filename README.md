@@ -156,6 +156,7 @@ csv-splitter extract chunks.tar -o ./out
 | **摸清一份陌生数据** | `analyze big.csv` | `GET /analyze` |
 | **去重** | `dedupe big.csv --by id -o clean.csv` | `POST /dedupe` |
 | **整理列再发出去** | `columns big.csv --drop id --rename "city:城市"` | — |
+| **改数据（不重写原文件）** | `edit set …` / `edit insert …` / `edit export -o fixed.csv` | `POST /edit` |
 | **按某列拆成多个文件** | `partition big.csv --by city` | `POST /partition` |
 | **多个同构文件拼成一张表** | `concat a.csv b.csv c.csv -o all.csv` | — |
 | **分组汇总** | `groupby big.csv --by city --agg "amount:sum"` | `GET /groupby` |
@@ -473,6 +474,53 @@ error: filter needs at least one --where <expr>
 `hint` 只在**有明确下一步**时出现（编码不支持 → 告诉你用 `convert`；
 列名找不到 → 告诉你用 `analyze` 看真实列名；分组太多 → 建议换列或调上限）。
 不该有的提示语不如没有。
+
+## 编辑 / Editing
+
+表格工具的核心是**改**，不是只看。但把 10 GB 读进内存来改是做不到的，所以这里反过来：
+
+```
+不可变的基础文件  +  追加式操作日志  =  一份「可编辑的表」
+```
+
+每次编辑都往旁边的 `<文件>.journal` 追加一条操作，**基础文件永远不动**。读窗口时把逻辑行映射到物理行再套用改动；导出才物化一次。
+
+```bash
+$ csv-splitter edit set orders.csv --row 1 --col city --value Monterrey
+✓ set row 1 'city' = 'Monterrey' (1 operation(s) pending)
+
+$ csv-splitter edit status orders.csv
+orders.csv
+  journal: orders.csv.journal (1 operations)
+    1. set row 1 'city' = 'Monterrey'
+
+$ csv-splitter edit export orders.csv -o fixed.csv
+✓ 4 rows × 3 columns → fixed.csv (63 B)
+```
+
+| 操作 | CLI | API |
+|---|---|---|
+| 改单元格 | `edit set --row N --col C --value V` | `POST /edit?action=set&row=&col=&value=` |
+| 插入行 | `edit insert --row N --value "a,b,c"` | `action=insert` |
+| 删除行 | `edit delete --row N --count K` | `action=delete` |
+| 查找替换 | `edit replace --from X --to Y [--col C]` | `action=replace` |
+| 删列 / 改名 | `edit drop --name C` / `edit rename --from A --to B` | `action=drop` / `rename` |
+| 撤销 | `edit undo` | `action=undo` |
+| 查看日志 | `edit status` | `GET /edit` |
+| 物化输出 | `edit export [-o F]` | `POST /edit?action=export&out=` |
+
+### 为什么是日志，而不是覆盖写
+
+- **撤销是免费的**：弹掉最后一条。
+- **日志是 CSV**，能在编辑器里打开、能 diff、能跟着数据一起提交。
+- **体积跟操作数走，不跟行数走**：100 万行文件 + 3 次编辑 = **60 字节**。
+- **原文件还在**：改错了直接撤销，或者干脆不导出。
+
+### 编辑是「粘在行上」的，不是「粘在位置上」
+
+先改第 50 万行，再在第 7 行插一行 —— 那条改动会**跟着它原来那一行往下走**，而不是错位到新的第 50 万行。做法是把 `set` 解析成稳定的行身份（基础文件的物理行号 / 插入块编号），插入和删除只改变它们在逻辑空间的位置。
+
+这条如果做错，表现是「改完导出，数据出现在隔壁那一行」—— 而且往往要过几天才发现。
 
 ## 自检 / Self-checks
 

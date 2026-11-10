@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.37.0] — 2026-11-10
+
+### Added
+
+- **Editing without rewriting: `edit` + a sidecar journal.** The base file stays
+  immutable; every edit appends one CSV record to `<file>.journal`, and reading or
+  exporting applies the journal on top. A 17 MB / 1 M row file with three edits
+  gets a **60-byte journal**, and `edit export` materialises 999,998 rows in 2.2 s.
+  - Operations: `set` (cell), `insert` (row), `delete` (rows), `replace` (find &
+    replace in a column or everywhere), `drop` / `rename` (columns), `undo`,
+    `status`, `export`.
+  - Exposed as `POST /edit` (record an edit, undo, or start an export job) and
+    `GET /edit` (pending operations and the logical row count).
+  - **Edits are anchored to rows, not positions**: a `set` on row 500000 then an
+    insert at row 7 keeps the edit on its original row instead of re-pointing it
+    at whatever now sits in slot 500000. Cells are keyed by `RowId`
+    (base physical row / insert-block id), resolved at journal-apply time.
+  - Window reads (`workbook::window`) apply the journal to a slice via the sparse
+    index, so the edited sheet is viewable without materialising it.
+
 ## [0.36.0] — 2026-11-10
 
 ### Changed

@@ -1419,3 +1419,81 @@ fn sort_and_partition_verify_their_claims() {
         assert!(archive.exists(), "{tag} archive missing");
     }
 }
+
+/// Spreadsheet-style editing: the base file is never touched, edits live in a sidecar journal,
+/// and exporting applies them.
+#[test]
+fn edit_journal_never_touches_the_base_file() {
+    let dir = TempDir::new("edit");
+    let input = dir.join("orders.csv");
+    let original = "id,city,amount\n1,CDMX,10\n2,Puebla,20\n3,CDMX,30\n4,Tijuana,40\n";
+    std::fs::write(&input, original).unwrap();
+
+    // set → insert → delete, each recorded in the journal.
+    for args in [
+        vec!["set", "--row", "1", "--col", "city", "--value", "Monterrey"],
+        vec!["insert", "--row", "2", "--value", "9,New,50"],
+        vec!["delete", "--row", "4", "--count", "1"],
+    ] {
+        let mut cmd = Command::new(bin());
+        cmd.arg("edit").arg(args[0]);
+        cmd.arg(input.to_str().unwrap());
+        cmd.args(&args[1..]);
+        let status = cmd.status().unwrap();
+        assert_eq!(status.code(), Some(0), "edit {} failed", args[0]);
+    }
+
+    // The source is byte-identical; the edits are in the sidecar.
+    assert_eq!(std::fs::read_to_string(&input).unwrap(), original);
+    let journal = dir.join("orders.csv.journal");
+    assert!(
+        journal.exists(),
+        "journal should be written next to the data"
+    );
+    let text = std::fs::read_to_string(&journal).unwrap();
+    assert_eq!(text.lines().count(), 3, "{text}");
+
+    // Export applies them.
+    let out = dir.join("fixed.csv");
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            input.to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let fixed = std::fs::read_to_string(&out).unwrap();
+    let lines: Vec<&str> = fixed.lines().collect();
+    assert_eq!(lines[0], "id,city,amount");
+    assert_eq!(lines[2], "2,Monterrey,20", "{fixed}");
+    assert_eq!(lines[3], "9,New,50", "{fixed}");
+    assert_eq!(lines.len(), 5, "one row deleted: {fixed}");
+
+    // Undo removes the last edit (the delete), and status reflects it.
+    let status = Command::new(bin())
+        .args(["edit", "undo", input.to_str().unwrap()])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let out2 = dir.join("fixed2.csv");
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            input.to_str().unwrap(),
+            "-o",
+            out2.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    assert_eq!(
+        std::fs::read_to_string(&out2).unwrap().lines().count(),
+        6,
+        "delete undone"
+    );
+}
