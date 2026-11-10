@@ -2760,3 +2760,33 @@ fn view_aligns_columns_and_can_order() {
     assert!(rows[0].contains("CDMX"), "10 should be first: {text}");
     assert!(rows[1].contains("蒂华纳"), "20 should be second: {text}");
 }
+
+/// Paging deep into a file stays fast: the index is built once, not per page.
+#[test]
+fn view_pages_deep_without_rebuilding_the_sheet() {
+    let dir = TempDir::new("deepview");
+    let input = dir.join("big.csv");
+    let mut text = String::from("id,city,amount\n");
+    for i in 0..100_000 {
+        text.push_str(&format!("{i},C{},{}\n", i % 7, i % 100));
+    }
+    std::fs::write(&input, text).unwrap();
+    let path = input.to_str().unwrap();
+
+    // First run builds the index; it must still answer a deep page quickly.
+    let started = std::time::Instant::now();
+    let out = Command::new(bin())
+        .args(["view", path, "--start", "90000", "--count", "10"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("90000"), "should land on row 90000: {text}");
+    assert!(text.contains("of 100000"), "{text}");
+    // Well under a full scan; a rebuild-per-page version was seconds here.
+    assert!(
+        started.elapsed().as_secs() < 5,
+        "deep paging took {:?}",
+        started.elapsed()
+    );
+}

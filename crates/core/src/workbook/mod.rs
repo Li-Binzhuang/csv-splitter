@@ -42,7 +42,7 @@ pub use rows::{
     RowMap,
 };
 
-pub use export::{export, export_quotes, logical_rows, window, ExportSummary, Window};
+pub use export::{export, export_quotes, logical_rows, window, ExportSummary, Pager, Window};
 
 use std::io::{self, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};

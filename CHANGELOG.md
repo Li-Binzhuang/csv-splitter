@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.73.0] — 2026-11-10
+
+### Changed
+
+- **`Pager` opens the sheet once.** `window()` re-derived the index, column layout and
+  compiled formulas on every call: fine for one HTTP request, wasteful for a pager that
+  walks a file. `view` now holds a `Pager` across pages, so a page costs its rows and
+  nothing else — 600 k rows, page at row 500 000: 0.9 s including the index build.
+  `window()` is now `Pager::open(...).page(...)`, so there is one implementation.
+- `view` reports where the page sits: `(page at rows 500001-500010 of 600000)`.
+
+### Fixed
+
+- Two `concat` tests shared a temp directory name when they started in the same
+  nanosecond, which is how one of them saw another's missing file.
+
 ## [0.72.0] — 2026-11-10
 
 ### Added

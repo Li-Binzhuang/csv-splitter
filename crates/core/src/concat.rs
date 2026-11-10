@@ -140,8 +140,12 @@ mod tests {
     struct Dir(PathBuf);
     impl Dir {
         fn new(tag: &str) -> Self {
+            // A monotonic counter as well as the clock: two tests can start inside
+            // the same nanosecond on a fast machine, and they did.
+            static SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+            let seq = SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             let d = std::env::temp_dir().join(format!(
-                "csvs_concat_{tag}_{}_{}",
+                "csvs_concat_{tag}_{}_{}_{seq}",
                 std::process::id(),
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)

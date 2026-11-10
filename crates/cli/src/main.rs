@@ -1470,6 +1470,7 @@ fn cmd_view(args: &[String]) -> i32 {
     // and paging a materialised+sorted copy when `--order` was asked for.
     let mut rows: Vec<Vec<String>> = Vec::new();
     let mut columns: Vec<String> = Vec::new();
+    let page_total: Option<u64>;
     if let Some(path) = &paging_file {
         if let Ok(file) = std::fs::File::open(path) {
             let mut reader = csv_splitter_core::csv_reader::RecordReader::new(
@@ -1498,21 +1499,28 @@ fn cmd_view(args: &[String]) -> i32 {
             }
         }
         let _ = std::fs::remove_file(path);
+        page_total = None;
     } else {
+        // One `Pager` for the whole scan: the index, column layout and compiled
+        // formulas are built once instead of once per page.
+        let pager = match csv_splitter_core::workbook::Pager::open(&input, &ops, delimiter) {
+            Ok(p) => p,
+            Err(e) => return report_failure("view", e.to_string()),
+        };
+        page_total = Some(pager.total());
         let mut seen: u64 = 0;
         let mut scanned: u64 = 0;
         let chunk = count.max(1_000);
         loop {
-            let win =
-                match csv_splitter_core::workbook::window(&input, &ops, seen, chunk, delimiter) {
-                    Ok(w) => w,
-                    Err(e) => return report_failure("view", e.to_string()),
-                };
+            let win = match pager.page(seen, chunk) {
+                Ok(w) => w,
+                Err(e) => return report_failure("view", e.to_string()),
+            };
             if win.rows.is_empty() {
                 break;
             }
             if columns.is_empty() {
-                columns = win.columns.clone();
+                columns = pager.columns().to_vec();
             }
             for row in &win.rows {
                 scanned += 1;
@@ -1561,6 +1569,14 @@ fn cmd_view(args: &[String]) -> i32 {
     }
     print_table(&columns, &rows);
     let applied = journal.len();
+    if let (Some(total), false) = (page_total, json) {
+        println!(
+            "\n(page at rows {}-{} of {})",
+            start + 1,
+            (start + rows.len() as u64).min(total),
+            total
+        );
+    }
     if applied > 0 || where_expr.is_some() {
         let mut note = String::new();
         if applied > 0 {

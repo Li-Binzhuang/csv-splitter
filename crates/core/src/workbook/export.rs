@@ -285,107 +285,140 @@ pub fn logical_rows(base: &Path, ops: &[Op]) -> io::Result<u64> {
 /// The base file is read only where the window lands: with a row index that is
 /// one or two seeks, without one it is a single sequential pass. Memory is
 /// bounded by the window, not the file — the point of the whole design.
-pub fn window(
-    base: &Path,
-    ops: &[Op],
-    start: u64,
-    count: u64,
-    delimiter: Delimiter,
-) -> io::Result<Window> {
-    let delim = delimiter.byte();
-    let base_columns = base_header(base, delimiter)?;
-    if base_columns.is_empty() {
-        return Ok(Window::default());
+/// A sheet opened for repeated paging.
+///
+/// `window()` does the expensive setup — index, column layout, formula compilation —
+/// on every call, which is fine for one request and wasteful for a pager that walks
+/// the file. `Pager` does it once and then reads pages.
+pub struct Pager {
+    base: std::path::PathBuf,
+    index: crate::index::SparseIndex,
+    columns: Vec<String>,
+    keep: Vec<Option<usize>>,
+    map: crate::workbook::RowMap,
+    edits: crate::workbook::CellEdits,
+    plan: ColumnPlan,
+    refs: crate::formula::Refs,
+    delim: u8,
+    empty: bool,
+}
+
+impl Pager {
+    pub fn open(base: &Path, ops: &[Op], delimiter: Delimiter) -> io::Result<Self> {
+        let delim = delimiter.byte();
+        let base_columns = base_header(base, delimiter)?;
+        if base_columns.is_empty() {
+            return Ok(Self {
+                base: base.to_path_buf(),
+                index: crate::index::SparseIndex::default(),
+                columns: Vec::new(),
+                keep: Vec::new(),
+                map: crate::workbook::RowMap::default(),
+                edits: crate::workbook::CellEdits::default(),
+                plan: ColumnPlan::default(),
+                refs: crate::formula::Refs::default(),
+                delim,
+                empty: true,
+            });
+        }
+        let layout = column_layout(ops, &base_columns)?;
+        let columns: Vec<String> = layout.iter().map(|(n, _)| n.clone()).collect();
+        let sidecar = crate::index::SparseIndex::sidecar_path(base);
+        let index = match crate::index::SparseIndex::load(&sidecar) {
+            Ok(idx) if idx.matches(base) => idx,
+            _ => crate::index::SparseIndex::build(base, crate::index::DEFAULT_INTERVAL)?,
+        };
+        let sheet = compile(ops, index.data_rows());
+        let compiled = compile_formulas_at(base, ops, &columns)?;
+        let plan = ColumnPlan::build(ops, &columns, &compiled);
+        Ok(Self {
+            base: base.to_path_buf(),
+            index,
+            columns,
+            keep: layout.iter().map(|(_, idx)| *idx).collect(),
+            map: sheet.map,
+            edits: sheet.edits,
+            plan,
+            refs: compiled.refs,
+            delim,
+            empty: false,
+        })
     }
-    let layout = column_layout(ops, &base_columns)?;
-    let columns: Vec<String> = layout.iter().map(|(n, _)| n.clone()).collect();
 
-    let sidecar = crate::index::SparseIndex::sidecar_path(base);
-    let index = match crate::index::SparseIndex::load(&sidecar) {
-        Ok(idx) if idx.matches(base) => idx,
-        _ => crate::index::SparseIndex::build(base, crate::index::DEFAULT_INTERVAL)?,
-    };
-    let sheet = compile(ops, index.data_rows());
-    let map = &sheet.map;
-    let edits = &sheet.edits;
-    let compiled = compile_formulas_at(base, ops, &columns)?;
-    let refs = &compiled.refs;
-    let plan = ColumnPlan::build(ops, &columns, &compiled);
+    pub fn total(&self) -> u64 {
+        self.map.len()
+    }
 
-    let keep: Vec<Option<usize>> = layout.iter().map(|(_, idx)| *idx).collect();
+    pub fn columns(&self) -> &[String] {
+        &self.columns
+    }
 
-    // A window that starts at row S can still answer `lag(col, k)` as long as k ≤ S:
-    // read the k rows before the window, feed them through the same pipeline, and the
-    // history is exactly what a full export would have had at that point. The cost is
-    // k rows, not S — memory follows the lag distance, the same rule as everywhere.
-    //
-    // Running totals are different: they need every row before the window, which is a
-    // full pass per request. Those keep reporting #VALUE! here; the honest alternative
-    // would be silently showing totals that start at the window.
-    let needs = plan.row_needs();
-    let (pre_roll, state) = if needs.is_empty() || !needs.running.is_empty() {
-        (0, None)
-    } else {
-        let look_back = needs.max_lag() as u64;
-        let first = start.saturating_sub(look_back);
-        (
-            start.saturating_sub(first),
-            Some(crate::formula::RowState::new(needs)),
-        )
-    };
-
-    let mut pipeline = RowPipeline::new(&columns, &keep, edits, &plan, refs, state);
-    if pre_roll > 0 {
-        for run in map.physical_runs(start.saturating_sub(pre_roll), pre_roll) {
-            match run {
-                Run::Base {
-                    physical,
-                    len,
-                    logical,
-                } => {
-                    let records = index.read_rows(base, physical, len)?;
-                    for (i, record) in records.iter().enumerate() {
-                        let cells = parse_csv_record(
-                            String::from_utf8_lossy(record).trim_end_matches(['\n', '\r']),
-                            delim,
-                        );
-                        // The values are discarded; what matters is the history they
-                        // leave behind for the window's first row.
-                        pipeline.row(&cells, RowId::Base(physical + i as u64), logical + i as u64);
-                    }
-                }
-                Run::Virtual {
-                    id,
-                    logical,
-                    rows: virtual_rows,
-                } => {
-                    for (i, cells) in virtual_rows.iter().enumerate() {
-                        pipeline.row(cells, RowId::Virtual(id), logical + i as u64);
-                    }
-                }
+    /// Read one page, with history pre-rolled when the formulas need it.
+    pub fn page(&self, start: u64, count: u64) -> io::Result<Window> {
+        if self.empty {
+            return Ok(Window::default());
+        }
+        let needs = self.plan.row_needs();
+        let (pre_roll, state) = if needs.is_empty() || !needs.running.is_empty() {
+            (0, None)
+        } else {
+            let look_back = needs.max_lag() as u64;
+            let first = start.saturating_sub(look_back);
+            (
+                start.saturating_sub(first),
+                Some(crate::formula::RowState::new(needs)),
+            )
+        };
+        let mut pipeline = RowPipeline::new(
+            &self.columns,
+            &self.keep,
+            &self.edits,
+            &self.plan,
+            &self.refs,
+            state,
+        );
+        if pre_roll > 0 {
+            for run in self
+                .map
+                .physical_runs(start.saturating_sub(pre_roll), pre_roll)
+            {
+                self.visit(run, &mut pipeline, None)?;
             }
         }
+        let mut rows = Vec::new();
+        for run in self.map.physical_runs(start, count) {
+            self.visit(run, &mut pipeline, Some(&mut rows))?;
+        }
+        Ok(Window {
+            columns: self.columns.clone(),
+            rows,
+            total: self.map.len(),
+        })
     }
 
-    let mut rows = Vec::new();
-    for run in map.physical_runs(start, count) {
+    fn visit(
+        &self,
+        run: Run,
+        pipeline: &mut RowPipeline<'_>,
+        mut out: Option<&mut Vec<Vec<String>>>,
+    ) -> io::Result<()> {
         match run {
             Run::Base {
                 physical,
                 len,
                 logical,
             } => {
-                let records = index.read_rows(base, physical, len)?;
+                let records = self.index.read_rows(&self.base, physical, len)?;
                 for (i, record) in records.iter().enumerate() {
                     let cells = parse_csv_record(
                         String::from_utf8_lossy(record).trim_end_matches(['\n', '\r']),
-                        delim,
+                        self.delim,
                     );
-                    rows.push(pipeline.row(
-                        &cells,
-                        RowId::Base(physical + i as u64),
-                        logical + i as u64,
-                    ));
+                    let row =
+                        pipeline.row(&cells, RowId::Base(physical + i as u64), logical + i as u64);
+                    if let Some(out) = out.as_deref_mut() {
+                        out.push(row);
+                    }
                 }
             }
             Run::Virtual {
@@ -394,17 +427,25 @@ pub fn window(
                 rows: virtual_rows,
             } => {
                 for (i, cells) in virtual_rows.iter().enumerate() {
-                    rows.push(pipeline.row(cells, RowId::Virtual(id), logical + i as u64));
+                    let row = pipeline.row(cells, RowId::Virtual(id), logical + i as u64);
+                    if let Some(out) = out.as_deref_mut() {
+                        out.push(row);
+                    }
                 }
             }
         }
+        Ok(())
     }
+}
 
-    Ok(Window {
-        columns,
-        rows,
-        total: map.len(),
-    })
+pub fn window(
+    base: &Path,
+    ops: &[Op],
+    start: u64,
+    count: u64,
+    delimiter: Delimiter,
+) -> io::Result<Window> {
+    Pager::open(base, ops, delimiter)?.page(start, count)
 }
 
 #[cfg(test)]

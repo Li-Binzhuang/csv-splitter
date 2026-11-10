@@ -32,6 +32,18 @@ pub struct SparseIndex {
     file_len: u64,
 }
 
+impl Default for SparseIndex {
+    fn default() -> Self {
+        Self {
+            offsets: Vec::new(),
+            interval: crate::index::DEFAULT_INTERVAL,
+            records: 0,
+            header_len: 0,
+            file_len: 0,
+        }
+    }
+}
+
 impl SparseIndex {
     pub fn interval(&self) -> u64 {
         self.interval
