@@ -87,11 +87,12 @@ pub fn export_quotes(
     // History for formulas that look backwards. Its size depends on the lag
     // distance and the number of such columns, never on the row count.
     let needs = plan.row_needs();
-    let mut state = if needs.is_empty() {
+    let state = if needs.is_empty() {
         None
     } else {
         Some(crate::formula::RowState::new(needs))
     };
+    let mut pipeline = RowPipeline::new(&columns, &keep, edits, &plan, refs, state);
 
     loop {
         // Which logical row sits at `logical`? Ask the map so inserted blocks and
@@ -99,17 +100,12 @@ pub fn export_quotes(
         match map.row(logical) {
             None => break,
             Some(RowRef::Virtual { id, cells }) => {
-                emit(
+                write_row(
                     &mut out,
-                    &columns,
-                    &keep,
+                    &mut pipeline,
                     &cells,
-                    edits,
                     RowId::Virtual(id),
                     logical,
-                    &plan,
-                    refs,
-                    state.as_mut(),
                     delim,
                 )?;
                 summary.rows += 1;
@@ -132,17 +128,12 @@ pub fn export_quotes(
                     delim,
                     quotes,
                 );
-                emit(
+                write_row(
                     &mut out,
-                    &columns,
-                    &keep,
+                    &mut pipeline,
                     &cells,
-                    edits,
                     RowId::Base(target),
                     logical,
-                    &plan,
-                    refs,
-                    state.as_mut(),
                     delim,
                 )?;
                 summary.rows += 1;
@@ -162,59 +153,99 @@ pub fn export_quotes(
     Ok(summary)
 }
 
-#[allow(clippy::too_many_arguments)]
-fn emit(
+/// Assembles an output row: base values, then edits, then derived columns.
+///
+/// Export and window reads each used to have their own copy of this. When `lag` was
+/// added it had to be written twice, and the two copies disagreed about history:
+/// export kept it, window reads did not. One implementation, one place to change.
+pub struct RowPipeline<'a> {
+    columns: &'a [String],
+    keep: &'a [Option<usize>],
+    edits: &'a CellEdits,
+    plan: &'a ColumnPlan,
+    refs: &'a crate::formula::Refs,
+    /// History for `lag` and `running_total`. `None` in window reads, which start
+    /// mid-file and have no earlier rows to consult.
+    state: Option<crate::formula::RowState>,
+}
+
+impl<'a> RowPipeline<'a> {
+    pub fn new(
+        columns: &'a [String],
+        keep: &'a [Option<usize>],
+        edits: &'a CellEdits,
+        plan: &'a ColumnPlan,
+        refs: &'a crate::formula::Refs,
+        state: Option<crate::formula::RowState>,
+    ) -> Self {
+        Self {
+            columns,
+            keep,
+            edits,
+            plan,
+            refs,
+            state,
+        }
+    }
+
+    /// Build one row.
+    pub fn row(&mut self, base_cells: &[String], id: RowId, row_number: u64) -> Vec<String> {
+        let mut cells: Vec<String> = Vec::with_capacity(self.columns.len());
+        for (idx, column) in self.columns.iter().enumerate() {
+            let raw = match self.keep.get(idx).copied().flatten() {
+                Some(base_idx) => base_cells.get(base_idx).cloned().unwrap_or_default(),
+                None => String::new(),
+            };
+            let value = match self.edits.cell(id, column) {
+                Some(v) => v.to_string(),
+                None => self.edits.substitute(column, &raw),
+            };
+            cells.push(value);
+        }
+        self.edits.apply_blocks(self.columns, id, &mut cells);
+        self.edits.apply_rules(self.columns, &mut cells);
+
+        if let Some(state) = self.state.as_mut() {
+            // A running total includes the current row, so the sums are folded in
+            // before evaluation; the row is remembered afterwards, so `lag(col, 1)`
+            // sees the row before this one and not this one.
+            let row = as_map(self.columns, &cells);
+            state.observe_sums(&row);
+            self.plan
+                .apply(self.columns, &mut cells, self.refs, row_number, Some(state));
+            let row = as_map(self.columns, &cells);
+            state.push_row(&row);
+        } else {
+            // Window reads start mid-file: the rows before were never read, so the
+            // formulas report #VALUE! rather than pretending this is row one.
+            self.plan
+                .apply(self.columns, &mut cells, self.refs, row_number, None);
+        }
+        cells
+    }
+}
+
+/// Assemble one row and write it.
+fn write_row(
     out: &mut impl Write,
-    columns: &[String],
-    keep: &[Option<usize>],
+    pipeline: &mut RowPipeline<'_>,
     base_cells: &[String],
-    edits: &CellEdits,
     id: RowId,
     row_number: u64,
-    plan: &ColumnPlan,
-    refs: &crate::formula::Refs,
-    state: Option<&mut crate::formula::RowState>,
     delim: u8,
 ) -> io::Result<()> {
-    let mut cells: Vec<String> = Vec::with_capacity(columns.len());
-    for (idx, column) in columns.iter().enumerate() {
-        let raw = match keep[idx] {
-            Some(base_idx) => base_cells.get(base_idx).cloned().unwrap_or_default(),
-            None => String::new(),
-        };
-        let value = match edits.cell(id, column) {
-            Some(v) => v.to_string(),
-            None => edits.substitute(column, &raw),
-        };
-        cells.push(value);
-    }
-    edits.apply_blocks(columns, id, &mut cells);
-    edits.apply_rules(columns, &mut cells);
+    let cells = pipeline.row(base_cells, id, row_number);
+    let fields: Vec<&str> = cells.iter().map(String::as_str).collect();
+    out.write_all(join_csv_line(&fields, delim).as_bytes())
+}
 
-    // History: totals are folded in before evaluation (a running total includes the
-    // current row), the row itself is remembered after it, so `lag(col, 1)` sees the
-    // row before this one and not this one.
-    if let Some(state) = state {
-        let row: HashMap<String, String> = columns
-            .iter()
-            .zip(cells.iter())
-            .map(|(c, v)| (c.clone(), v.clone()))
-            .collect();
-        state.observe_sums(&row);
-        // Derived columns are evaluated against the finished row, so a formula may
-        // read a value that was just edited.
-        plan.apply(columns, &mut cells, refs, row_number, Some(state));
-        let row: HashMap<String, String> = columns
-            .iter()
-            .zip(cells.iter())
-            .map(|(c, v)| (c.clone(), v.clone()))
-            .collect();
-        state.push_row(&row);
-    } else {
-        plan.apply(columns, &mut cells, refs, row_number, None);
-    }
-    let refs: Vec<&str> = cells.iter().map(String::as_str).collect();
-    out.write_all(join_csv_line(&refs, delim).as_bytes())
+/// Column name → value, the shape formula evaluation wants.
+fn as_map(columns: &[String], cells: &[String]) -> HashMap<String, String> {
+    columns
+        .iter()
+        .zip(cells.iter())
+        .map(|(c, v)| (c.clone(), v.clone()))
+        .collect()
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -281,13 +312,8 @@ pub fn window(
     let refs = &compiled.refs;
     let plan = ColumnPlan::build(ops, &columns, &compiled);
 
-    let row_shape = RowShape {
-        columns: &columns,
-        layout: &layout,
-        edits,
-        plan: &plan,
-        refs,
-    };
+    let keep: Vec<Option<usize>> = layout.iter().map(|(_, idx)| *idx).collect();
+    let mut pipeline = RowPipeline::new(&columns, &keep, edits, &plan, refs, None);
     let mut rows = Vec::new();
     for run in map.physical_runs(start, count) {
         match run {
@@ -302,8 +328,7 @@ pub fn window(
                         String::from_utf8_lossy(record).trim_end_matches(['\n', '\r']),
                         delim,
                     );
-                    rows.push(shape(
-                        &row_shape,
+                    rows.push(pipeline.row(
                         &cells,
                         RowId::Base(physical + i as u64),
                         logical + i as u64,
@@ -316,12 +341,7 @@ pub fn window(
                 rows: virtual_rows,
             } => {
                 for (i, cells) in virtual_rows.iter().enumerate() {
-                    rows.push(shape(
-                        &row_shape,
-                        cells,
-                        RowId::Virtual(id),
-                        logical + i as u64,
-                    ));
+                    rows.push(pipeline.row(cells, RowId::Virtual(id), logical + i as u64));
                 }
             }
         }
@@ -332,46 +352,4 @@ pub fn window(
         rows,
         total: map.len(),
     })
-}
-
-/// Project a base row (or an inserted one) onto the journal's column layout.
-/// What every row needs to be assembled: the same for all rows except the row
-/// identity itself.
-struct RowShape<'a> {
-    columns: &'a [String],
-    layout: &'a [(String, Option<usize>)],
-    edits: &'a CellEdits,
-    plan: &'a ColumnPlan,
-    refs: &'a crate::formula::Refs,
-}
-
-fn shape(shape: &RowShape<'_>, base_cells: &[String], id: RowId, row_number: u64) -> Vec<String> {
-    let RowShape {
-        columns,
-        layout,
-        edits,
-        plan,
-        refs,
-    } = shape;
-    let mut out = Vec::with_capacity(columns.len());
-    for (idx, column) in columns.iter().enumerate() {
-        let raw = layout
-            .get(idx)
-            .and_then(|(_, base_idx)| *base_idx)
-            .and_then(|base_idx| base_cells.get(base_idx))
-            .cloned()
-            .unwrap_or_default();
-        let value = match edits.cell(id, column) {
-            Some(v) => v.to_string(),
-            None => edits.substitute(column, &raw),
-        };
-        out.push(value);
-    }
-    edits.apply_blocks(columns, id, &mut out);
-    edits.apply_rules(columns, &mut out);
-    // A window starts mid-file: the rows before it were never read, so history
-    // formulas cannot be answered here. They report #VALUE! rather than pretending
-    // the window's first row is the file's first row.
-    plan.apply(columns, &mut out, refs, row_number, None);
-    out
 }

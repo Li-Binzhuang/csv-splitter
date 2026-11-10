@@ -190,6 +190,7 @@ fn the_documented_serve_port_actually_works() {
 
 /// The API reference must not describe endpoints the server does not serve.
 const API_DOC: &str = include_str!("../../../docs/API.md");
+const CHANGELOG: &str = include_str!("../../../CHANGELOG.md");
 const JOBS: &str = include_str!("../../../crates/core/src/jobs.rs");
 
 #[test]
@@ -295,4 +296,40 @@ fn the_task_index_names_real_commands() {
         unknown.is_empty(),
         "task index names unknown commands: {unknown:?}"
     );
+}
+
+/// The manifest version and the newest changelog entry must agree.
+///
+/// They drifted once without anyone noticing: the release bumps were written with
+/// `replace("## [0.6N] …")` anchors that did not exist yet, so six entries silently
+/// never landed while the code kept moving.
+#[test]
+fn the_changelog_leads_with_the_current_version() {
+    let manifest = include_str!("../../../Cargo.toml");
+    let version = manifest
+        .lines()
+        .find_map(|line| line.strip_prefix("version = \""))
+        .and_then(|rest| rest.split('"').next())
+        .expect("workspace version");
+    let first_entry = CHANGELOG
+        .lines()
+        .find_map(|line| line.strip_prefix("## ["))
+        .and_then(|rest| rest.split(']').next())
+        .expect("a changelog entry");
+    assert_eq!(
+        first_entry, version,
+        "the newest changelog entry is {first_entry}, the manifest says {version}"
+    );
+}
+
+/// Every entry must have a date, so the changelog stays a timeline rather than a
+/// pile of headings.
+#[test]
+fn changelog_entries_are_dated() {
+    let undated: Vec<&str> = CHANGELOG
+        .lines()
+        .filter(|line| line.starts_with("## ["))
+        .filter(|line| !line.contains("— "))
+        .collect();
+    assert!(undated.is_empty(), "entries without a date: {undated:?}");
 }

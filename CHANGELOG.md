@@ -1,5 +1,69 @@
 # Changelog
 
+## [0.69.0] — 2026-11-10
+
+### Changed
+
+- **Export and window reads share one row assembler** (`RowPipeline`). They had a
+  copy each, and adding `lag` in 0.67.0 meant writing it twice — which is how the
+  window copy ended up reporting `#VALUE!` for history it could have had. The
+  pipeline owns the row state, so history advances exactly once per row during
+  export and is absent in windows.
+
+## [0.68.0] — 2026-11-10
+
+### Changed
+
+- **`workbook.rs` (2500 lines) split into four modules**: `mod.rs` (Op, Sheet,
+  column layout), `rows.rs` (row identity, the logical→physical map, cell edits,
+  formula compilation), `journal.rs` (the journal and its text format), and
+  `export.rs` (export and windowed reads). The boundaries follow change rate rather
+  than line count: the journal format is nearly frozen, export touches every row.
+
+## [0.67.0] — 2026-11-10
+
+### Added
+
+- **`lag(col[, k])` and `running_total(col)`**: formulas that see earlier rows.
+  A ring buffer per referenced column, sized by the largest lag, plus one accumulator
+  per running total: 3 M rows / 30 MB exported in 17 MB peak RSS. The first row says
+  `#VALUE!` rather than 0 — a zero delta on row one looks like data.
+
+## [0.66.0] — 2026-11-10
+
+### Added
+
+- **A1 references in formulas**: `B2 * C2` means what a filled-down spreadsheet
+  formula means — column B and C of *this* row, relative to the first data row.
+  A reference needing another row (`B3`) reports `#VALUE!` instead of reading the
+  current row. `[A1]` still means "the column literally named A1".
+
+## [0.65.0] — 2026-11-10
+
+### Added
+
+- **`edit replace --regex`**, reusing the pattern subset conditional formatting
+  already had, so "what can a pattern contain" has one answer. A bad pattern is
+  refused before it becomes a journal step that does nothing.
+
+### Fixed
+
+- **`sort` is now stable across chunks.** Chunk sorting was stable, but the k-way
+  merge broke ties by heap order, so equal keys could come out in an arbitrary
+  sequence once a file was split — an almost-stable sort, which is worse than an
+  unstable one because you only notice when it reorders something.
+
+## [0.64.0] — 2026-11-10
+
+### Added
+
+- **Redo** (`edit redo`, `POST /edit?action=redo`): undone operations wait in
+  `<file>.journal.redo`, so a reader never has to know someone pressed undo. A new
+  edit discards that branch, the way a spreadsheet does.
+- **Rows are 1-based for the user** (`--row 1` is the first data row), matching A1
+  references and every spreadsheet; `--row 0` is refused with an explanation. The
+  journal still stores 0-based physical indices, so existing journals stay valid.
+
 ## [0.63.0] — 2026-11-10
 
 ### Fixed
@@ -1093,7 +1157,7 @@ offset per 1000 rows.
   green on current stable Rust again.
 - Workspace version bumped to 0.2.0.
 
-## [0.1.0]
+## [0.1.0] — 2025-11-10
 
 Initial release: split + compress pipeline, preview, column stats, decompress,
 bilingual GUI.
