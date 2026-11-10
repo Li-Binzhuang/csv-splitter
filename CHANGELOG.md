@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.57.0] — 2026-11-10
+
+### Added
+
+- **Quote-style detection and override** (`crates/core/src/csv_reader.rs`):
+  RFC 4180 (default), `backslash` (`\"` / `\\` escapes), `none` (no quoting).
+  - A file that escapes with backslashes is detected from its first 64 KB and the
+    CLI says so: *"this file looks like it escapes quotes with a backslash — if
+    fields look wrong, re-run with `--quotes backslash`"*.
+  - `preview --quotes backslash|rfc4180|none` reads it correctly.
+  - Why detection matters at all: reading a backslash file as RFC does not fail. It
+    merges or splits fields silently — `Ana | has a \quote\ inside` instead of
+    `has a "quote" inside`, and `["a", "b\\c,d"]` instead of three fields. A test
+    pins that exact wrong output so the failure mode stays documented.
+
 ## [0.56.0] — 2026-11-10
 
 ### Added

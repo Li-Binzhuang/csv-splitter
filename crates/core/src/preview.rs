@@ -1,4 +1,6 @@
-use crate::csv_reader::{detect_delimiter, parse_csv_line, parse_csv_record, RecordReader};
+use crate::csv_reader::{
+    detect_delimiter, parse_csv_line, parse_csv_record_with, QuoteStyle, RecordReader,
+};
 use crate::encoding;
 use crate::types::*;
 use rand::Rng;
@@ -12,6 +14,16 @@ pub fn load_preview(
     path: &Path,
     max_rows: usize,
     delimiter_override: Option<Delimiter>,
+) -> io::Result<CsvPreview> {
+    load_preview_with(path, max_rows, delimiter_override, QuoteStyle::Rfc4180)
+}
+
+/// Same as [`load_preview`], with an explicit quote style.
+pub fn load_preview_with(
+    path: &Path,
+    max_rows: usize,
+    delimiter_override: Option<Delimiter>,
+    quotes: QuoteStyle,
 ) -> io::Result<CsvPreview> {
     let file_size = fs::metadata(path)?.len();
 
@@ -32,7 +44,7 @@ pub fn load_preview(
 
     let mut record = Vec::with_capacity(64 * 1024);
     let headers = if reader.next_record(&mut record)? {
-        parse_csv_record(&String::from_utf8_lossy(&record), delim_byte)
+        parse_csv_record_with(&String::from_utf8_lossy(&record), delim_byte, quotes)
     } else {
         Vec::new()
     };
@@ -51,9 +63,10 @@ pub fn load_preview(
         bytes += record.len() as u64;
         sampled_records += 1;
         if rows.len() < max_rows {
-            rows.push(parse_csv_record(
+            rows.push(parse_csv_record_with(
                 &String::from_utf8_lossy(&record),
                 delim_byte,
+                quotes,
             ));
         }
     }
@@ -88,6 +101,25 @@ pub fn compute_column_stats(
     max_unique_per_col: usize,
     tx: &ProgressSender,
 ) -> io::Result<Vec<ColumnStats>> {
+    compute_column_stats_with(
+        path,
+        delimiter,
+        sample_size,
+        max_unique_per_col,
+        QuoteStyle::Rfc4180,
+        tx,
+    )
+}
+
+/// Same as [`compute_column_stats`], with an explicit quote style.
+pub fn compute_column_stats_with(
+    path: &Path,
+    delimiter: Delimiter,
+    sample_size: usize,
+    max_unique_per_col: usize,
+    quotes: QuoteStyle,
+    tx: &ProgressSender,
+) -> io::Result<Vec<ColumnStats>> {
     let file_size = fs::metadata(path)?.len();
     tx.send(ProgressEvent::PhaseStart {
         phase: "Computing column stats".into(),
@@ -110,7 +142,7 @@ pub fn compute_column_stats(
         .ok();
         return Ok(Vec::new());
     }
-    let headers = parse_csv_record(&String::from_utf8_lossy(&record), delim_byte);
+    let headers = parse_csv_record_with(&String::from_utf8_lossy(&record), delim_byte, quotes);
     let num_cols = headers.len();
 
     // Reservoir sampling: stream every record, keep `sample_size` at random.
@@ -123,7 +155,8 @@ pub fn compute_column_stats(
         bytes_read += record.len() as u64;
         total_rows += 1;
 
-        let parsed = || parse_csv_record(&String::from_utf8_lossy(&record), delim_byte);
+        let parsed =
+            || parse_csv_record_with(&String::from_utf8_lossy(&record), delim_byte, quotes);
         if sampled_rows.len() < sample_size {
             sampled_rows.push(parsed());
         } else {

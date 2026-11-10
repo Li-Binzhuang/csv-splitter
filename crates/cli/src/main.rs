@@ -11,7 +11,7 @@ use csv_splitter_core::filter::{self, scan as filter_scan, FilterSpec};
 use csv_splitter_core::index::{SparseIndex, DEFAULT_INTERVAL};
 use csv_splitter_core::merge::merge_archive;
 use csv_splitter_core::partition::{run_partition, PartitionConfig};
-use csv_splitter_core::preview::{compute_column_stats, load_preview};
+use csv_splitter_core::preview::compute_column_stats;
 use csv_splitter_core::search::{search as search_scan, SearchSpec};
 use csv_splitter_core::sort::SortColumn;
 use csv_splitter_core::splitter::run_split_threads;
@@ -829,6 +829,7 @@ fn cmd_merge(args: &[String]) -> i32 {
 
 fn cmd_preview(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut quotes_text = String::new();
     let mut input: Option<PathBuf> = None;
     let mut rows = 10usize;
     let mut delim = "auto".to_string();
@@ -864,6 +865,13 @@ fn cmd_preview(args: &[String]) -> i32 {
                     return 2;
                 }
             },
+            "--quotes" => match p.value("--quotes") {
+                Ok(v) => quotes_text = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "-d" | "--delim" => match p.value("--delim") {
                 Ok(v) => delim = v,
                 Err(e) => {
@@ -887,6 +895,7 @@ fn cmd_preview(args: &[String]) -> i32 {
         eprintln!("error: preview needs an <input> path");
         return 2;
     };
+    warn_quote_style(&input);
     warn_pending_edits(&input);
 
     let override_delim = if delim == "auto" {
@@ -905,7 +914,14 @@ fn cmd_preview(args: &[String]) -> i32 {
         return preview_from_index(&input, rows, start_row, override_delim, index_path);
     }
 
-    match load_preview(&input, rows, override_delim) {
+    let quotes = match csv_splitter_core::csv_reader::QuoteStyle::parse(&quotes_text) {
+        Ok(q) => q,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    match csv_splitter_core::preview::load_preview_with(&input, rows, override_delim, quotes) {
         Ok(preview) => {
             println!(
                 "{} — {:.1} MB, ~{} rows, delimiter {:?}",
@@ -3582,6 +3598,27 @@ fn warn_pending_edits(input: &std::path::Path) {
     }
 }
 
+/// Warn when a file looks like it uses a different quote escape than RFC 4180.
+///
+/// Reading such a file as RFC does not fail — it silently merges or splits fields —
+/// so the only defence is telling the user before they act on the numbers.
+fn warn_quote_style(input: &std::path::Path) {
+    let Ok(mut file) = csv_splitter_core::encoding::open_decoded(input) else {
+        return;
+    };
+    use std::io::Read;
+    let mut head = Vec::with_capacity(64 * 1024);
+    if file.read_to_end(&mut head).is_ok() {
+        let head = head[..head.len().min(64 * 1024)].to_vec();
+        if let Some(style) = csv_splitter_core::csv_reader::detect_quote_style(&head) {
+            eprintln!(
+                "note: this file looks like it escapes quotes with a backslash ({}); if fields look wrong, re-run with `--quotes backslash`",
+                style.name()
+            );
+        }
+    }
+}
+
 fn cmd_edit(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
     let mut action: Option<String> = None;
@@ -4099,6 +4136,7 @@ fn cmd_analyze(args: &[String]) -> i32 {
         eprintln!("error: analyze needs <input>");
         return 2;
     };
+    warn_quote_style(&input);
     warn_pending_edits(&input);
     let delimiter = match parse_delimiter(&delim, &input) {
         Ok(d) => d,

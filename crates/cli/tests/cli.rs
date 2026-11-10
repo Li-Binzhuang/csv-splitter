@@ -2178,3 +2178,45 @@ fn analyze_sample_stops_early_and_labels_itself() {
     // The sampled run reports fewer rows than the full one.
     assert!(out.contains("100"), "{out}");
 }
+
+/// A backslash-escaped file parses wrong by default, warns, and can be fixed.
+#[test]
+fn quote_style_is_detected_and_can_be_overridden() {
+    let dir = TempDir::new("quotes");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "name,note\nAna,\"has a \\\"quote\\\" inside\"\n").unwrap();
+
+    let default = Command::new(bin())
+        .args(["preview", input.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let stderr = String::from_utf8_lossy(&default.stderr);
+    assert!(stderr.contains("backslash"), "should warn: {stderr}");
+    assert!(
+        stderr.contains("--quotes backslash"),
+        "should name the fix: {stderr}"
+    );
+
+    let fixed = Command::new(bin())
+        .args(["preview", input.to_str().unwrap(), "--quotes", "backslash"])
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8_lossy(&fixed.stdout);
+    assert!(
+        stdout.contains("has a \\\"quote\\\" inside") || stdout.contains("has a \"quote\" inside"),
+        "{stdout}"
+    );
+
+    // A plain RFC file must not warn.
+    let plain = dir.join("plain.csv");
+    std::fs::write(&plain, "a,b\n1,\"x \"\"y\"\" z\"\n").unwrap();
+    let out = Command::new(bin())
+        .args(["preview", plain.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        !stderr.contains("backslash"),
+        "RFC file should not warn: {stderr}"
+    );
+}

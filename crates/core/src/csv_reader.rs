@@ -11,9 +11,59 @@ pub fn strip_bom(s: &str) -> &str {
     s.strip_prefix('\u{feff}').unwrap_or(s)
 }
 
+/// How a file escapes a quote inside a quoted field.
+///
+/// RFC 4180 doubles it (`""`); a lot of exports instead backslash it (`\"`), and
+/// some files never quote at all. Reading a backslash file as RFC 4180 does not
+/// fail — it silently produces fields with stray `\` and swallowed delimiters,
+/// which is the worst possible outcome, so the mismatch is worth detecting.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum QuoteStyle {
+    /// `""` inside quotes.
+    #[default]
+    Rfc4180,
+    /// `\"` and `\\` inside quotes.
+    Backslash,
+    /// No quoting: every delimiter splits, quotes are literal characters.
+    None,
+}
+
+impl QuoteStyle {
+    pub fn parse(raw: &str) -> Result<Self, String> {
+        match raw.trim().to_ascii_lowercase().as_str() {
+            "" | "auto" | "rfc4180" | "rfc" | "double" => Ok(Self::Rfc4180),
+            "backslash" | "escape" | "mysql" => Ok(Self::Backslash),
+            "none" | "raw" | "plain" => Ok(Self::None),
+            other => Err(format!(
+                "unknown quote style '{other}' (use rfc4180/backslash/none)"
+            )),
+        }
+    }
+
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::Rfc4180 => "rfc4180",
+            Self::Backslash => "backslash",
+            Self::None => "none",
+        }
+    }
+}
+
 /// Parse a single CSV line respecting quoted fields.
 /// Properly handles multi-byte UTF-8 characters (e.g. Chinese, Japanese, etc.).
 pub fn parse_csv_line(line: &str, delim: u8) -> Vec<String> {
+    parse_csv_line_with(line, delim, QuoteStyle::Rfc4180)
+}
+
+/// Parse one line with an explicit quote style.
+pub fn parse_csv_line_with(line: &str, delim: u8, style: QuoteStyle) -> Vec<String> {
+    if style == QuoteStyle::None {
+        return line
+            .trim_end_matches(['\n', '\r'])
+            .split(delim as char)
+            .map(str::to_string)
+            .collect();
+    }
     let mut fields = Vec::new();
     let mut current = String::new();
     let mut in_quotes = false;
@@ -23,12 +73,22 @@ pub fn parse_csv_line(line: &str, delim: u8) -> Vec<String> {
     let mut chars = trimmed.chars().peekable();
     while let Some(ch) = chars.next() {
         if in_quotes {
-            if ch == '"' {
-                if chars.peek() == Some(&'"') {
+            if style == QuoteStyle::Backslash && ch == '\\' {
+                match chars.next() {
+                    Some('"') => current.push('"'),
+                    Some('\\') => current.push('\\'),
+                    Some(other) => {
+                        current.push('\\');
+                        current.push(other);
+                    }
+                    None => current.push('\\'),
+                }
+            } else if ch == '"' {
+                if style == QuoteStyle::Backslash || chars.peek() != Some(&'"') {
+                    in_quotes = false;
+                } else {
                     current.push('"');
                     chars.next();
-                } else {
-                    in_quotes = false;
                 }
             } else {
                 current.push(ch);
@@ -48,7 +108,12 @@ pub fn parse_csv_line(line: &str, delim: u8) -> Vec<String> {
 /// Parse one complete CSV record, which may contain embedded newlines inside
 /// quoted fields. A leading BOM is stripped from the first cell.
 pub fn parse_csv_record(record: &str, delim: u8) -> Vec<String> {
-    let mut fields = parse_csv_line(record, delim);
+    parse_csv_record_with(record, delim, QuoteStyle::Rfc4180)
+}
+
+/// Parse a record with an explicit quote style.
+pub fn parse_csv_record_with(record: &str, delim: u8, style: QuoteStyle) -> Vec<String> {
+    let mut fields = parse_csv_line_with(record, delim, style);
     if let Some(first) = fields.first_mut() {
         let stripped = strip_bom(first).to_string();
         *first = stripped;
@@ -363,6 +428,41 @@ pub fn column_candidates(name: &str, headers: &[String]) -> String {
     )
 }
 
+/// Guess the escape style from the first few records.
+///
+/// The tell for backslash escaping is a quoted field containing `\"` *and* no
+/// `""`. A file that has neither is assumed to be RFC 4180, which is the only
+/// reading that needs no evidence beyond convention.
+pub fn detect_quote_style(bytes: &[u8]) -> Option<QuoteStyle> {
+    let text = String::from_utf8_lossy(bytes);
+    let mut doubled = 0usize;
+    let mut backslashed = 0usize;
+    let mut chars = text.chars().peekable();
+    let mut in_quotes = false;
+    while let Some(ch) = chars.next() {
+        if in_quotes {
+            if ch == '"' {
+                if chars.peek() == Some(&'"') {
+                    doubled += 1;
+                    chars.next();
+                } else {
+                    in_quotes = false;
+                }
+            } else if ch == '\\' && chars.peek() == Some(&'"') {
+                backslashed += 1;
+                chars.next();
+            }
+        } else if ch == '"' {
+            in_quotes = true;
+        }
+    }
+    if backslashed > 0 && doubled == 0 {
+        Some(QuoteStyle::Backslash)
+    } else {
+        None
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -489,5 +589,69 @@ mod column_tests {
         let h = headers(&["ID", "City"]);
         assert_eq!(resolve_column("city", &h).unwrap(), 1);
         assert_eq!(resolve_column("id", &h).unwrap(), 0);
+    }
+}
+
+#[cfg(test)]
+mod quote_style_tests {
+    use super::*;
+
+    #[test]
+    fn rfc4180_doubles_the_quote() {
+        let fields = parse_csv_line_with(r##"a,"b""c",d"##, b',', QuoteStyle::Rfc4180);
+        assert_eq!(fields, vec!["a", r#"b"c"#, "d"]);
+    }
+
+    #[test]
+    fn backslash_unescapes_quotes_and_backslashes() {
+        let fields = parse_csv_line_with(r##"a,"b\"c",d"##, b',', QuoteStyle::Backslash);
+        assert_eq!(fields, vec!["a", r#"b"c"#, "d"]);
+        let fields = parse_csv_line_with(r##""x\\y""##, b',', QuoteStyle::Backslash);
+        assert_eq!(fields, vec![r"x\y"]);
+    }
+
+    #[test]
+    fn reading_a_backslash_file_as_rfc_swallows_a_field_silently() {
+        // What the wrong style looks like: the escaped quote closes the field, the
+        // next quote opens one, and the rest of the line is absorbed. Two fields
+        // instead of three, no error — which is exactly why detection matters.
+        let wrong = parse_csv_line_with(r##"a,"b\"c",d"##, b',', QuoteStyle::Rfc4180);
+        assert_eq!(
+            wrong,
+            vec!["a", r#"b\c,d"#],
+            "expected the silent breakage this detector exists to catch"
+        );
+    }
+
+    #[test]
+    fn none_splits_on_every_delimiter() {
+        let fields = parse_csv_line_with(r#""a,b",c"#, b',', QuoteStyle::None);
+        assert_eq!(fields, vec![r#""a"#, r#"b""#, "c"]);
+    }
+
+    #[test]
+    fn detection_separates_the_two_styles() {
+        assert_eq!(
+            detect_quote_style(br#"a,"b""c""#),
+            None,
+            "RFC 4180 is the default"
+        );
+        assert_eq!(
+            detect_quote_style(br#"a,"b\"c""#),
+            Some(QuoteStyle::Backslash)
+        );
+        // A file with both looks like RFC: `""` is the stronger evidence.
+        assert_eq!(detect_quote_style(br#"a,"b\"c","d""e""#), None);
+    }
+
+    #[test]
+    fn style_names_parse() {
+        assert_eq!(QuoteStyle::parse("rfc4180").unwrap(), QuoteStyle::Rfc4180);
+        assert_eq!(
+            QuoteStyle::parse("backslash").unwrap(),
+            QuoteStyle::Backslash
+        );
+        assert_eq!(QuoteStyle::parse("none").unwrap(), QuoteStyle::None);
+        assert!(QuoteStyle::parse("weird").is_err());
     }
 }
