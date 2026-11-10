@@ -2234,6 +2234,7 @@ fn cmd_book(args: &[String]) -> i32 {
 
 fn cmd_lookup(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut quotes_text = String::new();
     let mut input: Option<PathBuf> = None;
     let mut out: Option<PathBuf> = None;
     let mut key: Option<String> = None;
@@ -2247,6 +2248,13 @@ fn cmd_lookup(args: &[String]) -> i32 {
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
+            "--quotes" => match p.value("--quotes") {
+                Ok(v) => quotes_text = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--key" => match p.value("--key") {
                 Ok(v) => key = Some(v),
                 Err(e) => {
@@ -2366,7 +2374,15 @@ fn cmd_lookup(args: &[String]) -> i32 {
     };
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("lookup", rx, quiet || json);
-    let result = csv_splitter_core::lookup::lookup(&input, delimiter, &output, &options, &tx);
+    let quotes = match parse_quotes(&quotes_text) {
+        Ok(q) => q,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let result =
+        csv_splitter_core::lookup::lookup_quotes(&input, delimiter, &output, &options, quotes, &tx);
     drop(tx);
     let _ = reporter.join();
     let summary = match result {
@@ -2889,6 +2905,7 @@ fn cmd_format(args: &[String]) -> i32 {
 
 fn cmd_pivot(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut quotes_text = String::new();
     let mut input: Option<PathBuf> = None;
     let mut out: Option<PathBuf> = None;
     let mut rows: Vec<String> = Vec::new();
@@ -2905,6 +2922,13 @@ fn cmd_pivot(args: &[String]) -> i32 {
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
+            "--quotes" => match p.value("--quotes") {
+                Ok(v) => quotes_text = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--rows" => match p.value("--rows") {
                 Ok(v) => rows = v.split(',').map(|s| s.trim().to_string()).collect(),
                 Err(e) => {
@@ -3037,7 +3061,15 @@ fn cmd_pivot(args: &[String]) -> i32 {
 
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("pivot", rx, quiet || json);
-    let result = csv_splitter_core::pivot::pivot(&input, delimiter, &output, &options, &tx);
+    let quotes = match parse_quotes(&quotes_text) {
+        Ok(q) => q,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let result =
+        csv_splitter_core::pivot::pivot_quotes(&input, delimiter, &output, &options, quotes, &tx);
     drop(tx);
     let _ = reporter.join();
     let summary = match result {
@@ -3121,6 +3153,7 @@ fn cmd_demo(args: &[String]) -> i32 {
 
 fn cmd_groupby(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut quotes_text = String::new();
     let mut input: Option<PathBuf> = None;
     let mut out: Option<PathBuf> = None;
     let mut keys: Vec<String> = Vec::new();
@@ -3134,6 +3167,13 @@ fn cmd_groupby(args: &[String]) -> i32 {
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
+            "--quotes" => match p.value("--quotes") {
+                Ok(v) => quotes_text = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--by" => match p.value("--by") {
                 Ok(v) => keys = v.split(',').map(|s| s.trim().to_string()).collect(),
                 Err(e) => {
@@ -3235,7 +3275,16 @@ fn cmd_groupby(args: &[String]) -> i32 {
         descending,
         max_groups,
     };
-    let result = csv_splitter_core::groupby::groupby(&input, delimiter, &output, &options, &tx);
+    let quotes = match parse_quotes(&quotes_text) {
+        Ok(q) => q,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let result = csv_splitter_core::groupby::groupby_quotes(
+        &input, delimiter, &output, &options, quotes, &tx,
+    );
     drop(tx);
     let _ = reporter.join();
     match result {
@@ -3613,6 +3662,11 @@ fn warn_pending_edits(input: &std::path::Path) {
     }
 }
 
+/// The `--quotes` value for a command, or the RFC default.
+fn parse_quotes(text: &str) -> Result<csv_splitter_core::csv_reader::QuoteStyle, String> {
+    csv_splitter_core::csv_reader::QuoteStyle::parse(text)
+}
+
 /// Warn when a file looks like it uses a different quote escape than RFC 4180.
 ///
 /// Reading such a file as RFC does not fail — it silently merges or splits fields —
@@ -3636,6 +3690,7 @@ fn warn_quote_style(input: &std::path::Path) {
 
 fn cmd_edit(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut quotes_text = String::new();
     let mut action: Option<String> = None;
     let mut input: Option<PathBuf> = None;
     let mut row: Option<u64> = None;
@@ -3697,6 +3752,13 @@ fn cmd_edit(args: &[String]) -> i32 {
                 .and_then(|v| v.parse().map_err(|_| "bad --count".to_string()))
             {
                 Ok(v) => count = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--quotes" => match p.value("--quotes") {
+                Ok(v) => quotes_text = v,
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -3778,6 +3840,13 @@ fn cmd_edit(args: &[String]) -> i32 {
     };
     let delimiter = match parse_delimiter(&delim, &input) {
         Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let quotes = match parse_quotes(&quotes_text) {
+        Ok(q) => q,
         Err(e) => {
             eprintln!("error: {e}");
             return 2;
@@ -3910,8 +3979,14 @@ fn cmd_edit(args: &[String]) -> i32 {
             });
             let (tx, rx) = mpsc::channel();
             let reporter = spawn_reporter("edit", rx, json);
-            let result =
-                csv_splitter_core::workbook::export(&input, journal.ops(), &output, delimiter, &tx);
+            let result = csv_splitter_core::workbook::export_quotes(
+                &input,
+                journal.ops(),
+                &output,
+                delimiter,
+                quotes,
+                &tx,
+            );
             drop(tx);
             let _ = reporter.join();
             return match result {

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.59.0] — 2026-11-10
+
+### Added
+
+- **Quote style reaches the record boundary, not just the field split**
+  (`RecordReader::new_with`). This was the real bug behind the `export --quotes`
+  attempt: in a backslash-escaped file a `\"` does not close a quoted section, so an
+  RFC reader runs past the record and swallows the next line into it. Field-level
+  parsing cannot fix a record that was never separated correctly.
+- `--quotes` now applies to `preview`, `filter`, `groupby`, `pivot`, `lookup` and
+  `edit export` — the commands that either decide matches or write new files.
+- Tests pin the record count under both styles (3 vs 2 for the same bytes), because
+  "the row count is wrong" is a much quieter failure than "the field looks odd".
+
 ## [0.58.0] — 2026-11-10
 
 ### Added

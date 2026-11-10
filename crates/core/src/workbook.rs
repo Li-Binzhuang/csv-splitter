@@ -23,7 +23,9 @@
 //! * **The original stays intact** — if an edit turns out wrong, the source is
 //!   still there, and `export` simply stops applying it.
 
-use crate::csv_reader::{join_csv_line, parse_csv_record, RecordReader};
+use crate::csv_reader::{
+    join_csv_line, parse_csv_record, parse_csv_record_with, QuoteStyle, RecordReader,
+};
 use crate::encoding;
 use crate::formula::Formula;
 use crate::types::{Delimiter, ProgressEvent, ProgressSender};
@@ -1265,6 +1267,25 @@ pub fn export(
     delimiter: Delimiter,
     tx: &ProgressSender,
 ) -> io::Result<ExportSummary> {
+    export_quotes(
+        base,
+        ops,
+        output,
+        delimiter,
+        crate::csv_reader::QuoteStyle::Rfc4180,
+        tx,
+    )
+}
+
+/// Same as [`export`], with an explicit quote style for the base file.
+pub fn export_quotes(
+    base: &Path,
+    ops: &[Op],
+    output: &Path,
+    delimiter: Delimiter,
+    quotes: QuoteStyle,
+    tx: &ProgressSender,
+) -> io::Result<ExportSummary> {
     let delim = delimiter.byte();
     let base_columns = base_header(base, delimiter)?;
     if base_columns.is_empty() {
@@ -1295,9 +1316,10 @@ pub fn export(
     let keep: Vec<Option<usize>> = layout.iter().map(|(_, idx)| *idx).collect();
 
     let reader_bytes = encoding::open_decoded(base)?;
-    let mut records = RecordReader::new(
+    let mut records = RecordReader::new_with(
         BufReader::with_capacity(8 * 1024 * 1024, reader_bytes),
         8 * 1024 * 1024,
+        quotes,
     );
     let mut record = Vec::with_capacity(64 * 1024);
     if !records.next_record(&mut record)? {
@@ -1344,9 +1366,10 @@ pub fn export(
                 if physical == u64::MAX {
                     break;
                 }
-                let cells = parse_csv_record(
+                let cells = parse_csv_record_with(
                     String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
                     delim,
+                    quotes,
                 );
                 emit(
                     &mut out,

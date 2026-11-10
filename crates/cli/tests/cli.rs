@@ -2267,3 +2267,36 @@ fn filter_reads_the_quote_style_it_is_given() {
     assert_eq!(status.code(), Some(0));
     assert_eq!(std::fs::read_to_string(&out).unwrap().lines().count(), 2);
 }
+
+/// A backslash file keeps its record boundaries: the row count is right, not just
+/// the field count.
+#[test]
+fn backslash_files_keep_their_records() {
+    let dir = TempDir::new("bsrecords");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "city,note\nCDMX,\"a \\\"b,c\"\nPuebla,plain\n").unwrap();
+
+    let out = dir.join("fixed.csv");
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            input.to_str().unwrap(),
+            "--quotes",
+            "backslash",
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&out).unwrap();
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(
+        lines.len(),
+        3,
+        "two data rows, not one merged record: {text}"
+    );
+    assert_eq!(lines[1], "CDMX,\"a \"\"b,c\"", "{text}");
+    assert_eq!(lines[2], "Puebla,plain", "{text}");
+}

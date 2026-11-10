@@ -14,7 +14,7 @@
 //! to hold `N/A` half-way through does not retroactively become an average of
 //! the numeric rows only — it is reported as non-numeric.
 
-use crate::csv_reader::{join_csv_line, parse_csv_record, RecordReader};
+use crate::csv_reader::{join_csv_line, parse_csv_record_with, QuoteStyle, RecordReader};
 use crate::encoding;
 use crate::types::{Delimiter, ProgressEvent, ProgressSender};
 use std::collections::HashMap;
@@ -73,6 +73,18 @@ pub fn groupby(
     options: &GroupOptions,
     tx: &ProgressSender,
 ) -> io::Result<GroupSummary> {
+    groupby_quotes(path, delimiter, output, options, QuoteStyle::Rfc4180, tx)
+}
+
+/// Same as [`groupby`], with an explicit quote style.
+pub fn groupby_quotes(
+    path: &Path,
+    delimiter: Delimiter,
+    output: &Path,
+    options: &GroupOptions,
+    quotes: QuoteStyle,
+    tx: &ProgressSender,
+) -> io::Result<GroupSummary> {
     let keys = &options.keys;
     let aggs = &options.aggregates;
     let order_by = options.order_by.as_deref();
@@ -95,16 +107,17 @@ pub fn groupby(
     .ok();
 
     let reader = encoding::open_decoded(path)?;
-    let mut records = RecordReader::new(
+    let mut records = RecordReader::new_with(
         BufReader::with_capacity(8 * 1024 * 1024, reader),
         8 * 1024 * 1024,
+        quotes,
     );
     let delim = delimiter.byte();
     let mut record = Vec::with_capacity(64 * 1024);
     if !records.next_record(&mut record)? {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "empty file"));
     }
-    let headers = parse_csv_record(&String::from_utf8_lossy(&record), delim);
+    let headers = parse_csv_record_with(&String::from_utf8_lossy(&record), delim, quotes);
 
     let key_indices = resolve(&headers, keys)?;
     let mut agg_indices = Vec::with_capacity(aggs.len());
@@ -119,7 +132,7 @@ pub fn groupby(
     while records.next_record(&mut record)? {
         rows += 1;
         let text = String::from_utf8_lossy(&record);
-        let fields = parse_csv_record(text.trim_end_matches(['\n', '\r']), delim);
+        let fields = parse_csv_record_with(text.trim_end_matches(['\n', '\r']), delim, quotes);
         let key_values: Vec<String> = key_indices
             .iter()
             .map(|&i| fields.get(i).cloned().unwrap_or_default())

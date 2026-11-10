@@ -16,7 +16,9 @@
 //! Duplicate reference keys keep the **first** occurrence, which is what VLOOKUP does
 //! and what people expect after sorting a reference sheet.
 
-use crate::csv_reader::{join_csv_line, parse_csv_record, resolve_column, RecordReader};
+use crate::csv_reader::{
+    join_csv_line, parse_csv_record_with, resolve_column, QuoteStyle, RecordReader,
+};
 use crate::encoding;
 use crate::types::{Delimiter, ProgressEvent, ProgressSender};
 use std::collections::HashMap;
@@ -61,6 +63,18 @@ pub fn lookup(
     options: &LookupOptions,
     tx: &ProgressSender,
 ) -> io::Result<LookupSummary> {
+    lookup_quotes(main, delimiter, output, options, QuoteStyle::Rfc4180, tx)
+}
+
+/// Same as [`lookup`], with an explicit quote style for all three files.
+pub fn lookup_quotes(
+    main: &Path,
+    delimiter: Delimiter,
+    output: &Path,
+    options: &LookupOptions,
+    quotes: QuoteStyle,
+    tx: &ProgressSender,
+) -> io::Result<LookupSummary> {
     if options.key.trim().is_empty() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -82,6 +96,7 @@ pub fn lookup(
         &options.take,
         options.max_keys,
         delimiter,
+        quotes,
     )?;
 
     let main_header = crate::workbook::base_header(main, delimiter)?;
@@ -116,9 +131,10 @@ pub fn lookup(
         .as_bytes(),
     )?;
 
-    let mut records = RecordReader::new(
+    let mut records = RecordReader::new_with(
         BufReader::with_capacity(4 * 1024 * 1024, encoding::open_decoded(main)?),
         4 * 1024 * 1024,
+        quotes,
     );
     let mut record = Vec::with_capacity(64 * 1024);
     if !records.next_record(&mut record)? {
@@ -141,9 +157,10 @@ pub fn lookup(
     };
     let mut scanned = 0u64;
     while records.next_record(&mut record)? {
-        let fields = parse_csv_record(
+        let fields = parse_csv_record_with(
             String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
             delim,
+            quotes,
         );
         summary.main_rows += 1;
         scanned += record.len() as u64;
@@ -190,11 +207,13 @@ impl Reference {
         take: &[String],
         max_keys: usize,
         delimiter: Delimiter,
+        quotes: QuoteStyle,
     ) -> io::Result<Self> {
         let delim = delimiter.byte();
-        let mut records = RecordReader::new(
+        let mut records = RecordReader::new_with(
             BufReader::with_capacity(2 * 1024 * 1024, encoding::open_decoded(path)?),
             2 * 1024 * 1024,
+            quotes,
         );
         let mut record = Vec::with_capacity(16 * 1024);
         if !records.next_record(&mut record)? {
@@ -203,9 +222,10 @@ impl Reference {
                 format!("reference {} has no header", path.display()),
             ));
         }
-        let header = parse_csv_record(
+        let header = parse_csv_record_with(
             String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
             delim,
+            quotes,
         );
         let key_idx = resolve_column(key, &header)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, format!("reference: {e}")))?;
@@ -221,9 +241,10 @@ impl Reference {
         let mut values = HashMap::with_capacity(1024);
         let mut rows = 0u64;
         while records.next_record(&mut record)? {
-            let fields = parse_csv_record(
+            let fields = parse_csv_record_with(
                 String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
                 delim,
+                quotes,
             );
             rows += 1;
             let key_value = fields.get(key_idx).cloned().unwrap_or_default();

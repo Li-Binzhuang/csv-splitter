@@ -234,10 +234,20 @@ pub struct RecordReader<R: Read> {
     len: usize,
     state: ScanState,
     finished: bool,
+    quotes: QuoteStyle,
 }
 
 impl<R: Read> RecordReader<R> {
     pub fn new(reader: R, capacity: usize) -> Self {
+        Self::new_with(reader, capacity, QuoteStyle::Rfc4180)
+    }
+
+    /// A reader whose record boundaries match the file's quote escape.
+    ///
+    /// This matters more than field parsing: in a backslash-escaped file a `\"`
+    /// does not close a quoted section, so an RFC reader runs past the record and
+    /// swallows the following lines into it.
+    pub fn new_with(reader: R, capacity: usize, quotes: QuoteStyle) -> Self {
         Self {
             reader,
             buf: vec![0u8; capacity.max(8 * 1024)],
@@ -245,6 +255,7 @@ impl<R: Read> RecordReader<R> {
             len: 0,
             state: ScanState::Outside,
             finished: false,
+            quotes,
         }
     }
 
@@ -286,6 +297,33 @@ impl<R: Read> RecordReader<R> {
                         }
                     }
                 }
+                ScanState::Inside if self.quotes == QuoteStyle::Backslash => {
+                    // One byte at a time: a `\"` pair must not be read as a
+                    // closing quote, and the lookahead can cross a buffer edge.
+                    let b = self.buf[self.pos];
+                    if b == b'\\' {
+                        if self.pos + 1 >= self.len {
+                            // Refill before deciding what the backslash escapes.
+                            self.pos = self.len;
+                            continue;
+                        }
+                        let next = self.buf[self.pos + 1];
+                        if next == b'"' {
+                            out.push(b'\\');
+                            out.push(b'"');
+                            self.pos += 2;
+                        } else {
+                            out.push(b'\\');
+                            self.pos += 1;
+                        }
+                    } else {
+                        out.push(b);
+                        self.pos += 1;
+                        if b == b'"' {
+                            self.state = ScanState::QuoteSeen;
+                        }
+                    }
+                }
                 ScanState::Inside => {
                     let chunk = &self.buf[self.pos..self.len];
                     match memchr(b'"', chunk) {
@@ -303,7 +341,7 @@ impl<R: Read> RecordReader<R> {
                 ScanState::QuoteSeen => {
                     let b = self.buf[self.pos];
                     self.pos += 1;
-                    if b == b'"' {
+                    if b == b'"' && self.quotes == QuoteStyle::Rfc4180 {
                         // Escaped quote: stay inside the quoted section.
                         out.push(b'"');
                         self.state = ScanState::Inside;
@@ -627,6 +665,37 @@ mod quote_style_tests {
     fn none_splits_on_every_delimiter() {
         let fields = parse_csv_line_with(r#""a,b",c"#, b',', QuoteStyle::None);
         assert_eq!(fields, vec![r#""a"#, r#"b""#, "c"]);
+    }
+
+    #[test]
+    fn record_boundaries_follow_the_escape_style() {
+        // With backslash escaping the `\"` does not close the field, so the next
+        // line is a separate record. An RFC reader swallows it.
+        let mut reader = RecordReader::new_with(
+            std::io::Cursor::new(b"id,note\n1,\"a \\\"b,c\"\n2,plain\n".to_vec()),
+            64,
+            QuoteStyle::Backslash,
+        );
+        let mut record = Vec::new();
+        let mut count = 0;
+        while reader.next_record(&mut record).unwrap() {
+            count += 1;
+        }
+        assert_eq!(count, 3, "header + 2 rows");
+
+        let mut reader = RecordReader::new(
+            std::io::Cursor::new(b"id,note\n1,\"a \\\"b,c\"\n2,plain\n".to_vec()),
+            64,
+        );
+        let mut record = Vec::new();
+        let mut count = 0;
+        while reader.next_record(&mut record).unwrap() {
+            count += 1;
+        }
+        assert_eq!(
+            count, 2,
+            "the RFC reader merges the second row into the first"
+        );
     }
 
     #[test]

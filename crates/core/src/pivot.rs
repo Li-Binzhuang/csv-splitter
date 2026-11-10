@@ -12,7 +12,9 @@
 //! size). Both are checked *before* memory is committed.
 
 use crate::aggregate::{Accumulator, AggOp, AggSpec};
-use crate::csv_reader::{join_csv_line, parse_csv_record, resolve_column, RecordReader};
+use crate::csv_reader::{
+    join_csv_line, parse_csv_record_with, resolve_column, QuoteStyle, RecordReader,
+};
 use crate::encoding;
 use crate::types::{Delimiter, ProgressEvent, ProgressSender};
 use std::collections::HashMap;
@@ -84,6 +86,18 @@ pub fn pivot(
     options: &PivotOptions,
     tx: &ProgressSender,
 ) -> io::Result<PivotSummary> {
+    pivot_quotes(path, delimiter, output, options, QuoteStyle::Rfc4180, tx)
+}
+
+/// Same as [`pivot`], with an explicit quote style.
+pub fn pivot_quotes(
+    path: &Path,
+    delimiter: Delimiter,
+    output: &Path,
+    options: &PivotOptions,
+    quotes: QuoteStyle,
+    tx: &ProgressSender,
+) -> io::Result<PivotSummary> {
     if options.rows.is_empty() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -98,9 +112,10 @@ pub fn pivot(
     }
 
     let delim = delimiter.byte();
-    let mut records = RecordReader::new(
+    let mut records = RecordReader::new_with(
         BufReader::with_capacity(4 * 1024 * 1024, encoding::open_decoded(path)?),
         4 * 1024 * 1024,
+        quotes,
     );
     let mut record = Vec::with_capacity(64 * 1024);
     if !records.next_record(&mut record)? {
@@ -109,9 +124,10 @@ pub fn pivot(
             "the file has no header",
         ));
     }
-    let header = parse_csv_record(
+    let header = parse_csv_record_with(
         String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
         delim,
+        quotes,
     );
 
     // Every referenced column is resolved once, with the same rules as the rest of
@@ -144,9 +160,10 @@ pub fn pivot(
     let mut scanned = 0u64;
 
     while records.next_record(&mut record)? {
-        let fields = parse_csv_record(
+        let fields = parse_csv_record_with(
             String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
             delim,
+            quotes,
         );
         input_rows += 1;
         scanned += record.len() as u64;
