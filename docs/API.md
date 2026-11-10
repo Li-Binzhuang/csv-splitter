@@ -242,6 +242,29 @@ curl -X POST "http://127.0.0.1:7811/edit?path=t.csv&action=set&row=1&col=city&va
 written on refusal, and `actual` says what the value is now.
 
 
+## 端点总表 / Endpoint index
+
+| 方法 | 路径 | 作用 |
+|---|---|---|
+| GET | `/health` | 存活 |
+| GET | `/meta` | 行数、字节数、表头、分隔符、编码 |
+| GET | `/rows` | 窗口（`start`/`count`/`where`/`order`/`columns`/`start-col`/`keys`）|
+| GET | `/columns` `/schema` | 列清单（`name=` 查存在性，`kind=`/`limit=` 过滤）|
+| GET | `/cell` | 单格 + 稳定行 key |
+| GET | `/journal` | 操作栈 + redo 栈 + 损坏计数 |
+| GET | `/sheet` | 概况：操作数、最后一条、capabilities、layout、indexed |
+| GET | `/capabilities` | 能力发现（reads/writes/actions/limits）|
+| GET | `/edit` | **只读**：journal 状态 |
+| POST | `/edit` | 写入（`action=` 见下表，`expect=` 可用）|
+| GET | `/export` | 把查询结果当 CSV 直接下载（不写文件）|
+| POST | `/edit?action=export` | 物化到文件（异步 job）|
+| GET | `/query` | SQL（只读，`limit` 上限 1 万并回显）|
+| GET | `/stats` `/analyze` `/filter` `/search` | 画像与检索 |
+| GET | `/groupby` `/pivot` `/style` `/chart` `/layout` | 聚合与展示元数据 |
+| GET | `/book` `/files` `/download` | 目录、书、下载 |
+| GET | `/job` `/jobs` | 异步任务状态 |
+| POST | `/split` `/merge` `/sort` `/dedupe` `/partition` `/warm` `/index` | 拆分与后台任务 |
+
 ## `GET /capabilities`
 
 One call that tells a front-end what this backend can do — generated from the same

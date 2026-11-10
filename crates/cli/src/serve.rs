@@ -3045,14 +3045,17 @@ fn query(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) 
     let Some(statement) = params.get("sql") else {
         return bad_request(stream, "sql is required", "sql", "pass sql=<SELECT ...>");
     };
-    let limit: usize = params
+    const QUERY_LIMIT: usize = 10_000;
+    let asked: usize = params
         .get("limit")
         .and_then(|v| v.parse().ok())
-        .unwrap_or(sql::DEFAULT_LIMIT)
-        .min(10_000);
+        .unwrap_or(sql::DEFAULT_LIMIT);
+    // Truncation that hides itself is how a client ends up believing it saw every row.
+    let limit = asked.min(QUERY_LIMIT);
     match sql::query_with(&path, statement, limit, delimiter(params)) {
         Ok(result) => {
             let cols: Vec<String> = result.columns.iter().map(|c| json_str(c)).collect();
+            let requested_limit = asked;
             let rows: Vec<String> = result
                 .rows
                 .iter()
@@ -3065,7 +3068,7 @@ fn query(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) 
                 stream,
                 200,
                 &format!(
-                    r#"{{"columns":[{}],"rows":[{}],"truncated":{}}}"#,
+                    r#"{{"columns":[{}],"rows":[{}],"truncated":{},"limit":{limit},"requestedLimit":{requested_limit}}}"#,
                     cols.join(","),
                     rows.join(","),
                     result.truncated

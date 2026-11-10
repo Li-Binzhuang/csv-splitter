@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.3.0] — 2026-11-10
+
+### Added
+
+- **`/query` reports the limit it applied**: `"limit":10000,"requestedLimit":50000` when
+  the ceiling clamps the request. Truncation that hides its own ceiling is how a client
+  ends up believing it saw every row.
+- **`docs/API.md` has an endpoint index**: method, path and purpose in one table, so
+  "is this GET or POST?" stops being a guess. `/edit` appears twice on purpose — GET is
+  the read-only state, POST is the write.
+- `scripts/backend-smoke.sh` grew keys and summary cases: `keys=` resolves to row numbers
+  and honours `columns=`, and `/sheet` carries `operations`, `lastOperation` and
+  `capabilities`. 38 checks now.
+
+### Docs
+
+- **README says which command reads columns and which rewrites them.** `schema` reads
+  metadata; `columns` keeps/drops/renames and writes a file. Two commands with
+  near-identical names doing opposite things is a trap, so the table says so with a
+  warning marker instead of relying on the reader's attention.
+
 ## [3.2.0] — 2026-11-10
 
 ### Changed

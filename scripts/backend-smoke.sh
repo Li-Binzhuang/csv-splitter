@@ -92,6 +92,17 @@ has "journal: count"             "$JOURNAL" '"count":1'
 has "journal: description"       "$JOURNAL" "set row 1 'city'"
 has "journal: canUndo"           "$JOURNAL" '"canUndo":true'
 
+echo "== keys and summary =="
+KEYS="$(curl -s "$URL/rows?path=orders.csv&keys=b:2,b:0")"
+has "keys: row numbers"        "$KEYS" '"rowNumbers":[3,1]'
+has "keys: rows"               "$KEYS" '"rows":['
+KEYSW="$(curl -s "$URL/rows?path=orders.csv&keys=b:2&columns=id,city")"
+has "keys: projection applies" "$KEYSW" '"columns":["id","city"]'
+SHEET="$(curl -s "$URL/sheet?path=orders.csv")"
+has "sheet: operations count"  "$SHEET" '"operations":'
+has "sheet: lastOperation"     "$SHEET" '"lastOperation"'
+has "sheet: capabilities"      "$SHEET" '"capabilities":'
+
 echo "== async export =="
 JOB="$(curl -s -X POST "$URL/edit?path=orders.csv&action=export&out=exported.csv&where=city=CDMX" | sed -n 's/.*"job":"\([^"]*\)".*/\1/p')"
 if [ -n "$JOB" ]; then printf '  ok   export queued a job (%s)\n' "$JOB"

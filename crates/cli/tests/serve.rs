@@ -2305,3 +2305,33 @@ fn keys_compose_with_projection_and_paging() {
     assert_eq!(code, 200, "{body}");
     assert!(body.contains(r#""columns":["c1","c2"]"#), "{body}");
 }
+
+/// `/query` says what limit it actually applied, so a client knows what it did not see.
+#[test]
+fn query_reports_the_limit_it_used() {
+    let dir = TempDir::new("querylimit");
+    let mut text = String::from("id\n");
+    for i in 1..=30 {
+        text.push_str(&format!("{i}\n"));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = get(
+        &server.addr,
+        "/query?path=t.csv&sql=SELECT%20*%20FROM%20t&limit=5",
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""truncated":true"#), "{body}");
+    assert!(body.contains(r#""limit":5"#), "{body}");
+    assert!(body.contains(r#""requestedLimit":5"#), "{body}");
+
+    // Asking for more than the ceiling: the applied limit is reported, not the asked one.
+    let (code, body) = get(
+        &server.addr,
+        "/query?path=t.csv&sql=SELECT%20*%20FROM%20t&limit=50000",
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""limit":10000"#), "{body}");
+    assert!(body.contains(r#""requestedLimit":50000"#), "{body}");
+}
