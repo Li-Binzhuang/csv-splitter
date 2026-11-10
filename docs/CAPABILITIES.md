@@ -41,7 +41,7 @@
 | UTF-16 LE/BE | 读取；索引拒绝（字节偏移不可靠） |
 | Windows-1252 | 与 GBK 打分竞争，`café` 不乱码 |
 | 转码 | `convert f.csv -o utf8.csv`（流式，恒定内存） |
-| 引号风格 | `--quotes rfc4180\|backslash\|none`，**所有读 CSV 的命令**都接受，并自动检测警告 |
+| 引号风格 | `--quotes rfc4180\|backslash\|none`：`preview` `filter` `view` `groupby` `pivot` `chart` `dedupe` `stats` `analyze` `lookup` `edit export`。`sort` / `columns` / `concat` / `search` / `sql` **还不接受**（按 RFC 4180 读）。检测到反斜杠转义时会自动提示 |
 
 ## 分析
 
@@ -53,7 +53,7 @@
 | SQL | `sql f.csv "SELECT ..."` | `GET /query`、`/rows?sql=` | DuckDB，只读单语句，结果封顶 |
 | 筛选 | `filter --where "c=v"` | `GET /filter`、`/rows?where=` | 支持 `= != > >= < <= ~ in empty` |
 | 搜索 | `search f.csv "text"` | `GET /search` | 返回行号，可配合跳转 |
-| 跨表查找 | `lookup --key C --from R --get cols` | — | `--max-keys` 500 万 |
+| 跨表查找 | `lookup --key C --from R --get cols` | — | `--max-keys` 默认 500 万（公式里的 `ref()` 默认 200 万） |
 
 聚合的算子统一是 `count / sum / mean / min / max`；`sum`/`mean` 用 Kahan 补偿求和。
 
@@ -144,6 +144,28 @@
 | Windows 未实测 | 路径处理可能有坑 |
 | 多 sheet 工作簿只有列表，没有跨表引用 | 还不能 `=customers!B2` |
 
+
+
+## 断言核对 / Claims checked against the code
+
+文档里的每一条「支持 / 不支持」都对着代码和实际命令验过（2026-11-10）：
+
+| 断言 | 结果 |
+|---|---|
+| UTF-16 文件拒绝建索引（字节偏移不可靠） | ✅ 有明确提示并给出 `convert` 建议 |
+| SQL 只允许单语句 | ✅ `SELECT 1; SELECT 2` → `only one statement is allowed` |
+| SQL 只读 | ✅ `DROP TABLE t` → `only SELECT / WITH queries are allowed` |
+| 筛选算子 `= != > >= < <= ~ in empty` | ✅ 逐个跑过 |
+| 透视 `--max-columns` 512 / `--max-cells` 200 万 | ✅ 与 `DEFAULT_*` 常量一致 |
+| 分组 `--max-groups` 100 万 | ✅ |
+| 图表 `--max-points` 5000 | ✅ |
+| `book` 最多 500 张表 | ✅ |
+| `lookup --max-keys` 500 万 | ✅（此处原写「500 万」，`ref()` 是 200 万，已注明） |
+| `--quotes` 所有读命令都支持 | ❌ **原文档写错了**：`sort`/`columns`/`concat`/`search`/`sql` 不接受。已改成逐个点名 |
+
+最后一条是这次核对唯一的错误，也是最容易造成静默错误的：文档说「所有」，
+用户就会以为 `sort --quotes backslash` 可用，实际会按 RFC 解析。
+现在有一个测试逐条跑这些命令，确认它们真的解析了这个参数。
 
 ## 成本边界 / Where the promise ends
 

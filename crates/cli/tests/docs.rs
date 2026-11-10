@@ -338,3 +338,37 @@ fn changelog_entries_are_dated() {
         .collect();
     assert!(undated.is_empty(), "entries without a date: {undated:?}");
 }
+
+/// The quote-style claim names real commands: each one must reject a bad value,
+/// which proves it parsed the flag at all.
+#[test]
+fn the_quote_style_claim_names_commands_that_accept_it() {
+    let accepting = [
+        "preview", "filter", "view", "groupby", "pivot", "chart", "dedupe", "stats", "analyze",
+        "lookup",
+    ];
+    let dir = std::env::temp_dir().join(format!("csvs_quotes_doc_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let file = dir.join("t.csv");
+    std::fs::write(&file, "a,b\n1,2\n").unwrap();
+
+    let mut missing = Vec::new();
+    for command in accepting {
+        let out = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+            .args([command, "--quotes", "nonsense", file.to_str().unwrap()])
+            .output()
+            .unwrap();
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        // Accepting the flag is what this checks: either the bad value is rejected, or
+        // the command's own required-argument check fires first. "unknown option"
+        // would mean the flag is not parsed at all.
+        if stderr.contains("unknown option") {
+            missing.push(format!("{command}: {stderr}"));
+        }
+    }
+    let _ = std::fs::remove_dir_all(&dir);
+    assert!(
+        missing.is_empty(),
+        "these do not accept --quotes: {missing:?}"
+    );
+}

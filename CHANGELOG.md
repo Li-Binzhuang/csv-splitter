@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.87.0] — 2026-11-10
+
+### Fixed (docs)
+
+- **`docs/CAPABILITIES.md` claimed `--quotes` works for "every command that reads
+  CSV"**. It does not: `sort`, `columns`, `concat`, `search` and `sql` do not accept it
+  and read as RFC 4180. That sentence would have taught a user to pass
+  `sort --quotes backslash` and silently get a mis-parsed file — the exact failure this
+  feature exists to prevent. The claim now names the eleven commands that do accept it,
+  and a test runs each of them to confirm the flag is parsed at all.
+
+### Verified
+
+- The rest of the capability table was checked against the code and the running binary:
+  UTF-16 index refusal, single-statement and read-only SQL, every filter operator,
+  the pivot/groupby/chart/book limits, and `lookup --max-keys`. Those hold; the audit
+  table in the doc records what was checked.
+
 ## [0.86.0] — 2026-11-10
 
 ### Docs

@@ -1425,12 +1425,18 @@ fn a_repeated_filtered_page_does_not_rescan() {
     let server = start(&dir.0.clone());
 
     let first = std::time::Instant::now();
-    let (status, body) = get(&server.addr, "/rows?path=t.csv&where=city%3DC5&start=0&count=100");
+    let (status, body) = get(
+        &server.addr,
+        "/rows?path=t.csv&where=city%3DC5&start=0&count=100",
+    );
     assert_eq!(status, 200, "{body}");
     let cold = first.elapsed();
 
     let warm = std::time::Instant::now();
-    let (status, body) = get(&server.addr, "/rows?path=t.csv&where=city%3DC5&start=0&count=100");
+    let (status, body) = get(
+        &server.addr,
+        "/rows?path=t.csv&where=city%3DC5&start=0&count=100",
+    );
     assert_eq!(status, 200, "{body}");
     let warm_elapsed = warm.elapsed();
 
