@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.75.0] — 2026-11-10
+
+### Added
+
+- **`view --find TEXT [--context N] [--match-case]`**: one command instead of two. The
+  match is located, the page is centred on it, and the row number is reported
+  (`row 41 of 100`) — so nobody has to copy a number from `search` into `--start`.
+  A miss is a normal answer (`(no row contains "...")`), not a failure.
+
+  The first implementation called `window()` per 2 000-row chunk, which rebuilt the
+  index and compiled the formulas fifty times for a million rows: 49 s to scan 1 M
+  rows. With one `Pager` for the scan it is 1.4 s — the same lesson as 0.73.0, learned
+  again in a new code path, which is why `window()` being a thin wrapper over `Pager`
+  was worth doing.
+
 ## [0.74.1] — 2026-11-10
 
 ### Changed

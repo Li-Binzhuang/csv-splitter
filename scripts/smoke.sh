@@ -82,6 +82,7 @@ run "sort several keys" "$BIN" sort "$DEMO" --by "city,amount:desc" -o sorted.cs
 run "search" "$BIN" search "$DEMO" CDMX
 run "paged view" "$BIN" view "$DEMO" --count 5
 run "view with a filter" "$BIN" view "$DEMO" --where "city=CDMX" --count 3
+run "view jumping to a value" "$BIN" view "$DEMO" --find CDMX --context 2
 
 step "summarise"
 run "groupby" "$BIN" groupby "$DEMO" --by city --agg "amount:sum" -o g.csv

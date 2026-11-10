@@ -1255,6 +1255,9 @@ fn cmd_view(args: &[String]) -> i32 {
     let mut where_expr: Option<String> = None;
     let mut order: Option<String> = None;
     let mut order_descending = false;
+    let mut find: Option<String> = None;
+    let mut context: u64 = 3;
+    let mut match_case = false;
     let mut json = false;
 
     while let Some(arg) = p.next() {
@@ -1311,6 +1314,27 @@ fn cmd_view(args: &[String]) -> i32 {
                 }
             },
             "--desc" => order_descending = true,
+            "--find" => match p.value("--find") {
+                Ok(v) => find = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--context" => match p.value("--context") {
+                Ok(v) => match v.parse() {
+                    Ok(n) => context = n,
+                    Err(_) => {
+                        eprintln!("error: --context needs a number");
+                        return 2;
+                    }
+                },
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--match-case" => match_case = true,
             "--json" => json = true,
             "-d" | "--delim" => match p.value("--delim") {
                 Ok(v) => delim = v,
@@ -1470,6 +1494,7 @@ fn cmd_view(args: &[String]) -> i32 {
     // and paging a materialised+sorted copy when `--order` was asked for.
     let mut rows: Vec<Vec<String>> = Vec::new();
     let mut columns: Vec<String> = Vec::new();
+    let mut highlight: Option<u64> = None;
     let page_total: Option<u64>;
     if let Some(path) = &paging_file {
         if let Ok(file) = std::fs::File::open(path) {
@@ -1501,6 +1526,60 @@ fn cmd_view(args: &[String]) -> i32 {
         let _ = std::fs::remove_file(path);
         page_total = None;
     } else {
+        // `--find` turns "search then copy the row number" into one command: the
+        // match is located first, and the page is centred on it.
+        if let Some(needle) = &find {
+            let needle = if match_case {
+                needle.clone()
+            } else {
+                needle.to_lowercase()
+            };
+            // One pager for the scan: `window()` per chunk would rebuild the index and
+            // the formulas fifty times over for a million rows.
+            let scan_pager = match csv_splitter_core::workbook::Pager::open(&input, &ops, delimiter)
+            {
+                Ok(p) => p,
+                Err(e) => return report_failure("view", e.to_string()),
+            };
+            let mut at: u64 = 0;
+            let found = 'scan: loop {
+                let win = match scan_pager.page(at, 2_000) {
+                    Ok(w) => w,
+                    Err(e) => return report_failure("view", e.to_string()),
+                };
+                if win.rows.is_empty() {
+                    break None;
+                }
+                for (i, row) in win.rows.iter().enumerate() {
+                    let hit = row.iter().any(|cell| {
+                        if match_case {
+                            cell.contains(&needle)
+                        } else {
+                            cell.to_lowercase().contains(&needle)
+                        }
+                    });
+                    if hit {
+                        break 'scan Some(at + i as u64);
+                    }
+                }
+                at += win.rows.len() as u64;
+                if win.rows.len() < 2_000 {
+                    break None;
+                }
+            };
+            match found {
+                Some(index) => {
+                    start = index.saturating_sub(context);
+                    count = count.max(context + 1 + context);
+                    highlight = Some(index);
+                }
+                None => {
+                    println!("(no row contains \"{}\")", find.clone().unwrap_or_default());
+                    return 0;
+                }
+            }
+        }
+
         // One `Pager` for the whole scan: the index, column layout and compiled
         // formulas are built once instead of once per page.
         let pager = match csv_splitter_core::workbook::Pager::open(&input, &ops, delimiter) {
@@ -1567,7 +1646,25 @@ fn cmd_view(args: &[String]) -> i32 {
         println!("(no rows matched)");
         return 0;
     }
-    print_table(&columns, &rows);
+    if let Some(index) = highlight {
+        // Print a marker beside the row `--find` landed on, so the eye finds it.
+        let offset = index.saturating_sub(start) as usize;
+        print_table(&columns, &rows);
+        println!(
+            "\n(^ row {} of {} matched{})",
+            index + 1,
+            page_total
+                .map(|t| t.to_string())
+                .unwrap_or_else(|| "?".into()),
+            if offset < rows.len() {
+                ""
+            } else {
+                " (outside this page)"
+            }
+        );
+    } else {
+        print_table(&columns, &rows);
+    }
     let applied = journal.len();
     if let (Some(total), false) = (page_total, json) {
         println!(

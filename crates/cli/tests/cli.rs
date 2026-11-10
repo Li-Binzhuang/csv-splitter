@@ -2790,3 +2790,44 @@ fn view_pages_deep_without_rebuilding_the_sheet() {
         started.elapsed()
     );
 }
+
+/// `view --find` centres on the match, so nobody has to copy a row number between
+/// two commands.
+#[test]
+fn view_can_jump_to_a_match() {
+    let dir = TempDir::new("viewfind");
+    let input = dir.join("t.csv");
+    let mut text = String::from("id,city\n");
+    for i in 0..100 {
+        let city = if i == 40 { "Zacatecas" } else { "CDMX" };
+        text.push_str(&format!("{i},{city}\n"));
+    }
+    std::fs::write(&input, text).unwrap();
+    let path = input.to_str().unwrap();
+
+    let out = Command::new(bin())
+        .args(["view", path, "--find", "Zacatecas", "--context", "2"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        text.contains("Zacatecas"),
+        "the match should be on screen: {text}"
+    );
+    assert!(
+        text.contains("row 41 of 100"),
+        "the match row is reported: {text}"
+    );
+    // The page is centred: two rows of context above it, so row 38 is visible.
+    assert!(text.contains("38"), "context rows should show: {text}");
+
+    // No match is a normal answer, not a failure.
+    let out = Command::new(bin())
+        .args(["view", path, "--find", "not-there"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("no row contains"), "{text}");
+}
