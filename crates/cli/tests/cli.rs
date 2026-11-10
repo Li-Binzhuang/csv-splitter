@@ -3372,3 +3372,48 @@ fn edits_survive_column_changes() {
     assert_eq!(text.lines().next().unwrap(), "id,amount,total");
     assert_eq!(text.lines().nth(1).unwrap(), "1,10,20", "{text}");
 }
+
+/// Editing one split piece must not erase its siblings.
+#[test]
+fn editing_a_split_piece_keeps_the_other_pieces() {
+    let dir = TempDir::new("splitedit");
+    let input = dir.join("t.csv");
+    std::fs::write(
+        &input,
+        "id,full\n1,\"Ana,Perez,St 1\"\n2,\"Beto,Calle 2\"\n",
+    )
+    .unwrap();
+    let path = input.to_str().unwrap();
+
+    let run = |args: &[&str]| {
+        assert_eq!(
+            Command::new(bin()).args(args).status().unwrap().code(),
+            Some(0),
+            "{args:?}"
+        );
+    };
+
+    run(&[
+        "edit",
+        "split-column",
+        path,
+        "--col",
+        "full",
+        "--by",
+        ",",
+        "--into",
+        "first,last,addr",
+    ]);
+    run(&[
+        "edit", "set", path, "--row", "1", "--col", "first", "--value", "Z",
+    ]);
+
+    let out = dir.join("o.csv");
+    run(&["edit", "export", path, "-o", out.to_str().unwrap()]);
+    let text = std::fs::read_to_string(&out).unwrap();
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines[0], "id,first,last,addr");
+    // The edit lands on one piece; the neighbours still come from the base text.
+    assert_eq!(lines[1], "1,Z,Perez,St 1", "{text}");
+    assert_eq!(lines[2], "2,Beto,Calle 2,", "{text}");
+}

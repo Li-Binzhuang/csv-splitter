@@ -726,6 +726,14 @@ impl ColumnPlan {
     /// `base_columns` is the file's original header and `columns` the output header
     /// after the layout ops. Splits need both: the pieces sit where the source used
     /// to be, and the source's name no longer exists among the outputs.
+    /// Which piece of which base cell this output column is, if it is a split piece.
+    pub fn split_piece(&self, target: usize) -> Option<(&str, usize, usize)> {
+        self.splits
+            .iter()
+            .find(|(index, _, _, _)| *index == target)
+            .map(|(_, by, piece, base)| (by.as_str(), *piece, *base))
+    }
+
     pub fn build(
         ops: &[Op],
         base_columns: &[String],
@@ -810,33 +818,9 @@ impl ColumnPlan {
         // Pieces first: a formula may refer to a piece by name, and the formula run
         // below reads the cells in their current state. The last piece keeps the rest
         // of the value, so `a,b,c,d` split into three gives "a", "b", "c,d".
-        if !self.splits.is_empty() {
-            // Snapshot each source *before* writing: the first piece lands in the same
-            // slot the whole value was read from, and reading it again after that would
-            // split the already-split text.
-            let sources: Vec<(usize, String)> = self
-                .splits
-                .iter()
-                .map(|(_, _, _, source)| *source)
-                .collect::<std::collections::BTreeSet<_>>()
-                .into_iter()
-                .filter_map(|source| cells.get(source).cloned().map(|v| (source, v)))
-                .collect();
-            for (target, by, piece, source) in &self.splits {
-                let Some((_, raw)) = sources.iter().find(|(s, _)| *s == *source) else {
-                    continue;
-                };
-                let pieces: Vec<&str> = raw.split(by.as_str()).collect();
-                let value = if *piece + 1 >= pieces.len() && pieces.len() > 1 {
-                    pieces[*piece..].join(by.as_str())
-                } else {
-                    pieces.get(*piece).copied().unwrap_or("").to_string()
-                };
-                if let Some(cell) = cells.get_mut(*target) {
-                    *cell = value;
-                }
-            }
-        }
+        // Split pieces are not applied here: they are derived from the *base* value and
+        // an explicit edit to a piece has to survive, so `RowPipeline::row` computes
+        // them while projecting. See `split_piece`.
         for (index, literal) in self.literals.iter().enumerate() {
             if let Some(value) = literal {
                 if let Some(cell) = cells.get_mut(index) {
@@ -1032,16 +1016,13 @@ mod split_tests {
         let plan = ColumnPlan::build(&ops, &base, &layout, &compiled);
         assert_eq!(plan.splits.len(), 3, "{:?}", plan.splits);
 
-        let mut cells = vec!["1".to_string(), "Ana,Perez,Calle 1".to_string()];
-        cells.resize(4, String::new());
-        plan.apply(
-            &names,
-            &mut cells,
-            &crate::formula::Refs::default(),
-            0,
-            None,
-        );
-        assert_eq!(cells, vec!["1", "Ana", "Perez", "Calle 1"]);
+        // Pieces are rendered by the export pipeline (so an explicit edit can win); this
+        // test pins the mapping it consults.
+        assert_eq!(plan.split_piece(1), Some((",", 0, 1)));
+        assert_eq!(plan.split_piece(2), Some((",", 1, 1)));
+        assert_eq!(plan.split_piece(3), Some((",", 2, 1)));
+        assert_eq!(plan.split_piece(0), None);
+        let _ = names;
     }
 }
 

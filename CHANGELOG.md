@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.90.0] — 2026-11-10
+
+### Fixed
+
+- **Editing one `split-column` piece wiped the others.** `split full → first,last,addr`
+  followed by `set first = Z` exported `Z,,'` — the split re-read the *edited* first
+  piece as its source and had nothing left to divide. Pieces are now derived from the
+  base text while the row is projected, and an explicit edit wins for its own column,
+  so `Z,Perez,St 1` is what comes out.
+
+Same shape as last round's bug: a derived thing was recomputed from a value that
+something else had already overwritten. The unit test that "passed" was asserting
+inside `ColumnPlan::apply` — where the pieces no longer get written — so it now pins
+the mapping the pipeline consults instead.
 ## [0.89.0] — 2026-11-10
 
 ### Fixed

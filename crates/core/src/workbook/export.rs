@@ -217,8 +217,16 @@ impl<'a> RowPipeline<'a> {
                 None => String::new(),
             };
             let value = match self.edits.cell(id, column) {
+                // An explicit edit to a piece wins over what the split would derive.
                 Some(v) => v.to_string(),
-                None => self.edits.substitute(column, &raw),
+                None => match self.plan.split_piece(idx) {
+                    // Pieces come from the base text, not from the possibly-edited cell:
+                    // editing `first` must not erase `last`.
+                    Some((by, piece, base_index)) => base_cells
+                        .get(base_index)
+                        .map_or_else(String::new, |text| split_piece(text, by, piece)),
+                    None => self.edits.substitute(column, &raw),
+                },
             };
             cells.push(value);
         }
@@ -242,6 +250,16 @@ impl<'a> RowPipeline<'a> {
                 .apply(self.columns, &mut cells, self.refs, row_number, None);
         }
         cells
+    }
+}
+
+/// One piece of a split, with the last piece keeping the remainder.
+fn split_piece(text: &str, by: &str, piece: usize) -> String {
+    let pieces: Vec<&str> = text.split(by).collect();
+    if piece + 1 >= pieces.len() && pieces.len() > 1 {
+        pieces[piece..].join(by)
+    } else {
+        pieces.get(piece).copied().unwrap_or("").to_string()
     }
 }
 
