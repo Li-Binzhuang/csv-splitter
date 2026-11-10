@@ -6824,6 +6824,41 @@ fn cmd_dedupe(args: &[String]) -> i32 {
     }
 }
 
+/// Compare two files in fixed-size chunks, so verifying a 10 GB split does not need
+/// 20 GB of RAM.
+///
+/// Returns the first differing byte offset and the two file lengths.
+fn files_differ(first: &Path, second: &Path) -> std::io::Result<Option<(u64, u64, u64)>> {
+    use std::io::Read;
+    const CHUNK: usize = 256 * 1024;
+    let mut a = std::io::BufReader::with_capacity(CHUNK, std::fs::File::open(first)?);
+    let mut b = std::io::BufReader::with_capacity(CHUNK, std::fs::File::open(second)?);
+    let mut left = vec![0u8; CHUNK];
+    let mut right = vec![0u8; CHUNK];
+    let mut offset: u64 = 0;
+    loop {
+        let a_read = a.read(&mut left)?;
+        let b_read = b.read(&mut right)?;
+        if a_read == 0 && b_read == 0 {
+            return Ok(None);
+        }
+        let slice_a = &left[..a_read];
+        let slice_b = &right[..b_read];
+        if a_read != b_read || slice_a != slice_b {
+            let len_a = std::fs::metadata(first).map(|m| m.len()).unwrap_or(0);
+            let len_b = std::fs::metadata(second).map(|m| m.len()).unwrap_or(0);
+            // Where inside this chunk they diverge.
+            let at = slice_a
+                .iter()
+                .zip(slice_b.iter())
+                .position(|(x, y)| x != y)
+                .unwrap_or(slice_a.len().min(slice_b.len()));
+            return Ok(Some((offset + at as u64, len_a, len_b)));
+        }
+        offset += a_read as u64;
+    }
+}
+
 fn cmd_verify(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
     let mut input: Option<PathBuf> = None;
@@ -6910,22 +6945,22 @@ fn cmd_verify(args: &[String]) -> i32 {
 
     let code = match merge_result {
         Ok(report) => {
-            let original = std::fs::read(&input).unwrap_or_default();
-            let restored = std::fs::read(&merged).unwrap_or_default();
-            if original == restored {
-                println!(
-                    "✓ lossless: {} bytes across {} chunk(s) round-tripped identically",
-                    original.len(),
-                    report.chunks
-                );
-                0
-            } else {
-                eprintln!(
-                    "✗ mismatch: original {} bytes, merged {} bytes",
-                    original.len(),
-                    restored.len()
-                );
-                1
+            let bytes = std::fs::metadata(&input).map(|m| m.len()).unwrap_or(0);
+            match files_differ(&input, &merged) {
+                Ok(None) => {
+                    println!(
+                        "✓ lossless: {bytes} bytes across {} chunk(s) round-tripped identically",
+                        report.chunks
+                    );
+                    0
+                }
+                Ok(Some((at, left, right))) => {
+                    eprintln!(
+                        "✗ mismatch at byte {at}: original {left} bytes, merged {right} bytes"
+                    );
+                    1
+                }
+                Err(e) => report_failure("verify", format!("cannot compare the files: {e}")),
             }
         }
         Err(e) => report_failure("analyze", e), // engine returned the error itself

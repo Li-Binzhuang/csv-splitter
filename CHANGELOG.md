@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.9.0] — 2026-11-10
+
+### Fixed
+
+- **`verify` loaded both files into memory.** It was `std::fs::read(input)` and
+  `std::fs::read(merged)` followed by `==` — 197 MB peak on a 77 MB file, and 20 GB on
+  the 10 GB splits that `verify` exists to check. It now compares in 256 KB chunks:
+  44 MB, flat in file size. A mismatch reports the byte offset and both lengths.
+
+### Verified
+
+- Every command's peak RSS measured in release on a 4 M-row / 77 MB file:
+  `preview`/`search`/`chart`/`pivot`/`groupby` 8–9 MB, `filter`/`columns`/`validate`
+  12–13 MB, `index` 16 MB, `analyze`/`stats` 23–25 MB, `split` 64 MB, `sort` 218 MB,
+  `partition` 287 MB, `dedupe` 285 MB with 4 M distinct keys but 9 MB with 20.
+  The doc now states the honest version of "memory does not grow with rows": it does
+  not, **except** where a command must remember every row (`dedupe` remembers keys,
+  `sort`/`partition` hold a buffer), and each of those has an explicit cap that errors
+  instead of growing silently.
+
 ## [1.8.0] — 2026-11-10
 
 ### Fixed

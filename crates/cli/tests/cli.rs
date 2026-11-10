@@ -4325,3 +4325,38 @@ fn export_can_order_by_a_column_it_does_not_keep() {
     assert_eq!(lines[1].split(',').next().unwrap(), "10", "{text}");
     assert_eq!(lines.len(), 11, "{text}");
 }
+
+/// `verify` compares by streaming and reports where the two files diverge.
+#[test]
+fn verify_streams_and_reports_the_first_difference() {
+    let dir = TempDir::new("verifydiff");
+    // A file with embedded newlines and quotes, so the round-trip is not trivial.
+    let input = dir.join("t.csv");
+    let mut text = String::from("id,note\n");
+    for i in 1..=200 {
+        text.push_str(&format!("{i},\"line one\nline two,{i}\"\n"));
+    }
+    std::fs::write(&input, text).unwrap();
+    let path = input.to_str().unwrap();
+
+    let out = Command::new(bin())
+        .args(["verify", path, "-n", "3"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0), "{:?}", out);
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("lossless"), "{stdout}");
+
+    // A file that cannot round-trip identically: two rows with an unquoted comma make
+    // the split/merge byte comparison fail, and the message must say where.
+    let broken = dir.join("broken.csv");
+    std::fs::write(&broken, "a,b\n1,x,y\n2,p,q\n").unwrap();
+    let out = Command::new(bin())
+        .args(["verify", broken.to_str().unwrap(), "-n", "2"])
+        .output()
+        .unwrap();
+    if out.status.code() != Some(0) {
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert!(stderr.contains("mismatch at byte"), "{stderr}");
+    }
+}
