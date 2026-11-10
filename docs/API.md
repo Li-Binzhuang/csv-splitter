@@ -86,6 +86,7 @@
 | `formula` | `name` `formula` | 追加公式列 |
 | `copy` | `from=A1:B2` `to=B3` | 区域复制（A1 风格范围） |
 | `split-column` | `col` `by` `into` | 一列拆成多列（最后一片吃下剩余部分） |
+| `fill` | `col` `from-row` `to-row` `value` | 区间填充（1-based，闭区间）；精确 `set` 优先于填充 |
 | `undo` / `redo` | — | 撤销最后一条 / 重做 |
 | `export` | `out` | 物化到文件（返回 job） |
 

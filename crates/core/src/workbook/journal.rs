@@ -161,6 +161,15 @@ pub(crate) fn render_op(op: &Op) -> String {
             column,
             value,
         } => join_csv_line(&[op.tag(), filter, column, value], b','),
+        Op::FillRange {
+            column,
+            from,
+            to,
+            value,
+        } => join_csv_line(
+            &[op.tag(), &from.to_string(), &to.to_string(), column, value],
+            b',',
+        ),
         Op::Substitute { column, from, to } => join_csv_line(
             &[op.tag(), column.as_deref().unwrap_or("*"), from, to],
             b',',
@@ -241,6 +250,12 @@ pub(crate) fn parse_op(record: &[u8]) -> Option<Op> {
             filter: fields[1].clone(),
             column: fields[2].clone(),
             value: fields[3].clone(),
+        }),
+        "fill" if fields.len() >= 5 => Some(Op::FillRange {
+            from: fields[1].parse().ok()?,
+            to: fields[2].parse().ok()?,
+            column: fields[3].clone(),
+            value: fields[4].clone(),
         }),
         "split-col" if fields.len() >= 4 => Some(Op::SplitColumn {
             column: fields[1].clone(),

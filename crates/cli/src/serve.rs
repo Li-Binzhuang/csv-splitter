@@ -918,6 +918,34 @@ fn edit_apply(
                 source,
             }
         }
+        "fill" => {
+            let (Some(column), Some(from), Some(to)) = (
+                params.get("col").cloned(),
+                plain("from-row").or_else(|| plain("from")),
+                plain("to-row").or_else(|| plain("to")),
+            ) else {
+                return bad_request(
+                    stream,
+                    "fill needs col, from-row and to-row",
+                    "col",
+                    "col=<column>&from-row=<n>&to-row=<n>&value=<text>",
+                );
+            };
+            if from == 0 || to == 0 || from > to {
+                return bad_request(
+                    stream,
+                    "from-row and to-row are 1-based, and from-row must be <= to-row",
+                    "from-row",
+                    "from-row=1&to-row=10",
+                );
+            }
+            Op::FillRange {
+                column,
+                from: from - 1,
+                to: to - 1,
+                value: params.get("value").cloned().unwrap_or_default(),
+            }
+        }
         "split-column" | "splitcolumn" => {
             let (Some(column), Some(by), Some(into)) = (
                 params.get("col").cloned(),

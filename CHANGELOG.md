@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.1.0] — 2026-11-10
+
+### Added
+
+- **`edit fill`**: one value across a row range — Excel's drag-fill.
+  `edit fill --col qty --from-row 5 --to-row 10 --value 0`, or
+  `POST /edit?action=fill&col=qty&from-row=5&to-row=10&value=0`.
+  - Stored as **one journal operation holding a range**, not one per row: filling
+    200 000 rows must not cost 200 000 entries, or the memory promise ("cost follows
+    edits, not rows") would be a lie for the most common bulk edit there is.
+  - A precise `set` always beats a bulk fill that covers it, whatever order they were
+    made in — a deliberate rule, written down rather than left to interpretation.
+  - The flag names are `--from-row` / `--to-row` because `--from` / `--to` already mean
+    "old name" and "replacement text"; renaming a column and filling rows are different
+    verbs and should not share a spelling.
+
 ## [1.0.2] — 2026-11-10
 
 ### Fixed (docs)

@@ -102,6 +102,16 @@ pub enum Op {
         from: String,
         to: String,
     },
+    /// Fill a range of rows in one column with the same value.
+    ///
+    /// Stored as a range, not as one operation per row: filling 200 000 rows must not
+    /// cost 200 000 journal entries. Rows are 0-based here like every other op.
+    FillRange {
+        column: String,
+        from: u64,
+        to: u64,
+        value: String,
+    },
     /// Split one column into several, by a literal separator.
     SplitColumn {
         column: String,
@@ -161,6 +171,7 @@ impl Op {
             Self::Substitute { .. } => "substitute",
             Self::SubstituteRegex { .. } => "subst-rx",
             Self::SplitColumn { .. } => "split-col",
+            Self::FillRange { .. } => "fill",
             Self::AddColumn { .. } => "addcolumn",
             Self::AddColumnAt { .. } => "addcolumnat",
             Self::PasteBlock { .. } => "pasteblock",
@@ -187,6 +198,17 @@ impl Op {
                 truncate(from, 20),
                 truncate(to, 20),
                 column.as_deref().unwrap_or("every column")
+            ),
+            Self::FillRange {
+                column,
+                from,
+                to,
+                value,
+            } => format!(
+                "fill '{column}' rows {}-{} = '{}'",
+                from + 1,
+                to + 1,
+                truncate(value, 20)
             ),
             Self::SplitColumn { column, by, into } => format!(
                 "split '{column}' by '{}' into {}",

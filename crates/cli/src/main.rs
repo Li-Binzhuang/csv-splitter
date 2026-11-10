@@ -188,6 +188,8 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--row", "Data row (1-based)"),
             ("--to", "Target encoding"),
             ("--value", "Value to write"),
+            ("--from-row", "First data row of a range (1-based)"),
+            ("--to-row", "Last data row of a range (1-based, inclusive)"),
             ("--where", "Filter expression, e.g. city=CDMX"),
         ],
     ),
@@ -5241,6 +5243,8 @@ fn cmd_edit(args: &[String]) -> i32 {
     let mut from: Option<String> = None;
     let mut by: Option<String> = None;
     let mut into: Option<String> = None;
+    let mut row_from: Option<u64> = None;
+    let mut row_to: Option<u64> = None;
     let mut count: Option<u64> = None;
     let mut regex = false;
     let mut name: Option<String> = None;
@@ -5255,6 +5259,34 @@ fn cmd_edit(args: &[String]) -> i32 {
     while let Some(arg) = p.next() {
         match arg.as_str() {
             "--regex" => regex = true,
+            // `--from`/`--to` already mean column and text; a row range needs its own
+            // names, because renaming a column and filling rows are different verbs.
+            "--from-row" => match p.value("--from-row") {
+                Ok(v) => match v.parse() {
+                    Ok(n) => row_from = Some(n),
+                    Err(_) => {
+                        eprintln!("error: --from-row must be a row number");
+                        return 2;
+                    }
+                },
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--to-row" => match p.value("--to-row") {
+                Ok(v) => match v.parse() {
+                    Ok(n) => row_to = Some(n),
+                    Err(_) => {
+                        eprintln!("error: --to-row must be a row number");
+                        return 2;
+                    }
+                },
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--by" => match p.value("--by") {
                 Ok(v) => by = Some(v),
                 Err(e) => {
@@ -5782,6 +5814,24 @@ fn cmd_edit(args: &[String]) -> i32 {
                 after: after_col,
                 name,
                 source,
+            }
+        }
+        "fill" => {
+            let (Some(column), Some(from), Some(to)) = (col.clone(), row_from, row_to) else {
+                eprintln!("error: fill needs --col, --from-row and --to-row");
+                return 2;
+            };
+            if from == 0 || to == 0 || from > to {
+                eprintln!(
+                    "error: --from-row/--to-row are 1-based data rows, and from must be <= to"
+                );
+                return 2;
+            }
+            csv_splitter_core::workbook::Op::FillRange {
+                column,
+                from: from - 1,
+                to: to - 1,
+                value: value.unwrap_or_default(),
             }
         }
         "split-column" | "splitcolumn" => {

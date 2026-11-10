@@ -296,6 +296,9 @@ pub struct CellEdits {
     regex_subs: Vec<(Option<String>, String, String)>,
     /// Bulk-edit rules: (filter expression, column, value).
     rules: Vec<(String, String, String)>,
+    /// Row-range fills: (from, to, column, value), applied before any explicit edit so
+    /// a precise `set` always wins over a bulk fill that happens to cover it.
+    fills: Vec<(u64, u64, String, String)>,
     /// Pasted blocks: (row identity, anchor column, one row of values).
     blocks: Vec<(RowId, String, Vec<String>)>,
 }
@@ -362,6 +365,15 @@ impl CellEdits {
     }
 
     /// Apply substitutions to one value.
+    /// A fill covering this row, if any. Applied before explicit edits, so `set` wins.
+    pub fn fill_for(&self, row: u64, column: &str) -> Option<&str> {
+        self.fills
+            .iter()
+            .rev()
+            .find(|(from, to, name, _)| name == column && row >= *from && row <= *to)
+            .map(|(_, _, _, value)| value.as_str())
+    }
+
     pub fn substitute(&self, column: &str, value: &str) -> String {
         let mut out = value.to_string();
         for (target, from, to) in &self.subs {
@@ -858,6 +870,7 @@ pub fn compile(ops: &[Op], base_rows: u64) -> Sheet {
     let mut subs: Vec<(Option<String>, String, String)> = Vec::new();
     let mut regex_subs: Vec<(Option<String>, String, String)> = Vec::new();
     let mut rules: Vec<(String, String, String)> = Vec::new();
+    let mut fills: Vec<(u64, u64, String, String)> = Vec::new();
     let mut blocks: Vec<(RowId, String, Vec<String>)> = Vec::new();
 
     for (index, op) in ops.iter().enumerate() {
@@ -904,6 +917,12 @@ pub fn compile(ops: &[Op], base_rows: u64) -> Sheet {
                     }
                 }
             }
+            Op::FillRange {
+                column,
+                from,
+                to,
+                value,
+            } => fills.push((*from, *to, column.clone(), value.clone())),
             Op::Substitute { column, from, to } => {
                 subs.push((column.clone(), from.clone(), to.clone()));
             }
@@ -939,6 +958,7 @@ pub fn compile(ops: &[Op], base_rows: u64) -> Sheet {
             subs,
             regex_subs,
             rules,
+            fills,
             blocks,
         },
     }
@@ -1074,5 +1094,36 @@ mod rename_tests {
             .edits
             .cells
             .contains_key(&(RowId::Base(1), "qty".to_string())));
+    }
+}
+
+#[cfg(test)]
+mod fill_tests {
+    use super::*;
+
+    #[test]
+    fn a_fill_is_one_operation_and_an_edit_beats_it() {
+        let ops = vec![
+            Op::FillRange {
+                column: "qty".to_string(),
+                from: 2,
+                to: 4,
+                value: "0".to_string(),
+            },
+            Op::SetCell {
+                row: 3,
+                column: "qty".to_string(),
+                value: "9".to_string(),
+            },
+        ];
+        let sheet = compile(&ops, 10);
+        // Stored as a range: ten rows of fill must not become ten journal entries.
+        assert_eq!(sheet.edits.fills.len(), 1);
+        assert_eq!(sheet.edits.fill_for(2, "qty"), Some("0"));
+        assert_eq!(sheet.edits.fill_for(4, "qty"), Some("0"));
+        assert_eq!(sheet.edits.fill_for(1, "qty"), None);
+        assert_eq!(sheet.edits.fill_for(5, "qty"), None);
+        // The explicit edit is a separate, higher-priority record.
+        assert_eq!(sheet.edits.cell(RowId::Base(3), "qty"), Some("9"));
     }
 }

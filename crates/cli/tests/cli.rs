@@ -3689,3 +3689,73 @@ fn validate_reports_bad_rows_without_changing_them() {
     let text = String::from_utf8_lossy(&out.stdout);
     assert!(text.contains("0 violation(s)"), "{text}");
 }
+
+/// `edit fill` writes one value across a row range, and an explicit edit still wins.
+#[test]
+fn fill_writes_a_row_range() {
+    let dir = TempDir::new("fill");
+    let input = dir.join("t.csv");
+    let mut text = String::from("id,qty\n");
+    for i in 1..=20 {
+        text.push_str(&format!("{i},{}\n", i * 10));
+    }
+    std::fs::write(&input, &text).unwrap();
+    let path = input.to_str().unwrap();
+
+    let run = |args: &[&str]| {
+        assert_eq!(
+            Command::new(bin()).args(args).status().unwrap().code(),
+            Some(0),
+            "{args:?}"
+        );
+    };
+    run(&[
+        "edit",
+        "fill",
+        path,
+        "--col",
+        "qty",
+        "--from-row",
+        "5",
+        "--to-row",
+        "10",
+        "--value",
+        "0",
+    ]);
+    let out = dir.join("o.csv");
+    run(&["edit", "export", path, "-o", out.to_str().unwrap()]);
+    let text = std::fs::read_to_string(&out).unwrap();
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines[1], "1,10", "outside the range is untouched");
+    assert_eq!(lines[5], "5,0", "the range starts at row 5");
+    assert_eq!(lines[10], "10,0", "and ends at row 10");
+    assert_eq!(lines[11], "11,110", "{text}");
+
+    // A precise edit beats the bulk fill that covers it.
+    run(&[
+        "edit", "set", path, "--row", "7", "--col", "qty", "--value", "999",
+    ]);
+    let out2 = dir.join("o2.csv");
+    run(&["edit", "export", path, "-o", out2.to_str().unwrap()]);
+    let text = std::fs::read_to_string(&out2).unwrap();
+    assert!(text.lines().any(|l| l == "7,999"), "{text}");
+
+    // An inverted range is a usage error, not a silent no-op.
+    let out = Command::new(bin())
+        .args([
+            "edit",
+            "fill",
+            path,
+            "--col",
+            "qty",
+            "--from-row",
+            "10",
+            "--to-row",
+            "5",
+            "--value",
+            "1",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+}
