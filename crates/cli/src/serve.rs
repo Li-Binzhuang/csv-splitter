@@ -861,10 +861,22 @@ fn book_endpoint(
     root: &Path,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
-    let max: usize = params
-        .get("max")
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(csv_splitter_core::book::DEFAULT_MAX_SHEETS);
+    // A malformed number is a bad request, not something to ignore: silently
+    // falling back to the default would make `max=nope` look like it worked.
+    let max = match params.get("max") {
+        None => csv_splitter_core::book::DEFAULT_MAX_SHEETS,
+        Some(raw) => match raw.parse::<usize>() {
+            Ok(value) => value,
+            Err(_) => {
+                return bad_request(
+                    stream,
+                    "max must be a number",
+                    "max",
+                    "pass max=<number of sheets to list>",
+                )
+            }
+        },
+    };
     match csv_splitter_core::book::scan(root, max) {
         Ok(book) => {
             let sheets: Vec<String> = book.sheets.iter().map(|s| s.to_json()).collect();
@@ -1066,15 +1078,13 @@ fn style_endpoint(
             }
         }
     }
-    let start: u64 = params
-        .get("start")
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(0);
-    let count: u64 = params
-        .get("count")
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(100)
-        .min(MAX_ROWS_PER_REQUEST);
+    let Some(start) = number_param(stream, params, "start", 0)? else {
+        return Ok(());
+    };
+    let Some(count) = number_param(stream, params, "count", 100)? else {
+        return Ok(());
+    };
+    let count = count.min(MAX_ROWS_PER_REQUEST);
     let sidecar = Journal::sidecar(&path);
     let journal = match Journal::load(&sidecar) {
         Ok(j) => j,
@@ -1763,15 +1773,13 @@ fn rows(
         Some(v) => v,
         None => return bad_path(stream),
     };
-    let start: u64 = params
-        .get("start")
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(0);
-    let count: u64 = params
-        .get("count")
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(100)
-        .min(MAX_ROWS_PER_REQUEST);
+    let Some(start) = number_param(stream, params, "start", 0)? else {
+        return Ok(());
+    };
+    let Some(count) = number_param(stream, params, "count", 100)? else {
+        return Ok(());
+    };
+    let count = count.min(MAX_ROWS_PER_REQUEST);
 
     // `where` / `order` turn a raw scan into a filtered, ordered view. They are
     // synonyms for the SQL endpoint, so the two cannot drift apart.
@@ -2570,6 +2578,33 @@ fn json_str(s: &str) -> String {
 /// It exists so "the backend is done" is something you can *look at*: it calls
 /// only the public endpoints, so anything it can do, a real front-end can too.
 const VIEWER_HTML: &str = include_str!("web/index.html");
+
+/// Parse an optional numeric parameter, refusing garbage instead of ignoring it.
+///
+/// `?count=abc` silently becoming the default is how a caller ends up paging with
+/// the wrong window and blaming the data.
+fn number_param(
+    stream: &mut TcpStream,
+    params: &HashMap<String, String>,
+    name: &str,
+    default: u64,
+) -> io::Result<Option<u64>> {
+    match params.get(name) {
+        None => Ok(Some(default)),
+        Some(raw) => match raw.parse::<u64>() {
+            Ok(value) => Ok(Some(value)),
+            Err(_) => {
+                bad_request(
+                    stream,
+                    &format!("{name} must be a number"),
+                    name,
+                    &format!("pass {name}=<non-negative integer>"),
+                )?;
+                Ok(None)
+            }
+        },
+    }
+}
 
 /// A 400 with a machine-readable reason.
 ///

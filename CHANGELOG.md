@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.62.0] — 2026-11-10
+
+### Added
+
+- **Every read endpoint's error shape is verified**: a test walks 17 endpoints with
+  missing or malformed parameters and requires `error` plus `parameter`/`hint` — no
+  prose, no silent 200.
+- **Numeric parameters are validated instead of ignored**: `/rows?start=abc` and
+  `/book?max=nope` now return 400 naming the parameter. Silently falling back to the
+  default means a caller pages with the wrong window and blames the data.
+- `scripts/smoke.sh` probes the API for the same thing, so the check runs against a
+  live server too.
+
 ## [0.61.0] — 2026-11-10
 
 ### Added

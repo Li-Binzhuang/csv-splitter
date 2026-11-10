@@ -7,7 +7,8 @@
 
 ## 约定 / Conventions
 
-**错误统一形状**（4xx）：
+**错误统一形状**（4xx）：所有读端点在没有必需参数、或参数值非法时都返回这个形状
+（有测试逐个端点验证：`bad_requests_always_carry_a_reason_and_a_hint`）。
 
 ```json
 {"error":"by is required","parameter":"by","hint":"pass by=<column name>"}
@@ -15,6 +16,9 @@
 
 `parameter` 指向出问题的参数，`hint` 说明该传什么。用法错误是 400，数据/引擎问题
 是 422，未知路径是 404（响应里带 `endpoints` 与 `writes` 两个清单）。
+
+**数字参数不会静默回退**：`start=abc` 是 400，不是「按 0 处理」。
+静默回退会让调用方用错窗口翻页，然后把问题算到数据头上。
 
 **窗口统一形状**（`/rows`）：
 

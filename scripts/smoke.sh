@@ -187,6 +187,19 @@ else
     fail "/rows missing columns"
   fi
 fi
+
+step "API answers bad requests with an explanation"
+if [ -n "${ADDR:-}" ]; then
+  for probe in "rows?path=edited.csv&start=abc" "book?max=nope" "groupby?path=edited.csv"; do
+    code=$(curl -s -o /dev/null -w '%{http_code}' "http://$ADDR/$probe")
+    body=$(curl -s "http://$ADDR/$probe")
+    if [ "$code" != "200" ] && printf '%s' "$body" | grep -q '"error"'; then
+      ok "$probe → $code with an error field"
+    else
+      fail "$probe answered $code without an error field"
+    fi
+  done
+fi
 kill "$SERVER_PID" 2>/dev/null
 wait "$SERVER_PID" 2>/dev/null
 

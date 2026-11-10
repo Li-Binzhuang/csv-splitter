@@ -1111,3 +1111,77 @@ fn copy_endpoint_pastes_a_named_range() {
     assert_eq!(status, 400, "{body}");
     assert!(body.contains("beyond the last column"), "{body}");
 }
+
+/// Every read endpoint answers a bad request with a structured error, not prose
+/// and not a silent 200.
+#[test]
+fn bad_requests_always_carry_a_reason_and_a_hint() {
+    let dir = TempDir::new("apihelp");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,CDMX\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    // Each of these is missing something the endpoint genuinely needs.
+    let endpoints = [
+        "/meta",
+        "/rows",
+        "/sheet",
+        "/book?max=nope",
+        "/analyze",
+        "/groupby",
+        "/pivot",
+        "/style",
+        "/chart",
+        "/layout",
+        "/edit",
+        "/filter",
+        "/search",
+        "/export",
+        "/query",
+        "/download",
+        "/job",
+    ];
+    let mut problems = Vec::new();
+    for endpoint in endpoints {
+        let (status, body) = get(&server.addr, endpoint);
+        if status == 200 {
+            problems.push(format!(
+                "{endpoint}: answered 200 with no parameters: {body}"
+            ));
+            continue;
+        }
+        if !body.contains("\"error\"") {
+            problems.push(format!(
+                "{endpoint}: {status} without an error field: {body}"
+            ));
+        }
+        if !body.contains("\"hint\"") && !body.contains("\"parameter\"") {
+            problems.push(format!("{endpoint}: {status} without a hint: {body}"));
+        }
+    }
+    assert!(problems.is_empty(), "{}", problems.join("\n"));
+}
+
+#[test]
+fn garbage_numbers_are_refused_rather_than_ignored() {
+    let dir = TempDir::new("numbers");
+    std::fs::write(dir.join("t.csv"), "id\n1\n2\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    for (query, parameter) in [
+        ("/rows?path=t.csv&start=abc", "start"),
+        ("/rows?path=t.csv&count=xyz", "count"),
+        ("/book?max=nope", "max"),
+    ] {
+        let (status, body) = get(&server.addr, query);
+        assert_eq!(status, 400, "{query}: {body}");
+        assert!(
+            body.contains(&format!("\"parameter\":\"{parameter}\"")),
+            "{query} did not name {parameter}: {body}"
+        );
+    }
+
+    // A valid value still works.
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&start=1&count=1");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(r#"["2"]"#), "{body}");
+}
