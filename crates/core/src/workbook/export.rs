@@ -53,7 +53,7 @@ pub fn export_quotes(
     let map = &sheet.map;
     let compiled = compile_formulas_at(base, ops, &columns)?;
     let refs = &compiled.refs;
-    let plan = ColumnPlan::build(ops, &columns, &compiled);
+    let plan = ColumnPlan::build(ops, &base_columns, &layout, &compiled);
 
     tx.send(ProgressEvent::PhaseStart {
         phase: "Exporting edits".into(),
@@ -330,7 +330,7 @@ impl Pager {
         };
         let sheet = compile(ops, index.data_rows());
         let compiled = compile_formulas_at(base, ops, &columns)?;
-        let plan = ColumnPlan::build(ops, &columns, &compiled);
+        let plan = ColumnPlan::build(ops, &base_columns, &layout, &compiled);
         Ok(Self {
             base: base.to_path_buf(),
             index,

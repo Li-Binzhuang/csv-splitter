@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.79.0] — 2026-11-10
+
+### Added
+
+- **`edit split-column`**: Excel's "text to columns". `--col full --by "," --into
+  "first,last,addr"` replaces one column with three, in place, and the **last piece
+  keeps the remainder** — so `Ana,Perez,Calle 1` becomes `Ana | Perez | Calle 1`
+  instead of dropping the commas out of the address. Fewer pieces than names leaves
+  the rest empty rather than shifting values into the wrong column.
+  - It is a journal operation, so the base file is untouched and `edit undo` takes it
+    back like any other edit.
+  - The split is computed per row at export time: no extra storage, no extra pass.
+
 ## [0.78.0] — 2026-11-10
 
 ### Fixed

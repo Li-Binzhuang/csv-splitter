@@ -4360,6 +4360,8 @@ fn cmd_edit(args: &[String]) -> i32 {
     let mut col: Option<String> = None;
     let mut value: Option<String> = None;
     let mut from: Option<String> = None;
+    let mut by: Option<String> = None;
+    let mut into: Option<String> = None;
     let mut count: Option<u64> = None;
     let mut regex = false;
     let mut name: Option<String> = None;
@@ -4374,6 +4376,20 @@ fn cmd_edit(args: &[String]) -> i32 {
     while let Some(arg) = p.next() {
         match arg.as_str() {
             "--regex" => regex = true,
+            "--by" => match p.value("--by") {
+                Ok(v) => by = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--into" => match p.value("--into") {
+                Ok(v) => into = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--row" => match p
                 .value("--row")
                 .and_then(|v| v.parse::<u64>().map_err(|_| "bad --row".to_string()))
@@ -4854,6 +4870,26 @@ fn cmd_edit(args: &[String]) -> i32 {
                 after: after_col,
                 name,
                 source,
+            }
+        }
+        "split-column" | "splitcolumn" => {
+            let (Some(column), Some(by), Some(into)) = (col.clone(), by, into) else {
+                eprintln!("error: split-column needs --col, --by and --into");
+                return 2;
+            };
+            let names: Vec<String> = into
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect();
+            if names.len() < 2 {
+                eprintln!("error: --into needs at least two names, e.g. --into \"first,last\"");
+                return 2;
+            }
+            csv_splitter_core::workbook::Op::SplitColumn {
+                column,
+                by,
+                into: names,
             }
         }
         "drop" => {

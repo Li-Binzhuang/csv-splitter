@@ -100,6 +100,12 @@ pub enum Op {
         from: String,
         to: String,
     },
+    /// Split one column into several, by a literal separator.
+    SplitColumn {
+        column: String,
+        by: String,
+        into: Vec<String>,
+    },
     /// Regex substitution, using the same pattern subset as conditional formatting.
     SubstituteRegex {
         column: Option<String>,
@@ -152,6 +158,7 @@ impl Op {
             Self::SetWhere { .. } => "setwhere",
             Self::Substitute { .. } => "substitute",
             Self::SubstituteRegex { .. } => "subst-rx",
+            Self::SplitColumn { .. } => "split-col",
             Self::AddColumn { .. } => "addcolumn",
             Self::AddColumnAt { .. } => "addcolumnat",
             Self::PasteBlock { .. } => "pasteblock",
@@ -178,6 +185,11 @@ impl Op {
                 truncate(from, 20),
                 truncate(to, 20),
                 column.as_deref().unwrap_or("every column")
+            ),
+            Self::SplitColumn { column, by, into } => format!(
+                "split '{column}' by '{}' into {}",
+                truncate(by, 12),
+                into.join(", ")
             ),
             Self::SubstituteRegex {
                 column,
@@ -1037,7 +1049,9 @@ mod history_tests {
             formula: "lag(amount)".to_string(),
         }];
         let compiled = compile_formulas(&ops, &columns).unwrap();
-        let plan = ColumnPlan::build(&ops, &columns, &compiled);
+        let base: Vec<String> = vec!["day".into(), "amount".into()];
+        let layout: Vec<(String, Option<usize>)> = column_layout(&ops, &base).unwrap();
+        let plan = ColumnPlan::build(&ops, &base, &layout, &compiled);
         let needs = plan.row_needs();
         assert_eq!(needs.lags, vec![("amount".to_string(), 1)], "{needs:?}");
         assert!(needs.running.is_empty());

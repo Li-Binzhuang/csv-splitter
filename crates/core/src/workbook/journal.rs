@@ -165,6 +165,9 @@ pub(crate) fn render_op(op: &Op) -> String {
             &[op.tag(), column.as_deref().unwrap_or("*"), from, to],
             b',',
         ),
+        Op::SplitColumn { column, by, into } => {
+            join_csv_line(&[op.tag(), column, by, &into.join("|")], b',')
+        }
         Op::SubstituteRegex {
             column,
             pattern,
@@ -238,6 +241,15 @@ pub(crate) fn parse_op(record: &[u8]) -> Option<Op> {
             filter: fields[1].clone(),
             column: fields[2].clone(),
             value: fields[3].clone(),
+        }),
+        "split-col" if fields.len() >= 4 => Some(Op::SplitColumn {
+            column: fields[1].clone(),
+            by: fields[2].clone(),
+            into: fields[3]
+                .split('|')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect(),
         }),
         "subst-rx" if fields.len() >= 4 => Some(Op::SubstituteRegex {
             column: match fields[1].trim() {

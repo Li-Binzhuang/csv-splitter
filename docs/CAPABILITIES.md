@@ -64,6 +64,7 @@
 | 改单元格 | `edit set --row N --col C --value V` | `POST /edit?action=set` |
 | 插入行 | `edit insert --row N --value "a,b,c"` | `action=insert` |
 | 删除行 | `edit delete --row N --count K` | `action=delete` |
+| 一列拆成多列 | `edit split-column f.csv --col full --by "," --into "first,last,addr"` | — |
 | 分页浏览（套用编辑） | `view f.csv [--where EXPR] [--order COL[--desc]] [--find TEXT [--nth N] [--context N]] [--start N] [--count M] [--json]` | `GET /rows?where=` |
 | 查找替换 | `edit replace --from X --to Y [--col C]` | `action=replace` |
 | 删列/改名 | `edit drop --name C` / `edit rename` | `action=drop/rename` |

@@ -454,6 +454,21 @@ pub fn column_layout(
                     ));
                 }
             }
+            Op::SplitColumn { column, into, .. } => {
+                let at = layout
+                    .iter()
+                    .position(|(n, _)| n == column)
+                    .ok_or_else(|| {
+                        io::Error::new(
+                            io::ErrorKind::InvalidInput,
+                            format!("cannot split: no column '{column}'"),
+                        )
+                    })?;
+                // The pieces occupy the original slot, in order, each reading from
+                // the same base column; the split itself happens per row.
+                let base = layout[at].1;
+                layout.splice(at..at + 1, into.iter().map(|name| (name.clone(), base)));
+            }
             Op::AddColumn { name, .. } => layout.push((name.clone(), None)),
             Op::AddColumnAt { after, name, .. } => {
                 let position = match after {
@@ -635,10 +650,24 @@ pub fn parse_a1_range(range: &str, columns: &[String]) -> Result<(u64, usize, u6
 pub struct ColumnPlan {
     pub formulas: Vec<Option<Formula>>,
     pub literals: Vec<Option<String>>,
+    /// Split pieces: (output index to fill, separator, piece number, source index).
+    ///
+    /// The source index is resolved in `build`, after the layout is known, so a
+    /// split column can sit anywhere and be renamed or moved afterwards.
+    pub splits: Vec<(usize, String, usize, usize)>,
 }
 
 impl ColumnPlan {
-    pub fn build(ops: &[Op], columns: &[String], compiled: &CompiledFormulas) -> Self {
+    /// `base_columns` is the file's original header and `columns` the output header
+    /// after the layout ops. Splits need both: the pieces sit where the source used
+    /// to be, and the source's name no longer exists among the outputs.
+    pub fn build(
+        ops: &[Op],
+        base_columns: &[String],
+        layout: &[(String, Option<usize>)],
+        compiled: &CompiledFormulas,
+    ) -> Self {
+        let columns: Vec<String> = layout.iter().map(|(name, _)| name.clone()).collect();
         let formulas = columns
             .iter()
             .map(|c| {
@@ -662,7 +691,37 @@ impl ColumnPlan {
                 }
             }
         }
-        Self { formulas, literals }
+        // Which output column is the source of each split piece? Look the source
+        // column up in the *final* layout: rows are projected onto it in order.
+        let mut splits = Vec::new();
+        for op in ops {
+            let Op::SplitColumn { column, by, into } = op else {
+                continue;
+            };
+            let Some(base_index) = base_columns.iter().position(|c| c == column) else {
+                continue;
+            };
+            // Every output column reading from that base column is one of the pieces,
+            // in layout order.
+            let pieces: Vec<usize> = layout
+                .iter()
+                .enumerate()
+                .filter(|(_, (_, base))| *base == Some(base_index))
+                .map(|(index, _)| index)
+                .collect();
+            if pieces.is_empty() {
+                continue;
+            }
+            let source = pieces[0];
+            for (piece, target) in pieces.iter().enumerate().take(into.len()) {
+                splits.push((*target, by.clone(), piece, source));
+            }
+        }
+        Self {
+            formulas,
+            literals,
+            splits,
+        }
     }
 
     /// Columns the formulas need history for.
@@ -683,6 +742,36 @@ impl ColumnPlan {
         row_number: u64,
         state: Option<&crate::formula::RowState>,
     ) {
+        // Pieces first: a formula may refer to a piece by name, and the formula run
+        // below reads the cells in their current state. The last piece keeps the rest
+        // of the value, so `a,b,c,d` split into three gives "a", "b", "c,d".
+        if !self.splits.is_empty() {
+            // Snapshot each source *before* writing: the first piece lands in the same
+            // slot the whole value was read from, and reading it again after that would
+            // split the already-split text.
+            let sources: Vec<(usize, String)> = self
+                .splits
+                .iter()
+                .map(|(_, _, _, source)| *source)
+                .collect::<std::collections::BTreeSet<_>>()
+                .into_iter()
+                .filter_map(|source| cells.get(source).cloned().map(|v| (source, v)))
+                .collect();
+            for (target, by, piece, source) in &self.splits {
+                let Some((_, raw)) = sources.iter().find(|(s, _)| *s == *source) else {
+                    continue;
+                };
+                let pieces: Vec<&str> = raw.split(by.as_str()).collect();
+                let value = if *piece + 1 >= pieces.len() && pieces.len() > 1 {
+                    pieces[*piece..].join(by.as_str())
+                } else {
+                    pieces.get(*piece).copied().unwrap_or("").to_string()
+                };
+                if let Some(cell) = cells.get_mut(*target) {
+                    *cell = value;
+                }
+            }
+        }
         for (index, literal) in self.literals.iter().enumerate() {
             if let Some(value) = literal {
                 if let Some(cell) = cells.get_mut(index) {
@@ -827,4 +916,37 @@ pub fn resolve_columns(ops: &[Op], base: &[String]) -> io::Result<Vec<String>> {
         }
     }
     Ok(columns)
+}
+
+#[cfg(test)]
+mod split_tests {
+    use super::*;
+
+    #[test]
+    fn a_column_can_be_split_into_several() {
+        let base: Vec<String> = vec!["id".into(), "full".into()];
+        let ops = vec![Op::SplitColumn {
+            column: "full".to_string(),
+            by: ",".to_string(),
+            into: vec!["first".into(), "last".into(), "addr".into()],
+        }];
+        let layout = column_layout(&ops, &base).unwrap();
+        let names: Vec<String> = layout.iter().map(|(n, _)| n.clone()).collect();
+        assert_eq!(names, vec!["id", "first", "last", "addr"]);
+
+        let compiled = compile_formulas(&ops, &names).unwrap();
+        let plan = ColumnPlan::build(&ops, &base, &layout, &compiled);
+        assert_eq!(plan.splits.len(), 3, "{:?}", plan.splits);
+
+        let mut cells = vec!["1".to_string(), "Ana,Perez,Calle 1".to_string()];
+        cells.resize(4, String::new());
+        plan.apply(
+            &names,
+            &mut cells,
+            &crate::formula::Refs::default(),
+            0,
+            None,
+        );
+        assert_eq!(cells, vec!["1", "Ana", "Perez", "Calle 1"]);
+    }
 }

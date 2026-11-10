@@ -3031,3 +3031,41 @@ fn extraction_refuses_to_escape_the_output_directory() {
         "partial extraction should not be left behind"
     );
 }
+
+/// Splitting a column in place: one column becomes several, the rest is the last piece.
+#[test]
+fn a_column_can_be_split_into_several() {
+    let dir = TempDir::new("splitcol");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,full\n1,\"Ana,Perez,Calle 1\"\n2,\"Solo\"\n").unwrap();
+    let path = input.to_str().unwrap();
+
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "split-column",
+            path,
+            "--col",
+            "full",
+            "--by",
+            ",",
+            "--into",
+            "first,last,addr",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    let out = dir.join("o.csv");
+    Command::new(bin())
+        .args(["edit", "export", path, "-o", out.to_str().unwrap()])
+        .status()
+        .unwrap();
+    let text = std::fs::read_to_string(&out).unwrap();
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines[0], "id,first,last,addr");
+    // The last piece keeps the remainder, so an address containing commas survives.
+    assert_eq!(lines[1], "1,Ana,Perez,Calle 1", "{text}");
+    // Fewer pieces than columns leaves the rest empty rather than shifting values.
+    assert_eq!(lines[2], "2,Solo,,", "{text}");
+}
