@@ -3761,9 +3761,16 @@ fn cmd_edit(args: &[String]) -> i32 {
         match arg.as_str() {
             "--row" => match p
                 .value("--row")
-                .and_then(|v| v.parse().map_err(|_| "bad --row".to_string()))
+                .and_then(|v| v.parse::<u64>().map_err(|_| "bad --row".to_string()))
             {
-                Ok(v) => row = Some(v),
+                // Rows are 1-based everywhere the user sees them, the same as A1
+                // references and the same as a spreadsheet. The journal stores
+                // 0-based physical indices; the translation happens exactly here.
+                Ok(0) => {
+                    eprintln!("error: rows are 1-based; row 1 is the first data row");
+                    return 2;
+                }
+                Ok(v) => row = Some(v - 1),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -4016,6 +4023,12 @@ fn cmd_edit(args: &[String]) -> i32 {
                 if journal.is_empty() {
                     println!("  (no edits yet)");
                 }
+                if journal.redo_len() > 0 {
+                    println!(
+                        "  {} operation(s) undone and available to `edit redo`",
+                        journal.redo_len()
+                    );
+                }
             }
             return 0;
         }
@@ -4069,10 +4082,35 @@ fn cmd_edit(args: &[String]) -> i32 {
                         return report_failure("edit", format!("cannot save the journal: {e}"));
                     }
                     println!("✓ undone: {}", op.describe());
+                    if journal.redo_len() > 0 {
+                        println!("  {} operation(s) can be redone", journal.redo_len());
+                    }
                     0
                 }
                 None => {
                     eprintln!("nothing to undo");
+                    1
+                }
+            };
+        }
+        "redo" => {
+            return match journal.redo() {
+                Some(op) => {
+                    if let Err(e) = journal.save(&sidecar) {
+                        return report_failure("edit", format!("cannot save the journal: {e}"));
+                    }
+                    println!("✓ redone: {}", op.describe());
+                    0
+                }
+                None => {
+                    eprintln!("nothing to redo");
+                    if journal.undo_len() > 0 {
+                        eprintln!(
+                            "hint: {} operation(s) are in effect; `edit undo` takes one back",
+                            journal.undo_len()
+                        );
+                        return 1;
+                    }
                     1
                 }
             };

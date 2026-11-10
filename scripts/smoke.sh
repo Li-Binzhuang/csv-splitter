@@ -98,7 +98,10 @@ BASE_SUM=$(shasum edited.csv | cut -d' ' -f1)
 run "bulk set" "$BIN" edit set edited.csv --where "city=CDMX" --col amount --value 0
 run "insert column" "$BIN" edit insert-column edited.csv --after city --name note --value manual
 run "formula column" "$BIN" edit formula edited.csv --name double --value "amount * 2"
-run "status" "$BIN" edit status edited.csv > /dev/null
+run "status" "$BIN" edit status edited.csv
+run "undo" "$BIN" edit undo edited.csv
+run "redo" "$BIN" edit redo edited.csv
+run "redo again (should refuse)" bash -c "! $BIN edit redo edited.csv > /dev/null 2>&1" || true
 run "export" "$BIN" edit export edited.csv -o edited.out.csv
 AFTER_SUM=$(shasum edited.csv | cut -d' ' -f1)
 if [ "$BASE_SUM" = "$AFTER_SUM" ]; then

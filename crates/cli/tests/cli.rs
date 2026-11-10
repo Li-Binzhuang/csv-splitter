@@ -1468,9 +1468,14 @@ fn edit_journal_never_touches_the_base_file() {
     assert_eq!(status.code(), Some(0));
     let fixed = std::fs::read_to_string(&out).unwrap();
     let lines: Vec<&str> = fixed.lines().collect();
+    // 1-based rows: `set --row 1` is the first data row, `insert --row 2` puts the
+    // new row before what was the second row, `delete --row 4` removes the row
+    // that sits at position 4 after the insert.
     assert_eq!(lines[0], "id,city,amount");
-    assert_eq!(lines[2], "2,Monterrey,20", "{fixed}");
-    assert_eq!(lines[3], "9,New,50", "{fixed}");
+    assert_eq!(lines[1], "1,Monterrey,10", "{fixed}");
+    assert_eq!(lines[2], "9,New,50", "{fixed}");
+    assert_eq!(lines[3], "2,Puebla,20", "{fixed}");
+    assert_eq!(lines[4], "4,Tijuana,40", "{fixed}");
     assert_eq!(lines.len(), 5, "one row deleted: {fixed}");
 
     // Undo removes the last edit (the delete), and status reflects it.
@@ -1734,7 +1739,7 @@ fn read_commands_warn_about_pending_edits() {
             "set",
             input.to_str().unwrap(),
             "--row",
-            "0",
+            "1",
             "--col",
             "amount",
             "--value",
@@ -2448,4 +2453,90 @@ fn a_window_read_does_not_scale_with_the_file() {
         big_ms < small_ms * 4 + 200,
         "a 10x bigger file took {big_ms} ms against {small_ms} ms, which suggests a full read"
     );
+}
+
+/// Undo takes a step back; redo puts it back; a new edit drops the redo branch.
+#[test]
+fn undo_and_redo_are_symmetric() {
+    let dir = TempDir::new("redocl");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,city\n1,x\n2,y\n").unwrap();
+
+    let run = |args: &[&str]| {
+        let out = Command::new(bin()).args(args).output().unwrap();
+        (
+            out.status.code(),
+            String::from_utf8_lossy(&out.stdout).to_string(),
+            String::from_utf8_lossy(&out.stderr).to_string(),
+        )
+    };
+    let path = input.to_str().unwrap();
+    run(&[
+        "edit", "set", path, "--row", "1", "--col", "city", "--value", "a",
+    ]);
+    run(&[
+        "edit", "set", path, "--row", "2", "--col", "city", "--value", "b",
+    ]);
+
+    let export = |name: &str| {
+        let out = dir.join(name);
+        run(&["edit", "export", path, "-o", out.to_str().unwrap()]);
+        std::fs::read_to_string(&out).unwrap()
+    };
+    assert_eq!(export("both.csv"), "id,city\n1,a\n2,b\n");
+
+    let (code, stdout, _) = run(&["edit", "undo", path]);
+    assert_eq!(code, Some(0));
+    assert!(stdout.contains("can be redone"), "{stdout}");
+    assert_eq!(export("undone.csv"), "id,city\n1,a\n2,y\n");
+
+    let (code, stdout, _) = run(&["edit", "redo", path]);
+    assert_eq!(code, Some(0));
+    assert!(stdout.contains("redone"), "{stdout}");
+    assert_eq!(export("redone.csv"), "id,city\n1,a\n2,b\n");
+
+    // Undo once more, then make a different edit: redo is no longer available.
+    run(&["edit", "undo", path]);
+    run(&[
+        "edit", "set", path, "--row", "2", "--col", "city", "--value", "c",
+    ]);
+    let (code, _, stderr) = run(&["edit", "redo", path]);
+    assert_eq!(code, Some(1));
+    assert!(stderr.contains("nothing to redo"), "{stderr}");
+}
+
+/// Rows are 1-based, like A1 references and like a spreadsheet.
+#[test]
+fn rows_are_one_based_for_the_user() {
+    let dir = TempDir::new("onebased");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,city\n1,x\n2,y\n").unwrap();
+    let path = input.to_str().unwrap();
+
+    let status = Command::new(bin())
+        .args([
+            "edit", "set", path, "--row", "1", "--col", "city", "--value", "a",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    let out = dir.join("o.csv");
+    Command::new(bin())
+        .args(["edit", "export", path, "-o", out.to_str().unwrap()])
+        .status()
+        .unwrap();
+    let text = std::fs::read_to_string(&out).unwrap();
+    assert!(text.contains("1,a"), "row 1 is the first data row: {text}");
+
+    // Row 0 is refused rather than quietly meaning "the first row".
+    let out = Command::new(bin())
+        .args([
+            "edit", "set", path, "--row", "0", "--col", "city", "--value", "q",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("1-based"), "{stderr}");
 }

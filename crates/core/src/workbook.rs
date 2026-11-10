@@ -205,6 +205,11 @@ fn truncate(text: &str, max: usize) -> String {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Journal {
     ops: Vec<Op>,
+    /// Operations taken back by `undo` and available to `redo`.
+    ///
+    /// Kept in its own sidecar so the journal itself stays append-only for readers:
+    /// a file being read never has to know that someone pressed undo.
+    redo: Vec<Op>,
 }
 
 impl Journal {
@@ -219,14 +224,28 @@ impl Journal {
         PathBuf::from(name)
     }
 
+    /// Where undone operations wait for a redo.
+    pub fn redo_sidecar(base: &Path) -> PathBuf {
+        PathBuf::from(format!("{}.redo", Self::sidecar(base).display()))
+    }
+
     /// Load the journal, or an empty one when the sidecar does not exist.
     ///
     /// The file is CSV so it can be read, diffed and hand-edited; a corrupt line
     /// is skipped with its number reported, because losing an undo step is better
     /// than refusing to open the sheet.
     pub fn load(path: &Path) -> io::Result<Self> {
+        Ok(Self {
+            ops: Self::read_ops(path)?,
+            // The redo sidecar is derived from the journal's path, so callers keep
+            // passing the same one path they always did.
+            redo: Self::read_ops(&path.with_extension("journal.redo"))?,
+        })
+    }
+
+    fn read_ops(path: &Path) -> io::Result<Vec<Op>> {
         if !path.exists() {
-            return Ok(Self::new());
+            return Ok(Vec::new());
         }
         let mut reader = RecordReader::new(
             BufReader::with_capacity(1024 * 1024, File::open(path)?),
@@ -239,30 +258,64 @@ impl Journal {
                 ops.push(op);
             }
         }
-        Ok(Self { ops })
+        Ok(ops)
     }
 
     /// Save atomically (write to `.tmp`, then rename).
     pub fn save(&self, path: &Path) -> io::Result<()> {
-        let tmp = path.with_extension("journal.tmp");
+        Self::write_ops(path, &self.ops)?;
+        let redo = path.with_extension("journal.redo");
+        if self.redo.is_empty() {
+            // No redo stack means no file: an empty sidecar would be noise.
+            if redo.exists() {
+                std::fs::remove_file(&redo)?;
+            }
+            return Ok(());
+        }
+        Self::write_ops(&redo, &self.redo)
+    }
+
+    fn write_ops(path: &Path, ops: &[Op]) -> io::Result<()> {
+        let tmp = path.with_extension("tmp");
         {
             let mut out = BufWriter::with_capacity(256 * 1024, File::create(&tmp)?);
-            for op in &self.ops {
+            for op in ops {
                 out.write_all(render_op(op).as_bytes())?;
             }
             out.flush()?;
         }
-        std::fs::rename(&tmp, path)?;
-        Ok(())
+        std::fs::rename(&tmp, path)
     }
 
+    /// Record a new operation.
+    ///
+    /// Any new edit discards the redo stack, the way a spreadsheet does: once you
+    /// change something after undoing, the branch you undid is gone.
     pub fn push(&mut self, op: Op) {
         self.ops.push(op);
+        self.redo.clear();
     }
 
-    /// Remove and return the last operation — the whole of undo.
+    /// Remove and return the last operation, making it available to `redo`.
     pub fn undo(&mut self) -> Option<Op> {
-        self.ops.pop()
+        let op = self.ops.pop()?;
+        self.redo.push(op.clone());
+        Some(op)
+    }
+
+    /// Put the most recently undone operation back, returning it.
+    pub fn redo(&mut self) -> Option<Op> {
+        let op = self.redo.pop()?;
+        self.ops.push(op.clone());
+        Some(op)
+    }
+
+    pub fn undo_len(&self) -> usize {
+        self.ops.len()
+    }
+
+    pub fn redo_len(&self) -> usize {
+        self.redo.len()
     }
 
     pub fn ops(&self) -> &[Op] {
@@ -2200,4 +2253,105 @@ fn shape(shape: &RowShape<'_>, base_cells: &[String], id: RowId, row_number: u64
     edits.apply_rules(columns, &mut out);
     plan.apply(columns, &mut out, refs, row_number);
     out
+}
+
+#[cfg(test)]
+mod redo_tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    struct TmpDir(PathBuf);
+
+    impl TmpDir {
+        fn new(tag: &str) -> Self {
+            let nanos = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0);
+            static SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+            let seq = SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            let path = std::env::temp_dir().join(format!("csvs_redo_{tag}_{nanos}_{seq}"));
+            std::fs::create_dir_all(&path).unwrap();
+            Self(path)
+        }
+
+        fn join(&self, name: &str) -> PathBuf {
+            self.0.join(name)
+        }
+    }
+
+    impl Drop for TmpDir {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    fn set(row: u64, value: &str) -> Op {
+        Op::SetCell {
+            row,
+            column: "city".to_string(),
+            value: value.to_string(),
+        }
+    }
+
+    #[test]
+    fn undo_moves_the_operation_to_the_redo_stack() {
+        let mut journal = Journal::new();
+        journal.push(set(0, "a"));
+        journal.push(set(1, "b"));
+
+        let undone = journal.undo().unwrap();
+        assert_eq!(journal.undo_len(), 1);
+        assert_eq!(journal.redo_len(), 1);
+        assert!(matches!(undone, Op::SetCell { ref value, .. } if value == "b"));
+
+        let redone = journal.redo().unwrap();
+        assert_eq!(journal.undo_len(), 2);
+        assert_eq!(journal.redo_len(), 0);
+        assert!(matches!(redone, Op::SetCell { ref value, .. } if value == "b"));
+    }
+
+    #[test]
+    fn undo_and_redo_survive_a_save_and_reload() {
+        let dir = TmpDir::new("redo");
+        let base: PathBuf = dir.join("t.csv");
+        std::fs::write(&base, "id,city\n1,x\n").unwrap();
+        let sidecar = Journal::sidecar(&base);
+
+        let mut journal = Journal::new();
+        journal.push(set(0, "a"));
+        journal.push(set(1, "b"));
+        journal.undo().unwrap();
+        journal.save(&sidecar).unwrap();
+
+        let mut reloaded = Journal::load(&sidecar).unwrap();
+        assert_eq!(reloaded.undo_len(), 1);
+        assert_eq!(
+            reloaded.redo_len(),
+            1,
+            "the redo stack is in its own sidecar"
+        );
+        reloaded.redo().unwrap();
+        assert_eq!(reloaded.undo_len(), 2);
+        reloaded.save(&sidecar).unwrap();
+        // Saving with an empty redo stack removes the file rather than leaving it.
+        assert!(!Journal::redo_sidecar(&base).exists());
+    }
+
+    #[test]
+    fn a_new_edit_discards_the_redo_branch() {
+        let mut journal = Journal::new();
+        journal.push(set(0, "a"));
+        journal.undo().unwrap();
+        journal.push(set(0, "c"));
+        assert_eq!(journal.redo_len(), 0, "editing after undo is a new branch");
+        assert_eq!(journal.undo_len(), 1);
+    }
+
+    #[test]
+    fn redo_on_an_empty_stack_is_harmless() {
+        let mut journal = Journal::new();
+        assert!(journal.redo().is_none());
+        assert!(journal.undo().is_none());
+    }
 }

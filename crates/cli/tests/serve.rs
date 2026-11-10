@@ -1185,3 +1185,29 @@ fn garbage_numbers_are_refused_rather_than_ignored() {
     assert_eq!(status, 200, "{body}");
     assert!(body.contains(r#"["2"]"#), "{body}");
 }
+
+#[test]
+fn the_api_can_redo_what_it_undid() {
+    let dir = TempDir::new("apidnd");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,x\n2,y\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=city&value=a",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let (status, body) = post(&server.addr, "/edit?path=t.csv&action=undo");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("undone"), "{body}");
+
+    let (status, body) = post(&server.addr, "/edit?path=t.csv&action=redo");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("redone"), "{body}");
+
+    // Nothing left to redo now.
+    let (status, body) = post(&server.addr, "/edit?path=t.csv&action=redo");
+    assert_eq!(status, 409, "{body}");
+    assert!(body.contains("\"hint\""), "{body}");
+}

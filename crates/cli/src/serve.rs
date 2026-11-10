@@ -622,6 +622,32 @@ fn edit_apply(
         };
     }
 
+    if action == "redo" {
+        return match journal.redo() {
+            Some(op) => match journal.save(&sidecar) {
+                Ok(()) => respond_json(
+                    stream,
+                    200,
+                    &format!(
+                        r#"{{"redone":{},"operations":{}}}"#,
+                        json_str(&op.describe()),
+                        journal.len()
+                    ),
+                ),
+                Err(e) => respond_json(
+                    stream,
+                    422,
+                    &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                ),
+            },
+            None => respond_json(
+                stream,
+                409,
+                r#"{"error":"nothing to redo","parameter":"action","hint":"run action=undo first, or make a new edit"}"#,
+            ),
+        };
+    }
+
     let number = |name: &str| -> Option<u64> { params.get(name).and_then(|v| v.parse().ok()) };
     let op = match action.as_str() {
         "set" => {
