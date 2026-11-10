@@ -9,6 +9,7 @@ pub mod dedupe;
 pub mod demo;
 pub mod encoding;
 pub mod filter;
+pub mod format;
 pub mod formula;
 pub mod groupby;
 pub mod index;

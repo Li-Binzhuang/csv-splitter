@@ -161,6 +161,7 @@ fn handle(
         "/sheet" => sheet_meta(&mut stream, root, &params),
         "/groupby" => group_by(&mut stream, root, cache, &params),
         "/pivot" => pivot_endpoint(&mut stream, root, cache, &params),
+        "/style" => style_endpoint(&mut stream, root, &params),
         "/download" => download(&mut stream, root, &params),
         "/export" => export(&mut stream, root, &params),
         "/query" => query(&mut stream, root, &params),
@@ -169,7 +170,7 @@ fn handle(
         _ => respond_json(
             &mut stream,
             404,
-            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/sheet","/pivot","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/edit","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
+            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/sheet","/pivot","/style","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/edit","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
         ),
     }
 }
@@ -707,6 +708,82 @@ fn edit_apply(
 /// Writes to a rate-limited cache of recent results: a dashboard polling the
 /// same query should not rescan the file each refresh, and the file is small
 /// (one row per group) by construction.
+/// Conditional formatting for a window: which cells to paint (GET /style).
+fn style_endpoint(
+    stream: &mut TcpStream,
+    root: &Path,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return bad_path(stream),
+    };
+    let Some(rules_text) = params.get("rules").filter(|v| !v.is_empty()) else {
+        return bad_request(
+            stream,
+            "rules is required",
+            "rules",
+            "pass rules=amount>1000:bg=red;status=late:fg=orange",
+        );
+    };
+    let mut rules = Vec::new();
+    for text in rules_text.split(';').filter(|s| !s.trim().is_empty()) {
+        match csv_splitter_core::format::Rule::parse(text) {
+            Ok(rule) => rules.push(rule),
+            Err(e) => {
+                return respond_json(stream, 400, &format!(r#"{{"error":{}}}"#, json_str(&e)))
+            }
+        }
+    }
+    let start: u64 = params
+        .get("start")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0);
+    let count: u64 = params
+        .get("count")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(100)
+        .min(MAX_ROWS_PER_REQUEST);
+    let sidecar = Journal::sidecar(&path);
+    let journal = match Journal::load(&sidecar) {
+        Ok(j) => j,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    match csv_splitter_core::format::styled_window(
+        &path,
+        journal.ops(),
+        &rules,
+        start,
+        count,
+        delimiter(params),
+    ) {
+        Ok(cells) => {
+            let body: Vec<String> = cells.iter().map(|c| c.to_json()).collect();
+            let rule_text: Vec<String> = rules.iter().map(|r| r.to_json()).collect();
+            respond_json(
+                stream,
+                200,
+                &format!(
+                    r#"{{"start":{start},"count":{count},"cells":[{}],"rules":[{}]}}"#,
+                    body.join(","),
+                    rule_text.join(",")
+                ),
+            )
+        }
+        Err(e) => respond_json(
+            stream,
+            422,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+    }
+}
+
 /// Pivot a sheet into a rows × columns matrix (GET /pivot).
 fn pivot_endpoint(
     stream: &mut TcpStream,

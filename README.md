@@ -488,6 +488,51 @@ Puebla,...
 
 实测：**100 万行 → 5×12 矩阵，1.56 秒**（debug 构建）。
 
+## 条件格式 / Conditional formatting
+
+规则由**服务端求值**，返回的是「哪些单元格该上色」——不是整表的重绘数据。
+一屏 100 行就只读 100 行，文件多大都一样。
+
+```bash
+$ csv-splitter format orders.csv --rule "amount>1000:bg=red" --rule "status=late:fg=orange"
+2 cell(s) match in rows 0..100
+  row      1  amount       = 1200                 → {"background":"#f44336"}
+  row      2  status       = late                 → {"foreground":"#ff9800"}
+```
+
+规则写法（一行一条，能直接放进 URL 或 shell 参数）：
+
+```
+<列><运算符><值>:<样式>
+  amount>1000:bg=red
+  city~CDMX:bg=#ffd54f,bold
+  amount between 10,2000:fg=white
+  status empty:italic
+  id matches ^2024\d{4}$:bg=green
+```
+
+| 运算符 | 含义 |
+|---|---|
+| `>` `>=` `<` `<=` `=` `!=` | 数值比较（非数字一律不匹配） |
+| `~` / `^` / `$` | 包含 / 开头是 / 结尾是 |
+| `matches` | 正则（支持 `\d` `\w` `[a-z]` `{n}` `{n,m}` `.` `*` `+` `?` `^` `$`） |
+| `between lo,hi` | 闭区间 |
+| `empty` / `nonempty` | 空 / 非空 |
+
+样式：`bg=` / `fg=` 加颜色（`red` `green` `yellow` `orange` `blue` `grey` `white` `black` 或 `#rgb`/`#rrggbb`），加 `bold` / `italic`。
+
+两条规则命中同一格时**后面的赢**——这样可以先写通用规则、再写精修规则，不用让每条规则互斥。
+
+`--summary` 扫全表只统计命中数，用来在有人看到颜色之前发现「这条规则太宽了」：
+
+```bash
+$ csv-splitter format orders.csv --rule "amount>50:bg=yellow" --summary
+3 rows scanned
+     2 rows (66.7%)  amount>50:bg=yellow
+```
+
+API：`GET /style?path=&rules=rule1;rule2&start=&count=`。
+
 ## 错误信息 / Error output
 
 只有两种形状，脚本可以直接按前缀判断：

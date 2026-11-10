@@ -898,3 +898,24 @@ fn pivot_endpoint_returns_a_matrix() {
     let (_, body) = get(&server.addr, "/pivot?path=sales.csv");
     assert!(body.contains(r#""parameter":"rows""#), "{body}");
 }
+
+#[test]
+fn style_endpoint_paints_only_matching_cells() {
+    let dir = TempDir::new("styleapi");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,1200\nPuebla,900\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(
+        &server.addr,
+        "/style?path=t.csv&rules=amount%3E1000%3Abg%3Dred",
+    );
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(r#""row":0"#), "{body}");
+    assert!(body.contains(r#""column":"amount""#), "{body}");
+    assert!(body.contains("#f44336"), "{body}");
+    // Only the matching row is reported, not the whole window.
+    assert!(!body.contains(r#""row":1"#), "{body}");
+
+    let (_, body) = get(&server.addr, "/style?path=t.csv");
+    assert!(body.contains(r#""parameter":"rules""#), "{body}");
+}

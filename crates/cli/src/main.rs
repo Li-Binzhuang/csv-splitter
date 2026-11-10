@@ -47,6 +47,7 @@ fn main() -> ExitCode {
         Some("concat") => cmd_concat(&args[1..]),
         Some("groupby") => cmd_groupby(&args[1..]),
         Some("pivot") => cmd_pivot(&args[1..]),
+        Some("format") => cmd_format(&args[1..]),
         Some("demo") => cmd_demo(&args[1..]),
         Some("sql") => cmd_sql(&args[1..]),
         Some("search") => cmd_search(&args[1..]),
@@ -95,6 +96,7 @@ COMMANDS
   concat   <a.csv> <b.csv> ...    Glue same-shaped files into one (header checked)
   groupby  <input> --by K --agg A Group and aggregate into a CSV
   pivot    <input> --rows R --values A Rows × columns × measures matrix
+  format   <input> --rule R          Conditional formatting: which cells to paint
   demo     [-o <dir>]           Write a sample file to try the commands on
   search   <input> <text>        Find text anywhere (or in chosen columns)
   files    --root <dir>          List readable files under a directory
@@ -2023,6 +2025,187 @@ fn parse_sort_columns(spec: &str, default_descending: bool) -> Result<Vec<SortCo
         return Err("no sort columns".to_string());
     }
     Ok(columns)
+}
+
+fn cmd_format(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut input: Option<PathBuf> = None;
+    let mut rules_text: Vec<String> = Vec::new();
+    let mut start: u64 = 0;
+    let mut count: u64 = 100;
+    let mut summary = false;
+    let mut json = false;
+    let mut quiet = false;
+    let mut delim = "auto".to_string();
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--rule" => match p.value("--rule") {
+                Ok(v) => rules_text.push(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--start" => match p
+                .value("--start")
+                .and_then(|v| v.parse().map_err(|_| "bad --start".to_string()))
+            {
+                Ok(v) => start = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--count" => match p
+                .value("--count")
+                .and_then(|v| v.parse().map_err(|_| "bad --count".to_string()))
+            {
+                Ok(v) => count = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--summary" => summary = true,
+            "--json" => json = true,
+            "--quiet" | "-q" => quiet = true,
+            "-d" | "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => {
+                if input.is_none() {
+                    input = Some(PathBuf::from(other));
+                } else {
+                    eprintln!("error: unexpected argument: {other}");
+                    return 2;
+                }
+            }
+        }
+    }
+
+    let Some(input) = input else {
+        eprintln!("error: format needs an <input> file");
+        return 2;
+    };
+    if rules_text.is_empty() {
+        eprintln!("error: format needs at least one --rule \"column>value:bg=...\"");
+        return 2;
+    }
+    let mut rules = Vec::new();
+    for text in &rules_text {
+        match csv_splitter_core::format::Rule::parse(text) {
+            Ok(rule) => rules.push(rule),
+            Err(e) => {
+                eprintln!("error: {e}");
+                return 2;
+            }
+        }
+    }
+    let delimiter = match parse_delimiter(&delim, &input) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let sidecar = csv_splitter_core::workbook::Journal::sidecar(&input);
+    let journal = match csv_splitter_core::workbook::Journal::load(&sidecar) {
+        Ok(j) => j,
+        Err(e) => {
+            return report_failure("format", format!("cannot read {}: {e}", sidecar.display()))
+        }
+    };
+
+    if summary {
+        // Whole-file census: which rule is too broad, before anyone sees colours.
+        let (tx, rx) = mpsc::channel();
+        let reporter = spawn_reporter("format", rx, quiet || json);
+        let result =
+            csv_splitter_core::format::count_matches(&input, journal.ops(), &rules, delimiter, &tx);
+        drop(tx);
+        let _ = reporter.join();
+        let summary = match result {
+            Ok(s) => s,
+            Err(_) => return 1,
+        };
+        if json {
+            let counts: Vec<String> = summary.matches.iter().map(|n| n.to_string()).collect();
+            println!(
+                r#"{{"rows":{},"rules":[{}],"matches":[{}]}}"#,
+                summary.rows,
+                rules
+                    .iter()
+                    .map(|r| r.to_json())
+                    .collect::<Vec<_>>()
+                    .join(","),
+                counts.join(",")
+            );
+        } else {
+            println!("{} rows scanned", summary.rows);
+            for (rule, hits) in rules.iter().zip(&summary.matches) {
+                let pct = if summary.rows == 0 {
+                    0.0
+                } else {
+                    *hits as f64 / summary.rows as f64 * 100.0
+                };
+                println!("  {:>6} rows ({pct:.1}%)  {}", hits, rule.source);
+            }
+        }
+        return 0;
+    }
+
+    let cells = match csv_splitter_core::format::styled_window(
+        &input,
+        journal.ops(),
+        &rules,
+        start,
+        count,
+        delimiter,
+    ) {
+        Ok(c) => c,
+        Err(e) => return report_failure("format", e),
+    };
+
+    if json {
+        let items: Vec<String> = cells.iter().map(|c| c.to_json()).collect();
+        println!(
+            r#"{{"start":{start},"count":{},"cells":[{}]}}"#,
+            cells.len(),
+            items.join(",")
+        );
+    } else {
+        println!(
+            "{} cell(s) match in rows {start}..{}",
+            cells.len(),
+            start + count
+        );
+        for cell in cells.iter().take(40) {
+            println!(
+                "  row {:>6}  {:<12} = {:<20} → {}",
+                cell.row + 1,
+                cell.column,
+                cell.value,
+                cell.style.to_json()
+            );
+        }
+        if cells.len() > 40 {
+            println!("  … and {} more", cells.len() - 40);
+        }
+    }
+    0
 }
 
 fn cmd_pivot(args: &[String]) -> i32 {

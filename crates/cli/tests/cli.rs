@@ -1559,3 +1559,52 @@ fn pivot_produces_a_matrix_and_refuses_to_explode() {
         .unwrap();
     assert_eq!(status.code(), Some(1), "a wide column key must fail");
 }
+
+/// Conditional formatting: the server says which cells match, the caller paints.
+#[test]
+fn format_reports_matching_cells_and_a_summary() {
+    let dir = TempDir::new("format");
+    let input = dir.join("t.csv");
+    std::fs::write(
+        &input,
+        "city,amount,status\nCDMX,1200,ok\nPuebla,900,late\nTijuana,30,ok\n",
+    )
+    .unwrap();
+
+    let status = Command::new(bin())
+        .args([
+            "format",
+            input.to_str().unwrap(),
+            "--rule",
+            "amount>1000:bg=red",
+            "--rule",
+            "status=late:fg=orange",
+            "--json",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    let status = Command::new(bin())
+        .args([
+            "format",
+            input.to_str().unwrap(),
+            "--rule",
+            "amount>1000:bg=red",
+            "--summary",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(status.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&status.stdout);
+    // Whole-file census, so a too-broad rule is visible before anyone sees colour.
+    assert!(text.contains("3 rows scanned"), "{text}");
+    assert!(text.contains("amount>1000:bg=red"), "{text}");
+
+    // A malformed rule is a usage error, not a silent no-op.
+    let out = Command::new(bin())
+        .args(["format", input.to_str().unwrap(), "--rule", "amount>1000"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+}

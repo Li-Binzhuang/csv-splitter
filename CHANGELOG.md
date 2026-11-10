@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.41.0] — 2026-11-10
+
+### Added
+
+- **Conditional formatting** (`crates/core/src/format.rs`): rules are evaluated
+  server-side and the answer is a list of cells to paint — `(row, column, style)`
+  — never a restyled copy of the data, so a window costs one window read.
+  - Rule language: `column>1000:bg=red`, `~`/`^`/`$` for text, `between lo,hi`,
+    `matches` with a small regex subset (`\d`, `\w`, `[a-z]`, `{n}`, `{n,m}`,
+    `.`, `*`, `+`, `?`, anchors), `empty`/`nonempty`, named or hex colours, `bold`/`italic`.
+  - Later rules win for the same cell, so a general rule can be refined instead of
+    every rule needing to exclude every other.
+  - `format --summary` streams the whole file and counts matches per rule — the
+    cheap way to notice a rule is too broad before anyone sees colour.
+  - `GET /style` serves the same evaluation for a window, with the rules echoed back.
+
 ## [0.40.0] — 2026-11-10
 
 ### Added
