@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.86.0] — 2026-11-10
+
+### Docs
+
+- **The cost boundary is written down.** "No lag on any size" is a claim about *memory*,
+  and the README now separates three kinds of time cost: constant (open, page, view the
+  edited sheet), once (building the index), and per-query (filter materialisation, sort,
+  column profile — the operations whose job is to read the whole file).
+  - Re-measured on 60 MB / 6 M rows: first `/rows` 0.55 s, later pages 0.21 s, a filtered
+    second page 18 ms once materialised (0.91 s the first time).
+  - The earlier guess — "where= scans every time" — turned out to be wrong: the result
+    cache serves the slices, and the scan happens once per distinct query. Writing down
+    the measured numbers rather than the remembered ones is the point of the exercise.
+
 ## [0.85.0] — 2026-11-10
 
 ### Added

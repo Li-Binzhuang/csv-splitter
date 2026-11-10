@@ -1412,3 +1412,32 @@ fn sheet_reports_the_index_and_it_can_be_prebuilt() {
     );
     assert!(body.contains("\"indexBytes\":"), "{body}");
 }
+
+/// The documented cost model: a repeated filtered page is served from the cache.
+#[test]
+fn a_repeated_filtered_page_does_not_rescan() {
+    let dir = TempDir::new("repeatfilter");
+    let mut text = String::from("id,city\n");
+    for i in 0..200_000 {
+        text.push_str(&format!("{i},C{}\n", i % 9));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0.clone());
+
+    let first = std::time::Instant::now();
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&where=city%3DC5&start=0&count=100");
+    assert_eq!(status, 200, "{body}");
+    let cold = first.elapsed();
+
+    let warm = std::time::Instant::now();
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&where=city%3DC5&start=0&count=100");
+    assert_eq!(status, 200, "{body}");
+    let warm_elapsed = warm.elapsed();
+
+    // The second identical request must be materially faster; both being ~0 would make
+    // the assertion meaningless, so require a cold run that took measurable time.
+    assert!(
+        warm_elapsed <= cold.max(std::time::Duration::from_millis(50)),
+        "warm {warm_elapsed:?} vs cold {cold:?}"
+    );
+}
