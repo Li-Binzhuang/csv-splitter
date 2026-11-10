@@ -78,6 +78,406 @@ fn main() -> ExitCode {
     ExitCode::from(code as u8)
 }
 
+/// Options for one command, so `--help` answers the question that was asked.
+///
+/// The global help lists what the tool can do; it cannot describe sixty-one flags
+/// without becoming unreadable. Each command's own options live here, and a test checks
+/// that no command parses a flag this table forgets to mention.
+const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
+    (
+        "analyze",
+        &[
+            ("--delim", "Field delimiter (default: auto)"),
+            (
+                "--distinct-cap",
+                "Stop counting distinct values past this many",
+            ),
+            ("--json", "Emit JSON"),
+            ("--quotes", "Quote style: rfc4180 | backslash | none"),
+            ("--sample", "Sample this many rows instead of reading all"),
+        ],
+    ),
+    (
+        "book",
+        &[
+            ("--json", "Emit JSON"),
+            ("--max", "Maximum sheets to list"),
+            ("--root", "Directory to serve / list"),
+        ],
+    ),
+    (
+        "chart",
+        &[
+            ("--by", "Separator (split-column) or grouping column"),
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--desc", "Descending order"),
+            ("--json", "Emit JSON"),
+            ("--max-points", "Refuse to chart more than this many points"),
+            ("--out", "Output path"),
+            ("--quotes", "Quote style: rfc4180 | backslash | none"),
+            ("--series", "Chart: one series per value of this column"),
+            ("--sort-by-value", "Chart: order categories by value"),
+            ("--type", "Chart type"),
+            ("--x", "Chart: x axis column"),
+            ("--y", "Chart: y axis measure, e.g. \"amount:sum\""),
+        ],
+    ),
+    (
+        "columns",
+        &[
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--drop", "Columns to drop, comma separated"),
+            ("--json", "Emit JSON"),
+            ("--keep", "Columns to keep, comma separated"),
+            ("--out", "Output path"),
+            ("--quotes", "Quote style: rfc4180 | backslash | none"),
+            ("--rename", "Renames, e.g. \"old:new\""),
+            ("--verify", "Re-check the result after writing"),
+        ],
+    ),
+    (
+        "concat",
+        &[
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--ignore-header", "Skip the header check"),
+            ("--json", "Emit JSON"),
+            ("--out", "Output path"),
+        ],
+    ),
+    (
+        "convert",
+        &[
+            ("--from", "Source encoding"),
+            ("--out", "Output path"),
+            ("--quiet", "Only errors"),
+            ("--to", "Target encoding"),
+        ],
+    ),
+    (
+        "dedupe",
+        &[
+            ("--by", "Separator (split-column) or grouping column"),
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--json", "Emit JSON"),
+            ("--max-keys", "Refuse to run past this many distinct keys"),
+            ("--out", "Output path"),
+            ("--quotes", "Quote style: rfc4180 | backslash | none"),
+            ("--verify", "Re-check the result after writing"),
+        ],
+    ),
+    ("demo", &[("--out", "Output path")]),
+    (
+        "edit",
+        &[
+            ("--after", "Insert the column after this one"),
+            ("--by", "Separator (split-column) or grouping column"),
+            ("--col", "Target column"),
+            ("--count", "How many rows"),
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--formula", "Formula for the new column, e.g. \"qty*2\""),
+            ("--from", "Source encoding"),
+            ("--into", "New column names for split-column"),
+            ("--json", "Emit JSON"),
+            ("--name", "Column name"),
+            ("--out", "Output path"),
+            ("--quotes", "Quote style: rfc4180 | backslash | none"),
+            (
+                "--regex",
+                "Treat the pattern as a pattern: . * + ? ^ $ [a-z]",
+            ),
+            ("--row", "Data row (1-based)"),
+            ("--to", "Target encoding"),
+            ("--value", "Value to write"),
+            ("--where", "Filter expression, e.g. city=CDMX"),
+        ],
+    ),
+    ("extract", &[("--out", "Output path")]),
+    (
+        "files",
+        &[
+            ("--ext", "Only files with this extension"),
+            ("--json", "Emit JSON"),
+            ("--root", "Directory to serve / list"),
+        ],
+    ),
+    (
+        "filter",
+        &[
+            ("--any", "OR instead of AND"),
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--desc", "Descending order"),
+            ("--json", "Emit JSON"),
+            ("--limit", "Maximum rows to report / return"),
+            ("--order", "Sort rows, e.g. \"city,amount:desc\""),
+            ("--out", "Output path"),
+            ("--quotes", "Quote style: rfc4180 | backslash | none"),
+            ("--show", "Also print the matching rows"),
+            ("--verify", "Re-check the result after writing"),
+            ("--where", "Filter expression, e.g. city=CDMX"),
+        ],
+    ),
+    (
+        "format",
+        &[
+            ("--count", "How many rows"),
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--json", "Emit JSON"),
+            ("--quiet", "Only errors"),
+            (
+                "--rule",
+                "Format rule (\"amount>1000:bg=red\") or validation rule (\"qty>=0\")",
+            ),
+            ("--start", "First data row (1-based)"),
+            (
+                "--summary",
+                "Count matches per rule instead of listing cells",
+            ),
+        ],
+    ),
+    (
+        "groupby",
+        &[
+            ("--agg", "Aggregations, e.g. \"amount:sum,qty:mean\""),
+            ("--asc", "Ascending order"),
+            ("--by", "Separator (split-column) or grouping column"),
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--desc", "Descending order"),
+            ("--json", "Emit JSON"),
+            ("--max-groups", "Refuse to run past this many groups"),
+            ("--order", "Sort rows, e.g. \"city,amount:desc\""),
+            ("--out", "Output path"),
+            ("--quiet", "Only errors"),
+            ("--quotes", "Quote style: rfc4180 | backslash | none"),
+        ],
+    ),
+    (
+        "index",
+        &[
+            ("--interval", "Rows between index checkpoints"),
+            ("--out", "Output path"),
+        ],
+    ),
+    (
+        "layout",
+        &[
+            ("--freeze-first", "Freeze these leading columns"),
+            ("--json", "Emit JSON"),
+            ("--set", "Layout settings, e.g. \"width=20\""),
+        ],
+    ),
+    (
+        "lookup",
+        &[
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--from", "Source encoding"),
+            ("--from-key", "Reference table key column"),
+            ("--get", "Columns to bring over, comma separated"),
+            ("--json", "Emit JSON"),
+            ("--key", "Join key column"),
+            ("--max-keys", "Refuse to run past this many distinct keys"),
+            ("--out", "Output path"),
+            ("--quiet", "Only errors"),
+            ("--quotes", "Quote style: rfc4180 | backslash | none"),
+            ("--reference", "Reference table path"),
+        ],
+    ),
+    (
+        "merge",
+        &[("--out", "Output path"), ("--quiet", "Only errors")],
+    ),
+    (
+        "partition",
+        &[
+            ("--buf-mb", "Sort buffer size in MB"),
+            ("--by", "Separator (split-column) or grouping column"),
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--format", "Archive format: tar | tar.gz | tar.zst | zip"),
+            ("--level", "Compression level"),
+            (
+                "--max-partitions",
+                "Refuse to write more partitions than this",
+            ),
+            ("--out", "Output path"),
+            ("--quiet", "Only errors"),
+            ("--verify", "Re-check the result after writing"),
+        ],
+    ),
+    (
+        "pivot",
+        &[
+            ("--cols", "Pivot: column key"),
+            ("--columns", "Pivot: column key"),
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--desc", "Descending order"),
+            ("--json", "Emit JSON"),
+            ("--max-cells", "Pivot: matrix cells allowed"),
+            ("--max-columns", "Pivot: distinct column values allowed"),
+            ("--order", "Sort rows, e.g. \"city,amount:desc\""),
+            ("--out", "Output path"),
+            (
+                "--qualify",
+                "Pivot: prefix each measure with its column key",
+            ),
+            ("--quiet", "Only errors"),
+            ("--quotes", "Quote style: rfc4180 | backslash | none"),
+            ("--rows", "Pivot row keys (comma separated)"),
+            ("--values", "Pivot measures, e.g. \"amount:sum\""),
+        ],
+    ),
+    (
+        "preview",
+        &[
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--index", "Rebuild the index first"),
+            ("--quotes", "Quote style: rfc4180 | backslash | none"),
+            ("--rows", "Pivot row keys (comma separated)"),
+            ("--start-row", "First data row (1-based)"),
+        ],
+    ),
+    (
+        "search",
+        &[
+            ("--case", "Case-sensitive search"),
+            ("--columns", "Pivot: column key"),
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--exact", "Match the whole cell"),
+            ("--json", "Emit JSON"),
+            ("--limit", "Maximum rows to report / return"),
+            ("--quotes", "Quote style: rfc4180 | backslash | none"),
+            (
+                "--regex",
+                "Treat the pattern as a pattern: . * + ? ^ $ [a-z]",
+            ),
+            ("--show", "Also print the matching rows"),
+        ],
+    ),
+    (
+        "serve",
+        &[
+            ("--addr", "Bind address (127.0.0.1:0 picks a free port)"),
+            ("--root", "Directory to serve / list"),
+        ],
+    ),
+    (
+        "sort",
+        &[
+            ("--asc", "Ascending order"),
+            ("--buf-mb", "Sort buffer size in MB"),
+            ("--by", "Separator (split-column) or grouping column"),
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--desc", "Descending order"),
+            ("--out", "Output path"),
+            ("--quiet", "Only errors"),
+            ("--verify", "Re-check the result after writing"),
+        ],
+    ),
+    (
+        "split",
+        &[
+            ("--buf-mb", "Sort buffer size in MB"),
+            ("--by-column", "Partition by this column"),
+            ("--by-size", "Target part size, e.g. 500MB"),
+            ("--columns", "Pivot: column key"),
+            ("--columns-file", "Read the split columns from a file"),
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--desc", "Descending order"),
+            ("--format", "Archive format: tar | tar.gz | tar.zst | zip"),
+            ("--level", "Compression level"),
+            ("--out", "Output path"),
+            ("--quiet", "Only errors"),
+            ("--sort", "Sort rows inside each part"),
+            ("--splits", "Number of archive parts (verify)"),
+            ("--threads", "Worker threads"),
+        ],
+    ),
+    (
+        "sql",
+        &[
+            ("--json", "Emit JSON"),
+            ("--limit", "Maximum rows to report / return"),
+        ],
+    ),
+    (
+        "stats",
+        &[
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--quotes", "Quote style: rfc4180 | backslash | none"),
+            ("--sample", "Sample this many rows instead of reading all"),
+            ("--top", "How many values to show per column"),
+        ],
+    ),
+    (
+        "validate",
+        &[
+            (
+                "--check",
+                "Validation rule, e.g. \"qty>=0\" or \"city:not-empty\"",
+            ),
+            ("--checks", "Several checks, separated by ;"),
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--json", "Emit JSON"),
+            ("--quiet", "Only errors"),
+            ("--quotes", "Quote style: rfc4180 | backslash | none"),
+            (
+                "--rule",
+                "Format rule (\"amount>1000:bg=red\") or validation rule (\"qty>=0\")",
+            ),
+        ],
+    ),
+    (
+        "verify",
+        &[
+            ("--quiet", "Only errors"),
+            ("--splits", "Number of archive parts (verify)"),
+        ],
+    ),
+    (
+        "view",
+        &[
+            ("--context", "Rows of context around the match"),
+            ("--count", "How many rows"),
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--desc", "Descending order"),
+            (
+                "--find",
+                "Centre the page on the first row containing this text",
+            ),
+            ("--json", "Emit JSON"),
+            ("--match-case", "Case-sensitive"),
+            ("--nth", "Which match to centre on (default 1)"),
+            ("--order", "Sort rows, e.g. \"city,amount:desc\""),
+            ("--quotes", "Quote style: rfc4180 | backslash | none"),
+            (
+                "--regex",
+                "Treat the pattern as a pattern: . * + ? ^ $ [a-z]",
+            ),
+            (
+                "--rule",
+                "Format rule (\"amount>1000:bg=red\") or validation rule (\"qty>=0\")",
+            ),
+            ("--start", "First data row (1-based)"),
+            ("--where", "Filter expression, e.g. city=CDMX"),
+        ],
+    ),
+];
+
+fn print_command_help(command: &str) {
+    let Some(options) = COMMAND_OPTIONS
+        .iter()
+        .find(|(name, _)| *name == command)
+        .map(|(_, options)| options)
+    else {
+        print_help();
+        return;
+    };
+    println!("csv-splitter {VERSION} — {command}\n");
+    for (flag, description) in options.iter() {
+        println!("  {flag:20} {description}");
+    }
+    println!("\n  --help               Show help and exit");
+    println!("\nRun `csv-splitter --help` for the list of commands.");
+}
+
 fn print_help() {
     println!(
         r#"csv-splitter {VERSION} — split / merge / inspect large CSV files
@@ -640,7 +1040,7 @@ fn cmd_split(args: &[String]) -> i32 {
                 }
                 "-q" | "--quiet" => quiet = true,
                 "-h" | "--help" => {
-                    print_help();
+                    print_command_help("split");
                     return Err(String::new());
                 }
                 other if other.starts_with('-') => return Err(format!("unknown option: {other}")),
@@ -805,7 +1205,7 @@ fn cmd_merge(args: &[String]) -> i32 {
             },
             "-q" | "--quiet" => quiet = true,
             "-h" | "--help" => {
-                print_help();
+                print_command_help("merge");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -897,7 +1297,7 @@ fn cmd_preview(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("preview");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -1038,7 +1438,7 @@ fn cmd_index(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("index");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -1099,7 +1499,7 @@ fn cmd_sql(args: &[String]) -> i32 {
             },
             "--json" => json = true,
             "-h" | "--help" => {
-                print_help();
+                print_command_help("sql");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -1376,6 +1776,10 @@ fn cmd_view(args: &[String]) -> i32 {
                     return 2;
                 }
             },
+            "-h" | "--help" => {
+                print_command_help("view");
+                return 0;
+            }
             other if other.starts_with('-') => {
                 eprintln!("error: unknown option: {other}");
                 return 2;
@@ -1875,7 +2279,7 @@ fn cmd_filter(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("filter");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -2126,7 +2530,7 @@ fn cmd_search(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("search");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -2250,7 +2654,7 @@ fn cmd_files(args: &[String]) -> i32 {
             },
             "--json" => json = true,
             "-h" | "--help" => {
-                print_help();
+                print_command_help("files");
                 return 0;
             }
             other => root = Some(PathBuf::from(other)),
@@ -2339,7 +2743,7 @@ fn cmd_convert(args: &[String]) -> i32 {
             },
             "-q" | "--quiet" => quiet = true,
             "-h" | "--help" => {
-                print_help();
+                print_command_help("convert");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -2430,7 +2834,7 @@ fn cmd_serve(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("serve");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -2496,7 +2900,7 @@ fn cmd_stats(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("stats");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -2572,7 +2976,7 @@ fn cmd_extract(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("extract");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -2668,7 +3072,7 @@ fn cmd_sort(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("sort");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -2830,7 +3234,7 @@ fn cmd_book(args: &[String]) -> i32 {
             },
             "--json" => json = true,
             "-h" | "--help" => {
-                print_help();
+                print_command_help("book");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -2985,7 +3389,7 @@ fn cmd_lookup(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("lookup");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -3135,7 +3539,7 @@ fn cmd_layout(args: &[String]) -> i32 {
             },
             "--json" => json = true,
             "-h" | "--help" => {
-                print_help();
+                print_command_help("layout");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -3312,7 +3716,7 @@ fn cmd_chart(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("chart");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -3472,7 +3876,7 @@ fn cmd_format(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("format");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -3696,7 +4100,7 @@ fn cmd_pivot(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("pivot");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -3879,7 +4283,7 @@ fn cmd_validate(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("validate");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -4006,7 +4410,7 @@ fn cmd_demo(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("demo");
                 return 0;
             }
             other => out = Some(PathBuf::from(other)),
@@ -4115,7 +4519,7 @@ fn cmd_groupby(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("groupby");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -4234,7 +4638,7 @@ fn cmd_concat(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("concat");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -4368,7 +4772,7 @@ fn cmd_partition(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("partition");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -4971,7 +5375,7 @@ fn cmd_edit(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("edit");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -5489,7 +5893,7 @@ fn cmd_analyze(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("analyze");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -5706,7 +6110,7 @@ fn cmd_columns(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("columns");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -5857,7 +6261,7 @@ fn cmd_dedupe(args: &[String]) -> i32 {
                 }
             },
             "-h" | "--help" => {
-                print_help();
+                print_command_help("dedupe");
                 return 0;
             }
             other if other.starts_with('-') => {
@@ -5971,7 +6375,7 @@ fn cmd_verify(args: &[String]) -> i32 {
             },
             "-q" | "--quiet" => quiet = true,
             "-h" | "--help" => {
-                print_help();
+                print_command_help("verify");
                 return 0;
             }
             other if other.starts_with('-') => {

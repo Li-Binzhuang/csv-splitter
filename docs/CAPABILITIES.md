@@ -265,3 +265,23 @@
 
 这一点对 tar 由 `tar` crate 自己做（它跳过越界成员），对 zip 是本项目自己做的
 ——之前没有做，`../escaped.txt` 真的写到了输出目录外面。
+
+## 帮助 / Help
+
+`csv-splitter --help` 是**任务视图**（「你想做什么 → 用哪条命令」）；
+`csv-splitter <command> --help` 是**选项视图**（这条命令能传什么）。
+
+```
+$ csv-splitter pivot --help
+csv-splitter 0.96.0 — pivot
+
+  --cols               Pivot: column key
+  --max-cells          Pivot: matrix cells allowed
+  --qualify            Pivot: prefix each measure with its column key
+  --values             Pivot measures, e.g. "amount:sum"
+  ...
+```
+
+在此之前，60 个选项**只存在于代码里**——`--get`、`--max-cells`、`--qualify`、`--check`
+这些能改变结果的参数，`--help` 一个字都没提。有一个测试读 `main.rs`、找出每条命令
+真正解析的参数，再跑 `<command> --help` 比对：**新增参数忘了写帮助会直接红。**

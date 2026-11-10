@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.97.0] — 2026-11-10
+
+### Added
+
+- **`<command> --help` now lists that command's own options.** The global help is a task
+  view ("what do you want to do → which command"); it cannot describe sixty-one flags
+  without becoming a wall. Sixty of them were parsed and never documented — `--get`,
+  `--max-cells`, `--qualify`, `--check`, `--regex`, `--sum`, and others that change the
+  answer rather than the formatting.
+
+### Fixed
+
+- **`view` had no `--help` at all** — the most-used command answered "unknown option:
+  --help". Found by the new test, which parses `main.rs` for the flags each command
+  really accepts, runs `<command> --help`, and compares. A flag added without a line
+  here now fails the suite instead of staying invisible.
+
 ## [0.96.0] — 2026-11-10
 
 ### Fixed

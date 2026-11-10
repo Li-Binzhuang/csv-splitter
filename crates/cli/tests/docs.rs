@@ -372,3 +372,77 @@ fn the_quote_style_claim_names_commands_that_accept_it() {
         "these do not accept --quotes: {missing:?}"
     );
 }
+
+/// `command --help` must mention every flag that command actually parses.
+///
+/// The source is parsed rather than a list of flags being maintained by hand: a flag
+/// that is added to a command and forgotten here fails the test, which is exactly how
+/// sixty-one options ended up undocumented before this existed.
+#[test]
+fn every_command_documents_the_flags_it_parses() {
+    let source = std::fs::read_to_string(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/main.rs"),
+    )
+    .expect("main.rs should be readable");
+
+    let mut problems = Vec::new();
+    for (name, _, body) in command_bodies(&source) {
+        let mut flags: Vec<String> = Vec::new();
+        for quoted in body.split(r#""--"#).skip(1) {
+            let flag: String = quoted
+                .chars()
+                .take_while(|c| c.is_ascii_lowercase() || *c == '-')
+                .collect();
+            if !flag.is_empty() {
+                flags.push(format!("--{flag}"));
+            }
+        }
+        // Ask the binary what it documents, so the check is end to end.
+        let out = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+            .args([name, "--help"])
+            .output()
+            .unwrap();
+        let help = String::from_utf8_lossy(&out.stdout);
+        for flag in flags {
+            if flag == "--help" {
+                continue;
+            }
+            if !help.contains(flag.as_str()) {
+                problems.push(format!("{name} parses {flag} but does not list it"));
+            }
+        }
+    }
+    assert!(problems.is_empty(), "{problems:#?}");
+}
+
+/// Split `main.rs` into `(command name, function body)` for the `cmd_*` functions.
+fn command_bodies(source: &str) -> Vec<(&str, usize, &str)> {
+    let mut out = Vec::new();
+    let mut rest = source;
+    let mut offset = 0;
+    while let Some(at) = rest.find("\nfn cmd_") {
+        let start = at + 4;
+        let head = &rest[start..];
+        let name_end = head.find('(').unwrap_or(0);
+        let name = &head[4..name_end];
+        let body_start = start;
+        let next = rest[start..].find("\nfn cmd_").map(|i| start + i);
+        let body_end = match next {
+            Some(next) => next,
+            None => rest.len(),
+        };
+        // Stop at the next top-level function of any kind, not only another cmd_.
+        let stop = rest[body_start..]
+            .match_indices("\nfn ")
+            .find(|(_, _)| true)
+            .map(|(i, _)| body_start + i)
+            .unwrap_or(body_end);
+        out.push((name, offset, &rest[body_start..stop]));
+        rest = &rest[stop..];
+        offset += stop;
+        if rest.len() <= 1 {
+            break;
+        }
+    }
+    out
+}
