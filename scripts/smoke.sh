@@ -79,7 +79,9 @@ step "find things"
 run "filter by column" "$BIN" filter "$DEMO" --where "city=CDMX" -o filtered.csv
 run "filter then order" "$BIN" filter "$DEMO" --where "amount>100" --order "amount:desc" -o ordered.csv
 run "sort several keys" "$BIN" sort "$DEMO" --by "city,amount:desc" -o sorted.csv
-run "search" "$BIN" search "$DEMO" CDMX > /dev/null
+run "search" "$BIN" search "$DEMO" CDMX
+run "paged view" "$BIN" view "$DEMO" --count 5
+run "view with a filter" "$BIN" view "$DEMO" --where "city=CDMX" --count 3
 
 step "summarise"
 run "groupby" "$BIN" groupby "$DEMO" --by city --agg "amount:sum" -o g.csv

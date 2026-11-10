@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.71.0] — 2026-11-10
+
+### Added
+
+- **`view <file> [--where EXPR] [--start N] [--count M] [--json]`**: a paged look at
+  the *edited* sheet in the terminal. It reads in windows instead of loading the file,
+  applies the journal, and reuses the same compiled predicate the exporter uses — a
+  second implementation would eventually disagree about what `city=CDMX` means.
+  Filtering streams: each window is tested and printing stops as soon as the
+  requested count is reached, so a selective filter over 10 GB stays cheap.
+
 ## [0.70.0] — 2026-11-10
 
 ### Added

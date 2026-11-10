@@ -2652,3 +2652,63 @@ fn formulas_can_look_at_the_previous_row() {
     assert_eq!(lines[3], "3,30,20,10,60", "{text}");
     assert_eq!(lines[4], "4,40,30,10,100", "{text}");
 }
+
+/// `view` shows the edited sheet, filters it, and pages it.
+#[test]
+fn view_applies_edits_and_filters() {
+    let dir = TempDir::new("viewcmd");
+    let input = dir.join("t.csv");
+    std::fs::write(
+        &input,
+        "id,city,amount\n1,CDMX,10\n2,Puebla,20\n3,CDMX,30\n4,Tijuana,40\n",
+    )
+    .unwrap();
+    let path = input.to_str().unwrap();
+
+    // No edits yet: the first page.
+    let out = Command::new(bin())
+        .args(["view", path, "--count", "2"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("id | city | amount"), "{text}");
+    assert!(text.contains("1 | CDMX | 10"), "{text}");
+
+    // Edit one row, then look again: the value must be the edited one.
+    Command::new(bin())
+        .args([
+            "edit", "set", path, "--row", "2", "--col", "amount", "--value", "999",
+        ])
+        .status()
+        .unwrap();
+    let out = Command::new(bin())
+        .args(["view", path, "--where", "city=Puebla"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        text.contains("2 | Puebla | 999"),
+        "edits must be visible: {text}"
+    );
+    assert!(text.contains("1 edit(s) applied"), "{text}");
+
+    // Paging past the end says nothing matched rather than failing.
+    let out = Command::new(bin())
+        .args(["view", path, "--start", "10", "--count", "5"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("no rows matched"), "{text}");
+
+    // JSON is machine-readable.
+    let out = Command::new(bin())
+        .args(["view", path, "--count", "1", "--json"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        text.starts_with(r#"{"columns":["id","city","amount"]"#),
+        "{text}"
+    );
+}

@@ -292,7 +292,9 @@ pub struct CompiledSet {
 }
 
 impl CompiledSet {
-    fn holds(&self, fields: &[String]) -> bool {
+    /// Does this row pass? Public so a viewer can reuse the same semantics the
+    /// exporter uses — two implementations would eventually disagree.
+    pub fn holds(&self, fields: &[String]) -> bool {
         let mut any = false;
         for (i, spec) in self.specs.iter().enumerate() {
             let idx = self.columns[i].1;

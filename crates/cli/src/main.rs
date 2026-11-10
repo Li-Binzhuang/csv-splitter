@@ -38,6 +38,7 @@ fn main() -> ExitCode {
         Some("serve") => cmd_serve(&args[1..]),
         Some("convert") => cmd_convert(&args[1..]),
         Some("filter") => cmd_filter(&args[1..]),
+        Some("view") => cmd_view(&args[1..]),
         Some("sort") => cmd_sort(&args[1..]),
         Some("analyze") => cmd_analyze(&args[1..]),
         Some("dedupe") => cmd_dedupe(&args[1..]),
@@ -101,6 +102,7 @@ COMMANDS
   split    <input>              Split a CSV (optionally compress) into chunks
   merge    <archive|dir> -o F   Re-assemble chunks produced by `split`
   preview  <input>              Print the first rows and detected delimiter
+  view     <input> [--where EXPR] Paged view of the edited sheet, optionally filtered
   index    <input>              Build a sparse row index for instant paging
   serve    --root <dir>          Local HTTP API (JSON) for a web front-end
   convert  <input>               Transcode a CSV to UTF-8 (GBK / UTF-16 input)
@@ -1182,6 +1184,225 @@ fn json_quote(s: &str) -> String {
     }
     out.push('"');
     out
+}
+
+/// `view`: paged look at the edited sheet, optionally filtered.
+///
+/// Reads the file in windows instead of loading it, so the same command works on a
+/// 10 GB file. Filtering streams: each window is tested and matches are printed until
+/// the requested count is reached, which means a selective filter stays fast and an
+/// unselective one stops early anyway.
+fn cmd_view(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut quotes_text = String::new();
+    let mut input: Option<PathBuf> = None;
+    let mut start: u64 = 0;
+    let mut count: u64 = 20;
+    let mut delim = "auto".to_string();
+    let mut where_expr: Option<String> = None;
+    let mut json = false;
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--start" => match p.value("--start") {
+                Ok(v) => match v.parse() {
+                    Ok(n) => start = n,
+                    Err(_) => {
+                        eprintln!("error: --start needs a number");
+                        return 2;
+                    }
+                },
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--count" => match p.value("--count") {
+                Ok(v) => match v.parse::<u64>() {
+                    Ok(0) => {
+                        eprintln!("error: --count must be at least 1");
+                        return 2;
+                    }
+                    Ok(n) => count = n,
+                    Err(_) => {
+                        eprintln!("error: --count needs a number");
+                        return 2;
+                    }
+                },
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--where" => match p.value("--where") {
+                Ok(v) => where_expr = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--quotes" => match p.value("--quotes") {
+                Ok(v) => quotes_text = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--json" => json = true,
+            "-d" | "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => input = Some(PathBuf::from(other)),
+        }
+    }
+
+    let Some(input) = input else {
+        eprintln!("error: view needs an <input> path");
+        return 2;
+    };
+    let delimiter = match parse_delimiter(&delim, &input) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    // Validate the flag even though `window` reads with the sheet's own rules: a
+    // rejected value should be rejected here, not silently ignored.
+    if let Err(e) = parse_quotes(&quotes_text) {
+        eprintln!("error: {e}");
+        return 2;
+    }
+    warn_quote_style(&input);
+    // No `warn_pending_edits` here: unlike the read-only commands, `view` applies them.
+
+    let sidecar = csv_splitter_core::workbook::Journal::sidecar(&input);
+    let journal = match csv_splitter_core::workbook::Journal::load(&sidecar) {
+        Ok(j) => j,
+        Err(e) => return report_failure("view", format!("cannot read the journal: {e}")),
+    };
+    let ops = journal.ops().to_vec();
+
+    // The predicate is compiled once, against the *edited* column names, so a filter
+    // on a renamed column behaves the way the user sees the sheet.
+    let compiled = match &where_expr {
+        None => None,
+        Some(expr) => {
+            let spec = match csv_splitter_core::filter::FilterSpec::parse(expr) {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            };
+            let set = csv_splitter_core::filter::FilterSet::single(spec);
+            let columns = match csv_splitter_core::workbook::resolve_columns(
+                &ops,
+                &match csv_splitter_core::workbook::base_header(&input, delimiter) {
+                    Ok(c) => c,
+                    Err(e) => return report_failure("view", e.to_string()),
+                },
+            ) {
+                Ok(c) => c,
+                Err(e) => return report_failure("view", e.to_string()),
+            };
+            match set.compile(&columns) {
+                Ok(c) => Some(c),
+                Err(e) => return report_failure("view", e.to_string()),
+            }
+        }
+    };
+
+    // A windowed reader gives the same rows an export would, edits and formulas
+    // included; this command adds paging and filtering on top.
+    let mut rows: Vec<Vec<String>> = Vec::new();
+    let mut columns: Vec<String> = Vec::new();
+    let mut seen: u64 = 0;
+    let mut scanned: u64 = 0;
+    let chunk = count.max(1_000);
+    loop {
+        let win = match csv_splitter_core::workbook::window(&input, &ops, seen, chunk, delimiter) {
+            Ok(w) => w,
+            Err(e) => return report_failure("view", e.to_string()),
+        };
+        if win.rows.is_empty() {
+            break;
+        }
+        if columns.is_empty() {
+            columns = win.columns.clone();
+        }
+        for row in &win.rows {
+            scanned += 1;
+            let keep = match &compiled {
+                None => scanned > start,
+                Some(set) => set.holds(row),
+            };
+            if keep {
+                rows.push(row.clone());
+                if rows.len() as u64 >= count {
+                    break;
+                }
+            }
+        }
+        seen += win.rows.len() as u64;
+        if rows.len() as u64 >= count || win.rows.len() < chunk as usize {
+            break;
+        }
+    }
+
+    if json {
+        let body = rows
+            .iter()
+            .map(|row| {
+                let cells: Vec<String> = row.iter().map(|c| serve::json_str(c)).collect();
+                format!("[{}]", cells.join(","))
+            })
+            .collect::<Vec<_>>()
+            .join(",");
+        println!(
+            r#"{{"columns":[{}],"rows":[{}]}}"#,
+            columns
+                .iter()
+                .map(|c| serve::json_str(c))
+                .collect::<Vec<_>>()
+                .join(","),
+            body
+        );
+        return 0;
+    }
+
+    if rows.is_empty() {
+        println!("(no rows matched)");
+        return 0;
+    }
+    println!("{}", columns.join(" | "));
+    println!("{}", "-".repeat(40));
+    for row in &rows {
+        println!("{}", row.join(" | "));
+    }
+    let applied = journal.len();
+    if applied > 0 || where_expr.is_some() {
+        let mut note = String::new();
+        if applied > 0 {
+            note.push_str(&format!("{applied} edit(s) applied"));
+        }
+        if let Some(expr) = &where_expr {
+            if !note.is_empty() {
+                note.push_str(" · ");
+            }
+            note.push_str(&format!("{} row(s) where {expr}", rows.len()));
+        }
+        println!("\n({note})");
+    }
+    0
 }
 
 fn cmd_filter(args: &[String]) -> i32 {
