@@ -19,6 +19,8 @@
 //! Cell values that are not numbers evaluate to `#VALUE!` in numeric positions,
 //! exactly like a spreadsheet, instead of silently becoming zero.
 
+mod functions;
+
 use std::collections::HashMap;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -30,17 +32,28 @@ enum Token {
     Star,
     Slash,
     Percent,
+    Ampersand,
+    Gt,
+    Ge,
+    Lt,
+    Le,
+    Eq,
+    Ne,
+    Str(String),
     LParen,
     RParen,
     Comma,
 }
 
 #[derive(Clone, Debug, PartialEq)]
-enum Expr {
+pub(crate) enum Expr {
     Number(f64),
+    Text(String),
     Column(String),
     Binary(char, Box<Expr>, Box<Expr>),
+    Compare(&'static str, Box<Expr>, Box<Expr>),
     Negate(Box<Expr>),
+    Not(Box<Expr>),
     Call(String, Vec<Expr>),
 }
 
@@ -54,6 +67,7 @@ pub struct Formula {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     Number(f64),
+    Bool(bool),
     Text(String),
     /// Non-numeric input where a number was required (spreadsheet `#VALUE!`).
     Error,
@@ -64,6 +78,7 @@ impl Value {
     pub fn render(&self) -> String {
         match self {
             Self::Number(n) => format_number(*n),
+            Self::Bool(b) => if *b { "TRUE" } else { "FALSE" }.to_string(),
             Self::Text(s) => s.clone(),
             Self::Error => "#VALUE!".to_string(),
         }
@@ -77,11 +92,7 @@ impl Value {
     }
 
     fn text(&self) -> String {
-        match self {
-            Self::Number(n) => format_number(*n),
-            Self::Text(s) => s.clone(),
-            Self::Error => "#VALUE!".to_string(),
-        }
+        self.render()
     }
 }
 
@@ -141,11 +152,12 @@ impl Formula {
 fn collect_refs(expr: &Expr, out: &mut Vec<String>) {
     match expr {
         Expr::Column(name) => out.push(name.clone()),
-        Expr::Binary(_, l, r) => {
+        Expr::Binary(_, l, r) | Expr::Compare(_, l, r) => {
             collect_refs(l, out);
             collect_refs(r, out);
         }
-        Expr::Negate(x) => collect_refs(x, out),
+        Expr::Negate(x) | Expr::Not(x) => collect_refs(x, out),
+        Expr::Text(_) => {}
         Expr::Call(_, args) => args.iter().for_each(|a| collect_refs(a, out)),
         Expr::Number(_) => {}
     }
@@ -161,6 +173,14 @@ impl Token {
             Self::Star => "*".into(),
             Self::Slash => "/".into(),
             Self::Percent => "%".into(),
+            Self::Ampersand => "&".into(),
+            Self::Gt => ">".into(),
+            Self::Ge => ">=".into(),
+            Self::Lt => "<".into(),
+            Self::Le => "<=".into(),
+            Self::Eq => "=".into(),
+            Self::Ne => "<>".into(),
+            Self::Str(text) => format!("\"{text}\""),
             Self::LParen => "(".into(),
             Self::RParen => ")".into(),
             Self::Comma => ",".into(),
@@ -195,6 +215,50 @@ fn tokenize(src: &str) -> Result<Vec<Token>, String> {
             '%' => {
                 chars.next();
                 tokens.push(Token::Percent);
+            }
+            '&' => {
+                chars.next();
+                tokens.push(Token::Ampersand);
+            }
+            '>' => {
+                chars.next();
+                if chars.peek() == Some(&'=') {
+                    chars.next();
+                    tokens.push(Token::Ge);
+                } else {
+                    tokens.push(Token::Gt);
+                }
+            }
+            '<' => {
+                chars.next();
+                match chars.peek() {
+                    Some('=') => {
+                        chars.next();
+                        tokens.push(Token::Le);
+                    }
+                    Some('>') => {
+                        chars.next();
+                        tokens.push(Token::Ne);
+                    }
+                    _ => tokens.push(Token::Lt),
+                }
+            }
+            '=' => {
+                chars.next();
+                tokens.push(Token::Eq);
+            }
+            '"' | '\'' => {
+                let quote = c;
+                chars.next();
+                let mut text = String::new();
+                loop {
+                    match chars.next() {
+                        Some(ch) if ch == quote => break,
+                        Some(ch) => text.push(ch),
+                        None => return Err("unclosed string in formula".to_string()),
+                    }
+                }
+                tokens.push(Token::Str(text));
             }
             '(' => {
                 chars.next();
@@ -275,6 +339,37 @@ impl Parser {
     }
 
     fn expr(&mut self) -> Result<Expr, String> {
+        let left = self.concat()?;
+        let op = match self.peek() {
+            Some(Token::Gt) => Some(">"),
+            Some(Token::Ge) => Some(">="),
+            Some(Token::Lt) => Some("<"),
+            Some(Token::Le) => Some("<="),
+            Some(Token::Eq) => Some("="),
+            Some(Token::Ne) => Some("<>"),
+            _ => None,
+        };
+        match op {
+            Some(op) => {
+                self.take();
+                Ok(Expr::Compare(op, Box::new(left), Box::new(self.concat()?)))
+            }
+            None => Ok(left),
+        }
+    }
+
+    /// `a & b & c`: text concatenation binds tighter than comparison, looser than
+    /// arithmetic, which is where a spreadsheet puts it.
+    fn concat(&mut self) -> Result<Expr, String> {
+        let mut left = self.additive()?;
+        while matches!(self.peek(), Some(Token::Ampersand)) {
+            self.take();
+            left = Expr::Binary('&', Box::new(left), Box::new(self.additive()?));
+        }
+        Ok(left)
+    }
+
+    fn additive(&mut self) -> Result<Expr, String> {
         let mut left = self.term()?;
         loop {
             match self.peek() {
@@ -308,7 +403,12 @@ impl Parser {
     fn factor(&mut self) -> Result<Expr, String> {
         match self.take() {
             Some(Token::Number(n)) => Ok(Expr::Number(n)),
+            Some(Token::Str(text)) => Ok(Expr::Text(text)),
+            Some(Token::Plus) => self.factor(),
             Some(Token::Minus) => Ok(Expr::Negate(Box::new(self.factor()?))),
+            Some(Token::Ident(name)) if name.eq_ignore_ascii_case("not") => {
+                Ok(Expr::Not(Box::new(self.factor()?)))
+            }
             Some(Token::LParen) => {
                 let inner = self.expr()?;
                 match self.take() {
@@ -349,9 +449,11 @@ impl Parser {
     }
 }
 
-fn eval(expr: &Expr, row: &HashMap<String, String>) -> Value {
+/// Evaluate one expression against a row.
+pub(crate) fn eval(expr: &Expr, row: &HashMap<String, String>) -> Value {
     match expr {
         Expr::Number(n) => Value::Number(*n),
+        Expr::Text(t) => Value::Text(t.clone()),
         Expr::Column(name) => match row.get(name) {
             None => Value::Error,
             Some(raw) => match raw.trim().parse::<f64>() {
@@ -364,82 +466,75 @@ fn eval(expr: &Expr, row: &HashMap<String, String>) -> Value {
             Value::Number(n) => Value::Number(-n),
             _ => Value::Error,
         },
+        Expr::Not(x) => Value::Bool(!truthy(&eval(x, row))),
         Expr::Binary(op, l, r) => {
             let a = eval(l, row);
             let b = eval(r, row);
-            // `&`-style concatenation is out of scope; arithmetic needs numbers.
-            let (Some(x), Some(y)) = (a.number(), b.number()) else {
-                return Value::Error;
-            };
             match op {
-                '+' => Value::Number(x + y),
-                '-' => Value::Number(x - y),
-                '*' => Value::Number(x * y),
-                '/' => {
-                    if y == 0.0 {
-                        Value::Error
-                    } else {
-                        Value::Number(x / y)
-                    }
-                }
-                '%' => {
-                    if y == 0.0 {
-                        Value::Error
-                    } else {
-                        Value::Number(x % y)
+                '&' => Value::Text(format!("{}{}", a.text(), b.text())),
+                '+' | '-' | '*' | '/' | '%' => {
+                    let (Some(x), Some(y)) = (a.number(), b.number()) else {
+                        return Value::Error;
+                    };
+                    match op {
+                        '+' => Value::Number(x + y),
+                        '-' => Value::Number(x - y),
+                        '*' => Value::Number(x * y),
+                        '/' => {
+                            if y == 0.0 {
+                                Value::Error
+                            } else {
+                                Value::Number(x / y)
+                            }
+                        }
+                        '%' => {
+                            if y == 0.0 {
+                                Value::Error
+                            } else {
+                                Value::Number(x % y)
+                            }
+                        }
+                        _ => Value::Error,
                     }
                 }
                 _ => Value::Error,
             }
         }
-        Expr::Call(name, args) => match name.to_ascii_lowercase().as_str() {
-            "round" => {
-                let Some(x) = args.first().and_then(|a| eval(a, row).number()) else {
-                    return Value::Error;
-                };
-                let digits = args
-                    .get(1)
-                    .and_then(|a| eval(a, row).number())
-                    .unwrap_or(0.0) as i32;
-                let factor = 10f64.powi(digits);
-                Value::Number((x * factor).round() / factor)
-            }
-            "abs" => match args.first().map(|a| eval(a, row)) {
-                Some(Value::Number(n)) => Value::Number(n.abs()),
-                _ => Value::Error,
-            },
-            "min" | "max" => {
-                let mut nums = Vec::new();
-                for arg in args {
-                    match eval(arg, row).number() {
-                        Some(n) => nums.push(n),
-                        None => return Value::Error,
-                    }
-                }
-                if nums.is_empty() {
-                    return Value::Error;
-                }
-                let picked = if name.eq_ignore_ascii_case("min") {
-                    nums.iter().cloned().fold(f64::INFINITY, f64::min)
-                } else {
-                    nums.iter().cloned().fold(f64::NEG_INFINITY, f64::max)
-                };
-                Value::Number(picked)
-            }
-            "len" => match args.first().map(|a| eval(a, row)) {
-                Some(v) => Value::Number(v.text().chars().count() as f64),
-                None => Value::Error,
-            },
-            "upper" => match args.first().map(|a| eval(a, row)) {
-                Some(v) => Value::Text(v.text().to_uppercase()),
-                None => Value::Error,
-            },
-            "lower" => match args.first().map(|a| eval(a, row)) {
-                Some(v) => Value::Text(v.text().to_lowercase()),
-                None => Value::Error,
-            },
-            _ => Value::Error,
-        },
+        Expr::Compare(op, l, r) => {
+            let a = eval(l, row);
+            let b = eval(r, row);
+            let ordering = match (a.number(), b.number()) {
+                (Some(x), Some(y)) => x.partial_cmp(&y),
+                _ => Some(a.text().cmp(&b.text())),
+            };
+            let Some(ordering) = ordering else {
+                return Value::Bool(false);
+            };
+            Value::Bool(match *op {
+                ">" => ordering.is_gt(),
+                ">=" => ordering.is_ge(),
+                "<" => ordering.is_lt(),
+                "<=" => ordering.is_le(),
+                "=" => ordering.is_eq(),
+                "<>" => ordering.is_ne(),
+                _ => false,
+            })
+        }
+        Expr::Call(name, args) => functions::call(name, args, row),
+    }
+}
+
+/// Truthiness, the way a spreadsheet decides it: non-zero numbers, `true`/`yes`/`1`
+/// as text, and anything else false.
+pub(crate) fn truthy(value: &Value) -> bool {
+    match value {
+        Value::Bool(b) => *b,
+        Value::Number(n) => *n != 0.0,
+        Value::Text(t) => {
+            let lower = t.trim().to_ascii_lowercase();
+            matches!(lower.as_str(), "true" | "yes" | "1")
+        }
+        Value::Error => false,
     }
 }
 
@@ -531,6 +626,91 @@ mod tests {
         assert!(Formula::parse("1 + $").is_err());
         let err = Formula::parse("amount @ 2").unwrap_err();
         assert!(err.contains('@'), "{err}");
+    }
+
+    #[test]
+    fn conditionals_only_evaluate_the_branch_they_need() {
+        // The unguarded branch would divide by zero; if() must not evaluate it.
+        assert_eq!(
+            eval_str(
+                "if(qty = 0, 0, amount / qty)",
+                &[("qty", "0"), ("amount", "10")]
+            ),
+            "0"
+        );
+        assert_eq!(
+            eval_str(
+                "if(qty = 0, 0, amount / qty)",
+                &[("qty", "2"), ("amount", "10")]
+            ),
+            "5"
+        );
+        assert_eq!(
+            eval_str("if(amount > 100, \"big\", \"small\")", &[("amount", "50")]),
+            "small"
+        );
+        assert_eq!(
+            eval_str("if(amount > 100, \"big\", \"small\")", &[("amount", "500")]),
+            "big"
+        );
+        assert_eq!(eval_str("if(1, 2, 3)", &[]), "2");
+        // A one-argument if has no else; it answers FALSE rather than erroring.
+        assert_eq!(eval_str("if(0, 2)", &[]), "FALSE");
+    }
+
+    #[test]
+    fn comparisons_return_booleans() {
+        assert_eq!(eval_str("amount >= 10", &[("amount", "10")]), "TRUE");
+        assert_eq!(eval_str("amount <> 10", &[("amount", "11")]), "TRUE");
+        assert_eq!(eval_str("city = \"CDMX\"", &[("city", "CDMX")]), "TRUE");
+        assert_eq!(eval_str("city = \"cdmx\"", &[("city", "CDMX")]), "FALSE");
+        assert_eq!(eval_str("not(1)", &[]), "FALSE");
+        assert_eq!(eval_str("and(1, 0)", &[]), "FALSE");
+        assert_eq!(eval_str("or(1, 0)", &[]), "TRUE");
+    }
+
+    #[test]
+    fn text_concatenation_and_slicing() {
+        assert_eq!(
+            eval_str(
+                "city & \"-\" & month",
+                &[("city", "CDMX"), ("month", "Jan")]
+            ),
+            "CDMX-Jan"
+        );
+        assert_eq!(eval_str("left(city, 2)", &[("city", "CDMX")]), "CD");
+        assert_eq!(eval_str("right(city, 2)", &[("city", "CDMX")]), "MX");
+        assert_eq!(eval_str("mid(city, 2, 2)", &[("city", "CDMX")]), "DM");
+        assert_eq!(eval_str("upper(city)", &[("city", "cdmx")]), "CDMX");
+        assert_eq!(eval_str("trim(city)", &[("city", "  x  ")]), "x");
+        assert_eq!(
+            eval_str("replace(city, \"C\", \"X\")", &[("city", "CDMX")]),
+            "XDMX"
+        );
+    }
+
+    #[test]
+    fn date_parts_read_iso_prefixes() {
+        assert_eq!(eval_str("year(d)", &[("d", "2024-03-15")]), "2024");
+        assert_eq!(eval_str("month(d)", &[("d", "2024-03-15")]), "3");
+        assert_eq!(eval_str("day(d)", &[("d", "2024-03-15")]), "15");
+        // Timestamps work too: the prefix is what matters.
+        assert_eq!(eval_str("month(d)", &[("d", "2024-03-15 10:00:00")]), "3");
+        // A non-date is an error, not a silent zero.
+        assert_eq!(eval_str("year(d)", &[("d", "not a date")]), "#VALUE!");
+        assert_eq!(eval_str("month(d)", &[("d", "2024-13-01")]), "#VALUE!");
+    }
+
+    #[test]
+    fn numeric_helpers() {
+        assert_eq!(eval_str("floor(3.7)", &[]), "3");
+        assert_eq!(eval_str("ceil(3.2)", &[]), "4");
+        assert_eq!(eval_str("int(-3.7)", &[]), "-3");
+        assert_eq!(eval_str("sqrt(16)", &[]), "4");
+        assert_eq!(eval_str("sqrt(-4)", &[]), "#VALUE!");
+        assert_eq!(eval_str("mod(7, 3)", &[]), "1");
+        assert_eq!(eval_str("mod(7, 0)", &[]), "#VALUE!");
+        assert_eq!(eval_str("iferror(mod(7,0), 0)", &[]), "0");
     }
 
     #[test]

@@ -682,9 +682,16 @@ id,city,amount,qty,total
 
 | 类别 | 写法 |
 |---|---|
-| 算术 | `+ - * / %`，括号 |
+| 算术 | `+ - * / %`，括号，负号 |
+| 比较 | `= <> > >= < <=`（两边都是数字就数值比较，否则按文本） |
+| 逻辑 | `if(条件, 真值[, 假值])` `and()` `or()` `not()` `isblank()` `isnumber()` `iferror(v, 兜底)` |
+| 文本 | `&` 拼接、`left` `right` `mid` `len` `upper` `lower` `trim` `replace` `concat` |
+| 数字 | `round(x[,位数])` `abs` `floor` `ceil` `int` `sqrt` `mod` `min` `max` |
+| 日期 | `year(d)` `month(d)` `day(d)` —— 取 ISO 前缀（`2024-03-15` 和带时间的都行） |
 | 列引用 | `amount`，带空格或中文用 `[客户编号]` |
-| 函数 | `round(x[, 位数])` `abs` `min` `max` `len` `upper` `lower` |
+| 字符串 | 双引号或单引号：`"缺货"` |
+
+`if` **只算选中的那个分支**——`if(qty=0, 0, amount/qty)` 不会因为另一个分支除零而报错。
 
 语义跟电子表格对齐：**空单元格当 0**，**非数字文本得 `#VALUE!`**，
 **除零得 `#VALUE!`**，**引用不存在的列 = 导出前直接报错**（而不是给一亿行写满 `#VALUE!`）。

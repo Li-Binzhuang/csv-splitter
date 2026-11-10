@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.45.0] — 2026-11-10
+
+### Added
+
+- **Formula functions, widened to what a spreadsheet is used for**
+  (`crates/core/src/formula/` now has `mod.rs` + `functions.rs`):
+  - comparisons (`= <> > >= < <=`) and booleans rendered as `TRUE`/`FALSE`;
+  - logic: `if`, `and`, `or`, `not`, `isblank`, `isnumber`, `iferror`;
+  - text: `&` concatenation, string literals, `left`, `right`, `mid`, `trim`,
+    `replace`, `concat`;
+  - numeric: `floor`, `ceil`, `int`, `sqrt`, `mod`, plus the existing `round`/`abs`/`min`/`max`;
+  - dates: `year`, `month`, `day` over ISO prefixes (`2024-03-15`, timestamps included).
+- `if()` evaluates **only the branch it needs**, so the classic
+  `if(qty=0, 0, amount/qty)` guard works instead of erroring on the branch it discards.
+
+### Changed
+
+- The formula module was split into a directory: parsing in `mod.rs`, built-in
+  functions in `functions.rs`. Thirty functions and a parser in one file is how a
+  module stops being readable.
+
 ## [0.44.0] — 2026-11-10
 
 ### Added
