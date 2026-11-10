@@ -188,6 +188,8 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--row", "Data row (1-based)"),
             ("--to", "Target encoding"),
             ("--value", "Value to write"),
+            ("--columns", "Columns to write / keep, comma separated"),
+            ("--order", "Sort rows, e.g. \"amount:desc\""),
             ("--from-row", "First data row of a range (1-based)"),
             ("--to-row", "Last data row of a range (1-based, inclusive)"),
             ("--where", "Filter expression, e.g. city=CDMX"),
@@ -5245,6 +5247,8 @@ fn cmd_edit(args: &[String]) -> i32 {
     let mut into: Option<String> = None;
     let mut row_from: Option<u64> = None;
     let mut row_to: Option<u64> = None;
+    let mut columns: Option<Vec<String>> = None;
+    let mut order: Option<Vec<csv_splitter_core::sort::SortColumn>> = None;
     let mut count: Option<u64> = None;
     let mut regex = false;
     let mut name: Option<String> = None;
@@ -5351,6 +5355,33 @@ fn cmd_edit(args: &[String]) -> i32 {
                 .and_then(|v| v.parse().map_err(|_| "bad --count".to_string()))
             {
                 Ok(v) => count = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--columns" => match p.value("--columns") {
+                Ok(v) => {
+                    columns = Some(
+                        v.split(',')
+                            .map(|c| c.trim().to_string())
+                            .filter(|c| !c.is_empty())
+                            .collect(),
+                    )
+                }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--order" => match p.value("--order") {
+                Ok(v) => match parse_sort_columns(&v, false) {
+                    Ok(keys) => order = Some(keys),
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                },
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -5619,38 +5650,71 @@ fn cmd_edit(args: &[String]) -> i32 {
             if let Err(code) = check_output(Some(&input), &output) {
                 return code;
             }
-            let result = csv_splitter_core::workbook::export_filtered(
+            // `--order` needs the data on disk to sort it; `--columns` is applied
+            // during the export, so the sort sees only the columns being written.
+            let staging = order.is_some();
+            let target = if staging {
+                output.with_extension("csvs-staging")
+            } else {
+                output.clone()
+            };
+            let result = csv_splitter_core::workbook::export_selected(
                 &input,
                 journal.ops(),
-                &output,
+                &target,
                 delimiter,
                 quotes,
-                only.as_ref(),
+                csv_splitter_core::workbook::ExportOptions {
+                    only: only.as_ref(),
+                    columns: columns.as_deref(),
+                },
                 &tx,
             );
             drop(tx);
             let _ = reporter.join();
-            return match result {
-                Ok(summary) => {
-                    if json {
-                        println!(
-                            r#"{{"rows":{},"bytes":{},"columns":["{}"]}}"#,
-                            summary.rows,
-                            summary.bytes,
-                            summary.columns.join(r#"",""#)
-                        );
-                    } else {
-                        println!(
-                            "✓ {} rows × {} columns → {} ({})",
-                            summary.rows,
-                            summary.columns.len(),
-                            output.display(),
-                            human_bytes(summary.bytes)
-                        );
+            let summary = match result {
+                Ok(summary) => summary,
+                Err(e) => {
+                    if staging {
+                        let _ = std::fs::remove_file(&target);
                     }
-                    0
+                    return report_failure("edit", e);
                 }
-                Err(e) => report_failure("edit", e),
+            };
+            // Sorting happens after the export, on the staged file: the sort command
+            // already streams with bounded memory, so this adds no new machinery.
+            if let Some(keys) = &order {
+                let (stx, srx) = mpsc::channel();
+                let reporter = spawn_reporter("sort", srx, true);
+                let outcome = csv_splitter_core::sort::external_sort_columns(
+                    &target, &output, keys, delimiter, 256, &stx,
+                );
+                drop(stx);
+                let _ = reporter.join();
+                let _ = std::fs::remove_file(&target);
+                if let Err(e) = outcome {
+                    return report_failure("edit", format!("cannot order the export: {e}"));
+                }
+            }
+            return {
+                if json {
+                    println!(
+                        r#"{{"rows":{},"bytes":{},"columns":["{}"]}}"#,
+                        summary.rows,
+                        summary.bytes,
+                        summary.columns.join(r#"",""#)
+                    );
+                } else {
+                    let bytes = std::fs::metadata(&output).map(|m| m.len()).unwrap_or(0);
+                    println!(
+                        "✓ {} rows × {} columns → {} ({})",
+                        summary.rows,
+                        summary.columns.len(),
+                        output.display(),
+                        human_bytes(bytes)
+                    );
+                }
+                0
             };
         }
         "undo" => {

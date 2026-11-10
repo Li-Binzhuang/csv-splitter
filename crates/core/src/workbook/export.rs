@@ -38,22 +38,45 @@ pub fn export_quotes(
     quotes: QuoteStyle,
     tx: &ProgressSender,
 ) -> io::Result<ExportSummary> {
-    export_filtered(base, ops, output, delimiter, quotes, None, tx)
+    export_selected(
+        base,
+        ops,
+        output,
+        delimiter,
+        quotes,
+        ExportOptions::default(),
+        tx,
+    )
 }
 
-/// Export, optionally keeping only rows that satisfy `keep`.
+/// Export with full control: which rows survive, and which columns are written.
 ///
-/// The predicate sees the finished row — edits and formulas applied — because a
-/// filter on a column that was just computed should behave like the spreadsheet.
-pub fn export_filtered(
+/// `columns: None` writes the whole layout; `Some(&["id","amount"])` writes those
+/// columns in that order. Selecting during the export avoids a second pass over the
+/// data — `columns` followed by `edit export` reads everything twice.
+/// What to write, beyond the sheet itself.
+///
+/// Grouped rather than added as parameters: three booleans-worth of "which rows, which
+/// columns" reads better as one value, and the next option does not change a signature
+/// every caller has to touch.
+#[derive(Clone, Copy, Default)]
+pub struct ExportOptions<'a> {
+    /// Keep only rows that satisfy this predicate.
+    pub only: Option<&'a crate::filter::CompiledSet>,
+    /// Write only these columns, in this order.
+    pub columns: Option<&'a [String]>,
+}
+
+pub fn export_selected(
     base: &Path,
     ops: &[Op],
     output: &Path,
     delimiter: Delimiter,
     quotes: QuoteStyle,
-    only: Option<&crate::filter::CompiledSet>,
+    options: ExportOptions<'_>,
     tx: &ProgressSender,
 ) -> io::Result<ExportSummary> {
+    let ExportOptions { only, .. } = options;
     let delim = delimiter.byte();
     let base_columns = base_header(base, delimiter)?;
     if base_columns.is_empty() {
@@ -64,6 +87,28 @@ pub fn export_filtered(
     }
     let layout = column_layout(ops, &base_columns)?;
     let columns: Vec<String> = layout.iter().map(|(n, _)| n.clone()).collect();
+    // Which output columns to write, resolved once.
+    let selected: Option<Vec<usize>> = match options.columns {
+        None => None,
+        Some(names) => {
+            let mut slots = Vec::with_capacity(names.len());
+            for name in names {
+                match columns.iter().position(|c| c == name) {
+                    Some(slot) => slots.push(slot),
+                    None => {
+                        return Err(io::Error::new(
+                            io::ErrorKind::InvalidInput,
+                            format!(
+                                "cannot export column '{name}': it is not in this sheet (have: {})",
+                                columns.join(", ")
+                            ),
+                        ))
+                    }
+                }
+            }
+            Some(slots)
+        }
+    };
     let sheet = compile(ops, u64::MAX);
     let edits = &sheet.edits;
     let map = &sheet.map;
@@ -77,9 +122,20 @@ pub fn export_filtered(
     })
     .ok();
 
+    let written: Vec<usize> = match &selected {
+        Some(slots) => slots.clone(),
+        None => (0..columns.len()).collect(),
+    };
+    let spec = RowSpec {
+        delim,
+        only,
+        written: &written,
+    };
+    let header: Vec<String> = written.iter().map(|i| columns[*i].clone()).collect();
+    let summary_columns = header.clone();
     let mut out = BufWriter::with_capacity(8 * 1024 * 1024, File::create(output)?);
-    let header: Vec<&str> = columns.iter().map(String::as_str).collect();
-    out.write_all(join_csv_line(&header, delim).as_bytes())?;
+    let header_fields: Vec<&str> = header.iter().map(String::as_str).collect();
+    out.write_all(join_csv_line(&header_fields, delim).as_bytes())?;
 
     let keep: Vec<Option<usize>> = layout.iter().map(|(_, idx)| *idx).collect();
 
@@ -95,7 +151,7 @@ pub fn export_filtered(
     }
 
     let mut summary = ExportSummary {
-        columns: columns.clone(),
+        columns: summary_columns.clone(),
         ..Default::default()
     };
     let mut physical: u64 = 0;
@@ -122,8 +178,7 @@ pub fn export_filtered(
                     &cells,
                     RowId::Virtual(id),
                     logical,
-                    delim,
-                    only,
+                    &spec,
                 )? {
                     summary.rows += 1;
                 }
@@ -152,8 +207,7 @@ pub fn export_filtered(
                     &cells,
                     RowId::Base(target),
                     logical,
-                    delim,
-                    only,
+                    &spec,
                 )? {
                     summary.rows += 1;
                 }
@@ -267,24 +321,59 @@ fn split_piece(text: &str, by: &str, piece: usize) -> String {
     }
 }
 
+/// Export, optionally keeping only rows that satisfy `only`.
+pub fn export_filtered(
+    base: &Path,
+    ops: &[Op],
+    output: &Path,
+    delimiter: Delimiter,
+    quotes: QuoteStyle,
+    only: Option<&crate::filter::CompiledSet>,
+    tx: &ProgressSender,
+) -> io::Result<ExportSummary> {
+    export_selected(
+        base,
+        ops,
+        output,
+        delimiter,
+        quotes,
+        ExportOptions {
+            only,
+            columns: None,
+        },
+        tx,
+    )
+}
+
 /// Assemble one row and write it, unless a predicate rejects it.
+/// Everything the row writer needs that is the same for every row.
+struct RowSpec<'a> {
+    delim: u8,
+    only: Option<&'a crate::filter::CompiledSet>,
+    written: &'a [usize],
+}
+
 fn write_row(
     out: &mut impl Write,
     pipeline: &mut RowPipeline<'_>,
     base_cells: &[String],
     id: RowId,
     row_number: u64,
-    delim: u8,
-    only: Option<&crate::filter::CompiledSet>,
+    spec: &RowSpec<'_>,
 ) -> io::Result<bool> {
     // The predicate sees the finished row: edits and formulas applied, so a filter on
     // a computed column behaves the way the spreadsheet does.
     let cells = pipeline.row(base_cells, id, row_number);
-    if only.is_some_and(|set| !set.holds(&cells)) {
+    if spec.only.is_some_and(|set| !set.holds(&cells)) {
         return Ok(false);
     }
-    let fields: Vec<&str> = cells.iter().map(String::as_str).collect();
-    out.write_all(join_csv_line(&fields, delim).as_bytes())?;
+    // The filter saw the whole row; the file gets the selected columns.
+    let fields: Vec<&str> = spec
+        .written
+        .iter()
+        .filter_map(|slot| cells.get(*slot).map(String::as_str))
+        .collect();
+    out.write_all(join_csv_line(&fields, spec.delim).as_bytes())?;
     Ok(true)
 }
 

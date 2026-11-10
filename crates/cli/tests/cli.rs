@@ -3759,3 +3759,101 @@ fn fill_writes_a_row_range() {
         .unwrap();
     assert_eq!(out.status.code(), Some(2));
 }
+
+/// An export can pick columns and order rows, in one pass over the data.
+#[test]
+fn export_can_select_columns_and_order_rows() {
+    let dir = TempDir::new("exportselect");
+    let input = dir.join("t.csv");
+    let mut text = String::from("id,city,qty\n");
+    for i in 1..=10 {
+        text.push_str(&format!("{i},C{},{}\n", i % 3, i * 10));
+    }
+    std::fs::write(&input, text).unwrap();
+    let path = input.to_str().unwrap();
+
+    // Column order is the order asked for.
+    let out = dir.join("cols.csv");
+    assert_eq!(
+        Command::new(bin())
+            .args([
+                "edit",
+                "export",
+                path,
+                "--columns",
+                "qty,id",
+                "-o",
+                out.to_str().unwrap()
+            ])
+            .status()
+            .unwrap()
+            .code(),
+        Some(0)
+    );
+    let text = std::fs::read_to_string(&out).unwrap();
+    assert_eq!(text.lines().next().unwrap(), "qty,id");
+    assert_eq!(text.lines().nth(1).unwrap(), "10,1");
+
+    // Ordering, filtering and selecting together.
+    let out2 = dir.join("sorted.csv");
+    assert_eq!(
+        Command::new(bin())
+            .args([
+                "edit",
+                "export",
+                path,
+                "--columns",
+                "city,qty",
+                "--order",
+                "qty:desc",
+                "-o",
+                out2.to_str().unwrap(),
+            ])
+            .status()
+            .unwrap()
+            .code(),
+        Some(0)
+    );
+    let text = std::fs::read_to_string(&out2).unwrap();
+    let first = text.lines().nth(1).unwrap();
+    assert!(first.ends_with(",100"), "{text}");
+
+    let out3 = dir.join("filtered.csv");
+    assert_eq!(
+        Command::new(bin())
+            .args([
+                "edit",
+                "export",
+                path,
+                "--where",
+                "qty>50",
+                "--order",
+                "qty",
+                "-o",
+                out3.to_str().unwrap()
+            ])
+            .status()
+            .unwrap()
+            .code(),
+        Some(0)
+    );
+    let text = std::fs::read_to_string(&out3).unwrap();
+    assert_eq!(text.lines().count(), 6, "header + five rows: {text}");
+
+    // A column that is not in the sheet is refused, not silently skipped.
+    let out = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            path,
+            "--columns",
+            "nope",
+            "-o",
+            dir.join("x.csv").to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("cannot export column 'nope'"), "{stderr}");
+}

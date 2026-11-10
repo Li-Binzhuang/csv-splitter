@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.2.0] — 2026-11-10
+
+### Added
+
+- **`edit export --columns` and `--order`**: select the columns to write, and the order
+  to write them in, in the same pass. "Filter, reorder, drop columns, export" was four
+  commands and two passes over the data; it is one command now.
+  ```
+  edit export t.csv --columns "id,amount" --order "amount:desc" --where "qty>50" -o out.csv
+  ```
+  - Column selection happens while the row is being assembled, so the sort that follows
+    sees only the columns being written — not the whole row.
+  - `--order` stages the export and reuses the existing streaming sort, so memory stays
+    bounded; the staging file is removed on both the success and failure paths.
+  - A column that is not in the sheet is refused with the list of ones that are, rather
+    than silently producing a short row.
+
 ## [1.1.0] — 2026-11-10
 
 ### Added
