@@ -20,6 +20,9 @@
 //! exactly like a spreadsheet, instead of silently becoming zero.
 
 mod functions;
+mod sheetref;
+
+pub use sheetref::{Refs, SheetRef, DEFAULT_MAX_KEYS};
 
 use std::collections::HashMap;
 
@@ -144,8 +147,45 @@ impl Formula {
     }
 
     /// Evaluate against one row.
+    /// Evaluate against one row, without cross-sheet references.
     pub fn eval(&self, row: &HashMap<String, String>) -> Value {
-        eval(&self.expr, row)
+        eval(&self.expr, row, &Refs::default())
+    }
+
+    /// Evaluate against one row, resolving `ref(...)` against loaded sheets.
+    pub fn eval_with(&self, row: &HashMap<String, String>, refs: &Refs) -> Value {
+        eval(&self.expr, row, refs)
+    }
+
+    /// The `ref(...)` calls this formula makes, so they can be loaded up front.
+    pub fn sheet_references(&self) -> Vec<(String, String, String)> {
+        let mut out = Vec::new();
+        collect_sheet_refs(&self.expr, &mut out);
+        out
+    }
+}
+
+fn collect_sheet_refs(expr: &Expr, out: &mut Vec<(String, String, String)>) {
+    match expr {
+        Expr::Call(name, args) if name.eq_ignore_ascii_case("ref") => {
+            if args.len() == 3 {
+                if let (Expr::Text(sheet), Expr::Text(key), Expr::Text(value)) =
+                    (&args[0], &args[1], &args[2])
+                {
+                    out.push((sheet.clone(), key.clone(), value.clone()));
+                }
+            }
+            for arg in args {
+                collect_sheet_refs(arg, out);
+            }
+        }
+        Expr::Call(_, args) => args.iter().for_each(|a| collect_sheet_refs(a, out)),
+        Expr::Binary(_, l, r) | Expr::Compare(_, l, r) => {
+            collect_sheet_refs(l, out);
+            collect_sheet_refs(r, out);
+        }
+        Expr::Negate(x) | Expr::Not(x) => collect_sheet_refs(x, out),
+        Expr::Number(_) | Expr::Text(_) | Expr::Column(_) => {}
     }
 }
 
@@ -450,7 +490,7 @@ impl Parser {
 }
 
 /// Evaluate one expression against a row.
-pub(crate) fn eval(expr: &Expr, row: &HashMap<String, String>) -> Value {
+pub(crate) fn eval(expr: &Expr, row: &HashMap<String, String>, refs: &Refs) -> Value {
     match expr {
         Expr::Number(n) => Value::Number(*n),
         Expr::Text(t) => Value::Text(t.clone()),
@@ -462,14 +502,14 @@ pub(crate) fn eval(expr: &Expr, row: &HashMap<String, String>) -> Value {
                 _ => Value::Text(raw.clone()),
             },
         },
-        Expr::Negate(x) => match eval(x, row) {
+        Expr::Negate(x) => match eval(x, row, refs) {
             Value::Number(n) => Value::Number(-n),
             _ => Value::Error,
         },
-        Expr::Not(x) => Value::Bool(!truthy(&eval(x, row))),
+        Expr::Not(x) => Value::Bool(!truthy(&eval(x, row, refs))),
         Expr::Binary(op, l, r) => {
-            let a = eval(l, row);
-            let b = eval(r, row);
+            let a = eval(l, row, refs);
+            let b = eval(r, row, refs);
             match op {
                 '&' => Value::Text(format!("{}{}", a.text(), b.text())),
                 '+' | '-' | '*' | '/' | '%' => {
@@ -501,8 +541,8 @@ pub(crate) fn eval(expr: &Expr, row: &HashMap<String, String>) -> Value {
             }
         }
         Expr::Compare(op, l, r) => {
-            let a = eval(l, row);
-            let b = eval(r, row);
+            let a = eval(l, row, refs);
+            let b = eval(r, row, refs);
             let ordering = match (a.number(), b.number()) {
                 (Some(x), Some(y)) => x.partial_cmp(&y),
                 _ => Some(a.text().cmp(&b.text())),
@@ -520,7 +560,7 @@ pub(crate) fn eval(expr: &Expr, row: &HashMap<String, String>) -> Value {
                 _ => false,
             })
         }
-        Expr::Call(name, args) => functions::call(name, args, row),
+        Expr::Call(name, args) => functions::call(name, args, row, refs),
     }
 }
 

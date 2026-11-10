@@ -705,7 +705,23 @@ pub fn column_layout(
 /// column that does not exist is a configuration error, and should be reported
 /// before a million rows are written.
 pub fn formulas(ops: &[Op], columns: &[String]) -> io::Result<Vec<(String, Formula)>> {
-    let mut out = Vec::new();
+    Ok(compile_formulas(ops, columns)?.items)
+}
+
+/// Parsed formulas plus every referenced sheet they need, loaded once.
+pub struct CompiledFormulas {
+    pub items: Vec<(String, Formula)>,
+    pub refs: crate::formula::Refs,
+}
+
+/// Parse formulas and validate the columns they read.
+///
+/// Cross-sheet references are *not* loaded here: `formulas()` is called by code
+/// that has no idea which directory the sheet lives in. Use
+/// [`compile_formulas_at`] when a base path is available (export and window reads).
+pub fn compile_formulas(ops: &[Op], columns: &[String]) -> io::Result<CompiledFormulas> {
+    let mut items = Vec::new();
+    let mut wanted: Vec<(String, String, String)> = Vec::new();
     for op in ops {
         if let Op::AddColumn { name, formula } = op {
             let parsed = Formula::parse(formula).map_err(|e| {
@@ -719,20 +735,50 @@ pub fn formulas(ops: &[Op], columns: &[String]) -> io::Result<Vec<(String, Formu
                     ));
                 }
             }
-            out.push((name.clone(), parsed));
+            wanted.extend(parsed.sheet_references());
+            items.push((name.clone(), parsed));
         }
     }
-    Ok(out)
+    let _ = wanted;
+    Ok(CompiledFormulas {
+        items,
+        refs: crate::formula::Refs::default(),
+    })
+}
+
+/// Same as [`compile_formulas`], and loads every referenced sheet from `base`'s
+/// directory so evaluation never has to touch the disk mid-scan.
+pub fn compile_formulas_at(
+    base: &Path,
+    ops: &[Op],
+    columns: &[String],
+) -> io::Result<CompiledFormulas> {
+    let mut compiled = compile_formulas(ops, columns)?;
+    let mut wanted: Vec<(String, String, String)> = Vec::new();
+    for (_, formula) in &compiled.items {
+        wanted.extend(formula.sheet_references());
+    }
+    if !wanted.is_empty() {
+        let directory = base.parent().unwrap_or_else(|| Path::new("."));
+        compiled.refs =
+            crate::formula::Refs::load_for(directory, &wanted, crate::formula::DEFAULT_MAX_KEYS)?;
+    }
+    Ok(compiled)
 }
 
 /// Evaluate a computed column for one row.
-fn eval_formula(formula: &Formula, columns: &[String], cells: &[String]) -> String {
+fn eval_formula(
+    formula: &Formula,
+    columns: &[String],
+    cells: &[String],
+    refs: &crate::formula::Refs,
+) -> String {
     let row: HashMap<String, String> = columns
         .iter()
         .zip(cells.iter())
         .map(|(c, v)| (c.clone(), v.clone()))
         .collect();
-    formula.eval(&row).render()
+    formula.eval_with(&row, refs).render()
 }
 
 /// The compiled sheet: final row map plus the cell edits resolved to identities.
@@ -856,7 +902,9 @@ pub fn export(
     let sheet = compile(ops, u64::MAX);
     let edits = &sheet.edits;
     let map = &sheet.map;
-    let formulas = formulas(ops, &columns)?;
+    let compiled = compile_formulas_at(base, ops, &columns)?;
+    let formulas = &compiled.items;
+    let refs = &compiled.refs;
     let formula_index: Vec<Option<&Formula>> = columns
         .iter()
         .map(|c| formulas.iter().find(|(n, _)| n == c).map(|(_, f)| f))
@@ -905,6 +953,7 @@ pub fn export(
                     edits,
                     RowId::Virtual(id),
                     &formula_index,
+                    refs,
                     delim,
                 )?;
                 summary.rows += 1;
@@ -934,6 +983,7 @@ pub fn export(
                     edits,
                     RowId::Base(target),
                     &formula_index,
+                    refs,
                     delim,
                 )?;
                 summary.rows += 1;
@@ -962,6 +1012,7 @@ fn emit(
     edits: &CellEdits,
     id: RowId,
     formulas: &[Option<&Formula>],
+    refs: &crate::formula::Refs,
     delim: u8,
 ) -> io::Result<()> {
     let mut cells: Vec<String> = Vec::with_capacity(columns.len());
@@ -980,7 +1031,7 @@ fn emit(
     // formula may read a value that was just edited.
     for (idx, formula) in formulas.iter().enumerate() {
         if let Some(f) = formula {
-            cells[idx] = eval_formula(f, columns, &cells);
+            cells[idx] = eval_formula(f, columns, &cells, refs);
         }
     }
     let refs: Vec<&str> = cells.iter().map(String::as_str).collect();
@@ -1377,6 +1428,42 @@ mod tests {
     }
 
     #[test]
+    fn a_formula_can_reference_another_sheet() {
+        let dir = Dir::new("sheetref");
+        let base = dir.join("orders.csv");
+        std::fs::write(&base, "order,cust_no,amount\nA,1,100\nB,2,50\nC,9,10\n").unwrap();
+        let customers = dir.join("customers.csv");
+        std::fs::write(&customers, "cust_no,name\n1,Ana\n2,Beto\n").unwrap();
+
+        let ops = vec![Op::AddColumn {
+            name: "customer".into(),
+            formula: r#"ref("customers.csv", "cust_no", "name")"#.into(),
+        }];
+        let text = export_with(&dir, &base, ops);
+        let lines: Vec<&str> = text.lines().collect();
+        assert_eq!(lines[0], "order,cust_no,amount,customer");
+        assert_eq!(lines[1], "A,1,100,Ana");
+        assert_eq!(lines[2], "B,2,50,Beto");
+        // A key the other sheet does not have is #N/A, like VLOOKUP.
+        assert_eq!(lines[3], "C,9,10,#N/A");
+    }
+
+    #[test]
+    fn a_missing_referenced_sheet_fails_before_writing() {
+        let dir = Dir::new("noref");
+        let base = dir.join("orders.csv");
+        std::fs::write(&base, "order,cust_no\nA,1\n").unwrap();
+        let ops = vec![Op::AddColumn {
+            name: "customer".into(),
+            formula: r#"ref("nope.csv", "cust_no", "name")"#.into(),
+        }];
+        let out = dir.join("o.csv");
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let err = export(&base, &ops, &out, Delimiter::Comma, &tx).unwrap_err();
+        assert!(err.to_string().contains("does not exist"), "{err}");
+    }
+
+    #[test]
     fn unknown_column_operations_are_refused() {
         let dir = Dir::new("badcols");
         let base = base_with(&dir, BASE);
@@ -1443,7 +1530,9 @@ pub fn window(
     let sheet = compile(ops, index.data_rows());
     let map = &sheet.map;
     let edits = &sheet.edits;
-    let formulas = formulas(ops, &columns)?;
+    let compiled = compile_formulas_at(base, ops, &columns)?;
+    let formulas = &compiled.items;
+    let refs = &compiled.refs;
     let formula_index: Vec<Option<&Formula>> = columns
         .iter()
         .map(|c| formulas.iter().find(|(n, _)| n == c).map(|(_, f)| f))
@@ -1466,6 +1555,7 @@ pub fn window(
                         edits,
                         RowId::Base(physical + i as u64),
                         &formula_index,
+                        refs,
                     ));
                 }
             }
@@ -1482,6 +1572,7 @@ pub fn window(
                         edits,
                         RowId::Virtual(id),
                         &formula_index,
+                        refs,
                     ));
                 }
             }
@@ -1503,6 +1594,7 @@ fn shape(
     edits: &CellEdits,
     id: RowId,
     formulas: &[Option<&Formula>],
+    refs: &crate::formula::Refs,
 ) -> Vec<String> {
     let mut out = Vec::with_capacity(columns.len());
     for (idx, column) in columns.iter().enumerate() {
@@ -1520,7 +1612,7 @@ fn shape(
     }
     for (idx, formula) in formulas.iter().enumerate() {
         if let Some(f) = formula {
-            out[idx] = eval_formula(f, columns, &out);
+            out[idx] = eval_formula(f, columns, &out, refs);
         }
     }
     out

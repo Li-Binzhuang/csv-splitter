@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.48.0] — 2026-11-10
+
+### Added
+
+- **Cross-sheet references in formulas** (`crates/core/src/formula/sheetref.rs`):
+  `ref("customers.csv", "cust_no", "name")` looks up this row's `cust_no` in another
+  sheet and returns its `name` — a VLOOKUP inside a formula column.
+  - The referenced sheet is loaded once into a map; the sheet being computed stays
+    streamed, so the asymmetry that makes `lookup` cheap applies here too.
+  - Sheet names resolve **relative to the base file's directory**, so moving a
+    directory does not break a formula.
+  - A missing referenced sheet fails **at export/open time**, not as a million
+    `#N/A` values discovered later; a missing key inside the sheet is `#N/A`, like
+    VLOOKUP.
+  - `Refs` is built from the formula's own literals (`Formula::sheet_references`),
+    which is why dynamic sheet names are refused rather than silently returning
+    nothing.
+
 ## [0.47.0] — 2026-11-10
 
 ### Added
