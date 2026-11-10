@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.10.0] — 2026-11-10
+
+### Verified
+
+Full backend regression on the real 2.5 GB / 782-column file, through HTTP, on this
+version: `/capabilities` 1.5 ms, `/columns?name=` 2.8 ms, `/columns` (all 782) 0.67 s,
+`/rows` at row 680 000 **2.4 ms** (0.9 ms for three columns), `/rows?keys=` 1.0 ms,
+`/cell` 1.6 ms, `/journal` 0.4 ms, `/query` 8.6 s (one scan, now under the 30 s
+interrupt), a compare-and-set write that succeeded and the same request refused **409**
+afterwards with `actual: "checked"`, and an export job that finished in 40 s and kept the
+input's BOM. The original file's sha256 is unchanged. Numbers replaced in
+`docs/CAPABILITIES.md`.
+
 ## [3.9.0] — 2026-11-10
 
 ### Docs

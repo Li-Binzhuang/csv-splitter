@@ -263,18 +263,25 @@
 | `edit export`（1 个公式列）| 69 s |
 | `preview` | 0.9 s，内存 9 MB |
 
-**后端在这份文件上的实测（release，本机 HTTP）**：
+**后端在这份文件上的实测（release，本机 HTTP，2.5 GB / 782 列 / 684 917 行）**：
 
 | 调用 | 结果 |
 |---|---|
-| `GET /columns?name=model_prob` | **3.3 ms**，47 字节 |
-| `GET /columns`（782 列全量） | **0.66 s**，107 KB |
-| `GET /rows?start=680000&count=10`（全列）| **2.0 ms**，87 KB |
-| 同一窗口 `&columns=…`（3 列）| **0.9 ms**，651 字节 |
-| `GET /cell?row=3&col=…` | **0.8 ms** |
-| `GET /journal` | **0.3 ms** |
-| `GET /query?sql=SELECT count(*) FROM t` | 7.9 s（整表扫描）|
-| `POST /edit?action=export`（带 where）| 33 s（一条异步 job，`GET /job?id=` 轮询）|
+| `GET /capabilities` | 1.5 ms，1008 字节 |
+| `GET /columns?name=model_prob` | **2.8 ms**，47 字节 |
+| `GET /columns`（782 列全量） | 0.67 s，107 KB |
+| `GET /columns?kind=number` | 1.6 ms（第二次，已缓存读）|
+| `GET /rows?start=680000&count=10`（全列）| **2.4 ms**，88 KB |
+| 同窗口 `&columns=…`（3 列）| **0.9 ms**，667 字节 |
+| `GET /rows?keys=b:5,b:100` | 1.0 ms，126 字节 |
+| `GET /rows?start=999999`（越界）| 0.7 ms，`pastEnd:true` |
+| `GET /cell` | **1.6 ms**，80 字节 |
+| `GET /journal` | 0.4 ms |
+| `GET /query?sql=count(*)` | 8.6 s（整表一次扫描，30 秒超时保护）|
+| `GET /query?sql=SELECT *&limit=5` | 8.0 s（同样是整表扫描）|
+| `POST /edit?action=set&expect=` 正确 | 200，值立即在 `/cell` 与 `/rows` 可见 |
+| 同一请求再发（`expect` 过期）| **409**，`actual` 是刚写入的 `checked` |
+| `POST /edit?action=export`（带 where，1 行命中）| job 40 s 完成，文件保留 BOM |
 
 **慢的两种，原因都清楚**：
 
