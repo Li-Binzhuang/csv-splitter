@@ -161,6 +161,19 @@ GET  /job?id=job123        →  state: done
 | 逃出 root | `path is outside the served directory` |
 
 （早先这四种都报「path missing or outside root」，把「文件名打错」说成「沙箱问题」。）
+## 性能 / Measured
+
+同一个 215 MB / 500 万行文件，release 构建，本机：
+
+| 场景 | 结果 |
+|---|---|
+| `/sheet`（含建索引）| 66 ms |
+| `/rows` 任意偏移 | **66 ms 首屏（含建索引），之后 6–7 ms** |
+| `/rows?where=…` 首屏（物化结果）| 296 ms |
+| 同一筛选条件后续页 | 15 ms |
+
+`count` 上限 2000，超了会报 `requested` / `count` / `limit` 三个字段。
+
 ## 已知限制
 
 - `where` / `order` 走 DuckDB：对**有编辑的文件**会先物化到临时表（每份源文件最多一份，

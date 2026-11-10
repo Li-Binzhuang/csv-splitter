@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.14.0] — 2026-11-10
+
+### Docs
+
+- **Every performance number re-measured** on a 215 MB / 5 M-row file in release; the
+  README table had grown a mixture of fixtures from different rounds. Index 0.08 s / 16 MB
+  / 40 KB, jump 0.01 s, `analyze` 1.64 s / 17 MB, split ×8 0.41 s (0.23 s with four
+  threads), merge 0.18 s, groupby 1.38 s / 9 MB.
+  - **Export with a formula column over 5 M rows: 17.3 MB peak** — the flat-memory
+    promise on the operation that matters most, now measured rather than assumed.
+  - API on the same file: first page 66 ms including index build, later pages 6–7 ms
+    (constant time at any offset), a filtered first page 296 ms and its second page 15 ms.
+
 ## [1.13.0] — 2026-11-10
 
 ### Docs
