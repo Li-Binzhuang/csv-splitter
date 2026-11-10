@@ -517,9 +517,69 @@ pub struct CompiledFormulas {
 /// Cross-sheet references are *not* loaded here: `formulas()` is called by code
 /// that has no idea which directory the sheet lives in. Use
 /// [`compile_formulas_at`] when a base path is available (export and window reads).
+/// Rewrite a rename through formula text, so a formula keeps pointing at its column.
+///
+/// `rename qty → amount` happens after `formula total = qty*2` was written; without
+/// this the formula keeps naming a column that no longer exists and the export fails.
+/// Strings are left alone: only bare identifiers and `[name]` references are rewritten.
+fn rename_identifiers(formula: &str, from: &str, to: &str) -> String {
+    let mut out = String::with_capacity(formula.len());
+    let mut rest = formula;
+    let mut in_quotes = false;
+    while !rest.is_empty() {
+        let ch = rest.chars().next().expect("non-empty");
+        if ch == '"' {
+            in_quotes = !in_quotes;
+            out.push(ch);
+            rest = &rest[ch.len_utf8()..];
+            continue;
+        }
+        if !in_quotes {
+            // `[name]` form.
+            if ch == '[' {
+                if let Some(end) = rest.find(']') {
+                    let inner = &rest[1..end];
+                    if inner == from {
+                        out.push('[');
+                        out.push_str(to);
+                        out.push(']');
+                        rest = &rest[end + 1..];
+                        continue;
+                    }
+                }
+            }
+            // Bare identifier: a maximal run of name characters.
+            if ch.is_alphanumeric() || ch == '_' {
+                let token: String = rest
+                    .chars()
+                    .take_while(|c| c.is_alphanumeric() || *c == '_')
+                    .collect();
+                if token == from {
+                    out.push_str(to);
+                } else {
+                    out.push_str(&token);
+                }
+                rest = &rest[token.len()..];
+                continue;
+            }
+        }
+        out.push(ch);
+        rest = &rest[ch.len_utf8()..];
+    }
+    out
+}
+
 pub fn compile_formulas(ops: &[Op], columns: &[String]) -> io::Result<CompiledFormulas> {
     let mut items = Vec::new();
     let mut wanted: Vec<(String, String, String)> = Vec::new();
+    // Renames are column-level facts, so every formula sees the final names.
+    let renames: Vec<(String, String)> = ops
+        .iter()
+        .filter_map(|op| match op {
+            Op::RenameColumn { from, to } => Some((from.clone(), to.clone())),
+            _ => None,
+        })
+        .collect();
     for op in ops {
         let (name, source) = match op {
             Op::AddColumn { name, formula } => (name, ColumnSource::Formula(formula.clone())),
@@ -527,6 +587,11 @@ pub fn compile_formulas(ops: &[Op], columns: &[String]) -> io::Result<CompiledFo
             _ => continue,
         };
         if let ColumnSource::Formula(formula) = &source {
+            let mut formula = formula.clone();
+            for (from, to) in &renames {
+                formula = rename_identifiers(&formula, from, to);
+            }
+            let formula = &formula;
             let parsed = Formula::parse(formula).map_err(|e| {
                 io::Error::new(io::ErrorKind::InvalidInput, format!("column '{name}': {e}"))
             })?;
@@ -826,6 +891,35 @@ pub fn compile(ops: &[Op], base_rows: u64) -> Sheet {
                     cells.insert((id, column.clone()), value.clone());
                 }
             }
+            // A rename is metadata about a column, so edits that already name it move
+            // with it. Without this, `set qty` followed by `rename qty → amount` drops
+            // the edit silently — the value simply stops being there.
+            Op::RenameColumn { from, to } => {
+                let renamed: Vec<((RowId, String), String)> = cells
+                    .iter()
+                    .filter(|((_, column), _)| column == from)
+                    .map(|(key, value)| ((key.0, to.clone()), value.clone()))
+                    .collect();
+                for (key, value) in renamed {
+                    cells.insert(key, value);
+                }
+                cells.retain(|(_, column), _| column != from);
+                for entry in &mut subs {
+                    if entry.0.as_deref() == Some(from.as_str()) {
+                        entry.0 = Some(to.clone());
+                    }
+                }
+                for entry in &mut regex_subs {
+                    if entry.0.as_deref() == Some(from.as_str()) {
+                        entry.0 = Some(to.clone());
+                    }
+                }
+                for entry in &mut rules {
+                    if entry.1 == *from {
+                        entry.1 = to.clone();
+                    }
+                }
+            }
             Op::Substitute { column, from, to } => {
                 subs.push((column.clone(), from.clone(), to.clone()));
             }
@@ -948,5 +1042,56 @@ mod split_tests {
             None,
         );
         assert_eq!(cells, vec!["1", "Ana", "Perez", "Calle 1"]);
+    }
+}
+
+#[cfg(test)]
+mod rename_tests {
+    use super::*;
+
+    #[test]
+    fn a_rename_rewrites_the_formula_but_not_the_strings() {
+        assert_eq!(rename_identifiers("qty*2", "qty", "amount"), "amount*2");
+        assert_eq!(rename_identifiers("[qty]+1", "qty", "amount"), "[amount]+1");
+        // Text is text: a literal that happens to say `qty` stays as written.
+        assert_eq!(
+            rename_identifiers(r#"if(qty>5,"qty","no")"#, "qty", "amount"),
+            r#"if(amount>5,"qty","no")"#
+        );
+        // Partial matches are not identifiers.
+        assert_eq!(
+            rename_identifiers("qty_total", "qty", "amount"),
+            "qty_total"
+        );
+    }
+
+    #[test]
+    fn an_edit_survives_a_rename_of_its_column() {
+        let ops = vec![
+            Op::SetCell {
+                row: 1,
+                column: "qty".to_string(),
+                value: "99".to_string(),
+            },
+            Op::RenameColumn {
+                from: "qty".to_string(),
+                to: "amount".to_string(),
+            },
+        ];
+        let sheet = compile(&ops, 2);
+        // The edit is keyed by column name, so the rename has to move it.
+        assert_eq!(
+            sheet
+                .edits
+                .cells
+                .get(&(RowId::Base(1), "amount".to_string())),
+            Some(&"99".to_string()),
+            "{:?}",
+            sheet.edits.cells
+        );
+        assert!(!sheet
+            .edits
+            .cells
+            .contains_key(&(RowId::Base(1), "qty".to_string())));
     }
 }

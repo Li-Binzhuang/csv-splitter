@@ -3273,7 +3273,16 @@ fn columns_and_search_read_the_quote_style() {
 
     let out = dir.join("cols.csv");
     let status = Command::new(bin())
-        .args(["columns", path, "--keep", "note", "--quotes", "backslash", "-o", out.to_str().unwrap()])
+        .args([
+            "columns",
+            path,
+            "--keep",
+            "note",
+            "--quotes",
+            "backslash",
+            "-o",
+            out.to_str().unwrap(),
+        ])
         .status()
         .unwrap();
     assert_eq!(status.code(), Some(0));
@@ -3287,4 +3296,79 @@ fn columns_and_search_read_the_quote_style() {
         .status()
         .unwrap();
     assert_eq!(status.code(), Some(0));
+}
+
+/// A stack of edits and column-layout changes must land where a person expects.
+#[test]
+fn edits_survive_column_changes() {
+    let dir = TempDir::new("combop");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,name,qty\n1,a,10\n2,b,20\n3,c,30\n").unwrap();
+    let path = input.to_str().unwrap();
+
+    let run = |args: &[&str]| {
+        let status = Command::new(bin()).args(args).status().unwrap();
+        assert_eq!(status.code(), Some(0), "{args:?}");
+    };
+
+    // Change a cell, then move columns around it.
+    run(&[
+        "edit", "set", path, "--row", "2", "--col", "qty", "--value", "99",
+    ]);
+    run(&[
+        "edit",
+        "insert-column",
+        path,
+        "--after",
+        "id",
+        "--name",
+        "tag",
+        "--value",
+        "x",
+    ]);
+    run(&["edit", "drop", path, "--name", "name"]);
+    run(&["edit", "rename", path, "--from", "qty", "--to", "amount"]);
+
+    let out = dir.join("o.csv");
+    run(&["edit", "export", path, "-o", out.to_str().unwrap()]);
+    let text = std::fs::read_to_string(&out).unwrap();
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines[0], "id,tag,amount");
+    assert_eq!(lines[1], "1,x,10");
+    // The edit follows the column through both the drop and the rename.
+    assert_eq!(lines[2], "2,x,99", "{text}");
+    assert_eq!(lines[3], "3,x,30");
+
+    // A formula written before the rename keeps pointing at the column.
+    let formula_file = dir.join("f.csv");
+    std::fs::write(&formula_file, "id,qty\n1,10\n").unwrap();
+    run(&[
+        "edit",
+        "formula",
+        formula_file.to_str().unwrap(),
+        "--name",
+        "total",
+        "--value",
+        "qty*2",
+    ]);
+    run(&[
+        "edit",
+        "rename",
+        formula_file.to_str().unwrap(),
+        "--from",
+        "qty",
+        "--to",
+        "amount",
+    ]);
+    let fout = dir.join("f_out.csv");
+    run(&[
+        "edit",
+        "export",
+        formula_file.to_str().unwrap(),
+        "-o",
+        fout.to_str().unwrap(),
+    ]);
+    let text = std::fs::read_to_string(&fout).unwrap();
+    assert_eq!(text.lines().next().unwrap(), "id,amount,total");
+    assert_eq!(text.lines().nth(1).unwrap(), "1,10,20", "{text}");
 }

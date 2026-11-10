@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.89.0] — 2026-11-10
+
+### Fixed
+
+- **Renaming a column silently dropped the edits already made to it.** Edits are keyed
+  by column name, so `set qty=99` followed by `rename qty → amount` exported the base
+  value: 20 instead of 99, with no warning. The rename now re-keys pending edits,
+  substitutions and `where` rules, so a change follows the column the way it follows a
+  row.
+- **A formula written before the rename stopped compiling.** `formula total = qty*2`
+  then `rename qty → amount` made the export fail with "formula reads unknown column
+  'qty'". Renames are now applied to formula text before parsing — identifiers only,
+  leaving string literals alone, and not matching inside longer names (`qty_total`).
+
+Both were found by the round's question — "do edits survive column changes?" — not by a
+report. The row-identity machinery was fine; the column identity was a name string with
+no equivalent care.
 ## [0.88.0] — 2026-11-10
 
 ### Added
