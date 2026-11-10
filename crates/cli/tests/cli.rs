@@ -2588,3 +2588,32 @@ fn replace_takes_a_regex() {
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(stderr.contains("not a supported pattern"), "{stderr}");
 }
+
+/// A1 references work the way a filled-down spreadsheet formula does.
+#[test]
+fn formula_accepts_a1_references() {
+    let dir = TempDir::new("a1refs");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,amount,qty\n1,10,3\n2,20,4\n3,30,5\n").unwrap();
+    let path = input.to_str().unwrap();
+
+    let status = Command::new(bin())
+        .args([
+            "edit", "formula", path, "--name", "total", "--value", "B2 * C2",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    let out = dir.join("o.csv");
+    Command::new(bin())
+        .args(["edit", "export", path, "-o", out.to_str().unwrap()])
+        .status()
+        .unwrap();
+    let text = std::fs::read_to_string(&out).unwrap();
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines[0], "id,amount,qty,total");
+    assert_eq!(lines[1], "1,10,3,30", "{text}");
+    assert_eq!(lines[2], "2,20,4,80", "{text}");
+    assert_eq!(lines[3], "3,30,5,150", "{text}");
+}

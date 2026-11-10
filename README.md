@@ -740,6 +740,7 @@ id,city,amount,qty,total
 | 文本 | `&` 拼接、`left` `right` `mid` `len` `upper` `lower` `trim` `replace` `concat` |
 | 数字 | `round(x[,位数])` `abs` `floor` `ceil` `int` `sqrt` `mod` `min` `max` |
 | 日期 | `year(d)` `month(d)` `day(d)` —— 取 ISO 前缀（`2024-03-15` 和带时间的都行） |
+| A1 引用 | `B2 * C2` —— 按列位置引用，在整列公式里就是「本行」 |
 | 行号 | `row()` —— 第 1 行是 1，用来做序号 / 奇偶交替 / 交替配色 |
 | 列引用 | `amount`，带空格或中文用 `[客户编号]` |
 | 跨表引用 | `ref("customers.csv", "cust_no", "name")` —— 本行的 cust_no 去那张表查 name |

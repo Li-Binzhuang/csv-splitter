@@ -30,6 +30,8 @@ use std::collections::HashMap;
 enum Token {
     Number(f64),
     Ident(String),
+    /// `[name]` — always a column, even when the name looks like a cell (`[A1]`).
+    Column(String),
     Plus,
     Minus,
     Star,
@@ -58,6 +60,12 @@ pub(crate) enum Expr {
     Negate(Box<Expr>),
     Not(Box<Expr>),
     Call(String, Vec<Expr>),
+    /// `B2` — column B, row 2. Only the current row is resolvable while
+    /// streaming, so a reference to another row evaluates to `#REF!`.
+    CellRef {
+        column: String,
+        row: u64,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -150,10 +158,12 @@ impl Formula {
     /// Evaluate against one row, without cross-sheet references.
     pub fn eval(&self, row: &HashMap<String, String>) -> Value {
         let refs = Refs::default();
+        let columns: Vec<String> = row.keys().cloned().collect();
         eval(
             &self.expr,
             &Ctx {
                 cells: row,
+                columns: &columns,
                 refs: &refs,
                 row: 0,
             },
@@ -162,15 +172,23 @@ impl Formula {
 
     /// Evaluate against one row, resolving `ref(...)` against loaded sheets.
     pub fn eval_with(&self, row: &HashMap<String, String>, refs: &Refs) -> Value {
-        self.eval_at(row, refs, 0)
+        let columns: Vec<String> = row.keys().cloned().collect();
+        self.eval_at(row, &columns, refs, 0)
     }
 
     /// Evaluate for a specific row number, which `row()` reports.
-    pub fn eval_at(&self, row: &HashMap<String, String>, refs: &Refs, row_number: u64) -> Value {
+    pub fn eval_at(
+        &self,
+        row: &HashMap<String, String>,
+        columns: &[String],
+        refs: &Refs,
+        row_number: u64,
+    ) -> Value {
         eval(
             &self.expr,
             &Ctx {
                 cells: row,
+                columns,
                 refs,
                 row: row_number,
             },
@@ -205,7 +223,7 @@ fn collect_sheet_refs(expr: &Expr, out: &mut Vec<(String, String, String)>) {
             collect_sheet_refs(r, out);
         }
         Expr::Negate(x) | Expr::Not(x) => collect_sheet_refs(x, out),
-        Expr::Number(_) | Expr::Text(_) | Expr::Column(_) => {}
+        Expr::Number(_) | Expr::Text(_) | Expr::Column(_) | Expr::CellRef { .. } => {}
     }
 }
 
@@ -219,7 +237,7 @@ fn collect_refs(expr: &Expr, out: &mut Vec<String>) {
         Expr::Negate(x) | Expr::Not(x) => collect_refs(x, out),
         Expr::Text(_) => {}
         Expr::Call(_, args) => args.iter().for_each(|a| collect_refs(a, out)),
-        Expr::Number(_) => {}
+        Expr::Number(_) | Expr::CellRef { .. } => {}
     }
 }
 
@@ -227,7 +245,7 @@ impl Token {
     fn describe(&self) -> String {
         match self {
             Self::Number(n) => format_number(*n),
-            Self::Ident(s) => s.clone(),
+            Self::Ident(s) | Self::Column(s) => s.clone(),
             Self::Plus => "+".into(),
             Self::Minus => "-".into(),
             Self::Star => "*".into(),
@@ -342,7 +360,7 @@ fn tokenize(src: &str) -> Result<Vec<Token>, String> {
                         None => return Err("unclosed '[' in formula".to_string()),
                     }
                 }
-                tokens.push(Token::Ident(name));
+                tokens.push(Token::Column(name));
             }
             c if c.is_ascii_digit() || c == '.' => {
                 let mut text = String::new();
@@ -476,6 +494,7 @@ impl Parser {
                     _ => Err("missing ')' in formula".to_string()),
                 }
             }
+            Some(Token::Column(name)) => Ok(Expr::Column(name)),
             Some(Token::Ident(name)) => {
                 if matches!(self.peek(), Some(Token::LParen)) {
                     self.take();
@@ -495,6 +514,8 @@ impl Parser {
                         Some(Token::RParen) => Ok(Expr::Call(name, args)),
                         _ => Err("missing ')' after function arguments".to_string()),
                     }
+                } else if let Some((column, row)) = split_cell_ref(&name) {
+                    Ok(Expr::CellRef { column, row })
                 } else {
                     Ok(Expr::Column(name))
                 }
@@ -509,14 +530,52 @@ impl Parser {
     }
 }
 
+/// The row a column formula is "written on": the first data row, counting the
+/// header as row 1 the way a spreadsheet does. References are relative to it.
+const FIRST_DATA_ROW: i64 = 2;
+
+/// Split `B2` into (`B`, 2); `None` when the identifier is not a cell reference.
+///
+/// The pattern is letters followed by digits, which is how spreadsheets write a
+/// cell. A bare `A1`-looking *column name* is therefore read as a reference — the
+/// only place this can surprise someone is a column literally named `A1`, and the
+/// `[A1]` bracket form still reaches it.
+fn split_cell_ref(name: &str) -> Option<(String, u64)> {
+    let letters: String = name
+        .chars()
+        .take_while(|c| c.is_ascii_alphabetic())
+        .collect();
+    let digits: String = name.chars().skip(letters.len()).collect();
+    if letters.is_empty() || digits.is_empty() || letters.len() + digits.len() != name.len() {
+        return None;
+    }
+    let row: u64 = digits.parse().ok()?;
+    if row == 0 {
+        return None;
+    }
+    Some((letters.to_ascii_uppercase(), row))
+}
+
 /// Evaluate one expression against a row.
 /// Everything an expression may look at while it is evaluated for one row.
 pub(crate) struct Ctx<'a> {
     pub cells: &'a HashMap<String, String>,
+    /// Column order, so `A1`-style references can be turned into column names.
+    pub columns: &'a [String],
     pub refs: &'a Refs,
     /// 0-based logical row; `row()` reports it as the 1-based number a spreadsheet
     /// would show, because that is what people type (`row() = 1` for the first row).
     pub row: u64,
+}
+
+/// Turn `B` into the second column's name, using the sheet's column order.
+fn column_from_letters(letters: &str, columns: &[String]) -> Option<String> {
+    let mut index: usize = 0;
+    for ch in letters.chars() {
+        let digit = (ch as u8).checked_sub(b'A')? as usize;
+        index = index.checked_mul(26)?.checked_add(digit + 1)?;
+    }
+    columns.get(index.checked_sub(1)?).cloned()
 }
 
 pub(crate) fn eval(expr: &Expr, ctx: &Ctx<'_>) -> Value {
@@ -531,6 +590,28 @@ pub(crate) fn eval(expr: &Expr, ctx: &Ctx<'_>) -> Value {
                 _ => Value::Text(raw.clone()),
             },
         },
+        Expr::CellRef { column, row } => {
+            // A column formula behaves like a spreadsheet formula filled down: the
+            // reference is *relative* to the row it was written on, and that row is
+            // the first data row (row 2 in a sheet whose row 1 is the header).
+            // So `B2` means "column B of this row" on every row, and `B3` would need
+            // the next row, which a forward streaming pass cannot see.
+            let offset = *row as i64 - FIRST_DATA_ROW;
+            if offset != 0 {
+                return Value::Error;
+            }
+            match column_from_letters(column, ctx.columns) {
+                Some(name) => match ctx.cells.get(&name) {
+                    None => Value::Error,
+                    Some(raw) => match raw.trim().parse::<f64>() {
+                        Ok(n) if n.is_finite() => Value::Number(n),
+                        _ if raw.trim().is_empty() => Value::Number(0.0),
+                        _ => Value::Text(raw.clone()),
+                    },
+                },
+                None => Value::Error,
+            }
+        }
         Expr::Negate(x) => match eval(x, ctx) {
             Value::Number(n) => Value::Number(-n),
             _ => Value::Error,
@@ -788,7 +869,7 @@ mod tests {
         let row = row(&[]);
         assert_eq!(formula.eval_with(&row, &Refs::default()).render(), "1");
         assert_eq!(
-            formula.eval_at(&row, &Refs::default(), 41).render(),
+            formula.eval_at(&row, &[], &Refs::default(), 41).render(),
             "42",
             "0-based internally, 1-based to the user"
         );
@@ -802,9 +883,91 @@ mod tests {
         let odd = Formula::parse("if(row() % 2 = 1, \"odd\", \"even\")").unwrap();
         let mut cells = HashMap::new();
         cells.insert("id".to_string(), "A".to_string());
-        assert_eq!(seq.eval_at(&cells, &Refs::default(), 0).render(), "A-1");
-        assert_eq!(odd.eval_at(&cells, &Refs::default(), 0).render(), "odd");
-        assert_eq!(odd.eval_at(&cells, &Refs::default(), 1).render(), "even");
+        assert_eq!(
+            seq.eval_at(&cells, &[], &Refs::default(), 0).render(),
+            "A-1"
+        );
+        assert_eq!(
+            odd.eval_at(&cells, &[], &Refs::default(), 0).render(),
+            "odd"
+        );
+        assert_eq!(
+            odd.eval_at(&cells, &[], &Refs::default(), 1).render(),
+            "even"
+        );
+    }
+
+    #[test]
+    fn a1_references_read_the_current_row() {
+        // Columns: id, amount, qty. `= B2 * C2` on row 2 uses amount × qty.
+        let columns = vec!["id".to_string(), "amount".to_string(), "qty".to_string()];
+        let formula = Formula::parse("B2 * C2").unwrap();
+        let mut cells = HashMap::new();
+        cells.insert("id".to_string(), "7".to_string());
+        cells.insert("amount".to_string(), "10".to_string());
+        cells.insert("qty".to_string(), "3".to_string());
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "30"
+        );
+
+        // Filled down, `B2 * C2` stays "this row's B and C" on every row.
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 2)
+                .render(),
+            "30",
+            "references are relative to the first data row, like a filled-down formula"
+        );
+
+        // A reference that needs another row cannot be served by a streaming pass.
+        let next_row = Formula::parse("B3").unwrap();
+        assert_eq!(
+            next_row
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!",
+            "a reference to the next row must fail loudly, not read this row"
+        );
+    }
+
+    #[test]
+    fn references_work_by_letter_across_multi_letter_columns() {
+        // AA is the 27th column.
+        let mut columns: Vec<String> = (0..27).map(|i| format!("c{i}")).collect();
+        columns[26] = "target".to_string();
+        let mut cells = HashMap::new();
+        for column in &columns {
+            cells.insert(column.clone(), "1".to_string());
+        }
+        cells.insert("target".to_string(), "42".to_string());
+        let formula = Formula::parse("AA2").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 0)
+                .render(),
+            "42"
+        );
+
+        // A reference beyond the last column is an error, not a panic.
+        let formula = Formula::parse("ZZ2").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 0)
+                .render(),
+            "#VALUE!"
+        );
+    }
+
+    #[test]
+    fn a_column_named_like_a_cell_can_still_be_used_with_brackets() {
+        let mut cells = HashMap::new();
+        cells.insert("A1".to_string(), "5".to_string());
+        cells.insert("other".to_string(), "1".to_string());
+        let formula = Formula::parse("[A1] + other").unwrap();
+        assert_eq!(formula.eval(&cells).render(), "6");
     }
 
     #[test]

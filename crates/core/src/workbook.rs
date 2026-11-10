@@ -1123,7 +1123,7 @@ fn eval_formula(
         .zip(cells.iter())
         .map(|(c, v)| (c.clone(), v.clone()))
         .collect();
-    formula.eval_at(&row, refs, row_number).render()
+    formula.eval_at(&row, columns, refs, row_number).render()
 }
 
 /// Parse an A1-style reference: `B3`, `AA10`.
