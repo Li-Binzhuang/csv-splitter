@@ -21,6 +21,9 @@
 
 mod functions;
 mod sheetref;
+mod state;
+
+pub use state::{RowNeeds, RowState};
 
 pub use sheetref::{Refs, SheetRef, DEFAULT_MAX_KEYS};
 
@@ -163,6 +166,7 @@ impl Formula {
             &self.expr,
             &Ctx {
                 cells: row,
+                state: None,
                 columns: &columns,
                 refs: &refs,
                 row: 0,
@@ -184,10 +188,23 @@ impl Formula {
         refs: &Refs,
         row_number: u64,
     ) -> Value {
+        self.eval_stateful(row, columns, refs, row_number, None)
+    }
+
+    /// Evaluate with row history available, so `lag` and `running_total` work.
+    pub fn eval_stateful(
+        &self,
+        row: &HashMap<String, String>,
+        columns: &[String],
+        refs: &Refs,
+        row_number: u64,
+        state: Option<&crate::formula::RowState>,
+    ) -> Value {
         eval(
             &self.expr,
             &Ctx {
                 cells: row,
+                state,
                 columns,
                 refs,
                 row: row_number,
@@ -195,11 +212,65 @@ impl Formula {
         )
     }
 
+    /// Columns this formula needs history for (`lag`, `running_total`).
+    pub fn row_needs(&self) -> crate::formula::RowNeeds {
+        let mut needs = crate::formula::RowNeeds::default();
+        collect_row_needs(&self.expr, &mut needs);
+        needs
+    }
+
     /// The `ref(...)` calls this formula makes, so they can be loaded up front.
     pub fn sheet_references(&self) -> Vec<(String, String, String)> {
         let mut out = Vec::new();
         collect_sheet_refs(&self.expr, &mut out);
         out
+    }
+}
+
+/// Walk the expression for `lag(col[, k])` and `running_total(col)`.
+///
+/// Only literal column names are understood here: `lag([a] , 1)` is a column, but
+/// `lag(if(..), 1)` would need the value before deciding the column, which the
+/// caller cannot pre-allocate. Such forms evaluate to #VALUE! at run time.
+fn collect_row_needs(expr: &Expr, out: &mut crate::formula::RowNeeds) {
+    match expr {
+        Expr::Call(name, args) if name.eq_ignore_ascii_case("lag") => {
+            if let Some(Expr::Column(column)) = args.first() {
+                let distance = match args.get(1) {
+                    Some(Expr::Number(n)) if *n >= 1.0 => *n as usize,
+                    _ => 1,
+                };
+                out.absorb(&crate::formula::RowNeeds {
+                    lags: vec![(column.clone(), distance)],
+                    running: Vec::new(),
+                });
+            }
+            for arg in args {
+                collect_row_needs(arg, out);
+            }
+        }
+        Expr::Call(name, args)
+            if name.eq_ignore_ascii_case("running_total")
+                || name.eq_ignore_ascii_case("cumulative")
+                || name.eq_ignore_ascii_case("cumsum") =>
+        {
+            if let Some(Expr::Column(column)) = args.first() {
+                out.absorb(&crate::formula::RowNeeds {
+                    lags: Vec::new(),
+                    running: vec![column.clone()],
+                });
+            }
+            for arg in args {
+                collect_row_needs(arg, out);
+            }
+        }
+        Expr::Call(_, args) => args.iter().for_each(|a| collect_row_needs(a, out)),
+        Expr::Binary(_, l, r) | Expr::Compare(_, l, r) => {
+            collect_row_needs(l, out);
+            collect_row_needs(r, out);
+        }
+        Expr::Negate(x) | Expr::Not(x) => collect_row_needs(x, out),
+        Expr::Number(_) | Expr::Text(_) | Expr::Column(_) | Expr::CellRef { .. } => {}
     }
 }
 
@@ -560,6 +631,8 @@ fn split_cell_ref(name: &str) -> Option<(String, u64)> {
 /// Everything an expression may look at while it is evaluated for one row.
 pub(crate) struct Ctx<'a> {
     pub cells: &'a HashMap<String, String>,
+    /// History and running totals, when the formula needs them.
+    pub state: Option<&'a crate::formula::RowState>,
     /// Column order, so `A1`-style references can be turned into column names.
     pub columns: &'a [String],
     pub refs: &'a Refs,

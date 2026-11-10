@@ -741,6 +741,7 @@ id,city,amount,qty,total
 | 数字 | `round(x[,位数])` `abs` `floor` `ceil` `int` `sqrt` `mod` `min` `max` |
 | 日期 | `year(d)` `month(d)` `day(d)` —— 取 ISO 前缀（`2024-03-15` 和带时间的都行） |
 | A1 引用 | `B2 * C2` —— 按列位置引用，在整列公式里就是「本行」 |
+| 上一行 / 累计 | `lag(amount)` · `lag(amount, 3)` · `running_total(amount)` —— 内存只与「往前看几行」有关 |
 | 行号 | `row()` —— 第 1 行是 1，用来做序号 / 奇偶交替 / 交替配色 |
 | 列引用 | `amount`，带空格或中文用 `[客户编号]` |
 | 跨表引用 | `ref("customers.csv", "cust_no", "name")` —— 本行的 cust_no 去那张表查 name |
@@ -946,6 +947,7 @@ curl -X POST ".../split?path=big.csv&splits=8&threads=4&out=parts.tar"
 | 拆成 8 片，4 线程 | 0.29 s | 124.0 MB |
 | 合并回单文件 | 0.26 s | 13.3 MB |
 | `groupby`（4 组） | 2.33 s | 9.0 MB |
+| `edit export` + `lag` + `running_total`（300 万行 / 30 MB） | 17.8 s | **17.0 MB** |
 
 这次复测抓到一个真问题：`analyze` 和 `preview` 的峰值内存曾经等于**文件大小**
 （322 MB 的文件要 332 MB 内存），原因是引号风格检测的辅助函数用 `read_to_end`

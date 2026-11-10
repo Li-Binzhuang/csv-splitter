@@ -2617,3 +2617,38 @@ fn formula_accepts_a1_references() {
     assert_eq!(lines[2], "2,20,4,80", "{text}");
     assert_eq!(lines[3], "3,30,5,150", "{text}");
 }
+
+/// A formula can look at the row before it, and the cost does not grow with rows.
+#[test]
+fn formulas_can_look_at_the_previous_row() {
+    let dir = TempDir::new("lag");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "day,amount\n1,10\n2,20\n3,30\n4,40\n").unwrap();
+    let path = input.to_str().unwrap();
+
+    for (name, formula) in [
+        ("prev", "lag(amount)"),
+        ("delta", "amount - lag(amount)"),
+        ("running", "running_total(amount)"),
+    ] {
+        let status = Command::new(bin())
+            .args(["edit", "formula", path, "--name", name, "--value", formula])
+            .status()
+            .unwrap();
+        assert_eq!(status.code(), Some(0), "{name}");
+    }
+
+    let out = dir.join("o.csv");
+    Command::new(bin())
+        .args(["edit", "export", path, "-o", out.to_str().unwrap()])
+        .status()
+        .unwrap();
+    let text = std::fs::read_to_string(&out).unwrap();
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines[0], "day,amount,prev,delta,running");
+    // The first row has no previous value, and the total includes the current row.
+    assert_eq!(lines[1], "1,10,#VALUE!,#VALUE!,10", "{text}");
+    assert_eq!(lines[2], "2,20,10,10,30", "{text}");
+    assert_eq!(lines[3], "3,30,20,10,60", "{text}");
+    assert_eq!(lines[4], "4,40,30,10,100", "{text}");
+}

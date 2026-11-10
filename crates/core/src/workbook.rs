@@ -1117,13 +1117,16 @@ fn eval_formula(
     cells: &[String],
     refs: &crate::formula::Refs,
     row_number: u64,
+    state: Option<&crate::formula::RowState>,
 ) -> String {
     let row: HashMap<String, String> = columns
         .iter()
         .zip(cells.iter())
         .map(|(c, v)| (c.clone(), v.clone()))
         .collect();
-    formula.eval_at(&row, columns, refs, row_number).render()
+    formula
+        .eval_stateful(&row, columns, refs, row_number, state)
+        .render()
 }
 
 /// Parse an A1-style reference: `B3`, `AA10`.
@@ -1218,6 +1221,15 @@ impl ColumnPlan {
         Self { formulas, literals }
     }
 
+    /// Columns the formulas need history for.
+    pub fn row_needs(&self) -> crate::formula::RowNeeds {
+        let mut needs = crate::formula::RowNeeds::default();
+        for formula in self.formulas.iter().flatten() {
+            needs.absorb(&formula.row_needs());
+        }
+        needs
+    }
+
     /// Fill derived columns into a finished row.
     pub fn apply(
         &self,
@@ -1225,6 +1237,7 @@ impl ColumnPlan {
         cells: &mut [String],
         refs: &crate::formula::Refs,
         row_number: u64,
+        state: Option<&crate::formula::RowState>,
     ) {
         for (index, literal) in self.literals.iter().enumerate() {
             if let Some(value) = literal {
@@ -1235,7 +1248,7 @@ impl ColumnPlan {
         }
         for (index, formula) in self.formulas.iter().enumerate() {
             if let Some(f) = formula {
-                let rendered = eval_formula(f, columns, cells, refs, row_number);
+                let rendered = eval_formula(f, columns, cells, refs, row_number, state);
                 if let Some(cell) = cells.get_mut(index) {
                     *cell = rendered;
                 }
@@ -1463,6 +1476,14 @@ pub fn export_quotes(
     };
     let mut physical: u64 = 0;
     let mut logical: u64 = 0;
+    // History for formulas that look backwards. Its size depends on the lag
+    // distance and the number of such columns, never on the row count.
+    let needs = plan.row_needs();
+    let mut state = if needs.is_empty() {
+        None
+    } else {
+        Some(crate::formula::RowState::new(needs))
+    };
 
     loop {
         // Which logical row sits at `logical`? Ask the map so inserted blocks and
@@ -1480,6 +1501,7 @@ pub fn export_quotes(
                     logical,
                     &plan,
                     refs,
+                    state.as_mut(),
                     delim,
                 )?;
                 summary.rows += 1;
@@ -1512,6 +1534,7 @@ pub fn export_quotes(
                     logical,
                     &plan,
                     refs,
+                    state.as_mut(),
                     delim,
                 )?;
                 summary.rows += 1;
@@ -1542,6 +1565,7 @@ fn emit(
     row_number: u64,
     plan: &ColumnPlan,
     refs: &crate::formula::Refs,
+    state: Option<&mut crate::formula::RowState>,
     delim: u8,
 ) -> io::Result<()> {
     let mut cells: Vec<String> = Vec::with_capacity(columns.len());
@@ -1559,9 +1583,28 @@ fn emit(
     edits.apply_blocks(columns, id, &mut cells);
     edits.apply_rules(columns, &mut cells);
 
-    // Derived columns are evaluated last, against the finished row, so a formula
-    // may read a value that was just edited.
-    plan.apply(columns, &mut cells, refs, row_number);
+    // History: totals are folded in before evaluation (a running total includes the
+    // current row), the row itself is remembered after it, so `lag(col, 1)` sees the
+    // row before this one and not this one.
+    if let Some(state) = state {
+        let row: HashMap<String, String> = columns
+            .iter()
+            .zip(cells.iter())
+            .map(|(c, v)| (c.clone(), v.clone()))
+            .collect();
+        state.observe_sums(&row);
+        // Derived columns are evaluated against the finished row, so a formula may
+        // read a value that was just edited.
+        plan.apply(columns, &mut cells, refs, row_number, Some(state));
+        let row: HashMap<String, String> = columns
+            .iter()
+            .zip(cells.iter())
+            .map(|(c, v)| (c.clone(), v.clone()))
+            .collect();
+        state.push_row(&row);
+    } else {
+        plan.apply(columns, &mut cells, refs, row_number, None);
+    }
     let refs: Vec<&str> = cells.iter().map(String::as_str).collect();
     out.write_all(join_csv_line(&refs, delim).as_bytes())
 }
@@ -2329,7 +2372,10 @@ fn shape(shape: &RowShape<'_>, base_cells: &[String], id: RowId, row_number: u64
     }
     edits.apply_blocks(columns, id, &mut out);
     edits.apply_rules(columns, &mut out);
-    plan.apply(columns, &mut out, refs, row_number);
+    // A window starts mid-file: the rows before it were never read, so history
+    // formulas cannot be answered here. They report #VALUE! rather than pretending
+    // the window's first row is the file's first row.
+    plan.apply(columns, &mut out, refs, row_number, None);
     out
 }
 
@@ -2484,5 +2530,64 @@ mod regex_tests {
             }
             other => panic!("parsed as {other:?}"),
         }
+    }
+}
+
+#[cfg(test)]
+mod history_tests {
+    use super::*;
+
+    fn temp(tag: &str) -> std::path::PathBuf {
+        static SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+        let seq = SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let path = std::env::temp_dir().join(format!("csvs_hist_{tag}_{nanos}_{seq}"));
+        std::fs::create_dir_all(&path).unwrap();
+        path
+    }
+
+    #[test]
+    fn the_plan_reports_the_history_it_needs() {
+        let columns: Vec<String> = vec!["day".into(), "amount".into(), "prev".into()];
+        let ops = vec![Op::AddColumn {
+            name: "prev".to_string(),
+            formula: "lag(amount)".to_string(),
+        }];
+        let compiled = compile_formulas(&ops, &columns).unwrap();
+        let plan = ColumnPlan::build(&ops, &columns, &compiled);
+        let needs = plan.row_needs();
+        assert_eq!(needs.lags, vec![("amount".to_string(), 1)], "{needs:?}");
+        assert!(needs.running.is_empty());
+    }
+
+    #[test]
+    fn lag_and_running_total_see_previous_rows() {
+        let dir = temp("lag");
+        let base = dir.join("t.csv");
+        std::fs::write(&base, "day,amount\n1,10\n2,20\n3,30\n").unwrap();
+        let ops = vec![
+            Op::AddColumn {
+                name: "prev".to_string(),
+                formula: "lag(amount)".to_string(),
+            },
+            Op::AddColumn {
+                name: "running".to_string(),
+                formula: "running_total(amount)".to_string(),
+            },
+        ];
+        let out = dir.join("out.csv");
+        let (tx, _rx) = std::sync::mpsc::channel();
+        export(&base, &ops, &out, Delimiter::Comma, &tx).unwrap();
+        let text = std::fs::read_to_string(&out).unwrap();
+        let lines: Vec<&str> = text.lines().collect();
+        assert_eq!(lines[0], "day,amount,prev,running");
+        // The first row has no previous value; the total includes the current row.
+        assert_eq!(lines[1], "1,10,#VALUE!,10", "{text}");
+        assert_eq!(lines[2], "2,20,10,30", "{text}");
+        assert_eq!(lines[3], "3,30,20,60", "{text}");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

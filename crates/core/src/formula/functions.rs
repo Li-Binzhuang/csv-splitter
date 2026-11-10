@@ -19,6 +19,46 @@ use super::{eval, truthy, Ctx, Expr, Value};
 pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
     let lower = name.to_ascii_lowercase();
     match lower.as_str() {
+        // History functions: they read the state the exporter maintains, so a formula
+        // can see the row before it without the file being loaded.
+        "lag" => {
+            let Some(state) = ctx.state else {
+                return Value::Error;
+            };
+            // The argument is a column *name*, not its value: `lag(amount)` means the
+            // amount of the previous row, so the name comes from the syntax tree.
+            let column = match args.first() {
+                Some(Expr::Column(name)) => name.clone(),
+                _ => return Value::Error,
+            };
+            let distance = match args.get(1) {
+                None => 1,
+                Some(expr) => match eval(expr, ctx).number() {
+                    Some(n) if n >= 1.0 => n as usize,
+                    _ => return Value::Error,
+                },
+            };
+            match state.lagged(&column, distance) {
+                Some(value) => match value.trim().parse::<f64>() {
+                    Ok(n) if n.is_finite() => Value::Number(n),
+                    _ if value.trim().is_empty() => Value::Number(0.0),
+                    _ => Value::Text(value.to_string()),
+                },
+                // Nothing that far back: the first rows of a file genuinely have no
+                // previous value, and saying so is better than inventing a zero.
+                None => Value::Error,
+            }
+        }
+        "running_total" | "runningtotal" | "cumulative" | "cumsum" => {
+            let Some(state) = ctx.state else {
+                return Value::Error;
+            };
+            let column = match args.first() {
+                Some(Expr::Column(name)) => name.clone(),
+                _ => return Value::Error,
+            };
+            Value::Number(state.sum(&column))
+        }
         "if" => {
             if args.len() < 2 {
                 return Value::Error;
