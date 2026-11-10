@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.10.0] — 2026-11-10
+
+### Verified
+
+- **No command modifies the input file.** Hashed, sized and mtime-stamped before and
+  after every writing command — filter, sort, groupby, validate, edit set, edit export,
+  split — plus one that fails on purpose. All identical. The promise had been checked
+  one command at a time; now a test checks the set.
+- No failed command leaves an output file behind: bad column, bad order, bad partition
+  key, bad split key — nine failure modes, zero leftovers.
+
+### Added
+
+- **A formula is checked when it is written, not when it is exported.** `edit formula
+  --value "amonut*2"` now fails with "unknown column(s): amonut (available: id, city,
+  amount)" instead of recording a step whose export fails later. A `ref()` pointing at a
+  sheet that does not exist is refused with the same rule the export applies, plus a
+  hint showing the expected shape.
+
 ## [1.9.0] — 2026-11-10
 
 ### Fixed

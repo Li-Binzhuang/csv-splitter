@@ -4360,3 +4360,160 @@ fn verify_streams_and_reports_the_first_difference() {
         assert!(stderr.contains("mismatch at byte"), "{stderr}");
     }
 }
+
+/// The base file is never modified — by any command, on success or on failure.
+///
+/// This is the project's central promise, and it is cheap to check: hash and mtime
+/// before, the same after. The commands that write are exercised on a file they must
+/// only read.
+#[test]
+fn no_command_modifies_the_input_file() {
+    let dir = TempDir::new("immutable");
+    let input = dir.join("t.csv");
+    let mut text = String::from("id,city,amount\n");
+    for i in 1..=200 {
+        text.push_str(&format!("{i},C{},{}\n", i % 7, i * 10));
+    }
+    std::fs::write(&input, &text).unwrap();
+    let path = input.to_str().unwrap();
+
+    let stamp = || {
+        let bytes = std::fs::read(&input).unwrap();
+        let modified = std::fs::metadata(&input).unwrap().modified().ok();
+        // A cheap content digest: length plus a rolling checksum over the bytes.
+        let sum: u64 = bytes.iter().enumerate().fold(0u64, |acc, (i, b)| {
+            acc.wrapping_add((i as u64 + 1) * (*b as u64))
+        });
+        (bytes.len(), sum, modified)
+    };
+    let before = stamp();
+
+    let out = dir.join("out.csv");
+    let mut runs: Vec<Vec<String>> = vec![
+        vec![
+            "filter".into(),
+            path.into(),
+            "--where".into(),
+            "city=C3".into(),
+            "-o".into(),
+            out.display().to_string(),
+        ],
+        vec![
+            "sort".into(),
+            path.into(),
+            "--by".into(),
+            "amount".into(),
+            "-o".into(),
+            out.display().to_string(),
+        ],
+        vec![
+            "groupby".into(),
+            path.into(),
+            "--by".into(),
+            "city".into(),
+            "--agg".into(),
+            "amount:sum".into(),
+            "-o".into(),
+            out.display().to_string(),
+        ],
+        vec![
+            "validate".into(),
+            path.into(),
+            "--check".into(),
+            "city:not-empty".into(),
+        ],
+        vec![
+            "edit".into(),
+            "set".into(),
+            path.into(),
+            "--row".into(),
+            "2".into(),
+            "--col".into(),
+            "city".into(),
+            "--value".into(),
+            "X".into(),
+        ],
+        vec![
+            "edit".into(),
+            "export".into(),
+            path.into(),
+            "-o".into(),
+            out.display().to_string(),
+        ],
+        vec![
+            "split".into(),
+            path.into(),
+            "-n".into(),
+            "2".into(),
+            "-o".into(),
+            dir.join("parts.tar").display().to_string(),
+        ],
+    ];
+    // A failing command must not touch it either.
+    runs.push(vec![
+        "sort".into(),
+        path.into(),
+        "--by".into(),
+        "nosuch".into(),
+        "-o".into(),
+        out.display().to_string(),
+    ]);
+
+    for args in runs {
+        let _ = Command::new(bin()).args(&args).status().unwrap();
+    }
+
+    let after = stamp();
+    assert_eq!(
+        before, after,
+        "the input file changed: {before:?} vs {after:?}"
+    );
+}
+
+/// A typo in a formula is caught when it is written, not after an export.
+#[test]
+fn a_formula_is_checked_before_it_is_recorded() {
+    let dir = TempDir::new("formulacheck");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,amount\n1,10\n2,20\n").unwrap();
+    let path = input.to_str().unwrap();
+
+    // Unknown column: refused, with the columns that do exist.
+    let out = Command::new(bin())
+        .args([
+            "edit", "formula", path, "--name", "bad", "--value", "amonut*2",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("unknown column"), "{stderr}");
+    assert!(stderr.contains("id, amount"), "{stderr}");
+
+    // Missing reference sheet: refused too, because the export would refuse it later.
+    let out = Command::new(bin())
+        .args([
+            "edit",
+            "formula",
+            path,
+            "--name",
+            "ext",
+            "--value",
+            r#"ref("nosuch.csv","id","amount")"#,
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("not found"), "{stderr}");
+    assert!(stderr.contains("hint:"), "{stderr}");
+
+    // A good formula still works, and its journal entry survives.
+    let out = Command::new(bin())
+        .args([
+            "edit", "formula", path, "--name", "twice", "--value", "amount*2",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+}

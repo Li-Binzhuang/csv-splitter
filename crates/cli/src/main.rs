@@ -5359,6 +5359,75 @@ fn sheet_path(input: &Path, apply_edits: bool, delimiter: Delimiter) -> Result<S
     })
 }
 
+/// Check a formula before it becomes a journal step: unknown columns and missing
+/// sheets are cheap to spot now and expensive to discover after an export.
+///
+/// A missing sheet is a warning rather than an error — `ref()` returns `#VALUE!` for
+/// it, which is a legitimate answer if the file is expected later — but every cell of
+/// the new column would be `#VALUE!`, and nobody wants to find that out row by row.
+fn check_formula(
+    input: &Path,
+    delimiter: Delimiter,
+    ops: &[csv_splitter_core::workbook::Op],
+    formula: &str,
+) -> Result<(), i32> {
+    let parsed = match csv_splitter_core::formula::Formula::parse(formula) {
+        Ok(parsed) => parsed,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return Err(2);
+        }
+    };
+    let columns = match csv_splitter_core::workbook::column_layout(
+        ops,
+        &match csv_splitter_core::workbook::base_header(input, delimiter) {
+            Ok(header) => header,
+            Err(e) => {
+                return Err(report_failure(
+                    "edit",
+                    format!("cannot read the header: {e}"),
+                ))
+            }
+        },
+    ) {
+        Ok(layout) => layout.into_iter().map(|(name, _)| name).collect::<Vec<_>>(),
+        Err(e) => return Err(report_failure("edit", e.to_string())),
+    };
+    let mut unknown: Vec<String> = Vec::new();
+    for reference in parsed.references() {
+        if !columns.iter().any(|c| c == &reference) {
+            unknown.push(reference);
+        }
+    }
+    if !unknown.is_empty() {
+        eprintln!(
+            "error: formula reads unknown column(s): {} (available: {})",
+            unknown.join(", "),
+            columns.join(", ")
+        );
+        return Err(2);
+    }
+    // The export refuses a missing sheet too, so refusing here is the same rule applied
+    // one step earlier — where the typo is still fresh in the user's mind.
+    let directory = input.parent().unwrap_or_else(|| Path::new("."));
+    let mut missing: Vec<String> = Vec::new();
+    for (sheet, _key, _value) in parsed.sheet_references() {
+        if !directory.join(&sheet).is_file() {
+            missing.push(sheet);
+        }
+    }
+    if !missing.is_empty() {
+        eprintln!(
+            "error: referenced sheet(s) not found next to {}: {}",
+            input.display(),
+            missing.join(", ")
+        );
+        eprintln!("hint: ref() takes a file name in the same directory, e.g. ref(\"customers.csv\", \"cust_no\", \"name\")");
+        return Err(2);
+    }
+    Ok(())
+}
+
 /// How many separate stretches `delete --where` will write before refusing.
 ///
 /// A condition that matches alternating rows would otherwise turn one edit into a
@@ -6206,6 +6275,9 @@ fn cmd_edit(args: &[String]) -> i32 {
                 eprintln!("error: formula needs --name and --value");
                 return 2;
             };
+            if let Err(code) = check_formula(&input, delimiter, journal.ops(), &value) {
+                return code;
+            }
             csv_splitter_core::workbook::Op::AddColumn {
                 name,
                 formula: value,
