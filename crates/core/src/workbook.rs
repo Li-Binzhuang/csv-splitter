@@ -87,6 +87,12 @@ pub enum Op {
         from: String,
         to: String,
     },
+    /// Regex substitution, using the same pattern subset as conditional formatting.
+    SubstituteRegex {
+        column: Option<String>,
+        pattern: String,
+        to: String,
+    },
     /// Append a computed column (formula evaluated at export time).
     AddColumn {
         name: String,
@@ -132,6 +138,7 @@ impl Op {
             Self::DeleteRows { .. } => "delete",
             Self::SetWhere { .. } => "setwhere",
             Self::Substitute { .. } => "substitute",
+            Self::SubstituteRegex { .. } => "subst-rx",
             Self::AddColumn { .. } => "addcolumn",
             Self::AddColumnAt { .. } => "addcolumnat",
             Self::PasteBlock { .. } => "pasteblock",
@@ -156,6 +163,16 @@ impl Op {
             Self::Substitute { column, from, to } => format!(
                 "substitute '{}' → '{}' in {}",
                 truncate(from, 20),
+                truncate(to, 20),
+                column.as_deref().unwrap_or("every column")
+            ),
+            Self::SubstituteRegex {
+                column,
+                pattern,
+                to,
+            } => format!(
+                "replace /{}/ → '{}' in {}",
+                truncate(pattern, 24),
                 truncate(to, 20),
                 column.as_deref().unwrap_or("every column")
             ),
@@ -364,6 +381,14 @@ fn render_op(op: &Op) -> String {
             &[op.tag(), column.as_deref().unwrap_or("*"), from, to],
             b',',
         ),
+        Op::SubstituteRegex {
+            column,
+            pattern,
+            to,
+        } => join_csv_line(
+            &[op.tag(), column.as_deref().unwrap_or("*"), pattern, to],
+            b',',
+        ),
         Op::AddColumn { name, formula } => join_csv_line(&[op.tag(), name, formula], b','),
         Op::PasteBlock { row, column, rows } => {
             let block = rows
@@ -429,6 +454,14 @@ fn parse_op(record: &[u8]) -> Option<Op> {
             filter: fields[1].clone(),
             column: fields[2].clone(),
             value: fields[3].clone(),
+        }),
+        "subst-rx" if fields.len() >= 4 => Some(Op::SubstituteRegex {
+            column: match fields[1].trim() {
+                "*" | "" => None,
+                name => Some(name.to_string()),
+            },
+            pattern: fields[2].clone(),
+            to: fields[3].clone(),
         }),
         "substitute" if fields.len() >= 4 => Some(Op::Substitute {
             column: match fields[1].trim() {
@@ -815,6 +848,8 @@ pub struct CellEdits {
     cells: HashMap<(RowId, String), String>,
     /// Substring replacements, applied in journal order.
     subs: Vec<(Option<String>, String, String)>,
+    /// Regex replacements: (column, pattern, replacement).
+    regex_subs: Vec<(Option<String>, String, String)>,
     /// Bulk-edit rules: (filter expression, column, value).
     rules: Vec<(String, String, String)>,
     /// Pasted blocks: (row identity, anchor column, one row of values).
@@ -894,8 +929,42 @@ impl CellEdits {
                 out = out.replace(from.as_str(), to);
             }
         }
+        for (target, pattern, to) in &self.regex_subs {
+            let applies = match target {
+                None => true,
+                Some(name) => name == column,
+            };
+            if applies {
+                out = regex_replace(pattern, &out, to);
+            }
+        }
         out
     }
+}
+
+/// Replace every match of `pattern` in `value` with `to`.
+///
+/// The pattern uses the same subset as conditional formatting, which means no
+/// capture groups: `to` is inserted verbatim. A pattern that does not compile
+/// leaves the value untouched rather than failing a whole export.
+pub fn regex_replace(pattern: &str, value: &str, to: &str) -> String {
+    let mut out = String::with_capacity(value.len());
+    let chars: Vec<char> = value.chars().collect();
+    let mut cursor = 0usize;
+    while cursor <= chars.len() {
+        match crate::format::find_span(pattern, value, cursor) {
+            Some((start, end)) => {
+                out.extend(chars[cursor..start].iter());
+                out.push_str(to);
+                cursor = end;
+            }
+            None => {
+                out.extend(chars[cursor..].iter());
+                break;
+            }
+        }
+    }
+    out
 }
 
 /// The output columns, each pointing at its base column (or `None` if computed).
@@ -1192,6 +1261,7 @@ pub fn compile(ops: &[Op], base_rows: u64) -> Sheet {
     let mut map = RowMap::build(&[], base_rows);
     let mut cells: HashMap<(RowId, String), String> = HashMap::new();
     let mut subs: Vec<(Option<String>, String, String)> = Vec::new();
+    let mut regex_subs: Vec<(Option<String>, String, String)> = Vec::new();
     let mut rules: Vec<(String, String, String)> = Vec::new();
     let mut blocks: Vec<(RowId, String, Vec<String>)> = Vec::new();
 
@@ -1212,6 +1282,13 @@ pub fn compile(ops: &[Op], base_rows: u64) -> Sheet {
             }
             Op::Substitute { column, from, to } => {
                 subs.push((column.clone(), from.clone(), to.clone()));
+            }
+            Op::SubstituteRegex {
+                column,
+                pattern,
+                to,
+            } => {
+                regex_subs.push((column.clone(), pattern.clone(), to.clone()));
             }
             Op::SetWhere {
                 filter,
@@ -1236,6 +1313,7 @@ pub fn compile(ops: &[Op], base_rows: u64) -> Sheet {
         edits: CellEdits {
             cells,
             subs,
+            regex_subs,
             rules,
             blocks,
         },
@@ -2353,5 +2431,58 @@ mod redo_tests {
         let mut journal = Journal::new();
         assert!(journal.redo().is_none());
         assert!(journal.undo().is_none());
+    }
+}
+
+#[cfg(test)]
+mod regex_tests {
+    use super::*;
+
+    #[test]
+    fn a_pattern_replaces_every_match() {
+        assert_eq!(regex_replace("[0-9]", "a1b22c", "x"), "axbxxc");
+        assert_eq!(regex_replace("ab", "abab", "-"), "--");
+    }
+
+    #[test]
+    fn anchors_bind_to_the_whole_value() {
+        assert_eq!(regex_replace("^1[0-9]{3}$", "1234", "ok"), "ok");
+        // The same pattern does not match a value with more digits around it.
+        assert_eq!(regex_replace("^1[0-9]{3}$", "x1234y", "ok"), "x1234y");
+    }
+
+    #[test]
+    fn a_pattern_that_does_not_compile_leaves_the_value_alone() {
+        assert_eq!(regex_replace("[", "abc", "x"), "abc");
+    }
+
+    #[test]
+    fn non_ascii_values_are_handled_by_character() {
+        // 谢谢你 is two matches, not one.
+        assert_eq!(regex_replace("谢", "谢谢你", "bye"), "byebye你");
+        assert_eq!(regex_replace("你", "谢谢你", "!"), "谢谢!");
+    }
+
+    #[test]
+    fn the_op_round_trips_through_the_journal_format() {
+        let op = Op::SubstituteRegex {
+            column: Some("note".to_string()),
+            pattern: r"\s+".to_string(),
+            to: " ".to_string(),
+        };
+        let rendered = render_op(&op);
+        let back = parse_op(rendered.as_bytes()).unwrap();
+        match back {
+            Op::SubstituteRegex {
+                column,
+                pattern,
+                to,
+            } => {
+                assert_eq!(column.as_deref(), Some("note"));
+                assert_eq!(pattern, r"\s+");
+                assert_eq!(to, " ");
+            }
+            other => panic!("parsed as {other:?}"),
+        }
     }
 }

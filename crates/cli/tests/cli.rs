@@ -2540,3 +2540,51 @@ fn rows_are_one_based_for_the_user() {
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(stderr.contains("1-based"), "{stderr}");
 }
+
+/// Regex replacement: one operation cleans a whole column at export time.
+#[test]
+fn replace_takes_a_regex() {
+    let dir = TempDir::new("regex");
+    let input = dir.join("t.csv");
+    std::fs::write(
+        &input,
+        "id,note\n1,\"too   many    spaces\"\n2,\"a1b22c\"\n",
+    )
+    .unwrap();
+    let path = input.to_str().unwrap();
+
+    let status = Command::new(bin())
+        .args([
+            "edit", "replace", path, "--from", "[ ]+", "--to", " ", "--regex", "--col", "note",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let status = Command::new(bin())
+        .args([
+            "edit", "replace", path, "--from", "[0-9]", "--to", "#", "--regex", "--col", "note",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    let out = dir.join("o.csv");
+    Command::new(bin())
+        .args(["edit", "export", path, "-o", out.to_str().unwrap()])
+        .status()
+        .unwrap();
+    let text = std::fs::read_to_string(&out).unwrap();
+    assert!(text.contains("too many spaces"), "{text}");
+    assert!(text.contains("a#b##c"), "{text}");
+
+    // A pattern outside the supported subset is refused before it is recorded.
+    let out = Command::new(bin())
+        .args([
+            "edit", "replace", path, "--from", "[", "--to", "x", "--regex",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("not a supported pattern"), "{stderr}");
+}

@@ -3716,6 +3716,26 @@ fn parse_quotes(text: &str) -> Result<csv_splitter_core::csv_reader::QuoteStyle,
     csv_splitter_core::csv_reader::QuoteStyle::parse(text)
 }
 
+/// Record one operation, save the journal, and report it the way other edits do.
+fn journal_push(
+    journal: &mut csv_splitter_core::workbook::Journal,
+    sidecar: &std::path::Path,
+    op: csv_splitter_core::workbook::Op,
+) -> Result<i32, i32> {
+    let description = op.describe();
+    journal.push(op);
+    match journal.save(sidecar) {
+        Ok(()) => {
+            println!("✓ {description}");
+            Ok(0)
+        }
+        Err(e) => {
+            report_failure("edit", format!("cannot save the journal: {e}"));
+            Err(1)
+        }
+    }
+}
+
 /// Warn when a file looks like it uses a different quote escape than RFC 4180.
 ///
 /// Reading such a file as RFC does not fail — it silently merges or splits fields —
@@ -3748,6 +3768,7 @@ fn cmd_edit(args: &[String]) -> i32 {
     let mut value: Option<String> = None;
     let mut from: Option<String> = None;
     let mut count: Option<u64> = None;
+    let mut regex = false;
     let mut name: Option<String> = None;
     let mut out: Option<PathBuf> = None;
     let mut where_expr: Option<String> = None;
@@ -3759,6 +3780,7 @@ fn cmd_edit(args: &[String]) -> i32 {
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
+            "--regex" => regex = true,
             "--row" => match p
                 .value("--row")
                 .and_then(|v| v.parse::<u64>().map_err(|_| "bad --row".to_string()))
@@ -4158,10 +4180,30 @@ fn cmd_edit(args: &[String]) -> i32 {
             csv_splitter_core::workbook::Op::DeleteRows { at: row, count }
         }
         "replace" => {
-            let (Some(from), Some(to)) = (from, to_block) else {
+            let (Some(from), Some(to)) = (from.clone(), to_block.clone()) else {
                 eprintln!("error: replace needs --from and --to");
                 return 2;
             };
+            if regex {
+                if csv_splitter_core::format::pattern_is_valid(&from).is_none() {
+                    eprintln!(
+                        "error: '{from}' is not a supported pattern (literals, ., [..], *, +, ?, ^, $, \\d \\w \\s)"
+                    );
+                    return 2;
+                }
+                return match journal_push(
+                    &mut journal,
+                    &sidecar,
+                    csv_splitter_core::workbook::Op::SubstituteRegex {
+                        column: col.clone(),
+                        pattern: from,
+                        to,
+                    },
+                ) {
+                    Ok(code) => code,
+                    Err(code) => return code,
+                };
+            }
             csv_splitter_core::workbook::Op::Substitute {
                 column: col,
                 from,

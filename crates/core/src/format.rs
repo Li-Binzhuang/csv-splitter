@@ -91,6 +91,56 @@ fn number(raw: &str) -> Option<f64> {
 /// Pulling in a regex crate for one comparison operator would be the wrong trade
 /// for a binary that otherwise has exactly one dependency; the subset covers the
 /// rules people actually write ("starts with 2024", "an id of digits").
+///
+/// Find the leftmost match of `pattern` in `value`, starting at char `from`.
+///
+/// Returns `(start, end)` as **char** indices. Anchors behave the way a user
+/// expects: `^` binds to the start of the value, `$` to its end, and without them
+/// the pattern may match anywhere. Shared with the conditional-format matcher so
+/// both agree on what the subset supports.
+/// Is this a pattern the engine can compile?
+///
+/// Exposed so a command can refuse a bad pattern *before* recording an operation
+/// that would silently do nothing on every row.
+pub fn pattern_is_valid(pattern: &str) -> Option<()> {
+    let body = pattern
+        .trim_start_matches('^')
+        .trim_end_matches('$')
+        .to_string();
+    compile(&body).map(|_| ())
+}
+
+pub(crate) fn find_span(pattern: &str, value: &str, from: usize) -> Option<(usize, usize)> {
+    let anchored_start = pattern.starts_with('^');
+    let anchored_end = pattern.ends_with('$') && !pattern.ends_with(r"\$");
+    let body = pattern
+        .trim_start_matches('^')
+        .trim_end_matches('$')
+        .to_string();
+    let tokens = compile(&body)?;
+    let chars = value.chars().count();
+    let starts: Vec<usize> = if anchored_start {
+        if from == 0 {
+            vec![0]
+        } else {
+            Vec::new()
+        }
+    } else {
+        (from..=chars).collect()
+    };
+    for start in starts {
+        if let Some(end) = match_tokens(&tokens, value, start) {
+            if anchored_end && end != chars {
+                continue;
+            }
+            if end > start {
+                return Some((start, end));
+            }
+        }
+    }
+    None
+}
+
 fn regex_matches(pattern: &str, value: &str) -> bool {
     let anchored_start = pattern.starts_with('^');
     let anchored_end = pattern.ends_with('$') && !pattern.ends_with("\\$");

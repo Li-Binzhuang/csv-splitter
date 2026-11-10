@@ -267,7 +267,14 @@ impl PartialOrd for MergeEntry {
 impl Ord for MergeEntry {
     fn cmp(&self, other: &Self) -> Ordering {
         // BinaryHeap is a max-heap, so reverse to pop the smallest key first.
-        self.plan.compare(&self.key, &other.key).reverse()
+        match self.plan.compare(&self.key, &other.key) {
+            // Equal keys fall back to the chunk they came from: chunks are written
+            // in file order, so the earlier chunk holds the earlier rows. Without
+            // this, rows that tie would come out in heap order — a sort that is
+            // "almost" stable, which is worse than one that is not.
+            Ordering::Equal => other.source.cmp(&self.source),
+            ord => ord.reverse(),
+        }
     }
 }
 
@@ -502,5 +509,77 @@ mod multi_tests {
         let lines: Vec<&str> = text.lines().collect();
         assert_eq!(lines[1], "10,c");
         assert_eq!(lines[3], "30,a");
+    }
+}
+
+#[cfg(test)]
+mod stability_tests {
+    use super::*;
+    use std::io::Write;
+
+    /// Temp directory that cleans itself up.
+    fn temp_dir(tag: &str) -> PathBuf {
+        static SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+        let seq = SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let path = std::env::temp_dir().join(format!("csvs_sort_{tag}_{nanos}_{seq}"));
+        std::fs::create_dir_all(&path).unwrap();
+        path
+    }
+
+    fn write_rows(dir: &std::path::Path, name: &str, rows: &[&str]) -> PathBuf {
+        let path = dir.join(name);
+        let mut file = std::fs::File::create(&path).unwrap();
+        writeln!(file, "id,key,payload").unwrap();
+        for row in rows {
+            writeln!(file, "{row}").unwrap();
+        }
+        path
+    }
+
+    #[test]
+    fn equal_keys_keep_their_original_order_across_chunks() {
+        let dir = temp_dir("stable");
+        // 40 rows sharing one key, forced across several chunks by a tiny buffer.
+        let rows: Vec<String> = (0..40).map(|i| format!("{i},same,p{i}")).collect();
+        let rows: Vec<&str> = rows.iter().map(String::as_str).collect();
+        let input = write_rows(&dir, "in.csv", &rows);
+
+        let out = dir.join("out.csv");
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let columns = vec![SortColumn::new("key", false)];
+        external_sort_columns(&input, &out, &columns, Delimiter::Comma, 1, &tx).unwrap();
+
+        let text = std::fs::read_to_string(&out).unwrap();
+        let lines: Vec<&str> = text.lines().collect();
+        assert_eq!(lines[0], "id,key,payload");
+        for (i, line) in lines[1..].iter().enumerate() {
+            let expected = format!("{i},same,p{i}");
+            assert_eq!(*line, expected, "row {i} moved; a sort must be stable");
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn reversing_the_key_reverses_the_rows_not_the_ties() {
+        let dir = temp_dir("stable2");
+        let rows = ["1,b,p1", "2,a,p2", "3,a,p3", "4,b,p4", "5,a,p5"];
+        let input = write_rows(&dir, "in.csv", &rows);
+        let out = dir.join("out.csv");
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let columns = vec![SortColumn::new("key", true)];
+        external_sort_columns(&input, &out, &columns, Delimiter::Comma, 1, &tx).unwrap();
+        let text = std::fs::read_to_string(&out).unwrap();
+        let lines: Vec<&str> = text.lines().collect();
+        // b's first (descending), and within each key the original order.
+        assert_eq!(lines[1], "1,b,p1");
+        assert_eq!(lines[2], "4,b,p4");
+        assert_eq!(lines[3], "2,a,p2");
+        assert_eq!(lines[4], "3,a,p3");
+        assert_eq!(lines[5], "5,a,p5");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
