@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.13.0] — 2026-11-10
+
+### Fixed
+
+- **`docs/INTEGRATION.md` told readers to run `serve --port 8787`, and `--port` did not
+  exist.** The guide's first command failed with `unknown option: --port`. `serve` takes
+  it now as a shorthand for `--addr 127.0.0.1:<port>` (`--port abc` says
+  `--port takes a number, not "abc"`), and both forms are in `serve --help`.
+
+### Added
+
+- **Two tests that run the documentation check backwards.** The existing pair only proved
+  "code is documented"; nothing proved "documentation is true". Now:
+  - `every_documented_flag_exists` — every `--flag` any doc tells a reader to type is a
+    flag the CLI accepts (cargo/git flags in examples are excluded, the changelog is
+    excluded because history legitimately names removed flags, markdown rules and
+    `--a/--b` prose are not flags).
+  - `every_documented_route_is_served` — every `/route` a guide names is in
+    `READ_ROUTES`/`WRITE_ROUTES`.
+  The first one immediately found the `--port` lie above.
+
 ## [3.12.0] — 2026-11-10
 
 ### Added

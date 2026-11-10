@@ -1117,3 +1117,178 @@ fn path_requiring_reads_are_real_routes() {
         );
     }
 }
+
+/// The reverse of `every_command_documents_the_flags_it_parses`: every flag the docs
+/// tell a reader to type is a flag the tool accepts.
+///
+/// The forward test cannot catch this — a documented flag that does not exist produces
+/// no warning anywhere, and the reader gets `unknown option`. That is exactly what
+/// happened to `serve --port`, which INTEGRATION.md recommended and nothing implemented.
+#[test]
+fn every_documented_flag_exists() {
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let root = manifest.join("../..");
+    let source = std::fs::read_to_string(manifest.join("src/main.rs")).unwrap();
+    let accepted: Vec<String> = source
+        .split('"')
+        .filter(|s| s.starts_with("--") && s.len() > 2 && !s.contains(' '))
+        .map(|s| s.to_string())
+        .collect();
+
+    // Flags belonging to other tools in the examples (cargo, git) are not ours to check.
+    let foreign = [
+        "--features",
+        "--all",
+        "--all-targets",
+        "--diff-filter",
+        "--lib",
+        "--no-deps",
+        "--path",
+        "--release",
+        "--test",
+        "--workspace",
+        "--help",
+        "--version",
+        "--quiet",
+        "--benches",
+    ];
+
+    let mut docs: Vec<std::path::PathBuf> = Vec::new();
+    let mut stack = vec![root.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        for entry in std::fs::read_dir(&dir).unwrap().flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                if path
+                    .file_name()
+                    .is_some_and(|n| n != "target" && n != ".git")
+                {
+                    stack.push(path);
+                }
+            } else if path.extension().is_some_and(|e| e == "md") {
+                // The changelog is history: it legitimately names flags that have been
+                // removed or renamed, so it is not a statement about the current CLI.
+                if path.file_name().is_some_and(|n| n != "CHANGELOG.md") {
+                    docs.push(path);
+                }
+            }
+        }
+    }
+    assert!(docs.len() >= 8, "{docs:?}");
+
+    let mut unknown: Vec<String> = Vec::new();
+    for doc in docs {
+        let text = std::fs::read_to_string(&doc).unwrap();
+        for word in text.split([' ', '\n', '"', '`', '(', ')', ',', '|']) {
+            let word = word.trim();
+            let flag = word.trim_end_matches(|c: char| !c.is_ascii_alphanumeric() && c != '-');
+            if !flag.starts_with("--") || flag.len() < 3 {
+                continue;
+            }
+            // Markdown table rules (`|---|`) are dashes, not options.
+            if flag.chars().all(|c| c == '-') {
+                continue;
+            }
+            // `--keep/--drop` is prose listing three flags, not one flag name.
+            let name = flag.split('=').next().unwrap().split('/').next().unwrap();
+            if foreign.contains(&name) || accepted.iter().any(|a| a.as_str() == name) {
+                continue;
+            }
+            unknown.push(format!("{}: {name}", doc.display()));
+        }
+    }
+    unknown.sort();
+    unknown.dedup();
+    assert!(
+        unknown.is_empty(),
+        "documented flags the tool does not accept: {unknown:#?}"
+    );
+}
+
+/// Every `/route` a doc tells a reader to call is a route the server serves.
+///
+/// The existing route test goes one way (served routes must be documented); this one
+/// catches the opposite: a guide inventing an endpoint (or naming a removed one) that no
+/// handler will answer.
+#[test]
+fn every_documented_route_is_served() {
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let root = manifest.join("../..");
+    let serve = std::fs::read_to_string(manifest.join("src/serve.rs")).unwrap();
+
+    let list = |name: &str| -> Vec<String> {
+        let start = serve
+            .find(&format!("const {name}: &[&str] = &["))
+            .unwrap_or_else(|| panic!("missing {name}"));
+        let end = serve[start..].find("];").unwrap() + start;
+        serve[start..end]
+            .split('"')
+            .skip(1)
+            .step_by(2)
+            .map(|s| s.to_string())
+            .collect()
+    };
+    let reads = list("READ_ROUTES");
+    let writes: Vec<String> = list("WRITE_ROUTES")
+        .iter()
+        .filter_map(|w| w.strip_prefix("POST ").map(|s| s.to_string()))
+        .collect();
+
+    let mut docs: Vec<std::path::PathBuf> = Vec::new();
+    for name in [
+        "README.md",
+        "docs/API.md",
+        "docs/INTEGRATION.md",
+        "docs/CAPABILITIES.md",
+        "docs/TROUBLESHOOTING.md",
+        "docs/HANDOFF.md",
+        "docs/ARCHITECTURE.md",
+    ] {
+        let path = root.join(name);
+        if path.exists() {
+            docs.push(path);
+        }
+    }
+    assert!(docs.len() >= 4, "{docs:?}");
+
+    let mut unknown: Vec<String> = Vec::new();
+    for doc in docs {
+        let text = std::fs::read_to_string(&doc).unwrap();
+        // Route mentions look like `/name?` or `/name"` inside curl lines; require a
+        // known-route character set to avoid matching file paths and markdown.
+        for token in text.split('"') {
+            let Some(route) = token.split('?').next() else {
+                continue;
+            };
+            let route = route.trim();
+            if !route.starts_with('/') || route.len() < 2 {
+                continue;
+            }
+            let name: String = route
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || *c == '/' || *c == '-')
+                .collect();
+            if name.len() < 2 || name == "/" {
+                continue;
+            }
+            // A curl URL ends at the path; only bare `/x` tokens are endpoint claims.
+            if name.contains("//") || name.contains(".md") {
+                continue;
+            }
+            if reads.iter().any(|r| r == &name) || writes.iter().any(|w| w == &name) {
+                continue;
+            }
+            // Shell/yaml examples carry absolute paths; those start with a directory.
+            if name.starts_with("/Users") || name.starts_with("/tmp") || name.starts_with("/data") {
+                continue;
+            }
+            unknown.push(format!("{}: {name}", doc.display()));
+        }
+    }
+    unknown.sort();
+    unknown.dedup();
+    assert!(
+        unknown.is_empty(),
+        "documented routes not served: {unknown:#?}"
+    );
+}

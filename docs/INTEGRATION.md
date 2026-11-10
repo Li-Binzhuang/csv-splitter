@@ -6,7 +6,7 @@
 ## 0. 起服务
 
 ```bash
-csv-splitter serve --root /data --port 8787
+csv-splitter serve --root /data --port 8787        # 或 --addr 127.0.0.1:8787
 # 或 --addr 127.0.0.1:8787
 ```
 

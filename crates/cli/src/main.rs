@@ -406,6 +406,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         "serve",
         &[
             ("--addr", "Bind address (127.0.0.1:0 picks a free port)"),
+            ("--port", "Bind to 127.0.0.1:<port> (shorthand for --addr)"),
             ("--root", "Directory to serve / list"),
         ],
     ),
@@ -2922,6 +2923,18 @@ fn cmd_serve(args: &[String]) -> i32 {
         match arg.as_str() {
             "--root" => match p.value("--root") {
                 Ok(v) => root = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            // `--port` is the shorthand people type; `--addr` is the full form.
+            "--port" => match p.value("--port").and_then(|v| {
+                v.parse::<u16>()
+                    .map(|port| format!("127.0.0.1:{port}"))
+                    .map_err(|_| format!("--port takes a number, not {v:?}"))
+            }) {
+                Ok(v) => addr = v,
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
