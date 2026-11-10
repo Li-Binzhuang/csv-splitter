@@ -703,6 +703,8 @@ $ csv-splitter edit export orders.csv -o fixed.csv
 | 删除行 | `edit delete --row N --count K` | `action=delete` |
 | 查找替换 | `edit replace --from X --to Y [--col C]` | `action=replace` |
 | 删列 / 改名 | `edit drop --name C` / `edit rename --from A --to B` | `action=drop` / `rename` |
+| **插入列（常量）** | `edit insert-column --name N --value V [--after C]` | `action=insert-column&name=&value=&after=` |
+| **插入列（公式）** | `edit insert-column --name N --formula E [--after C]` | `action=insert-column&name=&formula=&after=` |
 | 撤销 | `edit undo` | `action=undo` |
 | 查看日志 | `edit status` | `GET /edit` |
 | 物化输出 | `edit export [-o F]` | `POST /edit?action=export&out=` |

@@ -47,7 +47,7 @@ use csv_splitter_core::search::{search as search_scan, SearchSpec};
 use csv_splitter_core::splitter::run_split_threads;
 use csv_splitter_core::sql;
 use csv_splitter_core::viewer::WindowViewer;
-use csv_splitter_core::workbook::{self, Journal, Op};
+use csv_splitter_core::workbook::{self, ColumnSource, Journal, Op};
 use csv_splitter_core::{CompressFormat, Delimiter, ProgressEvent, SplitConfig};
 use std::collections::HashMap;
 use std::io::{self, BufRead, BufReader, Write};
@@ -680,6 +680,36 @@ fn edit_apply(
                 column: params.get("col").cloned(),
                 from: from.clone(),
                 to: to.clone(),
+            }
+        }
+        "insert-column" | "insertcolumn" => {
+            let Some(name) = params.get("name").filter(|v| !v.is_empty()) else {
+                return bad_request(
+                    stream,
+                    "insert-column needs name",
+                    "name",
+                    "name=<column>&value=<text>|formula=<expr>",
+                );
+            };
+            let source = match (
+                params.get("value").filter(|v| !v.is_empty()),
+                params.get("formula").filter(|v| !v.is_empty()),
+            ) {
+                (Some(v), None) => ColumnSource::Literal(v.clone()),
+                (None, Some(f)) => ColumnSource::Formula(f.clone()),
+                _ => {
+                    return bad_request(
+                        stream,
+                        "insert-column takes value or formula",
+                        "value",
+                        "value=<text> or formula=<expr>",
+                    )
+                }
+            };
+            Op::AddColumnAt {
+                after: params.get("after").cloned().filter(|v| !v.is_empty()),
+                name: name.clone(),
+                source,
             }
         }
         "drop" => {

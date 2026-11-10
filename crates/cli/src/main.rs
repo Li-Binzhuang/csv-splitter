@@ -158,6 +158,9 @@ EDIT ACTIONS  (the base file is never modified; edits live in <file>.journal)
   delete   --row N --count K             Delete K rows from position N
   replace  --from X --to Y [--col C]     Replace text in one column or every column
   formula  --name N --value EXPR         Append a computed column (EXPR parsed later)
+  insert-column --name N --value V        Insert a constant column
+                [--after C]              …placing it right after column C
+  insert-column --name N --formula E      …or a computed one
   drop     --name C                      Drop a column
   rename   --from A --to B               Rename a column
   undo                                   Remove the last edit
@@ -3537,6 +3540,8 @@ fn cmd_edit(args: &[String]) -> i32 {
     let mut name: Option<String> = None;
     let mut out: Option<PathBuf> = None;
     let mut where_expr: Option<String> = None;
+    let mut formula_expr: Option<String> = None;
+    let mut after_col: Option<String> = None;
     let mut json = false;
     let mut delim = "auto".to_string();
 
@@ -3585,6 +3590,20 @@ fn cmd_edit(args: &[String]) -> i32 {
                 .and_then(|v| v.parse().map_err(|_| "bad --count".to_string()))
             {
                 Ok(v) => count = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--formula" => match p.value("--formula") {
+                Ok(v) => formula_expr = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--after" => match p.value("--after") {
+                Ok(v) => after_col = Some(v),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -3821,6 +3840,30 @@ fn cmd_edit(args: &[String]) -> i32 {
             csv_splitter_core::workbook::Op::AddColumn {
                 name,
                 formula: value,
+            }
+        }
+        "insert-column" | "insertcolumn" => {
+            let Some(name) = name else {
+                eprintln!("error: insert-column needs --name");
+                return 2;
+            };
+            // `--value` is a constant, `--formula` an expression. Exactly one.
+            let source = match (value, formula_expr) {
+                (Some(v), None) => csv_splitter_core::workbook::ColumnSource::Literal(v),
+                (None, Some(f)) => csv_splitter_core::workbook::ColumnSource::Formula(f),
+                (Some(_), Some(_)) => {
+                    eprintln!("error: insert-column takes --value or --formula, not both");
+                    return 2;
+                }
+                (None, None) => {
+                    eprintln!("error: insert-column needs --value <text> or --formula <expr>");
+                    return 2;
+                }
+            };
+            csv_splitter_core::workbook::Op::AddColumnAt {
+                after: after_col,
+                name,
+                source,
             }
         }
         "drop" => {

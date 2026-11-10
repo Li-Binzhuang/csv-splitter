@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.51.0] — 2026-11-10
+
+### Added
+
+- **Insert a column where it belongs** (`edit insert-column --after city --name note`):
+  a constant (`--value`) or a computed one (`--formula`). Appending to the far right
+  was the only option before, which is not what "add a note column next to city"
+  means.
+  - `ColumnPlan` now describes every derived column once per export/window — formulas
+    parsed once, literals cloned once — instead of a `formula_index` that could only
+    express formulas.
+  - Available through `POST /edit?action=insert-column`, with `--value` and
+    `--formula` mutually exclusive rather than silently preferring one.
+
 ## [0.50.0] — 2026-11-10
 
 ### Added

@@ -32,6 +32,15 @@ use std::fs::File;
 use std::io::{self, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 
+/// Where an inserted column's values come from.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ColumnSource {
+    /// The same text in every row.
+    Literal(String),
+    /// An expression, evaluated per row like any other computed column.
+    Formula(String),
+}
+
 /// One recorded edit.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Op {
@@ -74,6 +83,17 @@ pub enum Op {
         name: String,
         formula: String,
     },
+    /// Insert a column, either a constant or a formula, at a chosen position.
+    ///
+    /// Inserting rather than appending is what makes this usable for real tidy-up
+    /// work: "add a note column right after city" is the common request, and a
+    /// column that lands at the far right is not the same thing.
+    AddColumnAt {
+        /// Insert after this column; `None` means append.
+        after: Option<String>,
+        name: String,
+        source: ColumnSource,
+    },
     DropColumn {
         name: String,
     },
@@ -93,6 +113,7 @@ impl Op {
             Self::SetWhere { .. } => "setwhere",
             Self::Substitute { .. } => "substitute",
             Self::AddColumn { .. } => "addcolumn",
+            Self::AddColumnAt { .. } => "addcolumnat",
             Self::DropColumn { .. } => "dropcolumn",
             Self::RenameColumn { .. } => "renamecolumn",
         }
@@ -118,6 +139,27 @@ impl Op {
                 column.as_deref().unwrap_or("every column")
             ),
             Self::AddColumn { name, formula } => format!("add column '{name}' = {formula}"),
+            Self::AddColumnAt {
+                after,
+                name,
+                source,
+            } => match source {
+                ColumnSource::Literal(value) => format!(
+                    "insert column '{name}' = '{}' {}",
+                    truncate(value, 30),
+                    after
+                        .as_ref()
+                        .map(|a| format!("after '{a}'"))
+                        .unwrap_or_else(|| "at the end".to_string())
+                ),
+                ColumnSource::Formula(formula) => format!(
+                    "insert column '{name}' = {formula} {}",
+                    after
+                        .as_ref()
+                        .map(|a| format!("after '{a}'"))
+                        .unwrap_or_else(|| "at the end".to_string())
+                ),
+            },
             Self::DropColumn { name } => format!("drop column '{name}'"),
             Self::RenameColumn { from, to } => format!("rename '{from}' → '{to}'"),
         }
@@ -244,6 +286,20 @@ fn render_op(op: &Op) -> String {
             b',',
         ),
         Op::AddColumn { name, formula } => join_csv_line(&[op.tag(), name, formula], b','),
+        Op::AddColumnAt {
+            after,
+            name,
+            source,
+        } => {
+            let (kind, value) = match source {
+                ColumnSource::Literal(v) => ("literal", v.clone()),
+                ColumnSource::Formula(f) => ("formula", f.clone()),
+            };
+            join_csv_line(
+                &[op.tag(), after.as_deref().unwrap_or(""), name, kind, &value],
+                b',',
+            )
+        }
         Op::DropColumn { name } => join_csv_line(&[op.tag(), name], b','),
         Op::RenameColumn { from, to } => join_csv_line(&[op.tag(), from, to], b','),
     }
@@ -290,6 +346,19 @@ fn parse_op(record: &[u8]) -> Option<Op> {
             },
             from: fields[2].clone(),
             to: fields[3].clone(),
+        }),
+        "addcolumnat" if fields.len() >= 5 => Some(Op::AddColumnAt {
+            after: if fields[1].trim().is_empty() {
+                None
+            } else {
+                Some(fields[1].trim().to_string())
+            },
+            name: fields[2].clone(),
+            source: if fields[3].trim() == "literal" {
+                ColumnSource::Literal(fields[4].clone())
+            } else {
+                ColumnSource::Formula(fields[4].clone())
+            },
         }),
         "addcolumn" if fields.len() >= 3 => Some(Op::AddColumn {
             name: fields[1].clone(),
@@ -748,6 +817,27 @@ pub fn column_layout(
                 }
             }
             Op::AddColumn { name, .. } => layout.push((name.clone(), None)),
+            Op::AddColumnAt { after, name, .. } => {
+                let position = match after {
+                    None => layout.len(),
+                    Some(reference) => {
+                        let index =
+                            layout
+                                .iter()
+                                .position(|(n, _)| n == reference)
+                                .ok_or_else(|| {
+                                    io::Error::new(
+                                        io::ErrorKind::InvalidInput,
+                                        format!(
+                                            "cannot insert after '{reference}': no such column"
+                                        ),
+                                    )
+                                })?;
+                        index + 1
+                    }
+                };
+                layout.insert(position, (name.clone(), None));
+            }
             _ => {}
         }
     }
@@ -778,7 +868,12 @@ pub fn compile_formulas(ops: &[Op], columns: &[String]) -> io::Result<CompiledFo
     let mut items = Vec::new();
     let mut wanted: Vec<(String, String, String)> = Vec::new();
     for op in ops {
-        if let Op::AddColumn { name, formula } = op {
+        let (name, source) = match op {
+            Op::AddColumn { name, formula } => (name, ColumnSource::Formula(formula.clone())),
+            Op::AddColumnAt { name, source, .. } => (name, source.clone()),
+            _ => continue,
+        };
+        if let ColumnSource::Formula(formula) = &source {
             let parsed = Formula::parse(formula).map_err(|e| {
                 io::Error::new(io::ErrorKind::InvalidInput, format!("column '{name}': {e}"))
             })?;
@@ -834,6 +929,64 @@ fn eval_formula(
         .map(|(c, v)| (c.clone(), v.clone()))
         .collect();
     formula.eval_with(&row, refs).render()
+}
+
+/// How each output column gets its value.
+///
+/// Computed once per export or window, never per row: a formula is parsed one time
+/// and a literal is cloned one time, however many rows follow.
+#[derive(Clone, Debug, Default)]
+pub struct ColumnPlan {
+    pub formulas: Vec<Option<Formula>>,
+    pub literals: Vec<Option<String>>,
+}
+
+impl ColumnPlan {
+    pub fn build(ops: &[Op], columns: &[String], compiled: &CompiledFormulas) -> Self {
+        let formulas = columns
+            .iter()
+            .map(|c| {
+                compiled
+                    .items
+                    .iter()
+                    .find(|(n, _)| n == c)
+                    .map(|(_, f)| f.clone())
+            })
+            .collect();
+        let mut literals: Vec<Option<String>> = vec![None; columns.len()];
+        for op in ops {
+            if let Op::AddColumnAt {
+                name,
+                source: ColumnSource::Literal(value),
+                ..
+            } = op
+            {
+                if let Some(index) = columns.iter().position(|c| c == name) {
+                    literals[index] = Some(value.clone());
+                }
+            }
+        }
+        Self { formulas, literals }
+    }
+
+    /// Fill derived columns into a finished row.
+    pub fn apply(&self, columns: &[String], cells: &mut [String], refs: &crate::formula::Refs) {
+        for (index, literal) in self.literals.iter().enumerate() {
+            if let Some(value) = literal {
+                if let Some(cell) = cells.get_mut(index) {
+                    *cell = value.clone();
+                }
+            }
+        }
+        for (index, formula) in self.formulas.iter().enumerate() {
+            if let Some(f) = formula {
+                let rendered = eval_formula(f, columns, cells, refs);
+                if let Some(cell) = cells.get_mut(index) {
+                    *cell = rendered;
+                }
+            }
+        }
+    }
 }
 
 /// The compiled sheet: final row map plus the cell edits resolved to identities.
@@ -918,6 +1071,22 @@ pub fn resolve_columns(ops: &[Op], base: &[String]) -> io::Result<Vec<String>> {
                 }
             }
             Op::AddColumn { name, .. } => columns.push(name.clone()),
+            Op::AddColumnAt { after, name, .. } => {
+                let position = match after {
+                    None => columns.len(),
+                    Some(reference) => {
+                        let index =
+                            columns.iter().position(|c| c == reference).ok_or_else(|| {
+                                io::Error::new(
+                                    io::ErrorKind::InvalidInput,
+                                    format!("cannot insert after '{reference}': no such column"),
+                                )
+                            })?;
+                        index + 1
+                    }
+                };
+                columns.insert(position, name.clone());
+            }
             _ => {}
         }
     }
@@ -964,12 +1133,8 @@ pub fn export(
     let edits = &sheet.edits;
     let map = &sheet.map;
     let compiled = compile_formulas_at(base, ops, &columns)?;
-    let formulas = &compiled.items;
     let refs = &compiled.refs;
-    let formula_index: Vec<Option<&Formula>> = columns
-        .iter()
-        .map(|c| formulas.iter().find(|(n, _)| n == c).map(|(_, f)| f))
-        .collect();
+    let plan = ColumnPlan::build(ops, &columns, &compiled);
 
     tx.send(ProgressEvent::PhaseStart {
         phase: "Exporting edits".into(),
@@ -1013,7 +1178,7 @@ pub fn export(
                     &cells,
                     edits,
                     RowId::Virtual(id),
-                    &formula_index,
+                    &plan,
                     refs,
                     delim,
                 )?;
@@ -1043,7 +1208,7 @@ pub fn export(
                     &cells,
                     edits,
                     RowId::Base(target),
-                    &formula_index,
+                    &plan,
                     refs,
                     delim,
                 )?;
@@ -1072,7 +1237,7 @@ fn emit(
     base_cells: &[String],
     edits: &CellEdits,
     id: RowId,
-    formulas: &[Option<&Formula>],
+    plan: &ColumnPlan,
     refs: &crate::formula::Refs,
     delim: u8,
 ) -> io::Result<()> {
@@ -1090,13 +1255,9 @@ fn emit(
     }
     edits.apply_rules(columns, &mut cells);
 
-    // Computed columns are evaluated last, against the finished row, so a
-    // formula may read a value that was just edited.
-    for (idx, formula) in formulas.iter().enumerate() {
-        if let Some(f) = formula {
-            cells[idx] = eval_formula(f, columns, &cells, refs);
-        }
-    }
+    // Derived columns are evaluated last, against the finished row, so a formula
+    // may read a value that was just edited.
+    plan.apply(columns, &mut cells, refs);
     let refs: Vec<&str> = cells.iter().map(String::as_str).collect();
     out.write_all(join_csv_line(&refs, delim).as_bytes())
 }
@@ -1592,6 +1753,67 @@ mod tests {
     }
 
     #[test]
+    fn a_column_can_be_inserted_where_it_belongs() {
+        let dir = Dir::new("insertcol");
+        let base = base_with(&dir, BASE);
+        let ops = vec![Op::AddColumnAt {
+            after: Some("city".into()),
+            name: "note".into(),
+            source: ColumnSource::Literal("manual".into()),
+        }];
+        let text = export_with(&dir, &base, ops);
+        let lines: Vec<&str> = text.lines().collect();
+        assert_eq!(lines[0], "id,city,note,amount", "{text}");
+        assert_eq!(lines[1], "1,CDMX,manual,10", "{text}");
+    }
+
+    #[test]
+    fn an_inserted_column_can_be_a_formula() {
+        let dir = Dir::new("insertformula");
+        let base = base_with(&dir, BASE);
+        let ops = vec![Op::AddColumnAt {
+            after: Some("id".into()),
+            name: "double".into(),
+            source: ColumnSource::Formula("amount * 2".into()),
+        }];
+        let text = export_with(&dir, &base, ops);
+        let lines: Vec<&str> = text.lines().collect();
+        assert_eq!(lines[0], "id,double,city,amount", "{text}");
+        assert_eq!(lines[1], "1,20,CDMX,10", "{text}");
+    }
+
+    #[test]
+    fn inserting_after_a_missing_column_is_refused() {
+        let dir = Dir::new("badinsert");
+        let base = base_with(&dir, BASE);
+        let ops = vec![Op::AddColumnAt {
+            after: Some("nope".into()),
+            name: "x".into(),
+            source: ColumnSource::Literal("y".into()),
+        }];
+        let out = dir.join("o.csv");
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let err = export(&base, &ops, &out, Delimiter::Comma, &tx).unwrap_err();
+        assert!(err.to_string().contains("no such column"), "{err}");
+    }
+
+    #[test]
+    fn an_inserted_column_round_trips_through_the_journal() {
+        let dir = Dir::new("insertjournal");
+        let base = base_with(&dir, BASE);
+        let path = Journal::sidecar(&base);
+        let mut journal = Journal::new();
+        journal.push(Op::AddColumnAt {
+            after: Some("city".into()),
+            name: "note".into(),
+            source: ColumnSource::Literal("manual".into()),
+        });
+        journal.save(&path).unwrap();
+        let loaded = Journal::load(&path).unwrap();
+        assert_eq!(loaded, journal);
+    }
+
+    #[test]
     fn unknown_column_operations_are_refused() {
         let dir = Dir::new("badcols");
         let base = base_with(&dir, BASE);
@@ -1659,12 +1881,8 @@ pub fn window(
     let map = &sheet.map;
     let edits = &sheet.edits;
     let compiled = compile_formulas_at(base, ops, &columns)?;
-    let formulas = &compiled.items;
     let refs = &compiled.refs;
-    let formula_index: Vec<Option<&Formula>> = columns
-        .iter()
-        .map(|c| formulas.iter().find(|(n, _)| n == c).map(|(_, f)| f))
-        .collect();
+    let plan = ColumnPlan::build(ops, &columns, &compiled);
 
     let mut rows = Vec::new();
     for run in map.physical_runs(start, count) {
@@ -1682,7 +1900,7 @@ pub fn window(
                         &cells,
                         edits,
                         RowId::Base(physical + i as u64),
-                        &formula_index,
+                        &plan,
                         refs,
                     ));
                 }
@@ -1699,7 +1917,7 @@ pub fn window(
                         cells,
                         edits,
                         RowId::Virtual(id),
-                        &formula_index,
+                        &plan,
                         refs,
                     ));
                 }
@@ -1721,7 +1939,7 @@ fn shape(
     base_cells: &[String],
     edits: &CellEdits,
     id: RowId,
-    formulas: &[Option<&Formula>],
+    plan: &ColumnPlan,
     refs: &crate::formula::Refs,
 ) -> Vec<String> {
     let mut out = Vec::with_capacity(columns.len());
@@ -1739,10 +1957,6 @@ fn shape(
         out.push(value);
     }
     edits.apply_rules(columns, &mut out);
-    for (idx, formula) in formulas.iter().enumerate() {
-        if let Some(f) = formula {
-            out[idx] = eval_formula(f, columns, &out, refs);
-        }
-    }
+    plan.apply(columns, &mut out, refs);
     out
 }

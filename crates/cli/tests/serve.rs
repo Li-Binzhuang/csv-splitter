@@ -1062,3 +1062,29 @@ fn frozen_columns_travel_with_the_window() {
     let (_, body) = get(&server.addr, "/sheet?path=t.csv");
     assert!(body.contains(r#""frozenColumns":["id","city"]"#), "{body}");
 }
+
+#[test]
+fn insert_column_endpoint_places_a_constant_column() {
+    let dir = TempDir::new("insertapi");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,CDMX\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=insert-column&name=note&value=manual&after=city",
+    );
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("insert column"), "{body}");
+
+    // The window shows the new column in the requested position.
+    let (_, body) = get(&server.addr, "/rows?path=t.csv");
+    assert!(body.contains(r#""columns":["id","city","note"]"#), "{body}");
+    assert!(body.contains(r#"["1","CDMX","manual"]"#), "{body}");
+
+    // Const and formula together is rejected.
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=insert-column&name=x&value=a&formula=b",
+    );
+    assert_eq!(status, 400, "{body}");
+}

@@ -1926,3 +1926,63 @@ fn bulk_edit_matches_a_filter_and_stays_one_operation() {
         .unwrap();
     assert_eq!(out.status.code(), Some(2));
 }
+
+/// A column can be inserted at a chosen position, as a constant or a formula.
+#[test]
+fn insert_column_places_it_where_asked() {
+    let dir = TempDir::new("insertcol");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,city,amount\n1,CDMX,10\n2,Puebla,20\n").unwrap();
+
+    for args in [
+        vec!["--after", "city", "--name", "note", "--value", "manual"],
+        vec![
+            "--after",
+            "id",
+            "--name",
+            "double",
+            "--formula",
+            "amount * 2",
+        ],
+    ] {
+        let mut cmd = Command::new(bin());
+        cmd.args(["edit", "insert-column", input.to_str().unwrap()]);
+        cmd.args(&args);
+        let status = cmd.status().unwrap();
+        assert_eq!(status.code(), Some(0), "{args:?}");
+    }
+
+    let out = dir.join("out.csv");
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            input.to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    let text = std::fs::read_to_string(&out).unwrap();
+    assert_eq!(text.lines().next().unwrap(), "id,double,city,note,amount");
+    assert_eq!(text.lines().nth(1).unwrap(), "1,20,CDMX,manual,10");
+
+    // value and formula together is a usage error.
+    let out = Command::new(bin())
+        .args([
+            "edit",
+            "insert-column",
+            input.to_str().unwrap(),
+            "--name",
+            "x",
+            "--value",
+            "a",
+            "--formula",
+            "b",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+}
