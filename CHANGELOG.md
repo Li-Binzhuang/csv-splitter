@@ -1,5 +1,25 @@
 # Changelog
 
+## [3.0.0] — 2026-11-10
+
+### Added
+
+- **`scripts/backend-smoke.sh`**: start a real server, make real requests, assert
+  27 things a front-end depends on — the capability list, column metadata and existence,
+  the window contract (`count`/`requested`/`limit`/`rowKeys`), column projection,
+  horizontal slicing, single-cell read, the three states of `expect=` (written, 409,
+  409 again once the value moved), the journal stack, and five error codes. Cargo tests
+  call handlers; this calls the thing a client talks to.
+
+### Fixed
+
+- **SQL and ordering mistakes were answering with raw engine text.** `?sql=SELECT nope`
+  returned `{"error":"Binder Error: … DESCRIBE SELECT …"}` — the client's own mistake,
+  reported as if the file were broken. Engine failures are now classified as input
+  errors: `400 {"error":"the query could not be run","parameter":"sql","hint":…,
+  "detail":"Binder Error: …"}`, and an order on a column that does not exist is caught
+  before the engine sees it (`cannot order by 'amount': … available columns: id, city`).
+
 ## [2.9.0] — 2026-11-10
 
 ### Fixed

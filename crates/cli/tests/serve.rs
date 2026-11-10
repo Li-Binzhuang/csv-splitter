@@ -2161,3 +2161,36 @@ fn window_modifiers_compose() {
     assert_eq!(code, 200, "{body}");
     assert!(body.contains(r#""columns":["amount","note"]"#), "{body}");
 }
+
+/// SQL and ordering failures are the caller's mistake, so they answer 400 in the same
+/// three-field shape as every other parameter error — never a raw engine message.
+#[test]
+fn sql_and_order_errors_are_structured() {
+    let dir = TempDir::new("sqlerrors");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n2,B\n").unwrap();
+    let server = start(&dir.0);
+
+    // A bad SELECT: structured 400, with the engine's wording kept in `detail`.
+    let (code, body) = get(
+        &server.addr,
+        "/query?path=t.csv&sql=SELECT%20nope%20FROM%20t",
+    );
+    assert_eq!(code, 400, "{body}");
+    assert!(
+        body.contains(r#""error":"the query could not be run""#),
+        "{body}"
+    );
+    assert!(body.contains(r#""parameter":"sql""#), "{body}");
+    assert!(body.contains(r#""detail""#), "{body}");
+    assert!(
+        body.contains("Binder Error"),
+        "the engine's reason is kept: {body}"
+    );
+
+    // An order on a column that does not exist: named before it reaches the engine.
+    let (code, body) = get(&server.addr, "/rows?path=t.csv&order=amount:desc");
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains("cannot order by 'amount'"), "{body}");
+    assert!(body.contains("available columns: id, city"), "{body}");
+    assert!(!body.contains("DESCRIBE"), "no SQL leaked: {body}");
+}

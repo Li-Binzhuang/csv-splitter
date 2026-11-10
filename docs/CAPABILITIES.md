@@ -274,6 +274,11 @@
 **已知的改进方向**（未做）：让 `RowPipeline` 用借用的 `&str`（`Cow`）而不是每格一个
 `String`，宽表的导出和校验能再快 2–3 倍。这是结构性改动，需要的时候再做。
 
+## 后端自检 / Backend self-check
+
+`scripts/backend-smoke.sh` 起一个真服务、跑 27 项断言（能力/列/窗口/写约束/journal/错误码）。
+和 cargo 测试互补：cargo 调 handler，这个调 HTTP。
+
 ## 中断与损坏 / Interrupts and damage
 
 长命令被打断是常态，所以每个 sidecar（旁挂文件）都必须能自我修复，且**修复本身不能骗人**：

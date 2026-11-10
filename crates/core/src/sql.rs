@@ -372,8 +372,22 @@ fn value_to_string(value: &Value) -> String {
     }
 }
 
+/// Engine failures are the caller's SQL, not the file's fault: classify them as
+/// `InvalidInput` so an API can answer 400 (with the engine's wording in a `detail`
+/// field) instead of a generic 422 that hides what went wrong.
 fn to_io(e: duckdb::Error) -> io::Error {
-    io::Error::other(e.to_string())
+    let text = e.to_string();
+    let input_error = text.starts_with("Parser Error")
+        || text.starts_with("Binder Error")
+        || text.starts_with("Catalog Error")
+        || text.starts_with("Type Error")
+        || text.starts_with("Invalid Input Error")
+        || text.starts_with("Conversion Error");
+    if input_error {
+        io::Error::new(io::ErrorKind::InvalidInput, text)
+    } else {
+        io::Error::other(text)
+    }
 }
 
 #[cfg(test)]

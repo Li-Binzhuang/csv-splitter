@@ -2798,7 +2798,31 @@ fn rows(
                 .map(|v| v == "1" || v == "true")
                 .unwrap_or(false);
             match order_clause(order, default_desc) {
-                Ok(clause) => query.push_str(&clause),
+                Ok((clause, used)) => match known_columns(&path, params) {
+                    Ok(known) => {
+                        if let Some(missing) = used.iter().find(|c| !known.contains(c)) {
+                            return bad_request(
+                                stream,
+                                &format!(
+                                    "cannot order by '{missing}': {}",
+                                    csv_splitter_core::csv_reader::column_candidates(
+                                        missing, &known
+                                    )
+                                ),
+                                "order",
+                                "order=<one of the columns in /columns>",
+                            );
+                        }
+                        query.push_str(&clause);
+                    }
+                    Err(e) => {
+                        return respond_json(
+                            stream,
+                            422,
+                            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                        )
+                    }
+                },
                 Err(e) => {
                     return bad_request(
                         stream,
@@ -2843,7 +2867,31 @@ fn rows(
                 .map(|v| v == "1" || v == "true")
                 .unwrap_or(false);
             match order_clause(order, default_desc) {
-                Ok(clause) => query.push_str(&clause),
+                Ok((clause, used)) => match known_columns(&path, params) {
+                    Ok(known) => {
+                        if let Some(missing) = used.iter().find(|c| !known.contains(c)) {
+                            return bad_request(
+                                stream,
+                                &format!(
+                                    "cannot order by '{missing}': {}",
+                                    csv_splitter_core::csv_reader::column_candidates(
+                                        missing, &known
+                                    )
+                                ),
+                                "order",
+                                "order=<one of the columns in /columns>",
+                            );
+                        }
+                        query.push_str(&clause);
+                    }
+                    Err(e) => {
+                        return respond_json(
+                            stream,
+                            422,
+                            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                        )
+                    }
+                },
                 Err(e) => {
                     return bad_request(
                         stream,
@@ -2998,10 +3046,17 @@ fn query(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) 
                 ),
             )
         }
+        // An SQL mistake is the caller's mistake: say so with the same three-field
+        // shape every other 400 uses, and keep the engine's own wording in `detail` —
+        // DuckDB's message is the useful part, but it is not a whole response.
         Err(e) if e.kind() == io::ErrorKind::InvalidInput => respond_json(
             stream,
             400,
-            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            &format!(
+                r#"{{"error":"the query could not be run","parameter":"sql","hint":{},"detail":{}}}"#,
+                json_str("pass a SELECT statement over the file, e.g. sql=SELECT count(*) FROM t"),
+                json_str(&e.to_string())
+            ),
         ),
         Err(e) => respond_json(
             stream,
@@ -3242,8 +3297,9 @@ fn row_keys_json(keys: &[csv_splitter_core::workbook::RowId]) -> String {
 /// to DuckDB — the client got a raw parser error naming an SQL statement it never wrote.
 /// Accepted forms: `col`, `col:asc`, `col:desc`, comma-separated. Anything with a
 /// character that is not part of a column name, a comma or a direction is a 400.
-fn order_clause(order: &str, default_desc: bool) -> Result<String, String> {
+fn order_clause(order: &str, default_desc: bool) -> Result<(String, Vec<String>), String> {
     let mut parts: Vec<String> = Vec::new();
+    let mut columns_used: Vec<String> = Vec::new();
     for raw in order.split(',') {
         let item = raw.trim();
         if item.is_empty() {
@@ -3275,11 +3331,23 @@ fn order_clause(order: &str, default_desc: bool) -> Result<String, String> {
             None => String::new(),
         };
         parts.push(format!("{column}{suffix}"));
+        columns_used.push(column.to_string());
     }
     if parts.is_empty() {
         return Err("order is empty".to_string());
     }
-    Ok(format!(" ORDER BY {}", parts.join(", ")))
+    Ok((format!(" ORDER BY {}", parts.join(", ")), columns_used))
+}
+
+/// The columns this sheet has, for checking names before they reach the engine.
+fn known_columns(path: &Path, params: &HashMap<String, String>) -> io::Result<Vec<String>> {
+    let sidecar = Journal::sidecar(path);
+    let journal = Journal::load(&sidecar)?;
+    let header = workbook::base_header(path, delimiter(params))?;
+    Ok(workbook::column_layout(journal.ops(), &header)?
+        .into_iter()
+        .map(|(name, _)| name)
+        .collect())
 }
 
 /// `columns=a,b,c` narrows a window to those columns, in that order.
