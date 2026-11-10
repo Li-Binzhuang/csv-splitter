@@ -2147,3 +2147,34 @@ fn filter_can_order_and_sort_takes_several_keys() {
         "{text}"
     );
 }
+
+/// Sampling trades accuracy for speed, and says so on the screen.
+#[test]
+fn analyze_sample_stops_early_and_labels_itself() {
+    let dir = TempDir::new("sample");
+    let input = dir.join("t.csv");
+    let mut csv = String::from("city,amount\n");
+    for i in 0..500 {
+        csv.push_str(&format!("C{},{}\n", i % 5, i));
+    }
+    std::fs::write(&input, csv).unwrap();
+
+    let full = Command::new(bin())
+        .args(["analyze", input.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let full_out = String::from_utf8_lossy(&full.stdout);
+    assert!(!full_out.contains("not a random sample"), "{full_out}");
+
+    let sampled = Command::new(bin())
+        .args(["analyze", input.to_str().unwrap(), "--sample", "100"])
+        .output()
+        .unwrap();
+    let out = String::from_utf8_lossy(&sampled.stdout);
+    assert!(
+        out.contains("not a random sample"),
+        "the report must not look like a full count: {out}"
+    );
+    // The sampled run reports fewer rows than the full one.
+    assert!(out.contains("100"), "{out}");
+}

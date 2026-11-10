@@ -230,6 +230,21 @@ pub fn profile(
     distinct_cap: usize,
     tx: &ProgressSender,
 ) -> io::Result<Vec<ColumnProfile>> {
+    profile_with(path, delimiter, distinct_cap, None, tx)
+}
+
+/// Same as [`profile`], stopping after `limit` rows.
+///
+/// This is a *prefix* sample, not a random one: it reads the first N rows and says
+/// so. A random sample of a 10 GB file would need the whole file (or an index) to
+/// pick from, which defeats the purpose. Callers must present the result as an estimate.
+pub fn profile_with(
+    path: &Path,
+    delimiter: Delimiter,
+    distinct_cap: usize,
+    limit: Option<u64>,
+    tx: &ProgressSender,
+) -> io::Result<Vec<ColumnProfile>> {
     let file_size = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
     tx.send(ProgressEvent::PhaseStart {
         phase: "Profiling columns".into(),
@@ -260,8 +275,13 @@ pub fn profile(
 
     let mut bytes_read = record.len() as u64;
     let mut ragged: u64 = 0;
+    let mut observed: u64 = 0;
     let width = headers.len();
     while records.next_record(&mut record)? {
+        if limit.is_some_and(|limit| observed >= limit) {
+            break;
+        }
+        observed += 1;
         bytes_read += record.len() as u64;
         let text = String::from_utf8_lossy(&record);
         let fields = parse_csv_record(text.trim_end_matches(['\n', '\r']), delim);

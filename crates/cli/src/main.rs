@@ -4047,6 +4047,7 @@ fn cmd_edit(args: &[String]) -> i32 {
 
 fn cmd_analyze(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut sample: Option<u64> = None;
     let mut input: Option<PathBuf> = None;
     let mut distinct_cap = csv_splitter_core::profile::DEFAULT_DISTINCT_CAP;
     let mut json = false;
@@ -4059,6 +4060,16 @@ fn cmd_analyze(args: &[String]) -> i32 {
                 .and_then(|v| v.parse().map_err(|_| "bad --distinct-cap".to_string()))
             {
                 Ok(v) => distinct_cap = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--sample" => match p
+                .value("--sample")
+                .and_then(|v| v.parse().map_err(|_| "bad --sample".to_string()))
+            {
+                Ok(v) => sample = Some(v),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -4099,7 +4110,8 @@ fn cmd_analyze(args: &[String]) -> i32 {
 
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("analyze", rx, true);
-    let result = csv_splitter_core::profile::profile(&input, delimiter, distinct_cap, &tx);
+    let result =
+        csv_splitter_core::profile::profile_with(&input, delimiter, distinct_cap, sample, &tx);
     drop(tx);
     let _ = reporter.join();
     let profiles = match result {
@@ -4128,6 +4140,13 @@ fn cmd_analyze(args: &[String]) -> i32 {
                 first.ragged, first.rows
             );
         }
+    }
+    if let Some(limit) = sample {
+        // Say what the number is. A prefix sample is an estimate, and a user who
+        // reads "1000 rows" as "this file has 1000 rows" will draw wrong conclusions.
+        println!(
+            "⚠ sampled the first {limit} rows (a prefix, not a random sample) — counts are estimates"
+        );
     }
     println!(
         "{:<20} {:>9} {:>8} {:>9}  summary",

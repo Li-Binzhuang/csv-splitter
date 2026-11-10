@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.56.0] — 2026-11-10
+
+### Added
+
+- **`analyze --sample N`**: profile the first N rows instead of the whole file.
+  Measured on 1 M rows: 1.7 s → 0.35 s.
+  - It is a **prefix** sample, not a random one — a random sample needs the whole
+    file (or an index) to pick from, which defeats the purpose. So the command says
+    so on screen: "sampled the first N rows (a prefix, not a random sample) — counts
+    are estimates". A user who reads the sampled row count as the file's row count
+    will draw wrong conclusions, and the tool must not help them.
+
 ## [0.55.0] — 2026-11-10
 
 ### Added

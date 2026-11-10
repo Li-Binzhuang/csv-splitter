@@ -30,7 +30,7 @@
 | 工作簿列表 | `book <dir>` | `GET /book` |
 | 表结构 | `preview` / `analyze` | `GET /sheet` |
 | 列统计（采样） | `stats f.csv` | `GET /stats?path=` |
-| 全列画像 | `analyze f.csv` | `GET /analyze?path=` |
+| 全列画像 | `analyze f.csv [--sample N]` | `GET /analyze?path=` |
 
 ## 编码
 
@@ -136,7 +136,7 @@
 | 短板 | 影响 |
 |---|---|
 | 内置页面没在真浏览器验证过 | 有契约测试兜底，布局未经人眼 |
-| `analyze` 全表扫描（1 GB 约 11 s） | 大文件不够快 |
+| `analyze` 全表扫描（1 GB 约 11 s） | 用 `--sample N` 可以快 5 倍，但那只是**前 N 行的估算** |
 | 引号/转义风格不可覆盖 | 非 RFC 4180 方言可能解析错 |
 | Windows 未实测 | 路径处理可能有坑 |
 | 多 sheet 工作簿只有列表，没有跨表引用 | 还不能 `=customers!B2` |
