@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.12.0] — 2026-11-10
+
+### Docs
+
+- **`docs/ARCHITECTURE.md`**: the map that 74 rounds of work never wrote down — the on-disk
+  format, the editing model with its two identity axes, the three `/rows` paths, the
+  module map, where each invariant is enforced, and a "if you change X, also check Y"
+  table whose rows are all backed by tests.
+  - The subtle parts are the ones three bugs came from: derived values read the *base*
+    text (split pieces), the *row identity* (fills), or the *finished row* (formulas).
+    That distinction is now written where someone changing `workbook/rows.rs` will see it.
+  - A test walks `crates/core/src` and fails when a module is missing from the map, which
+    immediately caught the formula submodules (`functions`, `state`, `sheetref`) that
+    the first draft had collapsed into `formula`.
+
 ## [1.11.0] — 2026-11-10
 
 ### Fixed

@@ -82,6 +82,12 @@ $ csv-splitter serve --root .  # 本地 JSON API，打开 http://127.0.0.1:8787/
 
 ![Extract](docs/extract.png)
 
+## 想改代码 / For contributors
+
+`docs/ARCHITECTURE.md` 有一张**改一处要看哪里**的表：编辑模型的两条身份轴、
+三条读路径、不变式分别由什么守住。新增命令或端点时要同步的五处位置，那里都列了，
+而且每一处都有测试盯着。
+
 ## CLI / 命令行
 
 桌面版适合手动处理，服务器和脚本需要的是无界面入口。`crates/cli` 与 GUI 共用同一套核心管线，

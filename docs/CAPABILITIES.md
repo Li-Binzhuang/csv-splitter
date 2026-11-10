@@ -277,6 +277,9 @@
 
 ## 大文件拆分 / Module layout
 
+模块职责与「改一处要看哪里」的对照表见 [ARCHITECTURE.md](ARCHITECTURE.md)。
+
+
 | 文件 | 行数 | 内容 |
 |---|---|---|
 | `crates/core/src/workbook/mod.rs` | ~1075 | `Op`、`Sheet`、列布局、公开接口 |

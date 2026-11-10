@@ -626,3 +626,51 @@ fn capabilities_names_real_commands_and_all_of_them() {
         "not documented: {missing:?}; documented but not a command: {phantom:?}"
     );
 }
+
+/// ARCHITECTURE.md must name every core module, so the map cannot go stale.
+///
+/// A module added to the engine but absent from the map is invisible to whoever opens
+/// the doc to find out what exists — which is the whole reason to have a map.
+#[test]
+fn the_architecture_map_names_every_core_module() {
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let core = manifest.join("../core/src");
+    let doc = std::fs::read_to_string(manifest.join("../../docs/ARCHITECTURE.md")).unwrap();
+    assert!(
+        doc.starts_with("# 架构 / Architecture"),
+        "wrong file? first line: {:?}",
+        doc.lines().next()
+    );
+
+    let mut modules: Vec<String> = Vec::new();
+    let mut stack = vec![core.clone()];
+    while let Some(dir) = stack.pop() {
+        for entry in std::fs::read_dir(&dir).unwrap().flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if path.extension().is_some_and(|e| e == "rs") {
+                let stem = path.file_stem().unwrap().to_string_lossy().to_string();
+                // `mod.rs` and `lib.rs` are structure, not capabilities.
+                if !matches!(stem.as_str(), "mod" | "lib") {
+                    modules.push(stem);
+                }
+            }
+        }
+    }
+    modules.sort();
+    assert!(modules.len() > 30, "{modules:?}");
+
+    let mut missing = Vec::new();
+    for module in &modules {
+        // The map lists modules as `name` in backticks or inside a path like
+        // `workbook/rows`; both count, but the name must appear.
+        if !doc.contains(module.as_str()) {
+            missing.push(module.clone());
+        }
+    }
+    assert!(
+        missing.is_empty(),
+        "modules absent from the map: {missing:?}"
+    );
+}
