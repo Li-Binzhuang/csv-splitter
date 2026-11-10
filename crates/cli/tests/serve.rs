@@ -1911,3 +1911,59 @@ fn rows_can_be_narrowed_to_selected_columns() {
     assert_eq!(code, 400, "{body}");
     assert!(body.contains(r#""parameter":"columns""#), "{body}");
 }
+
+/// The framework's read-side extras: one cell, horizontal paging, stable row keys.
+#[test]
+fn cell_keys_and_horizontal_paging() {
+    let dir = TempDir::new("cellkeys");
+    let mut header = String::from("id");
+    for i in 0..15 {
+        header.push_str(&format!(",c{i}"));
+    }
+    let mut body = String::new();
+    for r in 1..=5 {
+        body.push_str(&r.to_string());
+        for i in 0..15 {
+            body.push_str(&format!(",{}", r * 100 + i));
+        }
+        body.push('\n');
+    }
+    std::fs::write(dir.join("w.csv"), format!("{header}\n{body}")).unwrap();
+    let server = start(&dir.0);
+
+    // One cell, by name and 1-based row.
+    let (code, body) = get(&server.addr, "/cell?path=w.csv&row=2&col=c1");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""value":"201""#), "{body}");
+    assert!(body.contains(r#""key":"b:1""#), "{body}");
+
+    // Out of range is a 404 that says the total.
+    let (code, body) = get(&server.addr, "/cell?path=w.csv&row=99&col=c1");
+    assert_eq!(code, 404, "{body}");
+    assert!(body.contains("5 data rows"), "{body}");
+
+    // Horizontal paging: columns 5..9 of 16.
+    let (code, body) = get(
+        &server.addr,
+        "/rows?path=w.csv&count=2&start-col=5&count-cols=5",
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(
+        body.contains(r#""columns":["c4","c5","c6","c7","c8"]"#),
+        "{body}"
+    );
+    assert!(
+        body.contains(r#"["204","205","206","207","208"]"#),
+        "{body}"
+    );
+
+    // Stable keys travel with every window.
+    let (code, body) = get(&server.addr, "/rows?path=w.csv&count=3");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""rowKeys":["b:0","b:1","b:2"]"#), "{body}");
+
+    // /schema is /columns under another name.
+    let (code, body) = get(&server.addr, "/schema?path=w.csv&name=c3");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""index":5"#), "{body}");
+}

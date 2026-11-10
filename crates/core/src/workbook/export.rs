@@ -522,6 +522,12 @@ pub struct ExportSummary {
 pub struct Window {
     pub columns: Vec<String>,
     pub rows: Vec<Vec<String>>,
+    /// Stable identity of each row in `rows`, parallel to it.
+    ///
+    /// A front-end that keeps a selection across inserts and deletes needs a key that
+    /// is not "the fourth row": row identity is exactly that key, and it is what edits
+    /// are stored against.
+    pub keys: Vec<RowId>,
     /// Logical row count after the journal is applied.
     pub total: u64,
 }
@@ -648,16 +654,18 @@ impl Pager {
                 .map
                 .physical_runs(start.saturating_sub(pre_roll), pre_roll)
             {
-                self.visit(run, &mut pipeline, None)?;
+                self.visit(run, &mut pipeline, None, None)?;
             }
         }
         let mut rows = Vec::new();
+        let mut keys = Vec::new();
         for run in self.map.physical_runs(start, count) {
-            self.visit(run, &mut pipeline, Some(&mut rows))?;
+            self.visit(run, &mut pipeline, Some(&mut rows), Some(&mut keys))?;
         }
         Ok(Window {
             columns: self.columns.clone(),
             rows,
+            keys,
             total: self.map.len(),
         })
     }
@@ -667,6 +675,7 @@ impl Pager {
         run: Run,
         pipeline: &mut RowPipeline<'_>,
         mut out: Option<&mut Vec<Vec<String>>>,
+        mut keys: Option<&mut Vec<RowId>>,
     ) -> io::Result<()> {
         match run {
             Run::Base {
@@ -680,10 +689,13 @@ impl Pager {
                         String::from_utf8_lossy(record).trim_end_matches(['\n', '\r']),
                         self.delim,
                     );
-                    let row =
-                        pipeline.row(&cells, RowId::Base(physical + i as u64), logical + i as u64);
+                    let id = RowId::Base(physical + i as u64);
+                    let row = pipeline.row(&cells, id, logical + i as u64);
                     if let Some(out) = out.as_deref_mut() {
                         out.push(row);
+                    }
+                    if let Some(keys) = keys.as_deref_mut() {
+                        keys.push(id);
                     }
                 }
             }
@@ -696,6 +708,9 @@ impl Pager {
                     let row = pipeline.row(cells, RowId::Virtual(id), logical + i as u64);
                     if let Some(out) = out.as_deref_mut() {
                         out.push(row);
+                    }
+                    if let Some(keys) = keys.as_deref_mut() {
+                        keys.push(RowId::Virtual(id));
                     }
                 }
             }

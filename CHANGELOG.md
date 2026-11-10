@@ -1,5 +1,30 @@
 # Changelog
 
+## [2.4.0] — 2026-11-10
+
+Framework, round two: the reads a front-end needs to render a huge wide sheet.
+
+### Added
+
+- **`GET /cell?row=&col=`** — one cell by name, with its stable row key. The read half
+  of `expect=`: read the value, decide, then write conditionally. `404` past the end
+  (and says the total), `400` naming `col` when it does not exist.
+- **`rowKeys` on every window**: `b:<index>` for a base row, `v:<id>` for an inserted
+  one, parallel to `rows`. A selection that survives an insert is a selection by key,
+  never by position — this is the identity edits are stored against, finally exposed.
+  (`Window` carries them now, so CLI and API share the same keys by construction.)
+- **`start-col=` / `count-cols=` on `/rows`**: horizontal paging. A 782-column sheet
+  answers a screen-sized slice (`count-cols=5`) without building the other 777.
+- **`/schema` as an alias of `/columns`**, for callers that think in schema.
+
+### Docs
+
+- `kind` is documented as what it is: a sample of the first `--sample` rows to choose an
+  editor, **not** a promise about row 11 onward. Full-column truth is `analyze`; an
+  assertion is `validate`.
+- A test now checks that every route the code serves appears in `docs/API.md` — it
+  immediately caught `/cell` and `/schema` being undocumented.
+
 ## [2.3.0] — 2026-11-10
 
 Framework round: discovery, projection, and the one race that could lose an edit.

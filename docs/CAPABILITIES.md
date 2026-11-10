@@ -237,6 +237,12 @@
 - **改名会把已有的编辑和公式一起带到新列名**（0.89.0）。列身份和行身份同等重要。
 
 
+## 列类型是采样推断 / Column kinds are a sample, not a promise
+
+`schema` 和 `/columns` 报告的 `kind`（`number` / `date` / `text` / `empty` / `mixed`）只
+看前 `--sample` 行（默认 10）。它的用途是让前端选一个编辑器，不是保证——第 11 行起完全
+可能是别的类型。要判断整列，用 `analyze`（全表一遍）；要断言整列，用 `validate`。
+
 ## 真实宽表实测 / A real 782-column file
 
 用一份**真实业务结果文件**（2.5 GB / 68.5 万行 / 782 列）跑过一遍，因为 782 列宽表会

@@ -271,6 +271,41 @@ A lock left by a killed process is treated as stale after ten seconds, so a cras
 cannot wedge the file. For "did this value change under me?" the answer is not the lock
 but `expect=` — the lock keeps both edits, `expect` decides whether yours should happen.
 
+
+## `GET /cell?row=&col=`
+
+One cell, by column name and 1-based row — the read half of a constrained write:
+
+```bash
+curl "/cell?path=t.csv&row=2&col=city"
+{"row":2,"column":"city","value":"X","key":"b:1","total":5}
+```
+
+`404` when the row is past the end (and says the total), `400` naming `col` when the
+column does not exist. `key` is the row's stable identity (`b:<index>` base row,
+`v:<id>` inserted row).
+
+## `/schema` — an alias for `/columns`
+
+Same payload, same parameters. A front-end that thinks in "schema" should not have to
+remember a second name.
+
+## 横向翻列 / Horizontal paging
+
+`/rows` takes `start-col=` and `count-cols=`, so a screen-sized slice of a 782-column
+sheet is one request:
+
+```bash
+curl "/rows?path=t.csv&count=2&start-col=5&count-cols=5"
+# columns c4..c8, only those bytes
+```
+
+## 行身份 / `rowKeys`
+
+Every window carries `rowKeys`, parallel to `rows`: `b:<index>` for a row of the base
+file, `v:<id>` for an inserted row. A selection that survives an insert or a delete is
+a selection by key, never by position.
+
 ## 已知限制
 
 - `where` / `order` 走 DuckDB：对**有编辑的文件**会先物化到临时表（每份源文件最多一份，

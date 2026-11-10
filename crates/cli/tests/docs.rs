@@ -900,3 +900,36 @@ fn freeze_first_says_it_takes_a_count() {
     assert!(stderr.contains("takes a count"), "{stderr}");
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+/// Every route the code serves is listed in API.md, and nothing is listed that is gone.
+///
+/// A front-end reads API.md, not `serve.rs`; a route that exists but is undocumented is
+/// invisible, and one documented but removed is a trap.
+#[test]
+fn api_md_lists_every_route() {
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let source = std::fs::read_to_string(manifest.join("src/serve.rs")).unwrap();
+    let doc = std::fs::read_to_string(manifest.join("../../docs/API.md")).unwrap();
+
+    // Routes appear in the dispatch as `"/name" =>`.
+    let mut routes: Vec<String> = Vec::new();
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if let Some(rest) = trimmed.strip_prefix('"') {
+            if let Some(name) = rest.split('"').next() {
+                if name.starts_with('/') && rest.contains("=>") {
+                    routes.push(name.to_string());
+                }
+            }
+        }
+    }
+    routes.sort();
+    routes.dedup();
+    assert!(routes.len() >= 10, "{routes:?}");
+
+    let missing: Vec<&String> = routes
+        .iter()
+        .filter(|route| route.as_str() != "/" && !doc.contains(route.as_str()))
+        .collect();
+    assert!(missing.is_empty(), "routes not in API.md: {missing:?}");
+}

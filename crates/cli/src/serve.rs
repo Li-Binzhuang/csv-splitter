@@ -190,6 +190,8 @@ fn handle(
         "/sheet" => sheet_meta(&mut stream, root, &params),
         "/columns" => columns_endpoint(&mut stream, root, &params),
         "/capabilities" => capabilities_endpoint(&mut stream),
+        "/schema" => columns_endpoint(&mut stream, root, &params),
+        "/cell" => cell_endpoint(&mut stream, root, &params),
         "/groupby" => group_by(&mut stream, root, cache, &params),
         "/pivot" => pivot_endpoint(&mut stream, root, cache, &params),
         "/style" => style_endpoint(&mut stream, root, &params),
@@ -204,7 +206,7 @@ fn handle(
         _ => respond_json(
             &mut stream,
             404,
-            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/columns","/sheet","/capabilities","/book","/pivot","/style","/chart","/layout","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
+            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/columns","/schema","/cell","/sheet","/capabilities","/book","/pivot","/style","/chart","/layout","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
         ),
     }
 }
@@ -214,6 +216,109 @@ fn handle(
 /// A client should not have to read a document to learn which writes exist, how many
 /// rows a window may ask for, or that a write can be made conditional. Everything here
 /// is generated from the same constants the handlers use, so it cannot drift.
+/// `GET /cell?path=t.csv&row=3&col=city` — one cell, by name.
+///
+/// The counterpart of `expect=`: read the value, decide, then write conditionally. A
+/// front-end that wants only that one value should not pay for a whole window.
+fn cell_endpoint(
+    stream: &mut TcpStream,
+    root: &Path,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
+    };
+    let (Some(row), Some(column)) = (
+        params.get("row").and_then(|v| v.parse::<u64>().ok()),
+        params.get("col"),
+    ) else {
+        return bad_request(
+            stream,
+            "cell needs row and col",
+            "row",
+            "row=<n>&col=<name>",
+        );
+    };
+    if row == 0 {
+        return bad_request(
+            stream,
+            "rows are 1-based; row 1 is the first data row",
+            "row",
+            "pass row=1 for the first row",
+        );
+    }
+    let sheet = match csv_splitter_core::sheet::Sheet::open(
+        &path,
+        csv_splitter_core::sheet::ReadOptions {
+            delimiter: delimiter(params),
+        },
+    ) {
+        Ok(sheet) => sheet,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let columns = match sheet.columns() {
+        Ok(columns) => columns,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let Some(slot) = columns.iter().position(|c| c == column) else {
+        return bad_request(
+            stream,
+            "column not found",
+            "col",
+            &format!("available: {}", columns.join(", ")),
+        );
+    };
+    let window = match sheet.window(row - 1, 1) {
+        Ok(window) => window,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let Some(cells) = window.rows.first() else {
+        return respond_json(
+            stream,
+            404,
+            &format!(
+                r#"{{"error":"row {row} is past the end","parameter":"row","hint":"total is {} data rows"}}"#,
+                window.total
+            ),
+        );
+    };
+    let value = cells.get(slot).cloned().unwrap_or_default();
+    respond_json(
+        stream,
+        200,
+        &format!(
+            r#"{{"row":{row},"column":{},"value":{},"key":{},"total":{}}}"#,
+            json_str(column),
+            json_str(&value),
+            json_str(&match window.keys.first() {
+                Some(csv_splitter_core::workbook::RowId::Base(i)) => format!("b:{i}"),
+                Some(csv_splitter_core::workbook::RowId::Virtual(i)) => format!("v:{i}"),
+                None => String::new(),
+            }),
+            window.total
+        ),
+    )
+}
+
 fn capabilities_endpoint(stream: &mut TcpStream) -> io::Result<()> {
     let reads = [
         "/",
@@ -257,7 +362,7 @@ fn capabilities_endpoint(stream: &mut TcpStream) -> io::Result<()> {
         stream,
         200,
         &format!(
-            r#"{{"version":{},"reads":[{}],"writes":[{}],"editActions":[{}],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"columnsProjection":true}},"writeGuards":["expect=compare-and-set"],"notes":{}}}"#,
+            r#"{{"version":{},"reads":[{}],"writes":[{}],"editActions":[{}],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"columnsProjection":true,"horizontalPaging":true}},"writeGuards":["expect=compare-and-set"],"notes":{}}}"#,
             json_str(env!("CARGO_PKG_VERSION")),
             reads_json.join(","),
             writes_json.join(","),
@@ -2145,13 +2250,15 @@ fn respond_sheet_window(
             )
         }
     };
-    let (display_columns, display_rows) = match requested_columns(params) {
+    let projected = match requested_columns(params) {
         None => (window.columns.clone(), window.rows.clone()),
         Some(wanted) => match project_window(&window.columns, &window.rows, &wanted) {
             Ok(pair) => pair,
             Err(e) => return bad_request(stream, &e, "columns", "columns=a,b,c"),
         },
     };
+    let (display_columns, display_rows) = slice_columns(projected.0, projected.1, params);
+    let row_keys = row_keys_json(&window.keys);
     let cols: Vec<String> = display_columns.iter().map(|c| json_str(c)).collect();
     let rows: Vec<String> = display_rows
         .iter()
@@ -2175,12 +2282,13 @@ fn respond_sheet_window(
         stream,
         200,
         &format!(
-            r#"{{"start":{start},"count":{},"requested":{requested},"limit":{MAX_ROWS_PER_REQUEST},"total":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}],"edited":true,"operations":{}}}"#,
+            r#"{{"start":{start},"count":{},"requested":{requested},"limit":{MAX_ROWS_PER_REQUEST},"total":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}],"rowKeys":{},"edited":true,"operations":{}}}"#,
             rows_count,
             window.total,
             cols.join(","),
             frozen.join(","),
             rows.join(","),
+            row_keys,
             ops.len()
         ),
     )
@@ -2576,13 +2684,18 @@ fn rows(
         .take(count as usize)
         .cloned()
         .collect();
-    let (display_columns, display_rows) = match requested_columns(params) {
+    let projected = match requested_columns(params) {
         None => (headers.clone(), windowed),
         Some(wanted) => match project_window(&headers, &windowed, &wanted) {
             Ok(pair) => pair,
             Err(e) => return bad_request(stream, &e, "columns", "columns=a,b,c"),
         },
     };
+    let (display_columns, display_rows) = slice_columns(projected.0, projected.1, params);
+    let base_keys: Vec<csv_splitter_core::workbook::RowId> = (0..display_rows.len())
+        .map(|i| csv_splitter_core::workbook::RowId::Base(start + i as u64))
+        .collect();
+    let row_keys = row_keys_json(&base_keys);
     let rows: Vec<String> = display_rows
         .iter()
         .map(|row| {
@@ -2602,12 +2715,13 @@ fn rows(
         })
         .unwrap_or_default();
     let body = format!(
-        r#"{{"start":{start},"count":{},"requested":{requested},"limit":{MAX_ROWS_PER_REQUEST},"total":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}]}}"#,
+        r#"{{"start":{start},"count":{},"requested":{requested},"limit":{MAX_ROWS_PER_REQUEST},"total":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}],"rowKeys":{}}}"#,
         rows.len(),
         viewer.total_rows(),
         cols.join(","),
         frozen.join(","),
-        rows.join(",")
+        rows.join(","),
+        row_keys
     );
     respond_json(stream, 200, &body)
 }
@@ -2837,6 +2951,54 @@ struct RowWindow<'a> {
 }
 
 /// Render a window of a materialised query result, caching it by (path, SQL).
+/// Horizontal paging: `start-col=` and `count-cols=` slice the columns of a window.
+///
+/// A 782-column sheet does not fit on any screen, so a front-end scrolls sideways. Slicing
+/// here means the bytes for the columns off-screen are never built.
+fn slice_columns(
+    columns: Vec<String>,
+    rows: Vec<Vec<String>>,
+    params: &HashMap<String, String>,
+) -> (Vec<String>, Vec<Vec<String>>) {
+    let start = params
+        .get("start-col")
+        .and_then(|v| v.parse::<usize>().ok())
+        .unwrap_or(0);
+    let count = params
+        .get("count-cols")
+        .and_then(|v| v.parse::<usize>().ok())
+        .unwrap_or(usize::MAX);
+    if start == 0 && count == usize::MAX {
+        return (columns, rows);
+    }
+    let end = columns.len().min(start.saturating_add(count));
+    if start >= end {
+        return (Vec::new(), rows.into_iter().map(|_| Vec::new()).collect());
+    }
+    let kept_columns = columns[start..end].to_vec();
+    let kept_rows = rows
+        .into_iter()
+        .map(|row| {
+            let from = start.min(row.len());
+            let to = end.min(row.len());
+            row[from..to].to_vec()
+        })
+        .collect();
+    (kept_columns, kept_rows)
+}
+
+fn row_keys_json(keys: &[csv_splitter_core::workbook::RowId]) -> String {
+    use csv_splitter_core::workbook::RowId;
+    let items: Vec<String> = keys
+        .iter()
+        .map(|key| match key {
+            RowId::Base(index) => format!("\"b:{index}\""),
+            RowId::Virtual(id) => format!("\"v:{id}\""),
+        })
+        .collect();
+    format!("[{}]", items.join(","))
+}
+
 /// `columns=a,b,c` narrows a window to those columns, in that order.
 ///
 /// A 782-column row is 3.6 KB of JSON; a client that renders three columns should not
