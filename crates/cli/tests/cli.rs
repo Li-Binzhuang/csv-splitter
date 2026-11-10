@@ -3123,3 +3123,39 @@ fn export_can_be_filtered() {
     let text = std::fs::read_to_string(&out).unwrap();
     assert_eq!(text.lines().count(), 4, "all three rows now match: {text}");
 }
+
+/// Conditional formatting is visible in the terminal, not only in JSON.
+#[test]
+fn view_marks_cells_that_match_a_formatting_rule() {
+    let dir = TempDir::new("viewstyled");
+    let input = dir.join("t.csv");
+    std::fs::write(
+        &input,
+        "id,city,amount\n1,CDMX,10\n2,Puebla,2000\n3,CDMX,3000\n",
+    )
+    .unwrap();
+    let path = input.to_str().unwrap();
+
+    // Piped output has no colour, so a match is shown in brackets.
+    let out = Command::new(bin())
+        .args(["view", path, "--rule", "amount>1000:bg=red"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("[2000]"), "{text}");
+    assert!(text.contains("[3000]"), "{text}");
+    assert!(
+        !text.contains("[10]"),
+        "the untouched cell must stay plain: {text}"
+    );
+    assert!(text.contains("2 cell(s) matched"), "{text}");
+
+    // A rule that matches nothing says nothing.
+    let out = Command::new(bin())
+        .args(["view", path, "--rule", "amount>99999:bg=red"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(!text.contains("matched the formatting"), "{text}");
+}

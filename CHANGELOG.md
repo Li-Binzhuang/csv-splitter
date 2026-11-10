@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.81.0] — 2026-11-10
+
+### Added
+
+- **`view --rule` / `--rules`**: conditional formatting is visible in the terminal, not
+  only as JSON from the API. A terminal gets real colour (named colours and `#rrggbb`
+  through ANSI); a pipe gets the cell in brackets, because escape codes in a captured
+  file are noise while the marker still says which cell matched.
+  - The rules are the same `format::Rule` the API evaluates, so "why is this cell red"
+    has one answer.
+  - A rule that matches nothing prints nothing extra, rather than a "0 cells" line
+    that trains people to ignore the notice.
+
 ## [0.80.0] — 2026-11-10
 
 ### Added

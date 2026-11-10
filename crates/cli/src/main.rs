@@ -1257,6 +1257,7 @@ fn cmd_view(args: &[String]) -> i32 {
     let mut order: Option<String> = None;
     let mut order_descending = false;
     let mut find: Option<String> = None;
+    let mut rules_text: Vec<String> = Vec::new();
     let mut nth: u64 = 1;
     let mut context: u64 = 3;
     let mut match_case = false;
@@ -1357,6 +1358,13 @@ fn cmd_view(args: &[String]) -> i32 {
                 }
             },
             "--match-case" => match_case = true,
+            "--rule" => match p.value("--rule") {
+                Ok(v) => rules_text.push(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--json" => json = true,
             "-d" | "--delim" => match p.value("--delim") {
                 Ok(v) => delim = v,
@@ -1683,7 +1691,38 @@ fn cmd_view(args: &[String]) -> i32 {
         println!("(no rows matched)");
         return 0;
     }
-    if let Some(index) = highlight {
+    // Conditional formatting on screen: the same rules the API evaluates, applied to
+    // this page. Colour when the terminal can show it, brackets otherwise.
+    let marks = if rules_text.is_empty() || rows.is_empty() {
+        Vec::new()
+    } else {
+        let mut parsed = Vec::new();
+        for text in &rules_text {
+            match csv_splitter_core::format::Rule::parse(text) {
+                Ok(rule) => parsed.push(rule),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            }
+        }
+        let mut marks = Vec::new();
+        for (offset, row) in rows.iter().enumerate() {
+            let logical = start + offset as u64;
+            for rule in &parsed {
+                for (slot, column) in columns.iter().enumerate() {
+                    let value = row.get(slot).map(String::as_str).unwrap_or("");
+                    if rule.matches_cell(column, value) {
+                        marks.push((logical, column.clone(), rule.style.clone()));
+                    }
+                }
+            }
+        }
+        marks
+    };
+    if !marks.is_empty() {
+        print_table_styled(&columns, &rows, start, &marks);
+    } else if let Some(index) = highlight {
         // Print a marker beside the row `--find` landed on, so the eye finds it.
         let offset = index.saturating_sub(start) as usize;
         print_table(&columns, &rows);
@@ -4299,6 +4338,115 @@ fn journal_push(
             report_failure("edit", format!("cannot save the journal: {e}"));
             Err(1)
         }
+    }
+}
+
+/// Print a table, marking cells whose conditional-formatting rule matched.
+///
+/// Terminals get colour when they support it; a pipe gets brackets, because colour
+/// codes in a captured file are noise and the marker still says which cell matched.
+fn print_table_styled(
+    columns: &[String],
+    rows: &[Vec<String>],
+    start: u64,
+    marks: &[(u64, String, csv_splitter_core::format::Style)],
+) {
+    use std::io::IsTerminal;
+    let colour = std::io::stdout().is_terminal();
+    let mut widths: Vec<usize> = columns.iter().map(|c| display_width(c)).collect();
+    for (row_index, row) in rows.iter().enumerate() {
+        let logical = start + row_index as u64;
+        for (slot, cell) in row.iter().enumerate() {
+            let mut width = display_width(cell);
+            if marks
+                .iter()
+                .any(|(row, column, _)| *row == logical && columns.get(slot) == Some(column))
+            {
+                width += if colour { 0 } else { 2 };
+            }
+            if let Some(w) = widths.get_mut(slot) {
+                *w = (*w).max(width);
+            }
+        }
+    }
+    let render = |cells: &[String], logical: u64| {
+        let mut line = String::new();
+        for (slot, cell) in cells.iter().enumerate() {
+            if slot > 0 {
+                line.push_str(" | ");
+            }
+            let styled = marks
+                .iter()
+                .find(|(row, column, _)| *row == logical && columns.get(slot) == Some(column));
+            let shown = match styled {
+                None => cell.clone(),
+                Some((_, _, style)) => {
+                    if colour {
+                        let mut code = String::from("\u{1b}[");
+                        if style.bold {
+                            code.push_str("1;");
+                        }
+                        if let Some(bg) = &style.background {
+                            code.push_str(&ansi_colour(bg, false));
+                        }
+                        if let Some(fg) = &style.foreground {
+                            code.push_str(&ansi_colour(fg, true));
+                        }
+                        code.push('m');
+                        format!("{code}{cell}\u{1b}[0m")
+                    } else {
+                        format!("[{cell}]")
+                    }
+                }
+            };
+            line.push_str(&shown);
+            let pad = widths.get(slot).copied().unwrap_or(0) - display_width(&shown);
+            if slot + 1 < cells.len() {
+                line.push_str(&" ".repeat(pad));
+            }
+        }
+        line
+    };
+    println!("{}", render(columns, u64::MAX));
+    let total: usize = widths.iter().sum::<usize>() + 3 * widths.len().saturating_sub(1);
+    println!("{}", "-".repeat(total.max(20)));
+    for (row_index, row) in rows.iter().enumerate() {
+        println!("{}", render(row, start + row_index as u64));
+    }
+    if !marks.is_empty() {
+        println!("\n{} cell(s) matched the formatting rule(s)", marks.len());
+    }
+}
+
+/// Minimal colour mapping: named colours and `#rrggbb`.
+fn ansi_colour(name: &str, foreground: bool) -> String {
+    let lower = name.trim().to_ascii_lowercase();
+    let code = match lower.as_str() {
+        "black" => Some("30"),
+        "red" => Some("31"),
+        "green" => Some("32"),
+        "yellow" => Some("33"),
+        "blue" => Some("34"),
+        "magenta" => Some("35"),
+        "cyan" => Some("36"),
+        "white" => Some("37"),
+        "grey" | "gray" => Some("90"),
+        _ if lower.starts_with('#') && lower.len() == 7 => {
+            let r = u8::from_str_radix(&lower[1..3], 16).ok();
+            let g = u8::from_str_radix(&lower[3..5], 16).ok();
+            let b = u8::from_str_radix(&lower[5..7], 16).ok();
+            return match (r, g, b) {
+                (Some(r), Some(g), Some(b)) => {
+                    format!("{};2;{r};{g};{b};", if foreground { "38" } else { "48" })
+                }
+                _ => String::new(),
+            };
+        }
+        _ => None,
+    };
+    match (code, foreground) {
+        (Some(c), _) => format!("{c};"),
+        (None, _) => "39;".to_string(),
     }
 }
 
