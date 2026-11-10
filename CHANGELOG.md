@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.7.0] — 2026-11-10
+
+### Added
+
+- **`edit delete --invalid RULE`**: remove the rows a validation rule rejects.
+  `validate` found the bad rows; nothing could act on them, so the cleanup was a loop
+  over `edit delete --row`. `edit delete --invalid "ts:date"` is one operation and one
+  undo.
+- **`groupby` / `pivot` / `chart --apply-edits`**: these read the file, so a formula
+  column that lives only in the journal was invisible to them — "add a column, then
+  group by it" needed a manual `edit export` in between. With the flag they materialise
+  the sheet to a temporary file first, and the pending-edits warning is suppressed
+  because the edits really are applied.
+
+### Fixed
+
+- **`validate` printed a progress line per page**, eleven of them for 20 000 rows that
+  take under a second. Progress is now reported at ten-percent steps, and only above
+  100 000 rows, where it is worth having.
+
+All of this came out of walking the user journey end to end (analyse → validate →
+clean → compute → summarise → deliver) and finding where a step needed a detour.
+The journey is now a test, so the detours cannot come back unnoticed.
 ## [1.6.0] — 2026-11-10
 
 ### Fixed

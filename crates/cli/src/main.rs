@@ -109,6 +109,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         "chart",
         &[
             ("--by", "Separator (split-column) or grouping column"),
+            ("--apply-edits", "Materialise pending edits before reading"),
             ("--delim", "Field delimiter (default: auto)"),
             ("--desc", "Descending order"),
             ("--json", "Emit JSON"),
@@ -188,6 +189,10 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--row", "Data row (1-based)"),
             ("--to", "New column name / replacement text"),
             ("--value", "Value to write"),
+            (
+                "--invalid",
+                "With delete: remove rows a validation rule rejects",
+            ),
             ("--find", "Locate a row by its content instead of by number"),
             (
                 "--where",
@@ -252,6 +257,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--agg", "Aggregations, e.g. \"amount:sum,qty:mean\""),
             ("--asc", "Ascending order"),
             ("--by", "Separator (split-column) or grouping column"),
+            ("--apply-edits", "Materialise pending edits before reading"),
             ("--delim", "Field delimiter (default: auto)"),
             ("--desc", "Descending order"),
             ("--json", "Emit JSON"),
@@ -319,6 +325,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         &[
             ("--cols", "Pivot: column key"),
             ("--columns", "Pivot: column key"),
+            ("--apply-edits", "Materialise pending edits before reading"),
             ("--delim", "Field delimiter (default: auto)"),
             ("--desc", "Descending order"),
             ("--json", "Emit JSON"),
@@ -3650,6 +3657,7 @@ fn cmd_layout(args: &[String]) -> i32 {
 
 fn cmd_chart(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut apply_edits = false;
     let mut quotes_text = String::new();
     let mut input: Option<PathBuf> = None;
     let mut out: Option<PathBuf> = None;
@@ -3665,6 +3673,7 @@ fn cmd_chart(args: &[String]) -> i32 {
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
+            "--apply-edits" => apply_edits = true,
             "--json" => want_json = true,
             "--quotes" => match p.value("--quotes") {
                 Ok(v) => quotes_text = v,
@@ -3750,7 +3759,7 @@ fn cmd_chart(args: &[String]) -> i32 {
         eprintln!("error: chart needs an <input> file");
         return 2;
     };
-    warn_pending_edits(&input);
+    warn_pending_edits_unless(&input, apply_edits);
     let Some(x) = x else {
         eprintln!("error: chart needs --x <column>");
         return 2;
@@ -3804,7 +3813,12 @@ fn cmd_chart(args: &[String]) -> i32 {
             return 2;
         }
     };
-    let result = csv_splitter_core::chart::chart_quotes(&input, delimiter, &options, quotes, &tx);
+    let sheet = match sheet_path(&input, apply_edits, delimiter) {
+        Ok(sheet) => sheet,
+        Err(code) => return code,
+    };
+    let result =
+        csv_splitter_core::chart::chart_quotes(sheet.path(), delimiter, &options, quotes, &tx);
     drop(tx);
     let _ = reporter.join();
     let data = match result {
@@ -4021,6 +4035,7 @@ fn cmd_format(args: &[String]) -> i32 {
 
 fn cmd_pivot(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut apply_edits = false;
     let mut quotes_text = String::new();
     let mut input: Option<PathBuf> = None;
     let mut out: Option<PathBuf> = None;
@@ -4095,6 +4110,7 @@ fn cmd_pivot(args: &[String]) -> i32 {
                     return 2;
                 }
             },
+            "--apply-edits" => apply_edits = true,
             "--json" => json = true,
             "--quiet" | "-q" => quiet = true,
             "-o" | "--out" => match p.value("--out") {
@@ -4134,7 +4150,7 @@ fn cmd_pivot(args: &[String]) -> i32 {
         eprintln!("error: pivot needs an <input> file");
         return 2;
     };
-    warn_pending_edits(&input);
+    warn_pending_edits_unless(&input, apply_edits);
     if rows.is_empty() {
         eprintln!("error: pivot needs --rows <column[,column]>");
         return 2;
@@ -4184,11 +4200,20 @@ fn cmd_pivot(args: &[String]) -> i32 {
             return code;
         }
     }
+    let sheet = match sheet_path(&input, apply_edits, delimiter) {
+        Ok(sheet) => sheet,
+        Err(code) => return code,
+    };
     // Without `-o` the matrix goes to the terminal: a pivot is something you look at,
     // and writing a file only to open it again is a step nobody asked for.
     let table = if let Some(output) = out_was_given.clone() {
         let result = csv_splitter_core::pivot::pivot_quotes(
-            &input, delimiter, &output, &options, quotes, &tx,
+            sheet.path(),
+            delimiter,
+            &output,
+            &options,
+            quotes,
+            &tx,
         );
         drop(tx);
         let _ = reporter.join();
@@ -4198,7 +4223,8 @@ fn cmd_pivot(args: &[String]) -> i32 {
             Err(e) => return report_failure("pivot", e),
         }
     } else {
-        let result = csv_splitter_core::pivot::pivot_rows(&input, delimiter, &options, quotes, &tx);
+        let result =
+            csv_splitter_core::pivot::pivot_rows(sheet.path(), delimiter, &options, quotes, &tx);
         drop(tx);
         let _ = reporter.join();
         match result {
@@ -4460,6 +4486,7 @@ fn cmd_demo(args: &[String]) -> i32 {
 
 fn cmd_groupby(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut apply_edits = false;
     let mut quotes_text = String::new();
     let mut input: Option<PathBuf> = None;
     let mut out: Option<PathBuf> = None;
@@ -4521,6 +4548,7 @@ fn cmd_groupby(args: &[String]) -> i32 {
                     return 2;
                 }
             },
+            "--apply-edits" => apply_edits = true,
             "--json" => json = true,
             "-q" | "--quiet" => quiet = true,
             "-d" | "--delim" => match p.value("--delim") {
@@ -4546,7 +4574,7 @@ fn cmd_groupby(args: &[String]) -> i32 {
         eprintln!("error: groupby needs <input>");
         return 2;
     };
-    warn_pending_edits(&input);
+    warn_pending_edits_unless(&input, apply_edits);
     if keys.is_empty() {
         eprintln!("error: groupby needs --by <col[,col]>");
         return 2;
@@ -4592,8 +4620,17 @@ fn cmd_groupby(args: &[String]) -> i32 {
     if let Err(code) = check_output(Some(&input), &output) {
         return code;
     }
+    let sheet = match sheet_path(&input, apply_edits, delimiter) {
+        Ok(sheet) => sheet,
+        Err(code) => return code,
+    };
     let result = csv_splitter_core::groupby::groupby_quotes(
-        &input, delimiter, &output, &options, quotes, &tx,
+        sheet.path(),
+        delimiter,
+        &output,
+        &options,
+        quotes,
+        &tx,
     );
     drop(tx);
     let _ = reporter.join();
@@ -4959,6 +4996,14 @@ fn out_path_or_default(input: &Path, by: &str, format: CompressFormat) -> Result
 /// correct but surprising. Saying so costs one line; staying silent costs someone
 /// an hour of "why does this row still say CDMX".
 fn warn_pending_edits(input: &std::path::Path) {
+    warn_pending_edits_unless(input, false)
+}
+
+/// The same warning, suppressed when the caller applies the edits itself.
+fn warn_pending_edits_unless(input: &std::path::Path, applied: bool) {
+    if applied {
+        return;
+    }
     let sidecar = csv_splitter_core::workbook::Journal::sidecar(input);
     if let Ok(journal) = csv_splitter_core::workbook::Journal::load(&sidecar) {
         if !journal.is_empty() {
@@ -5242,6 +5287,67 @@ fn warn_quote_style(input: &std::path::Path) {
     }
 }
 
+/// A path the analysis commands should read: the base file, or a materialised copy.
+///
+/// `groupby` / `pivot` / `chart` read the file directly, so a formula column that only
+/// exists in the journal is invisible to them. `--apply-edits` exports the sheet to a
+/// temporary file first, which makes "add a column, then group by it" one step instead
+/// of two. The caller keeps the handle so the file is removed on the way out.
+struct SheetPath {
+    path: PathBuf,
+    /// Kept alive so the materialised file is removed when the command ends.
+    #[allow(dead_code)]
+    temporary: Option<csv_splitter_core::tempdir::TempDir>,
+}
+
+impl SheetPath {
+    fn path(&self) -> &Path {
+        &self.path
+    }
+}
+
+fn sheet_path(input: &Path, apply_edits: bool, delimiter: Delimiter) -> Result<SheetPath, i32> {
+    if !apply_edits {
+        return Ok(SheetPath {
+            path: input.to_path_buf(),
+            temporary: None,
+        });
+    }
+    let ops = match csv_splitter_core::workbook::Journal::load(
+        &csv_splitter_core::workbook::Journal::sidecar(input),
+    ) {
+        Ok(journal) => journal.ops().to_vec(),
+        Err(e) => return Err(report_failure("edit", e.to_string())),
+    };
+    if ops.is_empty() {
+        // Nothing to apply: reading the base file is the same thing, and cheaper.
+        return Ok(SheetPath {
+            path: input.to_path_buf(),
+            temporary: None,
+        });
+    }
+    let dir = match csv_splitter_core::tempdir::TempDir::new("applied") {
+        Ok(dir) => dir,
+        Err(e) => return Err(report_failure("temp", e.to_string())),
+    };
+    let target = dir.path().join("sheet.csv");
+    let (tx, rx) = mpsc::channel();
+    let reporter = spawn_reporter("export", rx, true);
+    let result = csv_splitter_core::workbook::export(input, &ops, &target, delimiter, &tx);
+    drop(tx);
+    let _ = reporter.join();
+    if let Err(e) = result {
+        return Err(report_failure(
+            "edit",
+            format!("cannot apply the edits: {e}"),
+        ));
+    }
+    Ok(SheetPath {
+        path: target,
+        temporary: Some(dir),
+    })
+}
+
 /// How many separate stretches `delete --where` will write before refusing.
 ///
 /// A condition that matches alternating rows would otherwise turn one edit into a
@@ -5262,6 +5368,7 @@ fn cmd_edit(args: &[String]) -> i32 {
     let mut row_from: Option<u64> = None;
     let mut row_to: Option<u64> = None;
     let mut columns: Option<Vec<String>> = None;
+    let mut invalid_rule: Option<String> = None;
     let mut find: Option<String> = None;
     let mut find_col: Option<Vec<String>> = None;
     let mut find_nth: u64 = 1;
@@ -5387,6 +5494,13 @@ fn cmd_edit(args: &[String]) -> i32 {
                             .collect(),
                     )
                 }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--invalid" => match p.value("--invalid") {
+                Ok(v) => invalid_rule = Some(v),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -5881,6 +5995,59 @@ fn cmd_edit(args: &[String]) -> i32 {
             }
         }
         "delete" => {
+            // `--invalid` removes the rows a validation rule rejects: the cleanup half
+            // of `validate`, as one undoable operation.
+            if let Some(check) = &invalid_rule {
+                if row.is_some() || where_expr.is_some() {
+                    eprintln!("error: delete takes one of --row, --where or --invalid");
+                    return 2;
+                }
+                let rule = match csv_splitter_core::validate::Rule::parse(check) {
+                    Ok(rule) => rule,
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                };
+                let runs = match csv_splitter_core::validate::rows_failing(
+                    &input,
+                    journal.ops(),
+                    std::slice::from_ref(&rule),
+                    delimiter,
+                ) {
+                    Ok(runs) => runs,
+                    Err(e) => return report_failure("edit", e),
+                };
+                if runs.is_empty() {
+                    eprintln!("note: every row passes '{check}'; the journal is unchanged");
+                    return 0;
+                }
+                let removed: u64 = runs.iter().map(|(_, count)| *count).sum();
+                if runs.len() > MAX_DELETE_RUNS {
+                    return report_failure(
+                        "edit",
+                        format!(
+                            "'{check}' rejects {removed} row(s) in {} separate stretches (limit {MAX_DELETE_RUNS}); \
+                             fix the values with `edit set --where` instead of deleting them",
+                            runs.len()
+                        ),
+                    );
+                }
+                let op = csv_splitter_core::workbook::Op::DeleteRanges { runs };
+                journal.push(op);
+                if let Err(e) = journal.save(&sidecar) {
+                    return report_failure("edit", format!("cannot save the journal: {e}"));
+                }
+                if json {
+                    println!(r#"{{"op":"dels","rows":{removed}"}}"#);
+                } else {
+                    println!(
+                        "✓ deleted {removed} row(s) failing '{check}' ({} operation(s) pending)",
+                        journal.len()
+                    );
+                }
+                return 0;
+            }
             // `--where` deletes everything that matches, as journal ranges.
             if let Some(filter) = &where_expr {
                 if row.is_some() {

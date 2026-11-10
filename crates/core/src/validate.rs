@@ -101,6 +101,13 @@ impl Rule {
         }
     }
 
+    /// Can this rule be judged from a single row? `unique` needs every row before it.
+    pub fn supports_per_row(&self) -> bool {
+        !matches!(self, Self::Unique { .. })
+    }
+
+    /// Does this row break the rule? Compares/filters are pre-compiled by
+    /// [`crate::validate::rows_failing`]; this covers the shape checks.
     fn failed(&self, value: &str) -> bool {
         match self {
             Self::NotEmpty { .. } => value.trim().is_empty(),
@@ -249,6 +256,97 @@ fn json(text: &str) -> String {
     out
 }
 
+/// Contiguous ranges of rows that break the rules, for "delete the bad rows".
+///
+/// Same evaluation as [`validate`], but it returns ranges instead of a report: the
+/// caller turns them into one journal operation, so the cleanup is one undo away.
+pub fn rows_failing(
+    base: &Path,
+    ops: &[Edit],
+    rules: &[Rule],
+    delimiter: Delimiter,
+) -> io::Result<Vec<(u64, u64)>> {
+    for rule in rules {
+        if !rule.supports_per_row() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!(
+                    "'{}' compares rows with each other, so it cannot pick rows to delete",
+                    rule.describe()
+                ),
+            ));
+        }
+    }
+    let pager = Pager::open(base, ops, delimiter)?;
+    let columns = pager.columns().to_vec();
+    for rule in rules {
+        if !columns.iter().any(|c| c == rule.column()) {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!(
+                    "rule '{}' reads unknown column '{}'",
+                    rule.describe(),
+                    rule.column()
+                ),
+            ));
+        }
+    }
+    let mut compiled: Vec<Option<crate::filter::CompiledSet>> = Vec::with_capacity(rules.len());
+    for rule in rules {
+        match rule {
+            Rule::Compare { column, spec } => {
+                let probe = format!("{column}{spec}");
+                let filter = crate::filter::FilterSpec::parse(&probe)
+                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+                let set = crate::filter::FilterSet::single(filter)
+                    .compile(&columns)
+                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e.to_string()))?;
+                compiled.push(Some(set));
+            }
+            _ => compiled.push(None),
+        }
+    }
+
+    let total = pager.total();
+    let mut runs: Vec<(u64, u64)> = Vec::new();
+    let mut at = 0u64;
+    while at < total {
+        let window = pager.page(at, PAGE)?;
+        for (offset, row) in window.rows.iter().enumerate() {
+            let index = at + offset as u64;
+            let broken = rules.iter().enumerate().any(|(slot, rule)| {
+                let value = columns
+                    .iter()
+                    .position(|c| c == rule.column())
+                    .and_then(|s| row.get(s))
+                    .cloned()
+                    .unwrap_or_default();
+                match &compiled[slot] {
+                    Some(set) => {
+                        let mut probe = vec![String::new(); columns.len()];
+                        if let Some(cell) = probe
+                            .get_mut(columns.iter().position(|c| c == rule.column()).unwrap_or(0))
+                        {
+                            *cell = value;
+                        }
+                        !set.holds(&probe)
+                    }
+                    None => rule.failed(&value),
+                }
+            });
+            if !broken {
+                continue;
+            }
+            match runs.last_mut() {
+                Some((start, count)) if *start + *count == index => *count += 1,
+                _ => runs.push((index, 1)),
+            }
+        }
+        at += PAGE;
+    }
+    Ok(runs)
+}
+
 /// Check a sheet against the rules, applying the journal like every other read path.
 pub fn validate(
     base: &Path,
@@ -324,6 +422,7 @@ pub fn validate(
         total_bytes: total,
     })
     .ok();
+    let mut last_percent: u64 = 0;
 
     let mut at = 0u64;
     while at < total {
@@ -389,11 +488,19 @@ pub fn validate(
                 }
             }
         }
-        tx.send(ProgressEvent::PhaseDone {
-            phase: format!("Validating ({} rows)", report.rows),
-        })
-        .ok();
         at += PAGE;
+        // A 20 000-row check finishes in under a second, so progress there is noise;
+        // a million rows take long enough that ten-percent steps are useful.
+        if total > 100_000 {
+            let percent = at.saturating_mul(10) / total.max(1);
+            if percent > last_percent {
+                last_percent = percent;
+                tx.send(ProgressEvent::PhaseDone {
+                    phase: format!("Validating ({}%)", percent * 10),
+                })
+                .ok();
+            }
+        }
     }
 
     Ok(report)

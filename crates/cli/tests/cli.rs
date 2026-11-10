@@ -4112,3 +4112,144 @@ fn view_filters_and_orders_on_edited_values() {
     let text = String::from_utf8_lossy(&out.stdout);
     assert!(text.contains("row(s) where big>1000"), "{text}");
 }
+
+/// A user journey: dirty file → clean it → add a column → summarise → export.
+///
+/// Written as one test because the steps have to work *in sequence*: each piece can be
+/// correct alone and still fail when the output of one feeds the next.
+#[test]
+fn the_journey_from_dirty_data_to_a_delivered_file() {
+    let dir = TempDir::new("journey");
+
+    // 1. A file with the failure real CSVs have: unquoted commas inside a field, so the
+    //    row has an extra column and the rest shifts.
+    let input = dir.join("orders.csv");
+    let mut text = String::from("id,city,amount,ts\n");
+    for i in 1..=50 {
+        if i % 10 == 0 {
+            text.push_str(&format!(
+                "{i},Puebla,{},\"stray,comma\",2026-03-0{}\n",
+                i * 100,
+                i % 9
+            ));
+        } else {
+            text.push_str(&format!("{i},Puebla,{},2026-03-0{}\n", i * 100, i % 9));
+        }
+    }
+    // Two rows with the extra field, and one with a value where a date should be.
+    text.push_str("51,CDMX,5100,not-a-date\n");
+    text.push_str("52,Tijuana,5200,\"stray,comma\",2026-03-02\n");
+    std::fs::write(&input, text).unwrap();
+    let path = input.to_str().unwrap();
+
+    let run = |args: &[&str]| {
+        assert_eq!(
+            Command::new(bin()).args(args).status().unwrap().code(),
+            Some(0),
+            "{args:?}"
+        );
+    };
+
+    // 2. The profile warns about the shifted rows rather than pretending they are fine.
+    let out = Command::new(bin())
+        .args(["analyze", path])
+        .output()
+        .unwrap();
+    let text_stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(text_stdout.contains("field count"), "{text_stdout}");
+
+    // 3. Validation names the rows that cannot be trusted.
+    let out = Command::new(bin())
+        .args(["validate", path, "--check", "ts:date"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(1), "bad rows must fail validation");
+    let text_stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(text_stdout.contains("violation"), "{text_stdout}");
+
+    // 4. Remove them, in one operation.
+    run(&["edit", "delete", path, "--invalid", "ts:date"]);
+
+    // 5. Add a computed column, then summarise by it — without materialising by hand.
+    run(&[
+        "edit",
+        "formula",
+        path,
+        "--name",
+        "vat",
+        "--value",
+        "amount*0.16",
+    ]);
+    let grouped = dir.join("by_city.csv");
+    run(&[
+        "groupby",
+        path,
+        "--by",
+        "city",
+        "--agg",
+        "vat:sum",
+        "--apply-edits",
+        "-o",
+        grouped.to_str().unwrap(),
+    ]);
+    let text = std::fs::read_to_string(&grouped).unwrap();
+    assert!(
+        text.contains("vat"),
+        "the formula column reached groupby: {text}"
+    );
+
+    // 6. Deliver only the columns that are wanted, ordered.
+    let delivered = dir.join("delivered.csv");
+    run(&[
+        "edit",
+        "export",
+        path,
+        "--columns",
+        "id,city,amount",
+        "--order",
+        "amount:desc",
+        "-o",
+        delivered.to_str().unwrap(),
+    ]);
+    let text = std::fs::read_to_string(&delivered).unwrap();
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines[0], "id,city,amount");
+    // 52 rows went in; the 12 whose `ts` could not be read were removed by `--invalid`.
+    assert_eq!(lines.len(), 41, "header + 40 rows: {text}");
+    assert!(lines.iter().any(|l| l.contains("Puebla")), "{text}");
+    // Row 52 had a stray comma, so its `ts` shifted and validation rejected it.
+    assert!(
+        !lines.iter().any(|l| l.starts_with("52,")),
+        "row 52 should have been removed: {text}"
+    );
+}
+
+/// Isolates the journey's last step: export with columns and order, on a plain file.
+#[test]
+fn export_with_order_keeps_every_row() {
+    let dir = TempDir::new("exportorderiso");
+    let input = dir.join("t.csv");
+    let mut text = String::from("id,city,amount\n");
+    for i in 1..=40 {
+        text.push_str(&format!("{i},Puebla,{}\n", i * 100));
+    }
+    std::fs::write(&input, text).unwrap();
+    let out = dir.join("out.csv");
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            input.to_str().unwrap(),
+            "--columns",
+            "id,city,amount",
+            "--order",
+            "amount:desc",
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&out).unwrap();
+    assert_eq!(text.lines().count(), 41, "{text}");
+}

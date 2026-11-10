@@ -47,13 +47,16 @@
 
 | 能力 | CLI | API | 边界 |
 |---|---|---|---|
-| 分组聚合 | `groupby --by K --agg c:op` | `GET /groupby` | `--max-groups` 默认 100 万 |
+| 分组聚合 | `groupby --by K --agg c:op [--apply-edits]` | `GET /groupby` | `--max-groups` 默认 100 万 |
 | 透视表 | `pivot --rows R --cols C --values c:op` | `GET /pivot` | `--max-columns` 512 / `--max-cells` 200 万 |
 | 图表数据 | `chart --x C --y c:op [--series S]` | `GET /chart` | `--max-points` 5000 |
 | SQL | `sql f.csv "SELECT ..."` | `GET /query`、`/rows?sql=` | DuckDB，只读单语句，结果封顶 |
 | 筛选 | `filter --where "c=v"` | `GET /filter`、`/rows?where=` | 支持 `= != > >= < <= ~ in empty` |
 | 搜索 | `search f.csv "text" [--regex]` | `GET /search?regex=1` | 返回行号；`--regex` 用条件格式那套模式子集 |
 | 跨表查找 | `lookup --key C --from R --get cols` | — | `--max-keys` 默认 500 万（公式里的 `ref()` 默认 200 万） |
+
+`groupby` / `pivot` / `chart` 读的是**文件**，所以公式列（只在 journal 里）对它们不可见；
+加 `--apply-edits` 会先把表物化到临时文件再分析，让「加公式列 → 按它汇总」一步完成。
 
 校验的检查类型：`not-empty` / `numeric` / `int` / `date` / `unique` / 任意比较（`qty>=0`、`city in a,b`）。
 `validate` **只读不写**：违规行数和每类计数是精确的，违规明细最多 1000 条（超了会明说），
@@ -120,6 +123,7 @@
 | 合并 | `merge chunks.tar -o out.csv` | `POST /merge` |
 | 排序 | `sort --by C -o out.csv` | `POST /sort` |
 | 数据校验 | `validate --check "qty>=0" --check "city:not-empty"` | — |
+| 删掉不合格的行 | `edit delete --invalid "ts:date"`（一次操作，一次撤销） | — |
 | 去重 | `dedupe -o out.csv [--by C]` | `POST /dedupe` |
 | 分文件 | `partition --by C -o parts.tar` | `POST /partition` |
 | 拼接 | `concat a.csv b.csv ...` | — |
