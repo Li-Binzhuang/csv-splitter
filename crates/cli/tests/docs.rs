@@ -233,22 +233,27 @@ fn api_reference_matches_the_router() {
 
 #[test]
 fn api_reference_names_only_parameters_the_server_reads() {
-    // Words in backticks inside the parameter column, plus a list of words that
-    // appear in prose rather than as parameters.
-    let prose = ["canonicalize", "done"];
+    // Only the parameter column of the endpoint tables is checked: prose mentions
+    // commands and functions freely, and that is not what this guards.
     let mut missing = Vec::new();
-    for token in API_DOC.split('`') {
-        let word = token.trim();
-        if word.len() < 2 || !word.chars().all(|c| c.is_ascii_alphanumeric()) {
+    for line in API_DOC.lines() {
+        let cells: Vec<&str> = line.split('|').map(str::trim).collect();
+        if cells.len() < 3 || !line.starts_with("| `") {
             continue;
         }
-        if prose.contains(&word) {
-            continue;
-        }
-        // Only consider words that look like parameters (camelCase or short names).
-        let needle = format!("\"{word}\"");
-        if !ROUTER.contains(&needle) && !JOBS.contains(&needle) {
-            missing.push(word.to_string());
+        let params = cells[2];
+        for token in params.split('`') {
+            let word = token.trim();
+            if word.len() < 2
+                || !word.chars().all(|c| c.is_ascii_alphanumeric())
+                || word.chars().next().is_some_and(|c| c.is_ascii_digit())
+            {
+                continue;
+            }
+            let needle = format!("\"{word}\"");
+            if !ROUTER.contains(&needle) && !JOBS.contains(&needle) {
+                missing.push(word.to_string());
+            }
         }
     }
     missing.sort();

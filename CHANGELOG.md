@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.70.0] — 2026-11-10
+
+### Added
+
+- **Window reads answer `lag()`** by pre-reading the rows before the window: `k` rows
+  where `k` is the largest look-back, not `S` rows where `S` is the window start. A
+  paged view now shows the same previous-row values an export does instead of
+  `#VALUE!`; the two paths disagreed, which is a bug waiting for someone to trust the
+  wrong one.
+- `running_total` still reports `#VALUE!` in windows: it needs every row before the
+  start, and a full pass per page is the wrong trade. The alternative — totalling only
+  the window's first row onward — would look plausible and be wrong.
+
 ## [0.69.0] — 2026-11-10
 
 ### Changed

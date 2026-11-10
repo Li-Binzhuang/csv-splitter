@@ -313,7 +313,60 @@ pub fn window(
     let plan = ColumnPlan::build(ops, &columns, &compiled);
 
     let keep: Vec<Option<usize>> = layout.iter().map(|(_, idx)| *idx).collect();
-    let mut pipeline = RowPipeline::new(&columns, &keep, edits, &plan, refs, None);
+
+    // A window that starts at row S can still answer `lag(col, k)` as long as k ≤ S:
+    // read the k rows before the window, feed them through the same pipeline, and the
+    // history is exactly what a full export would have had at that point. The cost is
+    // k rows, not S — memory follows the lag distance, the same rule as everywhere.
+    //
+    // Running totals are different: they need every row before the window, which is a
+    // full pass per request. Those keep reporting #VALUE! here; the honest alternative
+    // would be silently showing totals that start at the window.
+    let needs = plan.row_needs();
+    let (pre_roll, state) = if needs.is_empty() || !needs.running.is_empty() {
+        (0, None)
+    } else {
+        let look_back = needs.max_lag() as u64;
+        let first = start.saturating_sub(look_back);
+        (
+            start.saturating_sub(first),
+            Some(crate::formula::RowState::new(needs)),
+        )
+    };
+
+    let mut pipeline = RowPipeline::new(&columns, &keep, edits, &plan, refs, state);
+    if pre_roll > 0 {
+        for run in map.physical_runs(start.saturating_sub(pre_roll), pre_roll) {
+            match run {
+                Run::Base {
+                    physical,
+                    len,
+                    logical,
+                } => {
+                    let records = index.read_rows(base, physical, len)?;
+                    for (i, record) in records.iter().enumerate() {
+                        let cells = parse_csv_record(
+                            String::from_utf8_lossy(record).trim_end_matches(['\n', '\r']),
+                            delim,
+                        );
+                        // The values are discarded; what matters is the history they
+                        // leave behind for the window's first row.
+                        pipeline.row(&cells, RowId::Base(physical + i as u64), logical + i as u64);
+                    }
+                }
+                Run::Virtual {
+                    id,
+                    logical,
+                    rows: virtual_rows,
+                } => {
+                    for (i, cells) in virtual_rows.iter().enumerate() {
+                        pipeline.row(cells, RowId::Virtual(id), logical + i as u64);
+                    }
+                }
+            }
+        }
+    }
+
     let mut rows = Vec::new();
     for run in map.physical_runs(start, count) {
         match run {
@@ -352,4 +405,82 @@ pub fn window(
         rows,
         total: map.len(),
     })
+}
+
+#[cfg(test)]
+mod window_history_tests {
+    use super::*;
+
+    fn temp(tag: &str) -> std::path::PathBuf {
+        static SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+        let seq = SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let path = std::env::temp_dir().join(format!("csvs_window_{tag}_{nanos}_{seq}"));
+        std::fs::create_dir_all(&path).unwrap();
+        path
+    }
+
+    #[test]
+    fn a_window_can_answer_lag_by_reading_the_rows_before_it() {
+        let dir = temp("lag");
+        let base = dir.join("t.csv");
+        let mut text = String::from("day,amount\n");
+        for i in 1..=10 {
+            text.push_str(&format!("{i},{}\n", i * 10));
+        }
+        std::fs::write(&base, &text).unwrap();
+        let ops = vec![Op::AddColumn {
+            name: "prev".to_string(),
+            formula: "lag(amount)".to_string(),
+        }];
+
+        // Rows are 0-based here: `start = 5` is the 6th data row (day 6, amount 60),
+        // whose previous row is day 5 (amount 50).
+        let win = window(&base, &ops, 5, 2, Delimiter::Comma).unwrap();
+        assert_eq!(win.rows.len(), 2);
+        let prev_index = win.columns.iter().position(|c| c == "prev").unwrap();
+        assert_eq!(
+            win.rows[0][prev_index], "50",
+            "window should see the row before it"
+        );
+        assert_eq!(win.rows[1][prev_index], "60");
+
+        // A window at the very start has no previous row and says so.
+        let win = window(&base, &ops, 0, 1, Delimiter::Comma).unwrap();
+        assert_eq!(win.rows[0][prev_index], "#VALUE!");
+
+        // `lag(amount, 3)` starting at the 6th row needs the 3rd row before it.
+        let ops = vec![Op::AddColumn {
+            name: "three".to_string(),
+            formula: "lag(amount, 3)".to_string(),
+        }];
+        let win = window(&base, &ops, 5, 1, Delimiter::Comma).unwrap();
+        let idx = win.columns.iter().position(|c| c == "three").unwrap();
+        assert_eq!(
+            win.rows[0][idx], "30",
+            "lag 3 before the 6th row is the 3rd row"
+        );
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn running_totals_still_need_a_full_pass_and_say_so() {
+        let dir = temp("running");
+        let base = dir.join("t.csv");
+        std::fs::write(&base, "day,amount\n1,10\n2,20\n3,30\n4,40\n").unwrap();
+        let ops = vec![Op::AddColumn {
+            name: "total".to_string(),
+            formula: "running_total(amount)".to_string(),
+        }];
+        let win = window(&base, &ops, 2, 2, Delimiter::Comma).unwrap();
+        let idx = win.columns.iter().position(|c| c == "total").unwrap();
+        // Not showing 30 and 70 (which would look right but be a window-local sum).
+        assert_eq!(win.rows[0][idx], "#VALUE!");
+        assert_eq!(win.rows[1][idx], "#VALUE!");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

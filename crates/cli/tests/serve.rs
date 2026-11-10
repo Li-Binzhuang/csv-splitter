@@ -1211,3 +1211,34 @@ fn the_api_can_redo_what_it_undid() {
     assert_eq!(status, 409, "{body}");
     assert!(body.contains("\"hint\""), "{body}");
 }
+
+/// A paged view shows the same `lag` values an export would.
+#[test]
+fn the_api_agrees_with_export_about_previous_rows() {
+    let dir = TempDir::new("lagapi");
+    std::fs::write(dir.join("t.csv"), "day,amount\n1,10\n2,20\n3,30\n4,40\n").unwrap();
+
+    // The formula lives in the journal, so it applies to both paths.
+    let server_dir = dir.0.clone();
+    let status = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+        .args([
+            "edit",
+            "formula",
+            "t.csv",
+            "--name",
+            "prev",
+            "--value",
+            "lag(amount)",
+        ])
+        .current_dir(&server_dir)
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    let server = start(&server_dir);
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&start=2&count=2");
+    assert_eq!(status, 200, "{body}");
+    // Rows 3 and 4 of the file, each showing the row before it.
+    assert!(body.contains(r#"["3","30","20"]"#), "{body}");
+    assert!(body.contains(r#"["4","40","30"]"#), "{body}");
+}
