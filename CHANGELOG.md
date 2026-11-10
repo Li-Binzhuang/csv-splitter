@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.9.0] — 2026-11-10
+
+### Docs
+
+- **`docs/ACCEPTANCE.md`**: every claim in the objective mapped to something that can be
+  executed — the library function, the CLI command, the HTTP endpoint, the test that
+  holds it, and the measured number where there is one. The four scripts at the bottom
+  are the reproduction recipe.
+- **`docs/API.md` has response-field tables** for `/rows`, `/columns`, `/cell` and
+  `/journal`: what each field means, including the ones that are easy to misread
+  (`count` vs `requested` vs `limit`, `total` vs `totalExact`, `start` is 0-based input
+  while `rowNumbers` are 1-based output, `rowKeys` absent on filtered pages).
+- **README got a literal quickstart**: four `curl` lines against `127.0.0.1:8080`, each
+  with the sentence describing what it answers. They were run verbatim before committing;
+  the first draft used `…/rows` shorthand, which is not a command anyone can paste.
+
 ## [3.8.0] — 2026-11-10
 
 ### Added

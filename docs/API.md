@@ -483,6 +483,54 @@ warns about) — a UI can show "the history is incomplete" instead of pretending
 
 猜错动作名时，`hint` 会把这张表列出来——有测试保证它不会漏。
 
+
+## 核心端点的响应字段 / response fields
+
+### `/rows`
+
+| 字段 | 含义 |
+|---|---|
+| `start` | 起始行（0-based；**对外行号是 1-based**，见 `rowNumbers`）|
+| `count` / `requested` / `limit` | 实际行数 / 请求行数 / 本次上限（2000）|
+| `total` + `totalExact` | 总数；过滤页读不到末尾时 `totalExact:false`（`total` 是下界）|
+| `pastEnd` | `start` 超过末尾；空文件不算（看 `total: 0`）|
+| `columns` / `frozenColumns` | 表头与冻结列 |
+| `rows` | 二维字符串数组 |
+| `rowKeys` | `b:<index>` 基行 / `v:<id>` 插入行；**过滤页没有**（行不是 `start+i`）|
+| `edited` / `operations` | 这一屏是否套用了 journal，套用了几条 |
+
+### `/columns`
+
+| 字段 | 含义 |
+|---|---|
+| `count` | 返回的列数（`kind`/`limit` 过滤之后）|
+| `totalColumns` | 过滤前的列数 |
+| `shown` | 实际返回的条数 |
+| `kindFilter` | 应用的 `kind=`，没有则 `null` |
+| `columns[].name` / `.index` | 列名 / **1-based** 位置 |
+| `.kind` | `number`/`date`/`text`/`empty`/`mixed`，**采样推断** |
+| `.empty` / `.sampled` | 采样内空格数 / 采样行数 |
+| `.distinct` / `.distinctCapped` | 采样内不同值数（封顶 64），是否触顶 |
+
+`?name=` 时只返回 `{"name","exists","index"?}`。
+
+### `/cell`
+
+| 字段 | 含义 |
+|---|---|
+| `row` / `column` / `value` | 1-based 行号、列名、值 |
+| `key` | 该行的稳定身份 |
+| `total` | 总行数 |
+
+### `/journal`
+
+| 字段 | 含义 |
+|---|---|
+| `operations[]` / `count` | 待应用操作（`tag` + 1-based 描述）与条数 |
+| `redo[]` / `redoCount` | 可重做栈 |
+| `canUndo` / `canRedo` | 按钮可用性 |
+| `damaged` | 读不出的记录数（正常为 0）|
+
 ## 已知限制
 
 - `where` / `order` 走 DuckDB：对**有编辑的文件**会先物化到临时表（每份源文件最多一份，

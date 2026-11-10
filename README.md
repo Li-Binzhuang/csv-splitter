@@ -82,6 +82,11 @@ $ csv-splitter serve --root .  # 本地 JSON API，打开 http://127.0.0.1:8787/
 
 ![Extract](docs/extract.png)
 
+## 验收 / Acceptance
+
+`docs/ACCEPTANCE.md`：目标的每一条都指向**能执行的东西**——库 API、CLI 命令、HTTP 端点的名字，以及锁住它们的测试名。
+**四项脚本全绿就是证据。**
+
 ## 交接 / Handover
 
 `docs/HANDOVER.md`：这个软件是什么、对 Excel 的覆盖、三条承诺的证据位置、
@@ -89,8 +94,19 @@ $ csv-splitter serve --root .  # 本地 JSON API，打开 http://127.0.0.1:8787/
 
 ## 前端怎么接 / For front-end developers
 
-`docs/INTEGRATION.md`：起服务、拿列、翻行、读一格、有条件地改一格、按 key 记选中。
-**每个调用都有测试，不是示意。**
+起一个后端，三行就能看到数据：
+
+```bash
+cargo run --release -p csv-splitter-cli -- serve --root /data --addr 127.0.0.1:8080
+
+curl "127.0.0.1:8080/capabilities"                      # 它支持什么（read/writes/limits）
+curl "127.0.0.1:8080/rows?path=big.csv&count=3"         # 前 3 行 + 表头 + rowKeys
+curl "127.0.0.1:8080/cell?path=big.csv&row=1&col=city"  # 读一格
+curl -X POST "127.0.0.1:8080/edit?path=big.csv&action=set&row=1&col=city&value=CDMX&expect=Puebla"
+```
+
+`docs/INTEGRATION.md`：起服务、拿列、翻行、读一格、有条件地改一格、按 key 记选中、
+错误码速查。**每个调用都有测试，不是示意。**
 
 ## 卡住了 / When something goes wrong
 
