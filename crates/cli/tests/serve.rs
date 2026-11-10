@@ -1028,3 +1028,37 @@ fn book_endpoint_lists_every_sheet() {
     );
     assert!(body.contains(r#""sheets":["#), "{body}");
 }
+
+/// Frozen columns are a prefix, and the window says which ones to pin.
+#[test]
+fn frozen_columns_travel_with_the_window() {
+    let dir = TempDir::new("frozen");
+    std::fs::write(
+        dir.join("t.csv"),
+        "id,city,amount\n1,CDMX,10\n2,Puebla,20\n",
+    )
+    .unwrap();
+    let server = start(&dir.0.clone());
+
+    // Default: nothing pinned.
+    let (_, body) = get(&server.addr, "/rows?path=t.csv");
+    assert!(body.contains(r#""frozenColumns":[]"#), "{body}");
+
+    // Freeze the first two columns through the layout API.
+    let (_, body) = get(
+        &server.addr,
+        "/layout?path=t.csv&column=id&key=frozen&value=true",
+    );
+    assert!(body.contains(r#""frozen":true"#), "{body}");
+    let (_, body) = get(
+        &server.addr,
+        "/layout?path=t.csv&column=city&key=frozen&value=true",
+    );
+    assert!(body.contains(r#""frozen":true"#), "{body}");
+
+    let (_, body) = get(&server.addr, "/rows?path=t.csv");
+    assert!(body.contains(r#""frozenColumns":["id","city"]"#), "{body}");
+
+    let (_, body) = get(&server.addr, "/sheet?path=t.csv");
+    assert!(body.contains(r#""frozenColumns":["id","city"]"#), "{body}");
+}

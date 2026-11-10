@@ -587,13 +587,25 @@ orders.csv
 |---|---|
 | `name` | `city:name=城市` |
 | `width` | `city:width=160`（24–2000） |
-| `frozen` | `id:frozen=true` |
+| `frozen` | `id:frozen=true`，或 `--freeze-first N` 一次冻结前三列 |
 | `format` | `#,##0.00` / `0.00` / `0%` / `0.0%` / `$#,##0.00` |
 
 数字格式只对**数字**生效：`N/A` 原样显示——格式是对数字的承诺，对文本瞎改更糟。
 
 API：`GET /layout?path=`，`GET /layout?path=&column=&key=&value=`（设置），
 `/sheet` 的响应里带 `layout`，前端一次请求拿到数据和列宽。
+
+### 冻结列
+
+冻结是**前缀**语义：冻结第 1、2 列有意义，只冻结第 3 列没意义（前两列会滚走）。
+所以服务端不返回「哪些列被勾了」，而是返回**从左边数起连续冻结了几列**：
+
+```json
+{"columns":["id","city","amount"],"frozenColumns":["id","city"],"rows":[...]}
+```
+
+前端据此把表格切成两栏：`frozenColumns` 那一栏不参与横向滚动，其余跟着滚。
+服务端不重复发数据——行里本来就有全部列值。
 
 ## 编辑与只读命令的关系
 

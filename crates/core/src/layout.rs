@@ -320,6 +320,32 @@ impl Layout {
         Ok(())
     }
 
+    /// How many leading columns are frozen.
+    ///
+    /// Frozen columns are a *prefix*, like a spreadsheet's panes: freezing the third
+    /// column while the first two scroll would look broken, so the prefix is what
+    /// counts and a gap simply stops it.
+    pub fn frozen_prefix(&self, columns: &[String]) -> usize {
+        columns
+            .iter()
+            .take_while(|name| self.entries.get(*name).is_some_and(|meta| meta.frozen))
+            .count()
+    }
+
+    /// Freeze the first `count` columns, and unfreeze everything else.
+    pub fn set_frozen_prefix(&mut self, columns: &[String], count: usize) -> Result<(), String> {
+        if count > columns.len() {
+            return Err(format!(
+                "cannot freeze {count} columns; the sheet has {}",
+                columns.len()
+            ));
+        }
+        for (index, name) in columns.iter().enumerate() {
+            self.set(name, "frozen", if index < count { "true" } else { "false" })?;
+        }
+        Ok(())
+    }
+
     pub fn is_empty(&self) -> bool {
         self.entries.is_empty()
     }
@@ -418,6 +444,22 @@ mod tests {
         );
         assert_eq!(resolved[1].width, Some(80));
         assert_eq!(resolved[2].format, NumberFormat::Plain);
+    }
+
+    #[test]
+    fn frozen_columns_are_a_prefix() {
+        let columns = vec!["id".to_string(), "city".to_string(), "amount".to_string()];
+        let mut layout = Layout::default();
+        layout.set_frozen_prefix(&columns, 2).unwrap();
+        assert_eq!(layout.frozen_prefix(&columns), 2);
+
+        // A gap stops the prefix: freezing only the third column pins nothing.
+        layout.set("id", "frozen", "false").unwrap();
+        layout.set("city", "frozen", "false").unwrap();
+        layout.set("amount", "frozen", "true").unwrap();
+        assert_eq!(layout.frozen_prefix(&columns), 0);
+
+        assert!(layout.set_frozen_prefix(&columns, 4).is_err());
     }
 
     #[test]

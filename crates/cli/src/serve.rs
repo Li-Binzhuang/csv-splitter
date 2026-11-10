@@ -1524,13 +1524,25 @@ fn respond_sheet_window(
             format!("[{}]", cells.join(","))
         })
         .collect();
+    let frozen: Vec<String> = csv_splitter_core::layout::Layout::load(path)
+        .map(|l| {
+            let count = l.frozen_prefix(&window.columns);
+            window
+                .columns
+                .iter()
+                .take(count)
+                .map(|c| json_str(c))
+                .collect()
+        })
+        .unwrap_or_default();
     respond_json(
         stream,
         200,
         &format!(
-            r#"{{"start":{start},"total":{},"columns":[{}],"rows":[{}],"edited":true,"operations":{}}}"#,
+            r#"{{"start":{start},"total":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}],"edited":true,"operations":{}}}"#,
             window.total,
             cols.join(","),
+            frozen.join(","),
             rows.join(","),
             sheet.op_count()
         ),
@@ -1598,13 +1610,22 @@ fn sheet_meta(
         }
         Err(_) => "[]".to_string(),
     };
+    let frozen_count = csv_splitter_core::layout::Layout::load(&path)
+        .map(|l| l.frozen_prefix(&columns))
+        .unwrap_or(0);
+    let frozen_names: Vec<String> = columns
+        .iter()
+        .take(frozen_count)
+        .map(|c| json_str(c))
+        .collect();
     respond_json(
         stream,
         200,
         &format!(
-            r#"{{"path":{},"columns":[{}],"rows":{},"edited":{},"operations":{},"capabilities":[{}],"layout":{},"journal":{},"ops":[{}]}}"#,
+            r#"{{"path":{},"columns":[{}],"frozenColumns":[{}],"rows":{},"edited":{},"operations":{},"capabilities":[{}],"layout":{},"journal":{},"ops":[{}]}}"#,
             json_str(&params.get("path").cloned().unwrap_or_default()),
             cols.join(","),
+            frozen_names.join(","),
             rows,
             !sheet.is_pristine(),
             sheet.op_count(),
@@ -1821,10 +1842,17 @@ fn rows(
     // would otherwise have to make a second request to render a header.
     let headers = viewer.headers().unwrap_or_default();
     let cols: Vec<String> = headers.iter().map(|c| json_str(c)).collect();
+    let frozen: Vec<String> = csv_splitter_core::layout::Layout::load(&path)
+        .map(|l| {
+            let count = l.frozen_prefix(&headers);
+            headers.iter().take(count).map(|c| json_str(c)).collect()
+        })
+        .unwrap_or_default();
     let body = format!(
-        r#"{{"start":{start},"total":{},"columns":[{}],"rows":[{}]}}"#,
+        r#"{{"start":{start},"total":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}]}}"#,
         viewer.total_rows(),
         cols.join(","),
+        frozen.join(","),
         rows.join(",")
     );
     respond_json(stream, 200, &body)

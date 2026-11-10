@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.49.0] — 2026-11-10
+
+### Added
+
+- **Frozen columns are a real behaviour now, not just metadata.** Freezing is a
+  *prefix* — pinning the first two columns means something, pinning only the third
+  means the first two scroll away — so `Layout::frozen_prefix` reports how many
+  leading columns are pinned, and `/rows` plus `/sheet` return `frozenColumns`.
+  A client splits its table into a pinned pane and a scrolling pane; the row data
+  is not duplicated because the values are already there.
+- `layout --freeze-first N` sets the prefix in one command instead of one `--set`
+  per column.
+
 ## [0.48.0] — 2026-11-10
 
 ### Added

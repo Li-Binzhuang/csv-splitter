@@ -2307,16 +2307,43 @@ fn cmd_lookup(args: &[String]) -> i32 {
     0
 }
 
+/// Columns as the sheet presents them (journal applied), for layout commands.
+fn layout_columns(input: &std::path::Path) -> Result<Vec<String>, String> {
+    let base_columns =
+        csv_splitter_core::workbook::base_header(input, csv_splitter_core::types::Delimiter::Comma)
+            .map_err(|e| format!("cannot read the header: {e}"))?;
+    csv_splitter_core::workbook::Journal::load(&csv_splitter_core::workbook::Journal::sidecar(
+        input,
+    ))
+    .map(|journal| {
+        csv_splitter_core::workbook::column_layout(journal.ops(), &base_columns)
+            .map(|layout| layout.into_iter().map(|(name, _)| name).collect())
+    })
+    .unwrap_or_else(|_| Ok(base_columns))
+    .map_err(|e: std::io::Error| e.to_string())
+}
+
 fn cmd_layout(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
     let mut input: Option<PathBuf> = None;
     let mut settings: Vec<String> = Vec::new();
+    let mut freeze_first: Option<usize> = None;
     let mut json = false;
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
             "--set" => match p.value("--set") {
                 Ok(v) => settings.push(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--freeze-first" => match p
+                .value("--freeze-first")
+                .and_then(|v| v.parse().map_err(|_| "bad --freeze-first".to_string()))
+            {
+                Ok(v) => freeze_first = Some(v),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -2367,24 +2394,24 @@ fn cmd_layout(args: &[String]) -> i32 {
             return 2;
         }
     }
-    if !settings.is_empty() {
+    // Resolve columns first: `--freeze-first` needs to know what they are.
+    let all_columns = match layout_columns(&input) {
+        Ok(c) => c,
+        Err(e) => return report_failure("layout", e),
+    };
+    if let Some(count) = freeze_first {
+        if let Err(e) = layout.set_frozen_prefix(&all_columns, count) {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    }
+    if !settings.is_empty() || freeze_first.is_some() {
         if let Err(e) = layout.save(&input) {
             return report_failure("layout", format!("cannot save the layout: {e}"));
         }
     }
 
-    // Report the layout for the columns the sheet actually has.
-    let delimiter = csv_splitter_core::types::Delimiter::Comma;
-    let base_columns = match csv_splitter_core::workbook::base_header(&input, delimiter) {
-        Ok(c) => c,
-        Err(e) => return report_failure("layout", format!("cannot read the header: {e}")),
-    };
-    let sidecar = csv_splitter_core::workbook::Journal::sidecar(&input);
-    let journal = csv_splitter_core::workbook::Journal::load(&sidecar).unwrap_or_default();
-    let columns = match csv_splitter_core::workbook::column_layout(journal.ops(), &base_columns) {
-        Ok(layout) => layout.into_iter().map(|(name, _)| name).collect::<Vec<_>>(),
-        Err(e) => return report_failure("layout", e),
-    };
+    let columns = all_columns;
     let resolved = layout.resolve(&columns);
 
     if json {
