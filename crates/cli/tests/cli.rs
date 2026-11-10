@@ -1635,6 +1635,7 @@ fn chart_emits_json_with_categories_and_series() {
             "amount:sum",
             "--series",
             "city",
+            "--json",
         ])
         .output()
         .unwrap();
@@ -1663,6 +1664,7 @@ fn chart_emits_json_with_categories_and_series() {
             "amount:sum",
             "--series",
             "city",
+            "--json",
         ])
         .output()
         .unwrap();
@@ -3196,4 +3198,32 @@ fn pivot_prints_the_matrix_by_default() {
         !dir.join("t.pivot.csv").exists(),
         "no file should be created"
     );
+}
+
+/// A chart in the terminal: bars you can read, and JSON when a machine asks.
+#[test]
+fn chart_draws_in_the_terminal() {
+    let dir = TempDir::new("chartdraw");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "city,amount\nCDMX,10\nPuebla,30\nCDMX,5\n").unwrap();
+    let path = input.to_str().unwrap();
+
+    let out = Command::new(bin())
+        .args(["chart", path, "--x", "city", "--y", "amount:sum"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("Puebla"), "{text}");
+    assert!(text.contains('█'), "bars should be drawn: {text}");
+    assert!(text.contains("2 categories"), "{text}");
+
+    // The machine-readable form is still available.
+    let out = Command::new(bin())
+        .args(["chart", path, "--x", "city", "--y", "amount:sum", "--json"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.starts_with('{'), "{text}");
+    assert!(text.contains("\"points\""), "{text}");
 }

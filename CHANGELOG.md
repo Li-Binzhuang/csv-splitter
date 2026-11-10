@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.83.0] — 2026-11-10
+
+### Added
+
+- **`chart` draws in the terminal**: one line per category, bars scaled to the widest
+  value, the number beside each bar. `--json` still returns the JSON the API produces
+  and `-o` still writes a file, so nothing that worked before changed shape.
+  - Numbers are short by design (15, 4.2k, 1.3M): a chart is read at a glance, and a
+    full float next to a 40-character bar is noise.
+  - A category with no value says `(no data)` instead of drawing a zero-length bar,
+    because "no rows" and "zero" are different answers.
+
 ## [0.82.0] — 2026-11-10
 
 ### Changed

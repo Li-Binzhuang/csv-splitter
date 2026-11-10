@@ -3198,10 +3198,12 @@ fn cmd_chart(args: &[String]) -> i32 {
     let mut sort_by_value = false;
     let mut descending = false;
     let mut max_points = csv_splitter_core::chart::DEFAULT_MAX_POINTS;
+    let mut want_json = false;
     let mut delim = "auto".to_string();
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
+            "--json" => want_json = true,
             "--quotes" => match p.value("--quotes") {
                 Ok(v) => quotes_text = v,
                 Err(e) => {
@@ -3363,7 +3365,11 @@ fn cmd_chart(args: &[String]) -> i32 {
             Err(e) => report_failure("chart", format!("cannot write {}: {e}", path.display())),
         },
         None => {
-            println!("{json}");
+            if want_json {
+                println!("{json}");
+            } else {
+                print_chart(&data);
+            }
             0
         }
     }
@@ -4361,6 +4367,72 @@ fn journal_push(
             report_failure("edit", format!("cannot save the journal: {e}"));
             Err(1)
         }
+    }
+}
+
+/// Draw a chart in the terminal: one line per category, bars scaled to the widest.
+///
+/// This is the "look at it" counterpart of the JSON the API returns — enough to answer
+/// "which category is biggest", without a front-end or a file.
+fn print_chart(data: &csv_splitter_core::chart::ChartData) {
+    if data.categories.is_empty() {
+        println!("(no data to chart)");
+        return;
+    }
+    let widest: usize = data
+        .categories
+        .iter()
+        .map(|c| display_width(c))
+        .max()
+        .unwrap_or(0)
+        .min(28);
+    let label = |category: &str| {
+        let mut text: String = category.chars().take(28).collect();
+        let pad = widest.saturating_sub(display_width(&text));
+        text.push_str(&" ".repeat(pad));
+        text
+    };
+    for series in &data.series {
+        if data.series.len() > 1 {
+            println!("{}\n", series.name);
+        }
+        let peak = series
+            .points
+            .iter()
+            .flatten()
+            .fold(0.0f64, |acc, v| acc.max(v.abs()));
+        let scale = if peak > 0.0 { 40.0 / peak } else { 0.0 };
+        for (index, category) in data.categories.iter().enumerate() {
+            let value = series.points.get(index).copied().flatten();
+            let bar = match value {
+                None => "(no data)".to_string(),
+                Some(v) => {
+                    let width = ((v.abs() * scale).round() as usize).min(40);
+                    let glyphs = if v < 0.0 { "-" } else { "\u{2588}" };
+                    format!("{} {}", glyphs.repeat(width.max(1)), format_number_short(v))
+                }
+            };
+            println!("{} {}", label(category), bar);
+        }
+    }
+    println!(
+        "\n({} categories × {} series, {} rows)",
+        data.categories.len(),
+        data.series.len(),
+        data.rows
+    );
+}
+
+/// Numbers in a chart are read at a glance: two decimals at most, thousands grouped.
+fn format_number_short(value: f64) -> String {
+    if value.abs() >= 1_000_000.0 {
+        format!("{:.1}M", value / 1_000_000.0)
+    } else if value.abs() >= 10_000.0 {
+        format!("{:.1}k", value / 1_000.0)
+    } else if value.fract() == 0.0 {
+        format!("{}", value as i64)
+    } else {
+        format!("{value:.2}")
     }
 }
 
