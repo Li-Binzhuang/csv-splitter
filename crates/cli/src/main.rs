@@ -3721,13 +3721,14 @@ fn parse_quotes(text: &str) -> Result<csv_splitter_core::csv_reader::QuoteStyle,
 /// Reading such a file as RFC does not fail — it silently merges or splits fields —
 /// so the only defence is telling the user before they act on the numbers.
 fn warn_quote_style(input: &std::path::Path) {
-    let Ok(mut file) = csv_splitter_core::encoding::open_decoded(input) else {
+    let Ok(file) = csv_splitter_core::encoding::open_decoded(input) else {
         return;
     };
     use std::io::Read;
+    // Read a window, never the whole file: this runs before every preview and
+    // analyze, and a 10 GB file would otherwise be paged in for one warning.
     let mut head = Vec::with_capacity(64 * 1024);
-    if file.read_to_end(&mut head).is_ok() {
-        let head = head[..head.len().min(64 * 1024)].to_vec();
+    if file.take(64 * 1024).read_to_end(&mut head).is_ok() {
         if let Some(style) = csv_splitter_core::csv_reader::detect_quote_style(&head) {
             eprintln!(
                 "note: this file looks like it escapes quotes with a backslash ({}); if fields look wrong, re-run with `--quotes backslash`",

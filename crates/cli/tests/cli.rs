@@ -2407,3 +2407,45 @@ fn usage_errors_are_never_silent() {
         "these commands fail without saying why: {silent:?}"
     );
 }
+
+/// `preview` must not read the whole file to show a window.
+///
+/// This is the regression that made "memory does not grow with file size" false:
+/// the quote-style detector used read_to_end and pulled the entire file into RAM.
+/// The check is relative — a 10× bigger file must not take 10× longer — because
+/// wall-clock alone is noise when the test suite runs in parallel.
+#[test]
+fn a_window_read_does_not_scale_with_the_file() {
+    let dir = TempDir::new("windowread");
+    // 6 MB and 60 MB of identical rows.
+    let make = |name: &str, target: usize| {
+        let path = dir.join(name);
+        let mut text = String::from("id,city,amount\n");
+        while text.len() < target {
+            text.push_str("1,CDMX,10\n");
+        }
+        std::fs::write(&path, text).unwrap();
+        path
+    };
+    let small = make("small.csv", 6 * 1024 * 1024);
+    let big = make("big.csv", 60 * 1024 * 1024);
+
+    let time = |path: &std::path::Path| {
+        let start = std::time::Instant::now();
+        let out = Command::new(bin())
+            .args(["preview", path.to_str().unwrap(), "--rows", "5"])
+            .output()
+            .unwrap();
+        assert_eq!(out.status.code(), Some(0));
+        start.elapsed().as_millis()
+    };
+
+    // Warm the binary and the page cache so the comparison is fair.
+    time(&small);
+    let small_ms = time(&small);
+    let big_ms = time(&big);
+    assert!(
+        big_ms < small_ms * 4 + 200,
+        "a 10x bigger file took {big_ms} ms against {small_ms} ms, which suggests a full read"
+    );
+}

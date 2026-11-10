@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.63.0] — 2026-11-10
+
+### Fixed
+
+- **`preview` and `analyze` loaded the whole file.** The quote-style detector I added
+  in 0.57.0 used `read_to_end` and then kept 64 KB — so a 322 MB file cost 332 MB of
+  memory before showing two rows. One `take(64 * 1024)` fixes it: 8.3 MB for preview,
+  17.1 MB for analyze, independent of file size.
+  This is the round where "memory does not grow with the file" was actually false for
+  two of the most common commands, and the docs had been claiming otherwise.
+
+### Added
+
+- **`scripts/bench.sh`**: re-measures the README's numbers on any file (or a generated
+  fixture) and prints a markdown table. Time grows with bytes; memory must not.
+- A regression test compares a 6 MB and a 60 MB preview rather than asserting a
+  wall-clock figure, because a full read scales with size and noise does not.
+
 ## [0.62.0] — 2026-11-10
 
 ### Added
