@@ -775,3 +775,101 @@ fn troubleshooting_quotes_are_real() {
     let _ = std::fs::remove_dir_all(&dir);
     assert!(problems.is_empty(), "{problems:#?}");
 }
+
+/// The handover document must not promise a command that does not exist.
+///
+/// It is the first file a new maintainer reads, so a stale command name there costs
+/// more than the same mistake in a comment.
+#[test]
+fn the_handover_names_only_real_commands() {
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let doc = std::fs::read_to_string(manifest.join("../../docs/HANDOVER.md")).unwrap();
+    let help = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+        .arg("--help")
+        .output()
+        .unwrap();
+    let help = String::from_utf8_lossy(&help.stdout).to_string();
+    let commands: Vec<&str> = help
+        .lines()
+        .skip_while(|l| !l.starts_with("COMMANDS"))
+        .skip(1)
+        .take_while(|l| !l.trim().is_empty())
+        .map(|l| l.split_whitespace().next().unwrap_or(""))
+        .filter(|c| !c.is_empty())
+        .collect();
+    assert!(commands.len() >= 25, "{commands:?}");
+
+    // Every backticked word in the doc that looks like a command must be one.
+    let mut problems = Vec::new();
+    for word in doc.split('`').skip(1).step_by(2) {
+        let first = word.split_whitespace().next().unwrap_or("");
+        if first.contains(' ') || first.starts_with('-') || first.is_empty() {
+            continue;
+        }
+        let candidate = first.trim_end_matches(|c: char| !c.is_ascii_alphanumeric());
+        // Only judge words that are in the command vocabulary.
+        if commands.contains(&candidate) {
+            continue;
+        }
+        if matches!(
+            candidate,
+            "edit" | "get" | "post" | "csv-splitter" | "docs" | "scripts" | "crates"
+        ) {
+            continue;
+        }
+        if candidate.len() > 3
+            && candidate
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+            && !doc.contains(&format!("--{candidate}"))
+            && candidate.parse::<f64>().is_err()
+        {
+            // Words like `commands`, `journal`, `rows` are prose; only flag names that
+            // appear nowhere else in the help text.
+            if !help.contains(candidate)
+                && !doc.contains(&format!("/{candidate}"))
+                && looks_like_command(candidate)
+            {
+                problems.push(candidate.to_string());
+            }
+        }
+    }
+    assert!(
+        problems.is_empty(),
+        "handover names unknown commands: {problems:?}"
+    );
+}
+
+fn looks_like_command(word: &str) -> bool {
+    matches!(
+        word,
+        "split"
+            | "merge"
+            | "preview"
+            | "view"
+            | "index"
+            | "serve"
+            | "convert"
+            | "filter"
+            | "sort"
+            | "analyze"
+            | "dedupe"
+            | "columns"
+            | "partition"
+            | "concat"
+            | "groupby"
+            | "pivot"
+            | "format"
+            | "chart"
+            | "layout"
+            | "lookup"
+            | "book"
+            | "demo"
+            | "search"
+            | "files"
+            | "sql"
+            | "stats"
+            | "extract"
+            | "verify"
+    )
+}

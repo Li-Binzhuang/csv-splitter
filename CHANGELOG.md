@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.0.1] — 2026-11-10
+
+### Docs
+
+- **`docs/HANDOVER.md`**: the state of the project after eighty rounds — what it is
+  in one sentence, coverage against Excel/WPS operation by operation, where the evidence
+  for each of the three promises lives, the measured performance table, six known limits
+  stated rather than implied, how to continue (which doc to read before touching which
+  part), and the six lessons the rounds actually taught.
+- A test checks that every command the handover names exists in `--help`, because it is
+  the first file a new maintainer reads and a stale command name there is more
+  expensive than the same mistake in a comment.
+
 ## [2.0.0] — 2026-11-10
 
 79 rounds of work, and the reason this is a major version rather than 1.15.1: three
