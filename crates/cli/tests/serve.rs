@@ -1381,3 +1381,34 @@ fn the_export_job_honours_a_where_clause() {
     let text = std::fs::read_to_string(dir.join("sel.csv")).unwrap();
     assert_eq!(text.lines().count(), 3, "header + two rows: {text}");
 }
+
+/// `/sheet` says whether the index exists, and `POST /index` builds it up front.
+#[test]
+fn sheet_reports_the_index_and_it_can_be_prebuilt() {
+    let dir = TempDir::new("indexapi");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,CDMX\n2,Puebla\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(&server.addr, "/sheet?path=t.csv");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("\"indexed\":false"), "{body}");
+
+    let (status, body) = post(&server.addr, "/index?path=t.csv");
+    assert_eq!(status, 202, "{body}");
+    let job = body.split('"').nth(3).unwrap_or_default().to_string();
+    for _ in 0..100 {
+        let (_, state) = get(&server.addr, &format!("/job?id={job}"));
+        if state.contains("done") || state.contains("failed") {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
+
+    let (status, body) = get(&server.addr, "/sheet?path=t.csv");
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.contains("\"indexed\":true"),
+        "the index should be reported: {body}"
+    );
+    assert!(body.contains("\"indexBytes\":"), "{body}");
+}

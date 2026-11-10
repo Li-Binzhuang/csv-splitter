@@ -164,6 +164,7 @@ fn handle(
             "/split" => start_split(&mut stream, root, jobs, &params),
             "/merge" => start_merge(&mut stream, root, jobs, &params),
             "/warm" => start_warm(&mut stream, root, jobs, cache, &params),
+            "/index" => start_index(&mut stream, root, jobs, &params),
             "/sort" => start_sort(&mut stream, root, jobs, &params),
             "/dedupe" => start_dedupe(&mut stream, root, jobs, &params),
             "/partition" => start_partition(&mut stream, root, jobs, &params),
@@ -1591,6 +1592,58 @@ fn start_sort(
     respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
 }
 
+/// `POST /index?path=REL` — build the sparse row index as a job.
+///
+/// Paging a file without an index pays for a full scan inside the first request. A
+/// client that knows it will page a big file can call this first, watch the job, and
+/// then request pages without eating the scan under a timeout.
+fn start_index(
+    stream: &mut TcpStream,
+    root: &Path,
+    jobs: &JobRegistry,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return bad_path(stream),
+    };
+    let interval = params
+        .get("interval")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(csv_splitter_core::index::DEFAULT_INTERVAL)
+        .max(1);
+    let id = jobs.submit("index", move |tx| {
+        let sidecar = csv_splitter_core::index::SparseIndex::sidecar_path(&path);
+        let result = if sidecar.exists() {
+            Ok((0, 0))
+        } else {
+            match csv_splitter_core::index::SparseIndex::build(&path, interval) {
+                Ok(index) => match index.save(&sidecar) {
+                    Ok(()) => {
+                        let bytes = std::fs::metadata(&sidecar).map(|m| m.len()).unwrap_or(0);
+                        Ok((index.data_rows(), bytes))
+                    }
+                    Err(e) => Err(e),
+                },
+                Err(e) => Err(e),
+            }
+        };
+        match result {
+            Ok((rows, bytes)) => {
+                tx.send(ProgressEvent::Info(format!(
+                    "index ready: {rows} rows, {bytes} bytes"
+                )))
+                .ok();
+                tx.send(ProgressEvent::Finished { output: sidecar }).ok();
+            }
+            Err(e) => {
+                tx.send(ProgressEvent::Error(e.to_string())).ok();
+            }
+        }
+    });
+    respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
+}
+
 fn start_warm(
     stream: &mut TcpStream,
     root: &Path,
@@ -1954,11 +2007,22 @@ fn sheet_meta(
         .take(frozen_count)
         .map(|c| json_str(c))
         .collect();
+    // Whether random access is already paid for. A client that pages a big file can
+    // look here first and pre-warm instead of eating the scan inside a request.
+    let index_sidecar = csv_splitter_core::index::SparseIndex::sidecar_path(&path);
+    let indexed = index_sidecar.exists();
+    let index_bytes = if indexed {
+        std::fs::metadata(&index_sidecar)
+            .map(|m| m.len())
+            .unwrap_or(0)
+    } else {
+        0
+    };
     respond_json(
         stream,
         200,
         &format!(
-            r#"{{"path":{},"columns":[{}],"frozenColumns":[{}],"rows":{},"edited":{},"operations":{},"capabilities":[{}],"layout":{},"journal":{},"ops":[{}]}}"#,
+            r#"{{"path":{},"columns":[{}],"frozenColumns":[{}],"rows":{},"edited":{},"operations":{},"capabilities":[{}],"layout":{},"journal":{},"indexed":{},"indexBytes":{},"ops":[{}]}}"#,
             json_str(&params.get("path").cloned().unwrap_or_default()),
             cols.join(","),
             frozen_names.join(","),
@@ -1968,6 +2032,8 @@ fn sheet_meta(
             caps.join(","),
             layout_json,
             json_str(&sheet.journal_path().to_string_lossy()),
+            indexed,
+            index_bytes,
             ops.join(",")
         ),
     )

@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.85.0] — 2026-11-10
+
+### Added
+
+- **`GET /sheet` reports `indexed` and `indexBytes`**, and **`POST /index`** builds the
+  sparse index as a job. Paging a big file without an index pays for a full scan inside
+  the first request — a client that knows it will page can pre-warm and watch the job
+  instead of eating the scan under a timeout.
+  - The CLI already says when it is building one; this is the same information for
+    clients that have no stderr to read.
+
 ## [0.84.0] — 2026-11-10
 
 ### Fixed
