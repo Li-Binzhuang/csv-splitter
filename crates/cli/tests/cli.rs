@@ -3417,3 +3417,136 @@ fn editing_a_split_piece_keeps_the_other_pieces() {
     assert_eq!(lines[1], "1,Z,Perez,St 1", "{text}");
     assert_eq!(lines[2], "2,Beto,Calle 2,", "{text}");
 }
+
+/// A derived value must be computed from the *current* row, edits included.
+///
+/// This family produced three bugs in a row (split pieces, renames, split edits), so the
+/// semantics are pinned here rather than rediscovered: whatever reads a cell — a
+/// formula, `lag`, `running_total` — sees the edited value, not the base file's.
+#[test]
+fn derived_values_see_edited_values() {
+    let dir = TempDir::new("derived");
+    let run = |args: &[&str]| {
+        assert_eq!(
+            Command::new(bin()).args(args).status().unwrap().code(),
+            Some(0),
+            "{args:?}"
+        );
+    };
+    let export = |path: &std::path::Path, name: &str| {
+        let out = path.with_file_name(name);
+        run(&[
+            "edit",
+            "export",
+            path.to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+        ]);
+        std::fs::read_to_string(&out).unwrap()
+    };
+
+    // A formula reads an edited cell.
+    let plain = dir.join("plain.csv");
+    std::fs::write(&plain, "id,qty\n1,10\n2,20\n").unwrap();
+    run(&[
+        "edit",
+        "set",
+        plain.to_str().unwrap(),
+        "--row",
+        "2",
+        "--col",
+        "qty",
+        "--value",
+        "99",
+    ]);
+    run(&[
+        "edit",
+        "formula",
+        plain.to_str().unwrap(),
+        "--name",
+        "total",
+        "--value",
+        "qty*2",
+    ]);
+    let text = export(&plain, "plain_out.csv");
+    assert!(text.contains("2,99,198"), "{text}");
+
+    // `lag` and `running_total` read the edited row, not the one on disk.
+    let hist = dir.join("hist.csv");
+    std::fs::write(&hist, "id,qty\n1,10\n2,20\n3,30\n").unwrap();
+    run(&[
+        "edit",
+        "set",
+        hist.to_str().unwrap(),
+        "--row",
+        "1",
+        "--col",
+        "qty",
+        "--value",
+        "100",
+    ]);
+    run(&[
+        "edit",
+        "formula",
+        hist.to_str().unwrap(),
+        "--name",
+        "prev",
+        "--value",
+        "lag(qty)",
+    ]);
+    run(&[
+        "edit",
+        "formula",
+        hist.to_str().unwrap(),
+        "--name",
+        "cum",
+        "--value",
+        "running_total(qty)",
+    ]);
+    let text = export(&hist, "hist_out.csv");
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines[0], "id,qty,prev,cum");
+    assert_eq!(lines[1], "1,100,#VALUE!,100", "{text}");
+    // The previous row's edited value, and a running total that includes it.
+    assert_eq!(lines[2], "2,20,100,120", "{text}");
+    assert_eq!(lines[3], "3,30,20,150", "{text}");
+
+    // A formula reading a split piece sees the piece, edits included.
+    let split = dir.join("split.csv");
+    std::fs::write(&split, "id,full\n1,\"Ana,Perez\"\n").unwrap();
+    run(&[
+        "edit",
+        "split-column",
+        split.to_str().unwrap(),
+        "--col",
+        "full",
+        "--by",
+        ",",
+        "--into",
+        "first,last",
+    ]);
+    run(&[
+        "edit",
+        "formula",
+        split.to_str().unwrap(),
+        "--name",
+        "who",
+        "--value",
+        r#"first & " " & last"#,
+    ]);
+    let text = export(&split, "split_out.csv");
+    assert!(text.contains("1,Ana,Perez,Ana Perez"), "{text}");
+    run(&[
+        "edit",
+        "set",
+        split.to_str().unwrap(),
+        "--row",
+        "1",
+        "--col",
+        "first",
+        "--value",
+        "Zoe",
+    ]);
+    let text = export(&split, "split_out2.csv");
+    assert!(text.contains("1,Zoe,Perez,Zoe Perez"), "{text}");
+}

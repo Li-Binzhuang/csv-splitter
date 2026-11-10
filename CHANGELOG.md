@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.91.0] — 2026-11-10
+
+### Verified
+
+- **Derived values read the current row, edits included.** Probed the last unchecked
+  member of the family that produced three bugs in a row: a formula reading an edited
+  cell, `lag` reading an edited previous row, `running_total` folding edits in, and a
+  formula reading a split piece. All four were already right — so this round pinned
+  them in a test and wrote the rule down (`docs/CAPABILITIES.md` → "派生值的语义")
+  instead of leaving it to be rediscovered.
+- No code changed for this; the value is that the next change to the projection path
+  has something to break.
+
 ## [0.90.0] — 2026-11-10
 
 ### Fixed
