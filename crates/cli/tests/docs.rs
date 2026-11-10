@@ -446,3 +446,53 @@ fn command_bodies(source: &str) -> Vec<(&str, usize, &str)> {
     }
     out
 }
+
+/// `docs/API.md` and `serve.rs` must describe the same set of endpoints.
+///
+/// The route table is the authority: the doc is derived from it by a test rather than
+/// by memory. `docs/API.md` was silently overwritten with changelog text once, and
+/// nothing noticed for several rounds — a test like this is cheaper than that.
+#[test]
+fn the_api_reference_lists_every_route() {
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let server = std::fs::read_to_string(manifest.join("src/serve.rs")).unwrap();
+    let api = std::fs::read_to_string(manifest.join("../../docs/API.md")).unwrap();
+
+    assert!(
+        api.starts_with("# HTTP API"),
+        "docs/API.md should start with its own title, not: {:?}",
+        api.lines().next().unwrap_or("")
+    );
+
+    // Routes are matched arms of the form `"/name" =>` or `"/a" | "/b" =>`.
+    let mut routes: Vec<String> = Vec::new();
+    for line in server.lines() {
+        let trimmed = line.trim();
+        if !(trimmed.contains("\" =>") || trimmed.contains("\" |")) {
+            continue;
+        }
+        for piece in trimmed.split("=>").next().unwrap_or("").split('|') {
+            let name = piece.trim().trim_matches('"');
+            if name.starts_with('/') && !name.contains(' ') {
+                routes.push(name.to_string());
+            }
+        }
+    }
+    routes.sort();
+    routes.dedup();
+
+    let mut missing = Vec::new();
+    for route in &routes {
+        // `/` and `/index.html` serve the built-in page; the doc mentions it once.
+        if route == "/index.html" {
+            continue;
+        }
+        if !api.contains(route.as_str()) {
+            missing.push(route.clone());
+        }
+    }
+    assert!(
+        missing.is_empty(),
+        "routes absent from docs/API.md: {missing:?}"
+    );
+}

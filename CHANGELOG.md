@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.0.0] — 2026-11-10
+
+### Added
+
+- **`split-column` in the API** (`POST /edit?action=split-column&col=&by=&into=`).
+  The CLI had it and the endpoint did not; the doc said it did, and the doc test that
+  compares documented parameters against `serve.rs` caught the lie.
+
+### Changed
+
+- Version 1.0.0. The surface has been stable for twenty versions: the file layout
+  (base + journal + view + idx), the error contract, the cost model, and the CLI/API
+  parity all hold, and the last twenty rounds have been spent making the parts agree
+  with each other rather than adding parts.
+
+## [0.99.0] — 2026-11-10
+
+### Fixed
+
+- **`docs/API.md` was the changelog.** It had been overwritten with the changelog body
+  around 0.70 and nothing noticed for twenty-nine versions: anyone who opened the API
+  reference to build a client got release notes. Restored from `c6ecf68`, then brought
+  current — `POST /index`, `redo`, `split-column`, `regex`, the `/rows` count fields,
+  `/sheet`'s `indexed`, and the four path messages.
+  - A test now derives the route list from `serve.rs` and fails if a route is missing
+    from the doc, so the two cannot drift again silently.
+  - The file also has to start with `# HTTP API`, which is the check that would have
+    caught the overwrite the same day it happened.
+
 ## [0.98.0] — 2026-11-10
 
 ### Fixed

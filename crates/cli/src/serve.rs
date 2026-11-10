@@ -918,6 +918,34 @@ fn edit_apply(
                 source,
             }
         }
+        "split-column" | "splitcolumn" => {
+            let (Some(column), Some(by), Some(into)) = (
+                params.get("col").cloned(),
+                params.get("by").cloned(),
+                params.get("into").cloned(),
+            ) else {
+                return bad_request(
+                    stream,
+                    "split-column needs col, by and into",
+                    "col",
+                    "col=<column>&by=<separator>&into=<name,name,...>",
+                );
+            };
+            let into: Vec<String> = into
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect();
+            if into.len() < 2 {
+                return bad_request(
+                    stream,
+                    "into needs at least two names",
+                    "into",
+                    "into=first,last (one name per new column)",
+                );
+            }
+            Op::SplitColumn { column, by, into }
+        }
         "drop" => {
             let Some(name) = params.get("name") else {
                 return bad_request(stream, "drop needs name", "name", "name=<column>");

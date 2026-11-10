@@ -1,1202 +1,136 @@
-# Changelog
+# HTTP API
 
-## [0.70.0] — 2026-11-10
+`csv-splitter serve --root DIR [--addr 127.0.0.1:8787]`
 
-### Added
+服务绑定回环地址，只读 `--root` 下的文件（路径经过 `canonicalize`，越界直接拒绝），
+开启 CORS。除 `POST` 之外全是 `GET`；`GET /` 返回内置浏览页面。
 
-- **Window reads answer `lag()`** by pre-reading the rows before the window: `k` rows
-  where `k` is the largest look-back, not `S` rows where `S` is the window start. A
-  paged view now shows the same previous-row values an export does, instead of
-  `#VALUE!` — the two paths disagreed, which is a bug waiting for someone to trust
-  the wrong one.
-- `running_total` still reports `#VALUE!` in windows: it needs every row before the
-  start, and doing a full pass per page is the wrong trade. The alternative — silently
-  totalling only the window's first row onward — would look plausible and be wrong.
+## 约定 / Conventions
 
-## [0.69.0] — 2026-11-10
-
-### Changed
-
-- **Export and window reads share one row assembler** (`RowPipeline`). They had a
-  copy each, and adding `lag` in 0.67.0 meant writing it twice — which is how the
-  window copy ended up reporting `#VALUE!` for history it could have had. The
-  pipeline owns the row state, so history advances exactly once per row during
-  export and is absent in windows.
-
-## [0.68.0] — 2026-11-10
-
-### Changed
-
-- **`workbook.rs` (2500 lines) split into four modules**: `mod.rs` (Op, Sheet,
-  column layout), `rows.rs` (row identity, the logical→physical map, cell edits,
-  formula compilation), `journal.rs` (the journal and its text format), and
-  `export.rs` (export and windowed reads). The boundaries follow change rate rather
-  than line count: the journal format is nearly frozen, export touches every row.
-
-## [0.67.0] — 2026-11-10
-
-### Added
-
-- **`lag(col[, k])` and `running_total(col)`**: formulas that see earlier rows.
-  A ring buffer per referenced column, sized by the largest lag, plus one accumulator
-  per running total: 3 M rows / 30 MB exported in 17 MB peak RSS. The first row says
-  `#VALUE!` rather than 0 — a zero delta on row one looks like data.
-
-## [0.66.0] — 2026-11-10
-
-### Added
-
-- **A1 references in formulas**: `B2 * C2` means what a filled-down spreadsheet
-  formula means — column B and C of *this* row, relative to the first data row.
-  A reference needing another row (`B3`) reports `#VALUE!` instead of reading the
-  current row. `[A1]` still means "the column literally named A1".
-
-## [0.65.0] — 2026-11-10
-
-### Added
-
-- **`edit replace --regex`**, reusing the pattern subset conditional formatting
-  already had, so "what can a pattern contain" has one answer. A bad pattern is
-  refused before it becomes a journal step that does nothing.
-
-### Fixed
-
-- **`sort` is now stable across chunks.** Chunk sorting was stable, but the k-way
-  merge broke ties by heap order, so equal keys could come out in an arbitrary
-  sequence once a file was split — an almost-stable sort, which is worse than an
-  unstable one because you only notice when it reorders something.
-
-## [0.64.0] — 2026-11-10
-
-### Added
-
-- **Redo** (`edit redo`, `POST /edit?action=redo`): undone operations wait in
-  `<file>.journal.redo`, so a reader never has to know someone pressed undo. A new
-  edit discards that branch, the way a spreadsheet does.
-- **Rows are 1-based for the user** (`--row 1` is the first data row), matching A1
-  references and every spreadsheet; `--row 0` is refused with an explanation. The
-  journal still stores 0-based physical indices, so existing journals stay valid.
-
-## [0.63.0] — 2026-11-10
-
-### Fixed
-
-- **`preview` and `analyze` loaded the whole file.** The quote-style detector I added
-  in 0.57.0 used `read_to_end` and then kept 64 KB — so a 322 MB file cost 332 MB of
-  memory before showing two rows. One `take(64 * 1024)` fixes it: 8.3 MB for preview,
-  17.1 MB for analyze, independent of file size.
-  This is the round where "memory does not grow with the file" was actually false for
-  two of the most common commands, and the docs had been claiming otherwise.
-
-### Added
-
-- **`scripts/bench.sh`**: re-measures the README's numbers on any file (or a generated
-  fixture) and prints a markdown table. Time grows with bytes; memory must not.
-- A regression test compares a 6 MB and a 60 MB preview rather than asserting a
-  wall-clock figure, because a full read scales with size and noise does not.
-
-## [0.62.0] — 2026-11-10
-
-### Added
-
-- **Every read endpoint's error shape is verified**: a test walks 17 endpoints with
-  missing or malformed parameters and requires `error` plus `parameter`/`hint` — no
-  prose, no silent 200.
-- **Numeric parameters are validated instead of ignored**: `/rows?start=abc` and
-  `/book?max=nope` now return 400 naming the parameter. Silently falling back to the
-  default means a caller pages with the wrong window and blames the data.
-- `scripts/smoke.sh` probes the API for the same thing, so the check runs against a
-  live server too.
-
-## [0.61.0] — 2026-11-10
-
-### Added
-
-- **`scripts/smoke.sh`**: 26 steps covering one user's session — demo → view →
-  filter → sort → groupby → pivot → chart → format → layout → edit → export →
-  lookup → split/verify/merge/partition → server. Plus combination paths: GBK with a
-  semicolon delimiter, a multi-line quoted field round-tripped byte for byte, and the
-  edited-file warning.
-
-### Fixed
-
-- **Six commands failed without printing anything.** `pivot`, `groupby`, `chart`,
-  `convert`, `lookup` and `columns` return their error instead of sending it through
-  the progress channel, so the reporter stayed silent and the match arm discarded it:
-  a misspelled column produced exit code 1 and a blank screen. All now print
-  `✗ <command>: <reason>` with a hint, and two tests keep it that way —
-  `every_failure_prints_a_reason` and `usage_errors_are_never_silent` (which walks
-  every sub-command with no arguments).
-
-### Changed
-
-- `--help` opens with **"what do you want to do?"** — a task index mapping goals to
-  commands, because 22 sub-commands listed by name is a reference, not an
-  introduction. A test checks the index only names commands that exist.
-
-## [0.60.0] — 2026-11-10
-
-### Added
-
-- **`--quotes` reaches every command that reads CSV**: `chart`, `dedupe`, `stats`,
-  `analyze` joined `preview`, `filter`, `groupby`, `pivot`, `lookup` and `edit export`.
-  Each module gained a `*_quotes` entry point and kept its previous function as the
-  RFC-default wrapper, so no existing caller changed.
-- The record reader is shared, so the fix applies to record boundaries as well as
-  fields: a backslash file with `\"` no longer merges the next line into the previous
-  record.
-
-`docs/CAPABILITIES.md` loses its "quote style only covers two commands" line — the
-first gap on that list that has actually been closed rather than reworded.
-
-## [0.59.0] — 2026-11-10
-
-### Added
-
-- **Quote style reaches the record boundary, not just the field split**
-  (`RecordReader::new_with`). This was the real bug behind the `export --quotes`
-  attempt: in a backslash-escaped file a `\"` does not close a quoted section, so an
-  RFC reader runs past the record and swallows the next line into it. Field-level
-  parsing cannot fix a record that was never separated correctly.
-- `--quotes` now applies to `preview`, `filter`, `groupby`, `pivot`, `lookup` and
-  `edit export` — the commands that either decide matches or write new files.
-- Tests pin the record count under both styles (3 vs 2 for the same bytes), because
-  "the row count is wrong" is a much quieter failure than "the field looks odd".
-
-## [0.58.0] — 2026-11-10
-
-### Added
-
-- **`--quotes` reaches `filter`**, not just `preview`. Reading a backslash-escaped
-  file as RFC changes what a filter *matches*, not merely how output looks: the note
-  field ends at the escaped quote, so `note~c` misses a row that contains `c`. A test
-  pins both outcomes.
-- `filter::extract_style` is the style-aware entry point; `extract` keeps the RFC
-  default so every existing caller is unchanged.
-
-## [0.57.0] — 2026-11-10
-
-### Added
-
-- **Quote-style detection and override** (`crates/core/src/csv_reader.rs`):
-  RFC 4180 (default), `backslash` (`\"` / `\\` escapes), `none` (no quoting).
-  - A file that escapes with backslashes is detected from its first 64 KB and the
-    CLI says so: *"this file looks like it escapes quotes with a backslash — if
-    fields look wrong, re-run with `--quotes backslash`"*.
-  - `preview --quotes backslash|rfc4180|none` reads it correctly.
-  - Why detection matters at all: reading a backslash file as RFC does not fail. It
-    merges or splits fields silently — `Ana | has a \quote\ inside` instead of
-    `has a "quote" inside`, and `["a", "b\\c,d"]` instead of three fields. A test
-    pins that exact wrong output so the failure mode stays documented.
-
-## [0.56.0] — 2026-11-10
-
-### Added
-
-- **`analyze --sample N`**: profile the first N rows instead of the whole file.
-  Measured on 1 M rows: 1.7 s → 0.35 s.
-  - It is a **prefix** sample, not a random one — a random sample needs the whole
-    file (or an index) to pick from, which defeats the purpose. So the command says
-    so on screen: "sampled the first N rows (a prefix, not a random sample) — counts
-    are estimates". A user who reads the sampled row count as the file's row count
-    will draw wrong conclusions, and the tool must not help them.
-
-## [0.55.0] — 2026-11-10
-
-### Added
-
-- **`filter --order`**: filter and sort in one command —
-  `filter big.csv --where "amount>100" --order "city,amount:desc" -o out.csv`.
-  Filtering stays streaming; the matched rows are staged to a temp file and sorted
-  into place, so only matches touch disk twice.
-- Multi-key sorting (`--by city,amount:desc`) was already implemented in `sort` but
-  undocumented; the help and README now say so, and a test covers both paths.
-
-## [0.54.0] — 2026-11-10
-
-### Docs
-
-- **`docs/API.md`**: the HTTP surface written for someone building a front-end —
-  conventions first (error shape, window shape, job shape), then every endpoint with
-  its parameters, then copy-pasteable examples for the ten things people actually do.
-  Answering "what does /style expect?" used to mean reading `serve.rs`.
-- Two tests keep it honest: every endpoint in the doc must exist in the router, and
-  every parameter named in the doc must be read by the server somewhere. Documentation
-  drift was the first bug this project ever had and it will not be the last.
-
-## [0.53.0] — 2026-11-10
-
-### Added
-
-- **`row()` in formulas**: the 1-based row number, so per-row values no longer need
-  per-row storage. `order & "-" & row()` builds a sequence column;
-  `if(row() % 2 = 1, "odd", "even")` alternates; both cost one evaluation per row.
-  - Evaluation now carries a small context (cells, references, row number) instead
-    of two loose parameters, which is what made adding row awareness mechanical
-    rather than a rewrite.
-- **`POST /edit?action=copy&from=A1:B2&to=B3`**: the block-copy CLI capability, now
-  reachable from the API, sharing the same range parser
-  (`workbook::parse_a1_range`) so the two cannot disagree about what `A1:B2` means.
-
-## [0.52.0] — 2026-11-10
-
-### Added
-
-- **Block copy/paste with A1 ranges**: `edit copy --from "A2:C5" --to "B10"`.
-  - The pasted block stores **values**, not a reference to the source: storing a
-    reference would let a later edit of the source silently rewrite what had already
-    been pasted.
-  - Ranges are parsed the way people write them (`B3`, `A2:C5`, `AA10`), with the
-    bounds checked against the sheet rather than producing an empty paste.
-  - Bounded at 100 000 cells — beyond that the right tool is `edit set --where`
-    (one rule) or an export, not a hundred-thousand-value journal entry.
-  - Paste is anchored to **row identities**, so inserting rows above moves the
-    pasted block along with the rows it landed on.
-
-## [0.51.0] — 2026-11-10
-
-### Added
-
-- **Insert a column where it belongs** (`edit insert-column --after city --name note`):
-  a constant (`--value`) or a computed one (`--formula`). Appending to the far right
-  was the only option before, which is not what "add a note column next to city"
-  means.
-  - `ColumnPlan` now describes every derived column once per export/window — formulas
-    parsed once, literals cloned once — instead of a `formula_index` that could only
-    express formulas.
-  - Available through `POST /edit?action=insert-column`, with `--value` and
-    `--formula` mutually exclusive rather than silently preferring one.
-
-## [0.50.0] — 2026-11-10
-
-### Added
-
-- **Bulk edit by filter**: `edit set --where "city=CDMX" --col amount --value 0`
-  changes every matching row, and the API accepts `action=set&where=…`.
-  - Recorded as **one rule**, not one operation per row: a million-row bulk edit is
-    a 28-byte journal entry. The rule is evaluated while the sheet is read, so it
-    sees values created by earlier edits and formulas can read its result.
-  - `--row` and `--where` together are a usage error rather than a guess.
-
-## [0.49.0] — 2026-11-10
-
-### Added
-
-- **Frozen columns are a real behaviour now, not just metadata.** Freezing is a
-  *prefix* — pinning the first two columns means something, pinning only the third
-  means the first two scroll away — so `Layout::frozen_prefix` reports how many
-  leading columns are pinned, and `/rows` plus `/sheet` return `frozenColumns`.
-  A client splits its table into a pinned pane and a scrolling pane; the row data
-  is not duplicated because the values are already there.
-- `layout --freeze-first N` sets the prefix in one command instead of one `--set`
-  per column.
-
-## [0.48.0] — 2026-11-10
-
-### Added
-
-- **Cross-sheet references in formulas** (`crates/core/src/formula/sheetref.rs`):
-  `ref("customers.csv", "cust_no", "name")` looks up this row's `cust_no` in another
-  sheet and returns its `name` — a VLOOKUP inside a formula column.
-  - The referenced sheet is loaded once into a map; the sheet being computed stays
-    streamed, so the asymmetry that makes `lookup` cheap applies here too.
-  - Sheet names resolve **relative to the base file's directory**, so moving a
-    directory does not break a formula.
-  - A missing referenced sheet fails **at export/open time**, not as a million
-    `#N/A` values discovered later; a missing key inside the sheet is `#N/A`, like
-    VLOOKUP.
-  - `Refs` is built from the formula's own literals (`Formula::sheet_references`),
-    which is why dynamic sheet names are refused rather than silently returning
-    nothing.
-
-## [0.47.0] — 2026-11-10
-
-### Added
-
-- **Workbook view** (`crates/core/src/book.rs`): a directory is a workbook —
-  `book <dir>` / `GET /book` lists every CSV with size, header width, row count
-  (when an index exists), pending edits, and whether it carries layout metadata.
-  Row counts come from the sparse index rather than a scan, so listing a folder
-  never turns into reading the folder.
-- **`docs/CAPABILITIES.md`**: one page covering what every capability does, which
-  CLI command and endpoint serve it, and where each one's ceiling is (max groups,
-  max cells, max keys, max points). Scattered README sections were the reason
-  "can this do X?" required reading four files.
-
-## [0.46.0] — 2026-11-10
-
-### Added
-
-- **Cross-table lookup** (`crates/core/src/lookup.rs`): `lookup orders.csv --key
-  cust_no --from customers.csv --get name,city` — the VLOOKUP a spreadsheet user
-  reaches for first.
-  - The reference table is loaded, the main table is streamed: two sequential passes
-    over bytes regardless of how large the main file is.
-  - Misses are `#N/A`, not blanks (a blank cell reads as real data).
-  - Duplicate reference keys keep the first row, like VLOOKUP; a column-name clash
-    gets a `_ref` suffix instead of producing two identical headers.
-  - `--max-keys` (default 5 M) refuses an oversized reference with the parameter to
-    raise; `--from-key` covers a differently named reference key.
-
-## [0.45.0] — 2026-11-10
-
-### Added
-
-- **Formula functions, widened to what a spreadsheet is used for**
-  (`crates/core/src/formula/` now has `mod.rs` + `functions.rs`):
-  - comparisons (`= <> > >= < <=`) and booleans rendered as `TRUE`/`FALSE`;
-  - logic: `if`, `and`, `or`, `not`, `isblank`, `isnumber`, `iferror`;
-  - text: `&` concatenation, string literals, `left`, `right`, `mid`, `trim`,
-    `replace`, `concat`;
-  - numeric: `floor`, `ceil`, `int`, `sqrt`, `mod`, plus the existing `round`/`abs`/`min`/`max`;
-  - dates: `year`, `month`, `day` over ISO prefixes (`2024-03-15`, timestamps included).
-- `if()` evaluates **only the branch it needs**, so the classic
-  `if(qty=0, 0, amount/qty)` guard works instead of erroring on the branch it discards.
-
-### Changed
-
-- The formula module was split into a directory: parsing in `mod.rs`, built-in
-  functions in `functions.rs`. Thirty functions and a parser in one file is how a
-  module stops being readable.
-
-## [0.44.0] — 2026-11-10
-
-### Added
-
-- **`/rows?where=|order=` now sees the journal.** A filtered view of an edited sheet
-  used to answer with pre-edit bytes, because SQL reads the file. The edited sheet
-  is materialised to a temp CSV first, cached per source (replaced when the journal
-  changes) and refused above 2 GB with the instruction to `edit export` — better
-  than quietly filling a disk.
-- **Read-only CLI commands warn about pending edits** (`filter`, `sort`, `search`,
-  `sql`, `analyze`, `stats`, `groupby`, `pivot`, `chart`, `preview`): one line naming
-  the journal and the command that materialises it. Silent pre-edit answers were
-  the biggest remaining source of "why does this row still say CDMX".
-- Stale `csvs_sheet_*` temp copies from a killed server are swept at startup (older
-  than an hour).
-
-## [0.43.0] — 2026-11-10
-
-### Added
-
-- **Column metadata** (`crates/core/src/layout.rs`): display names, widths, frozen
-  columns and number formats, stored in a `<file>.view` sidecar.
-  - Deliberately separate from the journal: an edit changes what a cell *is* and
-    belongs in the audit trail; a width changes how it *looks* and should be cheap
-    to throw away. Merging them would turn "reset column widths" into an edit with
-    an undo step.
-  - Number formats: `#,##0.00`, `0.00`, `0`, `0%`, `0.0%`, `$#,##0.00`. A format
-    promise applies to numbers only — `N/A` stays `N/A`.
-  - `/sheet` returns the layout alongside the columns, so a client does not need a
-    second request to render chrome; `GET /layout` reads and sets properties.
-
-## [0.42.0] — 2026-11-10
-
-### Added
-
-- **Chart data** (`crates/core/src/chart.rs`): `chart --x month --y amount:sum --series
-  city` returns the JSON every charting library already accepts — categories plus
-  one array per series. Cost follows the number of categories, not the rows.
-  - Missing category/series combinations are `null`, not `0`, so a line chart draws
-    a gap instead of a fake drop to zero.
-  - `--type line|bar|pie|area`, `--sort-by-value`, `--max-points` (default 5000,
-    refused with the parameter to raise rather than allocating unbounded).
-  - `GET /chart` serves the same shape.
-
-## [0.41.0] — 2026-11-10
-
-### Added
-
-- **Conditional formatting** (`crates/core/src/format.rs`): rules are evaluated
-  server-side and the answer is a list of cells to paint — `(row, column, style)`
-  — never a restyled copy of the data, so a window costs one window read.
-  - Rule language: `column>1000:bg=red`, `~`/`^`/`$` for text, `between lo,hi`,
-    `matches` with a small regex subset (`\d`, `\w`, `[a-z]`, `{n}`, `{n,m}`,
-    `.`, `*`, `+`, `?`, anchors), `empty`/`nonempty`, named or hex colours, `bold`/`italic`.
-  - Later rules win for the same cell, so a general rule can be refined instead of
-    every rule needing to exclude every other.
-  - `format --summary` streams the whole file and counts matches per rule — the
-    cheap way to notice a rule is too broad before anyone sees colour.
-  - `GET /style` serves the same evaluation for a window, with the rules echoed back.
-
-## [0.40.0] — 2026-11-10
-
-### Added
-
-- **Pivot tables** (`crates/core/src/pivot.rs`): `pivot --rows city --cols month
-  --values "amount:sum"` streams the input once and writes a rows × columns
-  matrix. Multiple measures, multiple row keys, `--order`, `--desc`, and
-  `--qualify` (measure names in the header, needed as soon as there are two).
-  - Memory follows the *matrix* (row keys × column keys × measures), not the input:
-    1 M rows → 5 × 12 = 60 accumulators, 1.56 s in a debug build.
-  - Two hard ceilings (`--max-columns`, `--max-cells`) fail with the parameter to
-    raise, before memory is committed — pivoting on an id column is a mistake,
-    not a swap storm.
-  - `GET /pivot` serves the same matrix through the result cache.
-- **`aggregate.rs`**: `AggOp` / `AggSpec` / `Accumulator` moved out of `groupby`
-  so `groupby` and `pivot` share one implementation of compensated summation.
-  Two copies would eventually print different totals for the same file.
-
-### Fixed
-
-- Test temp directories used `SystemTime::now()` nanosecond suffixes, which on
-  macOS has microsecond resolution: parallel tests received the same directory,
-  and one would delete the other's files mid-run. They now use a process-wide
-  atomic counter.
-
-## [0.39.0] — 2026-11-10
-
-### Added
-
-- **A `Sheet` abstraction** (`crates/core/src/sheet.rs`): one CSV plus its journal,
-  with `columns()`, `rows()`, `window()`, `apply()`, `undo()`, `export()`,
-  `formulas()` and `capabilities()`. Editing, viewing and exporting now go through
-  the same type instead of each re-deriving the model.
-- `GET /sheet` returns the sheet's columns, logical row count, operation list and
-  a **capability list**, so a front-end can decide which controls to show without
-  guessing at what the server supports.
-- `/rows` applies the journal when the file has edits: the viewer shows the edited
-  table, not the raw bytes, and the response reports `edited` + `operations`.
-- `scripts/clean.sh` and `[profile.dev] debug = 0`: stress fixtures and build
-  output had grown to ~83 GB on this machine. Fixtures are removed by the script;
-  dropping debug info took `target/` from 72 GB to 3 GB for a full test run.
-
-### Fixed
-
-- **Renamed columns came out blank in windows** (the export path was fixed in
-  0.38.0, the `/rows` path was still matching by the original header). Both paths
-  now share `column_layout`, and a `Sheet` test covers it.
-
-## [0.38.0] — 2026-11-10
-
-### Added
-
-- **Formula columns** (`crates/core/src/formula.rs`): `edit formula --name total
-  --value "round(amount * qty, 2)"`. Expressions are parsed once and evaluated per
-  row at read/export time — nothing is stored, so a computed column costs no disk
-  and no extra memory however many rows the file has.
-  - Grammar: `+ - * / %`, parentheses, unary minus, column references (bracketed
-    form `[客户编号]` for names with spaces), `round/abs/min/max/len/upper/lower`.
-  - Spreadsheet-faithful edges: empty cell counts as 0, non-numeric text and
-    division by zero give `#VALUE!`, and a formula reading a column that the
-    journal dropped fails **before** the export writes anything.
-- Formatted output keeps six significant decimals, not float noise
-  (`0.1 + 0.2` → `0.3`, `100 / 3` → `33.333333`).
-
-### Fixed
-
-- **Renaming a column blanked its data.** The export mapped output columns onto
-  the *original* header, so a renamed column no longer matched and every value
-  came out empty. Column layout is now resolved once, in one place
-  (`workbook::column_layout`), and both export and windowed reads use it.
-
-## [0.37.0] — 2026-11-10
-
-### Added
-
-- **Editing without rewriting: `edit` + a sidecar journal.** The base file stays
-  immutable; every edit appends one CSV record to `<file>.journal`, and reading or
-  exporting applies the journal on top. A 17 MB / 1 M row file with three edits
-  gets a **60-byte journal**, and `edit export` materialises 999,998 rows in 2.2 s.
-  - Operations: `set` (cell), `insert` (row), `delete` (rows), `replace` (find &
-    replace in a column or everywhere), `drop` / `rename` (columns), `undo`,
-    `status`, `export`.
-  - Exposed as `POST /edit` (record an edit, undo, or start an export job) and
-    `GET /edit` (pending operations and the logical row count).
-  - **Edits are anchored to rows, not positions**: a `set` on row 500000 then an
-    insert at row 7 keeps the edit on its original row instead of re-pointing it
-    at whatever now sits in slot 500000. Cells are keyed by `RowId`
-    (base physical row / insert-block id), resolved at journal-apply time.
-  - Window reads (`workbook::window`) apply the journal to a slice via the sparse
-    index, so the edited sheet is viewable without materialising it.
-
-## [0.36.0] — 2026-11-10
-
-### Changed
-
-- **HTTP client errors are structured**: 400 now returns
-  `{"error":…,"parameter":…,"hint":…}` so a front-end can highlight the offending
-  input instead of showing prose, and a test can assert on `parameter` rather than
-  on wording. Applied to path/out resolution, and to the required `by` / `agg` /
-  `sql` / `q` / `id` parameters across every endpoint.
-- The router's advertised endpoint list was stale: it omitted `/` and the newer
-  `POST /sort`, `/dedupe`, `/partition`, `/warm`. A test now asserts the
-  advertisement covers everything the docs mention.
-
-### Docs
-
-- `docs/ROADMAP.md` brought up to date: milestones closed or re-scoped, north-star
-  numbers refreshed with the latest runs, and a new "known gaps" table that names
-  what is *not* done (browser-verified UI, fast `analyze`, quote-style overrides,
-  Windows, partial doc sync).
-
-## [0.35.0] — 2026-11-10
-
-### Added
-
-- **`--verify` for `sort` and `partition`**, the two write paths that were still
-  making unchecked claims. `sort` compares row and column counts before/after;
-  `partition` unpacks the archive (including members that are themselves
-  compressed) and sums the rows of every partition against the source.
-  - This caught a real trap while being written: counting a `.csv.zst` member
-    directly reported 577 rows out of 20,120, because the counter was reading
-    binary noise. Members are now decompressed first.
-- **Documentation drift tests** (`crates/cli/tests/docs.rs`): every
-  `csv-splitter <command>` in a code block must be a real sub-command, every
-  `GET/POST /x` must be advertised by the router, and the documented default port
-  must actually serve the viewer.
-
-## [0.34.0] — 2026-11-10
-
-### Changed
-
-- **One shape for every failure.** Usage errors are `error: <reason>` and exit 2;
-  runtime failures are `✗ <command>: <reason>` and exit 1, optionally followed by
-  a single `hint:` line. Previously the CLI printed five different forms, three
-  of them from the background reporter, and two commands could print the same
-  error twice.
-- `hint:` appears only when there is a concrete next step — unsupported encoding
-  points at `convert`, an unknown column at `analyze`, too many groups at
-  `--max-groups` — because a hint with nothing to do is noise.
-- A CLI test pins the contract: prefixes, exit codes, and that an error is
-  printed exactly once.
-
-## [0.33.0] — 2026-11-10
-
-### Added
-
-- **A contract test for the built-in viewer** (`crates/cli/tests/viewer.rs`): it
-  extracts every `api("/x")` call from the HTML, checks each endpoint against the
-  list the router advertises, then replays the page's request sequence against a
-  live server and asserts the exact fields the JavaScript reads. A browser test
-  could not run in CI; API drift is what actually breaks the page.
-- Every `/rows` response now carries `columns`, including the plain paged path.
-
-### Fixed
-
-- The plain `/rows` window returned `rows` without `columns`, so the viewer's
-  table had no header to render — found immediately by the new contract test.
-
-## [0.32.0] — 2026-11-10
-
-### Added
-
-- **A built-in viewer at `GET /`**: one self-contained HTML file (no build step,
-  no dependencies, ~13 KB) with a file list, row paging, jumping to a row, filtering,
-  cross-column search, the column profile, and group-by. It calls only the public
-  endpoints, so it doubles as a reference implementation for a real front-end.
-- **`/rows` understands `where` and `order`** (plus `desc`), served through the
-  same cached SQL path as `/rows?sql=` so the two cannot disagree.
-
-### Fixed
-
-- **DuckDB sniffing failures did not fall through the reader ladder.** Errors
-  raised while creating the view (where sniffing happens) aborted immediately
-  instead of trying the next option set, so a file with ragged rows *and* quoted
-  newlines could not be queried at all. `null_padding` + serial is now reachable.
-
-## [0.31.0] — 2026-11-10
-
-### Added
-
-- **`csv-splitter demo`**: writes a realistic sample file (20,120 rows, 918 KB)
-  with the defects real exports have — duplicate rows, empty cells, a quoted
-  field containing a newline, and rows with an extra unquoted comma. Deterministic,
-  so the documentation can quote its output and keep it true.
-- **[docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)**: a ten-step tour that
-  starts at `demo` and ends at `serve`, with the real output of every step, plus
-  a one-page command table. The README now opens with a quick start that points
-  at it.
-- A CLI test runs the *documented* tour end to end, so the guide cannot silently
-  drift away from the program.
-
-## [0.30.0] — 2026-11-10
-
-### Field run on a 1 GB file
-
-Ran the whole pipeline on 1.0 GB / 19 M rows with `--verify` on every write:
-
-| step | time | peak RSS |
-|---|---|---|
-| `preview` open + jump to row 18,000,000 | 0.01 s + 0.56 s | — |
-| `analyze` all columns | 10.9 s | **29 MB** |
-| `search` across every column | 8.1 s | — |
-| `filter -o --verify` (2,370,440 rows) | 5.6 s | — |
-| `dedupe --by --verify` | 5.2 s | — |
-| `groupby` (3 aggregates) | 6.3 s | — |
-| `sort` two keys | 25.8 s | 227 MB |
-| `columns --verify` (19 M rows × 5 cols) | 11.9 s | — |
-| `partition --by` (zst) | 19.8 s | — |
-| `split -n 8 --threads 4` / `merge` | 1.1 s / 0.69 s | 121 MB |
-| `verify` byte-for-byte | 5.2 s | — |
-
-Every step finished under 30 s, none needed the file in memory, and every
-self-check passed on the first try.
-
-### Fixed
-
-- **Large sums printed float noise**: a 2e11 total came out as
-  `215064677256.200012`. f64 has ~15 significant digits, so summing 19 M values
-  leaves error in the last few bits — printing it down to the micro-unit was
-  pretending to precision that is not there. Values ≥ 1e9 now keep 2 decimals.
-
-## [0.29.0] — 2026-11-10
-
-### Added
-
-- **`--verify` on the write commands** (`filter`, `columns`, `dedupe`): re-reads
-  the output and checks the claim the operation makes — exact row count, exact
-  column count, and no raggedness beyond what the source already had.
-  `dedupe` additionally checks `kept + removed == scanned` before reading
-  anything. `split`/`merge` already had the byte-for-byte `verify`.
-- `dedupe` reports `kept_ragged` and `filter` reports `matched_ragged`, so the
-  check can distinguish "this operation wrote bad rows" from "the source was
-  already ragged and the rows were copied faithfully".
-
-## [0.28.0] — 2026-11-10
-
-### Fixed — extreme inputs
-
-- **Windows-1252 was silently decoded as GBK**, turning `café` into mush. Two
-  candidates are now scored: GBK wins only when it decodes cleanly *and* yields
-  CJK characters; otherwise Windows-1252 (which never fails to decode) is used.
-  Files with real Chinese text still detect as GBK, and plain UTF-8 is untouched.
-- **`split` refused a file with no data rows** ("No data lines"). A 0-byte or
-  header-only export is a legitimate thing to process, so it now produces one
-  chunk holding the header and merges back **byte for byte**.
-- **`analyze` errored on a 0-byte file**; it now reports that there are no
-  columns instead of failing.
-- `/meta` reported a phantom single empty column for a 0-byte file; it reports
-  `headers: []`.
-
-Verified against fixtures for: 0 bytes, header-only, blank lines only, no trailing
-newline, duplicate header names, NUL bytes inside a field, a 2 MB single-line
-field, UTF-8 BOM, UTF-16 (explicitly refused with a message that says what to do),
-and Windows-1252.
-
-## [0.27.0] — 2026-11-10
-
-### Fixed — found by running a deliberately dirty file end to end
-
-A GBK file with CRLF endings, stray spaces in the header (`城市 `), ragged rows
-and quoted newlines exposed four things:
-
-- **`partition` could not read a GBK file at all.** It parsed the sorted chunk's
-  header as UTF-8, so the partition column looked missing and the error named
-  mojibake candidates. It now decodes while reading.
-- **Reported errors were swallowed.** `spawn_reporter` folded the engine's error
-  into the reporter's return value, and every caller discarded it — commands
-  failed with "see messages above" and nothing above. The reporter now prints the
-  reason itself.
-- **Column names with stray spaces were unusable.** `--where "城市=CDMX"` could
-  never match a header literally named `城市 `. Names now resolve exact →
-  unique-trimmed → unique-case-insensitive, and an ambiguous match is refused
-  rather than guessed. A missing name reports the available columns, or the
-  closest one when there is a plausible spelling difference.
-- **Ragged rows were invisible.** `analyze` now reports how many rows have a
-  field count different from the header, which is the first thing worth knowing
-  about a foreign file.
-
-Verified: record counts match Python's `csv` module exactly on the dirty fixture,
-and `verify` still round-trips the file byte-for-byte.
-
-## [0.26.0] — 2026-11-10
-
-### Added
-
-- **`groupby`**: `--by city --agg "amount:sum,amount:mean,amount:count"`,
-  multi-key and multi-aggregate, `--order` an output column, `--desc`. Memory
-  scales with the number of **groups**, not rows; past `--max-groups` (1M) it
-  errors instead of eating the machine, because grouping by an id column is
-  almost always a mistake. Also `GET /groupby` (served from the result cache).
-- Summation is Kahan-compensated: adding 40k values with plain f64 showed
-  visible drift in the last printed digits.
-- A text column aggregated with `sum`/`mean` renders `<mixed>` rather than
-  silently averaging only the numeric rows.
-
-## [0.25.0] — 2026-11-10
-
-### Added
-
-- **`partition --by COLUMN`**: one file per distinct value, packed into a tar/zip.
-  The engine already existed; it is now a command and `POST /partition`. It sorts
-  by the column first so only one writer is open at a time, and refuses to exceed
-  `--max-partitions` (512) because partitioning by `id` is almost always an
-  accident.
-- **`concat a.csv b.csv ...`**: glue same-shaped files into one table.
-  Headers are **checked**, not assumed: a mismatch is an error naming the file and
-  its columns, because silently appending amounts under an id column corrupts the
-  table invisibly. `--ignore-header` opts into that on purpose and still reports
-  which files differed.
-
-## [0.24.0] — 2026-11-10
-
-### Added
-
-- **`columns`**: reshape before handing data to someone else — `--keep a,b`
-  (also reorders), `--drop a,b`, `--rename old:new`. Unlike `filter --out`, this
-  must re-serialise each row because the column set changed, so quoting is
-  applied consistently and a multi-line cell stays one field. A column that is
-  both kept and dropped is an explicit error rather than a silent winner.
-- **`in (a,b,c)` filter**: `--where "city in CDMX,Puebla"` — one condition
-  instead of a chain of ORs. Values are trimmed and matched case-insensitively;
-  rendered as a quoted `IN (...)` list for `GET /export?where=`.
-
-## [0.23.0] — 2026-11-10
-
-### Added
-
-- **Multi-column sort**: `sort --by "city:asc,amount:desc"`. Each key carries its
-  own direction; `--desc` only sets the default for keys without one. The
-  comparison rule is resolved once into a shared plan, so the chunk writer and
-  the merge heap cannot disagree — a mismatch there would produce a "sorted" file
-  that is unsorted at chunk boundaries.
-- **Regex filtering**: `col~re:PATTERN` uses a real regex engine (`regex` crate)
-  while `col~TEXT` stays a plain substring search. Patterns are validated at
-  parse time and compiled **once per scan**, not per row. Available through
-  `filter --where`, and translated to `regexp_matches()` for `GET /export?where=`.
-
-## [0.22.0] — 2026-11-10
-
-### Added
-
-- **`analyze`** (`crates/core/src/profile.rs`): a per-column profile in one
-  streaming pass — empty counts, distinct counts (exact up to a cap, then `≥N`),
-  numeric min/max/mean/sum/median, and for text columns the common values plus
-  length extremes. A column counts as numeric only when *every* non-empty value
-  parses; one `N/A` demotes it to text and is reported as `mixed`. Also
-  `GET /analyze`.
-- **`dedupe`** (`crates/core/src/dedupe.rs`): drop duplicate rows by the whole
-  record or by chosen columns, keeping the first occurrence. Only 128-bit hashes
-  are retained (16 bytes per distinct row), and passing `--max-keys` fails loudly
-  instead of silently dropping unique rows. Also `POST /dedupe` as a job.
-
-## [0.21.0] — 2026-11-09
-
-### Added
-
-- **Multi-condition filtering**: repeat `--where` for AND, add `--any` for OR.
-  The common "city=CDMX and amount>1000" no longer needs a trip to SQL.
-- **`filter --out FILE`**: stream the matches into a CSV instead of only listing
-  row numbers. Matched rows keep their source bytes — no re-serialisation, so
-  quoting and line endings stay exactly as they were.
-- **`sort` command**: whole-file external sort exposed on its own
-  (`sort in.csv --by amount --desc -o sorted.csv`); previously it was only
-  reachable as a `split` option.
-- **API**: `GET /export?where=a=1|b>2` returns the filtered CSV, and `POST /sort`
-  runs as a job like split/merge. Predicates are parsed with the CLI grammar and
-  rendered as SQL, so a value can never be read as a column name or break out of
-  its literal.
-
-### Fixed
-
-- A `/sort` job stayed `running` forever after the file was already complete:
-  it never sent the `Finished` event the job registry waits for.
-
-## [0.20.1] — 2026-11-09
-
-### Added
-
-- **`GET /download?path=REL`**: streams the file byte-for-byte with
-  `Content-Disposition: attachment`. Root confinement applies like every other
-  endpoint, and the response is raw bytes — no UTF-8 round trip — so a GBK file
-  or a file with a BOM comes out exactly as it went in (tested with non-UTF-8
-  bytes in the fixture).
-- **`GET /export?path=REL&sql=...`**: the query result as CSV text instead of
-  JSON, properly quoted (`a,b` becomes `"a,b"`), so the output can be piped into
-  another tool or saved as a file.
-
-## [0.20.0] — 2026-11-09
-
-### Added
-
-- **`search`** (`crates/core/src/search.rs`): case-insensitive substring across
-  every column (or `--columns a,b`), `--case`, `--exact`, `--limit`, `--show`.
-  Returns row numbers, so hits can be jumped to through the sparse index.
-  Exposed as `GET /search?q=...`. Matches inside quoted multi-line fields count
-  once and do not shift later row numbers.
-- **`files`** (`crates/core/src/listing.rs`): list the tree under `--root` by
-  extension, relative paths, size and mtime — what a front-end needs to render
-  a file picker. Exposed as `GET /files?dir=...&ext=...`; unreadable
-  subdirectories are skipped and symlinked directories are not descended.
-
-### Changed
-
-- README now opens with a "what do I actually want to do" table mapping each basic
-  task to its command and its HTTP endpoint.
-
-## [0.19.0] — 2026-11-09
-
-### Added
-
-- **Parallel splitting** (`--threads N`, `threads=` on `POST /split`): several
-  readers, each owning a contiguous run of chunks. 1 GB / 8 chunks went from
-  2.8 s to **1.0 s** with 4 threads (zstd: 3.5 s → 1.5 s); 8 threads add nothing
-  on an M1 Pro.
-  - The hard part is not parallelism but *where to start*: seeking to
-    `file_len/n` lands mid-record, possibly inside a quoted field containing a
-    newline. The counting pass now records checkpoints (byte offset every 1000
-    records, known outside quotes), readers start from one and each owns whole
-    chunks, so no record is split, duplicated or reordered.
-  - Verified by a test that splits the same file with 1/2/4/8 threads and
-    requires byte-identical output after merging.
-
-### Fixed
-
-- The performance guard was flaky when the whole workspace ran in parallel: all
-  three tests built their own 10 MB fixture while measuring throughput. One
-  shared fixture plus best-of-three measurement removed the noise (three
-  consecutive full runs clean).
-
-## [0.18.0] — 2026-11-09
-
-### Added
-
-- **`POST /warm`**: pre-load a query into the result cache as a background job.
-  Files with quoted newlines fall back to a serial CSV scan, so the first page of
-  a 10 GB query costs seconds — a client that knows its filter can warm it up
-  while the user is still reading the empty table. Warmed page: **0.03 s**
-  instead of 0.70 s.
-  - `200 {"cached":true}` when already warm, so polling clients do not spawn
-    duplicate jobs; invalid SQL is rejected with 400 before a job exists.
-
-## [0.17.0] — 2026-11-09
-
-### Added
-
-- **Query result cache** (`crates/core/src/cache.rs`): `/rows?sql=` materialises
-  the result once (200k rows per entry, 400k rows total) and later pages are
-  slices. On a 1 GB file with quoted newlines, page 1 costs 0.70 s and every
-  following page costs **0.00 s**.
-  - A result bigger than the cap caches only its prefix; `rowsSoFar` says how
-    much, requests inside the prefix are served, and a request past it returns
-    422 instead of pretending the query ended there.
-  - Entries are invalidated by file length or mtime, evicted LRU, and partial
-    results never masquerade as complete.
-
-### Fixed
-
-- **DuckDB could not read files with quoted newlines.** `null_padding` (needed
-  for ragged rows) is rejected by the parallel scanner when a field contains a
-  newline, so any CSV with embedded newlines failed with a raw engine error.
-  Opening now tries three option sets — parallel+padding, parallel, serial+padding
-  — and only retries on reader-shape errors, so a genuine query error is still
-  reported once.
-- The wrong-delimiter hint moved from the query result to `DESCRIBE t`; it used
-  to fire on `count(*)` (a single column by design) instead of on the table.
-
-## [0.16.0] — 2026-11-09
-
-### Added
-
-- **criterion benchmarks** (`crates/core/benches/throughput.rs`): index build,
-  random access at head/middle/tail, and split throughput at 1 and 4 chunks.
-  Informational only — shared runners are too noisy for thresholds.
-- **Performance guard** (`crates/core/tests/performance.rs`, runs in 0.2 s):
-  fails the build only on pathological regressions (~50x slower than measured),
-  so it catches an accidental O(n²) or a lost buffer without flaking on CI.
-
-### Changed
-
-- **CI split into two jobs.** DuckDB is statically bundled and takes ~10 minutes
-  to compile from cold, which used to delay feedback on the engine — the part
-  that changes most. `engine` (core + gui, no DuckDB, includes fmt/clippy/perf
-  guard) now runs independently and finishes in minutes; `cli` (DuckDB, HTTP API
-  tests, benchmark compile check) follows it.
-
-## [0.15.0] — 2026-11-09
-
-### Verified at 10 GB
-
-Measured on a 9.9 GB / 190 M row CSV (Apple M1 Pro, release build):
-
-| Operation | Time | Peak RSS |
-|---|---|---|
-| `index` | 4.28 s | 18.3 MB |
-| jump to row 189,000,000 | 0.5–1.2 ms | 11.3 MB |
-| `split -n 8` | 20.9 s (≈490 MB/s) | 89 MB |
-| `merge` | 6.1 s | 10.7 MB |
-| SQL group-by (5 groups) | 2.78 s | — |
-| `/rows?sql=…&start=1000000` | 4.25 s (full sort) | — |
-
-Index size is 1.45 MB for 9.9 GB — 1/7000 of the file — because it stores one
-offset per 1000 rows.
-
-### Fixed
-
-- **DuckDB refused ragged CSVs.** A stray unquoted comma (very common in real
-  exports) made `read_csv_auto` bind the header as one giant column, and every
-  query then failed with "column not found". Our own reader tolerates such rows,
-  so `/rows` and `/rows?sql=` disagreed about the same file. Now opened with
-  `header=true, delim=<requested>, null_padding=true`, and a single-column
-  header that still contains a separator produces an explicit message naming the
-  likely delimiter instead of a binder error.
-- `/query` and `/rows?sql=` now honour the request's delimiter.
-
-## [0.14.0] — 2026-11-09
-
-### Added
-
-- **`/rows?sql=...`**: page through a query result instead of the raw file.
-  `GET /rows?path=REL&sql=SELECT ...&start=500&count=50` returns rows 500..550 of
-  the query — a table can scroll a filtered/sorted view without materialising it.
-- `sql::page()` in core: `LIMIT count+1 OFFSET start`, so `has_more` comes from
-  one extra row rather than a second `COUNT(*)`. Same validation as `/query`
-  (one statement, SELECT/WITH only, no file readers).
-
-## [0.13.0] — 2026-11-09
-
-### Added
-
-- **Background jobs** (`crates/core/src/jobs.rs`): a job registry with progress,
-  phase, fraction, messages, output and error. A 10 GB split takes minutes, so
-  the HTTP handler returns a job id and the client polls — the work is not tied
-  to the connection.
-- Write endpoints: `POST /split`, `POST /merge` (both 202 + job id),
-  `GET /job?id=`, `GET /jobs`. Output paths must stay inside `--root`, same rule
-  as reads. Finished jobs are retained (50) and running ones are never evicted.
-
-### Fixed
-
-- **Flaky integration test**: every test used `SystemTime::now().as_nanos()` for
-  its temp directory, and macOS only resolves to microseconds — a dozen parallel
-  tests could read the same value, share a directory, and delete each other's
-  files mid-run. `roundtrip_plain` failed once this way. All helpers now mix in
-  an atomic counter; the suite ran clean four times in a row afterwards.
-
-## [0.12.0] — 2026-11-09
-
-### Added
-
-- **`sql` command + `/query` API**: DuckDB over the file, registered as view `t`.
-  Handing GROUP BY / ORDER BY / window functions / type inference to a real
-  engine instead of writing them by hand — this is the "depend on libraries
-  rather than rebuild them" rule applied where it saves the most code.
-- Safety, because this is reachable over HTTP: one statement only, `SELECT`/`WITH`
-  only, DDL/DML/ATTACH/COPY/INSTALL/PRAGMA rejected, CSV/Parquet/JSON readers
-  rejected (data may only come from the whitelisted file), results capped
-  (default 1000, max 100k) with a `truncated` flag.
-- DuckDB is statically bundled behind an optional `sql` feature; the CLI enables
-  it, so no external install is needed.
-
-### Measured
-
-- 200k-row CSV, `GROUP BY city` with `count(*)` and `avg()`: **0.67 s** end to end
-  including process start.
-
-## [0.11.0] — 2026-11-09
-
-### Added
-
-- **`filter` command + `/filter` API**: `col=value`, `col~text`, `col>number`,
-  `col empty` / `col notempty`. Scans sequentially (decoding GBK/UTF-16 on the
-  way) and returns **row numbers**, so a client can jump to a hit with
-  `preview --start-row` instead of loading the file.
-- Numeric comparisons fall back to string order when a cell is not a number, so
-  ISO dates and zero-padded ids sort correctly.
-- `--json` on the CLI for scripting; `/filter` returns the same shape.
-
-## [0.10.0] — 2026-11-09
-
-### Added
-
-- **`convert` command**: streaming transcode to UTF-8 (optionally with a BOM),
-  `--from auto|utf-8|gbk|utf-16le|utf-16be`. Constant memory, so it works on the
-  same files the rest of the tool handles. This is the escape hatch for UTF-16:
-  convert once and the row index / random access work normally.
-- `encoding::parse_name` so the CLI and future API can accept encoding names.
-
-### Changed
-
-- The index error for UTF-16 now says what to run instead of only what failed.
-
-## [0.9.0] — 2026-11-09
-
-### Added
-
-- **Encoding detection and decoding**: UTF-8, UTF-8 with BOM, GBK (the usual
-  "ANSI" export on Chinese Windows) and UTF-16 LE/BE (BOM or NUL pattern).
-  Preview, column stats, splitting (including `--columns`), sorting and the HTTP
-  API all decode before parsing, so Chinese headers are no longer mojibake.
-- `/meta` reports the detected encoding.
-- Row index refuses UTF-16 with an explicit message: its separators are two
-  bytes, so byte offsets would silently misalign. UTF-8 and GBK are fine —
-  their `,` and `\n` never appear inside a multi-byte character.
-
-### Fixed
-
-- `--columns` wrote its temporary list to a pid-derived file, so concurrent runs
-  in one process (the test suite) overwrote each other's column names.
-
-## [0.8.0] — 2026-11-09
-
-### Added
-
-- **`csv-splitter serve`**: a dependency-free local HTTP API for a separated
-  front-end. Read-only endpoints `/health`, `/meta`, `/rows`, `/stats`, backed by
-  the sparse index so a browser can request rows 4,300,000..4,300,040 of a 10 GB
-  file in ~1 ms.
-- Path safety: every request resolves inside `--root`, canonicalised, `../`
-  rejected with 400. Binds loopback by default and warns otherwise. CORS enabled.
-- 4 black-box tests that start the real binary on port 0 and speak HTTP to it.
-
-### Changed
-
-- Project direction: GUI is frozen; the roadmap now targets the engine, CLI and
-  HTTP API. Front-end work is out of scope.
-
-## [0.7.0] — 2026-11-09
-
-### Fixed
-
-- **`merge` buffered every chunk in memory** before writing: merging a 1 GB
-  archive peaked at **1.08 GB RSS**. Chunks are now streamed straight from the
-  tar/zip entry to the output, one record at a time — same result, **4.8 MB**
-  peak. This was the last place where memory still scaled with file size.
-
-### Changed
-
-- Split I/O buffers are capped (4 MB per chunk, 16 MB for the reader) instead of
-  inheriting the whole `--buf-mb` budget. A 1 GB / 8-chunk split dropped from
-  205 MB to 88 MB peak RSS and got slightly faster.
-
-### Measured (release build, 1 GB / 19 M rows, M1 Pro)
-
-| Operation | Time | Peak RSS |
-|---|---|---|
-| `index` | 0.54 s | 10.9 MB |
-| `preview --start-row 18000000` | 0.49 ms | 3.5 MB |
-| `split -n 8` | 2.42 s | 88 MB |
-| `merge` | 1.05 s | 4.8 MB |
-| `verify` | byte-identical | — |
-
-## [0.6.0] — 2026-11-09
-
-### Added
-
-- **Sparse row index** (`crates/core/src/index.rs`): a sidecar `.idx` storing the
-  byte offset of every 1000th record, plus `csv-splitter index` to build it.
-  `preview --start-row N` now seeks through the index instead of scanning, so
-  jumping to row 1,500,000 of an 87 MB file takes ~200 µs and ~5 MB of RAM.
-- Index format is versioned (`CSI1`), written to a temp file and renamed, and
-  validated against the file length before use; a stale index is rebuilt
-  automatically.
-
-### Notes
-
-- Measured on the 1.6M-row / 87 MB sample: index build 0.53 s at 11.8 MB peak
-  RSS, 13 KB on disk; random access 211 µs.
-
-## [0.5.0] — 2026-11-09
-
-### Added
-
-- CLI progress now shows percentage, throughput and ETA for long phases
-  (`  46% · 83.4 MB/s · ETA 1s`), throttled to four updates a second so CI logs
-  stay readable. `--quiet` still silences everything but errors.
-
-## [0.4.0] — 2026-11-09
-
-### Added
-
-- `split --by-column <name>`: one file per distinct value of a column, e.g.
-  `--by-column city` gives `orders_CDMX.csv`, `orders_Puebla.csv`, …
-  Implemented as external-sort + sequential grouping, so only one writer is open
-  no matter how many values the column has. Values are sanitised for file names
-  (`New York` → `New_York`, empty → `_empty`, case-insensitive duplicates get a
-  suffix), and a cardinality guard fails the job instead of creating thousands
-  of files.
-- `--by-column` and `--by-size` are mutually exclusive; both are rejected with a
-  usage error rather than silently ignoring one.
-
-### Changed
-
-- Archive packing and the scratch-directory guard moved into `pack.rs` and
-  `tempdir.rs`, shared by split and partition.
-
-## [0.3.0] — 2026-11-09
-
-### Added
-
-- `split --by-size <size>`: split by target chunk size (`100MB`, `1.5GiB`, `512k`, …)
-  instead of a fixed chunk count. The chunk count is derived from
-  `ceil(csv_bytes / target)`; a chunk may overshoot the target by at most one
-  record. `-n` remains the default and keeps exact record counts per chunk.
-
-### Changed
-
-- The planning pass now reports CSV size as well as record count, so the job
-  log states which strategy produced how many chunks.
-- Chunk writers report their record counts back; a job fails loudly if the
-  written total does not match the scanned total, instead of trusting the plan.
-
-## [0.2.0] — 2026-11-09
-
-### Added
-
-- **CLI** (`crates/cli`, binary `csv-splitter`): `split`, `merge`, `preview`,
-  `stats`, `extract`, `verify`. Same core pipeline as the desktop app.
-- **`merge`**: re-assemble chunks from tar / tar.gz / tar.zst / tar.bz2 / tar.xz /
-  zip (or a directory) into a single CSV, keeping only the first header.
-- **`verify`**: split → merge → byte compare, printing whether a job is lossless.
-- Tests: 37 across core (unit + round-trip integration) and the CLI (black box).
-- `LICENSE` file — the README was already linking to it.
-
-### Fixed
-
-- Splitting counted and cut **physical lines**: a quoted field containing a
-  newline was torn across two chunks and preview/stats shifted every later
-  column. Reading is now record-aware (`RecordReader`), including across buffer
-  boundaries and escaped quotes.
-- `-f zip` produced raw CSV bytes named `.csv.zip` inside a tar — no zip at all.
-  Representation is now a real archive, and merge sniffs the container by magic
-  bytes rather than trusting the extension.
-- `--buf-mb` was allocated **per chunk** (64 MB × N). It is now a single shared
-  budget, so a 10-way split no longer needs ~700 MB of buffers.
-- `splits = 0` panicked with a divide-by-zero; `splits > records` created empty
-  chunks. Both are rejected/handled, and the remainder is distributed so chunk
-  sizes differ by at most one record.
-- The scratch directory leaked on any failure path (now an RAII guard), and two
-  concurrent jobs could share a temp directory when started in the same
-  millisecond.
-- A leading UTF-8 BOM leaked into the first column name; row-count estimates
-  were computed from the first three (often short) rows.
-- External sort also cut multi-line records.
-
-### Changed
-
-- CI runs `cargo test --workspace` and clippy with `--all-targets -D warnings`;
-  the GUI's 36 `f64 → f32` inference warnings are fixed, so the pipeline is
-  green on current stable Rust again.
-- Workspace version bumped to 0.2.0.
-
-## [0.1.0] — 2025-11-10
-
-Initial release: split + compress pipeline, preview, column stats, decompress,
-bilingual GUI.
-
-## 错误响应 / Error responses
-
-所有 4xx / 5xx 都是同一个形状：
+**错误统一形状**（4xx）：所有读端点在没有必需参数、或参数值非法时都返回这个形状
+（有测试逐个端点验证：`bad_requests_always_carry_a_reason_and_a_hint`）。
 
 ```json
-{"error": "...", "parameter": "path", "hint": "pass path=<relative path inside the served directory>"}
+{"error":"by is required","parameter":"by","hint":"pass by=<column name>"}
 ```
 
-`error` 一定有（人读的句子）；参数问题额外带 `parameter`（哪个参数）和 `hint`（怎么改）。
-有测试逐条跑 17 个读端点，确认这条契约没有被某个端点悄悄破坏。
+`parameter` 指向出问题的参数，`hint` 说明该传什么。用法错误是 400，数据/引擎问题
+是 422，未知路径是 404（响应里带 `endpoints` 与 `writes` 两个清单）。
 
-`path` 不解析时有四种不同的说法，因为它们是四种不同的错误：
+**数字参数不会静默回退**：`start=abc` 是 400，不是「按 0 处理」。
+静默回退会让调用方用错窗口翻页，然后把问题算到数据头上。
 
-| 情况 | 消息 |
-|---|---|
-| 没给 `path` | `path is required` |
-| 文件不存在 | `no such file inside the served directory` |
-| 指向目录 | `path is a directory, not a file` |
-| 逃出 root | `path is outside the served directory` |
+**窗口统一形状**（`/rows`）：
 
-（早先这四种都报「path missing or outside root」，把「文件名打错」说成「沙箱问题」，
-会让人找错方向。）
+```json
+{"start":0,"total":1000,"columns":["id","city"],
+ "frozenColumns":["id"],"rows":[["1","CDMX"],["2","Puebla"]]}
+```
+
+`total` 是逻辑行数（编辑后）；`frozenColumns` 是需要固定的前缀列，行里仍然是全部列值。
+
+**写入统一形状**：同步操作用 `POST /edit`（返回 `{"op":…,"operations":n}`），
+长任务用 `POST /split`、`/merge`、`/sort`、`/dedupe`、`/partition`、`/warm`
+（返回 `{"job":"job123"}`，再用 `GET /job?id=job123` 轮询：`state` 走到 `done` 即完成，
+期间 `fraction` 是进度）。
+
+## 只读 / Reads
+
+| 端点 | 参数 | 说明 |
+|---|---|---|
+| `GET /health` | — | 存活检查 + 根目录 |
+| `GET /meta` | `path` | 编码、行数、列数、分隔符、是否 ragged |
+| `GET /rows` | `path` `start` `count` `where` `order` `desc` `sql` `format` | 分页窗口；`where`/`order` 走 SQL，**会套用编辑**。响应带 `count`（实际返回行数）、`requested`（请求的）与 `limit`（上限 2000） |
+| `GET /sheet` | `path` | 列、行数、编辑数、能力清单、列布局、冻结列、是否已建索引（`indexed` / `indexBytes`） |
+| `GET /book` | — | 工作簿：根目录下所有 CSV 及其状态 |
+| `GET /stats` | `path` `sample` | 采样统计 |
+| `GET /analyze` | `path` `distinct` | 全列画像 |
+| `GET /groupby` | `path` `by` `agg` `order` `desc` `maxGroups` | 分组聚合 |
+| `GET /pivot` | `path` `rows` `cols` `values` `qualify` `maxColumns` `maxCells` | 透视矩阵 |
+| `GET /chart` | `path` `x` `y` `series` `type` `sortByValue` `desc` `maxPoints` | 图表数据 |
+| `GET /style` | `path` `rules` `start` `count` | 条件格式：该上色的单元格 |
+| `GET /layout` | `path` `column` `key` `value` | 列宽/显示名/冻结/数字格式（带 `column` 即写入） |
+| `GET /edit` | `path` | 待生效的编辑操作 + 逻辑行数 |
+| `GET /filter` | `path` `where` | 命中行的行号 |
+| `GET /search` | `path` `q` `columns` `case` `exact` `regex` `limit` | 跨列搜索；`regex=1` 用条件格式那套模式子集 |
+| `GET /files` | `ext` `limit` | 根目录下可读文件清单 |
+| `GET /download` | `path` | 原样下载文件 |
+| `GET /export` | `path` `sql` `where` | 导出（查询结果或筛选结果）为 CSV |
+| `GET /query` | `path` `sql` `limit` | 一次性 SQL 结果（不分页） |
+| `GET /job` | `id` | 任务状态：`state` `phase` `fraction` `output` `error` |
+| `GET /jobs` | — | 最近的任务列表 |
+
+## 写入 / Writes
+
+| 端点 | 参数 | 说明 |
+|---|---|---|
+| `POST /edit` | `path` `action` … | action 来自 `serve.rs` 的 `EDIT_ACTIONS`：`set`、`insert`、`delete`、`replace`、`copy`、`formula`、`drop`、`rename`、`undo`、`redo`、`export`。参数错误时响应的 `hint` 就是这份清单 |
+| `POST /split` | `path` `splits` `out` `format` `threads` | 切分（`splits` 为片数） |
+| `POST /merge` | `out` `format` | 合并（根目录下的分片） |
+| `POST /sort` | `path` `by` `desc` `out` | 外部排序 |
+| `POST /dedupe` | `path` `by` `out` | 去重 |
+| `POST /partition` | `path` `by` `out` `format` `maxPartitions` | 按列值拆成多个文件 |
+| `POST /warm` | `path` `sql` `start` `count` | 预热查询缓存 |
+| `POST /index` | `path` `interval` | 后台建稀疏索引（翻页前先跑，避免首个请求里含着全表扫描） |
+
+## 编辑动作 / Edit actions
+
+| `action` | 参数 | 说明 |
+|---|---|---|
+| `set` | `row=N` **或** `where=列=值`，`col` `value` | 单格或按条件批量（批量存成一条规则） |
+| `insert` | `row` `value`（CSV 行） | 插入行 |
+| `delete` | `row` `count` | 删除行 |
+| `replace` | `from` `to` `col` | 查找替换 |
+| `drop` / `rename` | `name` / `from`,`to` | 删列 / 改名 |
+| `insert-column` | `name` `value` **或** `formula`，`after` | 插入常量列或公式列 |
+| `formula` | `name` `formula` | 追加公式列 |
+| `copy` | `from=A1:B2` `to=B3` | 区域复制（A1 风格范围） |
+| `split-column` | `col` `by` `into` | 一列拆成多列（最后一片吃下剩余部分） |
+| `undo` / `redo` | — | 撤销最后一条 / 重做 |
+| `export` | `out` | 物化到文件（返回 job） |
+
+## 常用示例
+
+```bash
+# 打开工作簿
+curl "http://127.0.0.1:8787/book"
+
+# 翻页（编辑后的表）
+curl "http://127.0.0.1:8787/rows?path=orders.csv&start=0&count=50"
+
+# 按条件筛选（会看到编辑）
+curl "http://127.0.0.1:8787/rows?path=orders.csv&where=city%3DCDMX"
+
+# 批量改
+curl -X POST "http://127.0.0.1:8787/edit?path=orders.csv&action=set&where=city%3DCDMX&col=amount&value=0"
+
+# 透视
+curl "http://127.0.0.1:8787/pivot?path=orders.csv&rows=city&cols=month&values=amount:sum"
+
+# 条件格式
+curl "http://127.0.0.1:8787/style?path=orders.csv&rules=amount%3E1000%3Abg%3Dred"
+
+# 图表数据
+curl "http://127.0.0.1:8787/chart?path=orders.csv&x=month&y=amount:sum&series=city"
+
+# 物化编辑结果（长任务）
+curl -X POST "http://127.0.0.1:8787/edit?path=orders.csv&action=export&out=fixed.csv"
+curl "http://127.0.0.1:8787/job?id=job123"
+```
+
+
+## 索引 / Index
+
+翻页在没有索引的文件上要先扫一遍（60 MB 约 0.5 s，10 GB 就是几十秒）。
+`GET /sheet` 的 `indexed` / `indexBytes` 告诉你索引在不在；
+`POST /index?path=` 可以在翻页前先建好，它返回 job id，不占着请求：
+
+```
+POST /index?path=big.csv   →  202 {"job":"job123"}
+GET  /job?id=job123        →  state: done
+```
+
+前端可以这样用：打开文件先看 `indexed`，false 就调一次 `/index`，等 job 完成再翻页。
 
 ## `capabilities` 是承诺 / Capabilities are a promise
 
@@ -1208,10 +142,27 @@ bilingual GUI.
 | 做了但没列 | 用户看不到这个功能 |
 | 列了但没做 | 用户点了报错 |
 
-现在的列表：`window`、`edit.set`、`edit.set-where`、`edit.insert`、`edit.delete`、
+当前列表 18 项：`window`、`edit.set`、`edit.set-where`、`edit.insert`、`edit.delete`、
 `edit.replace`、`edit.replace-regex`、`edit.paste`、`edit.copy`、`edit.undo`、
 `edit.redo`、`column.add`、`column.insert`、`column.rename`、`column.drop`、
 `column.split`、`column.formula`、`export`。
 
-`POST /edit` 接受的 action 来自**一处**常量，两处错误提示都引用它（早先两处各写一份，
-缺的还不一样）。
+## `?path=` 的四种错误 / Four path mistakes
+
+不解析时有四种不同的说法，因为它们是四种不同的错误：
+
+| 情况 | 消息 |
+|---|---|
+| 没给 `path` | `path is required` |
+| 文件不存在 | `no such file inside the served directory` |
+| 指向目录 | `path is a directory, not a file` |
+| 逃出 root | `path is outside the served directory` |
+
+（早先这四种都报「path missing or outside root」，把「文件名打错」说成「沙箱问题」。）
+## 已知限制
+
+- `where` / `order` 走 DuckDB：对**有编辑的文件**会先物化到临时表（每份源文件最多一份，
+  日志变化即替换），超过 **2 GB** 直接报错让你先 `edit export`。
+- 单次结果封顶：`/query` 最多 1 万行、`/rows` 单页最多 `MAX_ROWS_PER_REQUEST` 行。
+- `GET /layout` 带参数即写入，是唯一"读端点会写"的地方（为了少一个端点，代价是
+  语义不纯；用 `POST` 也可以）。

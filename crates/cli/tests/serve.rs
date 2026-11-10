@@ -1680,3 +1680,32 @@ fn capabilities_and_actions_describe_each_other() {
     }
     assert!(problems.is_empty(), "{problems:?}");
 }
+
+/// `split-column` from the API, and the boundary case that has no second column.
+#[test]
+fn the_api_can_split_a_column() {
+    let dir = TempDir::new("apisplitcol");
+    std::fs::write(dir.join("t.csv"), "id,full\n1,\"Ana,Perez,St 1\"\n2,Solo\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=split-column&col=full&by=%2C&into=first,last,addr",
+    );
+    assert!(status == 200 || status == 202, "{body}");
+    let (_, window) = get(&server.addr, "/rows?path=t.csv&start=0&count=2");
+    assert!(
+        window.contains(r#"["id","first","last","addr"]"#),
+        "{window}"
+    );
+    assert!(window.contains(r#"["1","Ana","Perez","St 1"]"#), "{window}");
+    // Fewer pieces than names leaves the rest empty rather than shifting values.
+    assert!(window.contains(r#"["2","Solo","",""]"#), "{window}");
+
+    // One name is not a split.
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=split-column&col=first&by=%2C&into=only",
+    );
+    assert_eq!(status, 400, "{body}");
+}
