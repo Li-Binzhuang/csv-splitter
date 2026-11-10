@@ -1455,9 +1455,12 @@ fn book_endpoint(
                 stream,
                 200,
                 &format!(
-                    r#"{{"root":{},"sheets":[{}],"unreadable":[{}]}}"#,
-                    json_str(&root.to_string_lossy()),
+                    r#"{{"root":{},"sheets":[{}],"hidden":{},"total":{},"truncated":{},"unreadable":[{}]}}"#,
+                    json_str(&scan_root.to_string_lossy()),
                     sheets.join(","),
+                    book.hidden,
+                    book.total,
+                    book.hidden > 0,
                     unreadable.join(",")
                 ),
             )
@@ -3760,9 +3763,10 @@ fn files(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) 
                 stream,
                 200,
                 &format!(
-                    r#"{{"root":{},"truncated":{},"files":[{}]}}"#,
+                    r#"{{"root":{},"truncated":{},"total":{},"files":[{}]}}"#,
                     json_str(&list.root.to_string_lossy()),
                     list.truncated,
+                    list.total,
                     items.join(",")
                 ),
             )

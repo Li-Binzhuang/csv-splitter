@@ -272,7 +272,7 @@ written on refusal, and `actual` says what the value is now.
 | GET | `/query` | SQL（只读，`limit` 上限 1 万并回显）|
 | GET | `/stats` `/analyze` `/filter` `/search` | 画像与检索 |
 | GET | `/groupby` `/pivot` `/style` `/chart` `/layout` | 聚合与展示元数据 |
-| GET | `/book` `/files` `/download` | 目录、书、下载（`book?root=<子目录>` 不存在时 400，不会回退到根）|
+| GET | `/book` `/files` `/download` | 目录、书、下载（`book?root=` 不存在时 400；`max`/`limit` 截断时带 `total`/`hidden`）|
 | GET | `/job` `/jobs` | 异步任务状态 |
 | POST | `/split` `/merge` `/sort` `/dedupe` `/partition` `/warm` `/index` | 拆分与后台任务 |
 

@@ -66,6 +66,11 @@ pub struct Book {
     pub sheets: Vec<SheetSummary>,
     /// Files that looked like sheets but could not be read, with the reason.
     pub unreadable: Vec<(PathBuf, String)>,
+    /// Sheets that exist but were not listed because `max_sheets` cut them off —
+    /// reported so a client can say "N more" instead of pretending the list is whole.
+    pub hidden: usize,
+    /// Total sheets found, including the hidden ones.
+    pub total: usize,
 }
 
 /// List the sheets under `root`, newest first, up to `max_sheets`.
@@ -96,10 +101,14 @@ pub fn scan(root: &Path, max_sheets: usize) -> io::Result<Book> {
                 .unwrap_or(0),
         )
     });
+    let total = entries.len();
+    let hidden = total.saturating_sub(max_sheets);
     entries.truncate(max_sheets);
 
     let mut book = Book {
         root: root.to_path_buf(),
+        total,
+        hidden,
         ..Default::default()
     };
     for path in entries {

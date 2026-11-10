@@ -23,6 +23,8 @@ pub struct Listing {
     pub files: Vec<FileEntry>,
     /// True when `max` cut the list short.
     pub truncated: bool,
+    /// How many files matched, including the ones the limit hid.
+    pub total: usize,
 }
 
 /// List files under `root` whose extension is in `exts` (comma separated).
@@ -46,6 +48,7 @@ pub fn list(root: &Path, exts: &str, max: usize) -> io::Result<Listing> {
 
     let mut files = Vec::new();
     let mut truncated = false;
+    let mut matched = 0usize;
     let mut stack = vec![root.clone()];
 
     while let Some(dir) = stack.pop() {
@@ -75,9 +78,12 @@ pub fn list(root: &Path, exts: &str, max: usize) -> io::Result<Listing> {
             if !wanted.is_empty() && !matches_extension(&name, &wanted) {
                 continue;
             }
+            // Count every match even after the limit, so `total` means what a client
+            // reads it as: "how many are there", not "how many did I look at".
+            matched += 1;
             if files.len() >= max {
                 truncated = true;
-                break;
+                continue;
             }
             let relative = relative_path(&root, &path);
             let modified_secs = meta
@@ -92,9 +98,6 @@ pub fn list(root: &Path, exts: &str, max: usize) -> io::Result<Listing> {
                 modified_secs,
             });
         }
-        if truncated {
-            break;
-        }
     }
 
     files.sort_by(|a, b| a.relative.cmp(&b.relative));
@@ -102,6 +105,7 @@ pub fn list(root: &Path, exts: &str, max: usize) -> io::Result<Listing> {
         root,
         files,
         truncated,
+        total: matched,
     })
 }
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.6.0] — 2026-11-10
+
+### Added
+
+- **Truncated listings say how many there are.** `/files?limit=1` reported
+  `truncated: true` and nothing else — a client knew something was hidden but not how
+  much. It now carries `total` (every match, counted after the cut), and `/book?max=1`
+  carries `hidden` and `total` alongside `truncated`. `Listings::total` counts what the
+  limit hid rather than what the loop happened to look at.
+- **`docs/INTEGRATION.md` has an error cheatsheet**: the five status codes, their shapes,
+  and what a front-end should do for each — 400 means "read the hint and fix the
+  parameter", 409 means "re-read the cell and ask the user", 422 means "this file cannot
+  be read, do not retry". `detail` is flagged as developer-facing text that should never
+  be shown to a user verbatim.
+
 ## [3.5.0] — 2026-11-10
 
 ### Fixed

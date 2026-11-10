@@ -2413,3 +2413,28 @@ fn path_errors_stay_distinct_and_roots_are_checked() {
     assert_eq!(code, 200, "{body}");
     assert!(body.contains("other.csv"), "{body}");
 }
+
+/// A cut-off listing says how many there are, so a client can render "3 of 12".
+#[test]
+fn truncated_listings_report_a_total() {
+    let dir = TempDir::new("listtotals");
+    for name in ["a.csv", "b.csv", "c.csv"] {
+        std::fs::write(dir.join(name), "id\n1\n").unwrap();
+    }
+    let server = start(&dir.0);
+
+    let (code, body) = get(&server.addr, "/files?dir=.&limit=1");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""truncated":true"#), "{body}");
+    assert!(
+        body.contains(r#""total":3"#),
+        "total must count what was hidden: {body}"
+    );
+    assert_eq!(body.matches(r#""path""#).count(), 1, "{body}");
+
+    let (code, body) = get(&server.addr, "/book?root=.&max=1");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""hidden":2"#), "{body}");
+    assert!(body.contains(r#""total":3"#), "{body}");
+    assert!(body.contains(r#""truncated":true"#), "{body}");
+}
