@@ -43,7 +43,7 @@ check "dedupe"     "$BIN" dedupe orders.csv --by cust_no -o d.csv
 check "columns"    "$BIN" columns orders.csv --keep id,city -o c.csv
 check "schema"      "$BIN" schema orders.csv --sample 5
 check "schema --has" "$BIN" schema orders.csv --has city
-check "schema --diff" "$BIN" schema orders.csv --diff small.csv
+check "schema --diff" "$BIN" schema orders.csv --diff orders.csv
 check "schema --require" "$BIN" schema orders.csv --require id,city
 check "expect"      "$BIN" edit set orders.csv --row 1 --col city --expect "$(head -2 orders.csv | tail -1 | cut -d, -f3)" --value Z
 check "concat"     "$BIN" concat small.csv small.csv -o cc.csv
