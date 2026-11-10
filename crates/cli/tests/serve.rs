@@ -2438,3 +2438,22 @@ fn truncated_listings_report_a_total() {
     assert!(body.contains(r#""total":3"#), "{body}");
     assert!(body.contains(r#""truncated":true"#), "{body}");
 }
+
+/// The window cap is stated three ways, so a client never has to infer it.
+#[test]
+fn the_row_cap_is_stated_in_the_response() {
+    let dir = TempDir::new("rowcap");
+    let mut text = String::from("id\n");
+    for i in 1..=3000 {
+        text.push_str(&format!("{i}\n"));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = get(&server.addr, "/rows?path=t.csv&count=5000");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""count":2000"#), "{body}");
+    assert!(body.contains(r#""requested":5000"#), "{body}");
+    assert!(body.contains(r#""limit":2000"#), "{body}");
+    assert!(body.contains(r#""total":3000"#), "{body}");
+}

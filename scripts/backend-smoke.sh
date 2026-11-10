@@ -70,6 +70,11 @@ has "rows: window contract"      "$ROW1" '"requested":2'
 has "rows: total"                "$ROW1" '"total":'
 has "rows: rowKeys"              "$ROW1" '"rowKeys":["b:0","b:1"]'
 
+CAPPED="$(curl -s "$URL/rows?path=orders.csv&count=5000")"
+has "cap: count is capped"       "$CAPPED" '"count":2000'
+has "cap: requested is echoed"   "$CAPPED" '"requested":5000'
+has "cap: limit is stated"       "$CAPPED" '"limit":2000'
+
 NARROW="$(curl -s "$URL/rows?path=orders.csv&count=1&columns=id,city")"
 has "rows: columns projection"   "$NARROW" '"columns":["id","city"]'
 
@@ -117,6 +122,10 @@ has "export job output"    "$STATE" '"output"'
 if [ -s exported.csv ]; then printf '  ok   exported file written (%s bytes)\n' "$(wc -c < exported.csv | tr -d ' ')"
 else printf '  FAIL exported file is missing or empty\n'; failed=$((failed + 1)); fi
 has "exported file has a header" "$(head -1 exported.csv)" "id,"
+
+echo "== write error shapes =="
+want_code_post "400 on an unknown action" 400 "/edit?path=orders.csv&action=nope"
+want_code "400 on a missing col"          400 "/rows?path=orders.csv&count=1&columns=nosuch"
 
 echo "== error shapes =="
 want_code "400 on unknown endpoint"  404 "/nope"

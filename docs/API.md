@@ -382,6 +382,17 @@ curl "/rows?path=t.csv&keys=b:2,b:0,b:99"
 - 不存在的 key 进 `missing`（被删掉的行是「没有了」，不是错误）；
 - 一次最多 200 个 key，写错的 key 是 400，`parameter` 为 `keys`。
 
+### 窗口上限 / the row cap
+
+`count=5000` 会被截到 2000，但**三个字段一起说清楚**：
+
+```json
+{"count":2000,"requested":5000,"limit":2000,…}
+```
+
+`count` 是**实际给的行数**，`requested` 是你要求的，`limit` 是这次服务端的上限。
+`/capabilities` 的 `limits.rowsPerRequest` 也给同一个数字。
+
 ### 过滤页的总数 / total on a filtered page
 
 ```bash

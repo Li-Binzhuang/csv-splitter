@@ -255,6 +255,29 @@ const READ_ROUTES: &[&str] = &[
     "/jobs",
 ];
 
+/// Reads that need `?path=`; the rest answer without a sheet.
+const PATH_REQUIRED: &[&str] = &[
+    "/meta",
+    "/rows",
+    "/columns",
+    "/schema",
+    "/cell",
+    "/journal",
+    "/sheet",
+    "/pivot",
+    "/style",
+    "/chart",
+    "/layout",
+    "/stats",
+    "/analyze",
+    "/groupby",
+    "/filter",
+    "/search",
+    "/download",
+    "/export",
+    "/query",
+];
+
 /// Every POST route, same rule.
 const WRITE_ROUTES: &[&str] = &[
     "POST /split",
@@ -446,9 +469,10 @@ fn capabilities_endpoint(stream: &mut TcpStream) -> io::Result<()> {
         stream,
         200,
         &format!(
-            r#"{{"version":{},"reads":[{}],"writes":[{}],"editActions":[{}],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"columnsProjection":true,"horizontalPaging":true}},"writeGuards":["expect=compare-and-set"],"notes":{}}}"#,
+            r#"{{"version":{},"reads":[{}],"pathRequired":{},"writes":[{}],"editActions":[{}],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"columnsProjection":true,"horizontalPaging":true,"queryRows":10000}},"writeGuards":["expect=compare-and-set"],"notes":{}}}"#,
             json_str(env!("CARGO_PKG_VERSION")),
             reads_json.join(","),
+            PATH_REQUIRED.iter().map(|r| json_str(r)).collect::<Vec<_>>().join(","),
             writes_json.join(","),
             actions.join(","),
             json_str(

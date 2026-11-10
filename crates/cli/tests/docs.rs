@@ -1089,3 +1089,31 @@ fn the_endpoint_index_covers_the_capabilities() {
         "routes missing from API.md: {missing:?}"
     );
 }
+
+/// Every path-requiring read is a real route, and the list is a subset of the routes.
+#[test]
+fn path_requiring_reads_are_real_routes() {
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let source = std::fs::read_to_string(manifest.join("src/serve.rs")).unwrap();
+    let list = |name: &str| -> Vec<String> {
+        let start = source
+            .find(&format!("const {name}: &[&str] = &["))
+            .unwrap_or_else(|| panic!("missing {name}"));
+        let end = source[start..].find("];").unwrap() + start;
+        source[start..end]
+            .split('"')
+            .skip(1)
+            .step_by(2)
+            .map(|s| s.to_string())
+            .collect()
+    };
+    let reads = list("READ_ROUTES");
+    let needs = list("PATH_REQUIRED");
+    assert!(!needs.is_empty());
+    for route in &needs {
+        assert!(
+            reads.contains(route),
+            "{route} requires a path but is not a served read route"
+        );
+    }
+}

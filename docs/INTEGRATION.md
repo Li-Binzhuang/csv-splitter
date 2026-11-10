@@ -126,6 +126,7 @@ curl "…/rows?path=big.csv&keys=b:12,v:3"
 
 ## 8. 不要做的假设
 
+| `count` 永不超过 2000 | `count` 是实际行数，`requested` 才是你要求的 | 见 `/capabilities` 的 `limits.rowsPerRequest` |
 | 别假设 | 事实 |
 |---|---|
 | `rows` 长度总是等于 `count` | 文件末尾会更短 |

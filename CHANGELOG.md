@@ -1,5 +1,24 @@
 # Changelog
 
+## [3.7.0] — 2026-11-10
+
+### Added
+
+- **`/capabilities` says which reads need `?path=`** (`pathRequired`), and publishes
+  `limits.queryRows`. A client can discover "this endpoint wants a sheet" instead of
+  learning it from a 400.
+- The 2000-row window cap is now pinned by tests and by `scripts/backend-smoke.sh`:
+  `count`, `requested` and `limit` must all be right at once (`count` 2000,
+  `requested` 5000, `limit` 2000). It was already implemented; nothing was checking that
+  a client could see it.
+- `backend-smoke.sh` gained write-side error cases: an unknown `action` and a missing
+  `columns=` name. 43 checks.
+
+### Docs
+
+- API.md documents the cap as three fields, INTEGRATION.md's "do not assume" table warns
+  that `count` is never above 2000 and points at the capability that states the number.
+
 ## [3.6.0] — 2026-11-10
 
 ### Added
