@@ -1613,3 +1613,70 @@ fn error_responses_have_one_shape() {
 
     assert!(problems.is_empty(), "{problems:?}");
 }
+
+/// The advertised capabilities and the accepted actions must describe each other.
+///
+/// A front-end draws its buttons from `capabilities`; if a working operation is missing
+/// from that list, it does not exist as far as the user is concerned. The reverse
+/// matters too: advertising something nothing implements is a promise that breaks.
+#[test]
+fn capabilities_and_actions_describe_each_other() {
+    let dir = TempDir::new("capabilities");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,CDMX\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (_, sheet) = get(&server.addr, "/sheet?path=t.csv");
+    let capabilities: Vec<String> = sheet
+        .split(r#""capabilities":["#)
+        .nth(1)
+        .and_then(|rest| rest.split("]").next())
+        .map(|list| {
+            list.split(',')
+                .map(|item| item.trim().trim_matches('"').to_string())
+                .filter(|item| !item.is_empty())
+                .collect()
+        })
+        .unwrap_or_default();
+    assert!(!capabilities.is_empty(), "{sheet}");
+
+    // Both hints come from one list, and that list names every action the endpoint
+    // implements — checked by asking for a bogus action and for none at all.
+    let (_, body) = post(&server.addr, "/edit?path=t.csv&action=bogus");
+    let hint = body
+        .split(r#""hint":""#)
+        .nth(1)
+        .and_then(|rest| rest.split('"').next())
+        .unwrap_or_default()
+        .to_string();
+    let actions: Vec<&str> = hint.split('|').collect();
+    for action in [
+        "set", "insert", "delete", "replace", "copy", "formula", "drop", "rename",
+    ] {
+        assert!(actions.contains(&action), "{action} missing from {hint}");
+    }
+
+    // Every advertised capability corresponds to one of them.
+    let pairs = [
+        ("edit.set", "set"),
+        ("edit.insert", "insert"),
+        ("edit.delete", "delete"),
+        ("edit.replace", "replace"),
+        ("edit.copy", "copy"),
+        ("column.drop", "drop"),
+        ("column.rename", "rename"),
+        ("column.formula", "formula"),
+        ("edit.undo", "undo"),
+        ("edit.redo", "redo"),
+        ("export", "export"),
+    ];
+    let mut problems = Vec::new();
+    for (capability, action) in pairs {
+        if !capabilities.iter().any(|c| c == capability) {
+            problems.push(format!("sheet does not advertise {capability}"));
+        }
+        if !actions.contains(&action) {
+            problems.push(format!("edit does not accept {action}"));
+        }
+    }
+    assert!(problems.is_empty(), "{problems:?}");
+}

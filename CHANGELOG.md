@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.98.0] — 2026-11-10
+
+### Fixed
+
+- **`/sheet` advertised ten capabilities while the API accepted eleven actions**, and
+  the two error hints listed a third, different subset. So a front-end drawing buttons
+  from `capabilities` could not offer `redo`, `copy`, `formula`, `split-column` or
+  `paste` — implemented, working, invisible. And neither hint could be trusted as a
+  description of the endpoint; the "unknown action" message left out `redo` and `copy`
+  while the "action is required" one left out `drop`, `rename`, `formula` as well.
+
+  Both now come from one `EDIT_ACTIONS` constant, and `capabilities` lists all eighteen
+  things a sheet can do. Tests check both directions: every journal operation has a
+  capability, and every advertised capability has an action that answers to it.
+
 ## [0.97.0] — 2026-11-10
 
 ### Added

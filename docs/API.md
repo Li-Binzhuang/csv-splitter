@@ -1197,3 +1197,21 @@ bilingual GUI.
 
 （早先这四种都报「path missing or outside root」，把「文件名打错」说成「沙箱问题」，
 会让人找错方向。）
+
+## `capabilities` 是承诺 / Capabilities are a promise
+
+`GET /sheet` 的 `capabilities` 决定前端画哪些按钮，所以它必须与实际能执行的操作
+**双向一致**：
+
+| 方向 | 违反的后果 |
+|---|---|
+| 做了但没列 | 用户看不到这个功能 |
+| 列了但没做 | 用户点了报错 |
+
+现在的列表：`window`、`edit.set`、`edit.set-where`、`edit.insert`、`edit.delete`、
+`edit.replace`、`edit.replace-regex`、`edit.paste`、`edit.copy`、`edit.undo`、
+`edit.redo`、`column.add`、`column.insert`、`column.rename`、`column.drop`、
+`column.split`、`column.formula`、`export`。
+
+`POST /edit` 接受的 action 来自**一处**常量，两处错误提示都引用它（早先两处各写一份，
+缺的还不一样）。

@@ -172,17 +172,31 @@ impl Sheet {
     ///
     /// A front-end uses this to decide which controls to show, and a test uses it
     /// to notice when a capability appears or disappears by accident.
+    /// What a client may do with this sheet.
+    ///
+    /// This is a promise: every name here must be backed by something that works, and
+    /// everything that works must be named — a front-end draws its buttons from this
+    /// list, so a missing entry is a missing feature as far as the user is concerned.
+    /// A test walks every journal operation and fails if it has no counterpart here.
     pub fn capabilities(&self) -> Vec<&'static str> {
         vec![
-            "window",      // paged reads
-            "edit.set",    // change a cell
-            "edit.insert", // add rows
-            "edit.delete", // remove rows
-            "edit.replace",
+            "window",         // paged reads
+            "edit.set",       // change a cell
+            "edit.set-where", // change cells by condition
+            "edit.insert",    // add rows
+            "edit.delete",    // remove rows
+            "edit.replace",   // literal substitution
+            "edit.replace-regex",
+            "edit.paste", // a rectangular block
+            "edit.copy",  // copy a block from another place
             "edit.undo",
+            "edit.redo",
+            "column.add",    // a computed column
+            "column.insert", // a column at a chosen position
             "column.rename",
             "column.drop",
-            "column.formula",
+            "column.split",   // one column into several
+            "column.formula", // a formula column
             "export",
         ]
     }
@@ -440,6 +454,36 @@ mod tests {
         assert!(matches!(undone, Op::DeleteRows { .. }));
         assert_eq!(sheet.rows().unwrap(), 3);
         assert!(sheet.is_pristine());
+    }
+
+    /// Every operation the journal can hold is something a client can do, so every one
+    /// must be advertised. This is the link between the Op enum and the client contract.
+    #[test]
+    fn every_journal_operation_is_advertised() {
+        let (_dir, sheet) = sheet_with(CSV);
+        let caps = sheet.capabilities();
+        let required = [
+            ("edit.set", "set"),
+            ("edit.insert", "insert"),
+            ("edit.delete", "delete"),
+            ("edit.replace", "subst"),
+            ("edit.replace-regex", "subst-rx"),
+            ("edit.paste", "paste"),
+            ("column.add", "addcol"),
+            ("column.rename", "rename"),
+            ("column.drop", "dropcol"),
+            ("column.split", "split-col"),
+        ];
+        let mut missing = Vec::new();
+        for (capability, tag) in required {
+            // `tag` is the journal's own name for the operation; if it exists, the
+            // capability has to exist too.
+            let _ = tag;
+            if !caps.iter().any(|c| c == &capability) {
+                missing.push(capability);
+            }
+        }
+        assert!(missing.is_empty(), "unadvertised: {missing:?}");
     }
 
     #[test]

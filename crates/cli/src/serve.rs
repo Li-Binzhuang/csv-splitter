@@ -541,6 +541,16 @@ fn edit_state(
 }
 
 /// Record an edit (POST /edit?action=...), or start the export job.
+/// The write actions `POST /edit` accepts.
+///
+/// One list, two places: the "action is required" hint and the "unknown action" hint.
+/// They used to be written separately and disagreed — each omitted different actions,
+/// so the error text could not be trusted as a description of the endpoint.
+const EDIT_ACTIONS: &[&str] = &[
+    "set", "insert", "delete", "replace", "copy", "formula", "drop", "rename", "undo", "redo",
+    "export",
+];
+
 fn edit_apply(
     stream: &mut TcpStream,
     root: &Path,
@@ -556,7 +566,7 @@ fn edit_apply(
             stream,
             "action is required",
             "action",
-            "set|insert|delete|replace|undo|export",
+            &EDIT_ACTIONS.join("|"),
         );
     };
     let sidecar = Journal::sidecar(&path);
@@ -933,8 +943,9 @@ fn edit_apply(
                 stream,
                 400,
                 &format!(
-                    r#"{{"error":{},"parameter":"action","hint":"set|insert|delete|replace|drop|rename|undo|export"}}"#,
-                    json_str(&format!("unknown action {other}"))
+                    r#"{{"error":{},"parameter":"action","hint":{}}}"#,
+                    json_str(&format!("unknown action {other}")),
+                    json_str(&EDIT_ACTIONS.join("|"))
                 ),
             )
         }
