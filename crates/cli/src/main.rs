@@ -11,7 +11,7 @@ use csv_splitter_core::filter::{self, scan as filter_scan, FilterSpec};
 use csv_splitter_core::index::{SparseIndex, DEFAULT_INTERVAL};
 use csv_splitter_core::merge::merge_archive;
 use csv_splitter_core::partition::{run_partition, PartitionConfig};
-use csv_splitter_core::preview::compute_column_stats;
+
 use csv_splitter_core::search::{search as search_scan, SearchSpec};
 use csv_splitter_core::sort::SortColumn;
 use csv_splitter_core::splitter::run_split_threads;
@@ -1798,6 +1798,7 @@ fn cmd_serve(args: &[String]) -> i32 {
 
 fn cmd_stats(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut quotes_text = String::new();
     let mut input: Option<PathBuf> = None;
     let mut sample = 50_000usize;
     let mut top = 5usize;
@@ -1805,6 +1806,13 @@ fn cmd_stats(args: &[String]) -> i32 {
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
+            "--quotes" => match p.value("--quotes") {
+                Ok(v) => quotes_text = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--sample" => match p
                 .value("--sample")
                 .and_then(|v| v.parse().map_err(|_| "bad --sample".to_string()))
@@ -1859,7 +1867,16 @@ fn cmd_stats(args: &[String]) -> i32 {
 
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("stats", rx, true);
-    let result = compute_column_stats(&input, delimiter, sample, 100_000, &tx);
+    let quotes = match parse_quotes(&quotes_text) {
+        Ok(q) => q,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let result = csv_splitter_core::preview::compute_column_stats_with(
+        &input, delimiter, sample, 100_000, quotes, &tx,
+    );
     drop(tx);
     reporter.join().ok();
 
@@ -2556,6 +2573,7 @@ fn cmd_layout(args: &[String]) -> i32 {
 
 fn cmd_chart(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut quotes_text = String::new();
     let mut input: Option<PathBuf> = None;
     let mut out: Option<PathBuf> = None;
     let mut x: Option<String> = None;
@@ -2569,6 +2587,13 @@ fn cmd_chart(args: &[String]) -> i32 {
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
+            "--quotes" => match p.value("--quotes") {
+                Ok(v) => quotes_text = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--x" => match p.value("--x") {
                 Ok(v) => x = Some(v),
                 Err(e) => {
@@ -2693,7 +2718,14 @@ fn cmd_chart(args: &[String]) -> i32 {
     let (tx, rx) = mpsc::channel();
     // Writing JSON to stdout means stderr must stay quiet enough to pipe.
     let reporter = spawn_reporter("chart", rx, out.is_none());
-    let result = csv_splitter_core::chart::chart(&input, delimiter, &options, &tx);
+    let quotes = match parse_quotes(&quotes_text) {
+        Ok(q) => q,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let result = csv_splitter_core::chart::chart_quotes(&input, delimiter, &options, quotes, &tx);
     drop(tx);
     let _ = reporter.join();
     let data = match result {
@@ -4174,6 +4206,7 @@ fn cmd_edit(args: &[String]) -> i32 {
 
 fn cmd_analyze(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut quotes_text = String::new();
     let mut sample: Option<u64> = None;
     let mut input: Option<PathBuf> = None;
     let mut distinct_cap = csv_splitter_core::profile::DEFAULT_DISTINCT_CAP;
@@ -4182,6 +4215,13 @@ fn cmd_analyze(args: &[String]) -> i32 {
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
+            "--quotes" => match p.value("--quotes") {
+                Ok(v) => quotes_text = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--distinct-cap" => match p
                 .value("--distinct-cap")
                 .and_then(|v| v.parse().map_err(|_| "bad --distinct-cap".to_string()))
@@ -4238,8 +4278,21 @@ fn cmd_analyze(args: &[String]) -> i32 {
 
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("analyze", rx, true);
-    let result =
-        csv_splitter_core::profile::profile_with(&input, delimiter, distinct_cap, sample, &tx);
+    let quotes = match parse_quotes(&quotes_text) {
+        Ok(q) => q,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let result = csv_splitter_core::profile::profile_quotes(
+        &input,
+        delimiter,
+        distinct_cap,
+        sample,
+        quotes,
+        &tx,
+    );
     drop(tx);
     let _ = reporter.join();
     let profiles = match result {
@@ -4495,6 +4548,7 @@ fn cmd_columns(args: &[String]) -> i32 {
 
 fn cmd_dedupe(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut quotes_text = String::new();
     let mut input: Option<PathBuf> = None;
     let mut out: Option<PathBuf> = None;
     let mut keys: Vec<String> = Vec::new();
@@ -4505,6 +4559,13 @@ fn cmd_dedupe(args: &[String]) -> i32 {
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
+            "--quotes" => match p.value("--quotes") {
+                Ok(v) => quotes_text = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--by" => match p.value("--by") {
                 Ok(v) => keys = v.split(',').map(|s| s.trim().to_string()).collect(),
                 Err(e) => {
@@ -4571,8 +4632,16 @@ fn cmd_dedupe(args: &[String]) -> i32 {
 
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("dedupe", rx, !json);
-    let result =
-        csv_splitter_core::dedupe::dedupe(&input, delimiter, &keys, &output, max_keys, &tx);
+    let quotes = match parse_quotes(&quotes_text) {
+        Ok(q) => q,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let result = csv_splitter_core::dedupe::dedupe_quotes(
+        &input, delimiter, &keys, &output, max_keys, quotes, &tx,
+    );
     drop(tx);
     let _ = reporter.join();
     match result {

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.60.0] — 2026-11-10
+
+### Added
+
+- **`--quotes` reaches every command that reads CSV**: `chart`, `dedupe`, `stats`,
+  `analyze` joined `preview`, `filter`, `groupby`, `pivot`, `lookup` and `edit export`.
+  Each module gained a `*_quotes` entry point and kept its previous function as the
+  RFC-default wrapper, so no existing caller changed.
+- The record reader is shared, so the fix applies to record boundaries as well as
+  fields: a backslash file with `\"` no longer merges the next line into the previous
+  record.
+
+`docs/CAPABILITIES.md` loses its "quote style only covers two commands" line — the
+first gap on that list that has actually been closed rather than reworded.
+
 ## [0.59.0] — 2026-11-10
 
 ### Added

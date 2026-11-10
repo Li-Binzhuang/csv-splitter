@@ -11,7 +11,7 @@
 //! has no value, which line charts render as a gap instead of a fake zero.
 
 use crate::aggregate::{Accumulator, AggSpec};
-use crate::csv_reader::{parse_csv_record, resolve_column, RecordReader};
+use crate::csv_reader::{parse_csv_record_with, resolve_column, QuoteStyle, RecordReader};
 use crate::encoding;
 use crate::types::{Delimiter, ProgressEvent, ProgressSender};
 use std::collections::HashMap;
@@ -166,6 +166,17 @@ pub fn chart(
     options: &ChartOptions,
     tx: &ProgressSender,
 ) -> io::Result<ChartData> {
+    chart_quotes(path, delimiter, options, QuoteStyle::Rfc4180, tx)
+}
+
+/// Same as [`chart`], with an explicit quote style.
+pub fn chart_quotes(
+    path: &Path,
+    delimiter: Delimiter,
+    options: &ChartOptions,
+    quotes: QuoteStyle,
+    tx: &ProgressSender,
+) -> io::Result<ChartData> {
     if options.x.trim().is_empty() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -179,9 +190,10 @@ pub fn chart(
         ));
     }
     let delim = delimiter.byte();
-    let mut records = RecordReader::new(
+    let mut records = RecordReader::new_with(
         BufReader::with_capacity(4 * 1024 * 1024, encoding::open_decoded(path)?),
         4 * 1024 * 1024,
+        quotes,
     );
     let mut record = Vec::with_capacity(64 * 1024);
     if !records.next_record(&mut record)? {
@@ -190,9 +202,10 @@ pub fn chart(
             "the file has no header",
         ));
     }
-    let header = parse_csv_record(
+    let header = parse_csv_record_with(
         String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
         delim,
+        quotes,
     );
 
     let x_idx = resolve_column(&options.x, &header)
@@ -224,9 +237,10 @@ pub fn chart(
     let mut scanned = 0u64;
 
     while records.next_record(&mut record)? {
-        let fields = parse_csv_record(
+        let fields = parse_csv_record_with(
             String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
             delim,
+            quotes,
         );
         rows += 1;
         scanned += record.len() as u64;

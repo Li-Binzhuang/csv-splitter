@@ -15,8 +15,8 @@
 //!   * the caller can cap the key count; past the cap the run fails loudly
 //!     instead of silently dropping unique rows.
 
-use crate::csv_reader::parse_csv_record;
 use crate::csv_reader::RecordReader;
+use crate::csv_reader::{parse_csv_record_with, QuoteStyle};
 use crate::encoding;
 use crate::types::{Delimiter, ProgressEvent, ProgressSender};
 use std::collections::HashSet;
@@ -53,6 +53,27 @@ pub fn dedupe(
     max_keys: usize,
     tx: &ProgressSender,
 ) -> io::Result<DedupeSummary> {
+    dedupe_quotes(
+        path,
+        delimiter,
+        keys,
+        output,
+        max_keys,
+        QuoteStyle::Rfc4180,
+        tx,
+    )
+}
+
+/// Same as [`dedupe`], with an explicit quote style.
+pub fn dedupe_quotes(
+    path: &Path,
+    delimiter: Delimiter,
+    keys: &[String],
+    output: &Path,
+    max_keys: usize,
+    quotes: QuoteStyle,
+    tx: &ProgressSender,
+) -> io::Result<DedupeSummary> {
     let total_bytes = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
     tx.send(ProgressEvent::PhaseStart {
         phase: "Removing duplicates".into(),
@@ -71,7 +92,7 @@ pub fn dedupe(
     if !records.next_record(&mut record)? {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "empty file"));
     }
-    let headers = parse_csv_record(&String::from_utf8_lossy(&record), delim);
+    let headers = parse_csv_record_with(&String::from_utf8_lossy(&record), delim, quotes);
     let key_indices: Vec<usize> = if keys.is_empty() {
         Vec::new()
     } else {
@@ -112,9 +133,10 @@ pub fn dedupe(
                 "more than {max_keys} distinct rows; raise --max-keys or dedupe by column"
             )));
         }
-        if parse_csv_record(
+        if parse_csv_record_with(
             String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
             delim,
+            quotes,
         )
         .len()
             != width
@@ -155,7 +177,7 @@ fn key_hash(record: &[u8], indices: &[usize], delim: u8) -> u128 {
     }
     let text = String::from_utf8_lossy(record);
     let trimmed = text.trim_end_matches(['\n', '\r']);
-    let fields = parse_csv_record(trimmed, delim);
+    let fields = parse_csv_record_with(trimmed, delim, QuoteStyle::Rfc4180);
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     for &i in indices {
         fields

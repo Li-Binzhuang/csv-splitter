@@ -13,7 +13,7 @@
 //! Nothing here buffers a row: the same scanner that handles quoted newlines and
 //! GBK feeds the accumulators.
 
-use crate::csv_reader::{parse_csv_record, RecordReader};
+use crate::csv_reader::{parse_csv_record_with, QuoteStyle, RecordReader};
 use crate::encoding;
 use crate::types::{Delimiter, ProgressEvent, ProgressSender};
 use std::collections::HashSet;
@@ -245,6 +245,25 @@ pub fn profile_with(
     limit: Option<u64>,
     tx: &ProgressSender,
 ) -> io::Result<Vec<ColumnProfile>> {
+    profile_quotes(
+        path,
+        delimiter,
+        distinct_cap,
+        limit,
+        crate::csv_reader::QuoteStyle::Rfc4180,
+        tx,
+    )
+}
+
+/// Same as [`profile_with`], with an explicit quote style.
+pub fn profile_quotes(
+    path: &Path,
+    delimiter: Delimiter,
+    distinct_cap: usize,
+    limit: Option<u64>,
+    quotes: QuoteStyle,
+    tx: &ProgressSender,
+) -> io::Result<Vec<ColumnProfile>> {
     let file_size = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
     tx.send(ProgressEvent::PhaseStart {
         phase: "Profiling columns".into(),
@@ -253,9 +272,10 @@ pub fn profile_with(
     .ok();
 
     let reader = encoding::open_decoded(path)?;
-    let mut records = RecordReader::new(
+    let mut records = RecordReader::new_with(
         BufReader::with_capacity(8 * 1024 * 1024, reader),
         8 * 1024 * 1024,
+        quotes,
     );
     let delim = delimiter.byte();
 
@@ -269,7 +289,7 @@ pub fn profile_with(
         .ok();
         return Ok(Vec::new());
     }
-    let headers = parse_csv_record(&String::from_utf8_lossy(&record), delim);
+    let headers = parse_csv_record_with(&String::from_utf8_lossy(&record), delim, quotes);
     let cap = distinct_cap.max(1);
     let mut cols: Vec<Acc> = (0..headers.len()).map(|_| Acc::new()).collect();
 
@@ -284,7 +304,7 @@ pub fn profile_with(
         observed += 1;
         bytes_read += record.len() as u64;
         let text = String::from_utf8_lossy(&record);
-        let fields = parse_csv_record(text.trim_end_matches(['\n', '\r']), delim);
+        let fields = parse_csv_record_with(text.trim_end_matches(['\n', '\r']), delim, quotes);
         if fields.len() != width {
             ragged += 1;
         }

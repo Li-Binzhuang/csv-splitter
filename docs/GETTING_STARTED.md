@@ -194,3 +194,40 @@ $ curl "http://127.0.0.1:8787/groupby?path=orders.csv&by=city&agg=amount:sum"
 | 换编码 | `convert FILE --from gbk --to utf-8` |
 | SQL | `sql FILE "SELECT …"` |
 | 本地 API | `serve --root DIR` |
+
+## 从一份脏文件到一份能用的文件 / Dirty file, end to end
+
+真实世界的文件往往是：GBK 编码、表头带空格、备注里有反斜杠转义的引号。
+下面这条路径是实测过的（`/tmp/e2e/dirty.csv`，GBK，5 行）：
+
+```bash
+# 1) 先看一眼，工具会自己说哪里可疑
+$ csv-splitter preview dirty.csv
+note: this file looks like it escapes quotes with a backslash (backslash); if fields
+      look wrong, re-run with `--quotes backslash`
+客户编号  | 城市 | 金额 | 备注
+
+# 2) 按它说的读——备注里的引号才是对的
+$ csv-splitter preview dirty.csv --quotes backslash
+
+# 3) 先摸清数据（列统计、空值、去重）
+$ csv-splitter analyze dirty.csv --quotes backslash
+备注    5 行 / 0 空 / 1 个不同值 / text: 说 "谢谢" 的客户 (5)
+
+# 4) 批量改 + 插一列（原文件不动，改动在 dirty.csv.journal）
+$ csv-splitter edit set dirty.csv --where "城市=CDMX" --col 金额 --value 999 --quotes backslash
+$ csv-splitter edit insert-column dirty.csv --after 城市 --name 来源 --value "导入"
+
+# 5) 物化：输出 UTF-8、RFC 转义的标准 CSV
+$ csv-splitter edit export dirty.csv --quotes backslash -o clean.csv
+客户编号 ,城市,来源,金额,备注
+2,CDMX,导入,999,"说 ""谢谢"" 的客户"
+```
+
+几件值得注意的事：
+
+- **第 1 步的提示是自动的**：不改任何参数也会告诉你文件可能用了反斜杠转义。
+- **`--quotes` 要一路带上**：读的时候不一致，第 2 步以后每一步的答案都会错。
+- **表头的 `客户编号 ` 带空格**，按名字引用会自动容忍（`--col 金额` 不用写全）。
+- 导出后是**标准的 RFC 4180**，可以被任何工具再读。
+

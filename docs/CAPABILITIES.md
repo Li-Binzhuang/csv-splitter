@@ -41,7 +41,7 @@
 | UTF-16 LE/BE | 读取；索引拒绝（字节偏移不可靠） |
 | Windows-1252 | 与 GBK 打分竞争，`café` 不乱码 |
 | 转码 | `convert f.csv -o utf8.csv`（流式，恒定内存） |
-| 引号风格 | `--quotes rfc4180\|backslash\|none`（`preview`/`filter`/`groupby`/`pivot`/`lookup`/`edit export`），并自动检测警告 |
+| 引号风格 | `--quotes rfc4180\|backslash\|none`，**所有读 CSV 的命令**都接受，并自动检测警告 |
 
 ## 分析
 
@@ -138,6 +138,5 @@
 |---|---|
 | 内置页面没在真浏览器验证过 | 有契约测试兜底，布局未经人眼 |
 | `analyze` 全表扫描（1 GB 约 11 s） | 用 `--sample N` 可以快 5 倍，但那只是**前 N 行的估算** |
-| 引号风格覆盖 6 条命令 | `chart`/`dedupe`/`stats`/`analyze` 仍按 RFC 解析 |
 | Windows 未实测 | 路径处理可能有坑 |
 | 多 sheet 工作簿只有列表，没有跨表引用 | 还不能 `=customers!B2` |
