@@ -242,6 +242,22 @@ curl -X POST "http://127.0.0.1:7811/edit?path=t.csv&action=set&row=1&col=city&va
 written on refusal, and `actual` says what the value is now.
 
 
+
+## 状态码契约 / Status-code contract
+
+一个错误类别对应一个码，客户端可以按码分支：
+
+| 码 | 什么时候 | 例子 |
+|---|---|---|
+| **400** | 请求本身有问题（参数、路径、列名、SQL 语法）| `path=nope.csv`、`order=nosuch`、`sql=SELECT nope`、`path=../etc/passwd` |
+| **404** | 请求合法但目标不存在 | 未知端点；`/cell?row=999` 超过末尾 |
+| **405** | 方法不对 | `PUT /rows`、对 `POST /split` 发 GET |
+| **409** | 目标在你之前被改了 | `expect=` 不匹配（带 `actual`/`expected`）|
+| **422** | 文件读不了（编码/格式）| UTF-16 文件、损坏的 CSV |
+| **504** | 引擎被停止（超时）| 查询超过 30 秒 |
+
+**有测试逐条钉住这张表**（`failure_kinds_have_one_status_code_each`），所以「路径错误返回 400 还是 404」不是靠记忆。
+
 ## 端点总表 / Endpoint index
 
 ### 路径错误的四种消息

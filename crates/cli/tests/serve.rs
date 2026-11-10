@@ -2500,3 +2500,69 @@ fn the_sheet_carries_a_stamp_that_moves_after_a_write() {
     assert_eq!(code, 200, "{body}");
     assert!(body.contains(&format!(r#""stamp":"{after}""#)), "{body}");
 }
+
+/// Send any method, for the status-code contract below.
+fn request(addr: &str, method: &str, path: &str) -> u16 {
+    let mut stream = TcpStream::connect(addr).unwrap();
+    write!(
+        stream,
+        "{method} {path} HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+    )
+    .unwrap();
+    let mut raw = String::new();
+    stream.read_to_string(&mut raw).unwrap();
+    raw.split_whitespace()
+        .nth(1)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0)
+}
+
+/// One table for every failure kind, so a client can switch on the code.
+///
+/// The rule: 400 means "your request, fix it", 404 means "it is not there",
+/// 405 means "wrong method", 409 means "someone changed it under you",
+/// 422 means "this file cannot be read", 504 means "the engine was stopped".
+#[test]
+fn failure_kinds_have_one_status_code_each() {
+    let dir = TempDir::new("codes");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n2,B\n").unwrap();
+    std::fs::create_dir_all(dir.join("sub")).unwrap();
+    let server = start(&dir.0);
+
+    let cases: Vec<(&str, &str, u16)> = vec![
+        ("GET", "/nope", 404),
+        ("GET", "/rows", 400),
+        ("GET", "/rows?path=nope.csv", 400),
+        ("GET", "/rows?path=sub", 400),
+        ("GET", "/rows?path=../etc/passwd", 400),
+        ("GET", "/rows?path=t.csv&start=abc", 400),
+        ("GET", "/rows?path=t.csv&order=nosuch", 400),
+        ("GET", "/query?path=t.csv&sql=SELECT%20nope%20FROM%20t", 400),
+        ("GET", "/cell?path=t.csv&row=0&col=city", 400),
+        ("GET", "/cell?path=t.csv&row=999&col=city", 404),
+        ("GET", "/cell?path=t.csv&row=1&col=nope", 400),
+        ("GET", "/columns?path=t.csv&kind=blah", 400),
+        ("GET", "/download?path=sub", 400),
+        ("POST", "/edit?path=t.csv&action=nope", 400),
+        (
+            "POST",
+            "/edit?path=t.csv&action=set&row=1&col=city&value=Z&expect=__no__",
+            409,
+        ),
+        ("POST", "/nope", 404),
+        ("PUT", "/rows?path=t.csv", 405),
+    ];
+
+    let mut wrong: Vec<String> = Vec::new();
+    for (method, path, expected) in cases {
+        let got = if method == "GET" {
+            get(&server.addr, path).0
+        } else {
+            request(&server.addr, method, path)
+        };
+        if got != expected {
+            wrong.push(format!("{method} {path}: want {expected}, got {got}"));
+        }
+    }
+    assert!(wrong.is_empty(), "{wrong:#?}");
+}

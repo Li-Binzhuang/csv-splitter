@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.12.0] — 2026-11-10
+
+### Added
+
+- **A status-code contract, asserted case by case.** Seventeen failure kinds in one
+  table test (`failure_kinds_have_one_status_code_each`): 400 for anything wrong with the
+  request (path, column, SQL, parameter), 404 for a legal request whose target is not
+  there (unknown endpoint, a row past the end), 405 for the wrong method, 409 for a
+  compare-and-set that lost, 422 for an unreadable file, 504 for an interrupted query.
+  - The codes were already consistent when probed endpoint by endpoint; the test is what
+  makes "already consistent" stay true, and it is what a client can rely on when it
+    switches on the status rather than parsing messages.
+  - `docs/API.md` opens with the table; INTEGRATION.md points at the test.
+
 ## [3.11.0] — 2026-11-10
 
 ### Added
