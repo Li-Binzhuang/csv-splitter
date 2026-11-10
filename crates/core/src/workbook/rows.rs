@@ -286,6 +286,47 @@ fn delete(segments: &mut Vec<Segment>, at: u64, count: u64) {
 
 // ------------------------------------------------------------- sheet & export
 
+/// Which rows a fill covers, in identity space.
+///
+/// A contiguous run of base rows is the normal case and costs one entry; a run that
+/// includes inserted blocks keeps the identities it touched.
+#[derive(Clone, Debug)]
+pub enum FillSpan {
+    Base {
+        from: u64,
+        to: u64,
+        column: String,
+        value: String,
+    },
+    Rows {
+        ids: Vec<RowId>,
+        column: String,
+        value: String,
+    },
+}
+
+impl FillSpan {
+    fn covers(&self, id: RowId, column: &str) -> bool {
+        match self {
+            Self::Base {
+                from,
+                to,
+                column: name,
+                ..
+            } => name == column && matches!(id, RowId::Base(at) if at >= *from && at <= *to),
+            Self::Rows {
+                ids, column: name, ..
+            } => name == column && ids.contains(&id),
+        }
+    }
+
+    fn value(&self) -> &str {
+        match self {
+            Self::Base { value, .. } | Self::Rows { value, .. } => value,
+        }
+    }
+}
+
 /// Edits that change cell contents rather than row structure.
 #[derive(Clone, Debug, Default)]
 pub struct CellEdits {
@@ -301,9 +342,13 @@ pub struct CellEdits {
     regex_subs: Vec<(Option<String>, String, String)>,
     /// Bulk-edit rules: (filter expression, column, value).
     rules: Vec<(String, String, String)>,
-    /// Row-range fills: (from, to, column, value), applied before any explicit edit so
-    /// a precise `set` always wins over a bulk fill that happens to cover it.
-    fills: Vec<(u64, u64, String, String)>,
+    /// Row-range fills, resolved to row *identities* when the edit is made.
+    ///
+    /// Stored as identities rather than positions so the fill follows its rows: fill
+    /// rows 6-8, then delete rows 1-3, and the values must stay on the rows that were
+    /// filled rather than slide up with them. Applied before any explicit edit, so a
+    /// precise `set` always wins over a bulk fill that covers it.
+    fills: Vec<FillSpan>,
     /// Pasted blocks: (row identity, anchor column, one row of values).
     blocks: Vec<(RowId, String, Vec<String>)>,
 }
@@ -371,12 +416,12 @@ impl CellEdits {
 
     /// Apply substitutions to one value.
     /// A fill covering this row, if any. Applied before explicit edits, so `set` wins.
-    pub fn fill_for(&self, row: u64, column: &str) -> Option<&str> {
+    pub fn fill_for(&self, id: RowId, column: &str) -> Option<&str> {
         self.fills
             .iter()
             .rev()
-            .find(|(from, to, name, _)| name == column && row >= *from && row <= *to)
-            .map(|(_, _, _, value)| value.as_str())
+            .find(|span| span.covers(id, column))
+            .map(FillSpan::value)
     }
 
     pub fn substitute(&self, column: &str, value: &str) -> String {
@@ -875,7 +920,7 @@ pub fn compile(ops: &[Op], base_rows: u64) -> Sheet {
     let mut subs: Vec<(Option<String>, String, String)> = Vec::new();
     let mut regex_subs: Vec<(Option<String>, String, String)> = Vec::new();
     let mut rules: Vec<(String, String, String)> = Vec::new();
-    let mut fills: Vec<(u64, u64, String, String)> = Vec::new();
+    let mut fills: Vec<FillSpan> = Vec::new();
     let mut blocks: Vec<(RowId, String, Vec<String>)> = Vec::new();
 
     for (index, op) in ops.iter().enumerate() {
@@ -935,7 +980,42 @@ pub fn compile(ops: &[Op], base_rows: u64) -> Sheet {
                 from,
                 to,
                 value,
-            } => fills.push((*from, *to, column.clone(), value.clone())),
+            } => {
+                // Resolve against the map as it stands *now*: a later delete must not
+                // slide the filled values onto different rows.
+                let ids: Vec<RowId> = (*from..=*to)
+                    .filter_map(|logical| map.id_at(logical))
+                    .collect();
+                if ids.is_empty() {
+                    continue;
+                }
+                let bases: Vec<u64> = ids
+                    .iter()
+                    .filter_map(|id| match id {
+                        RowId::Base(at) => Some(*at),
+                        RowId::Virtual(_) => None,
+                    })
+                    .collect();
+                // The common case is one contiguous run of base rows: store it as a
+                // span, so filling a million rows still costs one entry.
+                let contiguous =
+                    bases.len() == ids.len() && bases.windows(2).all(|pair| pair[1] == pair[0] + 1);
+                let span = if contiguous {
+                    FillSpan::Base {
+                        from: bases[0],
+                        to: bases[bases.len() - 1],
+                        column: column.clone(),
+                        value: value.clone(),
+                    }
+                } else {
+                    FillSpan::Rows {
+                        ids,
+                        column: column.clone(),
+                        value: value.clone(),
+                    }
+                };
+                fills.push(span);
+            }
             Op::Substitute { column, from, to } => {
                 subs.push((column.clone(), from.clone(), to.clone()));
             }
@@ -1132,10 +1212,10 @@ mod fill_tests {
         let sheet = compile(&ops, 10);
         // Stored as a range: ten rows of fill must not become ten journal entries.
         assert_eq!(sheet.edits.fills.len(), 1);
-        assert_eq!(sheet.edits.fill_for(2, "qty"), Some("0"));
-        assert_eq!(sheet.edits.fill_for(4, "qty"), Some("0"));
-        assert_eq!(sheet.edits.fill_for(1, "qty"), None);
-        assert_eq!(sheet.edits.fill_for(5, "qty"), None);
+        assert_eq!(sheet.edits.fill_for(RowId::Base(2), "qty"), Some("0"));
+        assert_eq!(sheet.edits.fill_for(RowId::Base(4), "qty"), Some("0"));
+        assert_eq!(sheet.edits.fill_for(RowId::Base(1), "qty"), None);
+        assert_eq!(sheet.edits.fill_for(RowId::Base(5), "qty"), None);
         // The explicit edit is a separate, higher-priority record.
         assert_eq!(sheet.edits.cell(RowId::Base(3), "qty"), Some("9"));
     }

@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.5.0] — 2026-11-10
+
+### Fixed
+
+- **A fill did not follow its rows.** Fill rows 6-8, then delete rows 1-3, and the values
+  slid up to rows 3-5 — position semantics, while `set --row` uses identity semantics.
+  Every other edit sticks to its row, so the fill was the odd one out.
+  - Fills now resolve to row identities **when the edit is made**: a contiguous run of
+    base rows is stored as a span (filling a million rows still costs one entry), and a
+    range that spans inserted blocks keeps the identities it touched.
+  - Found by probing the combination, not by reading the code: each mechanism was
+    correct on its own.
+
 ## [1.4.0] — 2026-11-10
 
 ### Added

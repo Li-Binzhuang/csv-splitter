@@ -70,7 +70,7 @@
 | 删除行 | `edit delete --row N --count K` | `action=delete` |
 | 按条件删除 | `edit delete --where "city=Puebla"`（一次操作，一次撤销） | `action=delete-where` |
 | 按内容定位后修改 | `edit set --find Puebla --col city --value "..."` | — |
-| 区间填充 | `edit fill --col qty --from-row 5 --to-row 10 --value 0` | `action=fill` |
+| 区间填充（跟着行走） | `edit fill --col qty --from-row 5 --to-row 10 --value 0` | `action=fill` |
 | 一列拆成多列 | `edit split-column f.csv --col full --by "," --into "first,last,addr"` | — |
 | 分页浏览（套用编辑） | `view f.csv [--where EXPR] [--order COL[--desc]] [--find TEXT [--regex] [--nth N] [--context N]] [--start N] [--count M] [--json]` | `GET /rows?where=` |
 | 查找替换 | `edit replace --from X --to Y [--col C]` | `action=replace` |
@@ -81,6 +81,9 @@
 | 物化 | `edit export -o out.csv` | `POST /edit?action=export` |
 
 编辑是**粘在行上**的：先改第 50 万行、再在第 7 行插一行，那条改动会跟着原行走。
+**区间填充也一样**：填第 6–8 行、再删掉前 3 行，值留在这三行上，不会跟着位置滑上去
+（1.5.0 之前它按位置存，会滑）。一份连续的行存成区间（填 100 万行也只是一条记录），
+跨插入行的填充存成它碰到的行身份列表。
 同理**粘在列上**：改名会让已做的改动和公式跟着新列名走，删列则把那一列的改动一起带走。
 
 ### 公式

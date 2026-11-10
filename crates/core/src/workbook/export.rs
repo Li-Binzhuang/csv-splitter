@@ -274,8 +274,8 @@ impl<'a> RowPipeline<'a> {
                 // An explicit edit to a piece wins over what the split would derive.
                 Some(v) => v.to_string(),
                 // A range fill is bulk; a precise edit always beats it.
-                None if self.edits.fill_for(row_number, column).is_some() => {
-                    self.edits.fill_for(row_number, column).unwrap().to_string()
+                None if self.edits.fill_for(id, column).is_some() => {
+                    self.edits.fill_for(id, column).unwrap().to_string()
                 }
                 None => match self.plan.split_piece(idx) {
                     // Pieces come from the base text, not from the possibly-edited cell:

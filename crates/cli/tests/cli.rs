@@ -3973,3 +3973,85 @@ fn delete_by_condition_is_one_operation() {
     let journal = std::fs::read_to_string(dir.join("t.csv.journal")).unwrap();
     assert!(journal.contains("dels"), "{journal}");
 }
+
+/// A fill follows its rows: inserting or deleting elsewhere must not move the values.
+#[test]
+fn a_fill_sticks_to_the_rows_it_covered() {
+    let dir = TempDir::new("fillidentity");
+    let run = |args: &[&str]| {
+        assert_eq!(
+            Command::new(bin()).args(args).status().unwrap().code(),
+            Some(0),
+            "{args:?}"
+        );
+    };
+
+    // Fill rows 6-8, then delete the first three rows (by condition).
+    let input = dir.join("t.csv");
+    let mut text = String::from("id,city,qty\n");
+    for i in 1..=10 {
+        let city = if i <= 3 { "Puebla" } else { "CDMX" };
+        text.push_str(&format!("{i},{city},0\n"));
+    }
+    std::fs::write(&input, text).unwrap();
+    let path = input.to_str().unwrap();
+    run(&[
+        "edit",
+        "fill",
+        path,
+        "--col",
+        "qty",
+        "--from-row",
+        "6",
+        "--to-row",
+        "8",
+        "--value",
+        "999",
+    ]);
+    run(&["edit", "delete", path, "--where", "city=Puebla"]);
+    let out = dir.join("deleted.csv");
+    run(&["edit", "export", path, "-o", out.to_str().unwrap()]);
+    let text = std::fs::read_to_string(&out).unwrap();
+    // ids 6, 7, 8 keep the fill; ids 9 and 10 do not.
+    assert!(text.contains("6,CDMX,999"), "{text}");
+    assert!(text.contains("8,CDMX,999"), "{text}");
+    assert!(text.contains("9,CDMX,0"), "{text}");
+    assert!(!text.contains("10,CDMX,999"), "{text}");
+
+    // Fill rows 2-3, then insert two rows at the top: the fill stays with its rows.
+    let other = dir.join("u.csv");
+    let mut text = String::from("id,qty\n");
+    for i in 1..=5 {
+        text.push_str(&format!("{i},0\n"));
+    }
+    std::fs::write(&other, text).unwrap();
+    let opath = other.to_str().unwrap();
+    run(&[
+        "edit",
+        "fill",
+        opath,
+        "--col",
+        "qty",
+        "--from-row",
+        "2",
+        "--to-row",
+        "3",
+        "--value",
+        "555",
+    ]);
+    run(&["edit", "insert", opath, "--row", "1", "--value", "x,0"]);
+    run(&[
+        "edit",
+        "export",
+        opath,
+        "-o",
+        dir.join("inserted.csv").to_str().unwrap(),
+    ]);
+    let text = std::fs::read_to_string(dir.join("inserted.csv")).unwrap();
+    assert!(text.contains("2,555"), "{text}");
+    assert!(text.contains("3,555"), "{text}");
+    assert!(
+        !text.contains("x,555"),
+        "the inserted row was not filled: {text}"
+    );
+}
