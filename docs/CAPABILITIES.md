@@ -178,3 +178,11 @@
 
 覆盖保护覆盖：`filter` / `sort` / `columns` / `dedupe` / `lookup` / `groupby` /
 `pivot` / `convert` / `edit export`。
+
+## 解压安全 / Archive safety
+
+`extract` 解压前会**逐个校验成员名**：绝对路径、`..`、反斜杠、盘符前缀全部拒绝，
+并且**在写任何文件之前**校验完，所以恶意压缩包不会留下半截输出。
+
+这一点对 tar 由 `tar` crate 自己做（它跳过越界成员），对 zip 是本项目自己做的
+——之前没有做，`../escaped.txt` 真的写到了输出目录外面。

@@ -2319,7 +2319,7 @@ fn cmd_convert(args: &[String]) -> i32 {
             0
         }
         // `transcode` returns the error itself; nothing else printed it.
-        Err(e) => report_failure("convert", format!("cannot convert: {e}")),
+        Err(e) => report_failure("convert", e),
     }
 }
 
@@ -2530,8 +2530,7 @@ fn cmd_extract(args: &[String]) -> i32 {
             }
             0
         }
-        // `transcode` returns the error itself; nothing else printed it.
-        Err(e) => report_failure("convert", format!("cannot convert: {e}")),
+        Err(e) => report_failure("extract", e),
     }
 }
 

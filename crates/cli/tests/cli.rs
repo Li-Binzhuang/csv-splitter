@@ -2925,3 +2925,109 @@ fn writing_over_the_input_is_refused() {
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(stderr.contains("overwriting existing"), "{stderr}");
 }
+
+/// Minimal stored-entry zip writer: enough to exercise the extractor's path checks.
+fn build_zip(entries: &[(&str, &str)]) -> Vec<u8> {
+    let mut out: Vec<u8> = Vec::new();
+    let mut central: Vec<u8> = Vec::new();
+    for (name, body) in entries {
+        let offset = out.len() as u32;
+        let crc = crc32(body.as_bytes());
+        out.extend_from_slice(&0x0403_4b50u32.to_le_bytes());
+        out.extend_from_slice(&20u16.to_le_bytes()); // version needed
+        out.extend_from_slice(&0u16.to_le_bytes()); // flags
+        out.extend_from_slice(&0u16.to_le_bytes()); // stored
+        out.extend_from_slice(&0u16.to_le_bytes()); // time
+        out.extend_from_slice(&0u16.to_le_bytes()); // date
+        out.extend_from_slice(&crc.to_le_bytes());
+        out.extend_from_slice(&(body.len() as u32).to_le_bytes());
+        out.extend_from_slice(&(body.len() as u32).to_le_bytes());
+        out.extend_from_slice(&(name.len() as u16).to_le_bytes());
+        out.extend_from_slice(&0u16.to_le_bytes()); // extra
+        out.extend_from_slice(name.as_bytes());
+        out.extend_from_slice(body.as_bytes());
+
+        central.extend_from_slice(&0x0201_4b50u32.to_le_bytes());
+        central.extend_from_slice(&20u16.to_le_bytes()); // made by
+        central.extend_from_slice(&20u16.to_le_bytes()); // needed
+        central.extend_from_slice(&0u16.to_le_bytes());
+        central.extend_from_slice(&0u16.to_le_bytes());
+        central.extend_from_slice(&0u16.to_le_bytes());
+        central.extend_from_slice(&0u16.to_le_bytes());
+        central.extend_from_slice(&crc.to_le_bytes());
+        central.extend_from_slice(&(body.len() as u32).to_le_bytes());
+        central.extend_from_slice(&(body.len() as u32).to_le_bytes());
+        central.extend_from_slice(&(name.len() as u16).to_le_bytes());
+        central.extend_from_slice(&0u16.to_le_bytes());
+        central.extend_from_slice(&0u16.to_le_bytes());
+        central.extend_from_slice(&0u16.to_le_bytes());
+        central.extend_from_slice(&0u16.to_le_bytes());
+        central.extend_from_slice(&0u32.to_le_bytes());
+        central.extend_from_slice(&offset.to_le_bytes());
+        central.extend_from_slice(name.as_bytes());
+    }
+    let central_offset = out.len() as u32;
+    let central_size = central.len() as u32;
+    out.extend_from_slice(&central);
+    out.extend_from_slice(&0x0605_4b50u32.to_le_bytes());
+    out.extend_from_slice(&0u16.to_le_bytes());
+    out.extend_from_slice(&0u16.to_le_bytes());
+    out.extend_from_slice(&(entries.len() as u16).to_le_bytes());
+    out.extend_from_slice(&(entries.len() as u16).to_le_bytes());
+    out.extend_from_slice(&central_size.to_le_bytes());
+    out.extend_from_slice(&central_offset.to_le_bytes());
+    out.extend_from_slice(&0u16.to_le_bytes());
+    out
+}
+
+fn crc32(bytes: &[u8]) -> u32 {
+    let mut crc = 0xFFFF_FFFFu32;
+    for byte in bytes {
+        crc ^= *byte as u32;
+        for _ in 0..8 {
+            let mask = (crc & 1).wrapping_neg();
+            crc = (crc >> 1) ^ (0xEDB8_8320 & mask);
+        }
+    }
+    !crc
+}
+
+/// An archive member named `../x` must not be written outside the output directory.
+#[test]
+fn extraction_refuses_to_escape_the_output_directory() {
+    let dir = TempDir::new("zipslip");
+    let out = dir.join("out");
+    std::fs::create_dir_all(&out).unwrap();
+
+    // Build a zip with one good entry and one that points outside. The test crate
+    // has no zip dependency, so the archive is written by hand: a stored (uncompressed)
+    // entry is a local header, the data, then a central directory.
+    let zip_path = dir.join("evil.zip");
+    std::fs::write(
+        &zip_path,
+        build_zip(&[("good.txt", "ok"), ("../escaped.txt", "pwned")]),
+    )
+    .unwrap();
+
+    let status = Command::new(bin())
+        .args([
+            "extract",
+            zip_path.to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(1), "the archive should be refused");
+
+    // Nothing escaped, and nothing was extracted either: validation runs first.
+    assert!(
+        !dir.join("escaped.txt").exists(),
+        "zip slip escaped the output dir"
+    );
+    let entries: Vec<_> = std::fs::read_dir(&out).unwrap().collect();
+    assert!(
+        entries.is_empty(),
+        "partial extraction should not be left behind"
+    );
+}

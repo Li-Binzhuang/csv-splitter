@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.78.0] — 2026-11-10
+
+### Fixed
+
+- **Zip-slip in `extract`.** A zip entry named `../escaped.txt` was joined to the output
+  directory and written one level up — verified before the fix, refused after it. Every
+  member name is now validated (absolute paths, `..`, backslashes, drive prefixes) and
+  **validated before anything is written**, so a malicious archive leaves no partial
+  output. Tar already relied on the `tar` crate, which skips unsafe members.
+- `extract` reported its errors as `✗ convert:` — a copy-paste from the neighbouring
+  command that made a security message look like a transcoding failure.
+
 ## [0.77.0] — 2026-11-10
 
 ### Added

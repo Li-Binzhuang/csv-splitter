@@ -263,23 +263,63 @@ fn stream_to_file(reader: &mut dyn Read, out_path: &Path) -> io::Result<()> {
     Ok(())
 }
 
+/// Resolve an archive member name inside `out_dir`, refusing anything that escapes.
+///
+/// An archive can name a member `../../.config/autostart/x.desktop`, and joining that
+/// to the output directory writes outside it — the "zip slip" attack. Extraction is
+/// therefore only allowed for plain relative names.
+pub fn safe_member(out_dir: &Path, name: &str) -> io::Result<PathBuf> {
+    let rel = Path::new(name);
+    let unsafe_reason = if name.is_empty() {
+        Some("empty name")
+    } else if rel.is_absolute() || name.starts_with('/') || name.starts_with('\\') {
+        Some("absolute path")
+    } else if name.contains('\\') {
+        Some("backslash in the name")
+    } else if rel
+        .components()
+        .any(|c| !matches!(c, std::path::Component::Normal(_)))
+    {
+        // `..`, a root, or a Windows prefix: none of these belong in an archive.
+        Some("path escapes the output directory")
+    } else {
+        None
+    };
+    match unsafe_reason {
+        Some(reason) => Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("refusing archive member '{name}': {reason}"),
+        )),
+        None => Ok(out_dir.join(rel)),
+    }
+}
+
 fn decompress_zip(input: &Path, out_dir: &Path, tx: &ProgressSender) -> io::Result<Vec<PathBuf>> {
     tx.send(ProgressEvent::Info("Extracting zip...".into()))
         .ok();
     let file = File::open(input)?;
     let mut archive =
         zip::ZipArchive::new(file).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+    // Validate every member before writing anything: a malicious archive should
+    // leave no partial output behind.
+    for i in 0..archive.len() {
+        let entry = archive
+            .by_index(i)
+            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+        safe_member(out_dir, entry.name())?;
+    }
     let mut extracted = Vec::new();
     for i in 0..archive.len() {
         let mut entry = archive
             .by_index(i)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
         let name = entry.name().to_string();
+        // Never trust a member name: `../` components are refused outright.
+        let out_path = safe_member(out_dir, &name)?;
         if entry.is_dir() {
-            std::fs::create_dir_all(out_dir.join(&name))?;
+            std::fs::create_dir_all(&out_path)?;
             continue;
         }
-        let out_path = out_dir.join(&name);
         if let Some(parent) = out_path.parent() {
             std::fs::create_dir_all(parent)?;
         }
@@ -344,4 +384,36 @@ fn walk_dir(dir: &Path, out: &mut Vec<PathBuf>) -> io::Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod safety_tests {
+    use super::safe_member;
+    use std::path::Path;
+
+    #[test]
+    fn plain_names_stay_inside() {
+        let dir = Path::new("/tmp/out");
+        assert_eq!(safe_member(dir, "a.csv").unwrap(), dir.join("a.csv"));
+        assert_eq!(
+            safe_member(dir, "sub/b.csv").unwrap(),
+            dir.join("sub/b.csv")
+        );
+    }
+
+    #[test]
+    fn escaping_names_are_refused() {
+        for name in [
+            "../escape.csv",
+            "sub/../../escape.csv",
+            "/etc/passwd",
+            "..",
+            "sub/..",
+            "a\\b",
+        ] {
+            let err = safe_member(Path::new("/tmp/out"), name)
+                .expect_err(&format!("'{name}' should be refused"));
+            assert_eq!(err.kind(), std::io::ErrorKind::InvalidData);
+        }
+    }
 }
