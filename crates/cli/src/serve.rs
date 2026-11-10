@@ -290,6 +290,28 @@ const WRITE_ROUTES: &[&str] = &[
     "POST /index",
 ];
 
+/// A cheap fingerprint of the journal: ops + bytes + mtime.
+///
+/// Reads are lock-free, so a request can see state that changes a millisecond later.
+/// This lets a client answer "is the screen I rendered still current?" without a
+/// transaction: fetch it with `/sheet`, compare after a write, re-read if it moved.
+/// It is a change detector, not a version clock — two edits that happen to restore the
+/// same byte count and mtime second would look identical, and that is acceptable for
+/// "should I refresh?" but not for correctness decisions. Those use `expect=`.
+fn journal_stamp(path: &Path) -> String {
+    let sidecar = Journal::sidecar(path);
+    let meta = std::fs::metadata(&sidecar).ok();
+    let ops = Journal::load(&sidecar).map(|j| j.len()).unwrap_or(0);
+    format!(
+        "{ops}:{}:{}",
+        meta.as_ref().map(|m| m.len()).unwrap_or(0),
+        meta.and_then(|m| m.modified().ok())
+            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|d| d.as_secs())
+            .unwrap_or(0)
+    )
+}
+
 /// `GET /capabilities` — one call that tells a front-end what this backend can do.
 ///
 /// A client should not have to read a document to learn which writes exist, how many
@@ -449,8 +471,9 @@ fn journal_endpoint(
         stream,
         200,
         &format!(
-            r#"{{"path":{},"operations":[{}],"count":{},"redo":[{}],"redoCount":{},"canUndo":{},"canRedo":{},"damaged":{{"operations":{skipped},"redo":{skipped_redo}}}}}"#,
+            r#"{{"path":{},"stamp":{},"operations":[{}],"count":{},"redo":[{}],"redoCount":{},"canUndo":{},"canRedo":{},"damaged":{{"operations":{skipped},"redo":{skipped_redo}}}}}"#,
             json_str(&rel),
+            json_str(&journal_stamp(&path)),
             ops.join(","),
             journal.len(),
             redo.join(","),
@@ -2642,8 +2665,9 @@ fn sheet_meta(
         stream,
         200,
         &format!(
-            r#"{{"path":{},"columns":[{}],"frozenColumns":[{}],"rows":{},"edited":{},"operations":{},"lastOperation":{},"capabilities":[{}],"layout":{},"journal":{},"indexed":{},"indexBytes":{}}}"#,
+            r#"{{"path":{},"stamp":{},"columns":[{}],"frozenColumns":[{}],"rows":{},"edited":{},"operations":{},"lastOperation":{},"capabilities":[{}],"layout":{},"journal":{},"indexed":{},"indexBytes":{}}}"#,
             json_str(&params.get("path").cloned().unwrap_or_default()),
+            json_str(&journal_stamp(&path)),
             cols.join(","),
             frozen_names.join(","),
             rows,

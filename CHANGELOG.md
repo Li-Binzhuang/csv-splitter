@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.11.0] — 2026-11-10
+
+### Added
+
+- **`stamp` on `/sheet` and `/journal`**: `ops:bytes:mtime` — a change detector, so a
+  front-end can answer "is the screen I rendered still current?" with one comparison
+  instead of a transaction. Pristine sheets answer `0:0:0`; the first write moves it, and
+  both endpoints report the same string.
+  - It is deliberately named a stamp, not a version: it detects change, it does not order
+    edits. Correctness decisions use `expect=`; freshness decisions use the stamp.
+- `docs/INTEGRATION.md` gained "并发与一致性": what the backend already handles (locked
+  journal writes, 409 on a stale `expect`, lock-free reads that never show half an
+  operation, stale-lock recovery after ten seconds) and what the front-end must do (re-read
+  after writing, treat two edits as two operations rather than a transaction, and
+  understand that `expect=` guards the cell's value *now*, not what you saw earlier).
+
 ## [3.10.0] — 2026-11-10
 
 ### Verified

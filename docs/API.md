@@ -526,6 +526,7 @@ warns about) — a UI can show "the history is incomplete" instead of pretending
 
 | 字段 | 含义 |
 |---|---|
+| `stamp` | 变更探测器（`操作数:字节数:mtime秒`），与 `/sheet` 的相同 |
 | `operations[]` / `count` | 待应用操作（`tag` + 1-based 描述）与条数 |
 | `redo[]` / `redoCount` | 可重做栈 |
 | `canUndo` / `canRedo` | 按钮可用性 |

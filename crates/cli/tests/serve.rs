@@ -2457,3 +2457,46 @@ fn the_row_cap_is_stated_in_the_response() {
     assert!(body.contains(r#""limit":2000"#), "{body}");
     assert!(body.contains(r#""total":3000"#), "{body}");
 }
+
+/// A stamp that moves when the journal moves, so a client can decide to refresh.
+#[test]
+fn the_sheet_carries_a_stamp_that_moves_after_a_write() {
+    let dir = TempDir::new("stamp");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n2,B\n").unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = get(&server.addr, "/sheet?path=t.csv");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""stamp":"#), "{body}");
+    let before = body
+        .split(r#""stamp":""#)
+        .nth(1)
+        .and_then(|rest| rest.split('"').next())
+        .unwrap()
+        .to_string();
+    assert_eq!(
+        before, "0:0:0",
+        "a pristine sheet has an empty stamp: {body}"
+    );
+
+    let (code, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=city&value=Z",
+    );
+    assert_eq!(code, 200, "{body}");
+
+    let (code, body) = get(&server.addr, "/sheet?path=t.csv");
+    assert_eq!(code, 200, "{body}");
+    let after = body
+        .split(r#""stamp":""#)
+        .nth(1)
+        .and_then(|rest| rest.split('"').next())
+        .unwrap()
+        .to_string();
+    assert_ne!(after, before, "the stamp must move after a write");
+
+    // /journal reports the same stamp as /sheet: one fact, one place to compare.
+    let (code, body) = get(&server.addr, "/journal?path=t.csv");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(&format!(r#""stamp":"{after}""#)), "{body}");
+}
