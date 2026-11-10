@@ -872,3 +872,29 @@ fn rows_show_the_edits_and_sheet_advertises_capabilities() {
         "operation description missing: {body}"
     );
 }
+
+#[test]
+fn pivot_endpoint_returns_a_matrix() {
+    let dir = TempDir::new("pivotapi");
+    std::fs::write(
+        dir.join("sales.csv"),
+        "city,month,amount\nCDMX,Jan,10\nCDMX,Feb,20\nPuebla,Jan,30\n",
+    )
+    .unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(
+        &server.addr,
+        "/pivot?path=sales.csv&rows=city&cols=month&values=amount:sum",
+    );
+    assert_eq!(status, 200, "{body}");
+    // The header qualifies the measure so several values can coexist.
+    assert!(body.contains(r#""columns":["city""#), "{body}");
+    assert!(body.contains("Feb · sum_amount"), "{body}");
+    assert!(body.contains(r#"["CDMX","20","10"]"#), "{body}");
+    assert!(body.contains(r#""rowKeys":2"#), "{body}");
+
+    // Missing parameters name themselves.
+    let (_, body) = get(&server.addr, "/pivot?path=sales.csv");
+    assert!(body.contains(r#""parameter":"rows""#), "{body}");
+}

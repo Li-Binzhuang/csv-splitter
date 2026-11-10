@@ -46,6 +46,7 @@ fn main() -> ExitCode {
         Some("partition") => cmd_partition(&args[1..]),
         Some("concat") => cmd_concat(&args[1..]),
         Some("groupby") => cmd_groupby(&args[1..]),
+        Some("pivot") => cmd_pivot(&args[1..]),
         Some("demo") => cmd_demo(&args[1..]),
         Some("sql") => cmd_sql(&args[1..]),
         Some("search") => cmd_search(&args[1..]),
@@ -93,6 +94,7 @@ COMMANDS
   partition <input> --by COL      One file per distinct value of COL (tar/zip)
   concat   <a.csv> <b.csv> ...    Glue same-shaped files into one (header checked)
   groupby  <input> --by K --agg A Group and aggregate into a CSV
+  pivot    <input> --rows R --values A Rows × columns × measures matrix
   demo     [-o <dir>]           Write a sample file to try the commands on
   search   <input> <text>        Find text anywhere (or in chosen columns)
   files    --root <dir>          List readable files under a directory
@@ -2021,6 +2023,187 @@ fn parse_sort_columns(spec: &str, default_descending: bool) -> Result<Vec<SortCo
         return Err("no sort columns".to_string());
     }
     Ok(columns)
+}
+
+fn cmd_pivot(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut input: Option<PathBuf> = None;
+    let mut out: Option<PathBuf> = None;
+    let mut rows: Vec<String> = Vec::new();
+    let mut columns: Option<String> = None;
+    let mut values = String::new();
+    let mut order: Option<String> = None;
+    let mut descending = false;
+    let mut qualify = false;
+    let mut max_columns = csv_splitter_core::pivot::DEFAULT_MAX_COLUMNS;
+    let mut max_cells = csv_splitter_core::pivot::DEFAULT_MAX_CELLS;
+    let mut json = false;
+    let mut delim = "auto".to_string();
+    let mut quiet = false;
+
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--rows" => match p.value("--rows") {
+                Ok(v) => rows = v.split(',').map(|s| s.trim().to_string()).collect(),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--cols" | "--columns" => match p.value("--cols") {
+                Ok(v) => columns = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--values" => match p.value("--values") {
+                Ok(v) => values = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--order" => match p.value("--order") {
+                Ok(v) => order = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--desc" => descending = true,
+            "--qualify" => qualify = true,
+            "--max-columns" => match p
+                .value("--max-columns")
+                .and_then(|v| v.parse().map_err(|_| "bad --max-columns".to_string()))
+            {
+                Ok(v) => max_columns = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--max-cells" => match p
+                .value("--max-cells")
+                .and_then(|v| v.parse().map_err(|_| "bad --max-cells".to_string()))
+            {
+                Ok(v) => max_cells = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--json" => json = true,
+            "--quiet" | "-q" => quiet = true,
+            "-o" | "--out" => match p.value("--out") {
+                Ok(v) => out = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-d" | "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_help();
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => {
+                if input.is_none() {
+                    input = Some(PathBuf::from(other));
+                } else {
+                    eprintln!("error: unexpected argument: {other}");
+                    return 2;
+                }
+            }
+        }
+    }
+
+    let Some(input) = input else {
+        eprintln!("error: pivot needs an <input> file");
+        return 2;
+    };
+    if rows.is_empty() {
+        eprintln!("error: pivot needs --rows <column[,column]>");
+        return 2;
+    }
+    if values.trim().is_empty() {
+        eprintln!("error: pivot needs --values <column:op[,...]>");
+        return 2;
+    }
+    let specs = match csv_splitter_core::aggregate::AggSpec::parse_list(&values) {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let delimiter = match parse_delimiter(&delim, &input) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let output = out.unwrap_or_else(|| {
+        let stem = input
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_else(|| "pivot".to_string());
+        input.with_file_name(format!("{stem}.pivot.csv"))
+    });
+    let options = csv_splitter_core::pivot::PivotOptions {
+        rows,
+        columns,
+        values: specs,
+        order_by: order,
+        descending,
+        qualify_names: qualify,
+        max_columns,
+        max_cells,
+    };
+
+    let (tx, rx) = mpsc::channel();
+    let reporter = spawn_reporter("pivot", rx, quiet || json);
+    let result = csv_splitter_core::pivot::pivot(&input, delimiter, &output, &options, &tx);
+    drop(tx);
+    let _ = reporter.join();
+    let summary = match result {
+        Ok(s) => s,
+        Err(_) => return 1, // the reporter already printed the reason
+    };
+
+    if json {
+        println!(
+            r#"{{"inputRows":{},"rowKeys":{},"columnKeys":{},"bytes":{},"rowColumns":["{}"],"columnValues":["{}"],"measures":["{}"]}}"#,
+            summary.input_rows,
+            summary.row_keys,
+            summary.column_keys,
+            summary.bytes,
+            summary.row_columns.join(r#"",""#),
+            summary.column_values.join(r#"",""#),
+            summary.measures.join(r#"",""#)
+        );
+    } else {
+        println!(
+            "✓ {} rows × {} columns → {} ({}, {} cells)",
+            summary.row_keys,
+            summary.column_values.len() * summary.measures.len(),
+            output.display(),
+            human_bytes(summary.bytes),
+            summary.row_keys * (summary.column_keys * summary.measures.len() as u64)
+        );
+    }
+    0
 }
 
 fn cmd_demo(args: &[String]) -> i32 {

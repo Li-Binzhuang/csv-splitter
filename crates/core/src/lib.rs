@@ -1,3 +1,4 @@
+pub mod aggregate;
 pub mod cache;
 pub mod check;
 pub mod compress;
@@ -16,6 +17,7 @@ pub mod listing;
 pub mod merge;
 pub mod pack;
 pub mod partition;
+pub mod pivot;
 pub mod preview;
 pub mod profile;
 pub mod reshape;

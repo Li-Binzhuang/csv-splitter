@@ -13,6 +13,12 @@ use std::io::{BufRead, Read, Write};
 use std::net::TcpStream;
 use std::path::PathBuf;
 
+fn unique_seq() -> u64 {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static SEQ: AtomicU64 = AtomicU64::new(0);
+    SEQ.fetch_add(1, Ordering::Relaxed)
+}
+
 const README: &str = include_str!("../../../README.md");
 const GUIDE: &str = include_str!("../../../docs/GETTING_STARTED.md");
 const ROUTER: &str = include_str!("../src/serve.rs");
@@ -24,10 +30,7 @@ impl TempDir {
         let dir = std::env::temp_dir().join(format!(
             "csvs_docs_{tag}_{}_{}",
             std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
+            unique_seq()
         ));
         std::fs::create_dir_all(&dir).unwrap();
         Self(dir)

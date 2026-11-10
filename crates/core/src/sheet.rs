@@ -233,16 +233,19 @@ mod tests {
     use super::*;
     use crate::workbook::Op;
 
+    fn unique_seq() -> u64 {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static SEQ: AtomicU64 = AtomicU64::new(0);
+        SEQ.fetch_add(1, Ordering::Relaxed)
+    }
+
     struct Dir(PathBuf);
     impl Dir {
         fn new(tag: &str) -> Self {
             let d = std::env::temp_dir().join(format!(
                 "csvs_sheet_{tag}_{}_{}",
                 std::process::id(),
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_nanos()
+                unique_seq()
             ));
             std::fs::create_dir_all(&d).unwrap();
             Self(d)

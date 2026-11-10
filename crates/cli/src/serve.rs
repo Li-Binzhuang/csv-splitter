@@ -160,6 +160,7 @@ fn handle(
         "/edit" => edit_state(&mut stream, root, &params),
         "/sheet" => sheet_meta(&mut stream, root, &params),
         "/groupby" => group_by(&mut stream, root, cache, &params),
+        "/pivot" => pivot_endpoint(&mut stream, root, cache, &params),
         "/download" => download(&mut stream, root, &params),
         "/export" => export(&mut stream, root, &params),
         "/query" => query(&mut stream, root, &params),
@@ -168,7 +169,7 @@ fn handle(
         _ => respond_json(
             &mut stream,
             404,
-            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/sheet","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/edit","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
+            r#"{"error":"unknown endpoint","endpoints":["/","/health","/meta","/rows","/sheet","/pivot","/stats","/analyze","/groupby","/filter","/search","/files","/download","/export","/edit","/query","/job","/jobs"],"writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit"]}"#,
         ),
     }
 }
@@ -706,6 +707,134 @@ fn edit_apply(
 /// Writes to a rate-limited cache of recent results: a dashboard polling the
 /// same query should not rescan the file each refresh, and the file is small
 /// (one row per group) by construction.
+/// Pivot a sheet into a rows × columns matrix (GET /pivot).
+fn pivot_endpoint(
+    stream: &mut TcpStream,
+    root: &Path,
+    cache: &ResultCache,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return bad_path(stream),
+    };
+    let Some(rows) = params.get("rows").filter(|v| !v.is_empty()) else {
+        return bad_request(
+            stream,
+            "rows is required",
+            "rows",
+            "pass rows=<column[,column]>",
+        );
+    };
+    let Some(values) = params.get("values").filter(|v| !v.is_empty()) else {
+        return bad_request(
+            stream,
+            "values is required",
+            "values",
+            "pass values=column:sum[,column:count]",
+        );
+    };
+    let specs = match csv_splitter_core::aggregate::AggSpec::parse_list(values) {
+        Ok(v) => v,
+        Err(e) => return respond_json(stream, 400, &format!(r#"{{"error":{}}}"#, json_str(&e))),
+    };
+    let row_columns: Vec<String> = rows.split(',').map(|k| k.trim().to_string()).collect();
+    let columns = params.get("cols").cloned().filter(|v| !v.is_empty());
+    let qualify = params
+        .get("qualify")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(true);
+    let max_columns: usize = params
+        .get("maxColumns")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(csv_splitter_core::pivot::DEFAULT_MAX_COLUMNS);
+    let max_cells: usize = params
+        .get("maxCells")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(csv_splitter_core::pivot::DEFAULT_MAX_CELLS);
+
+    let delimiter = delimiter(params);
+    let options = csv_splitter_core::pivot::PivotOptions {
+        rows: row_columns.clone(),
+        columns: columns.clone(),
+        values: specs.clone(),
+        order_by: None,
+        descending: false,
+        qualify_names: qualify,
+        max_columns,
+        max_cells,
+    };
+    let cache_key = format!(
+        "pivot|{rows}|{}|{values}|{qualify}|{max_columns}|{max_cells}",
+        columns.clone().unwrap_or_default()
+    );
+
+    let loaded = cache.get_or_load(&path, &cache_key, delimiter, || {
+        let out = std::env::temp_dir().join(format!(
+            "csvs_pivot_{}_{}.csv",
+            std::process::id(),
+            unique_nanos()
+        ));
+        let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
+        drop(rx);
+        csv_splitter_core::pivot::pivot(&path, delimiter, &out, &options, &tx)?;
+        let text = std::fs::read_to_string(&out)?;
+        std::fs::remove_file(&out).ok();
+        let mut rows = Vec::new();
+        let mut columns = Vec::new();
+        for (index, line) in text.lines().enumerate() {
+            let fields: Vec<String> = parse_csv_line(line);
+            if index == 0 {
+                columns = fields;
+            } else {
+                rows.push(fields);
+            }
+        }
+        Ok(csv_splitter_core::cache::CachedResult {
+            columns,
+            rows,
+            oversized: false,
+        })
+    });
+
+    match loaded {
+        Ok(result) => {
+            let cols: Vec<String> = result.columns.iter().map(|c| json_str(c)).collect();
+            let body: Vec<String> = result
+                .rows
+                .iter()
+                .map(|row| {
+                    let cells: Vec<String> = row.iter().map(|c| json_str(c)).collect();
+                    format!("[{}]", cells.join(","))
+                })
+                .collect();
+            respond_json(
+                stream,
+                200,
+                &format!(
+                    r#"{{"columns":[{}],"rows":[{}],"rowKeys":{}}}"#,
+                    cols.join(","),
+                    body.join(","),
+                    result.rows.len()
+                ),
+            )
+        }
+        Err(e) => respond_json(
+            stream,
+            422,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+    }
+}
+
+/// Nanosecond stamp for temp file names (unique across processes and threads).
+fn unique_nanos() -> u128 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0)
+}
+
 fn group_by(
     stream: &mut TcpStream,
     root: &Path,

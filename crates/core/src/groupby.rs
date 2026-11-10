@@ -25,198 +25,12 @@ use std::path::Path;
 /// Default ceiling on retained groups (roughly 100 bytes each).
 pub const DEFAULT_MAX_GROUPS: usize = 1_000_000;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum AggOp {
-    Count,
-    Sum,
-    Mean,
-    Min,
-    Max,
-}
-
-impl AggOp {
-    pub fn parse(raw: &str) -> Result<Self, String> {
-        match raw.trim().to_ascii_lowercase().as_str() {
-            "count" | "n" => Ok(Self::Count),
-            "sum" | "total" => Ok(Self::Sum),
-            "mean" | "avg" | "average" => Ok(Self::Mean),
-            "min" => Ok(Self::Min),
-            "max" => Ok(Self::Max),
-            other => Err(format!(
-                "unknown aggregate '{other}' (use count/sum/mean/min/max)"
-            )),
-        }
-    }
-
-    pub fn name(&self) -> &'static str {
-        match self {
-            Self::Count => "count",
-            Self::Sum => "sum",
-            Self::Mean => "mean",
-            Self::Min => "min",
-            Self::Max => "max",
-        }
-    }
-
-    fn is_numeric(&self) -> bool {
-        matches!(self, Self::Sum | Self::Mean)
-    }
-}
-
-/// One aggregate over one column: `amount:sum` means "sum of amount".
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct AggSpec {
-    pub column: String,
-    pub op: AggOp,
-}
-
-impl AggSpec {
-    /// Parse `col:op,other:op`.
-    pub fn parse_list(raw: &str) -> Result<Vec<Self>, String> {
-        let mut out = Vec::new();
-        for part in raw.split(',') {
-            let part = part.trim();
-            if part.is_empty() {
-                continue;
-            }
-            let (column, op) = part
-                .split_once(':')
-                .ok_or_else(|| format!("aggregate '{part}' must be column:op"))?;
-            let column = column.trim();
-            if column.is_empty() {
-                return Err(format!("aggregate '{part}' has no column"));
-            }
-            out.push(Self {
-                column: column.to_string(),
-                op: AggOp::parse(op)?,
-            });
-        }
-        if out.is_empty() {
-            return Err("no aggregates given".to_string());
-        }
-        Ok(out)
-    }
-
-    pub fn output_name(&self) -> String {
-        format!("{}_{}", self.op.name(), self.column)
-    }
-}
-
-#[derive(Clone, Debug)]
-struct Acc {
-    /// Rows that had a value for this aggregate.
-    count: u64,
-    sum: f64,
-    /// Compensation term for Kahan summation.
-    compensation: f64,
-    min: f64,
-    max: f64,
-    non_numeric: u64,
-}
-
-impl Acc {
-    fn new() -> Self {
-        Self {
-            count: 0,
-            sum: 0.0,
-            compensation: 0.0,
-            min: f64::INFINITY,
-            max: f64::NEG_INFINITY,
-            non_numeric: 0,
-        }
-    }
-
-    fn observe(&mut self, value: &str, numeric_op: bool) {
-        if value.is_empty() {
-            return;
-        }
-        self.count += 1;
-        match value.trim().parse::<f64>() {
-            Ok(n) if n.is_finite() => {
-                // Compensated summation keeps the printed total from drifting
-                // in the last digits once the column has tens of thousands of
-                // rows.
-                let adjusted = n - self.compensation;
-                let tentative = self.sum + adjusted;
-                self.compensation = (tentative - self.sum) - adjusted;
-                self.sum = tentative;
-                if n < self.min {
-                    self.min = n;
-                }
-                if n > self.max {
-                    self.max = n;
-                }
-            }
-            _ => self.non_numeric += 1,
-        }
-        if !numeric_op {
-            // min/max on a text column are lexical; counted separately below.
-        }
-    }
-
-    fn render(&self, op: AggOp, text_min: &str, text_max: &str) -> String {
-        if op.is_numeric() && self.non_numeric > 0 {
-            return "<mixed>".to_string();
-        }
-        match op {
-            AggOp::Count => self.count.to_string(),
-            AggOp::Sum => format_number(self.sum),
-            AggOp::Mean => {
-                if self.count == 0 {
-                    String::new()
-                } else {
-                    format_number(self.sum / self.count as f64)
-                }
-            }
-            AggOp::Min => {
-                if self.count == 0 {
-                    String::new()
-                } else if self.non_numeric > 0 {
-                    text_min.to_string()
-                } else {
-                    format_number(self.min)
-                }
-            }
-            AggOp::Max => {
-                if self.count == 0 {
-                    String::new()
-                } else if self.non_numeric > 0 {
-                    text_max.to_string()
-                } else {
-                    format_number(self.max)
-                }
-            }
-        }
-    }
-}
-
-/// Format a result so the printed digits mean something.
-///
-/// f64 has ~15 significant digits, so summing 20 million values leaves error in
-/// the last few *bits* — visible as `.200012` on a total of 2e11. The display
-/// therefore keeps 6 decimals for ordinary magnitudes and 2 for very large ones,
-/// where anything beyond a cent is noise. Trailing zeros are trimmed so a whole
-/// number does not print as `60.000000`.
-fn format_number(v: f64) -> String {
-    let decimals = if v.abs() >= 1e9 { 2 } else { 6 };
-    if v == v.trunc() && v.abs() < 1e15 {
-        return format!("{}", v as i64);
-    }
-    let rounded = format!("{v:.decimals$}");
-    let trimmed = rounded.trim_end_matches('0').trim_end_matches('.');
-    if trimmed == "-0" || trimmed.is_empty() {
-        "0".to_string()
-    } else {
-        trimmed.to_string()
-    }
-}
+pub use crate::aggregate::{format_number, Accumulator, AggOp, AggSpec};
 
 #[derive(Clone, Debug)]
 struct Group {
     values: Vec<String>,
-    accs: Vec<Acc>,
-    text_min: Vec<String>,
-    text_max: Vec<String>,
+    accs: Vec<Accumulator>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -321,24 +135,13 @@ pub fn groupby(
 
         let group = groups.entry(map_key).or_insert_with(|| Group {
             values: key_values.clone(),
-            accs: vec![Acc::new(); aggs.len()],
-            text_min: vec![String::new(); aggs.len()],
-            text_max: vec![String::new(); aggs.len()],
+            accs: vec![Accumulator::new(); aggs.len()],
         });
 
-        for (slot, (agg, idx)) in aggs.iter().zip(&agg_indices).enumerate() {
+        for (slot, idx) in agg_indices.iter().enumerate() {
             let value = fields.get(*idx).map(String::as_str).unwrap_or("");
             let acc = &mut group.accs[slot];
-            acc.observe(value, agg.op.is_numeric());
-            // Track lexical extremes only for text-ish aggregates.
-            if agg.op == AggOp::Min
-                && (group.text_min[slot].is_empty() || value < group.text_min[slot].as_str())
-            {
-                group.text_min[slot] = value.to_string();
-            }
-            if agg.op == AggOp::Max && value > group.text_max[slot].as_str() {
-                group.text_max[slot] = value.to_string();
-            }
+            acc.observe(value);
         }
         if rows.is_multiple_of(500_000) {
             tx.send(ProgressEvent::Progress { bytes: rows }).ok();
@@ -367,11 +170,7 @@ pub fn groupby(
                         .accs
                         .iter()
                         .enumerate()
-                        .map(|(i, acc)| {
-                            acc.render(aggs[i].op, &group.text_min[i], &group.text_max[i])
-                                .as_str()
-                                .to_owned()
-                        })
+                        .map(|(i, acc)| acc.render(aggs[i].op).as_str().to_owned())
                         .collect::<Vec<String>>()
                         .iter(),
                 )

@@ -998,16 +998,19 @@ pub struct ExportSummary {
 mod tests {
     use super::*;
 
+    fn unique_seq() -> u64 {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static SEQ: AtomicU64 = AtomicU64::new(0);
+        SEQ.fetch_add(1, Ordering::Relaxed)
+    }
+
     struct Dir(std::path::PathBuf);
     impl Dir {
         fn new(tag: &str) -> Self {
             let d = std::env::temp_dir().join(format!(
                 "csvs_wb_{tag}_{}_{}",
                 std::process::id(),
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_nanos()
+                unique_seq()
             ));
             std::fs::create_dir_all(&d).unwrap();
             Self(d)

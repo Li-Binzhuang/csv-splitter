@@ -462,6 +462,32 @@ scripts/clean.sh          # 清压测残留
 scripts/clean.sh --all    # 连构建产物一起清
 ```
 
+## 透视表 / Pivot
+
+```bash
+$ csv-splitter pivot sales.csv --rows city --cols month --values "amount:sum"
+city,2024-01,2024-02,...
+CDMX,8300408,8300337,...
+Puebla,...
+```
+
+行维度 × 列维度 × 多个度量，一次扫描。`--qualify` 会把度量名写进表头
+（`Feb · sum_amount`），多个度量并存时必需。
+
+| 参数 | 说明 |
+|---|---|
+| `--rows` | 变成行的列，可多个（`,` 分隔） |
+| `--cols` | 变成列头的列；省略就退化成 `groupby` |
+| `--values` | `列:op`，可多个；op 为 `count/sum/mean/min/max` |
+| `--qualify` | 表头带度量名 |
+| `--max-columns` / `--max-cells` | 矩阵尺寸上限（默认 512 / 200 万） |
+
+**内存只在矩阵上**：5 个城市 × 12 个月 × 1 个度量 = 60 个累加器，跟输入是
+1000 行还是 1 亿行无关。代价是矩阵可能爆炸（比如按 id 透视），所以有两道硬上限，
+**在占内存之前**就报错并说明该调哪个参数。
+
+实测：**100 万行 → 5×12 矩阵，1.56 秒**（debug 构建）。
+
 ## 错误信息 / Error output
 
 只有两种形状，脚本可以直接按前缀判断：

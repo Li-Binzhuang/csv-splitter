@@ -1497,3 +1497,65 @@ fn edit_journal_never_touches_the_base_file() {
         "delete undone"
     );
 }
+
+/// A pivot turns one key into rows and another into columns.
+#[test]
+fn pivot_produces_a_matrix_and_refuses_to_explode() {
+    let dir = TempDir::new("pivot");
+    let input = dir.join("sales.csv");
+    std::fs::write(
+        &input,
+        "city,month,amount\nCDMX,Jan,10\nCDMX,Feb,20\nPuebla,Jan,30\n",
+    )
+    .unwrap();
+
+    let out = dir.join("m.csv");
+    let status = Command::new(bin())
+        .args([
+            "pivot",
+            input.to_str().unwrap(),
+            "--rows",
+            "city",
+            "--cols",
+            "month",
+            "--values",
+            "amount:sum",
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    let text = std::fs::read_to_string(&out).unwrap();
+    assert_eq!(text.lines().next().unwrap(), "city,Feb,Jan");
+    assert_eq!(text.lines().nth(1).unwrap(), "CDMX,20,10");
+    assert_eq!(text.lines().nth(2).unwrap(), "Puebla,0,30");
+
+    // A column key with more distinct values than the cap is a clear failure,
+    // not an out-of-memory.
+    let wide = dir.join("wide.csv");
+    let mut csv = String::from("id,k,v\n");
+    for i in 0..600 {
+        csv.push_str(&format!("{i},k{i},1\n"));
+    }
+    std::fs::write(&wide, csv).unwrap();
+    let status = Command::new(bin())
+        .args([
+            "pivot",
+            wide.to_str().unwrap(),
+            "--rows",
+            "id",
+            "--cols",
+            "k",
+            "--values",
+            "v:sum",
+            "--max-columns",
+            "100",
+            "-o",
+            dir.join("w.csv").to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(1), "a wide column key must fail");
+}

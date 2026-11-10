@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.40.0] — 2026-11-10
+
+### Added
+
+- **Pivot tables** (`crates/core/src/pivot.rs`): `pivot --rows city --cols month
+  --values "amount:sum"` streams the input once and writes a rows × columns
+  matrix. Multiple measures, multiple row keys, `--order`, `--desc`, and
+  `--qualify` (measure names in the header, needed as soon as there are two).
+  - Memory follows the *matrix* (row keys × column keys × measures), not the input:
+    1 M rows → 5 × 12 = 60 accumulators, 1.56 s in a debug build.
+  - Two hard ceilings (`--max-columns`, `--max-cells`) fail with the parameter to
+    raise, before memory is committed — pivoting on an id column is a mistake,
+    not a swap storm.
+  - `GET /pivot` serves the same matrix through the result cache.
+- **`aggregate.rs`**: `AggOp` / `AggSpec` / `Accumulator` moved out of `groupby`
+  so `groupby` and `pivot` share one implementation of compensated summation.
+  Two copies would eventually print different totals for the same file.
+
+### Fixed
+
+- Test temp directories used `SystemTime::now()` nanosecond suffixes, which on
+  macOS has microsecond resolution: parallel tests received the same directory,
+  and one would delete the other's files mid-run. They now use a process-wide
+  atomic counter.
+
 ## [0.39.0] — 2026-11-10
 
 ### Added
