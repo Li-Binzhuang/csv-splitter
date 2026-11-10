@@ -705,6 +705,7 @@ $ csv-splitter edit export orders.csv -o fixed.csv
 | 删列 / 改名 | `edit drop --name C` / `edit rename --from A --to B` | `action=drop` / `rename` |
 | **插入列（常量）** | `edit insert-column --name N --value V [--after C]` | `action=insert-column&name=&value=&after=` |
 | **插入列（公式）** | `edit insert-column --name N --formula E [--after C]` | `action=insert-column&name=&formula=&after=` |
+| **区域复制** | `edit copy --from "A2:C5" --to "B10"` | — |
 | 撤销 | `edit undo` | `action=undo` |
 | 查看日志 | `edit status` | `GET /edit` |
 | 物化输出 | `edit export [-o F]` | `POST /edit?action=export&out=` |
@@ -749,6 +750,7 @@ id,city,amount,qty,total
 
 - **撤销是免费的**：弹掉最后一条。
 - **批量编辑记成一条规则**：改一百万行匹配的数据，日志仍然只有一行（28 字节）。
+- **复制的区块存的是值**，不是「指向来源」——否则改来源会改写历史。上限 10 万格。
 - **日志是 CSV**，能在编辑器里打开、能 diff、能跟着数据一起提交。
 - **体积跟操作数走，不跟行数走**：100 万行文件 + 3 次编辑 = **60 字节**。
 - **原文件还在**：改错了直接撤销，或者干脆不导出。

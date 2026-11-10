@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.52.0] — 2026-11-10
+
+### Added
+
+- **Block copy/paste with A1 ranges**: `edit copy --from "A2:C5" --to "B10"`.
+  - The pasted block stores **values**, not a reference to the source: storing a
+    reference would let a later edit of the source silently rewrite what had already
+    been pasted.
+  - Ranges are parsed the way people write them (`B3`, `A2:C5`, `AA10`), with the
+    bounds checked against the sheet rather than producing an empty paste.
+  - Bounded at 100 000 cells — beyond that the right tool is `edit set --where`
+    (one rule) or an export, not a hundred-thousand-value journal entry.
+  - Paste is anchored to **row identities**, so inserting rows above moves the
+    pasted block along with the rows it landed on.
+
 ## [0.51.0] — 2026-11-10
 
 ### Added

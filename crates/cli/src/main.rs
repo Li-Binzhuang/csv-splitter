@@ -161,6 +161,7 @@ EDIT ACTIONS  (the base file is never modified; edits live in <file>.journal)
   insert-column --name N --value V        Insert a constant column
                 [--after C]              …placing it right after column C
   insert-column --name N --formula E      …or a computed one
+  copy     --from "A2:C5" --to "B10"      Copy a block of values (A1-style range)
   drop     --name C                      Drop a column
   rename   --from A --to B               Rename a column
   undo                                   Remove the last edit
@@ -3527,6 +3528,54 @@ fn warn_pending_edits(input: &std::path::Path) {
     }
 }
 
+/// Parse an A1-style range: `A2:C5` → (start_row, start_col, end_row, end_col).
+///
+/// Rows are 1-based and columns are letters, like a spreadsheet. Both halves are
+/// optional only in the sense that a single cell (`B3`) is a 1×1 range.
+fn parse_a1(range: &str, columns: &[String]) -> Result<(u64, usize, u64, usize), String> {
+    let (start, end) = match range.split_once(':') {
+        Some((a, b)) => (a.trim(), b.trim()),
+        None => (range.trim(), range.trim()),
+    };
+    let parse_cell = |text: &str| -> Result<(u64, usize), String> {
+        let letters: String = text
+            .chars()
+            .take_while(|c| c.is_ascii_alphabetic())
+            .collect();
+        let digits: String = text
+            .chars()
+            .skip_while(|c| c.is_ascii_alphabetic())
+            .collect();
+        if letters.is_empty() || digits.is_empty() {
+            return Err(format!("'{text}' is not a cell like B3"));
+        }
+        let mut column = 0usize;
+        for ch in letters.to_ascii_uppercase().chars() {
+            column = column * 26 + (ch as usize - 'A' as usize + 1);
+        }
+        let column = column.saturating_sub(1);
+        if column >= columns.len() {
+            return Err(format!(
+                "'{text}' is beyond the last column ({} columns)",
+                columns.len()
+            ));
+        }
+        let row: u64 = digits
+            .parse()
+            .map_err(|_| format!("'{text}' has no row number"))?;
+        if row == 0 {
+            return Err("rows are 1-based; row 0 does not exist".to_string());
+        }
+        Ok((row - 1, column))
+    };
+    let (start_row, start_col) = parse_cell(start)?;
+    let (end_row, end_col) = parse_cell(end)?;
+    if end_row < start_row || end_col < start_col {
+        return Err(format!("'{range}' ends before it starts"));
+    }
+    Ok((start_row, start_col, end_row, end_col))
+}
+
 fn cmd_edit(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
     let mut action: Option<String> = None;
@@ -3535,13 +3584,13 @@ fn cmd_edit(args: &[String]) -> i32 {
     let mut col: Option<String> = None;
     let mut value: Option<String> = None;
     let mut from: Option<String> = None;
-    let mut to: Option<String> = None;
     let mut count: Option<u64> = None;
     let mut name: Option<String> = None;
     let mut out: Option<PathBuf> = None;
     let mut where_expr: Option<String> = None;
     let mut formula_expr: Option<String> = None;
     let mut after_col: Option<String> = None;
+    let mut to_block: Option<String> = None;
     let mut json = false;
     let mut delim = "auto".to_string();
 
@@ -3579,7 +3628,7 @@ fn cmd_edit(args: &[String]) -> i32 {
                 }
             },
             "--to" => match p.value("--to") {
-                Ok(v) => to = Some(v),
+                Ok(v) => to_block = Some(v),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -3681,6 +3730,87 @@ fn cmd_edit(args: &[String]) -> i32 {
         Ok(j) => j,
         Err(e) => return report_failure("edit", format!("cannot read {}: {e}", sidecar.display())),
     };
+
+    // `copy` reads a source range and records the values as a paste op: the op
+    // must not point at the source, or a later edit there would rewrite history.
+    if action == "copy" {
+        let (Some(from), Some(to)) = (from.clone(), to_block.clone()) else {
+            eprintln!("error: copy needs --from \"A2:C5\" and --to \"B10\"");
+            return 2;
+        };
+        let columns = match layout_columns(&input) {
+            Ok(c) => c,
+            Err(e) => return report_failure("edit", e),
+        };
+        let (start_row, start_col, end_row, end_col) = match parse_a1(&from, &columns) {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("error: {e}");
+                return 2;
+            }
+        };
+        let (target_row, target_col) = match parse_a1(&to, &columns) {
+            Ok((r, c, _, _)) => (r, c),
+            Err(e) => {
+                eprintln!("error: {e}");
+                return 2;
+            }
+        };
+        let width = end_col - start_col + 1;
+        let height = (end_row - start_row + 1) as usize;
+        let cells = width * height;
+        if cells > csv_splitter_core::workbook::MAX_BLOCK_CELLS {
+            eprintln!(
+                "error: {width} × {height} is {cells} cells; the limit is {} — use `edit set --where` for a bulk change",
+                csv_splitter_core::workbook::MAX_BLOCK_CELLS
+            );
+            return 2;
+        }
+        if target_col + width > columns.len() {
+            eprintln!(
+                "error: the pasted block does not fit in {} columns",
+                columns.len()
+            );
+            return 2;
+        }
+        let window = match csv_splitter_core::workbook::window(
+            &input,
+            journal.ops(),
+            start_row,
+            height as u64,
+            delimiter,
+        ) {
+            Ok(w) => w,
+            Err(e) => return report_failure("edit", e),
+        };
+        if window.rows.len() < height {
+            eprintln!(
+                "error: source range needs {height} rows, the sheet has {}",
+                window.rows.len()
+            );
+            return 2;
+        }
+        let mut block = Vec::with_capacity(height);
+        for row in &window.rows {
+            let cells: Vec<String> = (0..width)
+                .map(|offset| row.get(start_col + offset).cloned().unwrap_or_default())
+                .collect();
+            block.push(cells);
+        }
+        let height_cells = block.len();
+        let op = csv_splitter_core::workbook::Op::PasteBlock {
+            row: target_row,
+            column: columns[target_col].clone(),
+            rows: block,
+        };
+        let description = op.describe();
+        journal.push(op);
+        if let Err(e) = journal.save(&sidecar) {
+            return report_failure("edit", format!("cannot save the journal: {e}"));
+        }
+        println!("✓ {description} ({height_cells} × {width} block)");
+        return 0;
+    }
 
     // Actions that do not modify the journal are handled before any save.
     match action.as_str() {
@@ -3806,7 +3936,7 @@ fn cmd_edit(args: &[String]) -> i32 {
             csv_splitter_core::workbook::Op::DeleteRows { at: row, count }
         }
         "replace" => {
-            let (Some(from), Some(to)) = (from, to) else {
+            let (Some(from), Some(to)) = (from, to_block) else {
                 eprintln!("error: replace needs --from and --to");
                 return 2;
             };
@@ -3874,7 +4004,7 @@ fn cmd_edit(args: &[String]) -> i32 {
             csv_splitter_core::workbook::Op::DropColumn { name }
         }
         "rename" => {
-            let (Some(from), Some(to)) = (from, to) else {
+            let (Some(from), Some(to)) = (from, to_block) else {
                 eprintln!("error: rename needs --from and --to");
                 return 2;
             };

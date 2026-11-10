@@ -32,6 +32,13 @@ use std::fs::File;
 use std::io::{self, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 
+/// Ceiling on cells in one pasted block.
+///
+/// A paste is stored as literal values, so its journal cost is the block itself.
+/// Beyond this size the right tool is `edit set --where` (one rule) or an export,
+/// not a million-value journal entry.
+pub const MAX_BLOCK_CELLS: usize = 100_000;
+
 /// Where an inserted column's values come from.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ColumnSource {
@@ -83,6 +90,17 @@ pub enum Op {
         name: String,
         formula: String,
     },
+    /// Paste a rectangular block of literal values at a position.
+    ///
+    /// Copy/paste stores the *values*, not a reference to the source range: if it
+    /// stored a reference, editing the source later would silently change what had
+    /// already been pasted. The block is bounded (`MAX_BLOCK_CELLS`) because a
+    /// million-cell paste belongs in an export, not in a journal.
+    PasteBlock {
+        row: u64,
+        column: String,
+        rows: Vec<Vec<String>>,
+    },
     /// Insert a column, either a constant or a formula, at a chosen position.
     ///
     /// Inserting rather than appending is what makes this usable for real tidy-up
@@ -114,6 +132,7 @@ impl Op {
             Self::Substitute { .. } => "substitute",
             Self::AddColumn { .. } => "addcolumn",
             Self::AddColumnAt { .. } => "addcolumnat",
+            Self::PasteBlock { .. } => "pasteblock",
             Self::DropColumn { .. } => "dropcolumn",
             Self::RenameColumn { .. } => "renamecolumn",
         }
@@ -139,6 +158,11 @@ impl Op {
                 column.as_deref().unwrap_or("every column")
             ),
             Self::AddColumn { name, formula } => format!("add column '{name}' = {formula}"),
+            Self::PasteBlock { row, column, rows } => format!(
+                "paste {} × {} block at row {row} '{column}'",
+                rows.len(),
+                rows.first().map(Vec::len).unwrap_or(0)
+            ),
             Self::AddColumnAt {
                 after,
                 name,
@@ -286,6 +310,18 @@ fn render_op(op: &Op) -> String {
             b',',
         ),
         Op::AddColumn { name, formula } => join_csv_line(&[op.tag(), name, formula], b','),
+        Op::PasteBlock { row, column, rows } => {
+            let block = rows
+                .iter()
+                .map(|r| {
+                    join_csv_line(&r.iter().map(String::as_str).collect::<Vec<_>>(), b',')
+                        .trim_end_matches('\n')
+                        .to_string()
+                })
+                .collect::<Vec<_>>()
+                .join("\u{1e}");
+            join_csv_line(&[op.tag(), &row.to_string(), column, &block], b',')
+        }
         Op::AddColumnAt {
             after,
             name,
@@ -347,6 +383,21 @@ fn parse_op(record: &[u8]) -> Option<Op> {
             from: fields[2].clone(),
             to: fields[3].clone(),
         }),
+        "pasteblock" if fields.len() >= 4 => {
+            let mut rows = Vec::new();
+            for line in fields[3].split('\u{1e}') {
+                let line = line.trim_end_matches(['\n', '\r']);
+                if line.is_empty() {
+                    continue;
+                }
+                rows.push(parse_csv_record(line, b','));
+            }
+            Some(Op::PasteBlock {
+                row: fields[1].trim().parse().ok()?,
+                column: fields[2].clone(),
+                rows,
+            })
+        }
         "addcolumnat" if fields.len() >= 5 => Some(Op::AddColumnAt {
             after: if fields[1].trim().is_empty() {
                 None
@@ -711,6 +762,8 @@ pub struct CellEdits {
     subs: Vec<(Option<String>, String, String)>,
     /// Bulk-edit rules: (filter expression, column, value).
     rules: Vec<(String, String, String)>,
+    /// Pasted blocks: (row identity, anchor column, one row of values).
+    blocks: Vec<(RowId, String, Vec<String>)>,
 }
 
 /// Stable identity of a row: a position in the base file, or an insert block.
@@ -730,6 +783,23 @@ impl CellEdits {
         self.cells
             .get(&(row, column.to_string()))
             .map(String::as_str)
+    }
+
+    /// Write a pasted block's values into this row, if this row is part of one.
+    pub fn apply_blocks(&self, columns: &[String], id: RowId, cells: &mut [String]) {
+        for (target, anchor, values) in &self.blocks {
+            if *target != id {
+                continue;
+            }
+            let Some(anchor_idx) = columns.iter().position(|c| c == anchor) else {
+                continue;
+            };
+            for (offset, value) in values.iter().enumerate() {
+                if let Some(cell) = cells.get_mut(anchor_idx + offset) {
+                    *cell = value.clone();
+                }
+            }
+        }
     }
 
     /// Apply bulk-edit rules to a whole row.
@@ -1007,6 +1077,7 @@ pub fn compile(ops: &[Op], base_rows: u64) -> Sheet {
     let mut cells: HashMap<(RowId, String), String> = HashMap::new();
     let mut subs: Vec<(Option<String>, String, String)> = Vec::new();
     let mut rules: Vec<(String, String, String)> = Vec::new();
+    let mut blocks: Vec<(RowId, String, Vec<String>)> = Vec::new();
 
     for (index, op) in ops.iter().enumerate() {
         match op {
@@ -1031,13 +1102,27 @@ pub fn compile(ops: &[Op], base_rows: u64) -> Sheet {
                 column,
                 value,
             } => rules.push((filter.clone(), column.clone(), value.clone())),
+            Op::PasteBlock { row, column, rows } => {
+                for (offset, values) in rows.iter().enumerate() {
+                    // Resolve to a row identity now, so a later insert elsewhere
+                    // moves the paste with the row it landed on.
+                    if let Some(id) = map.id_at(row.saturating_add(offset as u64)) {
+                        blocks.push((id, column.clone(), values.clone()));
+                    }
+                }
+            }
             _ => {}
         }
     }
 
     Sheet {
         map,
-        edits: CellEdits { cells, subs, rules },
+        edits: CellEdits {
+            cells,
+            subs,
+            rules,
+            blocks,
+        },
     }
 }
 
@@ -1253,6 +1338,7 @@ fn emit(
         };
         cells.push(value);
     }
+    edits.apply_blocks(columns, id, &mut cells);
     edits.apply_rules(columns, &mut cells);
 
     // Derived columns are evaluated last, against the finished row, so a formula
@@ -1814,6 +1900,59 @@ mod tests {
     }
 
     #[test]
+    fn a_pasted_block_lands_on_the_rows_it_names() {
+        let dir = Dir::new("paste");
+        let base = base_with(&dir, BASE);
+        let ops = vec![Op::PasteBlock {
+            row: 2,
+            column: "city".into(),
+            rows: vec![vec!["A".into(), "1".into()], vec!["B".into(), "2".into()]],
+        }];
+        let text = export_with(&dir, &base, ops);
+        let lines: Vec<&str> = text.lines().collect();
+        // Rows 0 and 1 untouched, rows 2 and 3 overwritten.
+        assert_eq!(lines[1], "1,CDMX,10", "{text}");
+        assert_eq!(lines[3], "3,A,1", "{text}");
+        assert_eq!(lines[4], "4,B,2", "{text}");
+    }
+
+    #[test]
+    fn a_paste_follows_its_rows_when_something_is_inserted_above() {
+        let dir = Dir::new("pastefollow");
+        let base = base_with(&dir, BASE);
+        let ops = vec![
+            Op::PasteBlock {
+                row: 2,
+                column: "city".into(),
+                rows: vec![vec!["A".into(), "1".into()]],
+            },
+            Op::InsertRows {
+                at: 0,
+                rows: vec![vec!["0".into(), "Top".into(), "0".into()]],
+            },
+        ];
+        let text = export_with(&dir, &base, ops);
+        let lines: Vec<&str> = text.lines().collect();
+        // The paste was on base row 2; after the insert it is at logical row 3.
+        assert_eq!(lines[4], "3,A,1", "{text}");
+    }
+
+    #[test]
+    fn paste_block_round_trips_through_the_journal() {
+        let dir = Dir::new("pastejournal");
+        let base = base_with(&dir, BASE);
+        let path = Journal::sidecar(&base);
+        let mut journal = Journal::new();
+        journal.push(Op::PasteBlock {
+            row: 0,
+            column: "city".into(),
+            rows: vec![vec!["X".into(), "Y".into()]],
+        });
+        journal.save(&path).unwrap();
+        assert_eq!(Journal::load(&path).unwrap(), journal);
+    }
+
+    #[test]
     fn unknown_column_operations_are_refused() {
         let dir = Dir::new("badcols");
         let base = base_with(&dir, BASE);
@@ -1956,6 +2095,7 @@ fn shape(
         };
         out.push(value);
     }
+    edits.apply_blocks(columns, id, &mut out);
     edits.apply_rules(columns, &mut out);
     plan.apply(columns, &mut out, refs);
     out

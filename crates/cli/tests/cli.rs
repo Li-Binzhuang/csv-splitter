@@ -1986,3 +1986,64 @@ fn insert_column_places_it_where_asked() {
         .unwrap();
     assert_eq!(out.status.code(), Some(2));
 }
+
+/// Copy a rectangular block by A1-style range.
+#[test]
+fn copy_pastes_a_block_by_range() {
+    let dir = TempDir::new("copy");
+    let input = dir.join("t.csv");
+    std::fs::write(
+        &input,
+        "id,city,amount\n1,CDMX,10\n2,Puebla,20\n3,Tijuana,30\n4,Monterrey,40\n",
+    )
+    .unwrap();
+
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "copy",
+            input.to_str().unwrap(),
+            "--from",
+            "A1:B2",
+            "--to",
+            "B3",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    let out = dir.join("out.csv");
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            input.to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&out).unwrap();
+    let lines: Vec<&str> = text.lines().collect();
+    // The 2×2 block from A1:B2 landed at B3.
+    assert_eq!(lines[3], "3,1,CDMX", "{text}");
+    assert_eq!(lines[4], "4,2,Puebla", "{text}");
+
+    // A range beyond the sheet is refused with a usable message.
+    let out = Command::new(bin())
+        .args([
+            "edit",
+            "copy",
+            input.to_str().unwrap(),
+            "--from",
+            "Z1:Z2",
+            "--to",
+            "A5",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("beyond the last column"), "{stderr}");
+}
