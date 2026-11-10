@@ -2696,14 +2696,15 @@ fn view_applies_edits_and_filters() {
     assert!(text.contains("999"), "edits must be visible: {text}");
     assert!(text.contains("1 edit(s) applied"), "{text}");
 
-    // Paging past the end says nothing matched rather than failing.
+    // Paging past the end says so, and says how far the file goes, rather than failing.
     let out = Command::new(bin())
         .args(["view", path, "--start", "10", "--count", "5"])
         .output()
         .unwrap();
     assert_eq!(out.status.code(), Some(0));
     let text = String::from_utf8_lossy(&out.stdout);
-    assert!(text.contains("no rows matched"), "{text}");
+    assert!(text.contains("past the end"), "{text}");
+    assert!(text.contains("4 data rows"), "{text}");
 
     // JSON is machine-readable.
     let out = Command::new(bin())
@@ -3549,4 +3550,37 @@ fn derived_values_see_edited_values() {
     ]);
     let text = export(&split, "split_out2.csv");
     assert!(text.contains("1,Zoe,Perez,Zoe Perez"), "{text}");
+}
+
+/// Empty screens say which kind of empty they are.
+#[test]
+fn an_empty_page_says_why_it_is_empty() {
+    let dir = TempDir::new("emptypage");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,city\n1,CDMX\n2,Puebla\n").unwrap();
+    let path = input.to_str().unwrap();
+
+    let out = Command::new(bin())
+        .args(["view", path, "--start", "50", "--count", "5"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("past the end"), "{text}");
+
+    let out = Command::new(bin())
+        .args(["view", path, "--where", "city=Nowhere"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("no rows matched"), "{text}");
+    assert!(text.contains("2 data rows"), "{text}");
+
+    let empty = dir.join("empty.csv");
+    std::fs::write(&empty, "id,city\n").unwrap();
+    let out = Command::new(bin())
+        .args(["view", empty.to_str().unwrap()])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("no data rows"), "{text}");
 }

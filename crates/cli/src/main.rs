@@ -1689,7 +1689,17 @@ fn cmd_view(args: &[String]) -> i32 {
     }
 
     if rows.is_empty() {
-        println!("(no rows matched)");
+        // Say which emptiness this is: an offset past the end reads very differently
+        // from "your filter matched nothing".
+        match page_total {
+            Some(0) => println!("(the file has no data rows)"),
+            Some(total) if start >= total => {
+                println!("(start row {start} is past the end: {total} data rows)")
+            }
+            Some(total) => println!("(no rows matched; the file has {total} data rows)"),
+            // `--find` scans without a pager, so there is no total to quote.
+            None => println!("(no rows matched)"),
+        }
         return 0;
     }
     // Conditional formatting on screen: the same rules the API evaluates, applied to

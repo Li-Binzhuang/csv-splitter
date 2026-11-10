@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.92.0] — 2026-11-10
+
+### Fixed
+
+- **`POST /edit?action=delete&count=N` deleted N−1 rows.** The handler subtracted one
+  from both parameters, because `row` arrives 1-based and is stored 0-based — but
+  `count` is not a row number. `count=3` removed 2, and `count=1` removed **nothing**
+  while reporting success. Ten rows asked for, nine gone.
+  - `count=0` is now a 400 instead of a silent no-op.
+
+- **`view` on an empty screen said "(no rows matched)" for every kind of empty**, so an
+  offset past the end looked like a filter that found nothing. It now distinguishes
+  "the file has no data rows", "start row 500 is past the end: 209 data rows", and
+  "no rows matched; the file has 209 data rows".
+
+The pager itself was already right: paging follows inserts and deletes, and the window
+shifts with them. The bug was one arithmetic step earlier.
 ## [0.91.0] — 2026-11-10
 
 ### Verified

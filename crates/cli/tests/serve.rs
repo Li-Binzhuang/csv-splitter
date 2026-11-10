@@ -1447,3 +1447,90 @@ fn a_repeated_filtered_page_does_not_rescan() {
         "warm {warm_elapsed:?} vs cold {cold:?}"
     );
 }
+
+/// Row edits move the page window, and the server-side pager notices.
+#[test]
+fn paging_follows_row_inserts_and_deletes() {
+    let dir = TempDir::new("pagingedits");
+    let mut text = String::from("id,city\n");
+    for i in 1..200 {
+        text.push_str(&format!("{i},C{}\n", i % 5));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0.clone());
+
+    let (_, body) = get(&server.addr, "/rows?path=t.csv&start=100&count=3");
+    assert!(body.contains("\"total\":199"), "{body}");
+    assert!(body.contains("[\"101\""), "{body}");
+
+    // Ten rows inserted at the top push the window ten rows down.
+    for _ in 0..10 {
+        let (status, body) = post(
+            &server.addr,
+            "/edit?path=t.csv&action=insert&row=1&value=x,y",
+        );
+        assert!(
+            status == 200 || status == 202,
+            "insert returned {status}: {body}"
+        );
+    }
+    let (_, body) = get(&server.addr, "/rows?path=t.csv&start=100&count=3");
+    assert!(
+        body.contains("\"total\":209"),
+        "total must follow the insert: {body}"
+    );
+    assert!(
+        body.contains("[\"91\""),
+        "the same offset now holds different rows: {body}"
+    );
+
+    // Deleting them again restores the window: the pager is not holding a stale page.
+    // `count` is a count — the API used to subtract one from it as if it were a row.
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=delete&row=1&count=10",
+    );
+    assert!(
+        status == 200 || status == 202,
+        "delete returned {status}: {body}"
+    );
+    assert!(
+        body.contains("delete 10 row(s)"),
+        "ten rows, not nine: {body}"
+    );
+    let (_, body) = get(&server.addr, "/rows?path=t.csv&start=100&count=3");
+    assert!(
+        body.contains("\"total\":199"),
+        "total must follow the delete: {body}"
+    );
+    assert!(
+        body.contains("[\"101\""),
+        "the window is back where it was: {body}"
+    );
+}
+
+/// `count` is a count: delete removes exactly that many rows, and 0 is refused.
+#[test]
+fn delete_removes_exactly_the_count_asked_for() {
+    let dir = TempDir::new("deletecount");
+    let mut text = String::from("id,city\n");
+    for i in 1..20 {
+        text.push_str(&format!("{i},C{}\n", i % 5));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0.clone());
+
+    let (_, body) = post(&server.addr, "/edit?path=t.csv&action=delete&row=2&count=3");
+    assert!(body.contains("delete 3 row(s)"), "{body}");
+    let (_, sheet) = get(&server.addr, "/sheet?path=t.csv");
+    assert!(sheet.contains("\"rows\":16"), "19 - 3 rows: {sheet}");
+
+    let (_, body) = post(&server.addr, "/edit?path=t.csv&action=delete&row=1&count=1");
+    assert!(body.contains("delete 1 row(s)"), "{body}");
+    let (_, sheet) = get(&server.addr, "/sheet?path=t.csv");
+    assert!(sheet.contains("\"rows\":15"), "{sheet}");
+
+    // Zero rows is a mistake, not a no-op that reports success.
+    let (status, body) = post(&server.addr, "/edit?path=t.csv&action=delete&row=1&count=0");
+    assert_eq!(status, 400, "{body}");
+}

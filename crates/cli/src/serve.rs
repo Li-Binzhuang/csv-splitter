@@ -706,12 +706,15 @@ fn edit_apply(
     // Rows are 1-based on the wire, the same as the CLI and the same as A1
     // references. The journal stores 0-based physical indices, so the translation
     // happens here and nowhere else.
+    // Row numbers arrive 1-based and are stored 0-based; a *count* is just a count.
     let number = |name: &str| -> Option<u64> {
         params
             .get(name)
             .and_then(|v| v.parse::<u64>().ok())
             .and_then(|n| n.checked_sub(1))
     };
+    let plain =
+        |name: &str| -> Option<u64> { params.get(name).and_then(|v| v.parse::<u64>().ok()) };
     // `row=0` means "before the first row", which does not exist; say so instead of
     // letting it fall through to "set needs row".
     if params.get("row").is_some_and(|v| v.trim() == "0") {
@@ -741,7 +744,7 @@ fn edit_apply(
             }
         }
         "delete" => {
-            let (Some(row), Some(count)) = (number("row"), number("count")) else {
+            let (Some(row), Some(count)) = (number("row"), plain("count")) else {
                 return bad_request(
                     stream,
                     "delete needs row and count",
@@ -749,6 +752,14 @@ fn edit_apply(
                     "row=<n>&count=<k>",
                 );
             };
+            if count == 0 {
+                return bad_request(
+                    stream,
+                    "count must be at least 1",
+                    "count",
+                    "count=<k> with k >= 1",
+                );
+            }
             Op::DeleteRows { at: row, count }
         }
         "insert" => {
