@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.88.0] — 2026-11-10
+
+### Added
+
+- **`--quotes` reaches `columns` and `search`**, the two commands from last round's audit
+  that decide what data means: `columns` can now reshape a backslash-escaped file
+  without mangling it, and `search` can look in the right field.
+  Remaining exceptions are `sort`, `concat` and `sql` — `sort` compares keys parsed from
+  bytes, `concat` only checks headers, and `sql` goes through DuckDB's own reader.
+
 ## [0.87.0] — 2026-11-10
 
 ### Fixed (docs)

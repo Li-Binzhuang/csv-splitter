@@ -11,7 +11,7 @@
 //! the quote-aware scanner, so a multi-line cell stays one record on the way in
 //! and one quoted field on the way out.
 
-use crate::csv_reader::{join_csv_line, parse_csv_record, RecordReader};
+use crate::csv_reader::{join_csv_line, parse_csv_record_with, QuoteStyle, RecordReader};
 use crate::encoding;
 use crate::types::{Delimiter, ProgressEvent, ProgressSender};
 use std::fs::File;
@@ -123,6 +123,18 @@ pub fn reshape(
     output: &Path,
     tx: &ProgressSender,
 ) -> io::Result<ReshapeSummary> {
+    reshape_quotes(path, delimiter, spec, output, QuoteStyle::Rfc4180, tx)
+}
+
+/// Same as [`reshape`], with an explicit quote style.
+pub fn reshape_quotes(
+    path: &Path,
+    delimiter: Delimiter,
+    spec: &ReshapeSpec,
+    output: &Path,
+    quotes: QuoteStyle,
+    tx: &ProgressSender,
+) -> io::Result<ReshapeSummary> {
     let total_bytes = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
     tx.send(ProgressEvent::PhaseStart {
         phase: "Reshaping columns".into(),
@@ -140,7 +152,7 @@ pub fn reshape(
     if !records.next_record(&mut record)? {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "empty file"));
     }
-    let headers = parse_csv_record(&String::from_utf8_lossy(&record), delim);
+    let headers = parse_csv_record_with(&String::from_utf8_lossy(&record), delim, quotes);
     let (indices, names) = resolve(spec, &headers)?;
 
     let mut out = BufWriter::with_capacity(4 * 1024 * 1024, File::create(output)?);
@@ -161,7 +173,7 @@ pub fn reshape(
 
     while records.next_record(&mut record)? {
         let text = String::from_utf8_lossy(&record);
-        let fields = parse_csv_record(text.trim_end_matches(['\n', '\r']), delim);
+        let fields = parse_csv_record_with(text.trim_end_matches(['\n', '\r']), delim, quotes);
         let selected: Vec<&str> = indices
             .iter()
             .map(|&i| fields.get(i).map(String::as_str).unwrap_or(""))

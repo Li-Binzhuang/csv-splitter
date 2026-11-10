@@ -12,7 +12,7 @@ use csv_splitter_core::index::{SparseIndex, DEFAULT_INTERVAL};
 use csv_splitter_core::merge::merge_archive;
 use csv_splitter_core::partition::{run_partition, PartitionConfig};
 
-use csv_splitter_core::search::{search as search_scan, SearchSpec};
+use csv_splitter_core::search::SearchSpec;
 use csv_splitter_core::sort::SortColumn;
 use csv_splitter_core::splitter::run_split_threads;
 use csv_splitter_core::sql::{self, DEFAULT_LIMIT};
@@ -2041,6 +2041,7 @@ fn cmd_filter(args: &[String]) -> i32 {
 
 fn cmd_search(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut quotes_text = String::new();
     let mut input: Option<PathBuf> = None;
     let mut query: Option<String> = None;
     let mut columns: Vec<String> = Vec::new();
@@ -2055,6 +2056,13 @@ fn cmd_search(args: &[String]) -> i32 {
         match arg.as_str() {
             "--columns" => match p.value("--columns") {
                 Ok(v) => columns = v.split(',').map(|s| s.trim().to_string()).collect(),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--quotes" => match p.value("--quotes") {
+                Ok(v) => quotes_text = v,
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -2129,7 +2137,16 @@ fn cmd_search(args: &[String]) -> i32 {
     spec.whole_cell = exact;
 
     let (tx, _rx) = mpsc::channel();
-    let result = match search_scan(&input, delimiter, &spec, limit, &tx) {
+    let quotes = match parse_quotes(&quotes_text) {
+        Ok(q) => q,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let result = match csv_splitter_core::search::search_quotes(
+        &input, delimiter, &spec, limit, quotes, &tx,
+    ) {
         Ok(r) => r,
         Err(e) => {
             return report_failure("search", e);
@@ -5437,6 +5454,7 @@ fn profile_json(c: &csv_splitter_core::profile::ColumnProfile) -> String {
 
 fn cmd_columns(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut quotes_text = String::new();
     let mut input: Option<PathBuf> = None;
     let mut out: Option<PathBuf> = None;
     let mut keep: Vec<String> = Vec::new();
@@ -5449,6 +5467,13 @@ fn cmd_columns(args: &[String]) -> i32 {
     while let Some(arg) = p.next() {
         match arg.as_str() {
             "--verify" => verify = true,
+            "--quotes" => match p.value("--quotes") {
+                Ok(v) => quotes_text = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--keep" => match p.value("--keep") {
                 Ok(v) => keep = v.split(',').map(|s| s.trim().to_string()).collect(),
                 Err(e) => {
@@ -5533,7 +5558,15 @@ fn cmd_columns(args: &[String]) -> i32 {
     }
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("columns", rx, json);
-    let result = csv_splitter_core::reshape::reshape(&input, delimiter, &spec, &output, &tx);
+    let quotes = match parse_quotes(&quotes_text) {
+        Ok(q) => q,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let result =
+        csv_splitter_core::reshape::reshape_quotes(&input, delimiter, &spec, &output, quotes, &tx);
     drop(tx);
     let _ = reporter.join();
     match result {

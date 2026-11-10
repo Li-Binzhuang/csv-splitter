@@ -3262,3 +3262,29 @@ fn the_first_page_says_it_is_building_an_index() {
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(!stderr.contains("building a row index"), "{stderr}");
 }
+
+/// A backslash-escaped file survives `columns` and `search` when told about it.
+#[test]
+fn columns_and_search_read_the_quote_style() {
+    let dir = TempDir::new("quotesmore");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,note\n1,\"a \\\"b,c\"\n").unwrap();
+    let path = input.to_str().unwrap();
+
+    let out = dir.join("cols.csv");
+    let status = Command::new(bin())
+        .args(["columns", path, "--keep", "note", "--quotes", "backslash", "-o", out.to_str().unwrap()])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&out).unwrap();
+    // Re-written as RFC 4180, so the value is quoted and doubled.
+    assert!(text.contains("\"a \"\"b,c\""), "{text}");
+
+    // Search finds the value that only exists when read with backslash escaping.
+    let status = Command::new(bin())
+        .args(["search", path, "b,c", "--quotes", "backslash"])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+}

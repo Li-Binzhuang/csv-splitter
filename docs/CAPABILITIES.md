@@ -41,7 +41,7 @@
 | UTF-16 LE/BE | 读取；索引拒绝（字节偏移不可靠） |
 | Windows-1252 | 与 GBK 打分竞争，`café` 不乱码 |
 | 转码 | `convert f.csv -o utf8.csv`（流式，恒定内存） |
-| 引号风格 | `--quotes rfc4180\|backslash\|none`：`preview` `filter` `view` `groupby` `pivot` `chart` `dedupe` `stats` `analyze` `lookup` `edit export`。`sort` / `columns` / `concat` / `search` / `sql` **还不接受**（按 RFC 4180 读）。检测到反斜杠转义时会自动提示 |
+| 引号风格 | `--quotes rfc4180\|backslash\|none`：`preview` `filter` `view` `groupby` `pivot` `chart` `dedupe` `stats` `analyze` `lookup` `search` `columns` `edit export`。`sort` / `concat` / `sql` **还不接受**（按 RFC 4180 读）。检测到反斜杠转义时会自动提示 |
 
 ## 分析
 
@@ -161,7 +161,7 @@
 | 图表 `--max-points` 5000 | ✅ |
 | `book` 最多 500 张表 | ✅ |
 | `lookup --max-keys` 500 万 | ✅（此处原写「500 万」，`ref()` 是 200 万，已注明） |
-| `--quotes` 所有读命令都支持 | ❌ **原文档写错了**：`sort`/`columns`/`concat`/`search`/`sql` 不接受。已改成逐个点名 |
+| `--quotes` 所有读命令都支持 | ❌ **原文档写错了**：`sort`/`concat`/`sql` 仍不接受。`columns` 和 `search` 已在 0.88.0 补上，文档改成逐个点名 |
 
 最后一条是这次核对唯一的错误，也是最容易造成静默错误的：文档说「所有」，
 用户就会以为 `sort --quotes backslash` 可用，实际会按 RFC 解析。

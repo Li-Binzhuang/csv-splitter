@@ -10,7 +10,7 @@
 //! filter already covers the useful half, and a regex engine here would cost a
 //! dependency for something the SQL endpoint does better.
 
-use crate::csv_reader::{parse_csv_record, RecordReader};
+use crate::csv_reader::{parse_csv_record_with, QuoteStyle, RecordReader};
 use crate::encoding;
 use crate::types::{Delimiter, ProgressEvent, ProgressSender};
 use std::io::{self, BufReader};
@@ -78,6 +78,18 @@ pub fn search(
     limit: usize,
     tx: &ProgressSender,
 ) -> io::Result<SearchResult> {
+    search_quotes(path, delimiter, spec, limit, QuoteStyle::Rfc4180, tx)
+}
+
+/// Same as [`search`], with an explicit quote style.
+pub fn search_quotes(
+    path: &Path,
+    delimiter: Delimiter,
+    spec: &SearchSpec,
+    limit: usize,
+    quotes: QuoteStyle,
+    tx: &ProgressSender,
+) -> io::Result<SearchResult> {
     if spec.query.is_empty() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -102,7 +114,7 @@ pub fn search(
     if !records.next_record(&mut record)? {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "empty file"));
     }
-    let headers = parse_csv_record(&String::from_utf8_lossy(&record), delim);
+    let headers = parse_csv_record_with(&String::from_utf8_lossy(&record), delim, quotes);
     let indices: Vec<usize> = if spec.columns.is_empty() {
         (0..headers.len()).collect()
     } else {
@@ -125,7 +137,7 @@ pub fn search(
     while records.next_record(&mut record)? {
         result.scanned += 1;
         let text = String::from_utf8_lossy(&record);
-        let fields = parse_csv_record(text.trim_end_matches(['\n', '\r']), delim);
+        let fields = parse_csv_record_with(text.trim_end_matches(['\n', '\r']), delim, quotes);
         let hit = indices
             .iter()
             .filter_map(|&i| fields.get(i))
