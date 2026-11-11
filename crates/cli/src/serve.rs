@@ -303,6 +303,7 @@ fn handle(
             "/warm" => start_warm(&mut stream, root, jobs, cache, &params),
             "/index" => start_index(&mut stream, root, jobs, &params),
             "/parquet" => start_parquet(&mut stream, root, jobs, &params),
+            "/job" => job_cancel(&mut stream, jobs, &params),
             "/sort" => start_sort(&mut stream, root, jobs, &params),
             "/dedupe" => start_dedupe(&mut stream, root, jobs, &params),
             "/partition" => start_partition(&mut stream, root, jobs, &params),
@@ -342,7 +343,13 @@ fn handle(
         "/download" => download(&mut stream, root, &params),
         "/export" => export(&mut stream, root, &params),
         "/query" => query(&mut stream, root, &params),
-        "/job" => job_status(&mut stream, jobs, &params),
+        "/job" => {
+            if params.get("action").map(String::as_str) == Some("cancel") {
+                job_cancel(&mut stream, jobs, &params)
+            } else {
+                job_status(&mut stream, jobs, &params)
+            }
+        }
         "/jobs" => job_list(&mut stream, jobs),
         _ => {
             // Same list the capabilities call publishes, built the same way.
@@ -846,6 +853,61 @@ fn capabilities_endpoint(stream: &mut TcpStream) -> io::Result<()> {
     )
 }
 
+/// `POST /job?action=cancel&id=…` — stop a job, or say honestly that it cannot stop.
+///
+/// A job only claims to be cancellable when its worker actually checks the flag: the
+/// export loop does, DuckDB statements do not. Returning 409 for those is the truthful
+/// answer; flipping a status label while the work continues would be worse than no
+/// cancel button at all.
+fn job_cancel(
+    stream: &mut TcpStream,
+    jobs: &JobRegistry,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let Some(id) = params.get("id") else {
+        return bad_request(
+            stream,
+            "id is required",
+            "id",
+            "cancel the job id returned by a write endpoint",
+        );
+    };
+    match jobs.cancel(id) {
+        csv_splitter_core::jobs::CancelOutcome::Cancelling => respond_json(
+            stream,
+            202,
+            &format!(
+                r#"{{"job":{},"state":"cancelling","hint":{}}}"#,
+                json_str(id),
+                json_str(
+                    "the worker stops at its next check; poll /job until it reports cancelled"
+                )
+            ),
+        ),
+        csv_splitter_core::jobs::CancelOutcome::Finished(state) => respond_json(
+            stream,
+            200,
+            &format!(
+                r#"{{"job":{},"state":{},"hint":{}}}"#,
+                json_str(id),
+                json_str(state.as_str()),
+                json_str("the job already finished; nothing was stopped")
+            ),
+        ),
+        csv_splitter_core::jobs::CancelOutcome::NotCancellable => respond_json(
+            stream,
+            409,
+            &format!(
+                r#"{{"error":"this job cannot be cancelled","parameter":"action","hint":{}}}"#,
+                json_str("wait for it to finish, or stop the server (SIGTERM waits five seconds)")
+            ),
+        ),
+        csv_splitter_core::jobs::CancelOutcome::Unknown => {
+            respond_json(stream, 404, r#"{"error":"unknown job"}"#)
+        }
+    }
+}
+
 fn job_status(
     stream: &mut TcpStream,
     jobs: &JobRegistry,
@@ -876,10 +938,11 @@ fn job_json(status: &csv_splitter_core::jobs::JobStatus) -> String {
         None => "null".to_string(),
     };
     format!(
-        r#"{{"id":{},"kind":{},"state":{},"phase":{},"progress":{},"total":{},"fraction":{},"elapsed":{},"output":{},"error":{},"messages":[{}]}}"#,
+        r#"{{"id":{},"kind":{},"state":{},"cancellable":{},"phase":{},"progress":{},"total":{},"fraction":{},"elapsed":{},"output":{},"error":{},"messages":[{}]}}"#,
         json_str(&status.id),
         json_str(&status.kind),
         json_str(status.state.as_str()),
+        status.cancellable,
         json_str(&status.phase),
         status.progress,
         status.total,
@@ -1286,14 +1349,20 @@ fn edit_apply(
                 }
             }
         };
-        let id = jobs.submit("edit-export", move |tx| {
-            match workbook::export_filtered(
+        let id = jobs.submit_cancellable("edit-export", move |tx, cancel| {
+            let cancel_ref = cancel.clone();
+            let options = workbook::ExportOptions {
+                only: only.as_ref(),
+                columns: None,
+                cancel: Some(&cancel_ref),
+            };
+            match workbook::export_selected(
                 &base,
                 &ops,
                 &out,
                 delimiter,
                 csv_splitter_core::csv_reader::QuoteStyle::Rfc4180,
-                only.as_ref(),
+                options,
                 &tx,
             ) {
                 Ok(summary) => {
@@ -1307,6 +1376,12 @@ fn edit_apply(
                         output: result_path,
                     })
                     .ok();
+                }
+                Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {
+                    // A half-written export that looks complete is worse than none.
+                    let _ = std::fs::remove_file(&result_path);
+                    tx.send(ProgressEvent::Info("export cancelled".to_string()))
+                        .ok();
                 }
                 Err(e) => {
                     tx.send(ProgressEvent::Error(e.to_string())).ok();

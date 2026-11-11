@@ -65,6 +65,8 @@ pub struct ExportOptions<'a> {
     pub only: Option<&'a crate::filter::CompiledSet>,
     /// Write only these columns, in this order.
     pub columns: Option<&'a [String]>,
+    /// Stop early when this is cancelled; partial output is removed by the caller's job.
+    pub cancel: Option<&'a crate::types::CancelToken>,
 }
 
 pub fn export_selected(
@@ -76,7 +78,7 @@ pub fn export_selected(
     options: ExportOptions<'_>,
     tx: &ProgressSender,
 ) -> io::Result<ExportSummary> {
-    let ExportOptions { only, .. } = options;
+    let ExportOptions { only, cancel, .. } = options;
     let delim = delimiter.byte();
     let base_columns = base_header(base, delimiter)?;
     if base_columns.is_empty() {
@@ -183,6 +185,14 @@ pub fn export_selected(
         plan_is_plain && writes_every_column && only.is_none() && quoting_matches_output;
 
     loop {
+        // A cancelled export stops between rows; the caller deletes the partial file,
+        // because a half-written export that looks complete is worse than none.
+        if cancel.is_some_and(|token| token.is_cancelled()) {
+            return Err(io::Error::new(
+                io::ErrorKind::Interrupted,
+                "the export was cancelled",
+            ));
+        }
         // Which logical row sits at `logical`? Ask the map so inserted blocks and
         // deleted ranges are handled by the same code path as normal rows.
         match map.row(logical) {
@@ -369,6 +379,7 @@ pub fn export_filtered(
         ExportOptions {
             only,
             columns: None,
+            cancel: None,
         },
         tx,
     )
@@ -835,5 +846,85 @@ mod window_history_tests {
         assert_eq!(win.rows[0][idx], "#VALUE!");
         assert_eq!(win.rows[1][idx], "#VALUE!");
         let _ = std::fs::remove_dir_all(&dir);
+    }
+}
+
+#[cfg(test)]
+mod cancel_tests {
+    use super::*;
+    use crate::types::{CancelToken, ProgressEvent};
+
+    fn sheet() -> (std::path::PathBuf, std::path::PathBuf) {
+        let dir = std::env::temp_dir().join(format!(
+            "csvs_export_cancel_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0)
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let base = dir.join("t.csv");
+        let mut text = String::from("id,city\n");
+        for i in 0..50 {
+            text.push_str(&format!("{i},C{}\n", i % 5));
+        }
+        std::fs::write(&base, text).unwrap();
+        (base, dir)
+    }
+
+    /// A token cancelled before the loop starts must stop the export at the first row,
+    /// not after the file. This is the wiring test: the check exists and is reached.
+    #[test]
+    fn a_cancelled_token_stops_the_export() {
+        let (base, dir) = sheet();
+        let out = dir.join("out.csv");
+        let token = CancelToken::new();
+        token.cancel();
+        let (tx, _rx) = std::sync::mpsc::channel::<ProgressEvent>();
+        let result = export_selected(
+            &base,
+            &[],
+            &out,
+            Delimiter::Comma,
+            QuoteStyle::Rfc4180,
+            ExportOptions {
+                only: None,
+                columns: None,
+                cancel: Some(&token),
+            },
+            &tx,
+        );
+        match result {
+            Err(e) => assert_eq!(e.kind(), std::io::ErrorKind::Interrupted, "{e}"),
+            Ok(summary) => panic!("export finished despite a cancelled token: {summary:?}"),
+        }
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    /// The same export without a token writes everything: cancelling is opt-in, not a
+    /// behaviour change for existing callers.
+    #[test]
+    fn an_uncancelled_export_finishes() {
+        let (base, dir) = sheet();
+        let out = dir.join("out.csv");
+        let token = CancelToken::new();
+        let (tx, _rx) = std::sync::mpsc::channel::<ProgressEvent>();
+        let summary = export_selected(
+            &base,
+            &[],
+            &out,
+            Delimiter::Comma,
+            QuoteStyle::Rfc4180,
+            ExportOptions {
+                only: None,
+                columns: None,
+                cancel: Some(&token),
+            },
+            &tx,
+        )
+        .unwrap();
+        assert_eq!(summary.rows, 50);
+        std::fs::remove_dir_all(dir).ok();
     }
 }

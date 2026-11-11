@@ -119,6 +119,19 @@ CODE="$(curl -s -o /dev/null -w '%{http_code}' "$URL/rows?path=orders.csv&pad=$L
 if [ "$CODE" = "414" ]; then printf '  ok   limits: long query -> 414\n'
 else printf '  FAIL long query returned %s\n' "$CODE"; failed=$((failed + 1)); fi
 
+echo "== job control =="
+CANCEL_UNKNOWN="$(curl -s -o /dev/null -w '%{http_code}' -X POST "$URL/job?action=cancel&id=nope")"
+if [ "$CANCEL_UNKNOWN" = "404" ]; then printf '  ok   cancel: unknown job -> 404\n'
+else printf '  FAIL cancel unknown returned %s\n' "$CANCEL_UNKNOWN"; failed=$((failed + 1)); fi
+
+EXPORT_RESP="$(curl -s -X POST "$URL/edit?path=orders.csv&action=export&out=cancel.csv&where=city=CDMX")"
+JOB_ID="$(printf '%s' "$EXPORT_RESP" | sed -n 's/.*"job":"\([^"]*\)".*/\1/p')"
+if [ -n "$JOB_ID" ]; then
+  JOB_JSON="$(curl -s "$URL/job?id=$JOB_ID")"
+  has "jobs: cancellable flag" "$JOB_JSON" '"cancellable":true'
+else printf '  FAIL export did not queue a job\n'; failed=$((failed + 1)); fi
+rm -f cancel.csv
+
 echo "== observability =="
 HEALTH="$(curl -s "$URL/health")"
 has "health: ok"               "$HEALTH" '"ok":true'

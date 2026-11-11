@@ -174,3 +174,33 @@ pub enum ProgressEvent {
 }
 
 pub type ProgressSender = mpsc::Sender<ProgressEvent>;
+
+/// A job's "please stop" flag.
+///
+/// Long loops check it between windows and return an interrupted error. It exists so a
+/// cancellation is a *behaviour* — the work actually stops — rather than a status label
+/// on a job that keeps running.
+#[derive(Clone, Default)]
+pub struct CancelToken {
+    flag: std::sync::Arc<std::sync::atomic::AtomicBool>,
+}
+
+impl CancelToken {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn cancel(&self) {
+        self.flag.store(true, std::sync::atomic::Ordering::SeqCst);
+    }
+
+    pub fn is_cancelled(&self) -> bool {
+        self.flag.load(std::sync::atomic::Ordering::SeqCst)
+    }
+}
+
+impl std::fmt::Debug for CancelToken {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "CancelToken({})", self.is_cancelled())
+    }
+}

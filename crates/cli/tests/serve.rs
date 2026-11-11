@@ -3090,3 +3090,41 @@ fn a_terminated_server_stops_accepting() {
     let refused = std::net::TcpStream::connect(&server.addr).is_err();
     assert!(refused, "the listener still accepts after shutdown");
 }
+
+/// Cancelling an unknown job is a 404, and the job listing says which jobs can stop.
+#[test]
+fn cancel_reports_what_actually_happened() {
+    let dir = TempDir::new("canceljob");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n2,B\n").unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = post(&server.addr, "/job?action=cancel&id=nope");
+    assert_eq!(code, 404, "{body}");
+
+    // A job that has ended is not "cancelled": it says so instead of lying.
+    let (code, body) = post(&server.addr, "/parquet?path=t.csv");
+    assert_eq!(code, 202, "{body}");
+    let id = body
+        .split(r#""job":""#)
+        .nth(1)
+        .and_then(|rest| rest.split('"').next())
+        .unwrap()
+        .to_string();
+    let state = wait_for_job(&server.addr, &id);
+    let (code, body) = post(&server.addr, &format!("/job?action=cancel&id={id}"));
+
+    assert!(
+        code == 200,
+        "a finished job answers 200, got {code}: {body}"
+    );
+    assert!(
+        body.contains("\"state\":\"done\"") || body.contains("\"state\":\"failed\""),
+        "{body}"
+    );
+
+    // The listing marks a plain job as not cancellable.
+    let (code, body) = get(&server.addr, "/jobs");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""cancellable":false"#), "{body}");
+    let _ = state;
+}

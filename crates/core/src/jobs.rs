@@ -8,7 +8,7 @@
 //! local tool, not a scheduler. Jobs are evicted once they fall out of the
 //! retained window.
 
-use crate::types::{ProgressEvent, ProgressSender};
+use crate::types::{CancelToken, ProgressEvent, ProgressSender};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -27,6 +27,8 @@ pub enum JobState {
     Running,
     Done,
     Failed,
+    /// Stopped on request. The worker saw the flag and returned before finishing.
+    Cancelled,
 }
 
 impl JobState {
@@ -36,6 +38,7 @@ impl JobState {
             Self::Running => "running",
             Self::Done => "done",
             Self::Failed => "failed",
+            Self::Cancelled => "cancelled",
         }
     }
 }
@@ -53,6 +56,8 @@ pub struct JobStatus {
     pub output: Option<PathBuf>,
     pub error: Option<String>,
     pub started: Instant,
+    /// Whether this job can actually be stopped, as opposed to merely relabelled.
+    pub cancellable: bool,
 }
 
 impl JobStatus {
@@ -69,6 +74,19 @@ impl JobStatus {
     }
 }
 
+/// What `cancel(id)` did.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CancelOutcome {
+    /// The flag was set; the worker stops at its next check.
+    Cancelling,
+    /// The job is not the kind that can stop.
+    NotCancellable,
+    /// Nothing to cancel: it already ended.
+    Finished(JobState),
+    /// No such job.
+    Unknown,
+}
+
 #[derive(Clone, Default)]
 pub struct JobRegistry {
     inner: Arc<Mutex<Inner>>,
@@ -77,6 +95,8 @@ pub struct JobRegistry {
 #[derive(Default)]
 struct Inner {
     jobs: HashMap<String, JobStatus>,
+    /// The stop flags of jobs that can be stopped, by id.
+    cancels: HashMap<String, CancelToken>,
 }
 
 static JOB_SEQ: AtomicU64 = AtomicU64::new(0);
@@ -94,6 +114,22 @@ impl JobRegistry {
     where
         F: FnOnce(ProgressSender) + Send + 'static,
     {
+        self.start(kind, false, move |tx, _| work(tx))
+    }
+
+    /// Start a job that can be stopped: the worker receives a [`CancelToken`] it is
+    /// expected to check between chunks, and `cancel(id)` sets it.
+    pub fn submit_cancellable<F>(&self, kind: &str, work: F) -> String
+    where
+        F: FnOnce(ProgressSender, CancelToken) + Send + 'static,
+    {
+        self.start(kind, true, work)
+    }
+
+    fn start<F>(&self, kind: &str, cancellable: bool, work: F) -> String
+    where
+        F: FnOnce(ProgressSender, CancelToken) + Send + 'static,
+    {
         let id = next_id();
         let status = JobStatus {
             id: id.clone(),
@@ -106,10 +142,15 @@ impl JobRegistry {
             output: None,
             error: None,
             started: Instant::now(),
+            cancellable,
         };
+        let token = CancelToken::new();
         {
             let mut inner = self.inner.lock().unwrap();
             inner.jobs.insert(id.clone(), status);
+            if cancellable {
+                inner.cancels.insert(id.clone(), token.clone());
+            }
             evict(&mut inner);
         }
 
@@ -168,7 +209,7 @@ impl JobRegistry {
                 }
             }
 
-            work(tx);
+            work(tx, token);
 
             // The worker dropped its sender; wait for the relay to drain so the
             // final status is visible before `wait` returns.
@@ -176,6 +217,37 @@ impl JobRegistry {
         });
 
         id
+    }
+
+    /// Ask a cancellable job to stop. Returns what actually happened, so a caller can
+    /// tell "stopping" from "could not be stopped" instead of offering a fake button.
+    pub fn cancel(&self, id: &str) -> CancelOutcome {
+        let mut inner = self.inner.lock().unwrap();
+        let (cancellable, state) = match inner.jobs.get(id) {
+            Some(row) => (row.cancellable, row.state),
+            None => return CancelOutcome::Unknown,
+        };
+        // Answering "already finished" before "cannot be cancelled" is more useful:
+        // the caller's question was "is it still doing work?".
+        if matches!(
+            state,
+            JobState::Done | JobState::Failed | JobState::Cancelled
+        ) {
+            return CancelOutcome::Finished(state);
+        }
+        if !cancellable {
+            return CancelOutcome::NotCancellable;
+        }
+        if let Some(token) = inner.cancels.get(id) {
+            token.cancel();
+        }
+        let Some(row) = inner.jobs.get_mut(id) else {
+            return CancelOutcome::Unknown;
+        };
+        // The worker stops at its next check; the state is marked now so a poller sees
+        // that the request was accepted, and the interrupted error confirms it.
+        row.state = JobState::Cancelled;
+        CancelOutcome::Cancelling
     }
 
     pub fn status(&self, id: &str) -> Option<JobStatus> {
@@ -292,5 +364,51 @@ mod tests {
         let status = registry.wait(&id, Duration::from_secs(5)).unwrap();
         assert!(status.fraction().is_none());
         assert_eq!(status.messages.len(), 1);
+    }
+}
+
+#[cfg(test)]
+mod cancel_registry_tests {
+    use super::*;
+
+    /// A cancellable job really stops: the worker sees the flag, exits, and the row
+    /// says `cancelled` — not `done`, and not `failed`.
+    #[test]
+    fn a_cancellable_job_stops_and_reports_it() {
+        let registry = JobRegistry::new();
+        let started = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let flag = started.clone();
+        let id = registry.submit_cancellable("test", move |tx, token| {
+            flag.store(true, std::sync::atomic::Ordering::SeqCst);
+            while !token.is_cancelled() {
+                std::thread::sleep(Duration::from_millis(5));
+            }
+            let _ = tx.send(ProgressEvent::Info("stopped".to_string()));
+        });
+        // Wait until the worker is actually running, then cancel.
+        for _ in 0..100 {
+            if started.load(std::sync::atomic::Ordering::SeqCst) {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        assert!(matches!(registry.cancel(&id), CancelOutcome::Cancelling));
+        let status = registry.wait(&id, Duration::from_secs(5)).unwrap();
+        assert_eq!(status.state, JobState::Cancelled, "{status:?}");
+        assert!(status.cancellable);
+    }
+
+    /// A plain job is not offered a cancel button that would do nothing.
+    #[test]
+    fn a_plain_job_refuses_cancellation() {
+        let registry = JobRegistry::new();
+        let id = registry.submit("test", |tx| {
+            let _ = tx.send(ProgressEvent::Info("done".to_string()));
+        });
+        assert!(matches!(
+            registry.cancel(&id),
+            CancelOutcome::NotCancellable
+        ));
+        assert!(matches!(registry.cancel("nope"), CancelOutcome::Unknown));
     }
 }

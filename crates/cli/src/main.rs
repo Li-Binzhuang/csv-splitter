@@ -6297,6 +6297,7 @@ fn cmd_edit(args: &[String]) -> i32 {
                 csv_splitter_core::workbook::ExportOptions {
                     only: only.as_ref(),
                     columns: export_columns,
+                    cancel: None,
                 },
                 &tx,
             );

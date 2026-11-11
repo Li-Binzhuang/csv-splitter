@@ -1,5 +1,23 @@
 # Changelog
 
+## [3.23.0] — 2026-11-11
+
+### Added
+
+- **Job cancellation that actually stops work, and says so when it cannot.**
+  `POST /job?action=cancel&id=…` answers 202 (accepted, poll until `cancelled`), 200
+  (already finished — nothing was stopped), 409 (this kind of job cannot stop) or 404.
+  `/job` and `/jobs` now carry `cancellable: true|false` per job.
+  - `edit-export` is cancellable: the export loop checks a `CancelToken` between rows,
+    returns `Interrupted`, and the handler deletes the partial file — a half-written
+    export that looks complete is worse than none.
+  - `parquet` is not: it is one DuckDB statement, and offering a button that does nothing
+    is worse than offering none. The 409 says exactly that.
+  - Tests cover the wiring (a pre-cancelled token stops the export at the first row), the
+    registry (a cancellable worker stops and reports `cancelled`, a plain job refuses),
+    and the HTTP outcomes (404 for unknown, 200 for finished, `cancellable:false` in the
+    listing).
+
 ## [3.22.0] — 2026-11-11
 
 ### Added
