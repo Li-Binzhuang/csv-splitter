@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.18.0] — 2026-11-11
+
+### Fixed
+
+- **A 64-row schema sample built a 2.5 GB row index.** `Sheet::schema` reads through
+  `window`, which needs the sparse index, so the first SQL request on a fresh copy paid a
+  full scan to create `t.csv.idx` — for twelve bytes of "is this a number?". The sampler
+  used by the SQL layer now reads the header and the first 64 records directly
+  (`sheet::schema_sample`, no journal, no index), and the cold filtered first page on the
+  2.5 GB file went from **1.01 s to 0.22 s**, with no sidecar written.
+
+### Changed
+
+- `Sheet::schema` keeps its behaviour (edit-aware columns) but shares one classifier with
+  the sampler, so "what kind is this column" has one implementation, not two.
+
 ## [3.17.0] — 2026-11-11
 
 ### Performance

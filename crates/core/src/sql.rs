@@ -206,8 +206,9 @@ fn cached_columns(path: &Path) -> io::Result<Vec<ColumnInfo>> {
     if let Some(hit) = store.lock().ok().and_then(|g| g.get(&key).cloned()) {
         return Ok(hit);
     }
-    let sheet = crate::sheet::Sheet::open(path, crate::sheet::ReadOptions::default())?;
-    let columns = sheet.schema(64)?;
+    // No sheet, no index: a 64-row sample must not build a 2.5 GB row index just to
+    // find out that 780 columns are numbers.
+    let columns = crate::sheet::schema_sample(path, Delimiter::Comma, 64)?;
     if let Ok(mut guard) = store.lock() {
         // Keep the cache small: a page of long-lived servers should not grow with files.
         if guard.len() > 16 {

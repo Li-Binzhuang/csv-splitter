@@ -193,7 +193,15 @@ impl Sheet {
     pub fn schema(&self, sample: u64) -> io::Result<Vec<ColumnInfo>> {
         let columns = self.columns()?;
         let sample = sample.max(1);
+        // The window needs the row index, which on a big file costs a scan. A schema
+        // sample of 64 rows does not: it reads the first records and stops.
         let window = self.window(0, sample.min(self.rows().unwrap_or(0).max(1)))?;
+        Ok(Self::classify(&columns, &window.rows))
+    }
+
+    /// Classify columns from a sample of rows: the one implementation of "what kind is this
+    /// column", used by both the sheet and the index-free sampler.
+    fn classify(columns: &[String], rows: &[Vec<String>]) -> Vec<ColumnInfo> {
         let mut tallies: Vec<KindTally> = columns
             .iter()
             .map(|_| KindTally {
@@ -206,7 +214,7 @@ impl Sheet {
             .iter()
             .map(|_| std::collections::HashSet::new())
             .collect();
-        for row in &window.rows {
+        for row in rows {
             for (slot, tally) in tallies.iter_mut().enumerate() {
                 let value = row.get(slot).map(String::as_str).unwrap_or("");
                 if value.trim().is_empty() {
@@ -217,19 +225,19 @@ impl Sheet {
                 ColumnKind::observe(tally, value);
             }
         }
-        Ok(columns
-            .into_iter()
+        columns
+            .iter()
             .enumerate()
             .map(|(slot, name)| ColumnInfo {
-                name,
+                name: name.clone(),
                 index: slot + 1,
                 kind: ColumnKind::finish(&tallies[slot]),
                 empty: empties[slot],
-                sampled: window.rows.len() as u64,
+                sampled: rows.len() as u64,
                 distinct: seen[slot].len() as u64,
                 distinct_capped: seen[slot].len() >= DISTINCT_CAP,
             })
-            .collect())
+            .collect()
     }
 
     /// 1-based index of a column by name, or `None` when it is not there.
@@ -426,6 +434,40 @@ fn unique_stamp() -> u128 {
 /// only want to know if the overlay path is needed.
 pub fn has_edits(base: &Path) -> bool {
     Journal::sidecar(base).exists()
+}
+
+/// Column shapes from the first `sample` records, without opening the sheet.
+///
+/// No journal is consulted (this is the base file's shape), and no sparse index is built
+/// — which is the point: a 12-byte answer must not cost a 2.5 GB scan. Callers that need
+/// edit-aware columns use [`Sheet::schema`].
+pub fn schema_sample(
+    base: &Path,
+    delimiter: Delimiter,
+    sample: u64,
+) -> io::Result<Vec<ColumnInfo>> {
+    let delim = delimiter.byte();
+    let mut records = crate::csv_reader::RecordReader::new_with(
+        std::io::BufReader::with_capacity(4 * 1024 * 1024, crate::encoding::open_decoded(base)?),
+        4 * 1024 * 1024,
+        crate::csv_reader::QuoteStyle::Rfc4180,
+    );
+    let mut record: Vec<u8> = Vec::with_capacity(8 * 1024);
+    if !records.next_record(&mut record)? {
+        return Ok(Vec::new());
+    }
+    let header = crate::csv_reader::parse_csv_record(
+        String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
+        delim,
+    );
+    let mut rows: Vec<Vec<String>> = Vec::new();
+    while rows.len() < sample.max(1) as usize && records.next_record(&mut record)? {
+        rows.push(crate::csv_reader::parse_csv_record(
+            String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
+            delim,
+        ));
+    }
+    Ok(Sheet::classify(&header, &rows))
 }
 
 #[cfg(test)]
