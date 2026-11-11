@@ -21,10 +21,6 @@ env:
 # creating both jobs; once the repository's cache quota was exceeded, runs came
 # back as "failure" with one job skipped and, sometimes, no jobs at all — a red X
 # with nothing to read. A single job cannot lose half of itself.
-#
-# The cost is that DuckDB compiles even when only the engine changed. With the
-# rolling cache below that is a few minutes, and it buys a signal that is always
-# complete.
 jobs:
   test:
     runs-on: ubuntu-22.04
@@ -47,22 +43,55 @@ jobs:
           key: linux-cargo-rolling-${{ github.run_id }}
           restore-keys: linux-cargo-rolling-
 
-      - name: Install Linux dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libxdo-dev fonts-noto-cjk
+      # No GTK/xdo/font packages: they were for the removed GUI crate, cost a minute
+      # per run, and nothing in the CLI or the API needs them.
 
       - name: Format
         run: cargo fmt --all -- --check
 
+      # Each test step tees its output to a log. The reporting step below turns the
+      # failing test names into annotations, because a run's logs need a signed-in
+      # admin to read while annotations are public — this project's failures used to
+      # be a red X with no text.
       - name: Test engine (no DuckDB)
-        run: cargo test -p csv-splitter-core -p csv-splitter-cli
+        run: |
+          set -o pipefail
+          cargo test -p csv-splitter-core -p csv-splitter-cli 2>&1 | tee engine.log
 
       - name: Performance guard
-        run: cargo test -p csv-splitter-core --test performance
+        run: |
+          set -o pipefail
+          cargo test -p csv-splitter-core --test performance 2>&1 | tee perf.log
 
       - name: Clippy workspace
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        run: |
+          set -o pipefail
+          cargo clippy --workspace --all-targets -- -D warnings 2>&1 | tee clippy.log
 
       - name: Test CLI (includes the HTTP API)
-        run: cargo test -p csv-splitter-cli
+        run: |
+          set -o pipefail
+          cargo test -p csv-splitter-cli 2>&1 | tee cli.log
+
+      - name: Report failures as annotations
+        if: failure()
+        run: |
+          set +e
+          # Failing test names and the first assertion line of each.
+          grep -hE "^(test .* \.\.\. FAILED|test .* FAILED|---- .* stdout ----|panicked at|assertion .* failed)" ./*.log 2>/dev/null \
+            | head -10 \
+            | while IFS= read -r line; do echo "::error title=CI failure::$line"; done
+          echo "--- tail of every log ---"
+          for f in ./*.log; do
+            [ -f "$f" ] || continue
+            echo "== $f =="
+            tail -n 15 "$f"
+          done
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: "*.log"
+          retention-days: 7

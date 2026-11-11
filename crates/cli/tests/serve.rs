@@ -3317,12 +3317,14 @@ fn twenty_concurrent_requests_do_not_interfere() {
 #[test]
 fn a_timeout_does_not_leak_the_engine_text() {
     let dir = TempDir::new("timeout");
+    // Big enough that a one-millisecond budget cannot finish before the watchdog
+    // fires. The first version used 2000 rows, and a fast runner answered the query
+    // inside the budget, turning this into a flaky 200.
     let mut text = String::from("id,city\n");
-    for i in 0..2000 {
+    for i in 0..200_000 {
         text.push_str(&format!("{i},C{}\n", i % 9));
     }
     std::fs::write(dir.join("t.csv"), text).unwrap();
-    // A one-millisecond budget: the engine is interrupted almost immediately.
     let server = start_with_env(&dir.0, &[("CSV_SPLITTER_QUERY_TIMEOUT_MS", "1")]);
 
     let (code, body) = get(
