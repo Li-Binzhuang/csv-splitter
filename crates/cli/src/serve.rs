@@ -4120,7 +4120,7 @@ fn respond_filtered_page(
                 stream,
                 504,
                 &format!(
-                    r#"{{"error":"the query was interrupted","parameter":{},"hint":{}}}"#,
+                    r#"{{"error":"the query exceeded its time limit","parameter":{},"hint":{}}}"#,
                     json_str(parameter),
                     json_str("narrow the filter or page without one; the engine was stopped at the time limit")
                 ),

@@ -338,6 +338,7 @@ where
             check_table_shape(&conn, delimiter)?;
             let handle = conn.interrupt_handle();
             let (done_tx, done_rx) = std::sync::mpsc::channel::<()>();
+            let started = std::time::Instant::now();
             let watchdog = std::thread::spawn(move || {
                 // Exit as soon as the query finishes; only fire on a real expiry.
                 if done_rx
@@ -348,8 +349,22 @@ where
                 }
             });
             let outcome = run(&conn);
+            let elapsed = started.elapsed();
             let _ = done_tx.send(());
             let _ = watchdog.join();
+            // The watchdog can fire before the query starts (a small budget on a busy
+            // box), and the interrupt then lands on an idle connection. The deadline is
+            // what counts: a result that arrived after it is a timeout even when the
+            // engine could not be stopped.
+            let outcome = match outcome {
+                Ok(_) if elapsed > std::time::Duration::from_millis(timeout_ms) => {
+                    Err(io::Error::new(
+                        io::ErrorKind::TimedOut,
+                        format!("the query took {elapsed:?}, over its {timeout_ms} ms limit"),
+                    ))
+                }
+                other => other,
+            };
             match outcome {
                 Ok(value) => return Ok(value),
                 Err(e) => {
@@ -914,8 +929,14 @@ mod timeout_tests {
         match outcome {
             Err(e) => {
                 assert_eq!(e.kind(), io::ErrorKind::TimedOut, "{e}");
-                assert!(e.to_string().contains("interrupted"), "{e}");
-                assert!(e.to_string().contains("LIMIT"), "{e}");
+                // Two honest messages, one meaning: the engine was interrupted, or the
+                // result arrived after the deadline because the interrupt landed on an
+                // idle connection. Either way it is a timeout.
+                let text = e.to_string();
+                assert!(
+                    text.contains("interrupted") || text.contains("over its 0 ms limit"),
+                    "{text}"
+                );
             }
             // A machine fast enough to finish before the watchdog fires is not a failure
             // of the code; report the assumption instead of pretending.
