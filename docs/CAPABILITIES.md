@@ -277,7 +277,10 @@
 | `GET /rows?start=999999`（越界）| 0.7 ms，`pastEnd:true` |
 | `GET /cell` | **1.6 ms**，80 字节 |
 | `GET /journal` | 0.4 ms |
-| `GET /query?sql=count(*)` | 8.6 s（整表一次扫描，30 秒超时保护）|
+| `GET /rows?where=` 首屏（全命中，3 列）| **1.4 s**（原 8–9 s：不再整表推断类型）|
+| `GET /rows?order=` 首屏（top-N，3 列）| **2.7 s**（原 15.5 s：不再收集 20 万行）|
+| `GET /rows?where=` 0 命中（必须全扫）| 2.9 s（原 15 s）|
+| `GET /query?sql=count(*)` | 2.0 s（声明列类型后；原 8.6 s）|
 | `GET /query?sql=SELECT *&limit=5` | 8.0 s（同样是整表扫描）|
 | `POST /edit?action=set&expect=` 正确 | 200，值立即在 `/cell` 与 `/rows` 可见 |
 | 同一请求再发（`expect` 过期）| **409**，`actual` 是刚写入的 `checked` |

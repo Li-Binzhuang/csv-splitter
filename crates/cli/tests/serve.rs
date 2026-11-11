@@ -2566,3 +2566,37 @@ fn failure_kinds_have_one_status_code_each() {
     }
     assert!(wrong.is_empty(), "{wrong:#?}");
 }
+
+/// An ordered window is a page, not a full sort collected into memory: the engine gets
+/// LIMIT/OFFSET, and the response says whether `total` is exact.
+#[test]
+fn an_ordered_page_is_a_page() {
+    let dir = TempDir::new("orderedpage");
+    let mut text = String::from("id,amount\n");
+    for i in 1..=200 {
+        text.push_str(&format!("{i},{}\n", 201 - i));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = get(&server.addr, "/rows?path=t.csv&order=amount&count=5");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""totalExact":false"#), "{body}");
+    // amount is 200,199,198… so the smallest amounts come first.
+    assert!(body.contains(r#"["200","1"]"#), "{body}");
+
+    // The last page reaches the end, so its total is exact and matches the row count.
+    let (code, body) = get(
+        &server.addr,
+        "/rows?path=t.csv&order=amount:desc&start=195&count=10",
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""count":5"#), "{body}");
+    assert!(body.contains(r#""totalExact":true"#), "{body}");
+    assert!(body.contains(r#""total":200"#), "{body}");
+
+    // An order column that does not exist is named, not sent to the engine.
+    let (code, body) = get(&server.addr, "/rows?path=t.csv&order=nosuch");
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains("cannot order by 'nosuch'"), "{body}");
+}

@@ -11,6 +11,7 @@
 //!   * results are capped, so a `SELECT *` cannot exhaust memory;
 //!   * the file is registered as view `t`, so queries never need a path.
 
+use crate::sheet::{ColumnInfo, ColumnKind};
 use crate::types::Delimiter;
 use duckdb::types::Value;
 use duckdb::Connection;
@@ -145,6 +146,89 @@ fn view_sql(path: &Path, delimiter: Delimiter, opts: OpenOptions) -> String {
     )
 }
 
+/// A view that declares its column types instead of asking DuckDB to guess them.
+///
+/// `read_csv_auto` sniffs the file to infer 782 column types, and on a 2.5 GB sheet that
+/// sniffing *is* the query: `SELECT * FROM t LIMIT 1` took 7.3 seconds, which is the
+/// whole file read once for types before the first row was produced. Declaring the types
+/// from a 64-row sample of our own reader removes that pass entirely — the engine reads
+/// the first block and answers.
+fn typed_view_sql(
+    path: &Path,
+    delimiter: Delimiter,
+    opts: OpenOptions,
+    columns: &[ColumnInfo],
+) -> String {
+    let quoted = path.to_string_lossy().replace('\'', "\'\'");
+    let delim = (delimiter.byte() as char).to_string().replace('\'', "\'\'");
+    let fields: Vec<String> = columns
+        .iter()
+        .map(|c| format!("'{}': '{}'", duck_quote(&c.name), duck_type(c.kind)))
+        .collect();
+    format!(
+        "CREATE VIEW t AS SELECT * FROM read_csv('{quoted}', header=true, delim='{delim}', sample_size=1, null_padding={np}, parallel={par}, columns={{{fields}}})",
+        np = opts.null_padding,
+        par = opts.parallel,
+        fields = fields.join(", ")
+    )
+}
+
+/// DuckDB's spelling for a column type, from what our sampler saw.
+///
+/// Numbers are DOUBLE rather than BIGINT because a sampled integer column may hold
+/// decimals further down; text stays text. Dates stay VARCHAR: their formats vary
+/// (`2026-07-22 03:54:37.957`), and a failed cast would fail the whole read.
+fn duck_type(kind: ColumnKind) -> &'static str {
+    match kind {
+        ColumnKind::Number => "DOUBLE",
+        _ => "VARCHAR",
+    }
+}
+
+/// Single-quoted identifier inside a DuckDB map literal: `it's` -> `it''s`.
+fn duck_quote(name: &str) -> String {
+    name.replace('\'', "\'\'")
+}
+
+/// The columns of a file, sampled once and remembered per (path, size, mtime).
+///
+/// Every request used to sample the header again; on a 782-column file that is a
+/// visible cost even though it is small, and it is the same answer every time until the
+/// file changes.
+fn cached_columns(path: &Path) -> io::Result<Vec<ColumnInfo>> {
+    use std::collections::HashMap;
+    use std::sync::{Mutex, OnceLock};
+    static CACHE: OnceLock<Mutex<HashMap<String, Vec<ColumnInfo>>>> = OnceLock::new();
+    let key = stamp_key(path);
+    let store = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
+    if let Some(hit) = store.lock().ok().and_then(|g| g.get(&key).cloned()) {
+        return Ok(hit);
+    }
+    let sheet = crate::sheet::Sheet::open(path, crate::sheet::ReadOptions::default())?;
+    let columns = sheet.schema(64)?;
+    if let Ok(mut guard) = store.lock() {
+        // Keep the cache small: a page of long-lived servers should not grow with files.
+        if guard.len() > 16 {
+            guard.clear();
+        }
+        guard.insert(key, columns.clone());
+    }
+    Ok(columns)
+}
+
+fn stamp_key(path: &Path) -> String {
+    let meta = std::fs::metadata(path).ok();
+    format!(
+        "{}|{}|{}",
+        path.display(),
+        meta.as_ref().map(|m| m.len()).unwrap_or(0),
+        meta.and_then(|m| m.modified().ok())
+            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|d| d.as_secs())
+            .unwrap_or(0)
+    )
+}
+
 /// How long a query may run before it is interrupted, unless the caller says otherwise.
 ///
 /// A 2.5 GB scan takes about eight seconds here, so thirty is generous for an
@@ -202,47 +286,62 @@ where
         return Err(io::Error::new(io::ErrorKind::NotFound, "file not found"));
     }
     let mut last: Option<io::Error> = None;
-    for opts in OPEN_LADDER {
-        let conn = Connection::open_in_memory().map_err(to_io)?;
-        if let Err(e) = conn.execute_batch(&view_sql(path, delimiter, opts)) {
-            let message = e.to_string();
-            last = Some(to_io(e));
-            if is_retryable(&message) {
-                continue;
+    // Typed first: it is what makes a first page cost one block instead of a whole pass.
+    // A sample can call a column a number that later holds text, so the auto view stays
+    // as the fallback — correctness keeps its slow path, it just stops being the only one.
+    let columns = cached_columns(path).ok();
+    let mut strategies: Vec<Option<&[ColumnInfo]>> = Vec::new();
+    if let Some(cols) = columns.as_deref() {
+        strategies.push(Some(cols));
+    }
+    strategies.push(None);
+    for columns in strategies {
+        for opts in OPEN_LADDER {
+            let conn = Connection::open_in_memory().map_err(to_io)?;
+            let create = match columns {
+                Some(cols) => typed_view_sql(path, delimiter, opts, cols),
+                None => view_sql(path, delimiter, opts),
+            };
+            if let Err(e) = conn.execute_batch(&create) {
+                let message = e.to_string();
+                last = Some(to_io(e));
+                if is_retryable(&message) {
+                    continue;
+                }
+                break;
             }
-            break;
-        }
-        check_table_shape(&conn, delimiter)?;
-        let handle = conn.interrupt_handle();
-        let (done_tx, done_rx) = std::sync::mpsc::channel::<()>();
-        let watchdog = std::thread::spawn(move || {
-            // Exit as soon as the query finishes; only fire on a real expiry.
-            if done_rx
-                .recv_timeout(std::time::Duration::from_millis(timeout_ms))
-                .is_err()
-            {
-                handle.interrupt();
-            }
-        });
-        let outcome = run(&conn);
-        let _ = done_tx.send(());
-        let _ = watchdog.join();
-        match outcome {
-            Ok(value) => return Ok(value),
-            Err(e) => {
-                if is_interrupted(&e.to_string()) {
-                    return Err(io::Error::new(
+            check_table_shape(&conn, delimiter)?;
+            let handle = conn.interrupt_handle();
+            let (done_tx, done_rx) = std::sync::mpsc::channel::<()>();
+            let watchdog = std::thread::spawn(move || {
+                // Exit as soon as the query finishes; only fire on a real expiry.
+                if done_rx
+                    .recv_timeout(std::time::Duration::from_millis(timeout_ms))
+                    .is_err()
+                {
+                    handle.interrupt();
+                }
+            });
+            let outcome = run(&conn);
+            let _ = done_tx.send(());
+            let _ = watchdog.join();
+            match outcome {
+                Ok(value) => return Ok(value),
+                Err(e) => {
+                    if is_interrupted(&e.to_string()) {
+                        return Err(io::Error::new(
                         io::ErrorKind::TimedOut,
                         format!(
                             "the query ran longer than {} s and was interrupted; add LIMIT or a WHERE clause, or raise the timeout",
                             timeout_ms / 1000
                         ),
                     ));
-                }
-                let retryable = is_retryable(&e.to_string());
-                last = Some(e);
-                if !retryable {
-                    break;
+                    }
+                    let retryable = is_retryable(&e.to_string());
+                    last = Some(e);
+                    if !retryable {
+                        break;
+                    }
                 }
             }
         }
@@ -269,28 +368,43 @@ where
         return Err(io::Error::new(io::ErrorKind::NotFound, "file not found"));
     }
     let mut last: Option<io::Error> = None;
-    for opts in OPEN_LADDER {
-        let conn = Connection::open_in_memory().map_err(to_io)?;
-        // Sniffing happens here, and it can fail for shapes the previous option
-        // set could not parse — so this error must also continue down the ladder.
-        if let Err(e) = conn.execute_batch(&view_sql(path, delimiter, opts)) {
-            let message = e.to_string();
-            last = Some(to_io(e));
-            if is_retryable(&message) {
-                continue;
+    // Typed first: it is what makes a first page cost one block instead of a whole pass.
+    // A sample can call a column a number that later holds text, so the auto view stays
+    // as the fallback — correctness keeps its slow path, it just stops being the only one.
+    let columns = cached_columns(path).ok();
+    let mut strategies: Vec<Option<&[ColumnInfo]>> = Vec::new();
+    if let Some(cols) = columns.as_deref() {
+        strategies.push(Some(cols));
+    }
+    strategies.push(None);
+    for columns in strategies {
+        for opts in OPEN_LADDER {
+            let conn = Connection::open_in_memory().map_err(to_io)?;
+            // Sniffing happens here, and it can fail for shapes the previous option
+            // set could not parse — so this error must also continue down the ladder.
+            let create = match columns {
+                Some(cols) => typed_view_sql(path, delimiter, opts, cols),
+                None => view_sql(path, delimiter, opts),
+            };
+            if let Err(e) = conn.execute_batch(&create) {
+                let message = e.to_string();
+                last = Some(to_io(e));
+                if is_retryable(&message) {
+                    continue;
+                }
+                break;
             }
-            break;
-        }
-        // A wrong delimiter is not fixable by another reader option, so this
-        // failure propagates instead of continuing down the ladder.
-        check_table_shape(&conn, delimiter)?;
-        match f(&conn) {
-            Ok(value) => return Ok(value),
-            Err(e) => {
-                let retryable = is_retryable(&e.to_string());
-                last = Some(e);
-                if !retryable {
-                    break;
+            // A wrong delimiter is not fixable by another reader option, so this
+            // failure propagates instead of continuing down the ladder.
+            check_table_shape(&conn, delimiter)?;
+            match f(&conn) {
+                Ok(value) => return Ok(value),
+                Err(e) => {
+                    let retryable = is_retryable(&e.to_string());
+                    last = Some(e);
+                    if !retryable {
+                        break;
+                    }
                 }
             }
         }
@@ -768,5 +882,76 @@ mod timeout_tests {
             // of the code; report the assumption instead of pretending.
             Ok(_) => eprintln!("note: the zero-timeout query finished before the interrupt"),
         }
+    }
+}
+
+#[cfg(test)]
+mod typed_view_tests {
+    use super::*;
+
+    fn sheet(dir: &str, body: &str) -> std::path::PathBuf {
+        let root = std::env::temp_dir().join(format!(
+            "csvs_typed_{dir}_{}_{}",
+            std::process::id(),
+            unique_seq()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let path = root.join("t.csv");
+        std::fs::write(&path, body).unwrap();
+        path
+    }
+
+    fn unique_seq() -> u64 {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static SEQ: AtomicU64 = AtomicU64::new(0);
+        SEQ.fetch_add(1, Ordering::Relaxed)
+    }
+
+    /// Numbers must stay numbers: a declared-DOUBLE view is why `amount > 5` compares
+    /// numerically instead of alphabetically (`10` would sort before `9` as text).
+    #[test]
+    fn declared_types_keep_numbers_numeric() {
+        let path = sheet("numeric", "id,amount\n1,10\n2,9\n3,100\n");
+        let result = query(
+            &path,
+            "SELECT id, amount FROM t WHERE amount > 5 ORDER BY amount",
+            10,
+        )
+        .unwrap();
+        let amounts: Vec<String> = result.rows.iter().map(|r| r[1].clone()).collect();
+        assert_eq!(
+            amounts,
+            ["9", "10", "100"],
+            "text order would be 10, 100, 9"
+        );
+        std::fs::remove_dir_all(path.parent().unwrap()).ok();
+    }
+
+    /// A column that looks numeric in the first 64 rows and turns into text later must
+    /// fall back to the auto-detected view instead of failing the read.
+    #[test]
+    fn a_mistyped_sample_falls_back_instead_of_failing() {
+        let mut body = String::from("id,value\n");
+        for i in 0..80 {
+            body.push_str(&format!("{i},{}\n", i * 10));
+        }
+        body.push_str("80,not-a-number\n81,11\n");
+        let path = sheet("fallback", &body);
+        let result = query(&path, "SELECT count(*) FROM t", 5).unwrap();
+        assert_eq!(
+            result.rows[0][0], "82",
+            "the fallback view must still read every row"
+        );
+        std::fs::remove_dir_all(path.parent().unwrap()).ok();
+    }
+
+    /// Quoted column names and apostrophes must not break the map literal.
+    #[test]
+    fn odd_column_names_survive_the_view() {
+        let path = sheet("oddnames", "'quoted',it's,total\n1,2,3\n");
+        let result = query(&path, "SELECT * FROM t", 2).unwrap();
+        assert_eq!(result.columns.len(), 3);
+        assert_eq!(result.rows[0], ["1", "2", "3"]);
+        std::fs::remove_dir_all(path.parent().unwrap()).ok();
     }
 }

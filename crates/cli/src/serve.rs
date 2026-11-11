@@ -2847,17 +2847,59 @@ fn rows(
     // LIMIT/OFFSET lets the engine stop as soon as it has the page (plus one, to know
     // whether there is another). On a 2.5 GB file this is the difference between a
     // 15-second first page and a two-second one for a selective filter.
-    if params.contains_key("where")
-        && !params.contains_key("order")
-        && !csv_splitter_core::sheet::has_edits(&path)
+    if !csv_splitter_core::sheet::has_edits(&path)
+        && (params.contains_key("where") || params.contains_key("order"))
     {
-        if let Some(clause) = filter_clause(params) {
+        let filter = filter_clause(params);
+        let mut where_sql = String::new();
+        if let Some(clause) = filter.as_ref() {
+            where_sql = format!(" WHERE {clause}");
+        }
+        let order_sql = match params.get("order") {
+            None => String::new(),
+            Some(raw) => match order_clause(
+                raw,
+                params
+                    .get("desc")
+                    .map(|v| v == "1" || v == "true")
+                    .unwrap_or(false),
+            )
+            .and_then(|(clause, used)| match known_columns(&path, params) {
+                Ok(known) => {
+                    if let Some(missing) = used.iter().find(|c| !known.contains(c)) {
+                        return Err(format!(
+                            "cannot order by '{missing}': available columns: {}",
+                            known.join(", ")
+                        ));
+                    }
+                    Ok(clause)
+                }
+                Err(e) => Err(e.to_string()),
+            }) {
+                Ok(clause) => format!(" {clause}"),
+                Err(e) => return bad_request(stream, &e, "order", "order=col[:asc|desc]"),
+            },
+        };
+        if filter.is_some() || !order_sql.is_empty() {
+            // LIMIT/OFFSET goes to the engine, so a first page costs the rows it shows
+            // (plus one). Without it an ordered first page sorted 684 917 wide rows and
+            // collected 200 000 of them before answering: 15.5 seconds for ten rows.
             let statement = format!(
-                "SELECT * FROM t WHERE {clause} LIMIT {} OFFSET {start}",
+                "SELECT * FROM t{where_sql}{order_sql} LIMIT {} OFFSET {start}",
                 count.saturating_add(1)
             );
+            let parameter = if filter.is_none() { "order" } else { "where" };
             return respond_filtered_page(
-                stream, &path, params, &statement, start, count, requested,
+                stream,
+                &path,
+                params,
+                &statement,
+                Page {
+                    start,
+                    count,
+                    requested,
+                },
+                parameter,
             );
         }
     }
@@ -3489,6 +3531,13 @@ fn known_columns(path: &Path, params: &HashMap<String, String>) -> io::Result<Ve
         .collect())
 }
 
+/// Where a page starts and how much of it was asked for.
+struct Page {
+    start: u64,
+    count: u64,
+    requested: u64,
+}
+
 /// One filtered page, without materialising the rest.
 ///
 /// `total` is exact only when the page reached the end of the result: a caller that gets
@@ -3498,10 +3547,14 @@ fn respond_filtered_page(
     path: &Path,
     params: &HashMap<String, String>,
     statement: &str,
-    start: u64,
-    count: u64,
-    requested: u64,
+    page: Page,
+    parameter: &str,
 ) -> io::Result<()> {
+    let Page {
+        start,
+        count,
+        requested,
+    } = page;
     let result = match sql::query_with_timeout(
         path,
         statement,
@@ -3515,8 +3568,9 @@ fn respond_filtered_page(
                 stream,
                 504,
                 &format!(
-                    r#"{{"error":"the query was interrupted","parameter":"where","hint":{},"detail":{}}}"#,
-                    json_str("narrow the filter or page through without a filter"),
+                    r#"{{"error":"the query was interrupted","parameter":{},"hint":{},"detail":{}}}"#,
+                    json_str(parameter),
+                    json_str("narrow the filter or page without one"),
                     json_str(&e.to_string())
                 ),
             )
@@ -3526,8 +3580,13 @@ fn respond_filtered_page(
                 stream,
                 400,
                 &format!(
-                    r#"{{"error":"the filter could not be run","parameter":"where","hint":{},"detail":{}}}"#,
-                    json_str("where=<column=value>, repeat with | for AND"),
+                    r#"{{"error":"the filter could not be run","parameter":{},"hint":{},"detail":{}}}"#,
+                    json_str(parameter),
+                    json_str(if parameter == "order" {
+                        "order=col[:asc|desc], comma-separated"
+                    } else {
+                        "where=<column=value>, repeat with | for AND"
+                    }),
                     json_str(&e.to_string())
                 ),
             )

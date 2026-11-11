@@ -1,5 +1,34 @@
 # Changelog
 
+## [3.15.0] — 2026-11-11
+
+### Performance
+
+- **The first page of a filter went from 8–9 s to 1.4 s on the 2.5 GB / 782-column file,
+  and the first page of an order from 15.5 s to 2.7 s.** Two separate causes, both fixed:
+
+  1. **`read_csv_auto` was inferring 782 column types by reading the file.** `SELECT * FROM
+     t LIMIT 1` took 7.3 seconds — almost the whole 2.5 GB read once for sniffing before
+     the first row existed. The view now declares its types from a 64-row sample of our
+     own reader, so the engine reads one block and answers. Numbers are declared DOUBLE
+     (text comparison would order `10` before `9`), everything else stays VARCHAR.
+     A sample can mislabel a column, so the auto-detected view remains as the fallback;
+     a test builds exactly that case (80 numeric rows then text) and asserts the read
+     still returns every row.
+  2. **An ordered first page sorted 684 917 wide rows and collected 200 000 of them
+     before answering.** `LIMIT`/`OFFSET` now go to the engine, so a page costs the rows
+     it shows plus one.
+
+- Column sampling is remembered per (path, size, mtime) instead of happening per request.
+
+- `/query?sql=count(*)` on the same file: 8.6 s → 2.0 s, same reason as (1).
+
+### Changed
+
+- Filtered and ordered pages now name the parameter that failed (`where` vs `order`) in
+  their 400/504 responses, and an unknown `order=` column is still reported with the
+  friendly `cannot order by 'x': available columns: …` message rather than as SQL text.
+
 ## [3.14.0] — 2026-11-10
 
 ### Docs

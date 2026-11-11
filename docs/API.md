@@ -421,7 +421,8 @@ curl "/rows?path=t.csv&where=city=CDMX&count=5"
 - 过滤页**不带 `rowKeys`**：行是引擎挑出来的，不是 base 文件的 `start+i`，
   给 key 会指向错的行。要 key 就别过滤。
 
-无 `where` 的窗口 `rowKeys` 恒有；带 `order=` 的窗口走缓存路径，也不带 key。
+无 `where` 的窗口 `rowKeys` 恒有；带 `order=` 的窗口也不带 key（排序后行不是 `start+i`），
+并且和过滤页一样用 `totalExact` 说明 `total` 是精确值还是下界。
 
 ## `order=` 与窗口修饰符 / window modifiers
 
