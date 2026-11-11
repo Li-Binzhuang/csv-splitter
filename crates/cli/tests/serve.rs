@@ -3128,3 +3128,64 @@ fn cancel_reports_what_actually_happened() {
     assert!(body.contains(r#""cancellable":false"#), "{body}");
     let _ = state;
 }
+
+/// Column metadata must not pay for a row index, and must not pretend to know a row
+/// count it has not computed.
+#[test]
+fn columns_do_not_build_an_index() {
+    let dir = TempDir::new("colindex");
+    std::fs::write(dir.join("t.csv"), "id,city,amount\n1,A,10\n2,B,9\n").unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = get(&server.addr, "/columns?path=t.csv&sample=5");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""count":3"#), "{body}");
+    // No index: the row count is honestly unknown rather than a full scan in disguise.
+    assert!(body.contains(r#""rows":null"#), "{body}");
+    assert!(!dir.join("t.csv.idx").exists(), "columns built an index");
+
+    // After /meta (which does pay for it), the count is there.
+    let (code, body) = get(&server.addr, "/meta?path=t.csv");
+    assert_eq!(code, 200, "{body}");
+    let (code, body) = get(&server.addr, "/columns?path=t.csv&sample=5");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""rows":2"#), "{body}");
+}
+
+/// The cost tier is published before a client asks for a page, and it flips with the cache.
+#[test]
+fn sheet_publishes_the_cost_tier() {
+    let dir = TempDir::new("costtier");
+    let mut text = String::from("id,city\n");
+    for i in 1..=300 {
+        text.push_str(&format!("{i},{}\n", if i % 2 == 0 { "A" } else { "B" }));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = get(&server.addr, "/sheet?path=t.csv");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""tier":"cold""#), "{body}");
+    assert!(body.contains(r#""filterFirstPageMs":1000"#), "{body}");
+    assert!(
+        body.contains("POST /parquet"),
+        "the hint names the action: {body}"
+    );
+
+    let (code, body) = post(&server.addr, "/parquet?path=t.csv");
+    assert_eq!(code, 202, "{body}");
+    let id = body
+        .split(r#""job":""#)
+        .nth(1)
+        .unwrap()
+        .split('"')
+        .next()
+        .unwrap()
+        .to_string();
+    let _ = wait_for_job(&server.addr, &id);
+
+    let (code, body) = get(&server.addr, "/sheet?path=t.csv");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""tier":"warm""#), "{body}");
+    assert!(body.contains(r#""filterFirstPageMs":260"#), "{body}");
+}

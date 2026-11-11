@@ -3016,14 +3016,31 @@ fn columns_endpoint(
         Some(0) => return bad_request(stream, "limit must be positive", "limit", "limit=50"),
         other => other,
     };
-    let mut schema = match sheet.schema(sample) {
-        Ok(schema) => schema,
-        Err(e) => {
-            return respond_json(
-                stream,
-                422,
-                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
-            )
+    // A pristine sheet is sampled directly: 782 column shapes must not cost a 2.5 GB
+    // row index. Edited sheets go through the pager, because their columns may include
+    // added ones and their rows are not the base file's.
+    let pristine = !csv_splitter_core::sheet::has_edits(&path);
+    let mut schema = if pristine {
+        match csv_splitter_core::sheet::schema_sample(&path, delimiter(params), sample) {
+            Ok(schema) => schema,
+            Err(e) => {
+                return respond_json(
+                    stream,
+                    422,
+                    &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                )
+            }
+        }
+    } else {
+        match sheet.schema(sample) {
+            Ok(schema) => schema,
+            Err(e) => {
+                return respond_json(
+                    stream,
+                    422,
+                    &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                )
+            }
         }
     };
     let total_columns = schema.len();
@@ -3038,7 +3055,19 @@ fn columns_endpoint(
         }
         _ => schema.len(),
     };
-    let rows = sheet.rows().unwrap_or(0);
+    // The row count needs the sparse index, and building it is a full scan. A client
+    // that has not asked for /meta yet gets `null` rather than silently paying 0.3 s.
+    let rows = if pristine {
+        let sidecar = csv_splitter_core::index::SparseIndex::sidecar_path(&path);
+        csv_splitter_core::index::SparseIndex::load(&sidecar)
+            .ok()
+            .filter(|index| index.matches(&path))
+            .map(|index| index.data_rows())
+            .map(|rows| rows.to_string())
+            .unwrap_or_else(|| "null".to_string())
+    } else {
+        sheet.rows().unwrap_or(0).to_string()
+    };
     let body: Vec<String> = schema
         .iter()
         .map(|column| {
@@ -3150,7 +3179,7 @@ fn sheet_meta(
         stream,
         200,
         &format!(
-            r#"{{"path":{},"stamp":{},"columns":[{}],"frozenColumns":[{}],"rows":{},"edited":{},"operations":{},"lastOperation":{},"capabilities":[{}],"layout":{},"journal":{},"indexed":{},"indexBytes":{},"parquet":{{"fresh":{},"bytes":{}}}}}"#,
+            r#"{{"path":{},"stamp":{},"columns":[{}],"frozenColumns":[{}],"rows":{},"edited":{},"operations":{},"lastOperation":{},"capabilities":[{}],"layout":{},"journal":{},"indexed":{},"indexBytes":{},"parquet":{{"fresh":{},"bytes":{}}},"cost":{}}}"#,
             json_str(&params.get("path").cloned().unwrap_or_default()),
             json_str(&journal_stamp(&path)),
             cols.join(","),
@@ -3167,7 +3196,25 @@ fn sheet_meta(
             csv_splitter_core::sql_cache::is_fresh(&path),
             std::fs::metadata(csv_splitter_core::sql_cache::sidecar(&path))
                 .map(|m| m.len())
-                .unwrap_or(0)
+                .unwrap_or(0),
+            {
+                // Published costs, not measured ones: these are the tiers the docs
+                // promise, so a client can decide before it asks for a page.
+                let warm = csv_splitter_core::sql_cache::is_fresh(&path);
+                let tier = if warm { "warm" } else { "cold" };
+                let filter_ms = if warm { 260 } else { 1000 };
+                let order_ms = if warm { 340 } else { 1400 };
+                let hint = if warm {
+                    "the columnar cache is present: filtered and ordered pages are on the fast tier"
+                } else {
+                    "POST /parquet builds the columnar cache (about 11 s for 2.5 GB) and moves this sheet to the fast tier"
+                };
+                format!(
+                    r#"{{"tier":{},"filterFirstPageMs":{filter_ms},"orderFirstPageMs":{order_ms},"hint":{}}}"#,
+                    json_str(tier),
+                    json_str(hint)
+                )
+            }
         ),
     )
 }

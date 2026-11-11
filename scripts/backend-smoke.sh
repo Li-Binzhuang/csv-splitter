@@ -113,6 +113,17 @@ HEAD_CODE="$(curl -s -o /dev/null -w '%{http_code}' -I "$URL/rows?path=orders.cs
 if [ "$HEAD_CODE" = "200" ]; then printf '  ok   HEAD answers 200\n'
 else printf '  FAIL HEAD returned %s\n' "$HEAD_CODE"; failed=$((failed + 1)); fi
 
+echo "== cost tier =="
+SHEET_COST="$(curl -s "$URL/sheet?path=orders.csv")"
+has "sheet: cost tier"         "$SHEET_COST" '"tier":'
+has "sheet: first page estimate" "$SHEET_COST" '"filterFirstPageMs":'
+cp orders.csv fresh.csv
+COLUMNS_JSON="$(curl -s "$URL/columns?path=fresh.csv&sample=5")"
+if [ -f fresh.csv.idx ]; then printf '  FAIL columns built an index sidecar\n'; failed=$((failed + 1));
+else printf '  ok   columns: no index sidecar\n'; fi
+has "columns: rows unknown without index" "$COLUMNS_JSON" '"rows":null'
+rm -f fresh.csv
+
 echo "== limits =="
 LONG="$(python3 -c "print('x'*17000)")"
 CODE="$(curl -s -o /dev/null -w '%{http_code}' "$URL/rows?path=orders.csv&pad=$LONG")"

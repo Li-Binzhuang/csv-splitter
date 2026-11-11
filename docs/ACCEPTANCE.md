@@ -57,6 +57,30 @@
 | 一套可跑的门 | `scripts/dev.sh gate`（**494 测试**）、`smoke.sh`（43）、`regress.sh`（39）、`backend-smoke.sh`（**44**）|
 
 
+
+## 性能两档（2.5 GB / 782 列 / 684 917 行，本机实测）
+
+| 调用 | 冷档（无缓存无索引） | 暖档（`POST /parquet` 后） | 契约 |
+|---|---|---|---|
+| `/rows` 不过滤 | 1–2 ms | 1–2 ms | ≤ 10 ms |
+| `/rows?where=` 首屏（命中密集）| **0.30 s** | **0.26 s** | 冷 ≤1 s / 暖 ≤0.35 s |
+| `/rows?where=` 0 命中（全扫）| 1.36 s | ~0.2 s | 冷档是 IO 下限，文档写明 |
+| `/rows?order=` 首屏 | 1.36 s | 0.34 s | 暖 ≤0.35 s |
+| `/columns` 全量 782 列 | **8 ms** | 8 ms | ≤0.5 s |
+| `/columns?name=` | 7 ms | 7 ms | ≤0.5 s |
+| `/meta` | 0.24 s | 0.24 s | ≤0.5 s |
+| `/cell` | 1.6 ms | 1.6 ms | — |
+
+**`/sheet` 会先告诉客户端自己在哪一档**：
+
+```json
+"cost":{"tier":"cold","filterFirstPageMs":1000,"orderFirstPageMs":1400,
+        "hint":"POST /parquet … moves this sheet to the fast tier"}
+```
+
+- `/columns` 不再为了行数建索引：没有索引时 `rows: null`，**明说不知道**，而不是花 0.3 秒去算
+- `/meta` 是唯一会（且只一次）建索引的端点，0.24 s 在预算内
+
 ## 首屏延迟（2.5 GB / 782 列，冷启动、无缓存、无索引）
 
 | 场景 | 之前 | 现在 |

@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.24.0] — 2026-11-11
+
+### Performance
+
+- **`/columns` went from 0.65 s to 8 ms** on the 2.5 GB / 782-column file. It was
+  sampling through `Sheet::schema`, which needs the sparse index — so "list the columns"
+  built an index over the whole file. Pristine sheets now sample directly
+  (`schema_sample`), and the row count is `null` when no index exists: honest, rather
+  than a full scan in disguise.
+- `/meta` (which does need the count) is the one request that pays for the index: 0.24 s,
+  inside the 0.5 s budget.
+
+### Added
+
+- **`/sheet` publishes the cost tier** before a client asks for a page:
+  `"cost":{"tier":"cold","filterFirstPageMs":1000,"orderFirstPageMs":1400,"hint":"POST
+  /parquet … moves this sheet to the fast tier"}`. The numbers are the contract's
+  numbers, not a measurement of the moment; the tier flips the moment the cache exists.
+- `docs/ACCEPTANCE.md` now carries the two-tier table (cold vs warm) with the measured
+  numbers for every call it promises.
+
 ## [3.23.0] — 2026-11-11
 
 ### Added

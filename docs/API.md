@@ -524,6 +524,7 @@ warns about) — a UI can show "the history is incomplete" instead of pretending
 
 | 字段 | 含义 |
 |---|---|
+| `rows` | 总行数；**没有索引时是 `null`**（行数要一次全表扫描，不该由「取列名」触发）|
 | `count` | 返回的列数（`kind`/`limit` 过滤之后）|
 | `totalColumns` | 过滤前的列数 |
 | `shown` | 实际返回的条数 |
