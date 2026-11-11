@@ -290,7 +290,7 @@ written on refusal, and `actual` says what the value is now.
 | GET | `/groupby` `/pivot` `/style` `/chart` `/layout` | 聚合与展示元数据 |
 | GET | `/book` `/files` `/download` | 目录、书、下载（`book?root=` 不存在时 400；`max`/`limit` 截断时带 `total`/`hidden`）|
 | GET | `/job` `/jobs` | 异步任务状态 |
-| POST | `/split` `/merge` `/sort` `/dedupe` `/partition` `/warm` `/index` | 拆分与后台任务 |
+| POST | `/split` `/merge` `/sort` `/dedupe` `/partition` `/warm` `/index` `/parquet` | 拆分、预热与后台任务（`/parquet` 建列式缓存）|
 
 ## `GET /capabilities`
 

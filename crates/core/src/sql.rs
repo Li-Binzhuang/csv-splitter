@@ -236,6 +236,14 @@ fn stamp_key(path: &Path) -> String {
 /// open until the client gives up, and the connection with it.
 pub const DEFAULT_TIMEOUT_MS: u64 = 30_000;
 
+/// Run one statement that writes (the cache build) with the same connection setup and
+/// the same wall clock as a query.
+pub fn run_statement_with_timeout(path: &Path, statement: &str, timeout_ms: u64) -> io::Result<()> {
+    run_with_timeout(path, Delimiter::Comma, timeout_ms, |conn| {
+        conn.execute_batch(statement).map_err(to_io)
+    })
+}
+
 /// Run a query with a wall-clock limit, interrupting the engine when it expires.
 ///
 /// The interrupt is what makes this honest: DuckDB stops the scan and returns an error,
@@ -291,16 +299,30 @@ where
     // as the fallback — correctness keeps its slow path, it just stops being the only one.
     let columns = cached_columns(path).ok();
     let mut strategies: Vec<Option<&[ColumnInfo]>> = Vec::new();
-    if let Some(cols) = columns.as_deref() {
-        strategies.push(Some(cols));
+    if crate::sql_cache::is_fresh(path) {
+        strategies.push(None);
+    } else {
+        if let Some(cols) = columns.as_deref() {
+            strategies.push(Some(cols));
+        }
+        strategies.push(None);
     }
-    strategies.push(None);
     for columns in strategies {
         for opts in OPEN_LADDER {
             let conn = Connection::open_in_memory().map_err(to_io)?;
-            let create = match columns {
-                Some(cols) => typed_view_sql(path, delimiter, opts, cols),
-                None => view_sql(path, delimiter, opts),
+            let create = if crate::sql_cache::is_fresh(path) {
+                // Columnar copy: a filter reads only the columns it needs.
+                format!(
+                    "CREATE VIEW t AS SELECT * FROM read_parquet('{}')",
+                    crate::sql_cache::sidecar(path)
+                        .to_string_lossy()
+                        .replace('\'', "\'\'")
+                )
+            } else {
+                match columns {
+                    Some(cols) => typed_view_sql(path, delimiter, opts, cols),
+                    None => view_sql(path, delimiter, opts),
+                }
             };
             if let Err(e) = conn.execute_batch(&create) {
                 let message = e.to_string();
@@ -373,18 +395,32 @@ where
     // as the fallback — correctness keeps its slow path, it just stops being the only one.
     let columns = cached_columns(path).ok();
     let mut strategies: Vec<Option<&[ColumnInfo]>> = Vec::new();
-    if let Some(cols) = columns.as_deref() {
-        strategies.push(Some(cols));
+    if crate::sql_cache::is_fresh(path) {
+        strategies.push(None);
+    } else {
+        if let Some(cols) = columns.as_deref() {
+            strategies.push(Some(cols));
+        }
+        strategies.push(None);
     }
-    strategies.push(None);
     for columns in strategies {
         for opts in OPEN_LADDER {
             let conn = Connection::open_in_memory().map_err(to_io)?;
             // Sniffing happens here, and it can fail for shapes the previous option
             // set could not parse — so this error must also continue down the ladder.
-            let create = match columns {
-                Some(cols) => typed_view_sql(path, delimiter, opts, cols),
-                None => view_sql(path, delimiter, opts),
+            let create = if crate::sql_cache::is_fresh(path) {
+                // Columnar copy: a filter reads only the columns it needs.
+                format!(
+                    "CREATE VIEW t AS SELECT * FROM read_parquet('{}')",
+                    crate::sql_cache::sidecar(path)
+                        .to_string_lossy()
+                        .replace('\'', "\'\'")
+                )
+            } else {
+                match columns {
+                    Some(cols) => typed_view_sql(path, delimiter, opts, cols),
+                    None => view_sql(path, delimiter, opts),
+                }
             };
             if let Err(e) = conn.execute_batch(&create) {
                 let message = e.to_string();

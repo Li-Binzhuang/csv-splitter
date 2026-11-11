@@ -2600,3 +2600,114 @@ fn an_ordered_page_is_a_page() {
     assert_eq!(code, 400, "{body}");
     assert!(body.contains("cannot order by 'nosuch'"), "{body}");
 }
+
+/// The cache is advertised, reported, and makes a filtered page cheap; deleting it
+/// restores the cold path without changing the answer.
+#[test]
+fn the_columnar_cache_is_advertised_and_faster() {
+    let dir = TempDir::new("parquet");
+    let mut text = String::from("id,city,amount\n");
+    for i in 1..=500 {
+        text.push_str(&format!(
+            "{i},{},{}\n",
+            if i % 3 == 0 { "CDMX" } else { "Puebla" },
+            i
+        ));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = get(&server.addr, "/capabilities");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""caches":["parquet"]"#), "{body}");
+    assert!(body.contains("POST /parquet"), "{body}");
+
+    let (code, body) = get(&server.addr, "/sheet?path=t.csv");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""parquet":{"fresh":false"#), "{body}");
+
+    // Cold answer, then build the cache, then the same answer must not change.
+    let cold = get(
+        &server.addr,
+        "/rows?path=t.csv&where=city%3DCDMX&count=5&columns=id,city",
+    );
+    assert_eq!(cold.0, 200, "{}", cold.1);
+    assert!(!dir.join("t.csv.parquet.tmp").exists());
+
+    let (code, body) = post(&server.addr, "/parquet?path=t.csv");
+    assert_eq!(code, 202, "{body}");
+    assert!(body.contains(r#""job":"#), "{body}");
+    let id = body
+        .split(r#""job":""#)
+        .nth(1)
+        .unwrap()
+        .split('"')
+        .next()
+        .unwrap()
+        .to_string();
+    let done = wait_for_job(&server.addr, &id);
+    assert!(done.contains("\"state\":\"done\""), "{done}");
+
+    let (code, body) = get(&server.addr, "/sheet?path=t.csv");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""parquet":{"fresh":true"#), "{body}");
+    assert!(
+        body.contains(r#""operations":0"#),
+        "no journal ops were needed: {body}"
+    );
+
+    let warm = get(
+        &server.addr,
+        "/rows?path=t.csv&where=city%3DCDMX&count=5&columns=id,city",
+    );
+    assert_eq!(warm.0, 200, "{}", warm.1);
+    assert_eq!(warm.1, cold.1, "the cache must not change the answer");
+
+    // A second request now short-circuits instead of building again.
+    let (code, body) = post(&server.addr, "/parquet?path=t.csv");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""cached":true"#), "{body}");
+}
+
+/// The CLI cache command reports state and can remove the sidecar.
+#[test]
+fn the_cache_command_reports_and_removes() {
+    let dir = TempDir::new("cachecmd");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n2,B\n").unwrap();
+    let bin = env!("CARGO_BIN_EXE_csv-splitter");
+
+    let out = std::process::Command::new(bin)
+        .arg("cache")
+        .arg(dir.join("t.csv"))
+        .arg("--status")
+        .current_dir(&dir.0)
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("missing"), "{text}");
+    assert!(out.status.success());
+
+    let out = std::process::Command::new(bin)
+        .arg("cache")
+        .arg(dir.join("t.csv"))
+        .arg("--build")
+        .current_dir(&dir.0)
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(dir.join("t.csv.parquet").exists());
+
+    let out = std::process::Command::new(bin)
+        .arg("cache")
+        .arg(dir.join("t.csv"))
+        .arg("--drop")
+        .current_dir(&dir.0)
+        .output()
+        .unwrap();
+    assert!(out.status.success());
+    assert!(!dir.join("t.csv.parquet").exists());
+}

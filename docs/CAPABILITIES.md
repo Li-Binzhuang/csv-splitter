@@ -13,6 +13,7 @@
 | **index** | `<file>.idx`，稀疏行索引，让跳转到任意行是 O(1) |
 | **sheet** | base + journal 呈现出来的一张表 |
 | **book** | 一个目录下所有 CSV 组成的工作簿 |
+| **parquet** | `<file>.parquet`，列式副本，可选；过滤/排序首屏从约 1.4 s 降到约 0.26 s，源文件变了即作废 |
 
 三条不变量（都有测试）：
 
@@ -32,6 +33,7 @@
 |---|---|---|
 | 预览（可跳任意行） | `preview f.csv --rows 20 [--start-row N]` | `GET /rows?path=&start=&count=` |
 | 建索引 | `index f.csv` | 自动（首次跳转时） |
+| 建列式缓存（可选） | `cache f.csv --build` / `--status` / `--drop` | `POST /parquet?path=`（job），状态见 `/sheet` 的 `parquet` |
 | 文件元信息 | — | `GET /meta?path=` |
 | 工作簿列表 | `book <dir>` | `GET /book` |
 | 表结构 | `preview` / `analyze` | `GET /sheet` |
@@ -278,6 +280,8 @@
 | `GET /cell` | **1.6 ms**，80 字节 |
 | `GET /journal` | 0.4 ms |
 | `GET /rows?where=` 首屏（全命中，3 列）| **1.4 s**（原 8–9 s：不再整表推断类型）|
+| 同上，**建过列式缓存**（`POST /parquet`）| **0.26 s** |
+| `GET /rows?order=` 首屏，有缓存 | **0.34 s** |
 | `GET /rows?order=` 首屏（top-N，3 列）| **2.7 s**（原 15.5 s：不再收集 20 万行）|
 | `GET /rows?where=` 0 命中（必须全扫）| 2.9 s（原 15 s）|
 | `GET /query?sql=count(*)` | 2.0 s（声明列类型后；原 8.6 s）|

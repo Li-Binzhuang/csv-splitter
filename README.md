@@ -179,6 +179,7 @@ csv-splitter extract chunks.tar -o ./out
 | `extract` | 解压 tar/zip/7z（成员路径越界会被拒绝） |
 | `preview` | 打开看一下，可跳任意行 |
 | `view` | 看**套用编辑后**的表：翻页、筛选、排序、查找、条件格式 |
+| `cache` | 列式副本（`t.csv.parquet`）：过滤/排序首屏从约 1.4 s 降到约 0.26 s | 宽表翻页前先建一次 |
 | `index` | 建稀疏行索引 |
 | `filter` | 按条件筛选，返回行号或写文件 |
 | `search` | 跨列搜索（支持 `--regex`） |

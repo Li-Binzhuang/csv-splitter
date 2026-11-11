@@ -98,6 +98,26 @@ has "journal: count"             "$JOURNAL" '"count":1'
 has "journal: description"       "$JOURNAL" "set row 1 'city'"
 has "journal: canUndo"           "$JOURNAL" '"canUndo":true'
 
+echo "== columnar cache =="
+has "cache: advertised"        "$CAPS" '"caches":["parquet"]'
+has "cache: listed as write"   "$CAPS" 'POST /parquet'
+PARQ="$(curl -s -X POST "$URL/parquet?path=orders.csv")"
+if printf '%s' "$PARQ" | grep -qE '"job"|"cached"'; then printf '  ok   cache: job or cached\n'
+else printf '  FAIL cache: neither job nor cached\n'; failed=$((failed + 1)); fi
+CACHE_STATE="$(curl -s "$URL/sheet?path=orders.csv")"
+has "cache: sheet reports it"  "$CACHE_STATE" '"parquet":{'
+if printf '%s' "$PARQ" | grep -q '"job":"'; then
+  JOB="$(printf '%s' "$PARQ" | sed -n 's/.*"job":"\([^"]*\)".*/\1/p')"
+  for _ in $(seq 1 120); do
+    STATE="$(curl -s "$URL/job?id=$JOB")"
+    printf '%s' "$STATE" | grep -q '"done"' && break
+    sleep 0.5
+  done
+  has "cache: build finished" "$STATE" '"done"'
+fi
+WARMED="$(curl -s "$URL/rows?path=orders.csv&where=city%3DPuebla&count=5&columns=id,city")"
+has "cache: filtered page still right" "$WARMED" '"rows":'
+
 echo "== keys and summary =="
 KEYS="$(curl -s "$URL/rows?path=orders.csv&keys=b:2,b:0")"
 has "keys: row numbers"        "$KEYS" '"rowNumbers":[3,1]'

@@ -165,6 +165,7 @@ fn handle(
             "/merge" => start_merge(&mut stream, root, jobs, &params),
             "/warm" => start_warm(&mut stream, root, jobs, cache, &params),
             "/index" => start_index(&mut stream, root, jobs, &params),
+            "/parquet" => start_parquet(&mut stream, root, jobs, &params),
             "/sort" => start_sort(&mut stream, root, jobs, &params),
             "/dedupe" => start_dedupe(&mut stream, root, jobs, &params),
             "/partition" => start_partition(&mut stream, root, jobs, &params),
@@ -288,6 +289,7 @@ const WRITE_ROUTES: &[&str] = &[
     "POST /warm",
     "POST /edit",
     "POST /index",
+    "POST /parquet",
 ];
 
 /// A cheap fingerprint of the journal: ops + bytes + mtime.
@@ -492,7 +494,7 @@ fn capabilities_endpoint(stream: &mut TcpStream) -> io::Result<()> {
         stream,
         200,
         &format!(
-            r#"{{"version":{},"reads":[{}],"pathRequired":{},"writes":[{}],"editActions":[{}],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"columnsProjection":true,"horizontalPaging":true,"queryRows":10000,"querySeconds":30}},"writeGuards":["expect=compare-and-set"],"notes":{}}}"#,
+            r#"{{"version":{},"reads":[{}],"pathRequired":[{}],"writes":[{}],"editActions":[{}],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"columnsProjection":true,"horizontalPaging":true,"queryRows":10000,"querySeconds":30}},"writeGuards":["expect=compare-and-set"],"caches":["parquet"],"notes":{}}}"#,
             json_str(env!("CARGO_PKG_VERSION")),
             reads_json.join(","),
             PATH_REQUIRED.iter().map(|r| json_str(r)).collect::<Vec<_>>().join(","),
@@ -2103,6 +2105,75 @@ fn start_sort(
     respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
 }
 
+/// `POST /parquet?path=REL` — build the columnar cache as a job.
+///
+/// A filtered page on a wide file costs about a second even when it needs ten rows,
+/// because a CSV row has to be parsed whole. With this cache the same page is a column
+/// read: about ten milliseconds. The cache is a sidecar (`t.csv.parquet`), never a
+/// rewrite of the sheet, and it goes stale the moment the file changes.
+fn start_parquet(
+    stream: &mut TcpStream,
+    root: &Path,
+    jobs: &JobRegistry,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
+    };
+    if csv_splitter_core::sql_cache::is_fresh(&path) {
+        return respond_json(
+            stream,
+            200,
+            &format!(
+                r#"{{"job":null,"cached":true,"path":{},"bytes":{}}}"#,
+                json_str(&rel),
+                std::fs::metadata(csv_splitter_core::sql_cache::sidecar(&path))
+                    .map(|m| m.len())
+                    .unwrap_or(0)
+            ),
+        );
+    }
+    let delim = delimiter(params);
+    let id = jobs.submit("parquet", move |tx| {
+        tx.send(ProgressEvent::PhaseStart {
+            phase: "building columnar cache".into(),
+            total_bytes: std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0),
+        })
+        .ok();
+        let columns = match csv_splitter_core::sheet::Sheet::open(
+            &path,
+            csv_splitter_core::sheet::ReadOptions { delimiter: delim },
+        ) {
+            Ok(sheet) => sheet.schema(64),
+            Err(e) => Err(e),
+        };
+        let outcome = match columns {
+            Ok(columns) => csv_splitter_core::sql_cache::build(
+                &path,
+                delim,
+                &columns,
+                csv_splitter_core::sql::DEFAULT_TIMEOUT_MS * 20,
+            ),
+            Err(e) => Err(e),
+        };
+        match outcome {
+            Ok(out) => {
+                let bytes = std::fs::metadata(&out).map(|m| m.len()).unwrap_or(0);
+                tx.send(ProgressEvent::Info(format!(
+                    "columnar cache ready: {bytes} bytes"
+                )))
+                .ok();
+                tx.send(ProgressEvent::Finished { output: out }).ok();
+            }
+            Err(e) => {
+                tx.send(ProgressEvent::Error(e.to_string())).ok();
+            }
+        }
+    });
+    respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
+}
+
 /// `POST /index?path=REL` — build the sparse row index as a job.
 ///
 /// Paging a file without an index pays for a full scan inside the first request. A
@@ -2665,7 +2736,7 @@ fn sheet_meta(
         stream,
         200,
         &format!(
-            r#"{{"path":{},"stamp":{},"columns":[{}],"frozenColumns":[{}],"rows":{},"edited":{},"operations":{},"lastOperation":{},"capabilities":[{}],"layout":{},"journal":{},"indexed":{},"indexBytes":{}}}"#,
+            r#"{{"path":{},"stamp":{},"columns":[{}],"frozenColumns":[{}],"rows":{},"edited":{},"operations":{},"lastOperation":{},"capabilities":[{}],"layout":{},"journal":{},"indexed":{},"indexBytes":{},"parquet":{{"fresh":{},"bytes":{}}}}}"#,
             json_str(&params.get("path").cloned().unwrap_or_default()),
             json_str(&journal_stamp(&path)),
             cols.join(","),
@@ -2678,7 +2749,11 @@ fn sheet_meta(
             layout_json,
             json_str(&sheet.journal_path().to_string_lossy()),
             indexed,
-            index_bytes
+            index_bytes,
+            csv_splitter_core::sql_cache::is_fresh(&path),
+            std::fs::metadata(csv_splitter_core::sql_cache::sidecar(&path))
+                .map(|m| m.len())
+                .unwrap_or(0)
         ),
     )
 }

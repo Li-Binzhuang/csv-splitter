@@ -36,6 +36,7 @@ fn main() -> ExitCode {
         Some("preview") => cmd_preview(&args[1..]),
         Some("schema") => cmd_schema(&args[1..]),
         Some("index") => cmd_index(&args[1..]),
+        Some("cache") => cmd_cache(&args[1..]),
         Some("serve") => cmd_serve(&args[1..]),
         Some("convert") => cmd_convert(&args[1..]),
         Some("filter") => cmd_filter(&args[1..]),
@@ -271,6 +272,14 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--out", "Output path"),
             ("--quiet", "Only errors"),
             ("--quotes", "Quote style: rfc4180 | backslash | none"),
+        ],
+    ),
+    (
+        "cache",
+        &[
+            ("--build", "Build the columnar cache (t.csv.parquet)"),
+            ("--drop", "Delete the cache"),
+            ("--status", "Report whether the cache exists and is fresh"),
         ],
     ),
     (
@@ -539,7 +548,7 @@ USAGE
   csv-splitter <command> [options]
 
 WHAT DO YOU WANT TO DO?
-  open a huge file without loading it      preview, index
+  open a huge file without loading it      preview, index, cache
   find rows worth looking at                filter, search
   understand a column's shape              stats, analyze
   change data without touching the file    edit set, edit insert-column
@@ -558,6 +567,7 @@ COMMANDS
   preview  <input>              Print the first rows and detected delimiter
   view     <input> [--where EXPR] Paged view of the edited sheet, optionally filtered
   index    <input>              Build a sparse row index for instant paging
+  cache    <input>              Columnar cache for fast filtered/ordered pages
   serve    --root <dir>          Local HTTP API (JSON) for a web front-end
   convert  <input>               Transcode a CSV to UTF-8 (GBK / UTF-16 input)
   filter   <input> --where EXPR  Row numbers matching a column predicate
@@ -1482,6 +1492,109 @@ fn preview_from_index(
             1
         }
     }
+}
+
+/// `cache FILE [--build|--drop|--status]` — the columnar sidecar behind fast pages.
+///
+/// The cache is what makes a filtered first page cost about ten milliseconds instead of a
+/// second: parquet is columnar, so a query touches only the columns it needs. Building it
+/// reads the sheet once (about 11 s for 2.5 GB) and writes a sidecar next to it; the
+/// sheet itself is never modified.
+fn cmd_cache(args: &[String]) -> i32 {
+    let mut input: Option<PathBuf> = None;
+    let mut build = false;
+    let mut drop_it = false;
+    let mut status = false;
+    let mut p = Parser::new(args);
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--build" => build = true,
+            "--drop" => drop_it = true,
+            "--status" => status = true,
+            "-h" | "--help" => {
+                print_command_help("cache");
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option for cache: {other}");
+                return 2;
+            }
+            other => input = Some(PathBuf::from(other)),
+        }
+    }
+    let Some(path) = input else {
+        eprintln!("error: cache needs an input file");
+        return 2;
+    };
+    let sidecar = csv_splitter_core::sql_cache::sidecar(&path);
+    let fresh = csv_splitter_core::sql_cache::is_fresh(&path);
+    if drop_it {
+        match csv_splitter_core::sql_cache::drop_cache(&path) {
+            Ok(true) => {
+                println!("removed {}", sidecar.display());
+                return 0;
+            }
+            Ok(false) => {
+                println!("no cache for {}", path.display());
+                return 0;
+            }
+            Err(e) => {
+                eprintln!("error: {e}");
+                return 1;
+            }
+        }
+    }
+    if build {
+        let options = csv_splitter_core::sheet::ReadOptions::default();
+        let columns = match csv_splitter_core::sheet::Sheet::open(
+            &path,
+            csv_splitter_core::sheet::ReadOptions::default(),
+        ) {
+            Ok(sheet) => match sheet.schema(64) {
+                Ok(columns) => columns,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 1;
+                }
+            },
+            Err(e) => {
+                eprintln!("error: {e}");
+                return 1;
+            }
+        };
+        match csv_splitter_core::sql_cache::build(
+            &path,
+            options.delimiter,
+            &columns,
+            csv_splitter_core::sql::DEFAULT_TIMEOUT_MS * 20,
+        ) {
+            Ok(out) => {
+                let bytes = std::fs::metadata(&out).map(|m| m.len()).unwrap_or(0);
+                println!("built {} ({bytes} bytes)", out.display());
+                return 0;
+            }
+            Err(e) => {
+                eprintln!("error: {e}");
+                return 1;
+            }
+        }
+    }
+    if status || !build && !drop_it {
+        let bytes = std::fs::metadata(&sidecar).map(|m| m.len()).unwrap_or(0);
+        println!(
+            "{} — {}",
+            sidecar.display(),
+            if fresh {
+                format!("fresh ({bytes} bytes)")
+            } else if sidecar.exists() {
+                "stale (the sheet changed); rebuild with --build".to_string()
+            } else {
+                "missing; build with --build".to_string()
+            }
+        );
+        return 0;
+    }
+    0
 }
 
 fn cmd_index(args: &[String]) -> i32 {

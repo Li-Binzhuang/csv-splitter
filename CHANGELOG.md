@@ -1,5 +1,32 @@
 # Changelog
 
+## [3.16.0] — 2026-11-11
+
+### Added
+
+- **A columnar cache that makes a filtered page cost 0.26 s instead of 1.4 s** — and
+  `0.34 s` for an ordered page, against `15.5 s` before this phase started.
+  `POST /parquet?path=…` builds `t.csv.parquet` as a job (11 s for 2.5 GB, 427 MB with
+  zstd), `/sheet` reports `parquet: {fresh, bytes}`, `/capabilities` advertises
+  `caches: ["parquet"]`, and `csv-splitter cache FILE --build/--drop/--status` does the
+  same from the CLI.
+  - Queries switch to the parquet view automatically once it exists, and go back to the
+    CSV reader the moment the sheet changes — a cache that outlives its source would
+    answer with yesterday's file.
+  - **The cache cannot change the answer**: a test compares the same query with and
+    without it (columns, rows, order) and asserts equality, because "faster" must not
+    mean "different".
+  - Typed columns first (numbers DOUBLE), auto-detected reader as the fallback, because
+    a demo fixture with five ragged rows proved the strict reader rejects declared
+    columns on files that `/query` already reads through auto-detection. The build tries
+    both rather than failing on a file the rest of the tool handles.
+
+### Docs
+
+- API.md, CAPABILITIES.md and GETTING_STARTED.md document the cache with its size,
+  build time, staleness rule and the CLI. `regress.sh` runs the four cache commands;
+  `backend-smoke.sh` grew to 50 checks including the build job and a filtered page.
+
 ## [3.15.0] — 2026-11-11
 
 ### Performance

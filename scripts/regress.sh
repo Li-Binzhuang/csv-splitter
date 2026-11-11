@@ -43,6 +43,11 @@ check "dedupe"     "$BIN" dedupe orders.csv --by cust_no -o d.csv
 check "columns"    "$BIN" columns orders.csv --keep id,city -o c.csv
 check "schema"      "$BIN" schema orders.csv --sample 5
 check "schema --has" "$BIN" schema orders.csv --has city
+check "cache --status (无缓存)" "$BIN" cache orders.csv --status
+check "cache --build" "$BIN" cache orders.csv --build
+check "cache --status (有缓存)" "$BIN" cache orders.csv --status
+check "cache --drop" "$BIN" cache orders.csv --drop
+
 check "schema --diff" "$BIN" schema orders.csv --diff orders.csv
 # A difference must exit 1; that is the contract, so the sweep asserts it rather than
 # treating it as a failure.

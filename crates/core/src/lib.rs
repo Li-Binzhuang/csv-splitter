@@ -33,6 +33,8 @@ pub mod split_parallel;
 pub mod splitter;
 #[cfg(feature = "sql")]
 pub mod sql;
+#[cfg(feature = "sql")]
+pub mod sql_cache;
 pub mod tempdir;
 pub mod types;
 pub mod validate;
