@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.22.0] — 2026-11-11
+
+### Added
+
+- **Graceful shutdown.** `SIGINT`/`SIGTERM` stop the accept loop, let in-flight requests
+  finish and give running jobs up to five seconds, then exit 0. A test sends SIGTERM to a
+  live server, waits for it to leave on its own and asserts the port no longer accepts —
+  "graceful" is a behaviour, so it is asserted rather than described.
+- **Request limits at the door**: query string 16 KB (`414`), request line 8 KB (`400`,
+  which is what a body sent to a GET looks like), 64 header lines (`400`), 10 s read and
+  30 s write timeouts. Before this, a client that opened a connection and said nothing
+  held a thread until the OS gave up — a closed browser tab is exactly that client.
+- **Symlink escape is refused**: `resolve_reason` canonicalises before the root check, so
+  a link pointing outside resolves outside. A test now proves it with a real symlink, and
+  also that a link staying inside the root still works.
+
 ## [3.21.0] — 2026-11-11
 
 ### Added

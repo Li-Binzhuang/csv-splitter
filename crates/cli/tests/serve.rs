@@ -2983,3 +2983,110 @@ fn health_separates_liveness_from_readiness() {
     assert!(body.contains(r#""ok":true"#), "{body}");
     assert!(body.contains(r#""ready":false"#), "{body}");
 }
+
+/// A symlink is a path, and a path must resolve inside the root.
+#[test]
+fn a_symlink_cannot_escape_the_root() {
+    let outside = TempDir::new("symlink_outside");
+    std::fs::write(outside.join("secret.csv"), "id\n1\n").unwrap();
+    let dir = TempDir::new("symlink_root");
+    std::os::unix::fs::symlink(outside.join("secret.csv"), dir.join("link.csv")).unwrap();
+    std::fs::write(dir.join("real.csv"), "id\n2\n").unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = get(&server.addr, "/rows?path=link.csv");
+    assert_eq!(code, 400, "{body}");
+    assert!(
+        body.contains("outside"),
+        "a symlink out of root is outside: {body}"
+    );
+
+    // A symlink that stays inside is still a file and is allowed.
+    std::os::unix::fs::symlink(dir.join("real.csv"), dir.join("inside.csv")).unwrap();
+    let (code, body) = get(&server.addr, "/rows?path=inside.csv");
+    assert_eq!(code, 200, "{body}");
+}
+
+/// Oversized requests are refused before they are buffered.
+#[test]
+fn oversized_requests_are_refused() {
+    let dir = TempDir::new("limits");
+    std::fs::write(dir.join("t.csv"), "id\n1\n").unwrap();
+    let server = start(&dir.0);
+
+    // A body sent to a GET becomes an enormous request line.
+    let mut stream = TcpStream::connect(&server.addr).unwrap();
+    let padding = "x".repeat(30 * 1024);
+    write!(
+        stream,
+        "GET /rows?path=t.csv&pad={padding} HTTP/1.1\r\nHost: x\r\n\r\n"
+    )
+    .unwrap();
+    let mut raw = String::new();
+    stream.read_to_string(&mut raw).unwrap();
+    let status: u16 = raw
+        .split_whitespace()
+        .nth(1)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0);
+    assert_eq!(status, 400, "{raw}");
+
+    // A query over 16 KB but under the request-line limit: the parameters are the
+    // problem, so the answer says so with 414 rather than blaming the line.
+    let (status, _raw) = raw_request(
+        &server.addr,
+        "GET",
+        &format!("/rows?path=t.csv&pad={}", "x".repeat(17 * 1024)),
+        &[],
+    );
+    assert_eq!(status, 414);
+
+    // Too many headers.
+    let mut stream = TcpStream::connect(&server.addr).unwrap();
+    let mut request = String::from("GET /rows?path=t.csv HTTP/1.1\r\nHost: x\r\n");
+    for i in 0..80 {
+        request.push_str(&format!("X-Pad-{i}: 1\r\n"));
+    }
+    request.push_str("\r\n");
+    write!(stream, "{request}").unwrap();
+    let mut raw = String::new();
+    stream.read_to_string(&mut raw).unwrap();
+    let status: u16 = raw
+        .split_whitespace()
+        .nth(1)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0);
+    assert_eq!(status, 400, "{raw}");
+}
+
+/// SIGTERM is a shutdown, not a kill: the listener closes and the process exits.
+#[test]
+fn a_terminated_server_stops_accepting() {
+    let dir = TempDir::new("sigterm");
+    std::fs::write(dir.join("t.csv"), "id\n1\n").unwrap();
+    let mut server = start(&dir.0);
+    let (code, body) = get(&server.addr, "/health");
+    assert_eq!(code, 200, "{body}");
+
+    // SIGTERM: the graceful path. The process must leave on its own, not need SIGKILL.
+    unsafe {
+        libc::kill(server.child.id() as libc::pid_t, libc::SIGTERM);
+    }
+    let mut left = false;
+    for _ in 0..100 {
+        if let Ok(Some(status)) = server.child.try_wait() {
+            left = true;
+            assert!(
+                status.success(),
+                "a graceful shutdown exits 0, got {status:?}"
+            );
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
+    assert!(left, "the server did not exit on SIGTERM");
+
+    // And the port is gone, so a client sees a refusal rather than a hang.
+    let refused = std::net::TcpStream::connect(&server.addr).is_err();
+    assert!(refused, "the listener still accepts after shutdown");
+}

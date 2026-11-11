@@ -8,6 +8,7 @@ name = "csv-splitter"
 path = "src/main.rs"
 
 [dependencies]
+libc = "0.2"
 csv-splitter-core = { workspace = true, features = ["sql"] }
 
 [dev-dependencies]

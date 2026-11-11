@@ -113,6 +113,12 @@ HEAD_CODE="$(curl -s -o /dev/null -w '%{http_code}' -I "$URL/rows?path=orders.cs
 if [ "$HEAD_CODE" = "200" ]; then printf '  ok   HEAD answers 200\n'
 else printf '  FAIL HEAD returned %s\n' "$HEAD_CODE"; failed=$((failed + 1)); fi
 
+echo "== limits =="
+LONG="$(python3 -c "print('x'*17000)")"
+CODE="$(curl -s -o /dev/null -w '%{http_code}' "$URL/rows?path=orders.csv&pad=$LONG")"
+if [ "$CODE" = "414" ]; then printf '  ok   limits: long query -> 414\n'
+else printf '  FAIL long query returned %s\n' "$CODE"; failed=$((failed + 1)); fi
+
 echo "== observability =="
 HEALTH="$(curl -s "$URL/health")"
 has "health: ok"               "$HEALTH" '"ok":true'

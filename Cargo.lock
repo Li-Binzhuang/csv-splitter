@@ -635,15 +635,16 @@ dependencies = [
 
 [[package]]
 name = "csv-splitter-cli"
-version = "3.21.0"
+version = "3.22.0"
 dependencies = [
  "csv-splitter-core",
  "encoding_rs",
+ "libc",
 ]
 
 [[package]]
 name = "csv-splitter-core"
-version = "3.21.0"
+version = "3.22.0"
 dependencies = [
  "bzip2",
  "criterion",

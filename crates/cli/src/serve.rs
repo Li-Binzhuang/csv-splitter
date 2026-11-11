@@ -79,7 +79,44 @@ pub fn run(cfg: ServerConfig) -> io::Result<()> {
         "csv-splitter API on http://{local}  (root: {})",
         root.display()
     );
-    serve_on(listener, root)
+    install_signal_handlers();
+    let flag = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    // The handler writes the global; this thread owns the copy the loop reads.
+    std::thread::spawn({
+        let flag = flag.clone();
+        move || loop {
+            if SHUTDOWN.swap(false, std::sync::atomic::Ordering::SeqCst) {
+                flag.store(true, std::sync::atomic::Ordering::SeqCst);
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(50));
+        }
+    });
+    serve_on_with(listener, root, flag)
+}
+
+/// Set once a SIGINT/SIGTERM arrives; the accept loop watches it.
+///
+/// Written from a signal handler, so it is a plain atomic store and nothing else.
+static SHUTDOWN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+extern "C" fn on_signal(_signal: libc::c_int) {
+    SHUTDOWN.store(true, std::sync::atomic::Ordering::SeqCst);
+}
+
+/// Install the handlers. Called once by `run`, not by tests, so a test process is not
+/// accidentally shut down by another test's signal.
+fn install_signal_handlers() {
+    unsafe {
+        // `signal` wants a numeric handler; going through a pointer keeps the function's
+        // ABI instead of an integer cast of the item itself.
+        let handler: libc::sighandler_t = {
+            let pointer: *const () = on_signal as *const ();
+            pointer as libc::sighandler_t
+        };
+        libc::signal(libc::SIGINT, handler);
+        libc::signal(libc::SIGTERM, handler);
+    }
 }
 
 /// Remove materialised sheet copies left by an earlier, killed server.
@@ -107,24 +144,74 @@ fn sweep_stale_temp() {
 }
 
 /// Serve until the listener fails. Exposed for tests, which bind port 0.
-pub fn serve_on(listener: TcpListener, root: PathBuf) -> io::Result<()> {
+/// Serve until the flag is set, then stop accepting and let running work finish.
+///
+/// "Graceful" means three concrete things: no new connections, running jobs get a
+/// bounded chance to complete, and in-flight requests are not cut off mid-response.
+pub fn serve_on_with(
+    listener: TcpListener,
+    root: PathBuf,
+    shutdown: Arc<std::sync::atomic::AtomicBool>,
+) -> io::Result<()> {
     let root = Arc::new(root);
     let jobs = JobRegistry::new();
     let cache = ResultCache::default();
-    for stream in listener.incoming() {
-        let stream = match stream {
-            Ok(s) => s,
+    listener.set_nonblocking(true)?;
+    let active = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    while !shutdown.load(std::sync::atomic::Ordering::SeqCst) {
+        match listener.accept() {
+            Ok((stream, _peer)) => {
+                // Accepted in nonblocking mode; the handler wants a blocking socket.
+                stream.set_nonblocking(false)?;
+                let root = Arc::clone(&root);
+                let jobs = jobs.clone();
+                let cache = cache.clone();
+                let active = Arc::clone(&active);
+                active.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                std::thread::spawn(move || {
+                    let _ = handle(stream, &root, &jobs, &cache);
+                    active.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+                });
+            }
+            Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
+                std::thread::sleep(std::time::Duration::from_millis(5));
+            }
             Err(_) => continue,
-        };
-        let root = Arc::clone(&root);
-        let jobs = jobs.clone();
-        let cache = cache.clone();
-        std::thread::spawn(move || {
-            let _ = handle(stream, &root, &jobs, &cache);
-        });
+        }
+    }
+    // No new connections from here on. Give running jobs a bounded chance, then let the
+    // process exit; nothing is killed silently, the client polling /job sees the state.
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    while std::time::Instant::now() < deadline {
+        let running = jobs
+            .list()
+            .iter()
+            .filter(|job| matches!(job.state, csv_splitter_core::jobs::JobState::Running))
+            .count();
+        let in_flight = active.load(std::sync::atomic::Ordering::SeqCst);
+        if running == 0 && in_flight == 0 {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(20));
     }
     Ok(())
 }
+
+/// How long a client may take to send a request, and how long it may take to read one.
+///
+/// Without these, a half-open connection holds a thread until the OS gives up — and a
+/// browser tab that was closed mid-page is exactly that client.
+const READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
+const WRITE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+
+/// A request line longer than this is not a real request: it is a body sent to a GET.
+///
+/// It sits above the query limit on purpose: the line carries the method and path too,
+/// so a request whose *query* is over the limit should be told that (`414`), not have all
+/// its parameters blamed.
+const MAX_REQUEST_LINE: usize = 24 * 1024;
+/// Headers beyond this are refused instead of buffered.
+const MAX_HEADER_LINES: usize = 64;
 
 fn handle(
     mut stream: TcpStream,
@@ -132,18 +219,39 @@ fn handle(
     jobs: &JobRegistry,
     cache: &ResultCache,
 ) -> io::Result<()> {
+    stream.set_read_timeout(Some(READ_TIMEOUT))?;
+    stream.set_write_timeout(Some(WRITE_TIMEOUT))?;
     let mut reader = BufReader::new(stream.try_clone()?);
     let mut request_line = String::new();
     if reader.read_line(&mut request_line)? == 0 {
         return Ok(());
     }
+    if request_line.len() > MAX_REQUEST_LINE {
+        return respond_json(
+            &mut stream,
+            400,
+            &format!(
+                r#"{{"error":{}}}"#,
+                json_str("the request line is too long; this API takes its parameters in the URL")
+            ),
+        );
+    }
     // This API has no bodies and no auth, but two headers matter: the validator a
     // client already holds, and whether it only wants the headers of a GET (HEAD).
     let mut if_none_match: Option<String> = None;
+    let mut header_lines = 0usize;
     loop {
         let mut line = String::new();
         if reader.read_line(&mut line)? == 0 || line == "\r\n" || line == "\n" {
             break;
+        }
+        header_lines += 1;
+        if header_lines > MAX_HEADER_LINES || line.len() > MAX_REQUEST_LINE {
+            return respond_json(
+                &mut stream,
+                400,
+                r#"{"error":"too many or too-long headers; this API takes its parameters in the URL"}"#,
+            );
         }
         let lower = line.to_ascii_lowercase();
         if let Some(rest) = lower.strip_prefix("if-none-match:") {
@@ -173,6 +281,17 @@ fn handle(
     if method == "OPTIONS" {
         // Preflight: 204 with the allow list; the browser then sends the real request.
         return respond(&mut stream, 204, "");
+    }
+    const MAX_QUERY: usize = 16 * 1024;
+    if query_string.len() > MAX_QUERY {
+        return respond_json(
+            &mut stream,
+            414,
+            &format!(
+                r#"{{"error":{}}}"#,
+                json_str("the query string is longer than 16 KB; narrow the request")
+            ),
+        );
     }
     let params = parse_query(query_string);
 
@@ -4577,7 +4696,10 @@ fn reason_for(status: u16) -> &'static str {
         400 => "Bad Request",
         404 => "Not Found",
         405 => "Method Not Allowed",
+        409 => "Conflict",
+        414 => "URI Too Long",
         422 => "Unprocessable Entity",
+        504 => "Gateway Timeout",
         _ => "Internal Server Error",
     }
 }
