@@ -137,23 +137,39 @@ fn handle(
     if reader.read_line(&mut request_line)? == 0 {
         return Ok(());
     }
-    // Headers are read and ignored: this API has no bodies and no auth.
+    // This API has no bodies and no auth, but two headers matter: the validator a
+    // client already holds, and whether it only wants the headers of a GET (HEAD).
+    let mut if_none_match: Option<String> = None;
     loop {
         let mut line = String::new();
         if reader.read_line(&mut line)? == 0 || line == "\r\n" || line == "\n" {
             break;
+        }
+        let lower = line.to_ascii_lowercase();
+        if let Some(rest) = lower.strip_prefix("if-none-match:") {
+            if_none_match = Some(
+                line[lower.len() - rest.len()..]
+                    .trim()
+                    .trim_start_matches("W/")
+                    .to_string(),
+            );
         }
     }
 
     let mut parts = request_line.split_whitespace();
     let method = parts.next().unwrap_or("");
     let target = parts.next().unwrap_or("/");
+    http_ctx::set(http_ctx::Request {
+        head_only: method == "HEAD",
+        if_none_match,
+    });
     let (path, query_string) = match target.split_once('?') {
         Some((p, q)) => (p, q),
         None => (target, ""),
     };
 
     if method == "OPTIONS" {
+        // Preflight: 204 with the allow list; the browser then sends the real request.
         return respond(&mut stream, 204, "");
     }
     let params = parse_query(query_string);
@@ -173,7 +189,7 @@ fn handle(
             _ => respond_json(&mut stream, 404, r#"{"error":"unknown endpoint"}"#),
         };
     }
-    if method != "GET" {
+    if method != "GET" && method != "HEAD" {
         return respond_json(&mut stream, 405, r#"{"error":"method not allowed"}"#);
     }
 
@@ -191,6 +207,7 @@ fn handle(
         "/sheet" => sheet_meta(&mut stream, root, &params),
         "/columns" => columns_endpoint(&mut stream, root, &params),
         "/capabilities" => capabilities_endpoint(&mut stream),
+        "/spec" => spec_endpoint(&mut stream),
         "/schema" => columns_endpoint(&mut stream, root, &params),
         "/cell" => cell_endpoint(&mut stream, root, &params),
         "/journal" => journal_endpoint(&mut stream, root, &params),
@@ -222,6 +239,116 @@ fn handle(
     }
 }
 
+/// The parameters each route reads, and the fields it answers with.
+///
+/// This is the machine-readable half of the contract: `/spec` publishes it and tests
+/// compare it against the live responses, so a field that moves or a parameter that is
+/// renamed fails a test instead of a client.
+const SPEC_PARAMS: &[(&str, &[&str])] = &[
+    (
+        "/rows",
+        &[
+            "path",
+            "start",
+            "count",
+            "where",
+            "whereAny",
+            "order",
+            "desc",
+            "columns",
+            "start-col",
+            "count-cols",
+            "keys",
+            "delim",
+        ],
+    ),
+    (
+        "/columns",
+        &["path", "name", "kind", "limit", "sample", "delim"],
+    ),
+    ("/meta", &["path", "delim"]),
+    ("/cell", &["path", "row", "col", "delim"]),
+    ("/journal", &["path", "delim"]),
+    ("/sheet", &["path", "delim"]),
+    ("/health", &[]),
+    ("/capabilities", &[]),
+    ("/spec", &[]),
+    ("/parquet", &["path", "delim"]),
+    (
+        "/edit",
+        &[
+            "path", "action", "row", "col", "value", "expect", "name", "out", "where", "delim",
+        ],
+    ),
+];
+
+/// Response fields, per route. Empty means "not JSON" (files, jobs with their own shape).
+const SPEC_FIELDS: &[(&str, &[&str])] = &[
+    (
+        "/rows",
+        &[
+            "start",
+            "count",
+            "requested",
+            "limit",
+            "total",
+            "totalExact",
+            "hasMore",
+            "pastEnd",
+            "columns",
+            "frozenColumns",
+            "rows",
+            "rowKeys",
+            "edited",
+            "operations",
+        ],
+    ),
+    (
+        "/columns",
+        &["count", "totalColumns", "shown", "kindFilter", "columns"],
+    ),
+    ("/cell", &["row", "column", "value", "key", "total"]),
+    (
+        "/journal",
+        &[
+            "stamp",
+            "operations",
+            "count",
+            "redo",
+            "redoCount",
+            "canUndo",
+            "canRedo",
+            "damaged",
+        ],
+    ),
+    (
+        "/sheet",
+        &[
+            "stamp",
+            "columns",
+            "rows",
+            "edited",
+            "operations",
+            "parquet",
+            "capabilities",
+        ],
+    ),
+    ("/health", &["status", "ready", "version"]),
+    (
+        "/capabilities",
+        &[
+            "version",
+            "reads",
+            "pathRequired",
+            "writes",
+            "editActions",
+            "limits",
+            "caches",
+        ],
+    ),
+    ("/spec", &[]),
+];
+
 /// Every GET route this server answers, in one place.
 ///
 /// The dispatcher, the capabilities response and the 404 fallback all read this list,
@@ -238,6 +365,7 @@ const READ_ROUTES: &[&str] = &[
     "/journal",
     "/sheet",
     "/capabilities",
+    "/spec",
     "/book",
     "/pivot",
     "/style",
@@ -312,6 +440,45 @@ fn journal_stamp(path: &Path) -> String {
             .map(|d| d.as_secs())
             .unwrap_or(0)
     )
+}
+
+/// `GET /spec` — what this backend accepts and answers, as data.
+///
+/// Pointing a client generator at a prose document is how field names drift; this is
+/// generated from the same tables the server uses, and tests compare it with live
+/// responses and with `docs/API.md`.
+fn spec_endpoint(stream: &mut TcpStream) -> io::Result<()> {
+    let routes: Vec<String> = READ_ROUTES.iter().map(|r| json_str(r)).collect();
+    let writes: Vec<String> = WRITE_ROUTES.iter().map(|w| json_str(w)).collect();
+    let needed: Vec<String> = PATH_REQUIRED.iter().map(|r| json_str(r)).collect();
+    let params = |rows: &[(&str, &[&str])]| -> String {
+        let items: Vec<String> = rows
+            .iter()
+            .map(|(route, names)| {
+                format!(
+                    "{}:[{}]",
+                    json_str(route),
+                    names
+                        .iter()
+                        .map(|n| json_str(n))
+                        .collect::<Vec<_>>()
+                        .join(",")
+                )
+            })
+            .collect();
+        format!("{{{}}}", items.join(","))
+    };
+    let fields = params(SPEC_FIELDS);
+    let body = format!(
+        r#"{{"version":{},"cors":true,"etag":true,"reads":[{}],"writes":[{}],"pathRequired":[{}],"caches":["parquet"],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"queryRows":10000,"querySeconds":30}},"params":{},"fields":{},"errors":{{"400":"your request is wrong (path, column, SQL, parameter)","404":"the target is not there","405":"wrong method","409":"a compare-and-set lost","422":"this file cannot be read","504":"the engine was interrupted after 30 s"}}}}"#,
+        json_str(env!("CARGO_PKG_VERSION")),
+        routes.join(","),
+        writes.join(","),
+        needed.join(","),
+        params(SPEC_PARAMS),
+        fields
+    );
+    respond_json(stream, 200, &body)
 }
 
 /// `GET /capabilities` — one call that tells a front-end what this backend can do.
@@ -3235,10 +3402,13 @@ fn rows(
         })
         .unwrap_or_default();
     let total = viewer.total_rows();
+    // Every page answers these, whether it was filtered or not: a client that has to
+    // branch on the shape of a response is a client that will get it wrong.
+    let past_end = total > 0 && start >= start.saturating_add(rows.len() as u64);
     let body = format!(
-        r#"{{"start":{start},"count":{},"requested":{requested},"limit":{MAX_ROWS_PER_REQUEST},"total":{total},"pastEnd":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}],"rowKeys":{}}}"#,
+        r#"{{"start":{start},"count":{},"requested":{requested},"limit":{MAX_ROWS_PER_REQUEST},"total":{total},"totalExact":true,"hasMore":{},"pastEnd":{past_end},"columns":[{}],"frozenColumns":[{}],"rows":[{}],"rowKeys":{},"edited":false,"operations":0}}"#,
         rows.len(),
-        total > 0 && start >= total,
+        (start + rows.len() as u64) < total,
         cols.join(","),
         frozen.join(","),
         rows.join(","),
@@ -3718,8 +3888,9 @@ fn respond_filtered_page(
         stream,
         200,
         &format!(
-            r#"{{"start":{start},"count":{},"requested":{requested},"limit":{MAX_ROWS_PER_REQUEST},"total":{total},"totalExact":{exact},"hasMore":{has_more},"columns":[{}],"frozenColumns":[{}],"rows":[{}],"edited":false,"operations":0}}"#,
+            r#"{{"start":{start},"count":{},"requested":{requested},"limit":{MAX_ROWS_PER_REQUEST},"total":{total},"totalExact":{exact},"hasMore":{has_more},"pastEnd":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}],"edited":false,"operations":0}}"#,
             display_rows.len(),
+            exact && total > 0 && start >= total,
             cols.join(","),
             frozen.join(","),
             body.join(",")
@@ -4321,20 +4492,21 @@ fn respond_bytes(
     body: &[u8],
 ) -> io::Result<()> {
     let reason = reason_for(status);
+    let request = http_ctx::current();
     let head = format!(
         "HTTP/1.1 {status} {reason}\r\n\
          Content-Type: {content_type}\r\n\
          Content-Disposition: {disposition}\r\n\
          Content-Length: {}\r\n\
-         Access-Control-Allow-Origin: *\r\n\
-         Access-Control-Allow-Methods: GET, OPTIONS\r\n\
-         Access-Control-Allow-Headers: *\r\n\
-         Cache-Control: no-store\r\n\
+         {}Cache-Control: no-store\r\n\
          Connection: close\r\n\r\n",
-        body.len()
+        body.len(),
+        cors_headers()
     );
     stream.write_all(head.as_bytes())?;
-    stream.write_all(body)?;
+    if !request.head_only {
+        stream.write_all(body)?;
+    }
     stream.flush()
 }
 
@@ -4354,22 +4526,84 @@ fn respond_json(stream: &mut TcpStream, status: u16, body: &str) -> io::Result<(
     respond(stream, status, body)
 }
 
+/// What the current connection asked for that every response must honour.
+///
+/// Handlers take `&mut TcpStream` and nothing else, and threading a context through
+/// forty of them would be churn; each connection is its own thread, so a thread-local is
+/// exactly the right scope. It is set in `handle` and read by the two response helpers —
+/// one place to add "the browser needs this header".
+mod http_ctx {
+    use std::cell::RefCell;
+
+    #[derive(Clone, Default)]
+    pub struct Request {
+        /// `HEAD`: send the headers a `GET` would, and no body.
+        pub head_only: bool,
+        /// `If-None-Match`: the validator the client already has.
+        pub if_none_match: Option<String>,
+    }
+
+    thread_local! {
+        static CURRENT: RefCell<Request> = RefCell::new(Request::default());
+    }
+
+    pub fn set(request: Request) {
+        CURRENT.with(|c| *c.borrow_mut() = request);
+    }
+
+    pub fn current() -> Request {
+        CURRENT.with(|c| c.borrow().clone())
+    }
+}
+
 fn respond(stream: &mut TcpStream, status: u16, body: &str) -> io::Result<()> {
+    let request = http_ctx::current();
+    let etag = format!("\"fnv-{:016x}\"", fnv1a(body.as_bytes()));
+    // A validator only makes sense for a body that succeeded; error text is not cached.
+    // Only a successful body is worth revalidating; a preflight or an error is not.
+    let taggable = status == 200;
+    if taggable && request.if_none_match.as_deref() == Some(etag.as_str()) {
+        let head = format!(
+            "HTTP/1.1 304 Not Modified\r\n\
+             ETag: {etag}\r\n\
+             Content-Length: 0\r\n\
+             {}Connection: close\r\n\r\n",
+            cors_headers()
+        );
+        stream.write_all(head.as_bytes())?;
+        return stream.flush();
+    }
+    let extra = if taggable {
+        format!(
+            "ETag: {etag}\r\n\
+             Access-Control-Expose-Headers: ETag, X-Response-Time\r\n"
+        )
+    } else {
+        String::new()
+    };
     let reason = reason_for(status);
     let response = format!(
         "HTTP/1.1 {status} {reason}\r\n\
          Content-Type: application/json; charset=utf-8\r\n\
          Content-Length: {}\r\n\
-         Access-Control-Allow-Origin: *\r\n\
-         Access-Control-Allow-Methods: GET, OPTIONS\r\n\
-         Access-Control-Allow-Headers: *\r\n\
-         Cache-Control: no-store\r\n\
+         {extra}{}Cache-Control: no-store\r\n\
          Connection: close\r\n\r\n{}",
         body.len(),
-        body
+        cors_headers(),
+        if request.head_only { "" } else { body }
     );
     stream.write_all(response.as_bytes())?;
     stream.flush()
+}
+
+/// The CORS answer, in one place: browsers need `POST`, `HEAD` and the preflight.
+fn cors_headers() -> String {
+    "Access-Control-Allow-Origin: *\r\n\
+     Access-Control-Allow-Methods: GET, POST, HEAD, OPTIONS\r\n\
+     Access-Control-Allow-Headers: *\r\n\
+     Access-Control-Max-Age: 600\r\n\
+     Vary: Origin\r\n"
+        .to_string()
 }
 
 #[cfg(test)]

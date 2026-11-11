@@ -35,6 +35,7 @@
 | 建索引 | `index f.csv` | 自动（首次跳转时） |
 | 建列式缓存（可选） | `cache f.csv --build` / `--status` / `--drop` | `POST /parquet?path=`（job），状态见 `/sheet` 的 `parquet` |
 | 文件元信息 | — | `GET /meta?path=` |
+| 机器可读契约 | — | `GET /spec`（端点/参数/字段/错误码）|
 | 工作簿列表 | `book <dir>` | `GET /book` |
 | 表结构 | `preview` / `analyze` | `GET /sheet` |
 | 列统计（采样） | `stats f.csv` | `GET /stats?path=` |

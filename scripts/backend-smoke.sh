@@ -98,6 +98,21 @@ has "journal: count"             "$JOURNAL" '"count":1'
 has "journal: description"       "$JOURNAL" "set row 1 'city'"
 has "journal: canUndo"           "$JOURNAL" '"canUndo":true'
 
+echo "== browser surface =="
+SPEC="$(curl -s "$URL/spec")"
+has "spec: version"            "$SPEC" '"version":'
+has "spec: fields for /rows"   "$SPEC" '"fields":{"/rows":['
+has "spec: error codes"        "$SPEC" '"504":'
+PREFLIGHT="$(curl -s -o /dev/null -w '%{http_code}' -X OPTIONS "$URL/rows?path=orders.csv" -H 'Origin: http://localhost:3000')"
+if [ "$PREFLIGHT" = "204" ]; then printf '  ok   preflight answers 204\n'
+else printf '  FAIL preflight returned %s\n' "$PREFLIGHT"; failed=$((failed + 1)); fi
+CORS="$(curl -s -D - -o /dev/null "$URL/rows?path=orders.csv&count=1")"
+has "cors: allow methods"     "$CORS" 'Access-Control-Allow-Methods: GET, POST, HEAD, OPTIONS'
+has "etag: on a window"       "$CORS" 'ETag:'
+HEAD_CODE="$(curl -s -o /dev/null -w '%{http_code}' -I "$URL/rows?path=orders.csv&count=1")"
+if [ "$HEAD_CODE" = "200" ]; then printf '  ok   HEAD answers 200\n'
+else printf '  FAIL HEAD returned %s\n' "$HEAD_CODE"; failed=$((failed + 1)); fi
+
 echo "== columnar cache =="
 has "cache: advertised"        "$CAPS" '"caches":["parquet"]'
 has "cache: listed as write"   "$CAPS" 'POST /parquet'

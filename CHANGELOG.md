@@ -1,5 +1,29 @@
 # Changelog
 
+## [3.20.0] — 2026-11-11
+
+### Added
+
+- **The API is reachable from a browser without a proxy.** One place now emits the CORS
+  answer — `Access-Control-Allow-Methods: GET, POST, HEAD, OPTIONS` (POST was missing,
+  which broke every cross-origin write), `Max-Age: 600`, and the origin is exposed so a
+  client can read `ETag`. `OPTIONS` answers a real preflight with 204.
+- **`HEAD`** returns the headers a `GET` would return and no body.
+- **`ETag` + `If-None-Match` → 304.** Every 200 JSON response carries a content hash; a
+  matching validator gets 304 with no body, so paging through an unchanged window
+  re-uses what the client already has. Errors are not taggable.
+- **`GET /spec`**: version, reads, writes, `pathRequired`, caches, limits, `params` and
+  `fields` per route, and the status-code meanings. It is generated from the server's own
+  tables (`SPEC_PARAMS` / `SPEC_FIELDS`), and a test compares the listed fields with the
+  live keys of `/rows` and `/cell` — a field that moves fails a test, not a client.
+
+### Changed
+
+- **Every window now has the same shape.** A plain page used to omit `totalExact`,
+  `hasMore`, `edited` and `operations` while filtered and edited pages carried them;
+  a client had to branch on the shape of a response. All pages answer the same keys now
+  (filtered pages still omit `rowKeys`, and say why: their rows are not `start+i`).
+
 ## [3.19.0] — 2026-11-11
 
 ### Verified

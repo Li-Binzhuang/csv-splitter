@@ -2501,6 +2501,25 @@ fn the_sheet_carries_a_stamp_that_moves_after_a_write() {
     assert!(body.contains(&format!(r#""stamp":"{after}""#)), "{body}");
 }
 
+/// A request with arbitrary headers, returning status and the raw response.
+fn raw_request(addr: &str, method: &str, path: &str, headers: &[(&str, &str)]) -> (u16, String) {
+    let mut stream = TcpStream::connect(addr).unwrap();
+    let mut request = format!("{method} {path} HTTP/1.1\r\nHost: localhost\r\n");
+    for (name, value) in headers {
+        request.push_str(&format!("{name}: {value}\r\n"));
+    }
+    request.push_str("Content-Length: 0\r\nConnection: close\r\n\r\n");
+    write!(stream, "{request}").unwrap();
+    let mut raw = String::new();
+    stream.read_to_string(&mut raw).unwrap();
+    let status = raw
+        .split_whitespace()
+        .nth(1)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0);
+    (status, raw)
+}
+
 /// Send any method, for the status-code contract below.
 fn request(addr: &str, method: &str, path: &str) -> u16 {
     let mut stream = TcpStream::connect(addr).unwrap();
@@ -2710,4 +2729,205 @@ fn the_cache_command_reports_and_removes() {
         .unwrap();
     assert!(out.status.success());
     assert!(!dir.join("t.csv.parquet").exists());
+}
+
+/// A browser asks before it acts: preflight must allow the methods this API uses.
+#[test]
+fn a_browser_preflight_is_answered() {
+    let dir = TempDir::new("preflight");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n").unwrap();
+    let server = start(&dir.0);
+
+    let (status, raw) = raw_request(
+        &server.addr,
+        "OPTIONS",
+        "/rows?path=t.csv",
+        &[
+            ("Origin", "http://localhost:3000"),
+            ("Access-Control-Request-Method", "POST"),
+        ],
+    );
+    assert_eq!(status, 204, "{raw}");
+    assert!(raw.contains("Access-Control-Allow-Origin: *"), "{raw}");
+    assert!(
+        raw.contains("Access-Control-Allow-Methods: GET, POST, HEAD, OPTIONS"),
+        "{raw}"
+    );
+    assert!(raw.contains("Access-Control-Max-Age"), "{raw}");
+}
+
+/// HEAD returns the headers a GET would return, and no body.
+#[test]
+fn head_returns_headers_without_a_body() {
+    let dir = TempDir::new("headmethod");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n2,B\n").unwrap();
+    let server = start(&dir.0);
+
+    let (status, get_body) = get(&server.addr, "/rows?path=t.csv&count=2");
+    assert_eq!(status, 200);
+
+    let (status, raw) = raw_request(&server.addr, "HEAD", "/rows?path=t.csv&count=2", &[]);
+    assert_eq!(status, 200, "{raw}");
+    assert!(raw.contains("Content-Type: application/json"), "{raw}");
+    // The declared length is the GET body's length; HEAD just does not send it.
+    assert!(
+        raw.contains(&format!("Content-Length: {}", get_body.len())),
+        "want length {}. got headers: {raw}",
+        get_body.len()
+    );
+    let after_headers = raw.split("\r\n\r\n").nth(1).unwrap_or("");
+    assert!(after_headers.is_empty(), "HEAD must not send a body: {raw}");
+}
+
+/// A window is revalidated, not re-sent: the same ETag with If-None-Match gives 304.
+#[test]
+fn a_window_is_revalidated_with_304() {
+    let dir = TempDir::new("etag");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n2,B\n").unwrap();
+    let server = start(&dir.0);
+
+    let (_, raw) = raw_request(&server.addr, "GET", "/rows?path=t.csv&count=1", &[]);
+    let etag = raw
+        .lines()
+        .find(|l| l.starts_with("ETag:"))
+        .expect("a 200 must carry an ETag")
+        .trim_start_matches("ETag:")
+        .trim()
+        .to_string();
+
+    let (status, raw) = raw_request(
+        &server.addr,
+        "GET",
+        "/rows?path=t.csv&count=1",
+        &[("If-None-Match", &etag)],
+    );
+    assert_eq!(status, 304, "{raw}");
+    assert!(raw.contains(&format!("ETag: {etag}")), "{raw}");
+
+    // A different window is a different validator, so it is not short-circuited.
+    let (status, _) = raw_request(
+        &server.addr,
+        "GET",
+        "/rows?path=t.csv&count=2",
+        &[("If-None-Match", &etag)],
+    );
+    assert_eq!(status, 200);
+
+    // Errors are not cacheable, so no validator is handed out for them.
+    let (status, raw) = raw_request(&server.addr, "GET", "/rows?path=nope.csv", &[]);
+    assert_eq!(status, 400, "{raw}");
+    assert!(
+        !raw.contains("ETag:"),
+        "an error must not be taggable: {raw}"
+    );
+}
+
+/// The keys of a flat JSON object, top level only — enough for the shapes this API
+/// returns, and no dependency for the test binary just to read them.
+fn json_keys(body: &str) -> Vec<String> {
+    let mut keys = Vec::new();
+    let mut depth = 0usize;
+    let mut in_string = false;
+    let mut escaped = false;
+    let mut current = String::new();
+    // A string is a key only if the next non-space character is a colon.
+    let chars: Vec<char> = body.chars().collect();
+    for (index, &c) in chars.iter().enumerate() {
+        if in_string {
+            if escaped {
+                escaped = false;
+            } else if c == '\\' {
+                escaped = true;
+            } else if c == '"' {
+                in_string = false;
+                if depth == 1 {
+                    let rest: String = chars[index + 1..]
+                        .iter()
+                        .take_while(|ch| ch.is_whitespace())
+                        .collect();
+                    let after = chars[index + 1..]
+                        .iter()
+                        .find(|ch| !ch.is_whitespace())
+                        .copied();
+                    let _ = rest;
+                    if after == Some(':') {
+                        keys.push(current.clone());
+                    }
+                }
+                current.clear();
+            } else {
+                current.push(c);
+            }
+            continue;
+        }
+        match c {
+            '"' => in_string = true,
+            '{' | '[' => depth += 1,
+            '}' | ']' => depth = depth.saturating_sub(1),
+            _ => {}
+        }
+    }
+    keys
+}
+
+/// The strings inside the first array after `marker`.
+fn array_after(body: &str, marker: &str) -> Vec<String> {
+    let start = body.find(marker).unwrap_or_else(|| panic!("no {marker}"));
+    let from = start + marker.len();
+    let inner = &body[from..];
+    let end = inner
+        .find(']')
+        .unwrap_or_else(|| panic!("unterminated {marker}"));
+    inner[..end]
+        .split(',')
+        .map(|item| item.trim().trim_matches('"').to_string())
+        .filter(|item| !item.is_empty())
+        .collect()
+}
+
+/// `/spec` must describe the server that is answering: the fields it lists are the
+/// fields a response actually has.
+#[test]
+fn the_spec_matches_the_live_server() {
+    let dir = TempDir::new("spec");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n2,B\n").unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = get(&server.addr, "/spec");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""cors":true"#), "{body}");
+    assert!(body.contains(r#""etag":true"#), "{body}");
+
+    let reads = array_after(&body, r#""reads":["#);
+    for route in ["/rows", "/columns", "/cell", "/journal", "/sheet", "/spec"] {
+        assert!(
+            reads.iter().any(|r| r == route),
+            "{route} missing from /spec"
+        );
+    }
+
+    // /rows: the listed fields are exactly the response's keys. Look inside the
+    // `fields` object — `params` has a `/rows` entry too, and it lists parameters.
+    let fields_part = &body[body.find(r#""fields":{"#).expect("fields")..];
+    let listed = array_after(fields_part, r#""/rows":["#);
+    let (code, window) = get(&server.addr, "/rows?path=t.csv&count=1");
+    assert_eq!(code, 200, "{window}");
+    let mut actual = json_keys(&window);
+    actual.retain(|k| !k.is_empty());
+    let mut want = listed.clone();
+    want.sort_unstable();
+    actual.sort_unstable();
+    assert_eq!(want, actual, "spec fields drifted from the response");
+
+    // /cell: same check on a smaller shape.
+    let (code, cell) = get(&server.addr, "/cell?path=t.csv&row=1&col=city");
+    assert_eq!(code, 200, "{cell}");
+    let mut cell_keys = json_keys(&cell);
+    cell_keys.retain(|k| !k.is_empty());
+    cell_keys.sort_unstable();
+    // The cell spec lives after the /rows entry; grab the array that starts with row.
+    let cell_listed = array_after(fields_part, r#""/cell":["#);
+    let mut cell_want = cell_listed.clone();
+    cell_want.sort_unstable();
+    assert_eq!(cell_want, cell_keys, "/cell spec fields drifted");
 }
