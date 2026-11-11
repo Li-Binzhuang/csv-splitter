@@ -239,6 +239,7 @@ fn handle(
     // This API has no bodies and no auth, but two headers matter: the validator a
     // client already holds, and whether it only wants the headers of a GET (HEAD).
     let mut if_none_match: Option<String> = None;
+    let mut accept_gzip = false;
     let mut header_lines = 0usize;
     loop {
         let mut line = String::new();
@@ -254,6 +255,9 @@ fn handle(
             );
         }
         let lower = line.to_ascii_lowercase();
+        if lower.starts_with("accept-encoding:") && lower.contains("gzip") {
+            accept_gzip = true;
+        }
         if let Some(rest) = lower.strip_prefix("if-none-match:") {
             if_none_match = Some(
                 line[lower.len() - rest.len()..]
@@ -272,6 +276,7 @@ fn handle(
         if_none_match,
         route: format!("{method} {}", target.split('?').next().unwrap_or(target)),
         started: std::time::Instant::now(),
+        accept_gzip,
     });
     let (path, query_string) = match target.split_once('?') {
         Some((p, q)) => (p, q),
@@ -5025,6 +5030,8 @@ mod http_ctx {
         pub route: String,
         /// When this request started, for `X-Response-Time`.
         pub started: std::time::Instant,
+        /// `Accept-Encoding` mentions gzip, so a large body may be compressed.
+        pub accept_gzip: bool,
     }
 
     impl Default for Request {
@@ -5034,6 +5041,7 @@ mod http_ctx {
                 if_none_match: None,
                 route: String::new(),
                 started: std::time::Instant::now(),
+                accept_gzip: false,
             }
         }
     }
@@ -5056,8 +5064,24 @@ fn respond(stream: &mut TcpStream, status: u16, body: &str) -> io::Result<()> {
     let elapsed_ms = request.started.elapsed().as_secs_f64() * 1000.0;
     metrics::shared().record(&request.route, status, elapsed_ms);
     let timing = format!("X-Response-Time: {elapsed_ms:.1}ms\r\n");
-    let etag = format!("\"fnv-{:016x}\"", fnv1a(body.as_bytes()));
-    // A validator only makes sense for a body that succeeded; error text is not cached.
+
+    // A 782-column window is 3.6 KB per row; gzip is the difference between a page that
+    // loads and one that does not. Compress first, because a compressed body is a
+    // different representation and therefore carries a different validator.
+    let payload: std::borrow::Cow<'_, [u8]> = if request.accept_gzip && body.len() > 512 {
+        match gzip(body.as_bytes()) {
+            Some(compressed) => std::borrow::Cow::Owned(compressed),
+            None => std::borrow::Cow::Borrowed(body.as_bytes()),
+        }
+    } else {
+        std::borrow::Cow::Borrowed(body.as_bytes())
+    };
+    let compressed = payload.len() < body.len();
+    let etag = if compressed {
+        format!("\"fnv-{:016x}-gz\"", fnv1a(body.as_bytes()))
+    } else {
+        format!("\"fnv-{:016x}\"", fnv1a(body.as_bytes()))
+    };
     // Only a successful body is worth revalidating; a preflight or an error is not.
     let taggable = status == 200;
     if taggable && request.if_none_match.as_deref() == Some(etag.as_str()) {
@@ -5080,19 +5104,35 @@ fn respond(stream: &mut TcpStream, status: u16, body: &str) -> io::Result<()> {
     } else {
         String::new()
     };
+    let encoding = if compressed {
+        "Content-Encoding: gzip\r\nVary: Accept-Encoding\r\n"
+    } else {
+        "Vary: Accept-Encoding\r\n"
+    };
     let reason = reason_for(status);
     let response = format!(
         "HTTP/1.1 {status} {reason}\r\n\
          Content-Type: application/json; charset=utf-8\r\n\
          Content-Length: {}\r\n\
-         {extra}{timing}{}Cache-Control: no-store\r\n\
-         Connection: close\r\n\r\n{}",
-        body.len(),
-        cors_headers(),
-        if request.head_only { "" } else { body }
+         {encoding}{extra}{timing}{}Cache-Control: no-store\r\n\
+         Connection: close\r\n\r\n",
+        payload.len(),
+        cors_headers()
     );
     stream.write_all(response.as_bytes())?;
+    if !request.head_only {
+        stream.write_all(&payload)?;
+    }
     stream.flush()
+}
+
+/// Gzip a JSON body, or `None` when compression would not help.
+fn gzip(bytes: &[u8]) -> Option<Vec<u8>> {
+    use flate2::write::GzEncoder;
+    use flate2::Compression;
+    let mut encoder = GzEncoder::new(Vec::with_capacity(bytes.len() / 4), Compression::fast());
+    std::io::Write::write_all(&mut encoder, bytes).ok()?;
+    encoder.finish().ok()
 }
 
 /// The CORS answer, in one place: browsers need `POST`, `HEAD` and the preflight.

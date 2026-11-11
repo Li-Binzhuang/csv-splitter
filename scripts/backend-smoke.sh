@@ -113,6 +113,15 @@ HEAD_CODE="$(curl -s -o /dev/null -w '%{http_code}' -I "$URL/rows?path=orders.cs
 if [ "$HEAD_CODE" = "200" ]; then printf '  ok   HEAD answers 200\n'
 else printf '  FAIL HEAD returned %s\n' "$HEAD_CODE"; failed=$((failed + 1)); fi
 
+echo "== compression =="
+GZIP_HEAD="$(curl -s -D - -o /dev/null -H 'Accept-Encoding: gzip' "$URL/rows?path=orders.csv&count=200")"
+has "gzip: encoding header"    "$GZIP_HEAD" 'Content-Encoding: gzip'
+has "gzip: vary header"        "$GZIP_HEAD" 'Vary: Accept-Encoding'
+PLAIN_LEN="$(curl -s "$URL/rows?path=orders.csv&count=200" | wc -c | tr -d ' ')"
+GZIP_LEN="$(curl -s -H 'Accept-Encoding: gzip' "$URL/rows?path=orders.csv&count=200" | wc -c | tr -d ' ')"
+if [ "$GZIP_LEN" -lt "$PLAIN_LEN" ]; then printf '  ok   gzip: smaller body (%s -> %s bytes)\n' "$PLAIN_LEN" "$GZIP_LEN"
+else printf '  FAIL gzip did not shrink the body (%s -> %s)\n' "$PLAIN_LEN" "$GZIP_LEN"; failed=$((failed + 1)); fi
+
 echo "== robustness =="
 # A client that asks and walks away must not take the server with it.
 ( curl -s -m 1 "$URL/rows?path=orders.csv&count=2000" >/dev/null 2>&1 & ) ; sleep 0.2

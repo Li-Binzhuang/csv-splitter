@@ -2512,6 +2512,36 @@ fn the_sheet_carries_a_stamp_that_moves_after_a_write() {
     assert!(body.contains(&format!(r#""stamp":"{after}""#)), "{body}");
 }
 
+/// Like `raw_request`, but returns bytes: a gzip body is not UTF-8.
+fn raw_request_bytes(
+    addr: &str,
+    method: &str,
+    path: &str,
+    headers: &[(&str, &str)],
+) -> (u16, String, Vec<u8>) {
+    let mut stream = TcpStream::connect(addr).unwrap();
+    let mut request = format!("{method} {path} HTTP/1.1\r\nHost: localhost\r\n");
+    for (name, value) in headers {
+        request.push_str(&format!("{name}: {value}\r\n"));
+    }
+    request.push_str("Content-Length: 0\r\nConnection: close\r\n\r\n");
+    write!(stream, "{request}").unwrap();
+    let mut raw = Vec::new();
+    std::io::Read::read_to_end(&mut stream, &mut raw).unwrap();
+    let split = raw
+        .windows(4)
+        .position(|w| w == b"\r\n\r\n")
+        .map(|at| at + 4)
+        .unwrap_or(raw.len());
+    let head_text = String::from_utf8_lossy(&raw[..split]).to_string();
+    let status = head_text
+        .split_whitespace()
+        .nth(1)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0);
+    (status, head_text, raw[split..].to_vec())
+}
+
 /// A request with arbitrary headers, returning status and the raw response.
 fn raw_request(addr: &str, method: &str, path: &str, headers: &[(&str, &str)]) -> (u16, String) {
     let mut stream = TcpStream::connect(addr).unwrap();
@@ -3316,4 +3346,69 @@ fn a_timeout_does_not_leak_the_engine_text() {
     let (code, body) = get(&server.addr, "/capabilities");
     assert_eq!(code, 200, "{body}");
     assert!(body.contains(r#""querySeconds":0"#), "{body}");
+}
+
+/// A gzip client gets a gzip body, its own validator, and can revalidate it.
+#[test]
+fn responses_are_gzipped_when_asked() {
+    let dir = TempDir::new("gzip");
+    let mut text = String::from("id,city,amount,note\n");
+    for i in 0..2000 {
+        text.push_str(&format!("{i},C{},{i},note number {i}\n", i % 9));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0);
+
+    let path = "/rows?path=t.csv&count=500&columns=id,city,amount,note";
+    let (status, head, body) = raw_request_bytes(&server.addr, "GET", path, &[]);
+    assert_eq!(status, 200);
+    assert!(
+        !head.contains("Content-Encoding: gzip"),
+        "no header, no gzip"
+    );
+    assert!(body.starts_with(b"{\""), "a plain body is JSON text");
+
+    let (status, head, body) =
+        raw_request_bytes(&server.addr, "GET", path, &[("Accept-Encoding", "gzip")]);
+    assert_eq!(status, 200, "{head}");
+    assert!(head.contains("Content-Encoding: gzip"), "{head}");
+    assert!(head.contains("Vary: Accept-Encoding"), "{head}");
+    assert!(
+        body.starts_with(&[0x1f, 0x8b]),
+        "gzip magic: {:?}",
+        &body[..4.min(body.len())]
+    );
+
+    // It really is the same JSON, only compressed.
+    let mut decoder = flate2::read::GzDecoder::new(body.as_slice());
+    let mut decoded = String::new();
+    std::io::Read::read_to_string(&mut decoder, &mut decoded).unwrap();
+    assert_eq!(decoded.len(), {
+        let (_, _, plain) = raw_request_bytes(&server.addr, "GET", path, &[]);
+        plain.len()
+    });
+
+    // The compressed validator differs from the plain one, and revalidates to 304.
+    let etag = head
+        .lines()
+        .find(|l| l.starts_with("ETag:"))
+        .unwrap()
+        .trim_start_matches("ETag:")
+        .trim()
+        .to_string();
+    assert!(etag.ends_with("-gz\""), "{etag}");
+    let (status, head, _) = raw_request_bytes(
+        &server.addr,
+        "GET",
+        path,
+        &[("Accept-Encoding", "gzip"), ("If-None-Match", &etag)],
+    );
+    assert_eq!(status, 304, "{head}");
+
+    // And a HEAD with gzip carries the gzip headers without a body.
+    let (status, head, body) =
+        raw_request_bytes(&server.addr, "HEAD", path, &[("Accept-Encoding", "gzip")]);
+    assert_eq!(status, 200, "{head}");
+    assert!(head.contains("Content-Encoding: gzip"), "{head}");
+    assert!(body.is_empty(), "HEAD must not send a body");
 }

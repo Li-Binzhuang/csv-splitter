@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.27.0] — 2026-11-11
+
+### Added
+
+- **gzip responses.** A 782-column window is 3.6 KB per row, so the audience for this
+  backend (a browser) asks for compression and previously got none. Bodies over 512 bytes
+  are gzipped when `Accept-Encoding` asks: a 500-row, 4-column window went from 22290 to
+  5714 bytes (3.9×).
+  - A compressed body is a different representation, so its validator carries a `-gz`
+    suffix and `Vary: Accept-Encoding` is always sent; `If-None-Match` still revalidates to
+    304 for the representation the client holds.
+  - HEAD returns the gzip headers with no body.
+  - The test reads the response as bytes (a gzip body is not UTF-8) and decompresses it to
+    check it is the same JSON, not merely smaller.
+
 ## [3.26.0] — 2026-11-11
 
 ### Verified

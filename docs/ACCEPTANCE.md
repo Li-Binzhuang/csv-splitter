@@ -92,6 +92,7 @@
 | `OPTIONS` 预检 | **204**，`Allow-Methods: GET, POST, HEAD, OPTIONS` |
 | `HEAD /rows` | **200**，`Content-Length` 与 GET 一致，**无 body** |
 | `ETag` + `If-None-Match` | **304**，0.002 s，不重传 JSON |
+| `Accept-Encoding: gzip` | 500 行窗口 **22290 → 5714 字节**（3.9×），ETag 带 `-gz` |
 | `GET /spec` | 13.6 ms / 2191 字节 |
 | `GET /capabilities` | 2.5 ms / 1085 字节 |
 

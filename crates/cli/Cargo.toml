@@ -9,6 +9,7 @@ path = "src/main.rs"
 
 [dependencies]
 libc = "0.2"
+flate2 = { workspace = true }
 csv-splitter-core = { workspace = true, features = ["sql"] }
 
 [dev-dependencies]
