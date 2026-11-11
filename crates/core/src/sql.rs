@@ -119,7 +119,9 @@ struct OpenOptions {
 }
 
 const OPEN_LADDER: [OpenOptions; 3] = [
-    // Fast path: parallel, ragged-tolerant. Breaks on quoted newlines.
+    // Parallel first: a serial scan of 2.5 GB takes 8.5 s, so the reader that can use
+    // every core is the default. Serial stays as the fallback for files the parallel
+    // scanner refuses (quoted newlines with ragged rows).
     OpenOptions {
         null_padding: true,
         parallel: true,
@@ -166,7 +168,7 @@ fn typed_view_sql(
         .map(|c| format!("'{}': '{}'", duck_quote(&c.name), duck_type(c.kind)))
         .collect();
     format!(
-        "CREATE VIEW t AS SELECT * FROM read_csv('{quoted}', header=true, delim='{delim}', sample_size=1, null_padding={np}, parallel={par}, columns={{{fields}}})",
+        "CREATE VIEW t AS SELECT * FROM read_csv('{quoted}', header=true, delim='{delim}', quote='\"', escape='\"', auto_detect=false, sample_size=1, null_padding={np}, parallel={par}, columns={{{fields}}})",
         np = opts.null_padding,
         par = opts.parallel,
         fields = fields.join(", ")
@@ -989,5 +991,71 @@ mod typed_view_tests {
         assert_eq!(result.columns.len(), 3);
         assert_eq!(result.rows[0], ["1", "2", "3"]);
         std::fs::remove_dir_all(path.parent().unwrap()).ok();
+    }
+}
+
+#[cfg(test)]
+mod dialect_tests {
+    use super::*;
+
+    fn dir(name: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "csvs_dialect_{name}_{}_{}",
+            std::process::id(),
+            unique_seq()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn unique_seq() -> u64 {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static SEQ: AtomicU64 = AtomicU64::new(0);
+        SEQ.fetch_add(1, Ordering::Relaxed)
+    }
+
+    /// The typed view turns dialect sniffing off for speed, so the cases sniffing used to
+    /// catch must still work: CRLF endings, quoted commas, quoted newlines, ragged rows.
+    #[test]
+    fn csv_shape_cases_still_read() {
+        let root = dir("shapes");
+        let path = root.join("t.csv");
+
+        // CRLF + a quoted comma.
+        std::fs::write(&path, "id,note\r\n1,\"a,b\"\r\n2,plain\r\n").unwrap();
+        let crlf = query(&path, "SELECT * FROM t", 5).unwrap();
+        assert_eq!(crlf.rows.len(), 2, "{:?}", crlf.rows);
+        assert_eq!(crlf.rows[0][1], "a,b");
+
+        // A newline inside quotes: the parallel reader refuses this, the ladder must
+        // still answer (the serial fallback exists for exactly this file).
+        std::fs::write(&path, "id,note\n1,\"two\nlines\"\n2,plain\n").unwrap();
+        let quoted = query(&path, "SELECT * FROM t", 5).unwrap();
+        assert_eq!(quoted.rows.len(), 2, "{:?}", quoted.rows);
+        assert!(quoted.rows[0][1].contains('\n'), "{:?}", quoted.rows[0]);
+
+        // Ragged rows: fewer fields is padded, more fields is truncated by the reader.
+        std::fs::write(&path, "a,b,c\n1,2\n3,4,5,6\n").unwrap();
+        let ragged = query(&path, "SELECT * FROM t", 5).unwrap();
+        assert_eq!(ragged.rows.len(), 2, "{:?}", ragged.rows);
+
+        std::fs::remove_dir_all(root).ok();
+    }
+
+    /// A match near the end of the data still costs a scan, but the reader must not stop
+    /// at the first block when the page is deep into the result.
+    #[test]
+    fn a_match_deep_in_the_file_is_found() {
+        let root = dir("deep");
+        let path = root.join("t.csv");
+        let mut text = String::from("id,city\n");
+        for i in 0..5000 {
+            text.push_str(&format!("{i},{}\n", if i == 4999 { "LAST" } else { "X" }));
+        }
+        std::fs::write(&path, text).unwrap();
+        let result = query(&path, "SELECT * FROM t WHERE city='LAST'", 5).unwrap();
+        assert_eq!(result.rows.len(), 1);
+        assert_eq!(result.rows[0][0], "4999");
+        std::fs::remove_dir_all(root).ok();
     }
 }

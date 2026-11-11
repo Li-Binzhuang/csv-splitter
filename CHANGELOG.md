@@ -1,5 +1,34 @@
 # Changelog
 
+## [3.17.0] — 2026-11-11
+
+### Performance
+
+- **Cold filtered first page on the 2.5 GB / 782-column file: 8–9 s → 0.22 s.**
+  Declaring the column types was only half the fix. `read_csv` still ran its dialect
+  sniffer — quote/escape/newline candidates over a large sample — before returning a
+  row. With `auto_detect=false`, an explicit `quote='"'`/`escape='"'` and the declared
+  columns, `SELECT … LIMIT 11` answers from the first block.
+
+  | cold, no cache | before | after |
+  |---|---|---|
+  | dense filter (`predict_status='success'`) | 8–9 s | **0.22 s** |
+  | match in the middle (row 300 000) | 15 s (cache path) | 1.48 s |
+  | no match (full scan) | 15 s | 1.36 s |
+  | ordered first page | 15.5 s | 1.36 s |
+  | `count(*)` | 8.6 s | 0.71 s |
+
+  A serial scan was tried first and rejected on evidence: it answers a dense filter in
+  0.19 s but takes 8.5 s on a full scan, so parallel stays the default and serial stays
+  the fallback for quoted-newline files.
+
+### Verified
+
+- New tests cover the dialect cases that `auto_detect=false` stops detecting: CRLF
+  endings, quoted commas, a newline inside quotes (parallel reader refuses it — the
+  ladder falls back), ragged rows, and a match in the last row of the file. Numbers in
+  `docs/CAPABILITIES.md`; API.md gained a "what a first page costs" table by case.
+
 ## [3.16.0] — 2026-11-11
 
 ### Added

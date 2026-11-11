@@ -108,7 +108,7 @@ fn copy_sql(
         .collect();
     if typed {
         format!(
-            "COPY (SELECT * FROM read_csv('{quoted}', header=true, delim='{delim}', sample_size=1, null_padding=true, columns={{{fields}}})) TO '{target}' (FORMAT parquet, COMPRESSION zstd)",
+            "COPY (SELECT * FROM read_csv('{quoted}', header=true, delim='{delim}', quote='\"', escape='\"', auto_detect=false, sample_size=1, null_padding=true, columns={{{fields}}})) TO '{target}' (FORMAT parquet, COMPRESSION zstd)",
             fields = fields.join(", ")
         )
     } else {
