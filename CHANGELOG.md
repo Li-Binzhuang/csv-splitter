@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.26.0] — 2026-11-11
+
+### Verified
+
+- Full acceptance run on a fresh copy of the real 2.5 GB / 782-column file, with the
+  numbers in `docs/ACCEPTANCE.md`: preflight 204, HEAD without a body, ETag → 304 in
+  2 ms, `/spec` 13.6 ms, `/columns` 10 ms, `/meta` 374 ms, cold filtered first page
+  302 ms, warm filtered first page 0.23–0.26 s, warm ordered page 0.30–0.37 s.
+  - One row is marked ⚠ rather than ✓: the warm ordered page occasionally lands at
+    0.37 s against a ≈0.35 s expectation. Reported, not rounded away.
+  - The original file's sha256 is unchanged after the whole run; only `.idx` and
+    `.parquet` sidecars appeared next to it.
+
 ## [3.25.0] — 2026-11-11
 
 ### Fixed
