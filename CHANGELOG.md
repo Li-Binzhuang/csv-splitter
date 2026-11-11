@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.19.0] — 2026-11-11
+
+### Verified
+
+- Cold-start evidence on a fresh copy of the 2.5 GB / 782-column file, with no cache and
+  no index sidecar: `/rows?where=predict_status='success'&count=10` **0.30 s** on the
+  first request and 0.17 s on the second; the directory afterwards still holds only
+  `real.csv`. The response keeps `count`/`requested`/`limit`, `total` with
+  `totalExact:false`, and still omits `rowKeys` on a filtered page.
+- `docs/ACCEPTANCE.md` records the before/after table and names the three causes
+  (type inference, dialect sniffing, a 64-row sample building a row index).
+
 ## [3.18.0] — 2026-11-11
 
 ### Fixed
