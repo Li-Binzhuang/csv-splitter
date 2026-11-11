@@ -134,3 +134,24 @@ error: rows are 1-based; row 1 is the first data row
 | `dedupe` 吃内存 | 要记住每个键 | 去掉 `--by` 前先想想基数；或提高 `--max-keys` 并接受内存 |
 
 内存数字与「哪些命令会随行数增长」写在 `CAPABILITIES.md` 的实测表里。
+
+## CI 为什么红过，以及现在怎么读失败
+
+`CI` 是单 job 工作流：fmt → 引擎测试 → 性能守卫 → clippy → CLI 测试。
+
+**失败不再需要登录看日志**：每个测试步骤把输出 tee 到 `*.log`，失败时
+`Report failures as annotations` 会把失败测试名和第一行断言变成 annotation
+（`::error::`），通过 API 就能读：
+
+```bash
+run=$(curl -s "https://api.github.com/repos/Li-Binzhuang/csv-splitter/actions/runs?per_page=1" | jq -r '.workflow_runs[0].id')
+job=$(curl -s "https://api.github.com/repos/Li-Binzhuang/csv-splitter/actions/runs/$run/jobs" | jq -r '.jobs[0].check_run_url')
+curl -s "$job/annotations"
+```
+
+日志同时作为 `test-logs` artifact 保留 7 天。
+
+**曾经的根因（2026-11-11）**：`a_timeout_does_not_leak_the_engine_text` 用 1 ms 预算，
+而 watchdog 线程可能在查询开始之前就触发——中断落在空闲连接上、什么也没做，
+于是快机器答了 200、慢机器答 504。现在 `run_with_timeout` 记录开始时刻，
+**超过预算的结果一律按超时处理**，不依赖中断是否恰好命中。
