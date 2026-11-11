@@ -162,6 +162,8 @@ fn handle(
     http_ctx::set(http_ctx::Request {
         head_only: method == "HEAD",
         if_none_match,
+        route: format!("{method} {}", target.split('?').next().unwrap_or(target)),
+        started: std::time::Instant::now(),
     });
     let (path, query_string) = match target.split_once('?') {
         Some((p, q)) => (p, q),
@@ -195,7 +197,8 @@ fn handle(
 
     match path {
         "/" | "/index.html" => respond_html(&mut stream, 200, VIEWER_HTML),
-        "/health" => respond_json(&mut stream, 200, r#"{"ok":true,"service":"csv-splitter"}"#),
+        "/health" => health_endpoint(&mut stream, root),
+        "/metrics" => metrics_endpoint(&mut stream, jobs),
         "/meta" => meta(&mut stream, root, &params),
         "/rows" => rows(&mut stream, root, &params, cache),
         "/stats" => stats(&mut stream, root, &params),
@@ -273,6 +276,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     ("/health", &[]),
     ("/capabilities", &[]),
     ("/spec", &[]),
+    ("/metrics", &[]),
     ("/parquet", &["path", "delim"]),
     (
         "/edit",
@@ -333,7 +337,23 @@ const SPEC_FIELDS: &[(&str, &[&str])] = &[
             "capabilities",
         ],
     ),
-    ("/health", &["status", "ready", "version"]),
+    ("/health", &["ok", "ready", "version", "root"]),
+    (
+        "/metrics",
+        &[
+            "uptimeSeconds",
+            "requests",
+            "errors4xx",
+            "errors5xx",
+            "slowRequests",
+            "p50Ms",
+            "p95Ms",
+            "status",
+            "routes",
+            "latencyBuckets",
+            "jobs",
+        ],
+    ),
     (
         "/capabilities",
         &[
@@ -366,6 +386,7 @@ const READ_ROUTES: &[&str] = &[
     "/sheet",
     "/capabilities",
     "/spec",
+    "/metrics",
     "/book",
     "/pivot",
     "/style",
@@ -439,6 +460,38 @@ fn journal_stamp(path: &Path) -> String {
             .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
             .map(|d| d.as_secs())
             .unwrap_or(0)
+    )
+}
+
+/// `GET /metrics` — request counts, latency percentiles and error distribution.
+///
+/// Counts come from one place (`respond`), so a new endpoint is measured without
+/// remembering to measure it.
+fn metrics_endpoint(stream: &mut TcpStream, jobs: &JobRegistry) -> io::Result<()> {
+    let all = jobs.list();
+    let running = all
+        .iter()
+        .filter(|job| matches!(job.state, csv_splitter_core::jobs::JobState::Running))
+        .count();
+    let body = metrics::shared().to_json((all.len(), running));
+    respond_json(stream, 200, &body)
+}
+
+/// `GET /health` — liveness and readiness in one answer.
+///
+/// Ready means "I can answer questions about files right now": the served directory
+/// lists. Liveness alone would say `ok` for a process that can no longer read its root.
+fn health_endpoint(stream: &mut TcpStream, root: &Path) -> io::Result<()> {
+    let ready = std::fs::read_dir(root).is_ok();
+    respond_json(
+        stream,
+        200,
+        &format!(
+            r#"{{"ok":true,"ready":{},"version":{},"root":{}}}"#,
+            ready,
+            json_str(env!("CARGO_PKG_VERSION")),
+            json_str(&root.to_string_lossy())
+        ),
     )
 }
 
@@ -4469,16 +4522,20 @@ fn bad_out(stream: &mut TcpStream) -> io::Result<()> {
 }
 
 fn respond_html(stream: &mut TcpStream, status: u16, body: &str) -> io::Result<()> {
+    let request = http_ctx::current();
+    let elapsed_ms = request.started.elapsed().as_secs_f64() * 1000.0;
+    metrics::shared().record(&request.route, status, elapsed_ms);
     let reason = reason_for(status);
     let response = format!(
         "HTTP/1.1 {status} {reason}\r\n\
          Content-Type: text/html; charset=utf-8\r\n\
          Content-Length: {}\r\n\
-         Access-Control-Allow-Origin: *\r\n\
-         Cache-Control: no-store\r\n\
+         X-Response-Time: {elapsed_ms:.1}ms\r\n\
+         {}Cache-Control: no-store\r\n\
          Connection: close\r\n\r\n{}",
         body.len(),
-        body
+        cors_headers(),
+        if request.head_only { "" } else { body }
     );
     stream.write_all(response.as_bytes())?;
     stream.flush()
@@ -4493,8 +4550,11 @@ fn respond_bytes(
 ) -> io::Result<()> {
     let reason = reason_for(status);
     let request = http_ctx::current();
+    let elapsed_ms = request.started.elapsed().as_secs_f64() * 1000.0;
+    metrics::shared().record(&request.route, status, elapsed_ms);
     let head = format!(
         "HTTP/1.1 {status} {reason}\r\n\
+         X-Response-Time: {elapsed_ms:.1}ms\r\n\
          Content-Type: {content_type}\r\n\
          Content-Disposition: {disposition}\r\n\
          Content-Length: {}\r\n\
@@ -4526,6 +4586,175 @@ fn respond_json(stream: &mut TcpStream, status: u16, body: &str) -> io::Result<(
     respond(stream, status, body)
 }
 
+/// Process-wide request accounting, so an operator can answer "what is slow" without a
+/// profiler attached.
+///
+/// It is a global rather than a threaded parameter because every response goes through
+/// one place already (`respond`); adding an argument to forty handlers to record a
+/// millisecond would be the sixth time this phase duplicated a rule to avoid one shared
+/// object.
+mod metrics {
+    use std::collections::BTreeMap;
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::sync::{Mutex, OnceLock};
+    use std::time::Instant;
+
+    /// Latency bucket upper bounds, in milliseconds; the last one is open-ended.
+    const BUCKETS: [u64; 13] = [
+        1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 30000,
+    ];
+
+    #[derive(Clone, Default)]
+    struct RouteStat {
+        count: u64,
+        total_ms: f64,
+        max_ms: f64,
+    }
+
+    pub struct Metrics {
+        started: Instant,
+        requests: AtomicU64,
+        slow: AtomicU64,
+        errors_4xx: AtomicU64,
+        errors_5xx: AtomicU64,
+        by_status: Mutex<BTreeMap<u16, u64>>,
+        by_route: Mutex<BTreeMap<String, RouteStat>>,
+        buckets: Mutex<[u64; BUCKETS.len() + 1]>,
+    }
+
+    impl Metrics {
+        fn new() -> Self {
+            Self {
+                started: Instant::now(),
+                requests: AtomicU64::new(0),
+                slow: AtomicU64::new(0),
+                errors_4xx: AtomicU64::new(0),
+                errors_5xx: AtomicU64::new(0),
+                by_status: Mutex::new(BTreeMap::new()),
+                by_route: Mutex::new(BTreeMap::new()),
+                buckets: Mutex::new([0; BUCKETS.len() + 1]),
+            }
+        }
+
+        pub fn record(&self, route: &str, status: u16, elapsed_ms: f64) {
+            self.requests.fetch_add(1, Ordering::Relaxed);
+            if (400..500).contains(&status) {
+                self.errors_4xx.fetch_add(1, Ordering::Relaxed);
+            }
+            if status >= 500 {
+                self.errors_5xx.fetch_add(1, Ordering::Relaxed);
+            }
+            if elapsed_ms >= 1000.0 {
+                self.slow.fetch_add(1, Ordering::Relaxed);
+            }
+            if let Ok(mut map) = self.by_status.lock() {
+                *map.entry(status).or_insert(0) += 1;
+            }
+            if let Ok(mut map) = self.by_route.lock() {
+                let entry = map.entry(route.to_string()).or_default();
+                entry.count += 1;
+                entry.total_ms += elapsed_ms;
+                entry.max_ms = entry.max_ms.max(elapsed_ms);
+            }
+            if let Ok(mut buckets) = self.buckets.lock() {
+                let slot = BUCKETS
+                    .iter()
+                    .position(|upper| elapsed_ms <= *upper as f64)
+                    .unwrap_or(BUCKETS.len());
+                buckets[slot] += 1;
+            }
+        }
+
+        /// Approximate percentile from the bucket counts: the upper bound of the bucket
+        /// the target rank falls in. Approximate on purpose — the alternative is storing
+        /// every sample forever in a server that is meant to run unattended.
+        fn percentile(&self, quota: f64) -> u64 {
+            let Ok(buckets) = self.buckets.lock() else {
+                return 0;
+            };
+            let total: u64 = buckets.iter().sum();
+            if total == 0 {
+                return 0;
+            }
+            let target = (total as f64 * quota).ceil() as u64;
+            let mut seen = 0u64;
+            for (slot, count) in buckets.iter().enumerate() {
+                seen += count;
+                if seen >= target {
+                    return BUCKETS
+                        .get(slot)
+                        .copied()
+                        .unwrap_or(BUCKETS[BUCKETS.len() - 1]);
+                }
+            }
+            BUCKETS[BUCKETS.len() - 1]
+        }
+
+        pub fn to_json(&self, jobs: (usize, usize)) -> String {
+            let uptime = self.started.elapsed().as_secs();
+            let status = match self.by_status.lock() {
+                Ok(map) => map
+                    .iter()
+                    .map(|(code, count)| format!("\"{code}\":{count}"))
+                    .collect::<Vec<_>>()
+                    .join(","),
+                Err(_) => String::new(),
+            };
+            let routes = match self.by_route.lock() {
+                Ok(map) => map
+                    .iter()
+                    .map(|(route, stat)| {
+                        format!(
+                            "{}:{{\"count\":{},\"avgMs\":{:.1},\"maxMs\":{:.1}}}",
+                            super::json_str(route),
+                            stat.count,
+                            if stat.count > 0 {
+                                stat.total_ms / stat.count as f64
+                            } else {
+                                0.0
+                            },
+                            stat.max_ms
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(","),
+                Err(_) => String::new(),
+            };
+            let buckets = match self.buckets.lock() {
+                Ok(values) => values
+                    .iter()
+                    .enumerate()
+                    .map(|(slot, count)| {
+                        let label = BUCKETS
+                            .get(slot)
+                            .map(|b| format!("<={b}ms"))
+                            .unwrap_or(">30000ms".to_string());
+                        format!("{}:{count}", super::json_str(&label))
+                    })
+                    .collect::<Vec<_>>()
+                    .join(","),
+                Err(_) => String::new(),
+            };
+            format!(
+                r#"{{"uptimeSeconds":{uptime},"requests":{},"errors4xx":{},"errors5xx":{},"slowRequests":{},"p50Ms":{},"p95Ms":{},"status":{{{status}}},"routes":{{{routes}}},"latencyBuckets":{{{buckets}}},"jobs":{{"total":{},"running":{}}}}}"#,
+                self.requests.load(Ordering::Relaxed),
+                self.errors_4xx.load(Ordering::Relaxed),
+                self.errors_5xx.load(Ordering::Relaxed),
+                self.slow.load(Ordering::Relaxed),
+                self.percentile(0.50),
+                self.percentile(0.95),
+                jobs.0,
+                jobs.1
+            )
+        }
+    }
+
+    pub fn shared() -> &'static Metrics {
+        static METRICS: OnceLock<Metrics> = OnceLock::new();
+        METRICS.get_or_init(Metrics::new)
+    }
+}
+
 /// What the current connection asked for that every response must honour.
 ///
 /// Handlers take `&mut TcpStream` and nothing else, and threading a context through
@@ -4535,12 +4764,27 @@ fn respond_json(stream: &mut TcpStream, status: u16, body: &str) -> io::Result<(
 mod http_ctx {
     use std::cell::RefCell;
 
-    #[derive(Clone, Default)]
+    #[derive(Clone)]
     pub struct Request {
         /// `HEAD`: send the headers a `GET` would, and no body.
         pub head_only: bool,
         /// `If-None-Match`: the validator the client already has.
         pub if_none_match: Option<String>,
+        /// `METHOD /route`, for the metrics table.
+        pub route: String,
+        /// When this request started, for `X-Response-Time`.
+        pub started: std::time::Instant,
+    }
+
+    impl Default for Request {
+        fn default() -> Self {
+            Self {
+                head_only: false,
+                if_none_match: None,
+                route: String::new(),
+                started: std::time::Instant::now(),
+            }
+        }
     }
 
     thread_local! {
@@ -4558,6 +4802,9 @@ mod http_ctx {
 
 fn respond(stream: &mut TcpStream, status: u16, body: &str) -> io::Result<()> {
     let request = http_ctx::current();
+    let elapsed_ms = request.started.elapsed().as_secs_f64() * 1000.0;
+    metrics::shared().record(&request.route, status, elapsed_ms);
+    let timing = format!("X-Response-Time: {elapsed_ms:.1}ms\r\n");
     let etag = format!("\"fnv-{:016x}\"", fnv1a(body.as_bytes()));
     // A validator only makes sense for a body that succeeded; error text is not cached.
     // Only a successful body is worth revalidating; a preflight or an error is not.
@@ -4567,6 +4814,7 @@ fn respond(stream: &mut TcpStream, status: u16, body: &str) -> io::Result<()> {
             "HTTP/1.1 304 Not Modified\r\n\
              ETag: {etag}\r\n\
              Content-Length: 0\r\n\
+             {timing}\
              {}Connection: close\r\n\r\n",
             cors_headers()
         );
@@ -4586,7 +4834,7 @@ fn respond(stream: &mut TcpStream, status: u16, body: &str) -> io::Result<()> {
         "HTTP/1.1 {status} {reason}\r\n\
          Content-Type: application/json; charset=utf-8\r\n\
          Content-Length: {}\r\n\
-         {extra}{}Cache-Control: no-store\r\n\
+         {extra}{timing}{}Cache-Control: no-store\r\n\
          Connection: close\r\n\r\n{}",
         body.len(),
         cors_headers(),

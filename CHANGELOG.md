@@ -1,5 +1,28 @@
 # Changelog
 
+## [3.21.0] — 2026-11-11
+
+### Added
+
+- **`GET /metrics`**: requests, `errors4xx`/`errors5xx`, `slowRequests` (≥1 s),
+  `p50Ms`/`p95Ms` from fixed buckets (1 ms … 30 s), status-code distribution, per-route
+  count/avg/max, latency buckets and job totals. Buckets rather than every sample stored
+  forever: this server is meant to run unattended.
+- **Every response carries `X-Response-Time`**, exposed to browsers via
+  `Access-Control-Expose-Headers`. Recording happens in the response helpers — the same
+  single place that emits CORS — so a new endpoint is measured without anyone
+  remembering to measure it.
+- **`/health` now separates liveness from readiness**: `ok` is the process, `ready` is
+  "the served directory is readable". A test removes the root and asserts
+  `ok:true, ready:false` — a process that is alive but cannot answer about files should
+  not receive traffic.
+
+### Notes
+
+- `/metrics` counts itself after building the body, so its own request is one behind the
+  caller's view. Documented rather than fudged: a metric that lies is worse than one that
+  is late by one.
+
 ## [3.20.0] — 2026-11-11
 
 ### Added

@@ -2931,3 +2931,55 @@ fn the_spec_matches_the_live_server() {
     cell_want.sort_unstable();
     assert_eq!(cell_want, cell_keys, "/cell spec fields drifted");
 }
+
+/// Every response is timed and counted, and the table says which route and status.
+#[test]
+fn metrics_count_requests_and_latency() {
+    let dir = TempDir::new("metrics");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n2,B\n").unwrap();
+    let server = start(&dir.0);
+
+    for _ in 0..3 {
+        get(&server.addr, "/rows?path=t.csv&count=1");
+    }
+    get(&server.addr, "/rows?path=nope.csv");
+
+    let (code, raw) = raw_request(&server.addr, "GET", "/rows?path=t.csv&count=1", &[]);
+    assert_eq!(code, 200);
+    assert!(
+        raw.contains("X-Response-Time:"),
+        "every response is timed: {raw}"
+    );
+
+    let (code, body) = get(&server.addr, "/metrics");
+    assert_eq!(code, 200, "{body}");
+    // Five requests so far: /metrics counts itself after it is built, which is why the
+    // number is one behind the caller's view rather than one ahead.
+    assert!(body.contains(r#""requests":5"#), "{body}");
+    assert!(body.contains(r#""errors4xx":1"#), "{body}");
+    assert!(body.contains(r#""GET /rows""#), "{body}");
+    assert!(body.contains(r#""p50Ms":"#), "{body}");
+    assert!(body.contains(r#""latencyBuckets""#), "{body}");
+    assert!(body.contains(r#""jobs":{"total":"#), "{body}");
+}
+
+/// Readiness is about the root being usable, not the process being alive.
+#[test]
+fn health_separates_liveness_from_readiness() {
+    let dir = TempDir::new("health");
+    std::fs::write(dir.join("t.csv"), "id\n1\n").unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = get(&server.addr, "/health");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""ok":true"#), "{body}");
+    assert!(body.contains(r#""ready":true"#), "{body}");
+    assert!(body.contains(r#""version":"#), "{body}");
+
+    // Remove the root: the process is alive, but it cannot answer about files.
+    std::fs::remove_dir_all(&dir.0).ok();
+    let (code, body) = get(&server.addr, "/health");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""ok":true"#), "{body}");
+    assert!(body.contains(r#""ready":false"#), "{body}");
+}

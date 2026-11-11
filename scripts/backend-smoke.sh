@@ -113,6 +113,18 @@ HEAD_CODE="$(curl -s -o /dev/null -w '%{http_code}' -I "$URL/rows?path=orders.cs
 if [ "$HEAD_CODE" = "200" ]; then printf '  ok   HEAD answers 200\n'
 else printf '  FAIL HEAD returned %s\n' "$HEAD_CODE"; failed=$((failed + 1)); fi
 
+echo "== observability =="
+HEALTH="$(curl -s "$URL/health")"
+has "health: ok"               "$HEALTH" '"ok":true'
+has "health: ready"            "$HEALTH" '"ready":true'
+has "health: version"          "$HEALTH" '"version":'
+METRICS="$(curl -s "$URL/metrics")"
+has "metrics: requests"        "$METRICS" '"requests":'
+has "metrics: percentiles"     "$METRICS" '"p95Ms":'
+has "metrics: routes"          "$METRICS" '"GET /rows"'
+TIMING="$(curl -s -D - -o /dev/null "$URL/rows?path=orders.csv&count=1")"
+has "timing header"            "$TIMING" 'X-Response-Time:'
+
 echo "== columnar cache =="
 has "cache: advertised"        "$CAPS" '"caches":["parquet"]'
 has "cache: listed as write"   "$CAPS" 'POST /parquet'

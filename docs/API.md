@@ -282,6 +282,8 @@ written on refusal, and `actual` says what the value is now.
 | GET | `/sheet` | 概况：操作数、最后一条、capabilities、layout、indexed |
 | GET | `/capabilities` | 能力发现（reads/writes/actions/limits）|
 | GET | `/spec` | **机器可读契约**：端点、参数、响应字段、错误码；代码生成，有测试对齐真实响应 |
+| GET | `/metrics` | 请求数、p50/p95、慢请求、状态码分布、按路由的计数、job 数 |
+| GET | `/health` | 存活 + 就绪（`ready` = 根目录可读），带版本 |
 | GET | `/edit` | **只读**：journal 状态 |
 | POST | `/edit` | 写入（`action=` 见下表，`expect=` 可用）|
 | GET | `/export` | 把查询结果当 CSV 直接下载（不写文件）|
