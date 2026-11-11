@@ -113,6 +113,32 @@ HEAD_CODE="$(curl -s -o /dev/null -w '%{http_code}' -I "$URL/rows?path=orders.cs
 if [ "$HEAD_CODE" = "200" ]; then printf '  ok   HEAD answers 200\n'
 else printf '  FAIL HEAD returned %s\n' "$HEAD_CODE"; failed=$((failed + 1)); fi
 
+echo "== robustness =="
+# A client that asks and walks away must not take the server with it.
+( curl -s -m 1 "$URL/rows?path=orders.csv&count=2000" >/dev/null 2>&1 & ) ; sleep 0.2
+HEALTH_AFTER="$(curl -s "$URL/health")"
+has "survives a hangup"        "$HEALTH_AFTER" '"ok":true'
+# Twenty at once, alternating a filtered page and a metrics read.
+# PIDs are collected and waited on individually: a bare `wait` would also wait for the
+# server this script started, which never exits.
+CONC_PIDS=""
+for i in $(seq 1 20); do
+  if [ $((i % 2)) -eq 0 ]; then
+    curl -s -o /dev/null -w '%{http_code}' "$URL/rows?path=orders.csv&where=city%3DCDMX&count=5&columns=id,city" > "$WORK/conc_$i.txt" &
+  else
+    curl -s -o /dev/null -w '%{http_code}' "$URL/metrics" > "$WORK/conc_$i.txt" &
+  fi
+  CONC_PIDS="$CONC_PIDS $!"
+done
+for pid in $CONC_PIDS; do wait "$pid" 2>/dev/null; done
+CONC_FAILED=0
+for i in $(seq 1 20); do
+  CODE="$(cat "$WORK/conc_$i.txt" 2>/dev/null)"
+  if [ "$CODE" != "200" ]; then CONC_FAILED=$((CONC_FAILED + 1)); fi
+done
+if [ "$CONC_FAILED" = "0" ]; then printf '  ok   20 concurrent requests all 200\n'
+else printf '  FAIL %s of 20 concurrent requests failed\n' "$CONC_FAILED"; failed=$((failed + 1)); fi
+
 echo "== cost tier =="
 SHEET_COST="$(curl -s "$URL/sheet?path=orders.csv")"
 has "sheet: cost tier"         "$SHEET_COST" '"tier":'

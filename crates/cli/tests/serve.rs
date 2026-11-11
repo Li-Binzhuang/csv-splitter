@@ -54,10 +54,21 @@ impl Drop for Server {
 }
 
 fn start(root: &PathBuf) -> Server {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+    start_with_env(root, &[])
+}
+
+/// Start a server with extra environment variables — the timeouts and limits are knobs
+/// a test should be able to tighten without waiting ten seconds.
+fn start_with_env(root: &PathBuf, env: &[(&str, &str)]) -> Server {
+    let mut child = Command::new(env!("CARGO_BIN_EXE_csv-splitter"));
+    child
         .args(["serve", "--root"])
         .arg(root)
-        .args(["--addr", "127.0.0.1:0"])
+        .args(["--addr", "127.0.0.1:0"]);
+    for (name, value) in env {
+        child.env(name, value);
+    }
+    let mut child = child
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
         .spawn()
@@ -3188,4 +3199,121 @@ fn sheet_publishes_the_cost_tier() {
     assert_eq!(code, 200, "{body}");
     assert!(body.contains(r#""tier":"warm""#), "{body}");
     assert!(body.contains(r#""filterFirstPageMs":260"#), "{body}");
+}
+
+/// A client that hangs up mid-response does not take the server with it.
+#[test]
+fn a_client_that_hangs_up_does_not_kill_the_server() {
+    let dir = TempDir::new("hangup");
+    let mut text = String::from("id,city\n");
+    for i in 0..500 {
+        text.push_str(&format!("{i},C{}\n", i % 7));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0);
+
+    for _ in 0..5 {
+        let mut stream = TcpStream::connect(&server.addr).unwrap();
+        // Ask for a large window, then walk away without reading the body.
+        write!(
+            stream,
+            "GET /rows?path=t.csv&count=500 HTTP/1.1\r\nHost: x\r\n\r\n"
+        )
+        .unwrap();
+        drop(stream);
+    }
+    std::thread::sleep(std::time::Duration::from_millis(200));
+
+    let (code, body) = get(&server.addr, "/health");
+    assert_eq!(code, 200, "server died after a hangup: {body}");
+    assert!(body.contains(r#""ready":true"#), "{body}");
+}
+
+/// Twenty clients at once answer correctly, and the metrics table sees them.
+#[test]
+fn twenty_concurrent_requests_do_not_interfere() {
+    let dir = TempDir::new("concurrent");
+    let mut text = String::from("id,city,amount\n");
+    for i in 0..2000 {
+        text.push_str(&format!("{i},{},{}\n", i % 5, i));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0);
+    let addr = server.addr.clone();
+
+    let handles: Vec<_> = (0..20)
+        .map(|i| {
+            let addr = addr.clone();
+            std::thread::spawn(move || {
+                if i % 2 == 0 {
+                    let (code, body) = get(
+                        &addr,
+                        "/rows?path=t.csv&where=city%3D0&count=5&columns=id,amount",
+                    );
+                    (code, body.contains(r#""count":5"#), body)
+                } else {
+                    let (code, body) = get(&addr, "/metrics");
+                    (code, body.contains(r#""requests":"#), body)
+                }
+            })
+        })
+        .collect();
+
+    let results: Vec<(u16, bool, String)> =
+        handles.into_iter().map(|h| h.join().unwrap()).collect();
+    let failures: Vec<&str> = results
+        .iter()
+        .filter(|(code, ok, _)| *code != 200 || !ok)
+        .map(|(_, _, body)| body.as_str())
+        .collect();
+    assert!(failures.is_empty(), "{failures:#?}");
+
+    // And the server is still healthy afterwards, with the requests counted.
+    let (code, body) = get(&server.addr, "/metrics");
+    assert_eq!(code, 200, "{body}");
+    let counted: u64 = body
+        .split(r#""requests":"#)
+        .nth(1)
+        .and_then(|rest| rest.split([',', '}']).next())
+        .and_then(|n| n.parse().ok())
+        .unwrap_or(0);
+    assert!(
+        counted >= 20,
+        "expected at least 20 requests counted, got {counted}: {body}"
+    );
+}
+
+/// When a query times out the client learns that, and nothing else.
+#[test]
+fn a_timeout_does_not_leak_the_engine_text() {
+    let dir = TempDir::new("timeout");
+    let mut text = String::from("id,city\n");
+    for i in 0..2000 {
+        text.push_str(&format!("{i},C{}\n", i % 9));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    // A one-millisecond budget: the engine is interrupted almost immediately.
+    let server = start_with_env(&dir.0, &[("CSV_SPLITTER_QUERY_TIMEOUT_MS", "1")]);
+
+    let (code, body) = get(
+        &server.addr,
+        "/query?path=t.csv&sql=SELECT%20count(*)%20FROM%20t",
+    );
+    assert_eq!(code, 504, "{body}");
+    assert!(
+        body.contains(r#""error":"the query was interrupted""#),
+        "{body}"
+    );
+    assert!(body.contains(r#""hint""#), "the hint stays: {body}");
+    for leak in ["INTERRUPT", "SQL Error", "Binder Error", "detail"] {
+        assert!(
+            !body.contains(leak),
+            "engine text leaked to the client ({leak}): {body}"
+        );
+    }
+
+    // The advertised limit is the one in force, not a hardcoded 30.
+    let (code, body) = get(&server.addr, "/capabilities");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""querySeconds":0"#), "{body}");
 }

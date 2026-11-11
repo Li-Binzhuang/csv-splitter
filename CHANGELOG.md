@@ -1,5 +1,28 @@
 # Changelog
 
+## [3.25.0] — 2026-11-11
+
+### Fixed
+
+- **`504` was leaking the engine's own text.** A timeout answered
+  `"detail":"INTERRUPT Error: Interrupted!"` — the last place where DuckDB's wording
+  reached a user. Timeouts now carry `error` + `parameter` + `hint` only; the engine's
+  message stays in the server's own error path (400 for a bad query still explains
+  itself, because that message is about the caller's SQL).
+
+### Added
+
+- **`CSV_SPLITTER_QUERY_TIMEOUT_MS`** tunes the query budget (default 30 s), and
+  `/capabilities` and `/spec` publish the effective `querySeconds` instead of a
+  hardcoded 30. It is also how the timeout path is tested without waiting half a minute.
+
+### Verified
+
+- Robustness is asserted, not described: a client that hangs up mid-response (five times
+  in a row) leaves the server healthy; 20 concurrent requests all answer correctly and
+  `/metrics` counts them; a one-millisecond budget produces `504` with no `INTERRUPT`,
+  `Binder Error` or `detail` in the body.
+
 ## [3.24.0] — 2026-11-11
 
 ### Performance

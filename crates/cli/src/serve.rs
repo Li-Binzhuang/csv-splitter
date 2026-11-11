@@ -589,6 +589,16 @@ fn journal_stamp(path: &Path) -> String {
     )
 }
 
+/// The query timeout, in milliseconds. Tunable for an operator whose box is slower (or
+/// for a test that needs to see the timeout path without waiting thirty seconds).
+fn query_timeout_ms() -> u64 {
+    std::env::var("CSV_SPLITTER_QUERY_TIMEOUT_MS")
+        .ok()
+        .and_then(|value| value.parse().ok())
+        .filter(|ms| *ms > 0)
+        .unwrap_or(csv_splitter_core::sql::DEFAULT_TIMEOUT_MS)
+}
+
 /// `GET /metrics` — request counts, latency percentiles and error distribution.
 ///
 /// Counts come from one place (`respond`), so a new endpoint is measured without
@@ -649,11 +659,12 @@ fn spec_endpoint(stream: &mut TcpStream) -> io::Result<()> {
     };
     let fields = params(SPEC_FIELDS);
     let body = format!(
-        r#"{{"version":{},"cors":true,"etag":true,"reads":[{}],"writes":[{}],"pathRequired":[{}],"caches":["parquet"],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"queryRows":10000,"querySeconds":30}},"params":{},"fields":{},"errors":{{"400":"your request is wrong (path, column, SQL, parameter)","404":"the target is not there","405":"wrong method","409":"a compare-and-set lost","422":"this file cannot be read","504":"the engine was interrupted after 30 s"}}}}"#,
+        r#"{{"version":{},"cors":true,"etag":true,"reads":[{}],"writes":[{}],"pathRequired":[{}],"caches":["parquet"],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"queryRows":10000,"querySeconds":{}}},"params":{},"fields":{},"errors":{{"400":"your request is wrong (path, column, SQL, parameter)","404":"the target is not there","405":"wrong method","409":"a compare-and-set lost","422":"this file cannot be read","504":"the engine was interrupted after 30 s"}}}}"#,
         json_str(env!("CARGO_PKG_VERSION")),
         routes.join(","),
         writes.join(","),
         needed.join(","),
+        query_timeout_ms() / 1000,
         params(SPEC_PARAMS),
         fields
     );
@@ -840,12 +851,13 @@ fn capabilities_endpoint(stream: &mut TcpStream) -> io::Result<()> {
         stream,
         200,
         &format!(
-            r#"{{"version":{},"reads":[{}],"pathRequired":[{}],"writes":[{}],"editActions":[{}],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"columnsProjection":true,"horizontalPaging":true,"queryRows":10000,"querySeconds":30}},"writeGuards":["expect=compare-and-set"],"caches":["parquet"],"notes":{}}}"#,
+            r#"{{"version":{},"reads":[{}],"pathRequired":[{}],"writes":[{}],"editActions":[{}],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"columnsProjection":true,"horizontalPaging":true,"queryRows":10000,"querySeconds":{}}},"writeGuards":["expect=compare-and-set"],"caches":["parquet"],"notes":{}}}"#,
             json_str(env!("CARGO_PKG_VERSION")),
             reads_json.join(","),
             PATH_REQUIRED.iter().map(|r| json_str(r)).collect::<Vec<_>>().join(","),
             writes_json.join(","),
             actions.join(","),
+            query_timeout_ms() / 1000,
             json_str(
                 "rows are 1-based; columns= narrows a window; expect= refuses a write unless the cell still holds that value (409)"
             )
@@ -2563,12 +2575,9 @@ fn start_parquet(
             Err(e) => Err(e),
         };
         let outcome = match columns {
-            Ok(columns) => csv_splitter_core::sql_cache::build(
-                &path,
-                delim,
-                &columns,
-                csv_splitter_core::sql::DEFAULT_TIMEOUT_MS * 20,
-            ),
+            Ok(columns) => {
+                csv_splitter_core::sql_cache::build(&path, delim, &columns, query_timeout_ms() * 20)
+            }
             Err(e) => Err(e),
         };
         match outcome {
@@ -3731,7 +3740,7 @@ fn query(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) 
         statement,
         limit,
         delimiter(params),
-        sql::DEFAULT_TIMEOUT_MS,
+        query_timeout_ms(),
     ) {
         Ok(result) => {
             let cols: Vec<String> = result.columns.iter().map(|c| json_str(c)).collect();
@@ -3761,9 +3770,8 @@ fn query(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) 
             stream,
             504,
             &format!(
-                r#"{{"error":"the query was interrupted","parameter":"sql","hint":{},"detail":{}}}"#,
-                json_str("add LIMIT or a WHERE clause, or ask for less data"),
-                json_str(&e.to_string())
+                r#"{{"error":"the query was interrupted","parameter":"sql","hint":{}}}"#,
+                json_str("add LIMIT or a WHERE clause, or ask for less data; the engine was stopped at the time limit")
             ),
         ),
         // An SQL mistake is the caller's mistake: say so with the same three-field
@@ -4099,7 +4107,7 @@ fn respond_filtered_page(
         statement,
         count as usize + 1,
         delimiter(params),
-        sql::DEFAULT_TIMEOUT_MS,
+        query_timeout_ms(),
     ) {
         Ok(result) => result,
         Err(e) if e.kind() == io::ErrorKind::TimedOut => {
@@ -4107,10 +4115,9 @@ fn respond_filtered_page(
                 stream,
                 504,
                 &format!(
-                    r#"{{"error":"the query was interrupted","parameter":{},"hint":{},"detail":{}}}"#,
+                    r#"{{"error":"the query was interrupted","parameter":{},"hint":{}}}"#,
                     json_str(parameter),
-                    json_str("narrow the filter or page without one"),
-                    json_str(&e.to_string())
+                    json_str("narrow the filter or page without one; the engine was stopped at the time limit")
                 ),
             )
         }
