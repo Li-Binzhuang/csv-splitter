@@ -82,6 +82,12 @@ $ csv-splitter serve --root .  # 本地 JSON API，打开 http://127.0.0.1:8787/
 
 ![Extract](docs/extract.png)
 
+## 部署 / Deployment
+
+`docs/DEPLOY.md`：三种安装方式、`serve` 的配置项、systemd unit（仓库里有
+[`deploy/csv-splitter.service`](deploy/csv-splitter.service)）、升级与回滚、安全边界
+（**没有鉴权**，默认只监听 loopback）。
+
 ## 验收 / Acceptance
 
 `docs/ACCEPTANCE.md`：目标的每一条都指向**能执行的东西**——库 API、CLI 命令、HTTP 端点的名字，以及锁住它们的测试名。

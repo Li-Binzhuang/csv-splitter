@@ -81,6 +81,20 @@
 - `/columns` 不再为了行数建索引：没有索引时 `rows: null`，**明说不知道**，而不是花 0.3 秒去算
 - `/meta` 是唯一会（且只一次）建索引的端点，0.24 s 在预算内
 
+
+## 发布与部署（goal：能发布 / 能部署 / 能跨平台）
+
+| 项 | 证据 |
+|---|---|
+| 三平台构建 | `release.yml` 构建 linux-x86_64 / macos-arm64 / macos-x86_64 / windows-x86_64，产物 + `.sha256` |
+| Windows 编译 | Unix-only 代码（信号、symlink）已 `cfg(unix)` 隔离；`windows-check` job 在 PR 与手动触发时跑 `cargo check -p csv-splitter-cli`（windows-latest）|
+| CI 无 GUI 依赖 | 两个工作流都不再安装 libgtk-3-dev / libxdo-dev / fonts-noto-cjk |
+| 缓存不撑爆配额 | 两个工作流都用滚动 key（`...-rolling-<run_id>`）|
+| 部署材料 | [`DEPLOY.md`](DEPLOY.md) + [`deploy/csv-splitter.service`](../deploy/csv-splitter.service) |
+| 配置项 | `--root` / `--port` / `--addr`、`CSV_SPLITTER_QUERY_TIMEOUT_MS`，`/capabilities` 发布生效值 |
+| 升级/回滚 | 换二进制即可；`.idx`/`.parquet` 可重建，只有 `.journal` 是数据 |
+| 边界写明 | 单机单用户、无鉴权、默认 loopback |
+
 ## 交付验收（3.25.0，真实 2.5 GB / 782 列 / 684 917 行，全新副本）
 
 **原文件 sha256**：`34e8d6f9…578d3` 前后一致；服务运行后目录里只有 `real.csv`、`.idx`、`.parquet` 三个文件，原文件未被写入。

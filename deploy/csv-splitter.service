@@ -1,0 +1,46 @@
+# csv-splitter backend as a systemd service.
+#
+# Install:
+#   sudo cp deploy/csv-splitter.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now csv-splitter
+#
+# The binary is expected at /usr/local/bin/csv-splitter and the served directory at
+# /srv/csv-splitter. Point --root at your own data; nothing else is required.
+#
+# Bound to loopback on purpose: this build has no authentication and is single-user.
+# To reach it from another machine, put it behind a reverse proxy that authenticates,
+# do not bind 0.0.0.0 directly.
+
+[Unit]
+Description=csv-splitter backend
+Documentation=https://github.com/Li-Binzhuang/csv-splitter/blob/main/docs/DEPLOY.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=csv-splitter
+Group=csv-splitter
+WorkingDirectory=/srv/csv-splitter
+ExecStart=/usr/local/bin/csv-splitter serve --root /srv/csv-splitter --port 8787
+Restart=on-failure
+RestartSec=2
+
+# Graceful stop: SIGTERM stops accepting, lets in-flight requests finish and gives
+# running jobs up to five seconds before the process exits 0.
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+# The process only reads the served directory and writes sidecars next to the files
+# it serves (.idx, .parquet, .journal). It never rewrites the CSV itself.
+ReadWritePaths=/srv/csv-splitter
+
+# Hardening that does not get in the way.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

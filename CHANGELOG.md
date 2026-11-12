@@ -1,5 +1,31 @@
 # Changelog
 
+## [3.28.0] — 2026-11-12
+
+### Build
+
+- **The release workflow no longer installs GUI packages.** Both workflows still ran
+  `apt-get install libgtk-3-dev libxdo-dev fonts-noto-cjk` — a minute per run for a GTK
+  dependency tree the CLI never needed, left over from the removed GUI crate. Gone from
+  both; the release cache key is rolling now, like CI's, instead of per-lockfile.
+- **Windows is a plausible build again.** Signal handling is `cfg(unix)` with a no-op
+  elsewhere (Windows has no SIGTERM to catch; Ctrl+C is what a console user expects), and
+  the two unix-only tests (symlink escape, SIGTERM) are `cfg(unix)`. A `windows-check` job
+  runs `cargo check -p csv-splitter-cli` on windows-latest for pull requests and manual
+  dispatch — not on every push, because MSVC plus bundled DuckDB costs about ten minutes.
+  - An ubuntu cross-check with `--target x86_64-pc-windows-msvc` was the first idea and
+    does not work: bzip2/zstd/lzma/duckdb have native build scripts that need a platform
+    toolchain, so the check dies inside the `-sys` crates, before any of our code.
+
+### Added
+
+- **`docs/DEPLOY.md` and `deploy/csv-splitter.service`**: installation by release
+  artifact, `cargo install`, or source; the `serve` knobs and the one environment
+  variable; a hardened systemd unit with `KillSignal=SIGTERM` and `TimeoutStopSec=15`;
+  which files are data (`.journal`) and which are rebuildable (`.idx`, `.parquet`);
+  upgrade and rollback as "swap the binary"; and an explicit security table whose last two
+  rows say "no authentication" and "no multi-user isolation".
+
 ## [3.27.0] — 2026-11-11
 
 ### Added

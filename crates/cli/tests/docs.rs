@@ -1151,6 +1151,9 @@ fn every_documented_flag_exists() {
         "--version",
         "--quiet",
         "--benches",
+        // systemctl's flag, in the deployment example.
+        "--now",
+        "--system",
     ];
 
     let mut docs: Vec<std::path::PathBuf> = Vec::new();
