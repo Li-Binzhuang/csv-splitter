@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.31.0] — 2026-11-12
+
+### Added
+
+- **`scripts/install-check.sh`**: the three documented install paths now each end with
+  evidence. Source build, `cargo install --path crates/cli`, and the release artifact are
+  each probed with `--version`, `demo`, and `serve --check` — a table of `ok` lines or a
+  non-zero exit.
+  - `cargo install` is attempted `--offline` first (the dependency cache is warm from the
+    build) and falls back to a networked install exactly once on a clean machine, saying
+    so. The first attempt failed here with "transfer too slow", which is what a clean
+    cache looks like on a bad connection.
+- `backend-smoke.sh` runs `serve --check` against the served directory **before** starting
+  the server — the same command a systemd `ExecStartPre` uses — so the deployment
+  self-check is covered by the HTTP regression too (79 checks).
+
 ## [3.30.0] — 2026-11-12
 
 ### Added

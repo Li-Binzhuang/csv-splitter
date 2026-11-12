@@ -46,6 +46,13 @@ want_code_post() { # want_code_post <description> <expected-code> <path>
   else printf '  FAIL %s (want %s got %s)\n' "$1" "$2" "$got"; failed=$((failed + 1)); fi
 }
 
+# The deployment self-check, before the server is even started — the same command a
+# systemd ExecStartPre runs.
+CHECK_OUT="$("$BIN" serve --check --root "$WORK" --addr 127.0.0.1:0 2>&1)"
+has "deploy self-check: root readable" "$CHECK_OUT" 'root readable'
+has "deploy self-check: bind"          "$CHECK_OUT" 'bind'
+has "deploy self-check: ok"            "$CHECK_OUT" 'configuration ok'
+
 echo "== framework surface =="
 CAPS="$(curl -s "$URL/capabilities")"
 has "capabilities list reads"    "$CAPS" '"/rows"'

@@ -11,6 +11,14 @@
 | `cargo install` | `cargo install --path crates/cli` | 本机已有 Rust |
 | 源码构建 | `cargo build --release -p csv-splitter-cli` | 要改代码 |
 
+**三种路径都有可执行的验证**，不是只写在文档里：
+
+```bash
+scripts/release-check.sh   # release 产物：解压 → 校验和比对 → demo → serve → SIGTERM
+scripts/install-check.sh   # 三条路径各跑一遍：源码构建 / cargo install / release 产物
+```
+
+
 发布产物按平台命名：`csv-splitter-linux-x86_64`、`csv-splitter-macos-arm64`、
 `csv-splitter-macos-x86_64`、`csv-splitter-windows-x86_64`（`.zip`），每个都带 `.sha256`。
 
@@ -35,7 +43,22 @@ scripts/release-check.sh                                # 打包后解压，跑�
 `/health`、`/spec`、`/rows` → `SIGTERM` 停机。发布流程调用的是**同一个**
 `scripts/package.sh`，所以本地验过的打包步骤就是 tag 时跑的步骤。
 
-本机实测（3.28.0，macOS arm64）：
+`install-check.sh` 的输出（3.30.0，macOS arm64）：
+
+```
+== source build ==
+  ok   source         csv-splitter 3.30.0
+  ok   source         demo + serve --check
+== cargo install --path ==
+  ok   cargo-install  csv-splitter 3.30.0
+  ok   cargo-install  demo + serve --check
+== release artifact ==
+  ok   checksum matches
+  ...
+== install check passed (3 paths) ==
+```
+
+本机实测（3.30.0，macOS arm64）：
 
 | 项 | 值 |
 |---|---|
