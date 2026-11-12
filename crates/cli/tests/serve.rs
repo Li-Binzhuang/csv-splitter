@@ -3026,6 +3026,10 @@ fn health_separates_liveness_from_readiness() {
 }
 
 /// A symlink is a path, and a path must resolve inside the root.
+///
+/// Unix only: creating a symlink on Windows needs a privilege and different APIs, and
+/// the path check itself is platform independent.
+#[cfg(unix)]
 #[test]
 fn a_symlink_cannot_escape_the_root() {
     let outside = TempDir::new("symlink_outside");
@@ -3101,6 +3105,7 @@ fn oversized_requests_are_refused() {
 }
 
 /// SIGTERM is a shutdown, not a kill: the listener closes and the process exits.
+#[cfg(unix)]
 #[test]
 fn a_terminated_server_stops_accepting() {
     let dir = TempDir::new("sigterm");

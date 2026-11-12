@@ -81,14 +81,14 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ matrix.target }}-release-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ matrix.target }}-release-
+          # Rolling key: one entry survives per target. A per-lockfile key accumulated
+          # multi-gigabyte archives and pushed the repository past its cache quota.
+          key: ${{ matrix.target }}-release-rolling-${{ github.run_id }}
+          restore-keys: ${{ matrix.target }}-release-rolling-
 
-      - name: Install Linux dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libxdo-dev fonts-noto-cjk
+      # No GTK/xdo/font packages: they belonged to the removed GUI crate. The CLI and
+      # the HTTP backend are pure Rust plus a bundled DuckDB, and DuckDB ships its own
+      # C++ sources, so a plain runner is enough.
 
       - name: Build release
         run: cargo build --release --target ${{ matrix.target }} -p csv-splitter-cli

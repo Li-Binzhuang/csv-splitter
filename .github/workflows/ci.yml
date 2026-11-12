@@ -95,3 +95,26 @@ jobs:
           name: test-logs
           path: "*.log"
           retention-days: 7
+
+  # Windows is not a target we test on every push: MSVC plus a bundled DuckDB costs
+  # about ten minutes, and the CLI does not change per platform very often. It is
+  # verified on pull requests and on demand (`workflow_dispatch`), which is exactly
+  # when a release is being prepared — so a Windows build error is caught before the
+  # tag rather than after it.
+  windows-check:
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: windows-cargo-rolling-${{ github.run_id }}
+          restore-keys: windows-cargo-rolling-
+      - name: Check the CLI on Windows
+        run: cargo check -p csv-splitter-cli

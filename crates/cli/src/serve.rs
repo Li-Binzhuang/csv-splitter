@@ -100,12 +100,18 @@ pub fn run(cfg: ServerConfig) -> io::Result<()> {
 /// Written from a signal handler, so it is a plain atomic store and nothing else.
 static SHUTDOWN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
+#[cfg(unix)]
 extern "C" fn on_signal(_signal: libc::c_int) {
     SHUTDOWN.store(true, std::sync::atomic::Ordering::SeqCst);
 }
 
 /// Install the handlers. Called once by `run`, not by tests, so a test process is not
 /// accidentally shut down by another test's signal.
+///
+/// Unix only: Windows has no SIGTERM to catch, and the default Ctrl+C handling is what a
+/// user of a console binary expects there. The graceful path still exists — it is just
+/// triggered by process termination rather than by a signal we install.
+#[cfg(unix)]
 fn install_signal_handlers() {
     unsafe {
         // `signal` wants a numeric handler; going through a pointer keeps the function's
@@ -117,6 +123,11 @@ fn install_signal_handlers() {
         libc::signal(libc::SIGINT, handler);
         libc::signal(libc::SIGTERM, handler);
     }
+}
+
+#[cfg(not(unix))]
+fn install_signal_handlers() {
+    // Nothing to install: Ctrl+C terminates the process directly on Windows.
 }
 
 /// Remove materialised sheet copies left by an earlier, killed server.
