@@ -43,6 +43,7 @@ check "dedupe"     "$BIN" dedupe orders.csv --by cust_no -o d.csv
 check "columns"    "$BIN" columns orders.csv --keep id,city -o c.csv
 check "schema"      "$BIN" schema orders.csv --sample 5
 check "schema --has" "$BIN" schema orders.csv --has city
+check "serve --check" "$BIN" serve --check --root . --addr 127.0.0.1:0
 check "cache --status (无缓存)" "$BIN" cache orders.csv --status
 check "cache --build" "$BIN" cache orders.csv --build
 check "cache --status (有缓存)" "$BIN" cache orders.csv --status

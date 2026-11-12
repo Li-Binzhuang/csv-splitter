@@ -4908,3 +4908,36 @@ fn schema_diff_reports_column_set_changes() {
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(stdout.contains(r#""removed":["amount"]"#), "{stdout}");
 }
+
+/// `serve --check` is the one command a deployment can gate on.
+#[test]
+fn serve_check_reports_the_configuration() {
+    let dir = TempDir::new("servecheck");
+    std::fs::write(dir.join("t.csv"), "id\n1\n").unwrap();
+
+    let out = std::process::Command::new(bin())
+        .args(["serve", "--check", "--root"])
+        .arg(&dir.0)
+        // Port 0: the check binds a free port, so the test never races a real service.
+        .args(["--addr", "127.0.0.1:0"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(out.status.success(), "{text}");
+    assert!(text.contains("version"), "{text}");
+    assert!(text.contains("root readable"), "{text}");
+    assert!(text.contains("bind"), "{text}");
+    assert!(text.contains("configuration ok"), "{text}");
+
+    // A root that is not there must fail, and say which check failed.
+    let out = std::process::Command::new(bin())
+        .args(["serve", "--check", "--root", "/nope"])
+        .args(["--addr", "127.0.0.1:0"])
+        .output()
+        .unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(!out.status.success(), "a missing root must fail: {text}");
+    assert!(text.contains("FAIL"), "{text}");
+    assert!(text.contains("check(s) failed"), "{text}");
+    std::fs::remove_dir_all(&dir.0).ok();
+}

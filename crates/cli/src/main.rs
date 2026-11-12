@@ -416,6 +416,10 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         &[
             ("--addr", "Bind address (127.0.0.1:0 picks a free port)"),
             ("--port", "Bind to 127.0.0.1:<port> (shorthand for --addr)"),
+            (
+                "--check",
+                "Verify the configuration and exit (root readable, port bindable)",
+            ),
             ("--root", "Directory to serve / list"),
         ],
     ),
@@ -3031,6 +3035,7 @@ fn cmd_serve(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
     let mut root: Option<PathBuf> = None;
     let mut addr = "127.0.0.1:8787".to_string();
+    let mut check = false;
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
@@ -3060,6 +3065,7 @@ fn cmd_serve(args: &[String]) -> i32 {
                     return 2;
                 }
             },
+            "--check" => check = true,
             "-h" | "--help" => {
                 print_command_help("serve");
                 return 0;
@@ -3076,6 +3082,9 @@ fn cmd_serve(args: &[String]) -> i32 {
         eprintln!("error: serve needs --root <dir>");
         return 2;
     };
+    if check {
+        return serve::check(&addr, &root);
+    }
     match serve::run(serve::ServerConfig { addr, root }) {
         Ok(()) => 0,
         Err(_) => 1, // the reporter already printed the reason

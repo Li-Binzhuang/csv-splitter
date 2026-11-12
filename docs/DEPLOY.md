@@ -55,10 +55,26 @@ csv-splitter serve --root /srv/csv-splitter --port 8787
 | `--root` | 当前目录 | 只服务这个目录下的文件；越界与符号链接一律拒 |
 | `--port` | 8787 | 绑到 `127.0.0.1:<port>` |
 | `--addr` | — | 完整绑定地址；`127.0.0.1:0` 让内核挑端口 |
+| `--check` | — | **只做自检然后退出**：根目录可读、端口可绑、版本打印；失败退出码 1 |
 
 | 环境变量 | 默认 | 说明 |
 |---|---|---|
 | `CSV_SPLITTER_QUERY_TIMEOUT_MS` | 30000 | 单条 SQL / 过滤查询的时间预算；`/capabilities` 会发布生效值 |
+
+部署前先自检（systemd 的 `ExecStartPre` 就是这么用的）：
+
+```bash
+$ csv-splitter serve --check --root /srv/csv-splitter --port 8787
+  ok     version                3.29.0 (linux)
+  ok     root                   /srv/csv-splitter
+  ok     root readable          the directory lists
+  ok     bind                   127.0.0.1:8787
+== configuration ok ==
+$ echo $?
+0
+```
+
+根目录不存在或端口被占时退出码是 1，并明确指出哪一项失败。
 
 启动后的三个探针：
 

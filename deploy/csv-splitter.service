@@ -23,6 +23,7 @@ Type=simple
 User=csv-splitter
 Group=csv-splitter
 WorkingDirectory=/srv/csv-splitter
+ExecStartPre=/usr/local/bin/csv-splitter serve --check --root /srv/csv-splitter --port 8787
 ExecStart=/usr/local/bin/csv-splitter serve --root /srv/csv-splitter --port 8787
 Restart=on-failure
 RestartSec=2

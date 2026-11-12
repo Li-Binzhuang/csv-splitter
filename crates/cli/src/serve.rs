@@ -58,6 +58,84 @@ use std::sync::Arc;
 const MAX_ROWS_PER_REQUEST: u64 = 2_000;
 const MAX_SAMPLE: usize = 200_000;
 
+/// `serve --check` — verify the configuration without starting the service.
+///
+/// Deployment needs one command that answers "can this box run me?": root readable,
+/// port bindable, version printed. It exits non-zero so a systemd `ExecStartPre` or a
+/// deploy script can gate on it.
+pub fn check(addr: &str, root: &Path) -> i32 {
+    let mut failures = 0;
+    let mut line = |ok: bool, label: &str, detail: String| {
+        if !ok {
+            failures += 1;
+        }
+        println!(
+            "  {}   {label:<22} {detail}",
+            if ok { "ok  " } else { "FAIL" }
+        );
+    };
+
+    line(
+        true,
+        "version",
+        format!("{} ({})", env!("CARGO_PKG_VERSION"), std::env::consts::OS),
+    );
+
+    let canonical = match root.canonicalize() {
+        Ok(path) if path.is_dir() => Some(path),
+        _ => None,
+    };
+    match &canonical {
+        Some(path) => line(true, "root", path.display().to_string()),
+        None => line(
+            false,
+            "root",
+            format!("{} is not a readable directory", root.display()),
+        ),
+    }
+
+    // A root that exists but cannot be listed would fail every request.
+    let readable = canonical
+        .as_ref()
+        .and_then(|path| std::fs::read_dir(path).ok())
+        .map(|mut entries| entries.next().is_some() || true);
+    match readable {
+        Some(true) => line(true, "root readable", "the directory lists".to_string()),
+        _ => line(false, "root readable", "permission denied".to_string()),
+    }
+
+    match std::net::TcpListener::bind(addr) {
+        Ok(listener) => {
+            let bound = listener
+                .local_addr()
+                .map(|a| a.to_string())
+                .unwrap_or_else(|_| addr.to_string());
+            line(true, "bind", bound);
+            drop(listener);
+        }
+        Err(e) => line(false, "bind", format!("{addr}: {e}")),
+    }
+
+    // Loopback is the supported shape; anything else is a deliberate choice that
+    // deserves a warning rather than a failure.
+    if let Ok(parsed) = addr.parse::<std::net::SocketAddr>() {
+        if !parsed.ip().is_loopback() {
+            println!(
+                "  !     {:<22} {parsed} is not loopback: this build has no authentication",
+                "public bind"
+            );
+        }
+    }
+
+    if failures == 0 {
+        println!("== configuration ok ==");
+        0
+    } else {
+        println!("== {failures} check(s) failed ==");
+        1
+    }
+}
+
 pub struct ServerConfig {
     pub addr: String,
     /// Every request path must resolve inside this directory.

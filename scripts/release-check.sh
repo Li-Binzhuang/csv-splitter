@@ -15,6 +15,10 @@ bash scripts/package.sh --build "$ARTIFACT" >/dev/null
 ASSET="dist/$ARTIFACT.tar.gz"
 [ -f "$ASSET" ] || { echo "FAIL: $ASSET missing" >&2; exit 1; }
 [ -f "$ASSET.sha256" ] || { echo "FAIL: checksum missing" >&2; exit 1; }
+# Verified, not merely present: a checksum nobody compares is decoration.
+( cd dist && if command -v shasum >/dev/null 2>&1; then shasum -a 256 -c "$(basename "$ASSET").sha256" >/dev/null; else sha256sum -c "$(basename "$ASSET").sha256" >/dev/null; fi ) \
+  || { echo "FAIL: checksum does not match the artifact" >&2; exit 1; }
+printf '  ok   checksum matches\n' 
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
@@ -33,7 +37,10 @@ esac
 ./csv-splitter demo -o demo >/dev/null 2>&1
 [ -s demo/orders.csv ] || { echo "FAIL: demo produced no file" >&2; exit 1; }
 printf '  ok   demo wrote %s bytes\n' "$(wc -c < demo/orders.csv | tr -d ' ')"
-
+# The artifact's own configuration check, on a directory that exists now.
+./csv-splitter serve --check --root demo --addr 127.0.0.1:0 > check.log 2>&1 || {
+  cat check.log >&2; echo "FAIL: the artifact's own configuration check failed" >&2; exit 1; }
+printf '  ok   serve --check\n'
 ./csv-splitter serve --root demo --port 8790 > serve.log 2>&1 &
 SPID=$!
 for _ in $(seq 1 40); do

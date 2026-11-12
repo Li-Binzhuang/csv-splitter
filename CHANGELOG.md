@@ -1,5 +1,25 @@
 # Changelog
 
+## [3.30.0] — 2026-11-12
+
+### Added
+
+- **`serve --check`**: verifies a deployment without starting the service — version and
+  OS, root exists and is readable, the address can be bound. It exits non-zero and names
+  the failing check, so a systemd `ExecStartPre` or a deploy script can gate on it.
+  A non-loopback address prints a warning rather than failing, because that is a
+  deliberate choice this build has no authentication for.
+- `deploy/csv-splitter.service` uses it as `ExecStartPre`, so a bad root or a taken port
+  fails the unit before it ever starts serving.
+- `scripts/release-check.sh` now **verifies** the checksum instead of checking that a
+  `.sha256` file exists, and runs `serve --check` from inside the unpacked artifact —
+  the config check is exercised on the thing users download, not only on the source tree.
+
+### Fixed
+
+- The same script created its demo directory *after* checking it, so the artifact's own
+  `--check` failed on a directory that did not exist yet. Order corrected.
+
 ## [3.29.0] — 2026-11-12
 
 ### Added
