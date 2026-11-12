@@ -2,7 +2,8 @@
 # Every command once, on a realistic file, checking that it either succeeds or refuses
 # with a reason. `smoke.sh` covers the main paths in detail; this covers the surface.
 set -u
-cd "$(dirname "$0")/.."
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
 BIN="${BIN:-./target/debug/csv-splitter}"
 if [ ! -x "$BIN" ]; then
   echo "build the binary first: cargo build -p csv-splitter-cli" >&2
@@ -46,7 +47,7 @@ check "schema --has" "$BIN" schema orders.csv --has city
 check "serve --check" "$BIN" serve --check --root . --addr 127.0.0.1:0
 
 # The release workflow's decision logic is a script, so the sweep can run its self-test.
-if bash scripts/release-decision.sh --self-test >/dev/null 2>&1; then
+if bash "$ROOT/scripts/release-decision.sh" --self-test >/dev/null 2>&1; then
   echo "  ok   release-decision --self-test"
 else
   echo "  FAIL release-decision --self-test"
