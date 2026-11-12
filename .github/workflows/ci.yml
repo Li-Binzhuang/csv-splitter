@@ -49,6 +49,10 @@ jobs:
       - name: Format
         run: cargo fmt --all -- --check
 
+      # The release workflow's branch logic, exercised without a tag or a network.
+      - name: Release decision self-test
+        run: bash scripts/release-decision.sh --self-test
+
       # Each test step tees its output to a log. The reporting step below turns the
       # failing test names into annotations, because a run's logs need a signed-in
       # admin to read while annotations are public — this project's failures used to

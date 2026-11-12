@@ -26,20 +26,19 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       do_release: ${{ steps.version.outputs.do_release }}
     steps:
+      - uses: actions/checkout@v4
+
+      # The branch logic lives in a script with a self-test, because inline shell in a
+      # workflow has never run until somebody publishes. It also refuses a tag that
+      # disagrees with Cargo.toml, which would otherwise ship a binary whose --version
+      # is a lie.
       - name: Determine version
         id: version
-        run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            VERSION="${GITHUB_REF#refs/tags/}"
-            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-            echo "do_release=true" >> "$GITHUB_OUTPUT"
-          elif [[ -n "${{ inputs.tag }}" ]]; then
-            echo "version=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
-            echo "do_release=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=dev" >> "$GITHUB_OUTPUT"
-            echo "do_release=false" >> "$GITHUB_OUTPUT"
-          fi
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: bash scripts/release-decision.sh "$EVENT_NAME" "$REF" "$INPUT_TAG" | tee -a "$GITHUB_OUTPUT"
 
   build:
     needs: prepare

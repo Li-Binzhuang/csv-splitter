@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.33.0] — 2026-11-12
+
+### Added
+
+- **`scripts/release-decision.sh`**: the release workflow's three-way decision (tag push,
+  dispatch with a tag, dispatch without one) moved out of inline shell and given a
+  `--self-test` with seven cases, including the two refusals a workflow should have:
+  a non-tag ref, and a tag that disagrees with `Cargo.toml` — the second would publish a
+  binary whose `--version` lies.
+  - The workflow now calls it, and CI runs the self-test on every push, so the branch
+    logic has executed before the first tag rather than during it.
+  - `regress.sh` runs it too; a sweep that skips the release path is a sweep of
+    everything except the thing that ships.
+
 ## [3.32.0] — 2026-11-12
 
 ### Verified

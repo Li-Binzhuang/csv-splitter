@@ -43,6 +43,20 @@ scripts/install-check.sh   # 三条路径各跑一遍：源码构建 / cargo ins
 | `workflow_dispatch` + `tag` | 你填的 tag | ✅ | ✅ |
 | `workflow_dispatch` 留空 | `dev` | ✅ | ❌（只验证流程）|
 
+这三个分支的判定逻辑在 `scripts/release-decision.sh` 里，带自测：
+
+```bash
+$ scripts/release-decision.sh --self-test
+  ok   tag push releases
+  ok   dispatch without a tag dry-runs
+  ok   a branch push is refused
+  ok   a mismatched tag is refused
+== release decision: all cases pass ==
+```
+
+**tag 与 `Cargo.toml` 版本不一致会直接失败**——否则打错了 tag 会发布一个 `--version` 说谎的二进制。
+CI 每次 push 都跑这个自测。
+
 所以正确的顺序是：
 
 1. Actions 里空跑一次 → 四个平台的构建和打包都通过

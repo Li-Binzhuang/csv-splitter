@@ -1185,7 +1185,15 @@ fn every_documented_flag_exists() {
     let mut unknown: Vec<String> = Vec::new();
     for doc in docs {
         let text = std::fs::read_to_string(&doc).unwrap();
-        for word in text.split([' ', '\n', '"', '`', '(', ')', ',', '|']) {
+        // Line-aware, because a line that invokes one of our own scripts has a foreign
+        // flag on it: `scripts/release-decision.sh --self-test` is not a CLI option, and
+        // growing the allowlist by one word per script would hide real mistakes.
+        let cli_lines: String = text
+            .lines()
+            .filter(|line| !line.contains("scripts/"))
+            .collect::<Vec<&str>>()
+            .join("\n");
+        for word in cli_lines.split([' ', '\n', '"', '`', '(', ')', ',', '|']) {
             let word = word.trim();
             let flag = word.trim_end_matches(|c: char| !c.is_ascii_alphanumeric() && c != '-');
             if !flag.starts_with("--") || flag.len() < 3 {
