@@ -10,8 +10,24 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-ARTIFACT="csv-splitter-$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)"
-bash scripts/package.sh --build "$ARTIFACT" >/dev/null
+# `--target` lets the same script check a non-native build (Intel macOS on an arm64
+# machine, for example), which is the cheapest way to exercise a matrix entry locally.
+TARGET=""
+if [ "${1:-}" = "--target" ]; then
+  TARGET="${2:?usage: release-check.sh [--target <triple>]}"
+fi
+case "${TARGET:-$(uname -m)}" in
+  aarch64-apple-darwin|arm64) ARTIFACT="csv-splitter-macos-arm64" ;;
+  x86_64-apple-darwin|x86_64) ARTIFACT="csv-splitter-macos-x86_64" ;;
+  x86_64-unknown-linux-gnu) ARTIFACT="csv-splitter-linux-x86_64" ;;
+  x86_64-pc-windows-msvc) ARTIFACT="csv-splitter-windows-x86_64" ;;
+  *) ARTIFACT="csv-splitter-$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)" ;;
+esac
+if [ -n "$TARGET" ]; then
+  bash scripts/package.sh --build "$ARTIFACT" "$TARGET" >/dev/null
+else
+  bash scripts/package.sh --build "$ARTIFACT" >/dev/null
+fi
 ASSET="dist/$ARTIFACT.tar.gz"
 [ -f "$ASSET" ] || { echo "FAIL: $ASSET missing" >&2; exit 1; }
 [ -f "$ASSET.sha256" ] || { echo "FAIL: checksum missing" >&2; exit 1; }

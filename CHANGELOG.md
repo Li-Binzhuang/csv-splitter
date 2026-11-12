@@ -1,5 +1,25 @@
 # Changelog
 
+## [3.32.0] — 2026-11-12
+
+### Verified
+
+- **Intel macOS builds and runs from this arm64 machine.** `cargo build --release
+  --target x86_64-apple-darwin` finished in 2m37s (65.5 MB binary), and
+  `release-check.sh --target x86_64-apple-darwin` passed end to end: unpack, checksum,
+  `--version`, `demo`, `serve --check`, `/health`, `/spec`, `/rows`, SIGTERM. So two of
+  the four release-matrix entries now have local evidence; Linux is covered by every CI
+  push, Windows is waiting for `windows-check`.
+- `scripts/release-check.sh --target <triple>` packages and probes a chosen build target
+  and names the artifact the way the release matrix does, so a matrix entry can be
+  exercised before a tag exists.
+
+### Docs
+
+- DEPLOY.md explains the three ways the release workflow can be triggered and the order
+  to use them: a `workflow_dispatch` run with an empty tag builds all four platforms
+  without publishing, then a real tag publishes.
+
 ## [3.31.0] — 2026-11-12
 
 ### Added

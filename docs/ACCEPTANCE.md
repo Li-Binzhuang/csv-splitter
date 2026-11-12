@@ -82,6 +82,16 @@
 - `/meta` 是唯一会（且只一次）建索引的端点，0.24 s 在预算内
 
 
+
+## 平台构建矩阵（本地已验证 vs CI 负责）
+
+| 平台 | 构建方式 | 证据 |
+|---|---|---|
+| macOS arm64 | 本机 | `release-check.sh` 全绿，产物 64.1 MB / `tar.gz` 19.5 MB |
+| macOS x86_64 | 本机交叉编译 | `cargo build --release --target x86_64-apple-darwin` 成功（2m37s），产物 65.5 MB；**同一套 release-check 通过**（Rosetta 运行）|
+| Linux x86_64 | CI（`ubuntu-22.04`）| 每次 push 的 `CI` job 编译并测试 |
+| Windows x86_64 | `windows-check` / release matrix | `cfg(unix)` 隔离已就位；首次数据待 PR 或手动触发 |
+
 ## 发布与部署（goal：能发布 / 能部署 / 能跨平台）
 
 | 项 | 证据 |

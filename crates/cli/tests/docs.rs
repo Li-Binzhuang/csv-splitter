@@ -1154,6 +1154,9 @@ fn every_documented_flag_exists() {
         // systemctl's flag, in the deployment example.
         "--now",
         "--system",
+        // cargo and git flags from build/release examples.
+        "--target",
+        "--tags",
     ];
 
     let mut docs: Vec<std::path::PathBuf> = Vec::new();

@@ -15,6 +15,7 @@
 
 ```bash
 scripts/release-check.sh   # release 产物：解压 → 校验和比对 → demo → serve → SIGTERM
+scripts/release-check.sh --target x86_64-apple-darwin   # 同一套检查，换个构建目标
 scripts/install-check.sh   # 三条路径各跑一遍：源码构建 / cargo install / release 产物
 ```
 
@@ -29,6 +30,23 @@ scripts/install-check.sh   # 三条路径各跑一遍：源码构建 / cargo ins
 ./csv-splitter demo -o /tmp/x && ./csv-splitter preview /tmp/x/orders.csv --rows 3
 ```
 
+
+
+## 发布流程的两种验证（不需要打 tag）
+
+`release.yml` 支持 **`workflow_dispatch` 空跑**：Actions 页面点 “Run workflow”、
+`tag` 留空，四平台照样构建并上传 artifact，**只是不创建 Release**。
+
+| 触发 | 版本号 | 构建 | 发布 |
+|---|---|---|---|
+| push tag `v*` | tag 本身 | ✅ | ✅ |
+| `workflow_dispatch` + `tag` | 你填的 tag | ✅ | ✅ |
+| `workflow_dispatch` 留空 | `dev` | ✅ | ❌（只验证流程）|
+
+所以正确的顺序是：
+
+1. Actions 里空跑一次 → 四个平台的构建和打包都通过
+2. 再打 `git tag v3.31.0 && git push --tags` → 真正发布
 
 ## 验证发布产物（不进网络也能验）
 
