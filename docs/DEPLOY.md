@@ -21,6 +21,28 @@
 ./csv-splitter demo -o /tmp/x && ./csv-splitter preview /tmp/x/orders.csv --rows 3
 ```
 
+
+## 验证发布产物（不进网络也能验）
+
+仓库里有两个脚本，让「用户拿到的东西」在本地就能验一遍：
+
+```bash
+scripts/package.sh --build csv-splitter-linux-x86_64   # 打包 + sha256，产物在 dist/
+scripts/release-check.sh                                # 打包后解压，跑三条最小验证
+```
+
+`release-check.sh` 做的事和用户完全一样：解压 → `--version` → `demo` → `serve` →
+`/health`、`/spec`、`/rows` → `SIGTERM` 停机。发布流程调用的是**同一个**
+`scripts/package.sh`，所以本地验过的打包步骤就是 tag 时跑的步骤。
+
+本机实测（3.28.0，macOS arm64）：
+
+| 项 | 值 |
+|---|---|
+| 二进制 | 64.1 MB（DuckDB 静态链接）|
+| `tar.gz` | 19.5 MB |
+| 校验和 | `dist/*.tar.gz.sha256` |
+
 ## 起服务
 
 ```bash

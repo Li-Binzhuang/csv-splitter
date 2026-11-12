@@ -93,41 +93,41 @@ jobs:
       - name: Build release
         run: cargo build --release --target ${{ matrix.target }} -p csv-splitter-cli
 
+      # One packaging script, used by CI and by scripts/release-check.sh locally, so the
+      # artifact a user downloads is produced by code that was actually run before the
+      # tag existed.
       - name: Package (Unix)
         if: runner.os != 'Windows'
-        run: |
-          mkdir -p staging
-          cp target/${{ matrix.target }}/release/csv-splitter staging/
-          cd staging
-          chmod +x csv-splitter
-          tar czf ../${{ matrix.artifact }}${{ matrix.ext }} csv-splitter
+        run: bash scripts/package.sh "${{ matrix.artifact }}" "${{ matrix.target }}"
+            
 
       - name: Package (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path staging
+          New-Item -ItemType Directory -Force -Path staging, dist | Out-Null
           Copy-Item "target/${{ matrix.target }}/release/csv-splitter.exe" "staging/"
-          Compress-Archive -Path "staging/csv-splitter.exe" -DestinationPath "${{ matrix.artifact }}${{ matrix.ext }}"
+          Compress-Archive -Path "staging/csv-splitter.exe" -DestinationPath "dist/${{ matrix.artifact }}${{ matrix.ext }}"
 
-      - name: Generate SHA256 checksum (Unix)
+      - name: List packaged files (Unix)
         if: runner.os != 'Windows'
-        run: shasum -a 256 ${{ matrix.artifact }}${{ matrix.ext }} > ${{ matrix.artifact }}${{ matrix.ext }}.sha256
+        run: ls -lh dist/
 
       - name: Generate SHA256 checksum (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $hash = (Get-FileHash "${{ matrix.artifact }}${{ matrix.ext }}" -Algorithm SHA256).Hash.ToLower()
-          "$hash  ${{ matrix.artifact }}${{ matrix.ext }}" | Out-File -Encoding ascii "${{ matrix.artifact }}${{ matrix.ext }}.sha256"
+          $asset = "dist/${{ matrix.artifact }}${{ matrix.ext }}"
+          $hash = (Get-FileHash $asset -Algorithm SHA256).Hash.ToLower()
+          "$hash  ${{ matrix.artifact }}${{ matrix.ext }}" | Out-File -Encoding ascii "$asset.sha256"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
           path: |
-            ${{ matrix.artifact }}${{ matrix.ext }}
-            ${{ matrix.artifact }}${{ matrix.ext }}.sha256
+            dist/${{ matrix.artifact }}${{ matrix.ext }}
+            dist/${{ matrix.artifact }}${{ matrix.ext }}.sha256
 
   release:
     needs: [prepare, build]

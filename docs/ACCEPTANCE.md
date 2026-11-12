@@ -91,6 +91,7 @@
 | CI 无 GUI 依赖 | 两个工作流都不再安装 libgtk-3-dev / libxdo-dev / fonts-noto-cjk |
 | 缓存不撑爆配额 | 两个工作流都用滚动 key（`...-rolling-<run_id>`）|
 | 部署材料 | [`DEPLOY.md`](DEPLOY.md) + [`deploy/csv-splitter.service`](../deploy/csv-splitter.service) |
+| 产物可运行 | `scripts/release-check.sh`：解压 → `--version` 3.28.0 → `demo` → `/health` → `/spec` → `/rows` → SIGTERM，全过；`tar.gz` 19.5 MB |
 | 配置项 | `--root` / `--port` / `--addr`、`CSV_SPLITTER_QUERY_TIMEOUT_MS`，`/capabilities` 发布生效值 |
 | 升级/回滚 | 换二进制即可；`.idx`/`.parquet` 可重建，只有 `.journal` 是数据 |
 | 边界写明 | 单机单用户、无鉴权、默认 loopback |

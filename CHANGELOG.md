@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.29.0] — 2026-11-12
+
+### Added
+
+- **`scripts/package.sh`** produces the artifact a user downloads — `tar.gz` on Unix,
+  `zip` on Windows, each with a `.sha256` — and **`scripts/release-check.sh`** then
+  unpacks it in a clean directory and runs the three things the documentation promises:
+  `--version`, `demo`, `serve` with `/health`, `/spec`, `/rows`, and a SIGTERM shutdown.
+  - The release workflow now calls `scripts/package.sh` instead of packaging inline, so
+    the locally verified packaging is the same code that runs at tag time.
+  - The Windows steps write into `dist/` like the Unix ones; they had been writing to the
+    repository root while the upload step expected `dist/`.
+  - Measured on 3.28.0 / macOS arm64: 64.1 MB binary (DuckDB statically linked), 19.5 MB
+    `tar.gz`, checksum alongside.
+
 ## [3.28.0] — 2026-11-12
 
 ### Build
