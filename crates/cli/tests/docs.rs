@@ -1306,3 +1306,70 @@ fn every_documented_route_is_served() {
         "documented routes not served: {unknown:#?}"
     );
 }
+
+/// The deployment page quotes `serve --check` output; that quoting must be real.
+///
+/// Version numbers are left out of the comparison on purpose (they change every release);
+/// what is pinned is the shape: how a passing and a failing check are printed, and the
+/// exit line. A reader copying this output should see the same thing.
+#[test]
+fn serve_check_output_matches_deploy_doc() {
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let doc = std::fs::read_to_string(manifest.join("../../docs/DEPLOY.md")).unwrap();
+    let bin = env!("CARGO_BIN_EXE_csv-splitter");
+
+    let dir = std::env::temp_dir().join(format!(
+        "csvs_deploy_check_{}_{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0)
+    ));
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("t.csv"), "id\n1\n").unwrap();
+
+    let ok = std::process::Command::new(bin)
+        .args(["serve", "--check", "--root"])
+        .arg(&dir)
+        .args(["--addr", "127.0.0.1:0"])
+        .output()
+        .unwrap();
+    let ok_text = String::from_utf8_lossy(&ok.stdout);
+    assert!(ok.status.success(), "{ok_text}");
+
+    let bad = std::process::Command::new(bin)
+        .args(["serve", "--check", "--root", "/nope-directory"])
+        .args(["--addr", "127.0.0.1:0"])
+        .output()
+        .unwrap();
+    let bad_text = String::from_utf8_lossy(&bad.stdout);
+    assert!(!bad.status.success(), "{bad_text}");
+
+    // Structure shared by both, quoted in the doc.
+    for needle in [
+        "  ok     version",
+        "  ok     root readable",
+        "  ok     bind",
+    ] {
+        assert!(ok_text.contains(needle), "output changed: {ok_text}");
+        assert!(
+            doc.contains(needle),
+            "DEPLOY.md no longer quotes {needle:?} — it shows: {bad_text}"
+        );
+    }
+    assert!(
+        doc.contains("== configuration ok =="),
+        "the passing line is not in the doc"
+    );
+    assert!(
+        doc.contains("FAIL   root"),
+        "the failing line is not in the doc"
+    );
+    assert!(
+        doc.contains("check(s) failed"),
+        "the failure summary is not in the doc"
+    );
+
+    std::fs::remove_dir_all(&dir).ok();
+}

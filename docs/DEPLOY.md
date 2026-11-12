@@ -131,6 +131,20 @@ $ echo $?
 
 根目录不存在或端口被占时退出码是 1，并明确指出哪一项失败。
 
+失败的样子（同样可以拿来对照）：
+
+```bash
+$ csv-splitter serve --check --root /nope
+  ok     version                3.33.0 (linux)
+  FAIL   root                   /nope is not a readable directory
+  FAIL   root readable          permission denied
+  ok     bind                   127.0.0.1:8787
+== 2 check(s) failed ==
+$ echo $?
+1
+```
+
+
 启动后的三个探针：
 
 ```bash
@@ -152,6 +166,22 @@ journalctl -u csv-splitter -f
 
 - `SIGTERM` 是优雅停机：不再接新连接、在途请求收尾、在跑的 job 最多再等 5 秒，退出码 0
 - `Ready` 的判断看 `/health` 的 `ready`，不是 `ok`
+
+
+## 出问题的时候 / when it will not start
+
+| 症状 | 原因 | 处理 |
+|---|---|---|
+| `systemctl start` 立刻失败 | `ExecStartPre` 的 `serve --check` 退出非 0 | `journalctl -u csv-splitter -n 20`，看是哪一项 FAIL |
+| `FAIL root` | `--root` 指向的目录不存在或不可读 | 修路径或用有权限的用户 |
+| `FAIL bind: Address already in use` | 端口被占 | 换 `--port`，或先 `ss -lntp | grep 8787` |
+| 起来了但 `/health` 的 `ready:false` | 根目录在运行中被删/权限变了 | 修好目录即可，无需重启（探针每次现查）|
+| 前端请求 400 `path is outside the served directory` | 用了绝对路径或 `../` | 传**相对**路径，见 `INTEGRATION.md` |
+| 大文件过滤首屏 1.4 s 左右 | 没建列式缓存（冷档）| `POST /parquet` 或 `cache --build`，见 `/sheet` 的 `cost.tier` |
+| 请求 504 | 查询超过 `CSV_SPLITTER_QUERY_TIMEOUT_MS` | 收窄条件，或调大预算后重启 |
+
+错误响应永远是三字段（`error` / `parameter` / `hint`），`parameter` 指明该改哪个参数——
+`API.md` 的状态码契约就是按这个排障的。
 
 ## 磁盘上会出现什么
 

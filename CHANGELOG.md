@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.34.0] — 2026-11-12
+
+### Docs
+
+- **DEPLOY.md gained a "when it will not start" table**: seven symptoms with the cause and
+  the fix — a unit that dies because `ExecStartPre` failed, a taken port, `ready:false`,
+  a path the server refuses, a 1.4 s first page that means "no columnar cache", a 504 that
+  means the query budget. Deployment pages usually describe the happy path and leave the
+  operator to grep logs.
+- The `serve --check` examples now include a **failing** run beside the passing one, and a
+  test (`serve_check_output_matches_deploy_doc`) pins the shape of both against the real
+  binary's output. It deliberately ignores the version number, which changes every
+  release, and pins everything else: a doc that quotes output is a doc that has to keep
+  quoting it correctly.
+
 ## [3.33.0] — 2026-11-12
 
 ### Added

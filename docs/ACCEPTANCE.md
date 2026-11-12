@@ -105,6 +105,8 @@
 | 三条安装路径 | `scripts/install-check.sh`：源码构建 / `cargo install --path` / release 产物 各跑 `--version` + `demo` + `serve --check`，三条全绿 |
 | 发布分支逻辑 | `scripts/release-decision.sh --self-test`：tag push / dispatch+tag / dispatch 空跑 / 非 tag 拒绝 / 版本不一致拒绝，7 个用例；CI 与 regress 都跑 |
 | 部署前自检 | `serve --check`（根目录可读、端口可绑），systemd 用它做 `ExecStartPre`；`backend-smoke.sh` 也在起服务前跑一次 |
+| 文档输出逐字一致 | `serve_check_output_matches_deploy_doc`：DEPLOY 里引用的 `serve --check` 输出必须与真实输出同形（版本号除外）|
+| 排障表 | DEPLOY「出问题的时候」：7 个症状 → 原因 → 处理，含 `ready:false`、路径越界、冷档 1.4 s、504 |
 | 配置项 | `--root` / `--port` / `--addr`、`CSV_SPLITTER_QUERY_TIMEOUT_MS`，`/capabilities` 发布生效值 |
 | 升级/回滚 | 换二进制即可；`.idx`/`.parquet` 可重建，只有 `.journal` 是数据 |
 | 边界写明 | 单机单用户、无鉴权、默认 loopback |
