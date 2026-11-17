@@ -403,6 +403,7 @@ fn handle(
             "/partition" => start_partition(&mut stream, root, jobs, &params),
             "/lookup" => start_lookup(&mut stream, root, jobs, &params),
             "/concat" => start_concat(&mut stream, root, jobs, &params),
+            "/columns" => start_columns_reshape(&mut stream, root, jobs, &params),
             "/edit" => edit_apply(&mut stream, root, jobs, &params),
             _ => respond_json(&mut stream, 404, r#"{"error":"unknown endpoint"}"#),
         };
@@ -681,6 +682,7 @@ const WRITE_ROUTES: &[&str] = &[
     "POST /partition",
     "POST /lookup",
     "POST /concat",
+    "POST /columns",
     "POST /warm",
     "POST /edit",
     "POST /index",
@@ -717,6 +719,77 @@ fn query_timeout_ms() -> u64 {
         .and_then(|value| value.parse().ok())
         .filter(|ms| *ms > 0)
         .unwrap_or(csv_splitter_core::sql::DEFAULT_TIMEOUT_MS)
+}
+
+/// `POST /columns?path=&out=&keep=a,b` / `drop=` / `rename=old:new,old2:new2`.
+///
+/// The write twin of `GET /columns`: that one tells you what the columns are, this one
+/// produces a file with a different set of them. A job, because it rewrites every row of
+/// the file into a new file; the source is never touched.
+fn start_columns_reshape(
+    stream: &mut TcpStream,
+    root: &Path,
+    jobs: &JobRegistry,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (input, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return bad_path(stream),
+    };
+    let Some(out) = resolve_out(root, params, "out") else {
+        return bad_out(stream);
+    };
+    let list = |name: &str| -> Vec<String> {
+        params
+            .get(name)
+            .map(|v| {
+                v.split(',')
+                    .map(str::trim)
+                    .filter(|c| !c.is_empty())
+                    .map(str::to_string)
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    let rename = match params.get("rename") {
+        Some(text) => match csv_splitter_core::reshape::ReshapeSpec::parse_renames(text) {
+            Ok(pairs) => pairs,
+            Err(e) => {
+                return bad_request(stream, &e, "rename", "rename=old:new,old2:new2");
+            }
+        },
+        None => Vec::new(),
+    };
+    let spec = csv_splitter_core::reshape::ReshapeSpec {
+        keep: list("keep"),
+        drop: list("drop"),
+        rename,
+    };
+    if spec.is_empty() {
+        return bad_request(
+            stream,
+            "give at least one of keep, drop, rename",
+            "keep",
+            "keep=a,b or drop=c or rename=old:new",
+        );
+    }
+    let delimiter = delimiter(params);
+    let result_path = out.clone();
+    let id = jobs.submit(
+        "columns",
+        move |tx| match csv_splitter_core::reshape::reshape(&input, delimiter, &spec, &out, &tx) {
+            Ok(_) => {
+                tx.send(ProgressEvent::Finished {
+                    output: result_path,
+                })
+                .ok();
+            }
+            Err(e) => {
+                tx.send(ProgressEvent::Error(e.to_string())).ok();
+            }
+        },
+    );
+    respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
 }
 
 /// `POST /concat?paths=a.csv,b.csv&out=combined.csv` — stack files that share a header.
@@ -2228,6 +2301,23 @@ fn edit_apply(
                 );
             }
             Op::SplitColumn { column, by, into }
+        }
+        "formula" => {
+            let (Some(name), Some(expression)) = (
+                params.get("name").filter(|v| !v.is_empty()),
+                params.get("value").filter(|v| !v.is_empty()),
+            ) else {
+                return bad_request(
+                    stream,
+                    "formula needs name and value",
+                    "name",
+                    "name=<new column>&value=<expression>",
+                );
+            };
+            Op::AddColumn {
+                name: name.clone(),
+                formula: expression.clone(),
+            }
         }
         "drop" => {
             let Some(name) = params.get("name") else {

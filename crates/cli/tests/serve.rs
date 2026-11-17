@@ -3559,3 +3559,99 @@ fn concat_stacks_files_over_http() {
     assert_eq!(code, 400, "{body}");
     assert!(body.contains(r#""parameter":"paths""#), "{body}");
 }
+
+/// `POST /columns` writes a reshaped copy; the source is untouched.
+#[test]
+fn columns_reshape_writes_a_new_file() {
+    let dir = TempDir::new("reshape");
+    std::fs::write(
+        dir.join("t.csv"),
+        "id,city,qty,note\n1,Puebla,5,a\n2,Monterrey,-3,b\n",
+    )
+    .unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = post(
+        &server.addr,
+        "/columns?path=t.csv&out=res.csv&keep=id,qty,city&rename=qty:units",
+    );
+    assert_eq!(code, 202, "{body}");
+    let job = body
+        .split("\"job\":\"")
+        .nth(1)
+        .and_then(|s| s.split('"').next())
+        .expect("job id")
+        .to_string();
+    let status = wait_for_job(&server.addr, &job);
+    assert!(status.contains(r#""state":"done""#), "{status}");
+
+    assert_eq!(
+        std::fs::read_to_string(dir.join("res.csv")).unwrap(),
+        "id,units,city\n1,5,Puebla\n2,-3,Monterrey\n"
+    );
+    // The original keeps every column it had.
+    assert_eq!(
+        std::fs::read_to_string(dir.join("t.csv")).unwrap(),
+        "id,city,qty,note\n1,Puebla,5,a\n2,Monterrey,-3,b\n"
+    );
+
+    // Nothing to do is a 400 that names the parameter instead of writing a copy.
+    let (code, body) = post(&server.addr, "/columns?path=t.csv&out=x.csv");
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains(r#""parameter":"keep""#), "{body}");
+}
+
+/// `action=formula` appends a computed column, and it is one undoable operation.
+#[test]
+fn edit_formula_appends_a_computed_column() {
+    let dir = TempDir::new("formula");
+    std::fs::write(dir.join("t.csv"), "id,qty\n1,5\n2,-3\n").unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=formula&name=total&value=qty*2",
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""op":"addcolumn""#), "{body}");
+    assert!(body.contains(r#""operations":1"#), "{body}");
+
+    let (code, body) = get(&server.addr, "/rows?path=t.csv&count=5&columns=id,total");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#"["1","10"]"#), "{body}");
+    assert!(body.contains(r#"["2","-6"]"#), "{body}");
+
+    // One undo removes the whole column, not a row of it.
+    let (code, body) = post(&server.addr, "/edit?path=t.csv&action=undo");
+    assert_eq!(code, 200, "{body}");
+    let (_, body) = get(&server.addr, "/rows?path=t.csv&count=1&columns=id,qty");
+    // `total` is also the name of the row-count field, so assert on the column list.
+    assert!(
+        body.contains(r#""columns":["id","qty"]"#),
+        "the column should be gone: {body}"
+    );
+}
+
+/// `action=split-column` exists over HTTP, not only in the CLI.
+#[test]
+fn edit_split_column_is_reachable_over_http() {
+    let dir = TempDir::new("splitcol");
+    std::fs::write(
+        dir.join("t.csv"),
+        "id,name\n1,Ada Lovelace\n2,Alan Turing\n",
+    )
+    .unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=split-column&col=name&by=%20&into=first,last",
+    );
+    assert_eq!(code, 200, "{body}");
+    let (_, body) = get(
+        &server.addr,
+        "/rows?path=t.csv&count=2&columns=id,first,last",
+    );
+    assert!(body.contains("Ada"), "{body}");
+    assert!(body.contains("Lovelace"), "{body}");
+}

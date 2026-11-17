@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.40.0] — 2026-11-17
+
+### Added
+
+- **`POST /columns`** — the write twin of `GET /columns`: `keep`, `drop`, `rename` produce
+  a new file with a different column set, as a job. The source file is never touched, and
+  the result is a separate file the caller names.
+- **`action=formula`** on `POST /edit` — appends a computed column, matching
+  `edit formula --name N --value EXPR`. It is one journal operation, so one undo removes
+  the whole column rather than a row of it.
+  - `action=split-column` was already reachable over HTTP; a test now locks that in, since
+    the capability table had claimed it was CLI-only.
+
 ## [3.39.0] — 2026-11-17
 
 ### Added

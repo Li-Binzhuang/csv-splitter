@@ -192,6 +192,31 @@ STACKED_LINES="$(wc -l < "$WORK/stacked.csv" 2>/dev/null | tr -d ' ')"
 if [ "${STACKED_LINES:-0}" -gt "$ORDERS_LINES" ]; then printf '  ok   concat: stacked %s lines over %s\n' "$STACKED_LINES" "$ORDERS_LINES"
 else printf '  FAIL concat wrote %s lines, orders.csv has %s\n' "${STACKED_LINES:-0}" "$ORDERS_LINES"; failed=$((failed + 1)); fi
 
+echo "== reshape and formula =="
+COLUMNS_JOB="$(curl -s -X POST "$URL/columns?path=orders.csv&out=reduced.csv&keep=id,city&rename=city:town" | python3 -c 'import json,sys;print(json.load(sys.stdin).get("job",""))')"
+for _ in $(seq 1 40); do
+  COLUMNS_STATE="$(curl -s "$URL/job?id=$COLUMNS_JOB")"
+  echo "$COLUMNS_STATE" | grep -q '"state":"done"' && break
+  sleep 0.25
+done
+has "columns reshape: finished" "$COLUMNS_STATE" '"state":"done"'
+has "columns reshape: new header" "$(head -1 "$WORK/reduced.csv" 2>/dev/null)" "id,town"
+FORMULA_JSON="$(curl -s -X POST "$URL/edit?path=orders.csv&action=formula&name=double&value=amount*2")"
+has "edit formula: accepted"  "$FORMULA_JSON" '"op":"addcolumn"'
+has "edit formula: recorded"  "$FORMULA_JSON" '"operations":'
+ROWS_JSON="$(curl -s "$URL/rows?path=orders.csv&count=2&columns=id,double")"
+has "edit formula: computed"  "$ROWS_JSON" '"double"'
+# One undo removes the whole computed column. The fixture's journal may already hold
+# other operations, so the count is not asserted here — the unit test owns that on a
+# fresh file.
+curl -s -X POST "$URL/edit?path=orders.csv&action=undo" > /dev/null
+AFTER_UNDO="$(curl -s "$URL/columns?path=orders.csv")"
+if echo "$AFTER_UNDO" | grep -q '"name":"double"'; then
+  printf '  FAIL undo left the computed column\n'; failed=$((failed + 1))
+else
+  printf '  ok   edit formula: one undo removes it\n'
+fi
+
 echo "== cost tier =="
 SHEET_COST="$(curl -s "$URL/sheet?path=orders.csv")"
 has "sheet: cost tier"         "$SHEET_COST" '"tier":'

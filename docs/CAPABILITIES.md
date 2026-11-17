@@ -86,11 +86,11 @@
 | 按条件删除 | `edit delete --where "city=Puebla"`（一次操作，一次撤销） | `action=delete-where` |
 | 按内容定位后修改 | `edit set --find Puebla --col city --value "..."` | — |
 | 区间填充（跟着行走） | `edit fill --col qty --from-row 5 --to-row 10 --value 0` | `action=fill` |
-| 一列拆成多列 | `edit split-column f.csv --col full --by "," --into "first,last,addr"` | — |
+| 一列拆成多列 | `edit split-column f.csv --col full --by "," --into "first,last,addr"` | `POST /edit?action=split-column&col=&by=&into=` |
 | 分页浏览（筛选/排序都看编辑后的值） | `view f.csv [--where EXPR] [--order COL[--desc]] [--find TEXT [--regex] [--nth N] [--context N]] [--start N] [--count M] [--json]` | `GET /rows?where=` |
 | 查找替换 | `edit replace --from X --to Y [--col C]` | `action=replace` |
 | 删列/改名 | `edit drop --name C` / `edit rename` | `action=drop/rename` |
-| 公式列 | `edit formula --name N --value "EXPR"` | — |
+| 公式列 | `edit formula --name N --value "EXPR"` | `POST /edit?action=formula&name=&value=` |
 | 撤销 | `edit undo` | `POST /edit?action=undo` |
 | 查看待生效 | `edit status` | `GET /edit` |
 | 物化 | `edit export -o out.csv` | `POST /edit?action=export` |
@@ -147,7 +147,7 @@
 | 去重 | `dedupe -o out.csv [--by C]` | `POST /dedupe` |
 | 分文件 | `partition --by C -o parts.tar` | `POST /partition` |
 | 拼接 | `concat a.csv b.csv ...` | `POST /concat`（job）|
-| 导列/改名 | `columns --keep/--drop/--rename` | — |
+| 导列/改名 | `columns --keep/--drop/--rename` | `POST /columns?keep=&drop=&rename=`（job，写新文件）|
 | 下载/导出 | — | `GET /download`、`/export` |
 | 起本地服务 | `serve --root DIR` | 全部端点 |
 | 列出可读文件 | `files --root DIR` | `GET /files` |
