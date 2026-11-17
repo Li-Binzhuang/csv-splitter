@@ -90,7 +90,7 @@
 | macOS arm64 | 本机 | `release-check.sh` 全绿，产物 64.1 MB / `tar.gz` 19.5 MB |
 | macOS x86_64 | 本机交叉编译 | `cargo build --release --target x86_64-apple-darwin` 成功（2m37s），产物 65.5 MB；**同一套 release-check 通过**（Rosetta 运行）|
 | Linux x86_64 | CI（`ubuntu-22.04`）| 每次 push 的 `CI` job 编译并测试 |
-| Windows x86_64 | **本机交叉编译（mingw-w64）** | `cargo build --release --target x86_64-pc-windows-gnu` 成功（4m17s），产物 PE32+ 91.7 MB；`zip` 25.0 MB + 校验和。**不能本地运行**（无 Wine），所以这是「编译通过」而非「运行通过」；release matrix 用 MSVC，首次运行证据仍待 `windows-check` |
+| Windows x86_64 | **CI（windows-latest，MSVC）** | `Windows check` run 3（`1095f33`）**通过**：`cargo check -p csv-splitter-cli` 在真实 MSVC 工具链上编译含 DuckDB 的全部依赖。本机另用 mingw GCC 14 交叉编译出 PE32+ 可执行文件（91.7 MB）作为补充证据 |
 
 ## 发布与部署（goal：能发布 / 能部署 / 能跨平台）
 

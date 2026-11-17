@@ -16,6 +16,12 @@
     thread model; that is why it looked fine locally and died on the runner. Both facts are
     now in DEPLOY.md and ACCEPTANCE.md rather than in this conversation only.
 
+### Verified
+
+- `Windows check` run 3 (`1095f33`) **passed** on windows-latest with MSVC, compiling the
+  CLI and its whole dependency stack (DuckDB included) for Windows. That closes the last
+  platform without a green CI signal; every push that touches `crates/**` gets it.
+
 ## [3.36.0] — 2026-11-17
 
 ### CI
