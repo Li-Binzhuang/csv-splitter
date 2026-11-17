@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.43.0] — 2026-11-17
+
+### Added
+
+- **Multi-column range fill**: `edit fill --cols a,b --from-row 1 --to-row 2 --value 0`
+  and `POST /edit?action=fill&cols=a,b`. Editing a block of a spreadsheet is one gesture,
+  so it is **one operation** — one undo covers every column, no matter how many the user
+  selected. `Op::FillColumns` stores the columns once and expands into per-column spans at
+  compile time, so the journal cost stays one line.
+  - The fill still resolves to row identities, so deleting an earlier row moves it up with
+    the rows it landed on rather than sliding onto a neighbour (asserted by test).
+
 ## [3.42.0] — 2026-11-17
 
 ### Added

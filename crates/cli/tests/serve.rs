@@ -3760,3 +3760,48 @@ fn insert_by_key_anchors_to_the_named_row() {
     assert_eq!(code, 400, "{body}");
     assert!(body.contains("b:12"), "{body}");
 }
+
+/// Filling several columns is one operation, so one undo restores all of them.
+#[test]
+fn fill_columns_is_one_undo() {
+    let dir = TempDir::new("fillcols");
+    std::fs::write(dir.join("t.csv"), "id,a,b,c\n1,x,y,z\n2,x,y,z\n3,x,y,z\n").unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=fill&cols=a,b&from-row=1&to-row=2&value=0",
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""op":"fillcols""#), "{body}");
+    assert!(body.contains(r#""operations":1"#), "{body}");
+
+    let (_, body) = get(&server.addr, "/rows?path=t.csv&count=3&columns=id,a,b,c");
+    assert!(body.contains(r#"["1","0","0","z"]"#), "{body}");
+    assert!(body.contains(r#"["2","0","0","z"]"#), "{body}");
+    assert!(body.contains(r#"["3","x","y","z"]"#), "{body}");
+
+    let (code, body) = post(&server.addr, "/edit?path=t.csv&action=undo");
+    assert_eq!(code, 200, "{body}");
+    let (_, body) = get(&server.addr, "/rows?path=t.csv&count=3&columns=id,a,b,c");
+    assert!(
+        body.contains(r#"["1","x","y","z"]"#),
+        "one undo must restore both columns: {body}"
+    );
+
+    // The single-column form still works.
+    let (code, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=fill&col=c&from-row=3&to-row=3&value=solo",
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""op":"fill""#), "{body}");
+
+    // Naming no column is a 400 that says what to pass.
+    let (code, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=fill&from-row=1&to-row=2&value=0",
+    );
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains(r#""parameter":"col""#), "{body}");
+}

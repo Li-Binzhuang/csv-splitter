@@ -85,7 +85,7 @@
 | 删除行 | `edit delete --row N --count K` | `action=delete` |
 | 按条件删除 | `edit delete --where "city=Puebla"`（一次操作，一次撤销） | `action=delete-where` |
 | 按内容定位后修改 | `edit set --find Puebla --col city --value "..."` | — |
-| 区间填充（跟着行走） | `edit fill --col qty --from-row 5 --to-row 10 --value 0` | `action=fill` |
+| 区间填充（跟着行走） | `edit fill --col qty --from-row 5 --to-row 10 --value 0` / `--cols a,b`（多列一次操作）| `action=fill` |
 | 一列拆成多列 | `edit split-column f.csv --col full --by "," --into "first,last,addr"` | `POST /edit?action=split-column&col=&by=&into=` |
 | 分页浏览（筛选/排序都看编辑后的值） | `view f.csv [--where EXPR] [--order COL[--desc]] [--find TEXT [--regex] [--nth N] [--context N]] [--start N] [--count M] [--json]` | `GET /rows?where=` |
 | 查找替换 | `edit replace --from X --to Y [--col C]` | `action=replace` |

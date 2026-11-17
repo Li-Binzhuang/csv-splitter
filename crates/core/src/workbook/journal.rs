@@ -314,6 +314,21 @@ pub(crate) fn render_op(op: &Op) -> String {
                 b',',
             )
         }
+        Op::FillColumns {
+            columns,
+            from,
+            to,
+            value,
+        } => join_csv_line(
+            &[
+                op.tag(),
+                &columns.join("|"),
+                &from.to_string(),
+                &to.to_string(),
+                value,
+            ],
+            b',',
+        ),
         Op::SetColumnFormula { column, formula } => {
             join_csv_line(&[op.tag(), column, formula], b',')
         }
@@ -423,6 +438,16 @@ pub(crate) fn parse_op(record: &[u8]) -> Option<Op> {
             } else {
                 ColumnSource::Formula(fields[4].clone())
             },
+        }),
+        "fillcols" if fields.len() >= 5 => Some(Op::FillColumns {
+            columns: fields[1]
+                .split('|')
+                .map(str::to_string)
+                .filter(|c| !c.is_empty())
+                .collect(),
+            from: fields[2].trim().parse().ok()?,
+            to: fields[3].trim().parse().ok()?,
+            value: fields[4].clone(),
         }),
         "setformula" if fields.len() >= 3 => Some(Op::SetColumnFormula {
             column: fields[1].clone(),

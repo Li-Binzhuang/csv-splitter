@@ -189,6 +189,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
                 "Treat the pattern as a pattern: . * + ? ^ $ [a-z]",
             ),
             ("--row", "Data row (1-based)"),
+            ("--cols", "Several columns to fill, as one operation (a,b)"),
             (
                 "--after-key",
                 "Insert after this row key (b:12 from /rows, not a row number)",
@@ -5823,6 +5824,7 @@ fn cmd_edit(args: &[String]) -> i32 {
     let mut input: Option<PathBuf> = None;
     let mut row: Option<u64> = None;
     let mut key_anchor: Option<(String, String)> = None;
+    let mut cols_list: Vec<String> = Vec::new();
     let mut col: Option<String> = None;
     let mut value: Option<String> = None;
     let mut from: Option<String> = None;
@@ -5896,6 +5898,19 @@ fn cmd_edit(args: &[String]) -> i32 {
             },
             "--after-key" | "--before-key" => match p.value(&arg) {
                 Ok(v) => key_anchor = Some((arg.clone(), v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--cols" => match p.value("--cols") {
+                Ok(v) => {
+                    cols_list = v
+                        .split(',')
+                        .map(|c| c.trim().to_string())
+                        .filter(|c| !c.is_empty())
+                        .collect()
+                }
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -6776,8 +6791,8 @@ fn cmd_edit(args: &[String]) -> i32 {
             }
         }
         "fill" => {
-            let (Some(column), Some(from), Some(to)) = (col.clone(), row_from, row_to) else {
-                eprintln!("error: fill needs --col, --from-row and --to-row");
+            let (Some(from), Some(to)) = (row_from, row_to) else {
+                eprintln!("error: fill needs --from-row and --to-row");
                 return 2;
             };
             if from == 0 || to == 0 || from > to {
@@ -6786,13 +6801,30 @@ fn cmd_edit(args: &[String]) -> i32 {
                 );
                 return 2;
             }
-            csv_splitter_core::workbook::Op::FillRange {
-                column,
-                from: from - 1,
-                to: to - 1,
-                value: value.unwrap_or_default(),
+            let text = value.unwrap_or_default();
+            // `--cols a,b` fills several columns as one operation, so one undo covers the
+            // whole gesture; `--col` stays the single-column form.
+            if !cols_list.is_empty() {
+                csv_splitter_core::workbook::Op::FillColumns {
+                    columns: cols_list.clone(),
+                    from: from - 1,
+                    to: to - 1,
+                    value: text,
+                }
+            } else {
+                let Some(column) = col else {
+                    eprintln!("error: fill needs --col or --cols");
+                    return 2;
+                };
+                csv_splitter_core::workbook::Op::FillRange {
+                    column,
+                    from: from - 1,
+                    to: to - 1,
+                    value: text,
+                }
             }
         }
+
         "split-column" | "splitcolumn" => {
             let (Some(column), Some(by), Some(into)) = (col.clone(), by, into) else {
                 eprintln!("error: split-column needs --col, --by and --into");

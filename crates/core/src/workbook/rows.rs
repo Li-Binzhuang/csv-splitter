@@ -1056,6 +1056,44 @@ impl ColumnPlan {
     }
 }
 
+/// Resolve a fill over `from..=to` into a span that follows row identities.
+///
+/// Resolved against the map as it stands *now*: a later delete must not slide the
+/// filled values onto different rows.
+fn fill_span(map: &RowMap, from: &u64, to: &u64, column: &str, value: &str) -> Option<FillSpan> {
+    let ids: Vec<RowId> = (*from..=*to)
+        .filter_map(|logical| map.id_at(logical))
+        .collect();
+    if ids.is_empty() {
+        return None;
+    }
+    let bases: Vec<u64> = ids
+        .iter()
+        .filter_map(|id| match id {
+            RowId::Base(at) => Some(*at),
+            RowId::Virtual(_) => None,
+        })
+        .collect();
+    // The common case is one contiguous run of base rows: store it as a span, so filling
+    // a million rows still costs one entry.
+    let contiguous =
+        bases.len() == ids.len() && bases.windows(2).all(|pair| pair[1] == pair[0] + 1);
+    Some(if contiguous {
+        FillSpan::Base {
+            from: bases[0],
+            to: bases[bases.len() - 1],
+            column: column.to_string(),
+            value: value.to_string(),
+        }
+    } else {
+        FillSpan::Rows {
+            ids,
+            column: column.to_string(),
+            value: value.to_string(),
+        }
+    })
+}
+
 /// The compiled sheet: final row map plus the cell edits resolved to identities.
 #[derive(Clone, Debug, Default)]
 pub struct Sheet {
@@ -1136,40 +1174,22 @@ pub fn compile(ops: &[Op], base_rows: u64) -> Sheet {
                 to,
                 value,
             } => {
-                // Resolve against the map as it stands *now*: a later delete must not
-                // slide the filled values onto different rows.
-                let ids: Vec<RowId> = (*from..=*to)
-                    .filter_map(|logical| map.id_at(logical))
-                    .collect();
-                if ids.is_empty() {
-                    continue;
+                if let Some(span) = fill_span(&map, from, to, column, value) {
+                    fills.push(span);
                 }
-                let bases: Vec<u64> = ids
-                    .iter()
-                    .filter_map(|id| match id {
-                        RowId::Base(at) => Some(*at),
-                        RowId::Virtual(_) => None,
-                    })
-                    .collect();
-                // The common case is one contiguous run of base rows: store it as a
-                // span, so filling a million rows still costs one entry.
-                let contiguous =
-                    bases.len() == ids.len() && bases.windows(2).all(|pair| pair[1] == pair[0] + 1);
-                let span = if contiguous {
-                    FillSpan::Base {
-                        from: bases[0],
-                        to: bases[bases.len() - 1],
-                        column: column.clone(),
-                        value: value.clone(),
+            }
+            // One gesture, one operation: the spans are per column, the undo is not.
+            Op::FillColumns {
+                columns,
+                from,
+                to,
+                value,
+            } => {
+                for column in columns {
+                    if let Some(span) = fill_span(&map, from, to, column, value) {
+                        fills.push(span);
                     }
-                } else {
-                    FillSpan::Rows {
-                        ids,
-                        column: column.clone(),
-                        value: value.clone(),
-                    }
-                };
-                fills.push(span);
+                }
             }
             Op::Substitute { column, from, to } => {
                 subs.push((column.clone(), from.clone(), to.clone()));

@@ -54,6 +54,7 @@
 | `GET /filter` | `path` `where` | 命中行的行号 |
 | `GET /search` | `path` `q` `columns` `case` `exact` `regex` `limit` | 跨列搜索；`regex=1` 用条件格式那套模式子集 |
 | `GET /schema` | `path` `diff` `sample` `delim` | 列清单；带 `diff=<另一个文件>` 时返回列集合对比（`same` / `removed` / `added` / `moved`），与 `schema --diff --json` 同一份文档 |
+| `POST /edit` | `action=fill&cols=a,b&from-row=&to-row=&value=` | 多列区间填充，**一次操作一次撤销**（`col=` 仍是单列形式）|
 | `POST /edit` | `action=insert-after-key&key=&value=` / `insert-before-key` | 按 **rowKey** 插行（`b:12`/`v:3`，来自上一次 `/rows`）；key 不存在 404，格式错 400 |
 | `POST /edit` | `action=set-formula&col=&value=` | 给**已有列**重套公式（一次撤销）；自引用或未知列在写入前就 400 |
 | `GET /validate` | `path` `checks` `delim` | 数据校验，与 CLI `validate --json` **同一份报告**：`ok` / `violations` / 每规则计数；**只读不写**；违规数据仍是 **200**（请求没错，数据错了）|

@@ -239,6 +239,17 @@ has "insert by key: placed after b:1" "$KEY_ROWS" '["2","b"],["2.5","added"],["3
 MISSING_KEY="$(curl -s -X POST "$URL/edit?path=keys.csv&action=insert-after-key&key=b:99&value=x,y")"
 has "insert by key: missing key 404" "$MISSING_KEY" '"parameter":"key"'
 
+echo "== multi-column fill =="
+printf 'id,a,b\n1,x,y\n2,x,y\n3,x,y\n' > "$WORK/fill.csv"
+rm -f "$WORK/fill.csv.journal"
+FILL_JSON="$(curl -s -X POST "$URL/edit?path=fill.csv&action=fill&cols=a,b&from-row=1&to-row=2&value=0")"
+has "fill cols: one operation" "$FILL_JSON" '"op":"fillcols"'
+FILL_ROWS="$(curl -s "$URL/rows?path=fill.csv&count=3&columns=id,a,b")"
+has "fill cols: both columns" "$FILL_ROWS" '["1","0","0"]'
+curl -s -X POST "$URL/edit?path=fill.csv&action=undo" > /dev/null
+UNDONE="$(curl -s "$URL/rows?path=fill.csv&count=3&columns=id,a,b")"
+has "fill cols: one undo" "$UNDONE" '["1","x","y"]'
+
 echo "== cost tier =="
 SHEET_COST="$(curl -s "$URL/sheet?path=orders.csv")"
 has "sheet: cost tier"         "$SHEET_COST" '"tier":'

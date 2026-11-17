@@ -2301,16 +2301,35 @@ fn edit_apply(
             Op::DeleteRanges { runs }
         }
         "fill" => {
-            let (Some(column), Some(from), Some(to)) = (
-                params.get("col").cloned(),
+            // `cols=a,b` fills several columns as one operation; `col=a` is the old form.
+            let many: Vec<String> = params
+                .get("cols")
+                .map(|v| {
+                    v.split(',')
+                        .map(str::trim)
+                        .filter(|c| !c.is_empty())
+                        .map(str::to_string)
+                        .collect()
+                })
+                .unwrap_or_default();
+            let single = params.get("col").cloned();
+            if many.is_empty() && single.is_none() {
+                return bad_request(
+                    stream,
+                    "fill needs col or cols",
+                    "col",
+                    "col=<column> or cols=a,b",
+                );
+            }
+            let (Some(from), Some(to)) = (
                 plain("from-row").or_else(|| plain("from")),
                 plain("to-row").or_else(|| plain("to")),
             ) else {
                 return bad_request(
                     stream,
-                    "fill needs col, from-row and to-row",
-                    "col",
-                    "col=<column>&from-row=<n>&to-row=<n>&value=<text>",
+                    "fill needs from-row and to-row",
+                    "from-row",
+                    "from-row=<n>&to-row=<n>&col=a or cols=a,b",
                 );
             };
             if from == 0 || to == 0 || from > to {
@@ -2321,11 +2340,21 @@ fn edit_apply(
                     "from-row=1&to-row=10",
                 );
             }
-            Op::FillRange {
-                column,
-                from: from - 1,
-                to: to - 1,
-                value: params.get("value").cloned().unwrap_or_default(),
+            let value = params.get("value").cloned().unwrap_or_default();
+            if many.is_empty() {
+                Op::FillRange {
+                    column: single.unwrap_or_default(),
+                    from: from - 1,
+                    to: to - 1,
+                    value,
+                }
+            } else {
+                Op::FillColumns {
+                    columns: many,
+                    from: from - 1,
+                    to: to - 1,
+                    value,
+                }
             }
         }
         "split-column" | "splitcolumn" => {

@@ -166,6 +166,18 @@ pub enum Op {
         from: String,
         to: String,
     },
+    /// Fill a range of rows in **several** columns with the same value, as one operation.
+    ///
+    /// `FillRange` does one column. Editing a block of a spreadsheet ("clear these three
+    /// cells for rows 5-10") is a single gesture, so it has to be a single undo — writing
+    /// one op per column would make the undo count depend on how many columns the user
+    /// happened to select.
+    FillColumns {
+        columns: Vec<String>,
+        from: u64,
+        to: u64,
+        value: String,
+    },
     /// Recompute an **existing** column from a formula, in place.
     ///
     /// Different from `AddColumn`, which appends a new one: this is the spreadsheet
@@ -198,6 +210,7 @@ impl Op {
             Self::DropColumn { .. } => "dropcolumn",
             Self::RenameColumn { .. } => "renamecolumn",
             Self::SetColumnFormula { .. } => "setformula",
+            Self::FillColumns { .. } => "fillcols",
         }
     }
 
@@ -284,6 +297,18 @@ impl Op {
             Self::SetColumnFormula { column, formula } => {
                 format!("compute '{column}' = {formula}")
             }
+            Self::FillColumns {
+                columns,
+                from,
+                to,
+                value,
+            } => format!(
+                "fill {} rows {}-{} = '{}'",
+                columns.join("+"),
+                from + 1,
+                to + 1,
+                truncate(value, 20)
+            ),
             Self::DropColumn { name } => format!("drop column '{name}'"),
             Self::RenameColumn { from, to } => format!("rename '{from}' → '{to}'"),
         }
@@ -1127,6 +1152,48 @@ mod history_tests {
         path
     }
 
+    #[test]
+    fn fill_columns_is_one_operation_over_many_columns() {
+        let dir = temp("fillcols");
+        let base = dir.join("t.csv");
+        std::fs::write(&base, "id,a,b,c\n1,x,y,z\n2,x,y,z\n3,x,y,z\n").unwrap();
+        let ops = vec![Op::FillColumns {
+            columns: vec!["a".into(), "b".into()],
+            from: 0,
+            to: 1,
+            value: "0".into(),
+        }];
+        let out = dir.join("out.csv");
+        let (tx, _rx) = std::sync::mpsc::channel();
+        export(&base, &ops, &out, Delimiter::Comma, &tx).unwrap();
+        let text = std::fs::read_to_string(&out).unwrap();
+        assert_eq!(text, "id,a,b,c\n1,0,0,z\n2,0,0,z\n3,x,y,z\n", "{text}");
+        // One gesture, one undo: the count is 1 no matter how many columns were filled.
+        assert_eq!(ops.len(), 1);
+    }
+
+    #[test]
+    fn fill_columns_follows_rows_when_a_row_is_deleted_above() {
+        let dir = temp("fillcols-shift");
+        let base = dir.join("t.csv");
+        std::fs::write(&base, "id,a,b\n1,x,y\n2,x,y\n3,x,y\n").unwrap();
+        let ops = vec![
+            Op::FillColumns {
+                columns: vec!["a".into(), "b".into()],
+                from: 1,
+                to: 2,
+                value: "FILLED".into(),
+            },
+            Op::DeleteRows { at: 0, count: 1 },
+        ];
+        let out = dir.join("out.csv");
+        let (tx, _rx) = std::sync::mpsc::channel();
+        export(&base, &ops, &out, Delimiter::Comma, &tx).unwrap();
+        let text = std::fs::read_to_string(&out).unwrap();
+        // The fill was resolved to the rows it landed on, so deleting an earlier row
+        // moves it up with them instead of sliding onto row 3.
+        assert_eq!(text, "id,a,b\n2,FILLED,FILLED\n3,FILLED,FILLED\n", "{text}");
+    }
     #[test]
     fn set_column_formula_recomputes_an_existing_column() {
         let dir = temp("setformula");
