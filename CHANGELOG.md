@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.44.0] — 2026-11-17
+
+### Added
+
+- **`POST /convert`** — rewrite a file in another encoding, as a job: `from` defaults to
+  auto-detection, `to` is `utf-8` or `utf-8-bom`. Same core `encoding::transcode` as
+  `csv-splitter convert`, so a GBK export in the served directory can become UTF-8 text a
+  browser can parse without leaving the API. An unknown encoding is a 400 naming `from`.
+
+### Tooling
+
+- `scripts/check_match_arms.py` fails when a match arm label appears twice in `serve.rs`,
+  and `regress.sh` runs it. The compiler rejects unreachable arms too — but only after the
+  compile the author was trying to avoid, and only when the shapes are visible to it. Three
+  replacement edits in a row left duplicate `fill` / `insert-column` / `delete-where` arms
+  in this round's parent; this catches the class in about a second, from the sweep.
+
 ## [3.43.0] — 2026-11-17
 
 ### Added

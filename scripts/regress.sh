@@ -46,6 +46,14 @@ check "schema"      "$BIN" schema orders.csv --sample 5
 check "schema --has" "$BIN" schema orders.csv --has city
 check "serve --check" "$BIN" serve --check --root . --addr 127.0.0.1:0
 
+# A duplicate match arm is a compiler error, but only after a compile; this is a second.
+if python3 "$ROOT/scripts/check_match_arms.py" >/dev/null 2>&1; then
+  echo "  ok   no duplicate match arms"
+else
+  echo "  FAIL duplicate match arms in serve.rs"
+  failed=$((failed + 1))
+fi
+
 # The release workflow's decision logic is a script, so the sweep can run its self-test.
 if bash "$ROOT/scripts/release-decision.sh" --self-test >/dev/null 2>&1; then
   echo "  ok   release-decision --self-test"

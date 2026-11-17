@@ -3805,3 +3805,32 @@ fn fill_columns_is_one_undo() {
     assert_eq!(code, 400, "{body}");
     assert!(body.contains(r#""parameter":"col""#), "{body}");
 }
+
+/// `POST /convert` rewrites a GBK file as UTF-8, and refuses an unknown encoding.
+#[test]
+fn convert_rewrites_the_encoding() {
+    let dir = TempDir::new("convert");
+    // 北京 = b1 b1 be a9, 上海 = c9 cf ba a3 in GBK; written as bytes so the fixture does
+    // not depend on this machine's encoders.
+    let gbk: &[u8] = b"id,city\n1,\xb1\xb1\xbe\xa9\n2,\xc9\xcf\xba\xa3\n";
+    std::fs::write(dir.join("gbk.csv"), gbk).unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = post(&server.addr, "/convert?path=gbk.csv&out=utf8.csv&from=gbk");
+    assert_eq!(code, 202, "{body}");
+    let job = body
+        .split("\"job\":\"")
+        .nth(1)
+        .and_then(|s| s.split('"').next())
+        .expect("job id")
+        .to_string();
+    let status = wait_for_job(&server.addr, &job);
+    assert!(status.contains(r#""state":"done""#), "{status}");
+    let text = std::fs::read_to_string(dir.join("utf8.csv")).unwrap();
+    assert_eq!(text, "id,city\n1,北京\n2,上海\n", "{text}");
+
+    // An encoding the engine does not know is a 400, not a guess.
+    let (code, body) = post(&server.addr, "/convert?path=gbk.csv&out=x.csv&from=klingon");
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains(r#""parameter":"from""#), "{body}");
+}

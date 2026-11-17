@@ -250,6 +250,20 @@ curl -s -X POST "$URL/edit?path=fill.csv&action=undo" > /dev/null
 UNDONE="$(curl -s "$URL/rows?path=fill.csv&count=3&columns=id,a,b")"
 has "fill cols: one undo" "$UNDONE" '["1","x","y"]'
 
+echo "== encoding convert =="
+printf 'id,city\n1,Puebla\n' > "$WORK/utf8-src.csv"
+CONVERT_JOB="$(curl -s -X POST "$URL/convert?path=utf8-src.csv&out=utf8-src.bom.csv&to=utf-8-bom" | python3 -c 'import json,sys;print(json.load(sys.stdin).get("job",""))')"
+for _ in $(seq 1 40); do
+  CONVERT_STATE="$(curl -s "$URL/job?id=$CONVERT_JOB")"
+  echo "$CONVERT_STATE" | grep -q '"state":"done"' && break
+  sleep 0.25
+done
+has "convert: finished" "$CONVERT_STATE" '"state":"done"'
+if [ -s "$WORK/utf8-src.bom.csv" ]; then printf '  ok   convert: wrote the file\n'
+else printf '  FAIL convert wrote nothing\n'; failed=$((failed + 1)); fi
+BAD_ENC="$(curl -s -X POST "$URL/convert?path=utf8-src.csv&out=x.csv&from=klingon")"
+has "convert: unknown encoding 400" "$BAD_ENC" '"parameter":"from"'
+
 echo "== cost tier =="
 SHEET_COST="$(curl -s "$URL/sheet?path=orders.csv")"
 has "sheet: cost tier"         "$SHEET_COST" '"tier":'

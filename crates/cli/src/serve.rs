@@ -404,6 +404,7 @@ fn handle(
             "/lookup" => start_lookup(&mut stream, root, jobs, &params),
             "/concat" => start_concat(&mut stream, root, jobs, &params),
             "/columns" => start_columns_reshape(&mut stream, root, jobs, &params),
+            "/convert" => start_convert(&mut stream, root, jobs, &params),
             "/edit" => edit_apply(&mut stream, root, jobs, &params),
             _ => respond_json(&mut stream, 404, r#"{"error":"unknown endpoint"}"#),
         };
@@ -683,6 +684,7 @@ const WRITE_ROUTES: &[&str] = &[
     "POST /lookup",
     "POST /concat",
     "POST /columns",
+    "POST /convert",
     "POST /warm",
     "POST /edit",
     "POST /index",
@@ -719,6 +721,79 @@ fn query_timeout_ms() -> u64 {
         .and_then(|value| value.parse().ok())
         .filter(|ms| *ms > 0)
         .unwrap_or(csv_splitter_core::sql::DEFAULT_TIMEOUT_MS)
+}
+
+/// `POST /convert?path=&out=&from=&to=utf-8` — rewrite a file in another encoding.
+///
+/// A job: it streams the whole file. Useful to a browser that has a GBK export in the
+/// served directory and needs UTF-8 text it can parse — the same capability
+/// `csv-splitter convert` has, and the same core `encoding::transcode`.
+fn start_convert(
+    stream: &mut TcpStream,
+    root: &Path,
+    jobs: &JobRegistry,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (input, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return bad_path(stream),
+    };
+    let Some(out) = resolve_out(root, params, "out") else {
+        return bad_out(stream);
+    };
+    let from = match params.get("from").map(String::as_str).unwrap_or("auto") {
+        "auto" | "" => None,
+        name => match csv_splitter_core::encoding::parse_name(name) {
+            Some(encoding) => Some(encoding),
+            None => {
+                return bad_request(
+                    stream,
+                    &format!("unknown encoding {name:?}"),
+                    "from",
+                    "from=auto|utf-8|gbk|utf-16le",
+                )
+            }
+        },
+    };
+    let to = match params.get("to").map(|t| t.to_ascii_lowercase()) {
+        Some(ref name) if name == "utf-8" || name == "utf8" => {
+            csv_splitter_core::encoding::TextEncoding::Utf8 { bom: false }
+        }
+        Some(ref name) if name == "utf-8-bom" || name == "utf8-bom" || name == "bom" => {
+            csv_splitter_core::encoding::TextEncoding::Utf8 { bom: true }
+        }
+        None => csv_splitter_core::encoding::TextEncoding::Utf8 { bom: false },
+        Some(other) => {
+            return bad_request(
+                stream,
+                &format!("--to only supports utf-8 or utf-8-bom (got {other})"),
+                "to",
+                "to=utf-8 or to=utf-8-bom",
+            )
+        }
+    };
+    let result_path = out.clone();
+    let id = jobs.submit(
+        "convert",
+        move |tx| match csv_splitter_core::encoding::transcode(
+            &input,
+            &out,
+            from,
+            to,
+            8 * 1024 * 1024,
+        ) {
+            Ok(_) => {
+                tx.send(ProgressEvent::Finished {
+                    output: result_path,
+                })
+                .ok();
+            }
+            Err(e) => {
+                tx.send(ProgressEvent::Error(e.to_string())).ok();
+            }
+        },
+    );
+    respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
 }
 
 /// `POST /columns?path=&out=&keep=a,b` / `drop=` / `rename=old:new,old2:new2`.

@@ -76,6 +76,7 @@
 | `POST /dedupe` | `path` `by` `out` | 去重 |
 | `POST /partition` | `path` `by` `out` `format` `maxPartitions` | 按列值拆成多个文件 |
 | `POST /lookup` | `path` `key` `from` `get` `out` `refKey` `maxKeys` | 跨表查找（job）：按 `key` 从 `from` 拷 `get` 列；未命中写 `#N/A` |
+| `POST /convert` | `path` `out` `from` `to` | 编码转换（job）：默认自动探测源编码，`to=utf-8` 或 `utf-8-bom`；未知编码 400 |
 | `POST /columns` | `path` `out` `keep` `drop` `rename` `delim` | **写**的列变换（job）：产出一个列集合不同的新文件；源文件不动。与 `GET /columns`（只读的列清单）是两个方向 |
 | `POST /concat` | `paths` `out` `ignoreHeader` `delim` | 拼接多个文件（job）；每个输入与输出都过 root 守卫 |
 | `POST /warm` | `path` `sql` `start` `count` | 预热查询缓存 |
@@ -302,7 +303,7 @@ written on refusal, and `actual` says what the value is now.
 | GET | `/groupby` `/pivot` `/style` `/chart` `/layout` | 聚合与展示元数据 |
 | GET | `/book` `/files` `/download` | 目录、书、下载（`book?root=` 不存在时 400；`max`/`limit` 截断时带 `total`/`hidden`）|
 | GET | `/job` `/jobs` | 异步任务状态 |
-| POST | `/split` `/merge` `/sort` `/dedupe` `/partition` `/lookup` `/concat` `/columns` `/warm` `/index` `/parquet` | 拆分、查找、预热与后台任务（`/parquet` 建列式缓存）|
+| POST | `/split` `/merge` `/sort` `/dedupe` `/partition` `/lookup` `/concat` `/columns` `/convert` `/warm` `/index` `/parquet` | 拆分、查找、预热与后台任务（`/parquet` 建列式缓存）|
 
 ## `GET /capabilities`
 
