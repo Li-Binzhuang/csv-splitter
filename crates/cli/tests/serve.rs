@@ -3834,3 +3834,41 @@ fn convert_rewrites_the_encoding() {
     assert_eq!(code, 400, "{body}");
     assert!(body.contains(r#""parameter":"from""#), "{body}");
 }
+
+/// `limit` bounds a validation scan, and the report says it only saw a prefix.
+#[test]
+fn validate_can_bound_its_scan() {
+    let dir = TempDir::new("validate-limit");
+    std::fs::write(dir.join("t.csv"), "id,qty\n1,5\n2,-3\n3,7\n4,-1\n").unwrap();
+    let server = start(&dir.0);
+
+    // Full scan: four rows, both violations counted.
+    let (code, body) = get(&server.addr, "/validate?path=t.csv&checks=qty%3E%3D0");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""rows":4"#), "{body}");
+    assert!(body.contains(r#""checked":4"#), "{body}");
+    assert!(body.contains(r#""partial":false"#), "{body}");
+    assert!(body.contains(r#""count":2"#), "{body}");
+
+    // Bounded scan: two of four rows, one violation, and it says it is a prefix.
+    let (code, body) = get(
+        &server.addr,
+        "/validate?path=t.csv&checks=qty%3E%3D0&limit=2",
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(
+        body.contains(r#""rows":4"#),
+        "the sheet still has four rows: {body}"
+    );
+    assert!(body.contains(r#""checked":2"#), "{body}");
+    assert!(body.contains(r#""partial":true"#), "{body}");
+    assert!(body.contains(r#""count":1"#), "{body}");
+
+    // A limit of zero is refused rather than silently validating nothing.
+    let (code, body) = get(
+        &server.addr,
+        "/validate?path=t.csv&checks=qty%3E%3D0&limit=0",
+    );
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains(r#""parameter":"limit""#), "{body}");
+}

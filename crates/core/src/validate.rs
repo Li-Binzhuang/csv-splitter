@@ -186,6 +186,10 @@ pub struct Violation {
 #[derive(Clone, Debug, Default)]
 pub struct Report {
     pub rows: u64,
+    /// Rows actually checked. Equals `rows` unless a row limit stopped the scan.
+    pub checked: u64,
+    /// True when the scan stopped early, so the counts describe a prefix of the file.
+    pub partial: bool,
     pub violations: Vec<Violation>,
     /// True when the violation list stopped at [`MAX_VIOLATIONS`].
     pub truncated: bool,
@@ -227,8 +231,10 @@ impl Report {
             .collect();
         let columns: Vec<String> = self.columns.iter().map(|c| json(c)).collect();
         format!(
-            r#"{{"rows":{},"violations":[{}],"counts":[{}],"truncated":{},"uniqueFull":{},"ok":{},"columns":[{}]}}"#,
+            r#"{{"rows":{},"checked":{},"partial":{},"violations":[{}],"counts":[{}],"truncated":{},"uniqueFull":{},"ok":{},"columns":[{}]}}"#,
             self.rows,
+            self.checked,
+            self.partial,
             violations.join(","),
             counts.join(","),
             self.truncated,
@@ -353,6 +359,22 @@ pub fn validate(
     delimiter: Delimiter,
     tx: &ProgressSender,
 ) -> io::Result<Report> {
+    validate_limited(base, ops, rules, delimiter, None, tx)
+}
+
+/// Validate at most `limit` data rows.
+///
+/// A browser previewing a window does not need the counts for 684 000 rows, and a full
+/// scan of a 2.5 GB file takes tens of seconds. A partial scan says so: `partial: true`
+/// and `checked < rows`, so nobody reads a prefix as if it were the whole file.
+pub fn validate_limited(
+    base: &Path,
+    ops: &[Edit],
+    rules: &[Rule],
+    delimiter: Delimiter,
+    limit: Option<u64>,
+    tx: &ProgressSender,
+) -> io::Result<Report> {
     let pager = match Pager::open(base, ops, delimiter) {
         Ok(p) => p,
         Err(e) => {
@@ -402,6 +424,9 @@ pub fn validate(
     }
 
     let mut report = Report {
+        // `rows` is the size of the sheet, `checked` how much of it was examined; they
+        // differ only when a limit stopped the scan, and then `partial` says so.
+        rows: total,
         columns: columns.clone(),
         counts: rules.iter().map(|r| (r.describe(), 0)).collect(),
         ..Default::default()
@@ -440,8 +465,14 @@ pub fn validate(
     while at < total {
         let window = pager.page(at, PAGE)?;
         for (offset, row) in window.rows.iter().enumerate() {
+            if let Some(limit) = limit {
+                if report.checked >= limit {
+                    report.partial = true;
+                    break;
+                }
+            }
             let row_number = at + offset as u64 + 1;
-            report.rows += 1;
+            report.checked += 1;
             for (index, rule) in rules.iter().enumerate() {
                 let slot = rule_slots[index];
                 let value = slot.and_then(|s| row.get(s)).cloned().unwrap_or_default();
@@ -499,6 +530,9 @@ pub fn validate(
                     report.truncated = true;
                 }
             }
+        }
+        if report.partial {
+            break;
         }
         at += PAGE;
         // A 20 000-row check finishes in under a second, so progress there is noise;

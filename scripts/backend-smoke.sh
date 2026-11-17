@@ -159,6 +159,9 @@ echo "== parity with the CLI =="
 VALIDATE_JSON="$(curl -s "$URL/validate?path=orders.csv&checks=amount%3E%3D0;city:not-empty")"
 has "validate: report"        "$VALIDATE_JSON" '"rows":'
 has "validate: per-rule counts" "$VALIDATE_JSON" '"counts":'
+LIMITED_JSON="$(curl -s "$URL/validate?path=orders.csv&checks=amount%3E%3D0&limit=100")"
+has "validate: limited scan is partial" "$LIMITED_JSON" '"partial":true'
+has "validate: limited scan checked 100" "$LIMITED_JSON" '"checked":100'
 printf 'city,sales\nCDMX,10\nPuebla,20\n' > "$WORK/regions.csv"
 LOOKUP_JOB="$(curl -s -X POST "$URL/lookup?path=orders.csv&key=city&from=regions.csv&get=sales&out=orders-lookup.csv" | python3 -c 'import json,sys;print(json.load(sys.stdin).get("job",""))')"
 has "lookup: job accepted" "$LOOKUP_JOB" 'job'

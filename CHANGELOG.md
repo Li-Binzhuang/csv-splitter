@@ -1,5 +1,33 @@
 # Changelog
 
+## [3.46.0] — 2026-11-17
+
+### Added
+
+- **`GET /validate?limit=`** bounds a validation scan. Measuring the endpoint on the real
+  2.5 GB file showed a full check costs **34.9 s** — acceptable for a batch job, wrong for
+  a browser previewing a window. `limit=200` answers in **0.11 s**, and the report is
+  explicit about what it did: `rows` is the sheet's size, `checked` how much was examined,
+  `partial:true` when the two differ. `limit=0` is a 400 rather than a scan that checks
+  nothing.
+
+## [3.45.0] — 2026-11-17
+
+### Fixed
+
+- **`/capabilities` was missing `delete-where`** — the action was documented in API.md and
+  handled by the dispatcher, but the machine-readable list a client reads did not mention
+  it. Found by a new test that compares `EDIT_ACTIONS` against the actual match arms in
+  `serve.rs` in both directions.
+
+### Tests
+
+- `crates/cli/tests/contract.rs`: the advertised action list and the dispatch must agree.
+  It models the two things that make this non-trivial and documents them: three actions
+  (`export`, `undo`, `redo`) are handled by early branches before the `match`, and four
+  squashed spellings (`deletewhere`, `insertcolumn`, `splitcolumn`, `setformula`) are
+  aliases that a client should never be told to use.
+
 ## [3.44.0] — 2026-11-17
 
 ### Added

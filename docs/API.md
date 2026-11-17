@@ -57,7 +57,7 @@
 | `POST /edit` | `action=fill&cols=a,b&from-row=&to-row=&value=` | 多列区间填充，**一次操作一次撤销**（`col=` 仍是单列形式）|
 | `POST /edit` | `action=insert-after-key&key=&value=` / `insert-before-key` | 按 **rowKey** 插行（`b:12`/`v:3`，来自上一次 `/rows`）；key 不存在 404，格式错 400 |
 | `POST /edit` | `action=set-formula&col=&value=` | 给**已有列**重套公式（一次撤销）；自引用或未知列在写入前就 400 |
-| `GET /validate` | `path` `checks` `delim` | 数据校验，与 CLI `validate --json` **同一份报告**：`ok` / `violations` / 每规则计数；**只读不写**；违规数据仍是 **200**（请求没错，数据错了）|
+| `GET /validate` | `path` `checks` `delim` `limit` | 数据校验，与 CLI `validate --json` **同一份报告**：`ok` / `violations` / 每规则计数；**只读不写**；违规数据仍是 **200**（请求没错，数据错了）。`limit=N` 只校验前 N 行，报告里 `checked` 与 `partial` 明说这是前缀；2.5 GB 全量实测 **34.9 s**，`limit=200` 为 **0.11 s** |
 | `GET /files` | `ext` `limit` | 根目录下可读文件清单 |
 | `GET /download` | `path` | 原样下载文件 |
 | `GET /export` | `path` `sql` `where` | 导出（查询结果或筛选结果）为 CSV |
@@ -88,14 +88,16 @@
 |---|---|---|
 | `set` | `row=N` **或** `where=列=值`，`col` `value` | 单格或按条件批量（批量存成一条规则） |
 | `insert` | `row` `value`（CSV 行） | 插入行 |
+| `insert-after-key` / `insert-before-key` | `key` `value` | 按 **rowKey** 插行（`b:12`/`v:3`）；key 不存在 404，格式错 400 |
 | `delete` | `row` `count` | 删除行 |
 | `replace` | `from` `to` `col` | 查找替换 |
 | `drop` / `rename` | `name` / `from`,`to` | 删列 / 改名 |
 | `insert-column` | `name` `value` **或** `formula`，`after` | 插入常量列或公式列 |
-| `formula` | `name` `formula` | 追加公式列 |
+| `formula` | `name` `value` | 追加公式列 |
+| `set-formula` | `col` `value` | **重算已有列**（一次撤销）；自引用/未知列写入前 400 |
 | `copy` | `from=A1:B2` `to=B3` | 区域复制（A1 风格范围） |
 | `split-column` | `col` `by` `into` | 一列拆成多列（最后一片吃下剩余部分） |
-| `fill` | `col` `from-row` `to-row` `value` | 区间填充（1-based，闭区间）；精确 `set` 优先于填充 |
+| `fill` | `col` **或** `cols` `from-row` `to-row` `value` | 区间填充（1-based，闭区间）；`cols=a,b` 是**一次操作**（一次 undo）；精确 `set` 优先于填充 |
 | `delete-where` | `where` | 删除所有命中行，**一条操作**（一次 undo 全恢复）；命中点超过 1000 段会拒绝并建议改用 `/filter` |
 | `undo` / `redo` | — | 撤销最后一条 / 重做 |
 | `export` | `out` | 物化到文件（返回 job） |

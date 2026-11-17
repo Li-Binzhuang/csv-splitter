@@ -479,7 +479,7 @@ fn handle(
 /// compare it against the live responses, so a field that moves or a parameter that is
 /// renamed fails a test instead of a client.
 const SPEC_PARAMS: &[(&str, &[&str])] = &[
-    ("/validate", &["path", "checks", "delim"]),
+    ("/validate", &["path", "checks", "delim", "limit"]),
     (
         "/schema",
         &[
@@ -1055,9 +1055,32 @@ fn validate_endpoint(
             )
         }
     };
+    // `limit` bounds the scan: the full-file count on a 2.5 GB sheet is a tens-of-seconds
+    // request, and a preview that validates its visible window does not need it.
+    let limit: Option<u64> = match params.get("limit").filter(|v| !v.is_empty()) {
+        Some(text) => match text.parse::<u64>() {
+            Ok(0) | Err(_) => {
+                return bad_request(
+                    stream,
+                    "limit must be a positive row count",
+                    "limit",
+                    "limit=1000 (or omit it for the whole file)",
+                )
+            }
+            Ok(n) => Some(n),
+        },
+        None => None,
+    };
     let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
     drop(rx);
-    match csv_splitter_core::validate::validate(&path, &ops, &rules, delimiter(params), &tx) {
+    match csv_splitter_core::validate::validate_limited(
+        &path,
+        &ops,
+        &rules,
+        delimiter(params),
+        limit,
+        &tx,
+    ) {
         // 200 with `"ok":false` rather than 4xx: the request was fine, the data is not.
         Ok(report) => respond_json(stream, 200, &report.to_json()),
         Err(e) => respond_json(
@@ -1831,6 +1854,7 @@ const EDIT_ACTIONS: &[&str] = &[
     "insert-after-key",
     "insert-before-key",
     "delete",
+    "delete-where",
     "replace",
     "copy",
     "fill",
