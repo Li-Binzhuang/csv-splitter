@@ -171,6 +171,27 @@ has "lookup: finished"  "$LOOKUP_STATE" '"state":"done"'
 if head -1 "$WORK/orders-lookup.csv" | grep -q sales; then printf '  ok   lookup: wrote the column\n'
 else printf '  FAIL lookup wrote no column\n'; failed=$((failed + 1)); fi
 
+echo "== schema diff and concat =="
+printf 'id,city,qty\n1,Puebla,5\n' > "$WORK/shape-a.csv"
+printf 'id,qty,city,extra\n1,5,Puebla,x\n' > "$WORK/shape-b.csv"
+DIFF_JSON="$(curl -s "$URL/schema?path=shape-a.csv&diff=shape-b.csv")"
+has "schema diff: added column" "$DIFF_JSON" '"added":["extra"]'
+has "schema diff: moved column" "$DIFF_JSON" '"moved":'
+# The same header as orders.csv: concat stacks files that agree on columns, and
+# deliberately refuses a mismatch instead of producing a ragged file.
+printf 'id,cust_no,city,amount,note,ts\n900001,C000001,CDMX,10.00,stacked row,2026-01-01\n' > "$WORK/extra-rows.csv"
+CONCAT_JOB="$(curl -s -X POST "$URL/concat?paths=orders.csv,extra-rows.csv&out=stacked.csv" | python3 -c 'import json,sys;print(json.load(sys.stdin).get("job",""))')"
+for _ in $(seq 1 40); do
+  CONCAT_STATE="$(curl -s "$URL/job?id=$CONCAT_JOB")"
+  echo "$CONCAT_STATE" | grep -q '"state":"done"' && break
+  sleep 0.25
+done
+has "concat: finished" "$CONCAT_STATE" '"state":"done"'
+ORDERS_LINES="$(wc -l < orders.csv | tr -d ' ')"
+STACKED_LINES="$(wc -l < "$WORK/stacked.csv" 2>/dev/null | tr -d ' ')"
+if [ "${STACKED_LINES:-0}" -gt "$ORDERS_LINES" ]; then printf '  ok   concat: stacked %s lines over %s\n' "$STACKED_LINES" "$ORDERS_LINES"
+else printf '  FAIL concat wrote %s lines, orders.csv has %s\n' "${STACKED_LINES:-0}" "$ORDERS_LINES"; failed=$((failed + 1)); fi
+
 echo "== cost tier =="
 SHEET_COST="$(curl -s "$URL/sheet?path=orders.csv")"
 has "sheet: cost tier"         "$SHEET_COST" '"tier":'

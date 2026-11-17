@@ -3495,3 +3495,67 @@ fn lookup_copies_columns_by_key() {
         "an outside path must be refused: {code} {body}"
     );
 }
+
+/// `/schema?diff=` answers exactly what `schema --diff --json` prints.
+#[test]
+fn schema_diff_matches_the_cli() {
+    let dir = TempDir::new("schemadiff");
+    std::fs::write(dir.join("a.csv"), "id,city,qty\n1,Puebla,5\n").unwrap();
+    std::fs::write(dir.join("b.csv"), "id,qty,city,extra\n1,5,Puebla,x\n").unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = get(&server.addr, "/schema?path=a.csv&diff=b.csv");
+    assert_eq!(code, 200, "{body}");
+    assert_eq!(
+        body,
+        r#"{"same":false,"removed":[],"added":["extra"],"moved":[{"name":"city","here":2,"there":3},{"name":"qty","here":3,"there":2}]}"#
+    );
+
+    // Reordering is not a schema change: same set, reported as `same:true` plus `moved`.
+    std::fs::write(dir.join("c.csv"), "qty,id,city\n5,1,Puebla\n").unwrap();
+    let (_, body) = get(&server.addr, "/schema?path=a.csv&diff=c.csv");
+    assert!(body.contains(r#""same":true"#), "{body}");
+    assert!(body.contains(r#""moved":[{"name":"id""#), "{body}");
+
+    // Without `diff`, `/schema` is still the column listing it always was.
+    let (code, body) = get(&server.addr, "/schema?path=a.csv");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""columns""#), "{body}");
+}
+
+/// `/concat` stacks files in a job, and refuses anything outside the root.
+#[test]
+fn concat_stacks_files_over_http() {
+    let dir = TempDir::new("concat");
+    std::fs::write(dir.join("a.csv"), "id,city\n1,Puebla\n2,Monterrey\n").unwrap();
+    std::fs::write(dir.join("b.csv"), "id,city\n3,CDMX\n").unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = post(&server.addr, "/concat?paths=a.csv,b.csv&out=all.csv");
+    assert_eq!(code, 202, "{body}");
+    let job = body
+        .split("\"job\":\"")
+        .nth(1)
+        .and_then(|s| s.split('"').next())
+        .expect("job id")
+        .to_string();
+    let status = wait_for_job(&server.addr, &job);
+    assert!(status.contains(r#""state":"done""#), "{status}");
+    assert_eq!(
+        std::fs::read_to_string(dir.join("all.csv")).unwrap(),
+        "id,city\n1,Puebla\n2,Monterrey\n3,CDMX\n"
+    );
+
+    // A path outside the root is refused before any work starts.
+    let (code, body) = post(
+        &server.addr,
+        "/concat?paths=a.csv,../../etc/passwd&out=x.csv",
+    );
+    assert_eq!(code, 404, "{body}");
+    assert!(body.contains("served directory"), "{body}");
+
+    // One file is not a stack.
+    let (code, body) = post(&server.addr, "/concat?paths=a.csv&out=x.csv");
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains(r#""parameter":"paths""#), "{body}");
+}

@@ -7092,40 +7092,9 @@ fn cmd_schema(args: &[String]) -> i32 {
         };
         let mine = sheet.columns().unwrap_or_default();
         let theirs = other_sheet.columns().unwrap_or_default();
-        let removed: Vec<&String> = mine.iter().filter(|c| !theirs.contains(c)).collect();
-        let added: Vec<&String> = theirs.iter().filter(|c| !mine.contains(c)).collect();
-        let moved: Vec<(&String, usize, usize)> = mine
-            .iter()
-            .filter_map(|name| {
-                let here = mine.iter().position(|c| c == name)? + 1;
-                let there = theirs.iter().position(|c| c == name)? + 1;
-                (here != there).then_some((name, here, there))
-            })
-            .collect();
-        let same = removed.is_empty() && added.is_empty();
+        let diff = csv_splitter_core::schema::diff(&mine, &theirs);
         if json {
-            let list = |items: &[&String]| {
-                items
-                    .iter()
-                    .map(|c| serve::json_str(c))
-                    .collect::<Vec<_>>()
-                    .join(",")
-            };
-            let moved_json: Vec<String> = moved
-                .iter()
-                .map(|(name, here, there)| {
-                    format!(
-                        r#"{{"name":{},"here":{here},"there":{there}}}"#,
-                        serve::json_str(name)
-                    )
-                })
-                .collect();
-            println!(
-                r#"{{"same":{same},"removed":[{}],"added":[{}],"moved":[{}]}}"#,
-                list(&removed),
-                list(&added),
-                moved_json.join(",")
-            );
+            println!("{}", diff.to_json());
         } else {
             println!(
                 "{} ({} columns) vs {} ({} columns)",
@@ -7134,20 +7103,23 @@ fn cmd_schema(args: &[String]) -> i32 {
                 other.display(),
                 theirs.len()
             );
-            if same {
+            if diff.same {
                 println!("✓ same column set");
             }
-            for name in &removed {
+            for name in &diff.removed {
                 println!("  − {name}   only in {}", input.display());
             }
-            for name in &added {
+            for name in &diff.added {
                 println!("  + {name}   only in {}", other.display());
             }
-            for (name, here, there) in &moved {
-                println!("  → {name}   position {here} here, {there} there");
+            for moved in &diff.moved {
+                println!(
+                    "  → {}   position {} here, {} there",
+                    moved.name, moved.here, moved.there
+                );
             }
         }
-        return if same { 0 } else { 1 };
+        return if diff.same { 0 } else { 1 };
     }
 
     if !require.is_empty() {

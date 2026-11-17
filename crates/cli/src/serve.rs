@@ -402,6 +402,7 @@ fn handle(
             "/dedupe" => start_dedupe(&mut stream, root, jobs, &params),
             "/partition" => start_partition(&mut stream, root, jobs, &params),
             "/lookup" => start_lookup(&mut stream, root, jobs, &params),
+            "/concat" => start_concat(&mut stream, root, jobs, &params),
             "/edit" => edit_apply(&mut stream, root, jobs, &params),
             _ => respond_json(&mut stream, 404, r#"{"error":"unknown endpoint"}"#),
         };
@@ -427,7 +428,13 @@ fn handle(
         "/columns" => columns_endpoint(&mut stream, root, &params),
         "/capabilities" => capabilities_endpoint(&mut stream),
         "/spec" => spec_endpoint(&mut stream),
-        "/schema" => columns_endpoint(&mut stream, root, &params),
+        "/schema" => {
+            if params.contains_key("diff") {
+                schema_diff_endpoint(&mut stream, root, &params)
+            } else {
+                columns_endpoint(&mut stream, root, &params)
+            }
+        }
         "/cell" => cell_endpoint(&mut stream, root, &params),
         "/journal" => journal_endpoint(&mut stream, root, &params),
         "/groupby" => group_by(&mut stream, root, cache, &params),
@@ -471,6 +478,12 @@ fn handle(
 /// renamed fails a test instead of a client.
 const SPEC_PARAMS: &[(&str, &[&str])] = &[
     ("/validate", &["path", "checks", "delim"]),
+    (
+        "/schema",
+        &[
+            "path", "diff", "sample", "delim", "kind", "limit", "has", "json",
+        ],
+    ),
     (
         "/lookup",
         &[
@@ -667,6 +680,7 @@ const WRITE_ROUTES: &[&str] = &[
     "POST /dedupe",
     "POST /partition",
     "POST /lookup",
+    "POST /concat",
     "POST /warm",
     "POST /edit",
     "POST /index",
@@ -703,6 +717,145 @@ fn query_timeout_ms() -> u64 {
         .and_then(|value| value.parse().ok())
         .filter(|ms| *ms > 0)
         .unwrap_or(csv_splitter_core::sql::DEFAULT_TIMEOUT_MS)
+}
+
+/// `POST /concat?paths=a.csv,b.csv&out=combined.csv` — stack files that share a header.
+///
+/// A job: it reads several files and writes one. Every input goes through the same path
+/// guard as a read, and the output cannot escape the root either, so a client cannot use
+/// this endpoint to concatenate `/etc/passwd` into something it can then download.
+fn start_concat(
+    stream: &mut TcpStream,
+    root: &Path,
+    jobs: &JobRegistry,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let Some(list) = params.get("paths").filter(|p| !p.trim().is_empty()) else {
+        return bad_request(
+            stream,
+            "paths is required",
+            "paths",
+            "pass paths=a.csv,b.csv (comma separated, relative to the root)",
+        );
+    };
+    let mut inputs: Vec<PathBuf> = Vec::new();
+    for name in list.split(',').map(str::trim).filter(|n| !n.is_empty()) {
+        let relative = name.trim_start_matches(['/', '\\']).to_string();
+        let candidate = match root.join(&relative).canonicalize() {
+            Ok(path) if path.is_file() && path.starts_with(root) => path,
+            _ => {
+                return respond_json(
+                    stream,
+                    404,
+                    &format!(
+                        r#"{{"error":{}}}"#,
+                        json_str(&format!("{name} is not a file inside the served directory"))
+                    ),
+                )
+            }
+        };
+        inputs.push(candidate);
+    }
+    if inputs.len() < 2 {
+        return bad_request(
+            stream,
+            "concat needs at least two files",
+            "paths",
+            "pass paths=a.csv,b.csv",
+        );
+    }
+    let Some(out) = resolve_out(root, params, "out") else {
+        return bad_out(stream);
+    };
+    let ignore_header = params
+        .get("ignoreHeader")
+        .is_some_and(|v| v == "1" || v == "true");
+    let delimiter = delimiter(params);
+    let result_path = out.clone();
+    let id = jobs.submit("concat", move |tx| match csv_splitter_core::concat::concat(
+        &inputs,
+        &out,
+        delimiter,
+        ignore_header,
+        &tx,
+    ) {
+        Ok(_) => {
+            tx.send(ProgressEvent::Finished {
+                output: result_path,
+            })
+            .ok();
+        }
+        Err(e) => {
+            tx.send(ProgressEvent::Error(e.to_string())).ok();
+        }
+    });
+    respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
+}
+
+/// `GET /schema?path=&diff=<other>` — the same document `schema --diff --json` prints.
+///
+/// Column lists come from the sampling path, not from the index: comparing two files' schemas
+/// should not build an index over either of them. The comparison itself is
+/// `core::schema::diff`, so the CLI and this endpoint cannot drift apart.
+fn schema_diff_endpoint(
+    stream: &mut TcpStream,
+    root: &Path,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
+    };
+    let Some(other) = params.get("diff").filter(|d| !d.trim().is_empty()) else {
+        return bad_request(
+            stream,
+            "diff is required",
+            "diff",
+            "pass diff=<another file>",
+        );
+    };
+    let other_path = match root.join(other.trim_start_matches(['/', '\\'])) {
+        p if p.exists() => p,
+        _ => {
+            return respond_json(
+                stream,
+                404,
+                &format!(
+                    r#"{{"error":{}}}"#,
+                    json_str(&format!("the file {other} is not there"))
+                ),
+            )
+        }
+    };
+    let sample = params
+        .get("sample")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(64u64);
+    let mine = match csv_splitter_core::sheet::schema_sample(&path, delimiter(params), sample) {
+        Ok(columns) => columns,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let theirs =
+        match csv_splitter_core::sheet::schema_sample(&other_path, delimiter(params), sample) {
+            Ok(columns) => columns,
+            Err(e) => {
+                return respond_json(
+                    stream,
+                    422,
+                    &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                )
+            }
+        };
+    let mine_names: Vec<String> = mine.iter().map(|c| c.name.clone()).collect();
+    let theirs_names: Vec<String> = theirs.iter().map(|c| c.name.clone()).collect();
+    let diff = csv_splitter_core::schema::diff(&mine_names, &theirs_names);
+    respond_json(stream, 200, &diff.to_json())
 }
 
 /// `GET /validate?path=&checks=qty>=0;city:not-empty` — the CLI's `validate`, on HTTP.
@@ -5085,13 +5238,23 @@ fn respond_bytes(
 fn reason_for(status: u16) -> &'static str {
     match status {
         200 => "OK",
+        201 => "Created",
+        // 202 is what every job submission answers, and "Internal Server Error" next to a
+        // successful 202 reads like a failure in every curl -i and in every proxy log.
+        202 => "Accepted",
         204 => "No Content",
+        206 => "Partial Content",
+        304 => "Not Modified",
+        416 => "Range Not Satisfiable",
         400 => "Bad Request",
         404 => "Not Found",
         405 => "Method Not Allowed",
         409 => "Conflict",
         414 => "URI Too Long",
         422 => "Unprocessable Entity",
+        429 => "Too Many Requests",
+        500 => "Internal Server Error",
+        503 => "Service Unavailable",
         504 => "Gateway Timeout",
         _ => "Internal Server Error",
     }

@@ -134,7 +134,7 @@
 | 切分 | `split f.csv -n N` / `--by-size` | `POST /split` |
 | 合并 | `merge chunks.tar -o out.csv` | `POST /merge` |
 | 排序 | `sort --by C -o out.csv` | `POST /sort` |
-| 列集合对比 | `schema a.csv --diff b.csv`（新增/缺失/移位，退出码 1）| — |
+| 列集合对比 | `schema a.csv --diff b.csv`（新增/缺失/移位，退出码 1）| `GET /schema?diff=` （同一份 JSON）|
 | 列过滤/截断 | — | `/columns?kind=number&limit=20`（带 totalColumns）|
 | 撤销栈查询 | `edit status` | `GET /journal`（含 redo 栈与损坏提示）|
 | 按 key 定位行 | `/rows?keys=b:12,v:3`（插入/删除后仍指向同一行）| — |
@@ -146,7 +146,7 @@
 | 删掉不合格的行 | `edit delete --invalid "ts:date"`（一次操作，一次撤销） | — |
 | 去重 | `dedupe -o out.csv [--by C]` | `POST /dedupe` |
 | 分文件 | `partition --by C -o parts.tar` | `POST /partition` |
-| 拼接 | `concat a.csv b.csv ...` | — |
+| 拼接 | `concat a.csv b.csv ...` | `POST /concat`（job）|
 | 导列/改名 | `columns --keep/--drop/--rename` | — |
 | 下载/导出 | — | `GET /download`、`/export` |
 | 起本地服务 | `serve --root DIR` | 全部端点 |

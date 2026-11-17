@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.39.0] — 2026-11-17
+
+### Added
+
+- **`GET /schema?diff=<file>`** — the column-set comparison the CLI prints, over HTTP, with
+  the **same JSON document**. The comparison moved into `core::schema::diff` and both
+  entry points call it, so "which column moved" cannot mean two different things. Column
+  lists come from the sampling path, so comparing two schemas never builds an index.
+  - `same:true` with a non-empty `moved` means "same columns, different order": a routine
+    reorder is not a schema change, and the endpoint says both facts.
+- **`POST /concat`** — stack files that share a header, as a job. Every input and the
+  output go through the path guard, so this endpoint cannot be used to concatenate
+  `/etc/passwd` into something downloadable. A header mismatch fails the job instead of
+  writing a ragged file.
+
+### Fixed
+
+- **`202 Internal Server Error`**, printed by every `curl -i` and proxy log next to a
+  successful job submission. `reason_for` now knows 201/202/206/304/416/429/500/503 —
+  the same class of bug as the old `414 Internal Server Error`.
+
 ## [3.38.0] — 2026-11-17
 
 ### Added
