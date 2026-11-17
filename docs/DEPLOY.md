@@ -218,3 +218,17 @@ journalctl -u csv-splitter -f
 |---|---|
 | Linux / macOS | `SIGTERM`/`SIGINT` 走优雅停机 |
 | Windows | 没有可捕获的 SIGTERM；`Ctrl+C` 直接结束进程。CLI 与后端功能一致 |
+
+想在非 Windows 机器上验证 Windows 能否编译：
+
+```bash
+brew install mingw-w64
+rustup target add x86_64-pc-windows-gnu
+CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=x86_64-w64-mingw32-gcc \
+CC_x86_64_pc_windows_gnu=x86_64-w64-mingw32-gcc \
+CXX_x86_64_pc_windows_gnu=x86_64-w64-mingw32-g++ \
+  cargo build --release --target x86_64-pc-windows-gnu -p csv-splitter-cli
+```
+
+这证明**能编译**（`.exe` 会产出），但不证明**能运行**——运行证据在 Windows 机器上，
+由 `windows-check` 或 release matrix 提供。

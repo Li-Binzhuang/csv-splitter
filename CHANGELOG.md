@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.35.0] — 2026-11-17
+
+### Verified
+
+- **Windows compiles.** `brew install mingw-w64`, `rustup target add
+  x86_64-pc-windows-gnu`, and a cross build with the mingw linker finished in 4m17s:
+  `PE32+ executable (console) x86-64`, 91.7 MB, packaged as a 25.0 MB zip with a checksum.
+  That exercises the `cfg(unix)` gating for signals and symlinks across the whole
+  dependency stack, DuckDB included — the gap that could previously only be discovered at
+  tag time.
+  - What this does **not** prove: that the `.exe` runs. There is no Wine here, so it is
+    "compiles", not "works". The run evidence still comes from `windows-check` or the
+    release matrix on a real Windows runner.
+  - The release matrix uses MSVC, not GNU; a successful mingw build is strong evidence
+    that our own code is platform-clean, not a substitute for the MSVC build.
+
 ## [3.34.0] — 2026-11-12
 
 ### Docs

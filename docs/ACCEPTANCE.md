@@ -90,14 +90,14 @@
 | macOS arm64 | 本机 | `release-check.sh` 全绿，产物 64.1 MB / `tar.gz` 19.5 MB |
 | macOS x86_64 | 本机交叉编译 | `cargo build --release --target x86_64-apple-darwin` 成功（2m37s），产物 65.5 MB；**同一套 release-check 通过**（Rosetta 运行）|
 | Linux x86_64 | CI（`ubuntu-22.04`）| 每次 push 的 `CI` job 编译并测试 |
-| Windows x86_64 | `windows-check` / release matrix | `cfg(unix)` 隔离已就位；首次数据待 PR 或手动触发 |
+| Windows x86_64 | **本机交叉编译（mingw-w64）** | `cargo build --release --target x86_64-pc-windows-gnu` 成功（4m17s），产物 PE32+ 91.7 MB；`zip` 25.0 MB + 校验和。**不能本地运行**（无 Wine），所以这是「编译通过」而非「运行通过」；release matrix 用 MSVC，首次运行证据仍待 `windows-check` |
 
 ## 发布与部署（goal：能发布 / 能部署 / 能跨平台）
 
 | 项 | 证据 |
 |---|---|
 | 三平台构建 | `release.yml` 构建 linux-x86_64 / macos-arm64 / macos-x86_64 / windows-x86_64，产物 + `.sha256` |
-| Windows 编译 | Unix-only 代码（信号、symlink）已 `cfg(unix)` 隔离；`windows-check` job 在 PR 与手动触发时跑 `cargo check -p csv-splitter-cli`（windows-latest）|
+| Windows 编译 | Unix-only 代码（信号、symlink）已 `cfg(unix)` 隔离；本机用 mingw-w64 交叉编译**通过**（含 DuckDB 全部依赖）；`windows-check` job 在 PR 与手动触发时跑 `cargo check -p csv-splitter-cli`（windows-latest）|
 | CI 无 GUI 依赖 | 两个工作流都不再安装 libgtk-3-dev / libxdo-dev / fonts-noto-cjk |
 | 缓存不撑爆配额 | 两个工作流都用滚动 key（`...-rolling-<run_id>`）|
 | 部署材料 | [`DEPLOY.md`](DEPLOY.md) + [`deploy/csv-splitter.service`](../deploy/csv-splitter.service) |
