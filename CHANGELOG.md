@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.37.0] — 2026-11-17
+
+### Fixed
+
+- **The ubuntu/mingw Windows cross-check could not work, and now it says so.** Its first
+  run failed inside `libduckdb-sys` with `'mutex' in namespace 'std' does not name a type`:
+  Ubuntu 22.04 ships mingw-w64 **GCC 10** with the *win32* thread model, whose libstdc++ has
+  no `std::mutex`/`std::shared_mutex`, and DuckDB's headers use both. A cross-check that
+  cannot compile the engine is not a cross-check.
+  - `.github/workflows/windows.yml` now runs `cargo check -p csv-splitter-cli` on
+    **windows-latest with MSVC** — the target the release actually ships — still filtered to
+    `crates/**` and the dependency manifests, and still annotating its own failures.
+  - The local mingw build that succeeded used **GCC 14** (Homebrew), which has the posix
+    thread model; that is why it looked fine locally and died on the runner. Both facts are
+    now in DEPLOY.md and ACCEPTANCE.md rather than in this conversation only.
+
 ## [3.36.0] — 2026-11-17
 
 ### CI

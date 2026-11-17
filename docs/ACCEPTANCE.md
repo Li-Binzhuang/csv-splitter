@@ -97,7 +97,7 @@
 | 项 | 证据 |
 |---|---|
 | 三平台构建 | `release.yml` 构建 linux-x86_64 / macos-arm64 / macos-x86_64 / windows-x86_64，产物 + `.sha256` |
-| Windows 编译 | Unix-only 代码（信号、symlink）已 `cfg(unix)` 隔离；本机用 mingw-w64 交叉编译**通过**（含 DuckDB 全部依赖）；两个 CI 通道：`windows.yml` 在 **push**（`crates/**` 变更）跑 mingw `cargo check`，`ci.yml` 的 `windows-check` 在 PR/手动跑 windows-latest MSVC |
+| Windows 编译 | Unix-only 代码（信号、symlink）已 `cfg(unix)` 隔离；本机用 mingw-w64 **GCC 14** 交叉编译通过（含 DuckDB）。CI 通道：`windows.yml` 在 push（`crates/**` 变更）用 windows-latest 的 MSVC 跑 `cargo check`。ubuntu+mingw 被否决：GCC 10 的 win32 线程模型缺 `std::mutex`，DuckDB 编译失败（有 annotation 为证）|
 | CI 无 GUI 依赖 | 两个工作流都不再安装 libgtk-3-dev / libxdo-dev / fonts-noto-cjk |
 | 缓存不撑爆配额 | 两个工作流都用滚动 key（`...-rolling-<run_id>`）|
 | 部署材料 | [`DEPLOY.md`](DEPLOY.md) + [`deploy/csv-splitter.service`](../deploy/csv-splitter.service) |

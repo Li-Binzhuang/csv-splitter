@@ -1,14 +1,15 @@
-name: Windows cross-check
+name: Windows check
 
-# Cross-compiling the CLI for Windows on a Linux runner, so a break in the cfg(unix)
-# gating is caught on push instead of at tag time.
+# The one Windows channel, on the target the release actually ships.
 #
-# Why a separate workflow: this costs about five minutes of DuckDB C++ compilation for
-# the Windows target, which is not worth paying on a documentation or script commit. The
-# path filter runs it exactly when Rust code, the manifest or the lockfile changed.
+# It used to be mingw-w64 on ubuntu, because that is cheap to install. That toolchain is
+# GCC 10 with the win32 thread model, whose libstdc++ has no std::mutex/std::shared_mutex
+# — and DuckDB's headers use both, so the job died inside libduckdb-sys with
+# "'mutex' in namespace 'std' does not name a type". A cross-check that cannot compile the
+# engine is not a cross-check; MSVC on windows-latest is.
 #
-# `cargo check`, not a full build: the question is whether the code compiles for Windows,
-# and the link step is what the release matrix's MSVC build answers anyway.
+# Costs about ten minutes of DuckDB compilation, hence the path filter: a documentation or
+# script commit does not pay for it, a change to Rust code does.
 
 on:
   push:
@@ -28,15 +29,14 @@ on:
 env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: "0"
+  CARGO_PROFILE_DEV_DEBUG: "0"
 
 jobs:
   check:
-    runs-on: ubuntu-22.04
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-pc-windows-gnu
 
       - name: Cache cargo
         uses: actions/cache@v4
@@ -45,44 +45,28 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: windows-cross-rolling-${{ github.run_id }}
-          restore-keys: windows-cross-rolling-
+          key: windows-cargo-rolling-${{ github.run_id }}
+          restore-keys: windows-cargo-rolling-
 
-      - name: Install mingw-w64
+      - name: Check the CLI
         run: |
-          sudo apt-get update
-          sudo apt-get install -y mingw-w64
-          x86_64-w64-mingw32-gcc --version | head -1
-          x86_64-w64-mingw32-g++ --version | head -1
+          cargo check -p csv-splitter-cli 2>&1 | Tee-Object -FilePath windows.log
 
-      - name: Check the CLI for Windows
-        env:
-          CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER: x86_64-w64-mingw32-gcc
-          CC_x86_64_pc_windows_gnu: x86_64-w64-mingw32-gcc
-          CXX_x86_64_pc_windows_gnu: x86_64-w64-mingw32-g++
-          AR_x86_64_pc_windows_gnu: x86_64-w64-mingw32-ar
-        run: |
-          set -o pipefail
-          cargo check -p csv-splitter-cli --target x86_64-pc-windows-gnu 2>&1 | tee windows.log
-
-      # A failure here is either our cfg gating or a toolchain mismatch with the runner's
-      # mingw version; both need the compiler's own words, and run logs need a signed-in
-      # admin to read while annotations are public.
       - name: Report failure as annotations
         if: failure()
+        shell: pwsh
         run: |
-          set +e
-          { grep -hE "^error|error:|undefined reference|fatal error|panicked" windows.log 2>/dev/null | head -8
-            echo "-- compiler --"
-            x86_64-w64-mingw32-g++ --version 2>/dev/null | head -1
-            echo "-- last lines --"
-            tail -n 25 windows.log 2>/dev/null
-          } | while IFS= read -r line; do echo "::error title=Windows cross-check::$line"; done
+          Get-Content windows.log -ErrorAction SilentlyContinue |
+            Select-String -Pattern "error", "panicked" |
+            Select-Object -First 8 |
+            ForEach-Object { Write-Host "::error title=Windows check::$($_.Line)" }
+          Write-Host "--- last lines ---"
+          Get-Content windows.log -Tail 25 -ErrorAction SilentlyContinue
 
       - name: Upload log
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: windows-cross-log
+          name: windows-check-log
           path: windows.log
           retention-days: 7

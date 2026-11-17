@@ -233,6 +233,9 @@ CXX_x86_64_pc_windows_gnu=x86_64-w64-mingw32-g++ \
 这证明**能编译**（`.exe` 会产出），但不证明**能运行**——运行证据在 Windows 机器上，
 由 `windows-check` 或 release matrix 提供。
 
-CI 里有两个通道：`.github/workflows/windows.yml` 在 push（只改 `crates/**` 或依赖清单时）
-用 mingw 跑 `cargo check`，成本约 5 分钟 DuckDB 编译；`.github/workflows/ci.yml` 的
-`windows-check` 在 PR/手动触发时用 windows-latest 的 MSVC。文档或脚本改动不触发前者。
+CI 里只有一个 Windows 通道：`.github/workflows/windows.yml`，在 **windows-latest 上用
+MSVC** 跑 `cargo check -p csv-splitter-cli`，只在 `crates/**` 或依赖清单变化时触发。
+
+曾经用 ubuntu + mingw-w64 做这件事，**失败了**，原因值得记下来：那个 mingw 是 GCC 10 的
+win32 线程模型，它的 libstdc++ **没有 `std::mutex` / `std::shared_mutex`**，而 DuckDB 的头
+文件用到了两者，于是死在 `libduckdb-sys` 里。一个连引擎都编译不了的交叉检查，不算交叉检查。
