@@ -52,6 +52,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y mingw-w64
+          x86_64-w64-mingw32-gcc --version | head -1
+          x86_64-w64-mingw32-g++ --version | head -1
 
       - name: Check the CLI for Windows
         env:
@@ -59,4 +61,28 @@ jobs:
           CC_x86_64_pc_windows_gnu: x86_64-w64-mingw32-gcc
           CXX_x86_64_pc_windows_gnu: x86_64-w64-mingw32-g++
           AR_x86_64_pc_windows_gnu: x86_64-w64-mingw32-ar
-        run: cargo check -p csv-splitter-cli --target x86_64-pc-windows-gnu
+        run: |
+          set -o pipefail
+          cargo check -p csv-splitter-cli --target x86_64-pc-windows-gnu 2>&1 | tee windows.log
+
+      # A failure here is either our cfg gating or a toolchain mismatch with the runner's
+      # mingw version; both need the compiler's own words, and run logs need a signed-in
+      # admin to read while annotations are public.
+      - name: Report failure as annotations
+        if: failure()
+        run: |
+          set +e
+          { grep -hE "^error|error:|undefined reference|fatal error|panicked" windows.log 2>/dev/null | head -8
+            echo "-- compiler --"
+            x86_64-w64-mingw32-g++ --version 2>/dev/null | head -1
+            echo "-- last lines --"
+            tail -n 25 windows.log 2>/dev/null
+          } | while IFS= read -r line; do echo "::error title=Windows cross-check::$line"; done
+
+      - name: Upload log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-cross-log
+          path: windows.log
+          retention-days: 7
