@@ -3655,3 +3655,52 @@ fn edit_split_column_is_reachable_over_http() {
     assert!(body.contains("Ada"), "{body}");
     assert!(body.contains("Lovelace"), "{body}");
 }
+
+/// `action=set-formula` recomputes an existing column in place, undoably, and refuses a
+/// formula that cannot evaluate before writing it into the journal.
+#[test]
+fn edit_set_formula_recomputes_a_column() {
+    let dir = TempDir::new("setformula");
+    std::fs::write(dir.join("t.csv"), "id,qty,price\n1,2,5\n2,3,7\n").unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set-formula&col=qty&value=price*10",
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""op":"setformula""#), "{body}");
+
+    let (code, body) = get(
+        &server.addr,
+        "/rows?path=t.csv&count=2&columns=id,qty,price",
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#"["1","50","5"]"#), "{body}");
+    assert!(body.contains(r#"["2","70","7"]"#), "{body}");
+
+    // One undo restores the base values; the column never moved.
+    let (code, body) = post(&server.addr, "/edit?path=t.csv&action=undo");
+    assert_eq!(code, 200, "{body}");
+    let (_, body) = get(
+        &server.addr,
+        "/rows?path=t.csv&count=2&columns=id,qty,price",
+    );
+    assert!(body.contains(r#"["1","2","5"]"#), "{body}");
+
+    // A self-reference is circular: 400 at write time, not a broken sheet later.
+    let (code, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set-formula&col=qty&value=qty*2",
+    );
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains("circular"), "{body}");
+
+    // An unknown column is named, not stored.
+    let (code, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set-formula&col=qty&value=nope*2",
+    );
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains("nope"), "{body}");
+}

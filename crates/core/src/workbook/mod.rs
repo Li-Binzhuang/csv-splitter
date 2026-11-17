@@ -37,9 +37,9 @@ mod rows;
 
 pub use journal::{Journal, RowRef};
 pub use rows::{
-    column_layout, compile, compile_formulas, compile_formulas_at, formulas, parse_a1,
-    parse_a1_range, regex_replace, resolve_columns, CellEdits, ColumnPlan, CompiledFormulas, RowId,
-    RowMap,
+    check_formula, column_layout, compile, compile_formulas, compile_formulas_at, formulas,
+    parse_a1, parse_a1_range, regex_replace, resolve_columns, CellEdits, ColumnPlan,
+    CompiledFormulas, RowId, RowMap,
 };
 
 pub use export::{
@@ -166,6 +166,17 @@ pub enum Op {
         from: String,
         to: String,
     },
+    /// Recompute an **existing** column from a formula, in place.
+    ///
+    /// Different from `AddColumn`, which appends a new one: this is the spreadsheet
+    /// gesture "make this column computed", and it is one operation, so one undo puts
+    /// the original values back. The formula wins over the base value **and over any
+    /// `SetCell` edit in that column**, which is the honest reading of "this column is
+    /// computed" — a half-computed column would be harder to reason about.
+    SetColumnFormula {
+        column: String,
+        formula: String,
+    },
 }
 
 impl Op {
@@ -186,6 +197,7 @@ impl Op {
             Self::PasteBlock { .. } => "pasteblock",
             Self::DropColumn { .. } => "dropcolumn",
             Self::RenameColumn { .. } => "renamecolumn",
+            Self::SetColumnFormula { .. } => "setformula",
         }
     }
 
@@ -269,6 +281,9 @@ impl Op {
                         .unwrap_or_else(|| "at the end".to_string())
                 ),
             },
+            Self::SetColumnFormula { column, formula } => {
+                format!("compute '{column}' = {formula}")
+            }
             Self::DropColumn { name } => format!("drop column '{name}'"),
             Self::RenameColumn { from, to } => format!("rename '{from}' → '{to}'"),
         }
@@ -1082,6 +1097,76 @@ mod history_tests {
         path
     }
 
+    #[test]
+    fn set_column_formula_recomputes_an_existing_column() {
+        let dir = temp("setformula");
+        let base = dir.join("t.csv");
+        std::fs::write(&base, "id,qty,price\n1,2,5\n2,3,7\n").unwrap();
+        // Overwrite `price` with qty*10: the base values must be replaced, not appended to.
+        let ops = vec![Op::SetColumnFormula {
+            column: "price".into(),
+            formula: "qty*10".into(),
+        }];
+        let out = dir.join("out.csv");
+        let (tx, _rx) = std::sync::mpsc::channel();
+        export(&base, &ops, &out, Delimiter::Comma, &tx).unwrap();
+        let text = std::fs::read_to_string(&out).unwrap();
+        assert_eq!(text, "id,qty,price\n1,2,20\n2,3,30\n", "{text}");
+
+        // The column did not move and did not duplicate.
+        let columns = resolve_columns(&ops, &["id".into(), "qty".into(), "price".into()]).unwrap();
+        assert_eq!(columns, vec!["id", "qty", "price"], "{columns:?}");
+
+        // A formula that reads the column it computes is a circular reference, refused
+        // at compile time rather than producing a value that depends on evaluation order.
+        let circular = compile_formulas(
+            &[Op::SetColumnFormula {
+                column: "qty".into(),
+                formula: "qty*2".into(),
+            }],
+            &["id".into(), "qty".into()],
+        );
+        let err = match circular {
+            Ok(_) => panic!("a self-referencing column formula must be refused"),
+            Err(e) => e,
+        };
+        assert!(err.to_string().contains("circular"), "{err}");
+    }
+
+    #[test]
+    fn set_column_formula_beats_a_cell_edit_in_that_column() {
+        let dir = temp("setformula-edit");
+        let base = dir.join("t.csv");
+        std::fs::write(&base, "id,qty,price\n1,2,5\n2,3,7\n").unwrap();
+        let ops = vec![
+            Op::SetCell {
+                row: 0,
+                column: "qty".into(),
+                value: "99".into(),
+            },
+            Op::SetColumnFormula {
+                column: "qty".into(),
+                formula: "price*10".into(),
+            },
+        ];
+        let out = dir.join("out.csv");
+        let (tx, _rx) = std::sync::mpsc::channel();
+        export(&base, &ops, &out, Delimiter::Comma, &tx).unwrap();
+        let text = std::fs::read_to_string(&out).unwrap();
+        // A computed column that half-respects an old edit would be harder to explain.
+        assert_eq!(text, "id,qty,price\n1,50,5\n2,70,7\n", "{text}");
+    }
+
+    #[test]
+    fn set_column_formula_round_trips_through_the_journal() {
+        let op = Op::SetColumnFormula {
+            column: "total".into(),
+            formula: "a+b".into(),
+        };
+        let line = crate::workbook::journal::render_op(&op);
+        let parsed = crate::workbook::journal::parse_op(line.as_bytes()).expect("parse");
+        assert_eq!(parsed, op);
+    }
     #[test]
     fn the_plan_reports_the_history_it_needs() {
         let columns: Vec<String> = vec!["day".into(), "amount".into(), "prev".into()];

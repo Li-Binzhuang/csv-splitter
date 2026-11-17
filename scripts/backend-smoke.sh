@@ -217,6 +217,19 @@ else
   printf '  ok   edit formula: one undo removes it\n'
 fi
 
+echo "== column recompute =="
+# A fresh fixture with known columns: reusing a file from an earlier step made the
+# first assertion fail on a column that does not exist there.
+printf 'id,qty,price\n1,2,5\n2,3,7\n' > "$WORK/recompute.csv"
+rm -f "$WORK/recompute.csv.journal"
+SETF="$(curl -s -X POST "$URL/edit?path=recompute.csv&action=set-formula&col=qty&value=price*10")"
+has "set-formula: accepted" "$SETF" '"op":"setformula"'
+has "set-formula: described" "$SETF" 'compute'
+CYCLE="$(curl -s -X POST "$URL/edit?path=recompute.csv&action=set-formula&col=qty&value=qty*2")"
+has "set-formula: circular refused" "$CYCLE" 'circular'
+COMPUTED="$(curl -s "$URL/cell?path=recompute.csv&row=1&col=qty")"
+has "set-formula: value computed" "$COMPUTED" '"value":"50"'
+
 echo "== cost tier =="
 SHEET_COST="$(curl -s "$URL/sheet?path=orders.csv")"
 has "sheet: cost tier"         "$SHEET_COST" '"tier":'

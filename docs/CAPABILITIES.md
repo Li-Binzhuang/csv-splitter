@@ -90,7 +90,8 @@
 | 分页浏览（筛选/排序都看编辑后的值） | `view f.csv [--where EXPR] [--order COL[--desc]] [--find TEXT [--regex] [--nth N] [--context N]] [--start N] [--count M] [--json]` | `GET /rows?where=` |
 | 查找替换 | `edit replace --from X --to Y [--col C]` | `action=replace` |
 | 删列/改名 | `edit drop --name C` / `edit rename` | `action=drop/rename` |
-| 公式列 | `edit formula --name N --value "EXPR"` | `POST /edit?action=formula&name=&value=` |
+| 公式列（新增） | `edit formula --name N --value "EXPR"` | `POST /edit?action=formula&name=&value=` |
+| 公式列（**重算已有列**） | `edit set-formula --col C --value "EXPR"` | `POST /edit?action=set-formula&col=&value=`（自引用/未知列写入前拒绝）|
 | 撤销 | `edit undo` | `POST /edit?action=undo` |
 | 查看待生效 | `edit status` | `GET /edit` |
 | 物化 | `edit export -o out.csv` | `POST /edit?action=export` |

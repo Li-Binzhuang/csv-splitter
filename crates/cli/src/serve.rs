@@ -1760,6 +1760,7 @@ const EDIT_ACTIONS: &[&str] = &[
     "insert-column",
     "split-column",
     "formula",
+    "set-formula",
     "drop",
     "rename",
     "undo",
@@ -2301,6 +2302,43 @@ fn edit_apply(
                 );
             }
             Op::SplitColumn { column, by, into }
+        }
+        "set-formula" | "setformula" => {
+            let (Some(column), Some(expression)) = (
+                params.get("col").filter(|v| !v.is_empty()),
+                params.get("value").filter(|v| !v.is_empty()),
+            ) else {
+                return bad_request(
+                    stream,
+                    "set-formula needs col and value",
+                    "col",
+                    "col=<existing column>&value=<expression>",
+                );
+            };
+            // Validate before writing: a stored formula that cannot evaluate would
+            // accept the request and break the next read.
+            let columns = match csv_splitter_core::workbook::base_header(&path, delimiter(params))
+                .and_then(|header| {
+                    csv_splitter_core::workbook::column_layout(journal.ops(), &header)
+                }) {
+                Ok(layout) => layout.into_iter().map(|(name, _)| name).collect::<Vec<_>>(),
+                Err(e) => {
+                    return respond_json(
+                        stream,
+                        422,
+                        &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                    )
+                }
+            };
+            if let Err(message) =
+                csv_splitter_core::workbook::check_formula(expression, &columns, Some(column))
+            {
+                return bad_request(stream, &message, "value", "value=<expression>");
+            }
+            Op::SetColumnFormula {
+                column: column.clone(),
+                formula: expression.clone(),
+            }
         }
         "formula" => {
             let (Some(name), Some(expression)) = (

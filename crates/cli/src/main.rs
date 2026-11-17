@@ -6682,6 +6682,32 @@ fn cmd_edit(args: &[String]) -> i32 {
                 formula: value,
             }
         }
+        "set-formula" | "setformula" => {
+            let (Some(target), Some(expression)) = (col.clone(), value.clone()) else {
+                eprintln!("error: set-formula needs --col and --value");
+                return 2;
+            };
+            let columns = match csv_splitter_core::workbook::base_header(&input, delimiter)
+                .and_then(|header| {
+                    csv_splitter_core::workbook::column_layout(journal.ops(), &header)
+                }) {
+                Ok(layout) => layout.into_iter().map(|(name, _)| name).collect::<Vec<_>>(),
+                Err(e) => {
+                    eprintln!("error: cannot read the header: {e}");
+                    return 2;
+                }
+            };
+            if let Err(message) =
+                csv_splitter_core::workbook::check_formula(&expression, &columns, Some(&target))
+            {
+                eprintln!("error: {message}");
+                return 2;
+            }
+            csv_splitter_core::workbook::Op::SetColumnFormula {
+                column: target,
+                formula: expression,
+            }
+        }
         "insert-column" | "insertcolumn" => {
             let Some(name) = name else {
                 eprintln!("error: insert-column needs --name");

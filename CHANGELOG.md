@@ -1,5 +1,23 @@
 # Changelog
 
+## [3.41.0] — 2026-11-17
+
+### Added
+
+- **Column recompute**: `edit set-formula --col C --value EXPR` and
+  `POST /edit?action=set-formula&col=&value=` make an **existing** column computed, in
+  place, as one journal operation — so one undo restores the original values. `Op::
+  SetColumnFormula` is a new journal op, and it works on every read path at once because
+  it joins the same formula compilation the appended columns use.
+  - The formula wins over the base value *and over any cell edit in that column*. A
+    half-computed column would be harder to explain than a fully computed one.
+  - **Circular references are refused at write time**, by both entry points: a formula
+    that reads the column it computes, or an unknown column name, is a 400 (and CLI exit
+    2) before anything enters the journal — storing it would accept the request and
+    break the next read. `core::workbook::check_formula` is the one implementation.
+  - Verified on all three paths the engine reads through: export, window reads and the
+    journal round trip (`setformula,col,expr`).
+
 ## [3.40.0] — 2026-11-17
 
 ### Added

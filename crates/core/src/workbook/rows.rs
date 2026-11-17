@@ -695,6 +695,43 @@ fn rename_identifiers(formula: &str, from: &str, to: &str) -> String {
     out
 }
 
+/// Validate a formula before it is written into the journal.
+///
+/// Both entry points call this at write time: storing an expression that can never
+/// evaluate would accept the request and then break the sheet on the next read, which is
+/// the worst of both worlds. `target` is the column the formula will fill, when it
+/// overwrites an existing one (`SetColumnFormula`); a self-reference is circular.
+pub fn check_formula(
+    formula: &str,
+    columns: &[String],
+    target: Option<&str>,
+) -> Result<(), String> {
+    let parsed = crate::formula::Formula::parse(formula).map_err(|e| e.to_string())?;
+    let references = parsed.references();
+    if let Some(target) = target {
+        if references.iter().any(|r| r == target) {
+            return Err(format!(
+                "the formula reads its own column '{target}'; that is a circular reference"
+            ));
+        }
+    }
+    let unknown: Vec<&String> = references
+        .iter()
+        .filter(|r| !columns.iter().any(|c| c.as_str() == r.as_str()))
+        .collect();
+    if !unknown.is_empty() {
+        return Err(format!(
+            "the formula reads unknown column(s): {}",
+            unknown
+                .iter()
+                .map(|c| c.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
+    }
+    Ok(())
+}
+
 pub fn compile_formulas(ops: &[Op], columns: &[String]) -> io::Result<CompiledFormulas> {
     let mut items = Vec::new();
     let mut wanted: Vec<(String, String, String)> = Vec::new();
@@ -710,6 +747,9 @@ pub fn compile_formulas(ops: &[Op], columns: &[String]) -> io::Result<CompiledFo
         let (name, source) = match op {
             Op::AddColumn { name, formula } => (name, ColumnSource::Formula(formula.clone())),
             Op::AddColumnAt { name, source, .. } => (name, source.clone()),
+            Op::SetColumnFormula { column, formula } => {
+                (column, ColumnSource::Formula(formula.clone()))
+            }
             _ => continue,
         };
         if let ColumnSource::Formula(formula) = &source {
@@ -721,6 +761,17 @@ pub fn compile_formulas(ops: &[Op], columns: &[String]) -> io::Result<CompiledFo
             let parsed = Formula::parse(formula).map_err(|e| {
                 io::Error::new(io::ErrorKind::InvalidInput, format!("column '{name}': {e}"))
             })?;
+            if let Op::SetColumnFormula { column, .. } = op {
+                if parsed.references().iter().any(|r| r == column) {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        format!(
+                            "column '{column}': the formula reads its own column; \
+                             that is a circular reference"
+                        ),
+                    ));
+                }
+            }
             for reference in parsed.references() {
                 if !columns.iter().any(|c| c == &reference) {
                     return Err(io::Error::new(
