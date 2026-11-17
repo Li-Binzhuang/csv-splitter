@@ -97,7 +97,7 @@
 | 项 | 证据 |
 |---|---|
 | 三平台构建 | `release.yml` 构建 linux-x86_64 / macos-arm64 / macos-x86_64 / windows-x86_64，产物 + `.sha256` |
-| Windows 编译 | Unix-only 代码（信号、symlink）已 `cfg(unix)` 隔离；本机用 mingw-w64 交叉编译**通过**（含 DuckDB 全部依赖）；`windows-check` job 在 PR 与手动触发时跑 `cargo check -p csv-splitter-cli`（windows-latest）|
+| Windows 编译 | Unix-only 代码（信号、symlink）已 `cfg(unix)` 隔离；本机用 mingw-w64 交叉编译**通过**（含 DuckDB 全部依赖）；两个 CI 通道：`windows.yml` 在 **push**（`crates/**` 变更）跑 mingw `cargo check`，`ci.yml` 的 `windows-check` 在 PR/手动跑 windows-latest MSVC |
 | CI 无 GUI 依赖 | 两个工作流都不再安装 libgtk-3-dev / libxdo-dev / fonts-noto-cjk |
 | 缓存不撑爆配额 | 两个工作流都用滚动 key（`...-rolling-<run_id>`）|
 | 部署材料 | [`DEPLOY.md`](DEPLOY.md) + [`deploy/csv-splitter.service`](../deploy/csv-splitter.service) |

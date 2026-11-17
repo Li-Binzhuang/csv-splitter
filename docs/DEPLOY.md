@@ -232,3 +232,7 @@ CXX_x86_64_pc_windows_gnu=x86_64-w64-mingw32-g++ \
 
 这证明**能编译**（`.exe` 会产出），但不证明**能运行**——运行证据在 Windows 机器上，
 由 `windows-check` 或 release matrix 提供。
+
+CI 里有两个通道：`.github/workflows/windows.yml` 在 push（只改 `crates/**` 或依赖清单时）
+用 mingw 跑 `cargo check`，成本约 5 分钟 DuckDB 编译；`.github/workflows/ci.yml` 的
+`windows-check` 在 PR/手动触发时用 windows-latest 的 MSVC。文档或脚本改动不触发前者。

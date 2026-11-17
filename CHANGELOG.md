@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.36.0] — 2026-11-17
+
+### CI
+
+- **A push-time Windows check that only runs when it can matter.** `.github/workflows/windows.yml`
+  cross-checks `cargo check -p csv-splitter-cli --target x86_64-pc-windows-gnu` on
+  ubuntu with mingw-w64, filtered by `paths: crates/**, Cargo.toml, Cargo.lock` — because
+  that costs about five minutes of DuckDB C++ compilation for the Windows target, and a
+  documentation commit should not pay it. The MSVC check on windows-latest stays for pull
+  requests and manual dispatch, where the real release target is the one that matters.
+  - The plan in the objective was `cargo check --target x86_64-pc-windows-msvc` on ubuntu;
+    that cannot work (the `-sys` build scripts need a platform toolchain), so mingw is the
+    honest substitute, documented as such.
+
 ## [3.35.0] — 2026-11-17
 
 ### Verified
