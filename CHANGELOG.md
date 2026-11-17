@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.42.0] — 2026-11-17
+
+### Added
+
+- **Insert by row key**: `edit insert --after-key b:12` / `--before-key v:3` and
+  `POST /edit?action=insert-after-key|insert-before-key`. A client holds identities from a
+  previous `/rows` (`b:12`, `v:3`), not positions — positions move as rows are inserted.
+  The server resolves the key against the sheet as it stands at write time
+  (`workbook::position_of_key`, built on a new `RowMap::position_of`), so "insert after
+  this row" means that row even if something was inserted above it meanwhile.
+  - A key that no longer exists is 404 naming `key`; a malformed key is 400 with the shape
+    it should have had. Silently appending to the end would be the worst behaviour, since
+    it looks like it worked.
+
 ## [3.41.0] — 2026-11-17
 
 ### Added

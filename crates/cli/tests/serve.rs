@@ -3704,3 +3704,59 @@ fn edit_set_formula_recomputes_a_column() {
     assert_eq!(code, 400, "{body}");
     assert!(body.contains("nope"), "{body}");
 }
+
+/// Inserting by row key lands next to the row it named, not next to its old position.
+#[test]
+fn insert_by_key_anchors_to_the_named_row() {
+    let dir = TempDir::new("insertkey");
+    std::fs::write(
+        dir.join("t.csv"),
+        "id,city\n1,Puebla\n2,Monterrey\n3,CDMX\n",
+    )
+    .unwrap();
+    let server = start(&dir.0);
+
+    // b:1 is the second base row (Monterrey); "after" it is position 2.
+    let (code, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=insert-after-key&key=b:1&value=99,AfterMonterrey",
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""op":"insert""#), "{body}");
+
+    let (_, body) = get(&server.addr, "/rows?path=t.csv&count=5&columns=id,city");
+    assert!(
+        body.contains(r#"["2","Monterrey"],["99","AfterMonterrey"],["3","CDMX"]"#),
+        "the row must sit between b:1 and b:2: {body}"
+    );
+
+    // The inserted row has an identity of its own, and "before" it works too.
+    let (code, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=insert-before-key&key=v:0&value=50,BeforeVirtual",
+    );
+    assert_eq!(code, 200, "{body}");
+    let (_, body) = get(&server.addr, "/rows?path=t.csv&count=6&columns=id,city");
+    // "before v:0" lands before the row inserted a moment ago, which is the row v:0
+    // names — order is identity-driven, not position-driven.
+    assert!(
+        body.contains(r#"["2","Monterrey"],["50","BeforeVirtual"],["99","AfterMonterrey"]"#),
+        "{body}"
+    );
+
+    // A key that no longer exists is a 404 that names the parameter, not a silent append.
+    let (code, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=insert-after-key&key=b:99&value=x,y",
+    );
+    assert_eq!(code, 404, "{body}");
+    assert!(body.contains(r#""parameter":"key""#), "{body}");
+
+    // A malformed key is a 400 with the shape it should have had.
+    let (code, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=insert-before-key&key=42&value=x,y",
+    );
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains("b:12"), "{body}");
+}

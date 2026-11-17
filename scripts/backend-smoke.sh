@@ -230,6 +230,15 @@ has "set-formula: circular refused" "$CYCLE" 'circular'
 COMPUTED="$(curl -s "$URL/cell?path=recompute.csv&row=1&col=qty")"
 has "set-formula: value computed" "$COMPUTED" '"value":"50"'
 
+echo "== insert by key =="
+printf 'id,tag\n1,a\n2,b\n3,c\n' > "$WORK/keys.csv"
+rm -f "$WORK/keys.csv.journal"
+curl -s -X POST "$URL/edit?path=keys.csv&action=insert-after-key&key=b:1&value=2.5,added" > /dev/null
+KEY_ROWS="$(curl -s "$URL/rows?path=keys.csv&count=6&columns=id,tag")"
+has "insert by key: placed after b:1" "$KEY_ROWS" '["2","b"],["2.5","added"],["3","c"]'
+MISSING_KEY="$(curl -s -X POST "$URL/edit?path=keys.csv&action=insert-after-key&key=b:99&value=x,y")"
+has "insert by key: missing key 404" "$MISSING_KEY" '"parameter":"key"'
+
 echo "== cost tier =="
 SHEET_COST="$(curl -s "$URL/sheet?path=orders.csv")"
 has "sheet: cost tier"         "$SHEET_COST" '"tier":'

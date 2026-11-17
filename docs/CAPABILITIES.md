@@ -81,7 +81,7 @@
 | 能力 | CLI | API |
 |---|---|---|
 | 改单元格 | `edit set --row N --col C --value V` | `POST /edit?action=set` |
-| 插入行 | `edit insert --row N --value "a,b,c"` | `action=insert` |
+| 插入行 | `edit insert --row N --value "a,b,c"` / `--after-key b:12` / `--before-key v:3` | `action=insert` / `insert-after-key` / `insert-before-key` |
 | 删除行 | `edit delete --row N --count K` | `action=delete` |
 | 按条件删除 | `edit delete --where "city=Puebla"`（一次操作，一次撤销） | `action=delete-where` |
 | 按内容定位后修改 | `edit set --find Puebla --col city --value "..."` | — |

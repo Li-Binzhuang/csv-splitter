@@ -1753,6 +1753,8 @@ fn edit_state(
 const EDIT_ACTIONS: &[&str] = &[
     "set",
     "insert",
+    "insert-after-key",
+    "insert-before-key",
     "delete",
     "replace",
     "copy",
@@ -1965,6 +1967,57 @@ fn edit_apply(
         );
     }
     let op = match action.as_str() {
+        "insert-after-key" | "insert-before-key" => {
+            let Some(key) = params.get("key").filter(|k| !k.is_empty()) else {
+                return bad_request(
+                    stream,
+                    &format!("{action} needs key"),
+                    "key",
+                    "key=b:12 or key=v:3 (from a previous /rows)",
+                );
+            };
+            let Some(value) = params.get("value") else {
+                return bad_request(
+                    stream,
+                    &format!("{action} needs value"),
+                    "value",
+                    "value=comma,separated,cells",
+                );
+            };
+            let position = match csv_splitter_core::workbook::position_of_key(
+                &path,
+                journal.ops(),
+                delimiter(params),
+                key,
+            ) {
+                Ok(Some(position)) => position,
+                Ok(None) => {
+                    return respond_json(
+                        stream,
+                        404,
+                        &format!(
+                            r#"{{"error":{},"parameter":"key"}}"#,
+                            json_str(&format!("no row with key {key} any more"))
+                        ),
+                    )
+                }
+                Err(e) => {
+                    return bad_request(stream, &e.to_string(), "key", "key=b:12 or key=v:3");
+                }
+            };
+            // `after` is "the next position"; `before` is the position itself. Both are
+            // resolved against the sheet as it stands now, which is why the client sends
+            // a key and not a row number.
+            let at = if action == "insert-after-key" {
+                position + 1
+            } else {
+                position
+            };
+            Op::InsertRows {
+                at,
+                rows: vec![csv_splitter_core::csv_reader::parse_csv_record(value, b',')],
+            }
+        }
         "set" => {
             let (Some(row), Some(column), Some(value)) =
                 (number("row"), params.get("col"), params.get("value"))

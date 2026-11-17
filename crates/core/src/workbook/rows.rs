@@ -61,6 +61,46 @@ impl RowMap {
         self.rows = logical;
     }
 
+    /// The logical position of a row identity, right now.
+    ///
+    /// The inverse of [`RowMap::id_at`], and the reason it exists: a client holds
+    /// identities (`b:12`), not positions, because positions move when rows are inserted.
+    /// Asking "insert after this row" needs to translate back to a position at the moment
+    /// the write happens.
+    pub fn position_of(&self, id: RowId) -> Option<u64> {
+        let mut logical = 0u64;
+        for seg in &self.segments {
+            let hit = match (seg, id) {
+                (
+                    Segment::Base {
+                        logical: at,
+                        physical,
+                        len,
+                    },
+                    RowId::Base(wanted),
+                ) if wanted >= *physical && wanted < physical.saturating_add(*len) => {
+                    Some(at.saturating_add(wanted - *physical))
+                }
+                // A virtual segment is one inserted row, so its identity maps to the
+                // segment's own first logical position.
+                (
+                    Segment::Virtual {
+                        logical: at,
+                        id: seg_id,
+                        ..
+                    },
+                    RowId::Virtual(wanted),
+                ) if wanted == *seg_id => Some(*at),
+                _ => None,
+            };
+            if let Some(position) = hit {
+                return Some(position);
+            }
+            logical = logical.saturating_add(seg.len());
+        }
+        None
+    }
+
     /// Stable identity of a logical row (what cell edits are keyed by).
     pub fn id_at(&self, logical: u64) -> Option<RowId> {
         match self.row(logical)? {

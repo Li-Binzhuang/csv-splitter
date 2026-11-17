@@ -189,6 +189,11 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
                 "Treat the pattern as a pattern: . * + ? ^ $ [a-z]",
             ),
             ("--row", "Data row (1-based)"),
+            (
+                "--after-key",
+                "Insert after this row key (b:12 from /rows, not a row number)",
+            ),
+            ("--before-key", "Insert before this row key"),
             ("--to", "New column name / replacement text"),
             ("--value", "Value to write"),
             (
@@ -5817,6 +5822,7 @@ fn cmd_edit(args: &[String]) -> i32 {
     let mut action: Option<String> = None;
     let mut input: Option<PathBuf> = None;
     let mut row: Option<u64> = None;
+    let mut key_anchor: Option<(String, String)> = None;
     let mut col: Option<String> = None;
     let mut value: Option<String> = None;
     let mut from: Option<String> = None;
@@ -5883,6 +5889,13 @@ fn cmd_edit(args: &[String]) -> i32 {
             },
             "--into" => match p.value("--into") {
                 Ok(v) => into = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--after-key" | "--before-key" => match p.value(&arg) {
+                Ok(v) => key_anchor = Some((arg.clone(), v)),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -6654,19 +6667,49 @@ fn cmd_edit(args: &[String]) -> i32 {
             }
         }
         "insert" => {
-            let Some(row) = row else {
-                eprintln!("error: insert needs --row (and --value as a CSV row)");
-                return 2;
-            };
-            let raw = value.unwrap_or_default();
+            let raw = value.clone().unwrap_or_default();
             let cells: Vec<String> = if raw.trim().is_empty() {
                 Vec::new()
             } else {
                 csv_splitter_core::csv_reader::parse_csv_record(&raw, b',')
             };
-            csv_splitter_core::workbook::Op::InsertRows {
-                at: row,
-                rows: vec![cells],
+            // A key anchor wins over `--row`: it names a row that still exists, while a
+            // row number is a position other writes may have moved.
+            if let Some((flag, key)) = key_anchor.clone() {
+                let position = match csv_splitter_core::workbook::position_of_key(
+                    &input,
+                    journal.ops(),
+                    delimiter,
+                    &key,
+                ) {
+                    Ok(Some(position)) => position,
+                    Ok(None) => {
+                        eprintln!("error: no row with key {key} any more");
+                        return 2;
+                    }
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                };
+                let at = if flag == "--after-key" {
+                    position + 1
+                } else {
+                    position
+                };
+                csv_splitter_core::workbook::Op::InsertRows {
+                    at,
+                    rows: vec![cells],
+                }
+            } else {
+                let Some(row) = row else {
+                    eprintln!("error: insert needs --row or --after-key/--before-key");
+                    return 2;
+                };
+                csv_splitter_core::workbook::Op::InsertRows {
+                    at: row,
+                    rows: vec![cells],
+                }
             }
         }
         "formula" => {

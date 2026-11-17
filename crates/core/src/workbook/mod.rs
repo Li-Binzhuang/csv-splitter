@@ -299,6 +299,36 @@ fn truncate(text: &str, max: usize) -> String {
     }
 }
 
+/// Logical position of a row identity, in the sheet as it stands right now.
+///
+/// Reads the base row count through the pager so the map is built against the real
+/// sheet, then translates `b:12` / `v:3` into a position. This is what makes
+/// "insert after this row" a write that survives other people inserting meanwhile.
+pub fn position_of_key(
+    base: &Path,
+    ops: &[Op],
+    delimiter: Delimiter,
+    key: &str,
+) -> io::Result<Option<u64>> {
+    let id = match key.split_once(':') {
+        Some(("b", n)) => RowId::Base(n.parse().map_err(|_| {
+            io::Error::new(io::ErrorKind::InvalidInput, format!("bad row key {key:?}"))
+        })?),
+        Some(("v", n)) => RowId::Virtual(n.parse().map_err(|_| {
+            io::Error::new(io::ErrorKind::InvalidInput, format!("bad row key {key:?}"))
+        })?),
+        _ => {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("row keys look like b:12 or v:3, not {key:?}"),
+            ))
+        }
+    };
+    let pager = Pager::open(base, ops, delimiter)?;
+    let sheet = compile(ops, pager.total());
+    Ok(sheet.map.position_of(id))
+}
+
 /// Read the base file's header.
 pub fn base_header(base: &Path, delimiter: Delimiter) -> io::Result<Vec<String>> {
     let reader = encoding::open_decoded(base)?;
