@@ -155,6 +155,22 @@ done
 if [ "$CONC_FAILED" = "0" ]; then printf '  ok   20 concurrent requests all 200\n'
 else printf '  FAIL %s of 20 concurrent requests failed\n' "$CONC_FAILED"; failed=$((failed + 1)); fi
 
+echo "== parity with the CLI =="
+VALIDATE_JSON="$(curl -s "$URL/validate?path=orders.csv&checks=amount%3E%3D0;city:not-empty")"
+has "validate: report"        "$VALIDATE_JSON" '"rows":'
+has "validate: per-rule counts" "$VALIDATE_JSON" '"counts":'
+printf 'city,sales\nCDMX,10\nPuebla,20\n' > "$WORK/regions.csv"
+LOOKUP_JOB="$(curl -s -X POST "$URL/lookup?path=orders.csv&key=city&from=regions.csv&get=sales&out=orders-lookup.csv" | python3 -c 'import json,sys;print(json.load(sys.stdin).get("job",""))')"
+has "lookup: job accepted" "$LOOKUP_JOB" 'job'
+for _ in $(seq 1 40); do
+  LOOKUP_STATE="$(curl -s "$URL/job?id=$LOOKUP_JOB")"
+  echo "$LOOKUP_STATE" | grep -q '"state":"done"' && break
+  sleep 0.25
+done
+has "lookup: finished"  "$LOOKUP_STATE" '"state":"done"'
+if head -1 "$WORK/orders-lookup.csv" | grep -q sales; then printf '  ok   lookup: wrote the column\n'
+else printf '  FAIL lookup wrote no column\n'; failed=$((failed + 1)); fi
+
 echo "== cost tier =="
 SHEET_COST="$(curl -s "$URL/sheet?path=orders.csv")"
 has "sheet: cost tier"         "$SHEET_COST" '"tier":'

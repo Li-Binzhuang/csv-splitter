@@ -30,7 +30,7 @@
 `total` 是逻辑行数（编辑后）；`frozenColumns` 是需要固定的前缀列，行里仍然是全部列值。
 
 **写入统一形状**：同步操作用 `POST /edit`（返回 `{"op":…,"operations":n}`），
-长任务用 `POST /split`、`/merge`、`/sort`、`/dedupe`、`/partition`、`/warm`
+长任务用 `POST /split`、`/merge`、`/sort`、`/dedupe`、`/partition`、`/lookup`、`/warm`
 （返回 `{"job":"job123"}`，再用 `GET /job?id=job123` 轮询：`state` 走到 `done` 即完成，
 期间 `fraction` 是进度）。
 
@@ -53,6 +53,7 @@
 | `GET /edit` | `path` | 待生效的编辑操作 + 逻辑行数 |
 | `GET /filter` | `path` `where` | 命中行的行号 |
 | `GET /search` | `path` `q` `columns` `case` `exact` `regex` `limit` | 跨列搜索；`regex=1` 用条件格式那套模式子集 |
+| `GET /validate` | `path` `checks` `delim` | 数据校验，与 CLI `validate --json` **同一份报告**：`ok` / `violations` / 每规则计数；**只读不写**；违规数据仍是 **200**（请求没错，数据错了）|
 | `GET /files` | `ext` `limit` | 根目录下可读文件清单 |
 | `GET /download` | `path` | 原样下载文件 |
 | `GET /export` | `path` `sql` `where` | 导出（查询结果或筛选结果）为 CSV |
@@ -70,6 +71,7 @@
 | `POST /sort` | `path` `by` `desc` `out` | 外部排序 |
 | `POST /dedupe` | `path` `by` `out` | 去重 |
 | `POST /partition` | `path` `by` `out` `format` `maxPartitions` | 按列值拆成多个文件 |
+| `POST /lookup` | `path` `key` `from` `get` `out` `refKey` `maxKeys` | 跨表查找（job）：按 `key` 从 `from` 拷 `get` 列；未命中写 `#N/A` |
 | `POST /warm` | `path` `sql` `start` `count` | 预热查询缓存 |
 | `POST /index` | `path` `interval` | 后台建稀疏索引（翻页前先跑，避免首个请求里含着全表扫描） |
 
@@ -290,11 +292,11 @@ written on refusal, and `actual` says what the value is now.
 | GET | `/export` | 把查询结果当 CSV 直接下载（不写文件）|
 | POST | `/edit?action=export` | 物化到文件（异步 job）|
 | GET | `/query` | SQL（只读，`limit` 上限 1 万并回显，30 秒超时后中断）|
-| GET | `/stats` `/analyze` `/filter` `/search` | 画像与检索 |
+| GET | `/stats` `/analyze` `/filter` `/search` `/validate` | 画像、检索与校验 |
 | GET | `/groupby` `/pivot` `/style` `/chart` `/layout` | 聚合与展示元数据 |
 | GET | `/book` `/files` `/download` | 目录、书、下载（`book?root=` 不存在时 400；`max`/`limit` 截断时带 `total`/`hidden`）|
 | GET | `/job` `/jobs` | 异步任务状态 |
-| POST | `/split` `/merge` `/sort` `/dedupe` `/partition` `/warm` `/index` `/parquet` | 拆分、预热与后台任务（`/parquet` 建列式缓存）|
+| POST | `/split` `/merge` `/sort` `/dedupe` `/partition` `/lookup` `/warm` `/index` `/parquet` | 拆分、查找、预热与后台任务（`/parquet` 建列式缓存）|
 
 ## `GET /capabilities`
 

@@ -3419,3 +3419,79 @@ fn responses_are_gzipped_when_asked() {
     assert!(head.contains("Content-Encoding: gzip"), "{head}");
     assert!(body.is_empty(), "HEAD must not send a body");
 }
+
+/// `/validate` answers with the same report the CLI prints, and does not write anything.
+#[test]
+fn validate_reports_rules_over_http() {
+    let dir = TempDir::new("validate");
+    std::fs::write(
+        dir.join("t.csv"),
+        "id,city,qty\n1,Puebla,5\n2,Puebla,-3\n3,,7\n",
+    )
+    .unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = get(
+        &server.addr,
+        "/validate?path=t.csv&checks=qty%3E%3D0;city:not-empty",
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""ok":false"#), "{body}");
+    assert!(body.contains(r#""rows":3"#), "{body}");
+    assert!(body.contains(r#""count":1"#), "{body}");
+    assert!(body.contains("qty: >=0"), "{body}");
+
+    // A clean file is a 200 with ok:true — the request was fine either way.
+    std::fs::write(dir.join("good.csv"), "id,qty\n1,5\n2,6\n").unwrap();
+    let (code, body) = get(&server.addr, "/validate?path=good.csv&checks=qty%3E%3D0");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""ok":true"#), "{body}");
+
+    // A rule that cannot be parsed names the parameter instead of guessing.
+    let (code, body) = get(&server.addr, "/validate?path=t.csv&checks=nonsense");
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains(r#""parameter":"checks""#), "{body}");
+}
+
+/// `/lookup` copies columns by key, in a job, with the CLI's `#N/A` for a miss.
+#[test]
+fn lookup_copies_columns_by_key() {
+    let dir = TempDir::new("lookup");
+    std::fs::write(
+        dir.join("t.csv"),
+        "id,city\n1,Puebla\n2,Puebla\n3,Nowhere\n",
+    )
+    .unwrap();
+    std::fs::write(dir.join("regions.csv"), "city,sales\nPuebla,120\n").unwrap();
+    let server = start(&dir.0);
+
+    let (code, body) = post(
+        &server.addr,
+        "/lookup?path=t.csv&key=city&from=regions.csv&get=sales&out=t-lookup.csv",
+    );
+    assert_eq!(code, 202, "{body}");
+    let job = body
+        .split("\"job\":\"")
+        .nth(1)
+        .and_then(|s| s.split('"').next())
+        .expect("job id")
+        .to_string();
+    let status = wait_for_job(&server.addr, &job);
+    assert!(status.contains(r#""state":"done""#), "{status}");
+
+    let written = std::fs::read_to_string(dir.join("t-lookup.csv")).unwrap();
+    assert_eq!(
+        written, "id,city,sales\n1,Puebla,120\n2,Puebla,120\n3,Nowhere,#N/A\n",
+        "a missing key must be marked, not silently blank"
+    );
+
+    // The reference file is read through the same root guard as everything else.
+    let (code, body) = post(
+        &server.addr,
+        "/lookup?path=t.csv&key=city&from=../../etc/passwd&get=x&out=o.csv",
+    );
+    assert!(
+        code == 404 || code == 400,
+        "an outside path must be refused: {code} {body}"
+    );
+}

@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.38.0] — 2026-11-17
+
+### Added
+
+- **`GET /validate`** — the CLI's `validate`, on HTTP, returning the core `Report`'s own
+  JSON so the two entry points cannot drift: `rows`, `violations` (row/column/rule/value),
+  per-rule `counts`, `truncated`, `uniqueFull`, `ok`, and it applies the journal like every
+  other read path — a cell you fixed in the grid is validated at its new value.
+  - Bad data is **200 with `"ok":false`**, not a 4xx: the request was fine, the data is not.
+  - An unparseable check is 400 naming `checks`, because guessing what the user meant is
+    worse than saying which parameter to fix.
+- **`POST /lookup`** — cross-file lookup as a job: `key` in this file, `from` reference,
+  `get` columns to copy, `out` result. Unmatched keys are written `#N/A`, the same marker
+  the CLI and the engine use everywhere else; the reference path goes through the same
+  root guard as every other request.
+
 ## [3.37.0] — 2026-11-17
 
 ### Fixed

@@ -401,6 +401,7 @@ fn handle(
             "/sort" => start_sort(&mut stream, root, jobs, &params),
             "/dedupe" => start_dedupe(&mut stream, root, jobs, &params),
             "/partition" => start_partition(&mut stream, root, jobs, &params),
+            "/lookup" => start_lookup(&mut stream, root, jobs, &params),
             "/edit" => edit_apply(&mut stream, root, jobs, &params),
             _ => respond_json(&mut stream, 404, r#"{"error":"unknown endpoint"}"#),
         };
@@ -418,6 +419,7 @@ fn handle(
         "/stats" => stats(&mut stream, root, &params),
         "/filter" => filter(&mut stream, root, &params),
         "/search" => search(&mut stream, root, &params),
+        "/validate" => validate_endpoint(&mut stream, root, &params),
         "/files" => files(&mut stream, root, &params),
         "/analyze" => analyze(&mut stream, root, &params),
         "/edit" => edit_state(&mut stream, root, &params),
@@ -468,6 +470,13 @@ fn handle(
 /// compare it against the live responses, so a field that moves or a parameter that is
 /// renamed fails a test instead of a client.
 const SPEC_PARAMS: &[(&str, &[&str])] = &[
+    ("/validate", &["path", "checks", "delim"]),
+    (
+        "/lookup",
+        &[
+            "path", "key", "from", "get", "out", "refKey", "maxKeys", "delim",
+        ],
+    ),
     (
         "/rows",
         &[
@@ -617,6 +626,7 @@ const READ_ROUTES: &[&str] = &[
     "/groupby",
     "/filter",
     "/search",
+    "/validate",
     "/files",
     "/download",
     "/export",
@@ -643,6 +653,7 @@ const PATH_REQUIRED: &[&str] = &[
     "/groupby",
     "/filter",
     "/search",
+    "/validate",
     "/download",
     "/export",
     "/query",
@@ -655,6 +666,7 @@ const WRITE_ROUTES: &[&str] = &[
     "POST /sort",
     "POST /dedupe",
     "POST /partition",
+    "POST /lookup",
     "POST /warm",
     "POST /edit",
     "POST /index",
@@ -691,6 +703,164 @@ fn query_timeout_ms() -> u64 {
         .and_then(|value| value.parse().ok())
         .filter(|ms| *ms > 0)
         .unwrap_or(csv_splitter_core::sql::DEFAULT_TIMEOUT_MS)
+}
+
+/// `GET /validate?path=&checks=qty>=0;city:not-empty` — the CLI's `validate`, on HTTP.
+///
+/// Read-only: it reports what is wrong and never deletes anything. The journal is applied
+/// like every other read path, so a cell you fixed in the grid is validated at its new
+/// value. The report is the core `Report`'s own JSON, so CLI `--json` and this endpoint
+/// cannot drift apart.
+fn validate_endpoint(
+    stream: &mut TcpStream,
+    root: &Path,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
+    };
+    let Some(checks) = params.get("checks").filter(|c| !c.trim().is_empty()) else {
+        return bad_request(
+            stream,
+            "checks is required",
+            "checks",
+            "pass checks=qty>=0;city:not-empty (semicolon separated)",
+        );
+    };
+    let mut rules = Vec::new();
+    for text in checks.split(';').map(str::trim).filter(|t| !t.is_empty()) {
+        match csv_splitter_core::validate::Rule::parse(text) {
+            Ok(rule) => rules.push(rule),
+            Err(e) => {
+                return bad_request(
+                    stream,
+                    &format!("cannot parse the check {text:?}: {e}"),
+                    "checks",
+                    "a check is \"col:not-empty\", \"col:date\" or \"col>=value\"",
+                )
+            }
+        }
+    }
+    let ops = match csv_splitter_core::workbook::Journal::load(
+        &csv_splitter_core::workbook::Journal::sidecar(&path),
+    ) {
+        Ok(journal) => journal.ops().to_vec(),
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
+    drop(rx);
+    match csv_splitter_core::validate::validate(&path, &ops, &rules, delimiter(params), &tx) {
+        // 200 with `"ok":false` rather than 4xx: the request was fine, the data is not.
+        Ok(report) => respond_json(stream, 200, &report.to_json()),
+        Err(e) => respond_json(
+            stream,
+            422,
+            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+        ),
+    }
+}
+
+/// `POST /lookup?path=&key=&from=&get=&out=` — copy columns from another file by key.
+///
+/// A job, because it reads both files and writes a result: the caller polls `/job`.
+fn start_lookup(
+    stream: &mut TcpStream,
+    root: &Path,
+    jobs: &JobRegistry,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (input, _rel) = match resolve(root, params) {
+        Some(v) => v,
+        None => return bad_path(stream),
+    };
+    let Some(out) = resolve_out(root, params, "out") else {
+        return bad_out(stream);
+    };
+    let Some(key) = params.get("key").filter(|k| !k.is_empty()) else {
+        return bad_request(
+            stream,
+            "key is required",
+            "key",
+            "pass key=<column in this file>",
+        );
+    };
+    let Some(reference_name) = params.get("from").filter(|f| !f.is_empty()) else {
+        return bad_request(
+            stream,
+            "from is required",
+            "from",
+            "pass from=<reference file>",
+        );
+    };
+    let reference = match root.join(reference_name.trim_start_matches(['/', '\\'])) {
+        p if p.exists() => p,
+        _ => {
+            return respond_json(
+                stream,
+                404,
+                &format!(
+                    r#"{{"error":{}}}"#,
+                    json_str(&format!("the reference file {reference_name} is not there"))
+                ),
+            )
+        }
+    };
+    let take: Vec<String> = params
+        .get("get")
+        .map(|g| {
+            g.split(',')
+                .map(str::trim)
+                .filter(|c| !c.is_empty())
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default();
+    if take.is_empty() {
+        return bad_request(
+            stream,
+            "get is required",
+            "get",
+            "pass get=a,b (columns to copy)",
+        );
+    }
+    let reference_key = params
+        .get("refKey")
+        .cloned()
+        .unwrap_or_else(|| key.to_string());
+    let max_keys: usize = params
+        .get("maxKeys")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(5_000_000);
+    let options = csv_splitter_core::lookup::LookupOptions {
+        key: key.to_string(),
+        reference,
+        reference_key,
+        take,
+        max_keys,
+    };
+    let delimiter = delimiter(params);
+    let result_path = out.clone();
+    let id = jobs.submit("lookup", move |tx| match csv_splitter_core::lookup::lookup(
+        &input, delimiter, &out, &options, &tx,
+    ) {
+        Ok(_) => {
+            tx.send(ProgressEvent::Finished {
+                output: result_path,
+            })
+            .ok();
+        }
+        Err(e) => {
+            tx.send(ProgressEvent::Error(e.to_string())).ok();
+        }
+    });
+    respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
 }
 
 /// `GET /metrics` — request counts, latency percentiles and error distribution.
