@@ -1,5 +1,23 @@
 # Changelog
 
+## [3.47.0] — 2026-11-17
+
+### Added
+
+- **`validate --limit N`** on the CLI, matching the endpoint that gained it last round:
+  the summary line and the JSON both say what was skipped
+  (`2 rows checked of 4 (--limit), 1 violation(s)`).
+
+### Known gap, recorded
+
+- `/spec`'s `params` table is **incomplete**: handlers read more than twenty keys it never
+  lists (`cols`, `rename`, `paths`, `q`, `sql`, `rules`, …). I tried to enforce agreement
+  with a test and it produced too many false alarms — parameters are often read through
+  helpers (`resolve_out(root, params, "out")`), so matching only `params.get(...)` reports
+  reads as missing. Nearly all of those keys are documented in API.md; `/spec` lags behind
+  it. That is written down in API.md as debt to pay per endpoint, not papered over with an
+  allowlist.
+
 ## [3.46.0] — 2026-11-17
 
 ### Added

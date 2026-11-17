@@ -95,6 +95,10 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
                 "Stop counting distinct values past this many",
             ),
             ("--json", "Emit JSON"),
+            (
+                "--limit",
+                "Check only the first N rows (reports what it skipped)",
+            ),
             ("--quotes", "Quote style: rfc4180 | backslash | none"),
             ("--sample", "Sample this many rows instead of reading all"),
         ],
@@ -492,6 +496,10 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             (
                 "--rule",
                 "Format rule (\"amount>1000:bg=red\") or validation rule (\"qty>=0\")",
+            ),
+            (
+                "--limit",
+                "Check only the first N rows (reports what it skipped)",
             ),
         ],
     ),
@@ -4505,6 +4513,7 @@ fn truncate_for_display(text: &str, width: usize) -> String {
 
 fn cmd_validate(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut limit: Option<u64> = None;
     let mut quotes_text = String::new();
     let mut input: Option<PathBuf> = None;
     let mut rules_text: Vec<String> = Vec::new();
@@ -4523,6 +4532,20 @@ fn cmd_validate(args: &[String]) -> i32 {
             },
             "--checks" => match p.value("--checks") {
                 Ok(v) => rules_text.extend(v.split(';').map(|r| r.trim().to_string())),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--limit" => match p
+                .value("--limit")
+                .and_then(|v| v.parse::<u64>().map_err(|_| "bad --limit".to_string()))
+            {
+                Ok(v) if v > 0 => limit = Some(v),
+                Ok(_) => {
+                    eprintln!("error: --limit is a positive row count");
+                    return 2;
+                }
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -4600,7 +4623,8 @@ fn cmd_validate(args: &[String]) -> i32 {
 
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("validate", rx, quiet || json);
-    let result = csv_splitter_core::validate::validate(&input, &ops, &rules, delimiter, &tx);
+    let result =
+        csv_splitter_core::validate::validate_limited(&input, &ops, &rules, delimiter, limit, &tx);
     drop(tx);
     let _ = reporter.join();
     let _ = quotes;
@@ -4618,6 +4642,12 @@ fn cmd_validate(args: &[String]) -> i32 {
     for (rule, count) in &report.counts {
         let mark = if *count == 0 { "✓" } else { "✗" };
         println!("{mark} {rule}: {count} violation(s)");
+    }
+    if report.partial {
+        println!(
+            "! checked {} of {} row(s) (--limit); the counts describe that prefix only",
+            report.checked, report.rows
+        );
     }
     if report.unique_full {
         println!(
@@ -4647,8 +4677,13 @@ fn cmd_validate(args: &[String]) -> i32 {
         }
     }
     println!(
-        "\n{} rows checked, {} violation(s)",
-        report.rows,
+        "\n{} rows checked{}, {} violation(s)",
+        report.checked,
+        if report.partial {
+            format!(" of {} (--limit)", report.rows)
+        } else {
+            String::new()
+        },
         report.total()
     );
     if failed {
