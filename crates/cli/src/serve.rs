@@ -479,6 +479,16 @@ fn handle(
 /// compare it against the live responses, so a field that moves or a parameter that is
 /// renamed fails a test instead of a client.
 const SPEC_PARAMS: &[(&str, &[&str])] = &[
+    ("/warm", &["path", "delim"]),
+    ("/stats", &["path", "delim"]),
+    ("/jobs", &["path", "delim"]),
+    ("/job", &["path", "delim"]),
+    ("/index", &["path", "delim"]),
+    ("/export", &["path", "delim"]),
+    ("/edit", &["path", "delim"]),
+    ("/download", &["path", "delim"]),
+    ("/analyze", &["path", "delim"]),
+    ("/", &[]),
     ("/validate", &["path", "checks", "delim", "limit"]),
     (
         "/schema",
@@ -506,13 +516,18 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
             "start-col",
             "count-cols",
             "keys",
+            "sql",
             "delim",
         ],
     ),
     (
         "/columns",
-        &["path", "name", "kind", "limit", "sample", "delim"],
+        &[
+            "path", "name", "kind", "limit", "sample", "delim", "keep", "drop", "rename", "out",
+        ],
     ),
+    ("/concat", &["paths", "out", "ignoreHeader", "delim"]),
+    ("/convert", &["path", "out", "from", "to"]),
     ("/meta", &["path", "delim"]),
     ("/cell", &["path", "row", "col", "delim"]),
     ("/journal", &["path", "delim"]),
@@ -523,9 +538,37 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     ("/metrics", &[]),
     ("/parquet", &["path", "delim"]),
     (
+        "/search",
+        &[
+            "path", "q", "columns", "regex", "case", "exact", "limit", "delim",
+        ],
+    ),
+    (
+        "/filter",
+        &["path", "where", "columns", "order", "desc", "delim"],
+    ),
+    (
+        "/groupby",
+        &["path", "by", "agg", "order", "apply-edits", "delim"],
+    ),
+    ("/pivot", &["path", "rows", "cols", "values", "delim"]),
+    ("/chart", &["path", "x", "y", "type", "series", "delim"]),
+    ("/style", &["path", "rules"]),
+    ("/layout", &["path", "key", "column", "value"]),
+    ("/files", &["dir"]),
+    ("/book", &["max"]),
+    ("/query", &["path", "sql", "limit", "delim"]),
+    ("/sort", &["path", "by", "desc", "out", "bufMb", "delim"]),
+    ("/dedupe", &["path", "by", "out", "delim"]),
+    ("/partition", &["path", "by", "format", "out", "delim"]),
+    ("/split", &["path", "format", "out", "delim"]),
+    ("/merge", &["path", "out", "delim"]),
+    (
         "/edit",
         &[
             "path", "action", "row", "col", "value", "expect", "name", "out", "where", "delim",
+            "after", "by", "count", "formula", "from", "from-row", "into", "key", "to", "to-row",
+            "cols",
         ],
     ),
 ];

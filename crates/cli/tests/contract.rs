@@ -97,3 +97,66 @@ fn every_advertised_edit_action_is_dispatched() {
         "serve.rs handles actions that /capabilities never mentions: {unadvertised:?}"
     );
 }
+
+/// `/spec` must not describe endpoints that do not exist, nor omit ones that do.
+///
+/// The parameter table is hand-written and grew route by route; a guessed route name
+/// (`/eval`) sat in it until this test existed. Both directions matter: a client that
+/// trusts `/spec` will build a request the server answers with 404.
+#[test]
+fn spec_routes_match_the_served_routes() {
+    let source = serve_source();
+
+    let listed: BTreeSet<String> = {
+        let start = source.find("const SPEC_PARAMS").expect("SPEC_PARAMS");
+        let rest = &source[start..];
+        let end = rest.find("\n];").expect("end of SPEC_PARAMS");
+        // Entries wrap: `("/rows", &[…])` and `(\n    "/schema",\n …)`. Matching "("
+        // followed by a quoted path anywhere in the block handles both.
+        // Walk every quoted string in the block; a route is a quote-delimited token that
+        // starts with `/` and is followed by `,` or `&`. This covers both the inline and
+        // the wrapped forms without depending on the exact whitespace.
+        let mut found = BTreeSet::new();
+        for (index, piece) in rest[..end].split('"').enumerate() {
+            if index % 2 == 1 && piece.starts_with('/') && !piece.contains(char::is_whitespace) {
+                found.insert(piece.to_string());
+            }
+        }
+        found
+    };
+
+    let served: BTreeSet<String> = {
+        let mut routes = BTreeSet::new();
+        for constant in ["READ_ROUTES", "WRITE_ROUTES"] {
+            let start = source.find(&format!("const {constant}")).expect(constant);
+            let rest = &source[start..];
+            let end = rest.find("\n];").expect("end of the route list");
+            for line in rest[..end].lines() {
+                // Read routes are `"/split"`, write routes `"POST /split"`: the path is
+                // what follows the last space either way.
+                if let Some(at) = line.find('"') {
+                    let literal = line[at + 1..].split('"').next().unwrap_or("");
+                    let path = literal.split_whitespace().last().unwrap_or(literal);
+                    if path.starts_with('/') {
+                        routes.insert(path.to_string());
+                    }
+                }
+            }
+        }
+        // A write route is served at its path, with the verb in the constant's name.
+        routes.retain(|r| r.starts_with('/'));
+        routes
+    };
+
+    assert!(!listed.is_empty() && !served.is_empty());
+    let phantom: Vec<&String> = listed.difference(&served).collect();
+    assert!(
+        phantom.is_empty(),
+        "/spec documents routes the server does not serve: {phantom:?}"
+    );
+    let undocumented: Vec<&String> = served.difference(&listed).collect();
+    assert!(
+        undocumented.is_empty(),
+        "served routes missing from /spec's parameter table: {undocumented:?}"
+    );
+}

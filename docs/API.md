@@ -103,11 +103,11 @@
 | `export` | `out` | 物化到文件（返回 job） |
 
 
-> **已知不完整**：`/spec` 的 `params` 只覆盖常用端点，`serve.rs` 里实际读取的参数有
-> 二十多个还没有写进去（如 `cols`、`rename`、`paths`、`q`、`sql`、`rules`）。我试过用
-> 一条测试强制两边一致，但它误报太多：参数也常常经辅助函数读取（`resolve_out(root,
-> params, "out")`），只按 `params.get` 匹配会把读到的当成没读到。所以这条**是债**，
-> 修的时候要按端点逐个补，而不是加白名单。
+> `/spec` 的 `params` 现已覆盖**全部端点**（参数表按 handler 实际读取的 key 补齐），
+> 并由 `crates/cli/tests/contract.rs` 双向断言：`/spec` 不能声明不存在的端点，已服务的
+> 端点也不能缺席。参数「是否真的被 handler 读取」这一层仍然无法用机械检查证明——
+> 参数常经辅助函数传入（`resolve_out(root, params, "out")`）——所以那一层靠测试逐个
+> 端点断言行为，而不是靠字符串匹配。
 
 ## 常用示例
 

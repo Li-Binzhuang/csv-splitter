@@ -203,3 +203,28 @@ bash scripts/backend-smoke.sh       # 起真服务，44 项断言
 ```
 
 四项脚本全绿，就是这份对照表的证据。
+
+
+## 能力面验收（3.48.0）
+
+| 新能力 | CLI | HTTP | 测试 |
+|---|---|---|---|
+| 拼接多文件 | `concat a.csv b.csv` | `POST /concat`（job）| `concat_stacks_files_over_http` + smoke |
+| 列变换写新文件 | `columns --keep/--drop/--rename` | `POST /columns`（job）| `columns_reshape_writes_a_new_file` |
+| 列集合对比 | `schema --diff b.csv` | `GET /schema?diff=` | `schema_diff_matches_the_cli`（断言字节相同）|
+| 追加公式列 | `edit formula --name --value` | `action=formula` | `edit_formula_appends_a_computed_column` |
+| **重算已有列** | `edit set-formula --col --value` | `action=set-formula` | 3 个 core + 1 个 HTTP（含循环引用拒绝）|
+| 一列拆多列 | `edit split-column` | `action=split-column` | `edit_split_column_is_reachable_over_http` |
+| 按 rowKey 插行 | `edit insert --after-key b:12` | `action=insert-after-key` | `insert_by_key_anchors_to_the_named_row` |
+| 多列区间填充（一次撤销）| `edit fill --cols a,b` | `action=fill&cols=` | 2 个 core + 1 个 HTTP + smoke |
+| 数据校验 | `validate --check` | `GET /validate[&limit]` | `validate_reports_rules_over_http`、`validate_can_bound_its_scan` |
+| 跨表查找 | `lookup --key --from --get` | `POST /lookup`（job）| `lookup_copies_columns_by_key` |
+| 编码转换 | `convert --to utf-8` | `POST /convert`（job）| `convert_rewrites_the_encoding` |
+
+契约检查（`crates/cli/tests/contract.rs`）：
+
+| 断言 | 说明 |
+|---|---|
+| `/capabilities` 的 `editActions` = dispatch | 双向；抓出过 `delete-where` 未声明 |
+| `/spec` 的路由 = 服务的路由 | 双向；抓出过虚构的 `/eval` |
+

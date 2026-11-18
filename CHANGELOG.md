@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.48.0] — 2026-11-17
+
+### Fixed
+
+- **`/spec`'s parameter table now covers every endpoint.** It listed 16 routes and omitted
+  the rest (`/search`, `/filter`, `/pivot`, `/chart`, `/query`, `/sort`, `/dedupe`,
+  `/partition`, `/split`, `/merge`, `/files`, `/book`, `/style`, `/layout`, …), and the
+  `/edit` list was missing ten of the keys its handler reads.
+  - A new test asserts both directions against the source: `/spec` may not describe an
+    endpoint the server does not serve (a guessed `/eval` did, until this existed), and no
+    served endpoint may be absent from the table.
+
 ## [3.47.0] — 2026-11-17
 
 ### Added
