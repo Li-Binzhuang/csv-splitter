@@ -1166,15 +1166,23 @@ fn start_lookup(
             "pass from=<reference file>",
         );
     };
-    let reference = match root.join(reference_name.trim_start_matches(['/', '\\'])) {
-        p if p.exists() => p,
+    // The reference goes through the same guard as a read: canonicalise, then require it
+    // to stay inside the root. Checking `exists` alone let `../../etc/passwd` through on
+    // a Linux box where that path resolves; the macOS temp layout hid it.
+    let reference = match root
+        .join(reference_name.trim_start_matches(['/', '\\']))
+        .canonicalize()
+    {
+        Ok(path) if path.starts_with(root) && path.is_file() => path,
         _ => {
             return respond_json(
                 stream,
                 404,
                 &format!(
                     r#"{{"error":{}}}"#,
-                    json_str(&format!("the reference file {reference_name} is not there"))
+                    json_str(&format!(
+                    "the reference file {reference_name} is not a file inside the served directory"
+                ))
                 ),
             )
         }

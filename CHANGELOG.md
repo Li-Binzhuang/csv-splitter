@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.48.1] — 2026-11-18
+
+### Fixed
+
+- **`/lookup`'s reference path escaped the root.** It checked `exists` instead of
+  canonicalising and comparing against the root, so `from=../../etc/passwd` was accepted
+  on a Linux box — the macOS temp-directory layout pointed that path at nothing, so the
+  test passed locally and CI caught it. It now goes through the same guard as a read, and
+  the 404 says why: "not a file inside the served directory".
+  - The test was also too lenient (`404 || 400`); it now asserts 404 and the message.
+
 ## [3.48.0] — 2026-11-17
 
 ### Fixed
