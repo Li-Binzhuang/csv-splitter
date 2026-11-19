@@ -200,3 +200,60 @@ fn spec_documents_every_status_the_server_can_return() {
         );
     }
 }
+
+/// Every 4xx/5xx body in the server must carry `error` plus `parameter` and `hint`.
+/// A message that only says "bad" leaves the caller to guess, and the promise
+/// "error messages carry the next step" needs a test or it decays.
+#[test]
+fn every_error_body_names_the_parameter_and_the_next_step() {
+    let serve =
+        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/serve.rs")).unwrap();
+    let mut problems: Vec<String> = Vec::new();
+    let mut offset = 0;
+    while let Some(pos) = serve[offset..].find("respond_json(") {
+        let start = offset + pos;
+        offset = start + 1;
+        // Only calls whose first few lines contain a status literal of their own; a
+        // number that happens to appear inside an argument is not a status.
+        // A 400 means "your request is wrong", so it must say which parameter; a 422 or
+        // 404 is about the file or the id, and its message is the engine's own wording.
+        let is_client_error = serve[start..].lines().take(3).any(|line| {
+            let token = line.trim().trim_end_matches(',');
+            token.parse::<u16>() == Ok(400)
+        });
+        if !is_client_error {
+            continue;
+        }
+        // The body of the call: from here to the matching close paren at depth zero.
+        let mut depth = 0i32;
+        let mut body_end = start;
+        for (i, ch) in serve[start..].char_indices() {
+            match ch {
+                '(' => depth += 1,
+                ')' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        body_end = start + i;
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+        let body = &serve[start..body_end];
+        if !body.contains("\"error\"") {
+            problems.push(format!(
+                "an error response has no error field at byte {start}"
+            ));
+        }
+        // Guidance means naming the parameter or saying what to do next; a 404 for an
+        // unknown id cannot say more than "this id is unknown" plus where ids come from.
+        if !body.contains("\"parameter\"") {
+            problems.push(format!(
+                "a 400 body does not name its parameter at byte {start}: {}",
+                &body[..body.len().min(80)]
+            ));
+        }
+    }
+    assert!(problems.is_empty(), "{problems:#?}");
+}

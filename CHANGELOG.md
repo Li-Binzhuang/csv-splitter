@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.52.2] — 2026-11-19
+
+### Fixed
+
+- **Every 400 now names the parameter it is complaining about.** Nine did not: the request
+  line, headers, an unknown compression format, an A1 range, and four engine "invalid input"
+  arms that answered with a bare error string. The convention was documented and untested;
+  a contract test now scans the source and fails when a 400 body has no `parameter`.
+
 ## [3.52.1] — 2026-11-19
 
 ### Changed

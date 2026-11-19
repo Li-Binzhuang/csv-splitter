@@ -321,8 +321,9 @@ fn handle(
             &mut stream,
             400,
             &format!(
-                r#"{{"error":{}}}"#,
-                json_str("the request line is too long; this API takes its parameters in the URL")
+                r#"{{"error":{},"parameter":"url","hint":{}}}"#,
+                json_str("the request line is too long"),
+                json_str("this API takes its parameters in the URL, so shorten it")
             ),
         );
     }
@@ -341,7 +342,10 @@ fn handle(
             return respond_json(
                 &mut stream,
                 400,
-                r#"{"error":"too many or too-long headers; this API takes its parameters in the URL"}"#,
+                &format!(
+                    r#"{{"error":"too many or too-long headers","parameter":"headers","hint":{}}}"#,
+                    json_str("this API takes its parameters in the URL, so send few headers")
+                ),
             );
         }
         let lower = line.to_ascii_lowercase();
@@ -407,11 +411,25 @@ fn handle(
             "/columns" => start_columns_reshape(&mut stream, root, jobs, &params),
             "/convert" => start_convert(&mut stream, root, jobs, &params),
             "/edit" => edit_apply(&mut stream, root, jobs, &params),
-            _ => respond_json(&mut stream, 404, r#"{"error":"unknown endpoint"}"#),
+            _ => respond_json(
+                &mut stream,
+                404,
+                &format!(
+                    r#"{{"error":"unknown endpoint","parameter":"path","hint":{}}}"#,
+                    json_str("GET /spec lists every route")
+                ),
+            ),
         };
     }
     if method != "GET" && method != "HEAD" {
-        return respond_json(&mut stream, 405, r#"{"error":"method not allowed"}"#);
+        return respond_json(
+            &mut stream,
+            405,
+            &format!(
+                r#"{{"error":"method not allowed","parameter":"method","hint":{}}}"#,
+                json_str("GET /spec lists which routes read and which write")
+            ),
+        );
     }
 
     match path {
@@ -1635,9 +1653,14 @@ fn job_cancel(
                 json_str("wait for it to finish, or stop the server (SIGTERM waits five seconds)")
             ),
         ),
-        csv_splitter_core::jobs::CancelOutcome::Unknown => {
-            respond_json(stream, 404, r#"{"error":"unknown job"}"#)
-        }
+        csv_splitter_core::jobs::CancelOutcome::Unknown => respond_json(
+            stream,
+            404,
+            &format!(
+                r#"{{"error":"unknown job","parameter":"id","hint":{}}}"#,
+                json_str("ids come from a 202 response; /jobs lists the live ones")
+            ),
+        ),
     }
 }
 
@@ -1656,7 +1679,14 @@ fn job_status(
     };
     match jobs.status(id) {
         Some(status) => respond_json(stream, 200, &job_json(&status)),
-        None => respond_json(stream, 404, r#"{"error":"unknown job"}"#),
+        None => respond_json(
+            stream,
+            404,
+            &format!(
+                r#"{{"error":"unknown job","parameter":"id","hint":{}}}"#,
+                json_str("ids come from a 202 response; /jobs lists the live ones")
+            ),
+        ),
     }
 }
 
@@ -1743,8 +1773,9 @@ fn start_split(
                 stream,
                 400,
                 &format!(
-                    r#"{{"error":{}}}"#,
-                    json_str(&format!("unknown format {other}"))
+                    r#"{{"error":{},"parameter":"format","hint":{}}}"#,
+                    json_str(&format!("unknown format {other}")),
+                    json_str("formats: gz, bz2, xz, zip, none")
                 ),
             )
         }
@@ -2146,7 +2177,14 @@ fn edit_apply(
                     &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
                 ),
             },
-            None => respond_json(stream, 409, r#"{"error":"nothing to undo"}"#),
+            None => respond_json(
+                stream,
+                409,
+                &format!(
+                    r#"{{"error":"nothing to undo","parameter":"action","hint":{}}}"#,
+                    json_str("the journal is empty; make an edit first")
+                ),
+            ),
         };
     }
 
@@ -2403,7 +2441,11 @@ fn edit_apply(
                         return respond_json(
                             stream,
                             400,
-                            &format!(r#"{{"error":{}}}"#, json_str(&e)),
+                            &format!(
+                                r#"{{"error":{},"parameter":"from","hint":{}}}"#,
+                                json_str(&e),
+                                json_str("a range is A1:B10, from the sheet header")
+                            ),
                         )
                     }
                 };
@@ -3339,7 +3381,10 @@ fn group_by(
         Err(e) if e.kind() == io::ErrorKind::InvalidInput => respond_json(
             stream,
             400,
-            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            &format!(
+                r#"{{"error":{},"parameter":"request"}}"#,
+                json_str(&e.to_string())
+            ),
         ),
         Err(e) => respond_json(
             stream,
@@ -3378,8 +3423,9 @@ fn start_partition(
                 stream,
                 400,
                 &format!(
-                    r#"{{"error":{}}}"#,
-                    json_str(&format!("unknown format {other}"))
+                    r#"{{"error":{},"parameter":"format","hint":{}}}"#,
+                    json_str(&format!("unknown format {other}")),
+                    json_str("formats: gz, bz2, xz, zip, none")
                 ),
             )
         }
@@ -4867,7 +4913,10 @@ fn export(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
         Err(e) if e.kind() == io::ErrorKind::InvalidInput => respond_json(
             stream,
             400,
-            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            &format!(
+                r#"{{"error":{},"parameter":"request"}}"#,
+                json_str(&e.to_string())
+            ),
         ),
         Err(e) => respond_json(
             stream,
@@ -5261,7 +5310,10 @@ fn respond_rows_from_cache(
         Err(e) if e.kind() == io::ErrorKind::InvalidInput => respond_json(
             stream,
             400,
-            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            &format!(
+                r#"{{"error":{},"parameter":"request"}}"#,
+                json_str(&e.to_string())
+            ),
         ),
         Err(e) => respond_json(
             stream,
@@ -5342,7 +5394,10 @@ fn search(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
         Err(e) if e.kind() == io::ErrorKind::InvalidInput => respond_json(
             stream,
             400,
-            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            &format!(
+                r#"{{"error":{},"parameter":"request"}}"#,
+                json_str(&e.to_string())
+            ),
         ),
         Err(e) => respond_json(
             stream,
@@ -5369,7 +5424,10 @@ fn files(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) 
                     return respond_json(
                         stream,
                         400,
-                        r#"{"error":"dir must be a directory inside root"}"#,
+                        &format!(
+                            r#"{{"error":"dir must be a directory inside root","parameter":"dir","hint":{}}}"#,
+                            json_str("pass a subdirectory relative to the served root")
+                        ),
                     )
                 }
             }
@@ -5425,7 +5483,14 @@ fn filter(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
         Err(reason) => return bad_path_reason(stream, reason),
     };
     let Some(expr) = params.get("where") else {
-        return respond_json(stream, 400, r#"{"error":"where is required"}"#);
+        return respond_json(
+            stream,
+            400,
+            &format!(
+                r#"{{"error":"where is required","parameter":"where","hint":{}}}"#,
+                json_str("pass where=city=CDMX (ops: = != ~ > >= < <= empty notempty in)")
+            ),
+        );
     };
     let spec = match FilterSpec::parse(expr) {
         Ok(s) => s,
