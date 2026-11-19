@@ -810,4 +810,64 @@ mod tests {
         assert!(n.data_bytes > 0);
         std::fs::remove_dir_all(&dir).ok();
     }
+
+    /// Parallel readers are supposed to split only at record boundaries, and a record may
+    /// contain a quoted newline — the case where a byte-offset split turns one row into two.
+    /// Four threads and one thread must produce identical parts.
+    #[test]
+    fn threads_do_not_break_records_with_quoted_newlines() {
+        let dir = std::env::temp_dir().join(format!("csvs_splitthreads_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+
+        // 1200 rows is past the 1000-record checkpoint interval, so the readers really do
+        // start from different offsets instead of all beginning at byte zero. Every third
+        // row carries a newline inside a quoted field, which is what a naive split breaks.
+        let mut text = String::from("id,note\n");
+        for i in 0..1200 {
+            if i % 3 == 0 {
+                text.push_str(&format!("{i},\"line one\nline two\"\n"));
+            } else {
+                text.push_str(&format!("{i},plain{}\n", i));
+            }
+        }
+        let input = dir.join("data.csv");
+        std::fs::write(&input, &text).unwrap();
+
+        let run = |threads: usize, tag: &str| -> Vec<std::path::PathBuf> {
+            let out = dir.join(tag);
+            std::fs::create_dir_all(&out).unwrap();
+            let config = SplitConfig {
+                input: input.clone(),
+                output: Some(out.join("part")),
+                splits: 4,
+                delimiter: Delimiter::Comma,
+                // The default is zstd; compare the bytes, not a compressed stream.
+                compress_format: CompressFormat::None,
+                ..SplitConfig::default()
+            };
+            let (tx, _rx) = std::sync::mpsc::channel();
+            run_split_threads(config, threads, tx);
+            let mut parts: Vec<_> = std::fs::read_dir(&out)
+                .unwrap()
+                .filter_map(|e| e.ok().map(|e| e.path()))
+                .collect();
+            parts.sort();
+            parts
+        };
+
+        let serial_parts = run(1, "serial");
+        let parallel_parts = run(4, "parallel");
+        assert_eq!(
+            serial_parts.len(),
+            parallel_parts.len(),
+            "part count differs"
+        );
+        for (serial, parallel) in serial_parts.iter().zip(&parallel_parts) {
+            let a = std::fs::read_to_string(serial).unwrap();
+            let b = std::fs::read_to_string(parallel).unwrap();
+            assert_eq!(a, b, "parts differ:\n{serial:?}\n---\n{parallel:?}");
+        }
+        std::fs::remove_dir_all(&dir).ok();
+    }
 }

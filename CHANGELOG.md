@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.52.7] — 2026-11-19
+
+### Tests
+
+- **Closed the one unguarded claim from the audit:** parallel readers must not split a record
+  that contains a quoted newline. The test writes 1200 rows (past the 1000-record checkpoint
+  interval, so readers really start at different offsets), every third row carrying a quoted
+  newline, and asserts four threads produce byte-identical parts to one thread.
+
 ## [3.52.6] — 2026-11-19
 
 ### Documentation
