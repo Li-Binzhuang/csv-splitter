@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.55.2] — 2026-11-19
+
+### Measured / Documented
+
+- Repeat-window latency on 2.5 GB: first request 21 ms, repeats 9.5 ms and 12 ms, and a
+  different window 10 ms. The pager cache buys roughly half on the first hit; the sparse index
+  does the real work. Recorded so nobody rewrites the read path to "warm the cache" — at
+  ten-millisecond scale there is nothing there to win.
+
 ## [3.55.1] — 2026-11-19
 
 ### Tests / Documentation
