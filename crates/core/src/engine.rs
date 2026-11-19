@@ -383,6 +383,222 @@ pub fn chart_sql(
     ))
 }
 
+/// DuckDB-backed pivot, for the file output path. The terminal matrix keeps the native
+/// path: it is built for three-column output, not for a database to stream.
+#[cfg(feature = "sql")]
+pub fn pivot_sql(
+    path: &Path,
+    delimiter: crate::types::Delimiter,
+    output: &Path,
+    options: &crate::pivot::PivotOptions,
+    tx: &crate::types::ProgressSender,
+) -> std::io::Result<crate::pivot::PivotSummary> {
+    use crate::aggregate::{format_number, AggOp};
+    use std::io::{self, Write};
+
+    let total_bytes = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
+    tx.send(crate::types::ProgressEvent::PhaseStart {
+        phase: "Pivoting (duckdb)".into(),
+        total_bytes,
+    })
+    .ok();
+
+    let Some(column_key) = options.columns.as_deref() else {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "pivot needs a column key",
+        ));
+    };
+    if options.rows.is_empty() || options.values.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "pivot needs row keys and measures",
+        ));
+    }
+
+    let distinct_query = format!(
+        "SELECT DISTINCT COALESCE({col}, '') FROM t ORDER BY 1 LIMIT {}",
+        options.max_columns.max(1) + 1,
+        col = ident(column_key)
+    );
+    let distinct =
+        crate::sql::query_with(path, &distinct_query, options.max_columns + 1, delimiter)?;
+    let mut column_values: Vec<String> = distinct
+        .rows
+        .iter()
+        .filter_map(|row| row.first().cloned())
+        .collect();
+    if column_values.len() > options.max_columns {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!(
+                "more than {} distinct values in '{}'; raise --max-columns",
+                options.max_columns, column_key
+            ),
+        ));
+    }
+    column_values.sort();
+
+    let mut header: Vec<String> = options.rows.clone();
+    for value in &column_values {
+        for spec in &options.values {
+            header.push(if options.qualify_names {
+                format!("{value} \u{00b7} {}", spec.output_name())
+            } else {
+                value.clone()
+            });
+        }
+    }
+
+    let mut select: Vec<String> = options.rows.iter().map(|r| ident(r)).collect();
+    for value in &column_values {
+        // An empty cell is a legitimate pivot column, which is why COALESCE appears on
+        // both sides: DuckDB reads a blank CSV field as NULL, the native path as "".
+        let condition = format!(
+            "COALESCE({}, '') = '{}'",
+            ident(column_key),
+            value.replace('\'', "''")
+        );
+        for spec in &options.values {
+            let measure = ident(&spec.column);
+            let expr = match spec.op {
+                AggOp::Count => format!("count(CASE WHEN {condition} THEN {measure} END)"),
+                AggOp::Sum => {
+                    format!("sum(CASE WHEN {condition} THEN try_cast({measure} AS DOUBLE) END)")
+                }
+                AggOp::Mean => {
+                    format!("avg(CASE WHEN {condition} THEN try_cast({measure} AS DOUBLE) END)")
+                }
+                AggOp::Min => {
+                    format!("min(CASE WHEN {condition} THEN try_cast({measure} AS DOUBLE) END)")
+                }
+                AggOp::Max => {
+                    format!("max(CASE WHEN {condition} THEN try_cast({measure} AS DOUBLE) END)")
+                }
+            };
+            // The alias is positional, not the display name: an empty pivot column has an
+            // empty header (legal in CSV) but SQL rejects a zero-length identifier. The
+            // real header is written from `header`, which carries the display names.
+            select.push(format!(
+                "{expr} AS {}",
+                ident(&format!("c{}", select.len()))
+            ));
+        }
+    }
+    let keys_sql = options
+        .rows
+        .iter()
+        .map(|r| ident(r))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let order = match options.order_by.as_deref() {
+        Some(name) => format!(
+            "{}{}",
+            ident(name),
+            if options.descending { " DESC" } else { "" }
+        ),
+        None => format!(
+            "{}{}",
+            keys_sql,
+            if options.descending { " DESC" } else { "" }
+        ),
+    };
+    let query = format!(
+        "SELECT {} FROM t GROUP BY {} ORDER BY {}",
+        select.join(", "),
+        keys_sql,
+        order
+    );
+    let limit = options.max_cells.max(1).saturating_add(1);
+    let result = crate::sql::query_with(path, &query, limit, delimiter)?;
+    if result.truncated
+        || result.rows.len() * column_values.len() * options.values.len() > options.max_cells
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!(
+                "more than {} cells; raise --max-cells or narrow the keys",
+                options.max_cells
+            ),
+        ));
+    }
+
+    let mut out = std::io::BufWriter::new(std::fs::File::create(output)?);
+    writeln!(out, "{}", quote_cells(&header).join(","))?;
+    for row in &result.rows {
+        let cells: Vec<String> = row
+            .iter()
+            .enumerate()
+            .map(|(i, value)| {
+                let measure_index = if i < options.rows.len() {
+                    None
+                } else {
+                    Some((i - options.rows.len()) % options.values.len())
+                };
+                match measure_index {
+                    Some(index) => {
+                        let op = options.values[index].op;
+                        if value.trim().is_empty() {
+                            // A cell with no contributing row is not NULL in the native
+                            // path: sum and count print 0, mean/min/max print nothing.
+                            match op {
+                                AggOp::Sum | AggOp::Count => "0".to_string(),
+                                _ => String::new(),
+                            }
+                        } else if op.is_numeric() || matches!(op, AggOp::Count) {
+                            match value.trim().parse::<f64>() {
+                                Ok(n) => format_number(n),
+                                Err(_) => value.clone(),
+                            }
+                        } else {
+                            value.clone()
+                        }
+                    }
+                    None => value.clone(),
+                }
+            })
+            .collect();
+        writeln!(out, "{}", quote_cells(&cells).join(","))?;
+    }
+    out.flush()?;
+
+    let rows_query = "SELECT count(*) AS n FROM t";
+    let input_rows: u64 = crate::sql::query_with(path, rows_query, 1, delimiter)
+        .ok()
+        .and_then(|r| r.rows.first().and_then(|row| row.first().cloned()))
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(0);
+    let bytes = std::fs::metadata(output).map(|m| m.len()).unwrap_or(0);
+    tx.send(crate::types::ProgressEvent::PhaseDone {
+        phase: "Pivoting (duckdb)".into(),
+    })
+    .ok();
+    Ok(crate::pivot::PivotSummary {
+        input_rows,
+        row_keys: result.rows.len() as u64,
+        column_keys: column_values.len() as u64,
+        output_rows: result.rows.len() as u64,
+        bytes,
+        row_columns: options.rows.clone(),
+        column_values,
+        measures: options.values.iter().map(|v| v.output_name()).collect(),
+    })
+}
+
+#[cfg(not(feature = "sql"))]
+pub fn pivot_sql(
+    _path: &Path,
+    _delimiter: crate::types::Delimiter,
+    _output: &Path,
+    _options: &crate::pivot::PivotOptions,
+    _tx: &crate::types::ProgressSender,
+) -> std::io::Result<crate::pivot::PivotSummary> {
+    Err(std::io::Error::new(
+        std::io::ErrorKind::Unsupported,
+        "this build has no `sql` feature; rebuild with --features sql",
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -524,6 +740,50 @@ mod tests {
             sql_map.insert(category.clone(), sql.series[0].points[index]);
         }
         assert_eq!(native_map, sql_map);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// The pivot path must reproduce the native file byte for byte, empty column values
+    /// included: that `""` header is a real bucket, not a bug to filter out.
+    #[cfg(feature = "sql")]
+    #[test]
+    fn pivot_engines_agree_byte_for_byte() {
+        use crate::aggregate::AggSpec;
+        use crate::pivot::{pivot_quotes, PivotOptions};
+        use crate::types::{Delimiter, ProgressSender};
+
+        let dir = std::env::temp_dir().join(format!("csvs_engine5_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("t.csv");
+        std::fs::write(&input, "city,kind,amount\nA,x,1\nA,y,2\nB,x,3\nB,,4\n").unwrap();
+        let options = PivotOptions {
+            rows: vec!["city".into()],
+            columns: Some("kind".into()),
+            values: vec![AggSpec::parse_list("amount:sum").unwrap().remove(0)],
+            order_by: None,
+            descending: false,
+            qualify_names: false,
+            max_columns: 100,
+            max_cells: 10_000,
+        };
+        let native_out = dir.join("native.csv");
+        let sql_out = dir.join("sql.csv");
+        let (tx, _rx) = std::sync::mpsc::channel::<crate::types::ProgressEvent>();
+        let tx_native: ProgressSender = tx.clone();
+        pivot_quotes(
+            &input,
+            Delimiter::Comma,
+            &native_out,
+            &options,
+            Default::default(),
+            &tx_native,
+        )
+        .unwrap();
+        let tx_sql: ProgressSender = tx.clone();
+        pivot_sql(&input, Delimiter::Comma, &sql_out, &options, &tx_sql).unwrap();
+        let native = std::fs::read_to_string(&native_out).unwrap();
+        let sql = std::fs::read_to_string(&sql_out).unwrap();
+        assert_eq!(native, sql, "native:\n{native}\nsql:\n{sql}");
         std::fs::remove_dir_all(&dir).ok();
     }
 }

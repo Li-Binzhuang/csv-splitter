@@ -361,6 +361,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--delim", "Field delimiter (default: auto)"),
             ("--desc", "Descending order"),
             ("--json", "Emit JSON"),
+            ("--engine", "auto | native | sql (auto: sql above 64 MB)"),
             ("--max-cells", "Pivot: matrix cells allowed"),
             ("--max-columns", "Pivot: distinct column values allowed"),
             ("--order", "Sort rows, e.g. \"city,amount:desc\""),
@@ -4363,6 +4364,7 @@ fn cmd_pivot(args: &[String]) -> i32 {
     let mut qualify = false;
     let mut max_columns = csv_splitter_core::pivot::DEFAULT_MAX_COLUMNS;
     let mut max_cells = csv_splitter_core::pivot::DEFAULT_MAX_CELLS;
+    let mut engine = csv_splitter_core::engine::Engine::Auto;
     let mut json = false;
     let mut delim = "auto".to_string();
     let mut quiet = false;
@@ -4371,6 +4373,19 @@ fn cmd_pivot(args: &[String]) -> i32 {
         match arg.as_str() {
             "--quotes" => match p.value("--quotes") {
                 Ok(v) => quotes_text = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--engine" => match p.value("--engine") {
+                Ok(v) => match csv_splitter_core::engine::Engine::parse(&v) {
+                    Ok(e) => engine = e,
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                },
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -4523,14 +4538,30 @@ fn cmd_pivot(args: &[String]) -> i32 {
     // Without `-o` the matrix goes to the terminal: a pivot is something you look at,
     // and writing a file only to open it again is a step nobody asked for.
     let table = if let Some(output) = out_was_given.clone() {
-        let result = csv_splitter_core::pivot::pivot_quotes(
-            sheet.path(),
-            delimiter,
-            &output,
-            &options,
-            quotes,
-            &tx,
-        );
+        let planned = match csv_splitter_core::engine::resolve(engine, sheet.path()) {
+            Ok(e) => e,
+            Err(message) => {
+                eprintln!("error: {message}");
+                return 2;
+            }
+        };
+        let result = match planned {
+            csv_splitter_core::engine::Engine::Sql => csv_splitter_core::engine::pivot_sql(
+                sheet.path(),
+                delimiter,
+                &output,
+                &options,
+                &tx,
+            ),
+            _ => csv_splitter_core::pivot::pivot_quotes(
+                sheet.path(),
+                delimiter,
+                &output,
+                &options,
+                quotes,
+                &tx,
+            ),
+        };
         drop(tx);
         let _ = reporter.join();
         match result {

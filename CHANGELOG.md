@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.49.4] — 2026-11-19
+
+### Added
+
+- **`pivot --engine auto|native|sql`** for the file output path (the terminal matrix stays
+  native, it is a three-column rendering rather than something to stream). A test asserts
+  byte-identical files from both engines, including the `""` bucket an empty key produces
+  and the "sum prints 0 where mean prints nothing" rule.
+
+  Three things the database needed taught to match the native output: an empty CSV field is
+  NULL to DuckDB but a real bucket to the native path, SQL rejects a zero-length alias while
+  a CSV header accepts an empty name, and a cell with no contributing row is 0 for sum/count
+  rather than NULL.
+
 ## [3.49.3] — 2026-11-19
 
 ### Fixed
