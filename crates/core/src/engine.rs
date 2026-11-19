@@ -775,6 +775,108 @@ pub fn filter_predicate(_spec: &crate::filter::FilterSpec) -> Option<String> {
     None
 }
 
+/// DuckDB-backed concat: one view over the file list, one `COPY` to the output.
+///
+/// Headers are still validated natively first. The database's `union_by_name` would happily
+/// glue a column of amounts under a column of ids, which is the corruption the native path
+/// exists to refuse, so the check stays where it can name the differing file and columns.
+#[cfg(feature = "sql")]
+pub fn concat_sql(
+    inputs: &[std::path::PathBuf],
+    output: &Path,
+    delimiter: crate::types::Delimiter,
+    ignore_header: bool,
+    tx: &crate::types::ProgressSender,
+) -> std::io::Result<crate::concat::ConcatSummary> {
+    use std::io;
+
+    if inputs.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "no input files",
+        ));
+    }
+    let total_bytes: u64 = inputs
+        .iter()
+        .filter_map(|p| std::fs::metadata(p).ok())
+        .map(|m| m.len())
+        .sum();
+    tx.send(crate::types::ProgressEvent::PhaseStart {
+        phase: "Concatenating (duckdb)".into(),
+        total_bytes,
+    })
+    .ok();
+
+    let header_of = |path: &std::path::Path| -> io::Result<Vec<String>> {
+        let file = std::fs::File::open(path)?;
+        let mut reader = crate::csv_reader::RecordReader::new(
+            std::io::BufReader::with_capacity(256 * 1024, file),
+            256 * 1024,
+        );
+        let mut record = Vec::new();
+        if !reader.next_record(&mut record)? {
+            return Ok(Vec::new());
+        }
+        Ok(crate::csv_reader::parse_csv_record(
+            String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
+            delimiter.byte(),
+        ))
+    };
+
+    let expected = header_of(&inputs[0])?;
+    if expected.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("{} has no header", inputs[0].display()),
+        ));
+    }
+    let mut mismatched: Vec<std::path::PathBuf> = Vec::new();
+    for path in inputs.iter().skip(1) {
+        let header = header_of(path)?;
+        if header != expected {
+            if !ignore_header {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    format!(
+                        "{}: header differs from {} (use --ignore-header to append anyway)",
+                        path.display(),
+                        inputs[0].display()
+                    ),
+                ));
+            }
+            mismatched.push(path.clone());
+        }
+    }
+
+    let rows = crate::sql::copy_to_csv(inputs, "SELECT * FROM t", output, delimiter)?;
+    let bytes = std::fs::metadata(output).map(|m| m.len()).unwrap_or(0);
+    tx.send(crate::types::ProgressEvent::PhaseDone {
+        phase: "Concatenating (duckdb)".into(),
+    })
+    .ok();
+    Ok(crate::concat::ConcatSummary {
+        files: inputs.len() as u64,
+        rows,
+        bytes,
+        columns: expected,
+        mismatched,
+    })
+}
+
+#[cfg(not(feature = "sql"))]
+pub fn concat_sql(
+    _inputs: &[std::path::PathBuf],
+    _output: &Path,
+    _delimiter: crate::types::Delimiter,
+    _ignore_header: bool,
+    _tx: &crate::types::ProgressSender,
+) -> std::io::Result<crate::concat::ConcatSummary> {
+    Err(std::io::Error::new(
+        std::io::ErrorKind::Unsupported,
+        "this build has no `sql` feature; rebuild with --features sql",
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1051,6 +1153,37 @@ mod tests {
             }
             assert_eq!(sql.rows, native, "{expr}");
         }
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// Both concat engines must write the same file and agree on the summary's row count.
+    #[cfg(feature = "sql")]
+    #[test]
+    fn concat_engines_agree_byte_for_byte() {
+        use crate::types::{Delimiter, ProgressSender};
+
+        let dir = std::env::temp_dir().join(format!("csvs_engine8_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let a = dir.join("a.csv");
+        let b = dir.join("b.csv");
+        std::fs::write(&a, "id,city\n1,Puebla\n").unwrap();
+        std::fs::write(&b, "id,city\n2,CDMX\n3,Tijuana\n").unwrap();
+        let inputs = vec![a.clone(), b.clone()];
+        let native_out = dir.join("native.csv");
+        let sql_out = dir.join("sql.csv");
+        let (tx, _rx) = std::sync::mpsc::channel::<crate::types::ProgressEvent>();
+        let tx_native: ProgressSender = tx.clone();
+        let native =
+            crate::concat::concat(&inputs, &native_out, Delimiter::Comma, false, &tx_native)
+                .unwrap();
+        let tx_sql: ProgressSender = tx.clone();
+        let sql = concat_sql(&inputs, &sql_out, Delimiter::Comma, false, &tx_sql).unwrap();
+        assert_eq!(
+            std::fs::read_to_string(&native_out).unwrap(),
+            std::fs::read_to_string(&sql_out).unwrap()
+        );
+        assert_eq!(native.rows, sql.rows);
+        assert_eq!(native.files, sql.files);
         std::fs::remove_dir_all(&dir).ok();
     }
 }

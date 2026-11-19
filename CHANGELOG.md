@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.49.8] — 2026-11-19
+
+### Added
+
+- **`concat --engine auto|native|sql`.** The SQL path builds one view over the file list and
+  uses `COPY`; headers are still validated natively first, because DuckDB's `union_by_name`
+  would happily put a column of amounts under a column of ids, which is exactly the
+  corruption the native check exists to refuse. A test asserts identical output and an
+  identical row count from both engines.
+  - Cost paid for that count: the SQL path scans the inputs twice (COPY then `count(*)`),
+    where the native path counts while copying. Recorded rather than hidden.
+
 ## [3.49.7] — 2026-11-19
 
 ### Added

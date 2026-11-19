@@ -147,7 +147,7 @@
 | 删掉不合格的行 | `edit delete --invalid "ts:date"`（一次操作，一次撤销） | — |
 | 去重 | `dedupe -o out.csv [--by C]` | `POST /dedupe` |
 | 分文件 | `partition --by C -o parts.tar` | `POST /partition` |
-| 拼接 | `concat a.csv b.csv ...` | `POST /concat`（job）|
+| 拼接 | `concat a.csv b.csv ...` | `POST /concat`（job） `--engine auto\|native\|sql`；SQL 走 `COPY`，表头仍先原生校验 |
 | 导列/改名 | `columns --keep/--drop/--rename` | `POST /columns?keep=&drop=&rename=`（job，写新文件）|
 | 下载/导出 | — | `GET /download`、`/export` |
 | 起本地服务 | `serve --root DIR` | 全部端点 |

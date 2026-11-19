@@ -147,6 +147,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         "concat",
         &[
             ("--delim", "Field delimiter (default: auto)"),
+            ("--engine", "auto | native | sql (auto: sql above 64 MB)"),
             ("--ignore-header", "Skip the header check"),
             ("--json", "Emit JSON"),
             ("--out", "Output path"),
@@ -5120,6 +5121,7 @@ fn cmd_concat(args: &[String]) -> i32 {
     let mut inputs: Vec<PathBuf> = Vec::new();
     let mut out: Option<PathBuf> = None;
     let mut ignore_header = false;
+    let mut engine = csv_splitter_core::engine::Engine::Auto;
     let mut json = false;
     let mut delim = "auto".to_string();
 
@@ -5127,6 +5129,19 @@ fn cmd_concat(args: &[String]) -> i32 {
         match arg.as_str() {
             "-o" | "--out" => match p.value("--out") {
                 Ok(v) => out = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--engine" => match p.value("--engine") {
+                Ok(v) => match csv_splitter_core::engine::Engine::parse(&v) {
+                    Ok(e) => engine = e,
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                },
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -5168,7 +5183,19 @@ fn cmd_concat(args: &[String]) -> i32 {
 
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("concat", rx, json);
-    let result = csv_splitter_core::concat::concat(&inputs, &output, delimiter, ignore_header, &tx);
+    let planned = match csv_splitter_core::engine::resolve(engine, &inputs[0]) {
+        Ok(e) => e,
+        Err(message) => {
+            eprintln!("error: {message}");
+            return 2;
+        }
+    };
+    let result = match planned {
+        csv_splitter_core::engine::Engine::Sql => {
+            csv_splitter_core::engine::concat_sql(&inputs, &output, delimiter, ignore_header, &tx)
+        }
+        _ => csv_splitter_core::concat::concat(&inputs, &output, delimiter, ignore_header, &tx),
+    };
     drop(tx);
     let _ = reporter.join();
     match result {

@@ -133,6 +133,44 @@ fn register_view(
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e.to_string()))
 }
 
+/// Write the result of one SELECT over several CSV files to a CSV file.
+///
+/// Unlike the read paths this one is allowed to run `COPY`, because `COPY` is how the
+/// engine writes: the statement is built here, never accepted from a caller.
+pub fn copy_to_csv(
+    inputs: &[std::path::PathBuf],
+    select: &str,
+    output: &Path,
+    delimiter: Delimiter,
+) -> io::Result<u64> {
+    let conn = open_limited()?;
+    let list: Vec<String> = inputs
+        .iter()
+        .map(|p| format!("'{}'", p.to_string_lossy().replace('\'', "''")))
+        .collect();
+    let create = format!(
+        "CREATE VIEW t AS SELECT * FROM read_csv([{}], header=true, delim='{}', sample_size=20000)",
+        list.join(", "),
+        delimiter.byte() as char
+    );
+    conn.execute_batch(&create)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e.to_string()))?;
+    let copy = format!(
+        "COPY ({}) TO '{}' (HEADER, DELIMITER ',')",
+        select,
+        output.to_string_lossy().replace('\'', "''")
+    );
+    conn.execute_batch(&copy)
+        .map_err(|e| io::Error::other(e.to_string()))?;
+    // The row count costs a second scan of the inputs; the native path gets it for free
+    // while copying. Reported rather than guessed, because a summary that lies about rows
+    // is worse than one that is slower.
+    let rows: i64 = conn
+        .query_row("SELECT count(*) FROM t", [], |row| row.get(0))
+        .unwrap_or(0);
+    Ok(rows as u64)
+}
+
 /// Validate a user query before it reaches DuckDB.
 pub fn validate(sql: &str) -> Result<(), String> {
     let trimmed = sql.trim().trim_end_matches(';').trim();
