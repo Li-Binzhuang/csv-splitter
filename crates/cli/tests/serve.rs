@@ -4720,3 +4720,36 @@ fn concurrent_http_edits_all_land() {
         );
     }
 }
+
+/// Concurrent readers share the pager cache; eight threads asking for different windows must
+/// all get their own rows, which is also the cheapest way to notice a cache race.
+#[test]
+fn concurrent_reads_return_their_own_windows() {
+    let dir = TempDir::new("concread");
+    let mut text = String::from("id,city\n");
+    for i in 0..200u32 {
+        text.push_str(&format!("{i},C{}\n", i % 7));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0.clone());
+    let addr = server.addr.clone();
+
+    let mut handles = Vec::new();
+    for w in 0..8u32 {
+        let addr = addr.clone();
+        handles.push(std::thread::spawn(move || {
+            let start = (w as u64) * 20;
+            let (status, body) = get(&addr, &format!("/rows?path=t.csv&start={start}&count=20"));
+            assert_eq!(status, 200, "window {start}: {body}");
+            // The first id of each window identifies it: they advance by 20.
+            // Each row is ["id","C…"], so the first cell must be exactly this window's start.
+            assert!(
+                body.contains(&format!("[\"{start}\",\"C")),
+                "window {start} returned other rows: {body}"
+            );
+        }));
+    }
+    for handle in handles {
+        handle.join().unwrap();
+    }
+}

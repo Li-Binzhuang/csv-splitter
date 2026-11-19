@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.55.7] — 2026-11-19
+
+### Tests
+
+- **Eight threads reading different windows at once.** They share the pager cache, so the test
+  both proves each caller gets its own rows (the first cell must be that window's start id)
+  and exercises the cache from several threads at the same time.
+
 ## [3.55.6] — 2026-11-19
 
 ### Fixed
