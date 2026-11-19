@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.52.1] — 2026-11-19
+
+### Changed
+
+- **The gate names each stage and says which one failed.** Five commands used to run under
+  one silent heading, so a red run left the reader grepping for the failure. Each stage now
+  prints `== <name> ok ==` or `== stage <name> failed ==`, and `GATE_FAIL_TEST=1` injects a
+  failing stage so `regress.sh` can assert both the exit status and the naming.
+
 ## [3.52.0] — 2026-11-19
 
 ### Added

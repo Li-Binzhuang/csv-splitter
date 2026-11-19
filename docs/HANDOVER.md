@@ -167,6 +167,10 @@ scripts/       dev.sh / smoke.sh / regress.sh / backend-smoke.sh / bench.sh / cl
 
 ## Running the gate
 
+Each stage prints `== <name> ==` and ends with either `== <name> ok ==` or
+`== stage <name> failed ==`, so a failure names itself instead of leaving a log to grep.
+`GATE_FAIL_TEST=1 scripts/dev.sh gate` injects a failing stage to prove that naming works.
+
 `bash scripts/dev.sh gate | tail` reports **tail's** exit status, not the gate's — a failing
 clippy run then looks green to anything chained with `&&`. Use `scripts/gate.sh` instead: it
 captures the status, prints `== gate exit=N ==`, and exits with it. `regress.sh` asserts that

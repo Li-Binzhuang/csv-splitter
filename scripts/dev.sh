@@ -37,18 +37,33 @@ case "${1:-check}" in
     time cargo test --quiet "$@"
     ;;
   gate)
-    echo "== fmt =="
-    cargo fmt --all -- --check
-    echo "== clippy =="
-    cargo clippy --workspace --all-targets --features sql -p csv-splitter-core -- -D warnings
-    cargo clippy --workspace --all-targets -p csv-splitter-cli -- -D warnings
-    echo "== tests =="
-    cargo test --workspace --quiet
+    # Every stage names itself when it starts and again when it ends. A gate that only
+    # prints "passed" leaves the next person grepping logs to find out which of five
+    # commands failed; the failing stage can say so itself.
+    run_stage() {
+      local name="$1"
+      shift
+      printf '== %s ==\n' "$name"
+      if ! "$@"; then
+        printf '== stage %s failed ==\n' "$name" >&2
+        return 1
+      fi
+      printf '== %s ok ==\n' "$name"
+    }
+    run_stage fmt cargo fmt --all -- --check
+    # A deliberately failing stage, so the naming can be tested without breaking a build.
+    if [ "${GATE_FAIL_TEST:-0}" = "1" ]; then
+      run_stage selftest false || exit 1
+    fi
+    run_stage clippy-core \
+      cargo clippy --workspace --all-targets --features sql -p csv-splitter-core -- -D warnings
+    run_stage clippy-cli \
+      cargo clippy --workspace --all-targets -p csv-splitter-cli -- -D warnings
+    run_stage tests cargo test --workspace --quiet
     # `sql` is an optional feature of core, and the CLI turns it on. Testing the
     # workspace alone builds core *without* it, so core's own SQL tests — the read-only
     # guard, the query wrapper — used to be skipped by the gate entirely.
-    echo "== tests (core with sql) =="
-    cargo test -p csv-splitter-core --features sql --quiet
+    run_stage tests-sql cargo test -p csv-splitter-core --features sql --quiet
     echo "== gate passed =="
     ;;
   *)

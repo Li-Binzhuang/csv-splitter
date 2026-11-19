@@ -103,9 +103,15 @@ check "edit undo"  "$BIN" edit undo orders.csv
 
 # A pipeline hides a command's exit status; gate.sh exists to keep it. Prove both facts so
 # the wrapper cannot rot into something that also reports success on failure.
-if GATE_FAIL_TEST=1 ./scripts/gate.sh >/dev/null 2>&1; then
+GATE_LOG=$(mktemp)
+# Absolute: this script changes directory before this check runs.
+if GATE_FAIL_TEST=1 "$ROOT/scripts/gate.sh" >"$GATE_LOG" 2>&1; then
   echo "gate.sh lost a failing status"; failed=$((failed + 1))
 fi
+if ! grep -q "stage selftest failed" "$GATE_LOG"; then
+  echo "gate did not name the stage that failed"; failed=$((failed + 1))
+fi
+rm -f "$GATE_LOG"
 
 if [ "$failed" -ne 0 ]; then
   echo "== $failed command(s) failed =="

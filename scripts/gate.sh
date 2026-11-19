@@ -11,8 +11,15 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 
 if [ "${GATE_FAIL_TEST:-0}" = "1" ]; then
-  echo "== gate failed (selftest) =="
-  exit 3
+  # Run the real gate with the injected failing stage: the point is to prove the gate names
+  # the stage that failed, not merely that some wrapper can exit 3.
+  log=$(mktemp)
+  bash scripts/dev.sh gate >"$log" 2>&1
+  code=$?
+  grep -E "== stage (selftest) failed ==" "$log" | head -1
+  rm -f "$log"
+  echo "== gate exit=$code =="
+  exit "$code"
 fi
 
 log=$(mktemp)
