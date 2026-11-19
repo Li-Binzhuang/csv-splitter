@@ -76,7 +76,7 @@
 | `POST /sort` | `path` `by` `desc` `out` | 外部排序 |
 | `POST /dedupe` | `path` `by` `out` | 去重 |
 | `POST /partition` | `path` `by` `out` `format` `maxPartitions` | 按列值拆成多个文件 |
-| `POST /lookup` | `path` `key` `from` `get` `out` `refKey` `maxKeys` | 跨表查找（job）：按 `key` 从 `from` 拷 `get` 列；未命中写 `#N/A` |
+| `POST /lookup` | `path` `key` `from` `get` `out` `refKey` `maxKeys` | 跨表查找（job）：按 `key` 从 `from` 拷 `get` 列；未命中写 `#N/A`，`engine=auto\|native\|sql`，`key`/`refKey` 可写复合键 |
 | `POST /convert` | `path` `out` `from` `to` | 编码转换（job）：默认自动探测源编码，`to=utf-8` 或 `utf-8-bom`；未知编码 400 |
 | `POST /columns` | `path` `out` `keep` `drop` `rename` `delim` | **写**的列变换（job）：产出一个列集合不同的新文件；源文件不动。与 `GET /columns`（只读的列清单）是两个方向 |
 | `POST /concat` | `paths` `out` `ignoreHeader` `delim` | 拼接多个文件（job）；每个输入与输出都过 root 守卫 |

@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.50.5] — 2026-11-19
+
+### Added
+
+- **`POST /lookup` takes `engine=auto|native|sql`.** The CLI could choose a lookup engine
+  and the endpoint could not — same capability, two answers. A test submits both engines,
+  waits for the jobs, and asserts the two output files are byte-identical; an unknown engine
+  is refused with 400 rather than ignored.
+
 ## [3.50.4] — 2026-11-19
 
 ### Documentation

@@ -4005,3 +4005,41 @@ fn a_filtered_row_number_points_at_the_same_row_in_the_window() {
     assert!(body.contains("CDMX"), "{body}");
     assert!(!body.contains("Puebla"), "{body}");
 }
+
+/// The two lookup engines must produce the same file over HTTP, because the CLI promises
+/// exactly that and the endpoints kept different abilities until now.
+#[test]
+fn lookup_over_http_agrees_across_engines() {
+    let dir = TempDir::new("lookupengines");
+    std::fs::write(dir.join("m.csv"), "id,city\n1,CDMX\n9,NOWHERE\n").unwrap();
+    std::fs::write(
+        dir.join("r.csv"),
+        "id,city,region\n1,Puebla,SUR\n1,CDMX,NORTH\n",
+    )
+    .unwrap();
+    let server = start(&dir.0.clone());
+
+    for (engine, out) in [("native", "out-native.csv"), ("sql", "out-sql.csv")] {
+        let (status, body) = post(
+            &server.addr,
+            &format!(
+                "/lookup?path=m.csv&key=id,city&from=r.csv&refKey=id,city&get=region&out={out}&engine={engine}"
+            ),
+        );
+        assert_eq!(status, 202, "{engine}: {body}");
+        let job = body.split('"').nth(3).unwrap_or_default().to_string();
+        let status = wait_for_job(&server.addr, &job);
+        assert!(status.contains("\"state\":\"done\""), "{engine}: {status}");
+    }
+
+    let native = std::fs::read_to_string(dir.join("out-native.csv")).unwrap();
+    let sql = std::fs::read_to_string(dir.join("out-sql.csv")).unwrap();
+    assert_eq!(native, sql, "engines must agree: {native} vs {sql}");
+
+    // An unknown engine is refused rather than ignored.
+    let (status, body) = post(
+        &server.addr,
+        "/lookup?path=m.csv&key=id&from=r.csv&get=region&out=x.csv&engine=bogus",
+    );
+    assert_eq!(status, 400, "{body}");
+}

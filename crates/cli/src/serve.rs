@@ -500,7 +500,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     (
         "/lookup",
         &[
-            "path", "key", "from", "get", "out", "refKey", "maxKeys", "delim",
+            "path", "key", "from", "get", "out", "refKey", "maxKeys", "delim", "engine",
         ],
     ),
     (
@@ -1256,18 +1256,36 @@ fn start_lookup(
         max_keys,
     };
     let delimiter = delimiter(params);
+    // The CLI could pick an engine for lookup and HTTP could not; same capability, two
+    // answers, which is exactly the drift the engine work is supposed to remove.
+    let engine = match engine::Engine::parse(params.get("engine").map(String::as_str).unwrap_or(""))
+    {
+        Ok(e) => e,
+        Err(message) => return bad_request(stream, &message, "engine", "engine=auto|native|sql"),
+    };
+    let planned = match engine::resolve(engine, &input) {
+        Ok(e) => e,
+        Err(message) => return bad_request(stream, &message, "engine", "engine=auto|native|sql"),
+    };
     let result_path = out.clone();
-    let id = jobs.submit("lookup", move |tx| match csv_splitter_core::lookup::lookup(
-        &input, delimiter, &out, &options, &tx,
-    ) {
-        Ok(_) => {
-            tx.send(ProgressEvent::Finished {
-                output: result_path,
-            })
-            .ok();
-        }
-        Err(e) => {
-            tx.send(ProgressEvent::Error(e.to_string())).ok();
+    let id = jobs.submit("lookup", move |tx| {
+        let result = match planned {
+            engine::Engine::Sql => {
+                engine::lookup_sql(&input, delimiter, &out, &options, &tx).map(|_| ())
+            }
+            _ => csv_splitter_core::lookup::lookup(&input, delimiter, &out, &options, &tx)
+                .map(|_| ()),
+        };
+        match result {
+            Ok(_) => {
+                tx.send(ProgressEvent::Finished {
+                    output: result_path,
+                })
+                .ok();
+            }
+            Err(e) => {
+                tx.send(ProgressEvent::Error(e.to_string())).ok();
+            }
         }
     });
     respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
