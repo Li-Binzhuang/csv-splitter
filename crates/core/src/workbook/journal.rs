@@ -513,6 +513,65 @@ pub enum RowRef {
     Virtual { id: u64, cells: Vec<String> },
 }
 
+/// What a journal repair did.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RepairSummary {
+    /// Records that could be read and were written back.
+    pub kept: usize,
+    /// Records that could not be read and were dropped.
+    pub dropped: usize,
+    /// Copy of the journal as it was before the rewrite.
+    pub backup: Option<std::path::PathBuf>,
+    /// True when a dry run only counted; nothing was written.
+    pub dry_run: bool,
+}
+
+/// Rewrite a damaged journal down to its readable records, keeping a copy first.
+///
+/// Reading already skips unreadable records, so this is not about making the sheet
+/// readable — it is about making the file *tidy* again, on purpose, with a backup. A
+/// journal that keeps a truncated tail forever will keep reporting damage forever.
+pub fn repair(sidecar: &Path, dry_run: bool) -> io::Result<RepairSummary> {
+    if !sidecar.exists() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("no journal at {}", sidecar.display()),
+        ));
+    }
+    let (journal, dropped, _) = {
+        let (ops, skipped) = Journal::read_ops_reporting(sidecar)?;
+        (ops, skipped, 0)
+    };
+    let mut summary = RepairSummary {
+        kept: journal.len(),
+        dropped,
+        backup: None,
+        dry_run,
+    };
+    if dry_run || dropped == 0 {
+        return Ok(summary);
+    }
+
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let backup = sidecar.with_extension(format!("journal.bak-{stamp}"));
+    std::fs::copy(sidecar, &backup)?;
+
+    let mut body = String::new();
+    for op in &journal {
+        // `render_op` already ends with the record's newline; adding one more would
+        // double-space the file and make the next load skip every other record.
+        body.push_str(&render_op(op));
+    }
+    let temporary = sidecar.with_extension(format!("journal.tmp-{stamp}"));
+    std::fs::write(&temporary, body)?;
+    std::fs::rename(&temporary, sidecar)?;
+    summary.backup = Some(backup);
+    Ok(summary)
+}
+
 #[cfg(test)]
 mod damaged_tests {
     use super::Journal;
@@ -538,6 +597,38 @@ mod damaged_tests {
         let plain = Journal::load(&path).unwrap();
         assert_eq!(plain.len(), 2);
 
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// Repair keeps the readable records, drops the truncated one, and never touches the
+    /// original without leaving a copy behind.
+    #[test]
+    fn repair_rewrites_only_the_damaged_tail() {
+        let dir = std::env::temp_dir().join(format!("csvs_journal_repair_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("data.csv.journal");
+        let original = "set,1,city,CDMX\nset,2,amount,10\nset,3,note";
+        std::fs::write(&path, original).unwrap();
+
+        let summary = super::repair(&path, true).unwrap();
+        assert_eq!(summary.kept, 2);
+        assert_eq!(summary.dropped, 1);
+        assert!(summary.dry_run);
+        assert!(summary.backup.is_none(), "a dry run writes nothing");
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), original);
+
+        let summary = super::repair(&path, false).unwrap();
+        assert_eq!(summary.kept, 2);
+        let backup = summary.backup.expect("a real repair leaves a copy");
+        assert_eq!(std::fs::read_to_string(&backup).unwrap(), original);
+        let repaired = std::fs::read_to_string(&path).unwrap();
+        assert_eq!(repaired.lines().count(), 2);
+        assert!(repaired.starts_with("set,1,city,CDMX\n"));
+
+        // A repaired journal loads with nothing left to report.
+        let (journal, skipped, _) = super::Journal::load_reporting(&path).unwrap();
+        assert_eq!(journal.len(), 2);
+        assert_eq!(skipped, 0);
         std::fs::remove_dir_all(&dir).ok();
     }
 }

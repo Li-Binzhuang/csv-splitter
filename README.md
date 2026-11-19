@@ -192,6 +192,7 @@ csv-splitter extract chunks.tar -o ./out
 | `stats` | 采样列统计 |
 | `analyze` | 全列画像：类型、空值、基数、异常 |
 | `validate` | 检查脏数据：非空/数值/日期/唯一/任意比较 |
+| `repair` | 把**损坏的 journal** 重写成可读记录（先备份；`--dry-run` 只看会丢几条） |
 | `dedupe` | 去重 |
 | `schema` | **读**列元数据：列清单、类型、是否存在（`--has COL`）、与另一文件比对列集合（`--diff`，有差异退出码 1）| 前端要的第一件事 |
 | `columns` | ⚠️ 是**改**列（保留/丢弃/重命名，写文件），不是查列——查列用 `schema` | 保留/删除/改名/重排 |

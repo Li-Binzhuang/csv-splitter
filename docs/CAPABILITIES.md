@@ -144,6 +144,7 @@
 | 列存在性 / 列元数据 | `schema --has COL`（存在 0 / 不存在 1）· `schema --json` | `GET /columns` |
 | 写入约束 | `edit set --expect VALUE`（不匹配则拒绝）| `POST /edit?action=set&expect=`（409）|
 | 数据校验 | `validate --check "qty>=0" --check "city:not-empty"` | `GET /validate?checks=a;b[&limit=N]`（全量是整文件扫描，`limit` 给前缀检查）|
+| 修复 journal | `repair f.csv [--dry-run]` | — | 先备份，再只保留可读记录；`--dry-run` 只报会丢几条 |
 | 删掉不合格的行 | `edit delete --invalid "ts:date"`（一次操作，一次撤销） | — |
 | 去重 | `dedupe -o out.csv [--by C]` | `POST /dedupe` |
 | 分文件 | `partition --by C -o parts.tar` | `POST /partition` |

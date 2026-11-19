@@ -35,7 +35,7 @@ mod export;
 mod journal;
 mod rows;
 
-pub use journal::{Journal, RowRef};
+pub use journal::{repair as repair_journal, Journal, RepairSummary, RowRef};
 pub use rows::{
     check_formula, column_layout, compile, compile_formulas, compile_formulas_at, formulas,
     parse_a1, parse_a1_range, regex_replace, resolve_columns, CellEdits, ColumnPlan,

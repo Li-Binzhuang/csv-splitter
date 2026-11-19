@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.51.0] — 2026-11-19
+
+### Added
+
+- **`repair <file>` fixes a damaged journal, on purpose and with a backup.** Reading already
+  skips unreadable records, but a truncated tail kept reporting damage forever. `repair`
+  copies the journal to `.journal.bak-<unix>` and rewrites only the readable records;
+  `--dry-run` reports what would be dropped and writes nothing. A core test pins the three
+  promises: the backup is byte-identical to the original, the repaired file loads with
+  `skipped = 0`, and a dry run leaves everything untouched.
+
 ## [3.50.9] — 2026-11-19
 
 ### Tests / Documentation
