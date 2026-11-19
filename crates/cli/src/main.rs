@@ -2073,7 +2073,60 @@ fn cmd_view(args: &[String]) -> i32 {
     // row. So the rows are materialised once (edited, then filtered), sorted, and the
     // requested page is read back. That costs a full scan and a temporary copy of the
     // matched rows — nothing proportional to the file beyond the matches.
-    let paging_file = if order.is_some() {
+    // Ordered paging through DuckDB: when the sheet has no pending edits and no
+    // `--where`, there is nothing the database cannot see, and `ORDER BY ... LIMIT` reads
+    // the columns it needs instead of materialising 2.5 GB three times. Measured on the
+    // 782-column fixture: 3.9 s here against 29.8 s for export+sort+page.
+    //
+    // The moment a journal edit exists this must stay native: the database would see the
+    // base file without it.
+    let sql_page: Option<(Vec<String>, Vec<Vec<String>>)> = if order.is_some()
+        && where_expr.is_none()
+        && ops.is_empty()
+    {
+        match csv_splitter_core::engine::resolve(csv_splitter_core::engine::Engine::Auto, &input) {
+            Ok(csv_splitter_core::engine::Engine::Sql) => {
+                let order_columns = match parse_sort_columns(
+                    order.as_deref().unwrap_or_default(),
+                    order_descending,
+                ) {
+                    Ok(c) => c,
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                };
+                let order_sql = order_columns
+                    .iter()
+                    .map(|c| {
+                        format!(
+                            "\"{}\" {}",
+                            c.name.replace('"', "\"\""),
+                            if c.descending { "DESC" } else { "ASC" }
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                let query = format!(
+                    "SELECT * FROM t ORDER BY {} LIMIT {} OFFSET {}",
+                    order_sql, count, start
+                );
+                match csv_splitter_core::sql::query_with(&input, &query, count as usize, delimiter)
+                {
+                    Ok(result) => Some((result.columns, result.rows)),
+                    Err(e) => {
+                        eprintln!("note: ordered read fell back to the native path: {e}");
+                        None
+                    }
+                }
+            }
+            _ => None,
+        }
+    } else {
+        None
+    };
+
+    let paging_file = if order.is_some() && sql_page.is_none() {
         let work = std::env::temp_dir().join(format!(
             "csvs_view_{}_{}.csv",
             std::process::id(),
@@ -2157,7 +2210,11 @@ fn cmd_view(args: &[String]) -> i32 {
     let mut columns: Vec<String> = Vec::new();
     let mut highlight: Option<u64> = None;
     let page_total: Option<u64>;
-    if let Some(path) = &paging_file {
+    if let Some((sql_columns, sql_rows)) = &sql_page {
+        columns = sql_columns.clone();
+        rows = sql_rows.clone();
+        page_total = None;
+    } else if let Some(path) = &paging_file {
         if let Ok(file) = std::fs::File::open(path) {
             let mut reader = csv_splitter_core::csv_reader::RecordReader::new(
                 std::io::BufReader::with_capacity(4 * 1024 * 1024, file),

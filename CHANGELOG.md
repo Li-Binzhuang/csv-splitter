@@ -1,5 +1,23 @@
 # Changelog
 
+## [3.49.1] — 2026-11-19
+
+### Fixed
+
+- **`view --order` no longer sorts the whole file to show five rows.** It exported, filtered
+  and external-merged 2.5 GB before handing back one page. With no pending edits and no
+  `--where` there is nothing DuckDB cannot see, so the ordered read is `ORDER BY … LIMIT`
+  through the same declared-schema path groupby uses.
+
+  | 输入 | 之前 | 现在 |
+  |---|---|---|
+  | 2.5 GB / 782 列 / `--order … --count 5` | 29.8 s | **2.6 s** |
+  | demo 20 120 行（低于 64 MB，仍走 native）| 0.05 s | 0.049 s |
+
+  Same top-5 values as the native path (0.88225, 0.878669, 0.870121, …). The moment a
+  journal edit exists the native path is used, because the database would read the base
+  file without it.
+
 ## [3.49.0] — 2026-11-19
 
 ### Added
