@@ -440,6 +440,21 @@ pivot 两个引擎的输出在这两个尺寸上逐字节相同。
 交叉点约在 4–9 MB，所以阈值定 **8 MB**。原来的 64 MB 没有数据支撑，中间 7 倍的区间
 一直在走更慢的原生路径。
 
+## 契约审计（2026-11-19）/ Contract audit
+
+逐项核对过声明与实现，结论留档，免得下次重新查：
+
+| 端点 | 检查 | 结论 |
+|---|---|---|
+| /rows | format 是否实现 | 曾**只写在文档**，现已实现（format=csv 输出编辑后的窗口）|
+| /rows | keys whereAny | 读取，有测试 |
+| /rows | start-col count-cols | 经 slice_columns 读取（跨行写法，grep 直接搜参数名搜不到），有测试 |
+| /cell | 是否带稳定 row key | 带（"key":"b:12"）|
+| /columns | 声明里混着 GET 与 POST 的参数 | 已知：/spec 按路由而非按方法列参数，keep/drop/rename/out 只对 POST 有意义；GET 收到它们会接受但忽略 |
+
+最后一行是**结构性问题**（/spec 的 params 键是路由，不分方法），修它要改契约格式，超出单轮范围；在那之前，
+GET /columns 多带的四个参数属于「声明正确、对该方法无意义」。
+
 ## 有意的不一致 / Deliberate inconsistencies
 
 这些地方**看起来不一致**，但每一条都是权衡后的选择。集中写在这里，免得分散在各节里被当成 bug：

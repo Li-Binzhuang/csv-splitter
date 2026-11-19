@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.55.9] — 2026-11-19
+
+### Documentation
+
+- Contract audit recorded: every  parameter is really read ( and
+   through , which a direct grep for the name misses), 
+  carries a stable row key, and one structural known issue —  lists parameters per
+  route rather than per method, so GET  accepts four POST-only parameters and ignores
+  them.
+
 ## [3.55.8] — 2026-11-19
 
 ### Added
