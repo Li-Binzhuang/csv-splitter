@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.52.8] — 2026-11-19
+
+### Measured / Documented
+
+- `split -t` was documented as "try 4 threads on big files" with no number behind it.
+  Measured on 89 MB with 4 chunks and default zstd: `-t 1` **447 ms**, `-t 4` **182 ms**
+  (2.5x), and both runs produced **byte-identical** archives. CAPABILITIES now carries the
+  numbers, the caveat about cold caches, and the note that small files gain nothing.
+
 ## [3.52.7] — 2026-11-19
 
 ### Tests
