@@ -4043,3 +4043,33 @@ fn lookup_over_http_agrees_across_engines() {
     );
     assert_eq!(status, 400, "{body}");
 }
+
+/// HTTP concat must agree across engines and refuse an unknown one, like lookup.
+#[test]
+fn concat_over_http_agrees_across_engines() {
+    let dir = TempDir::new("concatengines");
+    std::fs::write(dir.join("a.csv"), "id,city\n1,Puebla\n").unwrap();
+    std::fs::write(dir.join("b.csv"), "id,city\n2,CDMX\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    for (engine, out) in [("native", "n.csv"), ("sql", "s.csv")] {
+        let (status, body) = post(
+            &server.addr,
+            &format!("/concat?paths=a.csv,b.csv&out={out}&engine={engine}"),
+        );
+        assert_eq!(status, 202, "{engine}: {body}");
+        let job = body.split('"').nth(3).unwrap_or_default().to_string();
+        let state = wait_for_job(&server.addr, &job);
+        assert!(state.contains("\"state\":\"done\""), "{engine}: {state}");
+    }
+    assert_eq!(
+        std::fs::read_to_string(dir.join("n.csv")).unwrap(),
+        std::fs::read_to_string(dir.join("s.csv")).unwrap()
+    );
+
+    let (status, body) = post(
+        &server.addr,
+        "/concat?paths=a.csv,b.csv&out=x.csv&engine=bogus",
+    );
+    assert_eq!(status, 400, "{body}");
+}

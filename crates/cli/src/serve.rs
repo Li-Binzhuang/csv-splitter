@@ -527,7 +527,10 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
             "path", "name", "kind", "limit", "sample", "delim", "keep", "drop", "rename", "out",
         ],
     ),
-    ("/concat", &["paths", "out", "ignoreHeader", "delim"]),
+    (
+        "/concat",
+        &["paths", "out", "ignoreHeader", "delim", "engine"],
+    ),
     ("/convert", &["path", "out", "from", "to"]),
     ("/meta", &["path", "delim"]),
     ("/cell", &["path", "row", "col", "delim"]),
@@ -997,22 +1000,34 @@ fn start_concat(
         .get("ignoreHeader")
         .is_some_and(|v| v == "1" || v == "true");
     let delimiter = delimiter(params);
+    let engine = match engine::Engine::parse(params.get("engine").map(String::as_str).unwrap_or(""))
+    {
+        Ok(e) => e,
+        Err(message) => return bad_request(stream, &message, "engine", "engine=auto|native|sql"),
+    };
+    let planned = match engine::resolve(engine, &inputs[0]) {
+        Ok(e) => e,
+        Err(message) => return bad_request(stream, &message, "engine", "engine=auto|native|sql"),
+    };
     let result_path = out.clone();
-    let id = jobs.submit("concat", move |tx| match csv_splitter_core::concat::concat(
-        &inputs,
-        &out,
-        delimiter,
-        ignore_header,
-        &tx,
-    ) {
-        Ok(_) => {
-            tx.send(ProgressEvent::Finished {
-                output: result_path,
-            })
-            .ok();
-        }
-        Err(e) => {
-            tx.send(ProgressEvent::Error(e.to_string())).ok();
+    let id = jobs.submit("concat", move |tx| {
+        let result = match planned {
+            engine::Engine::Sql => {
+                engine::concat_sql(&inputs, &out, delimiter, ignore_header, &tx).map(|_| ())
+            }
+            _ => csv_splitter_core::concat::concat(&inputs, &out, delimiter, ignore_header, &tx)
+                .map(|_| ()),
+        };
+        match result {
+            Ok(_) => {
+                tx.send(ProgressEvent::Finished {
+                    output: result_path,
+                })
+                .ok();
+            }
+            Err(e) => {
+                tx.send(ProgressEvent::Error(e.to_string())).ok();
+            }
         }
     });
     respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))

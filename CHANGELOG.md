@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.50.6] — 2026-11-19
+
+### Added
+
+- **`POST /concat` takes `engine=auto|native|sql`**, the last endpoint that could not reach
+  the engines its CLI counterpart could. Both engines produce the same file over HTTP in a
+  test, and `engine=bogus` is a 400.
+
 ## [3.50.5] — 2026-11-19
 
 ### Added
