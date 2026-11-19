@@ -946,6 +946,35 @@ mod tests {
     #[cfg(feature = "sql")]
     /// Result parity is tested elsewhere; error parity is not. A missing column must fail the
     /// same way on both engines, or a caller that handles one status gets the other.
+    /// concat's error path: two files whose headers disagree. Native concatenation has to
+    /// refuse or align them; the SQL engine must answer the same way, or a caller switching
+    /// engines gets a file where one expects a failure.
+    #[test]
+    #[cfg(feature = "sql")]
+    fn concat_engines_agree_on_how_mismatched_headers_fail() {
+        use crate::types::Delimiter;
+
+        let dir = std::env::temp_dir().join(format!("csvs_engine_err4_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let a = dir.join("a.csv");
+        let b = dir.join("b.csv");
+        std::fs::write(&a, "city,amount\nCDMX,10\n").unwrap();
+        std::fs::write(&b, "city,total\nPuebla,20\n").unwrap();
+        let inputs = vec![a.clone(), b.clone()];
+        let (tx, _rx) = std::sync::mpsc::channel::<crate::types::ProgressEvent>();
+
+        let native_out = dir.join("n.csv");
+        let native =
+            crate::concat::concat(&inputs, &native_out, Delimiter::Comma, false, &tx).unwrap_err();
+        let sql_out = dir.join("s.csv");
+        let sql = concat_sql(&inputs, &sql_out, Delimiter::Comma, false, &tx).unwrap_err();
+        assert_eq!(
+            native.kind(),
+            sql.kind(),
+            "native {native:?} vs sql {sql:?}"
+        );
+    }
+
     /// The last engine pair: lookup over two files. A key column that does not exist must fail
     /// the same way on both engines; the reference side is checked too because a missing
     /// reference key is the mistake a caller actually makes.

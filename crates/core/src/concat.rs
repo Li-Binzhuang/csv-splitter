@@ -89,8 +89,11 @@ pub fn concat(
             let mut this = split_header(&header, delimiter);
             if this != summary.columns {
                 if !ignore_header {
+                    // InvalidInput, matching the SQL engine: a mismatched header is a bad
+                    // request, not corrupt data, and the same condition must not be 422 on one
+                    // engine and 400 on the other.
                     return Err(io::Error::new(
-                        io::ErrorKind::InvalidData,
+                        io::ErrorKind::InvalidInput,
                         format!(
                             "{} has a different header ({}); pass --ignore-header to append anyway",
                             path.display(),
@@ -203,7 +206,7 @@ mod tests {
             false,
         )
         .unwrap_err();
-        assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+        assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
         assert!(err.to_string().contains("b.csv"), "{err}");
     }
 

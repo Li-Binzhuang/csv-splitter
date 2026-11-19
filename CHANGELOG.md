@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.56.7] — 2026-11-19
+
+### Fixed
+
+- **concat's header mismatch was 422 on the native engine and 400 on SQL.** The test that
+  closed the last error-parity gap found it: native reported corrupt data (InvalidData) while
+  SQL reported a bad request (InvalidInput) for the same condition. Native is InvalidInput now.
+  With this, all five engine endpoints have both result and error parity tests.
+
 ## [3.56.6] — 2026-11-19
 
 ### Tests
