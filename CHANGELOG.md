@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.56.8] — 2026-11-19
+
+### Measured / Documented
+
+- Re-measured concat's engine choice: 89 MB × 2 native 0.25–0.28 s, SQL 0.78–0.92 s. The
+  "auto stays native" decision from earlier still holds at roughly 3×. Not measured at 2.5 GB:
+  concatenating that fixture means writing 5 GB, and the gap is wide enough that a doubling of
+  file size would not flip it.
+
 ## [3.56.7] — 2026-11-19
 
 ### Fixed
