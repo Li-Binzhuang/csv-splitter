@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.54.0] — 2026-11-19
+
+### Tests
+
+- **The strict-parameter default and its escape hatch both have a test.** The earlier test
+  enabled the check explicitly, which stopped proving anything once the default flipped: a
+  test that sets the flag cannot tell whether the default works. It now asserts the default
+  refuses an undeclared parameter and that `=0` lets it through.
+
 ## [3.53.9] — 2026-11-19
 
 ### Tests

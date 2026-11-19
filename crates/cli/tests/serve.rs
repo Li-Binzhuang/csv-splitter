@@ -4177,7 +4177,9 @@ fn search_stops_at_its_budget() {
     );
 }
 
-/// Strict parameter checking is opt-in: with it on, a parameter nobody reads is refused
+/// Strict parameter checking is on by default, and `=0` turns it off: both halves matter,
+/// because the default changed and an escape hatch nobody tests is an escape hatch that
+/// quietly stops working.
 /// instead of silently ignored; with it off, existing callers keep working.
 #[test]
 fn strict_mode_refuses_a_parameter_nobody_reads() {
@@ -4334,4 +4336,21 @@ fn pivot_and_chart_agree_across_engines_over_http() {
     a.sort();
     b.sort();
     assert_eq!(a, b, "chart engines must agree on values");
+}
+
+/// The default refuses an undeclared parameter; `=0` lets it through for clients that
+/// append their own extras.
+#[test]
+fn strict_parameter_checking_is_on_by_default_and_can_be_turned_off() {
+    let dir = TempDir::new("strictdefault");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,1\n").unwrap();
+
+    let server = start(&dir.0.clone());
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=5&bogus=1");
+    assert_eq!(status, 400, "default must refuse: {body}");
+    assert!(body.contains(r#""route":"/rows""#), "{body}");
+
+    let server = start_with_env(&dir.0, &[("CSV_SPLITTER_STRICT_PARAMS", "0")]);
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=5&bogus=1");
+    assert_eq!(status, 200, "=0 must let it through: {body}");
 }
