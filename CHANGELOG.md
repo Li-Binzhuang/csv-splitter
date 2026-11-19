@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.57.2] — 2026-11-19
+
+### Tests
+
+- smoke step zero checks that `--version` names whether DuckDB is compiled in. It is the first
+  thing a user runs when an engine question comes up, and smoke is what a user would run.
+
 ## [3.57.1] — 2026-11-19
 
 ### Tests

@@ -64,6 +64,10 @@ run() {  # run <label> <command...>
 
 cd "$WORK"
 
+step "version"
+VERSION_OUT="$("$BIN" --version)"
+printf '%s\n' "$VERSION_OUT" | grep -q "DuckDB:" && ok "version says whether DuckDB is in" || fail "version lacks the DuckDB marker"
+
 step "demo file"
 run "demo writes a sample" "$BIN" demo -o sample > /dev/null
 DEMO=sample/orders.csv
