@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.52.9] — 2026-11-19
+
+### Tests
+
+- **split then merge reproduces the input byte for byte.** The merge module's own comment
+  calls this "the cheapest way to prove a split is lossless", and nothing tested it end to
+  end. The new test splits 1200 rows (quoted newlines every third row, non-ASCII names) with
+  two threads and compares the merged file to the original byte for byte.
+
 ## [3.52.8] — 2026-11-19
 
 ### Measured / Documented

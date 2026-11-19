@@ -453,6 +453,7 @@ pivot 两个引擎的输出在这两个尺寸上逐字节相同。
 | 崩溃落在 journal 与 redo 之间不得重复一条撤销 | `journal::damaged_tests::a_crash_between_the_two_files_does_not_double_the_undo` |
 | 多个写入者不得丢编辑 | `journal::damaged_tests::concurrent_writers_do_not_lose_an_edit` |
 
+| split 再 merge 必须逐字节还原输入 | `splitter::tests::split_then_merge_reproduces_the_input`（1200 行，含引号换行与非 ASCII，2 线程）|
 | 并行读者绝不共享或拆开一条记录 | `splitter::tests::threads_do_not_break_records_with_quoted_newlines`（1200 行，每三行一处带引号换行，4 线程与单线程逐字节比对）|
 
 这条测试有讲究：行数必须超过 `CHECKPOINT_INTERVAL`（1000），否则所有读者都从字节 0 开始，

@@ -870,4 +870,47 @@ mod tests {
         }
         std::fs::remove_dir_all(&dir).ok();
     }
+
+    /// split then merge must reproduce the input byte for byte — that is the cheapest
+    /// proof that splitting is lossless, including records with a quoted newline and
+    /// non-ASCII text.
+    #[test]
+    fn split_then_merge_reproduces_the_input() {
+        let dir = std::env::temp_dir().join(format!("csvs_roundtrip_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+
+        let mut text = String::from("id,note,city\n");
+        for i in 0..1200u32 {
+            if i % 3 == 0 {
+                text.push_str(&format!("{i},\"first line\nsecond line\",Puebla\n"));
+            } else if i % 97 == 0 {
+                text.push_str(&format!("{i},café {i},León\n"));
+            } else {
+                text.push_str(&format!("{i},plain{i},CDMX\n"));
+            }
+        }
+        let input = dir.join("data.csv");
+        std::fs::write(&input, &text).unwrap();
+        let original = std::fs::read(&input).unwrap();
+
+        let archive = dir.join("archive");
+        let config = SplitConfig {
+            input: input.clone(),
+            output: Some(archive.clone()),
+            splits: 3,
+            compress_format: CompressFormat::None,
+            ..SplitConfig::default()
+        };
+        let (tx, _rx) = std::sync::mpsc::channel();
+        run_split_threads(config, 2, tx);
+
+        let merged = dir.join("merged.csv");
+        let (tx, _rx) = std::sync::mpsc::channel();
+        crate::merge::merge_archive(&archive, &merged, &tx).unwrap();
+        let roundtrip = std::fs::read(&merged).unwrap();
+        assert_eq!(roundtrip.len(), original.len(), "byte counts differ");
+        assert_eq!(roundtrip, original, "split+merge changed the bytes");
+        std::fs::remove_dir_all(&dir).ok();
+    }
 }
