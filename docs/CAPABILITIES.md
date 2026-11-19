@@ -410,6 +410,17 @@
 | `view --order --count N` | native 0.05 s | DuckDB 2.6 s（native 29.8 s）| ≥64 MB 且无编辑时用 sql |
 | `view --where … --order …` | — | 同左 | ≥64 MB、无编辑、且 `--where` 能精确翻译成 SQL 时用 sql；关系比较（`>` `>=` `<` `<=`）不能精确翻译，退回 native 并打印 note |
 
+### 行号为什么必须原生
+
+`/filter` 与 `search` 返回**文件里的行号**（1-based），`/rows?start=` 直接按这个位置取行。
+要交给 DuckDB，就需要 `row_number()` 与文件物理顺序一致——而 DuckDB **不承诺**跨计划、
+跨版本、跨线程数的扫描顺序。
+
+实验记录：20 000 行文件上，普通扫描与带 `WHERE` 的扫描目前都按文件顺序返回
+（`crates/core/src/sql.rs` 里的 canary 测试 `a_duckdb_scan_returns_rows_in_file_order_here`）。
+**「目前如此」不等于保证**，所以行号仍由原生扫描产生；这个测试的作用是：一旦哪天不再成立，
+我们能立刻看到，而不是等到用户发现点错了行。
+
 **没有迁移的：**
 
 - `sort`（全表写新文件）：两个理由。**语义**上，原生比较是「两边都能解析成数字才按数字，

@@ -812,6 +812,44 @@ fn to_io(e: duckdb::Error) -> io::Error {
     }
 }
 
+/// Does a DuckDB scan hand rows back in file order?
+///
+/// The row-number contract (`/filter` answers 1-based file positions) would need this to be
+/// true *and guaranteed*. The experiment records what is true here: plain and filtered scans
+/// on a 20 000-row file come back in file order with the default thread count. DuckDB
+/// promises no such thing across plans, versions or thread counts, which is why the row
+/// numbers stay on the native path. This test is the canary for that claim.
+#[cfg(feature = "sql")]
+#[test]
+fn a_duckdb_scan_returns_rows_in_file_order_here() {
+    use crate::types::Delimiter;
+
+    let dir = std::env::temp_dir().join(format!("csvs_order_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("t.csv");
+    let mut text = String::from("id,city\n");
+    for i in 0..20_000u32 {
+        text.push_str(&format!("{i},C{}\n", i % 7));
+    }
+    std::fs::write(&path, text).unwrap();
+
+    for query in [
+        "SELECT \"id\" FROM t",
+        "SELECT \"id\" FROM t WHERE \"city\" = 'C3'",
+    ] {
+        let result = query_with(&path, query, 20_001, Delimiter::Comma).unwrap();
+        let ids: Vec<u32> = result
+            .rows
+            .iter()
+            .map(|row| row[0].parse::<u32>().unwrap())
+            .collect();
+        assert!(!ids.is_empty(), "{query} matched nothing");
+        let ordered = ids.windows(2).all(|pair| pair[0] < pair[1]);
+        assert!(ordered, "{query} did not come back in file order");
+    }
+    std::fs::remove_dir_all(&dir).ok();
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

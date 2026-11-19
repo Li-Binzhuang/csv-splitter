@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.50.7] — 2026-11-19
+
+### Documented
+
+- Why `filter`/`search` keep their row numbers on the native path, with an experiment behind
+  the claim: a 20 000-row file returns rows in file order from DuckDB today, both plain and
+  filtered, but DuckDB promises no scan order across plans, versions or thread counts. The
+  test (`a_duckdb_scan_returns_rows_in_file_order_here`) is a canary: if it ever fails, the
+  native row numbers were justified, and if it keeps passing, they are still the only path
+  with a guarantee.
+
 ## [3.50.6] — 2026-11-19
 
 ### Added
