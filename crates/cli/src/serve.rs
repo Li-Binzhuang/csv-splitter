@@ -587,6 +587,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
             "count-cols",
             "keys",
             "sql",
+            "format",
             "delim",
         ],
     ),
@@ -4019,6 +4020,25 @@ fn respond_sheet_window(
                 .collect()
         })
         .unwrap_or_default();
+    // `format=csv` returns this window as CSV instead of JSON. It matters because `/export`
+    // reads the base file: this is the only way to get an *edited* window as text.
+    if params.get("format").map(String::as_str) == Some("csv") {
+        let mut body = String::new();
+        let mut header: Vec<&str> = Vec::with_capacity(display_columns.len());
+        header.extend(display_columns.iter().map(String::as_str));
+        body.push_str(&csv_splitter_core::csv_reader::join_csv_line(&header, b','));
+        for row in &display_rows {
+            let cells: Vec<&str> = row.iter().map(String::as_str).collect();
+            body.push_str(&csv_splitter_core::csv_reader::join_csv_line(&cells, b','));
+        }
+        return respond_bytes(
+            stream,
+            200,
+            "text/csv; charset=utf-8",
+            "inline",
+            body.as_bytes(),
+        );
+    }
     respond_json(
         stream,
         200,

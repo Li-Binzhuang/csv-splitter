@@ -4753,3 +4753,30 @@ fn concurrent_reads_return_their_own_windows() {
         handle.join().unwrap();
     }
 }
+
+/// `format=csv` on a window is the only way to get *edited* rows as text: /export reads the
+/// base file, so a filtered export of an edited cell comes back empty.
+#[test]
+fn a_window_can_be_asked_for_as_csv() {
+    let dir = TempDir::new("windowcsv");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=city&value=ZZ9",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let (status, raw) = get_raw(&server.addr, "/rows?path=t.csv&start=0&count=2&format=csv");
+    assert_eq!(status, 200);
+    let text = String::from_utf8_lossy(&raw).to_string();
+    assert!(text.starts_with("city,amount"), "{text}");
+    assert!(
+        text.contains("ZZ9"),
+        "the edited value must be in the CSV: {text}"
+    );
+    assert!(
+        !text.contains("CDMX"),
+        "the pre-edit value must be gone: {text}"
+    );
+}

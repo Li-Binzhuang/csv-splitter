@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.55.8] — 2026-11-19
+
+### Added
+
+- **`/rows?format=csv` returns the window as CSV with edits applied.** Docs listed `format`
+  while neither the handler nor the spec had it, so the documented parameter did nothing.
+  It now exists and is declared, and it is the only way to get an *edited* window as text:
+  `/export` reads the base file and a filtered export of an edited cell comes back empty.
+
 ## [3.55.7] — 2026-11-19
 
 ### Tests
