@@ -1011,6 +1011,7 @@ fn start_concat(
     };
     let result_path = out.clone();
     let id = jobs.submit("concat", move |tx| {
+        metrics::shared().record_engine(planned.label());
         let result = match planned {
             engine::Engine::Sql => {
                 engine::concat_sql(&inputs, &out, delimiter, ignore_header, &tx).map(|_| ())
@@ -1284,6 +1285,7 @@ fn start_lookup(
     };
     let result_path = out.clone();
     let id = jobs.submit("lookup", move |tx| {
+        metrics::shared().record_engine(planned.label());
         let result = match planned {
             engine::Engine::Sql => {
                 engine::lookup_sql(&input, delimiter, &out, &options, &tx).map(|_| ())
@@ -2954,6 +2956,7 @@ fn chart_endpoint(
     };
     let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
     drop(rx);
+    metrics::shared().record_engine(planned.label());
     let result = match planned {
         engine::Engine::Sql => engine::chart_sql(&path, delimiter(params), &options, &tx),
         _ => csv_splitter_core::chart::chart(&path, delimiter(params), &options, &tx),
@@ -3118,6 +3121,7 @@ fn pivot_endpoint(
         let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
         drop(rx);
         let planned = engine::resolve(engine, &path).map_err(io::Error::other)?;
+        metrics::shared().record_engine(planned.label());
         if planned == engine::Engine::Sql {
             engine::pivot_sql(&path, delimiter, &out, &options, &tx)?;
         } else {
@@ -3261,6 +3265,7 @@ fn group_by(
             max_groups,
         };
         let planned = engine::resolve(engine, &path).map_err(io::Error::other)?;
+        metrics::shared().record_engine(planned.label());
         let summary = match planned {
             engine::Engine::Sql => engine::groupby_sql(&path, delimiter, &out, &options, &tx)?,
             _ => groupby::groupby(&path, delimiter, &out, &options, &tx)?,
@@ -5852,6 +5857,9 @@ mod metrics {
         by_status: Mutex<BTreeMap<u16, u64>>,
         by_route: Mutex<BTreeMap<String, RouteStat>>,
         buckets: Mutex<[u64; BUCKETS.len() + 1]>,
+        /// Which engine actually ran an analysis, counted where it is resolved. Without
+        /// this, "is the SQL path being used at all" is a question answered by guessing.
+        engines: Mutex<BTreeMap<String, u64>>,
     }
 
     impl Metrics {
@@ -5865,6 +5873,14 @@ mod metrics {
                 by_status: Mutex::new(BTreeMap::new()),
                 by_route: Mutex::new(BTreeMap::new()),
                 buckets: Mutex::new([0; BUCKETS.len() + 1]),
+                engines: Mutex::new(BTreeMap::new()),
+            }
+        }
+
+        /// Count one resolved engine, e.g. "native" or "sql".
+        pub fn record_engine(&self, engine: &str) {
+            if let Ok(mut map) = self.engines.lock() {
+                *map.entry(engine.to_string()).or_insert(0) += 1;
             }
         }
 
@@ -5967,8 +5983,16 @@ mod metrics {
                     .join(","),
                 Err(_) => String::new(),
             };
+            let engines = match self.engines.lock() {
+                Ok(map) => map
+                    .iter()
+                    .map(|(name, count)| format!("{}:{count}", super::json_str(name)))
+                    .collect::<Vec<_>>()
+                    .join(","),
+                Err(_) => String::new(),
+            };
             format!(
-                r#"{{"uptimeSeconds":{uptime},"requests":{},"errors4xx":{},"errors5xx":{},"slowRequests":{},"p50Ms":{},"p95Ms":{},"status":{{{status}}},"routes":{{{routes}}},"latencyBuckets":{{{buckets}}},"jobs":{{"total":{},"running":{}}}}}"#,
+                r#"{{"uptimeSeconds":{uptime},"requests":{},"errors4xx":{},"errors5xx":{},"slowRequests":{},"p50Ms":{},"p95Ms":{},"status":{{{status}}},"routes":{{{routes}}},"latencyBuckets":{{{buckets}}},"jobs":{{"total":{},"running":{}}},"engines":{{{}}}}}"#,
                 self.requests.load(Ordering::Relaxed),
                 self.errors_4xx.load(Ordering::Relaxed),
                 self.errors_5xx.load(Ordering::Relaxed),
@@ -5976,7 +6000,8 @@ mod metrics {
                 self.percentile(0.50),
                 self.percentile(0.95),
                 jobs.0,
-                jobs.1
+                jobs.1,
+                engines
             )
         }
     }

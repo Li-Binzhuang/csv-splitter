@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.50.8] — 2026-11-19
+
+### Added
+
+- **`/metrics` reports `engines`.** Each analysis counts the engine that actually ran
+  (groupby, chart, pivot, lookup, concat), so "is the SQL path being used" is measured
+  instead of inferred. A test asks for native once and sql once and asserts both counters.
+
 ## [3.50.7] — 2026-11-19
 
 ### Documented

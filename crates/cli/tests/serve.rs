@@ -4073,3 +4073,33 @@ fn concat_over_http_agrees_across_engines() {
     );
     assert_eq!(status, 400, "{body}");
 }
+
+/// Asking for SQL must show up where the metrics are, otherwise "did the engine switch
+/// actually happen" stays a guess.
+#[test]
+fn metrics_count_which_engine_ran() {
+    let dir = TempDir::new("enginemetrics");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,1\nPuebla,2\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (_, _) = get(
+        &server.addr,
+        "/groupby?path=t.csv&by=city&agg=amount:sum&engine=native",
+    );
+    let (status, body) = get(
+        &server.addr,
+        "/groupby?path=t.csv&by=city&agg=amount:sum&engine=sql",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let (status, body) = get(&server.addr, "/metrics");
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.contains("\"engines\""),
+        "metrics must report engines: {body}"
+    );
+    assert!(
+        body.contains("\"sql\":1") && body.contains("\"native\":1"),
+        "both engines should be counted once: {body}"
+    );
+}
