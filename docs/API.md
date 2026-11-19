@@ -196,6 +196,9 @@ GET  /job?id=job123        →  state: done
 
 ## `GET /columns`
 
+只读：列出列名/类型。`keep` `drop` `rename` `out` 是 **POST /columns** 的参数，GET 收到会返回 400
+并指路（`/spec` 按路由列参数、不分方法，所以它们出现在同一条声明里）。
+
 The framework's first question: which columns does this sheet have?
 
 ```bash

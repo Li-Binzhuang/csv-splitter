@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.56.0] — 2026-11-19
+
+### Changed
+
+- **GET /columns refuses the four POST-only parameters.** The spec lists parameters per
+  route, not per method, so keep/drop/rename/out are declared for /columns although only
+  POST reads them; accepting and ignoring them made a write-shaped request look successful.
+  They now answer 400 and name where they belong, and a test covers all four.
+
 ## [3.55.9] — 2026-11-19
 
 ### Documentation

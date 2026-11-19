@@ -4780,3 +4780,21 @@ fn a_window_can_be_asked_for_as_csv() {
         "the pre-edit value must be gone: {text}"
     );
 }
+
+/// The spec lists one parameter set per route, so `keep` and friends are declared for
+/// /columns even though only POST reads them. GET must say so rather than look successful.
+#[test]
+fn a_get_columns_request_refuses_post_only_parameters() {
+    let dir = TempDir::new("columnsget");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    for key in ["keep=city", "drop=amount", "rename=a:b", "out=reshaped.csv"] {
+        let (code, body) = get(&server.addr, &format!("/columns?path=t.csv&{key}"));
+        assert_eq!(code, 400, "{key}: {body}");
+        assert!(
+            body.contains("POST /columns"),
+            "the error must name where the parameter belongs: {body}"
+        );
+    }
+}

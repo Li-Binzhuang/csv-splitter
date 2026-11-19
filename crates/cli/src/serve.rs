@@ -4067,6 +4067,20 @@ fn columns_endpoint(
     root: &Path,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
+    // The spec lists one parameter list per route, so these four are declared even though
+    // only POST /columns reads them. Accepting and ignoring them made a write-shaped request
+    // look successful; saying so is better than silence.
+    if let Some(name) = ["keep", "drop", "rename", "out"]
+        .into_iter()
+        .find(|k| params.contains_key(*k))
+    {
+        return bad_request(
+            stream,
+            &format!("{name} is a POST /columns parameter"),
+            name,
+            "GET /columns only lists them; POST /columns writes a reshaped file",
+        );
+    }
     let (path, _rel) = match resolve_reason(root, params) {
         Ok(v) => v,
         Err(reason) => return bad_path_reason(stream, reason),
