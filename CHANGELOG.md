@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.52.4] — 2026-11-19
+
+### Fixed
+
+- **`/schema` no longer advertises `has`, which it never read.** A client sending `has=city`
+  got 200 and no answer, because the parameter was declared and ignored. Existence checks
+  live on `name=` (the `/columns` alias `/schema` shares), which is declared in its place.
+
+  A source-scanning test for ghost parameters was attempted and removed: several keys are
+  read through helpers that take the key as a variable (`resolve_out(params, "out")`,
+  `number("count")`), so static scanning calls them ghosts and the test would have been a
+  lie in the other direction.
+
 ## [3.52.3] — 2026-11-19
 
 ### Fixed

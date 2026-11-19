@@ -518,7 +518,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     (
         "/schema",
         &[
-            "path", "diff", "sample", "delim", "kind", "limit", "has", "json",
+            "path", "diff", "sample", "delim", "kind", "limit", "json", "name",
         ],
     ),
     (
