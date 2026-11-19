@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "5c5dd780127174af9cd7bfd81dd67022f3a2cb55cbd4d0e70701bb9296228c20",
+  "batch_id": "ed631e342c4ef692be43129b276776ad4177c03c526576c03093635d54258bdc",
+  "composite_identity": "0137973d2fdf5f0969ace2fcf35e4a6c29afd8d952e7cd1514222c9cd5452f83",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "ed54e9fecd87ed2ed31fbf52356ace8d3d096a6780f0805cd38a627c486c5b77",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "fa664b7eaff90a7907a8a355bc75c80fa36920a62eff661f3d3d6735f27ee9a2",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/schema.rs | A:所有响应经 respond 统一附加 CORS、X-Response-Time、ETag 与 Vary；路径先 canonicalize 再要求落在 root 内；写操作以 Op 进 journal，从不修改 base；formula 与 set-formula 都在写前调 check_formula | S:gzip 是另一种表示，ETag 必须带 -gz 后缀；202 必须映射 Accepted，否则提交 job 的响应头写着 Internal Server Error；EDIT_ACTIONS 与实际 match 分支必须一致，由 contract 测试双向断言"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/API.md",
+      "path": "docs/API.md",
+      "change": "update",
+      "source_sha256": "71902ee495385a77bb5a17916a3e564655294f022aa99728004ea11a8b88a506",
+      "existing_entry": "API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引、每路由参数与错误码语义；504 不含引擎原文；/spec 参数表已覆盖全部端点 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "c6209adadd96299c48b000893c97927e7aa0f4b1ca9fa9e7aeaacc68780cb11e",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "fa664b7eaff90a7907a8a355bc75c80fa36920a62eff661f3d3d6735f27ee9a2",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/schema.rs | A:所有响应经 respond 统一附加 CORS、X-Response-Time、ETag 与 Vary；路径先 canonicalize 再要求落在 root 内；写操作以 Op 进 journal，从不修改 base；formula 与 set-formula 都在写前调 check_formula | S:gzip 是另一种表示，ETag 必须带 -gz 后缀；202 必须映射 Accepted，否则提交 job 的响应头写着 Internal Server Error；EDIT_ACTIONS 与实际 match 分支必须一致，由 contract 测试双向断言"
+    },
+    {
+      "candidate_id": "ad36b9c80c07ca7fd2ea90a0f613998a313e58d645883d4c1c6e128bf041c88c",
+      "object_ref": "code:docs/API.md",
+      "path": "docs/API.md",
+      "change": "update",
+      "source_sha256": "71902ee495385a77bb5a17916a3e564655294f022aa99728004ea11a8b88a506",
+      "existing_entry": "API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引、每路由参数与错误码语义；504 不含引擎原文；/spec 参数表已覆盖全部端点 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然"
+    }
+  ]
+}

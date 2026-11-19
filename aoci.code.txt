@@ -19,7 +19,7 @@ Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Carg
 
 ===/<repository>/crates/cli/src/===
 main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；groupby/chart/pivot 接 --engine，view 的有序读在无编辑且大文件时交给 DuckDB；行号一律 1-based | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败；cfg 判定必须看被依赖 crate 的 feature，不能用 cli 自己的 feature 名
-serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/schema.rs | A:所有响应经 respond 统一附加 CORS、X-Response-Time、ETag 与 Vary；路径先 canonicalize 再要求落在 root 内；写操作以 Op 进 journal，从不修改 base；formula 与 set-formula 都在写前调 check_formula | S:gzip 是另一种表示，ETag 必须带 -gz 后缀；202 必须映射 Accepted，否则提交 job 的响应头写着 Internal Server Error；EDIT_ACTIONS 与实际 match 分支必须一致，由 contract 测试双向断言
+serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:所有响应经 respond 统一附加 CORS、X-Response-Time、ETag 与 Vary；/groupby、/chart、/pivot 接 engine 参数并进缓存键；路径先 canonicalize 再要求落在 root 内 | S:gzip 是另一种表示，ETag 必须带 -gz；202 必须映射 Accepted；临时 CSV 必须用 CSV 读取器解析，lines() 会把带引号换行的单元格裂成多行
 
 ===/<repository>/crates/cli/src/web/===
 index.html[EU7M]: F:内置只读浏览页：用 /rows 拉窗口并把结果渲染成表格 | R:code:crates/cli/src/serve.rs | A:单文件 HTML 与内联 JS，无外部依赖；实际调用 /files、/meta、/rows、/search、/analyze、/groupby 六个端点 | S:-
@@ -94,7 +94,7 @@ csv-splitter.service[OV6T]: F:systemd 单元：以只读目录为根启动后端
 
 ===/<repository>/docs/===
 ACCEPTANCE.md[SD6M]: F:验收证据：两档性能表、能力矩阵与平台构建矩阵 | R:code:docs/API.md | A:每行写实测数字与对应测试名；未达标项标注而不是四舍五入 | S:文档里引用的输出由测试钉住，改实现不同步更新这里会让 gate 失败
-API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引、每路由参数与错误码语义；504 不含引擎原文；/spec 参数表已覆盖全部端点 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然
+API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；聚合端点均接受 engine=auto|native|sql，未知值返回 400；504 不含引擎原文 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然
 ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列出模块，共用工具组包含 engine，并有「改一处要看哪里」一节 | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败
 CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；新增引擎选择一节，列出各命令在小文件与大文件上的实测对比，以及没有迁移的 sort/dedupe/渲染路径及原因 | S:-
 CI.md[SO6S]: F:CI 结构说明：单 job 流水线、滚动缓存与失败注解机制 | R:code:.github/workflows/ci.yml | A:解释为什么合并成一个 job、为什么缓存 key 滚动、以及 annotation 如何让红叉可读 | S:-
