@@ -2029,6 +2029,19 @@ fn edit_state(
     root: &Path,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
+    // Same shape as GET /columns: the route shares one parameter list with its write side.
+    // A GET that looks like an edit but only reports state is the worse kind of silence.
+    if let Some(name) = ["action", "row", "col", "value", "expect"]
+        .into_iter()
+        .find(|k| params.contains_key(*k))
+    {
+        return bad_request(
+            stream,
+            &format!("{name} is a POST /edit parameter"),
+            name,
+            "GET /edit reports the journal; POST /edit writes an operation",
+        );
+    }
     let (path, _rel) = match resolve_reason(root, params) {
         Ok(v) => v,
         Err(reason) => return bad_path_reason(stream, reason),

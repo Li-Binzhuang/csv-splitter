@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.56.1] — 2026-11-19
+
+### Changed
+
+- **GET /edit refuses action, row, col, value and expect.** Same root cause as GET /columns:
+  one parameter list per route. A GET that carries write parameters and answers 200 reads as
+  "the edit landed"; it now answers 400 and names POST /edit, with a test covering all five.
+
 ## [3.56.0] — 2026-11-19
 
 ### Changed

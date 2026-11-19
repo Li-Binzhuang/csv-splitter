@@ -4798,3 +4798,21 @@ fn a_get_columns_request_refuses_post_only_parameters() {
         );
     }
 }
+
+/// GET /edit reports the journal; the write parameters belong to POST. A GET carrying them
+/// must say so, or a caller who swapped the method reads "200 OK" as "the edit landed".
+#[test]
+fn a_get_edit_request_refuses_write_parameters() {
+    let dir = TempDir::new("editsget");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    for key in ["action=set", "row=1", "col=city", "value=X", "expect=CDMX"] {
+        let (code, body) = get(&server.addr, &format!("/edit?path=t.csv&{key}"));
+        assert_eq!(code, 400, "{key}: {body}");
+        assert!(
+            body.contains("POST /edit"),
+            "the error must name where the parameter belongs: {body}"
+        );
+    }
+}
