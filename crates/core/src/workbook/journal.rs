@@ -68,6 +68,14 @@ impl Journal {
         let mut ops = Vec::new();
         let mut skipped = 0usize;
         while reader.next_record(&mut record)? {
+            // Every operation is written with a trailing newline. A record without one was
+            // cut off mid-write, and it can still *parse*: "set,1,city,CDM" is a valid
+            // set-cell op, so applying it would write a truncated value instead of
+            // reporting the lost edit. Requiring the terminator turns that into a drop.
+            if !record.ends_with(b"\n") {
+                skipped += 1;
+                continue;
+            }
             match parse_op(&record) {
                 Some(op) => ops.push(op),
                 None => skipped += 1,
@@ -629,6 +637,48 @@ mod damaged_tests {
         let (journal, skipped, _) = super::Journal::load_reporting(&path).unwrap();
         assert_eq!(journal.len(), 2);
         assert_eq!(skipped, 0);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// A cut can land anywhere, including inside a value where the fragment still parses as
+    /// a complete operation ("set,1,city,CDM"). Every cut must lose exactly the unfinished
+    /// record, never apply half of it.
+    #[test]
+    fn any_cut_point_loses_only_the_unfinished_record() {
+        let dir = std::env::temp_dir().join(format!("csvs_journal_cuts_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("data.csv.journal");
+        let head = "set,1,city,CDMX\nset,2,amount,10\n";
+        let tail = "set,3,note,refund issued\n";
+
+        for cut in 0..=tail.len() {
+            let content = format!("{head}{}", &tail[..cut]);
+            std::fs::write(&path, &content).unwrap();
+            let (journal, skipped, _) = super::Journal::load_reporting(&path).unwrap();
+            // A cut exactly at the record's terminator leaves a complete record, not a tear.
+            let complete = cut == tail.len();
+            let expected_ops = if complete { 3 } else { 2 };
+            assert_eq!(
+                journal.len(),
+                expected_ops,
+                "cut at {cut}: readable ops changed"
+            );
+            let expected = if cut == 0 || complete { 0 } else { 1 };
+            assert_eq!(skipped, expected, "cut at {cut}: skipped count");
+        }
+
+        // A torn value must not survive as a shorter value.
+        let torn = format!("{head}set,3,note,CDM");
+        std::fs::write(&path, &torn).unwrap();
+        let (journal, skipped, _) = super::Journal::load_reporting(&path).unwrap();
+        assert_eq!((journal.len(), skipped), (2, 1));
+        assert!(
+            !journal
+                .ops()
+                .iter()
+                .any(|op| format!("{op:?}").contains("CDM\"")),
+            "a truncated value must not be applied: {journal:?}"
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 }

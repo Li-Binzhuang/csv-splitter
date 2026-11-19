@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.51.8] — 2026-11-19
+
+### Fixed
+
+- **A torn journal record can no longer be applied as a short value.** Every operation is
+  written with a trailing newline, but the reader accepted an unterminated final record if it
+  happened to parse — `set,1,city,CDM` is a valid set-cell operation, so a crash inside the
+  value would have written `CDM` where the edit said `CDMX`, silently. Reading now requires
+  the terminator and counts the fragment as damaged. A test cuts the same record at every
+  byte offset and asserts exactly one record is lost, at every cut.
+
 ## [3.51.7] — 2026-11-19
 
 ### Fixed
