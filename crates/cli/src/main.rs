@@ -118,6 +118,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--apply-edits", "Materialise pending edits before reading"),
             ("--delim", "Field delimiter (default: auto)"),
             ("--desc", "Descending order"),
+            ("--engine", "auto | native | sql (auto: sql above 64 MB)"),
             ("--json", "Emit JSON"),
             ("--max-points", "Refuse to chart more than this many points"),
             ("--out", "Output path"),
@@ -3947,6 +3948,7 @@ fn cmd_layout(args: &[String]) -> i32 {
 
 fn cmd_chart(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
+    let mut engine = csv_splitter_core::engine::Engine::Auto;
     let mut apply_edits = false;
     let mut quotes_text = String::new();
     let mut input: Option<PathBuf> = None;
@@ -3967,6 +3969,19 @@ fn cmd_chart(args: &[String]) -> i32 {
             "--json" => want_json = true,
             "--quotes" => match p.value("--quotes") {
                 Ok(v) => quotes_text = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--engine" => match p.value("--engine") {
+                Ok(v) => match csv_splitter_core::engine::Engine::parse(&v) {
+                    Ok(e) => engine = e,
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                },
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -4107,8 +4122,19 @@ fn cmd_chart(args: &[String]) -> i32 {
         Ok(sheet) => sheet,
         Err(code) => return code,
     };
-    let result =
-        csv_splitter_core::chart::chart_quotes(sheet.path(), delimiter, &options, quotes, &tx);
+    let planned = match csv_splitter_core::engine::resolve(engine, sheet.path()) {
+        Ok(e) => e,
+        Err(message) => {
+            eprintln!("error: {message}");
+            return 2;
+        }
+    };
+    let result = match planned {
+        csv_splitter_core::engine::Engine::Sql => {
+            csv_splitter_core::engine::chart_sql(sheet.path(), delimiter, &options, &tx)
+        }
+        _ => csv_splitter_core::chart::chart_quotes(sheet.path(), delimiter, &options, quotes, &tx),
+    };
     drop(tx);
     let _ = reporter.join();
     let data = match result {

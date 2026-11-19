@@ -242,6 +242,147 @@ fn quote_cells(cells: &[String]) -> Vec<String> {
         .collect()
 }
 
+/// DuckDB-backed chart data. Same shape as the native path: categories plus one value
+/// per category for each series, with `None` where a series has no point.
+#[cfg(feature = "sql")]
+pub fn chart_sql(
+    path: &Path,
+    delimiter: crate::types::Delimiter,
+    options: &crate::chart::ChartOptions,
+    tx: &crate::types::ProgressSender,
+) -> std::io::Result<crate::chart::ChartData> {
+    use crate::aggregate::AggOp;
+    use crate::chart::Series;
+    use std::io;
+
+    let total_bytes = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
+    tx.send(crate::types::ProgressEvent::PhaseStart {
+        phase: "Charting (duckdb)".into(),
+        total_bytes,
+    })
+    .ok();
+
+    let x = ident(&options.x);
+    let y = ident(&options.y.column);
+    let as_double = format!("try_cast({y} AS DOUBLE)");
+    let measure = match options.y.op {
+        AggOp::Count => format!("count({y})"),
+        AggOp::Sum => format!("sum({as_double})"),
+        AggOp::Mean => format!("avg({as_double})"),
+        AggOp::Min => format!("min({as_double})"),
+        AggOp::Max => format!("max({as_double})"),
+    };
+    let (select, group) = match options.series.as_deref() {
+        Some(name) => {
+            let series = ident(name);
+            (
+                format!("SELECT {x}, {series}, {measure} AS v FROM t"),
+                format!(" GROUP BY {x}, {series}"),
+            )
+        }
+        None => (
+            format!("SELECT {x}, {measure} AS v FROM t"),
+            format!(" GROUP BY {x}"),
+        ),
+    };
+    let order = if options.sort_by_value {
+        format!(
+            " ORDER BY v{}",
+            if options.descending { " DESC" } else { "" }
+        )
+    } else {
+        format!(
+            " ORDER BY {x}{}",
+            if options.descending { " DESC" } else { "" }
+        )
+    };
+    let query = format!("{select}{group}{order}");
+    let result = crate::sql::query_with(path, &query, options.max_points.max(1), delimiter)?;
+    if result.truncated {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!(
+                "more points than --max-points {}; narrow the x column or raise the limit",
+                options.max_points
+            ),
+        ));
+    }
+
+    let mut categories: Vec<String> = Vec::new();
+    let mut series: Vec<Series> = Vec::new();
+    let mut points: Vec<(usize, usize, Option<f64>)> = Vec::new();
+    for row in &result.rows {
+        let (category, series_name, value) = match options.series.as_deref() {
+            Some(_) => (
+                row.first().cloned().unwrap_or_default(),
+                row.get(1).cloned().unwrap_or_default(),
+                row.get(2).and_then(|v| v.trim().parse::<f64>().ok()),
+            ),
+            None => (
+                row.first().cloned().unwrap_or_default(),
+                String::new(),
+                row.get(1).and_then(|v| v.trim().parse::<f64>().ok()),
+            ),
+        };
+        let category_index = match categories.iter().position(|c| c == &category) {
+            Some(i) => i,
+            None => {
+                categories.push(category);
+                categories.len() - 1
+            }
+        };
+        let series_index = match series.iter().position(|s| s.name == series_name) {
+            Some(i) => i,
+            None => {
+                series.push(Series {
+                    name: series_name,
+                    points: Vec::new(),
+                });
+                series.len() - 1
+            }
+        };
+        points.push((category_index, series_index, value));
+    }
+    for entry in &mut series {
+        entry.points = vec![None; categories.len()];
+    }
+    for (category_index, series_index, value) in points {
+        if let Some(series) = series.get_mut(series_index) {
+            series.points[category_index] = value;
+        }
+    }
+
+    let rows_query = "SELECT count(*) AS n FROM t";
+    let rows: u64 = crate::sql::query_with(path, rows_query, 1, delimiter)
+        .ok()
+        .and_then(|r| r.rows.first().and_then(|row| row.first().cloned()))
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(0);
+    tx.send(crate::types::ProgressEvent::PhaseDone {
+        phase: "Charting (duckdb)".into(),
+    })
+    .ok();
+    Ok(crate::chart::ChartData {
+        kind: options.kind.name(),
+        categories,
+        series,
+        rows,
+    })
+}
+
+#[cfg(not(feature = "sql"))]
+pub fn chart_sql(
+    _path: &Path,
+    _delimiter: crate::types::Delimiter,
+    _options: &crate::chart::ChartOptions,
+    _tx: &crate::types::ProgressSender,
+) -> std::io::Result<crate::chart::ChartData> {
+    Err(std::io::Error::new(
+        std::io::ErrorKind::Unsupported,
+        "this build has no `sql` feature; rebuild with --features sql",
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -330,6 +471,59 @@ mod tests {
         let native = std::fs::read_to_string(&native_out).unwrap();
         let sql = std::fs::read_to_string(&sql_out).unwrap();
         assert_eq!(native, sql, "native:\n{native}\nsql:\n{sql}");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// Chart engines must agree on every category's number. Order is allowed to differ:
+    /// SQL's GROUP BY has no "first appearance" order, while the native path deliberately
+    /// keeps the order categories appear in (a date axis must not become alphabetical).
+    #[cfg(feature = "sql")]
+    #[test]
+    fn chart_engines_agree_on_values() {
+        use crate::aggregate::AggSpec;
+        use crate::chart::{chart_quotes, ChartOptions};
+        use crate::types::{Delimiter, ProgressSender};
+
+        let dir = std::env::temp_dir().join(format!("csvs_engine4_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("t.csv");
+        std::fs::write(
+            &input,
+            "day,amount\n2026-01-02,10\n2026-01-01,4\n2026-01-02,6\n2026-01-01,8\n",
+        )
+        .unwrap();
+        let options = ChartOptions {
+            x: "day".into(),
+            series: None,
+            y: AggSpec::parse_list("amount:sum").unwrap().remove(0),
+            kind: crate::chart::ChartKind::Bar,
+            sort_by_value: false,
+            descending: false,
+            max_points: 100,
+        };
+
+        let (tx, _rx) = std::sync::mpsc::channel::<crate::types::ProgressEvent>();
+        let tx_native: ProgressSender = tx.clone();
+        let native = chart_quotes(
+            &input,
+            Delimiter::Comma,
+            &options,
+            Default::default(),
+            &tx_native,
+        )
+        .unwrap();
+        let tx_sql: ProgressSender = tx.clone();
+        let sql = chart_sql(&input, Delimiter::Comma, &options, &tx_sql).unwrap();
+
+        let mut native_map = std::collections::BTreeMap::new();
+        for (index, category) in native.categories.iter().enumerate() {
+            native_map.insert(category.clone(), native.series[0].points[index]);
+        }
+        let mut sql_map = std::collections::BTreeMap::new();
+        for (index, category) in sql.categories.iter().enumerate() {
+            sql_map.insert(category.clone(), sql.series[0].points[index]);
+        }
+        assert_eq!(native_map, sql_map);
         std::fs::remove_dir_all(&dir).ok();
     }
 }

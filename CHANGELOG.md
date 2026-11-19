@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.49.2] — 2026-11-19
+
+### Added
+
+- **`chart --engine auto|native|sql`.** Below 64 MB the native streaming accumulator runs;
+  above it the query goes to DuckDB through the same declared-schema path as `groupby`
+  (2.2 s on the 2.5 GB / 782-column fixture).
+
+  The two engines agree on every category's number, which a test asserts. They do **not**
+  agree on category order: the native path keeps the order categories first appear in, so a
+  date axis stays chronological, while `GROUP BY` has no such order and returns them sorted
+  by label. That difference is deliberate and written down rather than papered over.
+
 ## [3.49.1] — 2026-11-19
 
 ### Fixed
