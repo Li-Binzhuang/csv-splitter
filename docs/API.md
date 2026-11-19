@@ -583,6 +583,8 @@ warns about) — a UI can show "the history is incomplete" instead of pretending
 
 ## 严格参数检查（可选）
 
-设置环境变量 `CSV_SPLITTER_STRICT_PARAMS=1` 后，请求里出现 `/spec` 未声明的参数会返回 **400**（`parameter` 指出是哪一个），而不是被静默忽略。
+请求里出现 `/spec` 未声明的参数会返回 **400**：`parameter` 指明是哪一个，`route` 指明哪个路由，`hint` 指向 `/spec`。
 
-**为什么是可选而不是默认**：`/spec` 的参数表还没覆盖全部路由（`count`、`from-row`、`out` 等是通过辅助函数按变量名读取的，静态列表列不出来）。在表补齐之前，默认开启会拒绝合法请求。
+**默认开启**；需要发送额外参数（缓存穿透、代理注入）的客户端可以设置 `CSV_SPLITTER_STRICT_PARAMS=0` 关闭。
+
+这条规则的价值来自它的反作用：默认开启后测试暴露了 `count`、`from-row`、`out`、`splits`、`ext`、`root`、`desc`、`cols`、`key`、`whereAny` 等十几个「辅助函数按变量名读取、表里没写」的参数，现在都补进了 `/spec`。

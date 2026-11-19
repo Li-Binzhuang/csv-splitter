@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.53.3] — 2026-11-19
+
+### Changed
+
+- **Strict parameter checking is now on by default.** An undeclared parameter answers 400 with
+  `parameter`, `route` and a hint to `/spec`, instead of being silently ignored;
+  `CSV_SPLITTER_STRICT_PARAMS=0` turns it off for clients that add their own extras.
+
+  To get here the declaration table had to be completed. Turning the check on in the test suite
+  flushed out a dozen parameters that are read through helpers by variable name — `count`,
+  `from-row`, `to-row`, `cols`, `key`, `out`, `splits`, `ext`, `limit`, `root`, `desc`,
+  `whereAny` — across `/edit`, `/export`, `/split`, `/files`, `/book`, `/groupby`, `/job`. All
+  are declared now, and the full serve suite passes with the check enabled.
+
 ## [3.53.2] — 2026-11-19
 
 ### Added

@@ -403,9 +403,10 @@ fn handle(
                 &mut stream,
                 400,
                 &format!(
-                    r#"{{"error":{},"parameter":{},"hint":{}}}"#,
+                    r#"{{"error":{},"parameter":{},"route":{},"hint":{}}}"#,
                     json_str(&format!("unknown parameter {bad}")),
                     json_str(&bad),
+                    json_str(path),
                     json_str("GET /spec lists the parameters each route takes")
                 ),
             );
@@ -519,14 +520,21 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     ("/warm", &["path", "delim", "sql"]),
     ("/stats", &["path", "sample", "delim"]),
     ("/jobs", &["path", "delim"]),
-    ("/job", &["id"]),
+    ("/job", &["id", "action"]),
     ("/index", &["path", "delim"]),
-    ("/export", &["path", "delim", "sql"]),
+    (
+        "/export",
+        &[
+            "path", "where", "whereAny", "columns", "format", "order", "desc", "limit", "sql",
+            "delim",
+        ],
+    ),
     (
         "/edit",
         &[
             "path", "action", "row", "col", "value", "formula", "expect", "after", "name", "into",
-            "from", "to", "where", "by", "delim",
+            "from", "to", "where", "by", "delim", "count", "cols", "key", "out", "columns",
+            "format", "from-row", "to-row", "width", "height",
         ],
     ),
     ("/download", &["path", "delim"]),
@@ -600,6 +608,8 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
             "by",
             "agg",
             "order",
+            "desc",
+            "maxGroups",
             "apply-edits",
             "delim",
             "engine",
@@ -635,13 +645,18 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     ),
     ("/style", &["path", "rules"]),
     ("/layout", &["path", "key", "column", "value"]),
-    ("/files", &["dir"]),
-    ("/book", &["max"]),
+    ("/files", &["dir", "ext", "limit", "root"]),
+    ("/book", &["max", "root"]),
     ("/query", &["path", "sql", "limit", "delim"]),
     ("/sort", &["path", "by", "desc", "out", "bufMb", "delim"]),
     ("/dedupe", &["path", "by", "out", "delim"]),
     ("/partition", &["path", "by", "format", "out", "delim"]),
-    ("/split", &["path", "format", "out", "delim"]),
+    (
+        "/split",
+        &[
+            "path", "format", "out", "delim", "splits", "bufMb", "threads", "columns",
+        ],
+    ),
     ("/merge", &["path", "out", "delim"]),
     (
         "/edit",
@@ -5881,9 +5896,13 @@ const TIMEOUT_HINT: &str =
 
 /// Opt-in strict parameter checking: `CSV_SPLITTER_STRICT_PARAMS=1`.
 fn strict_params() -> bool {
-    std::env::var("CSV_SPLITTER_STRICT_PARAMS")
-        .map(|v| v == "1" || v == "true")
-        .unwrap_or(false)
+    // On by default: a parameter nobody reads is a request the server silently ignored, and
+    // the caller cannot tell. `CSV_SPLITTER_STRICT_PARAMS=0` turns the check off for a client
+    // that appends its own extras (cache busters, proxies).
+    match std::env::var("CSV_SPLITTER_STRICT_PARAMS") {
+        Ok(v) => v != "0" && v != "false",
+        Err(_) => true,
+    }
 }
 
 /// The first request parameter that `/spec` does not list for this route, if any.
