@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.57.3] — 2026-11-19
+
+### Documentation
+
+- Removed the "80 rounds" counts from HANDOVER and the README. The number was written at a
+  particular time, has no source anyone can check, and only drifts. The lesson tables say the
+  same thing without a figure that will be wrong.
+
 ## [3.57.2] — 2026-11-19
 
 ### Tests

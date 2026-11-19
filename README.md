@@ -96,7 +96,7 @@ $ csv-splitter serve --root .  # 本地 JSON API，打开 http://127.0.0.1:8787/
 ## 交接 / Handover
 
 `docs/HANDOVER.md`：这个软件是什么、对 Excel 的覆盖、三条承诺的证据位置、
-已知限制、怎么接着做，以及 80 轮里最有价值的六条教训。
+已知限制、怎么接着做，以及迭代中累积的六条教训。
 
 ## 前端怎么接 / For front-end developers
 
