@@ -35,6 +35,7 @@
 
 use csv_splitter_core::cache::ResultCache;
 use csv_splitter_core::dedupe;
+use csv_splitter_core::engine;
 use csv_splitter_core::filter::{self, scan as filter_scan, FilterSpec};
 use csv_splitter_core::groupby;
 use csv_splitter_core::jobs::JobRegistry;
@@ -549,7 +550,15 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     ),
     (
         "/groupby",
-        &["path", "by", "agg", "order", "apply-edits", "delim"],
+        &[
+            "path",
+            "by",
+            "agg",
+            "order",
+            "apply-edits",
+            "delim",
+            "engine",
+        ],
     ),
     ("/pivot", &["path", "rows", "cols", "values", "delim"]),
     ("/chart", &["path", "x", "y", "type", "series", "delim"]),
@@ -3122,11 +3131,16 @@ fn group_by(
         .get("maxGroups")
         .and_then(|v| v.parse().ok())
         .unwrap_or(groupby::DEFAULT_MAX_GROUPS);
+    let engine = match engine::Engine::parse(params.get("engine").map(String::as_str).unwrap_or(""))
+    {
+        Ok(e) => e,
+        Err(message) => return bad_request(stream, &message, "engine", "engine=auto|native|sql"),
+    };
 
     // Reuse the query cache: the key is path+sql, so we synthesise a stable
     // pseudo-query that encodes every parameter.
     let sql_key = format!(
-        "groupby|{by}|{agg}|{}|{descending}|{max_groups}",
+        "groupby|{by}|{agg}|{}|{descending}|{max_groups}|{engine:?}",
         order.clone().unwrap_or_default()
     );
     let delimiter = delimiter(params);
@@ -3144,19 +3158,18 @@ fn group_by(
         let out = out_dir.join(unique);
         let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
         drop(rx);
-        let summary = groupby::groupby(
-            &path,
-            delimiter,
-            &out,
-            &groupby::GroupOptions {
-                keys: keys.clone(),
-                aggregates: aggs.clone(),
-                order_by: order.clone(),
-                descending,
-                max_groups,
-            },
-            &tx,
-        )?;
+        let options = groupby::GroupOptions {
+            keys: keys.clone(),
+            aggregates: aggs.clone(),
+            order_by: order.clone(),
+            descending,
+            max_groups,
+        };
+        let planned = engine::resolve(engine, &path).map_err(io::Error::other)?;
+        let summary = match planned {
+            engine::Engine::Sql => engine::groupby_sql(&path, delimiter, &out, &options, &tx)?,
+            _ => groupby::groupby(&path, delimiter, &out, &options, &tx)?,
+        };
         let text = std::fs::read_to_string(&out)?;
         std::fs::remove_file(&out).ok();
         let mut rows = Vec::new();

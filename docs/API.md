@@ -45,7 +45,7 @@
 | `GET /book` | — | 工作簿：根目录下所有 CSV 及其状态 |
 | `GET /stats` | `path` `sample` | 采样统计 |
 | `GET /analyze` | `path` `distinct` | 全列画像 |
-| `GET /groupby` | `path` `by` `agg` `order` `desc` `maxGroups` | 分组聚合 |
+| `GET /groupby` | `path` `by` `agg` `order` `desc` `maxGroups` `engine` | 分组聚合；`engine=auto\|native\|sql`，未编译 sql feature 时 `sql` 返回 400 |
 | `GET /pivot` | `path` `rows` `cols` `values` `qualify` `maxColumns` `maxCells` | 透视矩阵 |
 | `GET /chart` | `path` `x` `y` `series` `type` `sortByValue` `desc` `maxPoints` | 图表数据 |
 | `GET /style` | `path` `rules` `start` `count` | 条件格式：该上色的单元格 |
