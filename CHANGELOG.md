@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.53.8] — 2026-11-19
+
+### Changed
+
+- **`sort --engine` and `dedupe --engine` are refused with a reason**, instead of falling
+  through to "unknown option" or, worse, being accepted and silently run natively. The
+  message states the semantic reason (smart_cmp's numeric-only-when-both-parse rule for
+  sort; first-occurrence needing a stable row order for dedupe), and both flags are listed in
+  the command help as unsupported so `--help` tells the same story as the error.
+
 ## [3.53.7] — 2026-11-19
 
 ### Documentation

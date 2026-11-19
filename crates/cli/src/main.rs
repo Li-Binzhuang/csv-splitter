@@ -166,6 +166,10 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
     (
         "dedupe",
         &[
+            (
+                "--engine",
+                "Not supported: dedupe keeps the first occurrence, which needs a stable row order SQL does not promise",
+            ),
             ("--by", "Separator (split-column) or grouping column"),
             ("--delim", "Field delimiter (default: auto)"),
             ("--json", "Emit JSON"),
@@ -442,6 +446,10 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
     (
         "sort",
         &[
+            (
+                "--engine",
+                "Not supported: sort orders numerically only when both sides parse, which SQL cannot reproduce",
+            ),
             ("--asc", "Ascending order"),
             ("--buf-mb", "Sort buffer size in MB"),
             ("--by", "Separator (split-column) or grouping column"),
@@ -3457,6 +3465,15 @@ fn cmd_sort(args: &[String]) -> i32 {
             "--desc" => descending = true,
             "--asc" => descending = false,
             "--verify" => verify = true,
+            // Accepting `--engine` and quietly using the native path would be worse than
+            // refusing: someone who asked for SQL would believe they got it.
+            "--engine" => {
+                eprintln!(
+                    "error: sort has no sql engine; its ordering is numeric only when both \
+                     sides parse as numbers, which no SQL ORDER BY on a typed column reproduces"
+                );
+                return 2;
+            }
             "--buf-mb" => match p
                 .value("--buf-mb")
                 .and_then(|v| v.parse().map_err(|_| "bad --buf-mb".to_string()))
@@ -7852,6 +7869,13 @@ fn cmd_dedupe(args: &[String]) -> i32 {
                 }
             },
             "--verify" => verify = true,
+            "--engine" => {
+                eprintln!(
+                    "error: dedupe has no sql engine; it keeps the first occurrence, which \
+                     needs a stable row order that SQL does not promise"
+                );
+                return 2;
+            }
             "-o" | "--out" => match p.value("--out") {
                 Ok(v) => out = Some(PathBuf::from(v)),
                 Err(e) => {
