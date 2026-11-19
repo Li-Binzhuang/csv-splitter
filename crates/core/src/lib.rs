@@ -10,6 +10,7 @@ pub mod decompress;
 pub mod dedupe;
 pub mod demo;
 pub mod encoding;
+pub mod engine;
 pub mod filter;
 pub mod format;
 pub mod formula;

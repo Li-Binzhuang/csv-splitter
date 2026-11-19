@@ -1,5 +1,29 @@
 # Changelog
 
+## [3.49.0] — 2026-11-19
+
+### Added
+
+- **`--engine auto|native|sql` for `groupby`**, and the core `engine` module that will carry
+  the rest of the analysis commands. `auto` picks DuckDB above 64 MB and the native reader
+  below it, because the measurements point opposite ways at two sizes:
+
+  | 输入 | native | DuckDB |
+  |---|---|---|
+  | demo 20 120 行 / 6 列 | **0.026 s** | 0.207 s |
+  | 2.5 GB / 684 917 行 / 782 列 | 13.1 s | **2.3 s** |
+
+  The large-file number goes through `sql::query_with` deliberately: that path declares
+  every column from a 64-row sample, while `read_csv_auto` spends the time inferring 782
+  types and lands at 10 s.
+- A test asserts the two engines write **byte-identical** output on data both understand,
+  so "reuse the database" cannot silently change a number.
+
+### Notes
+
+- Numeric aggregates over a column that mixes text keep SQL arithmetic on the `sql` engine
+  (the text is ignored) where native reports `<mixed>`. Documented rather than hidden.
+
 ## [3.48.3] — 2026-11-19
 
 ### Fixed

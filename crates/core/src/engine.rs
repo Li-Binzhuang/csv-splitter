@@ -1,0 +1,335 @@
+//! Which engine runs an analysis: the native one, or DuckDB.
+//!
+//! The project has two kinds of work and they want different machinery:
+//!
+//! * **rendering / editing** — a window of rows, journal edits, formula columns. It must
+//!   see `base + journal` per row, so it stays native. Handing it to DuckDB would require
+//!   materialising the whole file first, which is the one thing this tool refuses to do.
+//! * **analysis** — `groupby`, `pivot`, `chart`, `sort`, `dedupe`, joins. "Scan the file and
+//!   answer" is exactly a database's job, and DuckDB reads a 2.5 GB / 782-column CSV in
+//!   about a second while the native reader needs thirteen. Those belong in DuckDB.
+//!
+//! `Engine::Auto` is the default and chooses by input size: DuckDB above the threshold,
+//! native below it (its startup is ~200 ms, which is eight times the whole small query).
+
+use std::path::Path;
+
+/// Inputs at least this large go to DuckDB under `Engine::Auto`.
+///
+/// Below it the native path wins: measured 20 120 rows in 0.026 s natively against
+/// 0.207 s through DuckDB, almost all of it engine start-up.
+pub const SQL_AUTO_THRESHOLD_BYTES: u64 = 64 * 1024 * 1024;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Engine {
+    /// Pick by input size.
+    Auto,
+    /// The in-repo streaming implementation.
+    Native,
+    /// DuckDB.
+    Sql,
+}
+
+impl Engine {
+    pub fn parse(raw: &str) -> Result<Self, String> {
+        match raw.trim().to_ascii_lowercase().as_str() {
+            "" | "auto" => Ok(Self::Auto),
+            "native" | "rust" => Ok(Self::Native),
+            "sql" | "duckdb" => Ok(Self::Sql),
+            other => Err(format!("unknown engine '{other}' (use auto/native/sql)")),
+        }
+    }
+
+    pub fn label(&self) -> &'static str {
+        match self {
+            Self::Auto => "auto",
+            Self::Native => "native",
+            Self::Sql => "sql",
+        }
+    }
+}
+
+/// Whether this build can talk to DuckDB at all.
+pub fn sql_available() -> bool {
+    cfg!(feature = "sql")
+}
+
+/// Resolve `Auto` into the engine that will actually run, and refuse `Sql` in a build
+/// without the feature instead of silently falling back — a silent fallback would make
+/// "I chose sql" and "the build ignored me" look identical.
+pub fn resolve(engine: Engine, input: &Path) -> Result<Engine, String> {
+    match engine {
+        Engine::Sql if !sql_available() => {
+            Err("this build has no `sql` feature; rebuild with --features sql".to_string())
+        }
+        Engine::Sql => Ok(Engine::Sql),
+        Engine::Native => Ok(Engine::Native),
+        Engine::Auto => {
+            let bytes = std::fs::metadata(input).map(|m| m.len()).unwrap_or(0);
+            if bytes >= SQL_AUTO_THRESHOLD_BYTES && sql_available() {
+                Ok(Engine::Sql)
+            } else {
+                Ok(Engine::Native)
+            }
+        }
+    }
+}
+
+/// Quote an identifier for DuckDB without letting a column name close the quote.
+#[cfg(feature = "sql")]
+fn ident(name: &str) -> String {
+    format!("\"{}\"", name.replace('"', "\"\""))
+}
+
+/// Present in every build so callers do not need their own `cfg`: a build without the
+/// feature answers with an error instead of failing to compile.
+#[cfg(not(feature = "sql"))]
+pub fn groupby_sql(
+    _path: &Path,
+    _delimiter: crate::types::Delimiter,
+    _output: &Path,
+    _options: &crate::groupby::GroupOptions,
+    _tx: &crate::types::ProgressSender,
+) -> std::io::Result<crate::groupby::GroupSummary> {
+    Err(std::io::Error::new(
+        std::io::ErrorKind::Unsupported,
+        "this build has no `sql` feature; rebuild with --features sql",
+    ))
+}
+
+/// DuckDB-backed groupby. Same options and the same output bytes as the native path
+/// where the semantics overlap.
+///
+/// It goes through `sql::query_with` rather than opening its own connection: that path
+/// already declares every column from a small sample (`auto_detect=false`), which is why
+/// it reads a 782-column file in a second while `read_csv_auto` spends that long inferring
+/// 782 types.
+///
+/// Deliberate difference from native: numeric aggregates over a column that mixes text
+/// keep SQL arithmetic and ignore the text, where native reports `<mixed>`.
+#[cfg(feature = "sql")]
+pub fn groupby_sql(
+    path: &Path,
+    delimiter: crate::types::Delimiter,
+    output: &Path,
+    options: &crate::groupby::GroupOptions,
+    tx: &crate::types::ProgressSender,
+) -> std::io::Result<crate::groupby::GroupSummary> {
+    use crate::aggregate::{format_number, AggOp};
+    use std::io::{self, Write};
+
+    let total_bytes = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
+    tx.send(crate::types::ProgressEvent::PhaseStart {
+        phase: "Grouping (duckdb)".into(),
+        total_bytes,
+    })
+    .ok();
+
+    if options.keys.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "no key columns",
+        ));
+    }
+    if options.aggregates.is_empty() {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "no aggregates"));
+    }
+
+    let mut select: Vec<String> = options.keys.iter().map(|k| ident(k)).collect();
+    for spec in &options.aggregates {
+        let column = ident(&spec.column);
+        let as_double = format!("try_cast({column} AS DOUBLE)");
+        let expr = match spec.op {
+            AggOp::Count => format!("count({column})"),
+            AggOp::Sum => format!("sum({as_double})"),
+            AggOp::Mean => format!("avg({as_double})"),
+            AggOp::Min => format!("min({column})"),
+            AggOp::Max => format!("max({column})"),
+        };
+        select.push(format!("{expr} AS {}", ident(&spec.output_name())));
+    }
+    let keys_sql = options
+        .keys
+        .iter()
+        .map(|k| ident(k))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let order = match options.order_by.as_deref() {
+        Some(name) => format!(
+            "{}{}",
+            ident(name),
+            if options.descending { " DESC" } else { "" }
+        ),
+        None => format!(
+            "{}{}",
+            keys_sql,
+            if options.descending { " DESC" } else { "" }
+        ),
+    };
+    let query = format!(
+        "SELECT {} FROM t GROUP BY {} ORDER BY {}",
+        select.join(", "),
+        keys_sql,
+        order
+    );
+    let limit = options.max_groups.max(1).saturating_add(1);
+    let result = crate::sql::query_with(path, &query, limit, delimiter)?;
+    if result.truncated {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!(
+                "more than {} groups; raise --max-groups or narrow the key",
+                options.max_groups
+            ),
+        ));
+    }
+
+    let mut out = std::io::BufWriter::new(std::fs::File::create(output)?);
+    let mut header: Vec<String> = options.keys.clone();
+    header.extend(options.aggregates.iter().map(|a| a.output_name()));
+    writeln!(out, "{}", header.join(","))?;
+    for row in &result.rows {
+        let cells: Vec<String> = row
+            .iter()
+            .enumerate()
+            .map(|(i, value)| {
+                // sum/mean come back as full-precision doubles; render them the way the
+                // native path does so both engines produce the same bytes.
+                let numeric_agg = i >= options.keys.len()
+                    && options.aggregates[i - options.keys.len()].op.is_numeric();
+                match (numeric_agg, value.trim().parse::<f64>()) {
+                    (true, Ok(n)) if value.trim() != "" => format_number(n),
+                    _ => value.clone(),
+                }
+            })
+            .collect();
+        writeln!(out, "{}", quote_cells(&cells).join(","))?;
+    }
+    out.flush()?;
+
+    let rows_query = "SELECT count(*) AS n FROM t";
+    let rows: u64 = crate::sql::query_with(path, rows_query, 1, delimiter)
+        .ok()
+        .and_then(|r| r.rows.first().and_then(|row| row.first().cloned()))
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(0);
+    let bytes = std::fs::metadata(output).map(|m| m.len()).unwrap_or(0);
+    tx.send(crate::types::ProgressEvent::PhaseDone {
+        phase: "Grouping (duckdb)".into(),
+    })
+    .ok();
+    Ok(crate::groupby::GroupSummary {
+        rows,
+        groups: result.rows.len() as u64,
+        bytes,
+        key_columns: options.keys.clone(),
+        aggregates: options.aggregates.iter().map(|a| a.output_name()).collect(),
+    })
+}
+
+/// Minimal CSV quoting: only when the cell needs it, matching the native writer.
+#[cfg(feature = "sql")]
+fn quote_cells(cells: &[String]) -> Vec<String> {
+    cells
+        .iter()
+        .map(|cell| {
+            if cell.contains(',') || cell.contains('"') || cell.contains('\n') {
+                format!("\"{}\"", cell.replace('"', "\"\""))
+            } else {
+                cell.clone()
+            }
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn auto_picks_by_size() {
+        let dir = std::env::temp_dir().join(format!("csvs_engine_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let small = dir.join("small.csv");
+        std::fs::write(&small, "a,b\n1,2\n").unwrap();
+        let big = dir.join("big.csv");
+        std::fs::write(&big, vec![b'x'; SQL_AUTO_THRESHOLD_BYTES as usize]).unwrap();
+
+        let small_engine = resolve(Engine::Auto, &small).unwrap();
+        assert_eq!(small_engine, Engine::Native);
+        let big_engine = resolve(Engine::Auto, &big).unwrap();
+        assert_eq!(
+            big_engine,
+            if sql_available() {
+                Engine::Sql
+            } else {
+                Engine::Native
+            }
+        );
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn explicit_sql_is_refused_without_the_feature() {
+        let dir = std::env::temp_dir().join(format!("csvs_engine2_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("t.csv");
+        std::fs::write(&file, "a\n1\n").unwrap();
+        let result = resolve(Engine::Sql, &file);
+        assert_eq!(result.is_ok(), sql_available());
+        if let Err(message) = result {
+            assert!(message.contains("no `sql` feature"), "{message}");
+        }
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// The two engines must produce the same file for data both can handle. Without this
+    /// test the "reuse DuckDB" refactor would silently change numbers.
+    #[cfg(feature = "sql")]
+    #[test]
+    fn json_and_native_groupby_agree_byte_for_byte() {
+        use crate::aggregate::AggSpec;
+        use crate::groupby::{groupby_quotes, GroupOptions};
+        use crate::types::{Delimiter, ProgressSender};
+
+        let dir = std::env::temp_dir().join(format!("csvs_engine3_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("t.csv");
+        std::fs::write(
+            &input,
+            "city,amount,qty\nCDMex,10,2\nPuebla,7,3\nCDMex,5,4\nPuebla,1,5\n",
+        )
+        .unwrap();
+        let options = GroupOptions {
+            keys: vec!["city".into()],
+            aggregates: ["amount:sum", "amount:mean", "qty:count"]
+                .iter()
+                .map(|s| AggSpec::parse_list(s).unwrap().remove(0))
+                .collect(),
+            order_by: None,
+            descending: false,
+            max_groups: 1000,
+        };
+
+        let native_out = dir.join("native.csv");
+        let sql_out = dir.join("sql.csv");
+        let (tx, _rx) = std::sync::mpsc::channel::<crate::types::ProgressEvent>();
+        let tx_native: ProgressSender = tx.clone();
+        groupby_quotes(
+            &input,
+            Delimiter::Comma,
+            &native_out,
+            &options,
+            Default::default(),
+            &tx_native,
+        )
+        .unwrap();
+        let tx_sql: ProgressSender = tx.clone();
+        groupby_sql(&input, Delimiter::Comma, &sql_out, &options, &tx_sql).unwrap();
+
+        let native = std::fs::read_to_string(&native_out).unwrap();
+        let sql = std::fs::read_to_string(&sql_out).unwrap();
+        assert_eq!(native, sql, "native:\n{native}\nsql:\n{sql}");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+}

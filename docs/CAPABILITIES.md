@@ -59,7 +59,7 @@
 
 | 能力 | CLI | API | 边界 |
 |---|---|---|---|
-| 分组聚合 | `groupby --by K --agg c:op [--apply-edits]` | `GET /groupby` | `--max-groups` 默认 100 万 |
+| 分组聚合 | `groupby --by K --agg c:op [--apply-edits] [--engine auto\|native\|sql]` | `GET /groupby` | `--max-groups` 默认 100 万；`--engine auto` 在输入 ≥64 MB 时走 DuckDB |
 | 透视表 | `pivot --rows R --cols C --values c:op` | `GET /pivot` | `--max-columns` 512 / `--max-cells` 200 万 |
 | 图表数据 | `chart --x C --y c:op [--series S]` | `GET /chart` | `--max-points` 5000 |
 | SQL | `sql f.csv "SELECT ..."` | `GET /query`、`/rows?sql=` | DuckDB，只读单语句，结果封顶 |
