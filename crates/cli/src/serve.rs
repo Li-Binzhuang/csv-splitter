@@ -560,7 +560,20 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
             "engine",
         ],
     ),
-    ("/pivot", &["path", "rows", "cols", "values", "delim"]),
+    (
+        "/pivot",
+        &[
+            "path",
+            "rows",
+            "cols",
+            "values",
+            "delim",
+            "engine",
+            "qualify",
+            "maxColumns",
+            "maxCells",
+        ],
+    ),
     (
         "/chart",
         &[
@@ -3052,8 +3065,13 @@ fn pivot_endpoint(
         max_columns,
         max_cells,
     };
+    let engine = match engine::Engine::parse(params.get("engine").map(String::as_str).unwrap_or(""))
+    {
+        Ok(e) => e,
+        Err(message) => return bad_request(stream, &message, "engine", "engine=auto|native|sql"),
+    };
     let cache_key = format!(
-        "pivot|{rows}|{}|{values}|{qualify}|{max_columns}|{max_cells}",
+        "pivot|{rows}|{}|{values}|{qualify}|{max_columns}|{max_cells}|{engine:?}",
         columns.clone().unwrap_or_default()
     );
 
@@ -3065,14 +3083,31 @@ fn pivot_endpoint(
         ));
         let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
         drop(rx);
-        csv_splitter_core::pivot::pivot(&path, delimiter, &out, &options, &tx)?;
+        let planned = engine::resolve(engine, &path).map_err(io::Error::other)?;
+        if planned == engine::Engine::Sql {
+            engine::pivot_sql(&path, delimiter, &out, &options, &tx)?;
+        } else {
+            csv_splitter_core::pivot::pivot(&path, delimiter, &out, &options, &tx)?;
+        }
         let text = std::fs::read_to_string(&out)?;
         std::fs::remove_file(&out).ok();
+        // Parse with the real CSV reader, not `lines()`: a pivot column key can contain a
+        // quoted newline, and splitting on lines turns one row into three.
         let mut rows = Vec::new();
         let mut columns = Vec::new();
-        for (index, line) in text.lines().enumerate() {
-            let fields: Vec<String> = parse_csv_line(line);
-            if index == 0 {
+        // The file has already been read into `text` (and removed), so parse from memory.
+        let mut reader = csv_splitter_core::csv_reader::RecordReader::new(
+            std::io::BufReader::with_capacity(1024 * 1024, std::io::Cursor::new(text.clone())),
+            1024 * 1024,
+        );
+        let mut record = Vec::new();
+        while reader.next_record(&mut record).unwrap_or(false) {
+            let fields = csv_splitter_core::csv_reader::parse_csv_record_with(
+                String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
+                b',',
+                csv_splitter_core::csv_reader::QuoteStyle::Rfc4180,
+            );
+            if columns.is_empty() {
                 columns = fields;
             } else {
                 rows.push(fields);

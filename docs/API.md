@@ -47,7 +47,7 @@
 | `GET /analyze` | `path` `distinct` | 全列画像 |
 | `GET /chart` | `path` `x` `y` `series` `type` `maxPoints` `engine` | 图表数据；`engine=auto\|native\|sql` |
 | `GET /groupby` | `path` `by` `agg` `order` `desc` `maxGroups` `engine` | 分组聚合；`engine=auto\|native\|sql`，未编译 sql feature 时 `sql` 返回 400 |
-| `GET /pivot` | `path` `rows` `cols` `values` `qualify` `maxColumns` `maxCells` | 透视矩阵 |
+| `GET /pivot` | `path` `rows` `cols` `values` `qualify` `maxColumns` `maxCells` `engine` | 透视矩阵 |
 | `GET /chart` | `path` `x` `y` `series` `type` `sortByValue` `desc` `maxPoints` | 图表数据 |
 | `GET /style` | `path` `rules` `start` `count` | 条件格式：该上色的单元格 |
 | `GET /layout` | `path` `column` `key` `value` | 列宽/显示名/冻结/数字格式（带 `column` 即写入） |
