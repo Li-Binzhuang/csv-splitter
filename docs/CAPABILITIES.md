@@ -398,6 +398,21 @@
 覆盖保护覆盖：`filter` / `sort` / `columns` / `dedupe` / `lookup` / `groupby` /
 `pivot` / `convert` / `edit export`。
 
+## 首屏与跳转 / First screen and jumps (measured)
+
+`.idx` 稀疏索引（每 1000 行一个锚点，2.5 GB / 78 万列的文件上只有 5.4 KB）让窗口读取**不需要从头扫描**。实测（2.5 GB、684 917 行、782 列）：
+
+| 请求 | 耗时 |
+|---|---|
+| `/rows?start=0&count=50` | **0.014 s** |
+| `/rows?start=50 000&count=50` | **0.011 s** |
+| `/rows?start=600 000&count=50` | **0.016 s** |
+
+三点说明：
+- 第一次请求若索引尚未建立，代价在建索引阶段，之后稳定在十几毫秒；
+- 跳到最后一行与跳到第一行**几乎一样快**，因为两者都只从最近的锚点开始解析；
+- 因此「首屏慢」不是当前瓶颈：**不要为了它重写读取路径**。真要优化，先测一遍再动手。
+
 ## 引擎选择 / Which engine runs
 
 同一份分析有两种实现：仓库内的流式实现（native）和 DuckDB（sql）。`--engine auto` 按输入大小选，

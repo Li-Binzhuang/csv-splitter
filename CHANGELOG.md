@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.51.4] — 2026-11-19
+
+### Measured / Documented
+
+- First screen and jumps were suspected of a full scan; measured on 2.5 GB / 684 917 rows /
+  782 columns: `start=0` **0.014 s**, `start=50 000` **0.011 s**, `start=600 000` **0.016 s**,
+  with a 5.4 KB sparse index. The read path needs no change, and CAPABILITIES now records the
+  numbers plus the instruction to measure before rewriting it.
+
 ## [3.51.3] — 2026-11-19
 
 ### Added
