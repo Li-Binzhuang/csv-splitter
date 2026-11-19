@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.49.3] — 2026-11-19
+
+### Fixed
+
+- **DuckDB ran with its defaults: up to 80% of RAM and every core.** Every query now opens
+  through one `open_limited()` that pins `memory_limit` (default 512 MB), `threads`
+  (default: available parallelism, capped at 8) and `temp_directory`, so a large sort or
+  hash spills to disk instead of taking the machine.
+  - Overridable when the machine can afford it: `CSV_SPLITTER_SQL_MEMORY_MB`,
+    `CSV_SPLITTER_SQL_THREADS`, `CSV_SPLITTER_SQL_TEMP_DIR`.
+  - A test reads the settings back from the connection, so the limits are proved rather
+    than documented.
+
 ## [3.49.2] — 2026-11-19
 
 ### Added

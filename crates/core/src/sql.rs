@@ -57,6 +57,46 @@ const FORBIDDEN_WORDS: &[&str] = &[
 /// they take arguments (`read_csv_auto('…')`) and the name is only the start.
 const FORBIDDEN_PREFIXES: &[&str] = &["read_csv", "read_parquet", "read_json", "read_text", "glob"];
 
+/// Open the engine with the limits this project wants, not DuckDB's defaults.
+///
+/// DuckDB takes up to 80% of RAM when it needs to sort or hash, and uses every core. On a
+/// machine also running other things that is a surprise, so both are pinned:
+///
+/// * `CSV_SPLITTER_SQL_MEMORY_MB` (default 512) — past it the engine spills to disk
+///   instead of refusing to run;
+/// * `CSV_SPLITTER_SQL_THREADS` (default: available parallelism, capped at 8);
+/// * `CSV_SPLITTER_SQL_TEMP_DIR` (default: the system temp directory), where it spills.
+fn open_limited() -> io::Result<Connection> {
+    let memory_mb: u64 = std::env::var("CSV_SPLITTER_SQL_MEMORY_MB")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .filter(|v: &u64| *v >= 64)
+        .unwrap_or(512);
+    let threads: usize = std::env::var("CSV_SPLITTER_SQL_THREADS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .filter(|v: &usize| *v >= 1)
+        .unwrap_or_else(|| {
+            std::thread::available_parallelism()
+                .map_or(4, |n| n.get())
+                .min(8)
+        });
+    let temp = std::env::var("CSV_SPLITTER_SQL_TEMP_DIR")
+        .unwrap_or_else(|_| std::env::temp_dir().to_string_lossy().to_string());
+
+    let conn = Connection::open_in_memory().map_err(to_io)?;
+    let quote = |v: &str| v.replace('\'', "''");
+    let setup = format!(
+        "SET memory_limit='{}MB'; SET threads={}; SET temp_directory='{}';",
+        memory_mb,
+        threads,
+        quote(&temp)
+    );
+    conn.execute_batch(&setup)
+        .map_err(|e| io::Error::other(e.to_string()))?;
+    Ok(conn)
+}
+
 /// Validate a user query before it reaches DuckDB.
 pub fn validate(sql: &str) -> Result<(), String> {
     let trimmed = sql.trim().trim_end_matches(';').trim();
@@ -312,7 +352,7 @@ where
     }
     for columns in strategies {
         for opts in OPEN_LADDER {
-            let conn = Connection::open_in_memory().map_err(to_io)?;
+            let conn = open_limited()?;
             let create = if crate::sql_cache::is_fresh(path) {
                 // Columnar copy: a filter reads only the columns it needs.
                 format!(
@@ -423,7 +463,7 @@ where
     }
     for columns in strategies {
         for opts in OPEN_LADDER {
-            let conn = Connection::open_in_memory().map_err(to_io)?;
+            let conn = open_limited()?;
             // Sniffing happens here, and it can fail for shapes the previous option
             // set could not parse — so this error must also continue down the ladder.
             let create = if crate::sql_cache::is_fresh(path) {
@@ -1079,5 +1119,24 @@ mod dialect_tests {
         assert_eq!(result.rows.len(), 1);
         assert_eq!(result.rows[0][0], "4999");
         std::fs::remove_dir_all(root).ok();
+    }
+
+    /// The limits are actually applied, not merely documented.
+    #[test]
+    fn the_connection_carries_its_limits() {
+        let conn = open_limited().unwrap();
+        let memory: String = conn
+            .query_row("SELECT current_setting('memory_limit')", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert!(
+            memory.ends_with("MiB") || memory.ends_with("MB"),
+            "{memory}"
+        );
+        let threads: i64 = conn
+            .query_row("SELECT current_setting('threads')", [], |row| row.get(0))
+            .unwrap();
+        assert!(threads >= 1, "{threads}");
     }
 }
