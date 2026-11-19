@@ -36,12 +36,24 @@ impl Journal {
     /// is skipped with its number reported, because losing an undo step is better
     /// than refusing to open the sheet.
     pub fn load(path: &Path) -> io::Result<Self> {
-        Ok(Self {
-            ops: Self::read_ops(path)?,
-            // The redo sidecar is derived from the journal's path, so callers keep
-            // passing the same one path they always did.
-            redo: Self::read_ops(&path.with_extension("journal.redo"))?,
-        })
+        let ops = Self::read_ops(path)?;
+        // The redo sidecar is derived from the journal's path, so callers keep
+        // passing the same one path they always did.
+        let redo = Self::read_ops(&path.with_extension("journal.redo"))?;
+        Ok(Self::reconcile(ops, redo))
+    }
+
+    /// A save writes redo before the journal, so a crash in between leaves the undone
+    /// operation in both files. Dropping it from the redo stack restores the state the
+    /// save meant to reach; without this, the next redo would apply it twice.
+    fn reconcile(ops: Vec<Op>, mut redo: Vec<Op>) -> Self {
+        while let (Some(last_op), Some(last_redo)) = (ops.last(), redo.last()) {
+            if format!("{last_op:?}") != format!("{last_redo:?}") {
+                break;
+            }
+            redo.pop();
+        }
+        Self { ops, redo }
     }
 
     /// Load, and say how many records could not be read.
@@ -53,7 +65,7 @@ impl Journal {
     pub fn load_reporting(path: &Path) -> io::Result<(Self, usize, usize)> {
         let (ops, skipped_ops) = Self::read_ops_reporting(path)?;
         let (redo, skipped_redo) = Self::read_ops_reporting(&path.with_extension("journal.redo"))?;
-        Ok((Self { ops, redo }, skipped_ops, skipped_redo))
+        Ok((Self::reconcile(ops, redo), skipped_ops, skipped_redo))
     }
 
     fn read_ops_reporting(path: &Path) -> io::Result<(Vec<Op>, usize)> {
@@ -104,16 +116,22 @@ impl Journal {
 
     /// Save atomically (write to `.tmp`, then rename).
     pub fn save(&self, path: &Path) -> io::Result<()> {
-        Self::write_ops(path, &self.ops)?;
         let redo = path.with_extension("journal.redo");
         if self.redo.is_empty() {
-            // No redo stack means no file: an empty sidecar would be noise.
+            // Delete the redo file *before* writing the journal. In the other order a
+            // crash between the two steps leaves a stale redo stack next to a journal that
+            // already took a new edit, and the next redo would resurrect an operation the
+            // user's new edit was supposed to discard.
             if redo.exists() {
                 std::fs::remove_file(&redo)?;
             }
-            return Ok(());
+            return Self::write_ops(path, &self.ops);
         }
-        Self::write_ops(&redo, &self.redo)
+        // Write the redo first, then the journal: if the crash lands between them the
+        // undone operation is in both files, and load() recognises that duplicate instead
+        // of offering it back twice.
+        Self::write_ops(&redo, &self.redo)?;
+        Self::write_ops(path, &self.ops)
     }
 
     fn write_ops(path: &Path, ops: &[Op]) -> io::Result<()> {
@@ -679,6 +697,37 @@ mod damaged_tests {
                 .any(|op| format!("{op:?}").contains("CDM\"")),
             "a truncated value must not be applied: {journal:?}"
         );
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// Two files cannot be renamed atomically together, so the save order defines what a
+    /// crash can leave behind. Crash *between* redo and journal: the undone op is in both.
+    /// Loading must reconcile it, not hand it back twice.
+    #[test]
+    fn a_crash_between_the_two_files_does_not_double_the_undo() {
+        let dir = std::env::temp_dir().join(format!("csvs_journal_pair_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("data.csv.journal");
+        let redo = dir.join("data.csv.journal.redo");
+        let head = "set,1,city,CDMX\n";
+        let undone = "set,2,amount,10\n";
+        // State a crash can produce: journal and redo both hold the undone operation.
+        std::fs::write(&path, format!("{head}{undone}")).unwrap();
+        std::fs::write(&redo, undone).unwrap();
+
+        let journal = super::Journal::load(&path).unwrap();
+        assert_eq!(journal.len(), 2, "the journal is untouched");
+        assert!(
+            journal.redo_ops().is_empty(),
+            "the duplicate must not come back as a redo: {:?}",
+            journal.redo_ops()
+        );
+
+        // A genuinely undone operation (not in the journal) still offers itself back.
+        std::fs::write(&path, head).unwrap();
+        std::fs::write(&redo, &undone).unwrap();
+        let journal = super::Journal::load(&path).unwrap();
+        assert_eq!(journal.redo_len(), 1);
         std::fs::remove_dir_all(&dir).ok();
     }
 }

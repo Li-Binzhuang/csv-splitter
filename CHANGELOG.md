@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.51.9] — 2026-11-19
+
+### Fixed
+
+- **A crash between the journal and its redo sidecar can no longer double an undo.** Two
+  files are not renamed atomically together, so the save order decides what a crash leaves:
+  - redo empty: the redo file is removed *before* the journal is written, so a crash cannot
+    leave a stale redo that the new edit was supposed to discard;
+  - redo non-empty: redo is written first, so a crash leaves the undone operation in both
+    files — and `load` reconciles that duplicate instead of offering it back twice.
+
+  A test writes exactly that post-crash state (same op in both files) and asserts it loads as
+  two operations with no redo, while a genuinely undone op still offers itself back.
+
 ## [3.51.8] — 2026-11-19
 
 ### Fixed
