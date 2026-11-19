@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.54.4] — 2026-11-19
+
+### Tests / Documentation
+
+- **`/style` now has a test that it judges the edited value.** It loads the journal, but a
+  conditional-format endpoint reading the base file would paint cells by the pre-edit value
+  while the sheet shows the new one. The test asserts an edit can make a cell start matching
+  its rule, and the journal-visibility table gained a `/style` row.
+
 ## [3.54.3] — 2026-11-19
 
 ### Added

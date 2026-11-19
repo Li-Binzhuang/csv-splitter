@@ -4386,3 +4386,31 @@ fn capabilities_lists_the_engines_and_the_routes_that_take_them() {
     }
     assert!(body.contains(r#""duckdb":"#), "{body}");
 }
+
+/// `/style` is the conditional-formatting half of the render path: it must judge the edited
+/// value, or a cell that turned amber visually would not match its own rule.
+#[test]
+fn style_judges_the_edited_value() {
+    let dir = TempDir::new("styleedit");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let rules = "amount%3E999:bg=red";
+    let before = get(&server.addr, &format!("/style?path=t.csv&rules={rules}")).1;
+    assert!(
+        before.contains(r#""cells":[]"#),
+        "no cell matches yet: {before}"
+    );
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=amount&value=9999",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let after = get(&server.addr, &format!("/style?path=t.csv&rules={rules}")).1;
+    assert!(
+        !after.contains(r#""cells":[]"#),
+        "the edited value must match the rule: {after}"
+    );
+}
