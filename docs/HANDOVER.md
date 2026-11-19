@@ -164,3 +164,10 @@ scripts/       dev.sh / smoke.sh / regress.sh / backend-smoke.sh / bench.sh / cl
 **它现在能把几十 GB 的表当电子表格改，而且三条承诺都有测试。**
 下一步最该做的不是加功能，而是拿真实数据跑一遍——**80 轮里最有效的发现方式，始终是
 「真的执行那个组合」。**
+
+## Running the gate
+
+`bash scripts/dev.sh gate | tail` reports **tail's** exit status, not the gate's — a failing
+clippy run then looks green to anything chained with `&&`. Use `scripts/gate.sh` instead: it
+captures the status, prints `== gate exit=N ==`, and exits with it. `regress.sh` asserts that
+the wrapper still fails when it should.

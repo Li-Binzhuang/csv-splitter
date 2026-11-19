@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.52.0] — 2026-11-19
+
+### Added
+
+- **`scripts/gate.sh` keeps the gate's exit status.** `bash scripts/dev.sh gate | tail`
+  reports tail's status, so a failing clippy run reads as success to anything chained with
+  `&&` — which is exactly how a broken commit got pushed one round ago. The wrapper captures
+  the code, prints `== gate exit=N ==`, and exits with it; `regress.sh` asserts the wrapper
+  still fails on demand, so it cannot rot into a yes-man.
+
 ## [3.51.9] — 2026-11-19
 
 ### Fixed

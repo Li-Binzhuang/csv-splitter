@@ -101,6 +101,12 @@ check "edit export" "$BIN" edit export orders.csv --columns "id,city" --order "a
 check "groupby + edits" "$BIN" groupby orders.csv --by city --agg "vat:sum" --apply-edits -o g2.csv
 check "edit undo"  "$BIN" edit undo orders.csv
 
+# A pipeline hides a command's exit status; gate.sh exists to keep it. Prove both facts so
+# the wrapper cannot rot into something that also reports success on failure.
+if GATE_FAIL_TEST=1 ./scripts/gate.sh >/dev/null 2>&1; then
+  echo "gate.sh lost a failing status"; failed=$((failed + 1))
+fi
+
 if [ "$failed" -ne 0 ]; then
   echo "== $failed command(s) failed =="
   exit 1
