@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.51.2] — 2026-11-19
+
+### Added
+
+- **`GET /validate` honours the same time budget.** Omitting `limit` asks for the whole file,
+  which on 2.5 GB is a tens-of-seconds scan nobody can cancel. It now stops at the budget and
+  answers 504 with a hint to pass `limit=`; a small `limit` still completes (test covers both
+  halves in one request pair).
+
 ## [3.51.1] — 2026-11-19
 
 ### Added

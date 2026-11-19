@@ -1167,16 +1167,27 @@ fn validate_endpoint(
     };
     let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
     drop(rx);
-    match csv_splitter_core::validate::validate_limited(
+    let budget = std::time::Duration::from_millis(query_timeout_ms());
+    match csv_splitter_core::validate::validate_with_budget(
         &path,
         &ops,
         &rules,
         delimiter(params),
         limit,
+        Some(budget),
         &tx,
     ) {
         // 200 with `"ok":false` rather than 4xx: the request was fine, the data is not.
         Ok(report) => respond_json(stream, 200, &report.to_json()),
+        Err(e) if e.kind() == io::ErrorKind::TimedOut => respond_json(
+            stream,
+            504,
+            &format!(
+                r#"{{"error":{},"parameter":"limit","hint":{}}}"#,
+                json_str(TIMEOUT_ERROR),
+                json_str("pass limit= to check a window: the full scan stopped at its time budget")
+            ),
+        ),
         Err(e) => respond_json(
             stream,
             422,

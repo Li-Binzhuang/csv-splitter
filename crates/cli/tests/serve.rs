@@ -4127,3 +4127,33 @@ fn a_filtered_scan_stops_at_its_budget() {
         "engine text must not leak: {body}"
     );
 }
+
+/// Full-file validation without a limit can outlive the caller; it stops at the budget and
+/// says to pass limit= rather than answering as if the request were malformed.
+#[test]
+fn validation_stops_at_its_budget() {
+    let dir = TempDir::new("validatebudget");
+    let mut text = String::from("id,city\n");
+    for i in 0..200_000 {
+        text.push_str(&format!("{i},C{}\n", i % 9));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start_with_env(&dir.0, &[("CSV_SPLITTER_QUERY_TIMEOUT_MS", "1")]);
+
+    let (status, body) = get(&server.addr, "/validate?path=t.csv&checks=city:not-empty");
+    assert_eq!(status, 504, "{body}");
+    assert!(
+        body.contains("limit"),
+        "the hint must name the parameter: {body}"
+    );
+
+    // A limit completes inside a normal budget; the 1 ms server above cannot even open a
+    // pager that fast, so this half gets its own server.
+    let relaxed = start(&dir.0.clone());
+    let (status, body) = get(
+        &relaxed.addr,
+        "/validate?path=t.csv&checks=city:not-empty&limit=100",
+    );
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(r#""partial":true"#), "{body}");
+}

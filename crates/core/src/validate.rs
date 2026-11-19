@@ -375,6 +375,23 @@ pub fn validate_limited(
     limit: Option<u64>,
     tx: &ProgressSender,
 ) -> io::Result<Report> {
+    validate_with_budget(base, ops, rules, delimiter, limit, None, tx)
+}
+
+/// Same validation, stopping with `TimedOut` once `budget` elapses.
+///
+/// The row `limit` is the caller's choice; a budget protects the server from a caller that
+/// asked for the whole file and walked away.
+pub fn validate_with_budget(
+    base: &Path,
+    ops: &[Edit],
+    rules: &[Rule],
+    delimiter: Delimiter,
+    limit: Option<u64>,
+    budget: Option<std::time::Duration>,
+    tx: &ProgressSender,
+) -> io::Result<Report> {
+    let deadline = budget.and_then(|b| std::time::Instant::now().checked_add(b));
     let pager = match Pager::open(base, ops, delimiter) {
         Ok(p) => p,
         Err(e) => {
@@ -461,6 +478,17 @@ pub fn validate_limited(
         })
         .collect();
 
+    if let Some(deadline) = deadline {
+        if std::time::Instant::now() >= deadline {
+            return Err(io::Error::new(
+                io::ErrorKind::TimedOut,
+                format!(
+                    "validation stopped after {} rows at its time budget; pass limit= for a window",
+                    report.checked
+                ),
+            ));
+        }
+    }
     let mut at = 0u64;
     while at < total {
         let window = pager.page(at, PAGE)?;
