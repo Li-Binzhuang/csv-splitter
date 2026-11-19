@@ -167,6 +167,23 @@ pub fn scan(
     limit: usize,
     tx: &ProgressSender,
 ) -> io::Result<ScanResult> {
+    scan_with_budget(path, delimiter, spec, limit, None, tx)
+}
+
+/// Same scan, stopping with `TimedOut` once `budget` elapses.
+///
+/// A synchronous HTTP request has no cancel button: the client can walk away, but the
+/// thread keeps reading. A budget turns "busy forever" into a 504 that says to narrow the
+/// filter or page instead.
+pub fn scan_with_budget(
+    path: &Path,
+    delimiter: Delimiter,
+    spec: &FilterSpec,
+    limit: usize,
+    budget: Option<std::time::Duration>,
+    tx: &ProgressSender,
+) -> io::Result<ScanResult> {
+    let deadline = budget.and_then(|b| std::time::Instant::now().checked_add(b));
     let reader = encoding::open_decoded(path)?;
     let mut records = RecordReader::new(
         BufReader::with_capacity(4 * 1024 * 1024, reader),
@@ -195,6 +212,17 @@ pub fn scan(
     let limit = limit.max(1);
     while records.next_record(&mut record)? {
         result.scanned += 1;
+        if let Some(deadline) = deadline {
+            if result.scanned % 5_000 == 0 && std::time::Instant::now() >= deadline {
+                return Err(io::Error::new(
+                    io::ErrorKind::TimedOut,
+                    format!(
+                        "the scan stopped after {} rows at its time budget",
+                        result.scanned
+                    ),
+                ));
+            }
+        }
         let text = String::from_utf8_lossy(&record);
         let fields = parse_csv_record_with(
             text.trim_end_matches(['\n', '\r']),

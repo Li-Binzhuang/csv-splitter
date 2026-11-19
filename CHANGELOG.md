@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.51.1] — 2026-11-19
+
+### Added
+
+- **`GET /filter` honours a time budget.** A filtered scan is synchronous, so a client that
+  gives up leaves the thread reading; a 2.5 GB scan is the difference between a page and a
+  stall. `filter::scan_with_budget` stops with `TimedOut` and the endpoint answers 504 with
+  the same message as `/query`: stopped, nothing running, narrow the where or page instead.
+  A test uses a 1 ms budget on 200 000 rows to pin it.
+
 ## [3.51.0] — 2026-11-19
 
 ### Added

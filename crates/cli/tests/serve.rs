@@ -4103,3 +4103,27 @@ fn metrics_count_which_engine_ran() {
         "both engines should be counted once: {body}"
     );
 }
+
+/// A filtered scan has no cancel button; when its budget runs out it must say so with the
+/// same 504 shape /query uses, not with a 422 that reads like a bad request.
+#[test]
+fn a_filtered_scan_stops_at_its_budget() {
+    let dir = TempDir::new("filterbudget");
+    let mut text = String::from("id,city\n");
+    for i in 0..200_000 {
+        text.push_str(&format!("{i},C{}\n", i % 9));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start_with_env(&dir.0, &[("CSV_SPLITTER_QUERY_TIMEOUT_MS", "1")]);
+
+    let (status, body) = get(&server.addr, "/filter?path=t.csv&where=city%3DC3");
+    assert_eq!(status, 504, "{body}");
+    assert!(
+        body.contains("nothing keeps running"),
+        "the same hint the other timeouts use: {body}"
+    );
+    assert!(
+        !body.contains("INTERRUPT"),
+        "engine text must not leak: {body}"
+    );
+}

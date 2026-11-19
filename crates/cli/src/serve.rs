@@ -36,7 +36,7 @@
 use csv_splitter_core::cache::ResultCache;
 use csv_splitter_core::dedupe;
 use csv_splitter_core::engine;
-use csv_splitter_core::filter::{self, scan as filter_scan, FilterSpec};
+use csv_splitter_core::filter::{self, FilterSpec};
 use csv_splitter_core::groupby;
 use csv_splitter_core::jobs::JobRegistry;
 use csv_splitter_core::listing;
@@ -5409,7 +5409,10 @@ fn filter(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
         .min(MAX_ROWS_PER_REQUEST as usize * 10);
     let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
     drop(rx);
-    match filter_scan(&path, delimiter(params), &spec, limit, &tx) {
+    // The same budget /query already honours: a filtered scan over a huge sheet has no
+    // cancel button once the request is in flight.
+    let budget = std::time::Duration::from_millis(query_timeout_ms());
+    match filter::scan_with_budget(&path, delimiter(params), &spec, limit, Some(budget), &tx) {
         Ok(result) => {
             let rows: Vec<String> = result.row_numbers().iter().map(|n| n.to_string()).collect();
             respond_json(
@@ -5424,6 +5427,15 @@ fn filter(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
                 ),
             )
         }
+        Err(e) if e.kind() == io::ErrorKind::TimedOut => respond_json(
+            stream,
+            504,
+            &format!(
+                r#"{{"error":{},"parameter":"where","hint":{}}}"#,
+                json_str(TIMEOUT_ERROR),
+                json_str(TIMEOUT_HINT)
+            ),
+        ),
         Err(e) => respond_json(
             stream,
             422,
