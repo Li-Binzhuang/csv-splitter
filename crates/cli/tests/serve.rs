@@ -4218,3 +4218,40 @@ fn a_cell_read_sees_the_edit() {
         "the pre-edit value must be gone: {body}"
     );
 }
+
+/// Three endpoints report how many edits exist: `/rows` (`operations`), `/journal`
+/// (`count`) and `/sheet` (`journal`/`operations`). They read the same journal, so a
+/// disagreement means one of them is counting something else.
+#[test]
+fn the_edit_count_agrees_across_rows_journal_and_sheet() {
+    let dir = TempDir::new("opcount");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    for (row, value) in [(1u64, 111), (2, 222)] {
+        let (status, body) = post(
+            &server.addr,
+            &format!("/edit?path=t.csv&action=set&row={row}&col=amount&value={value}"),
+        );
+        assert_eq!(status, 200, "{body}");
+    }
+
+    let numbers = |body: &str, key: &str| -> u64 {
+        body.split(&format!("\"{key}\":"))
+            .nth(1)
+            .and_then(|tail| tail.split([',', '}']).next())
+            .and_then(|n| n.parse().ok())
+            .unwrap_or(u64::MAX)
+    };
+
+    let (_, rows) = get(&server.addr, "/rows?path=t.csv&start=0&count=5");
+    let (_, journal) = get(&server.addr, "/journal?path=t.csv");
+    let (_, sheet) = get(&server.addr, "/sheet?path=t.csv");
+
+    let rows_ops = numbers(&rows, "operations");
+    let journal_count = numbers(&journal, "count");
+    let sheet_ops = numbers(&sheet, "operations");
+    assert_eq!(rows_ops, 2, "rows: {rows}");
+    assert_eq!(journal_count, 2, "journal: {journal}");
+    assert_eq!(sheet_ops, 2, "sheet: {sheet}");
+}

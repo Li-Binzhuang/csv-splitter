@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.53.5] — 2026-11-19
+
+### Tests
+
+- **The edit count agrees across the three endpoints that report it.** `/rows` carries
+  `operations`, `/journal` carries `count`, `/sheet` carries `operations`; all three read the
+  same journal, so a mismatch would mean one of them counts something else. A test makes two
+  edits and asserts 2 from each, with a helper that fails loudly when the key is missing.
+
 ## [3.53.4] — 2026-11-19
 
 ### Tests
