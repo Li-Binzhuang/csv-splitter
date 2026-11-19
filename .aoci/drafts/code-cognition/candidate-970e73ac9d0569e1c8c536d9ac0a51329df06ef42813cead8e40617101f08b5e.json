@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "feee1dbb7b275b542dccb06912c4731d412fd1782dc8b6a0edce0a8268afb610",
+  "batch_id": "970e73ac9d0569e1c8c536d9ac0a51329df06ef42813cead8e40617101f08b5e",
+  "composite_identity": "a8a6895615a417b13baba9dd413f99efd5f65e1457609abb4b9be01f8f031240",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "6dc1814dae0d73d4993194dd58caaaf12b311f6f35baf7cf4da7e5f781e6c3f4",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "da7b9f80ae6ea570e6234424c32230198f69cf0d1cbd766cac8c2a0a1301ed61",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，并保留未达标项与已知债；3.49.x 记录向 DuckDB 迁移 groupby/chart/pivot 与有序读，每条都附实测数字和引擎差异 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:Cargo.toml",
+      "path": "Cargo.toml",
+      "change": "update",
+      "source_sha256": "f8b9dbde2325f5d845e3f9cfec439f87c9e082e899c6a84a3ef2fd47c500dc0c",
+      "existing_entry": "Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 core 与 cli；workspace.package 的版本是发布真相源，当前 3.49.4；二进制的 --version 与 tag 校验都以它为准 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/lookup.rs",
+      "path": "crates/core/src/lookup.rs",
+      "change": "update",
+      "source_sha256": "47f4f9f64fd9d247e865fbde9d98857522197bc48c95286e5dc420369b66483f",
+      "existing_entry": "lookup.rs[DD8L]: F:跨表查找：引用表加载成映射，主表保持流式 | R:code:crates/core/src/workbook/rows.rs | A:未命中写 #N/A；max_keys 限制引用表规模，超限明确失败 | S:引用表与被查表规模不对称，反过来加载主表会在百万行文件上直接爆内存"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "1373621557b17a87ddf66027b42b258d894467450591d88446d804a63851809e",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "da7b9f80ae6ea570e6234424c32230198f69cf0d1cbd766cac8c2a0a1301ed61",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，并保留未达标项与已知债；3.49.x 记录向 DuckDB 迁移 groupby/chart/pivot 与有序读，每条都附实测数字和引擎差异 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "b6094b3688370614b2b7ca236d4c02d52c209a6d90eceaa638ab9db03547bd3a",
+      "object_ref": "code:Cargo.toml",
+      "path": "Cargo.toml",
+      "change": "update",
+      "source_sha256": "f8b9dbde2325f5d845e3f9cfec439f87c9e082e899c6a84a3ef2fd47c500dc0c",
+      "existing_entry": "Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 core 与 cli；workspace.package 的版本是发布真相源，当前 3.49.4；二进制的 --version 与 tag 校验都以它为准 | S:-"
+    },
+    {
+      "candidate_id": "fb651bf61c66ff81c20dacbcbb1c7abafba47c23c32c06e08a982132e3246940",
+      "object_ref": "code:crates/core/src/lookup.rs",
+      "path": "crates/core/src/lookup.rs",
+      "change": "update",
+      "source_sha256": "47f4f9f64fd9d247e865fbde9d98857522197bc48c95286e5dc420369b66483f",
+      "existing_entry": "lookup.rs[DD8L]: F:跨表查找：引用表加载成映射，主表保持流式 | R:code:crates/core/src/workbook/rows.rs | A:未命中写 #N/A；max_keys 限制引用表规模，超限明确失败 | S:引用表与被查表规模不对称，反过来加载主表会在百万行文件上直接爆内存"
+    }
+  ]
+}

@@ -4,8 +4,8 @@
 .gitattributes[FV4T]: F:声明所有文本按 LF 检出，保证 AOCI 基线与跨平台检出逐字节一致 | R:- | A:唯一规则 `* text=auto eol=lf`；覆盖 Windows autocrlf 的行尾重写，否则整棵树会被基线和漂移检查判成 stale；二进制由 git 自动探测、不改写 | S:基线按原始字节计算，行尾被平台改写会让全部索引失真，所以这里必须强制 LF
 .gitignore[FV4T]: F:忽略构建产物与本地杂物 | R:- | A:忽略 `/target`、编辑器 swap、`.DS_Store`、发布打包目录 `dist/` 与 `staging/`；刻意不忽略 `.codegraph/` 与 `.aoci/`——本仓要求把两套索引的中间过程一起入库 | S:索引入库是有意的取舍：`.codegraph/codegraph.db` 是可重建的二进制，每次重建都会产生整文件变更，历史体积会稳步增长
 AGENTS.md[SV6S]: F:仓库级 Agent 指令：AOCI 认知层的接入与使用原则 | R:code:aoci.txt,code:aoci.meta.txt,code:aoci.code.txt | A:规定“模型生成、模型读取”闭环，何时读 rules/overview/maintain，以及收尾维护一次的纪律；不重复 CLI 手册 | S:机器事实以 Guide、Schema 与 Validator 为准，本文件不得覆盖；上下文压缩后的 handoff 不得携带索引语义，必须重新完整读取并认证
-CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，并保留未达标项与已知债；3.49.x 记录向 DuckDB 迁移 groupby/chart/pivot 与有序读，每条都附实测数字和引擎差异 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败
-Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 core 与 cli；workspace.package 的版本是发布真相源，当前 3.49.4；二进制的 --version 与 tag 校验都以它为准 | S:-
+CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；3.49.x 记录 DuckDB 迁移、引擎选择与复合键 lookup | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败
+Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 core 与 cli；workspace.package 的版本是发布真相源，当前 3.49.5；二进制的 --version 与 tag 校验都以它为准 | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
 README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:先讲取舍（base 不可变加 journal），再给命令表；命令表与默认端口被测试校验 | S:文档测试要求 README 列出全部命令，并且出现真实默认端口 127.0.0.1:8787
 
@@ -52,7 +52,7 @@ json.rs[CG5T]: F:唯一的 JSON 字符串转义实现 | R:code:crates/core/src/v
 layout.rs[CU7L]: F:显示元数据 sidecar：列名替换、列宽、数字格式与冻结列 | R:code:crates/core/src/sheet.rs | A:只影响展示不改值，因此写 `.view` 而不是 journal；每列可选替换名与格式 | S:放进 journal 会把长什么样的设置混进是什么的审计链，撤销一次改名会连带重放显示设置
 lib.rs[CG6T]: F:core crate 的模块清单与基础类型再导出 | R:code:crates/core/src/engine.rs | A:读取、编辑、分析、查询、SQL 与引擎选择各自成模块，pub use types 统一暴露基础类型 | S:新增模块必须同时写进 ARCHITECTURE.md，模块地图测试会逐个比对
 listing.rs[CQ7M]: F:目录列举：在 root 下列出可打开的 CSV 及大小与修改时间 | R:code:crates/core/src/book.rs | A:按扩展名过滤，路径相对 root，一次返回足够渲染文件选择器 | S:-
-lookup.rs[DD8L]: F:跨表查找：引用表加载成映射，主表保持流式 | R:code:crates/core/src/workbook/rows.rs | A:未命中写 #N/A；max_keys 限制引用表规模，超限明确失败 | S:引用表与被查表规模不对称，反过来加载主表会在百万行文件上直接爆内存
+lookup.rs[DD8L]: F:跨表查找：引用表加载成映射，主表保持流式 | R:code:crates/core/src/workbook/rows.rs | A:未命中写 #N/A；max_keys 限制引用表规模；key 与 from-key 可用逗号写成复合键，各部分用单元分隔符拼接 | S:单键在 id 重复的参考表上会静默附上第一行，例如把 1,CDMX 配成 1,Puebla 的地区；复合键修的就是这个
 merge.rs[MP7M]: F:把切分产出的分片重新拼回一个文件 | R:code:crates/core/src/splitter.rs,code:crates/core/src/pack.rs | A:保留第一个表头丢弃其余，按文件名序拼接；可读 tar 与 zip、含压缩分片 | S:-
 pack.rs[MP5T]: F:把分片文件装进 tar 或 zip 容器 | R:code:crates/core/src/merge.rs | A:容器保留文件名以便 merge 按序还原；tar 与 zip 两种都支持 | S:-
 partition.rs[KD7M]: F:按列值拆成每个取值一个文件 | R:code:crates/core/src/sort.rs | A:先按该列排序再顺序写出，不为每个取值常驻写入器 | S:按取值直接开写入器会在高基数列上撞开文件数上限，所以排序是前提而不是优化
