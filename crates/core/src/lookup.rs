@@ -106,7 +106,19 @@ pub fn lookup_quotes(
             format!("{} has no header", main.display()),
         ));
     }
-    let key_idx = resolve_column(&options.key, &main_header)
+    // A comma-separated key is a composite key. The parts are joined with the ASCII unit
+    // separator, which cannot appear in a CSV field value in practice, so "a" + "bc"
+    // can never collide with "ab" + "c".
+    let key_columns: Vec<String> = options
+        .key
+        .split(',')
+        .map(|k| k.trim().to_string())
+        .filter(|k| !k.is_empty())
+        .collect();
+    let key_indices: Vec<usize> = key_columns
+        .iter()
+        .map(|name| resolve_column(name, &main_header))
+        .collect::<Result<_, _>>()
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
 
     // Output header: the main file's, plus the reference columns. A clash is
@@ -168,7 +180,11 @@ pub fn lookup_quotes(
             tx.send(ProgressEvent::Progress { bytes: scanned }).ok();
         }
 
-        let key = fields.get(key_idx).cloned().unwrap_or_default();
+        let key = key_indices
+            .iter()
+            .map(|&index| fields.get(index).map(String::as_str).unwrap_or(""))
+            .collect::<Vec<_>>()
+            .join("\u{1f}");
         let mut line = fields;
         match reference.get(&key) {
             Some(values) => {
@@ -227,7 +243,12 @@ impl Reference {
             delim,
             quotes,
         );
-        let key_idx = resolve_column(key, &header)
+        let key_indices: Vec<usize> = key
+            .split(',')
+            .map(|k| k.trim())
+            .filter(|k| !k.is_empty())
+            .map(|name| resolve_column(name, &header))
+            .collect::<Result<_, _>>()
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, format!("reference: {e}")))?;
         let take_idx: Vec<usize> = take
             .iter()
@@ -247,7 +268,11 @@ impl Reference {
                 quotes,
             );
             rows += 1;
-            let key_value = fields.get(key_idx).cloned().unwrap_or_default();
+            let key_value = key_indices
+                .iter()
+                .map(|&index| fields.get(index).map(String::as_str).unwrap_or(""))
+                .collect::<Vec<_>>()
+                .join("\u{1f}");
             if key_value.is_empty() {
                 continue;
             }
@@ -440,5 +465,42 @@ mod tests {
         )
         .unwrap_err();
         assert!(err.to_string().contains("max-keys"), "{err}");
+    }
+
+    /// A comma-separated key is composite: matching on `id` alone picks the first reference
+    /// row for that id, which is exactly the silent wrong answer composite keys prevent.
+    #[test]
+    fn composite_keys_do_not_collide() {
+        let dir =
+            std::env::temp_dir().join(format!("csvs_lookup_composite_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let main = dir.join("main.csv");
+        let reference = dir.join("ref.csv");
+        std::fs::write(&main, "id,city\n1,CDMX\n").unwrap();
+        std::fs::write(&reference, "id,city,region\n1,Puebla,SUR\n1,CDMX,NORTH\n").unwrap();
+        let sheet = crate::workbook::base_header(&main, Delimiter::Comma).unwrap();
+        assert!(sheet.contains(&"city".to_string()));
+
+        for (key, expected) in [("id", "SUR"), ("id,city", "NORTH")] {
+            let (tx, _rx) = std::sync::mpsc::channel();
+            let out = dir.join(format!("out-{}.csv", key.replace(',', "-")));
+            lookup(
+                &main,
+                Delimiter::Comma,
+                &out,
+                &LookupOptions {
+                    key: key.to_string(),
+                    reference: reference.clone(),
+                    reference_key: key.to_string(),
+                    take: vec!["region".to_string()],
+                    max_keys: 1_000,
+                },
+                &tx,
+            )
+            .unwrap();
+            let text = std::fs::read_to_string(&out).unwrap();
+            assert!(text.contains(expected), "{key}: {text}");
+        }
+        std::fs::remove_dir_all(&dir).ok();
     }
 }

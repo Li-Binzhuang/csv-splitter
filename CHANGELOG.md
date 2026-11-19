@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.49.5] — 2026-11-19
+
+### Added
+
+- **`lookup --key a,b --from-key a,b` supports composite keys.** A single key on a table
+  where `id` repeats silently attaches the first matching row: with `1,Puebla,SUR` and
+  `1,CDMX,NORTH` in the reference, a main row `1,CDMX` came back as `SUR`. Parts are joined
+  with the ASCII unit separator, so `a`+`bc` cannot collide with `ab`+`c`.
+
 ## [3.49.4] — 2026-11-19
 
 ### Added
