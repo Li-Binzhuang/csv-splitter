@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.53.4] — 2026-11-19
+
+### Tests
+
+- **`/cell` is part of the render path and now has a test that it sees the journal.** The
+  handler opens a `Sheet`, which loads the journal, but nothing asserted it: a window that
+  showed edit A while a single-cell read showed the pre-edit value is the split-brain that
+  makes a front-end look broken.
+
 ## [3.53.3] — 2026-11-19
 
 ### Changed

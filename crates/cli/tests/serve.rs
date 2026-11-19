@@ -4194,3 +4194,27 @@ fn strict_mode_refuses_a_parameter_nobody_reads() {
     let (status, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=5");
     assert_eq!(status, 200, "{body}");
 }
+
+/// A single-cell read must see the journal: `/cell` is part of the render path, and showing
+/// the pre-edit value while `/rows` shows the new one is the kind of split-brain that makes a
+/// front-end look broken.
+#[test]
+fn a_cell_read_sees_the_edit() {
+    let dir = TempDir::new("celledit");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=amount&value=999",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let (status, body) = get(&server.addr, "/cell?path=t.csv&row=1&col=amount");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("999"), "/cell must show the edit: {body}");
+    assert!(
+        !body.contains("10"),
+        "the pre-edit value must be gone: {body}"
+    );
+}
