@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "c8e63c0987c45c60f9f221fb4cad50fe6c731621b4038b923cc7e2decfb5f784",
+  "batch_id": "a59eccd24f1a97871d8e29c2c10130eb5b666a2cf219259be7f1db56c90c2605",
+  "composite_identity": "c9583c2d28fb81ccbf9c2ce7f3de800c92cc4df4f887ab99df1ae861432a33a4",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "1cb77e9fbf7a0612b1613b1143924949c89d50da2b103839ba9adda63751cf42",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/sort.rs",
+      "path": "crates/core/src/sort.rs",
+      "change": "update",
+      "source_sha256": "888a95510e66e4e21626e46a71a6bd714885946d3bc1a2b6625ba1bd8d9d751c",
+      "existing_entry": "sort.rs[KP7L]: F:外部排序：内存受限下按列排序大文件 | R:code:crates/core/src/workbook/export.rs | A:分块排序后多路归并；行读取路径上的 order 另有把 LIMIT 下推给引擎的优化 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "682207eec5fa1c739198e85750273bf4030d558516c90e0ba5822c4d6e7eb815",
+      "object_ref": "code:crates/core/src/sort.rs",
+      "path": "crates/core/src/sort.rs",
+      "change": "update",
+      "source_sha256": "888a95510e66e4e21626e46a71a6bd714885946d3bc1a2b6625ba1bd8d9d751c",
+      "existing_entry": "sort.rs[KP7L]: F:外部排序：内存受限下按列排序大文件 | R:code:crates/core/src/workbook/export.rs | A:分块排序后多路归并；行读取路径上的 order 另有把 LIMIT 下推给引擎的优化 | S:-"
+    }
+  ]
+}

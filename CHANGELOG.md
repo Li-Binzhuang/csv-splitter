@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.48.2] — 2026-11-19
+
+### Fixed
+
+- **External sort sized its chunks by row count, so wide files were fully resident.**
+  The chunk was capped at 500 000 records: ~20 MB for a six-column file, but **~1.9 GB
+  for the 782-column fixture**. Measured peak RSS on the 2.5 GB file: **2.2 GB** — the
+  whole file in memory, which is what external sorting exists to avoid.
+  - Chunks are now bounded by a byte budget (`--buf-mb`, default 64 MB), with a fan-in
+    cap of 128 chunks so a small budget cannot create thousands of temp files.
+  - Same file, `--buf-mb 32`: peak RSS **2.2 GB → 125 MB**, runtime 29.9 s → 33.8 s,
+    output **byte-identical** (sha256 compared with the pre-fix run).
+  - `view --order` peak RSS on the same file: 2.28 GB → 230 MB.
+
 ## [3.48.1] — 2026-11-18
 
 ### Fixed

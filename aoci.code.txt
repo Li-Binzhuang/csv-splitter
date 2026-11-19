@@ -63,7 +63,7 @@ reshape.rs[DD7M]: F:列整形：保留、删除、改名与重排，写新文件
 schema.rs[CG6T]: F:列集合对比：新增、缺失与移位 | R:code:crates/cli/src/serve.rs | A:same 表示集合相同而非顺序相同，重排单独放在 moved | S:把重排判成 schema 变更会让日常调整列顺序看起来像破坏性变更
 search.rs[DA7M]: F:跨列搜索：返回命中行号而不是数据本身 | R:code:crates/core/src/index.rs | A:支持正则子集与整格匹配；调用方凭行号经稀疏索引跳转 | S:-
 sheet.rs[CD8L]: F:一张表的门面：base 加 journal 呈现出的列、行数、窗口与导出 | R:code:crates/core/src/workbook/export.rs | A:首次访问经 workbook 算出最终列与行映射；导出即物化编辑 | S:-
-sort.rs[KP7L]: F:外部排序：内存受限下按列排序大文件 | R:code:crates/core/src/workbook/export.rs | A:分块排序后多路归并；行读取路径上的 order 另有把 LIMIT 下推给引擎的优化 | S:-
+sort.rs[KP7L]: F:外部排序：按列排序大文件，内存由字节预算而不是行数封顶 | R:code:crates/core/src/workbook/export.rs | A:分块排序后多路归并；buf-mb 是每块预算，块数上限 128 | S:分块曾按 50 万行封顶，782 列 2.5 GB 文件的峰值达 2.2 GB 等于整份入内存；改成字节预算后同样任务峰值 125 MB，输出逐字节一致，代价 29.9s 到 33.8s
 split_parallel.rs[KP7M]: F:并行切分：多个 reader 各负责一段连续分片 | R:code:crates/core/src/splitter.rs | A:按文件大小与核数决定分工，每个分片自己写表头 | S:串行 reader 的上限是磁盘顺序吞吐，实测约 490 MB/s，并行收益取决于起点是否按字节边界算准
 splitter.rs[KP7L]: F:切分：按份数或按大小把文件切成多片 | R:code:crates/core/src/split_parallel.rs,code:crates/core/src/pack.rs | A:每片带表头；可选压缩；写入 tar、zip 或目录 | S:-
 sql.rs[ED8L]: F:用 DuckDB 在 CSV 上执行只读单条 SQL | R:code:crates/core/src/sql_cache.rs,code:crates/core/src/cache.rs | A:由采样声明列类型避免全文件推断；watchdog 超时中断；语句校验只允许单条只读 | S:类型推断若读全文件，首个 LIMIT 1 就要七秒；且超预算的结果必须按超时处理，不能因中断没命中就当成成功

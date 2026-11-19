@@ -93,7 +93,19 @@ pub fn external_sort_columns(
 ) -> io::Result<()> {
     let buf_size = buf_mb.clamp(1, 4096) * 1024 * 1024;
     let delim = delimiter.byte();
-    let chunk_max_lines = 500_000; // ~500K records per chunk, tune for memory
+    let chunk_max_lines = 500_000;
+    // A chunk is bounded by BYTES, not by line count. The previous version capped at
+    // 500K records, which is ~20 MB for a six-column file and ~1.9 GB for this repo's
+    // 782-column fixture — measured 2.2 GB peak RSS, i.e. the whole file in memory,
+    // which is exactly what external sorting exists to avoid.
+    //
+    // `max_chunks` keeps the other end bounded too: a 1 MB budget on a 100 GB file
+    // would mean 100 000 temp files, so the budget grows to keep the fan-in ≤ 128.
+    let max_chunks = 128usize;
+    let input_bytes = std::fs::metadata(input)
+        .map(|m| m.len() as usize)
+        .unwrap_or(0);
+    let chunk_budget_bytes = buf_size.max(input_bytes / max_chunks).max(1);
 
     tx.send(ProgressEvent::PhaseStart {
         phase: "Sorting: creating chunks".into(),
@@ -141,15 +153,18 @@ pub fn external_sort_columns(
     // Split into sorted chunks
     let tmp_dir = output.parent().unwrap_or(Path::new("."));
     let mut chunk_paths: Vec<PathBuf> = Vec::new();
-    let mut records: Vec<Vec<u8>> = Vec::with_capacity(chunk_max_lines);
+    let mut records: Vec<Vec<u8>> = Vec::new();
+    let mut chunk_bytes = 0usize;
 
     while reader.next_record(&mut record)? {
+        chunk_bytes += record.len() + 16;
         records.push(record.clone());
-        if records.len() >= chunk_max_lines {
+        if records.len() >= chunk_max_lines || chunk_bytes >= chunk_budget_bytes {
             let p =
                 write_sorted_chunk(&records, &plan, delim, tmp_dir, chunk_paths.len(), encoding)?;
             chunk_paths.push(p);
             records.clear();
+            chunk_bytes = 0;
             tx.send(ProgressEvent::Info(format!(
                 "Chunk {} written",
                 chunk_paths.len()
