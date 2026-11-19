@@ -561,7 +561,20 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
         ],
     ),
     ("/pivot", &["path", "rows", "cols", "values", "delim"]),
-    ("/chart", &["path", "x", "y", "type", "series", "delim"]),
+    (
+        "/chart",
+        &[
+            "path",
+            "x",
+            "y",
+            "type",
+            "series",
+            "delim",
+            "engine",
+            "maxPoints",
+            "sortByValue",
+        ],
+    ),
     ("/style", &["path", "rules"]),
     ("/layout", &["path", "key", "column", "value"]),
     ("/files", &["dir"]),
@@ -2883,9 +2896,22 @@ fn chart_endpoint(
             .and_then(|v| v.parse().ok())
             .unwrap_or(csv_splitter_core::chart::DEFAULT_MAX_POINTS),
     };
+    let engine = match engine::Engine::parse(params.get("engine").map(String::as_str).unwrap_or(""))
+    {
+        Ok(e) => e,
+        Err(message) => return bad_request(stream, &message, "engine", "engine=auto|native|sql"),
+    };
+    let planned = match engine::resolve(engine, &path) {
+        Ok(e) => e,
+        Err(message) => return bad_request(stream, &message, "engine", "engine=auto|native|sql"),
+    };
     let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
     drop(rx);
-    match csv_splitter_core::chart::chart(&path, delimiter(params), &options, &tx) {
+    let result = match planned {
+        engine::Engine::Sql => engine::chart_sql(&path, delimiter(params), &options, &tx),
+        _ => csv_splitter_core::chart::chart(&path, delimiter(params), &options, &tx),
+    };
+    match result {
         Ok(data) => respond_json(stream, 200, &data.to_json()),
         Err(e) => respond_json(
             stream,
