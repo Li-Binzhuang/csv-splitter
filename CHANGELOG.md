@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.56.3] — 2026-11-19
+
+### Fixed
+
+- **Going over the group cap is the same answer on both engines.** The native accumulator
+  returned a plain io error (422) while the SQL path returned InvalidInput (400), so the same
+  condition had two statuses. They now agree, and the 400 names maxGroups with a hint instead
+  of the vague "request", because raising the cap is the actual fix.
+
 ## [3.56.2] — 2026-11-19
 
 ### Added

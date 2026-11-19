@@ -141,9 +141,14 @@ pub fn groupby_quotes(
         let map_key = key_values.join("\u{1f}");
 
         if !groups.contains_key(&map_key) && groups.len() >= max_groups {
-            return Err(io::Error::other(format!(
-                "more than {max_groups} groups; raise --max-groups or group by a lower-cardinality column"
-            )));
+            // InvalidInput, matching the SQL engine's over-limit error: the same condition
+            // must not be a 400 on one engine and a 422 on the other.
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!(
+                    "more than {max_groups} groups; raise --max-groups or group by a lower-cardinality column"
+                ),
+            ));
         }
 
         let group = groups.entry(map_key).or_insert_with(|| Group {

@@ -4841,3 +4841,27 @@ fn the_spec_publishes_the_write_only_parameters() {
         );
     }
 }
+
+/// Going over the group cap is a 400 that names the parameter to turn, not "request".
+#[test]
+fn too_many_groups_names_max_groups_and_says_what_to_do() {
+    let dir = TempDir::new("maxgroups");
+    let mut text = String::from("id,v\n");
+    for i in 0..50u32 {
+        text.push_str(&format!("k{i},{i}\n"));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0.clone());
+
+    let (code, body) = get(
+        &server.addr,
+        "/groupby?path=t.csv&by=id&agg=v:sum&maxGroups=5",
+    );
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains(r#""parameter":"maxGroups""#), "{body}");
+    assert!(
+        body.contains("more than 5 groups"),
+        "the error should say the limit it hit: {body}"
+    );
+    assert!(body.contains(r#""hint":"#), "{body}");
+}

@@ -3509,6 +3509,22 @@ fn group_by(
                 ),
             )
         }
+        // "more than N groups" is the one InvalidInput this endpoint produces, and its fix is
+        // a named parameter — saying "request" would send the caller looking at everything.
+        Err(e)
+            if e.kind() == io::ErrorKind::InvalidInput
+                && e.to_string().starts_with("more than") =>
+        {
+            respond_json(
+                stream,
+                400,
+                &format!(
+                    r#"{{"error":{},"parameter":"maxGroups","hint":{}}}"#,
+                    json_str(&e.to_string()),
+                    json_str("raise maxGroups, or group by a coarser key")
+                ),
+            )
+        }
         Err(e) if e.kind() == io::ErrorKind::InvalidInput => respond_json(
             stream,
             400,
