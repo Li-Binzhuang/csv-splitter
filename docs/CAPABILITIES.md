@@ -398,6 +398,20 @@
 覆盖保护覆盖：`filter` / `sort` / `columns` / `dedupe` / `lookup` / `groupby` /
 `pivot` / `convert` / `edit export`。
 
+### 三个命令的交叉点一致（实测）
+
+同一个 8 MB 阈值能不能管住所有命令？分别测：
+
+| 输入 | chart native | chart DuckDB | pivot native | pivot DuckDB |
+|---|---|---|---|---|
+| 0.9 MB | **0.02 s** | 0.07 s | — | — |
+| 3.6 MB | **0.03 s** | 0.04 s | **0.05 s** | 0.07 s |
+| 9.1 MB | 0.08 s | **0.06 s** | — | — |
+| 18.1 MB | 0.14 s | **0.07 s** | 0.19 s | **0.11 s** |
+
+三个命令的交叉点都落在 4–9 MB 之间，所以**一个阈值够用**，不需要按命令各配一套。
+pivot 两个引擎的输出在这两个尺寸上逐字节相同。
+
 ### auto 阈值怎么定的（实测）
 
 `--engine auto` 的阈值不是拍的：同一台机器上跑 `groupby`（7 组、一个 sum），

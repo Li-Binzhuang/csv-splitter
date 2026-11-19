@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.51.6] — 2026-11-19
+
+### Measured / Documented
+
+- Checked whether one threshold can serve every command: `chart` crosses over between 3.6 and
+  9 MB (0.03 s native vs 0.04 s sql, then 0.14 s vs 0.07 s at 18 MB), and `pivot` between 3.6
+  and 18 MB (0.05 vs 0.07, then 0.19 vs 0.11). Both land in the same 4–9 MB band as
+  `groupby`, so the shared 8 MB threshold stands; pivot's two engines also produced
+  byte-identical files at both sizes.
+
 ## [3.51.5] — 2026-11-19
 
 ### Changed
