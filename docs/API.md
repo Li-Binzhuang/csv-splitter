@@ -273,7 +273,7 @@ written on refusal, and `actual` says what the value is now.
 | **405** | 方法不对 | `PUT /rows`、对 `POST /split` 发 GET |
 | **409** | 目标在你之前被改了 | `expect=` 不匹配（带 `actual`/`expected`）|
 | **422** | 文件读不了（编码/格式）| UTF-16 文件、损坏的 CSV |
-| **504** | 引擎被停止（超时）| 查询超过 30 秒 |
+| **504** | 引擎被停止（超时）| 查询超过 30 秒；响应说明「引擎已停止、连接已关闭，没有任务仍在跑，缩小范围重试是安全的」 |
 | **414** | 请求参数太长 | 查询串超过 16 KB |
 
 **有测试逐条钉住这张表**（`failure_kinds_have_one_status_code_each`），所以「路径错误返回 400 还是 404」不是靠记忆。

@@ -3958,3 +3958,26 @@ fn pivot_survives_a_quoted_newline_in_the_key() {
         "the quoted key must stay one column: {body}"
     );
 }
+
+/// The filtered-page path has its own timeout branch; it must say the same thing as /query:
+/// stopped, nothing still running, safe to retry smaller.
+#[test]
+fn a_filtered_page_timeout_says_nothing_is_still_running() {
+    let dir = TempDir::new("timeoutpage");
+    let mut text = String::from("id,city\n");
+    for i in 0..200_000 {
+        text.push_str(&format!("{i},C{}\n", i % 9));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start_with_env(&dir.0, &[("CSV_SPLITTER_QUERY_TIMEOUT_MS", "1")]);
+
+    let (code, body) = get(&server.addr, "/rows?path=t.csv&where=city%3DC3");
+    assert_eq!(code, 504, "{body}");
+    assert!(
+        body.contains("nothing keeps running"),
+        "the hint must say the engine stopped for good: {body}"
+    );
+    for leak in ["INTERRUPT", "SQL Error", "Binder Error"] {
+        assert!(!body.contains(leak), "engine text leaked ({leak}): {body}");
+    }
+}

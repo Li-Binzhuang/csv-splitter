@@ -4653,8 +4653,9 @@ fn query(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) 
             stream,
             504,
             &format!(
-                r#"{{"error":"the query was interrupted","parameter":"sql","hint":{}}}"#,
-                json_str("add LIMIT or a WHERE clause, or ask for less data; the engine was stopped at the time limit")
+                r#"{{"error":{},"parameter":"sql","hint":{}}}"#,
+                json_str(TIMEOUT_ERROR),
+                json_str(TIMEOUT_HINT)
             ),
         ),
         // An SQL mistake is the caller's mistake: say so with the same three-field
@@ -4998,9 +4999,10 @@ fn respond_filtered_page(
                 stream,
                 504,
                 &format!(
-                    r#"{{"error":"the query exceeded its time limit","parameter":{},"hint":{}}}"#,
+                    r#"{{"error":{},"parameter":{},"hint":{}}}"#,
+                    json_str(TIMEOUT_ERROR),
                     json_str(parameter),
-                    json_str("narrow the filter or page without one; the engine was stopped at the time limit")
+                    json_str(TIMEOUT_HINT)
                 ),
             )
         }
@@ -5700,6 +5702,14 @@ fn respond_bytes(
     }
     stream.flush()
 }
+
+/// What a client needs to know after a 504: the engine stopped, the connection closed, and
+/// retrying a smaller query is therefore safe. Both timeout sites say exactly this.
+const TIMEOUT_ERROR: &str = "the query was interrupted";
+const TIMEOUT_HINT: &str =
+    "narrow the filter or page without one, or add LIMIT: the engine was stopped at the time \
+     limit and the connection closed, so nothing keeps running and retrying with a smaller \
+     scope is safe";
 
 /// What each status means for a caller, in one place.
 ///

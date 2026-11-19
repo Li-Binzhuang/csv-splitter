@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.50.3] — 2026-11-19
+
+### Fixed
+
+- **Two 504 branches told the client different stories.** `/query` said "interrupted" and the
+  filtered page said "exceeded its time limit", so a caller could not tell whether anything
+  was still running. Both now share one message and one hint: the engine stopped, the
+  connection closed, nothing keeps running, and retrying with a smaller scope is safe. A test
+  covers the filtered-page branch, which had no timeout test before.
+
 ## [3.50.2] — 2026-11-19
 
 ### Fixed
