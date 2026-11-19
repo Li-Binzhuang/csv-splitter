@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.49.9] — 2026-11-19
+
+### Fixed
+
+- **`/rows` reported nothing when the journal was damaged.** A journal cut off mid-write
+  loses its last operation; the CLI already warned, and `/journal` already carried counts,
+  but a window that silently showed the pre-edit value read as "my edit vanished". The
+  response now carries `"damaged": N` (records that could not be read), and a test pins it
+  by writing one good operation plus a truncated line.
+
 ## [3.49.8] — 2026-11-19
 
 ### Added

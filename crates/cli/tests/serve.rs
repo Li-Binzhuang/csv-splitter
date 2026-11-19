@@ -3888,3 +3888,29 @@ fn validate_can_bound_its_scan() {
     assert_eq!(code, 400, "{body}");
     assert!(body.contains(r#""parameter":"limit""#), "{body}");
 }
+
+/// A journal cut off mid-write must not look like "no edits": the surviving operation is
+/// applied and the response says how many records could not be read.
+#[test]
+fn a_damaged_journal_is_applied_and_reported() {
+    let dir = TempDir::new("damagedjournal");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    // One good operation, then a truncated line as a crash mid-write would leave it.
+    std::fs::write(
+        dir.join("t.csv.journal"),
+        "set,1,amount,999\nset,7,amount\n",
+    )
+    .unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=10");
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.contains("999"),
+        "the readable edit must still apply: {body}"
+    );
+    assert!(
+        body.contains("\"damaged\":1"),
+        "the unreadable record must be counted, got: {body}"
+    );
+}

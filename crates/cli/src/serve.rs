@@ -3750,8 +3750,11 @@ fn respond_sheet_window(
     // A cached pager is reused across scrolls; the key includes the journal
     // fingerprint and the base file's stamp, so an edit invalidates it rather than
     // serving the previous page from a stale sheet.
-    let ops = match Journal::load(&Journal::sidecar(path)) {
-        Ok(journal) => journal.ops().to_vec(),
+    // Load with reporting, not silently: a journal cut off mid-write drops its last
+    // operation, and a window that quietly shows the pre-edit value reads as "my edit
+    // vanished". The count travels with the response so a client can say so.
+    let (ops, damaged) = match Journal::load_reporting(&Journal::sidecar(path)) {
+        Ok((journal, skipped, _)) => (journal.ops().to_vec(), skipped),
         Err(e) => {
             return respond_json(
                 stream,
@@ -3813,7 +3816,7 @@ fn respond_sheet_window(
         stream,
         200,
         &format!(
-            r#"{{"start":{start},"count":{},"requested":{requested},"limit":{MAX_ROWS_PER_REQUEST},"total":{},"pastEnd":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}],"rowKeys":{},"edited":true,"operations":{}}}"#,
+            r#"{{"start":{start},"count":{},"requested":{requested},"limit":{MAX_ROWS_PER_REQUEST},"total":{},"pastEnd":{},"columns":[{}],"frozenColumns":[{}],"rows":[{}],"rowKeys":{},"edited":true,"operations":{},"damaged":{damaged}}}"#,
             rows_count,
             window.total,
             window.total > 0 && start >= window.total,
