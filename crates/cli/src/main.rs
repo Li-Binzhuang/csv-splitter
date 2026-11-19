@@ -2083,10 +2083,7 @@ fn cmd_view(args: &[String]) -> i32 {
     //
     // The moment a journal edit exists this must stay native: the database would see the
     // base file without it.
-    let sql_page: Option<(Vec<String>, Vec<Vec<String>>)> = if order.is_some()
-        && where_expr.is_none()
-        && ops.is_empty()
-    {
+    let sql_page: Option<(Vec<String>, Vec<Vec<String>>)> = if order.is_some() && ops.is_empty() {
         match csv_splitter_core::engine::resolve(csv_splitter_core::engine::Engine::Auto, &input) {
             Ok(csv_splitter_core::engine::Engine::Sql) => {
                 let order_columns = match parse_sort_columns(
@@ -2110,8 +2107,33 @@ fn cmd_view(args: &[String]) -> i32 {
                     })
                     .collect::<Vec<_>>()
                     .join(", ");
+                // `--where` joins the same query when it translates exactly; when the
+                // native comparison has no SQL equivalent the read falls back instead.
+                let predicate = match where_expr.as_deref() {
+                    None => None,
+                    Some(expr) => {
+                        let spec = match csv_splitter_core::filter::FilterSpec::parse(expr) {
+                            Ok(spec) => spec,
+                            Err(e) => {
+                                eprintln!("error: {e}");
+                                return 2;
+                            }
+                        };
+                        match csv_splitter_core::engine::filter_predicate(&spec) {
+                            Some(predicate) => Some(predicate),
+                            None => {
+                                eprintln!(
+                                    "note: ordered read fell back to the native path: \
+                                     this --where has no exact SQL equivalent"
+                                );
+                                return 2;
+                            }
+                        }
+                    }
+                };
+                let where_sql = predicate.map(|p| format!(" WHERE {p}")).unwrap_or_default();
                 let query = format!(
-                    "SELECT * FROM t ORDER BY {} LIMIT {} OFFSET {}",
+                    "SELECT * FROM t{where_sql} ORDER BY {} LIMIT {} OFFSET {}",
                     order_sql, count, start
                 );
                 match csv_splitter_core::sql::query_with(&input, &query, count as usize, delimiter)

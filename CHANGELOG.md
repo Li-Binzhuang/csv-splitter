@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.49.7] — 2026-11-19
+
+### Added
+
+- **`view --where … --order …` runs as one SQL query on large files.** The ordered read
+  previously required no `--where` at all, so a filtered ordered page fell back to
+  export + filter + external sort. Equality, inequality, contains, `in`, empty/non-empty and
+  regex translate exactly (`COALESCE` keeps a blank field matching `empty`); the relational
+  operators do not, because the native path compares numbers when both sides parse and
+  strings otherwise, so those fall back with a printed note rather than a different answer.
+
 ## [3.49.6] — 2026-11-19
 
 ### Added

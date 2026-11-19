@@ -733,6 +733,48 @@ pub fn lookup_sql(
     ))
 }
 
+/// Translate one filter into a SQL predicate, or `None` when the native semantics have no
+/// exact SQL equivalent.
+///
+/// Supported: equality, inequality, contains, `in` (case-insensitive like native), empty
+/// and non-empty, and regex. The relational operators (`> >= < <=`) are NOT translated:
+/// the native path compares numbers when both sides parse and strings otherwise, and a
+/// single SQL predicate cannot express that without a CASE that would be harder to trust
+/// than the native comparison.
+#[cfg(feature = "sql")]
+pub fn filter_predicate(spec: &crate::filter::FilterSpec) -> Option<String> {
+    use crate::filter::Op;
+    // COALESCE matters: DuckDB reads a blank CSV field as NULL, and `NULL = ''` is
+    // false, which would make `note empty` select nothing.
+    let text = format!("COALESCE(CAST({} AS VARCHAR), '')", ident(&spec.column));
+    let quoted = spec.value.replace('\'', "''");
+    Some(match spec.op {
+        Op::Eq => format!("{text} = '{quoted}'"),
+        Op::Ne => format!("{text} <> '{quoted}'"),
+        Op::Contains => format!("contains({text}, '{quoted}')"),
+        Op::In => {
+            let items: Vec<String> = spec
+                .value
+                .split(',')
+                .map(|v| format!("'{}'", v.trim().to_lowercase().replace('\'', "''")))
+                .collect();
+            if items.is_empty() {
+                return None;
+            }
+            format!("lower(trim({text})) IN ({})", items.join(", "))
+        }
+        Op::Empty => format!("trim({text}) = ''"),
+        Op::NotEmpty => format!("trim({text}) <> ''"),
+        Op::Regex => format!("regexp_matches({text}, '{quoted}')"),
+        Op::Gt | Op::Gte | Op::Lt | Op::Lte => return None,
+    })
+}
+
+#[cfg(not(feature = "sql"))]
+pub fn filter_predicate(_spec: &crate::filter::FilterSpec) -> Option<String> {
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -960,6 +1002,55 @@ mod tests {
         let native = std::fs::read_to_string(&native_out).unwrap();
         let sql = std::fs::read_to_string(&sql_out).unwrap();
         assert_eq!(native, sql, "native:\n{native}\nsql:\n{sql}");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// The translated predicate must select the same rows the native matcher selects.
+    #[cfg(feature = "sql")]
+    #[test]
+    fn filter_predicate_matches_the_native_rows() {
+        use crate::filter::{matches, FilterSpec};
+        use crate::types::Delimiter;
+
+        let dir = std::env::temp_dir().join(format!("csvs_engine7_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("t.csv");
+        std::fs::write(
+            &input,
+            "city,note\nPuebla,refund\nCDMX,\nPuebla,ok\nTijuana,refund issued\n",
+        )
+        .unwrap();
+
+        for expr in [
+            "city=Puebla",
+            "note~refund",
+            "note empty",
+            "city in puebla,tijuana",
+        ] {
+            let spec = FilterSpec::parse(expr).unwrap();
+            let predicate = filter_predicate(&spec).expect("translatable");
+            let query = format!("SELECT \"city\", \"note\" FROM t WHERE {predicate}");
+            let sql = crate::sql::query_with(&input, &query, 100, Delimiter::Comma).unwrap();
+
+            // The native matcher, applied to the spec's own column, in file order.
+            let text = std::fs::read_to_string(&input).unwrap();
+            let mut lines = text.lines();
+            let header: Vec<String> = lines
+                .next()
+                .unwrap()
+                .split(',')
+                .map(|v| v.to_string())
+                .collect();
+            let index = header.iter().position(|c| c == &spec.column).unwrap();
+            let mut native: Vec<Vec<String>> = Vec::new();
+            for line in lines {
+                let cells: Vec<String> = line.split(',').map(|v| v.to_string()).collect();
+                if matches(&cells[index], &spec) {
+                    native.push(cells);
+                }
+            }
+            assert_eq!(sql.rows, native, "{expr}");
+        }
         std::fs::remove_dir_all(&dir).ok();
     }
 }

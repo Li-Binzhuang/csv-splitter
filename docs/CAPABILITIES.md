@@ -408,6 +408,7 @@
 | `chart` | native | DuckDB 2.2 s | ≥64 MB 用 sql |
 | `pivot`（写文件）| native | DuckDB | ≥64 MB 用 sql |
 | `view --order --count N` | native 0.05 s | DuckDB 2.6 s（native 29.8 s）| ≥64 MB 且无编辑时用 sql |
+| `view --where … --order …` | — | 同左 | ≥64 MB、无编辑、且 `--where` 能精确翻译成 SQL 时用 sql；关系比较（`>` `>=` `<` `<=`）不能精确翻译，退回 native 并打印 note |
 
 **没有迁移的：**
 
