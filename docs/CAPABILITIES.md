@@ -60,8 +60,8 @@
 | 能力 | CLI | API | 边界 |
 |---|---|---|---|
 | 分组聚合 | `groupby --by K --agg c:op [--apply-edits] [--engine auto\|native\|sql]` | `GET /groupby` | `--max-groups` 默认 100 万；`--engine auto` 在输入 ≥64 MB 时走 DuckDB |
-| 透视表 | `pivot --rows R --cols C --values c:op` | `GET /pivot` | `--max-columns` 512 / `--max-cells` 200 万 |
-| 图表数据 | `chart --x C --y c:op [--series S]` | `GET /chart` | `--max-points` 5000 |
+| 透视表 | `pivot --rows R --cols C --values c:op [--engine auto\|native\|sql]` | `GET /pivot` | `--max-columns` 512 / `--max-cells` 200 万；写文件时 `--engine auto` 在 ≥64 MB 走 DuckDB，终端矩阵始终原生 |
+| 图表数据 | `chart --x C --y c:op [--series S] [--engine auto\|native\|sql]` | `GET /chart` | `--max-points` 5000；两引擎数值相等，类别顺序可能不同（原生保留首次出现顺序）|
 | SQL | `sql f.csv "SELECT ..."` | `GET /query`、`/rows?sql=` | DuckDB，只读单语句，结果封顶 |
 | 筛选 | `filter --where "c=v"` | `GET /filter`、`/rows?where=` | 支持 `= != > >= < <= ~ in empty` |
 | 搜索 | `search f.csv "text" [--regex]` | `GET /search?regex=1` | 返回行号；`--regex` 用条件格式那套模式子集 |
@@ -396,6 +396,30 @@
 
 覆盖保护覆盖：`filter` / `sort` / `columns` / `dedupe` / `lookup` / `groupby` /
 `pivot` / `convert` / `edit export`。
+
+## 引擎选择 / Which engine runs
+
+同一份分析有两种实现：仓库内的流式实现（native）和 DuckDB（sql）。`--engine auto` 按输入大小选，
+判据来自实测而不是偏好：
+
+| 命令 | 小文件（20 120 行） | 2.5 GB / 782 列 | auto 的选择 |
+|---|---|---|---|
+| `groupby` | native 0.026 s | DuckDB 2.3 s（native 13.1 s）| ≥64 MB 用 sql |
+| `chart` | native | DuckDB 2.2 s | ≥64 MB 用 sql |
+| `pivot`（写文件）| native | DuckDB | ≥64 MB 用 sql |
+| `view --order --count N` | native 0.05 s | DuckDB 2.6 s（native 29.8 s）| ≥64 MB 且无编辑时用 sql |
+
+**没有迁移的：**
+
+- `sort`（全表写新文件）：DuckDB 要解析并重写全部列，而原生路径对非排序列只做**字节拷贝**，
+  2.5 GB / 782 列实测 34 s；换成 SQL 会把「只读一个键」变成「解析 782 个列」。
+- `dedupe`：原生语义是「保留首次出现」，SQL 的 `GROUP BY` / `row_number()` 没有稳定的行序，
+  换过去会悄悄改变保留哪一行。
+- 渲染/编辑路径（`/rows`、公式列、条件格式、写保护）：必须看到 `base + journal`，交给 DB
+  就得先物化整份文件。
+
+**资源上限**：所有 DuckDB 连接经 `open_limited()`，默认 512 MB 内存、线程上限 8、溢出落盘；
+可用 `CSV_SPLITTER_SQL_MEMORY_MB` / `_THREADS` / `_TEMP_DIR` 覆盖。
 
 ## 解压安全 / Archive safety
 

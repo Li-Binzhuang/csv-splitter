@@ -1,0 +1,139 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "1ca2ae0ebf44dea53c813e7ea22aa2435110b8698176e640596a6fcf13484670",
+  "batch_id": "b487a4f677228617d3713348c03491bbd16600d1c8995ac2fcab6094cf565463",
+  "composite_identity": "1fd5ca1b4941e982c556baa23bcb40d748c643e03b6b1464f70891aa747b6c6e",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "22a7c595f97dbf75fea700c54bc6a00d7ee826db9ff6a8b3bf6d49646d887d13",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "aa47c9b08833f59400f6a4967a5e50328444ca9910aa36ca021ed2d42bf0c1b1",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；3.48.2 记录外部排序峰值 2.2 GB 到 125 MB，3.48.3 记录空单元格不再被当成字符串 0 以及原位重算解禁 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:Cargo.toml",
+      "path": "Cargo.toml",
+      "change": "update",
+      "source_sha256": "749bbd602fb701f0eaaf86e9b913c261a3aaadd4b72e00ce63a53439eed5d2da",
+      "existing_entry": "Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 core 与 cli；workspace.package 的版本是发布真相源，当前 3.48.3；二进制的 --version 与 tag 校验都以它为准；依赖集中在 workspace.dependencies | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "230265505bd9b845c720090599ae75a9f658a433dca417ec34225040acf9af94",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/workbook/mod.rs | A:约三十个命令；行号在用户侧一律 1-based，0-based 只存在于 journal；写命令前用 check_formula 与 check_output 守卫；`serve --check` 做部署自检 | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败——它双向检查“解析了却没文档化”和“文档化了却不存在”"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/engine.rs",
+      "path": "crates/core/src/engine.rs",
+      "change": "create",
+      "source_sha256": "2b4e2df8ba384946b95e3d63fb6d568d5bac79ca7f354c7eabd6f415149c8cda"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/lib.rs",
+      "path": "crates/core/src/lib.rs",
+      "change": "update",
+      "source_sha256": "05866dd5fb776daa34086de77f49d03f9f87772046aafbef064e41a3daec67ea",
+      "existing_entry": "lib.rs[CG6T]: F:core crate 的模块清单与基础类型再导出 | R:- | A:读取、编辑、分析、查询与 SQL 各自成模块，pub use types 统一暴露分隔符与进度类型 | S:新增模块必须同时写进 ARCHITECTURE.md，模块地图测试会逐个比对"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/sql.rs",
+      "path": "crates/core/src/sql.rs",
+      "change": "update",
+      "source_sha256": "fe18abc2c7bf346d707f6fde580abddb9c02c5da1d1f54f43f8b1895f1411c42",
+      "existing_entry": "sql.rs[ED8L]: F:用 DuckDB 在 CSV 上执行只读单条 SQL | R:code:crates/core/src/sql_cache.rs,code:crates/core/src/cache.rs | A:由采样声明列类型避免全文件推断；watchdog 超时中断；语句校验只允许单条只读 | S:类型推断若读全文件，首个 LIMIT 1 就要七秒；且超预算的结果必须按超时处理，不能因中断没命中就当成成功"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "37b891986fcadbdb0739b101e5f1554ac5be2b8559b9a584cfd2380ce1fc7eaf",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按编辑模型/公式引擎/读写文件/查询与变换/结构比对/切分与压缩/面向客户端/共用工具/入口九组列出 40 个模块，并有「改一处要看哪里」一节 | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "ce085bc82ebbe10ac75c6af06b32bce1f8be89f4fd3293419bae1cf3f6c67e02",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应并写明边界 | R:code:docs/API.md | A:每条给 CLI 形式、API 形式与限制，并强调三条不变量 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4483d69ad94b2ac119cfee65b1e9388819641d9e17242b04ad917a1c2e9c5cbc",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "aa47c9b08833f59400f6a4967a5e50328444ca9910aa36ca021ed2d42bf0c1b1",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；3.48.2 记录外部排序峰值 2.2 GB 到 125 MB，3.48.3 记录空单元格不再被当成字符串 0 以及原位重算解禁 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "43684aaeba35e4a231560c143774d3e75d876ed8e5488a2d1d23199f7f7f38fc",
+      "object_ref": "code:Cargo.toml",
+      "path": "Cargo.toml",
+      "change": "update",
+      "source_sha256": "749bbd602fb701f0eaaf86e9b913c261a3aaadd4b72e00ce63a53439eed5d2da",
+      "existing_entry": "Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 core 与 cli；workspace.package 的版本是发布真相源，当前 3.48.3；二进制的 --version 与 tag 校验都以它为准；依赖集中在 workspace.dependencies | S:-"
+    },
+    {
+      "candidate_id": "98c3cf9f4ecebdb56eb7ab444041a710b12e5a85b590037745b3f9e17e6bd320",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "230265505bd9b845c720090599ae75a9f658a433dca417ec34225040acf9af94",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/workbook/mod.rs | A:约三十个命令；行号在用户侧一律 1-based，0-based 只存在于 journal；写命令前用 check_formula 与 check_output 守卫；`serve --check` 做部署自检 | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败——它双向检查“解析了却没文档化”和“文档化了却不存在”"
+    },
+    {
+      "candidate_id": "6a8e05fdac57ed136f5cd3ad73d3dcb016cc65a3da77fbf3eda234b4dda8fcdc",
+      "object_ref": "code:crates/core/src/engine.rs",
+      "path": "crates/core/src/engine.rs",
+      "change": "create",
+      "source_sha256": "2b4e2df8ba384946b95e3d63fb6d568d5bac79ca7f354c7eabd6f415149c8cda"
+    },
+    {
+      "candidate_id": "c876942b892405cd71c5a37304ac154c752af25bd0504423f6d7a9938d3875ea",
+      "object_ref": "code:crates/core/src/lib.rs",
+      "path": "crates/core/src/lib.rs",
+      "change": "update",
+      "source_sha256": "05866dd5fb776daa34086de77f49d03f9f87772046aafbef064e41a3daec67ea",
+      "existing_entry": "lib.rs[CG6T]: F:core crate 的模块清单与基础类型再导出 | R:- | A:读取、编辑、分析、查询与 SQL 各自成模块，pub use types 统一暴露分隔符与进度类型 | S:新增模块必须同时写进 ARCHITECTURE.md，模块地图测试会逐个比对"
+    },
+    {
+      "candidate_id": "1d79bc9efbbcb37d5ce8813adbdb4c87597b144a11300221fecd9d4c0ac50131",
+      "object_ref": "code:crates/core/src/sql.rs",
+      "path": "crates/core/src/sql.rs",
+      "change": "update",
+      "source_sha256": "fe18abc2c7bf346d707f6fde580abddb9c02c5da1d1f54f43f8b1895f1411c42",
+      "existing_entry": "sql.rs[ED8L]: F:用 DuckDB 在 CSV 上执行只读单条 SQL | R:code:crates/core/src/sql_cache.rs,code:crates/core/src/cache.rs | A:由采样声明列类型避免全文件推断；watchdog 超时中断；语句校验只允许单条只读 | S:类型推断若读全文件，首个 LIMIT 1 就要七秒；且超预算的结果必须按超时处理，不能因中断没命中就当成成功"
+    },
+    {
+      "candidate_id": "6d505d26a287716836d6e4bdd0fd0ed3f47fa7fb5ef0aec3b8d74f67751770fc",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "37b891986fcadbdb0739b101e5f1554ac5be2b8559b9a584cfd2380ce1fc7eaf",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按编辑模型/公式引擎/读写文件/查询与变换/结构比对/切分与压缩/面向客户端/共用工具/入口九组列出 40 个模块，并有「改一处要看哪里」一节 | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败"
+    },
+    {
+      "candidate_id": "7cc3561b034d6a96e686b0f97c6358f9c173f238a38655cc61ea9bbc4af66337",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "ce085bc82ebbe10ac75c6af06b32bce1f8be89f4fd3293419bae1cf3f6c67e02",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应并写明边界 | R:code:docs/API.md | A:每条给 CLI 形式、API 形式与限制，并强调三条不变量 | S:-"
+    }
+  ]
+}

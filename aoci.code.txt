@@ -4,8 +4,8 @@
 .gitattributes[FV4T]: F:声明所有文本按 LF 检出，保证 AOCI 基线与跨平台检出逐字节一致 | R:- | A:唯一规则 `* text=auto eol=lf`；覆盖 Windows autocrlf 的行尾重写，否则整棵树会被基线和漂移检查判成 stale；二进制由 git 自动探测、不改写 | S:基线按原始字节计算，行尾被平台改写会让全部索引失真，所以这里必须强制 LF
 .gitignore[FV4T]: F:忽略构建产物与本地杂物 | R:- | A:忽略 `/target`、编辑器 swap、`.DS_Store`、发布打包目录 `dist/` 与 `staging/`；刻意不忽略 `.codegraph/` 与 `.aoci/`——本仓要求把两套索引的中间过程一起入库 | S:索引入库是有意的取舍：`.codegraph/codegraph.db` 是可重建的二进制，每次重建都会产生整文件变更，历史体积会稳步增长
 AGENTS.md[SV6S]: F:仓库级 Agent 指令：AOCI 认知层的接入与使用原则 | R:code:aoci.txt,code:aoci.meta.txt,code:aoci.code.txt | A:规定“模型生成、模型读取”闭环，何时读 rules/overview/maintain，以及收尾维护一次的纪律；不重复 CLI 手册 | S:机器事实以 Guide、Schema 与 Validator 为准，本文件不得覆盖；上下文压缩后的 handoff 不得携带索引语义，必须重新完整读取并认证
-CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；3.48.2 记录外部排序峰值 2.2 GB 到 125 MB，3.48.3 记录空单元格不再被当成字符串 0 以及原位重算解禁 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败
-Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 core 与 cli；workspace.package 的版本是发布真相源，当前 3.48.3；二进制的 --version 与 tag 校验都以它为准；依赖集中在 workspace.dependencies | S:-
+CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，并保留未达标项与已知债；3.49.x 记录向 DuckDB 迁移 groupby/chart/pivot 与有序读，每条都附实测数字和引擎差异 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败
+Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 core 与 cli；workspace.package 的版本是发布真相源，当前 3.49.4；二进制的 --version 与 tag 校验都以它为准 | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
 README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:先讲取舍（base 不可变加 journal），再给命令表；命令表与默认端口被测试校验 | S:文档测试要求 README 列出全部命令，并且出现真实默认端口 127.0.0.1:8787
 
@@ -18,7 +18,7 @@ windows.yml[OV6T]: F:Windows 编译检查，只在 Rust 代码或依赖清单变
 Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Cargo.toml | A:二进制名 `csv-splitter`，入口 src/main.rs；依赖 libc（信号处理）与 flate2（gzip 响应）；启用 core 的 sql feature | S:-
 
 ===/<repository>/crates/cli/src/===
-main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/workbook/mod.rs | A:约三十个命令；行号在用户侧一律 1-based，0-based 只存在于 journal；写命令前用 check_formula 与 check_output 守卫；`serve --check` 做部署自检 | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败——它双向检查“解析了却没文档化”和“文档化了却不存在”
+main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；groupby/chart/pivot 接 --engine，view 的有序读在无编辑且大文件时交给 DuckDB；行号一律 1-based | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败；cfg 判定必须看被依赖 crate 的 feature，不能用 cli 自己的 feature 名
 serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/schema.rs | A:所有响应经 respond 统一附加 CORS、X-Response-Time、ETag 与 Vary；路径先 canonicalize 再要求落在 root 内；写操作以 Op 进 journal，从不修改 base；formula 与 set-formula 都在写前调 check_formula | S:gzip 是另一种表示，ETag 必须带 -gz 后缀；202 必须映射 Accepted，否则提交 job 的响应头写着 Internal Server Error；EDIT_ACTIONS 与实际 match 分支必须一致，由 contract 测试双向断言
 
 ===/<repository>/crates/cli/src/web/===
@@ -50,7 +50,7 @@ index.rs[CP8L]: F:稀疏行索引：把每第 N 条记录的字节偏移存成 s
 jobs.rs[MW8L]: F:后台任务注册表：进度、状态、取消令牌与终态判定 | R:code:crates/cli/src/serve.rs | A:任务在独立线程运行，进度写入共享表，客户端按 id 轮询；只有真正检查取消标志的任务才标为可取消 | S:把状态改成已取消而工作仍在继续，比不提供取消更糟，因此不可取消的任务返回 409
 json.rs[CG5T]: F:唯一的 JSON 字符串转义实现 | R:code:crates/core/src/validate.rs | A:转义引号、反斜杠、换行、制表与低于 0x20 的控制字符 | S:此前三处各自实现且对控制字符处理不一致，同一份数据在不同端点会转义成不同字节
 layout.rs[CU7L]: F:显示元数据 sidecar：列名替换、列宽、数字格式与冻结列 | R:code:crates/core/src/sheet.rs | A:只影响展示不改值，因此写 `.view` 而不是 journal；每列可选替换名与格式 | S:放进 journal 会把长什么样的设置混进是什么的审计链，撤销一次改名会连带重放显示设置
-lib.rs[CG6T]: F:core crate 的模块清单与基础类型再导出 | R:- | A:读取、编辑、分析、查询与 SQL 各自成模块，pub use types 统一暴露分隔符与进度类型 | S:新增模块必须同时写进 ARCHITECTURE.md，模块地图测试会逐个比对
+lib.rs[CG6T]: F:core crate 的模块清单与基础类型再导出 | R:code:crates/core/src/engine.rs | A:读取、编辑、分析、查询、SQL 与引擎选择各自成模块，pub use types 统一暴露基础类型 | S:新增模块必须同时写进 ARCHITECTURE.md，模块地图测试会逐个比对
 listing.rs[CQ7M]: F:目录列举：在 root 下列出可打开的 CSV 及大小与修改时间 | R:code:crates/core/src/book.rs | A:按扩展名过滤，路径相对 root，一次返回足够渲染文件选择器 | S:-
 lookup.rs[DD8L]: F:跨表查找：引用表加载成映射，主表保持流式 | R:code:crates/core/src/workbook/rows.rs | A:未命中写 #N/A；max_keys 限制引用表规模，超限明确失败 | S:引用表与被查表规模不对称，反过来加载主表会在百万行文件上直接爆内存
 merge.rs[MP7M]: F:把切分产出的分片重新拼回一个文件 | R:code:crates/core/src/splitter.rs,code:crates/core/src/pack.rs | A:保留第一个表头丢弃其余，按文件名序拼接；可读 tar 与 zip、含压缩分片 | S:-
@@ -66,12 +66,13 @@ sheet.rs[CD8L]: F:一张表的门面：base 加 journal 呈现出的列、行数
 sort.rs[KP7L]: F:外部排序：按列排序大文件，内存由字节预算而不是行数封顶 | R:code:crates/core/src/workbook/export.rs | A:分块排序后多路归并；buf-mb 是每块预算，块数上限 128 | S:分块曾按 50 万行封顶，782 列 2.5 GB 文件的峰值达 2.2 GB 等于整份入内存；改成字节预算后同样任务峰值 125 MB，输出逐字节一致，代价 29.9s 到 33.8s
 split_parallel.rs[KP7M]: F:并行切分：多个 reader 各负责一段连续分片 | R:code:crates/core/src/splitter.rs | A:按文件大小与核数决定分工，每个分片自己写表头 | S:串行 reader 的上限是磁盘顺序吞吐，实测约 490 MB/s，并行收益取决于起点是否按字节边界算准
 splitter.rs[KP7L]: F:切分：按份数或按大小把文件切成多片 | R:code:crates/core/src/split_parallel.rs,code:crates/core/src/pack.rs | A:每片带表头；可选压缩；写入 tar、zip 或目录 | S:-
-sql.rs[ED8L]: F:用 DuckDB 在 CSV 上执行只读单条 SQL | R:code:crates/core/src/sql_cache.rs,code:crates/core/src/cache.rs | A:由采样声明列类型避免全文件推断；watchdog 超时中断；语句校验只允许单条只读 | S:类型推断若读全文件，首个 LIMIT 1 就要七秒；且超预算的结果必须按超时处理，不能因中断没命中就当成成功
+sql.rs[ED8L]: F:用 DuckDB 在 CSV 上执行只读单条 SQL，并统一管理引擎资源 | R:code:crates/core/src/sql_cache.rs,code:crates/core/src/engine.rs | A:由采样声明列类型避免全文件推断；watchdog 超时中断；语句校验只允许单条只读；open_limited 固定 memory_limit 512MB、线程上限 8、溢出目录 | S:不设上限时 DuckDB 会吃掉 80% 内存与全部核心；设置可用 CSV_SPLITTER_SQL_MEMORY_MB/_THREADS/_TEMP_DIR 覆盖，并有测试读回设置
 sql_cache.rs[PP7M]: F:列式 parquet sidecar，加速重复查询与首屏 | R:code:crates/core/src/sql.rs | A:首次 COPY 建缓存，源文件 mtime 变化即作废；读取只碰查询涉及的列 | S:缓存必须可丢弃可重建，否则它会变成第二个真相源
 tempdir.rs[CG5T]: F:临时目录与唯一命名 | R:- | A:进程内自增序号加纳秒后缀，避免并行测试互相覆盖 | S:-
 types.rs[CD7M]: F:基础类型：分隔符、压缩格式、进度消息与取消令牌 | R:code:crates/core/src/json.rs | A:Delimiter 负责分隔符解析与字节；ProgressSender 是 mpsc 别名；CancelToken 用原子布尔 | S:-
 validate.rs[DQ8L]: F:列约束校验：只报告不改数据，可限制扫描行数 | R:code:crates/core/src/workbook/export.rs | A:检查的是 journal 应用后的值；报告含 rows、checked、partial、每规则计数与最多一千条明细 | S:限制只查前缀时必须标出 partial，否则读者会把前缀计数当成全量结论
 viewer.rs[CU6M]: F:窗口化读取：只持有一屏所需行 | R:code:crates/core/src/workbook/export.rs | A:请求超出缓存窗口时经稀疏索引重取，内存与文件大小无关 | S:-
+engine.rs[EG8L]: F:引擎选择器：native 与 DuckDB 分析路径的统一入口 | R:code:crates/core/src/sql.rs,code:crates/core/src/groupby.rs,code:crates/core/src/chart.rs,code:crates/core/src/pivot.rs | A:Engine 为 Auto/Native/Sql；Auto 按 64 MB 阈值选择；无 sql feature 时 Sql 明确报错；groupby_sql、chart_sql、pivot_sql 都走 sql::query_with 的声明式列采样而非 read_csv_auto | S:read_csv_auto 在 782 列文件上花十秒推类型，而 query_with 采样声明列后只要两秒；SQL 的 GROUP BY 没有行序，所以 chart 类别顺序与原生不同且已在文档说明
 
 ===/<repository>/crates/core/src/formula/===
 functions.rs[KA7M]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:与解析器分开以便持续扩展；约定跟随电子表格：if 短路求值、isblank 对空单元格返回真、isnumber 只认 Number、iferror、日期函数取 ISO 前缀 | S:空单元格是独立值而不是字符串 0，文本函数不能再把空值当 0 看待
@@ -94,8 +95,8 @@ csv-splitter.service[OV6T]: F:systemd 单元：以只读目录为根启动后端
 ===/<repository>/docs/===
 ACCEPTANCE.md[SD6M]: F:验收证据：两档性能表、能力矩阵与平台构建矩阵 | R:code:docs/API.md | A:每行写实测数字与对应测试名；未达标项标注而不是四舍五入 | S:文档里引用的输出由测试钉住，改实现不同步更新这里会让 gate 失败
 API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引、每路由参数与错误码语义；504 不含引擎原文；/spec 参数表已覆盖全部端点 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然
-ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按编辑模型/公式引擎/读写文件/查询与变换/结构比对/切分与压缩/面向客户端/共用工具/入口九组列出 40 个模块，并有「改一处要看哪里」一节 | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败
-CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应并写明边界 | R:code:docs/API.md | A:每条给 CLI 形式、API 形式与限制，并强调三条不变量 | S:-
+ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列出模块，共用工具组包含 engine，并有「改一处要看哪里」一节 | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败
+CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；新增引擎选择一节，列出各命令在小文件与大文件上的实测对比，以及没有迁移的 sort/dedupe/渲染路径及原因 | S:-
 CI.md[SO6S]: F:CI 结构说明：单 job 流水线、滚动缓存与失败注解机制 | R:code:.github/workflows/ci.yml | A:解释为什么合并成一个 job、为什么缓存 key 滚动、以及 annotation 如何让红叉可读 | S:-
 DEPLOY.md[SO7M]: F:部署材料：三种安装、配置项、systemd、升级回滚与安全边界 | R:code:deploy/csv-splitter.service | A:明确单机单用户、无鉴权、默认 loopback；给出 release-check 与 install-check 两条自检 | S:安全表必须写明没有鉴权与没有多用户隔离，只列防护不列边界会让人误判风险
 GETTING_STARTED.md[SU6M]: F:十分钟上手：用故意不干净的示例走完整链路 | R:code:crates/core/src/demo.rs | A:逐步骤贴真实输出，覆盖带引号换行与多一个逗号的错位行 | S:-
