@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.55.6] — 2026-11-19
+
+### Fixed
+
+- **HTTP edits now write under the journal lock.** The CLI used `update_locked`; the server
+  loaded the journal, pushed, and saved, so two concurrent tabs could both load the same
+  state and the later rename would drop the earlier edit. Set, undo and redo now go through
+  `update_locked`, and a lock held too long answers 409 instead of a misleading 422.
+
+  A test fires eight concurrent edits at one file and asserts all eight land in the journal
+  and in the window.
+
 ## [3.55.5] — 2026-11-19
 
 ### Measured / Documented

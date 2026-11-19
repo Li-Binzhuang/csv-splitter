@@ -4676,3 +4676,47 @@ fn a_range_request_returns_that_slice() {
     assert!(text.starts_with("HTTP/1.1 416"), "{text}");
     assert!(text.contains("\"parameter\":\"Range\""), "{text}");
 }
+
+/// Two tabs of a front-end editing the same file is the scenario `update_locked` exists for.
+/// Eight concurrent HTTP writers must all land: a lost edit here would be a lost click.
+#[test]
+fn concurrent_http_edits_all_land() {
+    let dir = TempDir::new("concedit");
+    let mut text = String::from("city,amount\n");
+    for i in 0..8 {
+        text.push_str(&format!("C{i},{i}\n"));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0.clone());
+    let addr = server.addr.clone();
+
+    let mut handles = Vec::new();
+    for row in 1..=8u64 {
+        let addr = addr.clone();
+        handles.push(std::thread::spawn(move || {
+            post(
+                &addr,
+                &format!("/edit?path=t.csv&action=set&row={row}&col=city&value=E{row}"),
+            )
+            .0
+        }));
+    }
+    for handle in handles {
+        let status = handle.join().unwrap();
+        assert!(status == 200 || status == 202, "a writer failed: {status}");
+    }
+
+    let (status, body) = get(&addr, "/journal?path=t.csv");
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.contains("\"count\":8"),
+        "all eight edits must be in the journal: {body}"
+    );
+    let (_, rows) = get(&addr, "/rows?path=t.csv&start=0&count=10");
+    for row in 1..=8u64 {
+        assert!(
+            rows.contains(&format!("E{row}")),
+            "edit {row} is missing from the window: {rows}"
+        );
+    }
+}

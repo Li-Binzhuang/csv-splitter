@@ -2115,7 +2115,7 @@ fn edit_apply(
         );
     };
     let sidecar = Journal::sidecar(&path);
-    let mut journal = match Journal::load(&sidecar) {
+    let journal = match Journal::load(&sidecar) {
         Ok(j) => j,
         Err(e) => {
             return respond_json(
@@ -2223,23 +2223,35 @@ fn edit_apply(
     }
 
     if action == "undo" {
-        return match journal.undo() {
-            Some(op) => match journal.save(&sidecar) {
-                Ok(()) => respond_json(
+        let mut undone = None;
+        let locked = csv_splitter_core::workbook::Journal::update_locked(&sidecar, |fresh| {
+            undone = fresh.undo();
+            Ok(())
+        });
+        let journal = match locked {
+            Ok(j) => j,
+            Err(e) => {
+                return respond_json(
                     stream,
-                    200,
-                    &format!(
-                        r#"{{"undone":{},"operations":{}}}"#,
-                        json_str(&op.describe()),
-                        journal.len()
-                    ),
-                ),
-                Err(e) => respond_json(
-                    stream,
-                    422,
+                    if e.kind() == std::io::ErrorKind::WouldBlock {
+                        409
+                    } else {
+                        422
+                    },
                     &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                )
+            }
+        };
+        return match undone {
+            Some(op) => respond_json(
+                stream,
+                200,
+                &format!(
+                    r#"{{"undone":{},"operations":{}}}"#,
+                    json_str(&op.describe()),
+                    journal.len()
                 ),
-            },
+            ),
             None => respond_json(
                 stream,
                 409,
@@ -2252,23 +2264,35 @@ fn edit_apply(
     }
 
     if action == "redo" {
-        return match journal.redo() {
-            Some(op) => match journal.save(&sidecar) {
-                Ok(()) => respond_json(
+        let mut redone = None;
+        let locked = csv_splitter_core::workbook::Journal::update_locked(&sidecar, |fresh| {
+            redone = fresh.redo();
+            Ok(())
+        });
+        let journal = match locked {
+            Ok(j) => j,
+            Err(e) => {
+                return respond_json(
                     stream,
-                    200,
-                    &format!(
-                        r#"{{"redone":{},"operations":{}}}"#,
-                        json_str(&op.describe()),
-                        journal.len()
-                    ),
-                ),
-                Err(e) => respond_json(
-                    stream,
-                    422,
+                    if e.kind() == std::io::ErrorKind::WouldBlock {
+                        409
+                    } else {
+                        422
+                    },
                     &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                )
+            }
+        };
+        return match redone {
+            Some(op) => respond_json(
+                stream,
+                200,
+                &format!(
+                    r#"{{"redone":{},"operations":{}}}"#,
+                    json_str(&op.describe()),
+                    journal.len()
                 ),
-            },
+            ),
             None => respond_json(
                 stream,
                 409,
@@ -2829,16 +2853,29 @@ fn edit_apply(
         }
     };
 
-    journal.push(op.clone());
-    match journal.save(&sidecar) {
-        Ok(()) => respond_json(
+    // Push and save under the journal's lock: two tabs editing at once must not lose an
+    // edit to a last-write-wins rename. The CLI already does this; the server did not.
+    let written = op.clone();
+    match csv_splitter_core::workbook::Journal::update_locked(&sidecar, |fresh| {
+        fresh.push(written.clone());
+        Ok(())
+    }) {
+        Ok(updated) => respond_json(
             stream,
             200,
             &format!(
                 r#"{{"op":{},"description":{},"operations":{}}}"#,
                 json_str(op.tag()),
                 json_str(&op.describe()),
-                journal.len()
+                updated.len()
+            ),
+        ),
+        Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => respond_json(
+            stream,
+            409,
+            &format!(
+                r#"{{"error":"another writer holds the journal","parameter":"action","hint":{}}}"#,
+                json_str("retry in a moment; the lock is released as soon as that edit lands")
             ),
         ),
         Err(e) => respond_json(
