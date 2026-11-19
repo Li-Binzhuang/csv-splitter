@@ -22,13 +22,13 @@ main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类�
 serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/schema.rs | A:所有响应经 respond 统一附加 CORS、X-Response-Time、ETag 与 Vary；路径先 canonicalize 再要求落在 root 内；写操作以 Op 进 journal，从不修改 base | S:gzip 是另一种表示，ETag 必须带 -gz 后缀；202 必须映射 Accepted，否则提交 job 的响应头写着 Internal Server Error；EDIT_ACTIONS 与实际 match 分支必须一致，由 contract 测试双向断言
 
 ===/<repository>/crates/cli/src/web/===
-index.html[EU7M]: F:内置只读浏览页：拉取 /sheet 与 /rows 并渲染表格 | R:code:crates/cli/src/serve.rs | A:单文件 HTML 与内联 JS，无外部依赖；用 /sheet 取列与冻结列，用 /rows 拉窗口，滚动时按 start/count 续取 | S:-
+index.html[EU7M]: F:内置只读浏览页：用 /rows 拉窗口并把结果渲染成表格 | R:code:crates/cli/src/serve.rs | A:单文件 HTML 与内联 JS，无外部依赖；实际调用 /files、/meta、/rows、/search、/analyze、/groupby 六个端点 | S:-
 
 ===/<repository>/crates/core/===
 Cargo.toml[FV7T]: F:core crate 清单：解析、压缩、编码与可选 DuckDB | R:code:crates/cli/Cargo.toml | A:sql 是可选 feature，只有 CLI 打开；依赖 memchr、zip、zstd、bzip2、flate2 等流式库；测试与基准同 crate | S:gate 必须用 `--features sql` 跑一次 core 测试，否则 SQL 与 parquet 路径在默认构建里无人验证
 
 ===/<repository>/crates/core/benches/===
-throughput.rs[TP5S]: F:吞吐基准：切分与合并的每秒行数与每秒字节 | R:- | A:生成临时数据后计时，结果直接打印；不进入默认测试集，避免与功能测试争资源 | S:-
+throughput.rs[TP5S]: F:criterion 基准：切分与稀疏索引的吞吐 | R:code:crates/core/tests/performance.rs | A:用 criterion_group 注册、临时目录生成夹具后计时；结果仅供人看，不断言 | S:共享 CI runner 噪音太大，硬阈值放在 tests/performance.rs；在这里加阈值会让构建随机变红
 
 ===/<repository>/crates/core/src/===
 aggregate.rs[KA8M]: F:groupby、pivot、chart 共用的聚合算子与累加器 | R:code:crates/core/src/groupby.rs,code:crates/core/src/pivot.rs,code:crates/core/src/chart.rs | A:AggOp 为 count/sum/mean/min/max；sum 与 mean 用 Kahan 补偿求和；输出列名由 AggSpec::output_name 统一生成 | S:三个命令共用同一累加器，任何一处改回朴素求和都会让同一份数据在不同命令里得出不同总数
@@ -86,7 +86,7 @@ mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序与列布局 | R:code:cra
 rows.rs[CP9L]: F:行身份映射与单元格编辑解析 | R:code:crates/core/src/workbook/mod.rs | A:RowId 为 Base 或 Virtual，position_of 是 id_at 的逆；填充解析成行身份而非位置；公式编译校验引用与自引用 | S:按位置存编辑会在插入行后把编辑指向邻居，这是本项目最需要避免的静默错误
 
 ===/<repository>/csv-splitter-demo/===
-orders.csv[ZO3L]: F:demo 生成的示例数据：两万行六列，故意含脏数据 | R:code:crates/core/src/demo.rs | A:由 csv-splitter demo 产出，供上手与冒烟使用，不是源码 | S:这是生成物，重跑 demo 会覆盖它，不要把它当受管理源码编辑
+orders.csv[ZO3L]: F:demo 生成的示例数据：20 120 条记录、6 列 | R:code:crates/core/src/demo.rs | A:20 000 条基础行 + 20 条多逗号错位（每 1000 行一条）+ 100 条重复（前半段每 100 行一条），物理行 20 921 因为还有带引号换行 | S:生成物，重跑 demo 会整份覆盖；不要当受管理源码手改
 
 ===/<repository>/deploy/===
 csv-splitter.service[OV6T]: F:systemd 单元：以只读目录为根启动后端 | R:code:docs/DEPLOY.md | A:ExecStartPre 先跑 serve --check；KillSignal 为 SIGTERM、TimeoutStopSec 十五秒走优雅停机；ProtectSystem 与 ReadWritePaths 限制写范围 | S:本构建没有鉴权，单元只绑 loopback，对外暴露必须放在带鉴权的反向代理后面
@@ -94,13 +94,13 @@ csv-splitter.service[OV6T]: F:systemd 单元：以只读目录为根启动后端
 ===/<repository>/docs/===
 ACCEPTANCE.md[SD6M]: F:验收证据：两档性能表、能力矩阵与平台构建矩阵 | R:code:docs/API.md | A:每行写实测数字与对应测试名；未达标项标注而不是四舍五入 | S:文档里引用的输出由测试钉住，改实现不同步更新这里会让 gate 失败
 API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引、每路由参数与错误码语义；504 不含引擎原文；/spec 参数表已覆盖全部端点 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然
-ARCHITECTURE.md[SD6S]: F:分层与模块地图：core 各模块职责 | R:code:crates/core/src/lib.rs | A:按读取、编辑、分析、公式、交付分组列出模块，并给出新增端点或模块时要同步的文件 | S:测试要求列出每个 core 模块，漏写会让 gate 失败
+ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按编辑模型/公式引擎/读写文件/查询与变换/结构比对/切分与压缩/面向客户端/共用工具/入口九组列出 40 个模块，并有「改一处要看哪里」一节 | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败
 CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应并写明边界 | R:code:docs/API.md | A:每条给 CLI 形式、API 形式与限制，并强调三条不变量 | S:-
 CI.md[SO6S]: F:CI 结构说明：单 job 流水线、滚动缓存与失败注解机制 | R:code:.github/workflows/ci.yml | A:解释为什么合并成一个 job、为什么缓存 key 滚动、以及 annotation 如何让红叉可读 | S:-
 DEPLOY.md[SO7M]: F:部署材料：三种安装、配置项、systemd、升级回滚与安全边界 | R:code:deploy/csv-splitter.service | A:明确单机单用户、无鉴权、默认 loopback；给出 release-check 与 install-check 两条自检 | S:安全表必须写明没有鉴权与没有多用户隔离，只列防护不列边界会让人误判风险
 GETTING_STARTED.md[SU6M]: F:十分钟上手：用故意不干净的示例走完整链路 | R:code:crates/core/src/demo.rs | A:逐步骤贴真实输出，覆盖带引号换行与多一个逗号的错位行 | S:-
 HANDOVER.md[SU5S]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:写出 AOCI（89 条 Entry，受版本控制）与 CodeGraph（本地可重建索引）分工：先问认知层这是什么，再读源码是怎么写的；改完后用 aoci_maintain 收尾一次 | S:.aoci 的运行时产物与 .codegraph 不入库，而 aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库，否则接手的人拿不到同一份认知
-INTEGRATION.md[SN6S]: F:前端接入指南：浏览器 fetch、ETag、并发与错误速查 | R:code:docs/API.md | A:给可直接复制的 fetch 片段与 409、504 的处理建议 | S:-
+INTEGRATION.md[SN6S]: F:前端接入走查：从起服务到翻行、改值、多文件的一页纸 | R:code:docs/API.md | A:按 0–7 步给出真实可跑的调用（起服务、打开文件、画一屏、读写单元格含 expect、行身份、写后、多文件）；每条都对应 crates/cli/tests/serve.rs 的测试 | S:-
 ROADMAP.md[SU5S]: F:路线图：已完成、进行中与明确不做的范围 | R:code:docs/CAPABILITIES.md | A:与能力清单分工——这里写未来与边界，已验证行为写进能力清单 | S:-
 TROUBLESHOOTING.md[SO6S]: F:排障：常见症状、原因与处理，以及如何读 CI 失败 | R:code:docs/CI.md | A:含 annotation 读取命令与历史根因（超时测试竞态、mingw 线程模型） | S:-
 
