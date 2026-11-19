@@ -493,6 +493,7 @@ pivot 两个引擎的输出在这两个尺寸上逐字节相同。
 | 条件格式必须按编辑后的值判定 | `serve::style_judges_the_edited_value` |
 | 哪些端点看得到编辑（矩阵）| `serve::the_journal_visibility_matrix_holds` |
 | 校验规则按编辑后的值判定 | `serve::validation_judges_the_edited_value` |
+| 文档里写的响应字段必须真的存在 | `serve::documented_fields_are_fields_the_endpoint_returns`（覆盖 /health /meta /metrics；其他端点文档行里反引号多为查询参数，无法机械区分）|
 | split 再 merge 必须逐字节还原输入 | `splitter::tests::split_then_merge_reproduces_the_input`（1200 行，含引号换行与非 ASCII，2 线程）|
 | 并行读者绝不共享或拆开一条记录 | `splitter::tests::threads_do_not_break_records_with_quoted_newlines`（1200 行，每三行一处带引号换行，4 线程与单线程逐字节比对）|
 

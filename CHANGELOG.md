@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.55.1] — 2026-11-19
+
+### Tests / Documentation
+
+- The documented-field guard now covers /health, /meta and /metrics. Two things came up:
+  the table has two row shapes (`| `GET /route` |` and `| GET | `/route` |`), and most other
+  endpoints use backticks for *query parameters*, so the check cannot be applied mechanically
+  there. Both facts are recorded next to the test instead of being discovered again later.
+
 ## [3.55.0] — 2026-11-19
 
 ### Added

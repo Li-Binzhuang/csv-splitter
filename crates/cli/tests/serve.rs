@@ -4566,8 +4566,10 @@ fn documented_fields_are_fields_the_endpoint_returns() {
     let docs =
         std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../../docs/API.md")).unwrap();
     let row = |route: &str| -> String {
+        // Rows come in two shapes: `| `GET /meta` | … |` and `| GET | `/metrics` | … |`.
+        // Match either by looking for the route and a GET in the same line.
         docs.lines()
-            .find(|line| line.starts_with(&format!("| `GET {route}`")))
+            .find(|line| line.contains(route) && line.contains("GET"))
             .unwrap_or_else(|| panic!("no table row for {route}"))
             .to_string()
     };
@@ -4576,7 +4578,11 @@ fn documented_fields_are_fields_the_endpoint_returns() {
     std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\n").unwrap();
     let server = start(&dir.0.clone());
 
-    for (route, query) in [("/health", "/health"), ("/meta", "/meta?path=t.csv")] {
+    for (route, query) in [
+        ("/health", "/health"),
+        ("/meta", "/meta?path=t.csv"),
+        ("/metrics", "/metrics"),
+    ] {
         let (status, body) = get(&server.addr, query);
         assert_eq!(status, 200, "{query}: {body}");
         let text = row(route);
