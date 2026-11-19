@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.57.1] — 2026-11-19
+
+### Tests
+
+- backend-smoke now asserts the two capability fields a client cannot work without:
+  strictParams (true under the default) and the duckdb field. The unit tests covered the
+  handlers; this is the check against a real `serve` process.
+
 ## [3.57.0] — 2026-11-19
 
 ### Added

@@ -58,6 +58,8 @@ CAPS="$(curl -s "$URL/capabilities")"
 has "capabilities list reads"    "$CAPS" '"/rows"'
 has "capabilities list writes"   "$CAPS" '"POST /edit"'
 has "capabilities list actions"  "$CAPS" '"set"'
+has "capabilities: strict"       "$CAPS" '"strictParams":true'
+has "capabilities: duckdb"       "$CAPS" '"duckdb":'
 has "capabilities query timeout" "$CAPS" '"querySeconds":30'
 
 COLS="$(curl -s "$URL/columns?path=orders.csv&sample=10")"
