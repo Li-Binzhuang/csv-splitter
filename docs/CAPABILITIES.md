@@ -59,8 +59,8 @@
 
 | 能力 | CLI | API | 边界 |
 |---|---|---|---|
-| 分组聚合 | `groupby --by K --agg c:op [--apply-edits] [--engine auto\|native\|sql]` | `GET /groupby` | `--max-groups` 默认 100 万；`--engine auto` 在输入 ≥64 MB 时走 DuckDB |
-| 透视表 | `pivot --rows R --cols C --values c:op [--engine auto\|native\|sql]` | `GET /pivot` | `--max-columns` 512 / `--max-cells` 200 万；写文件时 `--engine auto` 在 ≥64 MB 走 DuckDB，终端矩阵始终原生 |
+| 分组聚合 | `groupby --by K --agg c:op [--apply-edits] [--engine auto\|native\|sql]` | `GET /groupby` | `--max-groups` 默认 100 万；`--engine auto` 在输入 ≥8 MB 时走 DuckDB |
+| 透视表 | `pivot --rows R --cols C --values c:op [--engine auto\|native\|sql]` | `GET /pivot` | `--max-columns` 512 / `--max-cells` 200 万；写文件时 `--engine auto` 在 ≥8 MB 走 DuckDB，终端矩阵始终原生 |
 | 图表数据 | `chart --x C --y c:op [--series S] [--engine auto\|native\|sql]` | `GET /chart` | `--max-points` 5000；两引擎数值相等，类别顺序可能不同（原生保留首次出现顺序）|
 | SQL | `sql f.csv "SELECT ..."` | `GET /query`、`/rows?sql=` | DuckDB，只读单语句，结果封顶 |
 | 筛选 | `filter --where "c=v"` | `GET /filter`、`/rows?where=` | 支持 `= != > >= < <= ~ in empty` |
@@ -398,6 +398,21 @@
 覆盖保护覆盖：`filter` / `sort` / `columns` / `dedupe` / `lookup` / `groupby` /
 `pivot` / `convert` / `edit export`。
 
+### auto 阈值怎么定的（实测）
+
+`--engine auto` 的阈值不是拍的：同一台机器上跑 `groupby`（7 组、一个 sum），
+
+| 输入 | native | DuckDB |
+|---|---|---|
+| 0.9 MB | **0.01 s** | 0.03 s |
+| 1.8 MB | **0.02 s** | 0.03 s |
+| 3.6 MB | 0.04 s | 0.04 s |
+| 9.1 MB | 0.08 s | **0.06 s** |
+| 18.1 MB | 0.16 s | **0.07 s** |
+
+交叉点约在 4–9 MB，所以阈值定 **8 MB**。原来的 64 MB 没有数据支撑，中间 7 倍的区间
+一直在走更慢的原生路径。
+
 ## 首屏与跳转 / First screen and jumps (measured)
 
 `.idx` 稀疏索引（每 1000 行一个锚点，2.5 GB / 78 万列的文件上只有 5.4 KB）让窗口读取**不需要从头扫描**。实测（2.5 GB、684 917 行、782 列）：
@@ -420,11 +435,11 @@
 
 | 命令 | 小文件（20 120 行） | 2.5 GB / 782 列 | auto 的选择 |
 |---|---|---|---|
-| `groupby` | native 0.026 s | DuckDB 2.3 s（native 13.1 s）| ≥64 MB 用 sql |
-| `chart` | native | DuckDB 2.2 s | ≥64 MB 用 sql |
-| `pivot`（写文件）| native | DuckDB | ≥64 MB 用 sql |
-| `view --order --count N` | native 0.05 s | DuckDB 2.6 s（native 29.8 s）| ≥64 MB 且无编辑时用 sql |
-| `view --where … --order …` | — | 同左 | ≥64 MB、无编辑、且 `--where` 能精确翻译成 SQL 时用 sql；关系比较（`>` `>=` `<` `<=`）不能精确翻译，退回 native 并打印 note |
+| `groupby` | native 0.026 s | DuckDB 2.3 s（native 13.1 s）| ≥8 MB 用 sql |
+| `chart` | native | DuckDB 2.2 s | ≥8 MB 用 sql |
+| `pivot`（写文件）| native | DuckDB | ≥8 MB 用 sql |
+| `view --order --count N` | native 0.05 s | DuckDB 2.6 s（native 29.8 s）| ≥8 MB 且无编辑时用 sql |
+| `view --where … --order …` | — | 同左 | ≥8 MB、无编辑、且 `--where` 能精确翻译成 SQL 时用 sql；关系比较（`>` `>=` `<` `<=`）不能精确翻译，退回 native 并打印 note |
 
 ### journal 半损坏时的行为
 

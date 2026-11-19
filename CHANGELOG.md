@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.51.5] — 2026-11-19
+
+### Changed
+
+- **`--engine auto` now switches at 8 MB, down from 64 MB.** The old number had no
+  measurement behind it; a bracket on `groupby` shows native and DuckDB cross over between
+  roughly 4 and 9 MB (0.9 MB native 0.01 s vs sql 0.03 s; 18 MB native 0.16 s vs sql 0.07 s).
+  Everything between 8 and 64 MB was quietly running the slower path.
+
 ## [3.51.4] — 2026-11-19
 
 ### Measured / Documented

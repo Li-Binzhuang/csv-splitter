@@ -18,7 +18,16 @@ use std::path::Path;
 ///
 /// Below it the native path wins: measured 20 120 rows in 0.026 s natively against
 /// 0.207 s through DuckDB, almost all of it engine start-up.
-pub const SQL_AUTO_THRESHOLD_BYTES: u64 = 64 * 1024 * 1024;
+/// Below this, DuckDB's fixed startup (~30 ms) costs more than the scan it saves.
+///
+/// Measured on one machine with `groupby` (7 groups, one sum):
+///   0.9 MB  native 0.01 s  sql 0.03 s
+///   1.8 MB  native 0.02 s  sql 0.03 s
+///   3.6 MB  native 0.04 s  sql 0.04 s
+///   9.1 MB  native 0.08 s  sql 0.06 s
+///  18.1 MB  native 0.16 s  sql 0.07 s
+/// The old 64 MB was chosen without data and left a 7x gap where the native path is slower.
+pub const SQL_AUTO_THRESHOLD_BYTES: u64 = 8 * 1024 * 1024;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Engine {
