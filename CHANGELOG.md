@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.53.9] — 2026-11-19
+
+### Tests
+
+- **Pivot and chart now have HTTP engine-parity tests**, the pair only lookup and concat had.
+  Pivot compares the two bodies directly (order-stable); chart compares the point values with
+  sorting, because its category order is allowed to differ by design.
+
 ## [3.53.8] — 2026-11-19
 
 ### Changed

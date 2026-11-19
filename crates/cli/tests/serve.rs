@@ -4285,3 +4285,53 @@ fn filter_and_search_read_the_base_file_not_the_journal() {
         "the scan reads the base file; this is the documented difference: {body}"
     );
 }
+
+/// Both aggregation endpoints must give the same JSON whichever engine produced it.
+/// Pivot is order-stable, so the bodies are compared directly; chart's category order is
+/// allowed to differ (native keeps first appearance, SQL sorts), so only its values are
+/// compared.
+#[test]
+fn pivot_and_chart_agree_across_engines_over_http() {
+    let dir = TempDir::new("enginehttp");
+    let mut text = String::from("city,shop,amount\n");
+    for i in 0..600u32 {
+        text.push_str(&format!("C{},S{},{}\n", i % 9, i % 5, i % 100));
+    }
+    std::fs::write(dir.join("t.csv"), &text).unwrap();
+    let server = start(&dir.0.clone());
+
+    let native = get(
+        &server.addr,
+        "/pivot?path=t.csv&rows=city&cols=shop&values=amount:sum&engine=native",
+    )
+    .1;
+    let sql = get(
+        &server.addr,
+        "/pivot?path=t.csv&rows=city&cols=shop&values=amount:sum&engine=sql",
+    )
+    .1;
+    assert_eq!(native, sql, "pivot engines must agree");
+
+    let native = get(
+        &server.addr,
+        "/chart?path=t.csv&x=city&y=amount:sum&engine=native",
+    )
+    .1;
+    let sql = get(
+        &server.addr,
+        "/chart?path=t.csv&x=city&y=amount:sum&engine=sql",
+    )
+    .1;
+    let points = |body: &str| -> Vec<String> {
+        body.split("\"points\":[")
+            .nth(1)
+            .and_then(|tail| tail.split(']').next())
+            .map(|list| list.split(',').map(|v| v.to_string()).collect())
+            .unwrap_or_default()
+    };
+    let mut a = points(&native);
+    let mut b = points(&sql);
+    a.sort();
+    b.sort();
+    assert_eq!(a, b, "chart engines must agree on values");
+}
