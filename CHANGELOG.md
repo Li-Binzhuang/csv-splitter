@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.57.5] — 2026-11-19
+
+### Documentation
+
+- Narrowed limitation 6 with evidence: the built-in viewer answers GET / with 200 and 13 KB of
+  HTML whose title is correct, so "unverified" now means "no browser interaction was tested",
+  not "nobody has ever seen it work". The probe is a two-line curl, reproducible offline.
+
 ## [3.57.4] — 2026-11-19
 
 ### Tests
