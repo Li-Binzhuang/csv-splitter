@@ -4157,3 +4157,22 @@ fn validation_stops_at_its_budget() {
     assert_eq!(status, 200, "{body}");
     assert!(body.contains(r#""partial":true"#), "{body}");
 }
+
+/// Search is the third synchronous scan; it stops at the budget like the other two.
+#[test]
+fn search_stops_at_its_budget() {
+    let dir = TempDir::new("searchbudget");
+    let mut text = String::from("id,city\n");
+    for i in 0..200_000 {
+        text.push_str(&format!("{i},C{}\n", i % 9));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start_with_env(&dir.0, &[("CSV_SPLITTER_QUERY_TIMEOUT_MS", "1")]);
+
+    let (status, body) = get(&server.addr, "/search?path=t.csv&q=C3");
+    assert_eq!(status, 504, "{body}");
+    assert!(
+        body.contains("limit"),
+        "the hint must name a way forward: {body}"
+    );
+}

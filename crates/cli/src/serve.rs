@@ -44,7 +44,7 @@ use csv_splitter_core::merge::merge_archive;
 use csv_splitter_core::partition;
 use csv_splitter_core::preview::compute_column_stats;
 use csv_splitter_core::profile;
-use csv_splitter_core::search::{search as search_scan, SearchSpec};
+use csv_splitter_core::search::SearchSpec;
 use csv_splitter_core::splitter::run_split_threads;
 use csv_splitter_core::sql;
 use csv_splitter_core::viewer::WindowViewer;
@@ -5304,7 +5304,16 @@ fn search(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
         .min(MAX_ROWS_PER_REQUEST as usize * 10);
     let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
     drop(rx);
-    match search_scan(&path, delimiter(params), &spec, limit, &tx) {
+    let budget = std::time::Duration::from_millis(query_timeout_ms());
+    match csv_splitter_core::search::search_quotes_with_budget(
+        &path,
+        delimiter(params),
+        &spec,
+        limit,
+        Some(budget),
+        csv_splitter_core::csv_reader::QuoteStyle::Rfc4180,
+        &tx,
+    ) {
         Ok(result) => {
             let rows: Vec<String> = result.row_numbers().iter().map(|n| n.to_string()).collect();
             let cols: Vec<String> = result.columns.iter().map(|c| json_str(c)).collect();
@@ -5321,6 +5330,15 @@ fn search(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
                 ),
             )
         }
+        Err(e) if e.kind() == io::ErrorKind::TimedOut => respond_json(
+            stream,
+            504,
+            &format!(
+                r#"{{"error":{},"parameter":"q","hint":{}}}"#,
+                json_str(TIMEOUT_ERROR),
+                json_str("narrow columns= or pass limit=: the scan stopped at its time budget")
+            ),
+        ),
         Err(e) if e.kind() == io::ErrorKind::InvalidInput => respond_json(
             stream,
             400,

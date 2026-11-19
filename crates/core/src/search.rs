@@ -107,6 +107,20 @@ pub fn search_quotes(
     quotes: QuoteStyle,
     tx: &ProgressSender,
 ) -> io::Result<SearchResult> {
+    search_quotes_with_budget(path, delimiter, spec, limit, None, quotes, tx)
+}
+
+/// Same search, stopping with `TimedOut` once `budget` elapses.
+pub fn search_quotes_with_budget(
+    path: &Path,
+    delimiter: Delimiter,
+    spec: &SearchSpec,
+    limit: usize,
+    budget: Option<std::time::Duration>,
+    quotes: QuoteStyle,
+    tx: &ProgressSender,
+) -> io::Result<SearchResult> {
+    let deadline = budget.and_then(|b| std::time::Instant::now().checked_add(b));
     if spec.query.is_empty() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -153,6 +167,17 @@ pub fn search_quotes(
     let limit = limit.max(1);
     while records.next_record(&mut record)? {
         result.scanned += 1;
+        if let Some(deadline) = deadline {
+            if result.scanned.is_multiple_of(5_000) && std::time::Instant::now() >= deadline {
+                return Err(io::Error::new(
+                    io::ErrorKind::TimedOut,
+                    format!(
+                        "the search stopped after {} rows at its time budget",
+                        result.scanned
+                    ),
+                ));
+            }
+        }
         let text = String::from_utf8_lossy(&record);
         let fields = parse_csv_record_with(text.trim_end_matches(['\n', '\r']), delim, quotes);
         let hit = indices

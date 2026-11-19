@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.51.3] — 2026-11-19
+
+### Added
+
+- **`GET /search` stops at the same query budget.** That was the last synchronous scan with
+  no brake: filter and validate already have one, and search reads the most rows per request
+  because it compares every column. The 504 names `limit=` and `columns=` as the way forward.
+
 ## [3.51.2] — 2026-11-19
 
 ### Added
