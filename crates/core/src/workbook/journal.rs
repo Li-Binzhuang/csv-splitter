@@ -725,7 +725,7 @@ mod damaged_tests {
 
         // A genuinely undone operation (not in the journal) still offers itself back.
         std::fs::write(&path, head).unwrap();
-        std::fs::write(&redo, &undone).unwrap();
+        std::fs::write(&redo, undone).unwrap();
         let journal = super::Journal::load(&path).unwrap();
         assert_eq!(journal.redo_len(), 1);
         std::fs::remove_dir_all(&dir).ok();
