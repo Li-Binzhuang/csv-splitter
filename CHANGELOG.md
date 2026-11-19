@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.54.7] — 2026-11-19
+
+### Fixed / Documentation
+
+- **The export endpoint was documented as seeing edits; it does not.** It turns the where
+  clause into SQL and hands it to DuckDB, which reads the base file, so a filtered export of
+  an edited cell returns an empty result. A visibility matrix test caught the wrong row.
+
+- The matrix (the_journal_visibility_matrix_holds) now states both directions in one place:
+  five endpoints that must show the edit, three that must keep scanning the base file.
+
 ## [3.54.6] — 2026-11-19
 
 ### Added

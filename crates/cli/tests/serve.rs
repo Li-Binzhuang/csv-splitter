@@ -4445,3 +4445,49 @@ fn metrics_sum_journal_damage() {
         "the last damaged file should be named: {body}"
     );
 }
+
+/// One place that states which endpoints see the journal and which do not.
+///
+/// Adding a render-path endpoint without adding it here leaves it covert: nothing fails, and
+/// the next person trusts the table in CAPABILITIES. The two lists are deliberately
+/// exhaustive over the endpoints that read a sheet.
+#[test]
+fn the_journal_visibility_matrix_holds() {
+    let dir = TempDir::new("visibility");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=city&value=ZZ9",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    // Endpoints that must show the edited value, and how to recognise it.
+    let sees: &[(&str, &str)] = &[
+        ("/rows?path=t.csv&where=city%3DZZ9", "ZZ9"),
+        ("/cell?path=t.csv&row=1&col=city", "ZZ9"),
+        ("/journal?path=t.csv", "ZZ9"),
+        ("/sheet?path=t.csv", "\"operations\":1"),
+    ];
+    for (query, marker) in sees {
+        let (status, body) = get(&server.addr, query);
+        assert_eq!(status, 200, "{query}: {body}");
+        assert!(body.contains(marker), "{query} must see the edit: {body}");
+    }
+
+    // Endpoints that scan the base file: they must NOT see it. If someone changes this
+    // deliberately, both the code and this list have to change together.
+    let scans: &[(&str, &str)] = &[
+        ("/filter?path=t.csv&where=city%3DZZ9", "\"matched\":0"),
+        ("/search?path=t.csv&q=ZZ9", "\"matched\":0"),
+        ("/export?path=t.csv&where=city%3DZZ9", "city,amount"),
+    ];
+    for (query, marker) in scans {
+        let (status, body) = get(&server.addr, query);
+        assert_eq!(status, 200, "{query}: {body}");
+        assert!(
+            body.contains(marker),
+            "{query} must keep scanning the base file: {body}"
+        );
+    }
+}
