@@ -5252,7 +5252,7 @@ fn cmd_concat(args: &[String]) -> i32 {
 
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("concat", rx, json);
-    let planned = match csv_splitter_core::engine::resolve(engine, &inputs[0]) {
+    let planned = match csv_splitter_core::engine::resolve_for_copy(engine, &inputs[0]) {
         Ok(e) => e,
         Err(message) => {
             eprintln!("error: {message}");

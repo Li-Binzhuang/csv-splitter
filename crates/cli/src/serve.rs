@@ -1005,7 +1005,7 @@ fn start_concat(
         Ok(e) => e,
         Err(message) => return bad_request(stream, &message, "engine", "engine=auto|native|sql"),
     };
-    let planned = match engine::resolve(engine, &inputs[0]) {
+    let planned = match engine::resolve_for_copy(engine, &inputs[0]) {
         Ok(e) => e,
         Err(message) => return bad_request(stream, &message, "engine", "engine=auto|native|sql"),
     };

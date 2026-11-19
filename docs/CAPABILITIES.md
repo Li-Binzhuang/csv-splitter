@@ -398,6 +398,19 @@
 覆盖保护覆盖：`filter` / `sort` / `columns` / `dedupe` / `lookup` / `groupby` /
 `pivot` / `convert` / `edit export`。
 
+### concat 是唯一的例外：auto 始终走原生
+
+`concat` 的主要工作是**拷贝字节**，不是读取值。原生路径只解析表头、按记录复制；
+DuckDB 要解析每一列、写出文件、再扫一遍统计行数。实测：
+
+| 输入 | native | DuckDB |
+|---|---|---|
+| 18 MB × 2 | **0.07 s** | 0.20 s |
+| 90 MB × 2 | **0.26 s** | 0.88 s |
+
+所以 `concat --engine auto` **永远走原生**（`engine::resolve_for_copy`），要 DuckDB 得显式
+`--engine sql`——那里没有「文件大了就自动切换」的逻辑，因为没有交叉点可切。
+
 ### 三个命令的交叉点一致（实测）
 
 同一个 8 MB 阈值能不能管住所有命令？分别测：

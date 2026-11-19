@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.51.7] — 2026-11-19
+
+### Fixed
+
+- **`concat --engine auto` no longer switches to DuckDB.** Concat is copy-dominated: native
+  copies records and only parses headers, while DuckDB parses every column, writes the file
+  and scans it again for the row count. Measured 18 MB x 2: 0.07 s native vs 0.20 s sql;
+  90 MB x 2: 0.26 s vs 0.88 s. `resolve_for_copy` keeps `auto` on the native path, and an
+  explicit `--engine sql` still works.
+
 ## [3.51.6] — 2026-11-19
 
 ### Measured / Documented

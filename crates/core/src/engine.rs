@@ -84,6 +84,20 @@ pub fn resolve(engine: Engine, input: &Path) -> Result<Engine, String> {
     }
 }
 
+/// Resolve an engine for a command whose work is mostly *copying bytes* rather than
+/// reading values.
+///
+/// `concat` is the example: the native path copies records and only touches headers, while
+/// DuckDB parses every column, writes the file back and scans it again for the row count.
+/// Measured: 18 MB x 2 files, native 0.07 s vs sql 0.20 s; 90 MB x 2, 0.26 s vs 0.88 s.
+/// So `auto` stays native here; asking for `sql` explicitly is still allowed.
+pub fn resolve_for_copy(engine: Engine, path: &Path) -> Result<Engine, String> {
+    match engine {
+        Engine::Auto => Ok(Engine::Native),
+        other => resolve(other, path),
+    }
+}
+
 /// Quote an identifier for DuckDB without letting a column name close the quote.
 #[cfg(feature = "sql")]
 fn ident(name: &str) -> String {
