@@ -4557,3 +4557,43 @@ fn meta_reports_what_it_promises() {
         "a field the docs no longer promise must not appear: {body}"
     );
 }
+
+/// The API table names response fields in backticks; the handler must actually return them.
+/// Two endpoints are enough to make the pattern real — /meta drifted once already — and the
+/// parser skips tokens that are paths or prose.
+#[test]
+fn documented_fields_are_fields_the_endpoint_returns() {
+    let docs =
+        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../../docs/API.md")).unwrap();
+    let row = |route: &str| -> String {
+        docs.lines()
+            .find(|line| line.starts_with(&format!("| `GET {route}`")))
+            .unwrap_or_else(|| panic!("no table row for {route}"))
+            .to_string()
+    };
+
+    let dir = TempDir::new("docfields");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    for (route, query) in [("/health", "/health"), ("/meta", "/meta?path=t.csv")] {
+        let (status, body) = get(&server.addr, query);
+        assert_eq!(status, 200, "{query}: {body}");
+        let text = row(route);
+        // Backticked tokens that look like field names: no slash, no spaces.
+        for piece in text.split('`').skip(1).step_by(2) {
+            let token = piece.trim();
+            if token.is_empty()
+                || token.starts_with('/')
+                || token.contains(' ')
+                || !token.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+            {
+                continue;
+            }
+            assert!(
+                body.contains(&format!("\"{token}\"")),
+                "{route} documents {token} but the body lacks it: {body}"
+            );
+        }
+    }
+}

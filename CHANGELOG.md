@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.55.0] — 2026-11-19
+
+### Added
+
+- **A test that documented response fields really exist.** It reads the API table, takes the
+  backticked field names from a route's row, and asserts each appears in the live response.
+  The first mutation test aimed at it renamed `bytes` in a *different* endpoint by accident
+  and passed; renaming it in /meta failed the guard as intended, which is why the guard is
+  worth keeping.
+
 ## [3.54.9] — 2026-11-19
 
 ### Fixed / Documentation
