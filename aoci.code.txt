@@ -4,8 +4,8 @@
 .gitattributes[FV4T]: F:声明所有文本按 LF 检出，保证 AOCI 基线与跨平台检出逐字节一致 | R:- | A:唯一规则 `* text=auto eol=lf`；覆盖 Windows autocrlf 的行尾重写，否则整棵树会被基线和漂移检查判成 stale；二进制由 git 自动探测、不改写 | S:基线按原始字节计算，行尾被平台改写会让全部索引失真，所以这里必须强制 LF
 .gitignore[FV4T]: F:忽略构建产物与本地杂物 | R:- | A:忽略 `/target`、编辑器 swap、`.DS_Store`、发布打包目录 `dist/` 与 `staging/`；刻意不忽略 `.codegraph/` 与 `.aoci/`——本仓要求把两套索引的中间过程一起入库 | S:索引入库是有意的取舍：`.codegraph/codegraph.db` 是可重建的二进制，每次重建都会产生整文件变更，历史体积会稳步增长
 AGENTS.md[SV6S]: F:仓库级 Agent 指令：AOCI 认知层的接入与使用原则 | R:code:aoci.txt,code:aoci.meta.txt,code:aoci.code.txt | A:规定“模型生成、模型读取”闭环，何时读 rules/overview/maintain，以及收尾维护一次的纪律；不重复 CLI 手册 | S:机器事实以 Guide、Schema 与 Validator 为准，本文件不得覆盖；上下文压缩后的 handoff 不得携带索引语义，必须重新完整读取并认证
-CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，并保留未达标项与已知债；3.48.2 用实测数字收尾了外部排序修复，峰值 2.2 GB 到 125 MB | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败
-Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 core 与 cli；workspace.package 的版本是发布真相源，当前 3.48.2，二进制的 --version 与 tag 校验都以它为准；依赖集中在 workspace.dependencies | S:-
+CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；3.48.2 记录外部排序峰值 2.2 GB 到 125 MB，3.48.3 记录空单元格不再被当成字符串 0 以及原位重算解禁 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败
+Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 core 与 cli；workspace.package 的版本是发布真相源，当前 3.48.3；二进制的 --version 与 tag 校验都以它为准；依赖集中在 workspace.dependencies | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
 README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:先讲取舍（base 不可变加 journal），再给命令表；命令表与默认端口被测试校验 | S:文档测试要求 README 列出全部命令，并且出现真实默认端口 127.0.0.1:8787
 
@@ -19,7 +19,7 @@ Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Carg
 
 ===/<repository>/crates/cli/src/===
 main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/workbook/mod.rs | A:约三十个命令；行号在用户侧一律 1-based，0-based 只存在于 journal；写命令前用 check_formula 与 check_output 守卫；`serve --check` 做部署自检 | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败——它双向检查“解析了却没文档化”和“文档化了却不存在”
-serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/schema.rs | A:所有响应经 respond 统一附加 CORS、X-Response-Time、ETag 与 Vary；路径先 canonicalize 再要求落在 root 内；写操作以 Op 进 journal，从不修改 base | S:gzip 是另一种表示，ETag 必须带 -gz 后缀；202 必须映射 Accepted，否则提交 job 的响应头写着 Internal Server Error；EDIT_ACTIONS 与实际 match 分支必须一致，由 contract 测试双向断言
+serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/schema.rs | A:所有响应经 respond 统一附加 CORS、X-Response-Time、ETag 与 Vary；路径先 canonicalize 再要求落在 root 内；写操作以 Op 进 journal，从不修改 base；formula 与 set-formula 都在写前调 check_formula | S:gzip 是另一种表示，ETag 必须带 -gz 后缀；202 必须映射 Accepted，否则提交 job 的响应头写着 Internal Server Error；EDIT_ACTIONS 与实际 match 分支必须一致，由 contract 测试双向断言
 
 ===/<repository>/crates/cli/src/web/===
 index.html[EU7M]: F:内置只读浏览页：用 /rows 拉窗口并把结果渲染成表格 | R:code:crates/cli/src/serve.rs | A:单文件 HTML 与内联 JS，无外部依赖；实际调用 /files、/meta、/rows、/search、/analyze、/groupby 六个端点 | S:-
@@ -74,16 +74,16 @@ validate.rs[DQ8L]: F:列约束校验：只报告不改数据，可限制扫描�
 viewer.rs[CU6M]: F:窗口化读取：只持有一屏所需行 | R:code:crates/core/src/workbook/export.rs | A:请求超出缓存窗口时经稀疏索引重取，内存与文件大小无关 | S:-
 
 ===/<repository>/crates/core/src/formula/===
-functions.rs[KA7M]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:与解析器分开以便持续扩展；约定跟随电子表格：if 短路求值、isblank/isnumber、iferror、日期函数取 ISO 前缀 | S:-
-mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:支持算术、比较、逻辑、文本、数字与日期函数；if 只求选中分支；非数字得 #VALUE!，引用不存在的列在导出前报错 | S:公式列只存在 journal 里，groupby、pivot、chart 直接读文件看不见它，要汇总必须先 apply-edits 物化
+functions.rs[KA7M]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:与解析器分开以便持续扩展；约定跟随电子表格：if 短路求值、isblank 对空单元格返回真、isnumber 只认 Number、iferror、日期函数取 ISO 前缀 | S:空单元格是独立值而不是字符串 0，文本函数不能再把空值当 0 看待
+mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:Value 有 Number/Bool/Text/Empty/Error 五种；空单元格渲染为空串、算术当 0、isblank 为真；if 只求选中分支；未知列在导出前报错 | S:公式列只存在 journal 里，groupby、pivot、chart 直接读文件看不见它，要汇总必须先 apply-edits 物化
 sheetref.rs[DD6S]: F:公式中的跨表引用：ref("other.csv","key","col") | R:code:crates/core/src/formula/mod.rs | A:被引用表加载一次成为映射，当前表保持流式；路径相对 base 文件所在目录解析 | S:按进程工作目录解析会让公式在别处运行时悄悄换成另一张表，所以必须相对 base 文件
 state.rs[KP6S]: F:多行公式的行状态：lag 与 running 的有界环形缓冲 | R:code:crates/core/src/formula/mod.rs | A:RowNeeds 先声明需要多少历史，内存随 lag 距离而不是行数增长；导出前预滚历史 | S:导出是单向前进的，唯一可获得的历史是“前若干行”，反向引用无法支持，也不该假装支持
 
 ===/<repository>/crates/core/src/workbook/===
 export.rs[CD9L]: F:逐行组装、导出与分页读取 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/journal.rs | A:一次顺序扫描，只重写被编辑触及的单元格；Pager 只做一次昂贵准备（索引、列布局、公式编译） | S:未被 journal 触及的行必须走字节级拷贝，逐格分配会让 782 列文件慢数倍
 journal.rs[CP9L]: F:追加式操作日志与它的文本格式 | R:code:crates/core/src/workbook/mod.rs | A:每行一个操作的 CSV 记录；写入加锁，多进程同时编辑都保留；损坏可检测 | S:journal 是编辑的唯一载体，删掉等于丢数据，而 base 永远不被修改
-mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序与列布局 | R:code:crates/core/src/workbook/rows.rs | A:所有编辑记录为 Op；SetColumnFormula 重算已有列，FillColumns 一次填多列；改名让既有编辑跟着新名 | S:删除列会带走该列的编辑，改名不会——两者都可撤销，但语义不同
-rows.rs[CP9L]: F:行身份映射与单元格编辑解析 | R:code:crates/core/src/workbook/mod.rs | A:RowId 为 Base 或 Virtual，position_of 是 id_at 的逆；填充解析成行身份而非位置；公式编译校验引用与自引用 | S:按位置存编辑会在插入行后把编辑指向邻居，这是本项目最需要避免的静默错误
+mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序与列布局 | R:code:crates/core/src/workbook/rows.rs | A:所有编辑记录为 Op；SetColumnFormula 重算已有列，FillColumns 一次填多列；改名让既有编辑跟着新名 | S:原位重算每次都从 base 行取值，所以同一列连做两遍相同公式不会叠乘；删除列会带走该列的编辑，改名不会
+rows.rs[CP9L]: F:行身份映射与单元格编辑解析 | R:code:crates/core/src/workbook/mod.rs | A:RowId 为 Base 或 Virtual，position_of 是 id_at 的逆；填充解析成行身份而非位置；公式允许读自身列做原位重算，新列读自身被拒 | S:按位置存编辑会在插入行后把编辑指向邻居，这是本项目最需要避免的静默错误
 
 ===/<repository>/csv-splitter-demo/===
 orders.csv[ZO3L]: F:demo 生成的示例数据：20 120 条记录、6 列 | R:code:crates/core/src/demo.rs | A:20 000 条基础行 + 20 条多逗号错位（每 1000 行一条）+ 100 条重复（前半段每 100 行一条），物理行 20 921 因为还有带引号换行 | S:生成物，重跑 demo 会整份覆盖；不要当受管理源码手改
@@ -105,7 +105,7 @@ ROADMAP.md[SU5S]: F:路线图：已完成、进行中与明确不做的范围 | 
 TROUBLESHOOTING.md[SO6S]: F:排障：常见症状、原因与处理，以及如何读 CI 失败 | R:code:docs/CI.md | A:含 annotation 读取命令与历史根因（超时测试竞态、mingw 线程模型） | S:-
 
 ===/<repository>/scripts/===
-backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换与请求上限 | S:裸 wait 会连脚本自己启动的 server 一起等待，必须收集 PID 逐个等待
+backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换、自引用拒绝与请求上限 | S:脚本默认跑 target/debug 的二进制，改了代码只重建 release 会在这里看到旧行为；裸 wait 会连自己起的 server 一起等，必须收集 PID 逐个等待
 bench.sh[TP5T]: F:基准脚本：切分与合并吞吐 | R:code:scripts/smoke.sh | A:生成数据、计时并打印每秒兆字节 | S:-
 check_match_arms.py[XQ5T]: F:检查 serve.rs 里 match 分支标签是否重复 | R:code:crates/cli/src/serve.rs | A:按仓库根解析目标路径，由 regress 调用 | S:按调用者工作目录解析会在临时目录里找不到文件并假失败
 clean.sh[XO4T]: F:清理构建与本地产物 | R:- | A:删除 target 与 dist，不碰数据文件 | S:-

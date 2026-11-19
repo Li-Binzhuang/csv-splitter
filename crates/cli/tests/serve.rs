@@ -3688,13 +3688,29 @@ fn edit_set_formula_recomputes_a_column() {
     );
     assert!(body.contains(r#"["1","2","5"]"#), "{body}");
 
-    // A self-reference is circular: 400 at write time, not a broken sheet later.
+    // Reading your own column is in-place recompute, not recursion: the row pipeline
+    // builds the row from the base first, so `qty = qty*2` doubles each value once.
     let (code, body) = post(
         &server.addr,
         "/edit?path=t.csv&action=set-formula&col=qty&value=qty*2",
     );
-    assert_eq!(code, 400, "{body}");
-    assert!(body.contains("circular"), "{body}");
+    assert_eq!(code, 200, "{body}");
+    let (_, body) = get(&server.addr, "/rows?path=t.csv&count=2&columns=id,qty");
+    assert!(body.contains(r#"["1","4"]"#), "{body}");
+
+    // Re-issuing it replaces the previous pass rather than compounding: every pass reads
+    // the *base* row, which is what keeps `undo` and the immutable base coherent.
+    let (code, _) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set-formula&col=qty&value=qty*2",
+    );
+    assert_eq!(code, 200);
+    let (_, body) = get(&server.addr, "/rows?path=t.csv&count=2&columns=id,qty");
+    assert!(body.contains(r#"["1","4"]"#), "{body}");
+
+    // Undo drops one pass; the value stays doubled because the first pass remains.
+    let (code, _) = post(&server.addr, "/edit?path=t.csv&action=undo");
+    assert_eq!(code, 200);
 
     // An unknown column is named, not stored.
     let (code, body) = post(

@@ -2584,6 +2584,26 @@ fn edit_apply(
                     "name=<new column>&value=<expression>",
                 );
             };
+            // Same write-time guard as set-formula. A new column reading itself would be
+            // accepted here and then fail on every later read, which is the worst order.
+            let columns = match csv_splitter_core::workbook::base_header(&path, delimiter(params))
+                .and_then(|header| {
+                    csv_splitter_core::workbook::column_layout(journal.ops(), &header)
+                }) {
+                Ok(layout) => layout.into_iter().map(|(name, _)| name).collect::<Vec<_>>(),
+                Err(e) => {
+                    return respond_json(
+                        stream,
+                        422,
+                        &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                    )
+                }
+            };
+            if let Err(message) =
+                csv_splitter_core::workbook::check_formula(expression, &columns, Some(name))
+            {
+                return bad_request(stream, &message, "value", "value=<expression>");
+            }
             Op::AddColumn {
                 name: name.clone(),
                 formula: expression.clone(),

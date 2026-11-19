@@ -229,7 +229,11 @@ SETF="$(curl -s -X POST "$URL/edit?path=recompute.csv&action=set-formula&col=qty
 has "set-formula: accepted" "$SETF" '"op":"setformula"'
 has "set-formula: described" "$SETF" 'compute'
 CYCLE="$(curl -s -X POST "$URL/edit?path=recompute.csv&action=set-formula&col=qty&value=qty*2")"
-has "set-formula: circular refused" "$CYCLE" 'circular'
+# Reading your own column is in-place recompute, not recursion: the row is built from the
+# base first. A *new* column reading itself is what must be refused.
+has "set-formula: self-recompute accepted" "$CYCLE" '"op":"setformula"'
+NEWC="$(curl -s -X POST "$URL/edit?path=recompute.csv&action=formula&value=total*2&name=total")"
+has "new column: self-reference refused" "$NEWC" 'reads its own column'
 COMPUTED="$(curl -s "$URL/cell?path=recompute.csv&row=1&col=qty")"
 has "set-formula: value computed" "$COMPUTED" '"value":"50"'
 

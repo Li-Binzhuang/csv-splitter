@@ -100,6 +100,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         },
         "isblank" | "isempty" => match args.first() {
             Some(arg) => match eval(arg, ctx) {
+                Value::Empty => Value::Bool(true),
                 Value::Text(t) => Value::Bool(t.trim().is_empty()),
                 _ => Value::Bool(false),
             },

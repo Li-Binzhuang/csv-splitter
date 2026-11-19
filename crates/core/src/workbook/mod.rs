@@ -1214,20 +1214,32 @@ mod history_tests {
         let columns = resolve_columns(&ops, &["id".into(), "qty".into(), "price".into()]).unwrap();
         assert_eq!(columns, vec!["id", "qty", "price"], "{columns:?}");
 
-        // A formula that reads the column it computes is a circular reference, refused
-        // at compile time rather than producing a value that depends on evaluation order.
-        let circular = compile_formulas(
+        // Reading your own column is in-place recompute, not recursion: every cell is
+        // built from the base row before the computed column overwrites it.
+        let in_place = compile_formulas(
             &[Op::SetColumnFormula {
-                column: "qty".into(),
-                formula: "qty*2".into(),
+                column: "price".into(),
+                formula: "price * 1.1".into(),
+            }],
+            &["id".into(), "qty".into(), "price".into()],
+        )
+        .expect("in-place recompute of an existing column is allowed");
+        assert!(in_place.items.iter().any(|(name, _)| name == "price"));
+
+        // A *new* column that reads itself has nothing to read, so it stays refused at
+        // compile time rather than inventing a value from the empty placeholder.
+        let circular = compile_formulas(
+            &[Op::AddColumn {
+                name: "total".into(),
+                formula: "total*2".into(),
             }],
             &["id".into(), "qty".into()],
         );
         let err = match circular {
-            Ok(_) => panic!("a self-referencing column formula must be refused"),
+            Ok(_) => panic!("a new column reading itself must be refused"),
             Err(e) => e,
         };
-        assert!(err.to_string().contains("circular"), "{err}");
+        assert!(err.to_string().contains("cannot read itself"), "{err}");
     }
 
     #[test]

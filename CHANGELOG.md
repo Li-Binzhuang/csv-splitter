@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.48.3] — 2026-11-19
+
+### Fixed
+
+- **An empty cell was coerced to the string "0" before any text function saw it.**
+  `len(note)` returned **1** for an empty note, `upper(note)` returned `"0"`, and
+  `isblank(note)` was false. The cause was a single rule: empty cells became
+  `Value::Number(0.0)` so arithmetic would treat them as zero. A new `Value::Empty`
+  keeps that arithmetic behaviour (`Empty` still numbers as 0) while rendering as `""`,
+  so text functions see nothing: `len("") → 0`, `isblank("") → TRUE`.
+- **In-place recompute was refused as a circular reference.** `edit set-formula --col
+  amount --value "amount*1.1"` failed with "the formula reads its own column", which
+  blocked the main reason the feature exists. The row pipeline builds every cell from the
+  base row before overwriting the computed column, so reading your own column sees the old
+  value and cannot recurse. It is allowed now; a **new** column that reads itself is still
+  refused, because there would be nothing to read.
+
 ## [3.48.2] — 2026-11-19
 
 ### Fixed

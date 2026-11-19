@@ -1,0 +1,141 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "7976c9e46d309d015133be8c457620cc91a0f58f427092a2b55ad46fc543df2e",
+  "batch_id": "ca91f46a67cef285fcb33c33ff2cf85a3b2b81463a841cb94f7b8ac7ad5807c1",
+  "composite_identity": "6727abfb7a488027d8e2d79f8f0ec59549d097cedb2ac11151d678f97fbf3bc3",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b3c1aac7cd448fa4f96504623b016171670b798b10b047ef1cc97ae07061b6c9",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "dc06d3dbe36847cdaa24a4cf3f09b941b415dc80f557ebdee9e6305240827800",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，并保留未达标项与已知债；3.48.2 用实测数字收尾了外部排序修复，峰值 2.2 GB 到 125 MB | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:Cargo.toml",
+      "path": "Cargo.toml",
+      "change": "update",
+      "source_sha256": "3c5b7b6ff11e3c64a18ce6dd06dd7043f2a443d8dcd5b0d29c25098167360f74",
+      "existing_entry": "Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 core 与 cli；workspace.package 的版本是发布真相源，当前 3.48.2，二进制的 --version 与 tag 校验都以它为准；依赖集中在 workspace.dependencies | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "5afd739cc823d1a1dfbc81f9604876172ad12823b838a6bfd90b73900413b0e7",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/schema.rs | A:所有响应经 respond 统一附加 CORS、X-Response-Time、ETag 与 Vary；路径先 canonicalize 再要求落在 root 内；写操作以 Op 进 journal，从不修改 base | S:gzip 是另一种表示，ETag 必须带 -gz 后缀；202 必须映射 Accepted，否则提交 job 的响应头写着 Internal Server Error；EDIT_ACTIONS 与实际 match 分支必须一致，由 contract 测试双向断言"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "cd049c1f85d48706c9c3f240fcef98be3595b2cae511ecdc3934f46b1e80634a",
+      "existing_entry": "functions.rs[KA7M]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:与解析器分开以便持续扩展；约定跟随电子表格：if 短路求值、isblank/isnumber、iferror、日期函数取 ISO 前缀 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "76ee16c9420ac64ebbf32a76cc69a924a71e5b7b81d5e465d7855a2240fdd0c4",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:支持算术、比较、逻辑、文本、数字与日期函数；if 只求选中分支；非数字得 #VALUE!，引用不存在的列在导出前报错 | S:公式列只存在 journal 里，groupby、pivot、chart 直接读文件看不见它，要汇总必须先 apply-edits 物化"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/mod.rs",
+      "path": "crates/core/src/workbook/mod.rs",
+      "change": "update",
+      "source_sha256": "fd6ec12fd322818916568b661c764e44ebfe867efc21a0be64a35ff8ecf4ec91",
+      "existing_entry": "mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序与列布局 | R:code:crates/core/src/workbook/rows.rs | A:所有编辑记录为 Op；SetColumnFormula 重算已有列，FillColumns 一次填多列；改名让既有编辑跟着新名 | S:删除列会带走该列的编辑，改名不会——两者都可撤销，但语义不同"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/rows.rs",
+      "path": "crates/core/src/workbook/rows.rs",
+      "change": "update",
+      "source_sha256": "0e162d22f94ee89598f7c85291bb611338bc49feb4fbe4cdebff453a42595386",
+      "existing_entry": "rows.rs[CP9L]: F:行身份映射与单元格编辑解析 | R:code:crates/core/src/workbook/mod.rs | A:RowId 为 Base 或 Virtual，position_of 是 id_at 的逆；填充解析成行身份而非位置；公式编译校验引用与自引用 | S:按位置存编辑会在插入行后把编辑指向邻居，这是本项目最需要避免的静默错误"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/backend-smoke.sh",
+      "path": "scripts/backend-smoke.sh",
+      "change": "update",
+      "source_sha256": "fa5f09a3c381e6a832ec580954cfb0327aa5183899c5ac51a22fcd949f878733",
+      "existing_entry": "backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换与请求上限 | S:裸 wait 会连脚本自己启动的 server 一起等待，必须收集 PID 逐个等待"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "076bff95c062284b4f9f7ac890ad8a383b4ce2c7150e73d01ba899a9bdae3bc0",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "dc06d3dbe36847cdaa24a4cf3f09b941b415dc80f557ebdee9e6305240827800",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，并保留未达标项与已知债；3.48.2 用实测数字收尾了外部排序修复，峰值 2.2 GB 到 125 MB | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "33d38b3a981e29f73a4489751ce4d829d8349469694fd1138152f4296f715dfe",
+      "object_ref": "code:Cargo.toml",
+      "path": "Cargo.toml",
+      "change": "update",
+      "source_sha256": "3c5b7b6ff11e3c64a18ce6dd06dd7043f2a443d8dcd5b0d29c25098167360f74",
+      "existing_entry": "Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 core 与 cli；workspace.package 的版本是发布真相源，当前 3.48.2，二进制的 --version 与 tag 校验都以它为准；依赖集中在 workspace.dependencies | S:-"
+    },
+    {
+      "candidate_id": "650f5070ba69568a6be0aec8560b6ef25f540499d46efd447a8ced4f02476af6",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "5afd739cc823d1a1dfbc81f9604876172ad12823b838a6bfd90b73900413b0e7",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/schema.rs | A:所有响应经 respond 统一附加 CORS、X-Response-Time、ETag 与 Vary；路径先 canonicalize 再要求落在 root 内；写操作以 Op 进 journal，从不修改 base | S:gzip 是另一种表示，ETag 必须带 -gz 后缀；202 必须映射 Accepted，否则提交 job 的响应头写着 Internal Server Error；EDIT_ACTIONS 与实际 match 分支必须一致，由 contract 测试双向断言"
+    },
+    {
+      "candidate_id": "6811a304b8953878d82557be8e05024703d933d4928ba56f8e2d70c955459b31",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "cd049c1f85d48706c9c3f240fcef98be3595b2cae511ecdc3934f46b1e80634a",
+      "existing_entry": "functions.rs[KA7M]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:与解析器分开以便持续扩展；约定跟随电子表格：if 短路求值、isblank/isnumber、iferror、日期函数取 ISO 前缀 | S:-"
+    },
+    {
+      "candidate_id": "00c6af379b9afb7a6604282951af8c444453573bd252a4020209a964080ab62d",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "76ee16c9420ac64ebbf32a76cc69a924a71e5b7b81d5e465d7855a2240fdd0c4",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:支持算术、比较、逻辑、文本、数字与日期函数；if 只求选中分支；非数字得 #VALUE!，引用不存在的列在导出前报错 | S:公式列只存在 journal 里，groupby、pivot、chart 直接读文件看不见它，要汇总必须先 apply-edits 物化"
+    },
+    {
+      "candidate_id": "11b3928c4a1fdabf6dd629a63d1cb69cbf5628174c9b37df9fc50762ec287750",
+      "object_ref": "code:crates/core/src/workbook/mod.rs",
+      "path": "crates/core/src/workbook/mod.rs",
+      "change": "update",
+      "source_sha256": "fd6ec12fd322818916568b661c764e44ebfe867efc21a0be64a35ff8ecf4ec91",
+      "existing_entry": "mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序与列布局 | R:code:crates/core/src/workbook/rows.rs | A:所有编辑记录为 Op；SetColumnFormula 重算已有列，FillColumns 一次填多列；改名让既有编辑跟着新名 | S:删除列会带走该列的编辑，改名不会——两者都可撤销，但语义不同"
+    },
+    {
+      "candidate_id": "00bd1a76707f3d9123d9181b0c206a4db8356e77ae5ca994f47f7493d06811fe",
+      "object_ref": "code:crates/core/src/workbook/rows.rs",
+      "path": "crates/core/src/workbook/rows.rs",
+      "change": "update",
+      "source_sha256": "0e162d22f94ee89598f7c85291bb611338bc49feb4fbe4cdebff453a42595386",
+      "existing_entry": "rows.rs[CP9L]: F:行身份映射与单元格编辑解析 | R:code:crates/core/src/workbook/mod.rs | A:RowId 为 Base 或 Virtual，position_of 是 id_at 的逆；填充解析成行身份而非位置；公式编译校验引用与自引用 | S:按位置存编辑会在插入行后把编辑指向邻居，这是本项目最需要避免的静默错误"
+    },
+    {
+      "candidate_id": "a1f334e979922cfdab7ab6586d965e37830e3a1ebe806e3669e937664f10f166",
+      "object_ref": "code:scripts/backend-smoke.sh",
+      "path": "scripts/backend-smoke.sh",
+      "change": "update",
+      "source_sha256": "fa5f09a3c381e6a832ec580954cfb0327aa5183899c5ac51a22fcd949f878733",
+      "existing_entry": "backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换与请求上限 | S:裸 wait 会连脚本自己启动的 server 一起等待，必须收集 PID 逐个等待"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+治理：已对齐 —— 89 条 Entry 覆盖 94 个 index 角色源文件
+  另有 5 个 index 角色源文件按规则没有 Entry：5 个模型无法创作（二进制、空文件或过大），0 个被策展排除
+AOCI Verify：Volumes v1结构有效
+root_sha256: 94b15c6193b07f337a8a96a63207687df1288403817a63f7280d61aa6a191e69
+meta_sha256: 5ccd06dd2198435423141174e4f3eaed7e7645644070e0b5cc2e20dbc889172a
+composite_identity: 1fd5ca1b4941e982c556baa23bcb40d748c643e03b6b1464f70891aa747b6c6e

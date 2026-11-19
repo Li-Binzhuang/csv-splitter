@@ -739,8 +739,13 @@ fn rename_identifiers(formula: &str, from: &str, to: &str) -> String {
 ///
 /// Both entry points call this at write time: storing an expression that can never
 /// evaluate would accept the request and then break the sheet on the next read, which is
-/// the worst of both worlds. `target` is the column the formula will fill, when it
-/// overwrites an existing one (`SetColumnFormula`); a self-reference is circular.
+/// the worst of both worlds.
+///
+/// `target` is the column the formula will fill. Reading it is allowed when the column
+/// already exists (`SetColumnFormula`, e.g. `amount = amount * 1.1`): the row pipeline
+/// builds every cell from the base row before overwriting, so the read sees the old value
+/// and cannot recurse. A *new* column that reads itself is still refused — there would be
+/// nothing to read.
 pub fn check_formula(
     formula: &str,
     columns: &[String],
@@ -749,9 +754,9 @@ pub fn check_formula(
     let parsed = crate::formula::Formula::parse(formula).map_err(|e| e.to_string())?;
     let references = parsed.references();
     if let Some(target) = target {
-        if references.iter().any(|r| r == target) {
+        if references.iter().any(|r| r == target) && !columns.iter().any(|c| c == target) {
             return Err(format!(
-                "the formula reads its own column '{target}'; that is a circular reference"
+                "the formula reads its own column '{target}', but that column does not exist yet"
             ));
         }
     }
@@ -801,13 +806,18 @@ pub fn compile_formulas(ops: &[Op], columns: &[String]) -> io::Result<CompiledFo
             let parsed = Formula::parse(formula).map_err(|e| {
                 io::Error::new(io::ErrorKind::InvalidInput, format!("column '{name}': {e}"))
             })?;
-            if let Op::SetColumnFormula { column, .. } = op {
-                if parsed.references().iter().any(|r| r == column) {
+            // In-place recompute (`amount = amount * 1.1`) is legitimate: the row
+            // pipeline fills every cell from the base row first, then overwrites the
+            // computed column, so reading your own column sees the old value and
+            // never recurses. A *new* column that reads itself is different — it would
+            // read the empty placeholder it is about to create — so that stays refused.
+            if let Op::AddColumn { name: new_name, .. } = op {
+                if parsed.references().iter().any(|r| r == new_name) {
                     return Err(io::Error::new(
                         io::ErrorKind::InvalidInput,
                         format!(
-                            "column '{column}': the formula reads its own column; \
-                             that is a circular reference"
+                            "column '{new_name}': a new column cannot read itself; \
+                             there is no value to read"
                         ),
                     ));
                 }

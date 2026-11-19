@@ -83,6 +83,10 @@ pub enum Value {
     Number(f64),
     Bool(bool),
     Text(String),
+    /// An empty cell. Distinct from `Text("")` on purpose: a spreadsheet shows an empty
+    /// cell as nothing, while a text function applied to it yields "" and `len` yields 0.
+    /// It still counts as 0 in arithmetic, which is what a spreadsheet does.
+    Empty,
     /// Non-numeric input where a number was required (spreadsheet `#VALUE!`).
     Error,
 }
@@ -94,6 +98,7 @@ impl Value {
             Self::Number(n) => format_number(*n),
             Self::Bool(b) => if *b { "TRUE" } else { "FALSE" }.to_string(),
             Self::Text(s) => s.clone(),
+            Self::Empty => String::new(),
             Self::Error => "#VALUE!".to_string(),
         }
     }
@@ -101,6 +106,8 @@ impl Value {
     fn number(&self) -> Option<f64> {
         match self {
             Self::Number(n) => Some(*n),
+            // A spreadsheet reads an empty cell as 0 in arithmetic.
+            Self::Empty => Some(0.0),
             _ => None,
         }
     }
@@ -659,7 +666,7 @@ pub(crate) fn eval(expr: &Expr, ctx: &Ctx<'_>) -> Value {
             None => Value::Error,
             Some(raw) => match raw.trim().parse::<f64>() {
                 Ok(n) if n.is_finite() => Value::Number(n),
-                _ if raw.trim().is_empty() => Value::Number(0.0),
+                _ if raw.trim().is_empty() => Value::Empty,
                 _ => Value::Text(raw.clone()),
             },
         },
@@ -678,7 +685,7 @@ pub(crate) fn eval(expr: &Expr, ctx: &Ctx<'_>) -> Value {
                     None => Value::Error,
                     Some(raw) => match raw.trim().parse::<f64>() {
                         Ok(n) if n.is_finite() => Value::Number(n),
-                        _ if raw.trim().is_empty() => Value::Number(0.0),
+                        _ if raw.trim().is_empty() => Value::Empty,
                         _ => Value::Text(raw.clone()),
                     },
                 },
@@ -757,6 +764,7 @@ pub(crate) fn truthy(value: &Value) -> bool {
             let lower = t.trim().to_ascii_lowercase();
             matches!(lower.as_str(), "true" | "yes" | "1")
         }
+        Value::Empty => false,
         Value::Error => false,
     }
 }
