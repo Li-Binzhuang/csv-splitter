@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.55.5] — 2026-11-19
+
+### Measured / Documented
+
+- Measured the streaming download: server RSS 8.2 MB before, **10.2 MB peak** during a throttled
+  89 MB transfer, and the received file matched byte for byte. The old whole-file read would
+  have held the whole file, so "gigabyte exports do not blow up memory" is now a number rather
+  than a hope.
+
 ## [3.55.4] — 2026-11-19
 
 ### Added

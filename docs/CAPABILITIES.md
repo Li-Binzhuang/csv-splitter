@@ -518,6 +518,20 @@ pivot 两个引擎的输出在这两个尺寸上逐字节相同。
 - **但 126 MB 不等于 64 MB**：进程本身有约 70 MB 常驻开销（二进制、解码、缓冲）。文档里的
   「总预算」指 I/O 缓冲那部分，不是整个进程的 RSS——这两件事不要混。
 
+## 下载大文件的内存 / Downloading a big file costs almost nothing (measured)
+
+89 MB 文件，服务端限速下载（6 MB/s，持续约 15 秒），期间采样进程 RSS：
+
+| 时刻 | RSS |
+|---|---|
+| 启动后、下载前 | **8.2 MB** |
+| 下载进行中峰值 | **10.2 MB** |
+
+收到的文件与服务端文件 **sha256 相同**。
+
+这条数字的意义：`/download` 以前用 `std::fs::read` 整份读入，89 MB 文件等于 89 MB 常驻；
+现在按 1 MB 分块，**多出约 2 MB**。所以「几 GB 导出不会打爆内存」不再是推测。
+
 ## 分片的多线程开关 / Is parallel splitting worth it (measured)
 
 89 MB 的文件、切成 4 份、默认 zstd：
