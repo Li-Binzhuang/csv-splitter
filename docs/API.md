@@ -104,7 +104,7 @@
 | `export` | `out` | 物化到文件（返回 job） |
 
 
-> `/spec` 的 `params` 现已覆盖**全部端点**（参数表按 handler 实际读取的 key 补齐），
+> `/spec（`errors` 覆盖全部 17 个状态码）` 的 `params` 现已覆盖**全部端点**（参数表按 handler 实际读取的 key 补齐），
 > 并由 `crates/cli/tests/contract.rs` 双向断言：`/spec` 不能声明不存在的端点，已服务的
 > 端点也不能缺席。参数「是否真的被 handler 读取」这一层仍然无法用机械检查证明——
 > 参数常经辅助函数传入（`resolve_out(root, params, "out")`）——所以那一层靠测试逐个

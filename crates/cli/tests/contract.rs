@@ -160,3 +160,43 @@ fn spec_routes_match_the_served_routes() {
         "served routes missing from /spec's parameter table: {undocumented:?}"
     );
 }
+
+/// `/spec` must describe every status the server can return, not the six it used to list.
+/// The check reads the source so a new code in `reason_for` cannot ship undocumented.
+#[test]
+fn spec_documents_every_status_the_server_can_return() {
+    let serve =
+        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/serve.rs")).unwrap();
+
+    let reason_block = serve
+        .split("fn reason_for(status: u16)")
+        .nth(1)
+        .expect("reason_for must exist")
+        .split("\n}")
+        .next()
+        .unwrap();
+    let mut codes: Vec<u16> = Vec::new();
+    for line in reason_block.lines() {
+        let trimmed = line.trim();
+        // Arms look like `202 => "Accepted",`; the wildcard arm has no number.
+        if let Some((left, _)) = trimmed.split_once(" => ") {
+            if let Ok(number) = left.trim().parse::<u16>() {
+                codes.push(number);
+            }
+        }
+    }
+    assert!(!codes.is_empty(), "no status codes found in reason_for");
+
+    let notes = serve
+        .split("const STATUS_NOTES")
+        .nth(1)
+        .expect("STATUS_NOTES must exist");
+    for code in codes {
+        // rustfmt may put each tuple on its own line, so look for `201,` rather than the
+        // one-line `(201, ` form the source had when this test was written.
+        assert!(
+            notes.contains(&format!("{code},")),
+            "status {code} is returned by the server but has no note in STATUS_NOTES"
+        );
+    }
+}

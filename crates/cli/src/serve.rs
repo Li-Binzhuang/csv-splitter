@@ -1333,14 +1333,15 @@ fn spec_endpoint(stream: &mut TcpStream) -> io::Result<()> {
     };
     let fields = params(SPEC_FIELDS);
     let body = format!(
-        r#"{{"version":{},"cors":true,"etag":true,"reads":[{}],"writes":[{}],"pathRequired":[{}],"caches":["parquet"],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"queryRows":10000,"querySeconds":{}}},"params":{},"fields":{},"errors":{{"400":"your request is wrong (path, column, SQL, parameter)","404":"the target is not there","405":"wrong method","409":"a compare-and-set lost","422":"this file cannot be read","504":"the engine was interrupted after 30 s"}}}}"#,
+        r#"{{"version":{},"cors":true,"etag":true,"reads":[{}],"writes":[{}],"pathRequired":[{}],"caches":["parquet"],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"queryRows":10000,"querySeconds":{}}},"params":{},"fields":{},"errors":{{{}}}}}"#,
         json_str(env!("CARGO_PKG_VERSION")),
         routes.join(","),
         writes.join(","),
         needed.join(","),
         query_timeout_ms() / 1000,
         params(SPEC_PARAMS),
-        fields
+        fields,
+        status_notes_json()
     );
     respond_json(stream, 200, &body)
 }
@@ -5698,6 +5699,51 @@ fn respond_bytes(
         stream.write_all(body)?;
     }
     stream.flush()
+}
+
+/// What each status means for a caller, in one place.
+///
+/// `/spec` used to advertise six of them while the server returned sixteen, so a client
+/// reading the contract could not know what 201, 202, 206, 304, 414, 416, 429, 500 or 503
+/// meant. A test asserts every code `reason_for` knows has a note here.
+const STATUS_NOTES: &[(u16, &str)] = &[
+    (200, "here is what you asked for"),
+    (
+        201,
+        "something was created; read the response body for where",
+    ),
+    (202, "a job was accepted; poll /job?id= for progress"),
+    (204, "done, and there is deliberately nothing to read"),
+    (206, "a byte range was served; more may follow"),
+    (
+        304,
+        "nothing changed since your ETag; use the copy you have",
+    ),
+    (400, "your request is wrong (path, column, SQL, parameter)"),
+    (404, "the target is not there"),
+    (405, "wrong method for this route"),
+    (
+        409,
+        "a compare-and-set lost; the body carries actual and expected",
+    ),
+    (414, "the request line is too long for this server"),
+    (416, "the byte range does not fit the file"),
+    (422, "this file cannot be read (encoding, header, shape)"),
+    (429, "too many requests in flight; retry after a moment"),
+    (
+        500,
+        "the server failed while answering; the log has the detail",
+    ),
+    (503, "the server is shutting down or not ready; retry later"),
+    (504, "the engine was interrupted after the query budget"),
+];
+
+fn status_notes_json() -> String {
+    STATUS_NOTES
+        .iter()
+        .map(|(code, note)| format!("\"{code}\":{}", json_str(note)))
+        .collect::<Vec<_>>()
+        .join(",")
 }
 
 fn reason_for(status: u16) -> &'static str {

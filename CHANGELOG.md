@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.50.2] — 2026-11-19
+
+### Fixed
+
+- **`/spec` advertised six status codes while the server returns seventeen.** A client
+  reading the contract could not know what 201, 202, 206, 304, 414, 416, 429, 500 or 503
+  meant. The notes now live in one `STATUS_NOTES` table and `/spec` is built from it, and a
+  contract test reads `reason_for` from the source and fails if any returned code has no
+  note.
+
 ## [3.50.1] — 2026-11-19
 
 ### Documentation
