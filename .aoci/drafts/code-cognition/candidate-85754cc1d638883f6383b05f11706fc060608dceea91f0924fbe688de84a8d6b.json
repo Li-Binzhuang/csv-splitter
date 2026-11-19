@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "0efe52339a422ec8b0c66625b5710d60ab81789c339a48768fe6fd3c5278b589",
+  "batch_id": "85754cc1d638883f6383b05f11706fc060608dceea91f0924fbe688de84a8d6b",
+  "composite_identity": "5549a8476f4e0bae296ef4d2e38cfe825ddb93420deac1e2047c62469fcdec07",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e1748fd8141387c2d64ea05a5b5288235c980469f9be5cacdadd488ded4b5ff2",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "36fb8e5054ac6e146de3cc241a303f045dba87697cef575454325becdcb2b810",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；保留未达标项与已知债，例如暖档排序偶发 0.37 秒、/spec 参数表曾不完整 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:Cargo.toml",
+      "path": "Cargo.toml",
+      "change": "update",
+      "source_sha256": "06a01928d5d7da39175251cd349d5f967f6d106d5b86c485c5c0514564cf66e7",
+      "existing_entry": "Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 core 与 cli；`[workspace.package]` 的版本是发布真相源，二进制 `--version` 与 tag 校验都以它为准；依赖版本集中在 workspace.dependencies | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "42c1173fa1fcf1a61121e65077b57fa0769b3fe367663a904c9615b92362b14f",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "36fb8e5054ac6e146de3cc241a303f045dba87697cef575454325becdcb2b810",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；保留未达标项与已知债，例如暖档排序偶发 0.37 秒、/spec 参数表曾不完整 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "968cb9f946dbcd5579e63f28e0770cb269873f072dd8d948b1394414243079af",
+      "object_ref": "code:Cargo.toml",
+      "path": "Cargo.toml",
+      "change": "update",
+      "source_sha256": "06a01928d5d7da39175251cd349d5f967f6d106d5b86c485c5c0514564cf66e7",
+      "existing_entry": "Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 core 与 cli；`[workspace.package]` 的版本是发布真相源，二进制 `--version` 与 tag 校验都以它为准；依赖版本集中在 workspace.dependencies | S:-"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+治理：blocked（3 项 finding）
+AOCI Verify：Volumes v1结构有效
+root_sha256: 94b15c6193b07f337a8a96a63207687df1288403817a63f7280d61aa6a191e69
+meta_sha256: 5ccd06dd2198435423141174e4f3eaed7e7645644070e0b5cc2e20dbc889172a
+composite_identity: 5549a8476f4e0bae296ef4d2e38cfe825ddb93420deac1e2047c62469fcdec07
+Stale（2）—— 源文件在条目写成之后改过：
+  CHANGELOG.md
+  Cargo.toml
+等待复核的 observe 角色变更（1）：
+  Cargo.lock
+下一步：复核上面列出的 observe 角色变更，然后运行 aoci scope acknowledge --reviewed-by <name>
