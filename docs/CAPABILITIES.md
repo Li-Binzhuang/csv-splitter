@@ -507,6 +507,7 @@ GET /columns 多带的四个参数属于「声明正确、对该方法无意义�
 | 单格读取必须看到 journal 编辑 | `serve::a_cell_read_sees_the_edit` |
 | 条件格式必须按编辑后的值判定 | `serve::style_judges_the_edited_value` |
 | 哪些端点看得到编辑（矩阵）| `serve::the_journal_visibility_matrix_holds` |
+| 引擎等价不只看结果，也要看错误 | `engine::chart_engines_agree_on_how_a_missing_column_fails`（chart 已测；groupby/pivot 的错误路径尚未接同样测试）|
 | 校验规则按编辑后的值判定 | `serve::validation_judges_the_edited_value` |
 | 文档里写的响应字段必须真的存在 | `serve::documented_fields_are_fields_the_endpoint_returns`（覆盖 /health /meta /metrics；其他端点文档行里反引号多为查询参数，无法机械区分）|
 | split 再 merge 必须逐字节还原输入 | `splitter::tests::split_then_merge_reproduces_the_input`（1200 行，含引号换行与非 ASCII，2 线程）|

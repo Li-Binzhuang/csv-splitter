@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.56.4] — 2026-11-19
+
+### Tests
+
+- **Error parity is now tested, starting with chart.** Result equality between the engines has
+  tests; a request that must fail was not covered. Asking chart for a column that does not
+  exist fails with the same error kind on both engines, and the SQL message names the column.
+  The invariant table records that groupby and pivot still lack the same check.
+
 ## [3.56.3] — 2026-11-19
 
 ### Fixed

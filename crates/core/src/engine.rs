@@ -944,6 +944,40 @@ mod tests {
     /// The two engines must produce the same file for data both can handle. Without this
     /// test the "reuse DuckDB" refactor would silently change numbers.
     #[cfg(feature = "sql")]
+    /// Result parity is tested elsewhere; error parity is not. A missing column must fail the
+    /// same way on both engines, or a caller that handles one status gets the other.
+    #[test]
+    #[cfg(feature = "sql")]
+    fn chart_engines_agree_on_how_a_missing_column_fails() {
+        use crate::chart::ChartOptions;
+        use crate::types::Delimiter;
+
+        let dir = std::env::temp_dir().join(format!("csvs_engine_err_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("t.csv");
+        std::fs::write(&input, "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+        let options = ChartOptions {
+            x: "nope".into(),
+            y: crate::aggregate::AggSpec::parse_list("amount:sum")
+                .unwrap()
+                .remove(0),
+            ..Default::default()
+        };
+        let (tx, _rx) = std::sync::mpsc::channel::<crate::types::ProgressEvent>();
+
+        let native = crate::chart::chart(&input, Delimiter::Comma, &options, &tx).unwrap_err();
+        let sql = chart_sql(&input, Delimiter::Comma, &options, &tx).unwrap_err();
+        assert_eq!(
+            native.kind(),
+            sql.kind(),
+            "native said {native:?}, sql said {sql:?}"
+        );
+        assert!(
+            sql.to_string().contains("nope"),
+            "the sql error should name the column: {sql}"
+        );
+    }
+
     #[test]
     fn json_and_native_groupby_agree_byte_for_byte() {
         use crate::aggregate::AggSpec;
