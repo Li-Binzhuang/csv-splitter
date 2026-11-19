@@ -4414,3 +4414,28 @@ fn style_judges_the_edited_value() {
         "the edited value must match the rule: {after}"
     );
 }
+
+/// A damaged journal is reported per response; that is not enough to notice a trend. The
+/// metric sums it so a dashboard can alert on "users are losing edits".
+#[test]
+fn metrics_sum_journal_damage() {
+    let dir = TempDir::new("damagemeters");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\n").unwrap();
+    // One good record plus a truncated one, as a crash mid-write leaves them.
+    std::fs::write(dir.join("t.csv.journal"), "set,1,amount,999\nset,2,amount").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=5");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(r#""damaged":1"#), "{body}");
+
+    let (status, body) = get(&server.addr, "/metrics");
+    assert_eq!(status, 200, "{body}");
+    let value = body
+        .split("\"journalDamaged\":")
+        .nth(1)
+        .and_then(|tail| tail.split([',', '}']).next())
+        .and_then(|n| n.parse::<u64>().ok())
+        .unwrap_or(u64::MAX);
+    assert!(value >= 1, "damage must reach the metrics: {body}");
+}

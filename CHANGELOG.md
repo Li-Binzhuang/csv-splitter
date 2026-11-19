@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.54.5] — 2026-11-19
+
+### Added
+
+- ** sums .** A damaged journal is reported in the response that
+  hit it, which helps the person looking at that window and nobody else. The metric accumulates
+  the count across  and  loads so a dashboard can alert on "edits are being
+  lost" instead of waiting for a user to mention it.
+
 ## [3.54.4] — 2026-11-19
 
 ### Tests / Documentation

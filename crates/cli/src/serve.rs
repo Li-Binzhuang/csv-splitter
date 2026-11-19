@@ -1574,7 +1574,10 @@ fn journal_endpoint(
     };
     let sidecar = Journal::sidecar(&path);
     let (journal, skipped, skipped_redo) = match Journal::load_reporting(&sidecar) {
-        Ok(v) => v,
+        Ok(v) => {
+            metrics::shared().record_journal_damage(v.1 + v.2);
+            v
+        }
         Err(e) => {
             return respond_json(
                 stream,
@@ -3899,7 +3902,10 @@ fn respond_sheet_window(
     // operation, and a window that quietly shows the pre-edit value reads as "my edit
     // vanished". The count travels with the response so a client can say so.
     let (ops, damaged) = match Journal::load_reporting(&Journal::sidecar(path)) {
-        Ok((journal, skipped, _)) => (journal.ops().to_vec(), skipped),
+        Ok((journal, skipped, _)) => {
+            metrics::shared().record_journal_damage(skipped);
+            (journal.ops().to_vec(), skipped)
+        }
         Err(e) => {
             return respond_json(
                 stream,
@@ -6033,6 +6039,9 @@ mod metrics {
         /// Which engine actually ran an analysis, counted where it is resolved. Without
         /// this, "is the SQL path being used at all" is a question answered by guessing.
         engines: Mutex<BTreeMap<String, u64>>,
+        /// Journal records that could not be read, summed across requests. A count that only
+        /// lived in one response would never reach a dashboard.
+        journal_damaged: AtomicU64,
     }
 
     impl Metrics {
@@ -6047,6 +6056,15 @@ mod metrics {
                 by_route: Mutex::new(BTreeMap::new()),
                 buckets: Mutex::new([0; BUCKETS.len() + 1]),
                 engines: Mutex::new(BTreeMap::new()),
+                journal_damaged: AtomicU64::new(0),
+            }
+        }
+
+        /// Note that `count` journal records could not be read.
+        pub fn record_journal_damage(&self, count: usize) {
+            if count > 0 {
+                self.journal_damaged
+                    .fetch_add(count as u64, Ordering::Relaxed);
             }
         }
 
@@ -6165,7 +6183,7 @@ mod metrics {
                 Err(_) => String::new(),
             };
             format!(
-                r#"{{"uptimeSeconds":{uptime},"requests":{},"errors4xx":{},"errors5xx":{},"slowRequests":{},"p50Ms":{},"p95Ms":{},"status":{{{status}}},"routes":{{{routes}}},"latencyBuckets":{{{buckets}}},"jobs":{{"total":{},"running":{}}},"engines":{{{}}}}}"#,
+                r#"{{"uptimeSeconds":{uptime},"requests":{},"errors4xx":{},"errors5xx":{},"slowRequests":{},"p50Ms":{},"p95Ms":{},"status":{{{status}}},"routes":{{{routes}}},"latencyBuckets":{{{buckets}}},"jobs":{{"total":{},"running":{}}},"engines":{{{}}},"journalDamaged":{}}}"#,
                 self.requests.load(Ordering::Relaxed),
                 self.errors_4xx.load(Ordering::Relaxed),
                 self.errors_5xx.load(Ordering::Relaxed),
@@ -6174,7 +6192,8 @@ mod metrics {
                 self.percentile(0.95),
                 jobs.0,
                 jobs.1,
-                engines
+                engines,
+                self.journal_damaged.load(Ordering::Relaxed)
             )
         }
     }
