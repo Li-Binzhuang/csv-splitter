@@ -140,6 +140,25 @@ docs/          README 之外的 7 份文档，6 条一致性测试链
 scripts/       dev.sh / smoke.sh / regress.sh / backend-smoke.sh / bench.sh / clean.sh
 ```
 
+
+## 认知层：AOCI 与 CodeGraph
+
+仓库里有两层可复用的「系统记忆」，都不需要重新读一遍全部源码：
+
+| 层 | 文件 | 用途 | 维护方式 |
+|---|---|---|---|
+| **AOCI** | `aoci.txt` / `aoci.meta.txt` / `aoci.code.txt` | 89 条 Entry，每条一个受管理文件：F 职责、R 强关系、A 对外契约、S 不可推断的约束 | 改动受管理文件后，调 `aoci_maintain` 拿批次、写 Entry、再 `aoci verify` |
+| **CodeGraph** | `.codegraph/`（本地，不入库） | 2 295 个符号、9 882 条边的代码图，用来查调用链与影响面 | `codegraph init` 或 `codegraph explore "<符号>"`，随时可重建 |
+
+两侧的协作方式：
+
+- **先问认知层「这是什么」**，再读具体源码「它是怎么写的」——AOCI 的 S 字段就是为此存在的：
+  它记录那些「不看就会踩」的约束（例如 journal 是唯一承载编辑的文件、UTF-16 不能建索引）。
+- **改完之后用 `aoci_maintain` 收尾一次**，不要逐次修改逐次维护；它按仓库状态签发批次，
+  未对齐时会明确说还差哪几个文件。
+- 索引本身也受版本控制：`aoci*.txt`、`.aoci/{config,baseline}.json`、`.gitattributes`、`AGENTS.md`
+  都要入库；`.aoci` 的运行时产物与 `.codegraph/` 不入库。
+
 ## 一句话交接
 
 **它现在能把几十 GB 的表当电子表格改，而且三条承诺都有测试。**

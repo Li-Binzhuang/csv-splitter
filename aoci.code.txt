@@ -1,0 +1,118 @@
+#AOCI-CODE-VOLUME: 1
+
+===/<repository>/===
+.gitattributes[FV4T]: F:声明所有文本按 LF 检出，保证 AOCI 基线与跨平台检出逐字节一致 | R:- | A:唯一规则 `* text=auto eol=lf`；覆盖 Windows autocrlf 的行尾重写，否则整棵树会被基线和漂移检查判成 stale；二进制由 git 自动探测、不改写 | S:基线按原始字节计算，行尾被平台改写会让全部索引失真，所以这里必须强制 LF
+.gitignore[FV4T]: F:忽略构建产物与本地杂物 | R:- | A:忽略 `/target`、编辑器 swap 文件、`.DS_Store`、发布打包目录 `dist/` 与 `staging/`，以及本地代码图索引 `.codegraph/`（它是可重建的本地缓存，不入库） | S:`.codegraph/` 不入库但可随时重建，删掉只损失一次索引时间；AOCI 的索引则必须入库
+AGENTS.md[SV6S]: F:仓库级 Agent 指令：AOCI 认知层的接入与使用原则 | R:code:aoci.txt,code:aoci.meta.txt,code:aoci.code.txt | A:规定“模型生成、模型读取”闭环，何时读 rules/overview/maintain，以及收尾维护一次的纪律；不重复 CLI 手册 | S:机器事实以 Guide、Schema 与 Validator 为准，本文件不得覆盖；上下文压缩后的 handoff 不得携带索引语义，必须重新完整读取并认证
+CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；保留未达标项与已知债，例如暖档排序偶发 0.37 秒、/spec 参数表曾不完整 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败
+Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 core 与 cli；`[workspace.package]` 的版本是发布真相源，二进制 `--version` 与 tag 校验都以它为准；依赖版本集中在 workspace.dependencies | S:-
+LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
+README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:先讲取舍（base 不可变加 journal），再给命令表；命令表与默认端口被测试校验 | S:文档测试要求 README 列出全部命令，并且出现真实默认端口 127.0.0.1:8787
+
+===/<repository>/.github/workflows/===
+ci.yml[OV7S]: F:主 CI：格式化、引擎与 CLI 测试、性能守卫、clippy 工作区、失败注解 | R:code:scripts/smoke.sh,code:scripts/regress.sh,code:scripts/backend-smoke.sh | A:单 job 串联五个步骤；每步 tee 日志，失败时把失败测试名与首条断言转成公开 annotation 并上传 artifact；有路径过滤的 Windows 检查在独立工作流 | S:曾用两个 job 加 needs 串联，缓存配额超限时出现一个 job 跳过、红叉无信息的不可读结果，因此刻意合并成一个 job
+release.yml[OV7S]: F:tag 触发的四平台发布：构建、打包、校验和、创建 Release | R:code:scripts/package.sh,code:scripts/release-decision.sh | A:prepare 只调用 release-decision 脚本判定 version 与 do_release；build 矩阵为 linux-x86_64、macos-arm64、macos-x86_64、windows-x86_64；Unix 打包走 scripts/package.sh，Windows 写 dist/ 后压缩；release job 仅在 do_release 为 true 时运行 | S:tag 与 Cargo.toml 版本不一致会被决策脚本拒绝，否则会发布一个 `--version` 说谎的二进制
+windows.yml[OV6T]: F:Windows 编译检查，只在 Rust 代码或依赖清单变化时触发 | R:- | A:windows-latest + MSVC 跑 `cargo check -p csv-splitter-cli`；失败时把含 error 的行转成 annotation 并上传日志；path 过滤避免文档提交付 DuckDB 编译的代价 | S:ubuntu+mingw 交叉检查曾被否决——runner 的 mingw 是 GCC 10 与 win32 线程模型，libstdc++ 没有 std::mutex，DuckDB 头文件用到了它
+
+===/<repository>/crates/cli/===
+Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Cargo.toml | A:二进制名 `csv-splitter`，入口 src/main.rs；依赖 libc（信号处理）与 flate2（gzip 响应）；启用 core 的 sql feature | S:-
+
+===/<repository>/crates/cli/src/===
+main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/workbook/mod.rs | A:约三十个命令；行号在用户侧一律 1-based，0-based 只存在于 journal；写命令前用 check_formula 与 check_output 守卫；`serve --check` 做部署自检 | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败——它双向检查“解析了却没文档化”和“文档化了却不存在”
+serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/schema.rs | A:所有响应经 respond 统一附加 CORS、X-Response-Time、ETag 与 Vary；路径先 canonicalize 再要求落在 root 内；写操作以 Op 进 journal，从不修改 base | S:gzip 是另一种表示，ETag 必须带 -gz 后缀；202 必须映射 Accepted，否则提交 job 的响应头写着 Internal Server Error；EDIT_ACTIONS 与实际 match 分支必须一致，由 contract 测试双向断言
+
+===/<repository>/crates/cli/src/web/===
+index.html[EU7M]: F:内置只读浏览页：拉取 /sheet 与 /rows 并渲染表格 | R:code:crates/cli/src/serve.rs | A:单文件 HTML 与内联 JS，无外部依赖；用 /sheet 取列与冻结列，用 /rows 拉窗口，滚动时按 start/count 续取 | S:-
+
+===/<repository>/crates/core/===
+Cargo.toml[FV7T]: F:core crate 清单：解析、压缩、编码与可选 DuckDB | R:code:crates/cli/Cargo.toml | A:sql 是可选 feature，只有 CLI 打开；依赖 memchr、zip、zstd、bzip2、flate2 等流式库；测试与基准同 crate | S:gate 必须用 `--features sql` 跑一次 core 测试，否则 SQL 与 parquet 路径在默认构建里无人验证
+
+===/<repository>/crates/core/benches/===
+throughput.rs[TP5S]: F:吞吐基准：切分与合并的每秒行数与每秒字节 | R:- | A:生成临时数据后计时，结果直接打印；不进入默认测试集，避免与功能测试争资源 | S:-
+
+===/<repository>/crates/core/src/===
+aggregate.rs[KA8M]: F:groupby、pivot、chart 共用的聚合算子与累加器 | R:code:crates/core/src/groupby.rs,code:crates/core/src/pivot.rs,code:crates/core/src/chart.rs | A:AggOp 为 count/sum/mean/min/max；sum 与 mean 用 Kahan 补偿求和；输出列名由 AggSpec::output_name 统一生成 | S:三个命令共用同一累加器，任何一处改回朴素求和都会让同一份数据在不同命令里得出不同总数
+book.rs[AU7M]: F:把目录当作工作簿：列出目录下所有 CSV 及行数 | R:code:crates/core/src/index.rs | A:有稀疏索引时直接读索引取行数；没有索引则不为了列表去全量扫描，宁可缺行数 | S:列表请求若触发整目录扫描，就把“打开工作簿”变成最贵的操作，正是本项目要避免的事
+cache.rs[MP8L]: F:查询结果的有界缓存，让滚动与跳转不必重跑查询 | R:code:crates/core/src/sql.rs | A:每项最多 row_cap 行，超限标记 oversized 且不缓存；最多 entries 项，最旧淘汰；源文件长度或 mtime 变化即失效 | S:超限结果绝不静默截断——否则 total 会变成缓存容量而不是真实命中数，客户端会以为数据比实际少
+chart.rs[KA7L]: F:图表数据：类别、系列与数值，客户端只负责绘制 | R:code:crates/core/src/aggregate.rs | A:成本随类别数而非行数增长；输出 categories 加每系列一个数组，缺值为 null | S:缺值必须用 null 表示而不能退化成 0，否则折线图会在没有数据的位置画出谷底
+check.rs[TQ7M]: F:派生文件的自检：操作有没有做到它承诺的事 | R:code:crates/core/src/groupby.rs,code:crates/core/src/partition.rs | A:Counts 统计行/列/错位记录；Expectation 声明预期行数、列数与允许的错位量；check 比对后返回 problems 列表 | S:filter 原样透传的错位行不能算在它头上，但也不能凭空造出新错位行
+compress.rs[MP5T]: F:按格式创建压缩写入器并正确收尾 | R:code:crates/core/src/types.rs | A:缓冲区大小由调用方按分片预算传入；支持 zstd、gzip、bzip2；zip 不在此处，必须整包写入 | S:旧实现每片固定 64 MB 写缓冲，十路切分在开工前就吃掉约 640 MB
+concat.rs[DD7M]: F:把多个 CSV 合成一张表，比较表头而不是假设一致 | R:code:crates/core/src/merge.rs | A:表头不一致默认报错并指出文件与差异列；只有 ignore_header 才显式跳过；逐记录流式复制 | S:静默把金额列接在 id 列下面会产出一份没人察觉的错误数据，所以默认拒绝而不是尽力而为
+csv_reader.rs[CG9L]: F:CSV 记录读取：引号、嵌入换行、BOM 与引号风格 | R:code:crates/core/src/encoding.rs | A:RecordReader 按记录而非按行流式返回；QuoteStyle 支持 rfc4180、backslash 与 none；表头剥离 UTF-8 BOM | S:按物理行切分会把带换行的字段劈成两半并让后续列全部错位，这是全项目的正确性前提
+decompress.rs[MD6L]: F:解压或展开归档到输出目录，并拒绝成员路径逃逸 | R:code:crates/core/src/compress.rs | A:safe_member 校验每个成员名，拒绝 `..` 与绝对路径；支持 tar、zip、gz、bz2 | S:归档成员名可以带 `../`，不校验就会把文件写到输出目录之外
+dedupe.rs[KD7M]: F:流式去重：保留每个键的首次出现 | R:code:crates/core/src/groupby.rs | A:键哈希成 u128 只保留哈希，一千万键约 160 MB；汇总 kept、removed、scanned | S:-
+demo.rs[RU4S]: F:生成一份故意不干净的示例 CSV，供上手与冒烟使用 | R:code:scripts/smoke.sh | A:两万行、六列，含重复行、空备注、多一个逗号的错位行与带引号换行 | S:干净的示例会教出错误预期，这些瑕疵是刻意保留的，不要为了好看而清掉
+encoding.rs[CL8L]: F:文本编码探测与解码：UTF-8 及 BOM、GBK/GB18030、UTF-16、Windows-1252 | R:code:crates/core/src/csv_reader.rs | A:只探测一次，之后把所有读取路径统一成 UTF-8；UTF-16 可以读取，但索引与随机跳转被拒绝 | S:UTF-16 的逗号与换行是两字节，按字节偏移的稀疏索引会算错行号，所以宁可拒绝也不给近似的错位置
+filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs | A:运算符为等于、不等于、比较、包含、in 与空值判断；比较类规则预编译为 FilterSet 避免逐行重建；顺序扫描并按编码解码 | S:-
+format.rs[DU7L]: F:条件格式：服务器求值、客户端上色 | R:code:crates/core/src/filter.rs | A:返回 (row,column,style) 结果而不是重绘数据；同一单元格上后面的规则获胜；模式子集与 search 的正则共用 | S:求值成本必须只随窗口行数增长，任何一条规则都不允许触发全文件重扫
+groupby.rs[KA8L]: F:流式分组聚合，内存随组数而非行数增长 | R:code:crates/core/src/aggregate.rs | A:超过 max_groups 直接失败并说明原因；输出一行一组；支持 apply-edits 先把公式列物化 | S:默认上限的存在是为了让“按 id 分组”这类误用尽早暴露，而不是先把机器吃满再报错
+index.rs[CP8L]: F:稀疏行索引：把每第 N 条记录的字节偏移存成 sidecar，任意行跳转与扫描起点无关 | R:code:crates/core/src/workbook/export.rs | A:默认每 1000 条一个检查点，定位后最多再跳过 999 条；UTF-16 输入拒绝建索引 | S:索引记的是字节偏移，UTF-16 的逗号与换行是两字节，算出来会是错行号
+jobs.rs[MW8L]: F:后台任务注册表：进度、状态、取消令牌与终态判定 | R:code:crates/cli/src/serve.rs | A:任务在独立线程运行，进度写入共享表，客户端按 id 轮询；只有真正检查取消标志的任务才标为可取消 | S:把状态改成已取消而工作仍在继续，比不提供取消更糟，因此不可取消的任务返回 409
+json.rs[CG5T]: F:唯一的 JSON 字符串转义实现 | R:code:crates/core/src/validate.rs | A:转义引号、反斜杠、换行、制表与低于 0x20 的控制字符 | S:此前三处各自实现且对控制字符处理不一致，同一份数据在不同端点会转义成不同字节
+layout.rs[CU7L]: F:显示元数据 sidecar：列名替换、列宽、数字格式与冻结列 | R:code:crates/core/src/sheet.rs | A:只影响展示不改值，因此写 `.view` 而不是 journal；每列可选替换名与格式 | S:放进 journal 会把长什么样的设置混进是什么的审计链，撤销一次改名会连带重放显示设置
+lib.rs[CG6T]: F:core crate 的模块清单与基础类型再导出 | R:- | A:读取、编辑、分析、查询与 SQL 各自成模块，pub use types 统一暴露分隔符与进度类型 | S:新增模块必须同时写进 ARCHITECTURE.md，模块地图测试会逐个比对
+listing.rs[CQ7M]: F:目录列举：在 root 下列出可打开的 CSV 及大小与修改时间 | R:code:crates/core/src/book.rs | A:按扩展名过滤，路径相对 root，一次返回足够渲染文件选择器 | S:-
+lookup.rs[DD8L]: F:跨表查找：引用表加载成映射，主表保持流式 | R:code:crates/core/src/workbook/rows.rs | A:未命中写 #N/A；max_keys 限制引用表规模，超限明确失败 | S:引用表与被查表规模不对称，反过来加载主表会在百万行文件上直接爆内存
+merge.rs[MP7M]: F:把切分产出的分片重新拼回一个文件 | R:code:crates/core/src/splitter.rs,code:crates/core/src/pack.rs | A:保留第一个表头丢弃其余，按文件名序拼接；可读 tar 与 zip、含压缩分片 | S:-
+pack.rs[MP5T]: F:把分片文件装进 tar 或 zip 容器 | R:code:crates/core/src/merge.rs | A:容器保留文件名以便 merge 按序还原；tar 与 zip 两种都支持 | S:-
+partition.rs[KD7M]: F:按列值拆成每个取值一个文件 | R:code:crates/core/src/sort.rs | A:先按该列排序再顺序写出，不为每个取值常驻写入器 | S:按取值直接开写入器会在高基数列上撞开文件数上限，所以排序是前提而不是优化
+pivot.rs[KA8L]: F:透视表：行键 × 列键 × 度量，单遍流式 | R:code:crates/core/src/aggregate.rs,code:crates/core/src/groupby.rs | A:内存随单元格数而非行数增长；列数与单元格数各有上限 | S:超限必须失败并说明，否则按 id 透视会先把机器吃满再报错
+preview.rs[CU6M]: F:终端预览：前 N 行、列统计与行数估计 | R:code:crates/core/src/profile.rs | A:行数用采样或索引，不为预览做全量扫描 | S:-
+profile.rs[DA8L]: F:列画像：单遍流式统计每列取值、空值与类型分布 | R:code:crates/core/src/preview.rs | A:十 GB 文件只读一遍，输出列级摘要而非全量取值 | S:-
+reshape.rs[DD7M]: F:列整形：保留、删除、改名与重排，写新文件 | R:code:crates/core/src/workbook/rows.rs | A:ReshapeSpec 的三种操作可组合；输出是新文件，源文件不动 | S:-
+schema.rs[CG6T]: F:列集合对比：新增、缺失与移位 | R:code:crates/cli/src/serve.rs | A:same 表示集合相同而非顺序相同，重排单独放在 moved | S:把重排判成 schema 变更会让日常调整列顺序看起来像破坏性变更
+search.rs[DA7M]: F:跨列搜索：返回命中行号而不是数据本身 | R:code:crates/core/src/index.rs | A:支持正则子集与整格匹配；调用方凭行号经稀疏索引跳转 | S:-
+sheet.rs[CD8L]: F:一张表的门面：base 加 journal 呈现出的列、行数、窗口与导出 | R:code:crates/core/src/workbook/export.rs | A:首次访问经 workbook 算出最终列与行映射；导出即物化编辑 | S:-
+sort.rs[KP7L]: F:外部排序：内存受限下按列排序大文件 | R:code:crates/core/src/workbook/export.rs | A:分块排序后多路归并；行读取路径上的 order 另有把 LIMIT 下推给引擎的优化 | S:-
+split_parallel.rs[KP7M]: F:并行切分：多个 reader 各负责一段连续分片 | R:code:crates/core/src/splitter.rs | A:按文件大小与核数决定分工，每个分片自己写表头 | S:串行 reader 的上限是磁盘顺序吞吐，实测约 490 MB/s，并行收益取决于起点是否按字节边界算准
+splitter.rs[KP7L]: F:切分：按份数或按大小把文件切成多片 | R:code:crates/core/src/split_parallel.rs,code:crates/core/src/pack.rs | A:每片带表头；可选压缩；写入 tar、zip 或目录 | S:-
+sql.rs[ED8L]: F:用 DuckDB 在 CSV 上执行只读单条 SQL | R:code:crates/core/src/sql_cache.rs,code:crates/core/src/cache.rs | A:由采样声明列类型避免全文件推断；watchdog 超时中断；语句校验只允许单条只读 | S:类型推断若读全文件，首个 LIMIT 1 就要七秒；且超预算的结果必须按超时处理，不能因中断没命中就当成成功
+sql_cache.rs[PP7M]: F:列式 parquet sidecar，加速重复查询与首屏 | R:code:crates/core/src/sql.rs | A:首次 COPY 建缓存，源文件 mtime 变化即作废；读取只碰查询涉及的列 | S:缓存必须可丢弃可重建，否则它会变成第二个真相源
+tempdir.rs[CG5T]: F:临时目录与唯一命名 | R:- | A:进程内自增序号加纳秒后缀，避免并行测试互相覆盖 | S:-
+types.rs[CD7M]: F:基础类型：分隔符、压缩格式、进度消息与取消令牌 | R:code:crates/core/src/json.rs | A:Delimiter 负责分隔符解析与字节；ProgressSender 是 mpsc 别名；CancelToken 用原子布尔 | S:-
+validate.rs[DQ8L]: F:列约束校验：只报告不改数据，可限制扫描行数 | R:code:crates/core/src/workbook/export.rs | A:检查的是 journal 应用后的值；报告含 rows、checked、partial、每规则计数与最多一千条明细 | S:限制只查前缀时必须标出 partial，否则读者会把前缀计数当成全量结论
+viewer.rs[CU6M]: F:窗口化读取：只持有一屏所需行 | R:code:crates/core/src/workbook/export.rs | A:请求超出缓存窗口时经稀疏索引重取，内存与文件大小无关 | S:-
+
+===/<repository>/crates/core/src/formula/===
+functions.rs[KA7M]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:与解析器分开以便持续扩展；约定跟随电子表格：if 短路求值、isblank/isnumber、iferror、日期函数取 ISO 前缀 | S:-
+mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:支持算术、比较、逻辑、文本、数字与日期函数；if 只求选中分支；非数字得 #VALUE!，引用不存在的列在导出前报错 | S:公式列只存在 journal 里，groupby、pivot、chart 直接读文件看不见它，要汇总必须先 apply-edits 物化
+sheetref.rs[DD6S]: F:公式中的跨表引用：ref("other.csv","key","col") | R:code:crates/core/src/formula/mod.rs | A:被引用表加载一次成为映射，当前表保持流式；路径相对 base 文件所在目录解析 | S:按进程工作目录解析会让公式在别处运行时悄悄换成另一张表，所以必须相对 base 文件
+state.rs[KP6S]: F:多行公式的行状态：lag 与 running 的有界环形缓冲 | R:code:crates/core/src/formula/mod.rs | A:RowNeeds 先声明需要多少历史，内存随 lag 距离而不是行数增长；导出前预滚历史 | S:导出是单向前进的，唯一可获得的历史是“前若干行”，反向引用无法支持，也不该假装支持
+
+===/<repository>/crates/core/src/workbook/===
+export.rs[CD9L]: F:逐行组装、导出与分页读取 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/journal.rs | A:一次顺序扫描，只重写被编辑触及的单元格；Pager 只做一次昂贵准备（索引、列布局、公式编译） | S:未被 journal 触及的行必须走字节级拷贝，逐格分配会让 782 列文件慢数倍
+journal.rs[CP9L]: F:追加式操作日志与它的文本格式 | R:code:crates/core/src/workbook/mod.rs | A:每行一个操作的 CSV 记录；写入加锁，多进程同时编辑都保留；损坏可检测 | S:journal 是编辑的唯一载体，删掉等于丢数据，而 base 永远不被修改
+mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序与列布局 | R:code:crates/core/src/workbook/rows.rs | A:所有编辑记录为 Op；SetColumnFormula 重算已有列，FillColumns 一次填多列；改名让既有编辑跟着新名 | S:删除列会带走该列的编辑，改名不会——两者都可撤销，但语义不同
+rows.rs[CP9L]: F:行身份映射与单元格编辑解析 | R:code:crates/core/src/workbook/mod.rs | A:RowId 为 Base 或 Virtual，position_of 是 id_at 的逆；填充解析成行身份而非位置；公式编译校验引用与自引用 | S:按位置存编辑会在插入行后把编辑指向邻居，这是本项目最需要避免的静默错误
+
+===/<repository>/csv-splitter-demo/===
+orders.csv[ZO3L]: F:demo 生成的示例数据：两万行六列，故意含脏数据 | R:code:crates/core/src/demo.rs | A:由 csv-splitter demo 产出，供上手与冒烟使用，不是源码 | S:这是生成物，重跑 demo 会覆盖它，不要把它当受管理源码编辑
+
+===/<repository>/deploy/===
+csv-splitter.service[OV6T]: F:systemd 单元：以只读目录为根启动后端 | R:code:docs/DEPLOY.md | A:ExecStartPre 先跑 serve --check；KillSignal 为 SIGTERM、TimeoutStopSec 十五秒走优雅停机；ProtectSystem 与 ReadWritePaths 限制写范围 | S:本构建没有鉴权，单元只绑 loopback，对外暴露必须放在带鉴权的反向代理后面
+
+===/<repository>/docs/===
+ACCEPTANCE.md[SD6M]: F:验收证据：两档性能表、能力矩阵与平台构建矩阵 | R:code:docs/API.md | A:每行写实测数字与对应测试名；未达标项标注而不是四舍五入 | S:文档里引用的输出由测试钉住，改实现不同步更新这里会让 gate 失败
+API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引、每路由参数与错误码语义；504 不含引擎原文；/spec 参数表已覆盖全部端点 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然
+ARCHITECTURE.md[SD6S]: F:分层与模块地图：core 各模块职责 | R:code:crates/core/src/lib.rs | A:按读取、编辑、分析、公式、交付分组列出模块，并给出新增端点或模块时要同步的文件 | S:测试要求列出每个 core 模块，漏写会让 gate 失败
+CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应并写明边界 | R:code:docs/API.md | A:每条给 CLI 形式、API 形式与限制，并强调三条不变量 | S:-
+CI.md[SO6S]: F:CI 结构说明：单 job 流水线、滚动缓存与失败注解机制 | R:code:.github/workflows/ci.yml | A:解释为什么合并成一个 job、为什么缓存 key 滚动、以及 annotation 如何让红叉可读 | S:-
+DEPLOY.md[SO7M]: F:部署材料：三种安装、配置项、systemd、升级回滚与安全边界 | R:code:deploy/csv-splitter.service | A:明确单机单用户、无鉴权、默认 loopback；给出 release-check 与 install-check 两条自检 | S:安全表必须写明没有鉴权与没有多用户隔离，只列防护不列边界会让人误判风险
+GETTING_STARTED.md[SU6M]: F:十分钟上手：用故意不干净的示例走完整链路 | R:code:crates/core/src/demo.rs | A:逐步骤贴真实输出，覆盖带引号换行与多一个逗号的错位行 | S:-
+HANDOVER.md[SU5S]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:写出 AOCI（89 条 Entry，受版本控制）与 CodeGraph（本地可重建索引）分工：先问认知层这是什么，再读源码是怎么写的；改完后用 aoci_maintain 收尾一次 | S:.aoci 的运行时产物与 .codegraph 不入库，而 aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库，否则接手的人拿不到同一份认知
+INTEGRATION.md[SN6S]: F:前端接入指南：浏览器 fetch、ETag、并发与错误速查 | R:code:docs/API.md | A:给可直接复制的 fetch 片段与 409、504 的处理建议 | S:-
+ROADMAP.md[SU5S]: F:路线图：已完成、进行中与明确不做的范围 | R:code:docs/CAPABILITIES.md | A:与能力清单分工——这里写未来与边界，已验证行为写进能力清单 | S:-
+TROUBLESHOOTING.md[SO6S]: F:排障：常见症状、原因与处理，以及如何读 CI 失败 | R:code:docs/CI.md | A:含 annotation 读取命令与历史根因（超时测试竞态、mingw 线程模型） | S:-
+
+===/<repository>/scripts/===
+backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换与请求上限 | S:裸 wait 会连脚本自己启动的 server 一起等待，必须收集 PID 逐个等待
+bench.sh[TP5T]: F:基准脚本：切分与合并吞吐 | R:code:scripts/smoke.sh | A:生成数据、计时并打印每秒兆字节 | S:-
+check_match_arms.py[XQ5T]: F:检查 serve.rs 里 match 分支标签是否重复 | R:code:crates/cli/src/serve.rs | A:按仓库根解析目标路径，由 regress 调用 | S:按调用者工作目录解析会在临时目录里找不到文件并假失败
+clean.sh[XO4T]: F:清理构建与本地产物 | R:- | A:删除 target 与 dist，不碰数据文件 | S:-
+dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate 的统一入口 | R:code:scripts/smoke.sh | A:gate 等于 fmt、clippy 加拒绝警告、工作区测试与 core 的 sql feature 测试 | S:gate 必须带 sql feature 跑 core 测试，否则 SQL 与 parquet 路径无人验证
+install-check.sh[TO6T]: F:验证三条安装路径：源码构建、cargo install 与发布产物 | R:code:scripts/release-check.sh | A:每条路径各跑版本、demo 与 serve --check | S:cargo install 先离线后联网，冷缓存机器上静默联网会变成假失败
+package.sh[OV7T]: F:把二进制打成 tar.gz 或 zip 并生成校验和 | R:code:.github/workflows/release.yml | A:产物写 dist；Windows 打 zip 其余 tar.gz；发布工作流调用同一脚本 | S:打包与发布必须共用这一个脚本，否则本地验过的不是真正发布的那份
+regress.sh[TQ7S]: F:回归扫全量：逐条命令跑一遍并把 FAIL 计入退出码 | R:code:scripts/smoke.sh | A:每条命令一行 ok 或 FAIL；含 release-decision 自测与 match 分支查重；在临时工作目录里运行，所以脚本路径必须按仓库根解析成绝对路径 | S:相对调用者工作目录解析会在临时目录里找不到脚本并产生假失败
+release-check.sh[TV6T]: F:在干净目录里解包发布产物并跑用户的最小验证 | R:code:scripts/package.sh | A:校验和比对、版本、demo、serve --check、健康与就绪、spec、rows 与 SIGTERM 停机；支持 --target 检查非本机目标 | S:演示数据目录必须先创建再做自检，顺序反了会让产物自检假失败
+release-decision.sh[OV7T]: F:发布决策：tag 推送、带 tag 的手动触发、空 tag 空跑三个分支 | R:code:.github/workflows/release.yml | A:输出 version 与 do_release；拒绝非 tag 引用；self-test 覆盖七个用例 | S:tag 与 Cargo.toml 版本不一致必须失败，否则会发布一个 --version 说谎的二进制
+smoke.sh[TQ8M]: F:CLI 冒烟：用 demo 数据把主要命令跑一遍 | R:code:crates/core/src/demo.rs | A:覆盖预览、过滤、编辑、切分、合并、聚合、导出与缓存；每步检查退出码与产物 | S:-
