@@ -410,6 +410,18 @@
 | `view --order --count N` | native 0.05 s | DuckDB 2.6 s（native 29.8 s）| ≥64 MB 且无编辑时用 sql |
 | `view --where … --order …` | — | 同左 | ≥64 MB、无编辑、且 `--where` 能精确翻译成 SQL 时用 sql；关系比较（`>` `>=` `<` `<=`）不能精确翻译，退回 native 并打印 note |
 
+### journal 半损坏时的行为
+
+journal 是逐条追加的 CSV 记录。进程在写入中途崩溃时，最后一条记录可能不完整：
+
+- **完整记录照常生效**——不会因为末尾坏了就丢掉全部编辑；
+- **坏记录被跳过并计数**：CLI 在 stderr 警告，HTTP `/rows` 的 `damaged` 字段、
+  `/journal` 的 `damaged.operations` 都会带上这个数；
+- 侧车 `<file>.journal.redo` 同样处理。
+
+**不会自动修复文件**：跳过是读取时的行为，改写 journal 是另一件事（会改变用户的编辑历史），
+所以工具只报告不擅自动手。
+
 ### 行号为什么必须原生
 
 `/filter` 与 `search` 返回**文件里的行号**（1-based），`/rows?start=` 直接按这个位置取行。

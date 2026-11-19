@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.50.9] — 2026-11-19
+
+### Tests / Documentation
+
+- The damaged-journal behaviour now has a unit test: two complete records survive, the
+  truncated one is counted, and the redo sidecar gets the same treatment. CAPABILITIES
+  states the policy that goes with it — report, never silently repair, because rewriting the
+  journal changes the user's edit history.
+
 ## [3.50.8] — 2026-11-19
 
 ### Added

@@ -512,3 +512,32 @@ pub enum RowRef {
     /// This row was typed in; `id` identifies the insert operation it came from.
     Virtual { id: u64, cells: Vec<String> },
 }
+
+#[cfg(test)]
+mod damaged_tests {
+    use super::Journal;
+
+    /// A journal cut off mid-write keeps the edits that were complete, drops the broken
+    /// record, and says how many it dropped. The file itself is never rewritten here:
+    /// reporting is the contract, repair is a separate decision.
+    #[test]
+    fn a_truncated_record_is_counted_not_silently_dropped() {
+        let dir = std::env::temp_dir().join(format!("csvs_journal_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("data.csv.journal");
+        std::fs::write(&path, "set,1,city,CDMX\nset,2,amount,10\nset,3,note").unwrap();
+        std::fs::write(dir.join("data.csv.journal.redo"), "set,4,city,Puebla\nset").unwrap();
+
+        let (journal, skipped, skipped_redo) = Journal::load_reporting(&path).unwrap();
+        assert_eq!(journal.len(), 2, "both complete records must survive");
+        assert_eq!(skipped, 1, "the truncated record must be reported");
+        assert_eq!(skipped_redo, 1, "the redo sidecar gets the same treatment");
+
+        // Loading without reporting still applies the readable operations, so a damaged
+        // journal degrades the sheet instead of hiding every edit.
+        let plain = Journal::load(&path).unwrap();
+        assert_eq!(plain.len(), 2);
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+}
