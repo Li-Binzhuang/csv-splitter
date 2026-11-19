@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.53.1] — 2026-11-19
+
+### Fixed
+
+- **`/stats` accepts `sample` and `/analyze` accepts `distinctCap`, and `/spec` now says so.**
+  Both were read and ignored by the contract: a caller could not tell how much of the file was
+  being sampled. `/stats`'s default is unchanged; the parameter is merely advertised.
+
+  The source-scanning test from two rounds ago was removed after it failed to catch these two:
+  it parsed the declaration table with a naive split and skipped routes it could not parse, so
+  it was green while the gap existed. A guard that silently skips is worse than none.
+
 ## [3.53.0] — 2026-11-19
 
 ### Measured / Documented

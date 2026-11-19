@@ -44,7 +44,7 @@
 | `GET /sheet` | `path` | 列、行数、编辑数、能力清单、列布局、冻结列、是否已建索引（`indexed` / `indexBytes`） |
 | `GET /book` | — | 工作簿：根目录下所有 CSV 及其状态 |
 | `GET /stats` | `path` `sample` | 采样统计 |
-| `GET /analyze` | `path` `distinct` | 全列画像 |
+| `GET /analyze` | `path` `distinct` | 全列画像 `distinctCap` |
 | `GET /chart` | `path` `x` `y` `series` `type` `maxPoints` `engine` | 图表数据；`engine=auto\|native\|sql` |
 | `GET /groupby` — 响应含 `engine`（实际执行的引擎） | `path` `by` `agg` `order` `desc` `maxGroups` `engine` | 分组聚合；`engine=auto\|native\|sql`，未编译 sql feature 时 `sql` 返回 400 |
 | `GET /pivot` | `path` `rows` `cols` `values` `qualify` `maxColumns` `maxCells` `engine` | 透视矩阵 |

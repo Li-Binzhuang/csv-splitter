@@ -499,7 +499,7 @@ fn handle(
 /// renamed fails a test instead of a client.
 const SPEC_PARAMS: &[(&str, &[&str])] = &[
     ("/warm", &["path", "delim", "sql"]),
-    ("/stats", &["path", "delim"]),
+    ("/stats", &["path", "sample", "delim"]),
     ("/jobs", &["path", "delim"]),
     ("/job", &["id"]),
     ("/index", &["path", "delim"]),
@@ -512,7 +512,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
         ],
     ),
     ("/download", &["path", "delim"]),
-    ("/analyze", &["path", "delim"]),
+    ("/analyze", &["path", "distinctCap", "delim"]),
     ("/", &[]),
     ("/validate", &["path", "checks", "delim", "limit"]),
     (
