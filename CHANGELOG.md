@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.56.2] — 2026-11-19
+
+### Added
+
+- **The spec publishes .** Two runtime guards (GET /edit, GET /columns) were
+  refusing parameters that the spec declared for the whole route; a client generating calls
+  from /spec had no way to know. The table now lives in one constant that both handlers and
+  the spec use, so publishing it cannot drift from the behaviour.
+
 ## [3.56.1] — 2026-11-19
 
 ### Changed

@@ -4816,3 +4816,28 @@ fn a_get_edit_request_refuses_write_parameters() {
         );
     }
 }
+
+/// The spec now publishes which declared parameters its read side refuses, and the same table
+/// drives the 400s. If they ever disagree, a client that generates calls from /spec would
+/// send a GET it cannot use.
+#[test]
+fn the_spec_publishes_the_write_only_parameters() {
+    let dir = TempDir::new("writeonlyspec");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\n").unwrap();
+    let server = start(&dir.0.clone());
+    let (status, body) = get(&server.addr, "/spec");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(r#""writeOnlyParams":"#), "{body}");
+    for name in ["action", "row", "col", "value", "expect"] {
+        assert!(
+            body.contains(&format!("\"{name}\"")),
+            "{name} missing: {body}"
+        );
+    }
+    for name in ["keep", "drop", "rename"] {
+        assert!(
+            body.contains(&format!("\"{name}\"")),
+            "{name} missing: {body}"
+        );
+    }
+}

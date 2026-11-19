@@ -535,6 +535,22 @@ fn handle(
 /// This is the machine-readable half of the contract: `/spec` publishes it and tests
 /// compare it against the live responses, so a field that moves or a parameter that is
 /// renamed fails a test instead of a client.
+/// Parameters a route declares but its *read* side refuses: the spec lists one set per
+/// route, so these belong to the write side only. The handlers below use this same table,
+/// which is why it can be published without a second copy drifting from the code.
+const WRITE_ONLY_PARAMS: &[(&str, &[&str])] = &[
+    ("/edit", &["action", "row", "col", "value", "expect"]),
+    ("/columns", &["keep", "drop", "rename", "out"]),
+];
+
+fn write_only_param(route: &str) -> &'static [&'static str] {
+    WRITE_ONLY_PARAMS
+        .iter()
+        .find(|(r, _)| *r == route)
+        .map(|(_, names)| *names)
+        .unwrap_or(&[])
+}
+
 const SPEC_PARAMS: &[(&str, &[&str])] = &[
     ("/warm", &["path", "delim", "sql"]),
     ("/stats", &["path", "sample", "delim"]),
@@ -1457,13 +1473,14 @@ fn spec_endpoint(stream: &mut TcpStream) -> io::Result<()> {
     };
     let fields = params(SPEC_FIELDS);
     let body = format!(
-        r#"{{"version":{},"cors":true,"etag":true,"reads":[{}],"writes":[{}],"pathRequired":[{}],"caches":["parquet"],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"queryRows":10000,"querySeconds":{}}},"params":{},"fields":{},"errors":{{{}}}}}"#,
+        r#"{{"version":{},"cors":true,"etag":true,"reads":[{}],"writes":[{}],"pathRequired":[{}],"caches":["parquet"],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"queryRows":10000,"querySeconds":{}}},"params":{},"writeOnlyParams":{},"fields":{},"errors":{{{}}}}}"#,
         json_str(env!("CARGO_PKG_VERSION")),
         routes.join(","),
         writes.join(","),
         needed.join(","),
         query_timeout_ms() / 1000,
         params(SPEC_PARAMS),
+        params(WRITE_ONLY_PARAMS),
         fields,
         status_notes_json()
     );
@@ -2031,9 +2048,9 @@ fn edit_state(
 ) -> io::Result<()> {
     // Same shape as GET /columns: the route shares one parameter list with its write side.
     // A GET that looks like an edit but only reports state is the worse kind of silence.
-    if let Some(name) = ["action", "row", "col", "value", "expect"]
-        .into_iter()
-        .find(|k| params.contains_key(*k))
+    if let Some(name) = write_only_param("/edit")
+        .iter()
+        .find(|k| params.contains_key(**k))
     {
         return bad_request(
             stream,
@@ -4083,9 +4100,9 @@ fn columns_endpoint(
     // The spec lists one parameter list per route, so these four are declared even though
     // only POST /columns reads them. Accepting and ignoring them made a write-shaped request
     // look successful; saying so is better than silence.
-    if let Some(name) = ["keep", "drop", "rename", "out"]
-        .into_iter()
-        .find(|k| params.contains_key(*k))
+    if let Some(name) = write_only_param("/columns")
+        .iter()
+        .find(|k| params.contains_key(**k))
     {
         return bad_request(
             stream,
