@@ -3936,3 +3936,25 @@ fn groupby_survives_a_quoted_newline_in_the_key() {
     // The response says which engine answered, instead of leaving it to inference.
     assert!(body.contains("\"engine\":\"native\""), "{body}");
 }
+
+/// Same guarantee as /groupby: a quoted newline in a pivot column key is one column, not
+/// several physical lines pretending to be columns.
+#[test]
+fn pivot_survives_a_quoted_newline_in_the_key() {
+    let dir = TempDir::new("pivotnl");
+    std::fs::write(
+        dir.join("t.csv"),
+        "city,note,amount\nCDMX,\"first line\nsecond line\",10\nCDMX,ok,20\n",
+    )
+    .unwrap();
+    let server = start(&dir.0.clone());
+    let (status, body) = get(
+        &server.addr,
+        "/pivot?path=t.csv&rows=city&cols=note&values=amount:sum",
+    );
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.contains("first line\\nsecond line"),
+        "the quoted key must stay one column: {body}"
+    );
+}

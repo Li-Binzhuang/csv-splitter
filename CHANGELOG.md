@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.50.1] — 2026-11-19
+
+### Documentation
+
+- CAPABILITIES now records **two** reasons `sort` is not migrated, not one: the semantic one
+  (`smart_cmp` compares numerically only when both sides parse, which no single SQL
+  `ORDER BY` on a typed column reproduces, so mixed columns would sort differently) and the
+  cost one (byte-level copy of non-key columns vs parsing 782 of them).
+
+### Tests
+
+- `/pivot` gets the same quoted-newline guard `/groupby` already had. The defect was
+  identical in both, so the fix deserves the same coverage.
+
 ## [3.50.0] — 2026-11-19
 
 ### Fixed
