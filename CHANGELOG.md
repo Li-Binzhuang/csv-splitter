@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.57.6] — 2026-11-19
+
+### Tests
+
+- The documented-field guard covers /sheet: path, indexed and indexBytes are asserted against
+  the live body, the same way /health, /meta and /metrics already were.
+
 ## [3.57.5] — 2026-11-19
 
 ### Documentation
