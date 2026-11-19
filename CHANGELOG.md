@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.53.0] — 2026-11-19
+
+### Measured / Documented
+
+- The doc claims `--buf-mb` is a total budget that does not multiply with chunk count; measured
+  it. On 89 MB: `-n 16 --buf-mb 64 -t 4` peaks at **126 MB**, `-n 16 --buf-mb 8 -t 4` at
+  **78 MB**, `-t 1` at 133 MB. If each chunk took its own 64 MB, 16 chunks would be ~1 GB, so
+  the claim holds. CAPABILITIES also says what the claim does *not* mean: the process has its
+  own ~70 MB baseline, so "budget" is the I/O buffer share, not total RSS.
+
 ## [3.52.9] — 2026-11-19
 
 ### Tests
