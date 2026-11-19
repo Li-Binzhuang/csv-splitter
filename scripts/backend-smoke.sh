@@ -307,6 +307,7 @@ echo "== observability =="
 HEALTH="$(curl -s "$URL/health")"
 has "health: ok"               "$HEALTH" '"ok":true'
 has "health: ready"            "$HEALTH" '"ready":true'
+has "health: duckdb"           "$HEALTH" '"duckdb":'
 has "health: version"          "$HEALTH" '"version":'
 METRICS="$(curl -s "$URL/metrics")"
 has "metrics: requests"        "$METRICS" '"requests":'

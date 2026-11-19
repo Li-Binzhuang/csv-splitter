@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.57.4] — 2026-11-19
+
+### Tests
+
+- backend-smoke asserts the duckdb field on /health as well as on /capabilities: the probe a
+  deployment points at should answer the build question too.
+
 ## [3.57.3] — 2026-11-19
 
 ### Documentation
