@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.50.4] — 2026-11-19
+
+### Documentation
+
+- `/filter` and `/rows` count differently on purpose — 1-based human row numbers vs a
+  0-based window start — and the API table now says so. A test pins the link by filtering
+  for the second row and asserting `start=1` returns exactly that row, so a later cleanup
+  cannot drift them apart.
+
 ## [3.50.3] — 2026-11-19
 
 ### Fixed

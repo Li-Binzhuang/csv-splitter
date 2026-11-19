@@ -3981,3 +3981,27 @@ fn a_filtered_page_timeout_says_nothing_is_still_running() {
         assert!(!body.contains(leak), "engine text leaked ({leak}): {body}");
     }
 }
+
+/// The two endpoints count differently on purpose: /filter answers 1-based row numbers a
+/// human recognises, /rows takes a 0-based start. A client gluing them must subtract one,
+/// and this test pins that link so a later "cleanup" cannot quietly break it.
+#[test]
+fn a_filtered_row_number_points_at_the_same_row_in_the_window() {
+    let dir = TempDir::new("filterlink");
+    std::fs::write(
+        dir.join("t.csv"),
+        "city,amount\nPuebla,10\nCDMX,20\nTijuana,30\n",
+    )
+    .unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(&server.addr, "/filter?path=t.csv&where=city%3DCDMX");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(r#""rows":[2]"#), "{body}");
+
+    // 2 (1-based) means data row index 1 (0-based).
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&start=1&count=1");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("CDMX"), "{body}");
+    assert!(!body.contains("Puebla"), "{body}");
+}
