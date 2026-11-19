@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.54.6] — 2026-11-19
+
+### Added
+
+- **`/metrics` names the last damaged file.** A single global `journalDamaged` count says
+  something is broken but not where; a per-file map would grow with every path a client
+  touches. One bounded slot — `lastDamagedFile` — answers "which one, most recently" without
+  letting the metric's cardinality run away.
+
 ## [3.54.5] — 2026-11-19
 
 ### Added

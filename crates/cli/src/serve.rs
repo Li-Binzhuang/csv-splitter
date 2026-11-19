@@ -1575,7 +1575,7 @@ fn journal_endpoint(
     let sidecar = Journal::sidecar(&path);
     let (journal, skipped, skipped_redo) = match Journal::load_reporting(&sidecar) {
         Ok(v) => {
-            metrics::shared().record_journal_damage(v.1 + v.2);
+            metrics::shared().record_journal_damage(v.1 + v.2, &path);
             v
         }
         Err(e) => {
@@ -3903,7 +3903,7 @@ fn respond_sheet_window(
     // vanished". The count travels with the response so a client can say so.
     let (ops, damaged) = match Journal::load_reporting(&Journal::sidecar(path)) {
         Ok((journal, skipped, _)) => {
-            metrics::shared().record_journal_damage(skipped);
+            metrics::shared().record_journal_damage(skipped, path);
             (journal.ops().to_vec(), skipped)
         }
         Err(e) => {
@@ -6042,6 +6042,9 @@ mod metrics {
         /// Journal records that could not be read, summed across requests. A count that only
         /// lived in one response would never reach a dashboard.
         journal_damaged: AtomicU64,
+        /// The most recent file whose journal was damaged. A per-file map would grow with
+        /// every path a client touches; one name is bounded and still actionable.
+        last_damaged: Mutex<Option<String>>,
     }
 
     impl Metrics {
@@ -6057,14 +6060,19 @@ mod metrics {
                 buckets: Mutex::new([0; BUCKETS.len() + 1]),
                 engines: Mutex::new(BTreeMap::new()),
                 journal_damaged: AtomicU64::new(0),
+                last_damaged: Mutex::new(None),
             }
         }
 
         /// Note that `count` journal records could not be read.
-        pub fn record_journal_damage(&self, count: usize) {
-            if count > 0 {
-                self.journal_damaged
-                    .fetch_add(count as u64, Ordering::Relaxed);
+        pub fn record_journal_damage(&self, count: usize, file: &std::path::Path) {
+            if count == 0 {
+                return;
+            }
+            self.journal_damaged
+                .fetch_add(count as u64, Ordering::Relaxed);
+            if let Ok(mut slot) = self.last_damaged.lock() {
+                *slot = Some(file.to_string_lossy().to_string());
             }
         }
 
@@ -6183,7 +6191,7 @@ mod metrics {
                 Err(_) => String::new(),
             };
             format!(
-                r#"{{"uptimeSeconds":{uptime},"requests":{},"errors4xx":{},"errors5xx":{},"slowRequests":{},"p50Ms":{},"p95Ms":{},"status":{{{status}}},"routes":{{{routes}}},"latencyBuckets":{{{buckets}}},"jobs":{{"total":{},"running":{}}},"engines":{{{}}},"journalDamaged":{}}}"#,
+                r#"{{"uptimeSeconds":{uptime},"requests":{},"errors4xx":{},"errors5xx":{},"slowRequests":{},"p50Ms":{},"p95Ms":{},"status":{{{status}}},"routes":{{{routes}}},"latencyBuckets":{{{buckets}}},"jobs":{{"total":{},"running":{}}},"engines":{{{}}},"journalDamaged":{},"lastDamagedFile":{}}}"#,
                 self.requests.load(Ordering::Relaxed),
                 self.errors_4xx.load(Ordering::Relaxed),
                 self.errors_5xx.load(Ordering::Relaxed),
@@ -6193,7 +6201,14 @@ mod metrics {
                 jobs.0,
                 jobs.1,
                 engines,
-                self.journal_damaged.load(Ordering::Relaxed)
+                self.journal_damaged.load(Ordering::Relaxed),
+                match self.last_damaged.lock() {
+                    Ok(slot) => match slot.as_deref() {
+                        Some(p) => super::json_str(p),
+                        None => "null".to_string(),
+                    },
+                    Err(_) => "null".to_string(),
+                }
             )
         }
     }

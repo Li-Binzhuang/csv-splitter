@@ -4438,4 +4438,10 @@ fn metrics_sum_journal_damage() {
         .and_then(|n| n.parse::<u64>().ok())
         .unwrap_or(u64::MAX);
     assert!(value >= 1, "damage must reach the metrics: {body}");
+    // The global count says "something is damaged"; this says which file, without letting
+    // the metric grow with every path a client ever touched.
+    assert!(
+        body.contains("\"lastDamagedFile\":\"") && body.contains("/t.csv\""),
+        "the last damaged file should be named: {body}"
+    );
 }
