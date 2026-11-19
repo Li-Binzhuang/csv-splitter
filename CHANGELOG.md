@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.57.0] — 2026-11-19
+
+### Added
+
+-  reports strictParams. Strict mode changes how a request with extra parameters
+  answers, and a client discovering the backend could not see which mode it was in. The test
+  checks both states, default and CSV_SPLITTER_STRICT_PARAMS=0.
+
 ## [3.56.9] — 2026-11-19
 
 ### Documentation

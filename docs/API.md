@@ -306,7 +306,7 @@ written on refusal, and `actual` says what the value is now.
 | GET | `/cell` | 单格 + 稳定行 key |
 | GET | `/journal` | 操作栈 + redo 栈 + 损坏计数 |
 | GET | `/sheet` | 概况：操作数、最后一条、capabilities、layout、indexed |
-| GET | `/capabilities` | 能力发现（reads/writes/actions/limits/engines/duckdb）|
+| GET | `/capabilities` | 能力发现（reads/writes/actions/limits/engines/duckdb/strictParams）|
 | GET | `/spec` | **机器可读契约**：端点、参数、响应字段、错误码；代码生成，有测试对齐真实响应 |
 | GET | `/metrics` | 请求数、p50/p95、慢请求、状态码分布、按路由的计数、job 数、`engines`（各引擎执行次数）、`journalDamaged`（累计读不出的 journal 记录数）、`lastDamagedFile`（最近一次出问题的文件）|
 | GET | `/health` | 存活 + 就绪（`ready` = 根目录可读），带版本 |
@@ -329,6 +329,7 @@ constants the handlers use, so it cannot drift from the routes.
 ```json
 {"version":"3.54.3",
  "duckdb":true,
+ "strictParams":true,
  "engines":["native","sql"],
  "engineParam":["/groupby","/chart","/pivot","/lookup","/concat"],
  "reads":["/","/health","/meta","/rows","/columns","/sheet","/capabilities","…"],

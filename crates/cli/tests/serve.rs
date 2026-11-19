@@ -4865,3 +4865,19 @@ fn too_many_groups_names_max_groups_and_says_what_to_do() {
     );
     assert!(body.contains(r#""hint":"#), "{body}");
 }
+
+/// Strictness changes how a request with extra parameters answers, so a client discovering
+/// the backend must be able to see which mode it is in.
+#[test]
+fn capabilities_says_whether_strict_mode_is_on() {
+    let dir = TempDir::new("capstrict");
+    std::fs::write(dir.join("t.csv"), "a\n1\n").unwrap();
+    let server = start(&dir.0.clone());
+    let (status, body) = get(&server.addr, "/capabilities");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(r#""strictParams":true"#), "{body}");
+
+    let server = start_with_env(&dir.0, &[("CSV_SPLITTER_STRICT_PARAMS", "0")]);
+    let (_, body) = get(&server.addr, "/capabilities");
+    assert!(body.contains(r#""strictParams":false"#), "{body}");
+}
