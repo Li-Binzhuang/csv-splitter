@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.52.6] — 2026-11-19
+
+### Documentation
+
+- Audited the comments that make absolute claims (`never`, `always`, `cannot`) and recorded
+  which test guards each one. Six are covered; one is not: `split_parallel` says parallel
+  readers never share a record, and only checkpoint behaviour is tested. The gap is written
+  down with the exact experiment that would close it rather than left to be rediscovered.
+
 ## [3.52.5] — 2026-11-19
 
 ### Tests

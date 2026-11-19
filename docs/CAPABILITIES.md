@@ -440,6 +440,23 @@ pivot 两个引擎的输出在这两个尺寸上逐字节相同。
 交叉点约在 4–9 MB，所以阈值定 **8 MB**。原来的 64 MB 没有数据支撑，中间 7 倍的区间
 一直在走更慢的原生路径。
 
+## 不变量与它们的守卫 / Invariants and their guards
+
+注释里的「绝不」「永远」是最容易在重构中失效的承诺。逐个核对过的：
+
+| 承诺 | 测试 |
+|---|---|
+| 基文件永不改写，编辑只在 journal | `workbook::tests::window_applies_edits_without_rewriting_the_file` |
+| 排序绝不拆开带引号换行的记录 | `sort::tests::keeps_multiline_records_intact` |
+| 空单元格不算「同一个值」重复 | `validate::tests::blank_cells_are_not_duplicates` |
+| 被截断的 journal 记录不得以半截值生效 | `journal::damaged_tests::any_cut_point_loses_only_the_unfinished_record` |
+| 崩溃落在 journal 与 redo 之间不得重复一条撤销 | `journal::damaged_tests::a_crash_between_the_two_files_does_not_double_the_undo` |
+| 多个写入者不得丢编辑 | `journal::damaged_tests::concurrent_writers_do_not_lose_an_edit` |
+
+**已知缺口**：`split_parallel.rs` 声称「并行读者绝不共享同一条记录」，目前只有 checkpoint
+相关的测试，没有一条用「带引号换行的记录」验证并行切分边界。这一条要补时，做法是构造
+含换行的记录、用 4 线程切分，再与单线程结果逐行比对。
+
 ## 首屏与跳转 / First screen and jumps (measured)
 
 `.idx` 稀疏索引（每 1000 行一个锚点，2.5 GB / 78 万列的文件上只有 5.4 KB）让窗口读取**不需要从头扫描**。实测（2.5 GB、684 917 行、782 列）：
