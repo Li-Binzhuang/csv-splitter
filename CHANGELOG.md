@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.53.6] — 2026-11-19
+
+### Documented
+
+- **Which endpoints see the journal, in one table.** `/rows`, `/cell`, `/journal`, `/sheet`,
+  `/validate` and `/export` apply edits; `/filter` and `/search` do not — they are byte scans
+  over the base file, and applying edits would mean materialising the edited sheet. The
+  difference is deliberate and now pinned by a test: after an edit, `/filter` on the new value
+  finds 0 while `/rows?where=` finds it.
+
 ## [3.53.5] — 2026-11-19
 
 ### Tests

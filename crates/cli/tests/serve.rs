@@ -4255,3 +4255,33 @@ fn the_edit_count_agrees_across_rows_journal_and_sheet() {
     assert_eq!(journal_count, 2, "journal: {journal}");
     assert_eq!(sheet_ops, 2, "sheet: {sheet}");
 }
+
+/// `/filter` and `/search` are byte scans over the base file; they do not load the journal.
+/// That is deliberate (a scan of the edited sheet would mean materialising it first), but it
+/// must stay a *known* difference rather than a surprise: after an edit, `/filter` on the new
+/// value finds nothing while `/rows?where=` does.
+#[test]
+fn filter_and_search_read_the_base_file_not_the_journal() {
+    let dir = TempDir::new("baseonly");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=amount&value=999",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    // The edited view finds it, because it applies the journal.
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&where=amount%3D999");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("999"), "{body}");
+
+    // The raw scan does not: it sees the base file only.
+    let (status, body) = get(&server.addr, "/filter?path=t.csv&where=amount%3D999");
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.contains(r#""matched":0"#),
+        "the scan reads the base file; this is the documented difference: {body}"
+    );
+}
