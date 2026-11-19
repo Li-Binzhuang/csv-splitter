@@ -1400,10 +1400,11 @@ fn health_endpoint(stream: &mut TcpStream, root: &Path) -> io::Result<()> {
         stream,
         200,
         &format!(
-            r#"{{"ok":true,"ready":{},"version":{},"root":{}}}"#,
+            r#"{{"ok":true,"ready":{},"version":{},"root":{},"duckdb":{}}}"#,
             ready,
             json_str(env!("CARGO_PKG_VERSION")),
-            json_str(&root.to_string_lossy())
+            json_str(&root.to_string_lossy()),
+            engine::sql_available()
         ),
     )
 }

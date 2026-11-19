@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.54.2] — 2026-11-19
+
+### Added
+
+- **`/health` reports `duckdb` alongside `ready` and `version`.** `--version` answers the
+  build question on the command line; a probe or an operator in a browser had no equivalent.
+  A test asserts the field is present, so a future build that drops the SQL engine cannot
+  look identical to one that has it.
+
 ## [3.54.1] — 2026-11-19
 
 ### Added

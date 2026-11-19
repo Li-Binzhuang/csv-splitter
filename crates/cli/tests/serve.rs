@@ -4354,3 +4354,16 @@ fn strict_parameter_checking_is_on_by_default_and_can_be_turned_off() {
     let (status, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=5&bogus=1");
     assert_eq!(status, 200, "=0 must let it through: {body}");
 }
+
+/// `/health` answers the same build question as `--version`, so an operator looking at a
+/// browser or a probe can tell whether asking for the SQL engine is even possible.
+#[test]
+fn health_reports_whether_duckdb_is_available() {
+    let dir = TempDir::new("healthduck");
+    std::fs::write(dir.join("t.csv"), "a\n1\n").unwrap();
+    let server = start(&dir.0.clone());
+    let (status, body) = get(&server.addr, "/health");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(r#""ready":true"#), "{body}");
+    assert!(body.contains(r#""duckdb":"#), "{body}");
+}
