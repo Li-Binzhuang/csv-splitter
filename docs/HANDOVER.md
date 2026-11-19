@@ -83,6 +83,24 @@ csv-splitter edit export orders.csv -o clean.csv
 
 API：`/rows` 首屏 66 ms（含建索引），之后 **6–7 ms**，任意偏移一样快。
 
+## 改一处，要同时改哪里（现在都有测试盯着）
+
+这些是最近十几轮补上的守卫。**列在这里是因为它们会失败**——忘了同步就会红，而不是
+靠记性。
+
+| 你改了 | 同时要看 | 守着它的测试 |
+|---|---|---|
+| 任何写 journal 的路径 | 必须走 update_locked，不要自己 load+save | serve 的 concurrent_http_edits_all_land（8 并发写）|
+| 新增一个渲染端点 | 归入「看得到编辑」或「只读基文件」两榜 | serve 的 the_journal_visibility_matrix_holds |
+| 新增一个支持引擎的端点 | 结果等价 + 错误等价各一条 | engine 里五个 *_engines_agree_* |
+| 新增/改请求参数 | SPEC_PARAMS；只对写侧有意义的另记 WRITE_ONLY_PARAMS | /spec 的 contract 测试、writeOnlyParams 测试 |
+| 新增 HTTP 状态码 | STATUS_NOTES | contract 的 spec_documents_every_status_the_server_can_return |
+| 文档里改响应字段 | 字段必须真的返回 | serve 的 documented_fields_are_fields_the_endpoint_returns（覆盖 health/meta/metrics）|
+| 改版本号 | CHANGELOG 顶部同步 | docs 的 the_changelog_leads_with_the_current_version |
+
+CAPABILITIES.md 里的反引号会被当作命令名校验，**参数名和标志不要加反引号**；HANDOVER
+这里同理，测试名写成纯文本。
+
 ## 已知限制（写明，不暗示）
 
 1. `running_total` 在窗口视图里是 `#VALUE!`（它需要起点之前的每一行）。
@@ -104,7 +122,7 @@ API：`/rows` 首屏 66 ms（含建索引），之后 **6–7 ms**，任意偏�
 | 加一条命令 | ARCHITECTURE 的「改一处要看哪里」：帮助表、README、CAPABILITIES、`scripts/regress.sh` —— **四处都有测试盯着** |
 | 加一个 API 端点 | `docs/API.md`、`/sheet` 的 capabilities、`EDIT_ACTIONS` |
 | 改内存行为 | 用 `/usr/bin/time -l` 复测，数字写进 CAPABILITIES |
-| 不写代码、只验证 | `scripts/dev.sh gate`（fmt+clippy+**494 测试**，含 core 的 sql 特性）、`smoke.sh`（43 步）、`regress.sh`（39 项）、`backend-smoke.sh`（**44 项**，起真服务）、`bench.sh` |
+| 不写代码、只验证 | `scripts/dev.sh gate`（fmt+clippy+**606 测试**，另 336 条在 core 的 sql 特性下）、`smoke.sh`（49 步）、`regress.sh`（44 项）、`backend-smoke.sh`（**83 项**，起真服务）、`bench.sh` |
 
 **日常开发节奏**（用户明确要求）：
 `scripts/dev.sh check`（约 3 秒）→ 相关单测（约 5 秒）→ 攒够 1–3 个提交跑一次

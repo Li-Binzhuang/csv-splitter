@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.56.9] — 2026-11-19
+
+### Documentation
+
+- HANDOVER gained "change one thing, change this too": the guards added over the last rounds
+  as a table of what fails when they are out of sync (journal lock, visibility matrix, engine
+  parity, SPEC_PARAMS/writeOnlyParams, status codes, documented fields, changelog version).
+  The verification row's counts were also stale and now match reality: 606 workspace tests,
+  336 more under the sql feature, 49 smoke steps, 44 regress checks, 83 backend assertions.
+
 ## [3.56.8] — 2026-11-19
 
 ### Measured / Documented
