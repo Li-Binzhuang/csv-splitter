@@ -323,6 +323,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--from-key", "Reference table key column"),
             ("--get", "Columns to bring over, comma separated"),
             ("--json", "Emit JSON"),
+            ("--engine", "auto | native | sql (auto: sql above 64 MB)"),
             ("--key", "Join key column"),
             ("--max-keys", "Refuse to run past this many distinct keys"),
             ("--out", "Output path"),
@@ -3632,6 +3633,7 @@ fn cmd_lookup(args: &[String]) -> i32 {
     let mut reference_key = String::new();
     let mut take = String::new();
     let mut max_keys = csv_splitter_core::lookup::DEFAULT_MAX_KEYS;
+    let mut engine = csv_splitter_core::engine::Engine::Auto;
     let mut json = false;
     let mut quiet = false;
     let mut delim = "auto".to_string();
@@ -3640,6 +3642,19 @@ fn cmd_lookup(args: &[String]) -> i32 {
         match arg.as_str() {
             "--quotes" => match p.value("--quotes") {
                 Ok(v) => quotes_text = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--engine" => match p.value("--engine") {
+                Ok(v) => match csv_splitter_core::engine::Engine::parse(&v) {
+                    Ok(e) => engine = e,
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                },
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -3774,8 +3789,23 @@ fn cmd_lookup(args: &[String]) -> i32 {
     if let Err(code) = check_output(Some(&input), &output) {
         return code;
     }
-    let result =
-        csv_splitter_core::lookup::lookup_quotes(&input, delimiter, &output, &options, quotes, &tx);
+    let result = {
+        let planned = match csv_splitter_core::engine::resolve(engine, &input) {
+            Ok(e) => e,
+            Err(message) => {
+                eprintln!("error: {message}");
+                return 2;
+            }
+        };
+        match planned {
+            csv_splitter_core::engine::Engine::Sql => {
+                csv_splitter_core::engine::lookup_sql(&input, delimiter, &output, &options, &tx)
+            }
+            _ => csv_splitter_core::lookup::lookup_quotes(
+                &input, delimiter, &output, &options, quotes, &tx,
+            ),
+        }
+    };
     drop(tx);
     let _ = reporter.join();
     let summary = match result {

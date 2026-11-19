@@ -97,6 +97,42 @@ fn open_limited() -> io::Result<Connection> {
     Ok(conn)
 }
 
+/// Run one SELECT against two files at once: the main file as view `t`, the reference file
+/// as view `ref`. Used by the SQL lookup path, which needs a JOIN and therefore two views.
+///
+/// Both views are created with `read_csv_auto`, so types come from a sample; the typed
+/// ladder that makes single-file queries fast is not reused here because it registers
+/// columns for one file only.
+pub fn query_with_reference(
+    main: &Path,
+    reference: &Path,
+    sql: &str,
+    limit: usize,
+    delimiter: Delimiter,
+) -> io::Result<QueryResult> {
+    validate(sql).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+    let conn = open_limited()?;
+    register_view(&conn, "t", main, delimiter)?;
+    register_view(&conn, "ref", reference, delimiter)?;
+    query_once(&conn, sql, limit)
+}
+
+/// Register `name` as a view over a CSV file, failing with the engine's own message.
+fn register_view(
+    conn: &Connection,
+    name: &str,
+    path: &Path,
+    delimiter: Delimiter,
+) -> io::Result<()> {
+    let create = format!(
+        "CREATE VIEW \"{name}\" AS SELECT * FROM read_csv_auto('{}', header=true, delim='{}', sample_size=20000)",
+        path.to_string_lossy().replace('\'', "''"),
+        delimiter.byte() as char
+    );
+    conn.execute_batch(&create)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e.to_string()))
+}
+
 /// Validate a user query before it reaches DuckDB.
 pub fn validate(sql: &str) -> Result<(), String> {
     let trimmed = sql.trim().trim_end_matches(';').trim();

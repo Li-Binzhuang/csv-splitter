@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.49.6] — 2026-11-19
+
+### Added
+
+- **`lookup --engine auto|native|sql`, backed by a real `LEFT JOIN`.** The SQL module gained
+  a two-file view (`t` + `ref`), so a lookup can be one join instead of a load-then-stream
+  pass. Composite keys (`--key a,b`) work on both engines, an unmatched key still writes
+  `#N/A`, and clashing output names keep the `_ref` suffix.
+  - A test asserts byte-identical files from both engines, including the miss and the
+    suffix, so "reuse the database" cannot quietly change a lookup's answer.
+
 ## [3.49.5] — 2026-11-19
 
 ### Added

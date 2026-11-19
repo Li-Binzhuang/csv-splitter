@@ -599,6 +599,140 @@ pub fn pivot_sql(
     ))
 }
 
+/// DuckDB-backed lookup: the reference table becomes view `ref`, the main file view `t`,
+/// and the match is a LEFT JOIN. A missing key keeps the native `#N/A`, so the output
+/// means the same thing whichever engine produced it.
+#[cfg(feature = "sql")]
+pub fn lookup_sql(
+    main: &Path,
+    delimiter: crate::types::Delimiter,
+    output: &Path,
+    options: &crate::lookup::LookupOptions,
+    tx: &crate::types::ProgressSender,
+) -> std::io::Result<crate::lookup::LookupSummary> {
+    use std::io::{self, Write};
+
+    let total_bytes = std::fs::metadata(main).map(|m| m.len()).unwrap_or(0);
+    tx.send(crate::types::ProgressEvent::PhaseStart {
+        phase: "Looking up (duckdb)".into(),
+        total_bytes,
+    })
+    .ok();
+
+    let main_header = crate::workbook::base_header(main, delimiter)?;
+    if main_header.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("{} has no header", main.display()),
+        ));
+    }
+
+    // Same clash rule as the native path: a copied name that already exists in the main
+    // file gets `_ref`, repeatedly, until it is unique.
+    let mut columns = main_header.clone();
+    let mut output_names: Vec<String> = Vec::with_capacity(options.take.len());
+    for wanted in &options.take {
+        let mut name = wanted.clone();
+        while columns.iter().any(|c| c == &name) {
+            name = format!("{name}_ref");
+        }
+        columns.push(name.clone());
+        output_names.push(name);
+    }
+
+    let keys: Vec<String> = options
+        .key
+        .split(',')
+        .map(|k| k.trim().to_string())
+        .filter(|k| !k.is_empty())
+        .collect();
+    let reference_keys: Vec<String> = options
+        .reference_key
+        .split(',')
+        .map(|k| k.trim().to_string())
+        .filter(|k| !k.is_empty())
+        .collect();
+    if keys.len() != reference_keys.len() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!(
+                "key and from-key must have the same number of columns ({} vs {})",
+                keys.len(),
+                reference_keys.len()
+            ),
+        ));
+    }
+
+    let on = keys
+        .iter()
+        .zip(reference_keys.iter())
+        .map(|(l, r)| format!("m.{} = r.{}", ident(l), ident(r)))
+        .collect::<Vec<_>>()
+        .join(" AND ");
+    let projected = output_names
+        .iter()
+        .enumerate()
+        .map(|(index, name)| {
+            format!(
+                "COALESCE(r.{}, '#N/A') AS {}",
+                ident(&options.take[index]),
+                ident(name)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+    let query = format!("SELECT m.*, {projected} FROM t m LEFT JOIN ref r ON {on}");
+
+    let result =
+        crate::sql::query_with_reference(main, &options.reference, &query, 100_000, delimiter)?;
+
+    let mut out = std::io::BufWriter::new(std::fs::File::create(output)?);
+    writeln!(out, "{}", quote_cells(&columns).join(","))?;
+    let mut missing = 0u64;
+    for row in &result.rows {
+        let cells: Vec<String> = row.clone();
+        if cells
+            .iter()
+            .rev()
+            .take(output_names.len())
+            .all(|v| v == "#N/A")
+        {
+            missing += 1;
+        }
+        writeln!(out, "{}", quote_cells(&cells).join(","))?;
+    }
+    out.flush()?;
+
+    let rows = result.rows.len() as u64;
+    let bytes = std::fs::metadata(output).map(|m| m.len()).unwrap_or(0);
+    tx.send(crate::types::ProgressEvent::PhaseDone {
+        phase: "Looking up (duckdb)".into(),
+    })
+    .ok();
+    Ok(crate::lookup::LookupSummary {
+        main_rows: rows,
+        matched: rows.saturating_sub(missing),
+        missing,
+        reference_keys: 0,
+        bytes,
+        columns,
+    })
+}
+
+#[cfg(not(feature = "sql"))]
+pub fn lookup_sql(
+    _main: &Path,
+    _delimiter: crate::types::Delimiter,
+    _output: &Path,
+    _options: &crate::lookup::LookupOptions,
+    _tx: &crate::types::ProgressSender,
+) -> std::io::Result<crate::lookup::LookupSummary> {
+    Err(std::io::Error::new(
+        std::io::ErrorKind::Unsupported,
+        "this build has no `sql` feature; rebuild with --features sql",
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -781,6 +915,48 @@ mod tests {
         .unwrap();
         let tx_sql: ProgressSender = tx.clone();
         pivot_sql(&input, Delimiter::Comma, &sql_out, &options, &tx_sql).unwrap();
+        let native = std::fs::read_to_string(&native_out).unwrap();
+        let sql = std::fs::read_to_string(&sql_out).unwrap();
+        assert_eq!(native, sql, "native:\n{native}\nsql:\n{sql}");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// The SQL lookup must reproduce the native file byte for byte, including `#N/A` for
+    /// a key that is not in the reference and the `_ref` suffix on a clashing name.
+    #[cfg(feature = "sql")]
+    #[test]
+    fn lookup_engines_agree_byte_for_byte() {
+        use crate::lookup::{lookup_quotes, LookupOptions};
+        use crate::types::{Delimiter, ProgressSender};
+
+        let dir = std::env::temp_dir().join(format!("csvs_engine6_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let main = dir.join("m.csv");
+        let reference = dir.join("r.csv");
+        std::fs::write(&main, "id,city\n1,CDMX\n9,NOWHERE\n").unwrap();
+        std::fs::write(&reference, "id,city,region\n1,Puebla,SUR\n1,CDMX,NORTH\n").unwrap();
+        let options = LookupOptions {
+            key: "id,city".into(),
+            reference: reference.clone(),
+            reference_key: "id,city".into(),
+            take: vec!["region".into()],
+            max_keys: 1000,
+        };
+        let native_out = dir.join("native.csv");
+        let sql_out = dir.join("sql.csv");
+        let (tx, _rx) = std::sync::mpsc::channel::<crate::types::ProgressEvent>();
+        let tx_native: ProgressSender = tx.clone();
+        lookup_quotes(
+            &main,
+            Delimiter::Comma,
+            &native_out,
+            &options,
+            Default::default(),
+            &tx_native,
+        )
+        .unwrap();
+        let tx_sql: ProgressSender = tx.clone();
+        lookup_sql(&main, Delimiter::Comma, &sql_out, &options, &tx_sql).unwrap();
         let native = std::fs::read_to_string(&native_out).unwrap();
         let sql = std::fs::read_to_string(&sql_out).unwrap();
         assert_eq!(native, sql, "native:\n{native}\nsql:\n{sql}");

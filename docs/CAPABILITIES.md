@@ -65,7 +65,7 @@
 | SQL | `sql f.csv "SELECT ..."` | `GET /query`、`/rows?sql=` | DuckDB，只读单语句，结果封顶 |
 | 筛选 | `filter --where "c=v"` | `GET /filter`、`/rows?where=` | 支持 `= != > >= < <= ~ in empty` |
 | 搜索 | `search f.csv "text" [--regex]` | `GET /search?regex=1` | 返回行号；`--regex` 用条件格式那套模式子集 |
-| 跨表查找 | `lookup --key C --from R --get cols` | `POST /lookup`（job）| `--max-keys` 默认 500 万（公式里的 `ref()` 默认 200 万） |
+| 跨表查找 | `lookup --key C --from R --get cols` | `POST /lookup`（job）| `--max-keys` 默认 500 万（公式里的 `ref()` 默认 200 万） `--engine auto\|native\|sql`，`--key a,b` 支持复合键 |
 
 `groupby` / `pivot` / `chart` 读的是**文件**，所以公式列（只在 journal 里）对它们不可见；
 加 `--apply-edits` 会先把表物化到临时文件再分析，让「加公式列 → 按它汇总」一步完成。
