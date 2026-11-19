@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.53.7] — 2026-11-19
+
+### Documentation
+
+- **Collected the deliberate inconsistencies into one table.** `/filter` not seeing edits,
+  `sort`/`dedupe` staying native, `concat --engine auto` never switching, chart ordering,
+  the 8 MB threshold and strict-parameter mode each had their reason in a different section.
+  Together, with the reason and the workaround for each, they stop reading as bugs.
+
 ## [3.53.6] — 2026-11-19
 
 ### Documented
