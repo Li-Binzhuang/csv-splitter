@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.55.3] — 2026-11-19
+
+### Fixed
+
+- **Download streams the file instead of reading it whole.** The comment on the handler said
+  "stream a file under the root"; the code called `std::fs::read`, so a multi-gigabyte export
+  became a multi-gigabyte allocation for one request. It now sends a fixed Content-Length and
+  copies in 1 MB chunks, honouring HEAD. A test checks the body bytes and the length.
+
 ## [3.55.2] — 2026-11-19
 
 ### Measured / Documented

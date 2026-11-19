@@ -4603,3 +4603,39 @@ fn documented_fields_are_fields_the_endpoint_returns() {
         }
     }
 }
+
+/// A download is the bytes of the file, with the file's own length in Content-Length — and it
+/// streams, so a large export does not become a large allocation.
+#[test]
+fn download_returns_the_file_bytes_with_a_accurate_length() {
+    let dir = TempDir::new("downloadbytes");
+    let body = "city,amount\nCDMX,10\nPuebla,20\n";
+    std::fs::write(dir.join("t.csv"), body).unwrap();
+    let server = start(&dir.0.clone());
+
+    // HEAD answers the headers without the body, which is how the length is checked.
+    let mut head = TcpStream::connect(&server.addr).unwrap();
+    write!(
+        head,
+        "HEAD /download?path=t.csv HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
+    )
+    .unwrap();
+    let mut header_text = String::new();
+    head.read_to_string(&mut header_text).unwrap();
+    assert!(
+        header_text.contains(&format!("Content-Length: {}", body.len())),
+        "length must match the file: {header_text}"
+    );
+    assert!(
+        header_text.contains("attachment; filename=\"t.csv\""),
+        "{header_text}"
+    );
+
+    let (status, raw) = get_raw(&server.addr, "/download?path=t.csv");
+    assert_eq!(status, 200);
+    let text = String::from_utf8_lossy(&raw).to_string();
+    assert!(
+        text.ends_with(body),
+        "the body must be the file, byte for byte: {text}"
+    );
+}

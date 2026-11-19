@@ -4833,24 +4833,52 @@ fn download(
         Ok(v) => v,
         Err(reason) => return bad_path_reason(stream, reason),
     };
-    let bytes = match std::fs::read(&path) {
-        Ok(b) => b,
-        Err(e) => {
-            return respond_json(
-                stream,
-                422,
-                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
-            )
-        }
-    };
     let name = rel.rsplit('/').next().unwrap_or("download");
-    respond_bytes(
-        stream,
-        200,
-        "application/octet-stream",
-        &format!("attachment; filename=\"{}\"", name.replace('"', "'")),
-        &bytes,
-    )
+    let disposition = format!("attachment; filename=\"{}\"", name.replace('"', "'"));
+    // Stream, do not `std::fs::read`: a CSV export can be gigabytes, and reading it whole
+    // puts the entire file in RAM for one request. The comment above always said stream.
+    respond_file(stream, &path, "application/octet-stream", &disposition)
+}
+
+/// Copy a file to the client in bounded chunks instead of buffering it.
+fn respond_file(
+    stream: &mut TcpStream,
+    path: &Path,
+    content_type: &str,
+    disposition: &str,
+) -> io::Result<()> {
+    use std::io::Read;
+
+    let file = std::fs::File::open(path)?;
+    let len = file.metadata()?.len();
+    let request = http_ctx::current();
+    let elapsed_ms = request.started.elapsed().as_secs_f64() * 1000.0;
+    metrics::shared().record(&request.route, 200, elapsed_ms);
+    let head = format!(
+        "HTTP/1.1 200 {}\r\n\
+         X-Response-Time: {elapsed_ms:.1}ms\r\n\
+         Content-Type: {content_type}\r\n\
+         Content-Disposition: {disposition}\r\n\
+         Content-Length: {len}\r\n\
+         {}Cache-Control: no-store\r\n\
+         Connection: close\r\n\r\n",
+        reason_for(200),
+        cors_headers()
+    );
+    stream.write_all(head.as_bytes())?;
+    if request.head_only {
+        return stream.flush();
+    }
+    let mut reader = std::io::BufReader::with_capacity(1024 * 1024, file);
+    let mut buf = vec![0u8; 1024 * 1024];
+    loop {
+        let n = reader.read(&mut buf)?;
+        if n == 0 {
+            break;
+        }
+        stream.write_all(&buf[..n])?;
+    }
+    stream.flush()
 }
 
 /// Run a query and return its rows as CSV text (not JSON) so it can be piped
