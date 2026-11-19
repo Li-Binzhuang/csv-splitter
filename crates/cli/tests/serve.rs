@@ -4531,3 +4531,29 @@ fn validation_judges_the_edited_value() {
     );
     assert_eq!(count(&body), 1, "the edited row must now pass: {body}");
 }
+
+/// `/meta` promises five fields; a doc row that also promised a ragged flag was wrong.
+#[test]
+fn meta_reports_what_it_promises() {
+    let dir = TempDir::new("metaapi");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(&server.addr, "/meta?path=t.csv");
+    assert_eq!(status, 200, "{body}");
+    for key in [
+        "\"rows\"",
+        "\"bytes\"",
+        "\"headers\"",
+        "\"delimiter\"",
+        "\"encoding\"",
+    ] {
+        assert!(body.contains(key), "{key} missing: {body}");
+    }
+    assert!(body.contains(r#""rows":2"#), "two data rows: {body}");
+    assert!(body.contains(r#""city""#), "{body}");
+    assert!(
+        !body.contains("ragged"),
+        "a field the docs no longer promise must not appear: {body}"
+    );
+}

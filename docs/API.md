@@ -39,7 +39,7 @@
 | 端点 | 参数 | 说明 |
 |---|---|---|
 | `GET /health` | — | 存活检查 + 根目录 + `duckdb`（本构建是否编入 DuckDB）|
-| `GET /meta` | `path` | 编码、行数、列数、分隔符、是否 ragged |
+| `GET /meta` | `path` | 行数 `rows`、字节数 `bytes`、表头 `headers`、`delimiter`、`encoding`（不含 ragged 标记：行宽一致性请用 `/validate`）|
 | `GET /rows` | `path` `start` `count` `where` `order` `desc` `sql` `format` | 分页窗口；`where`/`order` 走 SQL，**套用编辑与公式列**。三条路径（普通/筛选/排序）返回同一组字段：`start` `count` `requested` `limit` `total` `columns` `frozenColumns` `rows` `edited` `operations`（筛选/排序额外有 `hasMore`） |
 | `GET /sheet` | `path` | 列、行数、编辑数、能力清单、列布局、冻结列、是否已建索引（`indexed` / `indexBytes`） |
 | `GET /book` | — | 工作簿：根目录下所有 CSV 及其状态 |

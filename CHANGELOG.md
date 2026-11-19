@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.54.9] — 2026-11-19
+
+### Fixed / Documentation
+
+- The API table promised `/meta` returned a ragged flag and a column count; it returns neither.
+  The row now names the five fields it really has, and points at `/validate` for row-width
+  consistency. A test asserts those five keys and that no ragged field exists, so the promise
+  and the answer cannot drift apart again.
+
 ## [3.54.8] — 2026-11-19
 
 ### Tests
