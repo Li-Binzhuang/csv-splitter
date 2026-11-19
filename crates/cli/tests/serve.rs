@@ -4491,3 +4491,43 @@ fn the_journal_visibility_matrix_holds() {
         );
     }
 }
+
+/// `/validate` loads the journal, so a rule that fails before the edit must pass after it.
+/// The matrix listed it as edit-aware; this makes that claim testable.
+#[test]
+fn validation_judges_the_edited_value() {
+    let dir = TempDir::new("validateedit");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+    let checks = "amount%3E%3D9999";
+
+    let (status, body) = get(
+        &server.addr,
+        &format!("/validate?path=t.csv&checks={checks}"),
+    );
+    assert_eq!(status, 200, "{body}");
+    let count = |body: &str| -> u64 {
+        body.split("\"count\":")
+            .nth(1)
+            .and_then(|t| t.split([',', '}']).next())
+            .and_then(|n| n.parse().ok())
+            .unwrap_or(u64::MAX)
+    };
+    assert_eq!(
+        count(&body),
+        2,
+        "both rows break the rule to begin with: {body}"
+    );
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=amount&value=9999",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let (_, body) = get(
+        &server.addr,
+        &format!("/validate?path=t.csv&checks={checks}"),
+    );
+    assert_eq!(count(&body), 1, "the edited row must now pass: {body}");
+}

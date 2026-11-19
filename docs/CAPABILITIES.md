@@ -464,7 +464,7 @@ pivot 两个引擎的输出在这两个尺寸上逐字节相同。
 | `/cell` | ✅ |
 | `/style`（条件格式）| ✅（按编辑后的值判定规则）|
 | `/journal` `/sheet` | ✅（且三处操作数一致）|
-| `/validate` | ✅ |
+| `/validate` | ✅（规则按编辑后的值判定）|
 | `/export` | ❌ **只读基文件**（它把 `where` 翻成 SQL 交给 DuckDB，DuckDB 看不到 journal）|
 | **`/filter`** | ❌ **只扫基文件** |
 | **`/search`** | ❌ **只扫基文件** |
@@ -492,6 +492,7 @@ pivot 两个引擎的输出在这两个尺寸上逐字节相同。
 | 单格读取必须看到 journal 编辑 | `serve::a_cell_read_sees_the_edit` |
 | 条件格式必须按编辑后的值判定 | `serve::style_judges_the_edited_value` |
 | 哪些端点看得到编辑（矩阵）| `serve::the_journal_visibility_matrix_holds` |
+| 校验规则按编辑后的值判定 | `serve::validation_judges_the_edited_value` |
 | split 再 merge 必须逐字节还原输入 | `splitter::tests::split_then_merge_reproduces_the_input`（1200 行，含引号换行与非 ASCII，2 线程）|
 | 并行读者绝不共享或拆开一条记录 | `splitter::tests::threads_do_not_break_records_with_quoted_newlines`（1200 行，每三行一处带引号换行，4 线程与单线程逐字节比对）|
 

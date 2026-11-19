@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.54.8] — 2026-11-19
+
+### Tests
+
+- Validation is edit-aware and now says so: a rule that both rows break before an edit
+  leaves exactly one violation after it. The visibility matrix listed validate as edit-aware,
+  and this makes the claim testable instead of asserted.
+
 ## [3.54.7] — 2026-11-19
 
 ### Fixed / Documentation
