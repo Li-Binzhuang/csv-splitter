@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.52.5] — 2026-11-19
+
+### Tests
+
+- **Eight writers, one journal, every edit survives.** `update_locked` exists because two
+  appending writers without a lock lose one edit silently (last rename wins), and that
+  promise had no test. The new one runs eight threads through `update_locked` and asserts the
+  file holds all eight operations, each with its own value.
+
 ## [3.52.4] — 2026-11-19
 
 ### Fixed

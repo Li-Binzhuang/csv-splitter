@@ -730,4 +730,45 @@ mod damaged_tests {
         assert_eq!(journal.redo_len(), 1);
         std::fs::remove_dir_all(&dir).ok();
     }
+
+    /// The lock exists because two writers appending without it lose an edit silently.
+    /// This runs eight writers against one journal and asserts every edit survives.
+    #[test]
+    fn concurrent_writers_do_not_lose_an_edit() {
+        let dir = std::env::temp_dir().join(format!("csvs_journal_lock_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let sidecar = dir.join("data.csv.journal");
+
+        let mut handles = Vec::new();
+        for worker in 0..8u64 {
+            let sidecar = sidecar.clone();
+            handles.push(std::thread::spawn(move || {
+                super::Journal::update_locked(&sidecar, |journal| {
+                    journal.push(super::Op::SetCell {
+                        row: worker,
+                        column: "city".to_string(),
+                        value: format!("C{worker}"),
+                    });
+                    Ok(())
+                })
+                .map(|_| ())
+            }));
+        }
+        for handle in handles {
+            handle.join().unwrap().expect("a writer failed");
+        }
+
+        let journal = super::Journal::load(&sidecar).unwrap();
+        assert_eq!(journal.len(), 8, "an edit was lost: {journal:?}");
+        for worker in 0..8u64 {
+            let found = journal.ops().iter().any(|op| match op {
+                super::Op::SetCell { row, value, .. } => {
+                    *row == worker && value == &format!("C{worker}")
+                }
+                _ => false,
+            });
+            assert!(found, "edit {worker} is missing: {journal:?}");
+        }
+        std::fs::remove_dir_all(&dir).ok();
+    }
 }
