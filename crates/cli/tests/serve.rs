@@ -3914,3 +3914,25 @@ fn a_damaged_journal_is_applied_and_reported() {
         "the unreadable record must be counted, got: {body}"
     );
 }
+
+/// A grouped key can hold a quoted newline; the endpoint must return one row per group, not
+/// one row per physical line.
+#[test]
+fn groupby_survives_a_quoted_newline_in_the_key() {
+    let dir = TempDir::new("groupnl");
+    std::fs::write(
+        dir.join("t.csv"),
+        "note,amount\n\"first line\nsecond line\",10\nok,20\n",
+    )
+    .unwrap();
+    let server = start(&dir.0.clone());
+    let (status, body) = get(&server.addr, "/groupby?path=t.csv&by=note&agg=amount:sum");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("ok"), "{body}");
+    assert!(
+        body.contains("first line\\nsecond line"),
+        "the quoted key must stay one group: {body}"
+    );
+    // The response says which engine answered, instead of leaving it to inference.
+    assert!(body.contains("\"engine\":\"native\""), "{body}");
+}

@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.50.0] — 2026-11-19
+
+### Fixed
+
+- **`/groupby` split its own output by lines.** A grouped key containing a quoted newline
+  became several rows, the same bug `/pivot` had. It now parses with the CSV reader.
+
+### Added
+
+- `/groupby` responses carry `"engine": "native" | "sql"` — which engine answered, rather
+  than leaving the caller to infer it from timing.
+
 ## [3.49.9] — 2026-11-19
 
 ### Fixed

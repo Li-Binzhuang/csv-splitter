@@ -3233,11 +3233,22 @@ fn group_by(
         };
         let text = std::fs::read_to_string(&out)?;
         std::fs::remove_file(&out).ok();
+        // Parse with the CSV reader, not lines(): a grouped key can contain a quoted
+        // newline, and splitting on lines turns one row into several.
         let mut rows = Vec::new();
         let mut columns = Vec::new();
-        for (index, line) in text.lines().enumerate() {
-            let fields: Vec<String> = parse_csv_line(line);
-            if index == 0 {
+        let mut reader = csv_splitter_core::csv_reader::RecordReader::new(
+            std::io::BufReader::with_capacity(1024 * 1024, std::io::Cursor::new(text.clone())),
+            1024 * 1024,
+        );
+        let mut record = Vec::new();
+        while reader.next_record(&mut record).unwrap_or(false) {
+            let fields = csv_splitter_core::csv_reader::parse_csv_record_with(
+                String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
+                b',',
+                csv_splitter_core::csv_reader::QuoteStyle::Rfc4180,
+            );
+            if columns.is_empty() {
                 columns = fields;
             } else {
                 rows.push(fields);
@@ -3266,9 +3277,12 @@ fn group_by(
                 stream,
                 200,
                 &format!(
-                    r#"{{"columns":[{}],"rows":[{}]}}"#,
+                    r#"{{"columns":[{}],"rows":[{}],"engine":"{}"}}"#,
                     cols.join(","),
-                    body.join(",")
+                    body.join(","),
+                    engine::resolve(engine, &path)
+                        .map(|e| e.label())
+                        .unwrap_or_else(|_| "native"),
                 ),
             )
         }
@@ -3283,12 +3297,6 @@ fn group_by(
             &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
         ),
     }
-}
-
-/// Split a CSV line into cells (the aggregate output is small and machine-made,
-/// so a plain split after unquoting suffices).
-fn parse_csv_line(line: &str) -> Vec<String> {
-    csv_splitter_core::csv_reader::parse_csv_record(line, b',')
 }
 
 /// Partition the file by a column into an archive, as a background job.
