@@ -69,7 +69,16 @@ fn main() -> ExitCode {
             0
         }
         Some("-V" | "--version") => {
-            println!("csv-splitter {VERSION}");
+            // The engine question comes up the moment `--engine sql` answers "this build has
+            // no sql feature"; `--version` should answer it before the error does.
+            println!(
+                "csv-splitter {VERSION} (DuckDB: {})",
+                if csv_splitter_core::engine::sql_available() {
+                    "compiled in"
+                } else {
+                    "not compiled"
+                }
+            );
             0
         }
         Some(other) => {

@@ -4941,3 +4941,15 @@ fn serve_check_reports_the_configuration() {
     assert!(text.contains("check(s) failed"), "{text}");
     std::fs::remove_dir_all(&dir.0).ok();
 }
+
+/// `--version` answers the build question before `--engine sql` turns it into an error.
+#[test]
+fn version_says_whether_duckdb_is_compiled_in() {
+    let out = Command::new(bin()).arg("--version").output().unwrap();
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("csv-splitter"), "{text}");
+    assert!(
+        text.contains("DuckDB: compiled in") || text.contains("DuckDB: not compiled"),
+        "{text}"
+    );
+}

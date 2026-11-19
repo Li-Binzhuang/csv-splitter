@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.54.1] — 2026-11-19
+
+### Added
+
+- **`--version` says whether DuckDB is compiled in.** The most common first error after
+  asking for `--engine sql` is "this build has no sql feature", and `--version` now answers
+  that question before the error does. A test asserts the marker is present in either form.
+
 ## [3.54.0] — 2026-11-19
 
 ### Tests
