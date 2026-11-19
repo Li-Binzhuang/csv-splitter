@@ -946,6 +946,59 @@ mod tests {
     #[cfg(feature = "sql")]
     /// Result parity is tested elsewhere; error parity is not. A missing column must fail the
     /// same way on both engines, or a caller that handles one status gets the other.
+    /// Same check as chart, for the two aggregations whose error paths were still untested.
+    #[test]
+    #[cfg(feature = "sql")]
+    fn groupby_and_pivot_agree_on_how_a_missing_column_fails() {
+        use crate::aggregate::AggSpec;
+        use crate::pivot::PivotOptions;
+        use crate::types::Delimiter;
+
+        let dir = std::env::temp_dir().join(format!("csvs_engine_err2_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("t.csv");
+        std::fs::write(&input, "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel::<crate::types::ProgressEvent>();
+
+        // groupby: a key column that does not exist.
+        let out = dir.join("g.csv");
+        let options = crate::groupby::GroupOptions {
+            keys: vec!["nope".into()],
+            aggregates: AggSpec::parse_list("amount:sum").unwrap(),
+            ..Default::default()
+        };
+        let native = crate::groupby::groupby_quotes(
+            &input,
+            Delimiter::Comma,
+            &out,
+            &options,
+            crate::csv_reader::QuoteStyle::Rfc4180,
+            &tx,
+        )
+        .unwrap_err();
+        let sql = groupby_sql(&input, Delimiter::Comma, &out, &options, &tx).unwrap_err();
+        assert_eq!(native.kind(), sql.kind(), "groupby: {native:?} vs {sql:?}");
+
+        // pivot: same mistake on the row key.
+        let out = dir.join("p.csv");
+        let options = PivotOptions {
+            rows: vec!["nope".into()],
+            values: AggSpec::parse_list("amount:sum").unwrap(),
+            ..Default::default()
+        };
+        let native = crate::pivot::pivot_quotes(
+            &input,
+            Delimiter::Comma,
+            &out,
+            &options,
+            crate::csv_reader::QuoteStyle::Rfc4180,
+            &tx,
+        )
+        .unwrap_err();
+        let sql = pivot_sql(&input, Delimiter::Comma, &out, &options, &tx).unwrap_err();
+        assert_eq!(native.kind(), sql.kind(), "pivot: {native:?} vs {sql:?}");
+    }
+
     #[test]
     #[cfg(feature = "sql")]
     fn chart_engines_agree_on_how_a_missing_column_fails() {

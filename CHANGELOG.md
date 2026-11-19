@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.56.5] — 2026-11-19
+
+### Tests
+
+- Error parity extended to groupby and pivot: a key column that does not exist fails with the
+  same error kind on the native and SQL engines, for both commands. Both pass, so the maxGroups
+  mismatch from earlier was isolated rather than systemic. lookup is the one remaining pair.
+
 ## [3.56.4] — 2026-11-19
 
 ### Tests
