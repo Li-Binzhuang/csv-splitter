@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.55.4] — 2026-11-19
+
+### Added
+
+- **Single-range downloads (`Range: bytes=start-end`).** A multi-gigabyte export could not be
+  resumed: the old handler sent the whole file or nothing. It now answers 206 with
+  `Content-Range`, seeks to the offset and sends exactly the requested slice, so `curl -C -`
+  works; an out-of-bounds range is a 416 that names the real length. Multi-range stays out —
+  a resumable download needs one range, not a CDN.
+
 ## [3.55.3] — 2026-11-19
 
 ### Fixed

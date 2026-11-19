@@ -331,6 +331,9 @@ fn handle(
     // client already holds, and whether it only wants the headers of a GET (HEAD).
     let mut if_none_match: Option<String> = None;
     let mut accept_gzip = false;
+    // `Range: bytes=start-end`, single range only. Multi-range is a CDN feature; a
+    // resumable download needs exactly this one.
+    let mut range: Option<(u64, Option<u64>)> = None;
     let mut header_lines = 0usize;
     loop {
         let mut line = String::new();
@@ -352,6 +355,21 @@ fn handle(
         if lower.starts_with("accept-encoding:") && lower.contains("gzip") {
             accept_gzip = true;
         }
+        if let Some(rest) = lower.strip_prefix("range:") {
+            let raw = line[lower.len() - rest.len()..].trim();
+            if let Some(spec) = raw.strip_prefix("bytes=") {
+                let mut parts = spec.splitn(2, '-');
+                let start = parts.next().and_then(|v| v.trim().parse::<u64>().ok());
+                let end = parts
+                    .next()
+                    .map(str::trim)
+                    .filter(|v| !v.is_empty())
+                    .and_then(|v| v.parse::<u64>().ok());
+                if let Some(start) = start {
+                    range = Some((start, end));
+                }
+            }
+        }
         if let Some(rest) = lower.strip_prefix("if-none-match:") {
             if_none_match = Some(
                 line[lower.len() - rest.len()..]
@@ -368,6 +386,7 @@ fn handle(
     http_ctx::set(http_ctx::Request {
         head_only: method == "HEAD",
         if_none_match,
+        range,
         route: format!("{method} {}", target.split('?').next().unwrap_or(target)),
         started: std::time::Instant::now(),
         accept_gzip,
@@ -4849,34 +4868,81 @@ fn respond_file(
 ) -> io::Result<()> {
     use std::io::Read;
 
-    let file = std::fs::File::open(path)?;
+    let mut file = std::fs::File::open(path)?;
     let len = file.metadata()?.len();
     let request = http_ctx::current();
     let elapsed_ms = request.started.elapsed().as_secs_f64() * 1000.0;
-    metrics::shared().record(&request.route, 200, elapsed_ms);
+
+    // A single range, so `curl -C -` can resume a large export. An out-of-bounds range is
+    // answered 416 with the real length, which is how the client learns where to restart.
+    let (status, start, length, content_range) = match request.range {
+        Some((first, last)) if first < len => {
+            let last = last.unwrap_or(len - 1).min(len - 1);
+            if last < first {
+                return respond_json(
+                    stream,
+                    416,
+                    &format!(
+                        r#"{{"error":"the byte range is empty","parameter":"Range","hint":{}}}"#,
+                        json_str(&format!("the file is {len} bytes; ask for bytes=0-"))
+                    ),
+                );
+            }
+            (
+                206,
+                first,
+                last - first + 1,
+                Some(format!("bytes {}-{}/{}", first, last, len)),
+            )
+        }
+        Some(_) => {
+            return respond_json(
+                stream,
+                416,
+                &format!(
+                    r#"{{"error":"the byte range does not fit the file","parameter":"Range","hint":{}}}"#,
+                    json_str(&format!("the file is {len} bytes; ask for bytes=0-"))
+                ),
+            );
+        }
+        None => (200, 0, len, None),
+    };
+    metrics::shared().record(&request.route, status, elapsed_ms);
+    let range_header = content_range
+        .map(|value| format!("Content-Range: {value}\r\n"))
+        .unwrap_or_default();
     let head = format!(
-        "HTTP/1.1 200 {}\r\n\
+        "HTTP/1.1 {status} {}\r\n\
          X-Response-Time: {elapsed_ms:.1}ms\r\n\
          Content-Type: {content_type}\r\n\
          Content-Disposition: {disposition}\r\n\
-         Content-Length: {len}\r\n\
+         Accept-Ranges: bytes\r\n\
+         {range_header}\
+         Content-Length: {length}\r\n\
          {}Cache-Control: no-store\r\n\
          Connection: close\r\n\r\n",
-        reason_for(200),
+        reason_for(status),
         cors_headers()
     );
     stream.write_all(head.as_bytes())?;
     if request.head_only {
         return stream.flush();
     }
+    if start > 0 {
+        use std::io::Seek;
+        file.seek(std::io::SeekFrom::Start(start))?;
+    }
     let mut reader = std::io::BufReader::with_capacity(1024 * 1024, file);
     let mut buf = vec![0u8; 1024 * 1024];
-    loop {
-        let n = reader.read(&mut buf)?;
+    let mut remaining = length;
+    while remaining > 0 {
+        let want = (buf.len() as u64).min(remaining) as usize;
+        let n = reader.read(&mut buf[..want])?;
         if n == 0 {
             break;
         }
         stream.write_all(&buf[..n])?;
+        remaining -= n as u64;
     }
     stream.flush()
 }
@@ -6268,6 +6334,8 @@ mod http_ctx {
         pub started: std::time::Instant,
         /// `Accept-Encoding` mentions gzip, so a large body may be compressed.
         pub accept_gzip: bool,
+        /// `Range: bytes=start-end`, already parsed into numbers.
+        pub range: Option<(u64, Option<u64>)>,
     }
 
     impl Default for Request {
@@ -6278,6 +6346,7 @@ mod http_ctx {
                 route: String::new(),
                 started: std::time::Instant::now(),
                 accept_gzip: false,
+                range: None,
             }
         }
     }

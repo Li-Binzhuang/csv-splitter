@@ -4639,3 +4639,40 @@ fn download_returns_the_file_bytes_with_a_accurate_length() {
         "the body must be the file, byte for byte: {text}"
     );
 }
+
+/// A range request resumes a download: 206 with Content-Range, exactly the bytes asked for,
+/// and 416 with the real length when the range does not fit.
+#[test]
+fn a_range_request_returns_that_slice() {
+    let dir = TempDir::new("downloadrange");
+    let body = "city,amount\nCDMX,10\nPuebla,20\n";
+    std::fs::write(dir.join("t.csv"), body).unwrap();
+    let server = start(&dir.0.clone());
+
+    let mut stream = TcpStream::connect(&server.addr).unwrap();
+    write!(
+        stream,
+        "GET /download?path=t.csv HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\
+         Range: bytes=5-9\r\n\r\n"
+    )
+    .unwrap();
+    let mut raw = Vec::new();
+    stream.read_to_end(&mut raw).unwrap();
+    let text = String::from_utf8_lossy(&raw).to_string();
+    assert!(text.starts_with("HTTP/1.1 206"), "{text}");
+    assert!(text.contains("Content-Range: bytes 5-9/"), "{text}");
+    assert!(raw.ends_with(&body.as_bytes()[5..10]), "{text}");
+
+    let mut stream = TcpStream::connect(&server.addr).unwrap();
+    write!(
+        stream,
+        "GET /download?path=t.csv HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\
+         Range: bytes=9999-\r\n\r\n"
+    )
+    .unwrap();
+    let mut raw = Vec::new();
+    stream.read_to_end(&mut raw).unwrap();
+    let text = String::from_utf8_lossy(&raw).to_string();
+    assert!(text.starts_with("HTTP/1.1 416"), "{text}");
+    assert!(text.contains("\"parameter\":\"Range\""), "{text}");
+}
