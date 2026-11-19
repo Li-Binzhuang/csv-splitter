@@ -946,6 +946,42 @@ mod tests {
     #[cfg(feature = "sql")]
     /// Result parity is tested elsewhere; error parity is not. A missing column must fail the
     /// same way on both engines, or a caller that handles one status gets the other.
+    /// The last engine pair: lookup over two files. A key column that does not exist must fail
+    /// the same way on both engines; the reference side is checked too because a missing
+    /// reference key is the mistake a caller actually makes.
+    #[test]
+    #[cfg(feature = "sql")]
+    fn lookup_engines_agree_on_how_a_missing_column_fails() {
+        use crate::lookup::LookupOptions;
+        use crate::types::Delimiter;
+
+        let dir = std::env::temp_dir().join(format!("csvs_engine_err3_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let main = dir.join("main.csv");
+        let reference = dir.join("ref.csv");
+        std::fs::write(&main, "city,amount\nCDMX,10\n").unwrap();
+        std::fs::write(&reference, "city,region\nCDMX,Bajio\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel::<crate::types::ProgressEvent>();
+
+        for (key, rkey, label) in [
+            ("nope", "city", "main key"),
+            ("city", "nope", "reference key"),
+        ] {
+            let out = dir.join(format!("out_{label}.csv"));
+            let options = LookupOptions {
+                key: key.into(),
+                reference: reference.clone(),
+                reference_key: rkey.into(),
+                take: vec!["region".into()],
+                max_keys: 1000,
+            };
+            let native =
+                crate::lookup::lookup(&main, Delimiter::Comma, &out, &options, &tx).unwrap_err();
+            let sql = lookup_sql(&main, Delimiter::Comma, &out, &options, &tx).unwrap_err();
+            assert_eq!(native.kind(), sql.kind(), "{label}: {native:?} vs {sql:?}");
+        }
+    }
+
     /// Same check as chart, for the two aggregations whose error paths were still untested.
     #[test]
     #[cfg(feature = "sql")]

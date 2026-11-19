@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.56.6] — 2026-11-19
+
+### Tests
+
+- Error parity for lookup, the last two-file engine pair: a missing key on the main file and
+  a missing key on the reference file both fail with the same error kind across engines. concat
+  remains the only engine pair without an error-parity test, and it is now named as such.
+
 ## [3.56.5] — 2026-11-19
 
 ### Tests
