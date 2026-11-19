@@ -498,13 +498,19 @@ fn handle(
 /// compare it against the live responses, so a field that moves or a parameter that is
 /// renamed fails a test instead of a client.
 const SPEC_PARAMS: &[(&str, &[&str])] = &[
-    ("/warm", &["path", "delim"]),
+    ("/warm", &["path", "delim", "sql"]),
     ("/stats", &["path", "delim"]),
     ("/jobs", &["path", "delim"]),
-    ("/job", &["path", "delim"]),
+    ("/job", &["id"]),
     ("/index", &["path", "delim"]),
-    ("/export", &["path", "delim"]),
-    ("/edit", &["path", "delim"]),
+    ("/export", &["path", "delim", "sql"]),
+    (
+        "/edit",
+        &[
+            "path", "action", "row", "col", "value", "formula", "expect", "after", "name", "into",
+            "from", "to", "where", "by", "delim",
+        ],
+    ),
     ("/download", &["path", "delim"]),
     ("/analyze", &["path", "delim"]),
     ("/", &[]),

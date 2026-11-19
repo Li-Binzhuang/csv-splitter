@@ -257,3 +257,123 @@ fn every_error_body_names_the_parameter_and_the_next_step() {
     }
     assert!(problems.is_empty(), "{problems:#?}");
 }
+
+/// A handler that reads a parameter `/spec` does not advertise is a contract that lies by
+/// omission: the client cannot know to send it. This reads the source so a new
+/// `params.get("x")` cannot ship undeclared.
+///
+/// Scope: handlers reachable from a `"/route" => name(...)` arm. Routes dispatched as an
+/// inline `{ ... }` block (the GET half of `/job`) are not scanned; their reads were checked
+/// by hand once, and a block that grows a new parameter will not be caught here.
+#[test]
+fn spec_advertises_every_parameter_a_handler_reads() {
+    let serve =
+        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/serve.rs")).unwrap();
+
+    // route -> handlers, all occurrences, because /job appears in both GET and write tables.
+    let mut handlers: Vec<(String, String)> = Vec::new();
+    let mut offset = 0;
+    while let Some(pos) = serve[offset..].find("\" => ") {
+        let start = offset + pos;
+        offset = start + 1;
+        // `start` points at the closing quote of the route literal, so the route is the
+        // text between the two quote characters that precede the arrow.
+        let before = &serve[..start];
+        // `start` is the route literal's closing quote, so its opening quote is the last
+        // one before that, and the route is everything in between.
+        let open = match before.rfind('"') {
+            Some(i) => i,
+            None => continue,
+        };
+        let route = before[open + 1..].to_string();
+        let after = &serve[start + 5..];
+        let name: String = after
+            .chars()
+            .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+            .collect();
+        if route.starts_with('/') && !name.is_empty() {
+            handlers.push((route, name));
+        }
+    }
+    assert!(!handlers.is_empty(), "no routes found");
+
+    // SPEC_PARAMS: route -> declared names.
+    let mut declared: std::collections::HashMap<String, Vec<String>> = Default::default();
+    let mut offset = 0;
+    while let Some(pos) = serve[offset..].find("SPEC_PARAMS") {
+        let start = offset + pos;
+        offset = start + 1;
+        let tail = &serve[start..];
+        let Some(open) = tail.find('(') else { continue };
+        let Some(close) = tail.find("],") else {
+            continue;
+        };
+        let chunk = &tail[open..close];
+        let mut route = String::new();
+        let mut names: Vec<String> = Vec::new();
+        for piece in chunk.split('"').skip(1).step_by(2) {
+            if piece.starts_with('/') && route.is_empty() {
+                route = piece.to_string();
+            } else if !piece.is_empty() {
+                names.push(piece.to_string());
+            }
+        }
+        if !route.is_empty() {
+            declared.insert(route, names);
+        }
+        offset = start + close;
+    }
+    assert!(!declared.is_empty(), "no SPEC_PARAMS found");
+
+    // Function bodies by name.
+    fn body<'a>(source: &'a str, name: &str) -> Option<&'a str> {
+        let start = source.find(&format!("\nfn {name}("))?;
+        let open = source[start..].find('{')? + start;
+        let mut depth = 0i32;
+        for (i, ch) in source[open..].char_indices() {
+            match ch {
+                '{' => depth += 1,
+                '}' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        return Some(&source[start..open + i]);
+                    }
+                }
+                _ => {}
+            }
+        }
+        None
+    }
+
+    let mut problems: Vec<String> = Vec::new();
+    for (route, handler) in handlers {
+        let Some(names) = declared.get(&route) else {
+            continue;
+        };
+        let Some(source) = body(&serve, &handler) else {
+            continue;
+        };
+        let mut reads: Vec<String> = Vec::new();
+        let mut cursor = 0;
+        while let Some(pos) = source[cursor..].find("params.get(\"") {
+            let start = cursor + pos + "params.get(\"".len();
+            cursor = start;
+            let end = source[start..]
+                .find('"')
+                .map(|i| start + i)
+                .unwrap_or(start);
+            let key = source[start..end].to_string();
+            if !key.is_empty() && !reads.contains(&key) {
+                reads.push(key);
+            }
+        }
+        for key in reads {
+            if !names.iter().any(|n| n == &key) {
+                problems.push(format!(
+                    "{route} ({handler}) reads {key} but /spec omits it"
+                ));
+            }
+        }
+    }
+    assert!(problems.is_empty(), "{problems:#?}");
+}

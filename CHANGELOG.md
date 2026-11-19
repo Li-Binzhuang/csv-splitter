@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.52.3] — 2026-11-19
+
+### Fixed
+
+- **`/spec` was under-declaring parameters.** `/edit` advertised only `path` and `delim` while
+  its handler reads fourteen keys; `/job` advertised neither `id`; `/warm` and `/export`
+  omitted `sql`. A contract test now reads the dispatch table and each handler from the
+  source and fails when a handler reads a key `/spec` does not list — proven by injecting a
+  bogus read into a handler and watching it fail.
+
 ## [3.52.2] — 2026-11-19
 
 ### Fixed
