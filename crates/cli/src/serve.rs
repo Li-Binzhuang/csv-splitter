@@ -1630,8 +1630,9 @@ fn capabilities_endpoint(stream: &mut TcpStream) -> io::Result<()> {
         stream,
         200,
         &format!(
-            r#"{{"version":{},"reads":[{}],"pathRequired":[{}],"writes":[{}],"editActions":[{}],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"columnsProjection":true,"horizontalPaging":true,"queryRows":10000,"querySeconds":{}}},"writeGuards":["expect=compare-and-set"],"caches":["parquet"],"notes":{}}}"#,
+            r#"{{"version":{},"duckdb":{},"engines":["native","sql"],"engineParam":["/groupby","/chart","/pivot","/lookup","/concat"],"reads":[{}],"pathRequired":[{}],"writes":[{}],"editActions":[{}],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"columnsProjection":true,"horizontalPaging":true,"queryRows":10000,"querySeconds":{}}},"writeGuards":["expect=compare-and-set"],"caches":["parquet"],"notes":{}}}"#,
             json_str(env!("CARGO_PKG_VERSION")),
+            engine::sql_available(),
             reads_json.join(","),
             PATH_REQUIRED.iter().map(|r| json_str(r)).collect::<Vec<_>>().join(","),
             writes_json.join(","),

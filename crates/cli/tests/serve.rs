@@ -4367,3 +4367,22 @@ fn health_reports_whether_duckdb_is_available() {
     assert!(body.contains(r#""ready":true"#), "{body}");
     assert!(body.contains(r#""duckdb":"#), "{body}");
 }
+
+/// `/capabilities` is how a client discovers what this build can do; listing the engines
+/// without saying which routes take them would leave the client guessing.
+#[test]
+fn capabilities_lists_the_engines_and_the_routes_that_take_them() {
+    let dir = TempDir::new("cappabilities");
+    std::fs::write(dir.join("t.csv"), "a\n1\n").unwrap();
+    let server = start(&dir.0.clone());
+    let (status, body) = get(&server.addr, "/capabilities");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(r#""engines":["native","sql"]"#), "{body}");
+    for route in ["/groupby", "/chart", "/pivot", "/lookup", "/concat"] {
+        assert!(
+            body.contains(&format!("\"{route}\"")),
+            "{route} should be listed as engine-capable: {body}"
+        );
+    }
+    assert!(body.contains(r#""duckdb":"#), "{body}");
+}

@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.54.3] — 2026-11-19
+
+### Added
+
+- ** reports ,  and which routes take an .** A client
+  discovering the backend learned the limits but not that DuckDB might be absent or which
+  endpoints could be asked for it. A test asserts the engine list and all five routes.
+
 ## [3.54.2] — 2026-11-19
 
 ### Added

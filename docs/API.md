@@ -300,7 +300,7 @@ written on refusal, and `actual` says what the value is now.
 | GET | `/cell` | 单格 + 稳定行 key |
 | GET | `/journal` | 操作栈 + redo 栈 + 损坏计数 |
 | GET | `/sheet` | 概况：操作数、最后一条、capabilities、layout、indexed |
-| GET | `/capabilities` | 能力发现（reads/writes/actions/limits）|
+| GET | `/capabilities` | 能力发现（reads/writes/actions/limits/engines/duckdb）|
 | GET | `/spec` | **机器可读契约**：端点、参数、响应字段、错误码；代码生成，有测试对齐真实响应 |
 | GET | `/metrics（`engines` 统计各引擎实际执行次数）` | 请求数、p50/p95、慢请求、状态码分布、按路由的计数、job 数 |
 | GET | `/health` | 存活 + 就绪（`ready` = 根目录可读），带版本 |
@@ -321,7 +321,10 @@ One call that tells a front-end what this backend can do — generated from the 
 constants the handlers use, so it cannot drift from the routes.
 
 ```json
-{"version":"2.2.0",
+{"version":"3.54.3",
+ "duckdb":true,
+ "engines":["native","sql"],
+ "engineParam":["/groupby","/chart","/pivot","/lookup","/concat"],
  "reads":["/","/health","/meta","/rows","/columns","/sheet","/capabilities","…"],
  "writes":["POST /split","POST /merge","POST /sort","POST /dedupe","POST /partition","POST /warm","POST /edit","POST /index"],
  "editActions":["set","insert","delete","replace","copy","formula","drop","rename","undo","redo","export"],
