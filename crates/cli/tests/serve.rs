@@ -4176,3 +4176,21 @@ fn search_stops_at_its_budget() {
         "the hint must name a way forward: {body}"
     );
 }
+
+/// Strict parameter checking is opt-in: with it on, a parameter nobody reads is refused
+/// instead of silently ignored; with it off, existing callers keep working.
+#[test]
+fn strict_mode_refuses_a_parameter_nobody_reads() {
+    let dir = TempDir::new("strictparams");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,1\n").unwrap();
+    let server = start_with_env(&dir.0, &[("CSV_SPLITTER_STRICT_PARAMS", "1")]);
+
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=5&bogus=1");
+    assert_eq!(status, 400, "{body}");
+    assert!(body.contains(r#""parameter":"bogus""#), "{body}");
+    assert!(body.contains("GET /spec"), "{body}");
+
+    // A declared parameter still works.
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=5");
+    assert_eq!(status, 200, "{body}");
+}

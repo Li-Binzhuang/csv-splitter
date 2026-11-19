@@ -580,3 +580,9 @@ warns about) — a UI can show "the history is incomplete" instead of pretending
 - 单次结果封顶：`/query` 最多 1 万行、`/rows` 单页最多 `MAX_ROWS_PER_REQUEST` 行。
 - `GET /layout` 带参数即写入，是唯一"读端点会写"的地方（为了少一个端点，代价是
   语义不纯；用 `POST` 也可以）。
+
+## 严格参数检查（可选）
+
+设置环境变量 `CSV_SPLITTER_STRICT_PARAMS=1` 后，请求里出现 `/spec` 未声明的参数会返回 **400**（`parameter` 指出是哪一个），而不是被静默忽略。
+
+**为什么是可选而不是默认**：`/spec` 的参数表还没覆盖全部路由（`count`、`from-row`、`out` 等是通过辅助函数按变量名读取的，静态列表列不出来）。在表补齐之前，默认开启会拒绝合法请求。

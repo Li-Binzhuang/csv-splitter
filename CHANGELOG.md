@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.53.2] — 2026-11-19
+
+### Added
+
+- **Opt-in strict parameter checking (`CSV_SPLITTER_STRICT_PARAMS=1`).** With it on, a request
+  parameter that `/spec` does not declare is refused with 400 naming it, instead of being
+  silently ignored — which is how `has` and `sample` stayed invisible for so long.
+
+  Why opt-in: turning it on by default flushed out a dozen legitimate parameters that the
+  declaration table does not list because they are read through helpers (`count`, `from-row`,
+  `out`, `splits`). Those are real capability gaps in `/spec`, and a default-on guard would
+  reject working requests until the table is complete. The test covers both halves.
+
 ## [3.53.1] — 2026-11-19
 
 ### Fixed

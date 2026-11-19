@@ -393,6 +393,24 @@ fn handle(
         );
     }
     let params = parse_query(query_string);
+    // A parameter nobody reads must not be silently ignored: the caller would think it was
+    // honoured. /spec is the list of what each route takes, but it is not yet complete —
+    // several keys are read through helpers that take the name as a variable — so the strict
+    // check is opt-in until that is fixed, rather than a default that would reject real work.
+    if strict_params() {
+        if let Some(bad) = unknown_parameter(path, &params) {
+            return respond_json(
+                &mut stream,
+                400,
+                &format!(
+                    r#"{{"error":{},"parameter":{},"hint":{}}}"#,
+                    json_str(&format!("unknown parameter {bad}")),
+                    json_str(&bad),
+                    json_str("GET /spec lists the parameters each route takes")
+                ),
+            );
+        }
+    }
 
     // Writes are POST; everything else is a read.
     if method == "POST" {
@@ -5860,6 +5878,28 @@ const TIMEOUT_HINT: &str =
     "narrow the filter or page without one, or add LIMIT: the engine was stopped at the time \
      limit and the connection closed, so nothing keeps running and retrying with a smaller \
      scope is safe";
+
+/// Opt-in strict parameter checking: `CSV_SPLITTER_STRICT_PARAMS=1`.
+fn strict_params() -> bool {
+    std::env::var("CSV_SPLITTER_STRICT_PARAMS")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false)
+}
+
+/// The first request parameter that `/spec` does not list for this route, if any.
+///
+/// Routes with no declaration (static files, the viewer) are left alone: they take nothing,
+/// and inventing an error there would break plain page requests.
+fn unknown_parameter(path: &str, params: &HashMap<String, String>) -> Option<String> {
+    let (_, allowed) = SPEC_PARAMS.iter().find(|(route, _)| *route == path)?;
+    if allowed.is_empty() {
+        return None;
+    }
+    params
+        .keys()
+        .find(|key| !allowed.iter().any(|a| a == key))
+        .cloned()
+}
 
 /// What each status means for a caller, in one place.
 ///
