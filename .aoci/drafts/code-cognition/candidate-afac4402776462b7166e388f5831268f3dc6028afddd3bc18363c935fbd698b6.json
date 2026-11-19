@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "f8cbff4edeeb2844e0bfbb9256b3ad057038fd95fce7bbdf66edf1172d235c50",
+  "batch_id": "afac4402776462b7166e388f5831268f3dc6028afddd3bc18363c935fbd698b6",
+  "composite_identity": "9012db68423250b2c873641bda16f07f6945289b19b3daa4b433138913cd9889",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "fddb4f11d1a077a9dc14d958108aef1bc176088592e76c1627f06b2d72b63444",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:.gitignore",
+      "path": ".gitignore",
+      "change": "update",
+      "source_sha256": "6f299e94186a9c3b0388cb0dfce906a9adc3d4d5999bf58ef4b0c3cdfe44d301",
+      "existing_entry": ".gitignore[FV4T]: F:忽略构建产物与本地杂物 | R:- | A:忽略 `/target`、编辑器 swap 文件、`.DS_Store`、发布打包目录 `dist/` 与 `staging/` | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "1a85a6354c1a7c78c4dcea89e1929ccad1a4f94119cb2f3809176f922293dd4e",
+      "object_ref": "code:.gitignore",
+      "path": ".gitignore",
+      "change": "update",
+      "source_sha256": "6f299e94186a9c3b0388cb0dfce906a9adc3d4d5999bf58ef4b0c3cdfe44d301",
+      "existing_entry": ".gitignore[FV4T]: F:忽略构建产物与本地杂物 | R:- | A:忽略 `/target`、编辑器 swap 文件、`.DS_Store`、发布打包目录 `dist/` 与 `staging/` | S:-"
+    }
+  ]
+}

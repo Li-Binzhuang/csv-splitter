@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "3b4dc86ccfbd8c1226b23e1f1de6a995fefd54ee8818e9e57df765298b5e94f1",
+  "batch_id": "87268d9968abb42b6af287068da79d8f7aab43b4e406e3ff862ceb9afe8b8501",
+  "composite_identity": "47a70129f4c261326fd99691b6ffa41f93a5d65c8b82d2713ebebcd2ab6ba959",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "3a13094ec7fd6f69a493f110376efd17a6f95ae9c7ca3c239c3f9b1a8a7835be",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "da5a8458a3cc10f2becd332972b49ce0c9e8bec0742da56b571b1ab4eb3dc930",
+      "existing_entry": "HANDOVER.md[SU5S]: F:交接说明：现状、已知债与下一步 | R:code:docs/ROADMAP.md | A:列出现在能做什么、还差什么、以及不建议做的事 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "332e2fd01997860d32413b135d38e5c4a773c0a223c9ddbdea7683ff6c1c42f2",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "da5a8458a3cc10f2becd332972b49ce0c9e8bec0742da56b571b1ab4eb3dc930",
+      "existing_entry": "HANDOVER.md[SU5S]: F:交接说明：现状、已知债与下一步 | R:code:docs/ROADMAP.md | A:列出现在能做什么、还差什么、以及不建议做的事 | S:-"
+    }
+  ]
+}

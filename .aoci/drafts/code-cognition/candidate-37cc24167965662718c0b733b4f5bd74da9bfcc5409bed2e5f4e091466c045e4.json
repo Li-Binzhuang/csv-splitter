@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "58e673f2ba28a424fa30efea2651b4198da105582d8b7bcf73991e371c6e8b78",
+  "batch_id": "37cc24167965662718c0b733b4f5bd74da9bfcc5409bed2e5f4e091466c045e4",
+  "composite_identity": "aae44401119daedcafffb9462d4b58f8079ed47b0b49d83a95279aa77267fb6a",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b3b19f6f972dd0c5f6bfcc4f9a814ae545328ca6fa41870f710a2c35275a791b",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:.gitignore",
+      "path": ".gitignore",
+      "change": "update",
+      "source_sha256": "8eb3f0c8b5d336a99695a62e340409d23c0ec8e5b16af0ff1ec356ed42f5d7a4",
+      "existing_entry": ".gitignore[FV4T]: F:忽略构建产物与本地杂物 | R:- | A:忽略 `/target`、编辑器 swap 文件、`.DS_Store`、发布打包目录 `dist/` 与 `staging/`，以及本地代码图索引 `.codegraph/`（它是可重建的本地缓存，不入库） | S:`.codegraph/` 不入库但可随时重建，删掉只损失一次索引时间；AOCI 的索引则必须入库"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "bda2bc538d11e52eb867ff5aedbc07b6477e0d60e967360750621cd95782221c",
+      "object_ref": "code:.gitignore",
+      "path": ".gitignore",
+      "change": "update",
+      "source_sha256": "8eb3f0c8b5d336a99695a62e340409d23c0ec8e5b16af0ff1ec356ed42f5d7a4",
+      "existing_entry": ".gitignore[FV4T]: F:忽略构建产物与本地杂物 | R:- | A:忽略 `/target`、编辑器 swap 文件、`.DS_Store`、发布打包目录 `dist/` 与 `staging/`，以及本地代码图索引 `.codegraph/`（它是可重建的本地缓存，不入库） | S:`.codegraph/` 不入库但可随时重建，删掉只损失一次索引时间；AOCI 的索引则必须入库"
+    }
+  ]
+}

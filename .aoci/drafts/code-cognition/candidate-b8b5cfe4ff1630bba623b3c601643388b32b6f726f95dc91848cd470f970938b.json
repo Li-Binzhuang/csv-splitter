@@ -1,0 +1,881 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "e2892e59cfba5d20b40cb1eab900bc1d8021aac61189c1359eeb82f83ae1ed4a",
+  "batch_id": "b8b5cfe4ff1630bba623b3c601643388b32b6f726f95dc91848cd470f970938b",
+  "composite_identity": "da964b297e293d2db45aaf4dcbb34dbfaac9bde3d55ca58d8090e103dfb30add",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "12cbc237b863041b3ab7b6c6330091964cb014a20e624ec1f88de6056aed56c2",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:.gitattributes",
+      "path": ".gitattributes",
+      "change": "create",
+      "source_sha256": "21fa16a2122e2b0360b47502c577428b645437e08e9e87ffba661f84853cb476"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:.github/workflows/ci.yml",
+      "path": ".github/workflows/ci.yml",
+      "change": "create",
+      "source_sha256": "df01b39b0fcf2ab1a2e91cec2a0e49a0bd4025f612782e26278f048929338248"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:.github/workflows/release.yml",
+      "path": ".github/workflows/release.yml",
+      "change": "create",
+      "source_sha256": "60f28cc1a1e37da84048e02e7674c47d0feff824e89da852ff85f0f576cfbcfb"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:.github/workflows/windows.yml",
+      "path": ".github/workflows/windows.yml",
+      "change": "create",
+      "source_sha256": "5e48fe61d41258861ffd5389628426df87ae192d2b11de60bcedbefb32609f96"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:.gitignore",
+      "path": ".gitignore",
+      "change": "create",
+      "source_sha256": "8eb3f0c8b5d336a99695a62e340409d23c0ec8e5b16af0ff1ec356ed42f5d7a4"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:AGENTS.md",
+      "path": "AGENTS.md",
+      "change": "create",
+      "source_sha256": "8dfc9de92509cb22289cefa4ad652c5df2d079221b407b6a67572d5ef75007e8"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "create",
+      "source_sha256": "a2a08993dfd5965eeba7ce3eba2e236862c647572a076b1eee06a213e2562713"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:Cargo.toml",
+      "path": "Cargo.toml",
+      "change": "create",
+      "source_sha256": "38725c53f4597972220167fc018775ddca18ec7562bb378c2d427b064db37541"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:LICENSE",
+      "path": "LICENSE",
+      "change": "create",
+      "source_sha256": "f6c00e7fde134b86593cb5b418670d19ee60718d059a779a4e1f0e00c37fe8a6"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "create",
+      "source_sha256": "9202e64c6a9cf32c9200f99c08b9a43e253247fa6afa96f76a693b39a22a07a9"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/Cargo.toml",
+      "path": "crates/cli/Cargo.toml",
+      "change": "create",
+      "source_sha256": "7808cd2c2c02a647533973e0996ac0a2ec1a4d3b04c6d35c03e0935bbfe06f73"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "create",
+      "source_sha256": "71ffa945a67a2098e0923911af0d094cac0a783eaaacaf194752357c11fecb34"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "create",
+      "source_sha256": "fd2b0d2a38b71afab594008ed1119bc24aa9ae07f1de1b1c1385753f66344832"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/web/index.html",
+      "path": "crates/cli/src/web/index.html",
+      "change": "create",
+      "source_sha256": "720c1a4ed4faf955e4aabc296e7b16995e1b6a97b4b832a703f3c497384f7a08"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/Cargo.toml",
+      "path": "crates/core/Cargo.toml",
+      "change": "create",
+      "source_sha256": "ef55a43200f7da83c4b7cb9998366c1e8e03e149248a950a0758ff3881f52e5c"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/benches/throughput.rs",
+      "path": "crates/core/benches/throughput.rs",
+      "change": "create",
+      "source_sha256": "3eae476535dc2ca9d4e883fe959ead7f73680c98e0a344e85a082fd626f832f5"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/aggregate.rs",
+      "path": "crates/core/src/aggregate.rs",
+      "change": "create",
+      "source_sha256": "7632bcc9d770823a2d28024888e91278a6074653f57c1f6509e77171aa073205"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/book.rs",
+      "path": "crates/core/src/book.rs",
+      "change": "create",
+      "source_sha256": "6abe8918799c3c007186ae30a614e83e0553de8e629cd7fdc59125bb10b7e49d"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/cache.rs",
+      "path": "crates/core/src/cache.rs",
+      "change": "create",
+      "source_sha256": "9b47e4d172a8a4a2ee94010afd11102473bfb28f34d10a28e3b2f09372e97be1"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/chart.rs",
+      "path": "crates/core/src/chart.rs",
+      "change": "create",
+      "source_sha256": "b94466393c355db54b5adaf073ed358cc48308780c382cb42c4d6bfd075cb0af"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/check.rs",
+      "path": "crates/core/src/check.rs",
+      "change": "create",
+      "source_sha256": "0085794f203a420876baa3f9f293ffc1b45d4ba52a8956cd87c922122c105f19"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/compress.rs",
+      "path": "crates/core/src/compress.rs",
+      "change": "create",
+      "source_sha256": "29abc877034df3152616021e389bfd9affb37a16bcc85a8cac9349f8874b78e6"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/concat.rs",
+      "path": "crates/core/src/concat.rs",
+      "change": "create",
+      "source_sha256": "3fef2f27cec77e701cddeb1bc9ec4a3f4763360a102454e864fe54b38ca75b58"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/csv_reader.rs",
+      "path": "crates/core/src/csv_reader.rs",
+      "change": "create",
+      "source_sha256": "b607619031cd80498f91c9ae8e5c7c8642df4325ab66bc0fa9bb6699828ce533"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/decompress.rs",
+      "path": "crates/core/src/decompress.rs",
+      "change": "create",
+      "source_sha256": "6f8f36226a0268994ee3d73e8d5cf8316bbc35c516fb59292237f0a5fe782c0b"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/dedupe.rs",
+      "path": "crates/core/src/dedupe.rs",
+      "change": "create",
+      "source_sha256": "ba08cba5cdf8a6de9dc3adee3d44032d47e2efe62a2e1fe2ead8a0efc8f8be52"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/demo.rs",
+      "path": "crates/core/src/demo.rs",
+      "change": "create",
+      "source_sha256": "0285f8943c69566776866724597c4d25536497c2c508f37a71a2afa72d2e25c3"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/encoding.rs",
+      "path": "crates/core/src/encoding.rs",
+      "change": "create",
+      "source_sha256": "a4e16863c1794f8ebb9ea7313a973955fea6992e52ad1eddffcd77ab976cb1aa"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "create",
+      "source_sha256": "73f814692972fc6dfe011e8ae4b9a068199ed9c7ba64d4717a0e89be6ef90639"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/format.rs",
+      "path": "crates/core/src/format.rs",
+      "change": "create",
+      "source_sha256": "0e2be5f102a89b31b2cbd6efa43b94bc5c0c3ddda9b6ee59c47253c6946a5f53"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "create",
+      "source_sha256": "a4e1c543331099eb728ba1d1feab09409d9773fb87cc2a20171597b805acfcd9"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "create",
+      "source_sha256": "e73593594766248fce495daa17ad06942bfc093fb490e656c8ed121821adbb97"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/sheetref.rs",
+      "path": "crates/core/src/formula/sheetref.rs",
+      "change": "create",
+      "source_sha256": "cc9c30aa33a76b9355b12a77911c29aa2b364ec82a9335b5dfdf9f10270a5cee"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/state.rs",
+      "path": "crates/core/src/formula/state.rs",
+      "change": "create",
+      "source_sha256": "8a0cea5b3b19613a649854e1cc09bb8638e78986bce76da4ccad7e4f5f99abec"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/groupby.rs",
+      "path": "crates/core/src/groupby.rs",
+      "change": "create",
+      "source_sha256": "3ff05c0f46f21bbee70fa06687d362b2f5bc4d778f5aec58ac1cc57742d6e8f3"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/index.rs",
+      "path": "crates/core/src/index.rs",
+      "change": "create",
+      "source_sha256": "c0201d81881e892d458a3caf1720e2ab2c73b1c56fb60e7dbe0a7381b93f369f"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/jobs.rs",
+      "path": "crates/core/src/jobs.rs",
+      "change": "create",
+      "source_sha256": "f3c42ed7afa1d83d20da1c8062fa0ecf970cc00580a745ab9d160eaed55c3b01"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/json.rs",
+      "path": "crates/core/src/json.rs",
+      "change": "create",
+      "source_sha256": "b3dd734e8a545cc77c1567959a4898c22b380659cc2b506193b0c8ac6cbe2008"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/layout.rs",
+      "path": "crates/core/src/layout.rs",
+      "change": "create",
+      "source_sha256": "a176ea5f9bd20381f29be0b1b31f9f86f69c7b70533786f707444acda1e911ca"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/lib.rs",
+      "path": "crates/core/src/lib.rs",
+      "change": "create",
+      "source_sha256": "fb73fa650560a38365f0787f8e535494e8afa5f68fc3939befdaa2a4a005a9c5"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/listing.rs",
+      "path": "crates/core/src/listing.rs",
+      "change": "create",
+      "source_sha256": "e734b0930f59b0fd6f7dd6d494dc556640ae04a70ecf251d967553ec34f1874e"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/lookup.rs",
+      "path": "crates/core/src/lookup.rs",
+      "change": "create",
+      "source_sha256": "02652b4da043a69296d425a66eb889b2877ca0644eb2d0d1a4b253ada5146a47"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/merge.rs",
+      "path": "crates/core/src/merge.rs",
+      "change": "create",
+      "source_sha256": "c3649f350845ec99c285053d4088c6552bf222808d4fb78b0c90c94688dcfa31"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/pack.rs",
+      "path": "crates/core/src/pack.rs",
+      "change": "create",
+      "source_sha256": "da5a136dacdf7dc0b6f1a8228693cd490f6d01532d158caed9a3751b1e0ff269"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/partition.rs",
+      "path": "crates/core/src/partition.rs",
+      "change": "create",
+      "source_sha256": "ec29e6ba68e3816bfd9d823da85a147b0430c14abb8d19e3a9d69df7b349c924"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/pivot.rs",
+      "path": "crates/core/src/pivot.rs",
+      "change": "create",
+      "source_sha256": "e660856258611b6b4be86cbd2bae541e67c900c7681e764fdfa73fd8e8d17649"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/preview.rs",
+      "path": "crates/core/src/preview.rs",
+      "change": "create",
+      "source_sha256": "9d780726c2869d8a3dc13c5f0da8e3259e5a49f68eaddc3e4f6821422323a822"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/profile.rs",
+      "path": "crates/core/src/profile.rs",
+      "change": "create",
+      "source_sha256": "99dac3e8d28f5c581636ad1593e56c5cb38586eaea7b1db23f742caf4b976d00"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/reshape.rs",
+      "path": "crates/core/src/reshape.rs",
+      "change": "create",
+      "source_sha256": "1abbae16acf8b01955bc4db165de4f246f3a3f9d10bed591d067cc9a88976225"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/schema.rs",
+      "path": "crates/core/src/schema.rs",
+      "change": "create",
+      "source_sha256": "2e40738d64a28713303615c408911898aae4e8309f326677862dc2a4400289dc"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/search.rs",
+      "path": "crates/core/src/search.rs",
+      "change": "create",
+      "source_sha256": "cc43dc1b4ae395737d063fc878d5662b9254cf86ea73038d74f918872491d547"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/sheet.rs",
+      "path": "crates/core/src/sheet.rs",
+      "change": "create",
+      "source_sha256": "47a1954de947c32245e5f1dc7eabee843a6dc21ac502adbd63bca3fc7e830819"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/sort.rs",
+      "path": "crates/core/src/sort.rs",
+      "change": "create",
+      "source_sha256": "67bf49e309a25cd987989db24fbed5ff9f05d1612a7ad04a3949378770e39f55"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/split_parallel.rs",
+      "path": "crates/core/src/split_parallel.rs",
+      "change": "create",
+      "source_sha256": "6fcc6c906ef979f0a5ce6e4d3e11d1a774608bad26689a61307a48e7683c8951"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/splitter.rs",
+      "path": "crates/core/src/splitter.rs",
+      "change": "create",
+      "source_sha256": "5978935247fca10698271f03d759e6c28de2cf0fb9dbbb72f47fe0584ad24ca7"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/sql.rs",
+      "path": "crates/core/src/sql.rs",
+      "change": "create",
+      "source_sha256": "9f5db56c62d43cf5a9e850642b51d996d439f6168b8b34885f3a257d69b54171"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/sql_cache.rs",
+      "path": "crates/core/src/sql_cache.rs",
+      "change": "create",
+      "source_sha256": "4b99fd27a120748747120639a4074caf775be7da0f82b54d895899dffe020e0d"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/tempdir.rs",
+      "path": "crates/core/src/tempdir.rs",
+      "change": "create",
+      "source_sha256": "cdee5994bb06ac809b6ff0156c9b7066b2a6f5ef4da3251eff703e6a95962f70"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/types.rs",
+      "path": "crates/core/src/types.rs",
+      "change": "create",
+      "source_sha256": "2b82dd47d2c08317a63f13c5bc1f42a5aae90f2f8e88e1faca23f10f323abdbe"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/validate.rs",
+      "path": "crates/core/src/validate.rs",
+      "change": "create",
+      "source_sha256": "5166d314328313d7fd4f49551c4d24f080cc501671c145f3e3af7695ec0af406"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/viewer.rs",
+      "path": "crates/core/src/viewer.rs",
+      "change": "create",
+      "source_sha256": "f3ad135e876fb5376afb7f638635b57b068a9708a553c4db8845636be5fa7872"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/export.rs",
+      "path": "crates/core/src/workbook/export.rs",
+      "change": "create",
+      "source_sha256": "b98f0e65131b62657e4f7429e79571f9033ac1237c1814e336b52f7b4e2d2f53"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/journal.rs",
+      "path": "crates/core/src/workbook/journal.rs",
+      "change": "create",
+      "source_sha256": "7245703a0d71a81c3f6f3bba26e9dde41ac2fe08708b1ab706a8f3987707cbbe"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/mod.rs",
+      "path": "crates/core/src/workbook/mod.rs",
+      "change": "create",
+      "source_sha256": "42fb8af705c0f7676fa52dc14acd08050fe4f5d3966cd7e3e5c8f362546f77f9"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/rows.rs",
+      "path": "crates/core/src/workbook/rows.rs",
+      "change": "create",
+      "source_sha256": "b49f8d2c6e686ca788e0c5af903e41f10ada592766217130b98bceaca0cd5490"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:csv-splitter-demo/orders.csv",
+      "path": "csv-splitter-demo/orders.csv",
+      "change": "create",
+      "source_sha256": "8a5fc586285e07f18ddb533ab11a4fdb36751932cddbe6e2883abd2026bc5462"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:deploy/csv-splitter.service",
+      "path": "deploy/csv-splitter.service",
+      "change": "create",
+      "source_sha256": "2df9ee7ab279a2803687670de29a4799cff8bb58c80575171389f61e3e209b92"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ACCEPTANCE.md",
+      "path": "docs/ACCEPTANCE.md",
+      "change": "create",
+      "source_sha256": "6b65568cbc1942c7f527bc809266d8f49f3ea65097afe5db360e9b56f7215f7f"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/API.md",
+      "path": "docs/API.md",
+      "change": "create",
+      "source_sha256": "2f7c9691d8ba7751bc21a74fb810584245f8149a609bd56ce7bd6f6d5eec11da"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "create",
+      "source_sha256": "89ca0c1e1dce0555357b99adbb85b47eb29281e6112ef7919faee14a3131fedd"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "create",
+      "source_sha256": "06e8c6c910b9a145d5fa9ca697608a50c406070bbbc89adca9342c995478a701"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CI.md",
+      "path": "docs/CI.md",
+      "change": "create",
+      "source_sha256": "18167d58e735f4c4004cdd2c9754a056f5d3b9ba9e63094b0c9feafe38e8fb29"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DEPLOY.md",
+      "path": "docs/DEPLOY.md",
+      "change": "create",
+      "source_sha256": "37fffc6543088d98c3ecb93697ef4778085fac3f29de74c9f1b525bdd780dd36"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/GETTING_STARTED.md",
+      "path": "docs/GETTING_STARTED.md",
+      "change": "create",
+      "source_sha256": "054bde98df612716ae1132cf5484efb9f4e8dfdf22873322d3968eaab7bd2226"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "create",
+      "source_sha256": "1039dd9da14ffa860d0155201392708e6f182d9a223c06d760b84bcb8a32d374"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/INTEGRATION.md",
+      "path": "docs/INTEGRATION.md",
+      "change": "create",
+      "source_sha256": "6e5b119ce63d03372491f809b07f9ab73667044109f90f72317778320034e51b"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "create",
+      "source_sha256": "2641b836c3a423e65c97f052afbc62db1115eb67611cf9af03b5df4791677657"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/TROUBLESHOOTING.md",
+      "path": "docs/TROUBLESHOOTING.md",
+      "change": "create",
+      "source_sha256": "d4547cc45ff60e04056f1ecd1347b99761e752bead162e1db7b0b31defdacdf1"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/backend-smoke.sh",
+      "path": "scripts/backend-smoke.sh",
+      "change": "create",
+      "source_sha256": "eabd6051f43be6a27345cd8653659b302d8372236b71a12f98eb9d673a3a59ef"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/bench.sh",
+      "path": "scripts/bench.sh",
+      "change": "create",
+      "source_sha256": "a6f7e0ccb443005a67cabac191cac1db64b834201c2164461a61f3193baa5fff"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_match_arms.py",
+      "path": "scripts/check_match_arms.py",
+      "change": "create",
+      "source_sha256": "c9bf0724d8e241e44661784263f2e039993d31fecc63a713b38129fd9c605fc0"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/clean.sh",
+      "path": "scripts/clean.sh",
+      "change": "create",
+      "source_sha256": "4a0e3875a3a111aa2d23eb143fa72ab32f4a174f052f20b06e044997734745e7"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "create",
+      "source_sha256": "3d71dab5f32bf92510e63b7cd56c72e4482b61b3efa35719f0a5533c90075ee8"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/install-check.sh",
+      "path": "scripts/install-check.sh",
+      "change": "create",
+      "source_sha256": "b6d85ff0cc088e62749eca83199b9b3cb07657180fcdcaf6203c5de210ac38b4"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package.sh",
+      "path": "scripts/package.sh",
+      "change": "create",
+      "source_sha256": "d137df2369b57d3c0ee18cab29dd45d4f519bc73d61adaf7a8f7e82c5f7b90d5"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/regress.sh",
+      "path": "scripts/regress.sh",
+      "change": "create",
+      "source_sha256": "2c396ba158ea53b5c802dd147ddab3c7e6be0d37d340242462a11222b1ab57f0"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/release-check.sh",
+      "path": "scripts/release-check.sh",
+      "change": "create",
+      "source_sha256": "023944abd5c7b90e50ef30f5d8cb639560d3749e4262a85d5bfcc012bde4fabc"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/release-decision.sh",
+      "path": "scripts/release-decision.sh",
+      "change": "create",
+      "source_sha256": "d79e499f92b6868fe85680a1cf39f937fc9f244628fa503111de88a0915ca285"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/smoke.sh",
+      "path": "scripts/smoke.sh",
+      "change": "create",
+      "source_sha256": "5fda6f25aecb159f18f94b60d839064f803d5d97ed5cc92ce0fe2bd0dfd710bf"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4e9027f3f4570c3e78b20b5b8543887d5c560b003fda629d529e9275f4b69bdc",
+      "object_ref": "code:.gitattributes",
+      "path": ".gitattributes",
+      "change": "create",
+      "source_sha256": "21fa16a2122e2b0360b47502c577428b645437e08e9e87ffba661f84853cb476"
+    },
+    {
+      "candidate_id": "93d6cbfa908c662e2f6f2ac3a57cc4269991420ba91571902c34c5b55813086e",
+      "object_ref": "code:.github/workflows/ci.yml",
+      "path": ".github/workflows/ci.yml",
+      "change": "create",
+      "source_sha256": "df01b39b0fcf2ab1a2e91cec2a0e49a0bd4025f612782e26278f048929338248"
+    },
+    {
+      "candidate_id": "1948ebf8b9c2b7295ee5d1d1f09cf678077ae142e5cf6a81f3a893a25289f31e",
+      "object_ref": "code:.github/workflows/release.yml",
+      "path": ".github/workflows/release.yml",
+      "change": "create",
+      "source_sha256": "60f28cc1a1e37da84048e02e7674c47d0feff824e89da852ff85f0f576cfbcfb"
+    },
+    {
+      "candidate_id": "062ebe4429b337c81221feba149816a3b7fb0d073c5476915d2a08ed7d2afc8d",
+      "object_ref": "code:.github/workflows/windows.yml",
+      "path": ".github/workflows/windows.yml",
+      "change": "create",
+      "source_sha256": "5e48fe61d41258861ffd5389628426df87ae192d2b11de60bcedbefb32609f96"
+    },
+    {
+      "candidate_id": "fe60813fb6e70102ebd13ac8310a93e8d8c5c5f4dc0a85643970156fb75d5c56",
+      "object_ref": "code:.gitignore",
+      "path": ".gitignore",
+      "change": "create",
+      "source_sha256": "8eb3f0c8b5d336a99695a62e340409d23c0ec8e5b16af0ff1ec356ed42f5d7a4"
+    },
+    {
+      "candidate_id": "dcf587f1270abf8892b7760c4ba5fae95412eb56dba42965b280b78fcdc3dcba",
+      "object_ref": "code:AGENTS.md",
+      "path": "AGENTS.md",
+      "change": "create",
+      "source_sha256": "8dfc9de92509cb22289cefa4ad652c5df2d079221b407b6a67572d5ef75007e8"
+    },
+    {
+      "candidate_id": "bc15fc34c29cb8ed4973b33b23bf00dd180df2f3505eb20acf2a78e2f9cdb2b1",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "create",
+      "source_sha256": "a2a08993dfd5965eeba7ce3eba2e236862c647572a076b1eee06a213e2562713"
+    },
+    {
+      "candidate_id": "4767a3ea828ba482e98dff6b83d478a59dd7d9c437691a92a8d09313c932dbfa",
+      "object_ref": "code:Cargo.toml",
+      "path": "Cargo.toml",
+      "change": "create",
+      "source_sha256": "38725c53f4597972220167fc018775ddca18ec7562bb378c2d427b064db37541"
+    },
+    {
+      "candidate_id": "c4150526bd2335f5d45c5663a5c6ae88f4f1621ab51421d6a901730ab77b8394",
+      "object_ref": "code:LICENSE",
+      "path": "LICENSE",
+      "change": "create",
+      "source_sha256": "f6c00e7fde134b86593cb5b418670d19ee60718d059a779a4e1f0e00c37fe8a6"
+    },
+    {
+      "candidate_id": "86ae313078ae1506b97010b5f035e16f26d25781295bfc04378d9f4767eb5855",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "create",
+      "source_sha256": "9202e64c6a9cf32c9200f99c08b9a43e253247fa6afa96f76a693b39a22a07a9"
+    },
+    {
+      "candidate_id": "eb8ece00a7dcd37229c97cc0360dda33f1c034a50fd793e289699165c5c14e29",
+      "object_ref": "code:crates/cli/Cargo.toml",
+      "path": "crates/cli/Cargo.toml",
+      "change": "create",
+      "source_sha256": "7808cd2c2c02a647533973e0996ac0a2ec1a4d3b04c6d35c03e0935bbfe06f73"
+    },
+    {
+      "candidate_id": "85784c25764c02c12a0868f72ef20b9c32cee99bca888583bdb79a56de0856fb",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "create",
+      "source_sha256": "71ffa945a67a2098e0923911af0d094cac0a783eaaacaf194752357c11fecb34"
+    },
+    {
+      "candidate_id": "4580a250da7bb09124d2ed9fd4e92806d1c5e102b5f052111d0220396bb38905",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "create",
+      "source_sha256": "fd2b0d2a38b71afab594008ed1119bc24aa9ae07f1de1b1c1385753f66344832"
+    },
+    {
+      "candidate_id": "0d0fd91bcaf686ffd8f98d7c8b6254d065ada2fd6566a2967f183b46ef31bca9",
+      "object_ref": "code:crates/cli/src/web/index.html",
+      "path": "crates/cli/src/web/index.html",
+      "change": "create",
+      "source_sha256": "720c1a4ed4faf955e4aabc296e7b16995e1b6a97b4b832a703f3c497384f7a08"
+    },
+    {
+      "candidate_id": "7bc28ec88d548f885875c1b19300e8d16819bebadd677095a61fb1b509ab1dc0",
+      "object_ref": "code:crates/core/Cargo.toml",
+      "path": "crates/core/Cargo.toml",
+      "change": "create",
+      "source_sha256": "ef55a43200f7da83c4b7cb9998366c1e8e03e149248a950a0758ff3881f52e5c"
+    },
+    {
+      "candidate_id": "476dbdef4c3c0c710a42143347f8247d65000b9206d7cefbd7f9481c818893d3",
+      "object_ref": "code:crates/core/benches/throughput.rs",
+      "path": "crates/core/benches/throughput.rs",
+      "change": "create",
+      "source_sha256": "3eae476535dc2ca9d4e883fe959ead7f73680c98e0a344e85a082fd626f832f5"
+    },
+    {
+      "candidate_id": "4ea4a8c8784d19251c1e40d9a145e2c2cb45e3e89dce135913623106742644b6",
+      "object_ref": "code:crates/core/src/aggregate.rs",
+      "path": "crates/core/src/aggregate.rs",
+      "change": "create",
+      "source_sha256": "7632bcc9d770823a2d28024888e91278a6074653f57c1f6509e77171aa073205"
+    },
+    {
+      "candidate_id": "b48c67b2e182b3d6b0916b2898930955a54e585498558a8248bfb6047e19524f",
+      "object_ref": "code:crates/core/src/book.rs",
+      "path": "crates/core/src/book.rs",
+      "change": "create",
+      "source_sha256": "6abe8918799c3c007186ae30a614e83e0553de8e629cd7fdc59125bb10b7e49d"
+    },
+    {
+      "candidate_id": "61ee348ba132711644cb0a9a8a5b49e04dfd60de2e8d49fd41aee535372f1dab",
+      "object_ref": "code:crates/core/src/cache.rs",
+      "path": "crates/core/src/cache.rs",
+      "change": "create",
+      "source_sha256": "9b47e4d172a8a4a2ee94010afd11102473bfb28f34d10a28e3b2f09372e97be1"
+    },
+    {
+      "candidate_id": "f1ed13f7f90acf788039c6aba7b748f5c2f7b93dfb932ecd81fc76c53dfc0e92",
+      "object_ref": "code:crates/core/src/chart.rs",
+      "path": "crates/core/src/chart.rs",
+      "change": "create",
+      "source_sha256": "b94466393c355db54b5adaf073ed358cc48308780c382cb42c4d6bfd075cb0af"
+    },
+    {
+      "candidate_id": "735d8c61a539ba774fff2cd0da6796bb3b4551fa9ca30df35c546f5ccecbc082",
+      "object_ref": "code:crates/core/src/check.rs",
+      "path": "crates/core/src/check.rs",
+      "change": "create",
+      "source_sha256": "0085794f203a420876baa3f9f293ffc1b45d4ba52a8956cd87c922122c105f19"
+    },
+    {
+      "candidate_id": "80daadbc15b574f443c18b304e7ce22d0d9466271a8b27799ec70ec3445dce68",
+      "object_ref": "code:crates/core/src/compress.rs",
+      "path": "crates/core/src/compress.rs",
+      "change": "create",
+      "source_sha256": "29abc877034df3152616021e389bfd9affb37a16bcc85a8cac9349f8874b78e6"
+    },
+    {
+      "candidate_id": "b22a27c1796767aeb281f69250af702f6a9038ff83cb5e5f64338cd7d6555b13",
+      "object_ref": "code:crates/core/src/concat.rs",
+      "path": "crates/core/src/concat.rs",
+      "change": "create",
+      "source_sha256": "3fef2f27cec77e701cddeb1bc9ec4a3f4763360a102454e864fe54b38ca75b58"
+    },
+    {
+      "candidate_id": "e08bef9f9998e480f34ee25ee3135036c216a57a70a4f80b291c2afdbd1a428b",
+      "object_ref": "code:crates/core/src/csv_reader.rs",
+      "path": "crates/core/src/csv_reader.rs",
+      "change": "create",
+      "source_sha256": "b607619031cd80498f91c9ae8e5c7c8642df4325ab66bc0fa9bb6699828ce533"
+    },
+    {
+      "candidate_id": "30d0ca3a67a0ebceaced9656c4f63332b6901ac57d991a41a4cedfb7498abc23",
+      "object_ref": "code:crates/core/src/decompress.rs",
+      "path": "crates/core/src/decompress.rs",
+      "change": "create",
+      "source_sha256": "6f8f36226a0268994ee3d73e8d5cf8316bbc35c516fb59292237f0a5fe782c0b"
+    },
+    {
+      "candidate_id": "abb007b928e5aef0371a3c5d73d94d21916dafa49faea87fdb03357f3760f147",
+      "object_ref": "code:crates/core/src/dedupe.rs",
+      "path": "crates/core/src/dedupe.rs",
+      "change": "create",
+      "source_sha256": "ba08cba5cdf8a6de9dc3adee3d44032d47e2efe62a2e1fe2ead8a0efc8f8be52"
+    },
+    {
+      "candidate_id": "7b8e77050bbf6e2735be2b8a1879ede9801f4ee67ab7c3bced0999582121c6d6",
+      "object_ref": "code:crates/core/src/demo.rs",
+      "path": "crates/core/src/demo.rs",
+      "change": "create",
+      "source_sha256": "0285f8943c69566776866724597c4d25536497c2c508f37a71a2afa72d2e25c3"
+    },
+    {
+      "candidate_id": "36001404959440ccdad7ea4a13249782287641e40cb9c8ff8c0d084b30151bd8",
+      "object_ref": "code:crates/core/src/encoding.rs",
+      "path": "crates/core/src/encoding.rs",
+      "change": "create",
+      "source_sha256": "a4e16863c1794f8ebb9ea7313a973955fea6992e52ad1eddffcd77ab976cb1aa"
+    },
+    {
+      "candidate_id": "3ca99a27cc848cf69754af1a59a91373c292f744bbf1e33bf44598bb941b7b63",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "create",
+      "source_sha256": "73f814692972fc6dfe011e8ae4b9a068199ed9c7ba64d4717a0e89be6ef90639"
+    },
+    {
+      "candidate_id": "832579190ca41f1b483f4f4238220c998fb47ec6f19b94a25e26d85cbd2c2966",
+      "object_ref": "code:crates/core/src/format.rs",
+      "path": "crates/core/src/format.rs",
+      "change": "create",
+      "source_sha256": "0e2be5f102a89b31b2cbd6efa43b94bc5c0c3ddda9b6ee59c47253c6946a5f53"
+    },
+    {
+      "candidate_id": "6528565be75c423aed1f570dc91e8db427eea5d67fdf8548922d5aa6aa64c1b7",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "create",
+      "source_sha256": "a4e1c543331099eb728ba1d1feab09409d9773fb87cc2a20171597b805acfcd9"
+    },
+    {
+      "candidate_id": "97440fb5f71b6f4a577e9f97d7826763b1a410dd6cf1989777950fdee27867a3",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "create",
+      "source_sha256": "e73593594766248fce495daa17ad06942bfc093fb490e656c8ed121821adbb97"
+    },
+    {
+      "candidate_id": "1ea1bdf6ef96aec8b25c5967110ad543d7cbc17f70854272eb75982d39d7eef5",
+      "object_ref": "code:crates/core/src/formula/sheetref.rs",
+      "path": "crates/core/src/formula/sheetref.rs",
+      "change": "create",
+      "source_sha256": "cc9c30aa33a76b9355b12a77911c29aa2b364ec82a9335b5dfdf9f10270a5cee"
+    },
+    {
+      "candidate_id": "bd9c74275df502e08b826884b81deae189d0e6a37fb700238d8f39fa7e589a1a",
+      "object_ref": "code:crates/core/src/formula/state.rs",
+      "path": "crates/core/src/formula/state.rs",
+      "change": "create",
+      "source_sha256": "8a0cea5b3b19613a649854e1cc09bb8638e78986bce76da4ccad7e4f5f99abec"
+    },
+    {
+      "candidate_id": "abee3a787ccb322d3b2966e3fcc49c7cd1d3b2b38c1a2330647b51cd48b1b332",
+      "object_ref": "code:crates/core/src/groupby.rs",
+      "path": "crates/core/src/groupby.rs",
+      "change": "create",
+      "source_sha256": "3ff05c0f46f21bbee70fa06687d362b2f5bc4d778f5aec58ac1cc57742d6e8f3"
+    }
+  ]
+}

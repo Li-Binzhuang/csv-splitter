@@ -1,0 +1,8 @@
+治理：authoring_required（1 项 finding）
+AOCI Verify：Volumes v1结构有效
+root_sha256: 94b15c6193b07f337a8a96a63207687df1288403817a63f7280d61aa6a191e69
+meta_sha256: 5ccd06dd2198435423141174e4f3eaed7e7645644070e0b5cc2e20dbc889172a
+composite_identity: aae44401119daedcafffb9462d4b58f8079ed47b0b49d83a95279aa77267fb6a
+Stale（1）—— 源文件在条目写成之后改过：
+  .gitignore
+下一步：在 Agent 会话里调用无参数 aoci_maintain，把它签发的批次通过 aoci_update_entry 提交；aoci index agent guide --json 会给出具体步骤

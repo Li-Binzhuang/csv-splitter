@@ -1,0 +1,69 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a954e29ab9d3be0db6ac2f3d159f219be8e6cd738ecc86d7ec0c921767d3cb27",
+  "batch_id": "e3bb76cad6bdf16781f4904175751fb15b11058e6c14525d1d75b494bfb63124",
+  "composite_identity": "6c0c980b869abccb0c0bddb00e3f43f02faf72e1edc1304034a86392f35ba759",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "fe349f76a9670a6ddcf57a806e283ebcfeda09703ee8f13e08a583c7afa86dff",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/regress.sh",
+      "path": "scripts/regress.sh",
+      "change": "create",
+      "source_sha256": "2c396ba158ea53b5c802dd147ddab3c7e6be0d37d340242462a11222b1ab57f0"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/release-check.sh",
+      "path": "scripts/release-check.sh",
+      "change": "create",
+      "source_sha256": "023944abd5c7b90e50ef30f5d8cb639560d3749e4262a85d5bfcc012bde4fabc"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/release-decision.sh",
+      "path": "scripts/release-decision.sh",
+      "change": "create",
+      "source_sha256": "d79e499f92b6868fe85680a1cf39f937fc9f244628fa503111de88a0915ca285"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/smoke.sh",
+      "path": "scripts/smoke.sh",
+      "change": "create",
+      "source_sha256": "5fda6f25aecb159f18f94b60d839064f803d5d97ed5cc92ce0fe2bd0dfd710bf"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "5b9526f9d81bf6654f073c137c2b473eafb805628dd078ca03584a591aa78fdb",
+      "object_ref": "code:scripts/regress.sh",
+      "path": "scripts/regress.sh",
+      "change": "create",
+      "source_sha256": "2c396ba158ea53b5c802dd147ddab3c7e6be0d37d340242462a11222b1ab57f0"
+    },
+    {
+      "candidate_id": "a6bf21b63e411f77379403a7e30cfc16440f02862035e50fbe01435ba3ec1edd",
+      "object_ref": "code:scripts/release-check.sh",
+      "path": "scripts/release-check.sh",
+      "change": "create",
+      "source_sha256": "023944abd5c7b90e50ef30f5d8cb639560d3749e4262a85d5bfcc012bde4fabc"
+    },
+    {
+      "candidate_id": "2d7a72869b40e0080e6e2338f1e142ee9b46ec32f9a2b9c6509ddf7539b8f2f7",
+      "object_ref": "code:scripts/release-decision.sh",
+      "path": "scripts/release-decision.sh",
+      "change": "create",
+      "source_sha256": "d79e499f92b6868fe85680a1cf39f937fc9f244628fa503111de88a0915ca285"
+    },
+    {
+      "candidate_id": "04e60e198a43c96fa5314fe7754277d14dc0695fb05c51efe4adc373fd1afab9",
+      "object_ref": "code:scripts/smoke.sh",
+      "path": "scripts/smoke.sh",
+      "change": "create",
+      "source_sha256": "5fda6f25aecb159f18f94b60d839064f803d5d97ed5cc92ce0fe2bd0dfd710bf"
+    }
+  ]
+}

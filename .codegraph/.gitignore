@@ -1,0 +1,9 @@
+# CodeGraph data files.
+#
+# 本项目刻意把索引也入库：它是可重建的派生产物，但保留历史能看出代码图随代码
+# 怎么演变（哪次提交新增了多少符号/边）。SQLite 的 -shm/-wal 是运行时临时文件，
+# 它们必须忽略，否则每次索引都会产生无法合并的二进制噪音。
+*
+!.gitignore
+!codegraph.db
+!config.json
