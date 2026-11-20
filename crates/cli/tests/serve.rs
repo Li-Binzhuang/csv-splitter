@@ -5764,3 +5764,47 @@ fn capabilities_publishes_apply_edits_routes() {
     assert!(body.contains(r#""expect=compare-and-set""#), "{body}");
     assert!(body.contains(r#""stamp=journal-precondition""#), "{body}");
 }
+
+/// `set-many` writes every cell in one journal update, so a reader sees either none or all;
+/// undo still walks one cell at a time, and the response says so.
+#[test]
+fn set_many_writes_all_cells_in_one_operation_batch() {
+    let dir = TempDir::new("setmany");
+    std::fs::write(dir.join("t.csv"), "city,amount\nA,1\nB,2\nC,3\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set-many&cells=1:city:X;2:amount:99;3:city:Z",
+    );
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(r#""cells":3"#), "{body}");
+    assert!(body.contains(r#""undo":"one cell per undo""#), "{body}");
+
+    let (_, rows) = get(&server.addr, "/rows?path=t.csv&start=0&count=3");
+    assert!(
+        rows.contains(r#"[["X","1"],["B","99"],["Z","3"]]"#),
+        "{rows}"
+    );
+    let (_, journal) = get(&server.addr, "/journal?path=t.csv");
+    assert!(journal.contains(r#""count":3"#), "{journal}");
+
+    // One undo per cell: after three undos the sheet is back to the original.
+    for _ in 0..3 {
+        assert_eq!(post(&server.addr, "/edit?path=t.csv&action=undo").0, 200);
+    }
+    let (_, rows) = get(&server.addr, "/rows?path=t.csv&start=0&count=3");
+    assert!(
+        rows.contains(r#"[["A","1"],["B","2"],["C","3"]]"#),
+        "{rows}"
+    );
+
+    // A bad entry refuses the whole batch and writes nothing.
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set-many&cells=1:city:Q;4:amount:7",
+    );
+    assert_eq!(status, 404, "{body}");
+    let (_, journal) = get(&server.addr, "/journal?path=t.csv");
+    assert!(journal.contains(r#""count":0"#), "{journal}");
+}

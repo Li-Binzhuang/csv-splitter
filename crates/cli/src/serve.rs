@@ -577,9 +577,9 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     (
         "/edit",
         &[
-            "path", "action", "row", "col", "value", "formula", "expect", "stamp", "after", "name",
-            "into", "from", "to", "where", "by", "delim", "count", "cols", "key", "out", "columns",
-            "format", "from-row", "to-row",
+            "path", "action", "row", "col", "value", "cells", "formula", "expect", "stamp",
+            "after", "name", "into", "from", "to", "where", "by", "delim", "count", "cols", "key",
+            "out", "columns", "format", "from-row", "to-row",
         ],
     ),
     ("/download", &["path", "delim"]),
@@ -2295,6 +2295,7 @@ fn edit_state(
 /// so the error text could not be trusted as a description of the endpoint.
 const EDIT_ACTIONS: &[&str] = &[
     "set",
+    "set-many",
     "insert",
     "insert-after-key",
     "insert-before-key",
@@ -2343,6 +2344,141 @@ fn edit_apply(
             )
         }
     };
+
+    // `set-many` writes every cell in one journal update: a crash leaves either all of them
+    // or none, which per-edit requests cannot promise. Undo still walks one cell at a time,
+    // and the response says so rather than pretending this is a transaction block.
+    if action == "set-many" {
+        let Some(cells) = params.get("cells").filter(|c| !c.trim().is_empty()) else {
+            return bad_request(
+                stream,
+                "set-many needs cells",
+                "cells",
+                "cells=row:col:value;row:col:value (a value may contain ':' but not ';')",
+            );
+        };
+        let read = csv_splitter_core::sheet::ReadOptions {
+            delimiter: delimiter(params),
+        };
+        let sheet = match csv_splitter_core::sheet::Sheet::open(&path, read) {
+            Ok(sheet) => sheet,
+            Err(e) => {
+                return respond_json(
+                    stream,
+                    422,
+                    &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                )
+            }
+        };
+        let columns = match sheet.columns() {
+            Ok(columns) => columns,
+            Err(e) => {
+                return respond_json(
+                    stream,
+                    422,
+                    &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                )
+            }
+        };
+        let total = sheet.rows().unwrap_or(0);
+        let mut ops = Vec::new();
+        for part in cells.split(';') {
+            let part = part.trim();
+            if part.is_empty() {
+                continue;
+            }
+            let mut pieces = part.splitn(3, ':');
+            let row_text = pieces.next().unwrap_or_default();
+            let column = pieces.next().unwrap_or_default();
+            let value = pieces.next();
+            let row: u64 = match row_text.trim().parse() {
+                Ok(n) if n >= 1 => n,
+                _ => {
+                    return bad_request(
+                        stream,
+                        &format!("cells entry {part:?} needs row:col:value"),
+                        "cells",
+                        "cells=1:city:A;2:city:B",
+                    )
+                }
+            };
+            if row > total {
+                return respond_json(
+                    stream,
+                    404,
+                    &format!(
+                        r#"{{"error":{},"parameter":"cells","total":{total}}}"#,
+                        json_str(&format!("row {row} is past the end ({total} rows)"))
+                    ),
+                );
+            }
+            if !columns.iter().any(|c| c == column) {
+                return bad_request(
+                    stream,
+                    &format!("cells entry {part:?} names unknown column {column:?}"),
+                    "cells",
+                    &format!("available: {}", columns.join(", ")),
+                );
+            }
+            let Some(value) = value else {
+                return bad_request(
+                    stream,
+                    &format!("cells entry {part:?} needs row:col:value"),
+                    "cells",
+                    "cells=1:city:A;2:city:B",
+                );
+            };
+            // `Op::SetCell` stores 0-based rows; the wire is 1-based, like every other row
+            // number here. The `number()` helper in the single-set branch does the same.
+            ops.push(Op::SetCell {
+                row: row - 1,
+                column: column.to_string(),
+                value: value.to_string(),
+            });
+        }
+        if ops.is_empty() {
+            return bad_request(
+                stream,
+                "cells parsed to no operations",
+                "cells",
+                "cells=1:city:A",
+            );
+        }
+        let written: Vec<Op> = ops.clone();
+        let mut updated_count = 0usize;
+        let locked = csv_splitter_core::workbook::Journal::update_locked(&sidecar, |fresh| {
+            for op in &written {
+                fresh.push(op.clone());
+            }
+            updated_count = fresh.len();
+            Ok(())
+        });
+        return match locked {
+            Ok(_) => respond_json(
+                stream,
+                200,
+                &format!(
+                    r#"{{"op":"set-many","cells":{},"operations":{},"stamp":{},"undo":"one cell per undo"}}"#,
+                    ops.len(),
+                    updated_count,
+                    json_str(&journal_stamp(&path))
+                ),
+            ),
+            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => respond_json(
+                stream,
+                409,
+                &format!(
+                    r#"{{"error":"another writer holds the journal","parameter":"action","hint":{}}}"#,
+                    json_str("retry in a moment; the lock is released as soon as that edit lands")
+                ),
+            ),
+            Err(e) => respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            ),
+        };
+    }
 
     if action == "export" {
         let Some(out) = resolve_out(root, params, "out") else {

@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.61.7] — 2026-11-20
+
+### Added
+
+- **`POST /edit?action=set-many&cells=row:col:value;…`** writes every cell in one journal
+  update: a crash leaves either all of the cells or none, which per-cell requests cannot
+  promise. Any invalid entry refuses the whole batch before writing, and undo still walks one
+  cell at a time — the response carries `"undo":"one cell per undo"` so the boundary is stated
+  rather than implied. Values may contain `:` but not `;`.
+
 ## [3.61.6] — 2026-11-20
 
 ### Added
