@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.59.9] — 2026-11-20
+
+### Added
+
+- **`POST /edit` accepts `stamp=` as a journal-wide precondition.** Cell-level `expect=` covers
+  one cell; two edits based on one read had no way to notice the state moved. An edit carrying
+  a stale stamp now answers 409 with the current stamp, and a successful edit returns the new
+  stamp, so a client can retry safely. This narrows the "two edits are not a transaction"
+  limitation without pretending to remove it.
+
 ## [3.59.8] — 2026-11-20
 
 ### Added

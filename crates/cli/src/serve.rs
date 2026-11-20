@@ -576,8 +576,8 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     (
         "/edit",
         &[
-            "path", "action", "row", "col", "value", "formula", "expect", "after", "name", "into",
-            "from", "to", "where", "by", "delim", "count", "cols", "key", "out", "columns",
+            "path", "action", "row", "col", "value", "formula", "expect", "stamp", "after", "name",
+            "into", "from", "to", "where", "by", "delim", "count", "cols", "key", "out", "columns",
             "format", "from-row", "to-row",
         ],
     ),
@@ -2997,7 +2997,21 @@ fn edit_apply(
     // Push and save under the journal's lock: two tabs editing at once must not lose an
     // edit to a last-write-wins rename. The CLI already does this; the server did not.
     let written = op.clone();
+    // `stamp=` is a compare-and-set on the whole journal: a client that read the sheet, made
+    // two edits and saw one land can send the second with the old stamp and get 409 instead of
+    // appending on top of a state it never saw.
+    let expected_stamp = params.get("stamp").cloned();
+    let mut stale_with: Option<String> = None;
     match csv_splitter_core::workbook::Journal::update_locked(&sidecar, |fresh| {
+        if let Some(expected) = &expected_stamp {
+            let current = journal_stamp(&path);
+            if &current != expected {
+                stale_with = Some(current);
+                return Err(std::io::Error::other(
+                    "the journal changed since that stamp",
+                ));
+            }
+        }
         fresh.push(written.clone());
         Ok(())
     }) {
@@ -3005,10 +3019,22 @@ fn edit_apply(
             stream,
             200,
             &format!(
-                r#"{{"op":{},"description":{},"operations":{}}}"#,
+                r#"{{"op":{},"description":{},"operations":{},"stamp":{}}}"#,
                 json_str(op.tag()),
                 json_str(&op.describe()),
-                updated.len()
+                updated.len(),
+                json_str(&journal_stamp(&path))
+            ),
+        ),
+        Err(_) if stale_with.is_some() => respond_json(
+            stream,
+            409,
+            &format!(
+                r#"{{"error":"the journal changed since that stamp","parameter":"stamp","hint":{}}}"#,
+                json_str(&format!(
+                    "re-read /journal; current stamp is {}",
+                    stale_with.clone().unwrap_or_default()
+                ))
             ),
         ),
         Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => respond_json(

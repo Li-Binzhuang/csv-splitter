@@ -5370,3 +5370,39 @@ fn sort_can_apply_edits() {
     assert!(out.contains("ZZ9"), "the edit is in the sorted file: {out}");
     assert!(!out.contains("CDMX"), "the old value is gone: {out}");
 }
+
+/// `stamp=` makes two edits from one read safe: the second one answers 409 and names the
+/// current stamp instead of appending on top of a state the client never saw.
+#[test]
+fn an_edit_carries_a_stamp_precondition() {
+    let dir = TempDir::new("stampededit");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=city&value=A",
+    );
+    assert_eq!(status, 200, "{body}");
+    let fresh = body
+        .split("\"stamp\":\"")
+        .nth(1)
+        .and_then(|t| t.split('"').next())
+        .unwrap()
+        .to_string();
+
+    // Another client that read the old state writes with that stamp: it must be refused.
+    let stale = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=2&col=city&value=B&stamp=0%3A0%3A0",
+    );
+    assert_eq!(stale.0, 409, "{}", stale.1);
+    assert!(stale.1.contains(r#""parameter":"stamp""#), "{}", stale.1);
+
+    // With the current stamp the same edit lands.
+    let (status, body) = post(
+        &server.addr,
+        &format!("/edit?path=t.csv&action=set&row=2&col=city&value=B&stamp={fresh}"),
+    );
+    assert_eq!(status, 200, "{body}");
+}
