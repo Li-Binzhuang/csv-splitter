@@ -71,7 +71,7 @@
 | 端点 | 参数 | 说明 |
 |---|---|---|
 | `POST /edit` | `path` `action` … | action 来自 `serve.rs` 的 `EDIT_ACTIONS`：`set`、`insert`、`delete`、`replace`、`copy`、`formula`、`drop`、`rename`、`undo`、`redo`、`export`。参数错误时响应的 `hint` 就是这份清单 |
-| `POST /split` | `path` `splits` `out` `format` `threads` | 切分（`splits` 为片数） |
+| `POST /split` | `path` `splits` `out` `format` `threads` `bufMb` `level` `columns` `delim` | 切分（`splits` 为片数；`level` 为压缩级别，`columns` 只切列的子集）|
 | `POST /merge` | `out` `format` | 合并（根目录下的分片） |
 | `POST /sort` | `path` `by` `desc` `out` | 外部排序 |
 | `POST /dedupe` | `path` `by` `out` | 去重 |

@@ -556,7 +556,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     ("/stats", &["path", "sample", "delim"]),
     ("/jobs", &["path", "delim"]),
     ("/job", &["id", "action"]),
-    ("/index", &["path", "delim"]),
+    ("/index", &["path", "interval", "delim"]),
     (
         "/export",
         &[
@@ -688,11 +688,14 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     ("/query", &["path", "sql", "limit", "delim"]),
     ("/sort", &["path", "by", "desc", "out", "bufMb", "delim"]),
     ("/dedupe", &["path", "by", "out", "delim"]),
-    ("/partition", &["path", "by", "format", "out", "delim"]),
+    (
+        "/partition",
+        &["path", "by", "format", "out", "maxPartitions", "delim"],
+    ),
     (
         "/split",
         &[
-            "path", "format", "out", "delim", "splits", "bufMb", "threads", "columns",
+            "path", "format", "out", "delim", "splits", "bufMb", "threads", "columns", "level",
         ],
     ),
     ("/merge", &["path", "out", "delim"]),

@@ -4972,3 +4972,27 @@ fn a_limited_filter_works_and_says_it_was_capped() {
         "a capped result must admit it: {body}"
     );
 }
+
+/// The spec now declares parameters the handlers already read. Two of them are checked here
+/// end to end, because "declared" and "accepted" are different claims.
+#[test]
+fn undeclared_before_params_are_accepted_now() {
+    let dir = TempDir::new("declaredparams");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (code, body) = post(&server.addr, "/index?path=t.csv&interval=100");
+    assert!(
+        code == 200 || code == 202,
+        "/index interval must be accepted: {body}"
+    );
+
+    let (code, body) = post(
+        &server.addr,
+        "/partition?path=t.csv&by=city&out=p.tar&format=none&maxPartitions=2",
+    );
+    assert!(
+        code == 200 || code == 202,
+        "/partition maxPartitions must be accepted: {body}"
+    );
+}

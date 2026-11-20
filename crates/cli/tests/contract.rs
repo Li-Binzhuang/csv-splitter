@@ -257,3 +257,44 @@ fn every_error_body_names_the_parameter_and_the_next_step() {
     }
     assert!(problems.is_empty(), "{problems:#?}");
 }
+
+/// Every parameter the server reads must be declared in the spec. Strict mode is on by
+/// default, so an undeclared one answers 400 to a documented, working request — /filter's
+/// limit and three others were found this way after they had already shipped.
+#[test]
+fn every_parameter_a_handler_reads_is_declared() {
+    let source =
+        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/serve.rs")).unwrap();
+    // Literal `params.get("name")` reads, however rustfmt split them across lines.
+    let mut read: Vec<String> = Vec::new();
+    let mut from = 0;
+    while let Some(at) = source[from..].find("params") {
+        let start = from + at + "params".len();
+        let tail = &source[start..];
+        let skip = tail.len() - tail.trim_start().len();
+        if let Some(rest) = tail[skip..].strip_prefix(".get(\"") {
+            if let Some(end) = rest.find('"') {
+                read.push(rest[..end].to_string());
+            }
+        }
+        from = start;
+    }
+
+    assert!(
+        read.len() >= 20,
+        "the scan must actually find reads, found {:?}",
+        read
+    );
+    let table = &source[source.find("const SPEC_PARAMS").unwrap()..];
+    let table = &table[..table.find("\n];").unwrap()];
+    let mut problems = Vec::new();
+    for name in &read {
+        if !table.contains(&format!("\"{name}\"")) {
+            problems.push(name.clone());
+        }
+    }
+    assert!(
+        problems.is_empty(),
+        "read by a handler but absent from SPEC_PARAMS: {problems:?}"
+    );
+}

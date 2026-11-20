@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.58.2] — 2026-11-20
+
+### Fixed
+
+- **Three more parameters were implemented but undeclared**: /index interval, /partition
+  maxPartitions and /split level. Each was documented and read by its handler, and each was
+  answered 400 by the default strict mode. All are declared now.
+
+- A contract test scans the served source for literal parameter reads and fails when one is
+  absent from the spec table. Mutation-checked: removing interval from the table fails it, naming interval.
+
 ## [3.58.1] — 2026-11-20
 
 ### Fixed
