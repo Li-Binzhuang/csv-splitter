@@ -27,7 +27,8 @@
   column aggregate per journal version so repeated exports skip the scan.
 - A formula column used to force a full re-render of every row: 2.1 GB / 50 M rows took
   ~70 s. A formula that is the same on every row (whole-column aggregates) now rides the
-  byte-copy path by appending one cell: the same export takes 15.4 s (1 M rows: 0.13–0.33 s), and only formulas that read the current row still rewrite each row.
+  byte-copy path by appending one cell: the same export takes 7.2 s (1 M rows: 0.13–0.33 s); the pre-pass itself splits
+  at checkpoints when the file is large, which took 15.4 s -> 7.2 s, and only formulas that read the current row still rewrite each row.
 
 ## [4.1.0] — 2026-11-20
 
