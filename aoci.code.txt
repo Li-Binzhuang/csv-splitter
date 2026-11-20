@@ -18,8 +18,8 @@ windows.yml[OV6T]: F:Windows 编译检查，只在 Rust 代码或依赖清单变
 Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Cargo.toml | A:包名 csvx-cli，二进制名 csvx，入口 src/main.rs；依赖 libc（信号处理）与 flate2（gzip 响应）；启用 core 的 sql feature；元数据从 workspace 继承 | S:-
 
 ===/<repository>/crates/cli/src/===
-main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；edit 的 transaction 与 HTTP 同语法、同保证（--ops set/delete/insert，先校验再一次 journal 写入）；filter/search 走 scan_fast；行号一律 1-based；demo 默认写 csvx-demo/ | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败；transaction 与 serve 的解析逻辑是两份，改语法时两边都要改（后续可收进 core）
-serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:/filter 与 /search 接 cursor 续扫；/edit 的 transaction 与 set-many 一样在 match 之前特殊处理：先整体校验行/列范围，再在单次 update_locked 里写入全部 op；strict 参数校验与 CSVX_QUERY_TIMEOUT_MS 在此读取 | S:strict 模式下未在路由表声明的参数一律 400，新增参数必须同时写进参数表；transaction 校验失败必须一条不写；contract 测试只扫描 match 分支，提前处理的动作要登记在 HANDLED_BEFORE_THE_MATCH
+main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；edit 的 transaction 只做参数与错误映射，解析/校验/写入都交给 csvx-core 的 parse_ops 与 append_atomically；filter/search 走 scan_fast；行号一律 1-based；demo 默认写 csvx-demo/ | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败；transaction 的错误分类映射为退出码（越界 1、语法/列名 2），不要另写一套语法
+serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:/filter 与 /search 接 cursor 续扫；/edit 的 transaction 在 match 之前特殊处理，解析与原子写入调 csvx-core，越界映射 404、语法/列名 400；strict 参数校验与 CSVX_QUERY_TIMEOUT_MS 在此读取 | S:strict 模式下未在路由表声明的参数一律 400，新增参数必须同时写进参数表；contract 测试只扫描 match 分支，提前处理的动作要登记在 HANDLED_BEFORE_THE_MATCH
 
 ===/<repository>/crates/cli/src/web/===
 index.html[EU7M]: F:内置只读浏览页：用 /rows 拉窗口并把结果渲染成表格 | R:code:crates/cli/src/serve.rs | A:单文件 HTML 与内联 JS，无外部依赖；title 与页头的 h1 都是 csvx；实际调用 /files、/meta、/rows、/search、/analyze、/groupby 六个端点 | S:-
@@ -85,13 +85,14 @@ totals.rs[KP6L]: F:整列与条件聚合的预扫及其缓存：为 sum/average/
 ===/<repository>/crates/core/src/workbook/===
 export.rs[CD9L]: F:逐行组装、导出与分页读取 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/journal.rs | A:一次顺序扫描；被 journal 触及的行走 RowPipeline，未触及的行拷贝原字节；每行相同的公式算一次后只追加一格；存在 InsertRows 时用真实行数构 RowMap（否则先延迟到 EOF），仅删除时仍用哨兵值免建索引 | S:插入锚点落在删除后的越界位置时，未知基长会留下幽灵基行让导出提前 EOF 而丢掉插入行（测试钉住）；join_csv_line 自带换行；会读当前行的公式不得走快路
 journal.rs[CP9L]: F:追加式操作日志与它的文本格式 | R:code:crates/core/src/workbook/mod.rs | A:每行一个操作的 CSV 记录；update_locked 用 sidecar 旁的 .journal.lock 独占锁把读改写合成一步，多进程同时编辑都保留；损坏行可检测；被 kill 留下的锁不会永久卡住 | S:journal 是编辑的唯一载体，删掉等于丢数据，而 base 永远不被修改
-mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序与列布局 | R:code:crates/core/src/workbook/rows.rs | A:所有编辑记录为 Op（含 SetColumnFormula 重算已有列与 FillColumns 一次填多列）；改名让既有编辑跟着新名；列布局由 Op 序列推导 | S:原位重算每次都从 base 行取值，所以同一列连做两遍相同公式不会叠乘；删除列会带走该列的编辑，改名不会
+mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序、列布局与 transaction 子模块 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/transaction.rs | A:所有编辑记录为 Op；改名让既有编辑跟着新名；列布局由 Op 序列推导；transaction 子模块导出 parse_ops 与 append_atomically 给 CLI 和 HTTP 共用 | S:原位重算每次都从 base 行取值，同一列连做两遍相同公式不会叠乘；删除列会带走该列编辑，改名不会；transaction 语法只维护这一份
 rows.rs[CP9L]: F:行身份映射与单元格编辑解析 | R:code:crates/core/src/workbook/mod.rs | A:RowId 为 Base 或 Virtual，position_of 是 id_at 的逆；填充解析成行身份而非位置；公式允许读自身列做原位重算，新列读自身被拒 | S:按位置存编辑会在插入行后把编辑指向邻居，这是本项目最需要避免的静默错误
+transaction.rs[CP8L]: F:CLI 与 HTTP 共用的 transaction 解析与原子写入 | R:code:crates/core/src/workbook/mod.rs,code:crates/core/src/workbook/journal.rs | A:parse_ops 把 set:/delete:/insert: 条目校验后转成 0-based Op，错误分为 Syntax/OutOfRange/UnknownColumn；append_atomically 用一次 update_locked 把整批入库并返回 pending 总数；行号线上 1-based | S:校验必须先于写入，任何一条不合法则一条都不落（测试钉住）；两个表面只做错误到退出码/状态码的映射，语法变更只能改这里
 
 ===/<repository>/docs/===
 ACCEPTANCE.md[SD6M]: F:验收证据：两档性能表、能力矩阵与平台构建矩阵 | R:code:docs/API.md | A:每行写实测数字与对应测试名；未达标项标注而不是四舍五入 | S:文档里引用的输出由测试钉住，改实现不同步更新这里会让 gate 失败
 API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；filter/search 行含 cursor 与 next/partial；/edit 写入行含 transaction 的 ops 语法（set/delete/insert）与“先整体校验再一次写入”；聚合端点接受 engine=auto|native|sql | S:文档测试要求本文列出的每个路由都真实存在，反之亦然；文档字段必须真的出现在响应里
-ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列出模块，共用工具组含 engine 与 scan_parallel，公式引擎组含 mod/functions/state/sheetref/totals | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败
+ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列出模块，共用工具组含 engine 与 scan_parallel，公式引擎组含 mod/functions/state/sheetref/totals，编辑模型组含 workbook/mod,rows,journal,export,transaction | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败
 CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；编辑表含原子批量写的 CLI 与 API 两列；公式节区分每行相同与会读当前行两种代价，大文件节写并行数字与游标续扫 | S:-
 CI.md[SO6S]: F:CI 结构说明：单 job 流水线、滚动缓存与失败注解机制 | R:code:.github/workflows/ci.yml | A:解释为什么合并成一个 job、为什么缓存 key 滚动、以及 annotation 如何让红叉可读；测试命令按 csvx-core 与 csvx-cli 包名 | S:-
 DEPLOY.md[SO7M]: F:部署材料：三种安装、配置项、systemd、升级回滚与安全边界 | R:code:deploy/csvx.service | A:明确单机单用户、无鉴权、默认 loopback；配置表含 CSVX_SCAN_THREADS（filter/search 的并行线程数，1 退回顺序）；给出 release-check 与 install-check 两条自检 | S:安全表必须写明没有鉴权与没有多用户隔离，只列防护不列边界会让人误判风险

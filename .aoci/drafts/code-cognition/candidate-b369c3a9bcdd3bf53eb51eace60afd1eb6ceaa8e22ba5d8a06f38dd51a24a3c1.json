@@ -1,0 +1,91 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "0ff9d81d18963f66de67548cc7de247f02f11d7b8fc3ba42f78da4b199e12103",
+  "batch_id": "b369c3a9bcdd3bf53eb51eace60afd1eb6ceaa8e22ba5d8a06f38dd51a24a3c1",
+  "composite_identity": "17d411dc0146294e96e0d463082405b0e00d90951cb9a092e5eb495b220ca684",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "80e9574b62a8bd182bd84fa66e2f5f776d4ccb2cd60151a4eec27f4b296bd75f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "241812b78b472a5a4c75551ece2de5f696b5a7b4b5a416c9e79ed0b0c7b911b5",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；edit 的 transaction 与 HTTP 同语法、同保证（--ops set/delete/insert，先校验再一次 journal 写入）；filter/search 走 scan_fast；行号一律 1-based；demo 默认写 csvx-demo/ | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败；transaction 与 serve 的解析逻辑是两份，改语法时两边都要改（后续可收进 core）"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "f5e7de8c4eefa8a5006c5670cd87db811fc1fc19816816de3c4e72ae10d00a88",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:/filter 与 /search 接 cursor 续扫；/edit 的 transaction 与 set-many 一样在 match 之前特殊处理：先整体校验行/列范围，再在单次 update_locked 里写入全部 op；strict 参数校验与 CSVX_QUERY_TIMEOUT_MS 在此读取 | S:strict 模式下未在路由表声明的参数一律 400，新增参数必须同时写进参数表；transaction 校验失败必须一条不写；contract 测试只扫描 match 分支，提前处理的动作要登记在 HANDLED_BEFORE_THE_MATCH"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/mod.rs",
+      "path": "crates/core/src/workbook/mod.rs",
+      "change": "update",
+      "source_sha256": "d0ec32fd8198b69cd647d56b6a41c712d6f2ba90d1656372870e9470781fd693",
+      "existing_entry": "mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序与列布局 | R:code:crates/core/src/workbook/rows.rs | A:所有编辑记录为 Op（含 SetColumnFormula 重算已有列与 FillColumns 一次填多列）；改名让既有编辑跟着新名；列布局由 Op 序列推导 | S:原位重算每次都从 base 行取值，所以同一列连做两遍相同公式不会叠乘；删除列会带走该列的编辑，改名不会"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/transaction.rs",
+      "path": "crates/core/src/workbook/transaction.rs",
+      "change": "create",
+      "source_sha256": "dbbe16a146d45bcae33bb321f85ffbf1c9fecb1ad1f43ac88e14bd98aef66c1b"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "ec05155bedf7461babe1bf5e7c7a9bd27c54571f520ba6b71e3601fec7132724",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列出模块，共用工具组含 engine 与 scan_parallel，公式引擎组含 mod/functions/state/sheetref/totals | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "5396e7af5842e7b41bbaf22bd1af3e418d210e72355a77b50afcb7e3080a4d43",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "241812b78b472a5a4c75551ece2de5f696b5a7b4b5a416c9e79ed0b0c7b911b5",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；edit 的 transaction 与 HTTP 同语法、同保证（--ops set/delete/insert，先校验再一次 journal 写入）；filter/search 走 scan_fast；行号一律 1-based；demo 默认写 csvx-demo/ | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败；transaction 与 serve 的解析逻辑是两份，改语法时两边都要改（后续可收进 core）"
+    },
+    {
+      "candidate_id": "594141a713e8b007c91648ae14581528b571f7a7858076cb53e6247f2fbc1d25",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "f5e7de8c4eefa8a5006c5670cd87db811fc1fc19816816de3c4e72ae10d00a88",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:/filter 与 /search 接 cursor 续扫；/edit 的 transaction 与 set-many 一样在 match 之前特殊处理：先整体校验行/列范围，再在单次 update_locked 里写入全部 op；strict 参数校验与 CSVX_QUERY_TIMEOUT_MS 在此读取 | S:strict 模式下未在路由表声明的参数一律 400，新增参数必须同时写进参数表；transaction 校验失败必须一条不写；contract 测试只扫描 match 分支，提前处理的动作要登记在 HANDLED_BEFORE_THE_MATCH"
+    },
+    {
+      "candidate_id": "19ba54519b02edce0094cdd801f7f340fa126955cc91ad1821cd92e0b57d2666",
+      "object_ref": "code:crates/core/src/workbook/mod.rs",
+      "path": "crates/core/src/workbook/mod.rs",
+      "change": "update",
+      "source_sha256": "d0ec32fd8198b69cd647d56b6a41c712d6f2ba90d1656372870e9470781fd693",
+      "existing_entry": "mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序与列布局 | R:code:crates/core/src/workbook/rows.rs | A:所有编辑记录为 Op（含 SetColumnFormula 重算已有列与 FillColumns 一次填多列）；改名让既有编辑跟着新名；列布局由 Op 序列推导 | S:原位重算每次都从 base 行取值，所以同一列连做两遍相同公式不会叠乘；删除列会带走该列的编辑，改名不会"
+    },
+    {
+      "candidate_id": "32f02998ea497e2bcacf90f7b4b8f503cc3c3ef42fb649c95d32932dcf682b6a",
+      "object_ref": "code:crates/core/src/workbook/transaction.rs",
+      "path": "crates/core/src/workbook/transaction.rs",
+      "change": "create",
+      "source_sha256": "dbbe16a146d45bcae33bb321f85ffbf1c9fecb1ad1f43ac88e14bd98aef66c1b"
+    },
+    {
+      "candidate_id": "02a32751a8a6beca54028f9bfc5337bfe48ffc6a1700e1401cd509dd973b9608",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "ec05155bedf7461babe1bf5e7c7a9bd27c54571f520ba6b71e3601fec7132724",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列出模块，共用工具组含 engine 与 scan_parallel，公式引擎组含 mod/functions/state/sheetref/totals | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败"
+    }
+  ]
+}
