@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "b9ceac655797d309ef1152be82954e85fca1d6b2b9310ae8a19cbd19987fd9c6",
+  "batch_id": "ff7eb33148158f705e89a9a70a8e7bfbdcd7c2e6ba4a4d399078a88e080fdf99",
+  "composite_identity": "d177718cd173c82912d8f44279af987506795afc31a8d1b8379232e61ee37957",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e16ed43b555d1968ece349b2a6971e1fa7b5a65065633acd891bc38d38b54ecb",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/demo.sh",
+      "path": "scripts/demo.sh",
+      "change": "update",
+      "source_sha256": "4ad6878b34c312365eeabc1d41c8b33e15172ee0416d4bcc21fa4001d7deebf2",
+      "existing_entry": "demo.sh[SZ6T]: F:一条命令的产品巡演：生成示例数据后按序跑预览、分析、过滤、编辑、公式（整列 sum 与条件 countif）、格式、布局、聚合、透视、图表、导出与服务自检 | R:code:scripts/drill.sh | A:每步打印要执行的命令与输出（head 限长）；--big 时调用 drill.sh，--writes 再转发；服务自检向 OS 要一个空闲端口（python3 缺失时回落 8787），避免演示被别的进程占用端口拖死；BIN 解析为绝对路径，因为巡演会切到临时目录 | S:必须用 release 二进制演示——debug 慢一个数量级会让大文件耗时失真；--writes 会写一份等大小的导出副本，磁盘不够时不要用"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "08da4e99cfed620a1325ebc2dec37df0dbd768c1a7961a2cfc21154aef8de45a",
+      "object_ref": "code:scripts/demo.sh",
+      "path": "scripts/demo.sh",
+      "change": "update",
+      "source_sha256": "4ad6878b34c312365eeabc1d41c8b33e15172ee0416d4bcc21fa4001d7deebf2",
+      "existing_entry": "demo.sh[SZ6T]: F:一条命令的产品巡演：生成示例数据后按序跑预览、分析、过滤、编辑、公式（整列 sum 与条件 countif）、格式、布局、聚合、透视、图表、导出与服务自检 | R:code:scripts/drill.sh | A:每步打印要执行的命令与输出（head 限长）；--big 时调用 drill.sh，--writes 再转发；服务自检向 OS 要一个空闲端口（python3 缺失时回落 8787），避免演示被别的进程占用端口拖死；BIN 解析为绝对路径，因为巡演会切到临时目录 | S:必须用 release 二进制演示——debug 慢一个数量级会让大文件耗时失真；--writes 会写一份等大小的导出副本，磁盘不够时不要用"
+    }
+  ]
+}
