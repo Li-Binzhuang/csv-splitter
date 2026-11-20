@@ -1010,7 +1010,11 @@ curl -X POST ".../split?path=big.csv&splits=8&threads=4&out=parts.tar"
 
 过滤与搜索在 UTF-8 文件上按稀疏索引分段并行（每核一段，封顶 8 段）；GBK/UTF-16 仍是顺序扫描，
 因为它们的字节偏移不是行边界。下面的 2 GB 实测里，并行把整文件过滤从 13.5 s 压到 2.7 s、搜索从 18.1 s 压到 4.8 s
-（同一二进制，`CSVX_SCAN_THREADS=1` 关并行）。
+（同一二进制，`CSVX_SCAN_THREADS=1` 关并行）。**这些数字可以用一条命令复现**：
+`scripts/drill.sh <file.csv> [--writes]` 会打印同样版式的表；11.2 GB 那一组就是它跑出来的。
+
+边界也要说清楚：搜索在 11.2 GB 上已经用掉 18.8 s，**约 20 GB 就是 30 s 预算的实际上限**；
+再大需要可续扫的游标分页（未做），而不是把预算调大。
 
 ## 性能 / Performance
 
@@ -1034,6 +1038,11 @@ curl -X POST ".../split?path=big.csv&splits=8&threads=4&out=parts.tar"
 | 过滤（`city=Tijuana`，1250 万命中） | 2.1 GB / 5000 万行 | **2.7 s**，峰值 **43 MB**（`CSVX_SCAN_THREADS=1` 顺序扫描 13.5 s）|
 | 全文搜索（无命中） | 2.1 GB / 5000 万行 | **4.8 s**，峰值 **42 MB**（顺序扫描 18.1 s）|
 | HTTP `/filter` / `/search` | 2.1 GB | **2.1 / 3.1 s**；`/rows` 首屏 **6 ms** |
+| 过滤（`city=Tijuana`，6250 万命中） | 11.2 GB / 2.5 亿行 | **11.9 s**，峰值 **46 MB** |
+| 全文搜索（无命中） | 11.2 GB / 2.5 亿行 | **18.8 s**，峰值 **45 MB** |
+| 打开 / 跳到第 1.2 亿行 | 11.2 GB | **0.01 s / 0.01 s** |
+| HTTP `/filter` / `/search` | 11.2 GB | **10.6 / 17.0 s**（30 s 预算内）|
+| 编辑一格 / 导出 2.1 GB / verify | 2.1 GB | **0.01 s / 1.9 s / 7.0 s** |
 
 HTTP API（同一个文件，release）：
 

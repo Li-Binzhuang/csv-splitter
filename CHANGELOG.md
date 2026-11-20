@@ -16,7 +16,15 @@
   compare the parallel path against the sequential one record by record, including a
   quoted newline that crosses a checkpoint. `CSVX_SCAN_THREADS` overrides the thread count
   (1 keeps the sequential path in the same build), which is how the before/after numbers
-  above were taken.
+  above were taken. At 11.2 GB / 250 M rows the drill gives filter **11.9 s**, search
+  **18.8 s** and HTTP 10.6 / 17.0 s — inside the 30 s budget, with ~20 GB as the point
+  where search would need cursor pagination instead.
+
+### Added
+
+- **`scripts/drill.sh`**: one command that indexes, opens, jumps, filters, searches and
+  (with `--writes`) edits, exports and verifies a real file, printing the markdown table
+  the README quotes. The 11.2 GB row above was produced by it.
 
 ## [4.0.0] — 2026-11-20
 
