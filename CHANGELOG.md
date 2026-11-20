@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.61.0] — 2026-11-20
+
+### Added
+
+- **Per-route latency percentiles and error counts.** /metrics already had count/avg/max per
+  route; an average hides the route that is fast until p95. Each route now carries `p50Ms`,
+  `p95Ms` and `errors`, computed from the same fixed bucket layout as the global histogram,
+  so the memory cost stays one small array per route. A test checks the fields appear.
+
 ## [3.60.7] — 2026-11-20
 
 ### Added

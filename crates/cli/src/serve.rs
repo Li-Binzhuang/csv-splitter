@@ -6639,6 +6639,10 @@ mod metrics {
         count: u64,
         total_ms: f64,
         max_ms: f64,
+        /// Same bucket layout as the global latency histogram, one per route: avg alone
+        /// hides a route that is fast most of the time and pathological at p95.
+        buckets: [u64; BUCKETS.len() + 1],
+        errors: u64,
     }
 
     pub struct Metrics {
@@ -6659,6 +6663,26 @@ mod metrics {
         /// The most recent file whose journal was damaged. A per-file map would grow with
         /// every path a client touches; one name is bounded and still actionable.
         last_damaged: Mutex<Option<String>>,
+    }
+
+    impl RouteStat {
+        /// Upper bound of the bucket the target rank falls in, same approximation the
+        /// global histogram uses (see `Metrics::percentile`).
+        fn percentile(&self, quota: f64) -> u64 {
+            let total: u64 = self.buckets.iter().sum();
+            if total == 0 {
+                return 0;
+            }
+            let target = (total as f64 * quota).ceil() as u64;
+            let mut seen = 0u64;
+            for (slot, count) in self.buckets.iter().enumerate() {
+                seen += count;
+                if seen >= target {
+                    return BUCKETS.get(slot).copied().unwrap_or(30_000);
+                }
+            }
+            30_000
+        }
     }
 
     impl Metrics {
@@ -6716,6 +6740,14 @@ mod metrics {
                 entry.count += 1;
                 entry.total_ms += elapsed_ms;
                 entry.max_ms = entry.max_ms.max(elapsed_ms);
+                if status >= 400 {
+                    entry.errors += 1;
+                }
+                let slot = BUCKETS
+                    .iter()
+                    .position(|upper| elapsed_ms <= *upper as f64)
+                    .unwrap_or(BUCKETS.len());
+                entry.buckets[slot] += 1;
             }
             if let Ok(mut buckets) = self.buckets.lock() {
                 let slot = BUCKETS
@@ -6766,7 +6798,7 @@ mod metrics {
                     .iter()
                     .map(|(route, stat)| {
                         format!(
-                            "{}:{{\"count\":{},\"avgMs\":{:.1},\"maxMs\":{:.1}}}",
+                            "{}:{{\"count\":{},\"avgMs\":{:.1},\"p50Ms\":{},\"p95Ms\":{},\"maxMs\":{:.1},\"errors\":{}}}",
                             super::json_str(route),
                             stat.count,
                             if stat.count > 0 {
@@ -6774,7 +6806,10 @@ mod metrics {
                             } else {
                                 0.0
                             },
-                            stat.max_ms
+                            stat.percentile(0.50),
+                            stat.percentile(0.95),
+                            stat.max_ms,
+                            stat.errors
                         )
                     })
                     .collect::<Vec<_>>()

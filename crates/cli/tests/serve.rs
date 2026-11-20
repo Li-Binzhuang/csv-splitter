@@ -5538,3 +5538,22 @@ fn merge_over_http_refuses_an_unexpected_chunk_count() {
     assert!(state.contains(r#""state":"failed""#), "{state}");
     assert!(state.contains("holds 2 chunk(s), not 3"), "{state}");
 }
+
+/// Per-route metrics must carry percentiles and an error count, not just an average: one
+/// pathological request should not be invisible.
+#[test]
+fn metrics_report_per_route_percentiles_and_errors() {
+    let dir = TempDir::new("routepercentiles");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    get(&server.addr, "/meta?path=t.csv");
+    get(&server.addr, "/meta?path=nope.csv");
+
+    let (_, body) = get(&server.addr, "/metrics");
+    assert!(body.contains(r#""routes":{"#), "routes: {body}");
+    assert!(body.contains(r#""p50Ms""#), "per-route p50: {body}");
+    assert!(body.contains(r#""p95Ms""#), "per-route p95: {body}");
+    assert!(body.contains(r#""errors""#), "per-route errors: {body}");
+    assert!(body.contains(r#""maxMs""#), "{body}");
+}
