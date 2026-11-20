@@ -78,7 +78,10 @@ printf '  -> clean.csv: %s bytes (quoted newlines make wc -l an unreliable row c
   "$(wc -c < clean.csv | tr -d ' ')"
 
 step "8. the HTTP backend starts and says everything is configured"
-run "$BIN" serve --check --root .
+# 8787 is the documented default, but a live demo must not fail because something else
+# already holds it. Ask the OS for a free port and let --check prove the rest.
+PORT=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()' 2>/dev/null || echo 8787)
+run "$BIN" serve --check --root . --port "$PORT"
 
 if [ -n "$BIG" ]; then
   step "9. the same product on a real big file ($(basename "$BIG"))"
