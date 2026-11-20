@@ -234,6 +234,35 @@ impl Formula {
         )
     }
 
+    /// True when the value is the same on every row: whole-column aggregates and
+    /// literals only. No reference to the current row's cells, no `lag`/`running_total`,
+    /// no A1 cell reference — so the export can write it once instead of per row.
+    pub fn is_row_constant(&self) -> bool {
+        fn constant(expr: &Expr) -> bool {
+            match expr {
+                Expr::Number(_) | Expr::Text(_) => true,
+                Expr::Column(_) | Expr::CellRef { .. } => false,
+                Expr::Binary(_, left, right) | Expr::Compare(_, left, right) => {
+                    constant(left) && constant(right)
+                }
+                Expr::Negate(inner) | Expr::Not(inner) => constant(inner),
+                Expr::Call(name, _) if is_aggregate(name) || is_filtered_aggregate(name) => true,
+                // These read something about the row even when every argument is a
+                // literal: `row()` its number, `ref`/`vlookup` the row's key cell.
+                Expr::Call(name, _)
+                    if matches!(
+                        name.to_ascii_lowercase().as_str(),
+                        "ref" | "vlookup" | "row"
+                    ) =>
+                {
+                    false
+                }
+                Expr::Call(_, args) => args.iter().all(constant),
+            }
+        }
+        constant(&self.expr)
+    }
+
     /// Columns this formula needs history for (`lag`, `running_total`).
     pub fn row_needs(&self) -> crate::formula::RowNeeds {
         let mut needs = crate::formula::RowNeeds::default();

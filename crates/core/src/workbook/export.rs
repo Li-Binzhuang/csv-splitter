@@ -175,6 +175,10 @@ pub fn export_selected(
         }
         Some(state)
     };
+    // A formula that is the same on every row (a whole-column aggregate, say) can still
+    // ride the byte-copy path: write the row's original bytes and append the one computed
+    // cell. Editing a cell forces the pipeline, as does any formula that reads a column.
+    let constant_tail = constant_tail_cells(&plan, &columns, refs, state.as_ref());
     let mut pipeline = RowPipeline::new(&columns, &keep, edits, &plan, refs, state);
 
     // A row the journal does not touch can be copied as bytes: no cell ever has to
@@ -189,8 +193,10 @@ pub fn export_selected(
     // already quotes the way this tool writes: RFC 4180 or not at all. A backslash file
     // is re-emitted as RFC — that normalisation is part of the export contract.
     let quoting_matches_output = matches!(quotes, QuoteStyle::Rfc4180 | QuoteStyle::None);
-    let fast_path =
-        plan_is_plain && writes_every_column && only.is_none() && quoting_matches_output;
+    let fast_path = (plan_is_plain || constant_tail.is_some())
+        && writes_every_column
+        && only.is_none()
+        && quoting_matches_output;
 
     loop {
         // A cancelled export stops between rows; the caller deletes the partial file,
@@ -238,7 +244,14 @@ pub fn export_selected(
                         end -= 1;
                     }
                     out.write_all(&record[..end])?;
-                    out.write_all(b"\n")?;
+                    if let Some(cells) = constant_tail.as_ref().filter(|c| !c.is_empty()) {
+                        // join_csv_line terminates the line itself.
+                        out.write_all(&[delim])?;
+                        let refs: Vec<&str> = cells.iter().map(String::as_str).collect();
+                        out.write_all(join_csv_line(&refs, delim).as_bytes())?;
+                    } else {
+                        out.write_all(b"\n")?;
+                    }
                     summary.rows += 1;
                     logical += 1;
                     continue;
@@ -492,6 +505,41 @@ struct RowSpec<'a> {
     delim: u8,
     only: Option<&'a crate::filter::CompiledSet>,
     written: &'a [usize],
+}
+
+/// The rendered cells of a formula tail that is identical on every row, or `None` when
+/// any formula reads the current row (or the layout is not "base columns, then formulas").
+fn constant_tail_cells(
+    plan: &ColumnPlan,
+    columns: &[String],
+    refs: &crate::formula::Refs,
+    state: Option<&crate::formula::RowState>,
+) -> Option<Vec<String>> {
+    if plan.literals.iter().any(Option::is_some) || !plan.splits.is_empty() {
+        return None;
+    }
+    let first = plan.formulas.iter().position(Option::is_some)?;
+    if plan.formulas.len() != columns.len() {
+        return None;
+    }
+    let mut cells = Vec::new();
+    let empty = std::collections::HashMap::new();
+    for formula in &plan.formulas[first..] {
+        let formula = formula.as_ref()?;
+        if !formula.is_row_constant() {
+            return None;
+        }
+        cells.push(
+            formula
+                .eval_stateful(&empty, columns, refs, 1, state)
+                .render(),
+        );
+    }
+    // Only a suffix of extra columns: the raw row already covers the base ones.
+    if first + cells.len() != plan.formulas.len() {
+        return None;
+    }
+    Some(cells)
 }
 
 fn write_row(
@@ -908,6 +956,36 @@ mod cancel_tests {
             Ok(summary) => panic!("export finished despite a cancelled token: {summary:?}"),
         }
         std::fs::remove_dir_all(dir).ok();
+    }
+
+    /// An aggregate column is the same on every row, so the export may copy each row's
+    /// bytes and append one cell. The quoted newline must survive that shortcut.
+    #[test]
+    fn a_constant_formula_column_keeps_the_original_row_bytes() {
+        let dir = std::env::temp_dir().join(format!(
+            "csvs_export_const_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0)
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let base = dir.join("t.csv");
+        std::fs::write(&base, "city,note,amount\nA,\"one\ntwo\",10\nB,plain,20\n").unwrap();
+        let out = dir.join("out.csv");
+        let ops = vec![Op::AddColumn {
+            name: "total".to_string(),
+            formula: "sum(amount)".to_string(),
+        }];
+        let (tx, _rx) = std::sync::mpsc::channel::<ProgressEvent>();
+        export(&base, &ops, &out, Delimiter::Comma, &tx).unwrap();
+        let text = std::fs::read_to_string(&out).unwrap();
+        std::fs::remove_dir_all(dir).ok();
+        assert_eq!(
+            text, "city,note,amount,total\nA,\"one\ntwo\",10,30\nB,plain,20,30\n",
+            "the aggregate column must be appended without re-rendering the row"
+        );
     }
 
     /// The same export without a token writes everything: cancelling is opt-in, not a
