@@ -23,8 +23,9 @@
   export the formula runs in is also the command that materialises edits).
 - `sum(A1:A9)` (range references) are not implemented; criteria are a single comparison,
   not a wildcard pattern.
-- The 50 ms target in `docs/BEYOND_EXCEL.md` is not met yet; the next step is caching the
-  column aggregate per journal version so repeated exports skip the scan.
+- The 50 ms target in `docs/BEYOND_EXCEL.md` is now met for a repeat export: the totals
+  are cached in `t.csv.agg` (invalidated by length + mtime), so the pre-pass on 1 M rows
+  drops to ~30 ms; the first, cold call still costs about 0.09 s.
 - A formula column used to force a full re-render of every row: 2.1 GB / 50 M rows took
   ~70 s. A formula that is the same on every row (whole-column aggregates) now rides the
   byte-copy path by appending one cell: the same export takes 7.2 s (1 M rows: 0.13–0.33 s); the pre-pass itself splits

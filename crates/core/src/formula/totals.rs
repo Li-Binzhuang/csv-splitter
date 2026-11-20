@@ -225,7 +225,132 @@ fn compile_criteria(column: &str, criteria: &str) -> Result<FilterSpec, String> 
 }
 
 /// Numeric sum and count for every column/criteria the formulas asked for.
+///
+/// The answer depends only on the base file's bytes, so it is cached next to the sheet
+/// (`t.csv.agg`) and keyed on the file's length and mtime. A stale cache is ignored;
+/// a missing or unwritable one costs the scan and nothing else.
 pub fn column_totals(
+    path: &Path,
+    delimiter: Delimiter,
+    quotes: QuoteStyle,
+    needs: &RowNeeds,
+) -> io::Result<ColumnTotals> {
+    if let Some(totals) = cache::load(path, needs) {
+        return Ok(totals);
+    }
+    let totals = compute_totals(path, delimiter, quotes, needs)?;
+    cache::store(path, &totals);
+    Ok(totals)
+}
+
+mod cache {
+    use super::*;
+    use std::time::UNIX_EPOCH;
+
+    pub fn sidecar(base: &Path) -> std::path::PathBuf {
+        let mut name = base.to_string_lossy().to_string();
+        name.push_str(".agg");
+        std::path::PathBuf::from(name)
+    }
+
+    /// Percent-encode the four characters that would break the line format.
+    fn esc(text: &str) -> String {
+        text.replace('%', "%25")
+            .replace(' ', "%20")
+            .replace('\t', "%09")
+            .replace('\n', "%0A")
+            .replace('\r', "%0D")
+    }
+
+    fn unesc(text: &str) -> String {
+        text.replace("%0D", "\r")
+            .replace("%0A", "\n")
+            .replace("%09", "\t")
+            .replace("%20", " ")
+            .replace("%25", "%")
+    }
+
+    fn stamp(path: &Path) -> Option<(u64, u128)> {
+        let meta = std::fs::metadata(path).ok()?;
+        let since = meta.modified().ok()?.duration_since(UNIX_EPOCH).ok()?;
+        Some((meta.len(), since.as_nanos()))
+    }
+
+    pub fn load(base: &Path, needs: &RowNeeds) -> Option<ColumnTotals> {
+        let (len, mtime) = stamp(base)?;
+        let text = std::fs::read_to_string(sidecar(base)).ok()?;
+        let mut lines = text.lines();
+        if lines.next()? != "csvx-agg 1" {
+            return None;
+        }
+        let cached_len: u64 = lines.next()?.strip_prefix("len ")?.parse().ok()?;
+        let cached_mtime: u128 = lines.next()?.strip_prefix("mtime ")?.parse().ok()?;
+        if cached_len != len || cached_mtime != mtime {
+            return None;
+        }
+        let mut totals = ColumnTotals::default();
+        for line in lines {
+            let mut parts = line.split(' ');
+            match parts.next()? {
+                "plain" => {
+                    let column = unesc(parts.next()?);
+                    let sum: f64 = parts.next()?.parse().ok()?;
+                    let count: u64 = parts.next()?.parse().ok()?;
+                    totals.plain.insert(column, (sum, count));
+                }
+                "filtered" => {
+                    let column = unesc(parts.next()?);
+                    let criteria = unesc(parts.next()?);
+                    let sum: f64 = parts.next()?.parse().ok()?;
+                    let count: u64 = parts.next()?.parse().ok()?;
+                    totals.filtered.insert((column, criteria), (sum, count));
+                }
+                _ => {}
+            }
+        }
+        if !needs
+            .aggregates
+            .iter()
+            .all(|c| totals.plain.contains_key(c))
+        {
+            return None;
+        }
+        if !needs
+            .filtered
+            .iter()
+            .all(|(c, crit)| totals.filtered.contains_key(&(c.clone(), crit.clone())))
+        {
+            return None;
+        }
+        Some(totals)
+    }
+
+    pub fn store(base: &Path, totals: &ColumnTotals) {
+        let Some((len, mtime)) = stamp(base) else {
+            return;
+        };
+        let mut text = String::from("csvx-agg 1\n");
+        text.push_str(&format!("len {len}\n"));
+        text.push_str(&format!("mtime {mtime}\n"));
+        for (name, (sum, count)) in &totals.plain {
+            text.push_str(&format!("plain {} {sum} {count}\n", esc(name)));
+        }
+        for ((column, criteria), (sum, count)) in &totals.filtered {
+            text.push_str(&format!(
+                "filtered {} {} {sum} {count}\n",
+                esc(column),
+                esc(criteria)
+            ));
+        }
+        let path = sidecar(base);
+        let tmp = path.with_extension("agg.tmp");
+        if std::fs::write(&tmp, text).is_ok() {
+            let _ = std::fs::rename(&tmp, &path);
+        }
+    }
+}
+
+fn compute_totals(
     path: &Path,
     delimiter: Delimiter,
     quotes: QuoteStyle,
@@ -390,6 +515,25 @@ mod tests {
                 .map(|(c, crit)| (c.to_string(), crit.to_string()))
                 .collect(),
         }
+    }
+
+    /// The sidecar is keyed on the file's length and mtime: the second call answers
+    /// from disk, and a changed file must not be served from the old copy.
+    #[test]
+    fn a_second_prepass_reads_the_cache_and_a_change_invalidates_it() {
+        let path = write("cache", "city,amount\nA,10\nB,20\n");
+        let needs = needs(&["amount"], &[]);
+        let first = column_totals(&path, Delimiter::Comma, QuoteStyle::Rfc4180, &needs).unwrap();
+        let cache = cache::sidecar(&path);
+        assert!(cache.exists(), "the first pass must write the sidecar");
+        let second = column_totals(&path, Delimiter::Comma, QuoteStyle::Rfc4180, &needs).unwrap();
+        assert_eq!(first.plain.get("amount"), second.plain.get("amount"));
+
+        std::fs::write(&path, "city,amount\nA,10\nB,20\nC,30\n").unwrap();
+        let third = column_totals(&path, Delimiter::Comma, QuoteStyle::Rfc4180, &needs).unwrap();
+        assert_eq!(third.plain.get("amount"), Some(&(60.0, 3)));
+        std::fs::remove_file(&path).ok();
+        std::fs::remove_file(cache).ok();
     }
 
     #[test]
