@@ -9,7 +9,10 @@
   total and count and the row loop reads them in O(1) — the same pattern `lag` and
   `running_total` already use. Non-numeric and empty cells are skipped, like a spreadsheet.
   Measured on 1 M rows: `edit export` 0.85 s without the formula, 1.33 s with it, so the
-  pre-pass costs about 0.48 s.
+  pre-pass costs about 0.48 s. With the columnar sidecar (`csvx cache FILE --build`,
+  0.99 s for this 33 MB file) the pre-pass reads parquet through DuckDB and drops to
+  **0.30 s** (export 1.15 s); DuckDB's start-up is most of what is left, so the 50 ms
+  target is still open.
 
 ### Known limits
 

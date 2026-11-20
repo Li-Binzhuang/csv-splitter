@@ -25,6 +25,23 @@ pub fn column_totals(
     quotes: QuoteStyle,
     columns: &[String],
 ) -> io::Result<HashMap<String, (f64, u64)>> {
+    // With the columnar sidecar present, DuckDB reads one column instead of parsing
+    // every field of every row. The cache is a cache: a stale or unreadable one falls
+    // back to the CSV scan below rather than failing the export.
+    #[cfg(feature = "sql")]
+    {
+        let cache = crate::sql_cache::sidecar(path);
+        if crate::sql_cache::is_fresh(path) {
+            if let Ok(entries) = crate::sql::parquet_totals(&cache, columns) {
+                let totals = entries
+                    .into_iter()
+                    .map(|(name, sum, count)| (name, (sum, count)))
+                    .collect();
+                return Ok(totals);
+            }
+        }
+    }
+
     let mut totals: HashMap<String, (f64, u64)> =
         columns.iter().map(|c| (c.clone(), (0.0, 0))).collect();
     let reader = encoding::open_decoded(path)?;

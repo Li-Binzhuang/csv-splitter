@@ -668,6 +668,44 @@ fn describe_query(conn: &Connection, sql: &str) -> io::Result<Vec<String>> {
 }
 
 /// Execute `sql` and pull every row into memory (the caller sets the cap).
+/// Numeric `(sum, count)` per column straight from the parquet sidecar.
+///
+/// This is the fast path behind whole-column formula aggregates: a columnar file lets
+/// DuckDB touch one column instead of parsing every field of every row. The SQL is built
+/// here, never accepted from a caller, so it may read the sidecar the CSV reader would
+/// not be allowed to name.
+pub fn parquet_totals(
+    sidecar: &std::path::Path,
+    columns: &[String],
+) -> io::Result<Vec<(String, f64, u64)>> {
+    let conn = open_limited()?;
+    let mut exprs = Vec::with_capacity(columns.len() * 2);
+    for column in columns {
+        let ident = format!("\"{}\"", column.replace('"', "\"\""));
+        exprs.push(format!("sum(try_cast({ident} AS DOUBLE))"));
+        exprs.push(format!("count(try_cast({ident} AS DOUBLE))"));
+    }
+    let path = sidecar.to_string_lossy().replace('\'', "''");
+    let sql = format!("SELECT {} FROM read_parquet('{}')", exprs.join(", "), path);
+    let rows = collect_rows(&conn, &sql, columns.len() * 2)?;
+    let mut out = Vec::with_capacity(columns.len());
+    if let Some(row) = rows.first() {
+        for (index, column) in columns.iter().enumerate() {
+            let sum = row
+                .get(index * 2)
+                .and_then(|text| text.trim().parse::<f64>().ok())
+                .filter(|value| value.is_finite())
+                .unwrap_or(0.0);
+            let count = row
+                .get(index * 2 + 1)
+                .and_then(|text| text.trim().parse::<u64>().ok())
+                .unwrap_or(0);
+            out.push((column.clone(), sum, count));
+        }
+    }
+    Ok(out)
+}
+
 fn collect_rows(conn: &Connection, sql: &str, width: usize) -> io::Result<Vec<Vec<String>>> {
     let mut stmt = conn.prepare(sql).map_err(to_io)?;
     let mut result = stmt.query([]).map_err(to_io)?;
