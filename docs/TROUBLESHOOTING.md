@@ -7,7 +7,7 @@
 
 ```
 ✗ filter: column 'amounts' not found; did you mean 'amount'
-  hint: run `csv-splitter analyze FILE` to see the exact column names
+  hint: run `csvx analyze FILE` to see the exact column names
 ```
 
 列名要**完全一致**（大小写、空格、全半角）。有编辑时，可用列是布局后的列名——
@@ -28,7 +28,7 @@ hint: ref() takes a file name in the same directory, e.g. ref("customers.csv", "
 
 ```
 ✗ preview: No such file or directory (os error 2)
-  hint: check the path; `csv-splitter files --root DIR` lists what is readable
+  hint: check the path; `csvx files --root DIR` lists what is readable
 ```
 
 `serve` 的四种路径错误各不相同，因为它们是四种不同的错：
@@ -44,7 +44,7 @@ hint: ref() takes a file name in the same directory, e.g. ref("customers.csv", "
 
 ```
 ✗ index: utf16.csv is utf-16le; the row index works on byte offsets — run `convert` to make it UTF-8 first
-  hint: convert it first: csv-splitter convert FILE -o utf8.csv
+  hint: convert it first: csvx convert FILE -o utf8.csv
 ✓ 0 data rows indexed …
 ```
 
@@ -65,7 +65,7 @@ note: this file looks like it escapes quotes with a backslash (backslash); if fi
 ## 看不到自己的编辑 / my edits are missing
 
 ```
-note: 1 pending edit(s) in t.csv.journal are not applied by this command; run `csv-splitter edit export t.csv` to materialise them
+note: 1 pending edit(s) in t.csv.journal are not applied by this command; run `csvx edit export t.csv` to materialise them
 ```
 
 两类命令读**文件**而不是表：`analyze` / `stats` / `search` / `sort` / `dedupe` / `concat` /

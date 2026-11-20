@@ -62,7 +62,7 @@ fn start(root: &std::path::Path) -> Server {
     // Bind an ephemeral port and read it from the banner. A pid-derived port
     // collided whenever two test binaries ran at once, and `cargo test` runs them
     // in parallel.
-    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_csvx"))
         .args(["serve", "--root", root.to_str().unwrap()])
         .args(["--addr", "127.0.0.1:0"])
         .stdout(std::process::Stdio::piped())
@@ -75,7 +75,7 @@ fn start(root: &std::path::Path) -> Server {
     std::io::BufReader::new(stdout)
         .read_line(&mut line)
         .unwrap();
-    // "csv-splitter API on http://127.0.0.1:PORT  (root: ...)"
+    // "csvx API on http://127.0.0.1:PORT  (root: ...)"
     let addr = line
         .split("http://")
         .nth(1)

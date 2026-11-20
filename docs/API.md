@@ -1,6 +1,6 @@
 # HTTP API
 
-`csv-splitter serve --root DIR [--addr 127.0.0.1:8787]`
+`csvx serve --root DIR [--addr 127.0.0.1:8787]`
 
 服务绑定回环地址，只读 `--root` 下的文件（路径经过 `canonicalize`，越界直接拒绝），
 开启 CORS。除 `POST` 之外全是 `GET`；`GET /` 返回内置浏览页面。
@@ -363,11 +363,11 @@ otherwise), and `frozenColumns` is narrowed the same way.
 
 ## 并发写入 / Concurrent writers
 
-`POST /edit` and `csv-splitter edit` take a lock on `<file>.journal` around
+`POST /edit` and `csvx edit` take a lock on `<file>.journal` around
 read-modify-write, so two clients appending at the same moment both survive:
 
 ```bash
-for i in $(seq 1 10); do csv-splitter edit set t.csv --row $i --col city --value W$i & done; wait
+for i in $(seq 1 10); do csvx edit set t.csv --row $i --col city --value W$i & done; wait
 # journal now holds 10 operations, one per writer
 ```
 
@@ -608,6 +608,6 @@ warns about) — a UI can show "the history is incomplete" instead of pretending
 
 请求里出现 `/spec` 未声明的参数会返回 **400**：`parameter` 指明是哪一个，`route` 指明哪个路由，`hint` 指向 `/spec`。
 
-**默认开启**；需要发送额外参数（缓存穿透、代理注入）的客户端可以设置 `CSV_SPLITTER_STRICT_PARAMS=0` 关闭。
+**默认开启**；需要发送额外参数（缓存穿透、代理注入）的客户端可以设置 `CSVX_STRICT_PARAMS=0` 关闭。
 
 这条规则的价值来自它的反作用：默认开启后测试暴露了 `count`、`from-row`、`out`、`splits`、`ext`、`root`、`desc`、`cols`、`key`、`whereAny` 等十几个「辅助函数按变量名读取、表里没写」的参数，现在都补进了 `/spec`。

@@ -9,9 +9,9 @@
 |---|---|
 | 工作区只有两个 crate | `Cargo.toml`：`members = ["crates/core", "crates/cli"]` |
 | GUI 目录与依赖已删 | `git log --diff-filter=D -- crates/gui`；`eframe`/`egui`/`rfd` 不在依赖里 |
-| CI 与发布构建 CLI | `.github/workflows/ci.yml`、`release.yml` 构建 `csv-splitter` |
+| CI 与发布构建 CLI | `.github/workflows/ci.yml`、`release.yml` 构建 `csvx` |
 
-验证：`cargo metadata --no-deps | grep csv-splitter-` 输出只有 core 和 cli。
+验证：`cargo metadata --no-deps | grep csvx-` 输出只有 core 和 cli。
 
 ## 2. 列元数据与存在性
 
@@ -90,7 +90,7 @@
 | macOS arm64 | 本机 | `release-check.sh` 全绿，产物 64.1 MB / `tar.gz` 19.5 MB |
 | macOS x86_64 | 本机交叉编译 | `cargo build --release --target x86_64-apple-darwin` 成功（2m37s），产物 65.5 MB；**同一套 release-check 通过**（Rosetta 运行）|
 | Linux x86_64 | CI（`ubuntu-22.04`）| 每次 push 的 `CI` job 编译并测试 |
-| Windows x86_64 | **CI（windows-latest，MSVC）** | `Windows check` run 3（`1095f33`）**通过**：`cargo check -p csv-splitter-cli` 在真实 MSVC 工具链上编译含 DuckDB 的全部依赖。本机另用 mingw GCC 14 交叉编译出 PE32+ 可执行文件（91.7 MB）作为补充证据 |
+| Windows x86_64 | **CI（windows-latest，MSVC）** | `Windows check` run 3（`1095f33`）**通过**：`cargo check -p csvx-cli` 在真实 MSVC 工具链上编译含 DuckDB 的全部依赖。本机另用 mingw GCC 14 交叉编译出 PE32+ 可执行文件（91.7 MB）作为补充证据 |
 
 ## 发布与部署（goal：能发布 / 能部署 / 能跨平台）
 
@@ -100,14 +100,14 @@
 | Windows 编译 | Unix-only 代码（信号、symlink）已 `cfg(unix)` 隔离；本机用 mingw-w64 **GCC 14** 交叉编译通过（含 DuckDB）。CI 通道：`windows.yml` 在 push（`crates/**` 变更）用 windows-latest 的 MSVC 跑 `cargo check`。ubuntu+mingw 被否决：GCC 10 的 win32 线程模型缺 `std::mutex`，DuckDB 编译失败（有 annotation 为证）|
 | CI 无 GUI 依赖 | 两个工作流都不再安装 libgtk-3-dev / libxdo-dev / fonts-noto-cjk |
 | 缓存不撑爆配额 | 两个工作流都用滚动 key（`...-rolling-<run_id>`）|
-| 部署材料 | [`DEPLOY.md`](DEPLOY.md) + [`deploy/csv-splitter.service`](../deploy/csv-splitter.service) |
+| 部署材料 | [`DEPLOY.md`](DEPLOY.md) + [`deploy/csvx.service`](../deploy/csvx.service) |
 | 产物可运行 | `scripts/release-check.sh`：解压 → **校验和比对** → `demo` → `serve --check` → `/health` → `/spec` → `/rows` → SIGTERM，全过；`tar.gz` 19.5 MB |
 | 三条安装路径 | `scripts/install-check.sh`：源码构建 / `cargo install --path` / release 产物 各跑 `--version` + `demo` + `serve --check`，三条全绿 |
 | 发布分支逻辑 | `scripts/release-decision.sh --self-test`：tag push / dispatch+tag / dispatch 空跑 / 非 tag 拒绝 / 版本不一致拒绝，7 个用例；CI 与 regress 都跑 |
 | 部署前自检 | `serve --check`（根目录可读、端口可绑），systemd 用它做 `ExecStartPre`；`backend-smoke.sh` 也在起服务前跑一次 |
 | 文档输出逐字一致 | `serve_check_output_matches_deploy_doc`：DEPLOY 里引用的 `serve --check` 输出必须与真实输出同形（版本号除外）|
 | 排障表 | DEPLOY「出问题的时候」：7 个症状 → 原因 → 处理，含 `ready:false`、路径越界、冷档 1.4 s、504 |
-| 配置项 | `--root` / `--port` / `--addr`、`CSV_SPLITTER_QUERY_TIMEOUT_MS`，`/capabilities` 发布生效值 |
+| 配置项 | `--root` / `--port` / `--addr`、`CSVX_QUERY_TIMEOUT_MS`，`/capabilities` 发布生效值 |
 | 升级/回滚 | 换二进制即可；`.idx`/`.parquet` 可重建，只有 `.journal` 是数据 |
 | 边界写明 | 单机单用户、无鉴权、默认 loopback |
 
@@ -191,7 +191,7 @@
 ## 怎么复现
 
 ```bash
-cargo build --release -p csv-splitter-cli
+cargo build --release -p csvx-cli
 bash scripts/dev.sh gate            # 全量测试（含 core 的 sql 特性）
 bash scripts/smoke.sh               # CLI 主路径
 bash scripts/regress.sh             # 每条命令一次

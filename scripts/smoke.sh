@@ -21,15 +21,15 @@ if ! command -v cargo >/dev/null 2>&1; then
   done
 fi
 
-BIN="${CSV_SPLITTER_BIN:-}"
+BIN="${CSVX_BIN:-}"
 if [ -z "$BIN" ]; then
   # Absolute path: the script changes directory later, and a relative binary would
   # stop resolving the moment it does.
-  BIN="$(pwd)/target/debug/csv-splitter"
+  BIN="$(pwd)/target/debug/csvx"
 fi
 if [ ! -x "$BIN" ]; then
-  echo "building csv-splitter-cli"
-  cargo build -p csv-splitter-cli -q || exit 1
+  echo "building csvx-cli"
+  cargo build -p csvx-cli -q || exit 1
 fi
 
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/csvs_smoke.XXXXXX")"

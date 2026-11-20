@@ -13,10 +13,10 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 
 export PATH="$HOME/.cargo/bin:$PATH"
-BIN="$(pwd)/target/release/csv-splitter"
+BIN="$(pwd)/target/release/csvx"
 if [ ! -x "$BIN" ]; then
   echo "building release (one time)"
-  cargo build --release -p csv-splitter-cli -q || exit 1
+  cargo build --release -p csvx-cli -q || exit 1
 fi
 
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/csvs_bench.XXXXXX")"

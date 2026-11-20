@@ -1,6 +1,6 @@
 //! Column-set comparison: what a second file adds, loses, or moved.
 //!
-//! This lives in the engine because two entry points print it — `csv-splitter schema --diff`
+//! This lives in the engine because two entry points print it — `csvx schema --diff`
 //! and `GET /schema?diff=` — and two copies of "which column moved" eventually disagree
 //! about what "same" means. The JSON produced here is the same document both callers
 //! serve, so a client cannot tell which door it came through.

@@ -50,7 +50,7 @@ jobs:
 
       - name: Check the CLI
         run: |
-          cargo check -p csv-splitter-cli 2>&1 | Tee-Object -FilePath windows.log
+          cargo check -p csvx-cli 2>&1 | Tee-Object -FilePath windows.log
 
       - name: Report failure as annotations
         if: failure()

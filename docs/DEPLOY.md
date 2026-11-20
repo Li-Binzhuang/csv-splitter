@@ -7,9 +7,9 @@
 
 | 方式 | 命令 | 适用 |
 |---|---|---|
-| 发布产物 | 解压 `csv-splitter-<平台>.tar.gz`，里面就是单个二进制 | 不想装 Rust |
+| 发布产物 | 解压 `csvx-<平台>.tar.gz`，里面就是单个二进制 | 不想装 Rust |
 | `cargo install` | `cargo install --path crates/cli` | 本机已有 Rust |
-| 源码构建 | `cargo build --release -p csv-splitter-cli` | 要改代码 |
+| 源码构建 | `cargo build --release -p csvx-cli` | 要改代码 |
 
 **三种路径都有可执行的验证**，不是只写在文档里：
 
@@ -20,14 +20,14 @@ scripts/install-check.sh   # 三条路径各跑一遍：源码构建 / cargo ins
 ```
 
 
-发布产物按平台命名：`csv-splitter-linux-x86_64`、`csv-splitter-macos-arm64`、
-`csv-splitter-macos-x86_64`、`csv-splitter-windows-x86_64`（`.zip`），每个都带 `.sha256`。
+发布产物按平台命名：`csvx-linux-x86_64`、`csvx-macos-arm64`、
+`csvx-macos-x86_64`、`csvx-windows-x86_64`（`.zip`），每个都带 `.sha256`。
 
 解压后的最小验证：
 
 ```bash
-./csv-splitter --version
-./csv-splitter demo -o /tmp/x && ./csv-splitter preview /tmp/x/orders.csv --rows 3
+./csvx --version
+./csvx demo -o /tmp/x && ./csvx preview /tmp/x/orders.csv --rows 3
 ```
 
 
@@ -67,7 +67,7 @@ CI 每次 push 都跑这个自测。
 仓库里有两个脚本，让「用户拿到的东西」在本地就能验一遍：
 
 ```bash
-scripts/package.sh --build csv-splitter-linux-x86_64   # 打包 + sha256，产物在 dist/
+scripts/package.sh --build csvx-linux-x86_64   # 打包 + sha256，产物在 dist/
 scripts/release-check.sh                                # 打包后解压，跑三条最小验证
 ```
 
@@ -79,10 +79,10 @@ scripts/release-check.sh                                # 打包后解压，跑�
 
 ```
 == source build ==
-  ok   source         csv-splitter 3.30.0
+  ok   source         csvx 3.30.0
   ok   source         demo + serve --check
 == cargo install --path ==
-  ok   cargo-install  csv-splitter 3.30.0
+  ok   cargo-install  csvx 3.30.0
   ok   cargo-install  demo + serve --check
 == release artifact ==
   ok   checksum matches
@@ -101,8 +101,8 @@ scripts/release-check.sh                                # 打包后解压，跑�
 ## 起服务
 
 ```bash
-csv-splitter serve --root /srv/csv-splitter --port 8787
-# "csv-splitter API on http://127.0.0.1:8787  (root: /srv/csv-splitter)"
+csvx serve --root /srv/csvx --port 8787
+# "csvx API on http://127.0.0.1:8787  (root: /srv/csvx)"
 ```
 
 | 参数 | 默认 | 说明 |
@@ -114,14 +114,14 @@ csv-splitter serve --root /srv/csv-splitter --port 8787
 
 | 环境变量 | 默认 | 说明 |
 |---|---|---|
-| `CSV_SPLITTER_QUERY_TIMEOUT_MS` | 30000 | 单条 SQL / 过滤查询的时间预算；`/capabilities` 会发布生效值 |
+| `CSVX_QUERY_TIMEOUT_MS` | 30000 | 单条 SQL / 过滤查询的时间预算；`/capabilities` 会发布生效值 |
 
 部署前先自检（systemd 的 `ExecStartPre` 就是这么用的）：
 
 ```bash
-$ csv-splitter serve --check --root /srv/csv-splitter --port 8787
+$ csvx serve --check --root /srv/csvx --port 8787
   ok     version                3.29.0 (linux)
-  ok     root                   /srv/csv-splitter
+  ok     root                   /srv/csvx
   ok     root readable          the directory lists
   ok     bind                   127.0.0.1:8787
 == configuration ok ==
@@ -134,7 +134,7 @@ $ echo $?
 失败的样子（同样可以拿来对照）：
 
 ```bash
-$ csv-splitter serve --check --root /nope
+$ csvx serve --check --root /nope
   ok     version                3.33.0 (linux)
   FAIL   root                   /nope is not a readable directory
   FAIL   root readable          permission denied
@@ -155,13 +155,13 @@ curl -s 127.0.0.1:8787/metrics  # p50/p95、错误分布、任务
 
 ## systemd
 
-仓库里有 [`deploy/csv-splitter.service`](../deploy/csv-splitter.service)：
+仓库里有 [`deploy/csvx.service`](../deploy/csvx.service)：
 
 ```bash
-sudo cp deploy/csv-splitter.service /etc/systemd/system/
+sudo cp deploy/csvx.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now csv-splitter
-journalctl -u csv-splitter -f
+sudo systemctl enable --now csvx
+journalctl -u csvx -f
 ```
 
 - `SIGTERM` 是优雅停机：不再接新连接、在途请求收尾、在跑的 job 最多再等 5 秒，退出码 0
@@ -172,13 +172,13 @@ journalctl -u csv-splitter -f
 
 | 症状 | 原因 | 处理 |
 |---|---|---|
-| `systemctl start` 立刻失败 | `ExecStartPre` 的 `serve --check` 退出非 0 | `journalctl -u csv-splitter -n 20`，看是哪一项 FAIL |
+| `systemctl start` 立刻失败 | `ExecStartPre` 的 `serve --check` 退出非 0 | `journalctl -u csvx -n 20`，看是哪一项 FAIL |
 | `FAIL root` | `--root` 指向的目录不存在或不可读 | 修路径或用有权限的用户 |
 | `FAIL bind: Address already in use` | 端口被占 | 换 `--port`，或先 `ss -lntp | grep 8787` |
 | 起来了但 `/health` 的 `ready:false` | 根目录在运行中被删/权限变了 | 修好目录即可，无需重启（探针每次现查）|
 | 前端请求 400 `path is outside the served directory` | 用了绝对路径或 `../` | 传**相对**路径，见 `INTEGRATION.md` |
 | 大文件过滤首屏 1.4 s 左右 | 没建列式缓存（冷档）| `POST /parquet` 或 `cache --build`，见 `/sheet` 的 `cost.tier` |
-| 请求 504 | 查询超过 `CSV_SPLITTER_QUERY_TIMEOUT_MS` | 收窄条件，或调大预算后重启 |
+| 请求 504 | 查询超过 `CSVX_QUERY_TIMEOUT_MS` | 收窄条件，或调大预算后重启 |
 
 错误响应永远是三字段（`error` / `parameter` / `hint`），`parameter` 指明该改哪个参数——
 `API.md` 的状态码契约就是按这个排障的。
@@ -227,14 +227,14 @@ rustup target add x86_64-pc-windows-gnu
 CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=x86_64-w64-mingw32-gcc \
 CC_x86_64_pc_windows_gnu=x86_64-w64-mingw32-gcc \
 CXX_x86_64_pc_windows_gnu=x86_64-w64-mingw32-g++ \
-  cargo build --release --target x86_64-pc-windows-gnu -p csv-splitter-cli
+  cargo build --release --target x86_64-pc-windows-gnu -p csvx-cli
 ```
 
 这证明**能编译**（`.exe` 会产出），但不证明**能运行**——运行证据在 Windows 机器上，
 由 `windows-check` 或 release matrix 提供。
 
 CI 里只有一个 Windows 通道：`.github/workflows/windows.yml`，在 **windows-latest 上用
-MSVC** 跑 `cargo check -p csv-splitter-cli`，只在 `crates/**` 或依赖清单变化时触发。
+MSVC** 跑 `cargo check -p csvx-cli`，只在 `crates/**` 或依赖清单变化时触发。
 
 曾经用 ubuntu + mingw-w64 做这件事，**失败了**，原因值得记下来：那个 mingw 是 GCC 10 的
 win32 线程模型，它的 libstdc++ **没有 `std::mutex` / `std::shared_mutex`**，而 DuckDB 的头

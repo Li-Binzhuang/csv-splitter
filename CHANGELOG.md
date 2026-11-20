@@ -1,5 +1,23 @@
 # Changelog
 
+## [4.0.0] — 2026-11-20
+
+### Changed
+
+- **The project is now `csvx`.** One binary, one name: `csvx`. Everything that said
+  `csv-splitter` says `csvx` — crate names (`csvx-core` / `csvx-cli`), the binary, release
+  artifacts, the systemd unit (`deploy/csvx.service`), the demo directory (`csvx-demo/`),
+  and every documented command. There is no compatibility alias: a rename that keeps two
+  names never finishes.
+- **Environment variables are `CSVX_*`**: `CSVX_STRICT_PARAMS`, `CSVX_QUERY_TIMEOUT_MS`,
+  `CSVX_SQL_MEMORY_MB`, `CSVX_SQL_THREADS`, `CSVX_SQL_TEMP_DIR`. Scripts and tests moved
+  with them; the strict-params guard the docs publish still holds under the new prefix.
+- **README leads with the positioning**: *High-performance CSV editor in Rust*, a Rust badge,
+  and a download table rebuilt around the new artifact names.
+
+Major version because the breaking surface is the name itself: a shell history, cron job or
+systemd unit that calls `csv-splitter` needs one edit. No behaviour changed.
+
 ## [3.62.0] — 2026-11-20
 
 ### Added
@@ -462,7 +480,7 @@
 
 -  reports strictParams. Strict mode changes how a request with extra parameters
   answers, and a client discovering the backend could not see which mode it was in. The test
-  checks both states, default and CSV_SPLITTER_STRICT_PARAMS=0.
+  checks both states, default and CSVX_STRICT_PARAMS=0.
 
 ## [3.56.9] — 2026-11-19
 
@@ -797,7 +815,7 @@
 
 - **Strict parameter checking is now on by default.** An undeclared parameter answers 400 with
   `parameter`, `route` and a hint to `/spec`, instead of being silently ignored;
-  `CSV_SPLITTER_STRICT_PARAMS=0` turns it off for clients that add their own extras.
+  `CSVX_STRICT_PARAMS=0` turns it off for clients that add their own extras.
 
   To get here the declaration table had to be completed. Turning the check on in the test suite
   flushed out a dozen parameters that are read through helpers by variable name — `count`,
@@ -809,7 +827,7 @@
 
 ### Added
 
-- **Opt-in strict parameter checking (`CSV_SPLITTER_STRICT_PARAMS=1`).** With it on, a request
+- **Opt-in strict parameter checking (`CSVX_STRICT_PARAMS=1`).** With it on, a request
   parameter that `/spec` does not declare is refused with 400 naming it, instead of being
   silently ignored — which is how `has` and `sample` stayed invisible for so long.
 
@@ -1212,8 +1230,8 @@
   through one `open_limited()` that pins `memory_limit` (default 512 MB), `threads`
   (default: available parallelism, capped at 8) and `temp_directory`, so a large sort or
   hash spills to disk instead of taking the machine.
-  - Overridable when the machine can afford it: `CSV_SPLITTER_SQL_MEMORY_MB`,
-    `CSV_SPLITTER_SQL_THREADS`, `CSV_SPLITTER_SQL_TEMP_DIR`.
+  - Overridable when the machine can afford it: `CSVX_SQL_MEMORY_MB`,
+    `CSVX_SQL_THREADS`, `CSVX_SQL_TEMP_DIR`.
   - A test reads the settings back from the connection, so the limits are proved rather
     than documented.
 
@@ -1378,7 +1396,7 @@
 
 - **`POST /convert`** — rewrite a file in another encoding, as a job: `from` defaults to
   auto-detection, `to` is `utf-8` or `utf-8-bom`. Same core `encoding::transcode` as
-  `csv-splitter convert`, so a GBK export in the served directory can become UTF-8 text a
+  `csvx convert`, so a GBK export in the served directory can become UTF-8 text a
   browser can parse without leaving the API. An unknown encoding is a 400 naming `from`.
 
 ### Tooling
@@ -1492,7 +1510,7 @@
   Ubuntu 22.04 ships mingw-w64 **GCC 10** with the *win32* thread model, whose libstdc++ has
   no `std::mutex`/`std::shared_mutex`, and DuckDB's headers use both. A cross-check that
   cannot compile the engine is not a cross-check.
-  - `.github/workflows/windows.yml` now runs `cargo check -p csv-splitter-cli` on
+  - `.github/workflows/windows.yml` now runs `cargo check -p csvx-cli` on
     **windows-latest with MSVC** — the target the release actually ships — still filtered to
     `crates/**` and the dependency manifests, and still annotating its own failures.
   - The local mingw build that succeeded used **GCC 14** (Homebrew), which has the posix
@@ -1510,7 +1528,7 @@
 ### CI
 
 - **A push-time Windows check that only runs when it can matter.** `.github/workflows/windows.yml`
-  cross-checks `cargo check -p csv-splitter-cli --target x86_64-pc-windows-gnu` on
+  cross-checks `cargo check -p csvx-cli --target x86_64-pc-windows-gnu` on
   ubuntu with mingw-w64, filtered by `paths: crates/**, Cargo.toml, Cargo.lock` — because
   that costs about five minutes of DuckDB C++ compilation for the Windows target, and a
   documentation commit should not pay it. The MSVC check on windows-latest stays for pull
@@ -1609,7 +1627,7 @@
   the failing check, so a systemd `ExecStartPre` or a deploy script can gate on it.
   A non-loopback address prints a warning rather than failing, because that is a
   deliberate choice this build has no authentication for.
-- `deploy/csv-splitter.service` uses it as `ExecStartPre`, so a bad root or a taken port
+- `deploy/csvx.service` uses it as `ExecStartPre`, so a bad root or a taken port
   fails the unit before it ever starts serving.
 - `scripts/release-check.sh` now **verifies** the checksum instead of checking that a
   `.sha256` file exists, and runs `serve --check` from inside the unpacked artifact —
@@ -1646,7 +1664,7 @@
 - **Windows is a plausible build again.** Signal handling is `cfg(unix)` with a no-op
   elsewhere (Windows has no SIGTERM to catch; Ctrl+C is what a console user expects), and
   the two unix-only tests (symlink escape, SIGTERM) are `cfg(unix)`. A `windows-check` job
-  runs `cargo check -p csv-splitter-cli` on windows-latest for pull requests and manual
+  runs `cargo check -p csvx-cli` on windows-latest for pull requests and manual
   dispatch — not on every push, because MSVC plus bundled DuckDB costs about ten minutes.
   - An ubuntu cross-check with `--target x86_64-pc-windows-msvc` was the first idea and
     does not work: bzip2/zstd/lzma/duckdb have native build scripts that need a platform
@@ -1654,7 +1672,7 @@
 
 ### Added
 
-- **`docs/DEPLOY.md` and `deploy/csv-splitter.service`**: installation by release
+- **`docs/DEPLOY.md` and `deploy/csvx.service`**: installation by release
   artifact, `cargo install`, or source; the `serve` knobs and the one environment
   variable; a hardened systemd unit with `KillSignal=SIGTERM` and `TimeoutStopSec=15`;
   which files are data (`.journal`) and which are rebuildable (`.idx`, `.parquet`);
@@ -1701,7 +1719,7 @@
 
 ### Added
 
-- **`CSV_SPLITTER_QUERY_TIMEOUT_MS`** tunes the query budget (default 30 s), and
+- **`CSVX_QUERY_TIMEOUT_MS`** tunes the query budget (default 30 s), and
   `/capabilities` and `/spec` publish the effective `querySeconds` instead of a
   hardcoded 30. It is also how the timeout path is tested without waiting half a minute.
 
@@ -1879,7 +1897,7 @@
   `0.34 s` for an ordered page, against `15.5 s` before this phase started.
   `POST /parquet?path=…` builds `t.csv.parquet` as a job (11 s for 2.5 GB, 427 MB with
   zstd), `/sheet` reports `parquet: {fresh, bytes}`, `/capabilities` advertises
-  `caches: ["parquet"]`, and `csv-splitter cache FILE --build/--drop/--status` does the
+  `caches: ["parquet"]`, and `csvx cache FILE --build/--drop/--status` does the
   same from the CLI.
   - Queries switch to the parquet view automatically once it exists, and go back to the
     CSV reader the moment the sheet changes — a cache that outlives its source would
@@ -2391,14 +2409,14 @@ matters; a front-end is someone else's job.
 - **The GUI crate is gone** (`crates/gui`, egui/eframe/rfd, ~950 lines and every Linux
   font/GTK dependency). Keeping a frozen front-end compiling for its own sake was work
   that produced nothing the user asked for. The workspace is now `core` (engine) and
-  `cli` (commands + HTTP backend). CI and the release workflow build `csv-splitter`.
+  `cli` (commands + HTTP backend). CI and the release workflow build `csvx`.
 
 ### Added — the three questions a front-end asks
 
 - **`sheet::schema()` and `sheet::column_index()`** in the library: the full column list
   with 1-based index, sampled kind (`number`/`date`/`text`/`empty`/`mixed`) and blank
   count, plus "does this column exist, and where".
-- **`csv-splitter schema FILE [--has COL] [--json] [--sample N]`**: the same two answers
+- **`csvx schema FILE [--has COL] [--json] [--sample N]`**: the same two answers
   on the command line. `--has` exits 0 when the column exists and 1 when it does not,
   so a script can branch on it.
 - **`GET /columns`**: the column list, never truncated (782 columns return 782 entries),
@@ -3071,7 +3089,7 @@ no equivalent care.
 ### Added
 
 - **A notice before building an index** on a file over 50 MB:
-  `note: building a row index for big.csv (61.9 MB) — one-time; run `csv-splitter index`
+  `note: building a row index for big.csv (61.9 MB) — one-time; run `csvx index`
   earlier to avoid the wait`. A silent wait is the worst outcome — the user presses
   Enter, nothing happens, and assumes it hung.
 
@@ -3801,7 +3819,7 @@ first gap on that list that has actually been closed rather than reworded.
     directly reported 577 rows out of 20,120, because the counter was reading
     binary noise. Members are now decompressed first.
 - **Documentation drift tests** (`crates/cli/tests/docs.rs`): every
-  `csv-splitter <command>` in a code block must be a real sub-command, every
+  `csvx <command>` in a code block must be a real sub-command, every
   `GET/POST /x` must be advertised by the router, and the documented default port
   must actually serve the viewer.
 
@@ -3858,7 +3876,7 @@ first gap on that list that has actually been closed rather than reworded.
 
 ### Added
 
-- **`csv-splitter demo`**: writes a realistic sample file (20,120 rows, 918 KB)
+- **`csvx demo`**: writes a realistic sample file (20,120 rows, 918 KB)
   with the defects real exports have — duplicate rows, empty cells, a quoted
   field containing a newline, and rows with an extra unquoted comma. Deterministic,
   so the documentation can quote its output and keep it true.
@@ -4291,7 +4309,7 @@ offset per 1000 rows.
 
 ### Added
 
-- **`csv-splitter serve`**: a dependency-free local HTTP API for a separated
+- **`csvx serve`**: a dependency-free local HTTP API for a separated
   front-end. Read-only endpoints `/health`, `/meta`, `/rows`, `/stats`, backed by
   the sparse index so a browser can request rows 4,300,000..4,300,040 of a 10 GB
   file in ~1 ms.
@@ -4334,7 +4352,7 @@ offset per 1000 rows.
 ### Added
 
 - **Sparse row index** (`crates/core/src/index.rs`): a sidecar `.idx` storing the
-  byte offset of every 1000th record, plus `csv-splitter index` to build it.
+  byte offset of every 1000th record, plus `csvx index` to build it.
   `preview --start-row N` now seeks through the index instead of scanning, so
   jumping to row 1,500,000 of an 87 MB file takes ~200 µs and ~5 MB of RAM.
 - Index format is versioned (`CSI1`), written to a temp file and renamed, and
@@ -4393,7 +4411,7 @@ offset per 1000 rows.
 
 ### Added
 
-- **CLI** (`crates/cli`, binary `csv-splitter`): `split`, `merge`, `preview`,
+- **CLI** (`crates/cli`, binary `csvx`): `split`, `merge`, `preview`,
   `stats`, `extract`, `verify`. Same core pipeline as the desktop app.
 - **`merge`**: re-assemble chunks from tar / tar.gz / tar.zst / tar.bz2 / tar.xz /
   zip (or a directory) into a single CSV, keeping only the first header.

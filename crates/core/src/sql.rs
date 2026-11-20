@@ -62,17 +62,17 @@ const FORBIDDEN_PREFIXES: &[&str] = &["read_csv", "read_parquet", "read_json", "
 /// DuckDB takes up to 80% of RAM when it needs to sort or hash, and uses every core. On a
 /// machine also running other things that is a surprise, so both are pinned:
 ///
-/// * `CSV_SPLITTER_SQL_MEMORY_MB` (default 512) — past it the engine spills to disk
+/// * `CSVX_SQL_MEMORY_MB` (default 512) — past it the engine spills to disk
 ///   instead of refusing to run;
-/// * `CSV_SPLITTER_SQL_THREADS` (default: available parallelism, capped at 8);
-/// * `CSV_SPLITTER_SQL_TEMP_DIR` (default: the system temp directory), where it spills.
+/// * `CSVX_SQL_THREADS` (default: available parallelism, capped at 8);
+/// * `CSVX_SQL_TEMP_DIR` (default: the system temp directory), where it spills.
 fn open_limited() -> io::Result<Connection> {
-    let memory_mb: u64 = std::env::var("CSV_SPLITTER_SQL_MEMORY_MB")
+    let memory_mb: u64 = std::env::var("CSVX_SQL_MEMORY_MB")
         .ok()
         .and_then(|v| v.parse().ok())
         .filter(|v: &u64| *v >= 64)
         .unwrap_or(512);
-    let threads: usize = std::env::var("CSV_SPLITTER_SQL_THREADS")
+    let threads: usize = std::env::var("CSVX_SQL_THREADS")
         .ok()
         .and_then(|v| v.parse().ok())
         .filter(|v: &usize| *v >= 1)
@@ -81,7 +81,7 @@ fn open_limited() -> io::Result<Connection> {
                 .map_or(4, |n| n.get())
                 .min(8)
         });
-    let temp = std::env::var("CSV_SPLITTER_SQL_TEMP_DIR")
+    let temp = std::env::var("CSVX_SQL_TEMP_DIR")
         .unwrap_or_else(|_| std::env::temp_dir().to_string_lossy().to_string());
 
     let conn = Connection::open_in_memory().map_err(to_io)?;

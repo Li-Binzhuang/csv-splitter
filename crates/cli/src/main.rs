@@ -1,22 +1,22 @@
-//! Headless CLI for csv-splitter.
+//! Headless CLI for csvx.
 //!
 //! The desktop app is great for one-off jobs, but servers and scripts need a
 //! binary that can be piped into cron/Makefile/CI. Every subcommand here shares
 //! the exact same core pipeline as the GUI, so behaviour cannot drift.
 
-use csv_splitter_core::csv_reader::{detect_delimiter, parse_csv_record, read_headers};
-use csv_splitter_core::decompress::decompress_file;
-use csv_splitter_core::encoding::{self, parse_name, TextEncoding};
-use csv_splitter_core::filter::{self, scan as filter_scan, FilterSpec};
-use csv_splitter_core::index::{SparseIndex, DEFAULT_INTERVAL};
-use csv_splitter_core::merge::merge_archive_expecting;
-use csv_splitter_core::partition::{run_partition, PartitionConfig};
+use csvx_core::csv_reader::{detect_delimiter, parse_csv_record, read_headers};
+use csvx_core::decompress::decompress_file;
+use csvx_core::encoding::{self, parse_name, TextEncoding};
+use csvx_core::filter::{self, scan as filter_scan, FilterSpec};
+use csvx_core::index::{SparseIndex, DEFAULT_INTERVAL};
+use csvx_core::merge::merge_archive_expecting;
+use csvx_core::partition::{run_partition, PartitionConfig};
 
-use csv_splitter_core::search::SearchSpec;
-use csv_splitter_core::sort::SortColumn;
-use csv_splitter_core::splitter::run_split_threads;
-use csv_splitter_core::sql::{self, DEFAULT_LIMIT};
-use csv_splitter_core::*;
+use csvx_core::search::SearchSpec;
+use csvx_core::sort::SortColumn;
+use csvx_core::splitter::run_split_threads;
+use csvx_core::sql::{self, DEFAULT_LIMIT};
+use csvx_core::*;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -72,8 +72,8 @@ fn main() -> ExitCode {
             // The engine question comes up the moment `--engine sql` answers "this build has
             // no sql feature"; `--version` should answer it before the error does.
             println!(
-                "csv-splitter {VERSION} (DuckDB: {})",
-                if csv_splitter_core::engine::sql_available() {
+                "csvx {VERSION} (DuckDB: {})",
+                if csvx_core::engine::sql_available() {
                     "compiled in"
                 } else {
                     "not compiled"
@@ -586,20 +586,20 @@ fn print_command_help(command: &str) {
         print_help();
         return;
     };
-    println!("csv-splitter {VERSION} — {command}\n");
+    println!("csvx {VERSION} — {command}\n");
     for (flag, description) in options.iter() {
         println!("  {flag:20} {description}");
     }
     println!("\n  --help               Show help and exit");
-    println!("\nRun `csv-splitter --help` for the list of commands.");
+    println!("\nRun `csvx --help` for the list of commands.");
 }
 
 fn print_help() {
     println!(
-        r#"csv-splitter {VERSION} — split / merge / inspect large CSV files
+        r#"csvx {VERSION} — split / merge / inspect large CSV files
 
 USAGE
-  csv-splitter <command> [options]
+  csvx <command> [options]
 
 WHAT DO YOU WANT TO DO?
   open a huge file without loading it      preview, index, cache
@@ -780,16 +780,16 @@ PREVIEW OPTIONS
                           the index is loaded from <input>.idx or built once
 
 NEW HERE? / 刚上手？
-  csv-splitter demo             Creates ./csv-splitter-demo/orders.csv to play with
-  csv-splitter preview csv-splitter-demo/orders.csv
+  csvx demo             Creates ./csvx-demo/orders.csv to play with
+  csvx preview csvx-demo/orders.csv
 
 EXAMPLES
-  csv-splitter split big.csv -n 8 -f zst
-  csv-splitter split huge.csv --by-size 100MB -f zip
-  csv-splitter split orders.csv --by-column city -f zst
-  csv-splitter split big.csv --columns id,phone,score -n 4 -f none -o keep.tar
-  csv-splitter merge big_split.tar -o restored.csv
-  csv-splitter verify big.csv --splits 6
+  csvx split big.csv -n 8 -f zst
+  csvx split huge.csv --by-size 100MB -f zip
+  csvx split orders.csv --by-column city -f zst
+  csvx split big.csv --columns id,phone,score -n 4 -f none -o keep.tar
+  csvx merge big_split.tar -o restored.csv
+  csvx verify big.csv --splits 6
 "#
     );
 }
@@ -1028,13 +1028,13 @@ fn fail_with_hint(command: &str, reason: impl std::fmt::Display, hint: &str) -> 
 fn hint_for(error: &str) -> Option<&'static str> {
     let lower = error.to_ascii_lowercase();
     if lower.contains("no such file or directory") {
-        Some("check the path; `csv-splitter files --root DIR` lists what is readable")
+        Some("check the path; `csvx files --root DIR` lists what is readable")
     } else if lower.contains("permission denied") {
         Some("the file or its directory is not readable by this user")
     } else if lower.contains("utf-16") {
-        Some("convert it first: csv-splitter convert FILE -o utf8.csv")
+        Some("convert it first: csvx convert FILE -o utf8.csv")
     } else if lower.contains("not found") && lower.contains("column") {
-        Some("run `csv-splitter analyze FILE` to see the exact column names")
+        Some("run `csvx analyze FILE` to see the exact column names")
     } else if lower.contains("more than") && lower.contains("groups") {
         Some("group by a lower-cardinality column, or raise --max-groups")
     } else if lower.contains("distinct rows") {
@@ -1058,11 +1058,11 @@ fn report_failure(command: &str, reason: impl std::fmt::Display) -> i32 {
 fn self_check(
     result: &Path,
     delimiter: Delimiter,
-    expectation: csv_splitter_core::check::Expectation,
+    expectation: csvx_core::check::Expectation,
     quiet: bool,
 ) -> bool {
     let (tx, _rx) = mpsc::channel();
-    match csv_splitter_core::check::check(result, delimiter, &expectation, &tx) {
+    match csvx_core::check::check(result, delimiter, &expectation, &tx) {
         Ok(report) if report.ok() => {
             if !quiet {
                 println!(
@@ -1481,14 +1481,14 @@ fn cmd_preview(args: &[String]) -> i32 {
         return preview_from_index(&input, rows, start_row, override_delim, index_path);
     }
 
-    let quotes = match csv_splitter_core::csv_reader::QuoteStyle::parse(&quotes_text) {
+    let quotes = match csvx_core::csv_reader::QuoteStyle::parse(&quotes_text) {
         Ok(q) => q,
         Err(e) => {
             eprintln!("error: {e}");
             return 2;
         }
     };
-    match csv_splitter_core::preview::load_preview_with(&input, rows, override_delim, quotes) {
+    match csvx_core::preview::load_preview_with(&input, rows, override_delim, quotes) {
         Ok(preview) => {
             println!(
                 "{} — {:.1} MB, ~{} rows, delimiter {:?}",
@@ -1599,10 +1599,10 @@ fn cmd_cache(args: &[String]) -> i32 {
         eprintln!("error: cache needs an input file");
         return 2;
     };
-    let sidecar = csv_splitter_core::sql_cache::sidecar(&path);
-    let fresh = csv_splitter_core::sql_cache::is_fresh(&path);
+    let sidecar = csvx_core::sql_cache::sidecar(&path);
+    let fresh = csvx_core::sql_cache::is_fresh(&path);
     if drop_it {
-        match csv_splitter_core::sql_cache::drop_cache(&path) {
+        match csvx_core::sql_cache::drop_cache(&path) {
             Ok(true) => {
                 println!("removed {}", sidecar.display());
                 return 0;
@@ -1618,10 +1618,10 @@ fn cmd_cache(args: &[String]) -> i32 {
         }
     }
     if build {
-        let options = csv_splitter_core::sheet::ReadOptions::default();
-        let columns = match csv_splitter_core::sheet::Sheet::open(
+        let options = csvx_core::sheet::ReadOptions::default();
+        let columns = match csvx_core::sheet::Sheet::open(
             &path,
-            csv_splitter_core::sheet::ReadOptions::default(),
+            csvx_core::sheet::ReadOptions::default(),
         ) {
             Ok(sheet) => match sheet.schema(64) {
                 Ok(columns) => columns,
@@ -1635,11 +1635,11 @@ fn cmd_cache(args: &[String]) -> i32 {
                 return 1;
             }
         };
-        match csv_splitter_core::sql_cache::build(
+        match csvx_core::sql_cache::build(
             &path,
             options.delimiter,
             &columns,
-            csv_splitter_core::sql::DEFAULT_TIMEOUT_MS * 20,
+            csvx_core::sql::DEFAULT_TIMEOUT_MS * 20,
         ) {
             Ok(out) => {
                 let bytes = std::fs::metadata(&out).map(|m| m.len()).unwrap_or(0);
@@ -2085,9 +2085,9 @@ fn cmd_view(args: &[String]) -> i32 {
     warn_quote_style(&input);
     // No `warn_pending_edits` here: unlike the read-only commands, `view` applies them.
 
-    let sidecar = csv_splitter_core::workbook::Journal::sidecar(&input);
+    let sidecar = csvx_core::workbook::Journal::sidecar(&input);
     warn_journal_damage(&input);
-    let journal = match csv_splitter_core::workbook::Journal::load(&sidecar) {
+    let journal = match csvx_core::workbook::Journal::load(&sidecar) {
         Ok(j) => j,
         Err(e) => return report_failure("view", format!("cannot read the journal: {e}")),
     };
@@ -2098,17 +2098,17 @@ fn cmd_view(args: &[String]) -> i32 {
     let compiled = match &where_expr {
         None => None,
         Some(expr) => {
-            let spec = match csv_splitter_core::filter::FilterSpec::parse(expr) {
+            let spec = match csvx_core::filter::FilterSpec::parse(expr) {
                 Ok(s) => s,
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
                 }
             };
-            let set = csv_splitter_core::filter::FilterSet::single(spec);
-            let columns = match csv_splitter_core::workbook::resolve_columns(
+            let set = csvx_core::filter::FilterSet::single(spec);
+            let columns = match csvx_core::workbook::resolve_columns(
                 &ops,
-                &match csv_splitter_core::workbook::base_header(&input, delimiter) {
+                &match csvx_core::workbook::base_header(&input, delimiter) {
                     Ok(c) => c,
                     Err(e) => return report_failure("view", e.to_string()),
                 },
@@ -2135,8 +2135,8 @@ fn cmd_view(args: &[String]) -> i32 {
     // The moment a journal edit exists this must stay native: the database would see the
     // base file without it.
     let sql_page: Option<(Vec<String>, Vec<Vec<String>>)> = if order.is_some() && ops.is_empty() {
-        match csv_splitter_core::engine::resolve(csv_splitter_core::engine::Engine::Auto, &input) {
-            Ok(csv_splitter_core::engine::Engine::Sql) => {
+        match csvx_core::engine::resolve(csvx_core::engine::Engine::Auto, &input) {
+            Ok(csvx_core::engine::Engine::Sql) => {
                 let order_columns = match parse_sort_columns(
                     order.as_deref().unwrap_or_default(),
                     order_descending,
@@ -2163,14 +2163,14 @@ fn cmd_view(args: &[String]) -> i32 {
                 let predicate = match where_expr.as_deref() {
                     None => None,
                     Some(expr) => {
-                        let spec = match csv_splitter_core::filter::FilterSpec::parse(expr) {
+                        let spec = match csvx_core::filter::FilterSpec::parse(expr) {
                             Ok(spec) => spec,
                             Err(e) => {
                                 eprintln!("error: {e}");
                                 return 2;
                             }
                         };
-                        match csv_splitter_core::engine::filter_predicate(&spec) {
+                        match csvx_core::engine::filter_predicate(&spec) {
                             Some(predicate) => Some(predicate),
                             None => {
                                 eprintln!(
@@ -2187,7 +2187,7 @@ fn cmd_view(args: &[String]) -> i32 {
                     "SELECT * FROM t{where_sql} ORDER BY {} LIMIT {} OFFSET {}",
                     order_sql, count, start
                 );
-                match csv_splitter_core::sql::query_with(&input, &query, count as usize, delimiter)
+                match csvx_core::sql::query_with(&input, &query, count as usize, delimiter)
                 {
                     Ok(result) => Some((result.columns, result.rows)),
                     Err(e) => {
@@ -2214,7 +2214,7 @@ fn cmd_view(args: &[String]) -> i32 {
         let exported = work.with_extension("src.csv");
         let (tx, rx) = mpsc::channel();
         let reporter = spawn_reporter("view", rx, true);
-        let result = csv_splitter_core::workbook::export_quotes(
+        let result = csvx_core::workbook::export_quotes(
             &input, &ops, &exported, delimiter, quotes, &tx,
         );
         drop(tx);
@@ -2224,8 +2224,8 @@ fn cmd_view(args: &[String]) -> i32 {
             return report_failure("view", format!("cannot materialise the sheet: {e}"));
         }
         if let Some(expr) = &where_expr {
-            let set = match csv_splitter_core::filter::FilterSpec::parse(expr) {
-                Ok(spec) => csv_splitter_core::filter::FilterSet::single(spec),
+            let set = match csvx_core::filter::FilterSpec::parse(expr) {
+                Ok(spec) => csvx_core::filter::FilterSet::single(spec),
                 Err(e) => {
                     let _ = std::fs::remove_file(&exported);
                     eprintln!("error: {e}");
@@ -2235,7 +2235,7 @@ fn cmd_view(args: &[String]) -> i32 {
             let filtered = work.with_extension("filtered.csv");
             let (tx, rx) = mpsc::channel();
             let reporter = spawn_reporter("view", rx, true);
-            let result = csv_splitter_core::filter::extract_style(
+            let result = csvx_core::filter::extract_style(
                 &exported, delimiter, &set, &filtered, quotes, &tx,
             );
             drop(tx);
@@ -2261,7 +2261,7 @@ fn cmd_view(args: &[String]) -> i32 {
             };
         let sorted = work.with_extension("sorted.csv");
         let (tx, _rx) = mpsc::channel();
-        let result = csv_splitter_core::sort::external_sort_columns(
+        let result = csvx_core::sort::external_sort_columns(
             &work,
             &sorted,
             &sort_columns,
@@ -2292,14 +2292,14 @@ fn cmd_view(args: &[String]) -> i32 {
         page_total = None;
     } else if let Some(path) = &paging_file {
         if let Ok(file) = std::fs::File::open(path) {
-            let mut reader = csv_splitter_core::csv_reader::RecordReader::new(
+            let mut reader = csvx_core::csv_reader::RecordReader::new(
                 std::io::BufReader::with_capacity(4 * 1024 * 1024, file),
                 4 * 1024 * 1024,
             );
             let mut record = Vec::new();
             let mut index: u64 = 0;
             while reader.next_record(&mut record).is_ok_and(|more| more) {
-                let cells = csv_splitter_core::csv_reader::parse_csv_record_with(
+                let cells = csvx_core::csv_reader::parse_csv_record_with(
                     String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
                     delimiter.byte(),
                     quotes,
@@ -2330,7 +2330,7 @@ fn cmd_view(args: &[String]) -> i32 {
             };
             // One pager for the scan: `window()` per chunk would rebuild the index and
             // the formulas fifty times over for a million rows.
-            let scan_pager = match csv_splitter_core::workbook::Pager::open(&input, &ops, delimiter)
+            let scan_pager = match csvx_core::workbook::Pager::open(&input, &ops, delimiter)
             {
                 Ok(p) => p,
                 Err(e) => return report_failure("view", e.to_string()),
@@ -2351,9 +2351,9 @@ fn cmd_view(args: &[String]) -> i32 {
                             // Same pattern subset as conditional formatting, so `--find`
                             // and `format --rule` agree on what a pattern means.
                             return if match_case {
-                                csv_splitter_core::format::pattern_matches(&needle, cell)
+                                csvx_core::format::pattern_matches(&needle, cell)
                             } else {
-                                csv_splitter_core::format::pattern_matches(
+                                csvx_core::format::pattern_matches(
                                     &needle,
                                     &cell.to_lowercase(),
                                 )
@@ -2403,7 +2403,7 @@ fn cmd_view(args: &[String]) -> i32 {
 
         // One `Pager` for the whole scan: the index, column layout and compiled
         // formulas are built once instead of once per page.
-        let pager = match csv_splitter_core::workbook::Pager::open(&input, &ops, delimiter) {
+        let pager = match csvx_core::workbook::Pager::open(&input, &ops, delimiter) {
             Ok(p) => p,
             Err(e) => return report_failure("view", e.to_string()),
         };
@@ -2495,7 +2495,7 @@ fn cmd_view(args: &[String]) -> i32 {
     } else {
         let mut parsed = Vec::new();
         for text in &rules_text {
-            match csv_splitter_core::format::Rule::parse(text) {
+            match csvx_core::format::Rule::parse(text) {
                 Ok(rule) => parsed.push(rule),
                 Err(e) => {
                     eprintln!("error: {e}");
@@ -2683,7 +2683,7 @@ fn cmd_filter(args: &[String]) -> i32 {
             return 2;
         }
     };
-    let quotes = match csv_splitter_core::csv_reader::QuoteStyle::parse(&quotes_text) {
+    let quotes = match csvx_core::csv_reader::QuoteStyle::parse(&quotes_text) {
         Ok(q) => q,
         Err(e) => {
             eprintln!("error: {e}");
@@ -2730,7 +2730,7 @@ fn cmd_filter(args: &[String]) -> i32 {
         let sorted = match (result, &sort_columns, &stage) {
             (Ok(summary), Some(columns), Some(stage)) => {
                 let (tx, _rx) = mpsc::channel();
-                match csv_splitter_core::sort::external_sort_columns(
+                match csvx_core::sort::external_sort_columns(
                     stage, &out, columns, delimiter, 64, &tx,
                 ) {
                     Ok(()) => {
@@ -2761,7 +2761,7 @@ fn cmd_filter(args: &[String]) -> i32 {
                     let ok = self_check(
                         &out,
                         delimiter,
-                        csv_splitter_core::check::Expectation::rows(s.matched)
+                        csvx_core::check::Expectation::rows(s.matched)
                             .with_ragged(s.matched_ragged),
                         false,
                     );
@@ -2819,7 +2819,7 @@ fn cmd_filter(args: &[String]) -> i32 {
     }
     if show > 0 {
         let picked = &result.rows[..result.rows.len().min(show)];
-        match csv_splitter_core::filter::read_rows(&input, delimiter, picked) {
+        match csvx_core::filter::read_rows(&input, delimiter, picked) {
             Ok(rows) => {
                 println!();
                 for r in rows {
@@ -2943,7 +2943,7 @@ fn cmd_search(args: &[String]) -> i32 {
             return 2;
         }
     };
-    let result = match csv_splitter_core::search::search_quotes(
+    let result = match csvx_core::search::search_quotes(
         &input, delimiter, &spec, limit, quotes, &tx,
     ) {
         Ok(r) => r,
@@ -2982,7 +2982,7 @@ fn cmd_search(args: &[String]) -> i32 {
 
     if show > 0 {
         let picked = &result.rows[..result.rows.len().min(show)];
-        match csv_splitter_core::filter::read_rows(&input, delimiter, picked) {
+        match csvx_core::filter::read_rows(&input, delimiter, picked) {
             Ok(rows) => {
                 println!();
                 for r in rows {
@@ -3032,7 +3032,7 @@ fn cmd_files(args: &[String]) -> i32 {
         eprintln!("error: files needs --root <dir>");
         return 2;
     };
-    let listing = match csv_splitter_core::listing::list(&root, &exts, 200) {
+    let listing = match csvx_core::listing::list(&root, &exts, 200) {
         Ok(l) => l,
         Err(e) => {
             return report_failure("files", e);
@@ -3321,7 +3321,7 @@ fn cmd_stats(args: &[String]) -> i32 {
             return 2;
         }
     };
-    let result = csv_splitter_core::preview::compute_column_stats_with(
+    let result = csvx_core::preview::compute_column_stats_with(
         &input, delimiter, sample, 100_000, quotes, &tx,
     );
     drop(tx);
@@ -3377,8 +3377,8 @@ fn cmd_repair(args: &[String]) -> i32 {
         eprintln!("error: repair needs a file");
         return 2;
     };
-    let sidecar = csv_splitter_core::workbook::Journal::sidecar(&input);
-    match csv_splitter_core::workbook::repair_journal(&sidecar, dry_run) {
+    let sidecar = csvx_core::workbook::Journal::sidecar(&input);
+    match csvx_core::workbook::repair_journal(&sidecar, dry_run) {
         Ok(summary) => {
             if json {
                 println!(
@@ -3581,7 +3581,7 @@ fn cmd_sort(args: &[String]) -> i32 {
     }
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("sort", rx, quiet);
-    let result = csv_splitter_core::sort::external_sort_columns(
+    let result = csvx_core::sort::external_sort_columns(
         &input, &out, &columns, delimiter, buf_mb, &tx,
     );
     drop(tx);
@@ -3603,13 +3603,13 @@ fn cmd_sort(args: &[String]) -> i32 {
                 // Sorting promises "same rows, reordered": check the counts on
                 // both sides rather than trusting the merge step.
                 let (tx, _rx) = mpsc::channel();
-                let before = match csv_splitter_core::check::count(&input, delimiter, &tx) {
+                let before = match csvx_core::check::count(&input, delimiter, &tx) {
                     Ok(c) => c,
                     Err(e) => {
                         return report_failure("sort", format!("cannot read the source: {e}"))
                     }
                 };
-                let after = match csv_splitter_core::check::count(&out, delimiter, &tx) {
+                let after = match csvx_core::check::count(&out, delimiter, &tx) {
                     Ok(c) => c,
                     Err(e) => {
                         return report_failure("sort", format!("cannot read the result: {e}"))
@@ -3673,7 +3673,7 @@ fn cmd_book(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
     let mut root: Option<PathBuf> = None;
     let mut json = false;
-    let mut max_sheets = csv_splitter_core::book::DEFAULT_MAX_SHEETS;
+    let mut max_sheets = csvx_core::book::DEFAULT_MAX_SHEETS;
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
@@ -3718,7 +3718,7 @@ fn cmd_book(args: &[String]) -> i32 {
         eprintln!("error: book needs a directory (--root <dir>)");
         return 2;
     };
-    let book = match csv_splitter_core::book::scan(&root, max_sheets) {
+    let book = match csvx_core::book::scan(&root, max_sheets) {
         Ok(b) => b,
         Err(e) => return report_failure("book", format!("cannot read {}: {e}", root.display())),
     };
@@ -3782,8 +3782,8 @@ fn cmd_lookup(args: &[String]) -> i32 {
     let mut reference: Option<PathBuf> = None;
     let mut reference_key = String::new();
     let mut take = String::new();
-    let mut max_keys = csv_splitter_core::lookup::DEFAULT_MAX_KEYS;
-    let mut engine = csv_splitter_core::engine::Engine::Auto;
+    let mut max_keys = csvx_core::lookup::DEFAULT_MAX_KEYS;
+    let mut engine = csvx_core::engine::Engine::Auto;
     let mut json = false;
     let mut quiet = false;
     let mut delim = "auto".to_string();
@@ -3798,7 +3798,7 @@ fn cmd_lookup(args: &[String]) -> i32 {
                 }
             },
             "--engine" => match p.value("--engine") {
-                Ok(v) => match csv_splitter_core::engine::Engine::parse(&v) {
+                Ok(v) => match csvx_core::engine::Engine::parse(&v) {
                     Ok(e) => engine = e,
                     Err(e) => {
                         eprintln!("error: {e}");
@@ -3920,7 +3920,7 @@ fn cmd_lookup(args: &[String]) -> i32 {
     });
     warn_pending_edits(&input);
 
-    let options = csv_splitter_core::lookup::LookupOptions {
+    let options = csvx_core::lookup::LookupOptions {
         key,
         reference,
         reference_key,
@@ -3940,7 +3940,7 @@ fn cmd_lookup(args: &[String]) -> i32 {
         return code;
     }
     let result = {
-        let planned = match csv_splitter_core::engine::resolve(engine, &input) {
+        let planned = match csvx_core::engine::resolve(engine, &input) {
             Ok(e) => e,
             Err(message) => {
                 eprintln!("error: {message}");
@@ -3948,10 +3948,10 @@ fn cmd_lookup(args: &[String]) -> i32 {
             }
         };
         match planned {
-            csv_splitter_core::engine::Engine::Sql => {
-                csv_splitter_core::engine::lookup_sql(&input, delimiter, &output, &options, &tx)
+            csvx_core::engine::Engine::Sql => {
+                csvx_core::engine::lookup_sql(&input, delimiter, &output, &options, &tx)
             }
-            _ => csv_splitter_core::lookup::lookup_quotes(
+            _ => csvx_core::lookup::lookup_quotes(
                 &input, delimiter, &output, &options, quotes, &tx,
             ),
         }
@@ -3989,13 +3989,13 @@ fn cmd_lookup(args: &[String]) -> i32 {
 /// Columns as the sheet presents them (journal applied), for layout commands.
 fn layout_columns(input: &std::path::Path) -> Result<Vec<String>, String> {
     let base_columns =
-        csv_splitter_core::workbook::base_header(input, csv_splitter_core::types::Delimiter::Comma)
+        csvx_core::workbook::base_header(input, csvx_core::types::Delimiter::Comma)
             .map_err(|e| format!("cannot read the header: {e}"))?;
-    csv_splitter_core::workbook::Journal::load(&csv_splitter_core::workbook::Journal::sidecar(
+    csvx_core::workbook::Journal::load(&csvx_core::workbook::Journal::sidecar(
         input,
     ))
     .map(|journal| {
-        csv_splitter_core::workbook::column_layout(journal.ops(), &base_columns)
+        csvx_core::workbook::column_layout(journal.ops(), &base_columns)
             .map(|layout| layout.into_iter().map(|(name, _)| name).collect())
     })
     .unwrap_or_else(|_| Ok(base_columns))
@@ -4053,7 +4053,7 @@ fn cmd_layout(args: &[String]) -> i32 {
         return 2;
     };
     warn_pending_edits(&input);
-    let mut layout = match csv_splitter_core::layout::Layout::load(&input) {
+    let mut layout = match csvx_core::layout::Layout::load(&input) {
         Ok(l) => l,
         Err(e) => return report_failure("layout", format!("cannot read the layout: {e}")),
     };
@@ -4129,7 +4129,7 @@ fn cmd_layout(args: &[String]) -> i32 {
 
 fn cmd_chart(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
-    let mut engine = csv_splitter_core::engine::Engine::Auto;
+    let mut engine = csvx_core::engine::Engine::Auto;
     let mut apply_edits = false;
     let mut quotes_text = String::new();
     let mut input: Option<PathBuf> = None;
@@ -4140,7 +4140,7 @@ fn cmd_chart(args: &[String]) -> i32 {
     let mut kind = "line".to_string();
     let mut sort_by_value = false;
     let mut descending = false;
-    let mut max_points = csv_splitter_core::chart::DEFAULT_MAX_POINTS;
+    let mut max_points = csvx_core::chart::DEFAULT_MAX_POINTS;
     let mut want_json = false;
     let mut delim = "auto".to_string();
 
@@ -4156,7 +4156,7 @@ fn cmd_chart(args: &[String]) -> i32 {
                 }
             },
             "--engine" => match p.value("--engine") {
-                Ok(v) => match csv_splitter_core::engine::Engine::parse(&v) {
+                Ok(v) => match csvx_core::engine::Engine::parse(&v) {
                     Ok(e) => engine = e,
                     Err(e) => {
                         eprintln!("error: {e}");
@@ -4254,7 +4254,7 @@ fn cmd_chart(args: &[String]) -> i32 {
         eprintln!("error: chart needs --y <column:op>");
         return 2;
     }
-    let spec = match csv_splitter_core::aggregate::AggSpec::parse_list(&y) {
+    let spec = match csvx_core::aggregate::AggSpec::parse_list(&y) {
         Ok(mut v) if !v.is_empty() => v.remove(0),
         Ok(_) => {
             eprintln!("error: --y needs one column:op measure");
@@ -4265,7 +4265,7 @@ fn cmd_chart(args: &[String]) -> i32 {
             return 2;
         }
     };
-    let chart_kind = match csv_splitter_core::chart::ChartKind::parse(&kind) {
+    let chart_kind = match csvx_core::chart::ChartKind::parse(&kind) {
         Ok(k) => k,
         Err(e) => {
             eprintln!("error: {e}");
@@ -4279,7 +4279,7 @@ fn cmd_chart(args: &[String]) -> i32 {
             return 2;
         }
     };
-    let options = csv_splitter_core::chart::ChartOptions {
+    let options = csvx_core::chart::ChartOptions {
         x,
         series,
         y: spec,
@@ -4303,7 +4303,7 @@ fn cmd_chart(args: &[String]) -> i32 {
         Ok(sheet) => sheet,
         Err(code) => return code,
     };
-    let planned = match csv_splitter_core::engine::resolve(engine, sheet.path()) {
+    let planned = match csvx_core::engine::resolve(engine, sheet.path()) {
         Ok(e) => e,
         Err(message) => {
             eprintln!("error: {message}");
@@ -4311,10 +4311,10 @@ fn cmd_chart(args: &[String]) -> i32 {
         }
     };
     let result = match planned {
-        csv_splitter_core::engine::Engine::Sql => {
-            csv_splitter_core::engine::chart_sql(sheet.path(), delimiter, &options, &tx)
+        csvx_core::engine::Engine::Sql => {
+            csvx_core::engine::chart_sql(sheet.path(), delimiter, &options, &tx)
         }
-        _ => csv_splitter_core::chart::chart_quotes(sheet.path(), delimiter, &options, quotes, &tx),
+        _ => csvx_core::chart::chart_quotes(sheet.path(), delimiter, &options, quotes, &tx),
     };
     drop(tx);
     let _ = reporter.join();
@@ -4427,7 +4427,7 @@ fn cmd_format(args: &[String]) -> i32 {
     }
     let mut rules = Vec::new();
     for text in &rules_text {
-        match csv_splitter_core::format::Rule::parse(text) {
+        match csvx_core::format::Rule::parse(text) {
             Ok(rule) => rules.push(rule),
             Err(e) => {
                 eprintln!("error: {e}");
@@ -4442,8 +4442,8 @@ fn cmd_format(args: &[String]) -> i32 {
             return 2;
         }
     };
-    let sidecar = csv_splitter_core::workbook::Journal::sidecar(&input);
-    let journal = match csv_splitter_core::workbook::Journal::load(&sidecar) {
+    let sidecar = csvx_core::workbook::Journal::sidecar(&input);
+    let journal = match csvx_core::workbook::Journal::load(&sidecar) {
         Ok(j) => j,
         Err(e) => {
             return report_failure("format", format!("cannot read {}: {e}", sidecar.display()))
@@ -4455,7 +4455,7 @@ fn cmd_format(args: &[String]) -> i32 {
         let (tx, rx) = mpsc::channel();
         let reporter = spawn_reporter("format", rx, quiet || json);
         let result =
-            csv_splitter_core::format::count_matches(&input, journal.ops(), &rules, delimiter, &tx);
+            csvx_core::format::count_matches(&input, journal.ops(), &rules, delimiter, &tx);
         drop(tx);
         let _ = reporter.join();
         let summary = match result {
@@ -4489,7 +4489,7 @@ fn cmd_format(args: &[String]) -> i32 {
     }
 
     note_index_build(&input);
-    let cells = match csv_splitter_core::format::styled_window(
+    let cells = match csvx_core::format::styled_window(
         &input,
         journal.ops(),
         &rules,
@@ -4542,9 +4542,9 @@ fn cmd_pivot(args: &[String]) -> i32 {
     let mut order: Option<String> = None;
     let mut descending = false;
     let mut qualify = false;
-    let mut max_columns = csv_splitter_core::pivot::DEFAULT_MAX_COLUMNS;
-    let mut max_cells = csv_splitter_core::pivot::DEFAULT_MAX_CELLS;
-    let mut engine = csv_splitter_core::engine::Engine::Auto;
+    let mut max_columns = csvx_core::pivot::DEFAULT_MAX_COLUMNS;
+    let mut max_cells = csvx_core::pivot::DEFAULT_MAX_CELLS;
+    let mut engine = csvx_core::engine::Engine::Auto;
     let mut json = false;
     let mut delim = "auto".to_string();
     let mut quiet = false;
@@ -4559,7 +4559,7 @@ fn cmd_pivot(args: &[String]) -> i32 {
                 }
             },
             "--engine" => match p.value("--engine") {
-                Ok(v) => match csv_splitter_core::engine::Engine::parse(&v) {
+                Ok(v) => match csvx_core::engine::Engine::parse(&v) {
                     Ok(e) => engine = e,
                     Err(e) => {
                         eprintln!("error: {e}");
@@ -4670,7 +4670,7 @@ fn cmd_pivot(args: &[String]) -> i32 {
         eprintln!("error: pivot needs --values <column:op[,...]>");
         return 2;
     }
-    let specs = match csv_splitter_core::aggregate::AggSpec::parse_list(&values) {
+    let specs = match csvx_core::aggregate::AggSpec::parse_list(&values) {
         Ok(v) => v,
         Err(e) => {
             eprintln!("error: {e}");
@@ -4686,7 +4686,7 @@ fn cmd_pivot(args: &[String]) -> i32 {
     };
     // Keep the requested path, if any: printing to the terminal is the default.
     let out_was_given: Option<PathBuf> = out;
-    let options = csv_splitter_core::pivot::PivotOptions {
+    let options = csvx_core::pivot::PivotOptions {
         rows,
         columns,
         values: specs,
@@ -4718,7 +4718,7 @@ fn cmd_pivot(args: &[String]) -> i32 {
     // Without `-o` the matrix goes to the terminal: a pivot is something you look at,
     // and writing a file only to open it again is a step nobody asked for.
     let table = if let Some(output) = out_was_given.clone() {
-        let planned = match csv_splitter_core::engine::resolve(engine, sheet.path()) {
+        let planned = match csvx_core::engine::resolve(engine, sheet.path()) {
             Ok(e) => e,
             Err(message) => {
                 eprintln!("error: {message}");
@@ -4726,14 +4726,14 @@ fn cmd_pivot(args: &[String]) -> i32 {
             }
         };
         let result = match planned {
-            csv_splitter_core::engine::Engine::Sql => csv_splitter_core::engine::pivot_sql(
+            csvx_core::engine::Engine::Sql => csvx_core::engine::pivot_sql(
                 sheet.path(),
                 delimiter,
                 &output,
                 &options,
                 &tx,
             ),
-            _ => csv_splitter_core::pivot::pivot_quotes(
+            _ => csvx_core::pivot::pivot_quotes(
                 sheet.path(),
                 delimiter,
                 &output,
@@ -4751,7 +4751,7 @@ fn cmd_pivot(args: &[String]) -> i32 {
         }
     } else {
         let result =
-            csv_splitter_core::pivot::pivot_rows(sheet.path(), delimiter, &options, quotes, &tx);
+            csvx_core::pivot::pivot_rows(sheet.path(), delimiter, &options, quotes, &tx);
         drop(tx);
         let _ = reporter.join();
         match result {
@@ -4882,10 +4882,10 @@ fn cmd_validate(args: &[String]) -> i32 {
         eprintln!("error: validate needs at least one --check (e.g. --check \"qty>=0\")");
         return 2;
     }
-    let rules: Vec<csv_splitter_core::validate::Rule> = {
+    let rules: Vec<csvx_core::validate::Rule> = {
         let mut parsed = Vec::new();
         for text in &rules_text {
-            match csv_splitter_core::validate::Rule::parse(text) {
+            match csvx_core::validate::Rule::parse(text) {
                 Ok(rule) => parsed.push(rule),
                 Err(e) => {
                     eprintln!("error: {e}");
@@ -4909,8 +4909,8 @@ fn cmd_validate(args: &[String]) -> i32 {
             return 2;
         }
     };
-    let ops = match csv_splitter_core::workbook::Journal::load(
-        &csv_splitter_core::workbook::Journal::sidecar(&input),
+    let ops = match csvx_core::workbook::Journal::load(
+        &csvx_core::workbook::Journal::sidecar(&input),
     ) {
         Ok(journal) => journal.ops().to_vec(),
         Err(e) => return report_failure("validate", e.to_string()),
@@ -4919,7 +4919,7 @@ fn cmd_validate(args: &[String]) -> i32 {
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("validate", rx, quiet || json);
     let result =
-        csv_splitter_core::validate::validate_limited(&input, &ops, &rules, delimiter, limit, &tx);
+        csvx_core::validate::validate_limited(&input, &ops, &rules, delimiter, limit, &tx);
     drop(tx);
     let _ = reporter.join();
     let _ = quotes;
@@ -4947,7 +4947,7 @@ fn cmd_validate(args: &[String]) -> i32 {
     if report.unique_full {
         println!(
             "✗ unique ran out of room after {} distinct values; raise the cap or check a narrower range",
-            csv_splitter_core::validate::MAX_UNIQUE_VALUES
+            csvx_core::validate::MAX_UNIQUE_VALUES
         );
     }
     if !report.violations.is_empty() {
@@ -4967,7 +4967,7 @@ fn cmd_validate(args: &[String]) -> i32 {
         if report.truncated {
             println!(
                 "  (violations cap reached at {}; counts above are exact)",
-                csv_splitter_core::validate::MAX_VIOLATIONS
+                csvx_core::validate::MAX_VIOLATIONS
             );
         }
     }
@@ -5009,13 +5009,13 @@ fn cmd_demo(args: &[String]) -> i32 {
         }
     }
 
-    let dir = out.unwrap_or_else(|| PathBuf::from("csv-splitter-demo"));
+    let dir = out.unwrap_or_else(|| PathBuf::from("csvx-demo"));
     if let Err(e) = std::fs::create_dir_all(&dir) {
         eprintln!("error: cannot create {}: {e}", dir.display());
         return 1;
     }
     let path = dir.join("orders.csv");
-    let bytes = csv_splitter_core::demo::write_sample(&path);
+    let bytes = csvx_core::demo::write_sample(&path);
     match bytes {
         Ok((rows, bytes)) => {
             println!(
@@ -5025,13 +5025,13 @@ fn cmd_demo(args: &[String]) -> i32 {
             );
             println!();
             println!("  Try the 10-minute tour:");
-            println!("    csv-splitter preview {}", path.display());
-            println!("    csv-splitter analyze {}", path.display());
-            println!("    csv-splitter filter {} --where \"city=CDMX\" --where \"amount>1000\" -o cdmx.csv", path.display());
-            println!("    csv-splitter groupby {} --by city --agg \"amount:sum,amount:count\" --order sum_amount --desc", path.display());
+            println!("    csvx preview {}", path.display());
+            println!("    csvx analyze {}", path.display());
+            println!("    csvx filter {} --where \"city=CDMX\" --where \"amount>1000\" -o cdmx.csv", path.display());
+            println!("    csvx groupby {} --by city --agg \"amount:sum,amount:count\" --order sum_amount --desc", path.display());
             println!();
             println!("  Or serve it to a front-end:");
-            println!("    csv-splitter serve --root {}", dir.display());
+            println!("    csvx serve --root {}", dir.display());
             0
         }
         Err(e) => report_failure("pivot", e), // engine returned the error itself
@@ -5048,10 +5048,10 @@ fn cmd_groupby(args: &[String]) -> i32 {
     let mut agg_spec = String::new();
     let mut order: Option<String> = None;
     let mut descending = false;
-    let mut max_groups = csv_splitter_core::groupby::DEFAULT_MAX_GROUPS;
+    let mut max_groups = csvx_core::groupby::DEFAULT_MAX_GROUPS;
     let mut json = false;
     let mut delim = "auto".to_string();
-    let mut engine = csv_splitter_core::engine::Engine::Auto;
+    let mut engine = csvx_core::engine::Engine::Auto;
     let mut quiet = false;
 
     while let Some(arg) = p.next() {
@@ -5071,7 +5071,7 @@ fn cmd_groupby(args: &[String]) -> i32 {
                 }
             },
             "--engine" => match p.value("--engine") {
-                Ok(v) => match csv_splitter_core::engine::Engine::parse(&v) {
+                Ok(v) => match csvx_core::engine::Engine::parse(&v) {
                     Ok(e) => engine = e,
                     Err(e) => {
                         eprintln!("error: {e}");
@@ -5147,7 +5147,7 @@ fn cmd_groupby(args: &[String]) -> i32 {
         eprintln!("error: groupby needs --by <col[,col]>");
         return 2;
     }
-    let aggs = match csv_splitter_core::groupby::AggSpec::parse_list(&agg_spec) {
+    let aggs = match csvx_core::groupby::AggSpec::parse_list(&agg_spec) {
         Ok(a) => a,
         Err(e) => {
             eprintln!("error: {e}");
@@ -5171,7 +5171,7 @@ fn cmd_groupby(args: &[String]) -> i32 {
 
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("groupby", rx, quiet || json);
-    let options = csv_splitter_core::groupby::GroupOptions {
+    let options = csvx_core::groupby::GroupOptions {
         keys,
         aggregates: aggs,
         order_by: order,
@@ -5195,7 +5195,7 @@ fn cmd_groupby(args: &[String]) -> i32 {
     // `auto` picks DuckDB for large inputs, native for small ones. Below the threshold
     // the engine's start-up costs more than the query itself: 0.207 s vs 0.026 s on the
     // 20 120-row demo, and 0.9 s vs 13.1 s on the 2.5 GB fixture.
-    let planned = match csv_splitter_core::engine::resolve(engine, sheet.path()) {
+    let planned = match csvx_core::engine::resolve(engine, sheet.path()) {
         Ok(e) => e,
         Err(message) => {
             eprintln!("error: {message}");
@@ -5203,10 +5203,10 @@ fn cmd_groupby(args: &[String]) -> i32 {
         }
     };
     let result = match planned {
-        csv_splitter_core::engine::Engine::Sql => {
-            csv_splitter_core::engine::groupby_sql(sheet.path(), delimiter, &output, &options, &tx)
+        csvx_core::engine::Engine::Sql => {
+            csvx_core::engine::groupby_sql(sheet.path(), delimiter, &output, &options, &tx)
         }
-        _ => csv_splitter_core::groupby::groupby_quotes(
+        _ => csvx_core::groupby::groupby_quotes(
             sheet.path(),
             delimiter,
             &output,
@@ -5249,7 +5249,7 @@ fn cmd_concat(args: &[String]) -> i32 {
     let mut out: Option<PathBuf> = None;
     let mut ignore_header = false;
     let mut by_name = false;
-    let mut engine = csv_splitter_core::engine::Engine::Auto;
+    let mut engine = csvx_core::engine::Engine::Auto;
     let mut json = false;
     let mut delim = "auto".to_string();
 
@@ -5263,7 +5263,7 @@ fn cmd_concat(args: &[String]) -> i32 {
                 }
             },
             "--engine" => match p.value("--engine") {
-                Ok(v) => match csv_splitter_core::engine::Engine::parse(&v) {
+                Ok(v) => match csvx_core::engine::Engine::parse(&v) {
                     Ok(e) => engine = e,
                     Err(e) => {
                         eprintln!("error: {e}");
@@ -5317,7 +5317,7 @@ fn cmd_concat(args: &[String]) -> i32 {
     // order concatenate instead of failing on a header mismatch.
     let aligned_guard;
     let aligned: Vec<PathBuf> = if by_name {
-        match csv_splitter_core::concat::align_by_name(&inputs, delimiter) {
+        match csvx_core::concat::align_by_name(&inputs, delimiter) {
             Ok(guard) => {
                 aligned_guard = guard;
                 aligned_guard.paths().to_vec()
@@ -5330,7 +5330,7 @@ fn cmd_concat(args: &[String]) -> i32 {
     } else {
         inputs.clone()
     };
-    let planned = match csv_splitter_core::engine::resolve_for_copy(engine, &inputs[0]) {
+    let planned = match csvx_core::engine::resolve_for_copy(engine, &inputs[0]) {
         Ok(e) => e,
         Err(message) => {
             eprintln!("error: {message}");
@@ -5338,10 +5338,10 @@ fn cmd_concat(args: &[String]) -> i32 {
         }
     };
     let result = match planned {
-        csv_splitter_core::engine::Engine::Sql => {
-            csv_splitter_core::engine::concat_sql(&aligned, &output, delimiter, ignore_header, &tx)
+        csvx_core::engine::Engine::Sql => {
+            csvx_core::engine::concat_sql(&aligned, &output, delimiter, ignore_header, &tx)
         }
-        _ => csv_splitter_core::concat::concat(&aligned, &output, delimiter, ignore_header, &tx),
+        _ => csvx_core::concat::concat(&aligned, &output, delimiter, ignore_header, &tx),
     };
     drop(tx);
     let _ = reporter.join();
@@ -5382,7 +5382,7 @@ fn cmd_partition(args: &[String]) -> i32 {
     let mut format = "none".to_string();
     let mut level = 3i32;
     let mut buf_mb = 64usize;
-    let mut max_partitions = csv_splitter_core::partition::DEFAULT_MAX_PARTITIONS;
+    let mut max_partitions = csvx_core::partition::DEFAULT_MAX_PARTITIONS;
     let mut verify = false;
     let mut delim = "auto".to_string();
     let mut quiet = false;
@@ -5497,7 +5497,7 @@ fn cmd_partition(args: &[String]) -> i32 {
             }
         },
     };
-    let config = csv_splitter_core::partition::PartitionConfig {
+    let config = csvx_core::partition::PartitionConfig {
         input: input.clone(),
         output: out,
         column: by.clone(),
@@ -5510,7 +5510,7 @@ fn cmd_partition(args: &[String]) -> i32 {
 
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("partition", rx, quiet);
-    csv_splitter_core::partition::run_partition(config, tx);
+    csvx_core::partition::run_partition(config, tx);
     let _ = reporter.join();
 
     if expected.exists() {
@@ -5524,7 +5524,7 @@ fn cmd_partition(args: &[String]) -> i32 {
             // The claim: every source row lands in exactly one partition, and no
             // partition is ragged. Unpack and count, because an archive's size
             // says nothing about its contents.
-            let tmp = match csv_splitter_core::tempdir::TempDir::new("partition-verify") {
+            let tmp = match csvx_core::tempdir::TempDir::new("partition-verify") {
                 Ok(t) => t,
                 Err(e) => {
                     return report_failure("partition", format!("cannot create a temp dir: {e}"))
@@ -5532,7 +5532,7 @@ fn cmd_partition(args: &[String]) -> i32 {
             };
             let (tx, _rx) = mpsc::channel();
             let files =
-                match csv_splitter_core::decompress::decompress_file(&expected, tmp.path(), &tx) {
+                match csvx_core::decompress::decompress_file(&expected, tmp.path(), &tx) {
                     Ok(f) => f,
                     Err(e) => {
                         return report_failure(
@@ -5541,7 +5541,7 @@ fn cmd_partition(args: &[String]) -> i32 {
                         )
                     }
                 };
-            let source = match csv_splitter_core::check::count(&input, delimiter, &tx) {
+            let source = match csvx_core::check::count(&input, delimiter, &tx) {
                 Ok(c) => c,
                 Err(e) => {
                     return report_failure("partition", format!("cannot read the source: {e}"))
@@ -5553,7 +5553,7 @@ fn cmd_partition(args: &[String]) -> i32 {
             let mut total = 0u64;
             for (index, file) in files.iter().enumerate() {
                 let plain =
-                    match csv_splitter_core::decompress::decompress_to_csv(file, tmp.path(), &tx) {
+                    match csvx_core::decompress::decompress_to_csv(file, tmp.path(), &tx) {
                         Ok(p) => p,
                         Err(e) => {
                             return report_failure(
@@ -5562,7 +5562,7 @@ fn cmd_partition(args: &[String]) -> i32 {
                             )
                         }
                     };
-                match csv_splitter_core::check::count(&plain, delimiter, &tx) {
+                match csvx_core::check::count(&plain, delimiter, &tx) {
                     Ok(c) => total += c.rows,
                     Err(e) => {
                         return report_failure(
@@ -5615,7 +5615,7 @@ fn out_path_or_default(input: &Path, by: &str, format: CompressFormat) -> Result
     };
     Ok(input.with_file_name(format!(
         "{stem}_by_{}.{ext}",
-        csv_splitter_core::partition::sanitize(by)
+        csvx_core::partition::sanitize(by)
     )))
 }
 
@@ -5633,11 +5633,11 @@ fn warn_pending_edits_unless(input: &std::path::Path, applied: bool) {
     if applied {
         return;
     }
-    let sidecar = csv_splitter_core::workbook::Journal::sidecar(input);
-    if let Ok(journal) = csv_splitter_core::workbook::Journal::load(&sidecar) {
+    let sidecar = csvx_core::workbook::Journal::sidecar(input);
+    if let Ok(journal) = csvx_core::workbook::Journal::load(&sidecar) {
         if !journal.is_empty() {
             eprintln!(
-                "note: {} pending edit(s) in {} are not applied by this command; run `csv-splitter edit export {}` to materialise them",
+                "note: {} pending edit(s) in {} are not applied by this command; run `csvx edit export {}` to materialise them",
                 journal.len(),
                 sidecar.display(),
                 input.display()
@@ -5647,21 +5647,21 @@ fn warn_pending_edits_unless(input: &std::path::Path, applied: bool) {
 }
 
 /// The `--quotes` value for a command, or the RFC default.
-fn parse_quotes(text: &str) -> Result<csv_splitter_core::csv_reader::QuoteStyle, String> {
-    csv_splitter_core::csv_reader::QuoteStyle::parse(text)
+fn parse_quotes(text: &str) -> Result<csvx_core::csv_reader::QuoteStyle, String> {
+    csvx_core::csv_reader::QuoteStyle::parse(text)
 }
 
 /// Record one operation, save the journal, and report it the way other edits do.
 fn journal_push(
-    journal: &mut csv_splitter_core::workbook::Journal,
+    journal: &mut csvx_core::workbook::Journal,
     sidecar: &std::path::Path,
-    op: csv_splitter_core::workbook::Op,
+    op: csvx_core::workbook::Op,
 ) -> Result<i32, i32> {
     let description = op.describe();
     // A concurrent writer may have appended since this journal was loaded, so the
     // append happens under a lock and on a freshly loaded journal: two edits become
     // two operations instead of one lost rename.
-    let outcome = csv_splitter_core::workbook::Journal::update_locked(sidecar, |fresh| {
+    let outcome = csvx_core::workbook::Journal::update_locked(sidecar, |fresh| {
         fresh.push(op);
         Ok(())
     });
@@ -5682,7 +5682,7 @@ fn journal_push(
 ///
 /// This is the "look at it" counterpart of the JSON the API returns — enough to answer
 /// "which category is biggest", without a front-end or a file.
-fn print_chart(data: &csv_splitter_core::chart::ChartData) {
+fn print_chart(data: &csvx_core::chart::ChartData) {
     if data.categories.is_empty() {
         println!("(no data to chart)");
         return;
@@ -5821,7 +5821,7 @@ fn print_table_styled(
     columns: &[String],
     rows: &[Vec<String>],
     start: u64,
-    marks: &[(u64, String, csv_splitter_core::format::Style)],
+    marks: &[(u64, String, csvx_core::format::Style)],
 ) {
     use std::io::IsTerminal;
     let (columns, rows, hidden) = fit_to_terminal(columns, rows);
@@ -5932,7 +5932,7 @@ fn ansi_colour(name: &str, foreground: bool) -> String {
 /// worst outcome is a silent wait: the user presses Enter, nothing happens, and they
 /// assume it hung.
 fn note_index_build(input: &Path) {
-    let sidecar = csv_splitter_core::index::SparseIndex::sidecar_path(input);
+    let sidecar = csvx_core::index::SparseIndex::sidecar_path(input);
     if sidecar.exists() {
         return;
     }
@@ -5941,7 +5941,7 @@ fn note_index_build(input: &Path) {
         return;
     }
     eprintln!(
-        "note: building a row index for {} ({}) — one-time; run `csv-splitter index` earlier to avoid the wait",
+        "note: building a row index for {} ({}) — one-time; run `csvx index` earlier to avoid the wait",
         input.display(),
         human_bytes(size)
     );
@@ -5979,7 +5979,7 @@ fn check_output(input: Option<&Path>, output: &Path) -> Result<(), i32> {
 /// Reading such a file as RFC does not fail — it silently merges or splits fields —
 /// so the only defence is telling the user before they act on the numbers.
 fn warn_quote_style(input: &std::path::Path) {
-    let Ok(file) = csv_splitter_core::encoding::open_decoded(input) else {
+    let Ok(file) = csvx_core::encoding::open_decoded(input) else {
         return;
     };
     use std::io::Read;
@@ -5987,7 +5987,7 @@ fn warn_quote_style(input: &std::path::Path) {
     // analyze, and a 10 GB file would otherwise be paged in for one warning.
     let mut head = Vec::with_capacity(64 * 1024);
     if file.take(64 * 1024).read_to_end(&mut head).is_ok() {
-        if let Some(style) = csv_splitter_core::csv_reader::detect_quote_style(&head) {
+        if let Some(style) = csvx_core::csv_reader::detect_quote_style(&head) {
             eprintln!(
                 "note: this file looks like it escapes quotes with a backslash ({}); if fields look wrong, re-run with `--quotes backslash`",
                 style.name()
@@ -6006,7 +6006,7 @@ struct SheetPath {
     path: PathBuf,
     /// Kept alive so the materialised file is removed when the command ends.
     #[allow(dead_code)]
-    temporary: Option<csv_splitter_core::tempdir::TempDir>,
+    temporary: Option<csvx_core::tempdir::TempDir>,
 }
 
 impl SheetPath {
@@ -6022,8 +6022,8 @@ fn sheet_path(input: &Path, apply_edits: bool, delimiter: Delimiter) -> Result<S
             temporary: None,
         });
     }
-    let ops = match csv_splitter_core::workbook::Journal::load(
-        &csv_splitter_core::workbook::Journal::sidecar(input),
+    let ops = match csvx_core::workbook::Journal::load(
+        &csvx_core::workbook::Journal::sidecar(input),
     ) {
         Ok(journal) => journal.ops().to_vec(),
         Err(e) => return Err(report_failure("edit", e.to_string())),
@@ -6035,14 +6035,14 @@ fn sheet_path(input: &Path, apply_edits: bool, delimiter: Delimiter) -> Result<S
             temporary: None,
         });
     }
-    let dir = match csv_splitter_core::tempdir::TempDir::new("applied") {
+    let dir = match csvx_core::tempdir::TempDir::new("applied") {
         Ok(dir) => dir,
         Err(e) => return Err(report_failure("temp", e.to_string())),
     };
     let target = dir.path().join("sheet.csv");
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("export", rx, true);
-    let result = csv_splitter_core::workbook::export(input, &ops, &target, delimiter, &tx);
+    let result = csvx_core::workbook::export(input, &ops, &target, delimiter, &tx);
     drop(tx);
     let _ = reporter.join();
     if let Err(e) = result {
@@ -6062,9 +6062,9 @@ fn sheet_path(input: &Path, apply_edits: bool, delimiter: Delimiter) -> Result<S
 /// A journal cut off mid-write silently loses its last operation, which reads as "my
 /// edit vanished". Naming it costs one line and turns a mystery into an explanation.
 fn warn_journal_damage(input: &std::path::Path) {
-    let sidecar = csv_splitter_core::workbook::Journal::sidecar(input);
+    let sidecar = csvx_core::workbook::Journal::sidecar(input);
     if let Ok((_, skipped, skipped_redo)) =
-        csv_splitter_core::workbook::Journal::load_reporting(&sidecar)
+        csvx_core::workbook::Journal::load_reporting(&sidecar)
     {
         for (count, file) in [
             (skipped, sidecar.clone()),
@@ -6094,9 +6094,9 @@ fn check_expect(
     column: &str,
     expect: &str,
 ) -> Result<(), i32> {
-    let sheet = match csv_splitter_core::sheet::Sheet::open(
+    let sheet = match csvx_core::sheet::Sheet::open(
         input,
-        csv_splitter_core::sheet::ReadOptions { delimiter },
+        csvx_core::sheet::ReadOptions { delimiter },
     ) {
         Ok(sheet) => sheet,
         Err(e) => {
@@ -6156,19 +6156,19 @@ fn check_expect(
 fn check_formula(
     input: &Path,
     delimiter: Delimiter,
-    ops: &[csv_splitter_core::workbook::Op],
+    ops: &[csvx_core::workbook::Op],
     formula: &str,
 ) -> Result<(), i32> {
-    let parsed = match csv_splitter_core::formula::Formula::parse(formula) {
+    let parsed = match csvx_core::formula::Formula::parse(formula) {
         Ok(parsed) => parsed,
         Err(e) => {
             eprintln!("error: {e}");
             return Err(2);
         }
     };
-    let columns = match csv_splitter_core::workbook::column_layout(
+    let columns = match csvx_core::workbook::column_layout(
         ops,
-        &match csv_splitter_core::workbook::base_header(input, delimiter) {
+        &match csvx_core::workbook::base_header(input, delimiter) {
             Ok(header) => header,
             Err(e) => {
                 return Err(report_failure(
@@ -6244,7 +6244,7 @@ fn cmd_edit(args: &[String]) -> i32 {
     let mut find_col: Option<Vec<String>> = None;
     let mut find_nth: u64 = 1;
     let mut match_case = false;
-    let mut order: Option<Vec<csv_splitter_core::sort::SortColumn>> = None;
+    let mut order: Option<Vec<csvx_core::sort::SortColumn>> = None;
     let mut count: Option<u64> = None;
     let mut regex = false;
     let mut name: Option<String> = None;
@@ -6544,9 +6544,9 @@ fn cmd_edit(args: &[String]) -> i32 {
             return 2;
         }
     };
-    let sidecar = csv_splitter_core::workbook::Journal::sidecar(&input);
+    let sidecar = csvx_core::workbook::Journal::sidecar(&input);
     warn_journal_damage(&input);
-    let mut journal = match csv_splitter_core::workbook::Journal::load(&sidecar) {
+    let mut journal = match csvx_core::workbook::Journal::load(&sidecar) {
         Ok(j) => j,
         Err(e) => return report_failure("edit", format!("cannot read {}: {e}", sidecar.display())),
     };
@@ -6563,14 +6563,14 @@ fn cmd_edit(args: &[String]) -> i32 {
             Err(e) => return report_failure("edit", e),
         };
         let (start_row, start_col, end_row, end_col) =
-            match csv_splitter_core::workbook::parse_a1_range(&from, &columns) {
+            match csvx_core::workbook::parse_a1_range(&from, &columns) {
                 Ok(r) => r,
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
                 }
             };
-        let (target_row, target_col) = match csv_splitter_core::workbook::parse_a1(&to, &columns) {
+        let (target_row, target_col) = match csvx_core::workbook::parse_a1(&to, &columns) {
             Ok((r, c)) => (r, c),
             Err(e) => {
                 eprintln!("error: {e}");
@@ -6580,10 +6580,10 @@ fn cmd_edit(args: &[String]) -> i32 {
         let width = end_col - start_col + 1;
         let height = (end_row - start_row + 1) as usize;
         let cells = width * height;
-        if cells > csv_splitter_core::workbook::MAX_BLOCK_CELLS {
+        if cells > csvx_core::workbook::MAX_BLOCK_CELLS {
             eprintln!(
                 "error: {width} × {height} is {cells} cells; the limit is {} — use `edit set --where` for a bulk change",
-                csv_splitter_core::workbook::MAX_BLOCK_CELLS
+                csvx_core::workbook::MAX_BLOCK_CELLS
             );
             return 2;
         }
@@ -6594,7 +6594,7 @@ fn cmd_edit(args: &[String]) -> i32 {
             );
             return 2;
         }
-        let window = match csv_splitter_core::workbook::window(
+        let window = match csvx_core::workbook::window(
             &input,
             journal.ops(),
             start_row,
@@ -6619,7 +6619,7 @@ fn cmd_edit(args: &[String]) -> i32 {
             block.push(cells);
         }
         let height_cells = block.len();
-        let op = csv_splitter_core::workbook::Op::PasteBlock {
+        let op = csvx_core::workbook::Op::PasteBlock {
             row: target_row,
             column: columns[target_col].clone(),
             rows: block,
@@ -6636,7 +6636,7 @@ fn cmd_edit(args: &[String]) -> i32 {
     match action.as_str() {
         "status" => {
             let logical =
-                csv_splitter_core::workbook::logical_rows(&input, journal.ops()).unwrap_or(0);
+                csvx_core::workbook::logical_rows(&input, journal.ops()).unwrap_or(0);
             if json {
                 println!(
                     r#"{{"file":"{}","ops":{},"logicalRows":{},"journal":"{}"}}"#,
@@ -6671,17 +6671,17 @@ fn cmd_edit(args: &[String]) -> i32 {
             let only = match &where_expr {
                 None => None,
                 Some(expr) => {
-                    let spec = match csv_splitter_core::filter::FilterSpec::parse(expr) {
+                    let spec = match csvx_core::filter::FilterSpec::parse(expr) {
                         Ok(s) => s,
                         Err(e) => {
                             eprintln!("error: {e}");
                             return 2;
                         }
                     };
-                    let set = csv_splitter_core::filter::FilterSet::single(spec);
-                    let columns = match csv_splitter_core::workbook::column_layout(
+                    let set = csvx_core::filter::FilterSet::single(spec);
+                    let columns = match csvx_core::workbook::column_layout(
                         journal.ops(),
-                        &match csv_splitter_core::workbook::base_header(&input, delimiter) {
+                        &match csvx_core::workbook::base_header(&input, delimiter) {
                             Ok(c) => c,
                             Err(e) => {
                                 return report_failure(
@@ -6730,13 +6730,13 @@ fn cmd_edit(args: &[String]) -> i32 {
             } else {
                 columns.as_deref()
             };
-            let result = csv_splitter_core::workbook::export_selected(
+            let result = csvx_core::workbook::export_selected(
                 &input,
                 journal.ops(),
                 &target,
                 delimiter,
                 quotes,
-                csv_splitter_core::workbook::ExportOptions {
+                csvx_core::workbook::ExportOptions {
                     only: only.as_ref(),
                     columns: export_columns,
                     cancel: None,
@@ -6764,7 +6764,7 @@ fn cmd_edit(args: &[String]) -> i32 {
                 };
                 let (stx, srx) = mpsc::channel();
                 let reporter = spawn_reporter("sort", srx, true);
-                let outcome = csv_splitter_core::sort::external_sort_columns(
+                let outcome = csvx_core::sort::external_sort_columns(
                     &target, &sorted, keys, delimiter, 256, &stx,
                 );
                 drop(stx);
@@ -6781,14 +6781,14 @@ fn cmd_edit(args: &[String]) -> i32 {
                         summary.columns = selected.clone();
                     }
                     // Drop the columns that were only there to sort by.
-                    let spec = csv_splitter_core::reshape::ReshapeSpec {
+                    let spec = csvx_core::reshape::ReshapeSpec {
                         keep: columns.clone().unwrap_or_default(),
                         drop: Vec::new(),
                         rename: Vec::new(),
                     };
                     let (ptx, prx) = mpsc::channel();
                     let reporter = spawn_reporter("columns", prx, true);
-                    let projected = csv_splitter_core::reshape::reshape(
+                    let projected = csvx_core::reshape::reshape(
                         &sorted, delimiter, &spec, &output, &ptx,
                     );
                     drop(ptx);
@@ -6824,7 +6824,7 @@ fn cmd_edit(args: &[String]) -> i32 {
             return match journal.undo() {
                 Some(op) => {
                     if let Err(e) =
-                        csv_splitter_core::workbook::Journal::update_locked(&sidecar, |fresh| {
+                        csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
                             fresh.undo();
                             Ok(())
                         })
@@ -6847,7 +6847,7 @@ fn cmd_edit(args: &[String]) -> i32 {
             return match journal.redo() {
                 Some(op) => {
                     if let Err(e) =
-                        csv_splitter_core::workbook::Journal::update_locked(&sidecar, |fresh| {
+                        csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
                             fresh.redo();
                             Ok(())
                         })
@@ -6881,7 +6881,7 @@ fn cmd_edit(args: &[String]) -> i32 {
             // it would find nothing whenever the target column does not contain the
             // needle. `--find-col` is the narrow-the-search flag.
             let columns_filter: Option<Vec<String>> = find_col.clone();
-            match csv_splitter_core::workbook::find_row(
+            match csvx_core::workbook::find_row(
                 &input,
                 journal.ops(),
                 needle,
@@ -6920,11 +6920,11 @@ fn cmd_edit(args: &[String]) -> i32 {
             match (row, where_expr) {
                 // Bulk edit: one rule, however many rows it touches.
                 (None, Some(filter)) => {
-                    if let Err(e) = csv_splitter_core::filter::FilterSpec::parse(&filter) {
+                    if let Err(e) = csvx_core::filter::FilterSpec::parse(&filter) {
                         eprintln!("error: {e}");
                         return 2;
                     }
-                    csv_splitter_core::workbook::Op::SetWhere {
+                    csvx_core::workbook::Op::SetWhere {
                         filter,
                         column,
                         value,
@@ -6936,7 +6936,7 @@ fn cmd_edit(args: &[String]) -> i32 {
                             return code;
                         }
                     }
-                    csv_splitter_core::workbook::Op::SetCell { row, column, value }
+                    csvx_core::workbook::Op::SetCell { row, column, value }
                 }
                 (Some(_), Some(_)) => {
                     eprintln!("error: set takes either --row or --where, not both");
@@ -6956,14 +6956,14 @@ fn cmd_edit(args: &[String]) -> i32 {
                     eprintln!("error: delete takes one of --row, --where or --invalid");
                     return 2;
                 }
-                let rule = match csv_splitter_core::validate::Rule::parse(check) {
+                let rule = match csvx_core::validate::Rule::parse(check) {
                     Ok(rule) => rule,
                     Err(e) => {
                         eprintln!("error: {e}");
                         return 2;
                     }
                 };
-                let runs = match csv_splitter_core::validate::rows_failing(
+                let runs = match csvx_core::validate::rows_failing(
                     &input,
                     journal.ops(),
                     std::slice::from_ref(&rule),
@@ -6987,7 +6987,7 @@ fn cmd_edit(args: &[String]) -> i32 {
                         ),
                     );
                 }
-                let op = csv_splitter_core::workbook::Op::DeleteRanges { runs };
+                let op = csvx_core::workbook::Op::DeleteRanges { runs };
                 if let Err(e) = journal_push(&mut journal, &sidecar, op) {
                     return e;
                 }
@@ -7007,7 +7007,7 @@ fn cmd_edit(args: &[String]) -> i32 {
                     eprintln!("error: delete takes either --row or --where, not both");
                     return 2;
                 }
-                let runs = match csv_splitter_core::workbook::runs_matching(
+                let runs = match csvx_core::workbook::runs_matching(
                     &input,
                     journal.ops(),
                     filter,
@@ -7029,7 +7029,7 @@ fn cmd_edit(args: &[String]) -> i32 {
                     return 2;
                 }
                 // One operation, so one `edit undo` brings back every deleted row.
-                let op = csv_splitter_core::workbook::Op::DeleteRanges { runs: runs.clone() };
+                let op = csvx_core::workbook::Op::DeleteRanges { runs: runs.clone() };
                 if let Err(e) = journal_push(&mut journal, &sidecar, op) {
                     return e;
                 }
@@ -7053,7 +7053,7 @@ fn cmd_edit(args: &[String]) -> i32 {
                 eprintln!("error: delete needs --row and --count");
                 return 2;
             };
-            csv_splitter_core::workbook::Op::DeleteRows { at: row, count }
+            csvx_core::workbook::Op::DeleteRows { at: row, count }
         }
         "replace" => {
             let (Some(from), Some(to)) = (from.clone(), to_block.clone()) else {
@@ -7061,7 +7061,7 @@ fn cmd_edit(args: &[String]) -> i32 {
                 return 2;
             };
             if regex {
-                if csv_splitter_core::format::pattern_is_valid(&from).is_none() {
+                if csvx_core::format::pattern_is_valid(&from).is_none() {
                     eprintln!(
                         "error: '{from}' is not a supported pattern (literals, ., [..], *, +, ?, ^, $, \\d \\w \\s)"
                     );
@@ -7070,7 +7070,7 @@ fn cmd_edit(args: &[String]) -> i32 {
                 return match journal_push(
                     &mut journal,
                     &sidecar,
-                    csv_splitter_core::workbook::Op::SubstituteRegex {
+                    csvx_core::workbook::Op::SubstituteRegex {
                         column: col.clone(),
                         pattern: from,
                         to,
@@ -7080,7 +7080,7 @@ fn cmd_edit(args: &[String]) -> i32 {
                     Err(code) => return code,
                 };
             }
-            csv_splitter_core::workbook::Op::Substitute {
+            csvx_core::workbook::Op::Substitute {
                 column: col,
                 from,
                 to,
@@ -7091,12 +7091,12 @@ fn cmd_edit(args: &[String]) -> i32 {
             let cells: Vec<String> = if raw.trim().is_empty() {
                 Vec::new()
             } else {
-                csv_splitter_core::csv_reader::parse_csv_record(&raw, b',')
+                csvx_core::csv_reader::parse_csv_record(&raw, b',')
             };
             // A key anchor wins over `--row`: it names a row that still exists, while a
             // row number is a position other writes may have moved.
             if let Some((flag, key)) = key_anchor.clone() {
-                let position = match csv_splitter_core::workbook::position_of_key(
+                let position = match csvx_core::workbook::position_of_key(
                     &input,
                     journal.ops(),
                     delimiter,
@@ -7117,7 +7117,7 @@ fn cmd_edit(args: &[String]) -> i32 {
                 } else {
                     position
                 };
-                csv_splitter_core::workbook::Op::InsertRows {
+                csvx_core::workbook::Op::InsertRows {
                     at,
                     rows: vec![cells],
                 }
@@ -7126,7 +7126,7 @@ fn cmd_edit(args: &[String]) -> i32 {
                     eprintln!("error: insert needs --row or --after-key/--before-key");
                     return 2;
                 };
-                csv_splitter_core::workbook::Op::InsertRows {
+                csvx_core::workbook::Op::InsertRows {
                     at: row,
                     rows: vec![cells],
                 }
@@ -7140,7 +7140,7 @@ fn cmd_edit(args: &[String]) -> i32 {
             if let Err(code) = check_formula(&input, delimiter, journal.ops(), &value) {
                 return code;
             }
-            csv_splitter_core::workbook::Op::AddColumn {
+            csvx_core::workbook::Op::AddColumn {
                 name,
                 formula: value,
             }
@@ -7150,9 +7150,9 @@ fn cmd_edit(args: &[String]) -> i32 {
                 eprintln!("error: set-formula needs --col and --value");
                 return 2;
             };
-            let columns = match csv_splitter_core::workbook::base_header(&input, delimiter)
+            let columns = match csvx_core::workbook::base_header(&input, delimiter)
                 .and_then(|header| {
-                    csv_splitter_core::workbook::column_layout(journal.ops(), &header)
+                    csvx_core::workbook::column_layout(journal.ops(), &header)
                 }) {
                 Ok(layout) => layout.into_iter().map(|(name, _)| name).collect::<Vec<_>>(),
                 Err(e) => {
@@ -7161,12 +7161,12 @@ fn cmd_edit(args: &[String]) -> i32 {
                 }
             };
             if let Err(message) =
-                csv_splitter_core::workbook::check_formula(&expression, &columns, Some(&target))
+                csvx_core::workbook::check_formula(&expression, &columns, Some(&target))
             {
                 eprintln!("error: {message}");
                 return 2;
             }
-            csv_splitter_core::workbook::Op::SetColumnFormula {
+            csvx_core::workbook::Op::SetColumnFormula {
                 column: target,
                 formula: expression,
             }
@@ -7178,8 +7178,8 @@ fn cmd_edit(args: &[String]) -> i32 {
             };
             // `--value` is a constant, `--formula` an expression. Exactly one.
             let source = match (value, formula_expr) {
-                (Some(v), None) => csv_splitter_core::workbook::ColumnSource::Literal(v),
-                (None, Some(f)) => csv_splitter_core::workbook::ColumnSource::Formula(f),
+                (Some(v), None) => csvx_core::workbook::ColumnSource::Literal(v),
+                (None, Some(f)) => csvx_core::workbook::ColumnSource::Formula(f),
                 (Some(_), Some(_)) => {
                     eprintln!("error: insert-column takes --value or --formula, not both");
                     return 2;
@@ -7189,7 +7189,7 @@ fn cmd_edit(args: &[String]) -> i32 {
                     return 2;
                 }
             };
-            csv_splitter_core::workbook::Op::AddColumnAt {
+            csvx_core::workbook::Op::AddColumnAt {
                 after: after_col,
                 name,
                 source,
@@ -7210,7 +7210,7 @@ fn cmd_edit(args: &[String]) -> i32 {
             // `--cols a,b` fills several columns as one operation, so one undo covers the
             // whole gesture; `--col` stays the single-column form.
             if !cols_list.is_empty() {
-                csv_splitter_core::workbook::Op::FillColumns {
+                csvx_core::workbook::Op::FillColumns {
                     columns: cols_list.clone(),
                     from: from - 1,
                     to: to - 1,
@@ -7221,7 +7221,7 @@ fn cmd_edit(args: &[String]) -> i32 {
                     eprintln!("error: fill needs --col or --cols");
                     return 2;
                 };
-                csv_splitter_core::workbook::Op::FillRange {
+                csvx_core::workbook::Op::FillRange {
                     column,
                     from: from - 1,
                     to: to - 1,
@@ -7244,7 +7244,7 @@ fn cmd_edit(args: &[String]) -> i32 {
                 eprintln!("error: --into needs at least two names, e.g. --into \"first,last\"");
                 return 2;
             }
-            csv_splitter_core::workbook::Op::SplitColumn {
+            csvx_core::workbook::Op::SplitColumn {
                 column,
                 by,
                 into: names,
@@ -7255,14 +7255,14 @@ fn cmd_edit(args: &[String]) -> i32 {
                 eprintln!("error: drop needs --name");
                 return 2;
             };
-            csv_splitter_core::workbook::Op::DropColumn { name }
+            csvx_core::workbook::Op::DropColumn { name }
         }
         "rename" => {
             let (Some(from), Some(to)) = (from, to_block) else {
                 eprintln!("error: rename needs --from and --to");
                 return 2;
             };
-            csv_splitter_core::workbook::Op::RenameColumn { from, to }
+            csvx_core::workbook::Op::RenameColumn { from, to }
         }
         other => {
             eprintln!("error: unknown edit action '{other}'");
@@ -7296,7 +7296,7 @@ fn cmd_analyze(args: &[String]) -> i32 {
     let mut quotes_text = String::new();
     let mut sample: Option<u64> = None;
     let mut input: Option<PathBuf> = None;
-    let mut distinct_cap = csv_splitter_core::profile::DEFAULT_DISTINCT_CAP;
+    let mut distinct_cap = csvx_core::profile::DEFAULT_DISTINCT_CAP;
     let mut json = false;
     let mut delim = "auto".to_string();
 
@@ -7373,7 +7373,7 @@ fn cmd_analyze(args: &[String]) -> i32 {
             return 2;
         }
     };
-    let result = csv_splitter_core::profile::profile_quotes(
+    let result = csvx_core::profile::profile_quotes(
         &input,
         delimiter,
         distinct_cap,
@@ -7459,7 +7459,7 @@ fn cmd_analyze(args: &[String]) -> i32 {
     0
 }
 
-fn profile_json(c: &csv_splitter_core::profile::ColumnProfile) -> String {
+fn profile_json(c: &csvx_core::profile::ColumnProfile) -> String {
     let numeric = match &c.numeric {
         Some(n) => format!(
             r#"{{"count":{},"min":{},"max":{},"sum":{},"mean":{},"median":{}}}"#,
@@ -7578,18 +7578,18 @@ fn cmd_schema(args: &[String]) -> i32 {
             return 2;
         }
     };
-    let sheet = match csv_splitter_core::sheet::Sheet::open(
+    let sheet = match csvx_core::sheet::Sheet::open(
         &input,
-        csv_splitter_core::sheet::ReadOptions { delimiter },
+        csvx_core::sheet::ReadOptions { delimiter },
     ) {
         Ok(sheet) => sheet,
         Err(e) => return report_failure("schema", format!("cannot open the sheet: {e}")),
     };
 
     if let Some(other) = &diff_with {
-        let other_sheet = match csv_splitter_core::sheet::Sheet::open(
+        let other_sheet = match csvx_core::sheet::Sheet::open(
             other,
-            csv_splitter_core::sheet::ReadOptions { delimiter },
+            csvx_core::sheet::ReadOptions { delimiter },
         ) {
             Ok(sheet) => sheet,
             Err(e) => {
@@ -7598,7 +7598,7 @@ fn cmd_schema(args: &[String]) -> i32 {
         };
         let mine = sheet.columns().unwrap_or_default();
         let theirs = other_sheet.columns().unwrap_or_default();
-        let diff = csv_splitter_core::schema::diff(&mine, &theirs);
+        let diff = csvx_core::schema::diff(&mine, &theirs);
         if json {
             println!("{}", diff.to_json());
         } else {
@@ -7646,7 +7646,7 @@ fn cmd_schema(args: &[String]) -> i32 {
         for name in &missing {
             eprintln!(
                 "  {name} — {}",
-                csv_splitter_core::csv_reader::column_candidates(name, &columns)
+                csvx_core::csv_reader::column_candidates(name, &columns)
             );
         }
         return 1;
@@ -7677,7 +7677,7 @@ fn cmd_schema(args: &[String]) -> i32 {
                     // The same candidate logic every other column lookup uses.
                     eprintln!(
                         "  {}",
-                        csv_splitter_core::csv_reader::column_candidates(name, &columns)
+                        csvx_core::csv_reader::column_candidates(name, &columns)
                     );
                 }
                 1
@@ -7781,7 +7781,7 @@ fn cmd_columns(args: &[String]) -> i32 {
             },
             "--rename" => match p
                 .value("--rename")
-                .and_then(|v| csv_splitter_core::reshape::ReshapeSpec::parse_renames(&v))
+                .and_then(|v| csvx_core::reshape::ReshapeSpec::parse_renames(&v))
             {
                 Ok(v) => rename = v,
                 Err(e) => {
@@ -7820,7 +7820,7 @@ fn cmd_columns(args: &[String]) -> i32 {
         eprintln!("error: columns needs <input>");
         return 2;
     };
-    let spec = csv_splitter_core::reshape::ReshapeSpec {
+    let spec = csvx_core::reshape::ReshapeSpec {
         keep,
         drop: drop_cols,
         rename,
@@ -7857,7 +7857,7 @@ fn cmd_columns(args: &[String]) -> i32 {
         }
     };
     let result =
-        csv_splitter_core::reshape::reshape_quotes(&input, delimiter, &spec, &output, quotes, &tx);
+        csvx_core::reshape::reshape_quotes(&input, delimiter, &spec, &output, quotes, &tx);
     drop(tx);
     let _ = reporter.join();
     match result {
@@ -7888,7 +7888,7 @@ fn cmd_columns(args: &[String]) -> i32 {
                 let ok = self_check(
                     &output,
                     delimiter,
-                    csv_splitter_core::check::Expectation::rows(s.rows)
+                    csvx_core::check::Expectation::rows(s.rows)
                         .with_columns(s.columns.len()),
                     json,
                 );
@@ -7908,7 +7908,7 @@ fn cmd_dedupe(args: &[String]) -> i32 {
     let mut input: Option<PathBuf> = None;
     let mut out: Option<PathBuf> = None;
     let mut keys: Vec<String> = Vec::new();
-    let mut max_keys = csv_splitter_core::dedupe::DEFAULT_MAX_KEYS;
+    let mut max_keys = csvx_core::dedupe::DEFAULT_MAX_KEYS;
     let mut json = false;
     let mut verify = false;
     let mut delim = "auto".to_string();
@@ -8005,7 +8005,7 @@ fn cmd_dedupe(args: &[String]) -> i32 {
     if let Err(code) = check_output(Some(&input), &output) {
         return code;
     }
-    let result = csv_splitter_core::dedupe::dedupe_quotes(
+    let result = csvx_core::dedupe::dedupe_quotes(
         &input, delimiter, &keys, &output, max_keys, quotes, &tx,
     );
     drop(tx);
@@ -8044,7 +8044,7 @@ fn cmd_dedupe(args: &[String]) -> i32 {
                 let ok = self_check(
                     &output,
                     delimiter,
-                    csv_splitter_core::check::Expectation::rows(s.kept).with_ragged(s.kept_ragged),
+                    csvx_core::check::Expectation::rows(s.kept).with_ragged(s.kept_ragged),
                     json,
                 );
                 if !ok {
@@ -8172,7 +8172,7 @@ fn cmd_verify(args: &[String]) -> i32 {
 
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("verify", rx, true);
-    let merge_result = csv_splitter_core::merge::merge_archive(&archive, &merged, &tx);
+    let merge_result = csvx_core::merge::merge_archive(&archive, &merged, &tx);
     drop(tx);
     reporter.join().ok();
 

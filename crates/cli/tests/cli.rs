@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn bin() -> &'static str {
-    env!("CARGO_BIN_EXE_csv-splitter")
+    env!("CARGO_BIN_EXE_csvx")
 }
 
 /// Per-process unique suffix for temp directories.
@@ -4947,7 +4947,7 @@ fn serve_check_reports_the_configuration() {
 fn version_says_whether_duckdb_is_compiled_in() {
     let out = Command::new(bin()).arg("--version").output().unwrap();
     let text = String::from_utf8_lossy(&out.stdout);
-    assert!(text.contains("csv-splitter"), "{text}");
+    assert!(text.contains("csvx"), "{text}");
     assert!(
         text.contains("DuckDB: compiled in") || text.contains("DuckDB: not compiled"),
         "{text}"

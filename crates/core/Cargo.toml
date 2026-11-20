@@ -1,7 +1,10 @@
 [package]
-name = "csv-splitter-core"
+name = "csvx-core"
 version.workspace = true
 edition.workspace = true
+description = "Engine of csvx: quoting-aware CSV reader, sparse row index, workbook journal, split/merge, DuckDB-backed analytics."
+repository.workspace = true
+license.workspace = true
 
 [dependencies]
 zstd = { workspace = true }

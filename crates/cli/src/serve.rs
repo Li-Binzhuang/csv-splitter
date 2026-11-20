@@ -33,23 +33,23 @@
 //!   POST /warm?path=REL&sql=...                       -> {"job":"..."}
 //!   GET  /job?id=...    (poll)      GET /jobs  (list)
 
-use csv_splitter_core::cache::ResultCache;
-use csv_splitter_core::dedupe;
-use csv_splitter_core::engine;
-use csv_splitter_core::filter::{self, FilterSpec};
-use csv_splitter_core::groupby;
-use csv_splitter_core::jobs::JobRegistry;
-use csv_splitter_core::listing;
-use csv_splitter_core::merge::merge_archive_expecting;
-use csv_splitter_core::partition;
-use csv_splitter_core::preview::compute_column_stats;
-use csv_splitter_core::profile;
-use csv_splitter_core::search::SearchSpec;
-use csv_splitter_core::splitter::run_split_threads;
-use csv_splitter_core::sql;
-use csv_splitter_core::viewer::WindowViewer;
-use csv_splitter_core::workbook::{self, ColumnSource, Journal, Op};
-use csv_splitter_core::{CompressFormat, Delimiter, ProgressEvent, SplitConfig};
+use csvx_core::cache::ResultCache;
+use csvx_core::dedupe;
+use csvx_core::engine;
+use csvx_core::filter::{self, FilterSpec};
+use csvx_core::groupby;
+use csvx_core::jobs::JobRegistry;
+use csvx_core::listing;
+use csvx_core::merge::merge_archive_expecting;
+use csvx_core::partition;
+use csvx_core::preview::compute_column_stats;
+use csvx_core::profile;
+use csvx_core::search::SearchSpec;
+use csvx_core::splitter::run_split_threads;
+use csvx_core::sql;
+use csvx_core::viewer::WindowViewer;
+use csvx_core::workbook::{self, ColumnSource, Journal, Op};
+use csvx_core::{CompressFormat, Delimiter, ProgressEvent, SplitConfig};
 use std::collections::HashMap;
 use std::io::{self, BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
@@ -155,7 +155,7 @@ pub fn run(cfg: ServerConfig) -> io::Result<()> {
         eprintln!("warning: listening on {local}, not loopback — anyone who can reach this port can read files under {}", root.display());
     }
     println!(
-        "csv-splitter API on http://{local}  (root: {})",
+        "csvx API on http://{local}  (root: {})",
         root.display()
     );
     install_signal_handlers();
@@ -276,7 +276,7 @@ pub fn serve_on_with(
         let running = jobs
             .list()
             .iter()
-            .filter(|job| matches!(job.state, csv_splitter_core::jobs::JobState::Running))
+            .filter(|job| matches!(job.state, csvx_core::jobs::JobState::Running))
             .count();
         let in_flight = active.load(std::sync::atomic::Ordering::SeqCst);
         if running == 0 && in_flight == 0 {
@@ -953,18 +953,18 @@ fn journal_stamp(path: &Path) -> String {
 /// The query timeout, in milliseconds. Tunable for an operator whose box is slower (or
 /// for a test that needs to see the timeout path without waiting thirty seconds).
 fn query_timeout_ms() -> u64 {
-    std::env::var("CSV_SPLITTER_QUERY_TIMEOUT_MS")
+    std::env::var("CSVX_QUERY_TIMEOUT_MS")
         .ok()
         .and_then(|value| value.parse().ok())
         .filter(|ms| *ms > 0)
-        .unwrap_or(csv_splitter_core::sql::DEFAULT_TIMEOUT_MS)
+        .unwrap_or(csvx_core::sql::DEFAULT_TIMEOUT_MS)
 }
 
 /// `POST /convert?path=&out=&from=&to=utf-8` — rewrite a file in another encoding.
 ///
 /// A job: it streams the whole file. Useful to a browser that has a GBK export in the
 /// served directory and needs UTF-8 text it can parse — the same capability
-/// `csv-splitter convert` has, and the same core `encoding::transcode`.
+/// `csvx convert` has, and the same core `encoding::transcode`.
 fn start_convert(
     stream: &mut TcpStream,
     root: &Path,
@@ -980,7 +980,7 @@ fn start_convert(
     };
     let from = match params.get("from").map(String::as_str).unwrap_or("auto") {
         "auto" | "" => None,
-        name => match csv_splitter_core::encoding::parse_name(name) {
+        name => match csvx_core::encoding::parse_name(name) {
             Some(encoding) => Some(encoding),
             None => {
                 return bad_request(
@@ -994,12 +994,12 @@ fn start_convert(
     };
     let to = match params.get("to").map(|t| t.to_ascii_lowercase()) {
         Some(ref name) if name == "utf-8" || name == "utf8" => {
-            csv_splitter_core::encoding::TextEncoding::Utf8 { bom: false }
+            csvx_core::encoding::TextEncoding::Utf8 { bom: false }
         }
         Some(ref name) if name == "utf-8-bom" || name == "utf8-bom" || name == "bom" => {
-            csv_splitter_core::encoding::TextEncoding::Utf8 { bom: true }
+            csvx_core::encoding::TextEncoding::Utf8 { bom: true }
         }
-        None => csv_splitter_core::encoding::TextEncoding::Utf8 { bom: false },
+        None => csvx_core::encoding::TextEncoding::Utf8 { bom: false },
         Some(other) => {
             return bad_request(
                 stream,
@@ -1012,7 +1012,7 @@ fn start_convert(
     let result_path = out.clone();
     let id = jobs.submit(
         "convert",
-        move |tx| match csv_splitter_core::encoding::transcode(
+        move |tx| match csvx_core::encoding::transcode(
             &input,
             &out,
             from,
@@ -1057,8 +1057,8 @@ fn start_copy(
     let result_path = out.clone();
     let id = jobs.submit("copy", move |tx| {
         let materialised = if apply_edits {
-            let read = csv_splitter_core::sheet::ReadOptions { delimiter };
-            match csv_splitter_core::sheet::materialize(&input, &read, &tx) {
+            let read = csvx_core::sheet::ReadOptions { delimiter };
+            match csvx_core::sheet::materialize(&input, &read, &tx) {
                 Ok(m) => Some(m),
                 Err(e) => {
                     tx.send(ProgressEvent::Error(e.to_string())).ok();
@@ -1118,7 +1118,7 @@ fn start_columns_reshape(
             .unwrap_or_default()
     };
     let rename = match params.get("rename") {
-        Some(text) => match csv_splitter_core::reshape::ReshapeSpec::parse_renames(text) {
+        Some(text) => match csvx_core::reshape::ReshapeSpec::parse_renames(text) {
             Ok(pairs) => pairs,
             Err(e) => {
                 return bad_request(stream, &e, "rename", "rename=old:new,old2:new2");
@@ -1126,7 +1126,7 @@ fn start_columns_reshape(
         },
         None => Vec::new(),
     };
-    let spec = csv_splitter_core::reshape::ReshapeSpec {
+    let spec = csvx_core::reshape::ReshapeSpec {
         keep: list("keep"),
         drop: list("drop"),
         rename,
@@ -1143,7 +1143,7 @@ fn start_columns_reshape(
     let result_path = out.clone();
     let id = jobs.submit(
         "columns",
-        move |tx| match csv_splitter_core::reshape::reshape(&input, delimiter, &spec, &out, &tx) {
+        move |tx| match csvx_core::reshape::reshape(&input, delimiter, &spec, &out, &tx) {
             Ok(_) => {
                 tx.send(ProgressEvent::Finished {
                     output: result_path,
@@ -1229,7 +1229,7 @@ fn start_concat(
         // order concatenate instead of failing on a header mismatch.
         let aligned;
         let effective: Vec<std::path::PathBuf> = if by_name {
-            match csv_splitter_core::concat::align_by_name(&inputs, delimiter) {
+            match csvx_core::concat::align_by_name(&inputs, delimiter) {
                 Ok(guard) => {
                     aligned = guard;
                     aligned.paths().to_vec()
@@ -1246,7 +1246,7 @@ fn start_concat(
             engine::Engine::Sql => {
                 engine::concat_sql(&effective, &out, delimiter, ignore_header, &tx).map(|_| ())
             }
-            _ => csv_splitter_core::concat::concat(&effective, &out, delimiter, ignore_header, &tx)
+            _ => csvx_core::concat::concat(&effective, &out, delimiter, ignore_header, &tx)
                 .map(|_| ()),
         };
         match result {
@@ -1303,7 +1303,7 @@ fn schema_diff_endpoint(
         .get("sample")
         .and_then(|v| v.parse().ok())
         .unwrap_or(64u64);
-    let mine = match csv_splitter_core::sheet::schema_sample(&path, delimiter(params), sample) {
+    let mine = match csvx_core::sheet::schema_sample(&path, delimiter(params), sample) {
         Ok(columns) => columns,
         Err(e) => {
             return respond_json(
@@ -1314,7 +1314,7 @@ fn schema_diff_endpoint(
         }
     };
     let theirs =
-        match csv_splitter_core::sheet::schema_sample(&other_path, delimiter(params), sample) {
+        match csvx_core::sheet::schema_sample(&other_path, delimiter(params), sample) {
             Ok(columns) => columns,
             Err(e) => {
                 return respond_json(
@@ -1326,7 +1326,7 @@ fn schema_diff_endpoint(
         };
     let mine_names: Vec<String> = mine.iter().map(|c| c.name.clone()).collect();
     let theirs_names: Vec<String> = theirs.iter().map(|c| c.name.clone()).collect();
-    let diff = csv_splitter_core::schema::diff(&mine_names, &theirs_names);
+    let diff = csvx_core::schema::diff(&mine_names, &theirs_names);
     respond_json(stream, 200, &diff.to_json())
 }
 
@@ -1355,7 +1355,7 @@ fn validate_endpoint(
     };
     let mut rules = Vec::new();
     for text in checks.split(';').map(str::trim).filter(|t| !t.is_empty()) {
-        match csv_splitter_core::validate::Rule::parse(text) {
+        match csvx_core::validate::Rule::parse(text) {
             Ok(rule) => rules.push(rule),
             Err(e) => {
                 return bad_request(
@@ -1367,8 +1367,8 @@ fn validate_endpoint(
             }
         }
     }
-    let ops = match csv_splitter_core::workbook::Journal::load(
-        &csv_splitter_core::workbook::Journal::sidecar(&path),
+    let ops = match csvx_core::workbook::Journal::load(
+        &csvx_core::workbook::Journal::sidecar(&path),
     ) {
         Ok(journal) => journal.ops().to_vec(),
         Err(e) => {
@@ -1398,7 +1398,7 @@ fn validate_endpoint(
     let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
     drop(rx);
     let budget = std::time::Duration::from_millis(query_timeout_ms());
-    match csv_splitter_core::validate::validate_with_budget(
+    match csvx_core::validate::validate_with_budget(
         &path,
         &ops,
         &rules,
@@ -1505,7 +1505,7 @@ fn start_lookup(
         .get("maxKeys")
         .and_then(|v| v.parse().ok())
         .unwrap_or(5_000_000);
-    let options = csv_splitter_core::lookup::LookupOptions {
+    let options = csvx_core::lookup::LookupOptions {
         key: key.to_string(),
         reference,
         reference_key,
@@ -1533,8 +1533,8 @@ fn start_lookup(
         metrics::shared().record_engine(planned.label());
         // `apply-edits=1` looks up the edited main file; the reference stays a plain file.
         let materialised = if apply_edits {
-            let read = csv_splitter_core::sheet::ReadOptions { delimiter };
-            match csv_splitter_core::sheet::materialize(&input, &read, &tx) {
+            let read = csvx_core::sheet::ReadOptions { delimiter };
+            match csvx_core::sheet::materialize(&input, &read, &tx) {
                 Ok(m) => Some(m),
                 Err(e) => {
                     tx.send(ProgressEvent::Error(e.to_string())).ok();
@@ -1552,7 +1552,7 @@ fn start_lookup(
             engine::Engine::Sql => {
                 engine::lookup_sql(&source, delimiter, &out, &options, &tx).map(|_| ())
             }
-            _ => csv_splitter_core::lookup::lookup(&source, delimiter, &out, &options, &tx)
+            _ => csvx_core::lookup::lookup(&source, delimiter, &out, &options, &tx)
                 .map(|_| ()),
         };
         match result {
@@ -1578,7 +1578,7 @@ fn metrics_endpoint(stream: &mut TcpStream, jobs: &JobRegistry) -> io::Result<()
     let all = jobs.list();
     let running = all
         .iter()
-        .filter(|job| matches!(job.state, csv_splitter_core::jobs::JobState::Running))
+        .filter(|job| matches!(job.state, csvx_core::jobs::JobState::Running))
         .count();
     let body = metrics::shared().to_json((all.len(), running));
     respond_json(stream, 200, &body)
@@ -1682,9 +1682,9 @@ fn cell_endpoint(
             "pass row=1 for the first row",
         );
     }
-    let sheet = match csv_splitter_core::sheet::Sheet::open(
+    let sheet = match csvx_core::sheet::Sheet::open(
         &path,
-        csv_splitter_core::sheet::ReadOptions {
+        csvx_core::sheet::ReadOptions {
             delimiter: delimiter(params),
         },
     ) {
@@ -1744,8 +1744,8 @@ fn cell_endpoint(
             json_str(column),
             json_str(&value),
             json_str(&match window.keys.first() {
-                Some(csv_splitter_core::workbook::RowId::Base(i)) => format!("b:{i}"),
-                Some(csv_splitter_core::workbook::RowId::Virtual(i)) => format!("v:{i}"),
+                Some(csvx_core::workbook::RowId::Base(i)) => format!("b:{i}"),
+                Some(csvx_core::workbook::RowId::Virtual(i)) => format!("v:{i}"),
                 None => String::new(),
             }),
             window.total
@@ -1869,7 +1869,7 @@ fn job_cancel(
         );
     };
     match jobs.cancel(id) {
-        csv_splitter_core::jobs::CancelOutcome::Cancelling => respond_json(
+        csvx_core::jobs::CancelOutcome::Cancelling => respond_json(
             stream,
             202,
             &format!(
@@ -1880,7 +1880,7 @@ fn job_cancel(
                 )
             ),
         ),
-        csv_splitter_core::jobs::CancelOutcome::Finished(state) => respond_json(
+        csvx_core::jobs::CancelOutcome::Finished(state) => respond_json(
             stream,
             200,
             &format!(
@@ -1890,7 +1890,7 @@ fn job_cancel(
                 json_str("the job already finished; nothing was stopped")
             ),
         ),
-        csv_splitter_core::jobs::CancelOutcome::NotCancellable => respond_json(
+        csvx_core::jobs::CancelOutcome::NotCancellable => respond_json(
             stream,
             409,
             &format!(
@@ -1898,7 +1898,7 @@ fn job_cancel(
                 json_str("wait for it to finish, or stop the server (SIGTERM waits five seconds)")
             ),
         ),
-        csv_splitter_core::jobs::CancelOutcome::Unknown => respond_json(
+        csvx_core::jobs::CancelOutcome::Unknown => respond_json(
             stream,
             404,
             &format!(
@@ -1940,7 +1940,7 @@ fn job_list(stream: &mut TcpStream, jobs: &JobRegistry) -> io::Result<()> {
     respond_json(stream, 200, &format!(r#"{{"jobs":[{}]}}"#, items.join(",")))
 }
 
-fn job_json(status: &csv_splitter_core::jobs::JobStatus) -> String {
+fn job_json(status: &csvx_core::jobs::JobStatus) -> String {
     let fraction = match status.fraction() {
         Some(f) => format!("{:.3}", f),
         None => "null".to_string(),
@@ -2118,10 +2118,10 @@ fn analyze(
         .map(|v| v == "1" || v == "true")
         .unwrap_or(false)
     {
-        let read = csv_splitter_core::sheet::ReadOptions {
+        let read = csvx_core::sheet::ReadOptions {
             delimiter: delimiter(params),
         };
-        match csv_splitter_core::sheet::materialize(&path, &read, &tx) {
+        match csvx_core::sheet::materialize(&path, &read, &tx) {
             Ok(m) => Some(m),
             Err(e) => {
                 return respond_json(
@@ -2224,8 +2224,8 @@ fn start_dedupe(
         // `apply-edits=1` deduplicates the edited sheet: the output is a flattened view of
         // the edits, not a copy of the base file.
         let materialised = if apply_edits {
-            let read = csv_splitter_core::sheet::ReadOptions { delimiter };
-            match csv_splitter_core::sheet::materialize(&input, &read, &tx) {
+            let read = csvx_core::sheet::ReadOptions { delimiter };
+            match csvx_core::sheet::materialize(&input, &read, &tx) {
                 Ok(m) => Some(m),
                 Err(e) => {
                     tx.send(ProgressEvent::Error(e.to_string())).ok();
@@ -2389,10 +2389,10 @@ fn edit_apply(
                 "cells=row:col:value;row:col:value (a value may contain ':' but not ';')",
             );
         };
-        let read = csv_splitter_core::sheet::ReadOptions {
+        let read = csvx_core::sheet::ReadOptions {
             delimiter: delimiter(params),
         };
-        let sheet = match csv_splitter_core::sheet::Sheet::open(&path, read) {
+        let sheet = match csvx_core::sheet::Sheet::open(&path, read) {
             Ok(sheet) => sheet,
             Err(e) => {
                 return respond_json(
@@ -2478,7 +2478,7 @@ fn edit_apply(
         }
         let written: Vec<Op> = ops.clone();
         let mut updated_count = 0usize;
-        let locked = csv_splitter_core::workbook::Journal::update_locked(&sidecar, |fresh| {
+        let locked = csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
             for op in &written {
                 fresh.push(op.clone());
             }
@@ -2528,7 +2528,7 @@ fn edit_apply(
                 match workbook::column_layout(&ops, &workbook::base_header(&base, delimiter)?) {
                     Ok(layout) => {
                         let columns: Vec<String> = layout.into_iter().map(|(n, _)| n).collect();
-                        let spec = match csv_splitter_core::filter::FilterSpec::parse(expr) {
+                        let spec = match csvx_core::filter::FilterSpec::parse(expr) {
                             Ok(spec) => spec,
                             Err(e) => {
                                 return respond_json(
@@ -2541,7 +2541,7 @@ fn edit_apply(
                                 )
                             }
                         };
-                        let set = csv_splitter_core::filter::FilterSet::single(spec);
+                        let set = csvx_core::filter::FilterSet::single(spec);
                         match set.compile(&columns) {
                             Ok(compiled) => Some(compiled),
                             Err(e) => {
@@ -2578,7 +2578,7 @@ fn edit_apply(
                 &ops,
                 &out,
                 delimiter,
-                csv_splitter_core::csv_reader::QuoteStyle::Rfc4180,
+                csvx_core::csv_reader::QuoteStyle::Rfc4180,
                 options,
                 &tx,
             ) {
@@ -2610,7 +2610,7 @@ fn edit_apply(
 
     if action == "undo" {
         let mut undone = None;
-        let locked = csv_splitter_core::workbook::Journal::update_locked(&sidecar, |fresh| {
+        let locked = csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
             undone = fresh.undo();
             Ok(())
         });
@@ -2651,7 +2651,7 @@ fn edit_apply(
 
     if action == "redo" {
         let mut redone = None;
-        let locked = csv_splitter_core::workbook::Journal::update_locked(&sidecar, |fresh| {
+        let locked = csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
             redone = fresh.redo();
             Ok(())
         });
@@ -2727,7 +2727,7 @@ fn edit_apply(
                     "value=comma,separated,cells",
                 );
             };
-            let position = match csv_splitter_core::workbook::position_of_key(
+            let position = match csvx_core::workbook::position_of_key(
                 &path,
                 journal.ops(),
                 delimiter(params),
@@ -2758,7 +2758,7 @@ fn edit_apply(
             };
             Op::InsertRows {
                 at,
-                rows: vec![csv_splitter_core::csv_reader::parse_csv_record(value, b',')],
+                rows: vec![csvx_core::csv_reader::parse_csv_record(value, b',')],
             }
         }
         "set" => {
@@ -2775,9 +2775,9 @@ fn edit_apply(
             // `expect=` makes the write compare-and-set: a client that fetched this
             // window earlier must not overwrite a value it never saw.
             if let Some(expect) = params.get("expect") {
-                let sheet = match csv_splitter_core::sheet::Sheet::open(
+                let sheet = match csvx_core::sheet::Sheet::open(
                     &path,
-                    csv_splitter_core::sheet::ReadOptions {
+                    csvx_core::sheet::ReadOptions {
                         delimiter: delimiter(params),
                     },
                 ) {
@@ -2868,7 +2868,7 @@ fn edit_apply(
             let cells = if raw.trim().is_empty() {
                 Vec::new()
             } else {
-                csv_splitter_core::csv_reader::parse_csv_record(&raw, b',')
+                csvx_core::csv_reader::parse_csv_record(&raw, b',')
             };
             Op::InsertRows {
                 at: row,
@@ -3146,9 +3146,9 @@ fn edit_apply(
             };
             // Validate before writing: a stored formula that cannot evaluate would
             // accept the request and break the next read.
-            let columns = match csv_splitter_core::workbook::base_header(&path, delimiter(params))
+            let columns = match csvx_core::workbook::base_header(&path, delimiter(params))
                 .and_then(|header| {
-                    csv_splitter_core::workbook::column_layout(journal.ops(), &header)
+                    csvx_core::workbook::column_layout(journal.ops(), &header)
                 }) {
                 Ok(layout) => layout.into_iter().map(|(name, _)| name).collect::<Vec<_>>(),
                 Err(e) => {
@@ -3160,7 +3160,7 @@ fn edit_apply(
                 }
             };
             if let Err(message) =
-                csv_splitter_core::workbook::check_formula(expression, &columns, Some(column))
+                csvx_core::workbook::check_formula(expression, &columns, Some(column))
             {
                 return bad_request(stream, &message, "value", "value=<expression>");
             }
@@ -3183,9 +3183,9 @@ fn edit_apply(
             };
             // Same write-time guard as set-formula. A new column reading itself would be
             // accepted here and then fail on every later read, which is the worst order.
-            let columns = match csv_splitter_core::workbook::base_header(&path, delimiter(params))
+            let columns = match csvx_core::workbook::base_header(&path, delimiter(params))
                 .and_then(|header| {
-                    csv_splitter_core::workbook::column_layout(journal.ops(), &header)
+                    csvx_core::workbook::column_layout(journal.ops(), &header)
                 }) {
                 Ok(layout) => layout.into_iter().map(|(name, _)| name).collect::<Vec<_>>(),
                 Err(e) => {
@@ -3197,7 +3197,7 @@ fn edit_apply(
                 }
             };
             if let Err(message) =
-                csv_splitter_core::workbook::check_formula(expression, &columns, Some(name))
+                csvx_core::workbook::check_formula(expression, &columns, Some(name))
             {
                 return bad_request(stream, &message, "value", "value=<expression>");
             }
@@ -3247,7 +3247,7 @@ fn edit_apply(
     // appending on top of a state it never saw.
     let expected_stamp = params.get("stamp").cloned();
     let mut stale_with: Option<String> = None;
-    match csv_splitter_core::workbook::Journal::update_locked(&sidecar, |fresh| {
+    match csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
         if let Some(expected) = &expected_stamp {
             let current = journal_stamp(&path);
             if &current != expected {
@@ -3332,7 +3332,7 @@ fn book_endpoint(
     // A malformed number is a bad request, not something to ignore: silently
     // falling back to the default would make `max=nope` look like it worked.
     let max = match params.get("max") {
-        None => csv_splitter_core::book::DEFAULT_MAX_SHEETS,
+        None => csvx_core::book::DEFAULT_MAX_SHEETS,
         Some(raw) => match raw.parse::<usize>() {
             Ok(value) => value,
             Err(_) => {
@@ -3345,7 +3345,7 @@ fn book_endpoint(
             }
         },
     };
-    match csv_splitter_core::book::scan(&scan_root, max) {
+    match csvx_core::book::scan(&scan_root, max) {
         Ok(book) => {
             let sheets: Vec<String> = book.sheets.iter().map(|s| s.to_json()).collect();
             let unreadable: Vec<String> = book
@@ -3391,7 +3391,7 @@ fn layout_endpoint(
         Ok(v) => v,
         Err(reason) => return bad_path_reason(stream, reason),
     };
-    let mut layout = match csv_splitter_core::layout::Layout::load(&path) {
+    let mut layout = match csvx_core::layout::Layout::load(&path) {
         Ok(l) => l,
         Err(e) => {
             return respond_json(
@@ -3476,7 +3476,7 @@ fn chart_endpoint(
     let Some(y) = params.get("y").filter(|v| !v.is_empty()) else {
         return bad_request(stream, "y is required", "y", "pass y=<column:op>");
     };
-    let spec = match csv_splitter_core::aggregate::AggSpec::parse_list(y) {
+    let spec = match csvx_core::aggregate::AggSpec::parse_list(y) {
         Ok(mut v) if !v.is_empty() => v.remove(0),
         _ => {
             return respond_json(
@@ -3486,13 +3486,13 @@ fn chart_endpoint(
             )
         }
     };
-    let kind = match csv_splitter_core::chart::ChartKind::parse(
+    let kind = match csvx_core::chart::ChartKind::parse(
         params.get("type").map(String::as_str).unwrap_or("line"),
     ) {
         Ok(k) => k,
         Err(e) => return respond_json(stream, 400, &format!(r#"{{"error":{}}}"#, json_str(&e))),
     };
-    let options = csv_splitter_core::chart::ChartOptions {
+    let options = csvx_core::chart::ChartOptions {
         x: x.clone(),
         series: params.get("series").cloned().filter(|v| !v.is_empty()),
         y: spec,
@@ -3508,7 +3508,7 @@ fn chart_endpoint(
         max_points: params
             .get("maxPoints")
             .and_then(|v| v.parse().ok())
-            .unwrap_or(csv_splitter_core::chart::DEFAULT_MAX_POINTS),
+            .unwrap_or(csvx_core::chart::DEFAULT_MAX_POINTS),
     };
     let engine = match engine::Engine::parse(params.get("engine").map(String::as_str).unwrap_or(""))
     {
@@ -3523,10 +3523,10 @@ fn chart_endpoint(
         .map(|v| v == "1" || v == "true")
         .unwrap_or(false)
     {
-        let read = csv_splitter_core::sheet::ReadOptions {
+        let read = csvx_core::sheet::ReadOptions {
             delimiter: delimiter(params),
         };
-        match csv_splitter_core::sheet::materialize(&path, &read, &tx) {
+        match csvx_core::sheet::materialize(&path, &read, &tx) {
             Ok(m) => Some(m),
             Err(e) => {
                 return respond_json(
@@ -3550,7 +3550,7 @@ fn chart_endpoint(
     metrics::shared().record_engine(planned.label());
     let result = match planned {
         engine::Engine::Sql => engine::chart_sql(&source, delimiter(params), &options, &tx),
-        _ => csv_splitter_core::chart::chart(&source, delimiter(params), &options, &tx),
+        _ => csvx_core::chart::chart(&source, delimiter(params), &options, &tx),
     };
     match result {
         Ok(data) => respond_json(stream, 200, &data.to_json()),
@@ -3582,7 +3582,7 @@ fn style_endpoint(
     };
     let mut rules = Vec::new();
     for text in rules_text.split(';').filter(|s| !s.trim().is_empty()) {
-        match csv_splitter_core::format::Rule::parse(text) {
+        match csvx_core::format::Rule::parse(text) {
             Ok(rule) => rules.push(rule),
             Err(e) => {
                 return respond_json(stream, 400, &format!(r#"{{"error":{}}}"#, json_str(&e)))
@@ -3607,7 +3607,7 @@ fn style_endpoint(
             )
         }
     };
-    match csv_splitter_core::format::styled_window(
+    match csvx_core::format::styled_window(
         &path,
         journal.ops(),
         &rules,
@@ -3663,7 +3663,7 @@ fn pivot_endpoint(
             "pass values=column:sum[,column:count]",
         );
     };
-    let specs = match csv_splitter_core::aggregate::AggSpec::parse_list(values) {
+    let specs = match csvx_core::aggregate::AggSpec::parse_list(values) {
         Ok(v) => v,
         Err(e) => return respond_json(stream, 400, &format!(r#"{{"error":{}}}"#, json_str(&e))),
     };
@@ -3676,14 +3676,14 @@ fn pivot_endpoint(
     let max_columns: usize = params
         .get("maxColumns")
         .and_then(|v| v.parse().ok())
-        .unwrap_or(csv_splitter_core::pivot::DEFAULT_MAX_COLUMNS);
+        .unwrap_or(csvx_core::pivot::DEFAULT_MAX_COLUMNS);
     let max_cells: usize = params
         .get("maxCells")
         .and_then(|v| v.parse().ok())
-        .unwrap_or(csv_splitter_core::pivot::DEFAULT_MAX_CELLS);
+        .unwrap_or(csvx_core::pivot::DEFAULT_MAX_CELLS);
 
     let delimiter = delimiter(params);
-    let options = csv_splitter_core::pivot::PivotOptions {
+    let options = csvx_core::pivot::PivotOptions {
         rows: row_columns.clone(),
         columns: columns.clone(),
         values: specs.clone(),
@@ -3717,8 +3717,8 @@ fn pivot_endpoint(
         drop(rx);
         // `apply-edits=1` pivots the edited sheet; the temp file lives until this closure ends.
         let materialised = if apply_edits {
-            let read = csv_splitter_core::sheet::ReadOptions { delimiter };
-            Some(csv_splitter_core::sheet::materialize(&path, &read, &tx)?)
+            let read = csvx_core::sheet::ReadOptions { delimiter };
+            Some(csvx_core::sheet::materialize(&path, &read, &tx)?)
         } else {
             None
         };
@@ -3731,7 +3731,7 @@ fn pivot_endpoint(
         if planned == engine::Engine::Sql {
             engine::pivot_sql(&source, delimiter, &out, &options, &tx)?;
         } else {
-            csv_splitter_core::pivot::pivot(&source, delimiter, &out, &options, &tx)?;
+            csvx_core::pivot::pivot(&source, delimiter, &out, &options, &tx)?;
         }
         let text = std::fs::read_to_string(&out)?;
         std::fs::remove_file(&out).ok();
@@ -3740,16 +3740,16 @@ fn pivot_endpoint(
         let mut rows = Vec::new();
         let mut columns = Vec::new();
         // The file has already been read into `text` (and removed), so parse from memory.
-        let mut reader = csv_splitter_core::csv_reader::RecordReader::new(
+        let mut reader = csvx_core::csv_reader::RecordReader::new(
             std::io::BufReader::with_capacity(1024 * 1024, std::io::Cursor::new(text.clone())),
             1024 * 1024,
         );
         let mut record = Vec::new();
         while reader.next_record(&mut record).unwrap_or(false) {
-            let fields = csv_splitter_core::csv_reader::parse_csv_record_with(
+            let fields = csvx_core::csv_reader::parse_csv_record_with(
                 String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
                 b',',
-                csv_splitter_core::csv_reader::QuoteStyle::Rfc4180,
+                csvx_core::csv_reader::QuoteStyle::Rfc4180,
             );
             if columns.is_empty() {
                 columns = fields;
@@ -3757,7 +3757,7 @@ fn pivot_endpoint(
                 rows.push(fields);
             }
         }
-        Ok(csv_splitter_core::cache::CachedResult {
+        Ok(csvx_core::cache::CachedResult {
             columns,
             rows,
             oversized: false,
@@ -3870,8 +3870,8 @@ fn group_by(
         // `apply-edits=1` analyses the edited sheet: materialise it once, then group it.
         // The temp file lives until this closure returns.
         let materialised = if apply_edits {
-            let read = csv_splitter_core::sheet::ReadOptions { delimiter };
-            Some(csv_splitter_core::sheet::materialize(&path, &read, &tx)?)
+            let read = csvx_core::sheet::ReadOptions { delimiter };
+            Some(csvx_core::sheet::materialize(&path, &read, &tx)?)
         } else {
             None
         };
@@ -3898,16 +3898,16 @@ fn group_by(
         // newline, and splitting on lines turns one row into several.
         let mut rows = Vec::new();
         let mut columns = Vec::new();
-        let mut reader = csv_splitter_core::csv_reader::RecordReader::new(
+        let mut reader = csvx_core::csv_reader::RecordReader::new(
             std::io::BufReader::with_capacity(1024 * 1024, std::io::Cursor::new(text.clone())),
             1024 * 1024,
         );
         let mut record = Vec::new();
         while reader.next_record(&mut record).unwrap_or(false) {
-            let fields = csv_splitter_core::csv_reader::parse_csv_record_with(
+            let fields = csvx_core::csv_reader::parse_csv_record_with(
                 String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
                 b',',
-                csv_splitter_core::csv_reader::QuoteStyle::Rfc4180,
+                csvx_core::csv_reader::QuoteStyle::Rfc4180,
             );
             if columns.is_empty() {
                 columns = fields;
@@ -3916,7 +3916,7 @@ fn group_by(
             }
         }
         let _ = summary;
-        Ok(csv_splitter_core::cache::CachedResult {
+        Ok(csvx_core::cache::CachedResult {
             columns,
             rows,
             oversized: false,
@@ -4038,10 +4038,10 @@ fn start_partition(
         // The guard must outlive the run: dropping it deletes the materialised temp file.
         let _materialised = if apply_edits {
             // `apply-edits=1` partitions the edited sheet: the parts carry the edits.
-            let read = csv_splitter_core::sheet::ReadOptions {
+            let read = csvx_core::sheet::ReadOptions {
                 delimiter: config.delimiter,
             };
-            match csv_splitter_core::sheet::materialize(&config.input, &read, &tx) {
+            match csvx_core::sheet::materialize(&config.input, &read, &tx) {
                 Ok(materialised) => {
                     config.input = materialised.path().to_path_buf();
                     Some(materialised)
@@ -4100,8 +4100,8 @@ fn start_sort(
         // `apply-edits=1` sorts the edited sheet and writes it out: the result is a
         // flattened view of the edits, not a copy of the base file.
         let materialised = if apply_edits {
-            let read = csv_splitter_core::sheet::ReadOptions { delimiter };
-            match csv_splitter_core::sheet::materialize(&input, &read, &tx) {
+            let read = csvx_core::sheet::ReadOptions { delimiter };
+            match csvx_core::sheet::materialize(&input, &read, &tx) {
                 Ok(m) => Some(m),
                 Err(e) => {
                     tx.send(ProgressEvent::Error(e.to_string())).ok();
@@ -4115,7 +4115,7 @@ fn start_sort(
             .as_ref()
             .map(|m| m.path().to_path_buf())
             .unwrap_or_else(|| input.clone());
-        match csv_splitter_core::sort::external_sort(
+        match csvx_core::sort::external_sort(
             &source, &out, &by_owned, descending, delimiter, buf_mb, &tx,
         ) {
             // A job only reaches `done` on Finished; without this it would stay
@@ -4150,14 +4150,14 @@ fn start_parquet(
         Ok(v) => v,
         Err(reason) => return bad_path_reason(stream, reason),
     };
-    if csv_splitter_core::sql_cache::is_fresh(&path) {
+    if csvx_core::sql_cache::is_fresh(&path) {
         return respond_json(
             stream,
             200,
             &format!(
                 r#"{{"job":null,"cached":true,"path":{},"bytes":{}}}"#,
                 json_str(&rel),
-                std::fs::metadata(csv_splitter_core::sql_cache::sidecar(&path))
+                std::fs::metadata(csvx_core::sql_cache::sidecar(&path))
                     .map(|m| m.len())
                     .unwrap_or(0)
             ),
@@ -4170,16 +4170,16 @@ fn start_parquet(
             total_bytes: std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0),
         })
         .ok();
-        let columns = match csv_splitter_core::sheet::Sheet::open(
+        let columns = match csvx_core::sheet::Sheet::open(
             &path,
-            csv_splitter_core::sheet::ReadOptions { delimiter: delim },
+            csvx_core::sheet::ReadOptions { delimiter: delim },
         ) {
             Ok(sheet) => sheet.schema(64),
             Err(e) => Err(e),
         };
         let outcome = match columns {
             Ok(columns) => {
-                csv_splitter_core::sql_cache::build(&path, delim, &columns, query_timeout_ms() * 20)
+                csvx_core::sql_cache::build(&path, delim, &columns, query_timeout_ms() * 20)
             }
             Err(e) => Err(e),
         };
@@ -4218,14 +4218,14 @@ fn start_index(
     let interval = params
         .get("interval")
         .and_then(|v| v.parse().ok())
-        .unwrap_or(csv_splitter_core::index::DEFAULT_INTERVAL)
+        .unwrap_or(csvx_core::index::DEFAULT_INTERVAL)
         .max(1);
     let id = jobs.submit("index", move |tx| {
-        let sidecar = csv_splitter_core::index::SparseIndex::sidecar_path(&path);
+        let sidecar = csvx_core::index::SparseIndex::sidecar_path(&path);
         let result = if sidecar.exists() {
             Ok((0, 0))
         } else {
-            match csv_splitter_core::index::SparseIndex::build(&path, interval) {
+            match csvx_core::index::SparseIndex::build(&path, interval) {
                 Ok(index) => match index.save(&sidecar) {
                     Ok(()) => {
                         let bytes = std::fs::metadata(&sidecar).map(|m| m.len()).unwrap_or(0);
@@ -4346,7 +4346,7 @@ fn meta(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -
 }
 
 /// A materialised copy plus the journal fingerprint it was built from.
-type MaterialEntry = (Stamp, csv_splitter_core::sheet::Materialized);
+type MaterialEntry = (Stamp, csvx_core::sheet::Materialized);
 type MaterialTable = std::sync::Mutex<HashMap<String, MaterialEntry>>;
 
 /// Materialised copies of edited sheets, at most one per source file.
@@ -4452,7 +4452,7 @@ fn pager_key(path: &Path, journal: Stamp, delimiter: &str) -> PagerKey {
 fn cached_pager(
     path: &Path,
     ops: &[workbook::Op],
-    delimiter: csv_splitter_core::types::Delimiter,
+    delimiter: csvx_core::types::Delimiter,
     delimiter_name: &str,
 ) -> io::Result<std::sync::Arc<workbook::Pager>> {
     let key = pager_key(path, Stamp::journal(path), delimiter_name);
@@ -4544,7 +4544,7 @@ fn respond_sheet_window(
         })
         .collect();
     let rows_count = display_rows.len();
-    let frozen: Vec<String> = csv_splitter_core::layout::Layout::load(path)
+    let frozen: Vec<String> = csvx_core::layout::Layout::load(path)
         .map(|l| {
             let count = l.frozen_prefix(&display_columns);
             display_columns
@@ -4585,10 +4585,10 @@ fn respond_window_as_csv(
 ) -> io::Result<()> {
     let mut body = String::new();
     let header: Vec<&str> = columns.iter().map(String::as_str).collect();
-    body.push_str(&csv_splitter_core::csv_reader::join_csv_line(&header, b','));
+    body.push_str(&csvx_core::csv_reader::join_csv_line(&header, b','));
     for row in rows {
         let cells: Vec<&str> = row.iter().map(String::as_str).collect();
-        body.push_str(&csv_splitter_core::csv_reader::join_csv_line(&cells, b','));
+        body.push_str(&csvx_core::csv_reader::join_csv_line(&cells, b','));
     }
     respond_bytes(
         stream,
@@ -4628,10 +4628,10 @@ fn columns_endpoint(
         Ok(v) => v,
         Err(reason) => return bad_path_reason(stream, reason),
     };
-    let options = csv_splitter_core::sheet::ReadOptions {
+    let options = csvx_core::sheet::ReadOptions {
         delimiter: delimiter(params),
     };
-    let sheet = match csv_splitter_core::sheet::Sheet::open(&path, options) {
+    let sheet = match csvx_core::sheet::Sheet::open(&path, options) {
         Ok(s) => s,
         Err(e) => {
             return respond_json(
@@ -4686,9 +4686,9 @@ fn columns_endpoint(
     // A pristine sheet is sampled directly: 782 column shapes must not cost a 2.5 GB
     // row index. Edited sheets go through the pager, because their columns may include
     // added ones and their rows are not the base file's.
-    let pristine = !csv_splitter_core::sheet::has_edits(&path);
+    let pristine = !csvx_core::sheet::has_edits(&path);
     let mut schema = if pristine {
-        match csv_splitter_core::sheet::schema_sample(&path, delimiter(params), sample) {
+        match csvx_core::sheet::schema_sample(&path, delimiter(params), sample) {
             Ok(schema) => schema,
             Err(e) => {
                 return respond_json(
@@ -4725,8 +4725,8 @@ fn columns_endpoint(
     // The row count needs the sparse index, and building it is a full scan. A client
     // that has not asked for /meta yet gets `null` rather than silently paying 0.3 s.
     let rows = if pristine {
-        let sidecar = csv_splitter_core::index::SparseIndex::sidecar_path(&path);
-        csv_splitter_core::index::SparseIndex::load(&sidecar)
+        let sidecar = csvx_core::index::SparseIndex::sidecar_path(&path);
+        csvx_core::index::SparseIndex::load(&sidecar)
             .ok()
             .filter(|index| index.matches(&path))
             .map(|index| index.data_rows())
@@ -4775,10 +4775,10 @@ fn sheet_meta(
         Ok(v) => v,
         Err(reason) => return bad_path_reason(stream, reason),
     };
-    let options = csv_splitter_core::sheet::ReadOptions {
+    let options = csvx_core::sheet::ReadOptions {
         delimiter: delimiter(params),
     };
-    let sheet = match csv_splitter_core::sheet::Sheet::open(&path, options) {
+    let sheet = match csvx_core::sheet::Sheet::open(&path, options) {
         Ok(s) => s,
         Err(e) => {
             return respond_json(
@@ -4811,7 +4811,7 @@ fn sheet_meta(
     };
     // Chrome travels with the data: a client should not need a second request to
     // learn a column's width or how its numbers print.
-    let layout_json = match csv_splitter_core::layout::Layout::load(&path) {
+    let layout_json = match csvx_core::layout::Layout::load(&path) {
         Ok(layout) => {
             let resolved = layout.resolve(&columns);
             let items: Vec<String> = resolved
@@ -4823,7 +4823,7 @@ fn sheet_meta(
         }
         Err(_) => "[]".to_string(),
     };
-    let frozen_count = csv_splitter_core::layout::Layout::load(&path)
+    let frozen_count = csvx_core::layout::Layout::load(&path)
         .map(|l| l.frozen_prefix(&columns))
         .unwrap_or(0);
     let frozen_names: Vec<String> = columns
@@ -4833,7 +4833,7 @@ fn sheet_meta(
         .collect();
     // Whether random access is already paid for. A client that pages a big file can
     // look here first and pre-warm instead of eating the scan inside a request.
-    let index_sidecar = csv_splitter_core::index::SparseIndex::sidecar_path(&path);
+    let index_sidecar = csvx_core::index::SparseIndex::sidecar_path(&path);
     let indexed = index_sidecar.exists();
     let index_bytes = if indexed {
         std::fs::metadata(&index_sidecar)
@@ -4860,14 +4860,14 @@ fn sheet_meta(
             json_str(&sheet.journal_path().to_string_lossy()),
             indexed,
             index_bytes,
-            csv_splitter_core::sql_cache::is_fresh(&path),
-            std::fs::metadata(csv_splitter_core::sql_cache::sidecar(&path))
+            csvx_core::sql_cache::is_fresh(&path),
+            std::fs::metadata(csvx_core::sql_cache::sidecar(&path))
                 .map(|m| m.len())
                 .unwrap_or(0),
             {
                 // Published costs, not measured ones: these are the tiers the docs
                 // promise, so a client can decide before it asks for a page.
-                let warm = csv_splitter_core::sql_cache::is_fresh(&path);
+                let warm = csvx_core::sql_cache::is_fresh(&path);
                 let tier = if warm { "warm" } else { "cold" };
                 let filter_ms = if warm { 260 } else { 1000 };
                 let order_ms = if warm { 340 } else { 1400 };
@@ -4897,16 +4897,16 @@ fn rows_by_keys_endpoint(
     keys: &str,
 ) -> io::Result<()> {
     const MAX_KEYS: usize = 200;
-    let mut wanted: Vec<csv_splitter_core::workbook::RowId> = Vec::new();
+    let mut wanted: Vec<csvx_core::workbook::RowId> = Vec::new();
     let mut malformed: Vec<String> = Vec::new();
     for raw in keys.split(',').map(str::trim).filter(|k| !k.is_empty()) {
         match raw.split_once(':') {
             Some(("b", n)) => match n.parse::<u64>() {
-                Ok(index) => wanted.push(csv_splitter_core::workbook::RowId::Base(index)),
+                Ok(index) => wanted.push(csvx_core::workbook::RowId::Base(index)),
                 Err(_) => malformed.push(raw.to_string()),
             },
             Some(("v", n)) => match n.parse::<u64>() {
-                Ok(id) => wanted.push(csv_splitter_core::workbook::RowId::Virtual(id)),
+                Ok(id) => wanted.push(csvx_core::workbook::RowId::Virtual(id)),
                 Err(_) => malformed.push(raw.to_string()),
             },
             _ => malformed.push(raw.to_string()),
@@ -4965,8 +4965,8 @@ fn rows_by_keys_endpoint(
     let found_keys: Vec<String> = resolved
         .iter()
         .map(|(_, key, _)| match key {
-            csv_splitter_core::workbook::RowId::Base(i) => format!("b:{i}"),
-            csv_splitter_core::workbook::RowId::Virtual(i) => format!("v:{i}"),
+            csvx_core::workbook::RowId::Base(i) => format!("b:{i}"),
+            csvx_core::workbook::RowId::Virtual(i) => format!("v:{i}"),
         })
         .collect();
     let row_numbers: Vec<String> = resolved
@@ -4977,8 +4977,8 @@ fn rows_by_keys_endpoint(
         .iter()
         .filter(|key| !resolved.iter().any(|(_, found, _)| *found == **key))
         .map(|key| match key {
-            csv_splitter_core::workbook::RowId::Base(i) => format!("b:{i}"),
-            csv_splitter_core::workbook::RowId::Virtual(i) => format!("v:{i}"),
+            csvx_core::workbook::RowId::Base(i) => format!("b:{i}"),
+            csvx_core::workbook::RowId::Virtual(i) => format!("v:{i}"),
         })
         .collect();
     // The same projection and horizontal slice every other window offers.
@@ -5050,7 +5050,7 @@ fn rows(
     // LIMIT/OFFSET lets the engine stop as soon as it has the page (plus one, to know
     // whether there is another). On a 2.5 GB file this is the difference between a
     // 15-second first page and a two-second one for a selective filter.
-    if !csv_splitter_core::sheet::has_edits(&path)
+    if !csvx_core::sheet::has_edits(&path)
         && (params.contains_key("where") || params.contains_key("order"))
     {
         let filter = filter_clause(params);
@@ -5115,9 +5115,9 @@ fn rows(
     // file first (and refused above a size ceiling rather than quietly filling the
     // disk), so filtering and sorting agree with what /rows shows.
     if (params.contains_key("where") || params.contains_key("order"))
-        && csv_splitter_core::sheet::has_edits(&path)
+        && csvx_core::sheet::has_edits(&path)
     {
-        let options = csv_splitter_core::sheet::ReadOptions {
+        let options = csvx_core::sheet::ReadOptions {
             delimiter: delimiter(params),
         };
         let fingerprint = Stamp::journal(&path);
@@ -5135,7 +5135,7 @@ fn rows(
                 guard.remove(&key);
                 let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
                 drop(rx);
-                match csv_splitter_core::sheet::materialize(&path, &options, &tx) {
+                match csvx_core::sheet::materialize(&path, &options, &tx) {
                     Ok(materialised) => {
                         guard.insert(key.clone(), (fingerprint, materialised));
                     }
@@ -5168,7 +5168,7 @@ fn rows(
                                 stream,
                                 &format!(
                                     "cannot order by '{missing}': {}",
-                                    csv_splitter_core::csv_reader::column_candidates(
+                                    csvx_core::csv_reader::column_candidates(
                                         missing, &known
                                     )
                                 ),
@@ -5237,7 +5237,7 @@ fn rows(
                                 stream,
                                 &format!(
                                     "cannot order by '{missing}': {}",
-                                    csv_splitter_core::csv_reader::column_candidates(
+                                    csvx_core::csv_reader::column_candidates(
                                         missing, &known
                                     )
                                 ),
@@ -5282,7 +5282,7 @@ fn rows(
     // A file with a journal is a sheet: the window must show the edits, not the
     // raw bytes. This is the same code path the CLI uses, so the two cannot
     // disagree about what a row means.
-    if csv_splitter_core::sheet::has_edits(&path) {
+    if csvx_core::sheet::has_edits(&path) {
         return respond_sheet_window(stream, &path, start, count, requested, params);
     }
 
@@ -5340,8 +5340,8 @@ fn rows(
         },
     };
     let (display_columns, display_rows) = slice_columns(projected.0, projected.1, params);
-    let base_keys: Vec<csv_splitter_core::workbook::RowId> = (0..display_rows.len())
-        .map(|i| csv_splitter_core::workbook::RowId::Base(start + i as u64))
+    let base_keys: Vec<csvx_core::workbook::RowId> = (0..display_rows.len())
+        .map(|i| csvx_core::workbook::RowId::Base(start + i as u64))
         .collect();
     let row_keys = row_keys_json(&base_keys);
     let rows: Vec<String> = display_rows
@@ -5356,7 +5356,7 @@ fn rows(
     // would otherwise have to make a second request to render a header.
     let headers = display_columns.clone();
     let cols: Vec<String> = headers.iter().map(|c| json_str(c)).collect();
-    let frozen: Vec<String> = csv_splitter_core::layout::Layout::load(&path)
+    let frozen: Vec<String> = csvx_core::layout::Layout::load(&path)
         .map(|l| {
             let count = l.frozen_prefix(&headers);
             headers.iter().take(count).map(|c| json_str(c)).collect()
@@ -5647,10 +5647,10 @@ fn export(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
         .map(|v| v == "1" || v == "true")
         .unwrap_or(false)
     {
-        let read = csv_splitter_core::sheet::ReadOptions {
+        let read = csvx_core::sheet::ReadOptions {
             delimiter: delimiter(params),
         };
-        match csv_splitter_core::sheet::materialize(&path, &read, &edit_tx) {
+        match csvx_core::sheet::materialize(&path, &read, &edit_tx) {
             Ok(m) => Some(m),
             Err(e) => {
                 return respond_json(
@@ -5776,8 +5776,8 @@ fn slice_columns(
     (kept_columns, kept_rows)
 }
 
-fn row_keys_json(keys: &[csv_splitter_core::workbook::RowId]) -> String {
-    use csv_splitter_core::workbook::RowId;
+fn row_keys_json(keys: &[csvx_core::workbook::RowId]) -> String {
+    use csvx_core::workbook::RowId;
     let items: Vec<String> = keys
         .iter()
         .map(|key| match key {
@@ -5942,7 +5942,7 @@ fn respond_filtered_page(
             format!("[{}]", cells.join(","))
         })
         .collect();
-    let frozen: Vec<String> = csv_splitter_core::layout::Layout::load(path)
+    let frozen: Vec<String> = csvx_core::layout::Layout::load(path)
         .map(|l| {
             let prefix = l.frozen_prefix(&display_columns);
             display_columns
@@ -6056,7 +6056,7 @@ fn respond_rows_from_cache(
             let cols: Vec<String> = display_columns.iter().map(|c| json_str(c)).collect();
             // The same context the plain window carries: a client should be able to
             // render frozen columns and say "edits applied" whichever path answered.
-            let frozen: Vec<String> = csv_splitter_core::layout::Layout::load(path)
+            let frozen: Vec<String> = csvx_core::layout::Layout::load(path)
                 .map(|l| {
                     let prefix = l.frozen_prefix(&cached.columns);
                     cached
@@ -6067,7 +6067,7 @@ fn respond_rows_from_cache(
                         .collect()
                 })
                 .unwrap_or_default();
-            let edited = csv_splitter_core::sheet::has_edits(path);
+            let edited = csvx_core::sheet::has_edits(path);
             let operations = Journal::load(&Journal::sidecar(path))
                 .map(|j| j.len())
                 .unwrap_or(0);
@@ -6149,10 +6149,10 @@ fn search(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
         .map(|v| v == "1" || v == "true")
         .unwrap_or(false)
     {
-        let read = csv_splitter_core::sheet::ReadOptions {
+        let read = csvx_core::sheet::ReadOptions {
             delimiter: delimiter(params),
         };
-        match csv_splitter_core::sheet::materialize(&path, &read, &tx) {
+        match csvx_core::sheet::materialize(&path, &read, &tx) {
             Ok(m) => Some(m),
             Err(e) => {
                 return respond_json(
@@ -6170,13 +6170,13 @@ fn search(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
         .map(|m| m.path().to_path_buf())
         .unwrap_or_else(|| path.clone());
     let budget = std::time::Duration::from_millis(query_timeout_ms());
-    match csv_splitter_core::search::search_quotes_with_budget(
+    match csvx_core::search::search_quotes_with_budget(
         &source,
         delimiter(params),
         &spec,
         limit,
         Some(budget),
-        csv_splitter_core::csv_reader::QuoteStyle::Rfc4180,
+        csvx_core::csv_reader::QuoteStyle::Rfc4180,
         &tx,
     ) {
         Ok(result) => {
@@ -6328,10 +6328,10 @@ fn filter(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
         .map(|v| v == "1" || v == "true")
         .unwrap_or(false)
     {
-        let read = csv_splitter_core::sheet::ReadOptions {
+        let read = csvx_core::sheet::ReadOptions {
             delimiter: delimiter(params),
         };
-        match csv_splitter_core::sheet::materialize(&path, &read, &tx) {
+        match csvx_core::sheet::materialize(&path, &read, &tx) {
             Ok(m) => Some(m),
             Err(e) => {
                 return respond_json(
@@ -6406,10 +6406,10 @@ fn stats(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) 
         .map(|v| v == "1" || v == "true")
         .unwrap_or(false)
     {
-        let read = csv_splitter_core::sheet::ReadOptions {
+        let read = csvx_core::sheet::ReadOptions {
             delimiter: delimiter(params),
         };
-        match csv_splitter_core::sheet::materialize(&path, &read, &tx) {
+        match csvx_core::sheet::materialize(&path, &read, &tx) {
             Ok(m) => Some(m),
             Err(e) => {
                 return respond_json(
@@ -6731,12 +6731,12 @@ const TIMEOUT_HINT: &str =
      limit and the connection closed, so nothing keeps running and retrying with a smaller \
      scope is safe";
 
-/// Opt-in strict parameter checking: `CSV_SPLITTER_STRICT_PARAMS=1`.
+/// Opt-in strict parameter checking: `CSVX_STRICT_PARAMS=1`.
 fn strict_params() -> bool {
     // On by default: a parameter nobody reads is a request the server silently ignored, and
-    // the caller cannot tell. `CSV_SPLITTER_STRICT_PARAMS=0` turns the check off for a client
+    // the caller cannot tell. `CSVX_STRICT_PARAMS=0` turns the check off for a client
     // that appends its own extras (cache busters, proxies).
-    match std::env::var("CSV_SPLITTER_STRICT_PARAMS") {
+    match std::env::var("CSVX_STRICT_PARAMS") {
         Ok(v) => v != "0" && v != "false",
         Err(_) => true,
     }

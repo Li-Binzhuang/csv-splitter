@@ -11,11 +11,11 @@
 和一屏的行数有关，原始文件逐字节不变，导出时才物化。
 
 ```bash
-csv-splitter demo -o .          # 生成一个真实感的示例文件
-csv-splitter view orders.csv --rows 20
-csv-splitter edit set orders.csv --row 3 --col city --value CDMX
-csv-splitter edit formula orders.csv --name vat --value "amount*0.16"
-csv-splitter edit export orders.csv -o clean.csv
+csvx demo -o .          # 生成一个真实感的示例文件
+csvx view orders.csv --rows 20
+csvx edit set orders.csv --row 3 --col city --value CDMX
+csvx edit formula orders.csv --name vat --value "amount*0.16"
+csvx edit export orders.csv -o clean.csv
 ```
 
 ## 给前端的三个接口 / the framework

@@ -3,11 +3,16 @@ members = ["crates/core", "crates/cli"]
 resolver = "2"
 
 [workspace.package]
-version = "3.62.0"
+version = "4.0.0"
 edition = "2021"
+description = "High-performance CSV editor in Rust — open, edit, query and split files bigger than Excel can open."
+repository = "https://github.com/Li-Binzhuang/csv-splitter"
+license = "MIT"
+keywords = ["csv", "editor", "cli", "duckdb", "data-analysis"]
+categories = ["command-line-utilities", "database"]
 
 [workspace.dependencies]
-csv-splitter-core = { path = "crates/core" }
+csvx-core = { path = "crates/core" }
 zstd = "0.13"
 tar = "0.4"
 memchr = "2"

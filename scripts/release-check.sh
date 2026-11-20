@@ -17,11 +17,11 @@ if [ "${1:-}" = "--target" ]; then
   TARGET="${2:?usage: release-check.sh [--target <triple>]}"
 fi
 case "${TARGET:-$(uname -m)}" in
-  aarch64-apple-darwin|arm64) ARTIFACT="csv-splitter-macos-arm64" ;;
-  x86_64-apple-darwin|x86_64) ARTIFACT="csv-splitter-macos-x86_64" ;;
-  x86_64-unknown-linux-gnu) ARTIFACT="csv-splitter-linux-x86_64" ;;
-  x86_64-pc-windows-msvc) ARTIFACT="csv-splitter-windows-x86_64" ;;
-  *) ARTIFACT="csv-splitter-$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)" ;;
+  aarch64-apple-darwin|arm64) ARTIFACT="csvx-macos-arm64" ;;
+  x86_64-apple-darwin|x86_64) ARTIFACT="csvx-macos-x86_64" ;;
+  x86_64-unknown-linux-gnu) ARTIFACT="csvx-linux-x86_64" ;;
+  x86_64-pc-windows-msvc) ARTIFACT="csvx-windows-x86_64" ;;
+  *) ARTIFACT="csvx-$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)" ;;
 esac
 if [ -n "$TARGET" ]; then
   bash scripts/package.sh --build "$ARTIFACT" "$TARGET" >/dev/null
@@ -40,24 +40,24 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 cd "$WORK"
 tar xzf "$OLDPWD/$ASSET"
-[ -x ./csv-splitter ] || { echo "FAIL: binary is not executable after unpacking" >&2; exit 1; }
+[ -x ./csvx ] || { echo "FAIL: binary is not executable after unpacking" >&2; exit 1; }
 
-printf '  ok   unpacked artifact (%s bytes)\n' "$(wc -c < "./csv-splitter" | tr -d ' ')"
+printf '  ok   unpacked artifact (%s bytes)\n' "$(wc -c < "./csvx" | tr -d ' ')"
 
-VERSION="$(./csv-splitter --version)"
+VERSION="$(./csvx --version)"
 case "$VERSION" in
-  csv-splitter*) printf '  ok   --version: %s\n' "$VERSION" ;;
+  csvx*) printf '  ok   --version: %s\n' "$VERSION" ;;
   *) echo "FAIL: --version printed $VERSION" >&2; exit 1 ;;
 esac
 
-./csv-splitter demo -o demo >/dev/null 2>&1
+./csvx demo -o demo >/dev/null 2>&1
 [ -s demo/orders.csv ] || { echo "FAIL: demo produced no file" >&2; exit 1; }
 printf '  ok   demo wrote %s bytes\n' "$(wc -c < demo/orders.csv | tr -d ' ')"
 # The artifact's own configuration check, on a directory that exists now.
-./csv-splitter serve --check --root demo --addr 127.0.0.1:0 > check.log 2>&1 || {
+./csvx serve --check --root demo --addr 127.0.0.1:0 > check.log 2>&1 || {
   cat check.log >&2; echo "FAIL: the artifact's own configuration check failed" >&2; exit 1; }
 printf '  ok   serve --check\n'
-./csv-splitter serve --root demo --port 8790 > serve.log 2>&1 &
+./csvx serve --root demo --port 8790 > serve.log 2>&1 &
 SPID=$!
 for _ in $(seq 1 40); do
   curl -sf "127.0.0.1:8790/health" >/dev/null 2>&1 && break

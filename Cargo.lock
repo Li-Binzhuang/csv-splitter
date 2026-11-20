@@ -634,18 +634,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "csv-splitter-cli"
-version = "3.62.0"
+name = "csvx-cli"
+version = "4.0.0"
 dependencies = [
- "csv-splitter-core",
+ "csvx-core",
  "encoding_rs",
  "flate2",
  "libc",
 ]
 
 [[package]]
-name = "csv-splitter-core"
-version = "3.62.0"
+name = "csvx-core"
+version = "4.0.0"
 dependencies = [
  "bzip2",
  "criterion",

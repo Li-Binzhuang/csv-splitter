@@ -1,14 +1,14 @@
 //! Throughput benchmarks for the operations that matter.
 //!
-//! Run with `cargo bench -p csv-splitter-core`. These are informational, not
+//! Run with `cargo bench -p csvx-core`. These are informational, not
 //! assertions — shared CI runners are too noisy for hard thresholds. The
 //! regression guard that *does* fail the build lives in
 //! `crates/core/tests/performance.rs` with deliberately generous bounds.
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
-use csv_splitter_core::index::SparseIndex;
-use csv_splitter_core::splitter::run_split;
-use csv_splitter_core::types::*;
+use csvx_core::index::SparseIndex;
+use csvx_core::splitter::run_split;
+use csvx_core::types::*;
 use std::path::PathBuf;
 use std::sync::mpsc;
 

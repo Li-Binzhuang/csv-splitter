@@ -60,7 +60,7 @@ fn start(root: &PathBuf) -> Server {
 /// Start a server with extra environment variables — the timeouts and limits are knobs
 /// a test should be able to tighten without waiting ten seconds.
 fn start_with_env(root: &PathBuf, env: &[(&str, &str)]) -> Server {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_csv-splitter"));
+    let mut child = Command::new(env!("CARGO_BIN_EXE_csvx"));
     child
         .args(["serve", "--root"])
         .arg(root)
@@ -77,7 +77,7 @@ fn start_with_env(root: &PathBuf, env: &[(&str, &str)]) -> Server {
     let stdout = child.stdout.take().unwrap();
     let mut line = String::new();
     BufReader::new(stdout).read_line(&mut line).unwrap();
-    // "csv-splitter API on http://127.0.0.1:PORT  (root: ...)"
+    // "csvx API on http://127.0.0.1:PORT  (root: ...)"
     let addr = line
         .split("http://")
         .nth(1)
@@ -754,7 +754,7 @@ fn serves_a_builtin_viewer_and_rows_supports_where() {
     assert_eq!(status, 200);
     let html = String::from_utf8_lossy(&body);
     assert!(html.contains("<!DOCTYPE html>"), "not html");
-    assert!(html.contains("csv-splitter"), "{html}");
+    assert!(html.contains("csvx"), "{html}");
     // It must talk to the public API only.
     for endpoint in [
         "/files", "/meta", "/rows", "/search", "/analyze", "/groupby",
@@ -1231,7 +1231,7 @@ fn the_api_agrees_with_export_about_previous_rows() {
 
     // The formula lives in the journal, so it applies to both paths.
     let server_dir = dir.0.clone();
-    let status = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+    let status = std::process::Command::new(env!("CARGO_BIN_EXE_csvx"))
         .args([
             "edit",
             "formula",
@@ -1295,7 +1295,7 @@ fn the_api_counts_rows_the_same_way_the_cli_does() {
     assert_eq!(status, 200, "{body}");
 
     // Export through the CLI path: the first data row carries the edit.
-    let status = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+    let status = std::process::Command::new(env!("CARGO_BIN_EXE_csvx"))
         .args(["edit", "export", "t.csv", "-o", "out.csv"])
         .current_dir(&dir.0)
         .status()
@@ -2734,7 +2734,7 @@ fn the_columnar_cache_is_advertised_and_faster() {
 fn the_cache_command_reports_and_removes() {
     let dir = TempDir::new("cachecmd");
     std::fs::write(dir.join("t.csv"), "id,city\n1,A\n2,B\n").unwrap();
-    let bin = env!("CARGO_BIN_EXE_csv-splitter");
+    let bin = env!("CARGO_BIN_EXE_csvx");
 
     let out = std::process::Command::new(bin)
         .arg("cache")
@@ -3330,7 +3330,7 @@ fn a_timeout_does_not_leak_the_engine_text() {
         text.push_str(&format!("{i},C{}\n", i % 9));
     }
     std::fs::write(dir.join("t.csv"), text).unwrap();
-    let server = start_with_env(&dir.0, &[("CSV_SPLITTER_QUERY_TIMEOUT_MS", "1")]);
+    let server = start_with_env(&dir.0, &[("CSVX_QUERY_TIMEOUT_MS", "1")]);
 
     let (code, body) = get(
         &server.addr,
@@ -3969,7 +3969,7 @@ fn a_filtered_page_timeout_says_nothing_is_still_running() {
         text.push_str(&format!("{i},C{}\n", i % 9));
     }
     std::fs::write(dir.join("t.csv"), text).unwrap();
-    let server = start_with_env(&dir.0, &[("CSV_SPLITTER_QUERY_TIMEOUT_MS", "1")]);
+    let server = start_with_env(&dir.0, &[("CSVX_QUERY_TIMEOUT_MS", "1")]);
 
     let (code, body) = get(&server.addr, "/rows?path=t.csv&where=city%3DC3");
     assert_eq!(code, 504, "{body}");
@@ -4114,7 +4114,7 @@ fn a_filtered_scan_stops_at_its_budget() {
         text.push_str(&format!("{i},C{}\n", i % 9));
     }
     std::fs::write(dir.join("t.csv"), text).unwrap();
-    let server = start_with_env(&dir.0, &[("CSV_SPLITTER_QUERY_TIMEOUT_MS", "1")]);
+    let server = start_with_env(&dir.0, &[("CSVX_QUERY_TIMEOUT_MS", "1")]);
 
     let (status, body) = get(&server.addr, "/filter?path=t.csv&where=city%3DC3");
     assert_eq!(status, 504, "{body}");
@@ -4138,7 +4138,7 @@ fn validation_stops_at_its_budget() {
         text.push_str(&format!("{i},C{}\n", i % 9));
     }
     std::fs::write(dir.join("t.csv"), text).unwrap();
-    let server = start_with_env(&dir.0, &[("CSV_SPLITTER_QUERY_TIMEOUT_MS", "1")]);
+    let server = start_with_env(&dir.0, &[("CSVX_QUERY_TIMEOUT_MS", "1")]);
 
     let (status, body) = get(&server.addr, "/validate?path=t.csv&checks=city:not-empty");
     assert_eq!(status, 504, "{body}");
@@ -4167,7 +4167,7 @@ fn search_stops_at_its_budget() {
         text.push_str(&format!("{i},C{}\n", i % 9));
     }
     std::fs::write(dir.join("t.csv"), text).unwrap();
-    let server = start_with_env(&dir.0, &[("CSV_SPLITTER_QUERY_TIMEOUT_MS", "1")]);
+    let server = start_with_env(&dir.0, &[("CSVX_QUERY_TIMEOUT_MS", "1")]);
 
     let (status, body) = get(&server.addr, "/search?path=t.csv&q=C3");
     assert_eq!(status, 504, "{body}");
@@ -4185,7 +4185,7 @@ fn search_stops_at_its_budget() {
 fn strict_mode_refuses_a_parameter_nobody_reads() {
     let dir = TempDir::new("strictparams");
     std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,1\n").unwrap();
-    let server = start_with_env(&dir.0, &[("CSV_SPLITTER_STRICT_PARAMS", "1")]);
+    let server = start_with_env(&dir.0, &[("CSVX_STRICT_PARAMS", "1")]);
 
     let (status, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=5&bogus=1");
     assert_eq!(status, 400, "{body}");
@@ -4350,7 +4350,7 @@ fn strict_parameter_checking_is_on_by_default_and_can_be_turned_off() {
     assert_eq!(status, 400, "default must refuse: {body}");
     assert!(body.contains(r#""route":"/rows""#), "{body}");
 
-    let server = start_with_env(&dir.0, &[("CSV_SPLITTER_STRICT_PARAMS", "0")]);
+    let server = start_with_env(&dir.0, &[("CSVX_STRICT_PARAMS", "0")]);
     let (status, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=5&bogus=1");
     assert_eq!(status, 200, "=0 must let it through: {body}");
 }
@@ -4937,7 +4937,7 @@ fn capabilities_says_whether_strict_mode_is_on() {
     assert_eq!(status, 200, "{body}");
     assert!(body.contains(r#""strictParams":true"#), "{body}");
 
-    let server = start_with_env(&dir.0, &[("CSV_SPLITTER_STRICT_PARAMS", "0")]);
+    let server = start_with_env(&dir.0, &[("CSVX_STRICT_PARAMS", "0")]);
     let (_, body) = get(&server.addr, "/capabilities");
     assert!(body.contains(r#""strictParams":false"#), "{body}");
 }

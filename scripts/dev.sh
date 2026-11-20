@@ -26,7 +26,7 @@ command -v cargo >/dev/null 2>&1 || {
   exit 2
 }
 
-crate() { echo "${1:-csv-splitter-core}"; }
+crate() { echo "${1:-csvx-core}"; }
 
 case "${1:-check}" in
   check)
@@ -56,14 +56,14 @@ case "${1:-check}" in
       run_stage selftest false || exit 1
     fi
     run_stage clippy-core \
-      cargo clippy --workspace --all-targets --features sql -p csv-splitter-core -- -D warnings
+      cargo clippy --workspace --all-targets --features sql -p csvx-core -- -D warnings
     run_stage clippy-cli \
-      cargo clippy --workspace --all-targets -p csv-splitter-cli -- -D warnings
+      cargo clippy --workspace --all-targets -p csvx-cli -- -D warnings
     run_stage tests cargo test --workspace --quiet
     # `sql` is an optional feature of core, and the CLI turns it on. Testing the
     # workspace alone builds core *without* it, so core's own SQL tests — the read-only
     # guard, the query wrapper — used to be skipped by the gate entirely.
-    run_stage tests-sql cargo test -p csv-splitter-core --features sql --quiet
+    run_stage tests-sql cargo test -p csvx-core --features sql --quiet
     echo "== gate passed =="
     ;;
   *)

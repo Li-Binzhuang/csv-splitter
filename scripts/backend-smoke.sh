@@ -7,8 +7,8 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-BIN="${BIN:-./target/debug/csv-splitter}"
-[ -x "$BIN" ] || { echo "build first: cargo build -p csv-splitter-cli" >&2; exit 2; }
+BIN="${BIN:-./target/debug/csvx}"
+[ -x "$BIN" ] || { echo "build first: cargo build -p csvx-cli" >&2; exit 2; }
 case "$BIN" in /*) ;; *) BIN="$(pwd)/${BIN#./}" ;; esac
 
 WORK="$(mktemp -d)"

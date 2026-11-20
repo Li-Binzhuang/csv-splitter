@@ -489,7 +489,7 @@ GET /columns 多带的四个参数属于「声明正确、对该方法无意义�
 | `concat --engine auto` 永远原生 | 拷贝字节比读值快 3 倍（18 MB×2：0.07 s vs 0.20 s）| 显式 `--engine sql` |
 | `chart` 两引擎顺序可能不同 | 原生保留首次出现顺序，SQL 按标签排序 | 数值一致；顺序差异已在文档写明 |
 | `--engine auto` 阈值 8 MB | 4–9 MB 是实测交叉点，三个命令一致 | 显式指定引擎 |
-| `/spec` 参数表是严格模式的依据 | 未声明的参数会 400（默认开启）| 客户端自加参数时设 `CSV_SPLITTER_STRICT_PARAMS=0` |
+| `/spec` 参数表是严格模式的依据 | 未声明的参数会 400（默认开启）| 客户端自加参数时设 `CSVX_STRICT_PARAMS=0` |
 
 ## 哪些端点看得到编辑 / Which endpoints see the journal
 
@@ -666,7 +666,7 @@ redo 末尾若与 journal 末尾相同，就把它从 redo 里去掉，避免下
   在此之前，行号仍由原生扫描给出；`apply-edits=1` 时扫描编辑后的表，行号与 `/rows` 对齐。
 
 **资源上限**：所有 DuckDB 连接经 `open_limited()`，默认 512 MB 内存、线程上限 8、溢出落盘；
-可用 `CSV_SPLITTER_SQL_MEMORY_MB` / `_THREADS` / `_TEMP_DIR` 覆盖。
+可用 `CSVX_SQL_MEMORY_MB` / `_THREADS` / `_TEMP_DIR` 覆盖。
 
 ## 解压安全 / Archive safety
 
@@ -678,12 +678,12 @@ redo 末尾若与 journal 末尾相同，就把它从 redo 里去掉，避免下
 
 ## 帮助 / Help
 
-`csv-splitter --help` 是**任务视图**（「你想做什么 → 用哪条命令」）；
-`csv-splitter <command> --help` 是**选项视图**（这条命令能传什么）。
+`csvx --help` 是**任务视图**（「你想做什么 → 用哪条命令」）；
+`csvx <command> --help` 是**选项视图**（这条命令能传什么）。
 
 ```
-$ csv-splitter pivot --help
-csv-splitter 0.96.0 — pivot
+$ csvx pivot --help
+csvx 0.96.0 — pivot
 
   --cols               Pivot: column key
   --max-cells          Pivot: matrix cells allowed

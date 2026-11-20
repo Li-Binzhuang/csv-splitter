@@ -4,9 +4,9 @@
 //! chunks back must reproduce the input byte for byte. Each test here asserts
 //! that invariant (or the intended transformation, for column filtering).
 
-use csv_splitter_core::merge::merge_archive;
-use csv_splitter_core::splitter::run_split;
-use csv_splitter_core::*;
+use csvx_core::merge::merge_archive;
+use csvx_core::splitter::run_split;
+use csvx_core::*;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 
@@ -224,7 +224,7 @@ fn empty_input_round_trips_instead_of_failing() {
 
 #[test]
 fn by_size_produces_roughly_equal_chunks() {
-    use csv_splitter_core::decompress::decompress_file;
+    use csvx_core::decompress::decompress_file;
 
     let dir = TempDir::new("bysize");
     let input = dir.join("data.csv");
@@ -271,7 +271,7 @@ fn by_size_produces_roughly_equal_chunks() {
 /// duplicated, dropped or reordered at a reader boundary.
 #[test]
 fn parallel_split_round_trips_like_sequential() {
-    use csv_splitter_core::splitter::run_split_threads;
+    use csvx_core::splitter::run_split_threads;
 
     let dir = TempDir::new("par");
 

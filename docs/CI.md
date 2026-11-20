@@ -36,12 +36,12 @@
 
 ```bash
 cargo fmt --all -- --check
-cargo test -p csv-splitter-core -p csv-splitter-cli
-cargo test -p csv-splitter-core --test performance
-cargo clippy -p csv-splitter-core -p csv-splitter-cli --all-targets -- -D warnings
+cargo test -p csvx-core -p csvx-cli
+cargo test -p csvx-core --test performance
+cargo clippy -p csvx-core -p csvx-cli --all-targets -- -D warnings
 
-CARGO_PROFILE_TEST_DEBUG=0 cargo clippy -p csv-splitter-cli --all-targets -- -D warnings
-CARGO_PROFILE_TEST_DEBUG=0 cargo test -p csv-splitter-cli
+CARGO_PROFILE_TEST_DEBUG=0 cargo clippy -p csvx-cli --all-targets -- -D warnings
+CARGO_PROFILE_TEST_DEBUG=0 cargo test -p csvx-cli
 ```
 
 ## 实测

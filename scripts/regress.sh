@@ -4,9 +4,9 @@
 set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
-BIN="${BIN:-./target/debug/csv-splitter}"
+BIN="${BIN:-./target/debug/csvx}"
 if [ ! -x "$BIN" ]; then
-  echo "build the binary first: cargo build -p csv-splitter-cli" >&2
+  echo "build the binary first: cargo build -p csvx-cli" >&2
   exit 2
 fi
 # Absolute, because the script changes directory before running anything.

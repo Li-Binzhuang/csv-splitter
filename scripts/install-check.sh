@@ -28,7 +28,7 @@ probe() { # probe <label> <binary>
   local version
   version="$("$bin" --version)"
   case "$version" in
-    csv-splitter*) printf '  ok   %-14s %s\n' "$label" "$version" ;;
+    csvx*) printf '  ok   %-14s %s\n' "$label" "$version" ;;
     *) echo "FAIL: $label printed $version" >&2; exit 1 ;;
   esac
   "$bin" demo -o "$WORK/demo-$label" >/dev/null 2>&1
@@ -42,8 +42,8 @@ probe() { # probe <label> <binary>
 }
 
 echo "== source build =="
-cargo build --release -p csv-splitter-cli --quiet
-probe "source" "$PWD/target/release/csv-splitter"
+cargo build --release -p csvx-cli --quiet
+probe "source" "$PWD/target/release/csvx"
 
 echo "== cargo install --path =="
 PREFIX="$WORK/prefix"
@@ -57,7 +57,7 @@ if ! cargo install --path crates/cli --root "$PREFIX" --offline --quiet 2>&1 | t
     exit 1
   }
 fi
-probe "cargo-install" "$PREFIX/bin/csv-splitter"
+probe "cargo-install" "$PREFIX/bin/csvx"
 
 echo "== release artifact =="
 bash scripts/release-check.sh 2>&1 | grep -E "^  ok|^==|^FAIL" | sed 's/^/  /'

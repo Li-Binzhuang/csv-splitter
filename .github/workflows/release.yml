@@ -13,7 +13,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  APP_NAME: csv-splitter
+  APP_NAME: csvx
 
 permissions:
   contents: write
@@ -48,19 +48,19 @@ jobs:
         include:
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
-            artifact: csv-splitter-linux-x86_64
+            artifact: csvx-linux-x86_64
             ext: .tar.gz
           - os: macos-14
             target: aarch64-apple-darwin
-            artifact: csv-splitter-macos-arm64
+            artifact: csvx-macos-arm64
             ext: .tar.gz
           - os: macos-14
             target: x86_64-apple-darwin
-            artifact: csv-splitter-macos-x86_64
+            artifact: csvx-macos-x86_64
             ext: .tar.gz
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact: csv-splitter-windows-x86_64
+            artifact: csvx-windows-x86_64
             ext: .zip
 
     runs-on: ${{ matrix.os }}
@@ -90,7 +90,7 @@ jobs:
       # C++ sources, so a plain runner is enough.
 
       - name: Build release
-        run: cargo build --release --target ${{ matrix.target }} -p csv-splitter-cli
+        run: cargo build --release --target ${{ matrix.target }} -p csvx-cli
 
       # One packaging script, used by CI and by scripts/release-check.sh locally, so the
       # artifact a user downloads is produced by code that was actually run before the
@@ -105,8 +105,8 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path staging, dist | Out-Null
-          Copy-Item "target/${{ matrix.target }}/release/csv-splitter.exe" "staging/"
-          Compress-Archive -Path "staging/csv-splitter.exe" -DestinationPath "dist/${{ matrix.artifact }}${{ matrix.ext }}"
+          Copy-Item "target/${{ matrix.target }}/release/csvx.exe" "staging/"
+          Compress-Archive -Path "staging/csvx.exe" -DestinationPath "dist/${{ matrix.artifact }}${{ matrix.ext }}"
 
       - name: List packaged files (Unix)
         if: runner.os != 'Windows'
@@ -149,7 +149,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.prepare.outputs.version }}
-          name: CSV Splitter ${{ needs.prepare.outputs.version }}
+          name: csvx ${{ needs.prepare.outputs.version }}
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(needs.prepare.outputs.version, '-') }}

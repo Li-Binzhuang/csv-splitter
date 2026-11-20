@@ -11,21 +11,21 @@
 ## 0 · 生成示例文件
 
 ```bash
-$ csv-splitter demo
-✓ wrote csv-splitter-demo/orders.csv (20120 data rows, 918.0 KB)
+$ csvx demo
+✓ wrote csvx-demo/orders.csv (20120 data rows, 918.0 KB)
 ```
 
-文件在 `./csv-splitter-demo/orders.csv`，6 列：`id,cust_no,city,amount,note,ts`，
+文件在 `./csvx-demo/orders.csv`，6 列：`id,cust_no,city,amount,note,ts`，
 2 万行，其中 20 行有额外逗号、100 行重复、900 个空备注。
 
 ```bash
-cd csv-splitter-demo   # 后面的命令都在这个目录里跑
+cd csvx-demo   # 后面的命令都在这个目录里跑
 ```
 
 ## 1 · 看一眼：`preview`
 
 ```bash
-$ csv-splitter preview orders.csv --rows 5
+$ csvx preview orders.csv --rows 5
 orders.csv — 0.9 MB, ~20499 rows, delimiter Comma
 id | cust_no | city | amount | note | ts
 ----------------------------------------
@@ -44,7 +44,7 @@ second line | 2026-03-10
 ## 2 · 摸清数据：`analyze`
 
 ```bash
-$ csv-splitter analyze orders.csv
+$ csvx analyze orders.csv
 ⚠ 20 of 20120 rows have a field count different from the header — columns may be shifted on those rows
 column                    rows    empty  distinct  summary
 id                       20120        0     20000  min 0.00  max 19999.00  mean 9973.91  median 9956.00  sum 200675140.00
@@ -62,7 +62,7 @@ note                     20120      900         4  text: ok (17600), amounts: 1,
 ## 3 · 找某个值：`search`
 
 ```bash
-$ csv-splitter search orders.csv "second line" --limit 3 --json
+$ csvx search orders.csv "second line" --limit 3 --json
 {"scanned":20120,"matched":800,"truncated":true,
  "columns":["id","cust_no","city","amount","note","ts"],"rows":[3,29,54]}
 ```
@@ -71,13 +71,13 @@ $ csv-splitter search orders.csv "second line" --limit 3 --json
 有了行号就能直接跳过去看：
 
 ```bash
-$ csv-splitter preview orders.csv --start-row 2 --rows 1
+$ csvx preview orders.csv --start-row 2 --rows 1
 ```
 
 ## 4 · 筛出来存成文件：`filter --out --verify`
 
 ```bash
-$ csv-splitter filter orders.csv --where "city=CDMX" --where "amount>1000" -o cdmx.csv --verify
+$ csvx filter orders.csv --where "city=CDMX" --where "amount>1000" -o cdmx.csv --verify
 ✓ 3978 of 20120 rows matched → cdmx.csv (173085 bytes)
   ✓ checked: 3978 rows, 6 columns
 ```
@@ -89,15 +89,15 @@ $ csv-splitter filter orders.csv --where "city=CDMX" --where "amount>1000" -o cd
 
 ```bash
 # 枚举
-csv-splitter filter orders.csv --where "city in CDMX,Puebla" -o两城.csv
+csvx filter orders.csv --where "city in CDMX,Puebla" -o两城.csv
 # 正则
-csv-splitter filter orders.csv --where "note~re:^first" -o multi.csv
+csvx filter orders.csv --where "note~re:^first" -o multi.csv
 ```
 
 ## 5 · 去重：`dedupe`
 
 ```bash
-$ csv-splitter dedupe orders.csv -o deduped.csv --verify
+$ csvx dedupe orders.csv -o deduped.csv --verify
 ✓ 20020 of 20120 rows kept, 100 removed → deduped.csv (913.9 KB)
   ✓ checked: 20020 rows, 6 columns
 ```
@@ -107,7 +107,7 @@ $ csv-splitter dedupe orders.csv -o deduped.csv --verify
 ## 6 · 分组汇总：`groupby`
 
 ```bash
-$ csv-splitter groupby orders.csv --by city --agg "amount:sum,amount:count" --order sum_amount --desc
+$ csvx groupby orders.csv --by city --agg "amount:sum,amount:count" --order sum_amount --desc
 city,sum_amount,count_amount
 Guadalajara,182878367,4073
 CDMX,181344992,4017
@@ -122,7 +122,7 @@ Tijuana,176863423,3975
 ## 7 · 整理列再发出去：`columns`
 
 ```bash
-$ csv-splitter columns orders.csv --drop note --rename "city:城市" --verify
+$ csvx columns orders.csv --drop note --rename "city:城市" --verify
 ✓ 20120 rows × 5 columns → orders.reshaped.csv (819.9 KB)
     columns: id, cust_no, 城市, amount, ts
     dropped: note
@@ -132,14 +132,14 @@ $ csv-splitter columns orders.csv --drop note --rename "city:城市" --verify
 ## 8 · 拆开、拼回、证明无损
 
 ```bash
-$ csv-splitter split orders.csv -n 4 -f none -o parts.tar
-$ csv-splitter merge parts.tar -o restored.csv
+$ csvx split orders.csv -n 4 -f none -o parts.tar
+$ csvx merge parts.tar -o restored.csv
 ```
 
 `verify` 会自动做一遍「拆 → 合 → 逐字节比较」：
 
 ```bash
-$ csv-splitter verify orders.csv -n 4
+$ csvx verify orders.csv -n 4
 ✓ lossless: 939996 bytes across 4 chunk(s) round-tripped identically
 ```
 
@@ -148,8 +148,8 @@ $ csv-splitter verify orders.csv -n 4
 ## 9 · 给前端用：`serve`
 
 ```bash
-$ csv-splitter serve --root . --addr 127.0.0.1:8787
-csv-splitter API on http://127.0.0.1:8787  (root: …)
+$ csvx serve --root . --addr 127.0.0.1:8787
+csvx API on http://127.0.0.1:8787  (root: …)
 ```
 
 然后在浏览器打开 **http://127.0.0.1:8787/** —— 有一个内置的单文件页面，
@@ -160,7 +160,7 @@ csv-splitter API on http://127.0.0.1:8787  (root: …)
 
 ```bash
 $ curl "http://127.0.0.1:8787/files?ext=csv"
-{"root":"…/csv-splitter-demo","truncated":false,"files":[{"path":"orders.csv","bytes":939996,…}]}
+{"root":"…/csvx-demo","truncated":false,"files":[{"path":"orders.csv","bytes":939996,…}]}
 $ curl "http://127.0.0.1:8787/meta?path=orders.csv"
 $ curl "http://127.0.0.1:8787/rows?path=orders.csv&start=0&count=20"
 $ curl "http://127.0.0.1:8787/groupby?path=orders.csv&by=city&agg=amount:sum"
@@ -202,24 +202,24 @@ $ curl "http://127.0.0.1:8787/groupby?path=orders.csv&by=city&agg=amount:sum"
 
 ```bash
 # 1) 先看一眼，工具会自己说哪里可疑
-$ csv-splitter preview dirty.csv
+$ csvx preview dirty.csv
 note: this file looks like it escapes quotes with a backslash (backslash); if fields
       look wrong, re-run with `--quotes backslash`
 客户编号  | 城市 | 金额 | 备注
 
 # 2) 按它说的读——备注里的引号才是对的
-$ csv-splitter preview dirty.csv --quotes backslash
+$ csvx preview dirty.csv --quotes backslash
 
 # 3) 先摸清数据（列统计、空值、去重）
-$ csv-splitter analyze dirty.csv --quotes backslash
+$ csvx analyze dirty.csv --quotes backslash
 备注    5 行 / 0 空 / 1 个不同值 / text: 说 "谢谢" 的客户 (5)
 
 # 4) 批量改 + 插一列（原文件不动，改动在 dirty.csv.journal）
-$ csv-splitter edit set dirty.csv --where "城市=CDMX" --col 金额 --value 999 --quotes backslash
-$ csv-splitter edit insert-column dirty.csv --after 城市 --name 来源 --value "导入"
+$ csvx edit set dirty.csv --where "城市=CDMX" --col 金额 --value 999 --quotes backslash
+$ csvx edit insert-column dirty.csv --after 城市 --name 来源 --value "导入"
 
 # 5) 物化：输出 UTF-8、RFC 转义的标准 CSV
-$ csv-splitter edit export dirty.csv --quotes backslash -o clean.csv
+$ csvx edit export dirty.csv --quotes backslash -o clean.csv
 客户编号 ,城市,来源,金额,备注
 2,CDMX,导入,999,"说 ""谢谢"" 的客户"
 ```

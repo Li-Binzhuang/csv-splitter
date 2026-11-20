@@ -60,12 +60,12 @@ jobs:
       - name: Test engine (no DuckDB)
         run: |
           set -o pipefail
-          cargo test -p csv-splitter-core -p csv-splitter-cli 2>&1 | tee engine.log
+          cargo test -p csvx-core -p csvx-cli 2>&1 | tee engine.log
 
       - name: Performance guard
         run: |
           set -o pipefail
-          cargo test -p csv-splitter-core --test performance 2>&1 | tee perf.log
+          cargo test -p csvx-core --test performance 2>&1 | tee perf.log
 
       - name: Clippy workspace
         run: |
@@ -75,7 +75,7 @@ jobs:
       - name: Test CLI (includes the HTTP API)
         run: |
           set -o pipefail
-          cargo test -p csv-splitter-cli 2>&1 | tee cli.log
+          cargo test -p csvx-cli 2>&1 | tee cli.log
 
       - name: Report failures as annotations
         if: failure()

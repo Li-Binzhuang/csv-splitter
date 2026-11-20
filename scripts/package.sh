@@ -31,7 +31,7 @@ fi
 name="${1:?usage: package.sh [--build] <artifact-name> [<target>]}"
 target="${2:-}"
 
-BIN=csv-splitter
+BIN=csvx
 EXT=""
 case "$name" in
   *windows*) EXT=".exe" ;;
@@ -43,9 +43,9 @@ mkdir -p staging
 
 if [ "$build" = "1" ]; then
   if [ -n "$target" ]; then
-    cargo build --release --target "$target" -p csv-splitter-cli
+    cargo build --release --target "$target" -p csvx-cli
   else
-    cargo build --release -p csv-splitter-cli
+    cargo build --release -p csvx-cli
   fi
 fi
 

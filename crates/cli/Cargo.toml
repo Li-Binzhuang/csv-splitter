@@ -1,16 +1,19 @@
 [package]
-name = "csv-splitter-cli"
+name = "csvx-cli"
 version.workspace = true
 edition.workspace = true
+description.workspace = true
+repository.workspace = true
+license.workspace = true
 
 [[bin]]
-name = "csv-splitter"
+name = "csvx"
 path = "src/main.rs"
 
 [dependencies]
 libc = "0.2"
 flate2 = { workspace = true }
-csv-splitter-core = { workspace = true, features = ["sql"] }
+csvx-core = { workspace = true, features = ["sql"] }
 
 [dev-dependencies]
 encoding_rs = "0.8"

@@ -12,9 +12,9 @@
 //!   * each measurement takes the best of a few runs, because a scheduler hiccup
 //!     in the *worst* run says nothing about the code.
 
-use csv_splitter_core::index::SparseIndex;
-use csv_splitter_core::splitter::run_split;
-use csv_splitter_core::types::*;
+use csvx_core::index::SparseIndex;
+use csvx_core::splitter::run_split;
+use csvx_core::types::*;
 use std::path::PathBuf;
 use std::sync::{mpsc, OnceLock};
 use std::time::{Duration, Instant};

@@ -5,7 +5,7 @@
 //! test that reads them and compares against the program.
 //!
 //! Two things are checked, both cheap and both have already drifted once:
-//!   * every `csv-splitter <command>` mentioned in a code block is a real
+//!   * every `csvx <command>` mentioned in a code block is a real
 //!     sub-command;
 //!   * every `GET /x` / `POST /x` mentioned is advertised by the router.
 
@@ -48,14 +48,14 @@ impl Drop for TempDir {
 
 /// Sub-commands the binary actually has, taken from its own help.
 fn real_commands() -> String {
-    let out = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+    let out = std::process::Command::new(env!("CARGO_BIN_EXE_csvx"))
         .arg("--help")
         .output()
         .expect("run --help");
     String::from_utf8_lossy(&out.stdout).to_string()
 }
 
-/// Every `csv-splitter <word>` inside a fenced code block in the docs.
+/// Every `csvx <word>` inside a fenced code block in the docs.
 fn documented_commands(text: &str) -> Vec<String> {
     let mut out = Vec::new();
     let mut in_block = false;
@@ -68,11 +68,11 @@ fn documented_commands(text: &str) -> Vec<String> {
         if !in_block {
             continue;
         }
-        // "$ csv-splitter demo", "csv-splitter preview …"
+        // "$ csvx demo", "csvx preview …"
         let body = trimmed.trim_start_matches("$ ").trim();
-        if let Some(rest) = body.strip_prefix("csv-splitter ") {
+        if let Some(rest) = body.strip_prefix("csvx ") {
             let word = rest.split_whitespace().next().unwrap_or("");
-            // Program *output* also begins with the name ("csv-splitter API on
+            // Program *output* also begins with the name ("csvx API on
             // http://…"); a sub-command is always a lowercase word.
             if !word.is_empty() && word.chars().all(|c| c.is_ascii_lowercase() || c == '-') {
                 out.push(word.trim_end_matches('\\').to_string());
@@ -96,7 +96,7 @@ fn every_documented_command_exists() {
                 .any(|line| line.trim_start().starts_with(&format!("{command} ")));
             if !listed {
                 problems.push(format!(
-                    "{}: `csv-splitter {command}` is not a sub-command",
+                    "{}: `csvx {command}` is not a sub-command",
                     doc.0
                 ));
             }
@@ -151,7 +151,7 @@ fn the_documented_serve_port_actually_works() {
     let dir = TempDir::new("port");
     std::fs::write(dir.join("a.csv"), "id\n1\n").unwrap();
 
-    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_csvx"))
         .args(["serve", "--root", dir.0.to_str().unwrap()])
         .args(["--addr", "127.0.0.1:0"])
         .stdout(std::process::Stdio::piped())
@@ -267,7 +267,7 @@ fn api_reference_names_only_parameters_the_server_reads() {
 /// The help's task index may only name real sub-commands.
 #[test]
 fn the_task_index_names_real_commands() {
-    let out = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+    let out = std::process::Command::new(env!("CARGO_BIN_EXE_csvx"))
         .arg("--help")
         .output()
         .unwrap();
@@ -354,7 +354,7 @@ fn the_quote_style_claim_names_commands_that_accept_it() {
 
     let mut missing = Vec::new();
     for command in accepting {
-        let out = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+        let out = std::process::Command::new(env!("CARGO_BIN_EXE_csvx"))
             .args([command, "--quotes", "nonsense", file.to_str().unwrap()])
             .output()
             .unwrap();
@@ -398,7 +398,7 @@ fn every_command_documents_the_flags_it_parses() {
             }
         }
         // Ask the binary what it documents, so the check is end to end.
-        let out = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+        let out = std::process::Command::new(env!("CARGO_BIN_EXE_csvx"))
             .args([name, "--help"])
             .output()
             .unwrap();
@@ -689,7 +689,7 @@ fn troubleshooting_quotes_are_real() {
     let path = csv.to_str().unwrap();
 
     let run = |args: &[&str]| {
-        let out = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+        let out = std::process::Command::new(env!("CARGO_BIN_EXE_csvx"))
             .args(args)
             .output()
             .unwrap();
@@ -784,7 +784,7 @@ fn troubleshooting_quotes_are_real() {
 fn the_handover_names_only_real_commands() {
     let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let doc = std::fs::read_to_string(manifest.join("../../docs/HANDOVER.md")).unwrap();
-    let help = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+    let help = std::process::Command::new(env!("CARGO_BIN_EXE_csvx"))
         .arg("--help")
         .output()
         .unwrap();
@@ -813,7 +813,7 @@ fn the_handover_names_only_real_commands() {
         }
         if matches!(
             candidate,
-            "edit" | "get" | "post" | "csv-splitter" | "docs" | "scripts" | "crates"
+            "edit" | "get" | "post" | "csvx" | "docs" | "scripts" | "crates"
         ) {
             continue;
         }
@@ -877,7 +877,7 @@ fn looks_like_command(word: &str) -> bool {
 /// `--freeze-first` takes a count, and the help must say so.
 #[test]
 fn freeze_first_says_it_takes_a_count() {
-    let help = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+    let help = std::process::Command::new(env!("CARGO_BIN_EXE_csvx"))
         .args(["layout", "--help"])
         .output()
         .unwrap();
@@ -891,7 +891,7 @@ fn freeze_first_says_it_takes_a_count() {
     std::fs::create_dir_all(&dir).unwrap();
     let csv = dir.join("t.csv");
     std::fs::write(&csv, "id,city,amount\n1,CDMX,10\n").unwrap();
-    let out = std::process::Command::new(env!("CARGO_BIN_EXE_csv-splitter"))
+    let out = std::process::Command::new(env!("CARGO_BIN_EXE_csvx"))
         .args(["layout", csv.to_str().unwrap(), "--freeze-first", "id,city"])
         .output()
         .unwrap();
@@ -1316,7 +1316,7 @@ fn every_documented_route_is_served() {
 fn serve_check_output_matches_deploy_doc() {
     let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let doc = std::fs::read_to_string(manifest.join("../../docs/DEPLOY.md")).unwrap();
-    let bin = env!("CARGO_BIN_EXE_csv-splitter");
+    let bin = env!("CARGO_BIN_EXE_csvx");
 
     let dir = std::env::temp_dir().join(format!(
         "csvs_deploy_check_{}_{}",

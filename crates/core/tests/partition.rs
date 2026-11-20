@@ -1,8 +1,8 @@
 //! Partition-by-column behaviour: one file per distinct value, nothing lost.
 
-use csv_splitter_core::decompress::decompress_file;
-use csv_splitter_core::partition::{run_partition, PartitionConfig};
-use csv_splitter_core::*;
+use csvx_core::decompress::decompress_file;
+use csvx_core::partition::{run_partition, PartitionConfig};
+use csvx_core::*;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 

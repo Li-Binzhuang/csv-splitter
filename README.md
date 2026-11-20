@@ -1,10 +1,12 @@
-# CSV Splitter Pro
+# csvx
 
-> Cross-platform CSV splitter, compressor, previewer & column statistics tool with bilingual (Chinese/English) UI.
+> **High-performance CSV editor in Rust** — open, edit, query and split files bigger than Excel can open.
 >
-> 跨平台 CSV 文件拆分、压缩、预览与列统计工具，支持中英文界面。
+> 用 Rust 写的高性能 CSV 编辑器：几十 GB 的表也能秒开、可编辑、可查询、可切分。
 >
-> **刚上手？** 跑一句 `csv-splitter demo` 生成示例文件，然后看 [10 分钟上手](docs/GETTING_STARTED.md)。
+> **刚上手？** 跑一句 `csvx demo` 生成示例文件，然后看 [10 分钟上手](docs/GETTING_STARTED.md)。
+
+[![Rust](https://img.shields.io/badge/Rust-powered-orange?logo=rust&logoColor=white)](https://www.rust-lang.org)
 
 [![CI](https://github.com/Li-Binzhuang/csv-splitter/actions/workflows/ci.yml/badge.svg)](https://github.com/Li-Binzhuang/csv-splitter/actions/workflows/ci.yml)
 [![Release](https://github.com/Li-Binzhuang/csv-splitter/actions/workflows/release.yml/badge.svg)](https://github.com/Li-Binzhuang/csv-splitter/actions/workflows/release.yml)
@@ -16,12 +18,12 @@
 ## Quick start / 快速开始
 
 ```bash
-$ csv-splitter demo            # 生成一份带脏数据的示例文件
-$ cd csv-splitter-demo
-$ csv-splitter preview orders.csv
-$ csv-splitter analyze orders.csv
-$ csv-splitter groupby orders.csv --by city --agg "amount:sum,amount:count" --order sum_amount --desc
-$ csv-splitter serve --root .  # 本地 JSON API，打开 http://127.0.0.1:8787/ 就能看
+$ csvx demo            # 生成一份带脏数据的示例文件
+$ cd csvx-demo
+$ csvx preview orders.csv
+$ csvx analyze orders.csv
+$ csvx groupby orders.csv --by city --agg "amount:sum,amount:count" --order sum_amount --desc
+$ csvx serve --root .  # 本地 JSON API，打开 http://127.0.0.1:8787/ 就能看
 ```
 
 每一步的真实输出、以及从筛选到交付的完整流程，见 **[10 分钟上手](docs/GETTING_STARTED.md)**。
@@ -32,10 +34,10 @@ $ csv-splitter serve --root .  # 本地 JSON API，打开 http://127.0.0.1:8787/
 
 | Platform | Artifact | Arch |
 |----------|----------|------|
-| 🐧 Linux | `csv-splitter-linux-x86_64.tar.gz` | x86_64 |
-| 🍎 macOS | `csv-splitter-macos-arm64.tar.gz` | Apple Silicon |
-| 🍎 macOS | `csv-splitter-macos-x86_64.tar.gz` | Intel |
-| 🪟 Windows | `csv-splitter-windows-x86_64.zip` | x86_64 |
+| 🐧 Linux | `csvx-linux-x86_64.tar.gz` | x86_64 |
+| 🍎 macOS | `csvx-macos-arm64.tar.gz` | Apple Silicon |
+| 🍎 macOS | `csvx-macos-x86_64.tar.gz` | Intel |
+| 🪟 Windows | `csvx-windows-x86_64.zip` | x86_64 |
 
 > 每个包附带 `.sha256` 校验文件，可用于验证下载完整性。
 
@@ -85,7 +87,7 @@ $ csv-splitter serve --root .  # 本地 JSON API，打开 http://127.0.0.1:8787/
 ## 部署 / Deployment
 
 `docs/DEPLOY.md`：三种安装方式、`serve` 的配置项、systemd unit（仓库里有
-[`deploy/csv-splitter.service`](deploy/csv-splitter.service)）、升级与回滚、安全边界
+[`deploy/csvx.service`](deploy/csvx.service)）、升级与回滚、安全边界
 （**没有鉴权**，默认只监听 loopback）。
 
 ## 验收 / Acceptance
@@ -103,7 +105,7 @@ $ csv-splitter serve --root .  # 本地 JSON API，打开 http://127.0.0.1:8787/
 起一个后端，三行就能看到数据：
 
 ```bash
-cargo run --release -p csv-splitter-cli -- serve --root /data --addr 127.0.0.1:8080
+cargo run --release -p csvx-cli -- serve --root /data --addr 127.0.0.1:8080
 
 curl "127.0.0.1:8080/capabilities"                      # 它支持什么（read/writes/limits）
 curl "127.0.0.1:8080/rows?path=big.csv&count=3"         # 前 3 行 + 表头 + rowKeys
@@ -135,39 +137,39 @@ curl -X POST "127.0.0.1:8080/edit?path=big.csv&action=set&row=1&col=city&value=C
 cargo install --path crates/cli
 
 # 拆分（默认 zstd、10 片）
-csv-splitter split big.csv -n 8 -f zst -o chunks.tar
+csvx split big.csv -n 8 -f zst -o chunks.tar
 
 # 按目标大小切：每片约 100 MB（片数由数据量决定）
-csv-splitter split huge.csv --by-size 100MB -f zip -o huge.zip
+csvx split huge.csv --by-size 100MB -f zip -o huge.zip
 
 # 按列值分区：一个城市一个文件
-csv-splitter split orders.csv --by-column city -f zst
+csvx split orders.csv --by-column city -f zst
 
 # 只要几列，并在拆分前按列排序
-csv-splitter split big.csv --columns id,phone,score --sort score --desc -n 4 -f zip
+csvx split big.csv --columns id,phone,score --sort score --desc -n 4 -f zip
 
 # 合并回单文件（支持 tar / tar.gz / tar.zst / tar.bz2 / tar.xz / zip）
-csv-splitter merge chunks.tar -o restored.csv
+csvx merge chunks.tar -o restored.csv
 
 # 证明这次拆分是无损的：split → merge → 逐字节比较
-csv-splitter verify big.csv -n 6
+csvx verify big.csv -n 6
 
 # 建立行索引（1.6M 行 → 13 KB 索引，0.5 秒）
-csv-splitter index big.csv
+csvx index big.csv
 
 # 跳到任意行（有索引时是微秒级）
-csv-splitter preview big.csv --start-row 1500000 --rows 20
+csvx preview big.csv --start-row 1500000 --rows 20
 
 # 筛选：返回行号，再用 preview --start-row 跳过去看
-csv-splitter filter orders.csv --where "city=CDMX"
-csv-splitter filter orders.csv --where "amount>1000" --json
+csvx filter orders.csv --where "city=CDMX"
+csvx filter orders.csv --where "amount>1000" --json
 
 # 看一眼数据与列分布
-csv-splitter preview big.csv --rows 5
-csv-splitter stats big.csv --sample 50000 --top 5
+csvx preview big.csv --rows 5
+csvx stats big.csv --sample 50000 --top 5
 
 # 解压任意支持的归档
-csv-splitter extract chunks.tar -o ./out
+csvx extract chunks.tar -o ./out
 ```
 
 所有子命令都支持 `-d/--delim auto|comma|tab|semicolon|pipe|<char>`、`-q/--quiet`、`-h/--help`。
@@ -175,7 +177,7 @@ csv-splitter extract chunks.tar -o ./out
 
 ### 命令总览 / Commands
 
-三十条命令，每条一句话。`csv-splitter <command> --help` 给出该命令的全部参数。
+三十条命令，每条一句话。`csvx <command> --help` 给出该命令的全部参数。
 
 | 命令 | 做什么 |
 |---|---|
@@ -255,7 +257,7 @@ csv-splitter extract chunks.tar -o ./out
 | **写操作自检（计数级）** | 写操作自检（计数级） | `filter … --verify` / `sort … --verify` / `partition … --verify` | — |
 
 ```bash
-$ csv-splitter search orders.csv refund --show 3
+$ csvx search orders.csv refund --show 3
 scanned 200000 rows, matched 2 (2 shown)
 rows (1-based, header excluded): 1, 3
 
@@ -266,7 +268,7 @@ rows (1-based, header excluded): 1, 3
 ### 认识一份数据
 
 ```bash
-$ csv-splitter analyze orders.csv
+$ csvx analyze orders.csv
 column                    rows    empty  distinct  summary
 id                      200000        0  ≥100000  min 0.00  max 199999.00  mean 99999.50  median 99760.00  sum 19999900000.00
 city                    200000        0         5  text: Tijuana (40189), CDMX (40116), Guadalajara (39987)
@@ -279,14 +281,14 @@ note                    200000    40171         4  text: ok (40370), 多行备�
 而不是假装自己精确。
 
 ```bash
-$ csv-splitter dedupe orders.csv --by cust_no -o clean.csv
+$ csvx dedupe orders.csv --by cust_no -o clean.csv
 ✓ 49124 of 200000 rows kept, 150876 removed → clean.csv (3.0 MB)
 ```
 
 ### 分组汇总
 
 ```bash
-$ csv-splitter groupby orders.csv --by city --agg "amount:sum,amount:mean,amount:count" --order sum_amount --desc
+$ csvx groupby orders.csv --by city --agg "amount:sum,amount:mean,amount:count" --order sum_amount --desc
 ✓ 200000 rows → 5 groups → orders.grouped.csv (268 B)
 
 city,sum_amount,mean_amount,count_amount
@@ -307,11 +309,11 @@ Puebla,1803568070.11,45219.21,39885
 
 ```bash
 # 每个 city 一个文件，打包成 tar（不按大小切，按值切）
-$ csv-splitter partition orders.csv --by city -o per_city.tar
+$ csvx partition orders.csv --by city -o per_city.tar
 ✓ partitioned by city → per_city.tar (12.1 MB)
 
 # 多个月的导出拼成一张表；表头会自动核对
-$ csv-splitter concat march.csv april.csv may.csv -o q2.csv
+$ csvx concat march.csv april.csv may.csv -o q2.csv
 ✓ 3 files, 2100000 rows → q2.csv (280 MB)
 ```
 
@@ -325,7 +327,7 @@ $ csv-splitter concat march.csv april.csv may.csv -o q2.csv
 ### 整理列
 
 ```bash
-$ csv-splitter columns orders.csv --drop internal_id --rename "city:城市,amount:金额" -o share.csv
+$ csvx columns orders.csv --drop internal_id --rename "city:城市,amount:金额" -o share.csv
 ✓ 200000 rows × 5 columns → share.csv (9.8 MB)
     columns: id, cust_no, 城市, 金额, ts
     dropped: note
@@ -345,22 +347,22 @@ $ csv-splitter columns orders.csv --drop internal_id --rename "city:城市,amoun
 
 ```bash
 # 两个条件 = AND；重复 --where 即可
-csv-splitter filter orders.csv --where "city=CDMX" --where "amount>45000" -o cdmx.csv
+csvx filter orders.csv --where "city=CDMX" --where "amount>45000" -o cdmx.csv
 # ✓ 19836 of 200000 rows matched → cdmx.csv (1195614 bytes)
 
 # --any 改成 OR
-csv-splitter filter orders.csv --where "city=Tijuana" --where "amount>49990" --any -o any.csv
+csvx filter orders.csv --where "city=Tijuana" --where "amount>49990" --any -o any.csv
 
 # 多列排序，逐列指定方向
-csv-splitter sort orders.csv --by "city:asc,amount:desc" -o sorted.csv
+csvx sort orders.csv --by "city:asc,amount:desc" -o sorted.csv
 # 单列仍是最简单的写法
-csv-splitter sort orders.csv --by amount --desc -o sorted.csv
+csvx sort orders.csv --by amount --desc -o sorted.csv
 
 # 枚举几个值
-csv-splitter filter orders.csv --where "city in CDMX,Puebla,Tijuana" -o in.csv
+csvx filter orders.csv --where "city in CDMX,Puebla,Tijuana" -o in.csv
 
 # 正则筛选（col~re: 前缀），可与其他条件用 AND / OR 组合
-csv-splitter filter orders.csv --where "note~re:^REFUND" --where "amount>1000" -o hits.csv
+csvx filter orders.csv --where "note~re:^REFUND" --where "amount>1000" -o hits.csv
 ```
 
 `-o` 是「筛完留下来」的路径：流式写出，命中行的**原始字节原样保留**（不重新序列化，
@@ -383,8 +385,8 @@ csv-splitter filter orders.csv --where "note~re:^REFUND" --where "amount>1000" -
 - 需要随机访问 UTF-16 文件时先转码，之后就是一个普通 UTF-8 CSV：
 
 ```bash
-csv-splitter convert export.csv -o export.utf8.csv     # 自动识别来源编码
-csv-splitter index export.utf8.csv
+csvx convert export.csv -o export.utf8.csv     # 自动识别来源编码
+csvx index export.utf8.csv
 ```
 
 ### 错误形状 / Error shape
@@ -472,8 +474,8 @@ curl "http://127.0.0.1:8787/jobs"     # 最近 50 个任务
 它原生读 CSV、并行扫描、有真正的优化器，我们只做门口的一道检查。
 
 ```bash
-csv-splitter sql orders.csv "SELECT city, count(*) n, round(avg(amount),1) q FROM t GROUP BY 1 ORDER BY n DESC"
-csv-splitter sql orders.csv "SELECT * FROM t" --limit 5 --json
+csvx sql orders.csv "SELECT city, count(*) n, round(avg(amount),1) q FROM t GROUP BY 1 ORDER BY n DESC"
+csvx sql orders.csv "SELECT * FROM t" --limit 5 --json
 ```
 
 ```bash
@@ -506,7 +508,7 @@ CDMX    | 50069 | 45221.4
 文件再大也不进内存。
 
 ```bash
-csv-splitter serve --root ~/data --addr 127.0.0.1:8787
+csvx serve --root ~/data --addr 127.0.0.1:8787
 ```
 
 | 端点 | 说明 |
@@ -560,7 +562,7 @@ scripts/clean.sh --all    # 连构建产物一起清
 ## 透视表 / Pivot
 
 ```bash
-$ csv-splitter pivot sales.csv --rows city --cols month --values "amount:sum"
+$ csvx pivot sales.csv --rows city --cols month --values "amount:sum"
 city,2024-01,2024-02,...
 CDMX,8300408,8300337,...
 Puebla,...
@@ -589,7 +591,7 @@ Puebla,...
 一屏 100 行就只读 100 行，文件多大都一样。
 
 ```bash
-$ csv-splitter format orders.csv --rule "amount>1000:bg=red" --rule "status=late:fg=orange"
+$ csvx format orders.csv --rule "amount>1000:bg=red" --rule "status=late:fg=orange"
 2 cell(s) match in rows 0..100
   row      1  amount       = 1200                 → {"background":"#f44336"}
   row      2  status       = late                 → {"foreground":"#ff9800"}
@@ -621,7 +623,7 @@ $ csv-splitter format orders.csv --rule "amount>1000:bg=red" --rule "status=late
 `--summary` 扫全表只统计命中数，用来在有人看到颜色之前发现「这条规则太宽了」：
 
 ```bash
-$ csv-splitter format orders.csv --rule "amount>50:bg=yellow" --summary
+$ csvx format orders.csv --rule "amount>50:bg=yellow" --summary
 3 rows scanned
      2 rows (66.7%)  amount>50:bg=yellow
 ```
@@ -633,7 +635,7 @@ API：`GET /style?path=&rules=rule1;rule2&start=&count=`。
 不改行、不搬数据——服务端只给「类别 + 每个系列的数值」，怎么画是前端的事。
 
 ```bash
-$ csv-splitter chart sales.csv --x month --y "amount:sum" --series city --type bar
+$ csvx chart sales.csv --x month --y "amount:sum" --series city --type bar
 {"type":"bar","rows":5,"categories":["Jan","Feb"],
  "series":[{"name":"CDMX","points":[15,20]},{"name":"Puebla","points":[30,40]}]}
 ```
@@ -667,8 +669,8 @@ API：`GET /chart?path=&x=&y=&series=&type=`。
 合并它们会让「重置列宽」变成一次需要撤销的编辑操作。
 
 ```bash
-$ csv-splitter layout orders.csv --set "amount:format=#,##0.00" --set "city:width=160"
-$ csv-splitter layout orders.csv
+$ csvx layout orders.csv --set "amount:format=#,##0.00" --set "city:width=160"
+$ csvx layout orders.csv
 orders.csv
   城市               width 160px  format plain
   amount           width -      format #,##0.00
@@ -705,9 +707,9 @@ API：`GET /layout?path=`，`GET /layout?path=&column=&key=&value=`（设置）�
 「原始文件不可变」的直接后果。它们会明说：
 
 ```
-$ csv-splitter filter orders.csv --where "city=CDMX"
+$ csvx filter orders.csv --where "city=CDMX"
 note: 1 pending edit(s) in orders.csv.journal are not applied by this command;
-      run `csv-splitter edit export orders.csv` to materialise them
+      run `csvx edit export orders.csv` to materialise them
 ```
 
 要走编辑后的数据，先 `edit export`，再对导出的文件操作。
@@ -719,7 +721,7 @@ note: 1 pending edit(s) in orders.csv.journal are not applied by this command;
 ## 跨表查找 / Lookup (VLOOKUP)
 
 ```bash
-$ csv-splitter lookup orders.csv --key cust_no --from customers.csv --get name,city
+$ csvx lookup orders.csv --key cust_no --from customers.csv --get name,city
 ✓ 2 of 3 rows matched (1 missing) → orders.lookup.csv (84 B)
 
 order,cust_no,amount,name,city
@@ -751,11 +753,11 @@ C,9,10,#N/A,#N/A
 | 运行时失败 | **1** | `✗ <命令>: <原因>`，下面可能有一行 `hint:` |
 
 ```
-$ csv-splitter preview /definitely/not/here.csv
+$ csvx preview /definitely/not/here.csv
 ✗ preview: No such file or directory (os error 2)
-  hint: check the path; `csv-splitter files --root DIR` lists what is readable
+  hint: check the path; `csvx files --root DIR` lists what is readable
 
-$ csv-splitter filter orders.csv
+$ csvx filter orders.csv
 error: filter needs at least one --where <expr>
 ```
 
@@ -774,15 +776,15 @@ error: filter needs at least one --where <expr>
 每次编辑都往旁边的 `<文件>.journal` 追加一条操作，**基础文件永远不动**。读窗口时把逻辑行映射到物理行再套用改动；导出才物化一次。
 
 ```bash
-$ csv-splitter edit set orders.csv --row 1 --col city --value Monterrey
+$ csvx edit set orders.csv --row 1 --col city --value Monterrey
 ✓ set row 1 'city' = 'Monterrey' (1 operation(s) pending)
 
-$ csv-splitter edit status orders.csv
+$ csvx edit status orders.csv
 orders.csv
   journal: orders.csv.journal (1 operations)
     1. set row 1 'city' = 'Monterrey'
 
-$ csv-splitter edit export orders.csv -o fixed.csv
+$ csvx edit export orders.csv -o fixed.csv
 ✓ 4 rows × 3 columns → fixed.csv (63 B)
 ```
 
@@ -804,10 +806,10 @@ $ csv-splitter edit export orders.csv -o fixed.csv
 ### 公式列 / Computed columns
 
 ```bash
-$ csv-splitter edit formula orders.csv --name total --value "round(amount * qty, 2)"
+$ csvx edit formula orders.csv --name total --value "round(amount * qty, 2)"
 ✓ add column 'total' = round(amount * qty, 2) (1 operation(s) pending)
 
-$ csv-splitter edit export orders.csv -o out.csv
+$ csvx edit export orders.csv -o out.csv
 id,city,amount,qty,total
 1,CDMX,10,3,30
 ```
@@ -869,7 +871,7 @@ id,city,amount,qty,total
 | `partition` | 所有源行都落在某一个分区里 | 解包（含压缩成员）逐个数行，求和比对 |
 
 ```
-$ csv-splitter filter messy.csv --where "城市=CDMX" -o f.csv --verify
+$ csvx filter messy.csv --where "城市=CDMX" -o f.csv --verify
 ✓ 7853 of 64176 rows matched → f.csv (372582 bytes)
   ✓ checked: 7853 rows, 6 columns
 ```
@@ -887,7 +889,7 @@ $ csv-splitter filter messy.csv --where "城市=CDMX" -o f.csv --verify
 而不是悄悄算出一个错答案：
 
 ```bash
-$ csv-splitter analyze messy.csv
+$ csvx analyze messy.csv
 ⚠ 27474 of 64176 rows have a field count different from the header — columns may be shifted on those rows
 column                    rows    empty  distinct  summary
 id                       64176        0     50001  text (mixed with numbers): 备注 (9176), 1098 (2), ...
@@ -911,8 +913,8 @@ id                       64176        0     50001  text (mixed with numbers): �
 ## 基准 / Benchmarks
 
 ```bash
-cargo bench -p csv-splitter-core          # 输出真实数字（criterion）
-cargo test -p csv-splitter-core --test performance   # 回归护栏，0.2 秒
+cargo bench -p csvx-core          # 输出真实数字（criterion）
+cargo test -p csvx-core --test performance   # 回归护栏，0.2 秒
 ```
 
 criterion 只报告不判定——共享 CI 跑者的抖动会让硬阈值变成噪声源。
@@ -939,7 +941,7 @@ split/4               ~47 ms     (299 MiB/s)
 单线程读取的上限是磁盘顺序带宽（M1 Pro 实测约 490 MB/s）。大文件可以用多线程读：
 
 ```bash
-csv-splitter split big.csv -n 8 --threads 4      # 或 -t 4
+csvx split big.csv -n 8 --threads 4      # 或 -t 4
 curl -X POST ".../split?path=big.csv&splits=8&threads=4&out=parts.tar"
 ```
 
@@ -1084,7 +1086,7 @@ Requires **Rust 1.75+**.
 ```bash
 # Clone
 git clone https://github.com/Li-Binzhuang/csv-splitter.git
-cd csv-splitter
+cd csvx
 
 # Dev build
 cargo build
@@ -1093,8 +1095,8 @@ cargo build
 cargo build --release
 
 # Run it
-cargo run --release -p csv-splitter-cli -- --help
-cargo run --release -p csv-splitter-cli -- serve --root .   # HTTP backend
+cargo run --release -p csvx-cli -- --help
+cargo run --release -p csvx-cli -- serve --root .   # HTTP backend
 
 ```
 
@@ -1111,7 +1113,7 @@ No GUI toolkit, no fonts: this is a CLI and an HTTP backend.
 ## Project Structure / 项目结构
 
 ```
-csv-splitter/
+csvx/
 ├── Cargo.toml                 # Workspace root
 ├── crates/
 │   ├── core/                  # The engine (a library, no front-end dependency)
@@ -1121,7 +1123,7 @@ csv-splitter/
 │   │       ├── index.rs       # Sparse row index: jump to any row
 │   │       ├── sheet.rs       # The seam features hang off: columns, rows, windows
 │   │       └── …              # filter, sort, groupby, pivot, validate, …
-│   └── cli/                   # `csv-splitter` (CLI) and its HTTP backend (`serve`)
+│   └── cli/                   # `csvx` (CLI) and its HTTP backend (`serve`)
 │       ├── src/main.rs        # commands
 │       └── src/serve.rs       # HTTP API for a front-end
 ├── docs/                      # API, architecture, capabilities, troubleshooting
