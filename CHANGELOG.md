@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.60.7] — 2026-11-20
+
+### Added
+
+- **Every split archive now carries `_manifest.txt` (`chunks=N`, `rows=M`), and merge checks
+  it.** Numbering proves the parts are contiguous; the manifest proves the rows came back.
+  A chunk damaged in transit, or a part silently dropped, now fails with
+  `the manifest says N row(s), the archive merged M` and the half output is deleted. Archives
+  written before this change carry no manifest and still merge (the check is skipped).
+
 ## [3.60.6] — 2026-11-20
 
 ### Added / Fixed

@@ -43,6 +43,17 @@ pub fn merge_archive_expecting(
     let mut merger = Merger::new(output)?;
     merger.expect_chunks = expect_chunks;
     if input.is_dir() {
+        if let Ok(entries) = std::fs::read_dir(input) {
+            for e in entries.flatten() {
+                let name = e.file_name().to_string_lossy().to_string();
+                if is_manifest(&name) {
+                    if let Ok(file) = File::open(e.path()) {
+                        merger.read_manifest(file);
+                    }
+                    break;
+                }
+            }
+        }
         let mut names: Vec<PathBuf> = std::fs::read_dir(input)?
             .filter_map(|e| e.ok().map(|e| e.path()))
             .filter(|p| {
@@ -75,6 +86,14 @@ pub fn merge_archive_expecting(
 
 /// Streams chunks straight into the output file. Nothing is buffered whole, so
 /// merging a 10 GB archive costs the same few MB as merging a 10 MB one.
+/// The manifest `split` writes into every archive: `chunks=N` and `rows=M` lines.
+fn is_manifest(name: &str) -> bool {
+    name.rsplit('/')
+        .next()
+        .unwrap_or(name)
+        .ends_with("_manifest.txt")
+}
+
 /// macOS tar/zip writers add AppleDouble siblings (`._stem_0001.csv`) that carry resource
 /// forks, not rows. They look like chunks by name, so they must be skipped explicitly.
 fn is_apple_double(name: &str) -> bool {
@@ -103,6 +122,8 @@ struct Merger {
     expected: Option<u32>,
     /// How many chunks the caller says this archive holds, if they said anything.
     expect_chunks: Option<usize>,
+    /// Row total the archive's manifest claims; `None` when the archive carries none.
+    expect_rows: Option<u64>,
     /// Set when a chunk number repeats or skips: merging a hole produces a file that
     /// silently lost rows, so it must fail instead.
     problem: Option<String>,
@@ -124,6 +145,7 @@ impl Merger {
             wrote_header: false,
             expected: Some(1),
             expect_chunks: None,
+            expect_rows: None,
             problem: None,
         })
     }
@@ -167,6 +189,22 @@ impl Merger {
         Ok(())
     }
 
+    /// A `*_manifest.txt` inside the archive says how many data rows it holds.
+    fn read_manifest(&mut self, reader: impl Read) {
+        let mut text = String::new();
+        let mut limited = reader.take(64 * 1024);
+        if limited.read_to_string(&mut text).is_err() {
+            return;
+        }
+        for line in text.lines() {
+            if let Some(n) = line.strip_prefix("rows=") {
+                if let Ok(rows) = n.trim().parse::<u64>() {
+                    self.expect_rows = Some(rows);
+                }
+            }
+        }
+    }
+
     fn finish(mut self) -> io::Result<MergeReport> {
         self.out.flush()?;
         if let Some(problem) = self.problem {
@@ -180,6 +218,19 @@ impl Merger {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidInput,
                     format!("the archive holds {} chunk(s), not {want}", self.chunks),
+                ));
+            }
+        }
+        if let Some(want) = self.expect_rows {
+            // `records` counts every record written, including the one header.
+            let data = self.records.saturating_sub(1);
+            if data != want {
+                let _ = std::fs::remove_file(&self.output);
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!(
+                        "the manifest says {want} row(s), the archive merged {data}; a chunk is damaged or a part is missing"
+                    ),
                 ));
             }
         }
@@ -216,6 +267,10 @@ fn merge_tar(
             .path()
             .map(|p| p.to_string_lossy().to_string())
             .unwrap_or_default();
+        if is_manifest(&name) {
+            merger.read_manifest(entry);
+            continue;
+        }
         if !is_chunk(&name) || is_apple_double(&name) {
             continue;
         }
@@ -228,6 +283,14 @@ fn merge_tar(
 fn merge_zip(input: &Path, merger: &mut Merger, tx: &ProgressSender) -> io::Result<()> {
     let file = File::open(input)?;
     let mut zip = zip::ZipArchive::new(BufReader::new(file)).map_err(io::Error::other)?;
+    let manifest: Option<String> = (0..zip.len())
+        .filter_map(|i| zip.by_index(i).ok().map(|f| f.name().to_string()))
+        .find(|n| is_manifest(n));
+    if let Some(name) = manifest {
+        if let Ok(entry) = zip.by_name(&name) {
+            merger.read_manifest(entry);
+        }
+    }
     let mut names: Vec<String> = (0..zip.len())
         .filter_map(|i| zip.by_index(i).ok().map(|f| f.name().to_string()))
         .filter(|n| is_chunk(n) && !is_apple_double(n))
@@ -372,6 +435,37 @@ mod sequence_tests {
         assert!(!out.exists(), "a broken merge must not leave an output");
     }
 
+    #[test]
+    fn a_manifest_that_disagrees_with_the_chunks_fails() {
+        let d = dir("manifest");
+        std::fs::write(d.join("t_0001.csv"), "id,v\n1,a\n2,b\n").unwrap();
+        std::fs::write(d.join("t_0002.csv"), "id,v\n3,c\n").unwrap();
+        std::fs::write(d.join("t_manifest.txt"), "chunks=2\nrows=2\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel::<ProgressEvent>();
+        let out = d.join("out.csv");
+        let err = merge_archive(&d, &out, &tx).unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::InvalidData);
+        assert!(
+            err.to_string()
+                .contains("manifest says 2 row(s), the archive merged 3"),
+            "{err}"
+        );
+        assert!(!out.exists());
+    }
+
+    #[test]
+    fn a_matching_manifest_merges_cleanly() {
+        let d = dir("manifest-ok");
+        std::fs::write(d.join("t_0001.csv"), "id,v\n1,a\n").unwrap();
+        std::fs::write(d.join("t_0002.csv"), "id,v\n2,b\n").unwrap();
+        std::fs::write(d.join("t_manifest.txt"), "chunks=2\nrows=2\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel::<ProgressEvent>();
+        let out = d.join("out.csv");
+        let report = merge_archive(&d, &out, &tx).unwrap();
+        assert_eq!(report.records, 3); // one header plus two data rows
+        let text = std::fs::read_to_string(&out).unwrap();
+        assert_eq!(text, "id,v\n1,a\n2,b\n");
+    }
     #[test]
     fn an_unexpected_chunk_count_is_rejected() {
         let d = dir("count");

@@ -72,7 +72,7 @@
 |---|---|---|
 | `POST /edit` | `path` `action` … | action 来自 `serve.rs` 的 `EDIT_ACTIONS`：`set`、`insert`、`delete`、`replace`、`copy`、`formula`、`drop`、`rename`、`undo`、`redo`、`export`。参数错误时响应的 `hint` 就是这份清单 |
 | `POST /split` | `path` `splits` `out` `format` `threads` `bufMb` `level` `columns` `delim` | 切分（`splits` 为片数；`level` 为压缩级别，`columns` 只切列的子集）|
-| `POST /merge` | `path` `out` `chunks` `delim` | 合并 `split` 产出的归档（job）：按名排序、只留一个表头；**缺号/重号、或 `chunks=` 指定的片数不符时失败**并删除半成品；macOS 的 `._` 资源叉条目会被忽略 |
+| `POST /merge` | `path` `out` `chunks` `delim` | 合并 `split` 产出的归档（job）：按名排序、只留一个表头；**缺号/重号、或 `chunks=` 指定的片数不符时失败**并删除半成品；归档内 `_manifest.txt` 的行数也会核对；macOS 的 `._` 资源叉条目会被忽略 |
 | `POST /sort` | `path` `by` `desc` `out` | 外部排序 |
 | `POST /dedupe` | `path` `by` `out` | 去重 |
 | `POST /partition` | `path` `by` `out` `format` `maxPartitions` | 按列值拆成多个文件 |

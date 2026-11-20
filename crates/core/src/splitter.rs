@@ -159,7 +159,7 @@ fn run_inner(config: SplitConfig, threads: usize, tx: &ProgressSender) -> io::Re
     })
     .ok();
 
-    let compressed = if threads > 1 {
+    let mut compressed = if threads > 1 {
         split_filter_compress_parallel(
             &work_path,
             tmp_dir.path(),
@@ -199,6 +199,14 @@ fn run_inner(config: SplitConfig, threads: usize, tx: &ProgressSender) -> io::Re
     })
     .ok();
 
+    // A manifest inside the archive makes `merge` able to prove the whole table came back:
+    // the part count is checked by numbering, and the row total by this line.
+    let manifest = tmp_dir.path().join(format!("{stem}_manifest.txt"));
+    std::fs::write(
+        &manifest,
+        format!("chunks={}\nrows={}\n", splits, data_records),
+    )?;
+
     // Phase 3: pack the result
     let output_path = config.output.clone().unwrap_or_else(|| {
         let ext = match config.compress_format {
@@ -236,6 +244,8 @@ fn run_inner(config: SplitConfig, threads: usize, tx: &ProgressSender) -> io::Re
         .iter()
         .map(|f| fs::metadata(f).map(|m| m.len()).unwrap_or(0))
         .sum();
+
+    compressed.push(manifest);
 
     if config.compress_format == CompressFormat::Zip {
         tx.send(ProgressEvent::PhaseStart {
