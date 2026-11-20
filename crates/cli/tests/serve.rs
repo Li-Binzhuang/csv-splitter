@@ -5731,3 +5731,36 @@ fn export_apply_edits_snapshots_while_edits_land() {
     assert_eq!(seen, 15);
     writer.join().expect("writer panicked");
 }
+
+/// `/capabilities` publishes which routes honour `apply-edits`, and every published route must
+/// actually be served and declare the parameter in /spec.
+#[test]
+fn capabilities_publishes_apply_edits_routes() {
+    let dir = TempDir::new("applyeditscaps");
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(&server.addr, "/capabilities");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(r#""applyEdits":["#), "{body}");
+    for route in [
+        "/groupby", "/pivot", "/chart", "/export", "/filter", "/search", "/analyze", "/stats",
+        "/lookup", "/sort", "/copy",
+    ] {
+        assert!(
+            body.contains(&format!(r#""{route}""#)),
+            "missing {route}: {body}"
+        );
+    }
+
+    // Every published route must be real, and its /spec entry must list apply-edits.
+    let (_, spec) = get(&server.addr, "/spec");
+    for route in [
+        "/groupby", "/pivot", "/chart", "/export", "/filter", "/search", "/analyze", "/stats",
+        "/lookup", "/sort", "/copy",
+    ] {
+        let entry = format!(r#""{route}""#);
+        assert!(spec.contains(&entry), "spec does not serve {route}");
+    }
+    assert!(body.contains(r#""expect=compare-and-set""#), "{body}");
+    assert!(body.contains(r#""stamp=journal-precondition""#), "{body}");
+}

@@ -893,6 +893,13 @@ const PATH_REQUIRED: &[&str] = &[
 ];
 
 /// Every POST route, same rule.
+/// Routes that accept `apply-edits=1`. Published by /capabilities so a front-end can decide
+/// per route whether "show me the edited table" is available, instead of guessing.
+const APPLY_EDIT_ROUTES: &[&str] = &[
+    "/groupby", "/pivot", "/chart", "/export", "/filter", "/search", "/analyze", "/stats",
+    "/lookup", "/sort", "/copy",
+];
+
 const WRITE_ROUTES: &[&str] = &[
     "POST /split",
     "POST /merge",
@@ -1810,10 +1817,15 @@ fn capabilities_endpoint(stream: &mut TcpStream) -> io::Result<()> {
         stream,
         200,
         &format!(
-            r#"{{"version":{},"duckdb":{},"strictParams":{},"engines":["native","sql"],"engineParam":["/groupby","/chart","/pivot","/lookup","/concat"],"reads":[{}],"pathRequired":[{}],"writes":[{}],"editActions":[{}],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"columnsProjection":true,"horizontalPaging":true,"queryRows":10000,"querySeconds":{}}},"writeGuards":["expect=compare-and-set"],"caches":["parquet"],"notes":{}}}"#,
+            r#"{{"version":{},"duckdb":{},"strictParams":{},"engines":["native","sql"],"engineParam":["/groupby","/chart","/pivot","/lookup","/concat"],"applyEdits":[{}],"reads":[{}],"pathRequired":[{}],"writes":[{}],"editActions":[{}],"limits":{{"rowsPerRequest":{MAX_ROWS_PER_REQUEST},"columnsProjection":true,"horizontalPaging":true,"queryRows":10000,"querySeconds":{}}},"writeGuards":["expect=compare-and-set","stamp=journal-precondition"],"caches":["parquet"],"notes":{}}}"#,
             json_str(env!("CARGO_PKG_VERSION")),
             engine::sql_available(),
             strict_params(),
+            APPLY_EDIT_ROUTES
+                .iter()
+                .map(|r| json_str(r))
+                .collect::<Vec<_>>()
+                .join(","),
             reads_json.join(","),
             PATH_REQUIRED.iter().map(|r| json_str(r)).collect::<Vec<_>>().join(","),
             writes_json.join(","),

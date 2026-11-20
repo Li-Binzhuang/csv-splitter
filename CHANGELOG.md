@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.61.6] — 2026-11-20
+
+### Added
+
+- **`/capabilities` publishes `applyEdits`**, the list of routes that honour
+  `apply-edits=1`, plus `stamp=journal-precondition` in `writeGuards`. A front-end that wants
+  to show the edited table had to discover per route which ones support it; now it can read
+  the list. A test asserts every published route is served by /spec.
+
 ## [3.61.5] — 2026-11-20
 
 ### Tests / Documentation
