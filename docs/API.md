@@ -72,7 +72,7 @@
 |---|---|---|
 | `POST /edit` | `path` `action` … | action 来自 `serve.rs` 的 `EDIT_ACTIONS`：`set`、`insert`、`delete`、`replace`、`copy`、`formula`、`drop`、`rename`、`undo`、`redo`、`export`。参数错误时响应的 `hint` 就是这份清单 |
 | `POST /split` | `path` `splits` `out` `format` `threads` `bufMb` `level` `columns` `delim` | 切分（`splits` 为片数；`level` 为压缩级别，`columns` 只切列的子集）|
-| `POST /merge` | `out` `format` | 合并（根目录下的分片） |
+| `POST /merge` | `path` `out` `delim` | 合并 `split` 产出的归档/目录（job）：按文件名顺序拼接、只保留一个表头；**分片编号缺失或重复时失败**，并删除写了一半的输出 |
 | `POST /sort` | `path` `by` `desc` `out` | 外部排序 |
 | `POST /dedupe` | `path` `by` `out` | 去重 |
 | `POST /partition` | `path` `by` `out` `format` `maxPartitions` | 按列值拆成多个文件 |

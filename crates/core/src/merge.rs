@@ -33,7 +33,11 @@ pub fn merge_archive(input: &Path, output: &Path, tx: &ProgressSender) -> io::Re
         let mut names: Vec<PathBuf> = std::fs::read_dir(input)?
             .filter_map(|e| e.ok().map(|e| e.path()))
             .filter(|p| {
-                p.is_file() && is_chunk(&p.file_name().unwrap_or_default().to_string_lossy())
+                // The output is created before the listing is read; if it lives in the same
+                // directory it must not be merged into itself.
+                p.is_file()
+                    && p != output
+                    && is_chunk(&p.file_name().unwrap_or_default().to_string_lossy())
             })
             .collect();
         names.sort();
@@ -57,6 +61,16 @@ pub fn merge_archive(input: &Path, output: &Path, tx: &ProgressSender) -> io::Re
 
 /// Streams chunks straight into the output file. Nothing is buffered whole, so
 /// merging a 10 GB archive costs the same few MB as merging a 10 MB one.
+/// The trailing number in a chunk name: `stem_0042.csv`, `stem_0042.csv.zst`.
+fn chunk_number(name: &str) -> Option<u32> {
+    let stem = name.rsplit_once('.')?.0;
+    let digits = stem.rsplit_once('_')?.1;
+    if digits.is_empty() || !digits.chars().all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    digits.parse().ok()
+}
+
 struct Merger {
     out: BufWriter<File>,
     output: PathBuf,
@@ -64,6 +78,12 @@ struct Merger {
     records: u64,
     bytes: u64,
     wrote_header: bool,
+    /// Next chunk number expected from a split archive; `None` once a name does not
+    /// carry one (a directory of arbitrary CSV files is still mergeable).
+    expected: Option<u32>,
+    /// Set when a chunk number repeats or skips: merging a hole produces a file that
+    /// silently lost rows, so it must fail instead.
+    problem: Option<String>,
 }
 
 impl Merger {
@@ -80,10 +100,27 @@ impl Merger {
             records: 0,
             bytes: 0,
             wrote_header: false,
+            expected: Some(1),
+            problem: None,
         })
     }
 
     fn add_chunk<R: Read>(&mut self, name: &str, reader: R, tx: &ProgressSender) -> io::Result<()> {
+        // `stem_0001.csv[.zst]` carries its position; a gap or a repeat means the archive
+        // is not what the splitter wrote, and merging it would drop or duplicate rows.
+        if self.problem.is_none() {
+            match chunk_number(name) {
+                Some(n) => match self.expected {
+                    Some(want) if n != want => {
+                        self.problem = Some(format!(
+                            "chunk {name} is out of sequence (expected number {want})"
+                        ));
+                    }
+                    _ => self.expected = Some(n + 1),
+                },
+                None => self.expected = None,
+            }
+        }
         let mut rr = RecordReader::new(reader, 256 * 1024);
         let mut record = Vec::with_capacity(256 * 1024);
         let mut first = true;
@@ -109,6 +146,11 @@ impl Merger {
 
     fn finish(mut self) -> io::Result<MergeReport> {
         self.out.flush()?;
+        if let Some(problem) = self.problem {
+            // A half-written output that looks complete is worse than none.
+            let _ = std::fs::remove_file(&self.output);
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, problem));
+        }
         Ok(MergeReport {
             output: self.output,
             chunks: self.chunks,
@@ -272,5 +314,43 @@ mod tests {
         merge_archive(&dir, &out, &tx).unwrap();
         assert_eq!(std::fs::read_to_string(&out).unwrap(), "h\n1\n2\n");
         std::fs::remove_dir_all(&dir).ok();
+    }
+}
+
+#[cfg(test)]
+mod sequence_tests {
+    use super::*;
+
+    fn dir(tag: &str) -> PathBuf {
+        let d = std::env::temp_dir().join(format!("csvs_merge_{tag}_{}", std::process::id()));
+        std::fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    #[test]
+    fn a_missing_chunk_fails_instead_of_dropping_rows() {
+        let d = dir("gap");
+        std::fs::write(d.join("t_0001.csv"), "id,v\n1,a\n").unwrap();
+        std::fs::write(d.join("t_0003.csv"), "id,v\n4,d\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel::<ProgressEvent>();
+        let out = d.join("out.csv");
+        let err = merge_archive(&d, &out, &tx).unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
+        assert!(err.to_string().contains("out of sequence"), "{err}");
+        assert!(!out.exists(), "a broken merge must not leave an output");
+    }
+
+    #[test]
+    fn in_order_chunks_merge_and_keep_one_header() {
+        let d = dir("order");
+        std::fs::write(d.join("t_0001.csv"), "id,v\n1,a\n").unwrap();
+        std::fs::write(d.join("t_0002.csv"), "id,v\n2,b\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel::<ProgressEvent>();
+        // Output inside the input directory: it must not count as a chunk.
+        let out = d.join("out.csv");
+        let report = merge_archive(&d, &out, &tx).unwrap();
+        assert_eq!(report.chunks, 2);
+        let text = std::fs::read_to_string(&out).unwrap();
+        assert_eq!(text, "id,v\n1,a\n2,b\n");
     }
 }

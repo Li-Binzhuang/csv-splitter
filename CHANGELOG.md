@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.60.5] — 2026-11-20
+
+### Fixed
+
+- **Merging a gap used to drop rows silently.** `merge` concatenated whatever chunks it found,
+  in name order, so an archive missing `stem_0002` produced a file that looked complete and was
+  not. The merger now tracks the expected chunk number and fails on a gap or a repeat, deleting
+  the half-written output; a test covers both the refusal and the in-order success.
+
+- The output file is excluded from the directory listing, so merging into a path inside the
+  input directory no longer merges the output into itself (the new test caught that too).
+
 ## [3.60.4] — 2026-11-20
 
 ### Tests / Documentation
