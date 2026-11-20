@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "8202e36f41fc266853ab655f18fccd00e915aa6ac6a4354fd697bea01762911a",
+  "batch_id": "b23b5179fdcf66e4fc91b88ce7f78c430b6659273e07864a8870ba9fa698209b",
+  "composite_identity": "4b72f3dd9c3c889b0891f9182d9820d9f0dc69b5054478912f1fe161418d18f4",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "ae9214bae2abeb1b026600e68ea75bb8c782fe382aa16ce7b35a8d8ce5211da9",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "b44bd2ef462b12f3a29534b6893817b828eb6490b60a2ae14cd00215eab4da65",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录整列/条件聚合、字节复制快路、并行预扫与 .agg 缓存、原子 transaction 写入，并把基文件/区间/冷启动/会读当前行的公式四条边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "e27b8b46ba0f5042c830ebef55563d3136e1f89baa9cb9b730f28a3f3fb83eb6",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令，帮助首行自报 csvx 与版本；groupby/chart/pivot 接 --engine，view 的有序读在无编辑且大文件时交给 DuckDB；filter 与 search 调用 scan_fast（大文件分段并行）；行号一律 1-based；demo 默认写 csvx-demo/ | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败；cfg 判定必须看被依赖 crate 的 feature，不能用 cli 自己的 feature 名"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/export.rs",
+      "path": "crates/core/src/workbook/export.rs",
+      "change": "update",
+      "source_sha256": "f140de9dc69748b65a8034657fb1d6f8644a5b348062b2052c6533efb907aeb5",
+      "existing_entry": "export.rs[CD9L]: F:逐行组装、导出与分页读取 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/journal.rs | A:一次顺序扫描；被 journal 触及的行走 RowPipeline，未触及的行拷贝原字节；每行相同的公式（整列/条件聚合）算一次后只追加一格，不再逐行重写；公式需预扫时先调 formula::totals 注入 totals/filtered | S:常量公式只允许出现在输出列的尾部且计划无 literal/split，否则回退 pipeline；join_csv_line 自带行尾换行，快路再补一个会多出空行；会读当前行的公式不得走快路"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "390aa765bffbe7f6152bd2fb76a569acd5b5459c6ec8a1819a43d4ed26653e15",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；大文件节写并行数字、20–22 GB 边界与 next 游标续扫；公式节区分“每行相同”（字节复制 + 并行预扫 + .agg 缓存：重复导出 100 万行 0.09 s、2.1 GB 4.56 s）与“会读当前行”（仍逐行重写） | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "e93c8400f4d215bc6bb2082b804d68be8d5fe43226ce898b1855f13e7aa8c2db",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "b44bd2ef462b12f3a29534b6893817b828eb6490b60a2ae14cd00215eab4da65",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录整列/条件聚合、字节复制快路、并行预扫与 .agg 缓存、原子 transaction 写入，并把基文件/区间/冷启动/会读当前行的公式四条边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "177d8eccdce49750f7439f84bfcb14b2f989f6360c0deb24ffd0135816f805c8",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "e27b8b46ba0f5042c830ebef55563d3136e1f89baa9cb9b730f28a3f3fb83eb6",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令，帮助首行自报 csvx 与版本；groupby/chart/pivot 接 --engine，view 的有序读在无编辑且大文件时交给 DuckDB；filter 与 search 调用 scan_fast（大文件分段并行）；行号一律 1-based；demo 默认写 csvx-demo/ | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败；cfg 判定必须看被依赖 crate 的 feature，不能用 cli 自己的 feature 名"
+    },
+    {
+      "candidate_id": "760d95548b5c04ec2cc09a969c0976e90e1fea970176cfb0fda99911d9925f5c",
+      "object_ref": "code:crates/core/src/workbook/export.rs",
+      "path": "crates/core/src/workbook/export.rs",
+      "change": "update",
+      "source_sha256": "f140de9dc69748b65a8034657fb1d6f8644a5b348062b2052c6533efb907aeb5",
+      "existing_entry": "export.rs[CD9L]: F:逐行组装、导出与分页读取 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/journal.rs | A:一次顺序扫描；被 journal 触及的行走 RowPipeline，未触及的行拷贝原字节；每行相同的公式（整列/条件聚合）算一次后只追加一格，不再逐行重写；公式需预扫时先调 formula::totals 注入 totals/filtered | S:常量公式只允许出现在输出列的尾部且计划无 literal/split，否则回退 pipeline；join_csv_line 自带行尾换行，快路再补一个会多出空行；会读当前行的公式不得走快路"
+    },
+    {
+      "candidate_id": "b84005d42b30a2922caffff73ba72a738cac0f7d618df009c64e22ddbd125faf",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "390aa765bffbe7f6152bd2fb76a569acd5b5459c6ec8a1819a43d4ed26653e15",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；大文件节写并行数字、20–22 GB 边界与 next 游标续扫；公式节区分“每行相同”（字节复制 + 并行预扫 + .agg 缓存：重复导出 100 万行 0.09 s、2.1 GB 4.56 s）与“会读当前行”（仍逐行重写） | S:-"
+    }
+  ]
+}
