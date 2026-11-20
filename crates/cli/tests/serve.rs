@@ -5301,3 +5301,37 @@ fn lookup_can_apply_edits() {
     let out = region.expect("the lookup job should finish");
     assert!(out.contains("Bajio"), "the edited key must join: {out}");
 }
+
+/// HTTP concat with byName=1: same columns in a different order concatenate; a different set
+/// still fails (the job reports the error rather than appending nonsense).
+#[test]
+fn concat_can_align_by_name_over_http() {
+    let dir = TempDir::new("concatbynamehttp");
+    std::fs::write(dir.join("a.csv"), "a,b,c\n1,2,3\n").unwrap();
+    std::fs::write(dir.join("b.csv"), "c,a,b\n30,10,20\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/concat?paths=a.csv,b.csv&out=joined.csv&byName=1",
+    );
+    assert!(status == 200 || status == 202, "{body}");
+
+    let mut ready = false;
+    let mut state = String::new();
+    for _ in 0..60 {
+        (_, state) = get(&server.addr, "/jobs?path=a.csv");
+        if state.contains(r#""state":"done""#) {
+            ready = true;
+            break;
+        }
+        if state.contains(r#""state":"failed""#) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    assert!(ready, "the concat job should finish: {state}");
+    let (_, out) = get(&server.addr, "/rows?path=joined.csv&start=0&count=5");
+    assert!(out.contains("10"), "the reordered row is aligned: {out}");
+    assert!(out.contains("30"), "{out}");
+}

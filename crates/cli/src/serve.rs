@@ -631,7 +631,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     ),
     (
         "/concat",
-        &["paths", "out", "ignoreHeader", "delim", "engine"],
+        &["paths", "out", "ignoreHeader", "byName", "delim", "engine"],
     ),
     ("/convert", &["path", "out", "from", "to"]),
     ("/meta", &["path", "delim"]),
@@ -1141,14 +1141,34 @@ fn start_concat(
         Ok(e) => e,
         Err(message) => return bad_request(stream, &message, "engine", "engine=auto|native|sql"),
     };
+    let by_name = params
+        .get("byName")
+        .is_some_and(|v| v == "1" || v == "true");
     let result_path = out.clone();
     let id = jobs.submit("concat", move |tx| {
         metrics::shared().record_engine(planned.label());
+        // `byName=1` aligns same-named columns first, so exports with a different column
+        // order concatenate instead of failing on a header mismatch.
+        let aligned;
+        let effective: Vec<std::path::PathBuf> = if by_name {
+            match csv_splitter_core::concat::align_by_name(&inputs, delimiter) {
+                Ok(guard) => {
+                    aligned = guard;
+                    aligned.paths().to_vec()
+                }
+                Err(e) => {
+                    tx.send(ProgressEvent::Error(e.to_string())).ok();
+                    return;
+                }
+            }
+        } else {
+            inputs.clone()
+        };
         let result = match planned {
             engine::Engine::Sql => {
-                engine::concat_sql(&inputs, &out, delimiter, ignore_header, &tx).map(|_| ())
+                engine::concat_sql(&effective, &out, delimiter, ignore_header, &tx).map(|_| ())
             }
-            _ => csv_splitter_core::concat::concat(&inputs, &out, delimiter, ignore_header, &tx)
+            _ => csv_splitter_core::concat::concat(&effective, &out, delimiter, ignore_header, &tx)
                 .map(|_| ()),
         };
         match result {

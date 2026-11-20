@@ -4953,3 +4953,43 @@ fn version_says_whether_duckdb_is_compiled_in() {
         "{text}"
     );
 }
+
+/// `concat --by-name` aligns same-named columns; a different column set still fails loudly.
+#[test]
+fn concat_by_name_aligns_reordered_columns() {
+    let dir = TempDir::new("concatbyname");
+    std::fs::write(dir.join("a.csv"), "a,b,c\n1,2,3\n").unwrap();
+    std::fs::write(dir.join("b.csv"), "c,a,b\n30,10,20\n").unwrap();
+
+    let out = Command::new(bin())
+        .args([
+            "concat",
+            dir.join("a.csv").to_str().unwrap(),
+            dir.join("b.csv").to_str().unwrap(),
+            "--out",
+            dir.join("out.csv").to_str().unwrap(),
+            "--by-name",
+        ])
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "{:?}", out);
+    let text = std::fs::read_to_string(dir.join("out.csv")).unwrap();
+    assert_eq!(text, "a,b,c\n1,2,3\n10,20,30\n");
+
+    // A different column set is not alignment, it is a mismatch.
+    std::fs::write(dir.join("d.csv"), "c,a\n30,10\n").unwrap();
+    let bad = Command::new(bin())
+        .args([
+            "concat",
+            dir.join("a.csv").to_str().unwrap(),
+            dir.join("d.csv").to_str().unwrap(),
+            "--out",
+            dir.join("bad.csv").to_str().unwrap(),
+            "--by-name",
+        ])
+        .output()
+        .unwrap();
+    assert!(!bad.status.success(), "a different set must fail");
+    let err = String::from_utf8_lossy(&bad.stderr);
+    assert!(err.contains("columns differ"), "{err}");
+}

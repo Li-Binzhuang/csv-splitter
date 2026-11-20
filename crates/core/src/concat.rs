@@ -28,6 +28,132 @@ pub struct ConcatSummary {
     pub mismatched: Vec<PathBuf>,
 }
 
+/// Inputs whose headers were reordered to match the first file.
+///
+/// `align_by_name` writes a rewritten copy only for files whose header order differs; the temp
+/// files are removed when the guard drops, so a caller can pass `.paths()` straight to
+/// `concat` and forget about them.
+#[derive(Debug)]
+pub struct Aligned {
+    paths: Vec<PathBuf>,
+    temps: Vec<PathBuf>,
+}
+
+impl Aligned {
+    pub fn paths(&self) -> &[PathBuf] {
+        &self.paths
+    }
+}
+
+impl Drop for Aligned {
+    fn drop(&mut self) {
+        for path in &self.temps {
+            std::fs::remove_file(path).ok();
+        }
+    }
+}
+
+/// Reorder each input's columns by name so every file matches the first file's header.
+///
+/// Only the *order* may differ: a file missing a column or carrying an extra one is still an
+/// error, because filling it with empties invents data nobody asked for.
+pub fn align_by_name(inputs: &[PathBuf], delimiter: Delimiter) -> io::Result<Aligned> {
+    if inputs.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "no input files",
+        ));
+    }
+    let header_of = |path: &Path| -> io::Result<Vec<String>> {
+        let file = File::open(path)?;
+        let mut reader = RecordReader::new(BufReader::with_capacity(256 * 1024, file), 256 * 1024);
+        let mut record = Vec::new();
+        if !reader.next_record(&mut record)? {
+            return Ok(Vec::new());
+        }
+        Ok(crate::csv_reader::parse_csv_record(
+            String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
+            delimiter.byte(),
+        ))
+    };
+
+    let expected = header_of(&inputs[0])?;
+    if expected.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("{} has no header", inputs[0].display()),
+        ));
+    }
+    let mut paths = vec![inputs[0].clone()];
+    let mut temps = Vec::new();
+    for path in inputs.iter().skip(1) {
+        let header = header_of(path)?;
+        if header == expected {
+            paths.push(path.clone());
+            continue;
+        }
+        let mut want: Vec<&str> = expected.iter().map(String::as_str).collect();
+        let mut have: Vec<&str> = header.iter().map(String::as_str).collect();
+        want.sort_unstable();
+        have.sort_unstable();
+        if want != have {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!(
+                    "{}: columns differ from {} (only the order may differ for by-name)",
+                    path.display(),
+                    inputs[0].display()
+                ),
+            ));
+        }
+        let seek: Vec<usize> = expected
+            .iter()
+            .map(|name| header.iter().position(|h| h == name).unwrap())
+            .collect();
+        let temp = std::env::temp_dir().join(format!(
+            "csvs_align_{}_{}.csv",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0)
+        ));
+        let file = File::open(path)?;
+        let mut reader = RecordReader::new(BufReader::with_capacity(256 * 1024, file), 256 * 1024);
+        let mut out = BufWriter::with_capacity(1024 * 1024, File::create(&temp)?);
+        // The rewritten file needs its own header: `concat` compares the first record of every
+        // input against file one's header.
+        let header_refs: Vec<&str> = expected.iter().map(String::as_str).collect();
+        out.write_all(crate::csv_reader::join_csv_line(&header_refs, delimiter.byte()).as_bytes())?;
+        let mut record = Vec::new();
+        let mut first = true;
+        while reader.next_record(&mut record)? {
+            let text = String::from_utf8_lossy(&record)
+                .trim_end_matches(['\n', '\r'])
+                .to_string();
+            let fields = crate::csv_reader::parse_csv_record_with(
+                &text,
+                delimiter.byte(),
+                crate::csv_reader::QuoteStyle::Rfc4180,
+            );
+            let reordered: Vec<String> = seek
+                .iter()
+                .map(|i| fields.get(*i).cloned().unwrap_or_default())
+                .collect();
+            if first {
+                // The reordered header is the first file's header, written once.
+                first = false;
+                continue;
+            }
+            let refs: Vec<&str> = reordered.iter().map(String::as_str).collect();
+            out.write_all(crate::csv_reader::join_csv_line(&refs, delimiter.byte()).as_bytes())?;
+        }
+        out.flush()?;
+        temps.push(temp.clone());
+        paths.push(temp);
+    }
+    Ok(Aligned { paths, temps })
+}
 /// Append every record of `inputs` into `output`, writing one header.
 pub fn concat(
     inputs: &[PathBuf],
@@ -208,6 +334,36 @@ mod tests {
         .unwrap_err();
         assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
         assert!(err.to_string().contains("b.csv"), "{err}");
+    }
+
+    #[test]
+    fn align_by_name_reorders_columns_and_keeps_values() {
+        let dir = std::env::temp_dir().join(format!("csvs_align_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let a = dir.join("a.csv");
+        let b = dir.join("b.csv");
+        std::fs::write(&a, "a,b,c\n1,2,3\n").unwrap();
+        std::fs::write(&b, "c,a,b\n30,10,20\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel::<ProgressEvent>();
+
+        let aligned = align_by_name(&[a.clone(), b.clone()], Delimiter::Comma).unwrap();
+        let out = dir.join("out.csv");
+        concat(aligned.paths(), &out, Delimiter::Comma, false, &tx).unwrap();
+        let text = std::fs::read_to_string(&out).unwrap();
+        assert_eq!(text, "a,b,c\n1,2,3\n10,20,30\n");
+    }
+
+    #[test]
+    fn align_by_name_still_refuses_a_different_column_set() {
+        let dir = std::env::temp_dir().join(format!("csvs_align2_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let a = dir.join("a.csv");
+        let b = dir.join("b.csv");
+        std::fs::write(&a, "a,b,c\n1,2,3\n").unwrap();
+        std::fs::write(&b, "c,a\n30,10\n").unwrap();
+        let err = align_by_name(&[a, b], Delimiter::Comma).unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
+        assert!(err.to_string().contains("columns differ"), "{err}");
     }
 
     #[test]

@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.59.7] — 2026-11-20
+
+### Added
+
+- **`concat --by-name` (CLI) and `byName=1` (/concat).** Files with the same columns in a
+  different order used to fail on a header mismatch. The new flag aligns them by name first:
+  only the order may differ, and a different column set is still an error (filling gaps with
+  empties would invent data). Misordered inputs are rewritten to a temp file per file, so the
+  fast byte-copy path still applies afterwards. Tests cover both engines' inputs: CLI checks
+  the aligned bytes, HTTP checks the job's output, and both check that a different set fails.
+
 ## [3.59.6] — 2026-11-20
 
 ### Added

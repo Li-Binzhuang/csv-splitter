@@ -465,6 +465,7 @@ GET /columns 多带的四个参数属于「声明正确、对该方法无意义�
 | `/filter` `/search` 默认看不到编辑 | 逐字节扫描；套用编辑要先物化整张编辑后的表 | 加 `apply-edits=1`，或用 `/rows?where=` |
 | `sort` 不交给 DuckDB | 原生 `smart_cmp` 是「两边都能解析成数字才按数字」，SQL 的 `ORDER BY` 复现不了 | 传 `--engine` 会被**明确拒绝**并说明原因 |
 | `dedupe` 不交给 DuckDB | 「保留首次出现」需要稳定行序，SQL 不承诺扫描顺序 | 传 `--engine` 会被**明确拒绝**并说明原因 |
+| `concat --by-name` 只在列集合相同时按名对齐，集合不同仍报错（不补空列）|
 | `concat --engine auto` 永远原生 | 拷贝字节比读值快 3 倍（18 MB×2：0.07 s vs 0.20 s）| 显式 `--engine sql` |
 | `chart` 两引擎顺序可能不同 | 原生保留首次出现顺序，SQL 按标签排序 | 数值一致；顺序差异已在文档写明 |
 | `--engine auto` 阈值 8 MB | 4–9 MB 是实测交叉点，三个命令一致 | 显式指定引擎 |

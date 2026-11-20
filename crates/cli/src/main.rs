@@ -159,6 +159,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--delim", "Field delimiter (default: auto)"),
             ("--engine", "auto | native | sql (auto: sql above 8 MB)"),
             ("--ignore-header", "Skip the header check"),
+            ("--by-name", "Align columns by name when the order differs (same set only)"),
             ("--json", "Emit JSON"),
             ("--out", "Output path"),
         ],
@@ -5216,6 +5217,7 @@ fn cmd_concat(args: &[String]) -> i32 {
     let mut inputs: Vec<PathBuf> = Vec::new();
     let mut out: Option<PathBuf> = None;
     let mut ignore_header = false;
+    let mut by_name = false;
     let mut engine = csv_splitter_core::engine::Engine::Auto;
     let mut json = false;
     let mut delim = "auto".to_string();
@@ -5243,6 +5245,7 @@ fn cmd_concat(args: &[String]) -> i32 {
                 }
             },
             "--ignore-header" => ignore_header = true,
+            "--by-name" => by_name = true,
             "--json" => json = true,
             "-d" | "--delim" => match p.value("--delim") {
                 Ok(v) => delim = v,
@@ -5278,6 +5281,24 @@ fn cmd_concat(args: &[String]) -> i32 {
 
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("concat", rx, json);
+
+    // `--by-name` aligns same-named columns first, so files exported in a different column
+    // order concatenate instead of failing on a header mismatch.
+    let aligned_guard;
+    let aligned: Vec<PathBuf> = if by_name {
+        match csv_splitter_core::concat::align_by_name(&inputs, delimiter) {
+            Ok(guard) => {
+                aligned_guard = guard;
+                aligned_guard.paths().to_vec()
+            }
+            Err(e) => {
+                eprintln!("error: {e}");
+                return 1;
+            }
+        }
+    } else {
+        inputs.clone()
+    };
     let planned = match csv_splitter_core::engine::resolve_for_copy(engine, &inputs[0]) {
         Ok(e) => e,
         Err(message) => {
@@ -5287,9 +5308,9 @@ fn cmd_concat(args: &[String]) -> i32 {
     };
     let result = match planned {
         csv_splitter_core::engine::Engine::Sql => {
-            csv_splitter_core::engine::concat_sql(&inputs, &output, delimiter, ignore_header, &tx)
+            csv_splitter_core::engine::concat_sql(&aligned, &output, delimiter, ignore_header, &tx)
         }
-        _ => csv_splitter_core::concat::concat(&inputs, &output, delimiter, ignore_header, &tx),
+        _ => csv_splitter_core::concat::concat(&aligned, &output, delimiter, ignore_header, &tx),
     };
     drop(tx);
     let _ = reporter.join();
