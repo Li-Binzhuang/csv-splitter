@@ -28,6 +28,9 @@ $ csvx serve --root .  # 本地 JSON API，打开 http://127.0.0.1:8787/ 就能�
 
 每一步的真实输出、以及从筛选到交付的完整流程，见 **[10 分钟上手](docs/GETTING_STARTED.md)**。
 
+想一次看全？`scripts/demo.sh` 会生成示例数据并把上面这些命令按顺序跑一遍；
+加 `--big file.csv` 会接着在真实大文件上跑 [drill](scripts/drill.sh)（打印每步耗时与峰值内存）。
+
 ## Download / 下载
 
 从 [Releases](https://github.com/Li-Binzhuang/csv-splitter/releases/latest) 页面下载对应平台的预编译包：
