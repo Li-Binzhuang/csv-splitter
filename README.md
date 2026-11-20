@@ -29,7 +29,8 @@ $ csvx serve --root .  # 本地 JSON API，打开 http://127.0.0.1:8787/ 就能�
 每一步的真实输出、以及从筛选到交付的完整流程，见 **[10 分钟上手](docs/GETTING_STARTED.md)**。
 
 想一次看全？`scripts/demo.sh` 会生成示例数据并把上面这些命令按顺序跑一遍；
-加 `--big file.csv` 会接着在真实大文件上跑 [drill](scripts/drill.sh)（打印每步耗时与峰值内存）。
+加 `--big file.csv` 会接着在真实大文件上跑 [drill](scripts/drill.sh)（打印每步耗时与峰值内存）；
+再加 `scripts/demo.sh --writes` 会把编辑、导出与 verify 一并跑掉（需要约 2 倍文件大小的磁盘）。
 
 ## Download / 下载
 

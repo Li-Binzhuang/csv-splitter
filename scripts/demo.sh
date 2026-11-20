@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # One command that shows what csvx can do, on data it generates itself.
 #
-#   scripts/demo.sh                      feature tour on `csvx demo` data
-#   scripts/demo.sh --big file.csv       … then the big-file drill on that file
+#   scripts/demo.sh                          feature tour on `csvx demo` data
+#   scripts/demo.sh --big file.csv           … then the big-file drill on that file
+#   scripts/demo.sh --big file.csv --writes  … including edit/export/verify (2× disk)
 #
 # Every step prints the command it runs, so the output doubles as a script a person
 # can follow by hand. Nothing here needs the network, a database, or a GUI.
@@ -19,9 +20,11 @@ fi
 BIN="$(cd "$(dirname "$BIN")" && pwd)/$(basename "$BIN")"
 
 BIG=""
+BIG_WRITES=0
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --big) BIG="${2:?--big needs a file}"; shift 2 ;;
+    --writes) BIG_WRITES=1; shift ;;
     *) echo "unknown option $1" >&2; exit 2 ;;
   esac
 done
@@ -79,7 +82,9 @@ run "$BIN" serve --check --root .
 
 if [ -n "$BIG" ]; then
   step "9. the same product on a real big file ($(basename "$BIG"))"
-  bash "$OLDPWD/scripts/drill.sh" "$BIG"
+  extra=""
+  [ "$BIG_WRITES" = "1" ] && extra="--writes"
+  bash "$OLDPWD/scripts/drill.sh" "$BIG" $extra
 fi
 
 printf '\nDemo finished. Working copy was %s (removed on exit).\n' "$WORK"
