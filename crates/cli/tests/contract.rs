@@ -298,3 +298,34 @@ fn every_parameter_a_handler_reads_is_declared() {
         "read by a handler but absent from SPEC_PARAMS: {problems:?}"
     );
 }
+
+/// The reverse direction: a declared parameter that nothing reads is a promise the server
+/// silently ignores. Three of those existed (json, width/height on /edit, apply-edits on
+/// /groupby — a CLI flag, not an HTTP parameter).
+#[test]
+fn every_declared_parameter_is_read_somewhere() {
+    let source =
+        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/serve.rs")).unwrap();
+    let start = source.find("const SPEC_PARAMS").unwrap();
+    let end = source[start..].find("\n];").unwrap() + start;
+    let table = &source[start..end];
+    let rest = format!("{}{}", &source[..start], &source[end..]);
+
+    let names: Vec<String> = table
+        .split('"')
+        .skip(1)
+        .step_by(2)
+        .filter(|n| !n.is_empty() && !n.starts_with('/'))
+        .map(str::to_string)
+        .collect();
+    assert!(
+        names.len() >= 50,
+        "the spec scan found {} names",
+        names.len()
+    );
+    let unused: Vec<&String> = names
+        .iter()
+        .filter(|n| !rest.contains(&format!("\"{n}\"")))
+        .collect();
+    assert!(unused.is_empty(), "declared but never read: {unused:?}");
+}

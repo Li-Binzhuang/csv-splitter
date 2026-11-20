@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.58.3] — 2026-11-20
+
+### Fixed
+
+- **Dead declarations removed**: schema json, edit width/height and groupby apply-edits were
+  declared parameters nothing read — a promise the server silently ignored. apply-edits is a
+  CLI flag, json is meaningless on an endpoint that already answers JSON, and width/height were
+  leftovers. The reverse contract test fails on any declared-but-unread name; mutation-checked
+  by re-adding json, which it reports as ["json"].
+
 ## [3.58.2] — 2026-11-20
 
 ### Fixed

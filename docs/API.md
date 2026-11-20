@@ -197,6 +197,10 @@ GET  /job?id=job123        →  state: done
 `count` 上限 2000，超了会报 `requested` / `count` / `limit` 三个字段。
 
 
+## `GET /schema` 不需要 JSON 开关
+
+HTTP 端点本来就返回 JSON；命令行里的 --json 开关在这里没有对应参数。
+
 ## `GET /columns`
 
 只读：列出列名/类型。`keep` `drop` `rename` `out` 是 **POST /columns** 的参数，GET 收到会返回 400

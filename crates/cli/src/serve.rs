@@ -569,7 +569,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
         &[
             "path", "action", "row", "col", "value", "formula", "expect", "after", "name", "into",
             "from", "to", "where", "by", "delim", "count", "cols", "key", "out", "columns",
-            "format", "from-row", "to-row", "width", "height",
+            "format", "from-row", "to-row",
         ],
     ),
     ("/download", &["path", "delim"]),
@@ -578,9 +578,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     ("/validate", &["path", "checks", "delim", "limit"]),
     (
         "/schema",
-        &[
-            "path", "diff", "sample", "delim", "kind", "limit", "json", "name",
-        ],
+        &["path", "diff", "sample", "delim", "kind", "limit", "name"],
     ),
     (
         "/lookup",
@@ -648,7 +646,6 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
             "order",
             "desc",
             "maxGroups",
-            "apply-edits",
             "delim",
             "engine",
         ],
