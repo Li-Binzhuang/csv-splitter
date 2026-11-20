@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.58.8] — 2026-11-20
+
+### Tests / Documentation
+
+- The documented-field guard now covers seventeen routes, including /files, /book, /layout,
+  /validate, /stats and /schema. Two mechanics were needed: a route may answer different
+  shapes (schema with and without diff), so fields are asserted against the union of its
+  answers; and every covered route must name at least one field, or the row would be silently
+  checking nothing.
+
 ## [3.58.7] — 2026-11-20
 
 ### Fixed

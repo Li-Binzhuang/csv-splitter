@@ -42,24 +42,24 @@
 | `GET /meta` | `path` | **基文件**的行数 `rows`、字节数 `bytes`、表头 `headers`、`delimiter`、`encoding`；另有 `edited`（journal 里的操作数）：有编辑时行/列数仍按文件计，编辑后的表头看 `/columns`、行看 `/rows` |
 | `GET /rows` | `path` `start` `count` `where` `order` `desc` `sql` `format`（`format=csv` 把该窗口按编辑后的值输出为 CSV，是拿到编辑后文本的唯一途径）| 分页窗口；`where`/`order` 走 SQL，**套用编辑与公式列**。三条路径（普通/筛选/排序）返回同一组字段：`start` `count` `requested` `limit` `total` `columns` `frozenColumns` `rows` `edited` `operations`（筛选/排序额外有 `hasMore`） |
 | `GET /sheet` | `path` | 列、行数、编辑数、能力清单、列布局、冻结列、是否已建索引（`indexed` / `indexBytes`） |
-| `GET /book` | — | 工作簿：根目录下所有 CSV 及其状态 |
-| `GET /stats` | `path` `sample` | 采样统计 |
+| `GET /book` | `max` `root` | 工作簿：响应 `root` `sheets` `hidden` `total` `truncated` `unreadable` |
+| `GET /stats` | `path` `sample` | 采样统计：响应 `columns` |
 | `GET /analyze` | `path` `distinct` | 全列画像 `distinctCap` |
 | `GET /chart` | `path` `x` `y` `series` `type` `sortByValue` `desc` `maxPoints` | 图表数据：响应 `type` `rows` `categories` `series`（每项 `name` `points`）|
 | `GET /groupby` | `path` `by` `agg` `order` `desc` `maxGroups` `engine` | 分组聚合：响应 `columns` `rows` `engine`（实际执行的引擎）；`engine=auto` 按大小自动选、`engine=sql` 在未编译 sql feature 时返回 400 |
 | `GET /pivot` | `path` `rows` `cols` `values` `qualify` `maxColumns` `maxCells` `engine` | 透视矩阵：响应 `columns` `rows` `rowKeys` |
 | `GET /chart` | `path` `x` `y` `series` `type` `sortByValue` `desc` `maxPoints` | 图表数据 |
 | `GET /style` | `path` `rules` `start` `count` | 条件格式：该上色的单元格 |
-| `GET /layout` | `path` `column` `key` `value` | 列宽/显示名/冻结/数字格式（带 `column` 即写入） |
+| `GET /layout` | `path` `column` `key` `value` | 列宽/显示名/冻结/数字格式（带 `column` 即写入）：响应 `columns` |
 | `GET /edit` | `path` | 待生效的编辑操作 + 逻辑行数；`action` `row` `col` `value` `expect` 属 POST，GET 收到返回 400 并指路 |
 | `GET /filter` | `path` `where` `limit` | 命中行的行号：响应 `scanned` `matched` `truncated` `rows`；`matched` 是全部命中数，`limit` 只截 `rows`，**1-based、表头不计**；配合 `/rows` 时用 `start = 行号 - 1`；超过查询预算返回 504（同 `/query` 的提示） |
 | `GET /search` | `path` `q` `columns` `case` `exact` `regex` `limit` | 跨列搜索，响应 `scanned` `matched` `truncated` `columns` `rows`；`regex=1` 用条件格式那套模式子集；超过查询预算返回 504 |
-| `GET /schema` | `path` `diff` `sample` `delim` `name` | 列清单；带 `diff=<另一个文件>` 时返回列集合对比（`same` / `removed` / `added` / `moved`），与 `schema --diff --json` 同一份文档 |
+| `GET /schema` | `path` `diff` `sample` `delim` `name` | 列清单：响应 `rows` `count` `totalColumns` `shown` `kindFilter` `columns`；带 `diff=<另一个文件>` 时返回列集合对比（`same` / `removed` / `added` / `moved`），与 `schema --diff --json` 同一份文档 |
 | `POST /edit` | `action=fill&cols=a,b&from-row=&to-row=&value=` | 多列区间填充，**一次操作一次撤销**（`col=` 仍是单列形式）|
 | `POST /edit` | `action=insert-after-key&key=&value=` / `insert-before-key` | 按 **rowKey** 插行（`b:12`/`v:3`，来自上一次 `/rows`）；key 不存在 404，格式错 400 |
 | `POST /edit` | `action=set-formula&col=&value=` | 给**已有列**重套公式（一次撤销）；自引用或未知列在写入前就 400 |
 | `GET /validate` | `path` `checks` `delim` `limit` | 数据校验，与 CLI `validate --json` **同一份报告**：`ok` / `violations` / 每规则计数；**只读不写**；违规数据仍是 **200**（请求没错，数据错了）。`limit=N` 只校验前 N 行，报告里 `checked` 与 `partial` 明说这是前缀；2.5 GB 全量实测 **34.9 s**，`limit=200` 为 **0.11 s**；不传 `limit` 且超过查询预算时返回 504，提示用 `limit=` |
-| `GET /files` | `ext` `limit` | 根目录下可读文件清单 |
+| `GET /files` | `dir` `ext` `limit` `root` | 根目录下可读文件清单：响应 `root` `truncated` `total` `files` |
 | `GET /download` | `path` | 原样下载文件；按 1 MB 分块流出，不整份读入内存；支持单段 `Range`（206 + Content-Range，越界 416），可用 curl -C - 断点续传 |
 | `GET /export` | `path` `sql` `where` | 导出（查询结果或筛选结果）为 CSV |
 | `GET /query` | `path` `sql` `limit` | 一次性 SQL 结果（不分页） |

@@ -4597,8 +4597,15 @@ fn documented_fields_are_fields_the_endpoint_returns() {
 
     let dir = TempDir::new("docfields");
     std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\n").unwrap();
+    // /schema documents its diff fields (same/removed/added/moved), so the guarded request
+    // asks for the diff form — those keys only exist in that answer.
+    std::fs::write(dir.join("t2.csv"), "city,total\nCDMX,10\n").unwrap();
     let server = start(&dir.0.clone());
 
+    // A route may answer different shapes (schema with and without diff). The documented
+    // fields are asserted against the union of its answers, not against one request.
+    let mut bodies: std::collections::BTreeMap<&str, Vec<String>> =
+        std::collections::BTreeMap::new();
     for (route, query) in [
         ("/health", "/health"),
         ("/meta", "/meta?path=t.csv"),
@@ -4611,10 +4618,22 @@ fn documented_fields_are_fields_the_endpoint_returns() {
         ("/groupby", "/groupby?path=t.csv&by=city&agg=amount:sum"),
         ("/pivot", "/pivot?path=t.csv&rows=city&values=amount:sum"),
         ("/chart", "/chart?path=t.csv&x=city&y=amount:sum"),
+        ("/files", "/files?dir=."),
+        ("/book", "/book"),
+        ("/layout", "/layout?path=t.csv"),
+        ("/validate", "/validate?path=t.csv&checks=amount%3E0"),
+        ("/stats", "/stats?path=t.csv"),
+        ("/schema", "/schema?path=t.csv"),
+        ("/schema", "/schema?path=t.csv&diff=t2.csv"),
     ] {
         let (status, body) = get(&server.addr, query);
         assert_eq!(status, 200, "{query}: {body}");
+        bodies.entry(route).or_default().push(body);
+    }
+
+    for (route, answers) in &bodies {
         let text = row(route);
+        let mut checked = 0usize;
         // Backticked tokens that look like field names: no slash, no spaces.
         for piece in text.split('`').skip(1).step_by(2) {
             let token = piece.trim();
@@ -4627,11 +4646,20 @@ fn documented_fields_are_fields_the_endpoint_returns() {
             {
                 continue;
             }
+            checked += 1;
+            let present = answers
+                .iter()
+                .any(|body| body.contains(&format!("\"{token}\"")));
             assert!(
-                body.contains(&format!("\"{token}\"")),
-                "{route} documents {token} but the body lacks it: {body}"
+                present,
+                "{route} documents {token} but no answer has it: {}",
+                answers.join(" | ")
             );
         }
+        assert!(
+            checked > 0,
+            "{route}: the docs row names no fields, so this guard checks nothing"
+        );
     }
 }
 
