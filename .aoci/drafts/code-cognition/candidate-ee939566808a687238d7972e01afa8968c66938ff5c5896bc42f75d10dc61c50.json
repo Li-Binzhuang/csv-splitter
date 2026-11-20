@@ -1,0 +1,93 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "e538363a86d63cced5dbe9562a02048324f27164b86e9f561aa5a907db1ea298",
+  "batch_id": "ee939566808a687238d7972e01afa8968c66938ff5c5896bc42f75d10dc61c50",
+  "composite_identity": "869ddee3d2ad433ab8d2c11fd1fc3b3b58ec37519773bb1010c6e8e1d81edff9",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "72d200b0ba65180734024c98e402892c671208143bce57bb813c760acb0962da",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "feb48e5a4ac51c7e14c2c609411bb3d64b505164fdef03b9d2657e413ad7245c",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合与缓存、字节复制快路、CLI/HTTP 原子 transaction 与一次撤销整批、以及导出丢行修复，并把公式边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "f539439ee313ba9e240224af753b1789b670da617dfb5707f0d0a62dc2392917",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:与解析器分开以便持续扩展；约定跟随电子表格：if 短路求值、isblank 对空单元格返回真、isnumber 只认 Number、iferror、日期函数取 ISO 前缀；sum/average/count 与 countif/sumif 从行状态读 O(1) 结果，空列平均返回 #VALUE!，条件参数从语法树取列名与条件字符串 | S:空单元格是独立值而不是字符串 0；聚合函数在无预扫状态（视图路径）时返回 #VALUE!，绝不返回错误的 0"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "431e4db4e21644883993f56adc2985f1f153f6f4b57933ba0565cade10d723ff",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:Value 有五种；空单元格渲染为空串、算术当 0；if 只求选中分支；未知列导出前报错；grammar 含整列与条件聚合；is_row_constant 判定“每行相同”（整列聚合/字面量），但 ref、vlookup、row 即使参数全是字面量也不算——它们的答案取决于当前行 | S:公式列只存在 journal 里，groupby/pivot/chart 直接读文件看不见它；把 ref/vlookup/row 归入常量会让跨表引用导出成 #VALUE!（测试钉住）"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "05a5739d341af6091bdabf138ca1a1b0662b1010846bbef070822bdeb215e338",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 写明聚合与 .agg 缓存让重复导出预扫约 30 ms（冷启动仍约 0.09 s，区间引用未做）；缺口 5 写明 set-many/transaction 先校验再一次写入且一次撤销整批，CLI 与 HTTP 均有测试 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "1ceae89d473accb6343da2e79b9c9e57edb37deee20d94b24a7bdc6ffebfa020",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；编辑表含原子批量写（失败全不写、一次撤销整批）；公式节区分两种代价；大文件节写并行数字与游标续扫 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "04f16b4596c35c42e95475a3cafbaa18a183d361c3507a49d546e5718c7a293a",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "feb48e5a4ac51c7e14c2c609411bb3d64b505164fdef03b9d2657e413ad7245c",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合与缓存、字节复制快路、CLI/HTTP 原子 transaction 与一次撤销整批、以及导出丢行修复，并把公式边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "c7c61737ce25bc0c8383be2a32b916653c6a112dc7a18b2262fe61457c75e46e",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "f539439ee313ba9e240224af753b1789b670da617dfb5707f0d0a62dc2392917",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:与解析器分开以便持续扩展；约定跟随电子表格：if 短路求值、isblank 对空单元格返回真、isnumber 只认 Number、iferror、日期函数取 ISO 前缀；sum/average/count 与 countif/sumif 从行状态读 O(1) 结果，空列平均返回 #VALUE!，条件参数从语法树取列名与条件字符串 | S:空单元格是独立值而不是字符串 0；聚合函数在无预扫状态（视图路径）时返回 #VALUE!，绝不返回错误的 0"
+    },
+    {
+      "candidate_id": "08812b0f9215220a6f322850b8d21177b6d2fae45253a4c667a54e087942b221",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "431e4db4e21644883993f56adc2985f1f153f6f4b57933ba0565cade10d723ff",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:Value 有五种；空单元格渲染为空串、算术当 0；if 只求选中分支；未知列导出前报错；grammar 含整列与条件聚合；is_row_constant 判定“每行相同”（整列聚合/字面量），但 ref、vlookup、row 即使参数全是字面量也不算——它们的答案取决于当前行 | S:公式列只存在 journal 里，groupby/pivot/chart 直接读文件看不见它；把 ref/vlookup/row 归入常量会让跨表引用导出成 #VALUE!（测试钉住）"
+    },
+    {
+      "candidate_id": "a8720df5107af5c8bde08e8311bf233212d4489af2ac45682015db0deb230d03",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "05a5739d341af6091bdabf138ca1a1b0662b1010846bbef070822bdeb215e338",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 写明聚合与 .agg 缓存让重复导出预扫约 30 ms（冷启动仍约 0.09 s，区间引用未做）；缺口 5 写明 set-many/transaction 先校验再一次写入且一次撤销整批，CLI 与 HTTP 均有测试 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    },
+    {
+      "candidate_id": "a6c9949f607798ad35c6a570a74967249a21b6a712565931fc862fa7728edec0",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "1ceae89d473accb6343da2e79b9c9e57edb37deee20d94b24a7bdc6ffebfa020",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；编辑表含原子批量写（失败全不写、一次撤销整批）；公式节区分两种代价；大文件节写并行数字与游标续扫 | S:-"
+    }
+  ]
+}
