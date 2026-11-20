@@ -5077,3 +5077,36 @@ fn chart_and_style_accept_their_documented_parameters() {
     );
     assert_eq!(code, 200, "/style start/count must be accepted: {body}");
 }
+
+/// `apply-edits=1` groups the edited sheet: a value changed by an edit must move between groups,
+/// which cannot happen if the handler reads the base file.
+#[test]
+fn groupby_can_apply_edits() {
+    let dir = TempDir::new("groupapply");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let base = get(&server.addr, "/groupby?path=t.csv&by=city&agg=amount:sum").1;
+    assert!(base.contains(r#""CDMX""#), "{base}");
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=city&value=Puebla",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let edited = get(
+        &server.addr,
+        "/groupby?path=t.csv&by=city&agg=amount:sum&apply-edits=1",
+    )
+    .1;
+    assert!(
+        !edited.contains(r#""CDMX""#),
+        "after the edit no CDMX row remains: {edited}"
+    );
+    let plain = get(&server.addr, "/groupby?path=t.csv&by=city&agg=amount:sum").1;
+    assert!(
+        plain.contains(r#""CDMX""#),
+        "without apply-edits the base file still has CDMX: {plain}"
+    );
+}

@@ -646,6 +646,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
             "order",
             "desc",
             "maxGroups",
+            "apply-edits",
             "delim",
             "engine",
         ],
@@ -3426,8 +3427,12 @@ fn group_by(
 
     // Reuse the query cache: the key is path+sql, so we synthesise a stable
     // pseudo-query that encodes every parameter.
+    let apply_edits = params
+        .get("apply-edits")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false);
     let sql_key = format!(
-        "groupby|{by}|{agg}|{}|{descending}|{max_groups}|{engine:?}",
+        "groupby|{by}|{agg}|{}|{descending}|{max_groups}|{engine:?}|apply={apply_edits}",
         order.clone().unwrap_or_default()
     );
     let delimiter = delimiter(params);
@@ -3445,6 +3450,18 @@ fn group_by(
         let out = out_dir.join(unique);
         let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
         drop(rx);
+        // `apply-edits=1` analyses the edited sheet: materialise it once, then group it.
+        // The temp file lives until this closure returns.
+        let materialised = if apply_edits {
+            let read = csv_splitter_core::sheet::ReadOptions { delimiter };
+            Some(csv_splitter_core::sheet::materialize(&path, &read, &tx)?)
+        } else {
+            None
+        };
+        let source: std::path::PathBuf = materialised
+            .as_ref()
+            .map(|m| m.path().to_path_buf())
+            .unwrap_or_else(|| path.clone());
         let options = groupby::GroupOptions {
             keys: keys.clone(),
             aggregates: aggs.clone(),
@@ -3452,11 +3469,11 @@ fn group_by(
             descending,
             max_groups,
         };
-        let planned = engine::resolve(engine, &path).map_err(io::Error::other)?;
+        let planned = engine::resolve(engine, &source).map_err(io::Error::other)?;
         metrics::shared().record_engine(planned.label());
         let summary = match planned {
-            engine::Engine::Sql => engine::groupby_sql(&path, delimiter, &out, &options, &tx)?,
-            _ => groupby::groupby(&path, delimiter, &out, &options, &tx)?,
+            engine::Engine::Sql => engine::groupby_sql(&source, delimiter, &out, &options, &tx)?,
+            _ => groupby::groupby(&source, delimiter, &out, &options, &tx)?,
         };
         let text = std::fs::read_to_string(&out)?;
         std::fs::remove_file(&out).ok();

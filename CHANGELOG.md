@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.59.0] — 2026-11-20
+
+### Added
+
+- **/groupby accepts the apply-edits parameter.** The CLI could analyse the edited sheet; the HTTP
+  endpoint always read the base file. It now materialises the edited sheet once per cache miss
+  and groups that, so "add a formula column, then aggregate by it" works over HTTP too. A test
+  edits a value across groups and checks the grouped answer changes with the flag and does not
+  without it. Capsule: pivot and chart still lack the HTTP flag.
+
 ## [3.58.9] — 2026-11-20
 
 ### Fixed
