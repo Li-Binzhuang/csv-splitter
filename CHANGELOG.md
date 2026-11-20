@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.59.5] — 2026-11-20
+
+### Added
+
+- **/lookup accepts apply-edits=1.** It joins the main file against a reference; with edits the
+  main side is materialised first, so a changed key joins against the reference instead of the
+  original one. The test edits a key to ZZ9 and checks the copied region arrives.
+
 ## [3.59.4] — 2026-11-20
 
 ### Added

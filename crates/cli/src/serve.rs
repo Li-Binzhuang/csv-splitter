@@ -592,7 +592,16 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     (
         "/lookup",
         &[
-            "path", "key", "from", "get", "out", "refKey", "maxKeys", "delim", "engine",
+            "path",
+            "key",
+            "from",
+            "get",
+            "out",
+            "refKey",
+            "maxKeys",
+            "apply-edits",
+            "delim",
+            "engine",
         ],
     ),
     (
@@ -1418,13 +1427,34 @@ fn start_lookup(
         Err(message) => return bad_request(stream, &message, "engine", "engine=auto|native|sql"),
     };
     let result_path = out.clone();
+    let apply_edits = params
+        .get("apply-edits")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false);
     let id = jobs.submit("lookup", move |tx| {
         metrics::shared().record_engine(planned.label());
+        // `apply-edits=1` looks up the edited main file; the reference stays a plain file.
+        let materialised = if apply_edits {
+            let read = csv_splitter_core::sheet::ReadOptions { delimiter };
+            match csv_splitter_core::sheet::materialize(&input, &read, &tx) {
+                Ok(m) => Some(m),
+                Err(e) => {
+                    tx.send(ProgressEvent::Error(e.to_string())).ok();
+                    return;
+                }
+            }
+        } else {
+            None
+        };
+        let source: std::path::PathBuf = materialised
+            .as_ref()
+            .map(|m| m.path().to_path_buf())
+            .unwrap_or_else(|| input.clone());
         let result = match planned {
             engine::Engine::Sql => {
-                engine::lookup_sql(&input, delimiter, &out, &options, &tx).map(|_| ())
+                engine::lookup_sql(&source, delimiter, &out, &options, &tx).map(|_| ())
             }
-            _ => csv_splitter_core::lookup::lookup(&input, delimiter, &out, &options, &tx)
+            _ => csv_splitter_core::lookup::lookup(&source, delimiter, &out, &options, &tx)
                 .map(|_| ()),
         };
         match result {

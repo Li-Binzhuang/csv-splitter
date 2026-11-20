@@ -5241,3 +5241,61 @@ fn analyze_and_stats_can_apply_edits() {
     let stats = get(&server.addr, "/stats?path=t.csv&apply-edits=1").1;
     assert!(stats.contains(r#""total""#), "stats follows too: {stats}");
 }
+
+/// `/rows?sql=` pages a query result; the question this pins down is whether that result is
+/// built from the edited sheet or the raw file.
+#[test]
+fn rows_sql_sees_the_journal_or_says_otherwise() {
+    let dir = TempDir::new("rowsapply");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=city&value=ZZ9",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let (status, body) = get(
+        &server.addr,
+        "/rows?path=t.csv&sql=SELECT%20city%20FROM%20t%20WHERE%20city%3D%27ZZ9%27",
+    );
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("ZZ9"), "the query must see the edit: {body}");
+}
+
+/// Lookup is a job; `apply-edits=1` must look up the edited main file, so a changed key joins
+/// against the reference instead of the original one.
+#[test]
+fn lookup_can_apply_edits() {
+    let dir = TempDir::new("lookupapply");
+    std::fs::write(dir.join("main.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    std::fs::write(dir.join("ref.csv"), "city,region\nZZ9,Bajio\nCDMX,Centro\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=main.csv&action=set&row=1&col=city&value=ZZ9",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let (status, body) = post(
+        &server.addr,
+        "/lookup?path=main.csv&key=city&from=ref.csv&get=region&out=j.csv&apply-edits=1",
+    );
+    assert!(status == 200 || status == 202, "{body}");
+
+    // Wait for the job to finish, then read the attached result.
+    let mut region = None;
+    for _ in 0..60 {
+        let (_, state) = get(&server.addr, "/jobs?path=main.csv");
+        if state.contains(r#""state":"done""#) {
+            let (_, out) = get(&server.addr, "/rows?path=j.csv&start=0&count=5");
+            region = Some(out);
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    let out = region.expect("the lookup job should finish");
+    assert!(out.contains("Bajio"), "the edited key must join: {out}");
+}
