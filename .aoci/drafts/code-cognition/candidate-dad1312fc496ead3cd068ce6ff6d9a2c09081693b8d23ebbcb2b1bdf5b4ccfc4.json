@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "44ff5bf321833b73b3aa2c0e450a962d292e4061590f02cd825bbb5fb732109b",
+  "batch_id": "dad1312fc496ead3cd068ce6ff6d9a2c09081693b8d23ebbcb2b1bdf5b4ccfc4",
+  "composite_identity": "1c84cd666a3a6a439080325556f45fee3981faedbdaa3b2e9bce4a8c611750f6",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "7332fa613c3dff1df65decaa82d17d0a16860e88f345c5339f87ab2d7031a66f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/demo.sh",
+      "path": "scripts/demo.sh",
+      "change": "update",
+      "source_sha256": "6e3026a7d253c1f2c5340ab25829df3b037e011fe3fe648460e28326ca04ad1b",
+      "existing_entry": "demo.sh[SZ6T]: F:一条命令的产品巡演：生成示例数据后按序跑预览、分析、过滤、编辑、公式（整列 sum 与条件 countif）、格式、布局、聚合、透视、图表、导出与服务自检 | R:code:scripts/drill.sh | A:每步打印要执行的命令与输出（head 限长）；--big 时调用 drill.sh，--writes 再把它转发给 drill.sh 跑编辑/导出/verify；BIN 解析为绝对路径，因为巡演会切到临时目录 | S:必须用 release 二进制演示——debug 构建慢一个数量级会让大文件耗时失真；--writes 会写一份等大小的导出副本，磁盘不够时不要用"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4dabcbdd083eae41135e220e371230f0e6e8dac1370e828d9f1c9fdf8e997360",
+      "object_ref": "code:scripts/demo.sh",
+      "path": "scripts/demo.sh",
+      "change": "update",
+      "source_sha256": "6e3026a7d253c1f2c5340ab25829df3b037e011fe3fe648460e28326ca04ad1b",
+      "existing_entry": "demo.sh[SZ6T]: F:一条命令的产品巡演：生成示例数据后按序跑预览、分析、过滤、编辑、公式（整列 sum 与条件 countif）、格式、布局、聚合、透视、图表、导出与服务自检 | R:code:scripts/drill.sh | A:每步打印要执行的命令与输出（head 限长）；--big 时调用 drill.sh，--writes 再把它转发给 drill.sh 跑编辑/导出/verify；BIN 解析为绝对路径，因为巡演会切到临时目录 | S:必须用 release 二进制演示——debug 构建慢一个数量级会让大文件耗时失真；--writes 会写一份等大小的导出副本，磁盘不够时不要用"
+    }
+  ]
+}
