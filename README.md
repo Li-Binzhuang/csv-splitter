@@ -1008,6 +1008,10 @@ curl -X POST ".../split?path=big.csv&splits=8&threads=4&out=parts.tar"
 
 结果缓存把重复查询兜住：同一筛选条件的第二页 60 MB 只要 **18 ms**（第一次物化 0.9 s）。
 
+过滤与搜索在 UTF-8 文件上按稀疏索引分段并行（每核一段，封顶 8 段）；GBK/UTF-16 仍是顺序扫描，
+因为它们的字节偏移不是行边界。下面的 2 GB 实测里，并行把整文件过滤从 13.5 s 压到 2.7 s、搜索从 18.1 s 压到 4.8 s
+（同一二进制，`CSVX_SCAN_THREADS=1` 关并行）。
+
 ## 性能 / Performance
 
 一台普通笔记本上的实测（`scripts/bench.sh` 可复现，release 构建）：
@@ -1027,6 +1031,9 @@ curl -X POST ".../split?path=big.csv&splits=8&threads=4&out=parts.tar"
 | 分组聚合（4 组） | 215 MB | **1.38 s**，峰值内存 **9.0 MB** |
 | **套用编辑导出（含公式列）** | **215 MB / 500 万行** | **17.3 MB** 峰值内存 |
 | **筛选 + 选列 + 排序 + 导出** | 215 MB（1M 行命中）| 150 MB 峰值（排序缓冲）|
+| 过滤（`city=Tijuana`，1250 万命中） | 2.1 GB / 5000 万行 | **2.7 s**，峰值 **43 MB**（`CSVX_SCAN_THREADS=1` 顺序扫描 13.5 s）|
+| 全文搜索（无命中） | 2.1 GB / 5000 万行 | **4.8 s**，峰值 **42 MB**（顺序扫描 18.1 s）|
+| HTTP `/filter` / `/search` | 2.1 GB | **2.1 / 3.1 s**；`/rows` 首屏 **6 ms** |
 
 HTTP API（同一个文件，release）：
 

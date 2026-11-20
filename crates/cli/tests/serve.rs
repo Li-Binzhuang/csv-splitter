@@ -5897,15 +5897,22 @@ fn dedupe_and_partition_can_apply_edits() {
         "/partition?path=t.csv&by=city&out=parts.tar&apply-edits=1",
     );
     assert!(status == 200 || status == 202, "{body}");
+    // `/jobs?path=t.csv` also lists the dedupe job above; waiting for any "done" let the
+    // dedupe job satisfy the loop while the partition was still writing its archive.
     let mut state = String::new();
     for _ in 0..100 {
         (_, state) = get(&server.addr, "/jobs?path=t.csv");
-        if state.contains(r#""state":"done""#) || state.contains(r#""state":"failed""#) {
+        if state.contains(r#""kind":"partition","state":"done""#)
+            || state.contains(r#""state":"failed""#)
+        {
             break;
         }
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
-    assert!(state.contains(r#""state":"done""#), "{state}");
+    assert!(
+        state.contains(r#""kind":"partition","state":"done""#),
+        "{state}"
+    );
 
     // The archive is a tar of one file per value; a part named after Q proves the edit
     // reached the partition step.

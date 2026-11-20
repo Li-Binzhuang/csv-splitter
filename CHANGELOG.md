@@ -1,5 +1,23 @@
 # Changelog
 
+## [4.1.0] — 2026-11-20
+
+### Performance
+
+- **A whole-table filter or search is now several scans at once.** UTF-8 files are split at
+  the sparse index's checkpoints into one slab per core (capped at 8); each slab seeks,
+  parses and matches on its own, and the row numbers are merged in order. GBK/UTF-16 keep
+  the sequential path because a byte offset there is not a row boundary.
+- Measured on 2.1 GB / 50 M rows (release, M-series): `filter city=Tijuana` (12.5 M hits)
+  **13.5 s → 2.7 s**, `search` with no hit **18.1 s → 4.8 s**, peak RSS 42–43 MB. The HTTP
+  endpoints inherit the win (`/filter` 2.1 s, `/search` 3.1 s, `/rows` 6 ms on the same
+  file), so a huge CSV no longer trips the 30 s budget on the way to a 504.
+- Row numbering is unchanged: `parallel_scan_agrees_with_sequential` and search's twin
+  compare the parallel path against the sequential one record by record, including a
+  quoted newline that crosses a checkpoint. `CSVX_SCAN_THREADS` overrides the thread count
+  (1 keeps the sequential path in the same build), which is how the before/after numbers
+  above were taken.
+
 ## [4.0.0] — 2026-11-20
 
 ### Changed

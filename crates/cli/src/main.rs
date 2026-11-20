@@ -7,7 +7,7 @@
 use csvx_core::csv_reader::{detect_delimiter, parse_csv_record, read_headers};
 use csvx_core::decompress::decompress_file;
 use csvx_core::encoding::{self, parse_name, TextEncoding};
-use csvx_core::filter::{self, scan as filter_scan, FilterSpec};
+use csvx_core::filter::{self, FilterSpec};
 use csvx_core::index::{SparseIndex, DEFAULT_INTERVAL};
 use csvx_core::merge::merge_archive_expecting;
 use csvx_core::partition::{run_partition, PartitionConfig};
@@ -2770,7 +2770,7 @@ fn cmd_filter(args: &[String]) -> i32 {
     let (tx, _rx) = mpsc::channel();
     let spec = set.specs.first().cloned();
     let Some(spec) = spec else { return 2 };
-    let result = match filter_scan(&input, delimiter, &spec, limit, &tx) {
+    let result = match filter::scan_fast(&input, delimiter, &spec, limit, None, &tx) {
         Ok(r) => r,
         Err(e) => {
             return report_failure("filter", e);
@@ -2936,7 +2936,7 @@ fn cmd_search(args: &[String]) -> i32 {
         }
     };
     let result =
-        match csvx_core::search::search_quotes(&input, delimiter, &spec, limit, quotes, &tx) {
+        match csvx_core::search::search_fast(&input, delimiter, &spec, limit, None, quotes, &tx) {
             Ok(r) => r,
             Err(e) => {
                 return report_failure("search", e);

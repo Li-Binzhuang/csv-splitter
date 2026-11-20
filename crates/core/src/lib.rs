@@ -28,6 +28,7 @@ pub mod pivot;
 pub mod preview;
 pub mod profile;
 pub mod reshape;
+pub mod scan_parallel;
 pub mod schema;
 pub mod search;
 pub mod sheet;

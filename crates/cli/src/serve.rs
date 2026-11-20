@@ -6150,7 +6150,7 @@ fn search(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
         .map(|m| m.path().to_path_buf())
         .unwrap_or_else(|| path.clone());
     let budget = std::time::Duration::from_millis(query_timeout_ms());
-    match csvx_core::search::search_quotes_with_budget(
+    match csvx_core::search::search_fast(
         &source,
         delimiter(params),
         &spec,
@@ -6331,7 +6331,7 @@ fn filter(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
     // The same budget /query already honours: a filtered scan over a huge sheet has no
     // cancel button once the request is in flight.
     let budget = std::time::Duration::from_millis(query_timeout_ms());
-    match filter::scan_with_budget(&source, delimiter(params), &spec, limit, Some(budget), &tx) {
+    match filter::scan_fast(&source, delimiter(params), &spec, limit, Some(budget), &tx) {
         Ok(result) => {
             let rows: Vec<String> = result.row_numbers().iter().map(|n| n.to_string()).collect();
             respond_json(

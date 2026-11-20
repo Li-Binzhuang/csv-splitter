@@ -253,6 +253,83 @@ pub fn scan_with_budget(
     Ok(result)
 }
 
+/// Resolve the predicate's column against the header, once, before splitting the file.
+fn column_index(path: &Path, delim: u8, spec: &FilterSpec) -> io::Result<usize> {
+    let reader = encoding::open_decoded(path)?;
+    let mut records = RecordReader::new(BufReader::with_capacity(1024 * 1024, reader), 1024 * 1024);
+    let mut record = Vec::new();
+    if !records.next_record(&mut record)? {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "empty file"));
+    }
+    let headers = parse_csv_record_with(
+        &String::from_utf8_lossy(&record),
+        delim,
+        QuoteStyle::Rfc4180,
+    );
+    crate::csv_reader::resolve_column(&spec.column, &headers)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))
+}
+
+/// Scan with one thread per checkpoint range when the file is big enough to pay for it.
+///
+/// The rows come back exactly as the sequential scan returns them; the difference is wall
+/// time. Encodings whose byte offsets are not row boundaries (GBK/UTF-16) keep the
+/// sequential path, and a timeout is a real answer the HTTP layer turns into 504, so it is
+/// not retried.
+pub fn scan_fast(
+    path: &Path,
+    delimiter: Delimiter,
+    spec: &FilterSpec,
+    limit: usize,
+    budget: Option<std::time::Duration>,
+    tx: &ProgressSender,
+) -> io::Result<ScanResult> {
+    let file_len = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
+    let threads = crate::scan_parallel::threads_for(file_len);
+    let seekable = crate::scan_parallel::is_seekable(path)?;
+    if threads <= 1 || !seekable {
+        return scan_with_budget(path, delimiter, spec, limit, budget, tx);
+    }
+    match filter_parallel(path, delimiter, spec, limit, budget, threads, tx) {
+        Ok(result) => Ok(result),
+        Err(e) if e.kind() == io::ErrorKind::TimedOut => Err(e),
+        Err(_) => scan_with_budget(path, delimiter, spec, limit, budget, tx),
+    }
+}
+
+/// The parallel half of [`scan_fast`], with threads made explicit so a test can force
+/// four of them on a file small enough to check by eye.
+fn filter_parallel(
+    path: &Path,
+    delimiter: Delimiter,
+    spec: &FilterSpec,
+    limit: usize,
+    budget: Option<std::time::Duration>,
+    threads: usize,
+    tx: &ProgressSender,
+) -> io::Result<ScanResult> {
+    let delim = delimiter.byte();
+    let col_idx = column_index(path, delim, spec)?;
+    let predicate =
+        |fields: &[String]| matches(fields.get(col_idx).map(String::as_str).unwrap_or(""), spec);
+    let phase = format!("Filtering {}", spec.column);
+    let options = crate::scan_parallel::ScanOptions {
+        delimiter,
+        limit,
+        budget,
+        threads,
+        quotes: QuoteStyle::Rfc4180,
+        phase: &phase,
+    };
+    let batch = crate::scan_parallel::scan_parallel(path, &options, tx, predicate)?;
+    Ok(ScanResult {
+        rows: batch.rows,
+        scanned: batch.scanned,
+        matched: batch.matched,
+        truncated: batch.truncated,
+    })
+}
+
 /// How several predicates combine.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Combine {
@@ -563,6 +640,94 @@ mod tests {
         assert!(!matches("a", &spec("x empty")));
         // Non-numeric falls back to string ordering.
         assert!(matches("2026-02-01", &spec("d>2026-01-01")));
+    }
+
+    struct TempFile(std::path::PathBuf);
+
+    impl TempFile {
+        fn new(name: &str) -> Self {
+            let path =
+                std::env::temp_dir().join(format!("csvx_filter_{}_{}", std::process::id(), name));
+            Self(path)
+        }
+
+        fn path(&self) -> &Path {
+            &self.0
+        }
+    }
+
+    impl Drop for TempFile {
+        fn drop(&mut self) {
+            std::fs::remove_file(&self.0).ok();
+            let mut idx = self.0.clone().into_os_string();
+            idx.push(".idx");
+            std::fs::remove_file(std::path::PathBuf::from(idx)).ok();
+        }
+    }
+
+    /// The parallel scan exists for wall time only: it must return the sequential scan's
+    /// rows, counts and truncation flag exactly. Boundaries fall on index checkpoints, and
+    /// one row in four thousand carries an embedded newline, so a plan that assumed one
+    /// record per line would drift there.
+    #[test]
+    fn parallel_scan_agrees_with_sequential() {
+        let file = TempFile::new("parallel");
+        let mut text = String::from("city,amount,note\n");
+        for i in 0..12_000u64 {
+            let city = if i % 3 == 0 { "Tijuana" } else { "CDMX" };
+            if i % 4000 == 3999 {
+                text.push_str(&format!("{city},{i},\"line one\nline two\"\n"));
+            } else {
+                text.push_str(&format!("{city},{i},note \"quoted, comma\"\n"));
+            }
+        }
+        std::fs::write(file.path(), text).unwrap();
+
+        let predicate = spec("city=Tijuana");
+        let (tx, rx) = std::sync::mpsc::channel();
+        drop(rx);
+        let sequential = scan(file.path(), Delimiter::Comma, &predicate, 10_000, &tx).unwrap();
+        let parallel = filter_parallel(
+            file.path(),
+            Delimiter::Comma,
+            &predicate,
+            10_000,
+            None,
+            4,
+            &tx,
+        )
+        .unwrap();
+
+        assert_eq!(sequential.rows, parallel.rows);
+        assert_eq!(sequential.matched, parallel.matched);
+        assert_eq!(sequential.scanned, parallel.scanned);
+        assert_eq!(sequential.truncated, parallel.truncated);
+        assert_eq!(parallel.rows.len(), 4000);
+        let expected: Vec<u64> = (0..12_000u64).filter(|i| i % 3 == 0).collect();
+        assert_eq!(parallel.rows, expected);
+    }
+
+    /// A limit smaller than the match count must truncate identically, including when the
+    /// kills land in different chunks.
+    #[test]
+    fn parallel_scan_truncates_at_the_same_limit() {
+        let file = TempFile::new("truncate");
+        let mut text = String::from("city,amount\n");
+        for i in 0..6_000u64 {
+            text.push_str(&format!("CDMX,{i}\n"));
+        }
+        std::fs::write(file.path(), text).unwrap();
+
+        let spec = spec("city=CDMX");
+        let (tx, rx) = std::sync::mpsc::channel();
+        drop(rx);
+        let sequential = scan(file.path(), Delimiter::Comma, &spec, 25, &tx).unwrap();
+        let parallel =
+            filter_parallel(file.path(), Delimiter::Comma, &spec, 25, None, 4, &tx).unwrap();
+        assert_eq!(sequential.rows, parallel.rows);
+        assert_eq!(parallel.rows.len(), 25);
+        assert!(parallel.truncated);
+        assert_eq!(parallel.matched, 6_000);
     }
 }
 

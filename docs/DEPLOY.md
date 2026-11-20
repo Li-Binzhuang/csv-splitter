@@ -115,6 +115,7 @@ csvx serve --root /srv/csvx --port 8787
 | 环境变量 | 默认 | 说明 |
 |---|---|---|
 | `CSVX_QUERY_TIMEOUT_MS` | 30000 | 单条 SQL / 过滤查询的时间预算；`/capabilities` 会发布生效值 |
+| `CSVX_SCAN_THREADS` | 每核一段，封顶 8 | `filter` / `search` 的分段并行线程数；设 1 退回顺序扫描 |
 
 部署前先自检（systemd 的 `ExecStartPre` 就是这么用的）：
 

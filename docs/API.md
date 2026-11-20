@@ -52,8 +52,8 @@
 | `GET /style` | `path` `rules` `start` `count` | 条件格式：该上色的单元格 |
 | `GET /layout` | `path` `column` `key` `value` | 列宽/显示名/冻结/数字格式（带 `column` 即写入）：响应 `columns` |
 | `GET /edit` | `path` | 待生效的编辑操作 + 逻辑行数；`action` `row` `col` `value` `expect` 属 POST，GET 收到返回 400 并指路 |
-| `GET /filter` | `path` `where` `limit` `apply-edits` | 命中行的行号：响应 `scanned` `matched` `truncated` `source`（取值 file 或 edited，无额外反引号）`rows`；`matched` 是全部命中数，`limit` 只截 `rows`，**1-based、表头不计**；配合 `/rows` 时用 `start = 行号 - 1`；超过查询预算返回 504（同 `/query` 的提示） |
-| `GET /search` | `path` `q` `columns` `case` `exact` `regex` `limit` `apply-edits` | 跨列搜索，响应 `scanned` `matched` `truncated` `source`（取值 file 或 edited，无额外反引号）`columns` `rows`；`regex=1` 用条件格式那套模式子集；超过查询预算返回 504 |
+| `GET /filter` | `path` `where` `limit` `apply-edits` | 命中行的行号：响应 `scanned` `matched` `truncated` `source`（取值 file 或 edited，无额外反引号）`rows`；`matched` 是全部命中数，`limit` 只截 `rows`，**1-based、表头不计**；配合 `/rows` 时用 `start = 行号 - 1`；UTF-8 文件按稀疏索引分段并行扫描（顺序扫描的等价实现，模块 scan_parallel），GBK/UTF-16 顺序扫描；超过查询预算返回 504（同 `/query` 的提示） |
+| `GET /search` | `path` `q` `columns` `case` `exact` `regex` `limit` `apply-edits` | 跨列搜索，响应 `scanned` `matched` `truncated` `source`（取值 file 或 edited，无额外反引号）`columns` `rows`；`regex=1` 用条件格式那套模式子集；UTF-8 文件分段并行扫描（与顺序扫描等价），GBK/UTF-16 顺序扫描；超过查询预算返回 504 |
 | `GET /schema` | `path` `diff` `sample` `delim` `name` | 列清单（无 `diff` 时套用编辑）：响应 `rows` `count` `totalColumns` `shown` `kindFilter` `columns`；带 `diff=<另一个文件>` 时返回列集合对比（`same` / `removed` / `added` / `moved`），与 `schema --diff --json` 同一份文档 |
 | `POST /edit` | `action=fill&cols=a,b&from-row=&to-row=&value=` | 多列区间填充，**一次操作一次撤销**（`col=` 仍是单列形式）|
 | `POST /edit` | `action=insert-after-key&key=&value=` / `insert-before-key` | 按 **rowKey** 插行（`b:12`/`v:3`，来自上一次 `/rows`）；key 不存在 404，格式错 400 |

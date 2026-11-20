@@ -87,7 +87,7 @@ core 里 40 个模块，按职责分组（文件名即模块名）：
 | **编辑模型** | `workbook/{mod,rows,journal,export}` |
 | **公式引擎** | `formula/{mod,functions,state,sheetref}`（表达式求值、函数表、`lag` 的行状态、跨表引用）|
 | **读写文件** | `csv_reader` `encoding` `index` `viewer` `preview` `tempdir` `types` |
-| **查询与变换** | `filter` `search` `sort` `dedupe` `reshape` `concat` `lookup` `groupby` `aggregate` `pivot` `chart` `profile` `validate` `format` `layout` `sql` `sql_cache` |
+| **查询与变换** | `filter` `search` `scan_parallel` `sort` `dedupe` `reshape` `concat` `lookup` `groupby` `aggregate` `pivot` `chart` `profile` `validate` `format` `layout` `sql` `sql_cache` |
 | **结构比对** | `schema`（列集合的增/减/移位；CLI 与 `GET /schema?diff=` 共用同一份实现）|
 | **切分与压缩** | `splitter` `split_parallel` `merge` `compress` `pack` `decompress` `partition` `check` |
 | **面向客户端** | `sheet` `book` `listing` `jobs` `cache` `demo` |

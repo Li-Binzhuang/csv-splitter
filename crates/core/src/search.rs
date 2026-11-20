@@ -207,6 +207,86 @@ pub fn search_quotes_with_budget(
     Ok(result)
 }
 
+/// Scan with one thread per checkpoint range when the file is big enough to pay for it.
+///
+/// Same rows as `search_quotes_with_budget`; falls back to it for encodings whose byte
+/// offsets are not row boundaries, or when the split would cost more than it saves.
+pub fn search_fast(
+    path: &Path,
+    delimiter: Delimiter,
+    spec: &SearchSpec,
+    limit: usize,
+    budget: Option<std::time::Duration>,
+    quotes: QuoteStyle,
+    tx: &ProgressSender,
+) -> io::Result<SearchResult> {
+    let file_len = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
+    let threads = crate::scan_parallel::threads_for(file_len);
+    let seekable = crate::scan_parallel::is_seekable(path)?;
+    if threads <= 1 || !seekable || spec.query.is_empty() {
+        return search_quotes_with_budget(path, delimiter, spec, limit, budget, quotes, tx);
+    }
+    let phase = format!("searching {}", spec.query);
+    let options = crate::scan_parallel::ScanOptions {
+        delimiter,
+        limit,
+        budget,
+        threads,
+        quotes,
+        phase: &phase,
+    };
+    match search_parallel(path, spec, &options, tx) {
+        Ok(result) => Ok(result),
+        Err(e) if e.kind() == io::ErrorKind::TimedOut => Err(e),
+        Err(_) => search_quotes_with_budget(path, delimiter, spec, limit, budget, quotes, tx),
+    }
+}
+
+/// The parallel half of [`search_fast`], with threads made explicit so a test can force
+/// four of them on a file small enough to check by eye.
+fn search_parallel(
+    path: &Path,
+    spec: &SearchSpec,
+    options: &crate::scan_parallel::ScanOptions<'_>,
+    tx: &ProgressSender,
+) -> io::Result<SearchResult> {
+    let delim = options.delimiter.byte();
+    let reader = encoding::open_decoded(path)?;
+    let mut records = RecordReader::new(BufReader::with_capacity(1024 * 1024, reader), 1024 * 1024);
+    let mut record = Vec::new();
+    if !records.next_record(&mut record)? {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "empty file"));
+    }
+    let headers = parse_csv_record_with(&String::from_utf8_lossy(&record), delim, options.quotes);
+    let indices: Vec<usize> = if spec.columns.is_empty() {
+        (0..headers.len()).collect()
+    } else {
+        let mut found = Vec::new();
+        for name in &spec.columns {
+            match crate::csv_reader::resolve_column(name, &headers) {
+                Ok(i) => found.push(i),
+                Err(e) => return Err(io::Error::new(io::ErrorKind::InvalidInput, e)),
+            }
+        }
+        found
+    };
+    let columns: Vec<String> = indices.iter().map(|&i| headers[i].clone()).collect();
+    let predicate = |fields: &[String]| {
+        indices
+            .iter()
+            .filter_map(|&i| fields.get(i))
+            .any(|cell| spec.matches(cell))
+    };
+    let batch = crate::scan_parallel::scan_parallel(path, options, tx, predicate)?;
+    Ok(SearchResult {
+        rows: batch.rows,
+        scanned: batch.scanned,
+        matched: batch.matched,
+        truncated: batch.truncated,
+        columns,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -313,5 +393,50 @@ mod tests {
         let (tx, _rx) = std::sync::mpsc::channel();
         let err = search(&p, Delimiter::Comma, &SearchSpec::new(""), 10, &tx).unwrap_err();
         assert_eq!(err.kind(), io::ErrorKind::InvalidInput);
+    }
+
+    /// Same contract as filter's parallel test: the rows, counts and the searched column
+    /// set must match the sequential scan, with a quoted newline crossing a checkpoint.
+    #[test]
+    fn parallel_search_agrees_with_sequential() {
+        let dir = TempDir::new("parallel");
+        let path = dir.join("t.csv");
+        let mut text = String::from("city,note\n");
+        for i in 0..12_000u64 {
+            if i % 4000 == 3999 {
+                text.push_str("CDMX,\"refund line one\nrefund line two\"\n");
+            } else if i % 7 == 0 {
+                text.push_str(&format!("CDMX,refund {i}\n"));
+            } else {
+                text.push_str("Puebla,note\n");
+            }
+        }
+        std::fs::write(&path, text).unwrap();
+        let spec = SearchSpec::new("refund");
+        let (tx, rx) = std::sync::mpsc::channel();
+        drop(rx);
+        let sequential = search_quotes(
+            &path,
+            Delimiter::Comma,
+            &spec,
+            100_000,
+            QuoteStyle::Rfc4180,
+            &tx,
+        )
+        .unwrap();
+        let phase = String::from("searching refund");
+        let options = crate::scan_parallel::ScanOptions {
+            delimiter: Delimiter::Comma,
+            limit: 100_000,
+            budget: None,
+            threads: 4,
+            quotes: QuoteStyle::Rfc4180,
+            phase: &phase,
+        };
+        let parallel = search_parallel(&path, &spec, &options, &tx).unwrap();
+        assert_eq!(sequential.rows, parallel.rows);
+        assert_eq!(sequential.matched, parallel.matched);
+        assert_eq!(sequential.scanned, parallel.scanned);
+        assert_eq!(sequential.columns, parallel.columns);
     }
 }

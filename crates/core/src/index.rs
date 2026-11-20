@@ -67,6 +67,13 @@ impl SparseIndex {
         self.file_len
     }
 
+    /// Checkpoints in record order: `checkpoints()[i]` is the byte offset of record
+    /// `i * interval()`. Record 0 is the header, so data row `k` starts at the
+    /// checkpoint for record `k + 1` when `(k + 1)` is a multiple of the interval.
+    pub fn checkpoints(&self) -> &[u64] {
+        &self.offsets
+    }
+
     /// Bytes on disk once serialised.
     pub fn size_bytes(&self) -> u64 {
         4 + 1 + 8 * 5 + self.offsets.len() as u64 * 8
