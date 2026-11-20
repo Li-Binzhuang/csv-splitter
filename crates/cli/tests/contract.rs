@@ -65,7 +65,7 @@ fn dispatched_actions(source: &str) -> BTreeSet<String> {
 }
 
 /// Actions served by the early branches in `edit_apply`, before the `match`.
-const HANDLED_BEFORE_THE_MATCH: &[&str] = &["export", "undo", "redo", "set-many"];
+const HANDLED_BEFORE_THE_MATCH: &[&str] = &["export", "undo", "redo", "set-many", "transaction"];
 
 /// Squashed spellings accepted for convenience. They are real aliases, not capabilities a
 /// client should be told about: `/capabilities` advertises the canonical name.

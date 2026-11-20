@@ -53,6 +53,10 @@
 
 ### Added
 
+- **Atomic `transaction` writes**: `POST /edit?action=transaction&ops=set:1:city:CDMX;delete:2:1;insert:4:a,b`
+  validates every entry against the sheet first, then appends them in one journal update.
+  A rejected entry writes nothing; undo still steps one op at a time. Two rows of one
+  request cannot land half-applied.
 - **Resumable `/filter` and `/search` pages**: a whole-table scan that hits the 30 s
   budget no longer answers 504. The waves that finished are returned with a `next`
   checkpoint; passing it back as `cursor` continues where the scan stopped, and the row

@@ -5976,3 +5976,38 @@ fn dedupe_and_partition_can_apply_edits() {
         "a part named after the edited value: {names}"
     );
 }
+
+/// A transaction validates the whole list before writing, and applies all of it in one
+/// journal update. A rejected entry must leave nothing behind.
+#[test]
+fn a_transaction_applies_every_op_or_none() {
+    let dir = TempDir::new("txn");
+    std::fs::write(dir.join("t.csv"), "city,amount\nA,1\nB,2\nC,3\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let ops = "set%3A1%3Acity%3AZ%3Bdelete%3A2%3A1%3Binsert%3A4%3Ad%2C4";
+    let (code, body) = post(
+        &server.addr,
+        &format!("/edit?path=t.csv&action=transaction&ops={ops}"),
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""atomic":true"#), "{body}");
+    let (_, rows) = get(&server.addr, "/rows?path=t.csv&count=10");
+    assert!(rows.contains('Z'), "the set must land: {rows}");
+    assert!(rows.contains('d'), "the insert must land: {rows}");
+    assert!(!rows.contains('B'), "the delete must land: {rows}");
+
+    // One bad entry (a delete past the end) must reject the whole batch: the set in the
+    // same request must not sneak in.
+    let bad = "set%3A1%3Acity%3AQ%3Bdelete%3A99%3A1";
+    let (code, body) = post(
+        &server.addr,
+        &format!("/edit?path=t.csv&action=transaction&ops={bad}"),
+    );
+    assert_eq!(code, 404, "{body}");
+    let (_, rows) = get(&server.addr, "/rows?path=t.csv&count=10");
+    assert!(
+        !rows.contains('Q'),
+        "a rejected batch wrote something: {rows}"
+    );
+}
