@@ -227,6 +227,10 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
                 "--expect",
                 "With set: write only if the cell still holds this value",
             ),
+            (
+                "--ops",
+                "With transaction: set:1:city:X;delete:2:1;insert:4:a,b (one journal write)",
+            ),
             ("--find", "Locate a row by its content instead of by number"),
             (
                 "--where",
@@ -6231,9 +6235,17 @@ fn cmd_edit(args: &[String]) -> i32 {
     let mut to_block: Option<String> = None;
     let mut json = false;
     let mut delim = "auto".to_string();
+    let mut ops_text: Option<String> = None;
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
+            "--ops" => match p.value("--ops") {
+                Ok(v) => ops_text = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--regex" => regex = true,
             // `--from`/`--to` already mean column and text; a row range needs its own
             // names, because renaming a column and filling rows are different verbs.
@@ -6878,6 +6890,137 @@ fn cmd_edit(args: &[String]) -> i32 {
         }
         _ => None,
     };
+
+    if action == "transaction" {
+        let Some(raw) = ops_text else {
+            eprintln!("error: transaction needs --ops");
+            return 2;
+        };
+        let read = csvx_core::sheet::ReadOptions { delimiter };
+        let sheet = match csvx_core::sheet::Sheet::open(&input, read) {
+            Ok(s) => s,
+            Err(e) => return report_failure("edit", e),
+        };
+        let total = sheet.rows().unwrap_or(0);
+        let columns = match sheet.columns() {
+            Ok(c) => c,
+            Err(e) => return report_failure("edit", e),
+        };
+        let mut ops = Vec::new();
+        let bad = |entry: &str| -> i32 {
+            eprintln!("error: transaction entry '{entry}' is not valid");
+            eprintln!("hint: --ops 'set:row:col:value;delete:row:count;insert:row:a,b,c'");
+            2
+        };
+        for part in raw.split(';') {
+            let part = part.trim();
+            if part.is_empty() {
+                continue;
+            }
+            let mut pieces = part.splitn(4, ':');
+            match pieces.next().unwrap_or_default().trim() {
+                "set" => {
+                    let (Some(row_text), Some(column), Some(value)) =
+                        (pieces.next(), pieces.next(), pieces.next())
+                    else {
+                        return bad(part);
+                    };
+                    let Ok(row) = row_text.trim().parse::<u64>() else {
+                        return bad(part);
+                    };
+                    if row < 1 || row > total {
+                        eprintln!("error: row {row} is outside 1..={total}");
+                        return 1;
+                    }
+                    if !columns.iter().any(|c| c == column.trim()) {
+                        eprintln!(
+                            "error: transaction entry '{part}' names unknown column '{}'",
+                            column.trim()
+                        );
+                        return 2;
+                    }
+                    ops.push(csvx_core::workbook::Op::SetCell {
+                        row: row - 1,
+                        column: column.trim().to_string(),
+                        value: value.to_string(),
+                    });
+                }
+                "delete" => {
+                    let (Some(row_text), Some(count_text)) = (pieces.next(), pieces.next()) else {
+                        return bad(part);
+                    };
+                    let (Ok(row), Ok(count)) = (
+                        row_text.trim().parse::<u64>(),
+                        count_text.trim().parse::<u64>(),
+                    ) else {
+                        return bad(part);
+                    };
+                    if count == 0 || row < 1 || row.saturating_add(count - 1) > total {
+                        eprintln!("error: delete {row}:{count} is outside 1..={total} rows");
+                        return 1;
+                    }
+                    ops.push(csvx_core::workbook::Op::DeleteRows { at: row - 1, count });
+                }
+                "insert" => {
+                    let (Some(row_text), Some(value)) = (pieces.next(), pieces.next()) else {
+                        return bad(part);
+                    };
+                    let Ok(row) = row_text.trim().parse::<u64>() else {
+                        return bad(part);
+                    };
+                    if row < 1 || row > total + 1 {
+                        eprintln!("error: insert row {row} is outside 1..={}", total + 1);
+                        return 1;
+                    }
+                    let cells = if value.trim().is_empty() {
+                        Vec::new()
+                    } else {
+                        csvx_core::csv_reader::parse_csv_record(value, b',')
+                    };
+                    ops.push(csvx_core::workbook::Op::InsertRows {
+                        at: row - 1,
+                        rows: vec![cells],
+                    });
+                }
+                _ => return bad(part),
+            }
+        }
+        if ops.is_empty() {
+            eprintln!("error: --ops parsed to no operations");
+            return 2;
+        }
+        let written: Vec<csvx_core::workbook::Op> = ops.clone();
+        let mut applied = 0usize;
+        let locked = csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
+            for op in &written {
+                fresh.push(op.clone());
+            }
+            applied = fresh.len();
+            Ok(())
+        });
+        return match locked {
+            Ok(_) => {
+                if json {
+                    println!(
+                        r#"{{"op":"transaction","operations":{},"applied":{applied},"atomic":true}}"#,
+                        ops.len()
+                    );
+                } else {
+                    println!(
+                        "✓ transaction: {} operation(s), {} pending total (atomic)",
+                        ops.len(),
+                        applied
+                    );
+                }
+                0
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                eprintln!("error: another writer holds the journal; retry in a moment");
+                1
+            }
+            Err(e) => report_failure("edit", e),
+        };
+    }
 
     let op = match action.as_str() {
         "set" => {

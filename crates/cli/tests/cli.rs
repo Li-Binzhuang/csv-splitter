@@ -5036,3 +5036,72 @@ fn a_failing_sort_explains_itself() {
         "the error must name the column: {err}"
     );
 }
+
+/// The CLI exposes the same atomic batch as the HTTP endpoint: all entries land, and a
+/// bad entry stops the whole request.
+#[test]
+fn a_cli_transaction_applies_every_op_or_none() {
+    let dir = TempDir::new("clitxn");
+    let base = dir.join("t.csv");
+    std::fs::write(&base, "city,amount\nA,1\nB,2\nC,3\n").unwrap();
+    let out = Command::new(bin())
+        .args([
+            "edit",
+            "transaction",
+            base.to_str().unwrap(),
+            "--ops",
+            "set:1:city:Z;delete:2:1;insert:4:d,4",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+
+    let exported = dir.join("out.csv");
+    let out = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            base.to_str().unwrap(),
+            "-o",
+            exported.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let text = std::fs::read_to_string(&exported).unwrap();
+    assert_eq!(text, "city,amount\nZ,1\nC,3\nd,4\n");
+
+    let bad = Command::new(bin())
+        .args([
+            "edit",
+            "transaction",
+            base.to_str().unwrap(),
+            "--ops",
+            "set:1:city:Q;delete:99:1",
+        ])
+        .output()
+        .unwrap();
+    assert_ne!(bad.status.code(), Some(0), "a bad batch must fail");
+    let exported = dir.join("again.csv");
+    let out = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            base.to_str().unwrap(),
+            "-o",
+            exported.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let text = std::fs::read_to_string(&exported).unwrap();
+    assert!(
+        !text.contains('Q'),
+        "a rejected batch wrote something: {text}"
+    );
+}

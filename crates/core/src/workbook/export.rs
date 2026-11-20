@@ -111,7 +111,21 @@ pub fn export_selected(
             Some(slots)
         }
     };
-    let sheet = compile(ops, u64::MAX);
+    // The row map needs the real base length when rows are inserted. With an unknown
+    // length, an insert anchored past a delete can sit behind a phantom base slot and
+    // the export's "physical rows exhausted" break never reaches it. Deletes alone do
+    // not need the count, so the common path keeps the sentinel and skips the index.
+    let base_rows = if ops.iter().any(|op| matches!(op, Op::InsertRows { .. })) {
+        let index =
+            match crate::index::SparseIndex::load(&crate::index::SparseIndex::sidecar_path(base)) {
+                Ok(idx) if idx.matches(base) => idx,
+                _ => crate::index::SparseIndex::build(base, crate::index::DEFAULT_INTERVAL)?,
+            };
+        index.data_rows()
+    } else {
+        u64::MAX
+    };
+    let sheet = compile(ops, base_rows);
     let edits = &sheet.edits;
     let map = &sheet.map;
     let compiled = compile_formulas_at(base, ops, &columns)?;
@@ -986,6 +1000,37 @@ mod cancel_tests {
             text, "city,note,amount,total\nA,\"one\ntwo\",10,30\nB,plain,20,30\n",
             "the aggregate column must be appended without re-rendering the row"
         );
+    }
+
+    /// An insert anchored past a delete must still be exported. With an unknown base
+    /// length the map used to leave a phantom base slot before the inserted row and the
+    /// export stopped at EOF before writing it.
+    #[test]
+    fn an_insert_after_a_delete_is_exported() {
+        let dir = std::env::temp_dir().join(format!(
+            "csvs_export_insert_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0)
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let base = dir.join("t.csv");
+        std::fs::write(&base, "city,amount\nA,1\nB,2\nC,3\n").unwrap();
+        let out = dir.join("out.csv");
+        let ops = vec![
+            Op::DeleteRows { at: 1, count: 1 },
+            Op::InsertRows {
+                at: 3,
+                rows: vec![vec!["d".into(), "4".into()]],
+            },
+        ];
+        let (tx, _rx) = std::sync::mpsc::channel::<ProgressEvent>();
+        export(&base, &ops, &out, Delimiter::Comma, &tx).unwrap();
+        let text = std::fs::read_to_string(&out).unwrap();
+        std::fs::remove_dir_all(dir).ok();
+        assert_eq!(text, "city,amount\nA,1\nC,3\nd,4\n");
     }
 
     /// The same export without a token writes everything: cancelling is opt-in, not a
