@@ -5611,3 +5611,36 @@ fn json_escapes_newlines_and_control_characters() {
     let (_, cell) = get(&server.addr, "/cell?path=t.csv&row=2&col=text");
     assert!(cell.contains(r#"ctrl\u0001char"#), "{cell}");
 }
+
+/// The same hostile cell through three other output paths: export (CSV), query and groupby
+/// (JSON). They share helpers with /rows, but sharing a helper is not the same as calling it.
+#[test]
+fn export_query_and_groupby_survive_hostile_cells() {
+    let dir = TempDir::new("hostilecells");
+    std::fs::write(
+        dir.join("t.csv"),
+        b"id,text\n1,\"he said \"\"hi\"\"\"\n2,back\\slash\n3,\"line1\nline2\"\n4,quote \x27ok\x27\n5,ctrl\x01char\n",
+    )
+    .unwrap();
+    let server = start(&dir.0.clone());
+
+    // CSV out: the quote is doubled, the newline stays inside quotes.
+    let (status, csv) = get(&server.addr, "/export?path=t.csv&where=id<6");
+    assert_eq!(status, 200, "{csv}");
+    assert!(csv.contains(r#""he said ""hi"""#), "{csv}");
+    assert!(csv.contains("\"line1\nline2\""), "{csv}");
+
+    // JSON out: a control byte must be escaped, not raw.
+    let (_, query) = get(
+        &server.addr,
+        "/query?path=t.csv&sql=SELECT%20text%20FROM%20t%20WHERE%20id%3D%275%27",
+    );
+    assert!(query.contains(r#"ctrl\u0001char"#), "{query}");
+
+    let (_, group) = get(&server.addr, "/groupby?path=t.csv&by=text&agg=id:count");
+    assert!(group.contains(r#"he said \"hi\""#), "{group}");
+
+    // A chart category is the same hostile string again, one more layer out.
+    let (_, chart) = get(&server.addr, "/chart?path=t.csv&x=text&y=id:count");
+    assert!(chart.contains(r#"he said \"hi\""#), "{chart}");
+}

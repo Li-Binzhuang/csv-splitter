@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.61.3] — 2026-11-20
+
+### Tests
+
+- Hostile cells (doubled quotes, backslash, embedded newline, single quote, `0x01`) are now
+  checked through four more output paths: /export (CSV), /query, /groupby and /chart (JSON).
+  All were already correct — sharing a helper with /rows is not the same as calling it, so each
+  path gets its own assertion.
+
 ## [3.61.2] — 2026-11-20
 
 ### Fixed
