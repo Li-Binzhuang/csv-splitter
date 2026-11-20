@@ -642,7 +642,8 @@ redo 末尾若与 journal 末尾相同，就把它从 redo 里去掉，避免下
 要交给 DuckDB，就需要 `row_number()` 与文件物理顺序一致——而 DuckDB **不承诺**跨计划、
 跨版本、跨线程数的扫描顺序。
 
-实验记录：20 000 行文件上，普通扫描与带 `WHERE` 的扫描目前都按文件顺序返回
+实验记录（2026-11-20）：**200 000 行**与 **2 000 000 行**文件上，从头 `LIMIT 5` 与
+`OFFSET 尾端` 查询都仍按文件顺序返回（首行 1，末行等于总行数）。20 000 行上的 canary 见下。
 （`crates/core/src/sql.rs` 里的 canary 测试 `a_duckdb_scan_returns_rows_in_file_order_here`）。
 **「目前如此」不等于保证**，所以行号仍由原生扫描产生；这个测试的作用是：一旦哪天不再成立，
 我们能立刻看到，而不是等到用户发现点错了行。
@@ -657,6 +658,9 @@ redo 末尾若与 journal 末尾相同，就把它从 redo 里去掉，避免下
   换过去会悄悄改变保留哪一行。
 - 渲染/编辑路径（`/rows`、公式列、条件格式、写保护）：必须看到 `base + journal`，交给 DB
   就得先物化整份文件。
+- `/filter` `/search` 的 **SQL 分页**：除了行序不承诺，还有一个契约问题——这两个端点的响应要
+  报 `scanned`（扫了多少行），SQL 路径要么再扫一遍 `count(*)`、要么把 `scanned` 变成 null。
+  在此之前，行号仍由原生扫描给出；`apply-edits=1` 时扫描编辑后的表，行号与 `/rows` 对齐。
 
 **资源上限**：所有 DuckDB 连接经 `open_limited()`，默认 512 MB 内存、线程上限 8、溢出落盘；
 可用 `CSV_SPLITTER_SQL_MEMORY_MB` / `_THREADS` / `_TEMP_DIR` 覆盖。

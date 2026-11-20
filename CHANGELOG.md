@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.60.2] — 2026-11-20
+
+### Measured / Documented
+
+- Row-order evidence widened: at 200 000 and 2 000 000 rows, a head `LIMIT 5` and a tail
+  `OFFSET` query both still return file order. **Today**, not a guarantee — which is exactly why
+  `/filter` and `/search` row numbers still come from the native scan.
+
+- Recorded the second blocker for SQL pagination: both endpoints report `scanned`, and a SQL
+  path would either need a second `count(*)` scan or a nullable field. Written down so the next
+  person does not rediscover it the hard way.
+
 ## [3.60.1] — 2026-11-20
 
 ### Added
