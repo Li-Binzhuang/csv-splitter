@@ -1,0 +1,93 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "3d6b41f6363158e36b016849a9175fb56baea2cc55b29f5acb5aa7c347799241",
+  "batch_id": "2b759df2f0a6ab488c0fd953312fe7d4937601d6fd3fb03c59d66ecc9d6bb052",
+  "composite_identity": "65a70783fed996a1ba51628b70fcbf6671cd396b3a60df4813c077abaf2f357d",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "7f5e7029f101960ce3937a8882ff031984b8971f355777bfd94f100f4c0d2242",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "9187d1fa14799a0e1e25798000a87f7cfd68df7050bebad11cc08c9e8c684f02",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.1.0 记录 filter/search 分段并行与 11.2 GB 演练；4.2.0 记录整列 sum/average/count 与条件 countif/sumif（预扫 0.48 s，含列式侧车 0.30 s），并把基文件/区间/50 ms 三条边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "70251344d09545072c559d03d1d10173e20385cbf2056637cd427122a69f5d72",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部一句话定位与 Rust 徽章；下载表列四平台产物；快速开始指向 scripts/demo.sh，并说明 --big 与 --writes 分别接读路径与大文件写路径；公式节说明整列与条件聚合（预扫 0.48 s，侧车 0.30 s）及边界；性能表含 2.1 GB 与 11.2 GB 两档 | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；含 scripts/ 的行不参与 flag 校验，所以 demo.sh 自己的 --writes 必须写在同一行"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/search.rs",
+      "path": "crates/core/src/search.rs",
+      "change": "update",
+      "source_sha256": "69d43d2526f40f4907debe80744bc295a0b91a7ca60392e5438ad2c2e15e3827",
+      "existing_entry": "search.rs[DA7M]: F:跨列搜索：返回命中行号而不是数据本身 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:匹配是字面量：默认大小写不敏感子串，可限定列或整格；regex 字段走条件格式的模式子集 format::pattern_matches，不是正则引擎；search_quotes_with_budget 超时返回 TimedOut 供 HTTP 映射 504；search_fast 在 UTF-8 大文件上分段并行，搜索列集合只解析一次 | S:这里刻意不引入正则依赖——真正的正则交给 SQL 端点，用 ~ 过滤已覆盖常用的那一半搜索需求；并行路径与顺序路径的 rows/columns 必须一致"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "4c78db5f7d19f16df3a1621a56127533c23c06507088eb5acfb59ca8d1382629",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；公式节含整列 sum/average/count 与条件 countif/sumif 的预扫、0.48 s/100 万行与列式侧车时的 0.30 s，并说明比较类条件只统计数字单元格；含引擎选择与两档大文件实测表 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "5df93e28ea27da4fa3fe0dac9711bc57dfb353b0c5bd20fc47fe28a43d5df2a2",
+      "existing_entry": "ROADMAP.md[SU5S]: F:路线图：已完成、进行中与明确不做的范围 | R:code:docs/CAPABILITIES.md | A:与能力清单分工——这里写未来与边界，已验证行为写进能力清单；M5 记录 filter/search 分段并行与 11.2 GB 演练（索引 3.9 s、跳转 0.01 s、过滤 11.9 s、搜索 18.8 s），并把 20 GB 以上的游标分页列为未做 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "8f156e10f988f56838312c754efb952b10cd185ad799b619d6a6f8b9400c95f5",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "9187d1fa14799a0e1e25798000a87f7cfd68df7050bebad11cc08c9e8c684f02",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.1.0 记录 filter/search 分段并行与 11.2 GB 演练；4.2.0 记录整列 sum/average/count 与条件 countif/sumif（预扫 0.48 s，含列式侧车 0.30 s），并把基文件/区间/50 ms 三条边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "fb4cf1cb24b5f64a813cfcf7a2c402d9fd2ae8af8e123f706b24e7e8741d1a21",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "70251344d09545072c559d03d1d10173e20385cbf2056637cd427122a69f5d72",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部一句话定位与 Rust 徽章；下载表列四平台产物；快速开始指向 scripts/demo.sh，并说明 --big 与 --writes 分别接读路径与大文件写路径；公式节说明整列与条件聚合（预扫 0.48 s，侧车 0.30 s）及边界；性能表含 2.1 GB 与 11.2 GB 两档 | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；含 scripts/ 的行不参与 flag 校验，所以 demo.sh 自己的 --writes 必须写在同一行"
+    },
+    {
+      "candidate_id": "a056ea08805519e54d55dd9f4965d214d0c579f9c2d9b56ff43d65d23656e381",
+      "object_ref": "code:crates/core/src/search.rs",
+      "path": "crates/core/src/search.rs",
+      "change": "update",
+      "source_sha256": "69d43d2526f40f4907debe80744bc295a0b91a7ca60392e5438ad2c2e15e3827",
+      "existing_entry": "search.rs[DA7M]: F:跨列搜索：返回命中行号而不是数据本身 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:匹配是字面量：默认大小写不敏感子串，可限定列或整格；regex 字段走条件格式的模式子集 format::pattern_matches，不是正则引擎；search_quotes_with_budget 超时返回 TimedOut 供 HTTP 映射 504；search_fast 在 UTF-8 大文件上分段并行，搜索列集合只解析一次 | S:这里刻意不引入正则依赖——真正的正则交给 SQL 端点，用 ~ 过滤已覆盖常用的那一半搜索需求；并行路径与顺序路径的 rows/columns 必须一致"
+    },
+    {
+      "candidate_id": "ed3652093e69cecd1ac3f175dadbb2b78527f57d6546f9fb5a5e0c16660276e6",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "4c78db5f7d19f16df3a1621a56127533c23c06507088eb5acfb59ca8d1382629",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；公式节含整列 sum/average/count 与条件 countif/sumif 的预扫、0.48 s/100 万行与列式侧车时的 0.30 s，并说明比较类条件只统计数字单元格；含引擎选择与两档大文件实测表 | S:-"
+    },
+    {
+      "candidate_id": "02b48e88a185c1fe035d9eb4750485df9c1281785bafc63542691824fdbd61f3",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "5df93e28ea27da4fa3fe0dac9711bc57dfb353b0c5bd20fc47fe28a43d5df2a2",
+      "existing_entry": "ROADMAP.md[SU5S]: F:路线图：已完成、进行中与明确不做的范围 | R:code:docs/CAPABILITIES.md | A:与能力清单分工——这里写未来与边界，已验证行为写进能力清单；M5 记录 filter/search 分段并行与 11.2 GB 演练（索引 3.9 s、跳转 0.01 s、过滤 11.9 s、搜索 18.8 s），并把 20 GB 以上的游标分页列为未做 | S:-"
+    }
+  ]
+}
