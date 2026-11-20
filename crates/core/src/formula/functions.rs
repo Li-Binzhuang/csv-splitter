@@ -24,15 +24,50 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         // Conditional aggregates: the criteria (">1000", "CDMX", "<>10") were compiled
         // and evaluated in the same pre-pass as the plain totals.
         "countif" | "sumif" => {
+            // A same-row range: count/sum the cells between two columns that match.
+            if let (Some(Expr::Range { from, to }), Some(Expr::Criteria { spec, .. })) =
+                (args.first(), args.get(1))
+            {
+                let Some(cells) = range_cells(from, to, ctx) else {
+                    return Value::Error;
+                };
+                let mut count = 0u64;
+                let mut sum = 0.0;
+                for cell in cells {
+                    // An ordering criterion is numeric, like the column aggregates.
+                    if matches!(
+                        spec.op,
+                        crate::filter::Op::Gt
+                            | crate::filter::Op::Gte
+                            | crate::filter::Op::Lt
+                            | crate::filter::Op::Lte
+                    ) && cell.trim().parse::<f64>().is_err()
+                    {
+                        continue;
+                    }
+                    if crate::filter::matches(cell, spec) {
+                        count += 1;
+                        if let Ok(value) = cell.trim().parse::<f64>() {
+                            if value.is_finite() {
+                                sum += value;
+                            }
+                        }
+                    }
+                }
+                return match lower.as_str() {
+                    "countif" => Value::Number(count as f64),
+                    _ => Value::Number(sum),
+                };
+            }
             let Some(state) = ctx.state else {
                 return Value::Error;
             };
-            let (Some(Expr::Column(column)), Some(Expr::Text(criteria))) =
+            let (Some(Expr::Column(column)), Some(Expr::Criteria { text, .. })) =
                 (args.first(), args.get(1))
             else {
                 return Value::Error;
             };
-            let Some((sum, count)) = state.filtered(column, criteria) else {
+            let Some((sum, count)) = state.filtered(column, text) else {
                 return Value::Error;
             };
             match lower.as_str() {
@@ -588,4 +623,27 @@ fn range_values(from: &(String, u64), to: &(String, u64), ctx: &Ctx<'_>) -> Opti
         }
     }
     Some(values)
+}
+
+/// The cells between two columns of the current row, for `countif(B2:C2, …)`.
+fn range_cells<'a>(
+    from: &(String, u64),
+    to: &(String, u64),
+    ctx: &Ctx<'a>,
+) -> Option<Vec<&'a str>> {
+    if from.1 != super::FIRST_DATA_ROW as u64 || to.1 != super::FIRST_DATA_ROW as u64 {
+        return None;
+    }
+    let start_name = super::column_from_letters(&from.0, ctx.columns)?;
+    let end_name = super::column_from_letters(&to.0, ctx.columns)?;
+    let start = ctx.columns.iter().position(|c| c == &start_name)?;
+    let end = ctx.columns.iter().position(|c| c == &end_name)?;
+    if start > end {
+        return None;
+    }
+    let mut cells = Vec::new();
+    for name in &ctx.columns[start..=end] {
+        cells.push(ctx.cells.get(name)?.as_str());
+    }
+    Some(cells)
 }

@@ -115,6 +115,7 @@
 其他 row lag(col[,n]) running_total(col)
 整列 sum(col) average(col) count(col)   ← 整列聚合：预扫一遍算出数字列的总和/计数
 区间 sum(B2:C2) count(B2:C2)         ← 同行区间：只读本行这两列之间的数字单元格（跨行会让流式求值看到未来行，返回 #VALUE!）
+条件区间 countif(B2:C2, ">5") sumif(B2:C2, ">5")  ← 条件字面量在解析时编译一次，逐行不再重复解析
 条件 countif(col, ">1000") sumif(col, ">1000")  ← 同一遍预扫；比较类条件只统计数字单元格
 列引用 amount   [客户编号]   [city2]   ← 名字含空格**或以数字结尾**时要加方括号
 ```

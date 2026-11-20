@@ -91,6 +91,12 @@ pub(crate) enum Expr {
         from: (String, u64),
         to: (String, u64),
     },
+    /// A criteria literal (`">1000"`) compiled once at parse time, so `countif` does
+    /// not re-parse the string on every row.
+    Criteria {
+        text: String,
+        spec: crate::filter::FilterSpec,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -249,11 +255,17 @@ impl Formula {
             match expr {
                 Expr::Number(_) | Expr::Text(_) => true,
                 Expr::Column(_) | Expr::CellRef { .. } | Expr::Range { .. } => false,
+                Expr::Criteria { .. } => false,
                 Expr::Binary(_, left, right) | Expr::Compare(_, left, right) => {
                     constant(left) && constant(right)
                 }
                 Expr::Negate(inner) | Expr::Not(inner) => constant(inner),
-                Expr::Call(name, _) if is_aggregate(name) || is_filtered_aggregate(name) => true,
+                Expr::Call(name, _) if is_aggregate(name) => true,
+                // A conditional aggregate over a whole column is constant; over a
+                // same-row range it depends on the row.
+                Expr::Call(name, args) if is_filtered_aggregate(name) => {
+                    matches!(args.first(), Some(Expr::Column(_)))
+                }
                 // These read something about the row even when every argument is a
                 // literal: `row()` its number, `ref`/`vlookup` the row's key cell.
                 Expr::Call(name, _)
@@ -323,10 +335,10 @@ fn collect_row_needs(expr: &Expr, out: &mut crate::formula::RowNeeds) {
             }
         }
         Expr::Call(name, args) if is_filtered_aggregate(name) => {
-            if let (Some(Expr::Column(column)), Some(Expr::Text(criteria))) =
+            if let (Some(Expr::Column(column)), Some(Expr::Criteria { text, .. })) =
                 (args.first(), args.get(1))
             {
-                let pair = (column.clone(), criteria.clone());
+                let pair = (column.clone(), text.clone());
                 if !out.filtered.contains(&pair) {
                     out.filtered.push(pair);
                 }
@@ -369,7 +381,7 @@ fn collect_row_needs(expr: &Expr, out: &mut crate::formula::RowNeeds) {
         }
         Expr::Negate(x) | Expr::Not(x) => collect_row_needs(x, out),
         Expr::Number(_) | Expr::Text(_) | Expr::Column(_) | Expr::CellRef { .. } => {}
-        Expr::Range { .. } => {}
+        Expr::Range { .. } | Expr::Criteria { .. } => {}
     }
 }
 
@@ -394,7 +406,7 @@ fn collect_sheet_refs(expr: &Expr, out: &mut Vec<(String, String, String)>) {
         }
         Expr::Negate(x) | Expr::Not(x) => collect_sheet_refs(x, out),
         Expr::Number(_) | Expr::Text(_) | Expr::Column(_) | Expr::CellRef { .. } => {}
-        Expr::Range { .. } => {}
+        Expr::Range { .. } | Expr::Criteria { .. } => {}
     }
 }
 
@@ -408,7 +420,7 @@ fn collect_refs(expr: &Expr, out: &mut Vec<String>) {
         Expr::Negate(x) | Expr::Not(x) => collect_refs(x, out),
         Expr::Text(_) => {}
         Expr::Call(_, args) => args.iter().for_each(|a| collect_refs(a, out)),
-        Expr::Number(_) | Expr::CellRef { .. } | Expr::Range { .. } => {}
+        Expr::Number(_) | Expr::CellRef { .. } | Expr::Range { .. } | Expr::Criteria { .. } => {}
     }
 }
 
@@ -687,7 +699,19 @@ impl Parser {
                         }
                     }
                     match self.take() {
-                        Some(Token::RParen) => Ok(Expr::Call(name, args)),
+                        Some(Token::RParen) => {
+                            let mut args = args;
+                            // `countif`'s criteria is a literal; compile it once here
+                            // rather than on every row the formula is evaluated on.
+                            if matches!(name.to_ascii_lowercase().as_str(), "countif" | "sumif") {
+                                if let Some(Expr::Text(text)) = args.get(1).cloned() {
+                                    if let Some(spec) = criteria_value(&text) {
+                                        args[1] = Expr::Criteria { text, spec };
+                                    }
+                                }
+                            }
+                            Ok(Expr::Call(name, args))
+                        }
                         _ => Err("missing ')' after function arguments".to_string()),
                     }
                 } else if let Some((column, row)) = split_cell_ref(&name) {
@@ -731,6 +755,23 @@ pub(crate) const FIRST_DATA_ROW: i64 = 2;
 /// cell. A bare `A1`-looking *column name* is therefore read as a reference — the
 /// only place this can surprise someone is a column literally named `A1`, and the
 /// `[A1]` bracket form still reaches it.
+/// Compile a spreadsheet criteria literal (`">1000"`, `"<>10"`, `"CDMX"`) into a
+/// `FilterSpec`. The column name is a placeholder: `matches` never reads it.
+fn criteria_value(text: &str) -> Option<crate::filter::FilterSpec> {
+    let trimmed = text.trim();
+    let expression = if let Some(rest) = trimmed.strip_prefix("<>") {
+        format!("_!={rest}")
+    } else if matches!(
+        trimmed.chars().next(),
+        Some('=') | Some('<') | Some('>') | Some('~')
+    ) {
+        format!("_{trimmed}")
+    } else {
+        format!("_={trimmed}")
+    };
+    crate::filter::FilterSpec::parse(&expression).ok()
+}
+
 fn split_cell_ref(name: &str) -> Option<(String, u64)> {
     let letters: String = name
         .chars()
@@ -785,6 +826,8 @@ pub(crate) fn eval(expr: &Expr, ctx: &Ctx<'_>) -> Value {
         },
         // A range is only meaningful as an aggregate argument; bare it is an error.
         Expr::Range { .. } => Value::Error,
+        // Criteria are read by `countif`/`sumif`, never as a value.
+        Expr::Criteria { .. } => Value::Error,
         Expr::CellRef { column, row } => {
             // A column formula behaves like a spreadsheet formula filled down: the
             // reference is *relative* to the row it was written on, and that row is
@@ -1090,6 +1133,48 @@ mod tests {
         assert_eq!(
             odd.eval_at(&cells, &[], &Refs::default(), 1).render(),
             "even"
+        );
+    }
+
+    #[test]
+    fn countif_and_sumif_read_a_same_row_range() {
+        let columns = vec![
+            "id".to_string(),
+            "amount".to_string(),
+            "qty".to_string(),
+            "note".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        cells.insert("id".to_string(), "7".to_string());
+        cells.insert("amount".to_string(), "10".to_string());
+        cells.insert("qty".to_string(), "3".to_string());
+        cells.insert("note".to_string(), "plain".to_string());
+
+        let count = Formula::parse(r#"countif(B2:C2, ">5")"#).unwrap();
+        assert_eq!(
+            count
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "1"
+        );
+        let sum = Formula::parse(r#"sumif(B2:C2, ">5")"#).unwrap();
+        assert_eq!(
+            sum.eval_at(&cells, &columns, &Refs::default(), 1).render(),
+            "10"
+        );
+        // Text cells are not counted by an ordering criterion.
+        let wider = Formula::parse(r#"countif(B2:D2, ">5")"#).unwrap();
+        assert_eq!(
+            wider
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "1"
+        );
+        // Another row is still not resolvable.
+        let next = Formula::parse(r#"countif(B3:C3, ">5")"#).unwrap();
+        assert_eq!(
+            next.eval_at(&cells, &columns, &Refs::default(), 1).render(),
+            "#VALUE!"
         );
     }
 
