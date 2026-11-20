@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "466a16bcbdf3b8af455ff90a81477a225ea3381359dfb9a0046f33e1fa16b2cb",
+  "batch_id": "16fd4420b03ca9e1c143745061bfd265f62c4cc37841769d7edd05fe70a7cd25",
+  "composite_identity": "20deffc2e02a009113e5335f6de77baea2ced2191de3d240c4e49697c771eaa9",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "852456adf6c593f80fa5cd29257305a1d633b6f479366876dd36bdbefbde3eb8",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "465e3edf6815a9b6feda86c1ddea2ba98bdf1f720e7709b1273ad3c8632dc052",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 写明聚合/.agg 缓存（重复预扫约 30 ms、冷启动约 0.09 s）与同行区间已做、跨行区间未做；缺口 5 写明事务原子写入与整批撤销均已做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "f017523209133de1fcb9868dd053e7e2a04f9d01d391430694623e0f393faf83",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；公式语法表含整列聚合、条件聚合、同行区间与条件区间（跨行返回 #VALUE!，条件字面量解析时编译一次）；编辑表含原子批量写与整批撤销；大文件节写并行数字与游标续扫 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "285baa9552e23fd783866f7424f1f5c7e66cd6584f182eb06afd4b621b325840",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "465e3edf6815a9b6feda86c1ddea2ba98bdf1f720e7709b1273ad3c8632dc052",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 写明聚合/.agg 缓存（重复预扫约 30 ms、冷启动约 0.09 s）与同行区间已做、跨行区间未做；缺口 5 写明事务原子写入与整批撤销均已做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    },
+    {
+      "candidate_id": "59da444ef0c65f7f79e7317676030e8e6adea97a5957ba4e86cb9add4337f77c",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "f017523209133de1fcb9868dd053e7e2a04f9d01d391430694623e0f393faf83",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；公式语法表含整列聚合、条件聚合、同行区间与条件区间（跨行返回 #VALUE!，条件字面量解析时编译一次）；编辑表含原子批量写与整批撤销；大文件节写并行数字与游标续扫 | S:-"
+    }
+  ]
+}
