@@ -25,6 +25,9 @@
   not a wildcard pattern.
 - The 50 ms target in `docs/BEYOND_EXCEL.md` is not met yet; the next step is caching the
   column aggregate per journal version so repeated exports skip the scan.
+- Adding a formula column makes the export rewrite every row: 1 M rows ≈ 1.3 s, and
+  2.1 GB / 50 M rows ≈ 70 s (the same file exports in 2.9 s without a formula). The
+  pre-pass is not the bottleneck; there is no byte-level shortcut once a cell changes.
 
 ## [4.1.0] — 2026-11-20
 
