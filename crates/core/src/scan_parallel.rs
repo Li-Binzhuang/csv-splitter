@@ -269,7 +269,15 @@ where
             merged.scanned += result.scanned;
             merged.matched += result.matched;
             merged.truncated |= result.truncated;
-            merged.rows.extend(result.rows);
+            // Cap the kept rows at every wave, not only at the end: a 250 M-row scan
+            // that matches a quarter of the file would otherwise accumulate tens of
+            // millions of row numbers before the final truncate (hundreds of MB), even
+            // though only `limit` are ever reported.
+            let room = limit.saturating_sub(merged.rows.len());
+            if result.rows.len() > room {
+                merged.truncated = true;
+            }
+            merged.rows.extend(result.rows.into_iter().take(room));
         }
         match next {
             Some(offset) => {
