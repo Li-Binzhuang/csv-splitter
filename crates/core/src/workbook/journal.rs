@@ -30,6 +30,12 @@ impl Journal {
         PathBuf::from(format!("{}.redo", Self::sidecar(base).display()))
     }
 
+    /// Where a transaction's group boundary is remembered: one line per batch, each
+    /// holding the journal length after that batch.
+    pub fn blocks_sidecar(base: &Path) -> PathBuf {
+        PathBuf::from(format!("{}.blocks", Self::sidecar(base).display()))
+    }
+
     /// Load the journal, or an empty one when the sidecar does not exist.
     ///
     /// The file is CSV so it can be read, diffed and hand-edited; a corrupt line
@@ -596,6 +602,63 @@ pub fn repair(sidecar: &Path, dry_run: bool) -> io::Result<RepairSummary> {
     std::fs::rename(&temporary, sidecar)?;
     summary.backup = Some(backup);
     Ok(summary)
+}
+
+/// Remember that a transaction of `size` operations ends at journal length `end`.
+///
+/// Both numbers are stored: `end` says whether the marker still describes this journal,
+/// and `size` says how many operations the transaction added, which is what one undo
+/// must take back together.
+pub fn record_block(sidecar: &Path, end: usize, size: usize) -> io::Result<()> {
+    use std::io::Write;
+    let path = Journal::blocks_sidecar(sidecar);
+    let mut file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)?;
+    writeln!(file, "{end},{size}")
+}
+
+/// A new single edit makes any remembered transaction boundary meaningless.
+pub fn clear_blocks(sidecar: &Path) {
+    let _ = std::fs::remove_file(Journal::blocks_sidecar(sidecar));
+}
+
+/// If the journal still ends on a transaction boundary, consume it and report how many
+/// operations to undo together. A stale marker (the journal grew or shrank since) is
+/// dropped rather than confused with a real one.
+pub fn take_block(sidecar: &Path, current_len: usize) -> io::Result<Option<usize>> {
+    let path = Journal::blocks_sidecar(sidecar);
+    let Ok(text) = std::fs::read_to_string(&path) else {
+        return Ok(None);
+    };
+    let mut marks: Vec<(usize, usize)> = text
+        .lines()
+        .filter_map(|line| {
+            let (end, size) = line.trim().split_once(',')?;
+            Some((end.parse().ok()?, size.parse().ok()?))
+        })
+        .collect();
+    match marks.pop() {
+        Some((end, size)) if end == current_len && size > 0 => {
+            if marks.is_empty() {
+                let _ = std::fs::remove_file(&path);
+            } else {
+                std::fs::write(
+                    &path,
+                    marks
+                        .iter()
+                        .map(|(e, s)| format!("{e},{s}\n"))
+                        .collect::<String>(),
+                )?;
+            }
+            Ok(Some(size))
+        }
+        _ => {
+            let _ = std::fs::remove_file(&path);
+            Ok(None)
+        }
+    }
 }
 
 #[cfg(test)]

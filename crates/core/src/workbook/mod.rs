@@ -36,7 +36,10 @@ mod journal;
 mod rows;
 mod transaction;
 
-pub use journal::{repair as repair_journal, Journal, RepairSummary, RowRef};
+pub use journal::{
+    clear_blocks, record_block, repair as repair_journal, take_block, Journal, RepairSummary,
+    RowRef,
+};
 pub use rows::{
     check_formula, column_layout, compile, compile_formulas, compile_formulas_at, formulas,
     parse_a1, parse_a1_range, regex_replace, resolve_columns, CellEdits, ColumnPlan,

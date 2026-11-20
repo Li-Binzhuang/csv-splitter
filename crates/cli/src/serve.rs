@@ -2467,6 +2467,7 @@ fn edit_apply(
         }
         let written: Vec<Op> = ops.clone();
         let mut updated_count = 0usize;
+        csvx_core::workbook::clear_blocks(&sidecar);
         let locked = csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
             for op in &written {
                 fresh.push(op.clone());
@@ -2689,9 +2690,17 @@ fn edit_apply(
     }
 
     if action == "undo" {
-        let mut undone = None;
+        // The same group marker the CLI uses: a transaction is undone in one step.
+        let mut undone = 0usize;
+        let mut last = String::new();
         let locked = csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
-            undone = fresh.undo();
+            let count = csvx_core::workbook::take_block(&sidecar, fresh.len())?.unwrap_or(1);
+            for _ in 0..count {
+                if let Some(op) = fresh.undo() {
+                    undone += 1;
+                    last = op.describe();
+                }
+            }
             Ok(())
         });
         let journal = match locked {
@@ -2709,21 +2718,21 @@ fn edit_apply(
             }
         };
         return match undone {
-            Some(op) => respond_json(
-                stream,
-                200,
-                &format!(
-                    r#"{{"undone":{},"operations":{}}}"#,
-                    json_str(&op.describe()),
-                    journal.len()
-                ),
-            ),
-            None => respond_json(
+            0 => respond_json(
                 stream,
                 409,
                 &format!(
                     r#"{{"error":"nothing to undo","parameter":"action","hint":{}}}"#,
                     json_str("the journal is empty; make an edit first")
+                ),
+            ),
+            count => respond_json(
+                stream,
+                200,
+                &format!(
+                    r#"{{"undone":{},"batch":{count},"operations":{}}}"#,
+                    json_str(&last),
+                    journal.len()
                 ),
             ),
         };
@@ -3320,6 +3329,7 @@ fn edit_apply(
     // Push and save under the journal's lock: two tabs editing at once must not lose an
     // edit to a last-write-wins rename. The CLI already does this; the server did not.
     let written = op.clone();
+    csvx_core::workbook::clear_blocks(&sidecar);
     // `stamp=` is a compare-and-set on the whole journal: a client that read the sheet, made
     // two edits and saw one land can send the second with the old stamp and get 409 instead of
     // appending on top of a state it never saw.

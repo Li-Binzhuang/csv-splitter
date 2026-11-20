@@ -5993,9 +5993,9 @@ fn a_transaction_applies_every_op_or_none() {
     assert_eq!(code, 200, "{body}");
     assert!(body.contains(r#""atomic":true"#), "{body}");
     let (_, rows) = get(&server.addr, "/rows?path=t.csv&count=10");
-    assert!(rows.contains('Z'), "the set must land: {rows}");
-    assert!(rows.contains('d'), "the insert must land: {rows}");
-    assert!(!rows.contains('B'), "the delete must land: {rows}");
+    assert!(rows.contains("\"Z\""), "the set must land: {rows}");
+    assert!(rows.contains("\"d\""), "the insert must land: {rows}");
+    assert!(!rows.contains("\"B\""), "the delete must land: {rows}");
 
     // One bad entry (a delete past the end) must reject the whole batch: the set in the
     // same request must not sneak in.
@@ -6010,4 +6010,30 @@ fn a_transaction_applies_every_op_or_none() {
         !rows.contains('Q'),
         "a rejected batch wrote something: {rows}"
     );
+}
+
+/// The HTTP undo honours the same transaction boundary as the CLI.
+#[test]
+fn a_transaction_is_undone_in_one_step_over_http() {
+    let dir = TempDir::new("txnundohttp");
+    std::fs::write(dir.join("t.csv"), "city,amount\nA,1\nB,2\nC,3\n").unwrap();
+    let server = start(&dir.0.clone());
+    let ops = "set%3A1%3Acity%3AZ%3Bdelete%3A2%3A1%3Binsert%3A4%3Ad%2C4";
+    let (code, body) = post(
+        &server.addr,
+        &format!("/edit?path=t.csv&action=transaction&ops={ops}"),
+    );
+    assert_eq!(code, 200, "{body}");
+
+    let (code, body) = post(&server.addr, "/edit?path=t.csv&action=undo");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""batch":3"#), "{body}");
+    assert!(body.contains(r#""operations":0"#), "{body}");
+
+    let (_, rows) = get(&server.addr, "/rows?path=t.csv&count=10");
+    assert!(
+        rows.contains("A") && rows.contains("B") && rows.contains("C"),
+        "{rows}"
+    );
+    assert!(!rows.contains("\"Z\"") && !rows.contains("\"d\""), "{rows}");
 }

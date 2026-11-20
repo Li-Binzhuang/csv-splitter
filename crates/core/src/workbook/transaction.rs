@@ -155,6 +155,8 @@ pub fn append_atomically(sidecar: &Path, ops: &[Op]) -> io::Result<usize> {
         applied = fresh.len();
         Ok(())
     })?;
+    // Remember where this batch ends so `edit undo` can take it back in one step.
+    super::record_block(sidecar, applied, ops.len())?;
     Ok(applied)
 }
 
@@ -187,5 +189,36 @@ mod tests {
         }
         // The good half must not be returned after the bad half fails.
         assert!(parse_ops("set:1:city:Q;delete:99:1", 3, &columns()).is_err());
+    }
+
+    /// A marker must not swallow earlier single edits: the batch size is stored, not
+    /// just the journal length after the batch.
+    #[test]
+    fn a_block_marker_covers_only_the_transaction() {
+        let dir = std::env::temp_dir().join(format!(
+            "csvx_txn_block_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0)
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let sidecar = dir.join("t.csv.journal");
+        Journal::update_locked(&sidecar, |fresh| {
+            fresh.push(Op::SetCell {
+                row: 0,
+                column: "city".to_string(),
+                value: "old".to_string(),
+            });
+            Ok(())
+        })
+        .unwrap();
+        let ops = parse_ops("set:2:city:A;delete:3:1", 5, &columns()).unwrap();
+        let applied = append_atomically(&sidecar, &ops).unwrap();
+        assert_eq!(applied, 3);
+        assert_eq!(crate::workbook::take_block(&sidecar, 3).unwrap(), Some(2));
+        assert_eq!(crate::workbook::take_block(&sidecar, 1).unwrap(), None);
+        std::fs::remove_dir_all(dir).ok();
     }
 }

@@ -5643,6 +5643,9 @@ fn journal_push(
     op: csvx_core::workbook::Op,
 ) -> Result<i32, i32> {
     let description = op.describe();
+    // A single edit ends any transaction group; its boundary must not be mistaken for
+    // this operation's undo unit later.
+    csvx_core::workbook::clear_blocks(sidecar);
     // A concurrent writer may have appended since this journal was loaded, so the
     // append happens under a lock and on a freshly loaded journal: two edits become
     // two operations instead of one lost rename.
@@ -6807,24 +6810,40 @@ fn cmd_edit(args: &[String]) -> i32 {
             };
         }
         "undo" => {
-            return match journal.undo() {
-                Some(op) => {
-                    if let Err(e) = csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
-                        fresh.undo();
-                        Ok(())
-                    }) {
-                        return report_failure("edit", format!("cannot save the journal: {e}"));
+            // A transaction boundary makes one undo take the whole batch back; the group
+            // is only consumed when the journal still ends there.
+            let mut undone = 0usize;
+            let mut last = String::new();
+            let locked = csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
+                let count = csvx_core::workbook::take_block(&sidecar, fresh.len())?.unwrap_or(1);
+                for _ in 0..count {
+                    if let Some(op) = fresh.undo() {
+                        undone += 1;
+                        last = op.describe();
                     }
-                    println!("✓ undone: {}", op.describe());
+                }
+                Ok(())
+            });
+            return match locked {
+                Ok(journal) => {
+                    if undone == 0 {
+                        eprintln!("nothing to undo");
+                        return 1;
+                    }
+                    if undone > 1 {
+                        println!(
+                            "✓ undone: {last} (+{} more in this transaction)",
+                            undone - 1
+                        );
+                    } else {
+                        println!("✓ undone: {last}");
+                    }
                     if journal.redo_len() > 0 {
                         println!("  {} operation(s) can be redone", journal.redo_len());
                     }
                     0
                 }
-                None => {
-                    eprintln!("nothing to undo");
-                    1
-                }
+                Err(e) => report_failure("edit", format!("cannot save the journal: {e}")),
             };
         }
         "redo" => {

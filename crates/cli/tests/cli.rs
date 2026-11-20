@@ -5105,3 +5105,62 @@ fn a_cli_transaction_applies_every_op_or_none() {
         "a rejected batch wrote something: {text}"
     );
 }
+
+/// One undo takes a whole transaction back; a second undo finds nothing left.
+#[test]
+fn undo_takes_a_transaction_back_in_one_step() {
+    let dir = TempDir::new("txnundo");
+    let base = dir.join("t.csv");
+    std::fs::write(&base, "city,amount\nA,1\nB,2\nC,3\n").unwrap();
+    let out = Command::new(bin())
+        .args([
+            "edit",
+            "transaction",
+            base.to_str().unwrap(),
+            "--ops",
+            "set:1:city:Z;delete:2:1;insert:4:d,4",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+
+    let undo = Command::new(bin())
+        .args(["edit", "undo", base.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert_eq!(
+        undo.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&undo.stderr)
+    );
+    let text = String::from_utf8_lossy(&undo.stdout);
+    assert!(text.contains("more in this transaction"), "{text}");
+
+    let exported = dir.join("after.csv");
+    let out = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            base.to_str().unwrap(),
+            "-o",
+            exported.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    assert_eq!(
+        std::fs::read_to_string(&exported).unwrap(),
+        "city,amount\nA,1\nB,2\nC,3\n"
+    );
+
+    let again = Command::new(bin())
+        .args(["edit", "undo", base.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert_eq!(
+        again.status.code(),
+        Some(1),
+        "nothing should be left to undo"
+    );
+}
