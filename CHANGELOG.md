@@ -48,6 +48,11 @@
 
 ### Added
 
+- **Resumable `/filter` and `/search` pages**: a whole-table scan that hits the 30 s
+  budget no longer answers 504. The waves that finished are returned with a `next`
+  checkpoint; passing it back as `cursor` continues where the scan stopped, and the row
+  numbers still line up with `/rows`. UTF-8 parallel path only — GBK/UTF-16 and small
+  files keep the single-shot scan, so they can still 504 on a truly huge file.
 - **`scripts/drill.sh`**: one command that indexes, opens, jumps, filters, searches and
   (with `--writes`) edits, exports and verifies a real file, printing the markdown table
   the README quotes. The 11.2 GB row above was produced by it.

@@ -290,15 +290,53 @@ pub fn scan_fast(
     if threads <= 1 || !seekable {
         return scan_with_budget(path, delimiter, spec, limit, budget, tx);
     }
-    match filter_parallel(path, delimiter, spec, limit, budget, threads, tx) {
-        Ok(result) => Ok(result),
+    match filter_parallel(path, delimiter, spec, limit, budget, threads, 0, tx) {
+        Ok((result, _)) => Ok(result),
         Err(e) if e.kind() == io::ErrorKind::TimedOut => Err(e),
         Err(_) => scan_with_budget(path, delimiter, spec, limit, budget, tx),
     }
 }
 
+/// A resumable page: the rows found so far, plus the cursor for the next call.
+///
+/// This is what the HTTP layer calls. A page that ran out of budget comes back with
+/// `next` set instead of an error or a silently truncated answer; passing that number
+/// back as `start_checkpoint` continues exactly where the last wave stopped.
+pub fn scan_page(
+    path: &Path,
+    delimiter: Delimiter,
+    spec: &FilterSpec,
+    limit: usize,
+    budget: Option<std::time::Duration>,
+    start_checkpoint: usize,
+    tx: &ProgressSender,
+) -> io::Result<(ScanResult, Option<usize>)> {
+    let file_len = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
+    let threads = crate::scan_parallel::threads_for(file_len);
+    if threads <= 1 || !crate::scan_parallel::is_seekable(path)? {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "resumable pages need a UTF-8 file and the parallel scan",
+        ));
+    }
+    filter_parallel(
+        path,
+        delimiter,
+        spec,
+        limit,
+        budget,
+        threads,
+        start_checkpoint,
+        tx,
+    )
+}
+
 /// The parallel half of [`scan_fast`], with threads made explicit so a test can force
 /// four of them on a file small enough to check by eye.
+// The eight arguments are all scalars from one scan request; the HTTP handler builds them
+// in one place and a test needs to force `threads`, so a bag struct would only move the
+// list somewhere else.
+#[allow(clippy::too_many_arguments)]
 fn filter_parallel(
     path: &Path,
     delimiter: Delimiter,
@@ -306,8 +344,9 @@ fn filter_parallel(
     limit: usize,
     budget: Option<std::time::Duration>,
     threads: usize,
+    start_checkpoint: usize,
     tx: &ProgressSender,
-) -> io::Result<ScanResult> {
+) -> io::Result<(ScanResult, Option<usize>)> {
     let delim = delimiter.byte();
     let col_idx = column_index(path, delim, spec)?;
     let predicate =
@@ -320,14 +359,19 @@ fn filter_parallel(
         threads,
         quotes: QuoteStyle::Rfc4180,
         phase: &phase,
+        start_checkpoint,
+        checkpoints_per_wave: crate::scan_parallel::CHECKPOINTS_PER_WAVE,
     };
     let batch = crate::scan_parallel::scan_parallel(path, &options, tx, predicate)?;
-    Ok(ScanResult {
-        rows: batch.rows,
-        scanned: batch.scanned,
-        matched: batch.matched,
-        truncated: batch.truncated,
-    })
+    Ok((
+        ScanResult {
+            rows: batch.rows,
+            scanned: batch.scanned,
+            matched: batch.matched,
+            truncated: batch.truncated,
+        },
+        batch.next_checkpoint,
+    ))
 }
 
 /// How several predicates combine.
@@ -694,9 +738,11 @@ mod tests {
             10_000,
             None,
             4,
+            0,
             &tx,
         )
-        .unwrap();
+        .unwrap()
+        .0;
 
         assert_eq!(sequential.rows, parallel.rows);
         assert_eq!(sequential.matched, parallel.matched);
@@ -722,8 +768,9 @@ mod tests {
         let (tx, rx) = std::sync::mpsc::channel();
         drop(rx);
         let sequential = scan(file.path(), Delimiter::Comma, &spec, 25, &tx).unwrap();
-        let parallel =
-            filter_parallel(file.path(), Delimiter::Comma, &spec, 25, None, 4, &tx).unwrap();
+        let parallel = filter_parallel(file.path(), Delimiter::Comma, &spec, 25, None, 4, 0, &tx)
+            .unwrap()
+            .0;
         assert_eq!(sequential.rows, parallel.rows);
         assert_eq!(parallel.rows.len(), 25);
         assert!(parallel.truncated);

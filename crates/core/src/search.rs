@@ -257,12 +257,53 @@ pub fn search_fast(
         threads,
         quotes,
         phase: &phase,
+        start_checkpoint: 0,
+        checkpoints_per_wave: crate::scan_parallel::CHECKPOINTS_PER_WAVE,
     };
     match search_parallel(path, spec, &options, tx) {
-        Ok(result) => Ok(result),
+        Ok((result, _)) => Ok(result),
         Err(e) if e.kind() == io::ErrorKind::TimedOut => Err(e),
         Err(_) => search_quotes_with_budget(path, delimiter, spec, limit, budget, quotes, tx),
     }
+}
+
+/// A resumable page: rows found so far plus the cursor for the next call.
+///
+/// Same contract as [`crate::filter::scan_page`]: only the UTF-8 parallel path can
+/// resume, because a cursor is a byte offset in the sparse index.
+// See filter::scan_page: the scalars are one request; grouping them here would just
+// relocate the list for the two call sites that use it.
+#[allow(clippy::too_many_arguments)]
+pub fn search_page(
+    path: &Path,
+    delimiter: Delimiter,
+    spec: &SearchSpec,
+    limit: usize,
+    budget: Option<std::time::Duration>,
+    quotes: QuoteStyle,
+    start_checkpoint: usize,
+    tx: &ProgressSender,
+) -> io::Result<(SearchResult, Option<usize>)> {
+    let file_len = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
+    let threads = crate::scan_parallel::threads_for(file_len);
+    if threads <= 1 || !crate::scan_parallel::is_seekable(path)? {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "resumable pages need a UTF-8 file and the parallel scan",
+        ));
+    }
+    let phase = format!("searching {}", spec.query);
+    let options = crate::scan_parallel::ScanOptions {
+        delimiter,
+        limit,
+        budget,
+        threads,
+        quotes,
+        phase: &phase,
+        start_checkpoint,
+        checkpoints_per_wave: crate::scan_parallel::CHECKPOINTS_PER_WAVE,
+    };
+    search_parallel(path, spec, &options, tx)
 }
 
 /// The parallel half of [`search_fast`], with threads made explicit so a test can force
@@ -272,7 +313,7 @@ fn search_parallel(
     spec: &SearchSpec,
     options: &crate::scan_parallel::ScanOptions<'_>,
     tx: &ProgressSender,
-) -> io::Result<SearchResult> {
+) -> io::Result<(SearchResult, Option<usize>)> {
     let delim = options.delimiter.byte();
     let reader = encoding::open_decoded(path)?;
     let mut records = RecordReader::new(BufReader::with_capacity(1024 * 1024, reader), 1024 * 1024);
@@ -301,13 +342,16 @@ fn search_parallel(
             .any(|cell| spec.matches(cell))
     };
     let batch = crate::scan_parallel::scan_parallel(path, options, tx, predicate)?;
-    Ok(SearchResult {
-        rows: batch.rows,
-        scanned: batch.scanned,
-        matched: batch.matched,
-        truncated: batch.truncated,
-        columns,
-    })
+    Ok((
+        SearchResult {
+            rows: batch.rows,
+            scanned: batch.scanned,
+            matched: batch.matched,
+            truncated: batch.truncated,
+            columns,
+        },
+        batch.next_checkpoint,
+    ))
 }
 
 #[cfg(test)]
@@ -455,8 +499,10 @@ mod tests {
             threads: 4,
             quotes: QuoteStyle::Rfc4180,
             phase: &phase,
+            start_checkpoint: 0,
+            checkpoints_per_wave: crate::scan_parallel::CHECKPOINTS_PER_WAVE,
         };
-        let parallel = search_parallel(&path, &spec, &options, &tx).unwrap();
+        let parallel = search_parallel(&path, &spec, &options, &tx).unwrap().0;
         assert_eq!(sequential.rows, parallel.rows);
         assert_eq!(sequential.matched, parallel.matched);
         assert_eq!(sequential.scanned, parallel.scanned);

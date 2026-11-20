@@ -654,6 +654,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
             "limit",
             "apply-edits",
             "delim",
+            "cursor",
         ],
     ),
     (
@@ -667,6 +668,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
             "limit",
             "apply-edits",
             "delim",
+            "cursor",
         ],
     ),
     (
@@ -6150,23 +6152,55 @@ fn search(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
         .map(|m| m.path().to_path_buf())
         .unwrap_or_else(|| path.clone());
     let budget = std::time::Duration::from_millis(query_timeout_ms());
-    match csvx_core::search::search_fast(
+    let cursor: usize = match params.get("cursor") {
+        None => 0,
+        Some(raw) => match raw.parse() {
+            Ok(n) => n,
+            Err(_) => {
+                return bad_request(
+                    stream,
+                    "cursor must be a non-negative checkpoint number",
+                    "cursor",
+                    "pass the `next` value from the previous page",
+                )
+            }
+        },
+    };
+    let page = csvx_core::search::search_page(
         &source,
         delimiter(params),
         &spec,
         limit,
         Some(budget),
         csvx_core::csv_reader::QuoteStyle::Rfc4180,
+        cursor,
         &tx,
-    ) {
-        Ok(result) => {
+    )
+    .or_else(|e| {
+        if e.kind() == io::ErrorKind::InvalidInput {
+            csvx_core::search::search_fast(
+                &source,
+                delimiter(params),
+                &spec,
+                limit,
+                Some(budget),
+                csvx_core::csv_reader::QuoteStyle::Rfc4180,
+                &tx,
+            )
+            .map(|result| (result, None))
+        } else {
+            Err(e)
+        }
+    });
+    match page {
+        Ok((result, next)) => {
             let rows: Vec<String> = result.row_numbers().iter().map(|n| n.to_string()).collect();
             let cols: Vec<String> = result.columns.iter().map(|c| json_str(c)).collect();
             respond_json(
                 stream,
                 200,
                 &format!(
-                    r#"{{"scanned":{},"matched":{},"truncated":{},"source":{},"columns":[{}],"rows":[{}]}}"#,
+                    r#"{{"scanned":{},"matched":{},"truncated":{},"source":{},"columns":[{}],"rows":[{}],"next":{},"partial":{}}}"#,
                     result.scanned,
                     result.matched,
                     result.truncated,
@@ -6176,7 +6210,9 @@ fn search(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
                         "file"
                     }),
                     cols.join(","),
-                    rows.join(",")
+                    rows.join(","),
+                    next.map(|n| n.to_string()).unwrap_or_else(|| "null".into()),
+                    next.is_some()
                 ),
             )
         }
@@ -6331,14 +6367,48 @@ fn filter(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
     // The same budget /query already honours: a filtered scan over a huge sheet has no
     // cancel button once the request is in flight.
     let budget = std::time::Duration::from_millis(query_timeout_ms());
-    match filter::scan_fast(&source, delimiter(params), &spec, limit, Some(budget), &tx) {
-        Ok(result) => {
+    // A resumable page: `cursor` is the checkpoint the previous page stopped at. Files
+    // too small (or not UTF-8) for the parallel scan fall back to a complete scan with
+    // no cursor, which is the old behaviour and never worse.
+    let cursor: usize = match params.get("cursor") {
+        None => 0,
+        Some(raw) => match raw.parse() {
+            Ok(n) => n,
+            Err(_) => {
+                return bad_request(
+                    stream,
+                    "cursor must be a non-negative checkpoint number",
+                    "cursor",
+                    "pass the `next` value from the previous page",
+                )
+            }
+        },
+    };
+    let page = filter::scan_page(
+        &source,
+        delimiter(params),
+        &spec,
+        limit,
+        Some(budget),
+        cursor,
+        &tx,
+    )
+    .or_else(|e| {
+        if e.kind() == io::ErrorKind::InvalidInput {
+            filter::scan_fast(&source, delimiter(params), &spec, limit, Some(budget), &tx)
+                .map(|result| (result, None))
+        } else {
+            Err(e)
+        }
+    });
+    match page {
+        Ok((result, next)) => {
             let rows: Vec<String> = result.row_numbers().iter().map(|n| n.to_string()).collect();
             respond_json(
                 stream,
                 200,
                 &format!(
-                    r#"{{"scanned":{},"matched":{},"truncated":{},"source":{},"rows":[{}]}}"#,
+                    r#"{{"scanned":{},"matched":{},"truncated":{},"source":{},"rows":[{}],"next":{},"partial":{}}}"#,
                     result.scanned,
                     result.matched,
                     result.truncated,
@@ -6347,7 +6417,9 @@ fn filter(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
                     } else {
                         "file"
                     }),
-                    rows.join(",")
+                    rows.join(","),
+                    next.map(|n| n.to_string()).unwrap_or_else(|| "null".into()),
+                    next.is_some()
                 ),
             )
         }

@@ -207,8 +207,9 @@
 | `GET /filter` / `GET /search` | 2.1 GB | 2.1 / 3.1 s | — | — |
 
 行号仍与 `/rows` 对齐：`filter_can_apply_edits_and_its_row_numbers_follow` 与
-`parallel_scan_agrees_with_sequential` 钉住这两件事。30 秒的预算仍在：如果某台机器上
-一遍全表真的超过预算，HTTP 返回 504 而不是假装还有结果。
+`parallel_scan_agrees_with_sequential` 钉住这两件事。30 秒的预算仍在：UTF-8 并行路径会把
+预算内已完成的一页返回，并给出 `next` 游标；只有顺序扫描路径（GBK/UTF-16 或小文件）
+在超预算时返回 504。
 
 同一份测量放大到 11.2 GB / 2.5 亿行（`scripts/drill.sh` 输出）：
 
@@ -220,8 +221,9 @@
 | 打开 / 跳到第 1.2 亿行 | 11.2 GB | 0.01 / 0.01 s | 8 MB |
 | 编辑一格 / 导出 2.1 GB / `verify` | 2.1 GB | 0.01 / 1.9 / 7.0 s | 8–46 MB |
 
-**边界**：搜索在 11.2 GB 上已用掉约 15 s，所以 30 s 预算的实际上限约 20–22 GB；更大就需要
-可续扫的游标分页（未做），而不是把预算调大了事。
+**边界**：搜索在 11.2 GB 上已用掉约 15 s，30 s 预算的实际上限约 20–22 GB；更大的文件
+不必 504——把 `/filter` 或 `/search` 返回的 `next` 作为 `cursor` 再请求即可续扫，
+行号仍与 `/rows` 对齐。
 
 所以「内存与行数无关」的准确版本是：**与行数无关，除非那个命令必须记住每一行**
 （`dedupe` 要记住见过的键；`sort`/`partition` 要一片缓冲区）。这三种都有显式上限：

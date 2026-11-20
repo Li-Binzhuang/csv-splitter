@@ -65,7 +65,7 @@
 - [ ] Windows 路径容错（只在 macOS / Linux 实测过）
 - [x] `filter` / `search` 分段并行（2.1 GB 实测：13.5→2.7 s / 18.1→4.8 s，行号语义不变）
 - [x] 11.2 GB / 2.5 亿行演练：索引 3.9 s、跳转 0.01 s、过滤 11.9 s、搜索 14.8 s、HTTP 10–16/14–20 s（`scripts/drill.sh`）
-- [ ] 20–22 GB 以上搜索需要可续扫游标分页（当前会在 30 s 预算处 504）
+- [x] `/filter` `/search` 可续扫游标：预算内结果先返回，`next` 作为 `cursor` 续扫（UTF-8 并行路径；GBK/小文件仍整页扫）
 - [ ] 其余读任务仍单线程（`analyze` 2.1 GB 17.5 s；索引采样方案未做）
 
 ## 现在能做什么 / What it does today
