@@ -4,7 +4,7 @@
 .gitattributes[FV4T]: F:声明所有文本按 LF 检出，保证 AOCI 基线与跨平台检出逐字节一致 | R:- | A:唯一规则 `* text=auto eol=lf`；覆盖 Windows autocrlf 的行尾重写，否则整棵树会被基线和漂移检查判成 stale；二进制由 git 自动探测、不改写 | S:基线按原始字节计算，行尾被平台改写会让全部索引失真，所以这里必须强制 LF
 .gitignore[FV4T]: F:忽略构建产物、生成侧车与本地杂物 | R:- | A:忽略 `/target`、编辑器 swap、`.DS_Store`、发布打包目录、以及每个数据文件自己的生成物（`*.idx`、`*.journal`、`*.parquet`、`*.agg`）；刻意不忽略 `.codegraph/` 与 `.aoci/`——本仓要求把两套索引的中间过程一起入库 | S:侧车属生成物，不应该因为跑过一次 demo 就进版本库；而 `.codegraph/codegraph.db` 是可重建二进制，入库带来的历史体积增长是有意取舍
 AGENTS.md[SV6S]: F:仓库级 Agent 指令：AOCI 认知层的接入与使用原则 | R:code:aoci.txt,code:aoci.meta.txt,code:aoci.code.txt | A:规定“模型生成、模型读取”闭环，何时读 rules/overview/maintain，以及收尾维护一次的纪律；不重复 CLI 手册 | S:机器事实以 Guide、Schema 与 Validator 为准，本文件不得覆盖；上下文压缩后的 handoff 不得携带索引语义，必须重新完整读取并认证
-CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录整列/条件聚合、字节复制快路、并行预扫与 .agg 缓存、CLI/HTTP 原子 transaction、以及“删除后再插入”导出丢行的修复，并把四条公式边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败
+CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合与缓存、字节复制快路、CLI/HTTP 原子 transaction 与一次撤销整批、以及导出丢行修复，并把公式边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败
 Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本与 crate 元数据、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 crates/core 与 crates/cli；workspace.dependencies 以 csvx-core 为本地 crate 键；workspace.package 持有版本 4.2.0、一句话定位、仓库地址与 MIT 许可，是发布真相源；二进制的 --version 与 tag 校验都以它为准 | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
 README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部定位与 Rust 徽章；下载表列四平台产物；快速开始指向 scripts/demo.sh；公式节说明整列/条件聚合、字节复制与 .agg 缓存（重复导出 100 万行 0.09 s、2.1 GB 4.56 s）；性能表为最新实测 | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；含 scripts/ 的行不参与 flag 校验；过滤内存随命中数增长、搜索约 20–22 GB 触及 30 s 预算
@@ -18,8 +18,8 @@ windows.yml[OV6T]: F:Windows 编译检查，只在 Rust 代码或依赖清单变
 Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Cargo.toml | A:包名 csvx-cli，二进制名 csvx，入口 src/main.rs；依赖 libc（信号处理）与 flate2（gzip 响应）；启用 core 的 sql feature；元数据从 workspace 继承 | S:-
 
 ===/<repository>/crates/cli/src/===
-main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；edit 的 transaction 只做参数与错误映射，解析/校验/写入都交给 csvx-core 的 parse_ops 与 append_atomically；filter/search 走 scan_fast；行号一律 1-based；demo 默认写 csvx-demo/ | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败；transaction 的错误分类映射为退出码（越界 1、语法/列名 2），不要另写一套语法
-serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:/filter 与 /search 接 cursor 续扫；/edit 的 transaction 在 match 之前特殊处理，解析与原子写入调 csvx-core，越界映射 404、语法/列名 400；strict 参数校验与 CSVX_QUERY_TIMEOUT_MS 在此读取 | S:strict 模式下未在路由表声明的参数一律 400，新增参数必须同时写进参数表；contract 测试只扫描 match 分支，提前处理的动作要登记在 HANDLED_BEFORE_THE_MATCH
+main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；edit transaction 只做参数与错误映射，解析/写入交 csvx-core；edit undo 读事务边界把整批一次撤回；单条编辑会清掉边界，避免旧标记吞掉后续撤销 | S:新增 flag 必须同时写进 print_command_help；transaction 错误映射为退出码（越界 1、语法/列名 2）；block 标记消费后必须写回 journal，否则重开后又变成块撤销
+serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:/filter 与 /search 接 cursor 续扫；/edit 的 transaction 调 csvx-core 解析并原子写入；undo 读 .blocks 把整批一次撤回，响应多一个 batch 字段；单条写入前清边界；strict 参数校验与 CSVX_QUERY_TIMEOUT_MS 在此读取 | S:strict 模式下未在路由表声明的参数一律 400；contract 只扫描 match 分支，提前处理的动作要登记；undo 的 0 条与单条响应不能混
 
 ===/<repository>/crates/cli/src/web/===
 index.html[EU7M]: F:内置只读浏览页：用 /rows 拉窗口并把结果渲染成表格 | R:code:crates/cli/src/serve.rs | A:单文件 HTML 与内联 JS，无外部依赖；title 与页头的 h1 都是 csvx；实际调用 /files、/meta、/rows、/search、/analyze、/groupby 六个端点 | S:-
@@ -84,16 +84,16 @@ totals.rs[KP6L]: F:整列与条件聚合的预扫及其缓存：为 sum/average/
 
 ===/<repository>/crates/core/src/workbook/===
 export.rs[CD9L]: F:逐行组装、导出与分页读取 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/journal.rs | A:一次顺序扫描；被 journal 触及的行走 RowPipeline，未触及的行拷贝原字节；每行相同的公式算一次后只追加一格；存在 InsertRows 时用真实行数构 RowMap，仅删除时用哨兵值免建索引；测试用 24 组生成的结构编辑逐格比对 window 与导出行 | S:插入锚点落在删除后的越界位置时，未知基长会留幽灵基行让导出提前 EOF 而丢掉插入行；该回归已被定向测试与 window/export 等价测试双重钉住（临时回退修复两条都会红）；join_csv_line 自带换行；会读当前行的公式不得走快路
-journal.rs[CP9L]: F:追加式操作日志与它的文本格式 | R:code:crates/core/src/workbook/mod.rs | A:每行一个操作的 CSV 记录；update_locked 用 sidecar 旁的 .journal.lock 独占锁把读改写合成一步，多进程同时编辑都保留；损坏行可检测；被 kill 留下的锁不会永久卡住 | S:journal 是编辑的唯一载体，删掉等于丢数据，而 base 永远不被修改
-mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序、列布局与 transaction 子模块 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/transaction.rs | A:所有编辑记录为 Op；改名让既有编辑跟着新名；列布局由 Op 序列推导；transaction 子模块导出 parse_ops 与 append_atomically 给 CLI 和 HTTP 共用 | S:原位重算每次都从 base 行取值，同一列连做两遍相同公式不会叠乘；删除列会带走该列编辑，改名不会；transaction 语法只维护这一份
+journal.rs[CP9L]: F:追加式操作日志、事务边界标记与两者文本格式 | R:code:crates/core/src/workbook/mod.rs,code:crates/core/src/workbook/transaction.rs | A:每行一个操作的 CSV；update_locked 用 .journal.lock 把读改写合成一步；.journal.blocks 每行记 end,size 表示事务批次；record_block/clear_blocks/take_block 维护它，end 不匹配当前长度就丢弃 | S:journal 是编辑的唯一载体，删掉等于丢数据；块标记必须同时记 size，只记 end 会把事务前的单条编辑一起撤销；单条编辑必须清标记
+mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序、列布局与 transaction 子模块 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/transaction.rs | A:所有编辑记录为 Op；改名让既有编辑跟着新名；列布局由 Op 序列推导；transaction 子模块导出 parse_ops/append_atomically，并转导出 journal 的块标记函数 | S:原位重算从 base 行取值，同一列连做两遍相同公式不会叠乘；删除列带走该列编辑，改名不会；transaction 语法只维护这一份
 rows.rs[CP9L]: F:行身份映射与单元格编辑解析 | R:code:crates/core/src/workbook/mod.rs | A:RowId 为 Base 或 Virtual，position_of 是 id_at 的逆；填充解析成行身份而非位置；公式允许读自身列做原位重算，新列读自身被拒 | S:按位置存编辑会在插入行后把编辑指向邻居，这是本项目最需要避免的静默错误
-transaction.rs[CP8L]: F:CLI 与 HTTP 共用的 transaction 解析与原子写入 | R:code:crates/core/src/workbook/mod.rs,code:crates/core/src/workbook/journal.rs | A:parse_ops 把 set:/delete:/insert: 条目校验后转成 0-based Op，错误分为 Syntax/OutOfRange/UnknownColumn；append_atomically 用一次 update_locked 把整批入库并返回 pending 总数；行号线上 1-based | S:校验必须先于写入，任何一条不合法则一条都不落（测试钉住）；两个表面只做错误到退出码/状态码的映射，语法变更只能改这里
+transaction.rs[CP8M]: F:CLI 与 HTTP 共用的 transaction 解析、原子写入与批量撤销标记 | R:code:crates/core/src/workbook/mod.rs,code:crates/core/src/workbook/journal.rs | A:parse_ops 校验后转成 0-based Op（错误分 Syntax/OutOfRange/UnknownColumn）；append_atomically 一次 update_locked 写入并记录 end,size 块标记供一次撤销 | S:校验必须先于写入，任一条不合法则一条不落；标记必须带 size（只记 end 会连带撤销事务前的单条编辑，测试钉住）；两个表面只做错误映射
 
 ===/<repository>/docs/===
 ACCEPTANCE.md[SD6M]: F:验收证据：两档性能表、能力矩阵与平台构建矩阵 | R:code:docs/API.md | A:每行写实测数字与对应测试名；未达标项标注而不是四舍五入 | S:文档里引用的输出由测试钉住，改实现不同步更新这里会让 gate 失败
 API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；filter/search 行含 cursor 与 next/partial；/edit 写入行含 transaction 的 ops 语法（set/delete/insert）与“先整体校验再一次写入”；聚合端点接受 engine=auto|native|sql | S:文档测试要求本文列出的每个路由都真实存在，反之亦然；文档字段必须真的出现在响应里
 ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列出模块，共用工具组含 engine 与 scan_parallel，公式引擎组含 mod/functions/state/sheetref/totals，编辑模型组含 workbook/mod,rows,journal,export,transaction | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败
-CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；编辑表含原子批量写的 CLI 与 API 两列；公式节区分每行相同与会读当前行两种代价，大文件节写并行数字与游标续扫 | S:-
+CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；编辑表含原子批量写（失败全不写、一次撤销整批）；公式节区分两种代价；大文件节写并行数字与游标续扫 | S:-
 CI.md[SO6S]: F:CI 结构说明：单 job 流水线、滚动缓存与失败注解机制 | R:code:.github/workflows/ci.yml | A:解释为什么合并成一个 job、为什么缓存 key 滚动、以及 annotation 如何让红叉可读；测试命令按 csvx-core 与 csvx-cli 包名 | S:-
 DEPLOY.md[SO7M]: F:部署材料：三种安装、配置项、systemd、升级回滚与安全边界 | R:code:deploy/csvx.service | A:明确单机单用户、无鉴权、默认 loopback；配置表含 CSVX_SCAN_THREADS（filter/search 的并行线程数，1 退回顺序）；给出 release-check 与 install-check 两条自检 | S:安全表必须写明没有鉴权与没有多用户隔离，只列防护不列边界会让人误判风险
 GETTING_STARTED.md[SU6M]: F:十分钟上手：用故意不干净的示例走完整链路 | R:code:crates/core/src/demo.rs | A:逐步骤贴真实输出，覆盖带引号换行与多一个逗号的错位行；命令一律以 csvx 开头，示例目录为 csvx-demo/ | S:-
@@ -101,7 +101,7 @@ HANDOVER.md[SU5S]: F:交接说明：现状、已知债、下一步，以及本�
 INTEGRATION.md[SN6S]: F:前端接入走查：从起服务到翻行、改值、多文件的一页纸 | R:code:docs/API.md | A:按 0–7 步给出真实可跑的调用（起服务、打开文件、画一屏、读写单元格含 expect、行身份、写后、多文件）；每条都对应 crates/cli/tests/serve.rs 的测试 | S:-
 ROADMAP.md[SU5S]: F:路线图：已完成、进行中与明确不做的范围 | R:code:docs/CAPABILITIES.md | A:与能力清单分工；M5 记录 filter/search 分段并行、11.2 GB 演练，并把可续扫游标页标为已完成（GBK 仍整页扫） | S:-
 TROUBLESHOOTING.md[SO6S]: F:排障：常见症状、原因与处理，以及如何读 CI 失败 | R:code:docs/CI.md | A:含 annotation 读取命令与历史根因（超时测试竞态、mingw 线程模型） | S:-
-BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 写明整列/条件聚合与 .agg 缓存让重复导出预扫约 30 ms（冷启动仍约 0.09 s，区间引用未做）；缺口 5 改为 set-many 与 transaction 均先校验再一次写入（失败一条不写），仅整块 undo 未做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据
+BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 写明聚合与 .agg 缓存让重复导出预扫约 30 ms（冷启动仍约 0.09 s，区间引用未做）；缺口 5 写明 set-many/transaction 先校验再一次写入且一次撤销整批，CLI 与 HTTP 均有测试 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据
 
 ===/<repository>/scripts/===
 backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换、自引用拒绝与请求上限；BIN 默认取 ./target/debug/csvx | S:脚本默认跑 target/debug 的二进制，改了代码只重建 release 会在这里看到旧行为；裸 wait 会连自己起的 server 一起等，必须收集 PID 逐个等待

@@ -1,0 +1,141 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "d420bf2cea1a2f7d25f4343fb5150a7a793ee881b2fb7ae0b2b09a44d5060e83",
+  "batch_id": "bbe8942a184e33650ef2798fe7d0d2674fbe7544359d84f23a71e76221c4ce74",
+  "composite_identity": "1ec43ba8ad91eabd2183c10908a08bf078bb95f176b5b839e0708d2c805af236",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e60465df16b74d6526ed522e8f1787305abd59ddf735b4c82cce69ec1190de4c",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "f01e8f75b1f48c42b8d872fe7f0ce1738705be8e9fdc51e05dc9fb20a3302641",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录整列/条件聚合、字节复制快路、并行预扫与 .agg 缓存、CLI/HTTP 原子 transaction、以及“删除后再插入”导出丢行的修复，并把四条公式边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "dfcda1ea3242ab3f00f2d416bc6df2b4ea876841082e80786b12cdac65a31235",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；edit 的 transaction 只做参数与错误映射，解析/校验/写入都交给 csvx-core 的 parse_ops 与 append_atomically；filter/search 走 scan_fast；行号一律 1-based；demo 默认写 csvx-demo/ | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败；transaction 的错误分类映射为退出码（越界 1、语法/列名 2），不要另写一套语法"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "aba067e52da3c90bb93cc469601a5172bb7cc6fbbe3533f65e4ab50d77682556",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:/filter 与 /search 接 cursor 续扫；/edit 的 transaction 在 match 之前特殊处理，解析与原子写入调 csvx-core，越界映射 404、语法/列名 400；strict 参数校验与 CSVX_QUERY_TIMEOUT_MS 在此读取 | S:strict 模式下未在路由表声明的参数一律 400，新增参数必须同时写进参数表；contract 测试只扫描 match 分支，提前处理的动作要登记在 HANDLED_BEFORE_THE_MATCH"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/journal.rs",
+      "path": "crates/core/src/workbook/journal.rs",
+      "change": "update",
+      "source_sha256": "08ac5585e1eddf8d5dc9118595815376166ac785c6d143a30118601c39d07daa",
+      "existing_entry": "journal.rs[CP9L]: F:追加式操作日志与它的文本格式 | R:code:crates/core/src/workbook/mod.rs | A:每行一个操作的 CSV 记录；update_locked 用 sidecar 旁的 .journal.lock 独占锁把读改写合成一步，多进程同时编辑都保留；损坏行可检测；被 kill 留下的锁不会永久卡住 | S:journal 是编辑的唯一载体，删掉等于丢数据，而 base 永远不被修改"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/mod.rs",
+      "path": "crates/core/src/workbook/mod.rs",
+      "change": "update",
+      "source_sha256": "4dd2fe70b45be2ce89e2a61651f30c6f2375127fd35e132bac7b390ee965e28b",
+      "existing_entry": "mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序、列布局与 transaction 子模块 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/transaction.rs | A:所有编辑记录为 Op；改名让既有编辑跟着新名；列布局由 Op 序列推导；transaction 子模块导出 parse_ops 与 append_atomically 给 CLI 和 HTTP 共用 | S:原位重算每次都从 base 行取值，同一列连做两遍相同公式不会叠乘；删除列会带走该列编辑，改名不会；transaction 语法只维护这一份"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/transaction.rs",
+      "path": "crates/core/src/workbook/transaction.rs",
+      "change": "update",
+      "source_sha256": "e83d5b31b7eb1ea14f977fbf0bf14676828013782332830f2f6cfa2a4a6419bd",
+      "existing_entry": "transaction.rs[CP8L]: F:CLI 与 HTTP 共用的 transaction 解析与原子写入 | R:code:crates/core/src/workbook/mod.rs,code:crates/core/src/workbook/journal.rs | A:parse_ops 把 set:/delete:/insert: 条目校验后转成 0-based Op，错误分为 Syntax/OutOfRange/UnknownColumn；append_atomically 用一次 update_locked 把整批入库并返回 pending 总数；行号线上 1-based | S:校验必须先于写入，任何一条不合法则一条都不落（测试钉住）；两个表面只做错误到退出码/状态码的映射，语法变更只能改这里"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "101836bbd945f5de75285df972c33bec2e682200b3d01043d1be2f022ab3c58f",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 写明整列/条件聚合与 .agg 缓存让重复导出预扫约 30 ms（冷启动仍约 0.09 s，区间引用未做）；缺口 5 改为 set-many 与 transaction 均先校验再一次写入（失败一条不写），仅整块 undo 未做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "a41b5de08a959f94b2d9da577c20793921357852fb21604c9ae1ea8a9fdcddf9",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；编辑表含原子批量写的 CLI 与 API 两列；公式节区分每行相同与会读当前行两种代价，大文件节写并行数字与游标续扫 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "f747493e529d12088f056013af7341bde145ca571abe40f9b6411dc2950a58f1",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "f01e8f75b1f48c42b8d872fe7f0ce1738705be8e9fdc51e05dc9fb20a3302641",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录整列/条件聚合、字节复制快路、并行预扫与 .agg 缓存、CLI/HTTP 原子 transaction、以及“删除后再插入”导出丢行的修复，并把四条公式边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "47164411cd130d8edb4e8b5d16fc3788b3ce97c882ec7b4cff8f2d02ea7a3d90",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "dfcda1ea3242ab3f00f2d416bc6df2b4ea876841082e80786b12cdac65a31235",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；edit 的 transaction 只做参数与错误映射，解析/校验/写入都交给 csvx-core 的 parse_ops 与 append_atomically；filter/search 走 scan_fast；行号一律 1-based；demo 默认写 csvx-demo/ | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败；transaction 的错误分类映射为退出码（越界 1、语法/列名 2），不要另写一套语法"
+    },
+    {
+      "candidate_id": "6f5f34e17d80671ed4c7ad472d1191093cf6f5b77ea06c2f94df427fd9c3aeb7",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "aba067e52da3c90bb93cc469601a5172bb7cc6fbbe3533f65e4ab50d77682556",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:/filter 与 /search 接 cursor 续扫；/edit 的 transaction 在 match 之前特殊处理，解析与原子写入调 csvx-core，越界映射 404、语法/列名 400；strict 参数校验与 CSVX_QUERY_TIMEOUT_MS 在此读取 | S:strict 模式下未在路由表声明的参数一律 400，新增参数必须同时写进参数表；contract 测试只扫描 match 分支，提前处理的动作要登记在 HANDLED_BEFORE_THE_MATCH"
+    },
+    {
+      "candidate_id": "4510e92bfb6b84f16d0d03ea0602d0e532faa57dc2a5d7d16b649f5f6729cd35",
+      "object_ref": "code:crates/core/src/workbook/journal.rs",
+      "path": "crates/core/src/workbook/journal.rs",
+      "change": "update",
+      "source_sha256": "08ac5585e1eddf8d5dc9118595815376166ac785c6d143a30118601c39d07daa",
+      "existing_entry": "journal.rs[CP9L]: F:追加式操作日志与它的文本格式 | R:code:crates/core/src/workbook/mod.rs | A:每行一个操作的 CSV 记录；update_locked 用 sidecar 旁的 .journal.lock 独占锁把读改写合成一步，多进程同时编辑都保留；损坏行可检测；被 kill 留下的锁不会永久卡住 | S:journal 是编辑的唯一载体，删掉等于丢数据，而 base 永远不被修改"
+    },
+    {
+      "candidate_id": "0bff9979fcd3df1c6437a76ad5ba05ace816265842245b2f5d7b8a5b6ce2b523",
+      "object_ref": "code:crates/core/src/workbook/mod.rs",
+      "path": "crates/core/src/workbook/mod.rs",
+      "change": "update",
+      "source_sha256": "4dd2fe70b45be2ce89e2a61651f30c6f2375127fd35e132bac7b390ee965e28b",
+      "existing_entry": "mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序、列布局与 transaction 子模块 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/transaction.rs | A:所有编辑记录为 Op；改名让既有编辑跟着新名；列布局由 Op 序列推导；transaction 子模块导出 parse_ops 与 append_atomically 给 CLI 和 HTTP 共用 | S:原位重算每次都从 base 行取值，同一列连做两遍相同公式不会叠乘；删除列会带走该列编辑，改名不会；transaction 语法只维护这一份"
+    },
+    {
+      "candidate_id": "6741259e0b62fd916df4847e4982f6b77ab8a21982e1f2d8835344f1827a5fc9",
+      "object_ref": "code:crates/core/src/workbook/transaction.rs",
+      "path": "crates/core/src/workbook/transaction.rs",
+      "change": "update",
+      "source_sha256": "e83d5b31b7eb1ea14f977fbf0bf14676828013782332830f2f6cfa2a4a6419bd",
+      "existing_entry": "transaction.rs[CP8L]: F:CLI 与 HTTP 共用的 transaction 解析与原子写入 | R:code:crates/core/src/workbook/mod.rs,code:crates/core/src/workbook/journal.rs | A:parse_ops 把 set:/delete:/insert: 条目校验后转成 0-based Op，错误分为 Syntax/OutOfRange/UnknownColumn；append_atomically 用一次 update_locked 把整批入库并返回 pending 总数；行号线上 1-based | S:校验必须先于写入，任何一条不合法则一条都不落（测试钉住）；两个表面只做错误到退出码/状态码的映射，语法变更只能改这里"
+    },
+    {
+      "candidate_id": "5aed0a0d7797a63cc643cfc2c4f1eedd39453aada4d42c7e67a02ede0e8cd995",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "101836bbd945f5de75285df972c33bec2e682200b3d01043d1be2f022ab3c58f",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 写明整列/条件聚合与 .agg 缓存让重复导出预扫约 30 ms（冷启动仍约 0.09 s，区间引用未做）；缺口 5 改为 set-many 与 transaction 均先校验再一次写入（失败一条不写），仅整块 undo 未做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    },
+    {
+      "candidate_id": "62395a3f3a47fb79bc56900507e4d72a8678529421b380dd01c8d28da6471b01",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "a41b5de08a959f94b2d9da577c20793921357852fb21604c9ae1ea8a9fdcddf9",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；编辑表含原子批量写的 CLI 与 API 两列；公式节区分每行相同与会读当前行两种代价，大文件节写并行数字与游标续扫 | S:-"
+    }
+  ]
+}
