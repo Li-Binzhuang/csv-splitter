@@ -260,6 +260,32 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
         }
         "min" | "max" => {
+            // `min(amount)` means the whole column, exactly like `sum(amount)`; a bare
+            // column argument would otherwise read this row's cell and call it a day.
+            if let Some(Expr::Column(column)) = args.first() {
+                if args.len() == 1 {
+                    let Some(state) = ctx.state else {
+                        return Value::Error;
+                    };
+                    let Some((min, max)) = state.bounds(column) else {
+                        return Value::Error;
+                    };
+                    return Value::Number(if lower == "min" { min } else { max });
+                }
+            }
+            if let Some(Expr::Range { from, to }) = args.first() {
+                let Some(values) = range_values(from, to, ctx) else {
+                    return Value::Error;
+                };
+                let Some(picked) = (if lower == "min" {
+                    values.iter().copied().reduce(f64::min)
+                } else {
+                    values.iter().copied().reduce(f64::max)
+                }) else {
+                    return Value::Error;
+                };
+                return Value::Number(picked);
+            }
             let mut nums = Vec::new();
             for arg in args {
                 match eval(arg, ctx).number() {

@@ -36,6 +36,8 @@ pub struct ColumnTotals {
     pub plain: HashMap<String, (f64, u64)>,
     /// `(column, criteria)` -> (numeric sum, count of matching cells).
     pub filtered: HashMap<(String, String), (f64, u64)>,
+    /// Numeric minimum and maximum for each column (Excel's MIN/MAX ignore text).
+    pub bounds: HashMap<String, (f64, f64)>,
 }
 
 impl ColumnTotals {
@@ -44,6 +46,18 @@ impl ColumnTotals {
             let slot = self.plain.entry(column).or_insert((0.0, 0));
             slot.0 += sum;
             slot.1 += count;
+        }
+        for (column, (min, max)) in other.bounds {
+            match self.bounds.entry(column) {
+                std::collections::hash_map::Entry::Vacant(slot) => {
+                    slot.insert((min, max));
+                }
+                std::collections::hash_map::Entry::Occupied(mut slot) => {
+                    let bounds = slot.get_mut();
+                    bounds.0 = bounds.0.min(min);
+                    bounds.1 = bounds.1.max(max);
+                }
+            }
         }
         for (pair, (sum, count)) in other.filtered {
             let slot = self.filtered.entry(pair).or_insert((0.0, 0));
@@ -312,7 +326,7 @@ mod cache {
         let (len, mtime) = stamp(base)?;
         let text = std::fs::read_to_string(sidecar(base)).ok()?;
         let mut lines = text.lines();
-        if lines.next()? != "csvx-agg 1" {
+        if lines.next()? != "csvx-agg 2" {
             return None;
         }
         let cached_len: u64 = lines.next()?.strip_prefix("len ")?.parse().ok()?;
@@ -330,6 +344,12 @@ mod cache {
                     let count: u64 = parts.next()?.parse().ok()?;
                     totals.plain.insert(column, (sum, count));
                 }
+                "bounds" => {
+                    let column = unesc(parts.next()?);
+                    let min: f64 = parts.next()?.parse().ok()?;
+                    let max: f64 = parts.next()?.parse().ok()?;
+                    totals.bounds.insert(column, (min, max));
+                }
                 "filtered" => {
                     let column = unesc(parts.next()?);
                     let criteria = unesc(parts.next()?);
@@ -343,7 +363,7 @@ mod cache {
         if !needs
             .aggregates
             .iter()
-            .all(|c| totals.plain.contains_key(c))
+            .all(|c| totals.plain.contains_key(c) && totals.bounds.contains_key(c))
         {
             return None;
         }
@@ -361,11 +381,14 @@ mod cache {
         let Some((len, mtime)) = stamp(base) else {
             return;
         };
-        let mut text = String::from("csvx-agg 1\n");
+        let mut text = String::from("csvx-agg 2\n");
         text.push_str(&format!("len {len}\n"));
         text.push_str(&format!("mtime {mtime}\n"));
         for (name, (sum, count)) in &totals.plain {
             text.push_str(&format!("plain {} {sum} {count}\n", esc(name)));
+        }
+        for (name, (min, max)) in &totals.bounds {
+            text.push_str(&format!("bounds {} {min} {max}\n", esc(name)));
         }
         for ((column, criteria), (sum, count)) in &totals.filtered {
             text.push_str(&format!(
@@ -496,6 +519,16 @@ fn compute_totals(
                         slot.0 += value;
                         slot.1 += 1;
                     }
+                    match out.bounds.entry(name.clone()) {
+                        std::collections::hash_map::Entry::Vacant(slot) => {
+                            slot.insert((value, value));
+                        }
+                        std::collections::hash_map::Entry::Occupied(mut slot) => {
+                            let bounds = slot.get_mut();
+                            bounds.0 = bounds.0.min(value);
+                            bounds.1 = bounds.1.max(value);
+                        }
+                    }
                 }
             }
         }
@@ -587,6 +620,7 @@ mod tests {
         std::fs::remove_file(&path).ok();
         std::fs::remove_file(cache::sidecar(&path)).ok();
         assert_eq!(totals.plain.get("amount"), Some(&(60.0, 3)));
+        assert_eq!(totals.bounds.get("amount"), Some(&(10.0, 30.0)));
     }
 
     #[test]

@@ -69,6 +69,8 @@ pub struct RowState {
     totals: HashMap<String, (f64, u64)>,
     /// `(column, criteria)` -> (sum, count of matching cells) for `countif`/`sumif`.
     filtered: HashMap<(String, String), (f64, u64)>,
+    /// Numeric (min, max) per column for `min`/`max`.
+    bounds: HashMap<String, (f64, f64)>,
 }
 
 impl RowState {
@@ -83,6 +85,7 @@ impl RowState {
             sums: HashMap::new(),
             totals: HashMap::new(),
             filtered: HashMap::new(),
+            bounds: HashMap::new(),
         }
     }
 
@@ -102,6 +105,15 @@ impl RowState {
     /// Install the totals a pre-pass computed for whole-column aggregates.
     pub fn set_totals(&mut self, totals: HashMap<String, (f64, u64)>) {
         self.totals = totals;
+    }
+
+    /// Install the numeric bounds a pre-pass computed for whole-column MIN/MAX.
+    pub fn set_bounds(&mut self, bounds: HashMap<String, (f64, f64)>) {
+        self.bounds = bounds;
+    }
+
+    pub fn bounds(&self, column: &str) -> Option<(f64, f64)> {
+        self.bounds.get(column).copied()
     }
 
     /// Matching cells for a `countif`/`sumif` pair: (numeric sum, count of matches).

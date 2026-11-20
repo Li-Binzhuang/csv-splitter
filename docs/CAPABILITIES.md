@@ -114,6 +114,7 @@
 日期 year(d) month(d) day(d) date(y,m,d) datestring(d)  ── ISO 前缀（2024-03-15，带时间也行）
 其他 row lag(col[,n]) running_total(col)
 整列 sum(col) average(col) count(col)   ← 整列聚合：预扫一遍算出数字列的总和/计数
+     min(col) max(col)                 ← 整列最小/最大（文本与空单元格忽略）
 区间 sum(B2:C2) count(B2:C2)         ← 同行区间：只读本行这两列之间的数字单元格（跨行会让流式求值看到未来行，返回 #VALUE!）
 条件区间 countif(B2:C2, ">5") sumif(B2:C2, ">5")  ← 条件字面量在解析时编译一次，逐行不再重复解析
 条件 countif(col, ">1000") sumif(col, ">1000")  ← 同一遍预扫；比较类条件只统计数字单元格

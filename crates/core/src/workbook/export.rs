@@ -186,6 +186,7 @@ pub fn export_selected(
             let totals = crate::formula::column_totals(base, delimiter, quotes, &needs)?;
             state.set_totals(totals.plain);
             state.set_filtered(totals.filtered);
+            state.set_bounds(totals.bounds);
         }
         Some(state)
     };

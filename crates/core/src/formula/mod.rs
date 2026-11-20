@@ -14,7 +14,7 @@
 //! factor  := number | column | '(' expr ')' | '-' factor | function '(' args ')'
 //! column  := name | [name]        (brackets for names with spaces)
 //! function:= round(x[, digits]) | roundup(x[, digits]) | rounddown(x[, digits]) | abs(x)
-//!          | min(...) | max(...) | sign(x) | power(x, y) | exp(x) | ln(x) | log(x[, base])
+//!          | min(...) | max(...) | min(range) | max(range) | sign(x) | power(x, y) | exp(x) | ln(x) | log(x[, base])
 //!          | len(x) | upper(x) | lower(x) | proper(x) | trim(x) | left(x, n) | right(x, n)
 //!          | mid(x, start[, len]) | replace(x, old, new) | substitute(x, old, new)
 //!          | find(needle, x[, start]) | search(needle, x[, start]) | rept(x, n)
@@ -301,7 +301,7 @@ impl Formula {
 fn is_aggregate(name: &str) -> bool {
     matches!(
         name.to_ascii_lowercase().as_str(),
-        "sum" | "average" | "avg" | "count"
+        "sum" | "average" | "avg" | "count" | "min" | "max"
     )
 }
 
@@ -1369,6 +1369,9 @@ mod tests {
         let mut totals = HashMap::new();
         totals.insert("amount".to_string(), (100.0, 4));
         state.set_totals(totals);
+        let mut bounds = HashMap::new();
+        bounds.insert("amount".to_string(), (1.0, 10.0));
+        state.set_bounds(bounds);
 
         let cells = row(&[("amount", "10")]);
         let columns = vec!["amount".to_string()];
@@ -1385,6 +1388,20 @@ mod tests {
                 .eval_stateful(&cells, &columns, &refs, 2, Some(&state))
                 .render(),
             "25"
+        );
+        assert_eq!(
+            Formula::parse("min(amount)")
+                .unwrap()
+                .eval_stateful(&cells, &columns, &refs, 2, Some(&state))
+                .render(),
+            "1"
+        );
+        assert_eq!(
+            Formula::parse("max(amount)")
+                .unwrap()
+                .eval_stateful(&cells, &columns, &refs, 2, Some(&state))
+                .render(),
+            "10"
         );
         // No pre-pass (the view path) is an error, never a wrong zero.
         assert_eq!(
