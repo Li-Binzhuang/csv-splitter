@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "6d5eb617650a6ee6d0a18c28940ef7ab8ecbf225c1ac32d3dddfa84a72f0530a",
+  "batch_id": "b07f4c582348abc4fd8a9051601ae076db93266d2d958ab8f43d62e4fb1dc441",
+  "composite_identity": "8d1f435ee723fe14eba2219a0f8e9b5ab60ab6d45fcf43bd071ec72d739eb646",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "d26cba0c7540923e3b6c20cadcf67fe5a94f1efeb745f38f7b9da1bbaaa49780",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "d6b1daf13edfcba0c2402df93c5db23b82d4066e52d867f1b0ca7d5fe72e4fdc",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合与缓存、同行区间、字节复制快路、CLI/HTTP 原子 transaction 与整批撤销、导出丢行修复，并把跨行区间等边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "dbe4da44577e7b168525f877694d2dd5aab057b2c1e0ec70b0e8562e0cc3bdce",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:与解析器分开；约定跟随电子表格：if 短路、isblank 对空真、isnumber 只认 Number、iferror、日期取 ISO 前缀；sum/average/count 既可读整列 totals，也可读同行区间 B2:C2（无需预扫，窗口路径可用）；区间里非数字单元格跳过 | S:空单元格是独立值而不是字符串 0；无预扫状态时整列聚合返回 #VALUE!；跨行区间返回 #VALUE! 而不是拿本行冒充"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "ff1578e460ed844c9d03e6c2dcb9d769509e2d8e6b40ef4de130267e40449878",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:Value 五种；空单元格渲染空串、算术当 0；grammar 含整列/条件聚合、同行区间 B2:C2、A1 引用；is_row_constant 判定每行相同，但 ref/vlookup/row 与区间都不算常量 | S:公式列只存 journal；跨行区间无随机访问，返回 #VALUE!；单独一个区间不是值"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "bd69dc539116b7851083e1f22cbcb1f6fbac6e9a1aa84461f861885bbd88d25c",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；公式语法表含整列聚合、条件聚合与同行区间 B2:C2（跨行返回 #VALUE!）；编辑表含原子批量写与整批撤销；大文件节写并行数字与游标续扫 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "f311f09ebc46d4dfde7b8589c4ff5b0a9a57c13b0f29af9408550959ede4bad2",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "d6b1daf13edfcba0c2402df93c5db23b82d4066e52d867f1b0ca7d5fe72e4fdc",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合与缓存、同行区间、字节复制快路、CLI/HTTP 原子 transaction 与整批撤销、导出丢行修复，并把跨行区间等边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "5d1a0dce5ed707482b263628e8314cf7c972652634bbb85fed57b481660e7e5c",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "dbe4da44577e7b168525f877694d2dd5aab057b2c1e0ec70b0e8562e0cc3bdce",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:与解析器分开；约定跟随电子表格：if 短路、isblank 对空真、isnumber 只认 Number、iferror、日期取 ISO 前缀；sum/average/count 既可读整列 totals，也可读同行区间 B2:C2（无需预扫，窗口路径可用）；区间里非数字单元格跳过 | S:空单元格是独立值而不是字符串 0；无预扫状态时整列聚合返回 #VALUE!；跨行区间返回 #VALUE! 而不是拿本行冒充"
+    },
+    {
+      "candidate_id": "f0fbab92ae17bc4ef105a07512254bd4ec2487d9b97669346f58bd994ef6eb11",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "ff1578e460ed844c9d03e6c2dcb9d769509e2d8e6b40ef4de130267e40449878",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:Value 五种；空单元格渲染空串、算术当 0；grammar 含整列/条件聚合、同行区间 B2:C2、A1 引用；is_row_constant 判定每行相同，但 ref/vlookup/row 与区间都不算常量 | S:公式列只存 journal；跨行区间无随机访问，返回 #VALUE!；单独一个区间不是值"
+    },
+    {
+      "candidate_id": "d1f945911431e4c28b41e8dfcac29b5eb7fd4d59895f598177645dd69f8a8a8c",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "bd69dc539116b7851083e1f22cbcb1f6fbac6e9a1aa84461f861885bbd88d25c",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；公式语法表含整列聚合、条件聚合与同行区间 B2:C2（跨行返回 #VALUE!）；编辑表含原子批量写与整批撤销；大文件节写并行数字与游标续扫 | S:-"
+    }
+  ]
+}
