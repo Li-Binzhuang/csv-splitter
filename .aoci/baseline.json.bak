@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-20T07:15:49Z",
+  "updated_at": "2026-11-20T07:28:53Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -52,9 +52,9 @@
     },
     "Cargo.lock": {
       "role": "observe",
-      "sha256": "83f440f7937e8316f9e5e25c98be45c3e7a2464d148f59abd7326a0250964334",
+      "sha256": "66e0065839a84493c905a84a15a865a675eb96c6727a8dbc77b2ed814482a694",
       "size": 56860,
-      "normalized_sha256": "83f440f7937e8316f9e5e25c98be45c3e7a2464d148f59abd7326a0250964334"
+      "normalized_sha256": "66e0065839a84493c905a84a15a865a675eb96c6727a8dbc77b2ed814482a694"
     },
     "Cargo.toml": {
       "role": "index",
@@ -70,15 +70,15 @@
     },
     "README.md": {
       "role": "index",
-      "sha256": "58f3a4921754370cb0a86f0656b607f11b44b1b1db2dac676249521aa8f01566",
-      "size": 53046,
-      "normalized_sha256": "58f3a4921754370cb0a86f0656b607f11b44b1b1db2dac676249521aa8f01566"
+      "sha256": "7de7a4031955932682e44f8ab9bf83736b5e406225ce0cbc07db1500d9bfa72e",
+      "size": 53273,
+      "normalized_sha256": "7de7a4031955932682e44f8ab9bf83736b5e406225ce0cbc07db1500d9bfa72e"
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "ea77f2b5a751f5b6d56c38c247d48195496f90861890a6f897b8973925336f55",
-      "size": 36581,
-      "normalized_sha256": "ea77f2b5a751f5b6d56c38c247d48195496f90861890a6f897b8973925336f55"
+      "sha256": "3e8cc37b113b0e9771d67c65c4b3546076cd2c0eedce764f9f23bf04a3357d50",
+      "size": 37149,
+      "normalized_sha256": "3e8cc37b113b0e9771d67c65c4b3546076cd2c0eedce764f9f23bf04a3357d50"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -621,6 +621,12 @@
       "sha256": "4a0e3875a3a111aa2d23eb143fa72ab32f4a174f052f20b06e044997734745e7",
       "size": 1633,
       "normalized_sha256": "4a0e3875a3a111aa2d23eb143fa72ab32f4a174f052f20b06e044997734745e7"
+    },
+    "scripts/demo.sh": {
+      "role": "index",
+      "sha256": "d14208728fe0d59a72ecdf653dbdc87ac89c340e84848705ed126bd19651d9cb",
+      "size": 2915,
+      "normalized_sha256": "d14208728fe0d59a72ecdf653dbdc87ac89c340e84848705ed126bd19651d9cb"
     },
     "scripts/dev.sh": {
       "role": "index",
