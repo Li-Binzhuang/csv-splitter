@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "af5f8a5f1edc96cc82f2c51b9192ad7a02d8ee3ee471adf63411268ae6ab190e",
+  "batch_id": "f0de228e173e3a3e008ad5e7fc7103420746fb3387f2e124bec528323ae7b4fd",
+  "composite_identity": "dfbfa6ade5c316f6b426f7c5aed20684142cffbc665df68e5702566dc6937228",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "eae2c318dd9b7072909505362038821bf6adaea2364cc8ad10e6a6645a9ce464",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/export.rs",
+      "path": "crates/core/src/workbook/export.rs",
+      "change": "update",
+      "source_sha256": "fd3e7a0784857d93dc9697ebfcfe4a1687d1b4bb7ee3ea3395efd047911ccf42",
+      "existing_entry": "export.rs[CD9L]: F:逐行组装、导出与分页读取 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/journal.rs | A:一次顺序扫描；被 journal 触及的行走 RowPipeline，未触及的行拷贝原字节；每行相同的公式算一次后只追加一格；存在 InsertRows 时用真实行数构 RowMap（否则先延迟到 EOF），仅删除时仍用哨兵值免建索引 | S:插入锚点落在删除后的越界位置时，未知基长会留下幽灵基行让导出提前 EOF 而丢掉插入行（测试钉住）；join_csv_line 自带换行；会读当前行的公式不得走快路"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "6033003133b84b840b47e50c3065c1aa9c55c4db6e68e674da2c73a60e85f7cf",
+      "object_ref": "code:crates/core/src/workbook/export.rs",
+      "path": "crates/core/src/workbook/export.rs",
+      "change": "update",
+      "source_sha256": "fd3e7a0784857d93dc9697ebfcfe4a1687d1b4bb7ee3ea3395efd047911ccf42",
+      "existing_entry": "export.rs[CD9L]: F:逐行组装、导出与分页读取 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/journal.rs | A:一次顺序扫描；被 journal 触及的行走 RowPipeline，未触及的行拷贝原字节；每行相同的公式算一次后只追加一格；存在 InsertRows 时用真实行数构 RowMap（否则先延迟到 EOF），仅删除时仍用哨兵值免建索引 | S:插入锚点落在删除后的越界位置时，未知基长会留下幽灵基行让导出提前 EOF 而丢掉插入行（测试钉住）；join_csv_line 自带换行；会读当前行的公式不得走快路"
+    }
+  ]
+}
