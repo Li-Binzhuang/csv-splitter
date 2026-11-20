@@ -166,11 +166,12 @@ pub fn export_selected(
         None
     } else {
         let mut state = crate::formula::RowState::new(needs.clone());
-        if !needs.aggregates.is_empty() {
-            // One pre-pass over the base file gives every row the same total; see
+        if !needs.aggregates.is_empty() || !needs.filtered.is_empty() {
+            // One pre-pass over the base file gives every row the same totals; see
             // formula::totals for why the journal is not included here.
-            let totals = crate::formula::column_totals(base, delimiter, quotes, &needs.aggregates)?;
-            state.set_totals(totals);
+            let totals = crate::formula::column_totals(base, delimiter, quotes, &needs)?;
+            state.set_totals(totals.plain);
+            state.set_filtered(totals.filtered);
         }
         Some(state)
     };

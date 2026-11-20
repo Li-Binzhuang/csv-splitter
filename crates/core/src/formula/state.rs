@@ -17,11 +17,16 @@ pub struct RowNeeds {
     /// Columns whose totals `sum(...)`, `average(...)` and `count(...)` read,
     /// computed once before the first row is emitted.
     pub aggregates: Vec<String>,
+    /// `(column, criteria)` for `countif`/`sumif`, evaluated in the same pre-pass.
+    pub filtered: Vec<(String, String)>,
 }
 
 impl RowNeeds {
     pub fn is_empty(&self) -> bool {
-        self.lags.is_empty() && self.running.is_empty() && self.aggregates.is_empty()
+        self.lags.is_empty()
+            && self.running.is_empty()
+            && self.aggregates.is_empty()
+            && self.filtered.is_empty()
     }
 
     pub fn max_lag(&self) -> usize {
@@ -46,6 +51,11 @@ impl RowNeeds {
                 self.aggregates.push(column.clone());
             }
         }
+        for pair in &other.filtered {
+            if !self.filtered.contains(pair) {
+                self.filtered.push(pair.clone());
+            }
+        }
     }
 }
 
@@ -57,6 +67,8 @@ pub struct RowState {
     sums: HashMap<String, f64>,
     /// Whole-column (numeric total, numeric count) for `sum`, `average`, `count`.
     totals: HashMap<String, (f64, u64)>,
+    /// `(column, criteria)` -> (sum, count of matching cells) for `countif`/`sumif`.
+    filtered: HashMap<(String, String), (f64, u64)>,
 }
 
 impl RowState {
@@ -70,6 +82,7 @@ impl RowState {
             history,
             sums: HashMap::new(),
             totals: HashMap::new(),
+            filtered: HashMap::new(),
         }
     }
 
@@ -89,6 +102,17 @@ impl RowState {
     /// Install the totals a pre-pass computed for whole-column aggregates.
     pub fn set_totals(&mut self, totals: HashMap<String, (f64, u64)>) {
         self.totals = totals;
+    }
+
+    /// Matching cells for a `countif`/`sumif` pair: (numeric sum, count of matches).
+    pub fn set_filtered(&mut self, filtered: HashMap<(String, String), (f64, u64)>) {
+        self.filtered = filtered;
+    }
+
+    pub fn filtered(&self, column: &str, criteria: &str) -> Option<(f64, u64)> {
+        self.filtered
+            .get(&(column.to_string(), criteria.to_string()))
+            .copied()
     }
 
     /// Numeric total and numeric count for a column, or `None` when the pre-pass
@@ -150,6 +174,7 @@ mod tests {
             lags: vec![("amount".to_string(), 2)],
             running: Vec::new(),
             aggregates: Vec::new(),
+            filtered: Vec::new(),
         });
         // Evaluating the first row: nothing has been seen.
         assert_eq!(state.lagged("amount", 1), None);
@@ -174,6 +199,7 @@ mod tests {
             lags: Vec::new(),
             running: vec!["amount".to_string()],
             aggregates: Vec::new(),
+            filtered: Vec::new(),
         });
         state.observe_sums(&row(&[("amount", "10")]));
         assert_eq!(state.sum("amount"), 10.0);
@@ -190,11 +216,13 @@ mod tests {
             lags: vec![("amount".to_string(), 1)],
             running: vec!["qty".to_string()],
             aggregates: Vec::new(),
+            filtered: Vec::new(),
         };
         let b = RowNeeds {
             lags: vec![("amount".to_string(), 3)],
             running: vec!["qty".to_string(), "amount".to_string()],
             aggregates: vec!["amount".to_string()],
+            filtered: Vec::new(),
         };
         a.absorb(&b);
         assert_eq!(a.lags.len(), 1);

@@ -21,6 +21,25 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
     match lower.as_str() {
         // History functions: they read the state the exporter maintains, so a formula
         // can see the row before it without the file being loaded.
+        // Conditional aggregates: the criteria (">1000", "CDMX", "<>10") were compiled
+        // and evaluated in the same pre-pass as the plain totals.
+        "countif" | "sumif" => {
+            let Some(state) = ctx.state else {
+                return Value::Error;
+            };
+            let (Some(Expr::Column(column)), Some(Expr::Text(criteria))) =
+                (args.first(), args.get(1))
+            else {
+                return Value::Error;
+            };
+            let Some((sum, count)) = state.filtered(column, criteria) else {
+                return Value::Error;
+            };
+            match lower.as_str() {
+                "countif" => Value::Number(count as f64),
+                _ => Value::Number(sum),
+            }
+        }
         // Whole-column aggregates: the pre-pass installed the totals before the loop
         // started, so every row reads the same number in O(1). The argument is a column
         // name taken from the syntax tree, exactly like `lag`.

@@ -23,6 +23,7 @@
 //!          | if(cond, a[, b]) | and(...) | or(...) | not(x) | iferror(x, fallback)
 //!          | isblank(x) | isnumber(x) | row | lag(col[, n]) | running_total(col)
 //!          | sum(col) | average(col) | count(col)   (whole-column, constant per row)
+//!          | countif(col, "criteria") | sumif(col, "criteria")
 //!
 //! `column := name | [name]` — bracket a name that contains spaces **or ends in digits**,
 //! because `city2` bare is an A1-style cell reference (column CITY, row 2).
@@ -256,6 +257,11 @@ fn is_aggregate(name: &str) -> bool {
     )
 }
 
+/// Aggregates that count/sum only the cells matching a criteria string.
+fn is_filtered_aggregate(name: &str) -> bool {
+    matches!(name.to_ascii_lowercase().as_str(), "countif" | "sumif")
+}
+
 /// Walk the expression for `lag(col[, k])` and `running_total(col)`.
 ///
 /// Only literal column names are understood here: `lag([a] , 1)` is a column, but
@@ -273,7 +279,21 @@ fn collect_row_needs(expr: &Expr, out: &mut crate::formula::RowNeeds) {
                     lags: vec![(column.clone(), distance)],
                     running: Vec::new(),
                     aggregates: Vec::new(),
+                    filtered: Vec::new(),
                 });
+            }
+            for arg in args {
+                collect_row_needs(arg, out);
+            }
+        }
+        Expr::Call(name, args) if is_filtered_aggregate(name) => {
+            if let (Some(Expr::Column(column)), Some(Expr::Text(criteria))) =
+                (args.first(), args.get(1))
+            {
+                let pair = (column.clone(), criteria.clone());
+                if !out.filtered.contains(&pair) {
+                    out.filtered.push(pair);
+                }
             }
             for arg in args {
                 collect_row_needs(arg, out);
@@ -299,6 +319,7 @@ fn collect_row_needs(expr: &Expr, out: &mut crate::formula::RowNeeds) {
                     lags: Vec::new(),
                     running: vec![column.clone()],
                     aggregates: Vec::new(),
+                    filtered: Vec::new(),
                 });
             }
             for arg in args {
@@ -1171,6 +1192,29 @@ mod tests {
                 .eval_stateful(&cells, &columns, &refs, 2, None)
                 .render(),
             "#VALUE!"
+        );
+    }
+
+    #[test]
+    fn countif_and_sumif_read_the_filtered_prepass() {
+        let formula =
+            Formula::parse(r#"countif(amount, ">1000") + sumif(amount, ">1000")"#).unwrap();
+        assert_eq!(
+            formula.row_needs().filtered,
+            vec![("amount".to_string(), ">1000".to_string())]
+        );
+        let mut state = RowState::new(formula.row_needs());
+        let mut filtered = HashMap::new();
+        filtered.insert(("amount".to_string(), ">1000".to_string()), (5000.0, 2));
+        state.set_filtered(filtered);
+        let cells = row(&[("amount", "10")]);
+        let columns = vec!["amount".to_string()];
+        let refs = Refs::default();
+        assert_eq!(
+            formula
+                .eval_stateful(&cells, &columns, &refs, 2, Some(&state))
+                .render(),
+            "5002"
         );
     }
 }

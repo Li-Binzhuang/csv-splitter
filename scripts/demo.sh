@@ -58,6 +58,7 @@ step "4. edit without touching the file: a cell and a computed column"
 run "$BIN" edit set orders.csv --row 1 --col note --value "VIP"
 run "$BIN" edit formula orders.csv --name vat --value "amount*0.16"
 run "$BIN" edit formula orders.csv --name all_sales --value "sum(amount)"
+run "$BIN" edit formula orders.csv --name big_orders --value "countif(amount, \">1000\")"
 
 step "5. conditional formatting and layout, as data a front-end can render"
 run "$BIN" format orders.csv --rule "amount>1000:bg=red" --summary
