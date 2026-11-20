@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.60.3] — 2026-11-20
+
+### Tests / Documentation
+
+- Validation's violation row numbers follow edits, and a test now pins it: after deleting the
+  first row, the row that was 3 reports as 2 and the deleted row stops reporting. The API row
+  says explicitly that `violations[].row` is the edited-sheet position, the same numbers
+  `/rows` uses.
+
 ## [3.60.2] — 2026-11-20
 
 ### Measured / Documented

@@ -5417,16 +5417,16 @@ fn copy_duplicates_a_sheet_with_or_without_edits() {
 
     let (status, body) = post(&server.addr, "/copy?path=t.csv&out=plain.csv");
     assert!(status == 200 || status == 202, "{body}");
-    let mut state = String::new();
-    for _ in 0..60 {
-        (_, state) = get(&server.addr, "/jobs?path=t.csv");
-        if state.contains(r#""state":"done""#) || state.contains(r#""state":"failed""#) {
+    // Poll the output, not `/jobs`: two copy jobs on the same source make "a job is done"
+    // ambiguous, and the first run of this test was flaky for exactly that reason.
+    let mut rows = String::new();
+    for _ in 0..100 {
+        (_, rows) = get(&server.addr, "/rows?path=plain.csv&start=0&count=5");
+        if rows.contains("CDMX") {
             break;
         }
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
-    assert!(state.contains(r#""state":"done""#), "{state}");
-    let (_, rows) = get(&server.addr, "/rows?path=plain.csv&start=0&count=5");
     assert!(rows.contains("CDMX"), "{rows}");
 
     let (status, body) = post(
@@ -5439,14 +5439,35 @@ fn copy_duplicates_a_sheet_with_or_without_edits() {
         "/copy?path=t.csv&out=edited.csv&apply-edits=1",
     );
     assert!(status == 200 || status == 202, "{body}");
-    for _ in 0..60 {
-        (_, state) = get(&server.addr, "/jobs?path=t.csv");
-        if state.contains(r#""state":"done""#) {
+    let mut rows = String::new();
+    for _ in 0..100 {
+        (_, rows) = get(&server.addr, "/rows?path=edited.csv&start=0&count=5");
+        if rows.contains("ZZ9") || rows.contains("CDMX") {
             break;
         }
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
-    let (_, rows) = get(&server.addr, "/rows?path=edited.csv&start=0&count=5");
     assert!(rows.contains("ZZ9"), "the copy carries the edit: {rows}");
     assert!(!rows.contains("CDMX"), "the old value is gone: {rows}");
+}
+
+/// Validation applies edits, so its violation row numbers should describe the edited sheet —
+/// the same row numbers `/rows` uses. Deleting the first row must shift them by one.
+#[test]
+fn validation_row_numbers_follow_edits() {
+    let dir = TempDir::new("validateedits");
+    std::fs::write(dir.join("t.csv"), "city,amount\n,A\nCDMX,10\n,B\nZZ9,30\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let before = get(&server.addr, "/validate?path=t.csv&checks=city:not-empty").1;
+    assert!(before.contains(r#"{"row":1,"#), "{before}");
+    assert!(before.contains(r#"{"row":3,"#), "{before}");
+
+    let (status, body) = post(&server.addr, "/edit?path=t.csv&action=delete&row=1&count=1");
+    assert_eq!(status, 200, "{body}");
+
+    let after = get(&server.addr, "/validate?path=t.csv&checks=city:not-empty").1;
+    // The row that was 3 is now 2; the deleted empty row no longer reports.
+    assert!(after.contains(r#"{"row":2,"#), "{after}");
+    assert!(!after.contains(r#"{"row":3,"#), "{after}");
 }

@@ -58,7 +58,7 @@
 | `POST /edit` | `action=fill&cols=a,b&from-row=&to-row=&value=` | 多列区间填充，**一次操作一次撤销**（`col=` 仍是单列形式）|
 | `POST /edit` | `action=insert-after-key&key=&value=` / `insert-before-key` | 按 **rowKey** 插行（`b:12`/`v:3`，来自上一次 `/rows`）；key 不存在 404，格式错 400 |
 | `POST /edit` | `action=set-formula&col=&value=` | 给**已有列**重套公式（一次撤销）；自引用或未知列在写入前就 400 |
-| `GET /validate` | `path` `checks` `delim` `limit` | 数据校验，与 CLI `validate --json` **同一份报告**：`ok` / `violations` / 每规则计数；**只读不写**；违规数据仍是 **200**（请求没错，数据错了）。`limit=N` 只校验前 N 行，报告里 `checked` 与 `partial` 明说这是前缀；2.5 GB 全量实测 **34.9 s**，`limit=200` 为 **0.11 s**；不传 `limit` 且超过查询预算时返回 504，提示用 `limit=` |
+| `GET /validate` | `path` `checks` `delim` `limit` | 数据校验，与 CLI `validate --json` **同一份报告**：`ok` / `violations` / 每规则计数；**只读不写**；套用编辑，`violations[].row` 是编辑后的行号（与 `/rows` 一致）；违规数据仍是 **200**（请求没错，数据错了）。`limit=N` 只校验前 N 行，报告里 `checked` 与 `partial` 明说这是前缀；2.5 GB 全量实测 **34.9 s**，`limit=200` 为 **0.11 s**；不传 `limit` 且超过查询预算时返回 504，提示用 `limit=` |
 | `GET /files` | `dir` `ext` `limit` `root` | 根目录下可读文件清单：响应 `root` `truncated` `total` `files` |
 | `GET /download` | `path` | 原样下载文件；按 1 MB 分块流出，不整份读入内存；支持单段 `Range`（206 + Content-Range，越界 416），可用 curl -C - 断点续传 |
 | `GET /export` | `path` `where` `whereAny` `columns` `format` `order` `desc` `limit` `sql` `apply-edits` `delim` | 执行 SQL 并把结果作为文件返回；默认读基文件，`apply-edits=1` 先物化编辑后的表再导出 |
