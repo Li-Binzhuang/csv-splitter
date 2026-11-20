@@ -54,19 +54,42 @@ impl SearchSpec {
             };
             return crate::format::pattern_matches(&pattern, &cell);
         }
-        if self.whole_cell {
-            if self.case_sensitive {
+        if self.case_sensitive {
+            return if self.whole_cell {
                 cell == self.query
             } else {
-                cell.eq_ignore_ascii_case(&self.query)
-                    || cell.to_lowercase() == self.query.to_lowercase()
-            }
-        } else if self.case_sensitive {
-            cell.contains(&self.query)
-        } else {
-            cell.to_lowercase().contains(&self.query.to_lowercase())
+                cell.contains(&self.query)
+            };
         }
+        // Case-insensitive is the hot path, and `to_lowercase()` allocates per cell —
+        // on an 11 GB sheet that is one allocation per field of every row. ASCII data
+        // (almost all of it) is compared byte-wise instead; only a non-ASCII query or
+        // cell falls back to the allocating comparison, which keeps Unicode semantics.
+        if self.whole_cell {
+            if cell.eq_ignore_ascii_case(&self.query) {
+                return true;
+            }
+            return !(cell.is_ascii() && self.query.is_ascii())
+                && cell.to_lowercase() == self.query.to_lowercase();
+        }
+        if cell.is_ascii() && self.query.is_ascii() {
+            return ascii_contains_ignore_case(cell.as_bytes(), self.query.as_bytes());
+        }
+        cell.to_lowercase().contains(&self.query.to_lowercase())
     }
+}
+
+/// Case-insensitive substring search over ASCII bytes, without allocating.
+fn ascii_contains_ignore_case(haystack: &[u8], needle: &[u8]) -> bool {
+    if needle.is_empty() {
+        return true;
+    }
+    if needle.len() > haystack.len() {
+        return false;
+    }
+    haystack
+        .windows(needle.len())
+        .any(|window| window.eq_ignore_ascii_case(needle))
 }
 
 #[derive(Clone, Debug, Default)]
@@ -438,5 +461,16 @@ mod tests {
         assert_eq!(sequential.matched, parallel.matched);
         assert_eq!(sequential.scanned, parallel.scanned);
         assert_eq!(sequential.columns, parallel.columns);
+    }
+
+    /// ASCII goes through the byte-wise fast path; non-ASCII must keep the allocating
+    /// lowercase comparison, or "café" stops matching "CAFÉ".
+    #[test]
+    fn non_ascii_is_still_case_insensitive() {
+        let spec = SearchSpec::new("café");
+        assert!(spec.matches("CAFÉ"));
+        assert!(!spec.matches("tea"));
+        let spec = SearchSpec::new("CAFÉ");
+        assert!(spec.matches("café"));
     }
 }

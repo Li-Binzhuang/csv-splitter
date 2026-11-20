@@ -1051,9 +1051,9 @@ curl -X POST ".../split?path=big.csv&splits=8&threads=4&out=parts.tar"
 | 全文搜索（无命中） | 2.1 GB / 5000 万行 | **4.8 s**，峰值 **42 MB**（顺序扫描 18.1 s）|
 | HTTP `/filter` / `/search` | 2.1 GB | **2.1 / 3.1 s**；`/rows` 首屏 **6 ms** |
 | 过滤（`city=Tijuana`，6250 万命中） | 11.2 GB / 2.5 亿行 | **11.9 s**，峰值 **46 MB** |
-| 全文搜索（无命中） | 11.2 GB / 2.5 亿行 | **18.8 s**，峰值 **45 MB** |
+| 全文搜索（无命中） | 11.2 GB / 2.5 亿行 | **14.8 s**，峰值 **45 MB**（大小写不敏感走字节比较，不再每格分配 lowercase）|
 | 打开 / 跳到第 1.2 亿行 | 11.2 GB | **0.01 s / 0.01 s** |
-| HTTP `/filter` / `/search` | 11.2 GB | **10.6 / 17.0 s**（30 s 预算内）|
+| HTTP `/filter` / `/search` | 11.2 GB | **10–16 / 14–20 s**（随系统负载波动，均在 30 s 预算内）|
 | 编辑一格 / 导出 2.1 GB / verify | 2.1 GB | **0.01 s / 1.9 s / 7.0 s** |
 
 HTTP API（同一个文件，release）：

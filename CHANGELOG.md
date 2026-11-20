@@ -43,8 +43,8 @@
   quoted newline that crosses a checkpoint. `CSVX_SCAN_THREADS` overrides the thread count
   (1 keeps the sequential path in the same build), which is how the before/after numbers
   above were taken. At 11.2 GB / 250 M rows the drill gives filter **11.9 s**, search
-  **18.8 s** and HTTP 10.6 / 17.0 s — inside the 30 s budget, with ~20 GB as the point
-  where search would need cursor pagination instead.
+  **14.8 s** and HTTP 10–16 / 14–20 s (load-dependent) — inside the 30 s budget, with
+  ~20–22 GB as the point where search would need cursor pagination instead.
 
 ### Added
 
