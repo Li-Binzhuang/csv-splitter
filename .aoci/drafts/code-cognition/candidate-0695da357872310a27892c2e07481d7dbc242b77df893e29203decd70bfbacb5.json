@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "731f9bb9cf2ea7a2785154ba30e378792a9386ae49e42f5f29104633489efb23",
+  "batch_id": "0695da357872310a27892c2e07481d7dbc242b77df893e29203decd70bfbacb5",
+  "composite_identity": "5c9fac6d46579c44b3a18b4a2b2a1f48f8443d3fae46163332626f2a8a189b09",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "03b1ada715aef9538b1b35409522341acbd5956828edc192761d83691dabb80a",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/csv_reader.rs",
+      "path": "crates/core/src/csv_reader.rs",
+      "change": "update",
+      "source_sha256": "56b9ca139d7b8342a161f344e8ad84468d9c9b010442c5076cf546739c632681",
+      "existing_entry": "csv_reader.rs[CG9L]: F:CSV 记录读取：引号、嵌入换行、BOM 与引号风格 | R:code:crates/core/src/encoding.rs | A:RecordReader 按记录而非按行流式返回；QuoteStyle 支持 rfc4180、backslash 与 none；表头剥离 UTF-8 BOM | S:按物理行切分会把带换行的字段劈成两半并让后续列全部错位，这是全项目的正确性前提"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/totals.rs",
+      "path": "crates/core/src/formula/totals.rs",
+      "change": "update",
+      "source_sha256": "c82f1529e66bd5b9b91f0b20a45c51bb869610db4bc3c2c116a5cb1086cc2dbe",
+      "existing_entry": "totals.rs[KP6L]: F:整列与条件聚合的预扫及其缓存：为 sum/average/count 与 countif/sumif 算（总和, 计数） | R:code:crates/core/src/formula/state.rs,code:crates/core/src/formula/mod.rs,code:crates/core/src/filter.rs,code:crates/core/src/index.rs | A:结果只依赖基文件字节，因此写 t.csv.agg 侧车（文件长 + mtime 失效，百分号转义列名/条件）；未命中时按“parquet 侧车 → 检查点分块并行 → 顺序扫”依次降级，比较类条件只统计数字单元格 | S:缓存读失败或不可写只损失一次扫描，绝不能让导出失败；文件内容变了而长度/mtime 未变时会误命（同长度覆盖属罕见）；读的是基文件，不含 journal 未导出的编辑"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "0600642527a0a7e05e58c8371f9adcad90658bb6e061d43bffcd90d62a25212f",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 区分预扫与整体导出：重复预扫约 30 ms（达标），冷启动有 parquet 侧车约 50 ms、无侧车约 80 ms（仍略高于目标）；同行区间已做、跨行区间未做；缺口 5 已做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "861fcd0267240099fa608dff6ae10f6fa314812570cd272a962698ad5b17361f",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；公式节把预扫开销与整体导出分开写（重复 30 ms、冷启动 50–80 ms）；语法表含同行/条件区间；编辑表含原子批量写与整批撤销；大文件节写并行数字与游标续扫 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "7452deb186d9941f63e9005ead7f751698cae151056477bc3370ed32431696f1",
+      "object_ref": "code:crates/core/src/csv_reader.rs",
+      "path": "crates/core/src/csv_reader.rs",
+      "change": "update",
+      "source_sha256": "56b9ca139d7b8342a161f344e8ad84468d9c9b010442c5076cf546739c632681",
+      "existing_entry": "csv_reader.rs[CG9L]: F:CSV 记录读取：引号、嵌入换行、BOM 与引号风格 | R:code:crates/core/src/encoding.rs | A:RecordReader 按记录而非按行流式返回；QuoteStyle 支持 rfc4180、backslash 与 none；表头剥离 UTF-8 BOM | S:按物理行切分会把带换行的字段劈成两半并让后续列全部错位，这是全项目的正确性前提"
+    },
+    {
+      "candidate_id": "45937ceaf525468b616c49a8554feb9119935e3b9d74e7a9c83bbe2b6f9f3139",
+      "object_ref": "code:crates/core/src/formula/totals.rs",
+      "path": "crates/core/src/formula/totals.rs",
+      "change": "update",
+      "source_sha256": "c82f1529e66bd5b9b91f0b20a45c51bb869610db4bc3c2c116a5cb1086cc2dbe",
+      "existing_entry": "totals.rs[KP6L]: F:整列与条件聚合的预扫及其缓存：为 sum/average/count 与 countif/sumif 算（总和, 计数） | R:code:crates/core/src/formula/state.rs,code:crates/core/src/formula/mod.rs,code:crates/core/src/filter.rs,code:crates/core/src/index.rs | A:结果只依赖基文件字节，因此写 t.csv.agg 侧车（文件长 + mtime 失效，百分号转义列名/条件）；未命中时按“parquet 侧车 → 检查点分块并行 → 顺序扫”依次降级，比较类条件只统计数字单元格 | S:缓存读失败或不可写只损失一次扫描，绝不能让导出失败；文件内容变了而长度/mtime 未变时会误命（同长度覆盖属罕见）；读的是基文件，不含 journal 未导出的编辑"
+    },
+    {
+      "candidate_id": "3f53ebf4f94c055ce366ff87f822746bc2b3023589af7339f0370a2269c4f24e",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "0600642527a0a7e05e58c8371f9adcad90658bb6e061d43bffcd90d62a25212f",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 区分预扫与整体导出：重复预扫约 30 ms（达标），冷启动有 parquet 侧车约 50 ms、无侧车约 80 ms（仍略高于目标）；同行区间已做、跨行区间未做；缺口 5 已做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    },
+    {
+      "candidate_id": "d61f0181800fbfd1261da899325356121ba608c944dc887f2a97757b5cfbd7ea",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "861fcd0267240099fa608dff6ae10f6fa314812570cd272a962698ad5b17361f",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；公式节把预扫开销与整体导出分开写（重复 30 ms、冷启动 50–80 ms）；语法表含同行/条件区间；编辑表含原子批量写与整批撤销；大文件节写并行数字与游标续扫 | S:-"
+    }
+  ]
+}

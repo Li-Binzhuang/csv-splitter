@@ -38,7 +38,7 @@ chart.rs[KA7L]: F:图表数据：类别、系列与数值，客户端只负责�
 check.rs[TQ7M]: F:派生文件的自检：操作有没有做到它承诺的事 | R:code:crates/core/src/groupby.rs,code:crates/core/src/partition.rs | A:Counts 统计行/列/错位记录；Expectation 声明预期行数、列数与允许的错位量；check 比对后返回 problems 列表 | S:filter 原样透传的错位行不能算在它头上，但也不能凭空造出新错位行
 compress.rs[MP5T]: F:按格式创建压缩写入器并正确收尾 | R:code:crates/core/src/types.rs | A:缓冲区大小由调用方按分片预算传入；支持 zstd、gzip、bzip2；zip 不在此处，必须整包写入 | S:旧实现每片固定 64 MB 写缓冲，十路切分在开工前就吃掉约 640 MB
 concat.rs[DD7L]: F:把多个 CSV 合成一张表，比较表头而不是假设一致 | R:code:crates/core/src/merge.rs | A:表头不一致默认 InvalidInput 并指出文件与差异列（与 SQL 引擎同为 400 而非 422）；只有 --ignore-header 才显式跳过并把差异记进 mismatched；align_by_name 为列顺序不同的文件写对齐副本，临时文件随 Aligned 守卫删除；逐记录流式复制 | S:静默把金额列接在 id 列下面会产出一份没人察觉的错误数据，所以默认拒绝而不是尽力而为
-csv_reader.rs[CG9L]: F:CSV 记录读取：引号、嵌入换行、BOM 与引号风格 | R:code:crates/core/src/encoding.rs | A:RecordReader 按记录而非按行流式返回；QuoteStyle 支持 rfc4180、backslash 与 none；表头剥离 UTF-8 BOM | S:按物理行切分会把带换行的字段劈成两半并让后续列全部错位，这是全项目的正确性前提
+csv_reader.rs[CG9L]: F:CSV 记录读取：引号、嵌入换行、BOM、引号风格与字段切片 | R:code:crates/core/src/encoding.rs,code:crates/core/src/formula/totals.rs | A:RecordReader 按记录流式返回；QuoteStyle 支持 rfc4180/backslash/none；field_slices 为零分配快路，遇转义引号、backslash、未闭合引号或引号后多余字符即返回 None 让调用者回退全解析；表头剔 BOM | S:按物理行切分会把带换行字段劈成两半并让后续列错位；快路必须与全解析逐字段一致，不等就不许用
 decompress.rs[MD6L]: F:解压或展开归档到输出目录，并拒绝成员路径逃逸 | R:code:crates/core/src/compress.rs | A:safe_member 校验每个成员名，拒绝 `..` 与绝对路径；支持 tar、zip、gz、bz2 | S:归档成员名可以带 `../`，不校验就会把文件写到输出目录之外
 dedupe.rs[KD7M]: F:流式去重：保留每个键的首次出现 | R:code:crates/core/src/groupby.rs | A:键哈希成 u128 只保留哈希，一千万键约 160 MB；汇总 kept、removed、scanned | S:-
 demo.rs[RU4S]: F:生成一份故意不干净的示例 CSV，供上手与冒烟使用 | R:code:scripts/smoke.sh | A:两万行、六列，含重复行、空备注、多一个逗号的错位行与带引号换行 | S:干净的示例会教出错误预期，这些瑕疵是刻意保留的，不要为了好看而清掉
@@ -80,7 +80,7 @@ functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod
 mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件聚合、同行区间、A1 引用；countif/sumif 的条件字面量在解析时编译成 Expr::Criteria（每行不再重解析）；is_row_constant 把 ref/vlookup/row、区间与区间条件聚合都判为非每行相同 | S:公式列只存 journal；跨行区间无随机访问；单独一个区间或条件不是值
 sheetref.rs[DD6S]: F:公式中的跨表引用：ref("other.csv","key","col") | R:code:crates/core/src/formula/mod.rs | A:被引用表加载一次成为映射，当前表保持流式；路径相对 base 文件所在目录解析 | S:按进程工作目录解析会让公式在别处运行时悄悄换成另一张表，所以必须相对 base 文件
 state.rs[KP6M]: F:多行公式的行状态：lag/running 的有界历史、整列 totals 与条件过滤结果 | R:code:crates/core/src/formula/mod.rs,code:crates/core/src/formula/totals.rs | A:RowNeeds 声明历史、聚合列与 (列, 条件) 对；set_totals/set_filtered 装预扫结果，totals() 与 filtered() 供五类聚合函数读取；内存随 lag 距离而不是行数增长 | S:导出是单向前进的，唯一可获得的历史是前若干行；整列与条件聚合必须靠预扫，不能在流中边读边得
-totals.rs[KP6L]: F:整列与条件聚合的预扫及其缓存：为 sum/average/count 与 countif/sumif 算（总和, 计数） | R:code:crates/core/src/formula/state.rs,code:crates/core/src/formula/mod.rs,code:crates/core/src/filter.rs,code:crates/core/src/index.rs | A:结果只依赖基文件字节，因此写 t.csv.agg 侧车（文件长 + mtime 失效，百分号转义列名/条件）；未命中时按“parquet 侧车 → 检查点分块并行 → 顺序扫”依次降级，比较类条件只统计数字单元格 | S:缓存读失败或不可写只损失一次扫描，绝不能让导出失败；文件内容变了而长度/mtime 未变时会误命（同长度覆盖属罕见）；读的是基文件，不含 journal 未导出的编辑
+totals.rs[KP6L]: F:整列与条件聚合的预扫及其缓存 | R:code:crates/core/src/formula/state.rs,code:crates/core/src/formula/mod.rs,code:crates/core/src/filter.rs,code:crates/core/src/index.rs,code:crates/core/src/csv_reader.rs | A:先用 field_slices 零分配读单元格（需全解析时回退）；t.csv.agg 按长度+mtime 缓存；未命中时小文件（<64MB）走列切片并行、大文件优先 parquet，最后顺序扫；条件字面量用 FilterSpec | S:快路读出的值必须与全解析一致（带引号逗号/换行测试钉住）；小文件用 parquet 反而被 DuckDB 启动拖慢，阈值是有意的；缓存/侧车失效不得让导出失败
 
 ===/<repository>/crates/core/src/workbook/===
 export.rs[CD9L]: F:逐行组装、导出与分页读取 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/journal.rs | A:一次顺序扫描；被 journal 触及的行走 RowPipeline，未触及的行拷贝原字节；每行相同的公式算一次后只追加一格；存在 InsertRows 时用真实行数构 RowMap，仅删除时用哨兵值免建索引；测试用 24 组生成的结构编辑逐格比对 window 与导出行 | S:插入锚点落在删除后的越界位置时，未知基长会留幽灵基行让导出提前 EOF 而丢掉插入行；该回归已被定向测试与 window/export 等价测试双重钉住（临时回退修复两条都会红）；join_csv_line 自带换行；会读当前行的公式不得走快路
@@ -93,7 +93,7 @@ transaction.rs[CP8M]: F:CLI 与 HTTP 共用的 transaction 解析、原子写入
 ACCEPTANCE.md[SD6M]: F:验收证据：两档性能表、能力矩阵与平台构建矩阵 | R:code:docs/API.md | A:每行写实测数字与对应测试名；未达标项标注而不是四舍五入 | S:文档里引用的输出由测试钉住，改实现不同步更新这里会让 gate 失败
 API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；filter/search 行含 cursor 与 next/partial；/edit 写入行含 transaction 的 ops 语法（set/delete/insert）与“先整体校验再一次写入”；聚合端点接受 engine=auto|native|sql | S:文档测试要求本文列出的每个路由都真实存在，反之亦然；文档字段必须真的出现在响应里
 ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列模块（公式引擎含 totals，编辑模型含 transaction）；磁盘格式表列全部侧车：journal/redo/blocks/idx/view/agg/parquet，并给每种的失效规则；S 注明模块地图测试会逐个比对 core 模块 | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败；侧车都是生成物，可以删，但删 journal 等于丢编辑
-CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；公式节把预扫开销与整体导出分开写（重复 30 ms、冷启动 50–80 ms）；语法表含同行/条件区间；编辑表含原子批量写与整批撤销；大文件节写并行数字与游标续扫 | S:-
+CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式节分开写预扫与整体导出（重复 30 ms、冷启动 50–60 ms，小文件列切片并行、大文件 parquet）；语法表含同行/条件区间；编辑表含原子批量写与整批撤销；大文件节写并行数字与游标续扫 | S:-
 CI.md[SO6S]: F:CI 结构说明：单 job 流水线、滚动缓存与失败注解机制 | R:code:.github/workflows/ci.yml | A:解释为什么合并成一个 job、为什么缓存 key 滚动、以及 annotation 如何让红叉可读；测试命令按 csvx-core 与 csvx-cli 包名 | S:-
 DEPLOY.md[SO7M]: F:部署材料：三种安装、配置项、systemd、升级回滚与安全边界 | R:code:deploy/csvx.service | A:明确单机单用户、无鉴权、默认 loopback；配置表含 CSVX_SCAN_THREADS（filter/search 的并行线程数，1 退回顺序）；给出 release-check 与 install-check 两条自检 | S:安全表必须写明没有鉴权与没有多用户隔离，只列防护不列边界会让人误判风险
 GETTING_STARTED.md[SU6M]: F:十分钟上手：用故意不干净的示例走完整链路 | R:code:crates/core/src/demo.rs | A:逐步骤贴真实输出，覆盖带引号换行与多一个逗号的错位行；命令一律以 csvx 开头，示例目录为 csvx-demo/ | S:-
@@ -101,7 +101,7 @@ HANDOVER.md[SU5S]: F:交接说明：现状、已知债、下一步，以及本�
 INTEGRATION.md[SN6S]: F:前端接入走查：从起服务到翻行、改值、多文件的一页纸 | R:code:docs/API.md | A:按 0–7 步给出真实可跑的调用（起服务、打开文件、画一屏、读写单元格含 expect、行身份、写后、多文件）；每条都对应 crates/cli/tests/serve.rs 的测试 | S:-
 ROADMAP.md[SU5S]: F:路线图：已完成、进行中与明确不做的范围 | R:code:docs/CAPABILITIES.md | A:与能力清单分工；M5 记录 filter/search 分段并行、11.2 GB 演练，并把可续扫游标页标为已完成（GBK 仍整页扫） | S:-
 TROUBLESHOOTING.md[SO6S]: F:排障：常见症状、原因与处理，以及如何读 CI 失败 | R:code:docs/CI.md | A:含 annotation 读取命令与历史根因（超时测试竞态、mingw 线程模型） | S:-
-BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 区分预扫与整体导出：重复预扫约 30 ms（达标），冷启动有 parquet 侧车约 50 ms、无侧车约 80 ms（仍略高于目标）；同行区间已做、跨行区间未做；缺口 5 已做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据
+BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 区分预扫与导出：重复预扫约 30 ms（达标），冷启动 50–60 ms（列切片后从 80 ms 降下，仍略高于 50 ms）；同行区间已做、跨行未做；缺口 5 已做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据
 
 ===/<repository>/scripts/===
 backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换、自引用拒绝与请求上限；BIN 默认取 ./target/debug/csvx | S:脚本默认跑 target/debug 的二进制，改了代码只重建 release 会在这里看到旧行为；裸 wait 会连自己起的 server 一起等，必须收集 PID 逐个等待
