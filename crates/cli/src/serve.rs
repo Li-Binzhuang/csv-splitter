@@ -6643,6 +6643,9 @@ mod metrics {
         /// hides a route that is fast most of the time and pathological at p95.
         buckets: [u64; BUCKETS.len() + 1],
         errors: u64,
+        /// Errors by code *for this route*. The global map answers "how many 404s", this
+        /// answers "which route is returning them".
+        status: std::collections::BTreeMap<u16, u64>,
     }
 
     pub struct Metrics {
@@ -6743,6 +6746,7 @@ mod metrics {
                 if status >= 400 {
                     entry.errors += 1;
                 }
+                *entry.status.entry(status).or_insert(0) += 1;
                 let slot = BUCKETS
                     .iter()
                     .position(|upper| elapsed_ms <= *upper as f64)
@@ -6797,8 +6801,14 @@ mod metrics {
                 Ok(map) => map
                     .iter()
                     .map(|(route, stat)| {
+                        let by_status = stat
+                            .status
+                            .iter()
+                            .map(|(code, count)| format!("\"{code}\":{count}"))
+                            .collect::<Vec<_>>()
+                            .join(",");
                         format!(
-                            "{}:{{\"count\":{},\"avgMs\":{:.1},\"p50Ms\":{},\"p95Ms\":{},\"maxMs\":{:.1},\"errors\":{}}}",
+                            "{}:{{\"count\":{},\"avgMs\":{:.1},\"p50Ms\":{},\"p95Ms\":{},\"maxMs\":{:.1},\"errors\":{},\"status\":{{{by_status}}}}}",
                             super::json_str(route),
                             stat.count,
                             if stat.count > 0 {

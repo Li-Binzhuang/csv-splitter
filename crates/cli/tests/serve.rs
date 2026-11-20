@@ -5556,4 +5556,9 @@ fn metrics_report_per_route_percentiles_and_errors() {
     assert!(body.contains(r#""p95Ms""#), "per-route p95: {body}");
     assert!(body.contains(r#""errors""#), "per-route errors: {body}");
     assert!(body.contains(r#""maxMs""#), "{body}");
+    // The same route answered 200 and 404 above; both must be attributed to it.
+    assert!(body.contains(r#""status":{"#), "per-route status: {body}");
+    // A missing file is a 400 in this server's contract, not a 404.
+    assert!(body.contains(r#""400""#), "the 400 is attributed: {body}");
+    assert!(body.contains(r#""200""#), "the 200 is attributed: {body}");
 }

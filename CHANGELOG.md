@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.61.1] — 2026-11-20
+
+### Added
+
+- **Per-route status distribution in /metrics.** The global `status` map answers "how many
+  400s"; a route entry now also carries `status:{"200":n,"400":m}`, so a failing route is
+  identifiable without guessing from the aggregate. Tested on a route that answered both.
+
 ## [3.61.0] — 2026-11-20
 
 ### Added
