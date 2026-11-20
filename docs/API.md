@@ -52,7 +52,7 @@
 | `GET /style` | `path` `rules` `start` `count` | 条件格式：该上色的单元格 |
 | `GET /layout` | `path` `column` `key` `value` | 列宽/显示名/冻结/数字格式（带 `column` 即写入） |
 | `GET /edit` | `path` | 待生效的编辑操作 + 逻辑行数；`action` `row` `col` `value` `expect` 属 POST，GET 收到返回 400 并指路 |
-| `GET /filter` | `path` `where` `limit` | 命中行的行号，**1-based、表头不计**；配合 `/rows` 时用 `start = 行号 - 1`；超过查询预算返回 504（同 `/query` 的提示） |
+| `GET /filter` | `path` `where` `limit` | 命中行的行号（`matched` 是全部命中数，`limit` 只截 `rows`，被截时 `truncated:true`），**1-based、表头不计**；配合 `/rows` 时用 `start = 行号 - 1`；超过查询预算返回 504（同 `/query` 的提示） |
 | `GET /search` | `path` `q` `columns` `case` `exact` `regex` `limit` | 跨列搜索；`regex=1` 用条件格式那套模式子集；超过查询预算返回 504 |
 | `GET /schema` | `path` `diff` `sample` `delim` `name` | 列清单；带 `diff=<另一个文件>` 时返回列集合对比（`same` / `removed` / `added` / `moved`），与 `schema --diff --json` 同一份文档 |
 | `POST /edit` | `action=fill&cols=a,b&from-row=&to-row=&value=` | 多列区间填充，**一次操作一次撤销**（`col=` 仍是单列形式）|

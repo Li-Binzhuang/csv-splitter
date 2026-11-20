@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.58.1] — 2026-11-20
+
+### Fixed
+
+- **/filter's limit was implemented but not declared**, and strict parameter checking is on by
+  default, so the documented and working parameter answered 400 "unknown parameter limit".
+  It is in the spec now, and a test pins the whole contract: matched counts every hit, limit
+  caps rows, truncated says the list was cut.
+
 ## [3.58.0] — 2026-11-20
 
 ### Documentation

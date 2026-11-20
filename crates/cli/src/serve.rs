@@ -635,7 +635,9 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     ),
     (
         "/filter",
-        &["path", "where", "columns", "order", "desc", "delim"],
+        &[
+            "path", "where", "columns", "order", "desc", "limit", "delim",
+        ],
     ),
     (
         "/groupby",

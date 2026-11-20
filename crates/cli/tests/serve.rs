@@ -4944,3 +4944,31 @@ fn meta_says_a_journal_exists() {
         "the edited schema lives in /columns: {columns}"
     );
 }
+
+/// `limit` works in the handler but was missing from the spec, so strict mode answered 400.
+/// With it declared, a capped scan must also say it was capped.
+#[test]
+fn a_limited_filter_works_and_says_it_was_capped() {
+    let dir = TempDir::new("filtermore");
+    let mut text = String::from("city,amount\n");
+    for i in 0..10u32 {
+        text.push_str(&format!("C{},100\n", i % 3)); // three cities, ten rows
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(
+        &server.addr,
+        "/filter?path=t.csv&where=amount%3D100&limit=2",
+    );
+    assert_eq!(status, 200, "limit must be accepted: {body}");
+    assert!(
+        body.contains(r#""matched":10"#),
+        "matched counts all hits: {body}"
+    );
+    assert!(body.contains(r#""rows":[1,2]"#), "rows are capped: {body}");
+    assert!(
+        body.contains(r#""truncated":true"#),
+        "a capped result must admit it: {body}"
+    );
+}
