@@ -97,6 +97,7 @@ API：`/rows` 首屏 66 ms（含建索引），之后 **6–7 ms**，任意偏�
 | 新增 HTTP 状态码 | STATUS_NOTES | contract 的 spec_documents_every_status_the_server_can_return |
 | 文档里改响应字段 | 字段必须真的返回 | serve 的 documented_fields_are_fields_the_endpoint_returns（覆盖 health/meta/metrics）|
 | 改版本号 | CHANGELOG 顶部同步 | docs 的 the_changelog_leads_with_the_current_version |
+| 在文档里加反引号 | 只放命令名或**响应字段**；参数名写成纯文本 | docs 的 api_reference_names_only_parameters_the_server_reads（把反引号里的参数当「文档声明」校验）|
 
 CAPABILITIES.md 里的反引号会被当作命令名校验，**参数名和标志不要加反引号**；HANDOVER
 这里同理，测试名写成纯文本。
