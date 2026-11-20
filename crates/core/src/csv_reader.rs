@@ -105,6 +105,76 @@ pub fn parse_csv_line_with(line: &str, delim: u8, style: QuoteStyle) -> Vec<Stri
     fields
 }
 
+/// Field slices of one record, without allocating a `String` per cell.
+///
+/// This is the hot path for whole-column scans: they only need a few columns and throw
+/// the rest away, so building five owned strings per row is pure waste. Quoted fields
+/// are returned without their quotes; the record's trailing newline ends it.
+///
+/// Returns `None` when the full parser is needed: backslash quoting, an escaped quote
+/// (`""`) whose decoded value is not the raw bytes, unbalanced quotes, or text after a
+/// closing quote. A caller must fall back rather than guess.
+pub fn field_slices(record: &[u8], delim: u8, style: QuoteStyle) -> Option<Vec<&[u8]>> {
+    if style == QuoteStyle::Backslash {
+        return None;
+    }
+    let len = record.len();
+    let mut fields = Vec::with_capacity(8);
+    let mut i = 0usize;
+    let mut ended_with_delim = false;
+    while i < len {
+        if style == QuoteStyle::Rfc4180 && record[i] == b'"' {
+            let start = i + 1;
+            let mut j = start;
+            loop {
+                if j >= len {
+                    return None;
+                }
+                if record[j] == b'"' {
+                    // A doubled quote means the decoded value differs from the bytes.
+                    if j + 1 < len && record[j + 1] == b'"' {
+                        return None;
+                    }
+                    fields.push(&record[start..j]);
+                    j += 1;
+                    break;
+                }
+                j += 1;
+            }
+            if j >= len {
+                return Some(fields);
+            }
+            match record[j] {
+                b'\n' | b'\r' => return Some(fields),
+                byte if byte == delim => {
+                    ended_with_delim = true;
+                    i = j + 1;
+                }
+                _ => return None,
+            }
+        } else {
+            let start = i;
+            while i < len && record[i] != delim && record[i] != b'\n' && record[i] != b'\r' {
+                i += 1;
+            }
+            fields.push(&record[start..i]);
+            if i >= len {
+                return Some(fields);
+            }
+            if record[i] == delim {
+                ended_with_delim = true;
+                i += 1;
+            } else {
+                return Some(fields);
+            }
+        }
+    }
+    if len == 0 || ended_with_delim {
+        fields.push(&record[len..len]);
+    }
+    Some(fields)
+}
+
 /// Parse one complete CSV record, which may contain embedded newlines inside
 /// quoted fields. A leading BOM is stripped from the first cell.
 pub fn parse_csv_record(record: &str, delim: u8) -> Vec<String> {
@@ -699,5 +769,34 @@ mod quote_style_tests {
         );
         assert_eq!(QuoteStyle::parse("none").unwrap(), QuoteStyle::None);
         assert!(QuoteStyle::parse("weird").is_err());
+    }
+}
+#[cfg(test)]
+mod slice_tests {
+    use super::*;
+
+    #[test]
+    fn slices_match_the_parsed_fields() {
+        let cases: &[(&[u8], &[&str])] = &[
+            (b"a,b,c", &["a", "b", "c"]),
+            (b"a,b,c\n", &["a", "b", "c"]),
+            (b"a,b,c\r\n", &["a", "b", "c"]),
+            (b"a,b,\n", &["a", "b", ""]),
+            (b"\"a,b\",c", &["a,b", "c"]),
+            (b"\"line1\nline2\",x", &["line1\nline2", "x"]),
+            (b"", &[""]),
+        ];
+        for (record, expected) in cases {
+            let got = field_slices(record, b',', QuoteStyle::Rfc4180)
+                .unwrap_or_else(|| panic!("{:?} should slice", record));
+            let text: Vec<&str> = got
+                .iter()
+                .map(|s| std::str::from_utf8(s).unwrap())
+                .collect();
+            assert_eq!(text, *expected, "record {record:?}");
+        }
+        // Escaped quotes change the decoded value, so the fast path declines.
+        assert!(field_slices(b"\"a\"\"b\"", b',', QuoteStyle::Rfc4180).is_none());
+        assert!(field_slices(b"\"a\\\"b\"", b',', QuoteStyle::Backslash).is_none());
     }
 }

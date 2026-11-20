@@ -25,6 +25,11 @@ use std::path::Path;
 /// only a few milliseconds, so one thread wins.
 const PARALLEL_MIN_BYTES: u64 = 8 * 1024 * 1024;
 
+/// Below this the parquet sidecar is *slower* than the sliced parallel CSV scan: DuckDB's
+/// start-up costs more than reading 33 MB of columns. Large files still prefer parquet.
+#[cfg(feature = "sql")]
+const PARQUET_MIN_BYTES: u64 = 64 * 1024 * 1024;
+
 #[derive(Debug, Default)]
 pub struct ColumnTotals {
     /// Numeric sum and numeric count for each column.
@@ -154,56 +159,83 @@ fn scan_slab(
         if !records.next_record(&mut record)? {
             break;
         }
-        let text = String::from_utf8_lossy(&record);
-        let fields = parse_csv_record_with(
-            text.trim_end_matches(['\n', '\r']),
-            delimiter.byte(),
-            quotes,
-        );
-        for (name, index) in plain {
-            let Some(cell) = fields.get(*index) else {
-                continue;
-            };
-            let trimmed = cell.trim();
-            if trimmed.is_empty() {
-                continue;
-            }
-            if let Ok(value) = trimmed.parse::<f64>() {
-                if value.is_finite() {
-                    if let Some(slot) = out.plain.get_mut(name) {
-                        slot.0 += value;
-                        slot.1 += 1;
-                    }
-                }
-            }
+        // Fast path: slice the record instead of building a String per cell. Falls back
+        // to the full parser for escaped quotes, backslash quoting, or bad UTF-8.
+        if let Some(cells) = slice_cells(&record, delimiter.byte(), quotes) {
+            accumulate_cells(&cells, plain, filtered, &mut out);
+        } else {
+            let text = String::from_utf8_lossy(&record);
+            let fields = parse_csv_record_with(
+                text.trim_end_matches(['\n', '\r']),
+                delimiter.byte(),
+                quotes,
+            );
+            let refs: Vec<&str> = fields.iter().map(|f| f.as_str()).collect();
+            accumulate_cells(&refs, plain, filtered, &mut out);
         }
-        for (column, criteria, index, spec) in filtered {
-            let Some(cell) = fields.get(*index) else {
-                continue;
-            };
-            // An ordering criterion is numeric: COUNTIF(">100") must not count the cell
-            // "not-a-number" just because 'n' sorts after '1'.
-            if matches!(
-                spec.op,
-                filter::Op::Gt | filter::Op::Gte | filter::Op::Lt | filter::Op::Lte
-            ) && cell.trim().parse::<f64>().is_err()
-            {
-                continue;
-            }
-            if !filter::matches(cell, spec) {
-                continue;
-            }
-            if let Some(slot) = out.filtered.get_mut(&(column.clone(), criteria.clone())) {
-                slot.1 += 1;
-                if let Ok(value) = cell.trim().parse::<f64>() {
-                    if value.is_finite() {
-                        slot.0 += value;
-                    }
+    }
+    Ok(out)
+}
+
+/// The record's fields as borrowed strings, or `None` when the full parser is needed.
+fn slice_cells(record: &[u8], delim: u8, quotes: QuoteStyle) -> Option<Vec<&str>> {
+    let slices = crate::csv_reader::field_slices(record, delim, quotes)?;
+    let mut out = Vec::with_capacity(slices.len());
+    for slice in slices {
+        out.push(std::str::from_utf8(slice).ok()?);
+    }
+    Some(out)
+}
+
+/// Fold one record's cells into the running totals.
+fn accumulate_cells(
+    cells: &[&str],
+    plain: &[(String, usize)],
+    filtered: &[(String, String, usize, FilterSpec)],
+    out: &mut ColumnTotals,
+) {
+    for (name, index) in plain {
+        let Some(cell) = cells.get(*index) else {
+            continue;
+        };
+        let trimmed = cell.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        if let Ok(value) = trimmed.parse::<f64>() {
+            if value.is_finite() {
+                if let Some(slot) = out.plain.get_mut(name) {
+                    slot.0 += value;
+                    slot.1 += 1;
                 }
             }
         }
     }
-    Ok(out)
+    for (column, criteria, index, spec) in filtered {
+        let Some(cell) = cells.get(*index) else {
+            continue;
+        };
+        // An ordering criterion is numeric: COUNTIF(">100") must not count the cell
+        // "not-a-number" just because 'n' sorts after '1'.
+        if matches!(
+            spec.op,
+            filter::Op::Gt | filter::Op::Gte | filter::Op::Lt | filter::Op::Lte
+        ) && cell.trim().parse::<f64>().is_err()
+        {
+            continue;
+        }
+        if !filter::matches(cell, spec) {
+            continue;
+        }
+        if let Some(slot) = out.filtered.get_mut(&(column.clone(), criteria.clone())) {
+            slot.1 += 1;
+            if let Ok(value) = cell.trim().parse::<f64>() {
+                if value.is_finite() {
+                    slot.0 += value;
+                }
+            }
+        }
+    }
 }
 
 /// Compile a spreadsheet criteria, where `">1000"` means `amount>1000` and a bare
@@ -365,7 +397,9 @@ fn compute_totals(
     // every field of every row. Criteria are evaluated here rather than translated to
     // SQL, so a countif/sumif request keeps the CSV path; a stale cache falls back too.
     #[cfg(feature = "sql")]
-    if needs.filtered.is_empty() {
+    if needs.filtered.is_empty()
+        && std::fs::metadata(path).map(|m| m.len()).unwrap_or(0) >= PARQUET_MIN_BYTES
+    {
         let cache = crate::sql_cache::sidecar(path);
         if crate::sql_cache::is_fresh(path) {
             if let Ok(entries) = crate::sql::parquet_totals(&cache, &needs.aggregates) {
@@ -534,6 +568,25 @@ mod tests {
         assert_eq!(third.plain.get("amount"), Some(&(60.0, 3)));
         std::fs::remove_file(&path).ok();
         std::fs::remove_file(cache).ok();
+    }
+
+    /// The slice fast path must agree with the full parser on quoted cells.
+    #[test]
+    fn totals_read_quoted_and_multiline_cells() {
+        let path = write(
+            "quoted",
+            "city,amount,note\nA,10,\"x,y\"\nB,20,\"line1\nline2\"\nC,30,\"a\"\"b\"\n",
+        );
+        let totals = column_totals(
+            &path,
+            Delimiter::Comma,
+            QuoteStyle::Rfc4180,
+            &needs(&["amount"], &[]),
+        )
+        .unwrap();
+        std::fs::remove_file(&path).ok();
+        std::fs::remove_file(cache::sidecar(&path)).ok();
+        assert_eq!(totals.plain.get("amount"), Some(&(60.0, 3)));
     }
 
     #[test]
