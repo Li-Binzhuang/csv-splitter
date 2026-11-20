@@ -5406,3 +5406,47 @@ fn an_edit_carries_a_stamp_precondition() {
     );
     assert_eq!(status, 200, "{body}");
 }
+
+/// `/copy` is "save as": a whole-file duplicate, and with apply-edits=1 the duplicate carries
+/// the edits instead of the base bytes.
+#[test]
+fn copy_duplicates_a_sheet_with_or_without_edits() {
+    let dir = TempDir::new("copysheet");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(&server.addr, "/copy?path=t.csv&out=plain.csv");
+    assert!(status == 200 || status == 202, "{body}");
+    let mut state = String::new();
+    for _ in 0..60 {
+        (_, state) = get(&server.addr, "/jobs?path=t.csv");
+        if state.contains(r#""state":"done""#) || state.contains(r#""state":"failed""#) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    assert!(state.contains(r#""state":"done""#), "{state}");
+    let (_, rows) = get(&server.addr, "/rows?path=plain.csv&start=0&count=5");
+    assert!(rows.contains("CDMX"), "{rows}");
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=city&value=ZZ9",
+    );
+    assert_eq!(status, 200, "{body}");
+    let (status, body) = post(
+        &server.addr,
+        "/copy?path=t.csv&out=edited.csv&apply-edits=1",
+    );
+    assert!(status == 200 || status == 202, "{body}");
+    for _ in 0..60 {
+        (_, state) = get(&server.addr, "/jobs?path=t.csv");
+        if state.contains(r#""state":"done""#) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    let (_, rows) = get(&server.addr, "/rows?path=edited.csv&start=0&count=5");
+    assert!(rows.contains("ZZ9"), "the copy carries the edit: {rows}");
+    assert!(!rows.contains("CDMX"), "the old value is gone: {rows}");
+}

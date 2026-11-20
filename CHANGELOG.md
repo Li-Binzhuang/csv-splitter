@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.60.1] — 2026-11-20
+
+### Added
+
+- **`POST /copy` — the "save as" the front-end lacked.** `/export` runs a query; this is a
+  whole-file duplicate, and with `apply-edits=1` the duplicate is the edited table instead of
+  the base bytes. A test copies a sheet, edits it, copies again, and checks the second copy
+  carries the edit while the first does not.
+
 ## [3.60.0] — 2026-11-20
 
 ### Documentation

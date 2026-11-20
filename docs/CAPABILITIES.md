@@ -467,7 +467,7 @@ GET /columns 多带的四个参数属于「声明正确、对该方法无意义�
 | `/cell` `/style` `/journal` `/sheet` `/columns` `/validate` | 总是套用编辑 | 渲染/校验路径 |
 | `/groupby` `/pivot` `/chart` `/analyze` `/stats` | 可选，`apply-edits=1` | 分析前先物化 |
 | `/filter` `/search` | 可选 | 响应里的 `source` 说明扫的是 `file` 还是 `edited` |
-| `/export` `/sort` | 可选 | 输出是编辑后的表（sort 会把编辑摊平进新文件）|
+| `/export` `/sort` `/copy` | 可选 | 输出是编辑后的表（sort/copy 会把编辑摊平进新文件）|
 | `/lookup` | 可选 | 主文件套编辑，参考文件保持原样 |
 | `/sort`（写文件）/ `/export` 之外的写命令：`/dedupe` `/split` `/partition` `/columns` `/concat` `/merge` | **不支持** | 语义是「拷贝/切分源文件」，套编辑会改变操作对象的直觉 |
 

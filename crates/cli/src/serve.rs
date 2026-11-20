@@ -448,6 +448,7 @@ fn handle(
             "/concat" => start_concat(&mut stream, root, jobs, &params),
             "/columns" => start_columns_reshape(&mut stream, root, jobs, &params),
             "/convert" => start_convert(&mut stream, root, jobs, &params),
+            "/copy" => start_copy(&mut stream, root, jobs, &params),
             "/edit" => edit_apply(&mut stream, root, jobs, &params),
             _ => respond_json(
                 &mut stream,
@@ -634,6 +635,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
         &["paths", "out", "ignoreHeader", "byName", "delim", "engine"],
     ),
     ("/convert", &["path", "out", "from", "to"]),
+    ("/copy", &["path", "out", "apply-edits", "delim"]),
     ("/meta", &["path", "delim"]),
     ("/cell", &["path", "row", "col", "delim"]),
     ("/journal", &["path", "delim"]),
@@ -901,6 +903,7 @@ const WRITE_ROUTES: &[&str] = &[
     "POST /concat",
     "POST /columns",
     "POST /convert",
+    "POST /copy",
     "POST /warm",
     "POST /edit",
     "POST /index",
@@ -1009,6 +1012,60 @@ fn start_convert(
             }
         },
     );
+    respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
+}
+
+/// `POST /copy?path=&out=` — duplicate a sheet, optionally flattening the edits into it.
+///
+/// This is the "save as" the front-end needs: `/export` runs a query, `/copy` is a whole-file
+/// duplicate, and with `apply-edits=1` the output is the edited table rather than the base file.
+fn start_copy(
+    stream: &mut TcpStream,
+    root: &Path,
+    jobs: &JobRegistry,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (input, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
+    };
+    let Some(out) = resolve_out(root, params, "out") else {
+        return bad_out(stream);
+    };
+    let apply_edits = params
+        .get("apply-edits")
+        .is_some_and(|v| v == "1" || v == "true");
+    let delimiter = delimiter(params);
+    let result_path = out.clone();
+    let id = jobs.submit("copy", move |tx| {
+        let materialised = if apply_edits {
+            let read = csv_splitter_core::sheet::ReadOptions { delimiter };
+            match csv_splitter_core::sheet::materialize(&input, &read, &tx) {
+                Ok(m) => Some(m),
+                Err(e) => {
+                    tx.send(ProgressEvent::Error(e.to_string())).ok();
+                    return;
+                }
+            }
+        } else {
+            None
+        };
+        let source: std::path::PathBuf = materialised
+            .as_ref()
+            .map(|m| m.path().to_path_buf())
+            .unwrap_or_else(|| input.clone());
+        match std::fs::copy(&source, &out) {
+            Ok(_) => {
+                tx.send(ProgressEvent::Finished {
+                    output: result_path,
+                })
+                .ok();
+            }
+            Err(e) => {
+                tx.send(ProgressEvent::Error(e.to_string())).ok();
+            }
+        }
+    });
     respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
 }
 
