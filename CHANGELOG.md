@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.58.7] — 2026-11-20
+
+### Fixed
+
+- **Two more implemented-but-undeclared parameters**: chart desc and style start/count. Each is
+  documented, each is read by its handler, and each answered 400 under the default strict mode.
+  Both declared now, with a test that sends them and expects 200.
+
+- The documented-field guard covers groupby, pivot and chart: columns/rows/engine,
+  columns/rows/rowKeys, and type/rows/categories/series are asserted against live bodies.
+
 ## [3.58.6] — 2026-11-20
 
 ### Tests / Documentation

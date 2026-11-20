@@ -4608,6 +4608,9 @@ fn documented_fields_are_fields_the_endpoint_returns() {
         ("/cell", "/cell?path=t.csv&row=1&col=city"),
         ("/filter", "/filter?path=t.csv&where=amount%3D100"),
         ("/search", "/search?path=t.csv&q=CDMX"),
+        ("/groupby", "/groupby?path=t.csv&by=city&agg=amount:sum"),
+        ("/pivot", "/pivot?path=t.csv&rows=city&values=amount:sum"),
+        ("/chart", "/chart?path=t.csv&x=city&y=amount:sum"),
     ] {
         let (status, body) = get(&server.addr, query);
         assert_eq!(status, 200, "{query}: {body}");
@@ -5022,4 +5025,26 @@ fn undeclared_before_params_are_accepted_now() {
         code == 200 || code == 202,
         "/partition maxPartitions must be accepted: {body}"
     );
+}
+
+/// Documented parameters that a handler reads must also be accepted; the spec omitted them and
+/// strict mode answered 400 (chart desc, style start/count were recent instances).
+#[test]
+fn chart_and_style_accept_their_documented_parameters() {
+    let dir = TempDir::new("aggparams");
+    std::fs::write(
+        dir.join("t.csv"),
+        "city,amount\nCDMX,10\nPuebla,20\nCDMX,30\n",
+    )
+    .unwrap();
+    let server = start(&dir.0.clone());
+
+    let (code, body) = get(&server.addr, "/chart?path=t.csv&x=city&y=amount:sum&desc=1");
+    assert_eq!(code, 200, "/chart desc must be accepted: {body}");
+
+    let (code, body) = get(
+        &server.addr,
+        "/style?path=t.csv&rules=amount%3E5:bg=red&start=0&count=2",
+    );
+    assert_eq!(code, 200, "/style start/count must be accepted: {body}");
 }

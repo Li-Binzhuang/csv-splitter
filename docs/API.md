@@ -45,9 +45,9 @@
 | `GET /book` | — | 工作簿：根目录下所有 CSV 及其状态 |
 | `GET /stats` | `path` `sample` | 采样统计 |
 | `GET /analyze` | `path` `distinct` | 全列画像 `distinctCap` |
-| `GET /chart` | `path` `x` `y` `series` `type` `maxPoints` `engine` | 图表数据；`engine=auto\|native\|sql` |
-| `GET /groupby` — 响应含 `engine`（实际执行的引擎） | `path` `by` `agg` `order` `desc` `maxGroups` `engine` | 分组聚合；`engine=auto\|native\|sql`，未编译 sql feature 时 `sql` 返回 400 |
-| `GET /pivot` | `path` `rows` `cols` `values` `qualify` `maxColumns` `maxCells` `engine` | 透视矩阵 |
+| `GET /chart` | `path` `x` `y` `series` `type` `sortByValue` `desc` `maxPoints` | 图表数据：响应 `type` `rows` `categories` `series`（每项 `name` `points`）|
+| `GET /groupby` | `path` `by` `agg` `order` `desc` `maxGroups` `engine` | 分组聚合：响应 `columns` `rows` `engine`（实际执行的引擎）；`engine=auto` 按大小自动选、`engine=sql` 在未编译 sql feature 时返回 400 |
+| `GET /pivot` | `path` `rows` `cols` `values` `qualify` `maxColumns` `maxCells` `engine` | 透视矩阵：响应 `columns` `rows` `rowKeys` |
 | `GET /chart` | `path` `x` `y` `series` `type` `sortByValue` `desc` `maxPoints` | 图表数据 |
 | `GET /style` | `path` `rules` `start` `count` | 条件格式：该上色的单元格 |
 | `GET /layout` | `path` `column` `key` `value` | 列宽/显示名/冻结/数字格式（带 `column` 即写入） |
