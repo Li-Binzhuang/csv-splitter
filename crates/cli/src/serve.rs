@@ -3839,14 +3839,21 @@ fn meta(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) -
         Ok(viewer) => {
             let headers = viewer.headers().unwrap_or_default();
             let headers_json: Vec<String> = headers.iter().map(|h| json_str(h)).collect();
+            // Physical facts about the base file: rows, bytes, headers, encoding. `edited`
+            // says a journal exists, because the row and column counts here are the file's,
+            // not the edited sheet's — /rows and /columns are the edited view.
+            let edited = Journal::load(&Journal::sidecar(&path))
+                .map(|j| j.ops().len())
+                .unwrap_or(0);
             let body = format!(
-                r#"{{"path":{},"rows":{},"bytes":{},"headers":[{}],"delimiter":{},"encoding":{}}}"#,
+                r#"{{"path":{},"rows":{},"bytes":{},"headers":[{}],"delimiter":{},"encoding":{},"edited":{}}}"#,
                 json_str(&rel),
                 viewer.total_rows(),
                 viewer.file_len(),
                 headers_json.join(","),
                 json_str(&(delimiter(params).byte() as char).to_string()),
-                json_str(viewer.encoding_label())
+                json_str(viewer.encoding_label()),
+                edited
             );
             respond_json(stream, 200, &body)
         }

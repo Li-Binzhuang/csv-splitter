@@ -4912,3 +4912,35 @@ fn columns_lists_the_edited_schema() {
         "the old name must be gone: {body}"
     );
 }
+
+/// /meta describes the base file on purpose: rows, bytes and headers are physical facts.
+/// What it must not do is stay silent about a journal — a caller that sees 2 columns here and
+/// 3 in /columns needs to know why.
+#[test]
+fn meta_says_a_journal_exists() {
+    let dir = TempDir::new("metaedit");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=insert-column&name=note&value=x&after=city",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let (status, body) = get(&server.addr, "/meta?path=t.csv");
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.contains(r#""edited":1"#),
+        "the edit count must be visible: {body}"
+    );
+    assert!(
+        body.contains(r#""headers":["city","amount"]"#),
+        "headers stay the file's own: {body}"
+    );
+    let (_, columns) = get(&server.addr, "/columns?path=t.csv");
+    assert!(
+        columns.contains("\"note\""),
+        "the edited schema lives in /columns: {columns}"
+    );
+}

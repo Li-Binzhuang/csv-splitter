@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.57.8] — 2026-11-20
+
+### Added
+
+- **/meta now has an edited count.** Its rows, bytes and headers are the base file's on
+  purpose — physical facts — but staying silent about an existing journal made a 2-column /meta
+  next to a 3-column /columns look like a bug. The field names the reason, the docs say where
+  the edited view lives, and a test pins both halves: headers stay the file's, the counter tracks
+  the journal, and the new column appears only in /columns.
+
 ## [3.57.7] — 2026-11-20
 
 ### Tests
