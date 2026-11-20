@@ -307,7 +307,7 @@ written on refusal, and `actual` says what the value is now.
 | GET | `/meta` | 行数、字节数、表头、分隔符、编码 |
 | GET | `/rows` | 窗口（`start`/`count`/`where`/`order`/`columns`/`start-col`/`keys`）|
 | GET | `/columns` `/schema` | 列清单（`name=` 查存在性，`kind=`/`limit=` 过滤）|
-| GET | `/cell` | 单格 + 稳定行 key |
+| GET | `/cell` | 单个单元格：`row` `column` `value`、稳定行 `key`、总行数 `total` |
 | GET | `/journal` | 操作栈 `operations`、`count`、undo/redo 栈 `redo` `redoCount` `canUndo` `canRedo`、损坏计数 `damaged` |
 | GET | `/sheet` | 概况：操作数、最后一条、capabilities、layout、indexed |
 | GET | `/capabilities` | 能力发现（reads/writes/actions/limits/engines/duckdb/strictParams）|

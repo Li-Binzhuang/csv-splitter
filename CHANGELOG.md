@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.58.5] — 2026-11-20
+
+### Tests / Documentation
+
+- The documented-field guard covers /cell: row, column, value, key and total are asserted
+  against the live body. The API table now names them; mutation-checked by renaming key, which
+  the guard reports by name.
+
 ## [3.58.4] — 2026-11-20
 
 ### Tests / Documentation

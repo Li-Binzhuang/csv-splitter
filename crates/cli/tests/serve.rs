@@ -4584,6 +4584,7 @@ fn documented_fields_are_fields_the_endpoint_returns() {
         ("/metrics", "/metrics"),
         ("/sheet", "/sheet?path=t.csv"),
         ("/journal", "/journal?path=t.csv"),
+        ("/cell", "/cell?path=t.csv&row=1&col=city"),
     ] {
         let (status, body) = get(&server.addr, query);
         assert_eq!(status, 200, "{query}: {body}");
