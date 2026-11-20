@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.60.0] — 2026-11-20
+
+### Documentation
+
+- The apply-edits support matrix in one table: which endpoints apply edits by default (render
+  and validation paths), which take `apply-edits=1` (analysis, export, sort, filter, search,
+  lookup), and which deliberately do not (dedupe/split/partition/columns/concat/merge, whose
+  semantics are copying or partitioning the source file). The rule in one line: endpoints that
+  read a table and answer a reading apply edits; endpoints that emit a file copy do not.
+
 ## [3.59.9] — 2026-11-20
 
 ### Added

@@ -456,6 +456,23 @@ pivot 两个引擎的输出在这两个尺寸上逐字节相同。
 最后一行是**结构性问题**（/spec 的 params 键是路由，不分方法），修它要改契约格式，超出单轮范围；在那之前，
 GET /columns 多带的四个参数属于「声明正确、对该方法无意义」。
 
+## `apply-edits` 支持矩阵 / Which endpoints can apply edits
+
+一条规则：**读表并回答读数的端点支持 `apply-edits=1`；产出文件副本的端点不支持**。
+
+| 端点 | `apply-edits=1` | 备注 |
+|---|---|---|
+| `/rows` | 总是套用编辑（`sql` 路径也一样）| 渲染路径的默认行为 |
+| `/rows?format=csv` | 同上 | 拿到编辑后文本的唯一途径（`/export` 默认读基文件）|
+| `/cell` `/style` `/journal` `/sheet` `/columns` `/validate` | 总是套用编辑 | 渲染/校验路径 |
+| `/groupby` `/pivot` `/chart` `/analyze` `/stats` | 可选，`apply-edits=1` | 分析前先物化 |
+| `/filter` `/search` | 可选 | 响应里的 `source` 说明扫的是 `file` 还是 `edited` |
+| `/export` `/sort` | 可选 | 输出是编辑后的表（sort 会把编辑摊平进新文件）|
+| `/lookup` | 可选 | 主文件套编辑，参考文件保持原样 |
+| `/sort`（写文件）/ `/export` 之外的写命令：`/dedupe` `/split` `/partition` `/columns` `/concat` `/merge` | **不支持** | 语义是「拷贝/切分源文件」，套编辑会改变操作对象的直觉 |
+
+第 62 行附近还有 CLI 侧的说明：`--apply-edits` 与 HTTP 的 `apply-edits=1` 是同一能力。
+
 ## 有意的不一致 / Deliberate inconsistencies
 
 这些地方**看起来不一致**，但每一条都是权衡后的选择。集中写在这里，免得分散在各节里被当成 bug：
