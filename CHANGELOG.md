@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.57.9] — 2026-11-20
+
+### Documentation
+
+- The journal-visibility table gained a third category. /meta is neither edit-aware nor
+  base-only: it reports the file's physical facts and an edited count, and points at /rows and
+  /columns for the edited view. Written down so the 2-column/3-column contrast stops looking
+  like a defect.
+
 ## [3.57.8] — 2026-11-20
 
 ### Added
