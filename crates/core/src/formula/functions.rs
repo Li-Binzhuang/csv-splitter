@@ -21,6 +21,28 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
     match lower.as_str() {
         // History functions: they read the state the exporter maintains, so a formula
         // can see the row before it without the file being loaded.
+        // Whole-column aggregates: the pre-pass installed the totals before the loop
+        // started, so every row reads the same number in O(1). The argument is a column
+        // name taken from the syntax tree, exactly like `lag`.
+        "sum" | "average" | "avg" | "count" => {
+            let Some(state) = ctx.state else {
+                return Value::Error;
+            };
+            let Some(Expr::Column(column)) = args.first() else {
+                return Value::Error;
+            };
+            let Some((sum, count)) = state.totals(column) else {
+                return Value::Error;
+            };
+            match lower.as_str() {
+                "sum" => Value::Number(sum),
+                "count" => Value::Number(count as f64),
+                // Average of an empty column is #DIV/0! in a spreadsheet; #VALUE! is the
+                // only error this engine has, and a wrong answer would be worse.
+                _ if count > 0 => Value::Number(sum / count as f64),
+                _ => Value::Error,
+            }
+        }
         "lag" => {
             let Some(state) = ctx.state else {
                 return Value::Error;

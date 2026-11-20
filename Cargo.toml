@@ -3,7 +3,7 @@ members = ["crates/core", "crates/cli"]
 resolver = "2"
 
 [workspace.package]
-version = "4.1.0"
+version = "4.2.0"
 edition = "2021"
 description = "High-performance CSV editor in Rust — open, edit, query and split files bigger than Excel can open."
 repository = "https://github.com/Li-Binzhuang/csv-splitter"

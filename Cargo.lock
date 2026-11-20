@@ -635,7 +635,7 @@ dependencies = [
 
 [[package]]
 name = "csvx-cli"
-version = "4.1.0"
+version = "4.2.0"
 dependencies = [
  "csvx-core",
  "encoding_rs",
@@ -645,7 +645,7 @@ dependencies = [
 
 [[package]]
 name = "csvx-core"
-version = "4.1.0"
+version = "4.2.0"
 dependencies = [
  "bzip2",
  "criterion",

@@ -22,6 +22,7 @@
 //!          | year(x) | month(x) | day(x) | date(y, m, d) | datestring(x)
 //!          | if(cond, a[, b]) | and(...) | or(...) | not(x) | iferror(x, fallback)
 //!          | isblank(x) | isnumber(x) | row | lag(col[, n]) | running_total(col)
+//!          | sum(col) | average(col) | count(col)   (whole-column, constant per row)
 //!
 //! `column := name | [name]` — bracket a name that contains spaces **or ends in digits**,
 //! because `city2` bare is an A1-style cell reference (column CITY, row 2).
@@ -33,8 +34,10 @@
 mod functions;
 mod sheetref;
 mod state;
+mod totals;
 
 pub use state::{RowNeeds, RowState};
+pub use totals::column_totals;
 
 pub use sheetref::{Refs, SheetRef, DEFAULT_MAX_KEYS};
 
@@ -245,6 +248,14 @@ impl Formula {
     }
 }
 
+/// The functions whose value is the same on every row of a column.
+fn is_aggregate(name: &str) -> bool {
+    matches!(
+        name.to_ascii_lowercase().as_str(),
+        "sum" | "average" | "avg" | "count"
+    )
+}
+
 /// Walk the expression for `lag(col[, k])` and `running_total(col)`.
 ///
 /// Only literal column names are understood here: `lag([a] , 1)` is a column, but
@@ -261,7 +272,18 @@ fn collect_row_needs(expr: &Expr, out: &mut crate::formula::RowNeeds) {
                 out.absorb(&crate::formula::RowNeeds {
                     lags: vec![(column.clone(), distance)],
                     running: Vec::new(),
+                    aggregates: Vec::new(),
                 });
+            }
+            for arg in args {
+                collect_row_needs(arg, out);
+            }
+        }
+        Expr::Call(name, args) if is_aggregate(name) => {
+            if let Some(Expr::Column(column)) = args.first() {
+                if !out.aggregates.contains(column) {
+                    out.aggregates.push(column.clone());
+                }
             }
             for arg in args {
                 collect_row_needs(arg, out);
@@ -276,6 +298,7 @@ fn collect_row_needs(expr: &Expr, out: &mut crate::formula::RowNeeds) {
                 out.absorb(&crate::formula::RowNeeds {
                     lags: Vec::new(),
                     running: vec![column.clone()],
+                    aggregates: Vec::new(),
                 });
             }
             for arg in args {
@@ -1110,5 +1133,44 @@ mod tests {
         assert_eq!(eval_str("day(date(2026, 11, 20))", &[]), "20");
         // A nonsense date is an error, not a made-up string.
         assert_eq!(eval_str("date(2026, 13, 1)", &[]), "#VALUE!");
+    }
+
+    /// Whole-column aggregates are constant per row, so the formula layer must ask for
+    /// the column up front and read the pre-pass totals instead of recomputing them.
+    #[test]
+    fn aggregate_functions_read_the_prepass_totals() {
+        let formula = Formula::parse("sum(amount) + count(amount)").unwrap();
+        assert!(formula.references().contains(&"amount".to_string()));
+        assert_eq!(formula.row_needs().aggregates, vec!["amount".to_string()]);
+
+        let mut state = RowState::new(formula.row_needs());
+        let mut totals = HashMap::new();
+        totals.insert("amount".to_string(), (100.0, 4));
+        state.set_totals(totals);
+
+        let cells = row(&[("amount", "10")]);
+        let columns = vec!["amount".to_string()];
+        let refs = Refs::default();
+        assert_eq!(
+            formula
+                .eval_stateful(&cells, &columns, &refs, 2, Some(&state))
+                .render(),
+            "104"
+        );
+        assert_eq!(
+            Formula::parse("average(amount)")
+                .unwrap()
+                .eval_stateful(&cells, &columns, &refs, 2, Some(&state))
+                .render(),
+            "25"
+        );
+        // No pre-pass (the view path) is an error, never a wrong zero.
+        assert_eq!(
+            Formula::parse("sum(amount)")
+                .unwrap()
+                .eval_stateful(&cells, &columns, &refs, 2, None)
+                .render(),
+            "#VALUE!"
+        );
     }
 }

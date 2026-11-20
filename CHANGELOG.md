@@ -1,5 +1,24 @@
 # Changelog
 
+## [4.2.0] — 2026-11-20
+
+### Added
+
+- **Whole-column aggregates in formula columns**: `sum(col)`, `average(col)` and
+  `count(col)` are constant for every row, so one pre-pass computes the column's numeric
+  total and count and the row loop reads them in O(1) — the same pattern `lag` and
+  `running_total` already use. Non-numeric and empty cells are skipped, like a spreadsheet.
+  Measured on 1 M rows: `edit export` 0.85 s without the formula, 1.33 s with it, so the
+  pre-pass costs about 0.48 s.
+
+### Known limits
+
+- The pre-pass reads the **base file**; pending journal edits are not included (the
+  export the formula runs in is also the command that materialises edits).
+- `sum(A1:A9)` (ranges) and `countif` are not implemented.
+- The 50 ms target in `docs/BEYOND_EXCEL.md` is not met yet; the next step is caching the
+  column aggregate per journal version so repeated exports skip the scan.
+
 ## [4.1.0] — 2026-11-20
 
 ### Performance

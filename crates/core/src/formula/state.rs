@@ -14,11 +14,14 @@ pub struct RowNeeds {
     pub lags: Vec<(String, usize)>,
     /// Columns accumulated by `running_total(...)`.
     pub running: Vec<String>,
+    /// Columns whose totals `sum(...)`, `average(...)` and `count(...)` read,
+    /// computed once before the first row is emitted.
+    pub aggregates: Vec<String>,
 }
 
 impl RowNeeds {
     pub fn is_empty(&self) -> bool {
-        self.lags.is_empty() && self.running.is_empty()
+        self.lags.is_empty() && self.running.is_empty() && self.aggregates.is_empty()
     }
 
     pub fn max_lag(&self) -> usize {
@@ -38,6 +41,11 @@ impl RowNeeds {
                 self.running.push(column.clone());
             }
         }
+        for column in &other.aggregates {
+            if !self.aggregates.contains(column) {
+                self.aggregates.push(column.clone());
+            }
+        }
     }
 }
 
@@ -47,6 +55,8 @@ pub struct RowState {
     needs: RowNeeds,
     history: HashMap<String, VecDeque<String>>,
     sums: HashMap<String, f64>,
+    /// Whole-column (numeric total, numeric count) for `sum`, `average`, `count`.
+    totals: HashMap<String, (f64, u64)>,
 }
 
 impl RowState {
@@ -59,6 +69,7 @@ impl RowState {
             needs,
             history,
             sums: HashMap::new(),
+            totals: HashMap::new(),
         }
     }
 
@@ -73,6 +84,17 @@ impl RowState {
             return None;
         }
         history.get(history.len() - distance).map(String::as_str)
+    }
+
+    /// Install the totals a pre-pass computed for whole-column aggregates.
+    pub fn set_totals(&mut self, totals: HashMap<String, (f64, u64)>) {
+        self.totals = totals;
+    }
+
+    /// Numeric total and numeric count for a column, or `None` when the pre-pass
+    /// did not run (the view path can render `lag`, but not a whole-column total).
+    pub fn totals(&self, column: &str) -> Option<(f64, u64)> {
+        self.totals.get(column).copied()
     }
 
     /// Accumulated total for a column, including the current row.
@@ -127,6 +149,7 @@ mod tests {
         let mut state = RowState::new(RowNeeds {
             lags: vec![("amount".to_string(), 2)],
             running: Vec::new(),
+            aggregates: Vec::new(),
         });
         // Evaluating the first row: nothing has been seen.
         assert_eq!(state.lagged("amount", 1), None);
@@ -150,6 +173,7 @@ mod tests {
         let mut state = RowState::new(RowNeeds {
             lags: Vec::new(),
             running: vec!["amount".to_string()],
+            aggregates: Vec::new(),
         });
         state.observe_sums(&row(&[("amount", "10")]));
         assert_eq!(state.sum("amount"), 10.0);
@@ -165,14 +189,17 @@ mod tests {
         let mut a = RowNeeds {
             lags: vec![("amount".to_string(), 1)],
             running: vec!["qty".to_string()],
+            aggregates: Vec::new(),
         };
         let b = RowNeeds {
             lags: vec![("amount".to_string(), 3)],
             running: vec!["qty".to_string(), "amount".to_string()],
+            aggregates: vec!["amount".to_string()],
         };
         a.absorb(&b);
         assert_eq!(a.lags.len(), 1);
         assert_eq!(a.lags[0].1, 3, "the larger window wins");
         assert_eq!(a.running.len(), 2);
+        assert_eq!(a.aggregates, vec!["amount".to_string()]);
     }
 }

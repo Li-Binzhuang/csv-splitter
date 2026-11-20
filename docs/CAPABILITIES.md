@@ -112,10 +112,16 @@
 数字 round roundup rounddown abs floor ceil int sqrt mod min max sign power exp ln log
 日期 year(d) month(d) day(d) date(y,m,d) datestring(d)  ── ISO 前缀（2024-03-15，带时间也行）
 其他 row lag(col[,n]) running_total(col)
+整列 sum(col) average(col) count(col)   ← 整列聚合：预扫一遍算出数字列的总和/计数
 列引用 amount   [客户编号]   [city2]   ← 名字含空格**或以数字结尾**时要加方括号
 ```
 
 `if` 只算选中的分支（`if(qty=0, 0, amount/qty)` 不会除零）。
+
+整列聚合（`sum`/`average`/`count`）在公式开始前扫一遍**基文件**，把数字列的
+（总和, 计数）装进状态；之后每行是 O(1) 查表。代价是 100 万行约 0.48 s（
+`edit export` 0.85 s → 1.33 s）；也明确不支持区间（`sum(a1:a9)`），且只读文件、
+不包含 journal 里尚未导出的编辑。
 空单元格当 0；非数字得 `#VALUE!`；引用不存在的列 → **导出前报错**。
 
 ## 格式化与呈现

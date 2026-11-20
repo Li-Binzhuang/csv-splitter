@@ -165,7 +165,14 @@ pub fn export_selected(
     let state = if needs.is_empty() {
         None
     } else {
-        Some(crate::formula::RowState::new(needs))
+        let mut state = crate::formula::RowState::new(needs.clone());
+        if !needs.aggregates.is_empty() {
+            // One pre-pass over the base file gives every row the same total; see
+            // formula::totals for why the journal is not included here.
+            let totals = crate::formula::column_totals(base, delimiter, quotes, &needs.aggregates)?;
+            state.set_totals(totals);
+        }
+        Some(state)
     };
     let mut pipeline = RowPipeline::new(&columns, &keep, edits, &plan, refs, state);
 
