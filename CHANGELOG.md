@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.60.4] — 2026-11-20
+
+### Tests / Documentation
+
+- /schema without  already applied edits (it shares the columns handler); with 
+  it compares two files on disk. A test pins both halves: after a journal-only rename, /schema
+  shows the new column while the diff against an unchanged file reports . The
+  support matrix now distinguishes the two.
+
 ## [3.60.3] — 2026-11-20
 
 ### Tests / Documentation

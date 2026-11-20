@@ -464,7 +464,7 @@ GET /columns 多带的四个参数属于「声明正确、对该方法无意义�
 |---|---|---|
 | `/rows` | 总是套用编辑（`sql` 路径也一样）| 渲染路径的默认行为 |
 | `/rows?format=csv` | 同上 | 拿到编辑后文本的唯一途径（`/export` 默认读基文件）|
-| `/cell` `/style` `/journal` `/sheet` `/columns` `/validate` | 总是套用编辑 | 渲染/校验路径 |
+| `/cell` `/style` `/journal` `/sheet` `/columns` `/schema`（无 `diff`）/`/validate` | 总是套用编辑 | 渲染/校验路径；`/schema?diff=` 比较的是磁盘上的两份文件 |
 | `/groupby` `/pivot` `/chart` `/analyze` `/stats` | 可选，`apply-edits=1` | 分析前先物化 |
 | `/filter` `/search` | 可选 | 响应里的 `source` 说明扫的是 `file` 还是 `edited` |
 | `/export` `/sort` `/copy` | 可选 | 输出是编辑后的表（sort/copy 会把编辑摊平进新文件）|

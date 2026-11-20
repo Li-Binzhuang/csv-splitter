@@ -5471,3 +5471,35 @@ fn validation_row_numbers_follow_edits() {
     assert!(after.contains(r#"{"row":2,"#), "{after}");
     assert!(!after.contains(r#"{"row":3,"#), "{after}");
 }
+
+/// `/schema` without `diff` shares the columns handler, so it already applies edits; `/schema`
+/// with `diff` compares two files on disk. Both halves are pinned here so the difference is
+/// explicit rather than accidental.
+#[test]
+fn schema_applies_edits_but_diff_compares_files_on_disk() {
+    let dir = TempDir::new("schemaedits");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\n").unwrap();
+    std::fs::write(dir.join("other.csv"), "city,amount\nCDMX,20\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=rename&from=amount&to=total",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let (_, schema) = get(&server.addr, "/schema?path=t.csv");
+    assert!(
+        schema.contains(r#""total""#),
+        "schema follows the edit: {schema}"
+    );
+    assert!(!schema.contains(r#""amount""#), "{schema}");
+
+    // The journal renamed amount to total, but the files on disk both still say amount, so
+    // the diff reports no difference — that is the proof it reads the disk, not the sheet.
+    let (_, diff) = get(&server.addr, "/schema?path=t.csv&diff=other.csv");
+    assert!(
+        diff.contains(r#""same":true"#),
+        "diff compares the files on disk: {diff}"
+    );
+}
