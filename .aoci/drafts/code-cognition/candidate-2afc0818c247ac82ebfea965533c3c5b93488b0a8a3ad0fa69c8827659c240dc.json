@@ -1,0 +1,93 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "03efbe92f2e8be1c805e5892d7a448ae13cb7eeeba16f739c9d0bf3ea9e535e6",
+  "batch_id": "2afc0818c247ac82ebfea965533c3c5b93488b0a8a3ad0fa69c8827659c240dc",
+  "composite_identity": "37b11c4cbdacbde15fe1643e57afaed2d564fae32e906bf301a69ab09bca95ba",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "f5794315932d2d9fc91cee210017b0f351eabb6339a03f13e52623bec7fbabcf",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "2e60164fdd8e44d34e78d12aaf5047d995fcc94c9d4f0b555876498d133fb82d",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录整列与条件聚合、可续扫游标页、每行相同公式的字节复制与分段并行预扫（2.1 GB 15.4→7.2 s），并把基文件/区间/50 ms/会读当前行的公式四条边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "b7e96b8a2d32c88bace2d757666cc8c64950bc2a9331333d194ce63b7cbd067e",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部定位与 Rust 徽章；下载表列四平台产物；快速开始指向 scripts/demo.sh；公式节说明整列/条件聚合与字节复制快路；性能表已换成最新实测（2.1 GB 过滤 2.4 s/136 MB、搜索 2.6 s/74 MB、导出 1.8 s、verify 6.2 s；11.2 GB 过滤 13.9 s/354 MB、搜索 14.8 s） | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；含 scripts/ 的行不参与 flag 校验；过滤内存随命中数增长、搜索约 20–22 GB 触及 30 s 预算"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/totals.rs",
+      "path": "crates/core/src/formula/totals.rs",
+      "change": "update",
+      "source_sha256": "4ca86604c5b9815cb02ec21168dcf7d6a18a91996bdc8d7b01f2da6867fa7093",
+      "existing_entry": "totals.rs[KP6L]: F:整列与条件聚合的预扫：为 sum/average/count 与 countif/sumif 算（总和, 计数） | R:code:crates/core/src/formula/state.rs,code:crates/core/src/formula/mod.rs,code:crates/core/src/filter.rs,code:crates/core/src/index.rs | A:条件字符串编译为 FilterSpec；新鲜列式侧车且无条件时走 DuckDB parquet；否则大 UTF-8 文件按检查点切块并行（CSVX_SCAN_THREADS 可覆盖），小文件或非 UTF-8 顺序扫；比较类条件只统计数字单元格 | S:读的是基文件，不含 journal 里尚未导出的编辑；分块必须落在检查点上，否则行会漏或重复（slab 等价测试钉住）；侧车失效或读取失败必须静默回退"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "af41cebf9b7e4334a5b39d05c80bccec4ef4122a0ef15802dc634dc31c6de2b8",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 写明整列 sum/average/count 与条件 countif/sumif 已实现（0.48 s，含侧车 0.30 s），区间引用未做，并保留 50 ms 验收标准 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "705c390ca59ab11014faa99983cff9ffbd8c5c4e69ca1c93ee693bca1ca245cf",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；大文件节写并行数字、20–22 GB 边界与 next 游标续扫；公式节区分“每行相同”（字节复制 + 并行预扫，100 万行 0.13–0.33 s、2.1 GB 7.2 s）与“会读当前行”（仍逐行重写） | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "f05dbcb7135d5982b84feffd714dc149813df3f0e2d7f90d88c74969c37f5f6a",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "2e60164fdd8e44d34e78d12aaf5047d995fcc94c9d4f0b555876498d133fb82d",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录整列与条件聚合、可续扫游标页、每行相同公式的字节复制与分段并行预扫（2.1 GB 15.4→7.2 s），并把基文件/区间/50 ms/会读当前行的公式四条边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "5d977042f2781772ab2ae8a3b176a94914fd07c64e6e216382376a8f87971d0a",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "b7e96b8a2d32c88bace2d757666cc8c64950bc2a9331333d194ce63b7cbd067e",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部定位与 Rust 徽章；下载表列四平台产物；快速开始指向 scripts/demo.sh；公式节说明整列/条件聚合与字节复制快路；性能表已换成最新实测（2.1 GB 过滤 2.4 s/136 MB、搜索 2.6 s/74 MB、导出 1.8 s、verify 6.2 s；11.2 GB 过滤 13.9 s/354 MB、搜索 14.8 s） | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；含 scripts/ 的行不参与 flag 校验；过滤内存随命中数增长、搜索约 20–22 GB 触及 30 s 预算"
+    },
+    {
+      "candidate_id": "3113d84c44ecd65fa5cbe2899ced87028383baad6092e7bd0d219d18f4e13f2c",
+      "object_ref": "code:crates/core/src/formula/totals.rs",
+      "path": "crates/core/src/formula/totals.rs",
+      "change": "update",
+      "source_sha256": "4ca86604c5b9815cb02ec21168dcf7d6a18a91996bdc8d7b01f2da6867fa7093",
+      "existing_entry": "totals.rs[KP6L]: F:整列与条件聚合的预扫：为 sum/average/count 与 countif/sumif 算（总和, 计数） | R:code:crates/core/src/formula/state.rs,code:crates/core/src/formula/mod.rs,code:crates/core/src/filter.rs,code:crates/core/src/index.rs | A:条件字符串编译为 FilterSpec；新鲜列式侧车且无条件时走 DuckDB parquet；否则大 UTF-8 文件按检查点切块并行（CSVX_SCAN_THREADS 可覆盖），小文件或非 UTF-8 顺序扫；比较类条件只统计数字单元格 | S:读的是基文件，不含 journal 里尚未导出的编辑；分块必须落在检查点上，否则行会漏或重复（slab 等价测试钉住）；侧车失效或读取失败必须静默回退"
+    },
+    {
+      "candidate_id": "38411ecc01869389e46f68681dc9a58003efc16b91bc4a7a9472da04b96d434b",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "af41cebf9b7e4334a5b39d05c80bccec4ef4122a0ef15802dc634dc31c6de2b8",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 写明整列 sum/average/count 与条件 countif/sumif 已实现（0.48 s，含侧车 0.30 s），区间引用未做，并保留 50 ms 验收标准 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    },
+    {
+      "candidate_id": "4b14a9d6d4b830b63df54cb12aca6c77bc34367f92219376eff828ac9f1e8fb3",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "705c390ca59ab11014faa99983cff9ffbd8c5c4e69ca1c93ee693bca1ca245cf",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；大文件节写并行数字、20–22 GB 边界与 next 游标续扫；公式节区分“每行相同”（字节复制 + 并行预扫，100 万行 0.13–0.33 s、2.1 GB 7.2 s）与“会读当前行”（仍逐行重写） | S:-"
+    }
+  ]
+}
