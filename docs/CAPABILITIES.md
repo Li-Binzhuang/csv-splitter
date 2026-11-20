@@ -106,11 +106,13 @@
 
 ```
 算术 + - * / %  ()      比较 = <> > >= < <=
-逻辑 if(a,b,c) and or not isblank isnumber iferror
-文本 & "字符串" left right mid trim replace concat upper lower len
-数字 round abs floor ceil int sqrt mod min max
-日期 year(d) month(d) day(d)     ── 取 ISO 前缀（2024-03-15，带时间也行）
-列引用 amount   [客户编号]
+逻辑 if(a,b,c) and or not isblank isnumber iferror exact
+文本 & "字符串" left right mid trim replace substitute find search proper rept
+     concat concatenate upper lower len value
+数字 round roundup rounddown abs floor ceil int sqrt mod min max sign power exp ln log
+日期 year(d) month(d) day(d) date(y,m,d) datestring(d)  ── ISO 前缀（2024-03-15，带时间也行）
+其他 row lag(col[,n]) running_total(col)
+列引用 amount   [客户编号]   [city2]   ← 名字含空格**或以数字结尾**时要加方括号
 ```
 
 `if` 只算选中的分支（`if(qty=0, 0, amount/qty)` 不会除零）。

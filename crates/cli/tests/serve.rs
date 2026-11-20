@@ -5861,3 +5861,61 @@ fn set_many_refuses_a_semicolon_inside_a_value() {
         "nothing was written: {journal}"
     );
 }
+
+/// Dedupe and partition are "flatten the edits into output files" commands: with
+/// `apply-edits=1` the output carries the edit, without it the base file is what gets written.
+#[test]
+fn dedupe_and_partition_can_apply_edits() {
+    let dir = TempDir::new("dedupedapply");
+    std::fs::write(dir.join("t.csv"), "city,amount\nA,1\nA,2\nB,3\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=city&value=Q",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let (status, body) = post(
+        &server.addr,
+        "/dedupe?path=t.csv&by=city&out=dedup.csv&apply-edits=1",
+    );
+    assert!(status == 200 || status == 202, "{body}");
+    let mut rows = String::new();
+    for _ in 0..100 {
+        (_, rows) = get(&server.addr, "/rows?path=dedup.csv&start=0&count=5");
+        if rows.contains("Q") || rows.contains("city") {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    assert!(rows.contains("Q"), "the edit survives dedupe: {rows}");
+    assert!(rows.contains("A") && rows.contains("B"), "{rows}");
+
+    let (status, body) = post(
+        &server.addr,
+        "/partition?path=t.csv&by=city&out=parts.tar&apply-edits=1",
+    );
+    assert!(status == 200 || status == 202, "{body}");
+    let mut state = String::new();
+    for _ in 0..100 {
+        (_, state) = get(&server.addr, "/jobs?path=t.csv");
+        if state.contains(r#""state":"done""#) || state.contains(r#""state":"failed""#) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    assert!(state.contains(r#""state":"done""#), "{state}");
+
+    // The archive is a tar of one file per value; a part named after Q proves the edit
+    // reached the partition step.
+    let listing = std::process::Command::new("tar")
+        .args(["-tf", dir.join("parts.tar").to_str().unwrap()])
+        .output()
+        .unwrap();
+    let names = String::from_utf8_lossy(&listing.stdout).to_string();
+    assert!(
+        names.contains('Q'),
+        "a part named after the edited value: {names}"
+    );
+}

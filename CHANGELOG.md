@@ -1,5 +1,23 @@
 # Changelog
 
+## [3.62.0] — 2026-11-20
+
+### Added
+
+- **Sixteen more spreadsheet functions**, so a formula column is closer to what a spreadsheet
+  user reaches for: `sign`, `power`, `exp`, `ln`, `log(x[,base])`, `roundup`, `rounddown`,
+  `exact`, `substitute`, `find`, `search`, `proper`, `rept`, `value`, `concatenate`,
+  `date(y,m,d)`. Directed rounding follows Excel (away from / towards zero for negatives),
+  `find` is case-sensitive and `search` is not, both return 0 when absent, and `date` refuses
+  an impossible date instead of printing one. A test walks each function and also checks that
+  `date` composes with `year`/`month`/`day`.
+
+- **`docs/BEYOND_EXCEL.md`**: the honest case for surpassing Excel — eight measured advantages
+  with evidence (row limit, first screen, concurrent writers, machine-readable contract,
+  journal auditing, read-time formulas, dual engines, verified split/merge), six named
+  remaining gaps with acceptance criteria, and the non-goals. No claim without a number or a
+  test behind it.
+
 ## [3.61.8] — 2026-11-20
 
 ### Tests / Documentation

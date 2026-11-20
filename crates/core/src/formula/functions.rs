@@ -274,6 +274,106 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         }
         // Alias for `mid`, which is the name people reach for first.
         "substr" => call("mid", args, ctx),
+        // ---- more of the spreadsheet's everyday functions --------------------
+        "concatenate" => call("concat", args, ctx),
+        "sign" => match args.first().map(|a| eval(a, ctx).number()) {
+            Some(Some(n)) => Value::Number(if n > 0.0 {
+                1.0
+            } else if n < 0.0 {
+                -1.0
+            } else {
+                0.0
+            }),
+            _ => Value::Error,
+        },
+        "power" | "pow" => match (
+            args.first().map(|a| eval(a, ctx).number()),
+            args.get(1).map(|a| eval(a, ctx).number()),
+        ) {
+            (Some(Some(base)), Some(Some(exp))) => Value::Number(base.powf(exp)),
+            _ => Value::Error,
+        },
+        "exp" => match args.first().map(|a| eval(a, ctx).number()) {
+            Some(Some(n)) => Value::Number(n.exp()),
+            _ => Value::Error,
+        },
+        "ln" => match args.first().map(|a| eval(a, ctx).number()) {
+            Some(Some(n)) if n > 0.0 => Value::Number(n.ln()),
+            _ => Value::Error,
+        },
+        // Excel's LOG(number, [base]) defaults to base 10; LN is the natural log.
+        "log" => match args.first().map(|a| eval(a, ctx).number()) {
+            Some(Some(n)) if n > 0.0 => {
+                let base = args.get(1).and_then(|a| eval(a, ctx).number());
+                match base {
+                    None => Value::Number(n.log10()),
+                    Some(b) if b > 0.0 && b != 1.0 => Value::Number(n.log(b)),
+                    _ => Value::Error,
+                }
+            }
+            _ => Value::Error,
+        },
+        // `roundup`/`rounddown` round away from/towards zero, like Excel, and honour digits.
+        "roundup" | "rounddown" => round_directed(&lower, args, ctx),
+        "exact" => match (
+            args.first().map(|a| eval(a, ctx).text()),
+            args.get(1).map(|a| eval(a, ctx).text()),
+        ) {
+            (Some(a), Some(b)) => Value::Bool(a == b),
+            _ => Value::Error,
+        },
+        // Excel's SUBSTITUTE(text, old, new) replaces every occurrence. Our `replace`
+        // already had that meaning, so this is the name a spreadsheet user expects.
+        "substitute" => call("replace", args, ctx),
+        "find" => find_in(args, ctx, true),
+        "search" => find_in(args, ctx, false),
+        "proper" => match args.first().map(|a| eval(a, ctx).text()) {
+            Some(text) => Value::Text(
+                text.split(' ')
+                    .map(|word| {
+                        let mut chars = word.chars();
+                        match chars.next() {
+                            Some(first) => {
+                                format!("{}{}", first.to_uppercase(), chars.as_str().to_lowercase())
+                            }
+                            None => String::new(),
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" "),
+            ),
+            None => Value::Error,
+        },
+        "rept" => match (
+            args.first().map(|a| eval(a, ctx).text()),
+            args.get(1).map(|a| eval(a, ctx).number()),
+        ) {
+            (Some(text), Some(Some(times))) if (0.0..=10_000.0).contains(&times) => {
+                Value::Text(text.repeat(times as usize))
+            }
+            _ => Value::Error,
+        },
+        "value" => match args.first().map(|a| eval(a, ctx).text()) {
+            Some(text) => match text.trim().parse::<f64>() {
+                Ok(n) if n.is_finite() => Value::Number(n),
+                _ => Value::Error,
+            },
+            None => Value::Error,
+        },
+        // DATE(year, month, day) renders the ISO day a CSV date column can hold, so it
+        // composes with year()/month()/day() rather than inventing a serial number.
+        "date" => match (
+            args.first().map(|a| eval(a, ctx).number()),
+            args.get(1).map(|a| eval(a, ctx).number()),
+            args.get(2).map(|a| eval(a, ctx).number()),
+        ) {
+            (Some(Some(y)), Some(Some(m)), Some(Some(d)))
+                if (1.0..=9999.0).contains(&y) && (1.0..=12.0).contains(&m) && d >= 1.0 =>
+            {
+                Value::Text(format!("{:04}-{:02}-{:02}", y as u32, m as u32, d as u32))
+            }
+            _ => Value::Error,
+        },
 
         // ---- row position ---------------------------------------------------
         "row" => Value::Number((ctx.row + 1) as f64),
@@ -345,5 +445,64 @@ fn date_part(text: &str, part: &str) -> Option<u32> {
                 .filter(|d| (1..=31).contains(d))
         }
         _ => None,
+    }
+}
+
+/// `roundup(1.44, 1)` → 1.5, `rounddown(1.46, 1)` → 1.4. Negative numbers round away
+/// from / towards zero (Excel semantics), `digits` may be negative to round tens.
+fn round_directed(direction: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
+    let Some(Some(number)) = args.first().map(|a| eval(a, ctx).number()) else {
+        return Value::Error;
+    };
+    let digits = args
+        .get(1)
+        .and_then(|a| eval(a, ctx).number())
+        .unwrap_or(0.0);
+    if !number.is_finite() || digits.abs() > 12.0 {
+        return Value::Error;
+    }
+    let factor = 10f64.powi(digits as i32);
+    let scaled = number * factor;
+    let rounded = if direction == "roundup" {
+        if number >= 0.0 {
+            scaled.ceil()
+        } else {
+            scaled.floor()
+        }
+    } else if number >= 0.0 {
+        scaled.floor()
+    } else {
+        scaled.ceil()
+    };
+    Value::Number(rounded / factor)
+}
+
+/// 1-based position of `needle` in `text`; 0 when absent, like Excel's FIND/SEARCH.
+fn find_in(args: &[Expr], ctx: &Ctx<'_>, case_sensitive: bool) -> Value {
+    let needle = args.first().map(|a| eval(a, ctx).text());
+    let haystack = args.get(1).map(|a| eval(a, ctx).text());
+    let start = args
+        .get(2)
+        .and_then(|a| eval(a, ctx).number())
+        .unwrap_or(1.0)
+        .max(1.0) as usize;
+    let (Some(needle), Some(haystack)) = (needle, haystack) else {
+        return Value::Error;
+    };
+    if needle.is_empty() {
+        return Value::Error;
+    }
+    let haystack_slice: String = haystack.chars().skip(start.saturating_sub(1)).collect();
+    let (needle_cmp, haystack_cmp) = if case_sensitive {
+        (needle.clone(), haystack_slice.clone())
+    } else {
+        (needle.to_lowercase(), haystack_slice.to_lowercase())
+    };
+    match haystack_cmp.find(&needle_cmp) {
+        Some(byte_index) => {
+            let char_index = haystack_cmp[..byte_index].chars().count();
+            Value::Number((char_index + start) as f64)
+        }
+        None => Value::Number(0.0),
     }
 }

@@ -13,7 +13,18 @@
 //! term    := factor (('*' | '/' | '%') factor)*
 //! factor  := number | column | '(' expr ')' | '-' factor | function '(' args ')'
 //! column  := name | [name]        (brackets for names with spaces)
-//! function:= round(x[, digits]) | abs(x) | min(...) | max(...) | len(x) | upper(x) | lower(x)
+//! function:= round(x[, digits]) | roundup(x[, digits]) | rounddown(x[, digits]) | abs(x)
+//!          | min(...) | max(...) | sign(x) | power(x, y) | exp(x) | ln(x) | log(x[, base])
+//!          | len(x) | upper(x) | lower(x) | proper(x) | trim(x) | left(x, n) | right(x, n)
+//!          | mid(x, start[, len]) | replace(x, old, new) | substitute(x, old, new)
+//!          | find(needle, x[, start]) | search(needle, x[, start]) | rept(x, n)
+//!          | concat(...) | concatenate(...) | value(x) | exact(a, b)
+//!          | year(x) | month(x) | day(x) | date(y, m, d) | datestring(x)
+//!          | if(cond, a[, b]) | and(...) | or(...) | not(x) | iferror(x, fallback)
+//!          | isblank(x) | isnumber(x) | row | lag(col[, n]) | running_total(col)
+//!
+//! `column := name | [name]` — bracket a name that contains spaces **or ends in digits**,
+//! because `city2` bare is an A1-style cell reference (column CITY, row 2).
 //! ```
 //!
 //! Cell values that are not numbers evaluate to `#VALUE!` in numeric positions,
@@ -1056,5 +1067,48 @@ mod tests {
         assert_eq!(eval_str("0.1 + 0.2", &[]), "0.3");
         assert_eq!(eval_str("10 / 4", &[]), "2.5");
         assert_eq!(eval_str("100 / 3", &[]), "33.333333");
+    }
+
+    #[test]
+    fn the_everyday_functions_behave_like_a_spreadsheet() {
+        // Numeric
+        assert_eq!(eval_str("sign(-3)", &[]), "-1");
+        assert_eq!(eval_str("power(2, 10)", &[]), "1024");
+        assert_eq!(eval_str("roundup(1.41, 1)", &[]), "1.5");
+        assert_eq!(eval_str("rounddown(1.49, 1)", &[]), "1.4");
+        assert_eq!(eval_str("roundup(-1.41, 1)", &[]), "-1.5");
+        assert_eq!(eval_str("round(2.5)", &[]), "3");
+        assert_eq!(eval_str("ln(1)", &[]), "0");
+        assert_eq!(eval_str("log(100)", &[]), "2");
+        assert_eq!(eval_str("log(8, 2)", &[]), "3");
+
+        // Text
+        assert_eq!(eval_str("exact('a', 'A')", &[]), "FALSE");
+        assert_eq!(eval_str("exact('x', 'x')", &[]), "TRUE");
+        // `city2` bare is parsed as an A1-style reference (column CITY, row 2), so a
+        // column whose name ends in digits has to be bracketed.
+        assert_eq!(
+            eval_str(
+                "exact([city], [city2])",
+                &[("city", "CDMX"), ("city2", "CDMX")]
+            ),
+            "TRUE"
+        );
+        assert_eq!(eval_str("proper('hello world')", &[]), "Hello World");
+        assert_eq!(eval_str("rept('ab', 3)", &[]), "ababab");
+        assert_eq!(eval_str("substitute('a-b-c', '-', '+')", &[]), "a+b+c");
+        assert_eq!(eval_str("find('B', 'aBc')", &[]), "2");
+        assert_eq!(eval_str("search('b', 'aBc')", &[]), "2");
+        assert_eq!(eval_str("find('z', 'aBc')", &[]), "0");
+        assert_eq!(eval_str("concatenate('a', 1)", &[]), "a1");
+        assert_eq!(eval_str("value(' 42 ')", &[]), "42");
+
+        // Dates compose: date() produces what year()/month()/day() read back.
+        assert_eq!(eval_str("date(2026, 11, 20)", &[]), "2026-11-20");
+        assert_eq!(eval_str("year(date(2026, 11, 20))", &[]), "2026");
+        assert_eq!(eval_str("month(date(2026, 11, 20))", &[]), "11");
+        assert_eq!(eval_str("day(date(2026, 11, 20))", &[]), "20");
+        // A nonsense date is an error, not a made-up string.
+        assert_eq!(eval_str("date(2026, 13, 1)", &[]), "#VALUE!");
     }
 }

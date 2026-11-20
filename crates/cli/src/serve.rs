@@ -726,10 +726,21 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
         "/sort",
         &["path", "by", "desc", "out", "bufMb", "apply-edits", "delim"],
     ),
-    ("/dedupe", &["path", "by", "out", "delim"]),
+    (
+        "/dedupe",
+        &["path", "by", "out", "maxKeys", "apply-edits", "delim"],
+    ),
     (
         "/partition",
-        &["path", "by", "format", "out", "maxPartitions", "delim"],
+        &[
+            "path",
+            "by",
+            "format",
+            "out",
+            "maxPartitions",
+            "apply-edits",
+            "delim",
+        ],
     ),
     (
         "/split",
@@ -2205,9 +2216,30 @@ fn start_dedupe(
         .unwrap_or(dedupe::DEFAULT_MAX_KEYS);
     let delimiter = delimiter(params);
     let result_path = out.clone();
+    let apply_edits = params
+        .get("apply-edits")
+        .is_some_and(|v| v == "1" || v == "true");
 
     let id = jobs.submit("dedupe", move |tx| {
-        match dedupe::dedupe(&input, delimiter, &keys, &out, max_keys, &tx) {
+        // `apply-edits=1` deduplicates the edited sheet: the output is a flattened view of
+        // the edits, not a copy of the base file.
+        let materialised = if apply_edits {
+            let read = csv_splitter_core::sheet::ReadOptions { delimiter };
+            match csv_splitter_core::sheet::materialize(&input, &read, &tx) {
+                Ok(m) => Some(m),
+                Err(e) => {
+                    tx.send(ProgressEvent::Error(e.to_string())).ok();
+                    return;
+                }
+            }
+        } else {
+            None
+        };
+        let source: std::path::PathBuf = materialised
+            .as_ref()
+            .map(|m| m.path().to_path_buf())
+            .unwrap_or_else(|| input.clone());
+        match dedupe::dedupe(&source, delimiter, &keys, &out, max_keys, &tx) {
             Ok(summary) => {
                 tx.send(ProgressEvent::Info(format!(
                     "kept {} of {} rows",
@@ -3998,7 +4030,30 @@ fn start_partition(
         delimiter: delimiter(params),
         max_partitions,
     };
+    let apply_edits = params
+        .get("apply-edits")
+        .is_some_and(|v| v == "1" || v == "true");
     let id = jobs.submit("partition", move |tx| {
+        let mut config = config;
+        // The guard must outlive the run: dropping it deletes the materialised temp file.
+        let _materialised = if apply_edits {
+            // `apply-edits=1` partitions the edited sheet: the parts carry the edits.
+            let read = csv_splitter_core::sheet::ReadOptions {
+                delimiter: config.delimiter,
+            };
+            match csv_splitter_core::sheet::materialize(&config.input, &read, &tx) {
+                Ok(materialised) => {
+                    config.input = materialised.path().to_path_buf();
+                    Some(materialised)
+                }
+                Err(e) => {
+                    tx.send(ProgressEvent::Error(e.to_string())).ok();
+                    return;
+                }
+            }
+        } else {
+            None
+        };
         partition::run_partition(config, tx);
     });
     respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
