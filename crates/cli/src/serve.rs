@@ -4354,21 +4354,7 @@ fn respond_sheet_window(
     // `format=csv` returns this window as CSV instead of JSON. It matters because `/export`
     // reads the base file: this is the only way to get an *edited* window as text.
     if params.get("format").map(String::as_str) == Some("csv") {
-        let mut body = String::new();
-        let mut header: Vec<&str> = Vec::with_capacity(display_columns.len());
-        header.extend(display_columns.iter().map(String::as_str));
-        body.push_str(&csv_splitter_core::csv_reader::join_csv_line(&header, b','));
-        for row in &display_rows {
-            let cells: Vec<&str> = row.iter().map(String::as_str).collect();
-            body.push_str(&csv_splitter_core::csv_reader::join_csv_line(&cells, b','));
-        }
-        return respond_bytes(
-            stream,
-            200,
-            "text/csv; charset=utf-8",
-            "inline",
-            body.as_bytes(),
-        );
+        return respond_window_as_csv(stream, &display_columns, &display_rows);
     }
     respond_json(
         stream,
@@ -4384,6 +4370,29 @@ fn respond_sheet_window(
             row_keys,
             ops.len()
         ),
+    )
+}
+
+/// Render a window as CSV. Shared by the edited and pristine paths: `format=csv` must
+/// mean the same thing whether or not the sheet has a journal.
+fn respond_window_as_csv(
+    stream: &mut TcpStream,
+    columns: &[String],
+    rows: &[Vec<String>],
+) -> io::Result<()> {
+    let mut body = String::new();
+    let header: Vec<&str> = columns.iter().map(String::as_str).collect();
+    body.push_str(&csv_splitter_core::csv_reader::join_csv_line(&header, b','));
+    for row in rows {
+        let cells: Vec<&str> = row.iter().map(String::as_str).collect();
+        body.push_str(&csv_splitter_core::csv_reader::join_csv_line(&cells, b','));
+    }
+    respond_bytes(
+        stream,
+        200,
+        "text/csv; charset=utf-8",
+        "inline",
+        body.as_bytes(),
     )
 }
 
@@ -5150,6 +5159,9 @@ fn rows(
             headers.iter().take(count).map(|c| json_str(c)).collect()
         })
         .unwrap_or_default();
+    if params.get("format").map(String::as_str) == Some("csv") {
+        return respond_window_as_csv(stream, &display_columns, &display_rows);
+    }
     let total = viewer.total_rows();
     // Every page answers these, whether it was filtered or not: a client that has to
     // branch on the shape of a response is a client that will get it wrong.

@@ -5562,3 +5562,52 @@ fn metrics_report_per_route_percentiles_and_errors() {
     assert!(body.contains(r#""400""#), "the 400 is attributed: {body}");
     assert!(body.contains(r#""200""#), "the 200 is attributed: {body}");
 }
+
+/// `format=csv` must mean CSV whether or not the sheet has edits: the pristine branch used
+/// to ignore the parameter and answer JSON, and the edited branch was the only covered path.
+#[test]
+fn format_csv_works_on_a_pristine_sheet_too() {
+    let dir = TempDir::new("csvpristine");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=2&format=csv");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.starts_with("city,amount\n"), "{body}");
+    assert!(!body.contains(r#""columns""#), "not JSON: {body}");
+
+    // Special characters must survive the CSV rendering (quotes, backslash, newline, tab).
+    std::fs::write(
+        dir.join("w.csv"),
+        "id,text\n1,\"he said \"\"hi\"\"\"\n2,back\\slash\n3,\"line1\nline2\"\n",
+    )
+    .unwrap();
+    let (_, csv) = get(&server.addr, "/rows?path=w.csv&start=0&count=3&format=csv");
+    assert!(csv.contains("\"he said \"\"hi\"\"\""), "{csv}");
+    assert!(csv.contains("back\\slash"), "{csv}");
+    assert!(csv.contains("\"line1\nline2\""), "{csv}");
+}
+
+/// JSON must escape what a CSV cell can legally contain: a raw newline or control byte inside
+/// a JSON string makes the whole response unparseable for every client.
+#[test]
+fn json_escapes_newlines_and_control_characters() {
+    let dir = TempDir::new("jsonescape");
+    std::fs::write(
+        dir.join("t.csv"),
+        b"id,text\n1,\"line1\nline2\"\n2,ctrl\x01char\n",
+    )
+    .unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = get(&server.addr, "/rows?path=t.csv&start=0&count=2");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(r#"line1\nline2"#), "newline escaped: {body}");
+    assert!(
+        body.contains(r#"ctrl\u0001char"#),
+        "control escaped: {body}"
+    );
+
+    let (_, cell) = get(&server.addr, "/cell?path=t.csv&row=2&col=text");
+    assert!(cell.contains(r#"ctrl\u0001char"#), "{cell}");
+}

@@ -40,7 +40,7 @@
 |---|---|---|
 | `GET /health` | — | 存活检查 + 根目录 + `duckdb`（本构建是否编入 DuckDB）|
 | `GET /meta` | `path` | **基文件**的行数 `rows`、字节数 `bytes`、表头 `headers`、`delimiter`、`encoding`；另有 `edited`（journal 里的操作数）：有编辑时行/列数仍按文件计，编辑后的表头看 `/columns`、行看 `/rows` |
-| `GET /rows` | `path` `start` `count` `where` `order` `desc` `sql` `format`（`format=csv` 把该窗口按编辑后的值输出为 CSV，是拿到编辑后文本的唯一途径）| 分页窗口；`where`/`order` 走 SQL，**套用编辑与公式列**。三条路径（普通/筛选/排序）返回同一组字段：`start` `count` `requested` `limit` `total` `columns` `frozenColumns` `rows` `edited` `operations`（筛选/排序额外有 `hasMore`） |
+| `GET /rows` | `path` `start` `count` `where` `order` `desc` `sql` `format`（`format=csv` 把该窗口按编辑后的值输出为 CSV，是拿到编辑后文本的唯一途径；**无编辑的文件同样返回 CSV**（此前只对编辑过的表生效，参数被静默忽略））| 分页窗口；`where`/`order` 走 SQL，**套用编辑与公式列**。三条路径（普通/筛选/排序）返回同一组字段：`start` `count` `requested` `limit` `total` `columns` `frozenColumns` `rows` `edited` `operations`（筛选/排序额外有 `hasMore`） |
 | `GET /sheet` | `path` | 列、行数、编辑数、能力清单、列布局、冻结列、是否已建索引（`indexed` / `indexBytes`） |
 | `GET /book` | `max` `root` | 工作簿：响应 `root` `sheets` `hidden` `total` `truncated` `unreadable` |
 | `GET /stats` | `path` `sample` `apply-edits` | 采样统计：响应 `columns`；`apply-edits=1` 先物化编辑后的表 |

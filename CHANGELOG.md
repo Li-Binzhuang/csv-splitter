@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.61.2] — 2026-11-20
+
+### Fixed
+
+- **`/rows?format=csv` was silently ignored on a sheet without edits.** The CSV branch lived
+  only in the edited path, so a pristine file answered JSON despite the parameter — exactly the
+  silent fallback the API promises not to do. Both paths now share one renderer, and a test
+  pins the pristine CSV body plus quoting of quotes, backslashes and embedded newlines.
+
+### Tests
+
+- JSON escaping is now covered by real CSV content: a cell with a newline and another with a
+  `0x01` byte must appear as `\n` and `\u0001`, because a raw newline inside a JSON string
+  makes the response unparseable for every client.
+
 ## [3.61.1] — 2026-11-20
 
 ### Added
