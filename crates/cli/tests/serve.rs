@@ -5164,3 +5164,49 @@ fn export_can_apply_edits() {
         "without apply-edits the base file answers: {text}"
     );
 }
+
+/// With edits applied, filter's row numbers must describe the edited sheet — otherwise a caller
+/// pages `/rows` with numbers that point at different rows.
+#[test]
+fn filter_can_apply_edits_and_its_row_numbers_follow() {
+    let dir = TempDir::new("filterapply");
+    std::fs::write(dir.join("t.csv"), "city,amount\nA,1\nB,2\nC,3\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(&server.addr, "/edit?path=t.csv&action=delete&row=1&count=1");
+    assert_eq!(status, 200, "{body}");
+
+    let base = get(&server.addr, "/filter?path=t.csv&where=amount%3E0").1;
+    assert!(base.contains(r#""rows":[1,2,3]"#), "{base}");
+
+    let edited = get(
+        &server.addr,
+        "/filter?path=t.csv&where=amount%3E0&apply-edits=1",
+    )
+    .1;
+    assert!(
+        edited.contains(r#""rows":[1,2]"#),
+        "the edited sheet has two rows left: {edited}"
+    );
+}
+
+/// Search over the edited sheet: a deleted row must stop matching, and without the flag the
+/// base file still answers.
+#[test]
+fn search_can_apply_edits() {
+    let dir = TempDir::new("searchapply");
+    std::fs::write(dir.join("t.csv"), "city,amount\nA,1\nB,2\nC,3\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(&server.addr, "/edit?path=t.csv&action=delete&row=2&count=1");
+    assert_eq!(status, 200, "{body}");
+
+    let base = get(&server.addr, "/search?path=t.csv&q=B").1;
+    assert!(base.contains(r#""matched":1"#), "{base}");
+
+    let edited = get(&server.addr, "/search?path=t.csv&q=B&apply-edits=1").1;
+    assert!(
+        edited.contains(r#""matched":0"#),
+        "the deleted row must stop matching: {edited}"
+    );
+}

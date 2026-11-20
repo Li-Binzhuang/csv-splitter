@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.59.3] — 2026-11-20
+
+### Added
+
+- **/filter and /search accept apply-edits=1.** Both scan the base file by design; with edits
+  applied, a deleted row still matched and the returned row numbers disagreed with /rows after
+  an insert or delete. With the flag they scan the edited sheet, so row numbers line up with the
+  window a caller pages. Tests cover both directions: the base answer keeps the deleted row, the
+  edited answer does not (filter checks the row numbers, search checks the match count).
+
 ## [3.59.2] — 2026-11-20
 
 ### Added

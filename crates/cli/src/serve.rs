@@ -637,13 +637,28 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     (
         "/search",
         &[
-            "path", "q", "columns", "regex", "case", "exact", "limit", "delim",
+            "path",
+            "q",
+            "columns",
+            "regex",
+            "case",
+            "exact",
+            "limit",
+            "apply-edits",
+            "delim",
         ],
     ),
     (
         "/filter",
         &[
-            "path", "where", "columns", "order", "desc", "limit", "delim",
+            "path",
+            "where",
+            "columns",
+            "order",
+            "desc",
+            "limit",
+            "apply-edits",
+            "delim",
         ],
     ),
     (
@@ -5723,9 +5738,35 @@ fn search(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
         .min(MAX_ROWS_PER_REQUEST as usize * 10);
     let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
     drop(rx);
+    // `apply-edits=1` searches the edited sheet; its row numbers then match /rows.
+    let materialised = if params
+        .get("apply-edits")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false)
+    {
+        let read = csv_splitter_core::sheet::ReadOptions {
+            delimiter: delimiter(params),
+        };
+        match csv_splitter_core::sheet::materialize(&path, &read, &tx) {
+            Ok(m) => Some(m),
+            Err(e) => {
+                return respond_json(
+                    stream,
+                    422,
+                    &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                )
+            }
+        }
+    } else {
+        None
+    };
+    let source: std::path::PathBuf = materialised
+        .as_ref()
+        .map(|m| m.path().to_path_buf())
+        .unwrap_or_else(|| path.clone());
     let budget = std::time::Duration::from_millis(query_timeout_ms());
     match csv_splitter_core::search::search_quotes_with_budget(
-        &path,
+        &source,
         delimiter(params),
         &spec,
         limit,
@@ -5870,10 +5911,37 @@ fn filter(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
         .min(MAX_ROWS_PER_REQUEST as usize * 10);
     let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
     drop(rx);
+    // `apply-edits=1` scans the edited sheet: its row numbers then match /rows, which is what
+    // a caller paging the filtered result needs after inserts and deletes.
+    let materialised = if params
+        .get("apply-edits")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false)
+    {
+        let read = csv_splitter_core::sheet::ReadOptions {
+            delimiter: delimiter(params),
+        };
+        match csv_splitter_core::sheet::materialize(&path, &read, &tx) {
+            Ok(m) => Some(m),
+            Err(e) => {
+                return respond_json(
+                    stream,
+                    422,
+                    &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                )
+            }
+        }
+    } else {
+        None
+    };
+    let source: std::path::PathBuf = materialised
+        .as_ref()
+        .map(|m| m.path().to_path_buf())
+        .unwrap_or_else(|| path.clone());
     // The same budget /query already honours: a filtered scan over a huge sheet has no
     // cancel button once the request is in flight.
     let budget = std::time::Duration::from_millis(query_timeout_ms());
-    match filter::scan_with_budget(&path, delimiter(params), &spec, limit, Some(budget), &tx) {
+    match filter::scan_with_budget(&source, delimiter(params), &spec, limit, Some(budget), &tx) {
         Ok(result) => {
             let rows: Vec<String> = result.row_numbers().iter().map(|n| n.to_string()).collect();
             respond_json(
