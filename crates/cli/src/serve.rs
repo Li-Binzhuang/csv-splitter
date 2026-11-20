@@ -720,7 +720,10 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     ("/files", &["dir", "ext", "limit", "root"]),
     ("/book", &["max", "root"]),
     ("/query", &["path", "sql", "limit", "delim"]),
-    ("/sort", &["path", "by", "desc", "out", "bufMb", "delim"]),
+    (
+        "/sort",
+        &["path", "by", "desc", "out", "bufMb", "apply-edits", "delim"],
+    ),
     ("/dedupe", &["path", "by", "out", "delim"]),
     (
         "/partition",
@@ -3796,10 +3799,30 @@ fn start_sort(
     let by_owned = by.to_string();
     let result_path = out.clone();
 
-    let id = jobs.submit(
-        "sort",
-        move |tx| match csv_splitter_core::sort::external_sort(
-            &input, &out, &by_owned, descending, delimiter, buf_mb, &tx,
+    let apply_edits = params
+        .get("apply-edits")
+        .is_some_and(|v| v == "1" || v == "true");
+    let id = jobs.submit("sort", move |tx| {
+        // `apply-edits=1` sorts the edited sheet and writes it out: the result is a
+        // flattened view of the edits, not a copy of the base file.
+        let materialised = if apply_edits {
+            let read = csv_splitter_core::sheet::ReadOptions { delimiter };
+            match csv_splitter_core::sheet::materialize(&input, &read, &tx) {
+                Ok(m) => Some(m),
+                Err(e) => {
+                    tx.send(ProgressEvent::Error(e.to_string())).ok();
+                    return;
+                }
+            }
+        } else {
+            None
+        };
+        let source: std::path::PathBuf = materialised
+            .as_ref()
+            .map(|m| m.path().to_path_buf())
+            .unwrap_or_else(|| input.clone());
+        match csv_splitter_core::sort::external_sort(
+            &source, &out, &by_owned, descending, delimiter, buf_mb, &tx,
         ) {
             // A job only reaches `done` on Finished; without this it would stay
             // "running" forever even though the file is already complete.
@@ -3812,8 +3835,8 @@ fn start_sort(
             Err(e) => {
                 tx.send(ProgressEvent::Error(e.to_string())).ok();
             }
-        },
-    );
+        }
+    });
     respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
 }
 

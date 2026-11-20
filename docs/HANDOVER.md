@@ -107,8 +107,8 @@ CAPABILITIES.md 里的反引号会被当作命令名校验，**参数名和标�
 1. `running_total` 在窗口视图里是 `#VALUE!`（它需要起点之前的每一行）。
 2. 需要读别的行的 A1 引用返回 `#VALUE!`；只有同行引用可用。
 3. `sort` / `concat` / `sql` 不接受 `--quotes`。
-4. `sort`/`dedupe`/`concat`/`columns`/`split`/`partition` 读**文件**而非编辑后的表；
-   `analyze`/`stats`/`filter`/`search`/`export` 默认读文件，但都有 `apply-edits=1`。
+4. `dedupe`/`concat`/`columns`/`split`/`partition` 读**文件**而非编辑后的表；
+   `analyze`/`stats`/`filter`/`search`/`export`/`lookup`/`sort` 默认读文件，但都有 `apply-edits=1`。
 5. `dedupe` 内存随不同键数增长；`sort`/`partition` 随 `--buf-mb` 增长。
 6. 内置查看页**服务端已验证**：`GET /` 返回 200、13 KB HTML、标题正确（脚本可复现）；
    但交互（点击、翻页、编辑）未在真实浏览器里跑过。

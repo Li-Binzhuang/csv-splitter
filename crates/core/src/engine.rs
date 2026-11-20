@@ -949,6 +949,31 @@ mod tests {
     /// concat's error path: two files whose headers disagree. Native concatenation has to
     /// refuse or align them; the SQL engine must answer the same way, or a caller switching
     /// engines gets a file where one expects a failure.
+    /// With `--by-name` both engines receive the aligned inputs, so their outputs must agree.
+    #[test]
+    #[cfg(feature = "sql")]
+    fn concat_engines_agree_after_by_name_alignment() {
+        use crate::types::Delimiter;
+
+        let dir = std::env::temp_dir().join(format!("csvs_engine_align_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let a = dir.join("a.csv");
+        let b = dir.join("b.csv");
+        std::fs::write(&a, "a,b,c\n1,2,3\n").unwrap();
+        std::fs::write(&b, "c,a,b\n30,10,20\n").unwrap();
+        let inputs = vec![a.clone(), b.clone()];
+        let (tx, _rx) = std::sync::mpsc::channel::<crate::types::ProgressEvent>();
+
+        let aligned = crate::concat::align_by_name(&inputs, Delimiter::Comma).unwrap();
+        let native_out = dir.join("n.csv");
+        crate::concat::concat(aligned.paths(), &native_out, Delimiter::Comma, false, &tx).unwrap();
+        let sql_out = dir.join("s.csv");
+        concat_sql(aligned.paths(), &sql_out, Delimiter::Comma, false, &tx).unwrap();
+        let native = std::fs::read_to_string(&native_out).unwrap();
+        let sql = std::fs::read_to_string(&sql_out).unwrap();
+        assert_eq!(native, sql);
+    }
+
     #[test]
     #[cfg(feature = "sql")]
     fn concat_engines_agree_on_how_mismatched_headers_fail() {

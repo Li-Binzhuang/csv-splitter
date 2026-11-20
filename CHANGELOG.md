@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.59.8] — 2026-11-20
+
+### Added
+
+- **/sort accepts apply-edits=1**, so "edit a column, then export it sorted" works: the job
+  materialises the edited sheet and sorts that, and the output is a flattened view of the edits
+  rather than a copy of the base file. A test edits a value, sorts, and checks the output has
+  the new value and not the old one.
+
+- The aligned-concat engines now have an explicit parity test: with `by-name` both engines
+  receive the same aligned inputs and their outputs are compared byte for byte.
+
 ## [3.59.7] — 2026-11-20
 
 ### Added

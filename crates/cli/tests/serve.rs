@@ -5335,3 +5335,38 @@ fn concat_can_align_by_name_over_http() {
     assert!(out.contains("10"), "the reordered row is aligned: {out}");
     assert!(out.contains("30"), "{out}");
 }
+
+/// Sorting an edited sheet writes a flattened view of the edits; without the flag the base
+/// file is still what gets sorted.
+#[test]
+fn sort_can_apply_edits() {
+    let dir = TempDir::new("sortapply");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=city&value=ZZ9",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let (status, body) = post(
+        &server.addr,
+        "/sort?path=t.csv&by=city&out=sorted.csv&apply-edits=1",
+    );
+    assert!(status == 200 || status == 202, "{body}");
+
+    let mut state = String::new();
+    for _ in 0..60 {
+        (_, state) = get(&server.addr, "/jobs?path=t.csv");
+        if state.contains(r#""state":"done""#) || state.contains(r#""state":"failed""#) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    assert!(state.contains(r#""state":"done""#), "{state}");
+
+    let (_, out) = get(&server.addr, "/rows?path=sorted.csv&start=0&count=5");
+    assert!(out.contains("ZZ9"), "the edit is in the sorted file: {out}");
+    assert!(!out.contains("CDMX"), "the old value is gone: {out}");
+}
