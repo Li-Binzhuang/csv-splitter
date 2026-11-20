@@ -2501,9 +2501,9 @@ fn edit_apply(
         };
     }
 
-    // `transaction` is set-many's idea applied to every row-level op: validate the whole
-    // list first, then push them into one journal update. A request that fails validation
-    // writes nothing, and a crash during the single save leaves the old journal intact.
+    // `transaction` is set-many's idea applied to every row-level op: the batch is
+    // parsed and validated by csvx-core before anything is written, then lands in one
+    // journal update. Both surfaces share that parser, so the syntax cannot drift.
     if action == "transaction" {
         let Some(raw) = params.get("ops").filter(|v| !v.trim().is_empty()) else {
             return bad_request(
@@ -2537,157 +2537,59 @@ fn edit_apply(
                 )
             }
         };
-        let mut ops = Vec::new();
-        for part in raw.split(';') {
-            let part = part.trim();
-            if part.is_empty() {
-                continue;
-            }
-            let mut pieces = part.splitn(4, ':');
-            let kind = pieces.next().unwrap_or_default().trim();
-            macro_rules! entry_error {
-                () => {
-                    bad_request(
+        let ops = match csvx_core::workbook::parse_ops(raw, total, &columns) {
+            Ok(ops) => ops,
+            Err(e) => {
+                let message = e.message.clone();
+                return match e.kind {
+                    csvx_core::workbook::TransactionErrorKind::OutOfRange => respond_json(
                         stream,
-                        &format!("transaction entry {part:?} is not valid"),
+                        404,
+                        &format!(
+                            r#"{{"error":{},"parameter":"ops","total":{total}}}"#,
+                            json_str(&message)
+                        ),
+                    ),
+                    _ => bad_request(
+                        stream,
+                        &message,
                         "ops",
                         "set:row:col:value;delete:row:count;insert:row:a,b,c",
-                    )
+                    ),
                 };
             }
-            match kind {
-                "set" => {
-                    let (Some(row_text), Some(column), Some(value)) =
-                        (pieces.next(), pieces.next(), pieces.next())
-                    else {
-                        return entry_error!();
-                    };
-                    let Ok(row) = row_text.trim().parse::<u64>() else {
-                        return entry_error!();
-                    };
-                    if row < 1 || row > total {
-                        return respond_json(
-                            stream,
-                            404,
-                            &format!(
-                                r#"{{"error":{},"parameter":"ops","total":{total}}}"#,
-                                json_str(&format!("row {row} is outside 1..={total}"))
-                            ),
-                        );
-                    }
-                    if !columns.iter().any(|c| c == column.trim()) {
-                        return bad_request(
-                            stream,
-                            &format!("transaction entry {part:?} names unknown column"),
-                            "ops",
-                            &format!("available: {}", columns.join(", ")),
-                        );
-                    }
-                    ops.push(Op::SetCell {
-                        row: row - 1,
-                        column: column.trim().to_string(),
-                        value: value.to_string(),
-                    });
-                }
-                "delete" => {
-                    let (Some(row_text), Some(count_text)) = (pieces.next(), pieces.next()) else {
-                        return entry_error!();
-                    };
-                    let (Ok(row), Ok(count)) = (
-                        row_text.trim().parse::<u64>(),
-                        count_text.trim().parse::<u64>(),
-                    ) else {
-                        return entry_error!();
-                    };
-                    if count == 0 || row < 1 || row.saturating_add(count - 1) > total {
-                        return respond_json(
-                            stream,
-                            404,
-                            &format!(
-                                r#"{{"error":{},"parameter":"ops","total":{total}}}"#,
-                                json_str(&format!(
-                                    "delete {row}:{count} is outside 1..={total} rows"
-                                ))
-                            ),
-                        );
-                    }
-                    ops.push(Op::DeleteRows { at: row - 1, count });
-                }
-                "insert" => {
-                    let (Some(row_text), Some(value)) = (pieces.next(), pieces.next()) else {
-                        return entry_error!();
-                    };
-                    let Ok(row) = row_text.trim().parse::<u64>() else {
-                        return entry_error!();
-                    };
-                    if row < 1 || row > total + 1 {
-                        return respond_json(
-                            stream,
-                            404,
-                            &format!(
-                                r#"{{"error":{},"parameter":"ops","total":{total}}}"#,
-                                json_str(&format!(
-                                    "insert row {row} is outside 1..={total_plus}",
-                                    total_plus = total + 1
-                                ))
-                            ),
-                        );
-                    }
-                    let cells = if value.trim().is_empty() {
-                        Vec::new()
-                    } else {
-                        csvx_core::csv_reader::parse_csv_record(value, b',')
-                    };
-                    ops.push(Op::InsertRows {
-                        at: row - 1,
-                        rows: vec![cells],
-                    });
-                }
-                _ => return entry_error!(),
-            }
-        }
-        if ops.is_empty() {
-            return bad_request(
-                stream,
-                "ops parsed to no operations",
-                "ops",
-                "ops=set:1:city:CDMX",
-            );
-        }
-        let written: Vec<Op> = ops.clone();
-        let mut updated_count = 0usize;
-        let locked = csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
-            for op in &written {
-                fresh.push(op.clone());
-            }
-            updated_count = fresh.len();
-            Ok(())
-        });
-        return match locked {
-            Ok(_) => respond_json(
-                stream,
-                200,
-                &format!(
-                    r#"{{"op":"transaction","operations":{},"applied":{},"stamp":{},"atomic":true,"undo":"one op per undo"}}"#,
-                    ops.len(),
-                    updated_count,
-                    json_str(&journal_stamp(&path))
-                ),
-            ),
-            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => respond_json(
-                stream,
-                409,
-                &format!(
-                    r#"{{"error":"another writer holds the journal","parameter":"action","hint":{}}}"#,
-                    json_str("retry in a moment; the lock is released as soon as that edit lands")
-                ),
-            ),
-            Err(e) => respond_json(
-                stream,
-                422,
-                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
-            ),
         };
+        let applied = match csvx_core::workbook::append_atomically(&sidecar, &ops) {
+            Ok(applied) => applied,
+            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                return respond_json(
+                    stream,
+                    409,
+                    &format!(
+                        r#"{{"error":"another writer holds the journal","parameter":"action","hint":{}}}"#,
+                        json_str(
+                            "retry in a moment; the lock is released as soon as that edit lands"
+                        )
+                    ),
+                );
+            }
+            Err(e) => {
+                return respond_json(
+                    stream,
+                    422,
+                    &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                );
+            }
+        };
+        return respond_json(
+            stream,
+            200,
+            &format!(
+                r#"{{"op":"transaction","operations":{},"applied":{applied},"stamp":{},"atomic":true,"undo":"one op per undo"}}"#,
+                ops.len(),
+                json_str(&journal_stamp(&path))
+            ),
+        );
     }
 
     if action == "export" {

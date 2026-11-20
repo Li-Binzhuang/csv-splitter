@@ -34,6 +34,7 @@ use std::fs::File;
 mod export;
 mod journal;
 mod rows;
+mod transaction;
 
 pub use journal::{repair as repair_journal, Journal, RepairSummary, RowRef};
 pub use rows::{
@@ -41,6 +42,7 @@ pub use rows::{
     parse_a1, parse_a1_range, regex_replace, resolve_columns, CellEdits, ColumnPlan,
     CompiledFormulas, RowId, RowMap,
 };
+pub use transaction::{append_atomically, parse_ops, TransactionError, TransactionErrorKind};
 
 pub use export::{
     export, export_filtered, export_quotes, export_selected, find_row, logical_rows, rows_by_keys,

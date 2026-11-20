@@ -6906,120 +6906,38 @@ fn cmd_edit(args: &[String]) -> i32 {
             Ok(c) => c,
             Err(e) => return report_failure("edit", e),
         };
-        let mut ops = Vec::new();
-        let bad = |entry: &str| -> i32 {
-            eprintln!("error: transaction entry '{entry}' is not valid");
-            eprintln!("hint: --ops 'set:row:col:value;delete:row:count;insert:row:a,b,c'");
-            2
+        // One parser, shared with the HTTP endpoint: a syntax change cannot land on
+        // one surface and be forgotten on the other.
+        let ops = match csvx_core::workbook::parse_ops(&raw, total, &columns) {
+            Ok(ops) => ops,
+            Err(e) => {
+                eprintln!("error: {e}");
+                return match e.kind {
+                    csvx_core::workbook::TransactionErrorKind::OutOfRange => 1,
+                    _ => 2,
+                };
+            }
         };
-        for part in raw.split(';') {
-            let part = part.trim();
-            if part.is_empty() {
-                continue;
-            }
-            let mut pieces = part.splitn(4, ':');
-            match pieces.next().unwrap_or_default().trim() {
-                "set" => {
-                    let (Some(row_text), Some(column), Some(value)) =
-                        (pieces.next(), pieces.next(), pieces.next())
-                    else {
-                        return bad(part);
-                    };
-                    let Ok(row) = row_text.trim().parse::<u64>() else {
-                        return bad(part);
-                    };
-                    if row < 1 || row > total {
-                        eprintln!("error: row {row} is outside 1..={total}");
-                        return 1;
-                    }
-                    if !columns.iter().any(|c| c == column.trim()) {
-                        eprintln!(
-                            "error: transaction entry '{part}' names unknown column '{}'",
-                            column.trim()
-                        );
-                        return 2;
-                    }
-                    ops.push(csvx_core::workbook::Op::SetCell {
-                        row: row - 1,
-                        column: column.trim().to_string(),
-                        value: value.to_string(),
-                    });
-                }
-                "delete" => {
-                    let (Some(row_text), Some(count_text)) = (pieces.next(), pieces.next()) else {
-                        return bad(part);
-                    };
-                    let (Ok(row), Ok(count)) = (
-                        row_text.trim().parse::<u64>(),
-                        count_text.trim().parse::<u64>(),
-                    ) else {
-                        return bad(part);
-                    };
-                    if count == 0 || row < 1 || row.saturating_add(count - 1) > total {
-                        eprintln!("error: delete {row}:{count} is outside 1..={total} rows");
-                        return 1;
-                    }
-                    ops.push(csvx_core::workbook::Op::DeleteRows { at: row - 1, count });
-                }
-                "insert" => {
-                    let (Some(row_text), Some(value)) = (pieces.next(), pieces.next()) else {
-                        return bad(part);
-                    };
-                    let Ok(row) = row_text.trim().parse::<u64>() else {
-                        return bad(part);
-                    };
-                    if row < 1 || row > total + 1 {
-                        eprintln!("error: insert row {row} is outside 1..={}", total + 1);
-                        return 1;
-                    }
-                    let cells = if value.trim().is_empty() {
-                        Vec::new()
-                    } else {
-                        csvx_core::csv_reader::parse_csv_record(value, b',')
-                    };
-                    ops.push(csvx_core::workbook::Op::InsertRows {
-                        at: row - 1,
-                        rows: vec![cells],
-                    });
-                }
-                _ => return bad(part),
-            }
-        }
-        if ops.is_empty() {
-            eprintln!("error: --ops parsed to no operations");
-            return 2;
-        }
-        let written: Vec<csvx_core::workbook::Op> = ops.clone();
-        let mut applied = 0usize;
-        let locked = csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
-            for op in &written {
-                fresh.push(op.clone());
-            }
-            applied = fresh.len();
-            Ok(())
-        });
-        return match locked {
-            Ok(_) => {
-                if json {
-                    println!(
-                        r#"{{"op":"transaction","operations":{},"applied":{applied},"atomic":true}}"#,
-                        ops.len()
-                    );
-                } else {
-                    println!(
-                        "✓ transaction: {} operation(s), {} pending total (atomic)",
-                        ops.len(),
-                        applied
-                    );
-                }
-                0
-            }
+        let applied = match csvx_core::workbook::append_atomically(&sidecar, &ops) {
+            Ok(applied) => applied,
             Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                 eprintln!("error: another writer holds the journal; retry in a moment");
-                1
+                return 1;
             }
-            Err(e) => report_failure("edit", e),
+            Err(e) => return report_failure("edit", e),
         };
+        if json {
+            println!(
+                r#"{{"op":"transaction","operations":{},"applied":{applied},"atomic":true}}"#,
+                ops.len()
+            );
+        } else {
+            println!(
+                "✓ transaction: {} operation(s), {applied} pending total (atomic)",
+                ops.len()
+            );
+        }
+        return 0;
     }
 
     let op = match action.as_str() {
