@@ -4565,6 +4565,27 @@ fn meta_reports_what_it_promises() {
 fn documented_fields_are_fields_the_endpoint_returns() {
     let docs =
         std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../../docs/API.md")).unwrap();
+    // Parameters are declared in SPEC_PARAMS; the docs row also names them in backticks,
+    // so the guard must skip them or every route with a parameter column would fail.
+    let serve_src =
+        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/serve.rs")).unwrap();
+    let spec = &serve_src[serve_src.find("const SPEC_PARAMS").unwrap()..];
+    let spec = &spec[..spec.find("\n];").unwrap()];
+    let declared_for = |route: &str| -> Vec<String> {
+        let at = match spec.find(&format!("\"{route}\"")) {
+            Some(at) => at,
+            None => return Vec::new(),
+        };
+        let rest = &spec[at + route.len() + 2..];
+        let stop = rest.find("\n    (\"").unwrap_or(rest.len());
+        rest[..stop]
+            .split('"')
+            .skip(1)
+            .step_by(2)
+            .filter(|n| !n.is_empty() && !n.starts_with('/'))
+            .map(str::to_string)
+            .collect()
+    };
     let row = |route: &str| -> String {
         // Rows come in two shapes: `| `GET /meta` | … |` and `| GET | `/metrics` | … |`.
         // Match either by looking for the route and a GET in the same line.
@@ -4585,6 +4606,8 @@ fn documented_fields_are_fields_the_endpoint_returns() {
         ("/sheet", "/sheet?path=t.csv"),
         ("/journal", "/journal?path=t.csv"),
         ("/cell", "/cell?path=t.csv&row=1&col=city"),
+        ("/filter", "/filter?path=t.csv&where=amount%3D100"),
+        ("/search", "/search?path=t.csv&q=CDMX"),
     ] {
         let (status, body) = get(&server.addr, query);
         assert_eq!(status, 200, "{query}: {body}");
@@ -4592,7 +4615,9 @@ fn documented_fields_are_fields_the_endpoint_returns() {
         // Backticked tokens that look like field names: no slash, no spaces.
         for piece in text.split('`').skip(1).step_by(2) {
             let token = piece.trim();
+            let declared = declared_for(route);
             if token.is_empty()
+                || declared.iter().any(|p| p == token)
                 || token.starts_with('/')
                 || token.contains(' ')
                 || !token.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')

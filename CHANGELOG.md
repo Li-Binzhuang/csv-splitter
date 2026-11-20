@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.58.6] — 2026-11-20
+
+### Tests / Documentation
+
+- The documented-field guard covers /filter and /search, and it now skips parameters the route
+  declares — otherwise every row with a parameter column would fail. Both rows name their
+  response fields (scanned, matched, truncated, columns, rows) instead of leaving them implicit.
+  Mutation-checked by renaming truncated in /filter's body.
+
 ## [3.58.5] — 2026-11-20
 
 ### Tests / Documentation
