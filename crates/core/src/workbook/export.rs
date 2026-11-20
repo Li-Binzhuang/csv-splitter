@@ -1058,4 +1058,81 @@ mod cancel_tests {
         assert_eq!(summary.rows, 50);
         std::fs::remove_dir_all(dir).ok();
     }
+
+    /// A structural edit sequence must look the same through the window and through the
+    /// exported file. The insert-after-delete bug slipped past the targeted tests, so this
+    /// compares the two read paths across a spread of generated op sequences.
+    #[test]
+    fn export_matches_the_window_across_structural_edits() {
+        let dir = std::env::temp_dir().join(format!(
+            "csvs_export_equiv_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0)
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let base = dir.join("t.csv");
+        let mut text = String::from("city,amount,note\n");
+        for i in 0..40u64 {
+            text.push_str(&format!("C{},{},plain\n", i % 5, i * 7));
+        }
+        std::fs::write(&base, text).unwrap();
+
+        let mut seed = 0x9e3779b97f4a7c15u64;
+        let mut next = move || {
+            seed ^= seed << 13;
+            seed ^= seed >> 7;
+            seed ^= seed << 17;
+            seed
+        };
+        for case in 0..24u64 {
+            let total = 40u64;
+            let del_at = 1 + next() % (total - 2);
+            let del_count = 1 + next() % 3;
+            // Anchor the insert from just before the delete to well past it; one case in
+            // three appends at the original end, which is exactly where the old
+            // unknown-base-length map left a phantom slot.
+            let ins_at = if case % 3 == 0 {
+                total
+            } else {
+                1 + next() % total
+            };
+            let set_at = 1 + next() % total;
+            let ops = vec![
+                Op::DeleteRows {
+                    at: del_at,
+                    count: del_count,
+                },
+                Op::InsertRows {
+                    at: ins_at,
+                    rows: vec![vec![
+                        "INS".to_string(),
+                        format!("{case}"),
+                        "new".to_string(),
+                    ]],
+                },
+                Op::SetCell {
+                    row: set_at - 1,
+                    column: "city".to_string(),
+                    value: format!("S{case}"),
+                },
+            ];
+            let win = window(&base, &ops, 0, 200, Delimiter::Comma).unwrap();
+            let out = dir.join(format!("out{case}.csv"));
+            let (tx, _rx) = std::sync::mpsc::channel::<ProgressEvent>();
+            export(&base, &ops, &out, Delimiter::Comma, &tx).unwrap();
+            let exported = std::fs::read_to_string(&out).unwrap();
+            let mut lines = exported.lines();
+            let header = lines.next().unwrap();
+            assert_eq!(header, win.columns.join(","), "case {case}: header drifted");
+            let rows: Vec<Vec<String>> = lines.map(|line| parse_csv_record(line, b',')).collect();
+            assert_eq!(rows.len(), win.rows.len(), "case {case}: row count drifted");
+            for (row, expected) in rows.iter().zip(&win.rows) {
+                assert_eq!(row, expected, "case {case}: a row differs");
+            }
+        }
+        std::fs::remove_dir_all(dir).ok();
+    }
 }
