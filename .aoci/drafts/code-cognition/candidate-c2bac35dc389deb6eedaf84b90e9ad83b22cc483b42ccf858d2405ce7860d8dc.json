@@ -1,0 +1,125 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "11274eb8feb5cdb44f73516d9cffe75ed58d038489ace1428457c0326e4017eb",
+  "batch_id": "c2bac35dc389deb6eedaf84b90e9ad83b22cc483b42ccf858d2405ce7860d8dc",
+  "composite_identity": "a88e213e8fffddd21b8331cafe6669326ab93faea78c547ef8ca76acb08a0584",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "1645924c41ae1b0470e0e72dccd3af17e8f5a33b063f2748d62c0b8306971095",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "7d81c7406cd2bbcdd509c02243077f47503be9208c037ae9305e9c882403bcd4",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合与缓存、同行区间及其条件聚合、字节复制快路、CLI/HTTP 原子 transaction 与整批撤销、导出丢行修复 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "269b7b2bc0d131a2a610e8ccf4798d999b9cae5767fc9d218253270ca04f6b5f",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:sum/average/count 可读整列 totals 或同行区间；countif/sumif 既可读列预扫结果，也可读同行区间（用解析时编译好的 FilterSpec 逐格匹配，排序类条件跳过非数字）；if 短路、isblank/iferror/日期遵循表格习惯 | S:空单元格是独立值；无预扫状态时整列聚合返回 #VALUE!；跨行区间返回 #VALUE! 而不是拿本行冒充"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "6d3bbb2460380261871495247243de9d20efa89bdc17b651d825c7de658d5f8f",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件聚合、同行区间、A1 引用；countif/sumif 的条件字面量在解析时编译成 Expr::Criteria（每行不再重解析）；is_row_constant 把 ref/vlookup/row、区间与区间条件聚合都判为非每行相同 | S:公式列只存 journal；跨行区间无随机访问；单独一个区间或条件不是值"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/state.rs",
+      "path": "crates/core/src/formula/state.rs",
+      "change": "update",
+      "source_sha256": "ef2d63633605504e6ee6083e44ba680b2d0df6d8c3b293a9844365edcea1105e",
+      "existing_entry": "state.rs[KP6M]: F:多行公式的行状态：lag/running 的有界历史、整列 totals 与条件过滤结果 | R:code:crates/core/src/formula/mod.rs,code:crates/core/src/formula/totals.rs | A:RowNeeds 声明历史、聚合列与 (列, 条件) 对；set_totals/set_filtered 装预扫结果，totals() 与 filtered() 供五类聚合函数读取；内存随 lag 距离而不是行数增长 | S:导出是单向前进的，唯一可获得的历史是前若干行；整列与条件聚合必须靠预扫，不能在流中边读边得"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/totals.rs",
+      "path": "crates/core/src/formula/totals.rs",
+      "change": "update",
+      "source_sha256": "d8f2fa1f0c725c5b75a89fa6e5e86c635ea7816b313c2e4c4a8c2037121543c2",
+      "existing_entry": "totals.rs[KP6L]: F:整列与条件聚合的预扫及其缓存 | R:code:crates/core/src/formula/state.rs,code:crates/core/src/formula/mod.rs,code:crates/core/src/filter.rs,code:crates/core/src/index.rs,code:crates/core/src/csv_reader.rs | A:先用 field_slices 零分配读单元格（需全解析时回退）；t.csv.agg 按长度+mtime 缓存；未命中时小文件（\u003c64MB）走列切片并行、大文件优先 parquet，最后顺序扫；条件字面量用 FilterSpec | S:快路读出的值必须与全解析一致（带引号逗号/换行测试钉住）；小文件用 parquet 反而被 DuckDB 启动拖慢，阈值是有意的；缓存/侧车失效不得让导出失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/export.rs",
+      "path": "crates/core/src/workbook/export.rs",
+      "change": "update",
+      "source_sha256": "f8e8db7cea079ca36c7d2758c770fe68c0782cb609a6cf4bb8b3318c157dc69f",
+      "existing_entry": "export.rs[CD9L]: F:逐行组装、导出与分页读取 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/journal.rs | A:一次顺序扫描；被 journal 触及的行走 RowPipeline，未触及的行拷贝原字节；每行相同的公式算一次后只追加一格；存在 InsertRows 时用真实行数构 RowMap，仅删除时用哨兵值免建索引；测试用 24 组生成的结构编辑逐格比对 window 与导出行 | S:插入锚点落在删除后的越界位置时，未知基长会留幽灵基行让导出提前 EOF 而丢掉插入行；该回归已被定向测试与 window/export 等价测试双重钉住（临时回退修复两条都会红）；join_csv_line 自带换行；会读当前行的公式不得走快路"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "a145abaa7e846f3369f6536ef971ae8645f8f33c188df0fd3fbeb2bbee56c138",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式节分开写预扫与整体导出；语法表含同行/条件区间；编辑表含原子批量写与整批撤销；大文件节表已更新为 filter 13.9 s / 79 MB，并写明只保留 limit 条行号、命中计数仍完整 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "23e3c4f52e93f8bbe05b26df8e14af70775abf50c3ab1fa52e0bba9bb785edd5",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "7d81c7406cd2bbcdd509c02243077f47503be9208c037ae9305e9c882403bcd4",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合与缓存、同行区间及其条件聚合、字节复制快路、CLI/HTTP 原子 transaction 与整批撤销、导出丢行修复 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "68067947d3d84b68efc9d284049f272e211a686c5c0acf73ed0eff1d618986fc",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "269b7b2bc0d131a2a610e8ccf4798d999b9cae5767fc9d218253270ca04f6b5f",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:sum/average/count 可读整列 totals 或同行区间；countif/sumif 既可读列预扫结果，也可读同行区间（用解析时编译好的 FilterSpec 逐格匹配，排序类条件跳过非数字）；if 短路、isblank/iferror/日期遵循表格习惯 | S:空单元格是独立值；无预扫状态时整列聚合返回 #VALUE!；跨行区间返回 #VALUE! 而不是拿本行冒充"
+    },
+    {
+      "candidate_id": "d8202dfccc850756eb1fed176dca6235c3373376bf905910b51b8fa5dd27b900",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "6d3bbb2460380261871495247243de9d20efa89bdc17b651d825c7de658d5f8f",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件聚合、同行区间、A1 引用；countif/sumif 的条件字面量在解析时编译成 Expr::Criteria（每行不再重解析）；is_row_constant 把 ref/vlookup/row、区间与区间条件聚合都判为非每行相同 | S:公式列只存 journal；跨行区间无随机访问；单独一个区间或条件不是值"
+    },
+    {
+      "candidate_id": "b0ab841e4df35b13eff74abfdfeb35dc76239124c37d58cb765ab6f20532d6f2",
+      "object_ref": "code:crates/core/src/formula/state.rs",
+      "path": "crates/core/src/formula/state.rs",
+      "change": "update",
+      "source_sha256": "ef2d63633605504e6ee6083e44ba680b2d0df6d8c3b293a9844365edcea1105e",
+      "existing_entry": "state.rs[KP6M]: F:多行公式的行状态：lag/running 的有界历史、整列 totals 与条件过滤结果 | R:code:crates/core/src/formula/mod.rs,code:crates/core/src/formula/totals.rs | A:RowNeeds 声明历史、聚合列与 (列, 条件) 对；set_totals/set_filtered 装预扫结果，totals() 与 filtered() 供五类聚合函数读取；内存随 lag 距离而不是行数增长 | S:导出是单向前进的，唯一可获得的历史是前若干行；整列与条件聚合必须靠预扫，不能在流中边读边得"
+    },
+    {
+      "candidate_id": "d7828f45a728342aad0d1b2148112082b5b729c55d4c7408fe403971c1eccfbb",
+      "object_ref": "code:crates/core/src/formula/totals.rs",
+      "path": "crates/core/src/formula/totals.rs",
+      "change": "update",
+      "source_sha256": "d8f2fa1f0c725c5b75a89fa6e5e86c635ea7816b313c2e4c4a8c2037121543c2",
+      "existing_entry": "totals.rs[KP6L]: F:整列与条件聚合的预扫及其缓存 | R:code:crates/core/src/formula/state.rs,code:crates/core/src/formula/mod.rs,code:crates/core/src/filter.rs,code:crates/core/src/index.rs,code:crates/core/src/csv_reader.rs | A:先用 field_slices 零分配读单元格（需全解析时回退）；t.csv.agg 按长度+mtime 缓存；未命中时小文件（\u003c64MB）走列切片并行、大文件优先 parquet，最后顺序扫；条件字面量用 FilterSpec | S:快路读出的值必须与全解析一致（带引号逗号/换行测试钉住）；小文件用 parquet 反而被 DuckDB 启动拖慢，阈值是有意的；缓存/侧车失效不得让导出失败"
+    },
+    {
+      "candidate_id": "46b8e0db04b0b16b508cc04c30cbe398fac8932c23965d3e100dad0a2c004e57",
+      "object_ref": "code:crates/core/src/workbook/export.rs",
+      "path": "crates/core/src/workbook/export.rs",
+      "change": "update",
+      "source_sha256": "f8e8db7cea079ca36c7d2758c770fe68c0782cb609a6cf4bb8b3318c157dc69f",
+      "existing_entry": "export.rs[CD9L]: F:逐行组装、导出与分页读取 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/journal.rs | A:一次顺序扫描；被 journal 触及的行走 RowPipeline，未触及的行拷贝原字节；每行相同的公式算一次后只追加一格；存在 InsertRows 时用真实行数构 RowMap，仅删除时用哨兵值免建索引；测试用 24 组生成的结构编辑逐格比对 window 与导出行 | S:插入锚点落在删除后的越界位置时，未知基长会留幽灵基行让导出提前 EOF 而丢掉插入行；该回归已被定向测试与 window/export 等价测试双重钉住（临时回退修复两条都会红）；join_csv_line 自带换行；会读当前行的公式不得走快路"
+    },
+    {
+      "candidate_id": "a3a557ea677bde2806670e5d4dfbf9a3f48b567ae17a6132640abb24d056bc83",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "a145abaa7e846f3369f6536ef971ae8645f8f33c188df0fd3fbeb2bbee56c138",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式节分开写预扫与整体导出；语法表含同行/条件区间；编辑表含原子批量写与整批撤销；大文件节表已更新为 filter 13.9 s / 79 MB，并写明只保留 limit 条行号、命中计数仍完整 | S:-"
+    }
+  ]
+}
