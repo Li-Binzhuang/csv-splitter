@@ -4993,3 +4993,46 @@ fn concat_by_name_aligns_reordered_columns() {
     let err = String::from_utf8_lossy(&bad.stderr);
     assert!(err.contains("columns differ"), "{err}");
 }
+
+/// `merge --chunks` refuses an archive with the wrong number of parts, deleting nothing on
+/// success and leaving no half file on failure.
+#[test]
+fn merge_refuses_an_unexpected_chunk_count() {
+    let dir = TempDir::new("mergechunks");
+    std::fs::create_dir_all(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/t_0001.csv"), "id,v\n1,a\n").unwrap();
+    std::fs::write(dir.join("parts/t_0002.csv"), "id,v\n2,b\n").unwrap();
+
+    let out = Command::new(bin())
+        .args([
+            "merge",
+            dir.join("parts").to_str().unwrap(),
+            "--out",
+            dir.join("joined.csv").to_str().unwrap(),
+            "--chunks",
+            "3",
+        ])
+        .output()
+        .unwrap();
+    assert!(!out.status.success(), "the count must be enforced");
+    let err = String::from_utf8_lossy(&out.stderr);
+    assert!(err.contains("holds 2 chunk(s), not 3"), "{err}");
+    assert!(!dir.join("joined.csv").exists(), "no half-written output");
+}
+
+/// A failing sort used to exit 1 with no explanation; it must say why.
+#[test]
+fn a_failing_sort_explains_itself() {
+    let dir = TempDir::new("sortfailmsg");
+    std::fs::write(dir.join("t.csv"), "a,b\n1,2\n").unwrap();
+    let out = Command::new(bin())
+        .args(["sort", dir.join("t.csv").to_str().unwrap(), "--by", "nope"])
+        .output()
+        .unwrap();
+    assert!(!out.status.success());
+    let err = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        err.contains("nope"),
+        "the error must name the column: {err}"
+    );
+}

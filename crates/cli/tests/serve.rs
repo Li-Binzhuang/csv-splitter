@@ -5503,3 +5503,38 @@ fn schema_applies_edits_but_diff_compares_files_on_disk() {
         "diff compares the files on disk: {diff}"
     );
 }
+
+/// The HTTP merge job honours `chunks=`: an archive with fewer parts fails and says so.
+#[test]
+fn merge_over_http_refuses_an_unexpected_chunk_count() {
+    let dir = TempDir::new("mergewrongcount");
+    std::fs::create_dir_all(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/t_0001.csv"), "id,v\n1,a\n").unwrap();
+    std::fs::write(dir.join("parts/t_0002.csv"), "id,v\n2,b\n").unwrap();
+    // HTTP merges archives; the directory form is CLI-only, so pack the parts first.
+    let tar = Command::new("tar")
+        .args(["-cf", dir.join("parts.tar").to_str().unwrap()])
+        .args(["-C", dir.join("parts").to_str().unwrap()])
+        .args(["t_0001.csv", "t_0002.csv"])
+        .output()
+        .unwrap();
+    assert!(tar.status.success(), "{tar:?}");
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/merge?path=parts.tar&out=joined.csv&chunks=3",
+    );
+    assert!(status == 200 || status == 202, "{body}");
+
+    let mut state = String::new();
+    for _ in 0..100 {
+        (_, state) = get(&server.addr, "/jobs?path=parts");
+        if state.contains(r#""state":"failed""#) || state.contains(r#""state":"done""#) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    assert!(state.contains(r#""state":"failed""#), "{state}");
+    assert!(state.contains("holds 2 chunk(s), not 3"), "{state}");
+}

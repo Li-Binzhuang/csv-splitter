@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.60.6] — 2026-11-20
+
+### Added / Fixed
+
+- **`merge --chunks N` (CLI) and `chunks=` (/merge)** enforce the expected part count on top of
+  the gap/repeat check: a re-split glued onto an older archive is a real way to get a longer
+  archive, and the numbering alone cannot see it. A mismatch fails and deletes the half output.
+
+- **Errors are no longer silent** for merge, sort and serve: all three returned an error without
+  sending a progress event, so `exit 1` came with no message. A test now asserts that a failing
+  sort names the missing column.
+
+- **AppleDouble entries are skipped.** A macOS tar can carry `._t_0001.csv` resource-fork
+  siblings; they look like chunks by name and made merge fail with a bogus "out of sequence"
+  error. Tar, zip and directory inputs now ignore them.
+
 ## [3.60.5] — 2026-11-20
 
 ### Fixed

@@ -40,7 +40,7 @@ use csv_splitter_core::filter::{self, FilterSpec};
 use csv_splitter_core::groupby;
 use csv_splitter_core::jobs::JobRegistry;
 use csv_splitter_core::listing;
-use csv_splitter_core::merge::merge_archive;
+use csv_splitter_core::merge::merge_archive_expecting;
 use csv_splitter_core::partition;
 use csv_splitter_core::preview::compute_column_stats;
 use csv_splitter_core::profile;
@@ -737,7 +737,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
             "path", "format", "out", "delim", "splits", "bufMb", "threads", "columns", "level",
         ],
     ),
-    ("/merge", &["path", "out", "delim"]),
+    ("/merge", &["path", "out", "chunks", "delim"]),
     (
         "/edit",
         &[
@@ -2042,9 +2042,17 @@ fn start_merge(
     let Some(output) = resolve_out(root, params, "out") else {
         return bad_out(stream);
     };
+    // `chunks=` refuses an archive that does not hold that many chunks; a gap check already
+    // proves the numbering is contiguous, this catches a re-split glued onto an older one.
+    let expect_chunks: Option<usize> = match params.get("chunks").and_then(|v| v.parse().ok()) {
+        Some(0) => {
+            return bad_request(stream, "chunks must be positive", "chunks", "chunks=3");
+        }
+        other => other,
+    };
 
     let id = jobs.submit("merge", move |tx| {
-        match merge_archive(&input, &output, &tx) {
+        match merge_archive_expecting(&input, &output, expect_chunks, &tx) {
             Ok(report) => {
                 tx.send(ProgressEvent::Info(format!(
                     "merged {} chunk(s), {} records",

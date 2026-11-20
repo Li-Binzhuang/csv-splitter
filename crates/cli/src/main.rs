@@ -9,7 +9,7 @@ use csv_splitter_core::decompress::decompress_file;
 use csv_splitter_core::encoding::{self, parse_name, TextEncoding};
 use csv_splitter_core::filter::{self, scan as filter_scan, FilterSpec};
 use csv_splitter_core::index::{SparseIndex, DEFAULT_INTERVAL};
-use csv_splitter_core::merge::merge_archive;
+use csv_splitter_core::merge::merge_archive_expecting;
 use csv_splitter_core::partition::{run_partition, PartitionConfig};
 
 use csv_splitter_core::search::SearchSpec;
@@ -160,6 +160,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--engine", "auto | native | sql (auto: sql above 8 MB)"),
             ("--ignore-header", "Skip the header check"),
             ("--by-name", "Align columns by name when the order differs (same set only)"),
+
             ("--json", "Emit JSON"),
             ("--out", "Output path"),
         ],
@@ -350,7 +351,11 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
     ),
     (
         "merge",
-        &[("--out", "Output path"), ("--quiet", "Only errors")],
+        &[
+            ("--out", "Output path"),
+            ("--chunks", "Refuse an archive that does not hold this many chunks"),
+            ("--quiet", "Only errors"),
+        ],
     ),
     (
         "partition",
@@ -1305,9 +1310,23 @@ fn cmd_merge(args: &[String]) -> i32 {
     let mut input: Option<PathBuf> = None;
     let mut out: Option<PathBuf> = None;
     let mut quiet = false;
+    let mut expect_chunks: Option<usize> = None;
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
+            "--chunks" => match p.value("--chunks") {
+                Ok(v) => match v.parse::<usize>() {
+                    Ok(n) if n > 0 => expect_chunks = Some(n),
+                    _ => {
+                        eprintln!("error: --chunks needs a positive number");
+                        return 2;
+                    }
+                },
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "-o" | "--out" => match p.value("--out") {
                 Ok(v) => out = Some(PathBuf::from(v)),
                 Err(e) => {
@@ -1335,7 +1354,7 @@ fn cmd_merge(args: &[String]) -> i32 {
 
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("merge", rx, quiet);
-    let result = merge_archive(&input, &out, &tx);
+    let result = merge_archive_expecting(&input, &out, expect_chunks, &tx);
     drop(tx);
     reporter.join().ok();
 
@@ -1352,7 +1371,12 @@ fn cmd_merge(args: &[String]) -> i32 {
             }
             0
         }
-        Err(_) => 1, // the reporter already printed the reason
+        Err(e) => {
+            // The reporter only prints events the callee sends; merge returns an error
+            // without one, so staying silent would leave exit 1 with no explanation.
+            eprintln!("error: {e}");
+            1
+        }
     }
 }
 
@@ -3211,7 +3235,10 @@ fn cmd_serve(args: &[String]) -> i32 {
     }
     match serve::run(serve::ServerConfig { addr, root }) {
         Ok(()) => 0,
-        Err(_) => 1, // the reporter already printed the reason
+        Err(e) => {
+            eprintln!("error: {e}");
+            1
+        }
     }
 }
 
@@ -3607,7 +3634,11 @@ fn cmd_sort(args: &[String]) -> i32 {
             }
             0
         }
-        Err(_) => 1, // the reporter already printed the reason
+        Err(e) => {
+            // Same as merge: sorting returns an error without sending an event.
+            eprintln!("error: {e}");
+            1
+        }
     }
 }
 
@@ -8141,7 +8172,7 @@ fn cmd_verify(args: &[String]) -> i32 {
 
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("verify", rx, true);
-    let merge_result = merge_archive(&archive, &merged, &tx);
+    let merge_result = csv_splitter_core::merge::merge_archive(&archive, &merged, &tx);
     drop(tx);
     reporter.join().ok();
 
