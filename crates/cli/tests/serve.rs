@@ -5644,3 +5644,50 @@ fn export_query_and_groupby_survive_hostile_cells() {
     let (_, chart) = get(&server.addr, "/chart?path=t.csv&x=text&y=id:count");
     assert!(chart.contains(r#"he said \"hi\""#), "{chart}");
 }
+
+/// Readers must never see a torn journal while a writer appends: every /rows and /journal
+/// response during a burst of edits has to parse and report `damaged:0`. This is the
+/// read-side counterpart of the eight-writer test.
+#[test]
+fn reads_stay_consistent_while_edits_land() {
+    let dir = TempDir::new("readwhilewriting");
+    std::fs::write(dir.join("t.csv"), "city,amount\nA,1\nB,2\nC,3\n").unwrap();
+    let server = start(&dir.0.clone());
+    let addr = server.addr.clone();
+
+    let writer = {
+        let addr = addr.clone();
+        std::thread::spawn(move || {
+            for i in 0..40 {
+                let path = format!("/edit?path=t.csv&action=set&row=1&col=city&value=W{}", i);
+                assert_eq!(post(&addr, &path).0, 200);
+            }
+        })
+    };
+
+    for _ in 0..120 {
+        let (status, body) = get(&addr, "/rows?path=t.csv&start=0&count=3");
+        assert_eq!(status, 200, "{body}");
+        assert!(body.contains(r#""rows":[["#), "no rows: {body}");
+        // A pristine answer carries no `damaged` field; an edited one must say zero.
+        assert!(
+            body.contains(r#""edited":false"#) || body.contains(r#""damaged":0"#),
+            "torn journal: {body}"
+        );
+
+        let (status, body) = get(&addr, "/journal?path=t.csv");
+        assert_eq!(status, 200, "{body}");
+        assert!(
+            body.contains(r#""damaged":{"operations":0,"redo":0}"#),
+            "torn journal: {body}"
+        );
+    }
+
+    writer.join().expect("writer panicked");
+
+    // After the burst the last write must be the one visible: no lost edit.
+    let (_, body) = get(&addr, "/rows?path=t.csv&start=0&count=1");
+    assert!(body.contains("W39"), "the last edit is visible: {body}");
+    let (_, journal) = get(&addr, "/journal?path=t.csv");
+    assert!(journal.contains(r#""count":40"#), "{journal}");
+}

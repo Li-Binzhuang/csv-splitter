@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.61.4] — 2026-11-20
+
+### Tests
+
+- The read side now has a concurrency test of its own: 40 edits land while 120 rounds of
+  /rows and /journal are read, every response must parse, an edited answer must report
+  `damaged:0`, and after the burst the last value and all 40 operations are visible. Three
+  consecutive runs passed. The eight-writer test covered writes; this covers readers.
+
 ## [3.61.3] — 2026-11-20
 
 ### Tests
