@@ -62,10 +62,16 @@ run "$BIN" edit set orders.csv --row 1 --col note --value "VIP"
 run "$BIN" edit formula orders.csv --name vat --value "amount*0.16"
 run "$BIN" edit formula orders.csv --name all_sales --value "sum(amount)"
 run "$BIN" edit formula orders.csv --name big_orders --value "countif(amount, \">1000\")"
+run "$BIN" edit formula orders.csv --name min_sale --value "min(amount)"
+run "$BIN" edit formula orders.csv --name max_sale --value "max(amount)"
 
 step "5. conditional formatting and layout, as data a front-end can render"
 run "$BIN" format orders.csv --rule "amount>1000:bg=red" --summary
 run "$BIN" layout orders.csv --freeze-first 2 --set "amount:width=120"
+
+step "4b. a transaction of several ops, taken back by one undo"
+run "$BIN" edit transaction orders.csv --ops "set:1:note:VIP2;delete:2:1"
+run "$BIN" edit undo orders.csv
 
 step "6. aggregate, pivot, chart (same numbers through native or DuckDB)"
 run "$BIN" groupby orders.csv --by city --agg "amount:sum,amount:count" --order sum_amount --desc
