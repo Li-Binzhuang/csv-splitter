@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.59.6] — 2026-11-20
+
+### Added
+
+- **/filter and /search say which source they scanned**: `source` is `file` or `edited`. A caller
+  that gets row numbers needs to know whether they index the base file or the edited sheet, and
+  the flag alone made that implicit. Tests pin both values, and the documented-field guard
+  covers the new key.
+
 ## [3.59.5] — 2026-11-20
 
 ### Added

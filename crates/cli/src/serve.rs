@@ -5837,10 +5837,15 @@ fn search(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
                 stream,
                 200,
                 &format!(
-                    r#"{{"scanned":{},"matched":{},"truncated":{},"columns":[{}],"rows":[{}]}}"#,
+                    r#"{{"scanned":{},"matched":{},"truncated":{},"source":{},"columns":[{}],"rows":[{}]}}"#,
                     result.scanned,
                     result.matched,
                     result.truncated,
+                    json_str(if materialised.is_some() {
+                        "edited"
+                    } else {
+                        "file"
+                    }),
                     cols.join(","),
                     rows.join(",")
                 ),
@@ -6004,10 +6009,15 @@ fn filter(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
                 stream,
                 200,
                 &format!(
-                    r#"{{"scanned":{},"matched":{},"truncated":{},"rows":[{}]}}"#,
+                    r#"{{"scanned":{},"matched":{},"truncated":{},"source":{},"rows":[{}]}}"#,
                     result.scanned,
                     result.matched,
                     result.truncated,
+                    json_str(if materialised.is_some() {
+                        "edited"
+                    } else {
+                        "file"
+                    }),
                     rows.join(",")
                 ),
             )

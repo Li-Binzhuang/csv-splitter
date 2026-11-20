@@ -5178,6 +5178,7 @@ fn filter_can_apply_edits_and_its_row_numbers_follow() {
 
     let base = get(&server.addr, "/filter?path=t.csv&where=amount%3E0").1;
     assert!(base.contains(r#""rows":[1,2,3]"#), "{base}");
+    assert!(base.contains(r#""source":"file""#), "{base}");
 
     let edited = get(
         &server.addr,
@@ -5188,6 +5189,7 @@ fn filter_can_apply_edits_and_its_row_numbers_follow() {
         edited.contains(r#""rows":[1,2]"#),
         "the edited sheet has two rows left: {edited}"
     );
+    assert!(edited.contains(r#""source":"edited""#), "{edited}");
 }
 
 /// Search over the edited sheet: a deleted row must stop matching, and without the flag the
