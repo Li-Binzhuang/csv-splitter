@@ -1,0 +1,91 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "4081bb1e05c9127ccddd224d50cc34a80e43737233cad0f7428ff620ba069de0",
+  "batch_id": "3519511254ffbbe1e7c6816646b5aeec0d2ed9a687626efa6856ae8303367b6d",
+  "composite_identity": "9f5e76af18cf8c387d0da102b07f7f32472fa819f82f1de01be9695fe9a8a719",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "f91b281abdd58c7eab1cc3b9b68388c4629fac0132f2e5cb911c663d5e595350",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "393aab8a13df8a25fd7c584d2bdf341e23f7c59382be43fb633e0e397a31461e",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.0.0 记录整仓改名 csvx（crate、二进制、CSVX_* 环境变量、文档与脚本）；4.1.0 记录 filter/search 分段并行（2.1 GB：13.5→2.7 s、18.1→4.8 s）与 CSVX_SCAN_THREADS | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "58f3a4921754370cb0a86f0656b607f11b44b1b1db2dac676249521aa8f01566",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部一句话定位 High-performance CSV editor in Rust 与 Rust 徽章；下载表列出 csvx-linux/macos/windows 四个产物；性能表新增 2.1 GB 过滤/搜索并行实测（13.5→2.7 s、18.1→4.8 s，CSVX_SCAN_THREADS=1 为基准）；命令表与默认端口被测试校验 | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；徽章与克隆链接仍指向仓库 slug Li-Binzhuang/csv-splitter，仓库改名时这些要同步"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "529acd0edfb4172e07a57dc3ff348a097b79a2016e0e9e0f7e654d09fd6a9fd2",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；含引擎选择一节与「大文件过滤与搜索」2 GB 实测表（并行 vs CSVX_SCAN_THREADS=1），列出没有迁移的 sort/dedupe/渲染路径及原因 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "3d85f39629365d00d4e032f782d16262010c189804db1a1dedf373092e598297",
+      "existing_entry": "ROADMAP.md[SU5S]: F:路线图：已完成、进行中与明确不做的范围 | R:code:docs/CAPABILITIES.md | A:与能力清单分工——这里写未来与边界，已验证行为写进能力清单；M5 记录 filter/search 分段并行（2.1 GB 实测）与仍单线程的 analyze | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/drill.sh",
+      "path": "scripts/drill.sh",
+      "change": "create",
+      "source_sha256": "d334b026cc8dea1f7c4249ff0f817889e6467218587e83151e4fbc4c0526de46"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "d7ccfd4ecc5a38f91952d28807b7b41140a6c709e4bcde5a43892f441baedb0e",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "393aab8a13df8a25fd7c584d2bdf341e23f7c59382be43fb633e0e397a31461e",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.0.0 记录整仓改名 csvx（crate、二进制、CSVX_* 环境变量、文档与脚本）；4.1.0 记录 filter/search 分段并行（2.1 GB：13.5→2.7 s、18.1→4.8 s）与 CSVX_SCAN_THREADS | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "ab57e915de680db4c7c1f247f57321940f2ef9ca620651b450dfb5ba9a675998",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "58f3a4921754370cb0a86f0656b607f11b44b1b1db2dac676249521aa8f01566",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部一句话定位 High-performance CSV editor in Rust 与 Rust 徽章；下载表列出 csvx-linux/macos/windows 四个产物；性能表新增 2.1 GB 过滤/搜索并行实测（13.5→2.7 s、18.1→4.8 s，CSVX_SCAN_THREADS=1 为基准）；命令表与默认端口被测试校验 | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；徽章与克隆链接仍指向仓库 slug Li-Binzhuang/csv-splitter，仓库改名时这些要同步"
+    },
+    {
+      "candidate_id": "0e1ed6cfb63937f249be8a8fb9196b1148b76af2b7805a3e9c636f8b1d0ce4eb",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "529acd0edfb4172e07a57dc3ff348a097b79a2016e0e9e0f7e654d09fd6a9fd2",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；含引擎选择一节与「大文件过滤与搜索」2 GB 实测表（并行 vs CSVX_SCAN_THREADS=1），列出没有迁移的 sort/dedupe/渲染路径及原因 | S:-"
+    },
+    {
+      "candidate_id": "71e0d2a82032ddfecbfa0ff8c1b57fabff54d71073140057ce4acd14bb45aa56",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "3d85f39629365d00d4e032f782d16262010c189804db1a1dedf373092e598297",
+      "existing_entry": "ROADMAP.md[SU5S]: F:路线图：已完成、进行中与明确不做的范围 | R:code:docs/CAPABILITIES.md | A:与能力清单分工——这里写未来与边界，已验证行为写进能力清单；M5 记录 filter/search 分段并行（2.1 GB 实测）与仍单线程的 analyze | S:-"
+    },
+    {
+      "candidate_id": "97bc16387cb70f473096bdda7a9b1ae83615ad390d789e064af30ba814f37192",
+      "object_ref": "code:scripts/drill.sh",
+      "path": "scripts/drill.sh",
+      "change": "create",
+      "source_sha256": "d334b026cc8dea1f7c4249ff0f817889e6467218587e83151e4fbc4c0526de46"
+    }
+  ]
+}
