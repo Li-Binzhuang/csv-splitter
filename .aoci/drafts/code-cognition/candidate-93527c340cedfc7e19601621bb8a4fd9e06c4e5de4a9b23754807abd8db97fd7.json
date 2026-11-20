@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "0042b1759102132bce922fd278664fc9c0952e810eb02bd233e909adaa0377d6",
+  "batch_id": "93527c340cedfc7e19601621bb8a4fd9e06c4e5de4a9b23754807abd8db97fd7",
+  "composite_identity": "d2f65c7dd748be10334d7350f6ed851aae89313f817f93def8c6902427844864",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "995cd58071b2d4f629e54f11d7f8fd9eb61b90abf386775034071346bb1b6b6c",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "1b0dd9ca87d1d721f2b5131f09afb6e7f518ced7f80958b255bc22d09a87ca80",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 写明整列/条件聚合已实现且 t.csv.agg 缓存让重复导出的预扫约 30 ms（达到 50 ms 验收），冷启动仍约 0.09 s，区间引用未做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "a9891f45f6b379d15dc87124fb0b685c35335f77c13c438fd4a82f4b4d5df796",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "1b0dd9ca87d1d721f2b5131f09afb6e7f518ced7f80958b255bc22d09a87ca80",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 写明整列/条件聚合已实现且 t.csv.agg 缓存让重复导出的预扫约 30 ms（达到 50 ms 验收），冷启动仍约 0.09 s，区间引用未做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    }
+  ]
+}

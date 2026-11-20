@@ -100,7 +100,7 @@ HANDOVER.md[SU5S]: F:交接说明：现状、已知债、下一步，以及本�
 INTEGRATION.md[SN6S]: F:前端接入走查：从起服务到翻行、改值、多文件的一页纸 | R:code:docs/API.md | A:按 0–7 步给出真实可跑的调用（起服务、打开文件、画一屏、读写单元格含 expect、行身份、写后、多文件）；每条都对应 crates/cli/tests/serve.rs 的测试 | S:-
 ROADMAP.md[SU5S]: F:路线图：已完成、进行中与明确不做的范围 | R:code:docs/CAPABILITIES.md | A:与能力清单分工；M5 记录 filter/search 分段并行、11.2 GB 演练，并把可续扫游标页标为已完成（GBK 仍整页扫） | S:-
 TROUBLESHOOTING.md[SO6S]: F:排障：常见症状、原因与处理，以及如何读 CI 失败 | R:code:docs/CI.md | A:含 annotation 读取命令与历史根因（超时测试竞态、mingw 线程模型） | S:-
-BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 写明整列/条件聚合已实现且 t.csv.agg 缓存让重复导出的预扫约 30 ms（达到 50 ms 验收），冷启动仍约 0.09 s，区间引用未做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据
+BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 写明整列/条件聚合与 .agg 缓存让重复导出预扫约 30 ms（冷启动仍约 0.09 s，区间引用未做）；缺口 5 改为 set-many 与 transaction 均先校验再一次写入（失败一条不写），仅整块 undo 未做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据
 
 ===/<repository>/scripts/===
 backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换、自引用拒绝与请求上限；BIN 默认取 ./target/debug/csvx | S:脚本默认跑 target/debug 的二进制，改了代码只重建 release 会在这里看到旧行为；裸 wait 会连自己起的 server 一起等，必须收集 PID 逐个等待
