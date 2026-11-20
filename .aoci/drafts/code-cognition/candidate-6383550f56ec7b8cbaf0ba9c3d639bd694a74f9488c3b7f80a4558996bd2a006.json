@@ -1,0 +1,109 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "653a59c929800ee7030b256a1c9857e8591546cb411b67d1c60cd18acc110250",
+  "batch_id": "6383550f56ec7b8cbaf0ba9c3d639bd694a74f9488c3b7f80a4558996bd2a006",
+  "composite_identity": "24b9cc20845eb9d769fb31d77f6c995211de0d4c2e7635a2a650f7f3d151b933",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "eab0713f677add684e1aba9b5be67f5c00fdaae8451c40277c69b444696c3307",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "6e4c7d13280e4e99395d947235a2f6a53232d009e552863d44dd66a4336090fc",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.1.0 记录 filter/search 分段并行与 11.2 GB 演练；4.2.0 记录整列 sum/average/count（1M 行预扫 0.48 s）并把基文件/区间/50 ms 三条边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "0efe6e3e19dc0b5a4d3a3a882b81d01327371dfc7aa72d18c7644972eb06fc37",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部一句话定位 High-performance CSV editor in Rust 与 Rust 徽章；下载表列四平台产物；快速开始指向 scripts/demo.sh；公式节说明整列 sum/average/count（100 万行预扫 0.48 s）与三条边界；性能表含 2.1 GB 与 11.2 GB 两档 | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；搜索在 11.2 GB 已用 18.8 s，约 20 GB 就是 30 s 预算上限"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/totals.rs",
+      "path": "crates/core/src/formula/totals.rs",
+      "change": "update",
+      "source_sha256": "7518b05fa9df62a521668fa575c7d92f35501d99468ac645d3ec42ed306690c6",
+      "existing_entry": "totals.rs[KP6T]: F:整列数字总和的预扫：为 sum/average/count 算（总和, 计数） | R:code:crates/core/src/formula/state.rs,code:crates/core/src/formula/mod.rs | A:扫描基文件，按表头解析列序号，逐条记录解析目标列；空值与无法解析的数字跳过；返回 HashMap\u003c列名,(f64,u64)\u003e 供 RowState::set_totals | S:读的是基文件，不含 journal 里尚未导出的编辑；100 万行约 0.48 s，50 ms 目标未达，下一步是按 journal 版本缓存"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/sql.rs",
+      "path": "crates/core/src/sql.rs",
+      "change": "update",
+      "source_sha256": "a3afbf79cbe30e1c8e10f1a07d1a191f6d66d565af5da98d17f619cf81e25ec6",
+      "existing_entry": "sql.rs[ED8L]: F:用 DuckDB 在 CSV 上执行只读单条 SQL，并统一管理引擎资源 | R:code:crates/core/src/sql_cache.rs,code:crates/core/src/engine.rs | A:由采样声明列类型避免全文件推断；watchdog 超时中断；语句校验只允许单条只读；open_limited 固定 memory_limit 512MB、线程数默认取可用并行度但封顶 8、溢出目录可配 | S:不设上限时 DuckDB 会吃掉 80% 内存与全部核心；可用 CSVX_SQL_MEMORY_MB、CSVX_SQL_THREADS、CSVX_SQL_TEMP_DIR 覆盖，并有测试读回设置"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "55d4b21d33c25087fdd8d8224d3a672072db08251f344610bd545e09ff7b316d",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1（聚合公式）已更新为“整列 sum/average/count 已实现、区间与 countif 未做”，并保留 50 ms 验收标准与当前 0.48 s 的差距 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "096846dfc5ef1afc808796a69bb3d3d271a37f6d741267e6a276d51c1fbe2fbf",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；公式节含整列 sum/average/count 的预扫与 0.48 s/100 万行数字；含引擎选择与「大文件过滤与搜索」两档实测表 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "04e429f266af942d7e00945e28e3eb8d3cbe650d62fdc9a8e9b86e0469a585a2",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "6e4c7d13280e4e99395d947235a2f6a53232d009e552863d44dd66a4336090fc",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.1.0 记录 filter/search 分段并行与 11.2 GB 演练；4.2.0 记录整列 sum/average/count（1M 行预扫 0.48 s）并把基文件/区间/50 ms 三条边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "715ebb53829158e01334fd2b9a9c443c0a9ea1f1c55897921ded9f1bbae28106",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "0efe6e3e19dc0b5a4d3a3a882b81d01327371dfc7aa72d18c7644972eb06fc37",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部一句话定位 High-performance CSV editor in Rust 与 Rust 徽章；下载表列四平台产物；快速开始指向 scripts/demo.sh；公式节说明整列 sum/average/count（100 万行预扫 0.48 s）与三条边界；性能表含 2.1 GB 与 11.2 GB 两档 | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；搜索在 11.2 GB 已用 18.8 s，约 20 GB 就是 30 s 预算上限"
+    },
+    {
+      "candidate_id": "6eda2854cd423655233837a008dfd4229db7e542988b31f4eafa9b7a0e3d7ecf",
+      "object_ref": "code:crates/core/src/formula/totals.rs",
+      "path": "crates/core/src/formula/totals.rs",
+      "change": "update",
+      "source_sha256": "7518b05fa9df62a521668fa575c7d92f35501d99468ac645d3ec42ed306690c6",
+      "existing_entry": "totals.rs[KP6T]: F:整列数字总和的预扫：为 sum/average/count 算（总和, 计数） | R:code:crates/core/src/formula/state.rs,code:crates/core/src/formula/mod.rs | A:扫描基文件，按表头解析列序号，逐条记录解析目标列；空值与无法解析的数字跳过；返回 HashMap\u003c列名,(f64,u64)\u003e 供 RowState::set_totals | S:读的是基文件，不含 journal 里尚未导出的编辑；100 万行约 0.48 s，50 ms 目标未达，下一步是按 journal 版本缓存"
+    },
+    {
+      "candidate_id": "22cfb8ee526e001b801004d50f5efb0d3a378f4538a5512a4efcad2262e51ed3",
+      "object_ref": "code:crates/core/src/sql.rs",
+      "path": "crates/core/src/sql.rs",
+      "change": "update",
+      "source_sha256": "a3afbf79cbe30e1c8e10f1a07d1a191f6d66d565af5da98d17f619cf81e25ec6",
+      "existing_entry": "sql.rs[ED8L]: F:用 DuckDB 在 CSV 上执行只读单条 SQL，并统一管理引擎资源 | R:code:crates/core/src/sql_cache.rs,code:crates/core/src/engine.rs | A:由采样声明列类型避免全文件推断；watchdog 超时中断；语句校验只允许单条只读；open_limited 固定 memory_limit 512MB、线程数默认取可用并行度但封顶 8、溢出目录可配 | S:不设上限时 DuckDB 会吃掉 80% 内存与全部核心；可用 CSVX_SQL_MEMORY_MB、CSVX_SQL_THREADS、CSVX_SQL_TEMP_DIR 覆盖，并有测试读回设置"
+    },
+    {
+      "candidate_id": "b6c20a3348f630801e76d1014a6ab54503b2206d8bdb3b8e8e2ca44ba850b64e",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "55d4b21d33c25087fdd8d8224d3a672072db08251f344610bd545e09ff7b316d",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1（聚合公式）已更新为“整列 sum/average/count 已实现、区间与 countif 未做”，并保留 50 ms 验收标准与当前 0.48 s 的差距 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    },
+    {
+      "candidate_id": "d5b0b54e9c707a639627b10b5bcabb1a696e33af0574af9a39487689d964895f",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "096846dfc5ef1afc808796a69bb3d3d271a37f6d741267e6a276d51c1fbe2fbf",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；公式节含整列 sum/average/count 的预扫与 0.48 s/100 万行数字；含引擎选择与「大文件过滤与搜索」两档实测表 | S:-"
+    }
+  ]
+}
