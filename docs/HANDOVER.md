@@ -1,6 +1,6 @@
 # 交付说明 / Handover
 
-**版本 3.13.0**：一个 CLI + HTTP 后端（**没有 GUI**）。这份文档说明它是什么、能给前端
+**版本 4.2.0**：一个 CLI + HTTP 后端（**没有 GUI**）。这份文档说明它是什么、能给前端
 什么、边界在哪、怎么接着做。验收对照见 [`ACCEPTANCE.md`](ACCEPTANCE.md)。
 
 ---
@@ -17,6 +17,20 @@ csvx edit set orders.csv --row 3 --col city --value CDMX
 csvx edit formula orders.csv --name vat --value "amount*0.16"
 csvx edit export orders.csv -o clean.csv
 ```
+
+## 一条命令演示（周一用这个）
+
+```bash
+cargo build --release
+scripts/demo.sh --big /tmp/csvx_big/big.csv --writes   # 功能巡演 + 2.1 GB 写路径
+scripts/demo.sh --big /tmp/csvx_big/big10.csv          # 11.2 GB 读路径
+```
+
+本机实测（release）：2.1 GB 建索引 0.76 s、打开/跳转 0.01 s、过滤 2.4 s、搜索 2.6 s、
+编辑 0.01 s、导出 1.8 s、verify 6.2 s；11.2 GB 索引 3.8 s、过滤 13.9 s、搜索 14.7 s。
+演示完 `rm -rf /tmp/csvx_big` 回收约 13 GB。端口被占也不怕：demo 会向系统要空闲端口。
+
+---
 
 ## 给前端的三个接口 / the framework
 
