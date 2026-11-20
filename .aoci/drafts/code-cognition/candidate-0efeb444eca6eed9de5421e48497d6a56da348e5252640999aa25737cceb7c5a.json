@@ -1,0 +1,43 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "4d6b08368c805b5eaf0e068e52374f74333fffe04af67ec1a9073c6ff7ea6548",
+  "batch_id": "0efeb444eca6eed9de5421e48497d6a56da348e5252640999aa25737cceb7c5a",
+  "composite_identity": "8220351e57e7ba47e05d6723eebe112828e41f493532ab3ddfd885c05579b2a0",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "ea77f2b5a751f5b6d56c38c247d48195496f90861890a6f897b8973925336f55",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "7de7a4031955932682e44f8ab9bf83736b5e406225ce0cbc07db1500d9bfa72e",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部一句话定位 High-performance CSV editor in Rust 与 Rust 徽章；下载表列出 csvx-linux/macos/windows 四个产物；性能表含 2.1 GB 与 11.2 GB 两档过滤/搜索实测，并说明可用 scripts/drill.sh 复现；命令表与默认端口被测试校验 | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；搜索在 11.2 GB 已用 18.8 s，约 20 GB 就是 30 s 预算上限，再大需要游标分页"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/demo.sh",
+      "path": "scripts/demo.sh",
+      "change": "create",
+      "source_sha256": "d14208728fe0d59a72ecdf653dbdc87ac89c340e84848705ed126bd19651d9cb"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "6e2d0f8eb95542980e2ce45469669d0739e82cc615bc17530b327f745278d355",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "7de7a4031955932682e44f8ab9bf83736b5e406225ce0cbc07db1500d9bfa72e",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部一句话定位 High-performance CSV editor in Rust 与 Rust 徽章；下载表列出 csvx-linux/macos/windows 四个产物；性能表含 2.1 GB 与 11.2 GB 两档过滤/搜索实测，并说明可用 scripts/drill.sh 复现；命令表与默认端口被测试校验 | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；搜索在 11.2 GB 已用 18.8 s，约 20 GB 就是 30 s 预算上限，再大需要游标分页"
+    },
+    {
+      "candidate_id": "b230057ae0fc80a32aaabcf0490ecd23747afbf5ce31c60b3d9a7af81193c354",
+      "object_ref": "code:scripts/demo.sh",
+      "path": "scripts/demo.sh",
+      "change": "create",
+      "source_sha256": "d14208728fe0d59a72ecdf653dbdc87ac89c340e84848705ed126bd19651d9cb"
+    }
+  ]
+}

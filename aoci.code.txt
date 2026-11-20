@@ -7,7 +7,7 @@ AGENTS.md[SV6S]: F:仓库级 Agent 指令：AOCI 认知层的接入与使用原�
 CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.1.0 记录 filter/search 分段并行（2.1 GB 13.5→2.7 s、18.1→4.8 s；11.2 GB 11.9 / 18.8 s，HTTP 10.6 / 17.0 s）与 CSVX_SCAN_THREADS、scripts/drill.sh | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败
 Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本与 crate 元数据、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 crates/core 与 crates/cli；workspace.dependencies 以 csvx-core 为本地 crate 键；workspace.package 持有版本 4.1.0、一句话定位、仓库地址与 MIT 许可，是发布真相源；二进制的 --version 与 tag 校验都以它为准 | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
-README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部一句话定位 High-performance CSV editor in Rust 与 Rust 徽章；下载表列出 csvx-linux/macos/windows 四个产物；性能表含 2.1 GB 与 11.2 GB 两档过滤/搜索实测，并说明可用 scripts/drill.sh 复现；命令表与默认端口被测试校验 | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；搜索在 11.2 GB 已用 18.8 s，约 20 GB 就是 30 s 预算上限，再大需要游标分页
+README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部一句话定位 High-performance CSV editor in Rust 与 Rust 徽章；下载表列出四个平台产物；快速开始后指向 scripts/demo.sh（--big 接 drill.sh）；性能表含 2.1 GB 与 11.2 GB 两档实测，并说明可用 drill.sh 复现 | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；搜索在 11.2 GB 已用 18.8 s，约 20 GB 就是 30 s 预算上限，再大需要游标分页
 
 ===/<repository>/.github/workflows/===
 ci.yml[OV7S]: F:主 CI：格式化、引擎与 CLI 测试、性能守卫、clippy 工作区、失败注解 | R:code:scripts/smoke.sh,code:scripts/regress.sh,code:scripts/backend-smoke.sh,code:scripts/release-decision.sh | A:单 job 串联五个步骤；测试命令按新名字 cargo test -p csvx-core -p csvx-cli；每步 tee 日志，失败时把失败测试名与首条断言转成公开 annotation 并上传 artifact；有路径过滤的 Windows 检查在独立工作流 | S:曾用两个 job 加 needs 串联，缓存配额超限时出现一个 job 跳过、红叉无信息的不可读结果，因此刻意合并成一个 job
@@ -115,6 +115,7 @@ release-decision.sh[OV7T]: F:发布决策：tag 推送、带 tag 的手动触发
 smoke.sh[TQ8M]: F:CLI 冒烟：用 demo 数据把主要命令跑一遍 | R:code:crates/core/src/demo.rs | A:覆盖预览、过滤、编辑、切分、合并、聚合、导出与缓存；每步检查退出码与产物；BIN 默认取 target/debug/csvx | S:-
 gate.sh[XQ5T]: F:gate 包装：保住真实退出码并把失败阶段写回终端 | R:code:scripts/dev.sh | A:调用 scripts/dev.sh gate；失败时只打印 error、FAILED、panicked、Diff 的前 20 行与日志尾部；最后一行固定为 == gate exit=N == 并以它退出；GATE_FAIL_TEST=1 走注入失败的 selftest 分支 | S:把 scripts/dev.sh gate 的输出接给 tail 时，报的是 tail 的状态而不是 gate 的；直接接管道会让失败的 clippy 看起来是绿的
 drill.sh[TQ6T]: F:一条命令的端到端演练：索引、打开、跳转、过滤、搜索，可选编辑/导出/verify | R:code:scripts/bench.sh | A:打印 markdown 表格（每步墙钟与峰值 RSS）；--writes 才跑写路径（需要 2 倍文件空间的导出副本）；--where / --jump 可换谓词与行号；/usr/bin/time -l 与 -v 各一条分支，都没有时退回 bash 计时 | S:写路径默认关闭，因为 export 会复制整份文件；10 GB 文件在只剩 40 GB 的盘上跑 --writes 会把磁盘吃光
+demo.sh[SZ6T]: F:一条命令的产品巡演：生成示例数据后按序跑预览、分析、过滤、编辑、公式、格式、布局、聚合、透视、图表、导出与服务自检 | R:code:scripts/drill.sh | A:每步打印要执行的命令与输出（head 限长），--big 时再调用 drill.sh 跑真实大文件；BIN 解析为绝对路径，因为巡演会切到临时目录 | S:必须用 release 二进制演示——debug 构建慢一个数量级会让大文件耗时失真；--big 只走读路径，写路径只在 drill.sh --writes 里发生（会复制整份文件）
 
 ===/<repository>/csvx-demo/===
 orders.csv[AZ4L]: F:demo 命令生成的示例数据：6 列 20 120 行，含刻意保留的脏数据 | R:code:crates/core/src/demo.rs | A:列为 id,cust_no,city,amount,note,ts；20 行多一个逗号、100 行重复、900 个空备注，用来演示预览与统计对错位行的容忍 | S:脏数据是故意的，不要清理——GETTING_STARTED 与契约测试都引用这份输入
