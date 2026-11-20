@@ -1619,22 +1619,20 @@ fn cmd_cache(args: &[String]) -> i32 {
     }
     if build {
         let options = csvx_core::sheet::ReadOptions::default();
-        let columns = match csvx_core::sheet::Sheet::open(
-            &path,
-            csvx_core::sheet::ReadOptions::default(),
-        ) {
-            Ok(sheet) => match sheet.schema(64) {
-                Ok(columns) => columns,
+        let columns =
+            match csvx_core::sheet::Sheet::open(&path, csvx_core::sheet::ReadOptions::default()) {
+                Ok(sheet) => match sheet.schema(64) {
+                    Ok(columns) => columns,
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 1;
+                    }
+                },
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 1;
                 }
-            },
-            Err(e) => {
-                eprintln!("error: {e}");
-                return 1;
-            }
-        };
+            };
         match csvx_core::sql_cache::build(
             &path,
             options.delimiter,
@@ -2187,8 +2185,7 @@ fn cmd_view(args: &[String]) -> i32 {
                     "SELECT * FROM t{where_sql} ORDER BY {} LIMIT {} OFFSET {}",
                     order_sql, count, start
                 );
-                match csvx_core::sql::query_with(&input, &query, count as usize, delimiter)
-                {
+                match csvx_core::sql::query_with(&input, &query, count as usize, delimiter) {
                     Ok(result) => Some((result.columns, result.rows)),
                     Err(e) => {
                         eprintln!("note: ordered read fell back to the native path: {e}");
@@ -2214,9 +2211,8 @@ fn cmd_view(args: &[String]) -> i32 {
         let exported = work.with_extension("src.csv");
         let (tx, rx) = mpsc::channel();
         let reporter = spawn_reporter("view", rx, true);
-        let result = csvx_core::workbook::export_quotes(
-            &input, &ops, &exported, delimiter, quotes, &tx,
-        );
+        let result =
+            csvx_core::workbook::export_quotes(&input, &ops, &exported, delimiter, quotes, &tx);
         drop(tx);
         let _ = reporter.join();
         if let Err(e) = result {
@@ -2330,8 +2326,7 @@ fn cmd_view(args: &[String]) -> i32 {
             };
             // One pager for the scan: `window()` per chunk would rebuild the index and
             // the formulas fifty times over for a million rows.
-            let scan_pager = match csvx_core::workbook::Pager::open(&input, &ops, delimiter)
-            {
+            let scan_pager = match csvx_core::workbook::Pager::open(&input, &ops, delimiter) {
                 Ok(p) => p,
                 Err(e) => return report_failure("view", e.to_string()),
             };
@@ -2353,10 +2348,7 @@ fn cmd_view(args: &[String]) -> i32 {
                             return if match_case {
                                 csvx_core::format::pattern_matches(&needle, cell)
                             } else {
-                                csvx_core::format::pattern_matches(
-                                    &needle,
-                                    &cell.to_lowercase(),
-                                )
+                                csvx_core::format::pattern_matches(&needle, &cell.to_lowercase())
                             };
                         }
                         if match_case {
@@ -2943,14 +2935,13 @@ fn cmd_search(args: &[String]) -> i32 {
             return 2;
         }
     };
-    let result = match csvx_core::search::search_quotes(
-        &input, delimiter, &spec, limit, quotes, &tx,
-    ) {
-        Ok(r) => r,
-        Err(e) => {
-            return report_failure("search", e);
-        }
-    };
+    let result =
+        match csvx_core::search::search_quotes(&input, delimiter, &spec, limit, quotes, &tx) {
+            Ok(r) => r,
+            Err(e) => {
+                return report_failure("search", e);
+            }
+        };
 
     if json {
         let rows: Vec<String> = result.row_numbers().iter().map(|n| n.to_string()).collect();
@@ -3581,9 +3572,8 @@ fn cmd_sort(args: &[String]) -> i32 {
     }
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("sort", rx, quiet);
-    let result = csvx_core::sort::external_sort_columns(
-        &input, &out, &columns, delimiter, buf_mb, &tx,
-    );
+    let result =
+        csvx_core::sort::external_sort_columns(&input, &out, &columns, delimiter, buf_mb, &tx);
     drop(tx);
     let _ = reporter.join();
     match result {
@@ -3951,9 +3941,9 @@ fn cmd_lookup(args: &[String]) -> i32 {
             csvx_core::engine::Engine::Sql => {
                 csvx_core::engine::lookup_sql(&input, delimiter, &output, &options, &tx)
             }
-            _ => csvx_core::lookup::lookup_quotes(
-                &input, delimiter, &output, &options, quotes, &tx,
-            ),
+            _ => {
+                csvx_core::lookup::lookup_quotes(&input, delimiter, &output, &options, quotes, &tx)
+            }
         }
     };
     drop(tx);
@@ -3988,18 +3978,15 @@ fn cmd_lookup(args: &[String]) -> i32 {
 
 /// Columns as the sheet presents them (journal applied), for layout commands.
 fn layout_columns(input: &std::path::Path) -> Result<Vec<String>, String> {
-    let base_columns =
-        csvx_core::workbook::base_header(input, csvx_core::types::Delimiter::Comma)
-            .map_err(|e| format!("cannot read the header: {e}"))?;
-    csvx_core::workbook::Journal::load(&csvx_core::workbook::Journal::sidecar(
-        input,
-    ))
-    .map(|journal| {
-        csvx_core::workbook::column_layout(journal.ops(), &base_columns)
-            .map(|layout| layout.into_iter().map(|(name, _)| name).collect())
-    })
-    .unwrap_or_else(|_| Ok(base_columns))
-    .map_err(|e: std::io::Error| e.to_string())
+    let base_columns = csvx_core::workbook::base_header(input, csvx_core::types::Delimiter::Comma)
+        .map_err(|e| format!("cannot read the header: {e}"))?;
+    csvx_core::workbook::Journal::load(&csvx_core::workbook::Journal::sidecar(input))
+        .map(|journal| {
+            csvx_core::workbook::column_layout(journal.ops(), &base_columns)
+                .map(|layout| layout.into_iter().map(|(name, _)| name).collect())
+        })
+        .unwrap_or_else(|_| Ok(base_columns))
+        .map_err(|e: std::io::Error| e.to_string())
 }
 
 fn cmd_layout(args: &[String]) -> i32 {
@@ -4726,13 +4713,9 @@ fn cmd_pivot(args: &[String]) -> i32 {
             }
         };
         let result = match planned {
-            csvx_core::engine::Engine::Sql => csvx_core::engine::pivot_sql(
-                sheet.path(),
-                delimiter,
-                &output,
-                &options,
-                &tx,
-            ),
+            csvx_core::engine::Engine::Sql => {
+                csvx_core::engine::pivot_sql(sheet.path(), delimiter, &output, &options, &tx)
+            }
             _ => csvx_core::pivot::pivot_quotes(
                 sheet.path(),
                 delimiter,
@@ -4750,8 +4733,7 @@ fn cmd_pivot(args: &[String]) -> i32 {
             Err(e) => return report_failure("pivot", e),
         }
     } else {
-        let result =
-            csvx_core::pivot::pivot_rows(sheet.path(), delimiter, &options, quotes, &tx);
+        let result = csvx_core::pivot::pivot_rows(sheet.path(), delimiter, &options, quotes, &tx);
         drop(tx);
         let _ = reporter.join();
         match result {
@@ -4909,17 +4891,15 @@ fn cmd_validate(args: &[String]) -> i32 {
             return 2;
         }
     };
-    let ops = match csvx_core::workbook::Journal::load(
-        &csvx_core::workbook::Journal::sidecar(&input),
-    ) {
-        Ok(journal) => journal.ops().to_vec(),
-        Err(e) => return report_failure("validate", e.to_string()),
-    };
+    let ops =
+        match csvx_core::workbook::Journal::load(&csvx_core::workbook::Journal::sidecar(&input)) {
+            Ok(journal) => journal.ops().to_vec(),
+            Err(e) => return report_failure("validate", e.to_string()),
+        };
 
     let (tx, rx) = mpsc::channel();
     let reporter = spawn_reporter("validate", rx, quiet || json);
-    let result =
-        csvx_core::validate::validate_limited(&input, &ops, &rules, delimiter, limit, &tx);
+    let result = csvx_core::validate::validate_limited(&input, &ops, &rules, delimiter, limit, &tx);
     drop(tx);
     let _ = reporter.join();
     let _ = quotes;
@@ -5027,7 +5007,10 @@ fn cmd_demo(args: &[String]) -> i32 {
             println!("  Try the 10-minute tour:");
             println!("    csvx preview {}", path.display());
             println!("    csvx analyze {}", path.display());
-            println!("    csvx filter {} --where \"city=CDMX\" --where \"amount>1000\" -o cdmx.csv", path.display());
+            println!(
+                "    csvx filter {} --where \"city=CDMX\" --where \"amount>1000\" -o cdmx.csv",
+                path.display()
+            );
             println!("    csvx groupby {} --by city --agg \"amount:sum,amount:count\" --order sum_amount --desc", path.display());
             println!();
             println!("  Or serve it to a front-end:");
@@ -5531,16 +5514,15 @@ fn cmd_partition(args: &[String]) -> i32 {
                 }
             };
             let (tx, _rx) = mpsc::channel();
-            let files =
-                match csvx_core::decompress::decompress_file(&expected, tmp.path(), &tx) {
-                    Ok(f) => f,
-                    Err(e) => {
-                        return report_failure(
-                            "partition",
-                            format!("cannot unpack {}: {e}", expected.display()),
-                        )
-                    }
-                };
+            let files = match csvx_core::decompress::decompress_file(&expected, tmp.path(), &tx) {
+                Ok(f) => f,
+                Err(e) => {
+                    return report_failure(
+                        "partition",
+                        format!("cannot unpack {}: {e}", expected.display()),
+                    )
+                }
+            };
             let source = match csvx_core::check::count(&input, delimiter, &tx) {
                 Ok(c) => c,
                 Err(e) => {
@@ -5552,16 +5534,15 @@ fn cmd_partition(args: &[String]) -> i32 {
             // reads binary noise and reports nonsense row counts.
             let mut total = 0u64;
             for (index, file) in files.iter().enumerate() {
-                let plain =
-                    match csvx_core::decompress::decompress_to_csv(file, tmp.path(), &tx) {
-                        Ok(p) => p,
-                        Err(e) => {
-                            return report_failure(
-                                "partition",
-                                format!("cannot unpack {}: {e}", file.display()),
-                            )
-                        }
-                    };
+                let plain = match csvx_core::decompress::decompress_to_csv(file, tmp.path(), &tx) {
+                    Ok(p) => p,
+                    Err(e) => {
+                        return report_failure(
+                            "partition",
+                            format!("cannot unpack {}: {e}", file.display()),
+                        )
+                    }
+                };
                 match csvx_core::check::count(&plain, delimiter, &tx) {
                     Ok(c) => total += c.rows,
                     Err(e) => {
@@ -6022,12 +6003,11 @@ fn sheet_path(input: &Path, apply_edits: bool, delimiter: Delimiter) -> Result<S
             temporary: None,
         });
     }
-    let ops = match csvx_core::workbook::Journal::load(
-        &csvx_core::workbook::Journal::sidecar(input),
-    ) {
-        Ok(journal) => journal.ops().to_vec(),
-        Err(e) => return Err(report_failure("edit", e.to_string())),
-    };
+    let ops =
+        match csvx_core::workbook::Journal::load(&csvx_core::workbook::Journal::sidecar(input)) {
+            Ok(journal) => journal.ops().to_vec(),
+            Err(e) => return Err(report_failure("edit", e.to_string())),
+        };
     if ops.is_empty() {
         // Nothing to apply: reading the base file is the same thing, and cheaper.
         return Ok(SheetPath {
@@ -6063,9 +6043,7 @@ fn sheet_path(input: &Path, apply_edits: bool, delimiter: Delimiter) -> Result<S
 /// edit vanished". Naming it costs one line and turns a mystery into an explanation.
 fn warn_journal_damage(input: &std::path::Path) {
     let sidecar = csvx_core::workbook::Journal::sidecar(input);
-    if let Ok((_, skipped, skipped_redo)) =
-        csvx_core::workbook::Journal::load_reporting(&sidecar)
-    {
+    if let Ok((_, skipped, skipped_redo)) = csvx_core::workbook::Journal::load_reporting(&sidecar) {
         for (count, file) in [
             (skipped, sidecar.clone()),
             (skipped_redo, sidecar.with_extension("journal.redo")),
@@ -6094,18 +6072,16 @@ fn check_expect(
     column: &str,
     expect: &str,
 ) -> Result<(), i32> {
-    let sheet = match csvx_core::sheet::Sheet::open(
-        input,
-        csvx_core::sheet::ReadOptions { delimiter },
-    ) {
-        Ok(sheet) => sheet,
-        Err(e) => {
-            return Err(report_failure(
-                "edit",
-                format!("cannot open the sheet: {e}"),
-            ))
-        }
-    };
+    let sheet =
+        match csvx_core::sheet::Sheet::open(input, csvx_core::sheet::ReadOptions { delimiter }) {
+            Ok(sheet) => sheet,
+            Err(e) => {
+                return Err(report_failure(
+                    "edit",
+                    format!("cannot open the sheet: {e}"),
+                ))
+            }
+        };
     let columns = match sheet.columns() {
         Ok(columns) => columns,
         Err(e) => {
@@ -6635,8 +6611,7 @@ fn cmd_edit(args: &[String]) -> i32 {
     // Actions that do not modify the journal are handled before any save.
     match action.as_str() {
         "status" => {
-            let logical =
-                csvx_core::workbook::logical_rows(&input, journal.ops()).unwrap_or(0);
+            let logical = csvx_core::workbook::logical_rows(&input, journal.ops()).unwrap_or(0);
             if json {
                 println!(
                     r#"{{"file":"{}","ops":{},"logicalRows":{},"journal":"{}"}}"#,
@@ -6788,9 +6763,8 @@ fn cmd_edit(args: &[String]) -> i32 {
                     };
                     let (ptx, prx) = mpsc::channel();
                     let reporter = spawn_reporter("columns", prx, true);
-                    let projected = csvx_core::reshape::reshape(
-                        &sorted, delimiter, &spec, &output, &ptx,
-                    );
+                    let projected =
+                        csvx_core::reshape::reshape(&sorted, delimiter, &spec, &output, &ptx);
                     drop(ptx);
                     let _ = reporter.join();
                     let _ = std::fs::remove_file(&sorted);
@@ -6823,12 +6797,10 @@ fn cmd_edit(args: &[String]) -> i32 {
         "undo" => {
             return match journal.undo() {
                 Some(op) => {
-                    if let Err(e) =
-                        csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
-                            fresh.undo();
-                            Ok(())
-                        })
-                    {
+                    if let Err(e) = csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
+                        fresh.undo();
+                        Ok(())
+                    }) {
                         return report_failure("edit", format!("cannot save the journal: {e}"));
                     }
                     println!("✓ undone: {}", op.describe());
@@ -6846,12 +6818,10 @@ fn cmd_edit(args: &[String]) -> i32 {
         "redo" => {
             return match journal.redo() {
                 Some(op) => {
-                    if let Err(e) =
-                        csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
-                            fresh.redo();
-                            Ok(())
-                        })
-                    {
+                    if let Err(e) = csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
+                        fresh.redo();
+                        Ok(())
+                    }) {
                         return report_failure("edit", format!("cannot save the journal: {e}"));
                     }
                     println!("✓ redone: {}", op.describe());
@@ -7151,9 +7121,8 @@ fn cmd_edit(args: &[String]) -> i32 {
                 return 2;
             };
             let columns = match csvx_core::workbook::base_header(&input, delimiter)
-                .and_then(|header| {
-                    csvx_core::workbook::column_layout(journal.ops(), &header)
-                }) {
+                .and_then(|header| csvx_core::workbook::column_layout(journal.ops(), &header))
+            {
                 Ok(layout) => layout.into_iter().map(|(name, _)| name).collect::<Vec<_>>(),
                 Err(e) => {
                     eprintln!("error: cannot read the header: {e}");
@@ -7373,14 +7342,8 @@ fn cmd_analyze(args: &[String]) -> i32 {
             return 2;
         }
     };
-    let result = csvx_core::profile::profile_quotes(
-        &input,
-        delimiter,
-        distinct_cap,
-        sample,
-        quotes,
-        &tx,
-    );
+    let result =
+        csvx_core::profile::profile_quotes(&input, delimiter, distinct_cap, sample, quotes, &tx);
     drop(tx);
     let _ = reporter.join();
     let profiles = match result {
@@ -7578,24 +7541,24 @@ fn cmd_schema(args: &[String]) -> i32 {
             return 2;
         }
     };
-    let sheet = match csvx_core::sheet::Sheet::open(
-        &input,
-        csvx_core::sheet::ReadOptions { delimiter },
-    ) {
-        Ok(sheet) => sheet,
-        Err(e) => return report_failure("schema", format!("cannot open the sheet: {e}")),
-    };
+    let sheet =
+        match csvx_core::sheet::Sheet::open(&input, csvx_core::sheet::ReadOptions { delimiter }) {
+            Ok(sheet) => sheet,
+            Err(e) => return report_failure("schema", format!("cannot open the sheet: {e}")),
+        };
 
     if let Some(other) = &diff_with {
-        let other_sheet = match csvx_core::sheet::Sheet::open(
-            other,
-            csvx_core::sheet::ReadOptions { delimiter },
-        ) {
-            Ok(sheet) => sheet,
-            Err(e) => {
-                return report_failure("schema", format!("cannot open {}: {e}", other.display()))
-            }
-        };
+        let other_sheet =
+            match csvx_core::sheet::Sheet::open(other, csvx_core::sheet::ReadOptions { delimiter })
+            {
+                Ok(sheet) => sheet,
+                Err(e) => {
+                    return report_failure(
+                        "schema",
+                        format!("cannot open {}: {e}", other.display()),
+                    )
+                }
+            };
         let mine = sheet.columns().unwrap_or_default();
         let theirs = other_sheet.columns().unwrap_or_default();
         let diff = csvx_core::schema::diff(&mine, &theirs);
@@ -7856,8 +7819,7 @@ fn cmd_columns(args: &[String]) -> i32 {
             return 2;
         }
     };
-    let result =
-        csvx_core::reshape::reshape_quotes(&input, delimiter, &spec, &output, quotes, &tx);
+    let result = csvx_core::reshape::reshape_quotes(&input, delimiter, &spec, &output, quotes, &tx);
     drop(tx);
     let _ = reporter.join();
     match result {
@@ -7888,8 +7850,7 @@ fn cmd_columns(args: &[String]) -> i32 {
                 let ok = self_check(
                     &output,
                     delimiter,
-                    csvx_core::check::Expectation::rows(s.rows)
-                        .with_columns(s.columns.len()),
+                    csvx_core::check::Expectation::rows(s.rows).with_columns(s.columns.len()),
                     json,
                 );
                 if !ok {
@@ -8005,9 +7966,8 @@ fn cmd_dedupe(args: &[String]) -> i32 {
     if let Err(code) = check_output(Some(&input), &output) {
         return code;
     }
-    let result = csvx_core::dedupe::dedupe_quotes(
-        &input, delimiter, &keys, &output, max_keys, quotes, &tx,
-    );
+    let result =
+        csvx_core::dedupe::dedupe_quotes(&input, delimiter, &keys, &output, max_keys, quotes, &tx);
     drop(tx);
     let _ = reporter.join();
     match result {

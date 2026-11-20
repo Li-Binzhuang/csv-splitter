@@ -95,10 +95,7 @@ fn every_documented_command_exists() {
                 .lines()
                 .any(|line| line.trim_start().starts_with(&format!("{command} ")));
             if !listed {
-                problems.push(format!(
-                    "{}: `csvx {command}` is not a sub-command",
-                    doc.0
-                ));
+                problems.push(format!("{}: `csvx {command}` is not a sub-command", doc.0));
             }
         }
     }

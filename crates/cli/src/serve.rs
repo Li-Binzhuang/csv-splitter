@@ -154,10 +154,7 @@ pub fn run(cfg: ServerConfig) -> io::Result<()> {
     if !local.ip().is_loopback() {
         eprintln!("warning: listening on {local}, not loopback — anyone who can reach this port can read files under {}", root.display());
     }
-    println!(
-        "csvx API on http://{local}  (root: {})",
-        root.display()
-    );
+    println!("csvx API on http://{local}  (root: {})", root.display());
     install_signal_handlers();
     let flag = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
     // The handler writes the global; this thread owns the copy the loop reads.
@@ -1010,15 +1007,8 @@ fn start_convert(
         }
     };
     let result_path = out.clone();
-    let id = jobs.submit(
-        "convert",
-        move |tx| match csvx_core::encoding::transcode(
-            &input,
-            &out,
-            from,
-            to,
-            8 * 1024 * 1024,
-        ) {
+    let id = jobs.submit("convert", move |tx| {
+        match csvx_core::encoding::transcode(&input, &out, from, to, 8 * 1024 * 1024) {
             Ok(_) => {
                 tx.send(ProgressEvent::Finished {
                     output: result_path,
@@ -1028,8 +1018,8 @@ fn start_convert(
             Err(e) => {
                 tx.send(ProgressEvent::Error(e.to_string())).ok();
             }
-        },
-    );
+        }
+    });
     respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
 }
 
@@ -1141,9 +1131,8 @@ fn start_columns_reshape(
     }
     let delimiter = delimiter(params);
     let result_path = out.clone();
-    let id = jobs.submit(
-        "columns",
-        move |tx| match csvx_core::reshape::reshape(&input, delimiter, &spec, &out, &tx) {
+    let id = jobs.submit("columns", move |tx| {
+        match csvx_core::reshape::reshape(&input, delimiter, &spec, &out, &tx) {
             Ok(_) => {
                 tx.send(ProgressEvent::Finished {
                     output: result_path,
@@ -1153,8 +1142,8 @@ fn start_columns_reshape(
             Err(e) => {
                 tx.send(ProgressEvent::Error(e.to_string())).ok();
             }
-        },
-    );
+        }
+    });
     respond_json(stream, 202, &format!(r#"{{"job":{}}}"#, json_str(&id)))
 }
 
@@ -1313,17 +1302,16 @@ fn schema_diff_endpoint(
             )
         }
     };
-    let theirs =
-        match csvx_core::sheet::schema_sample(&other_path, delimiter(params), sample) {
-            Ok(columns) => columns,
-            Err(e) => {
-                return respond_json(
-                    stream,
-                    422,
-                    &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
-                )
-            }
-        };
+    let theirs = match csvx_core::sheet::schema_sample(&other_path, delimiter(params), sample) {
+        Ok(columns) => columns,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
     let mine_names: Vec<String> = mine.iter().map(|c| c.name.clone()).collect();
     let theirs_names: Vec<String> = theirs.iter().map(|c| c.name.clone()).collect();
     let diff = csvx_core::schema::diff(&mine_names, &theirs_names);
@@ -1367,18 +1355,17 @@ fn validate_endpoint(
             }
         }
     }
-    let ops = match csvx_core::workbook::Journal::load(
-        &csvx_core::workbook::Journal::sidecar(&path),
-    ) {
-        Ok(journal) => journal.ops().to_vec(),
-        Err(e) => {
-            return respond_json(
-                stream,
-                422,
-                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
-            )
-        }
-    };
+    let ops =
+        match csvx_core::workbook::Journal::load(&csvx_core::workbook::Journal::sidecar(&path)) {
+            Ok(journal) => journal.ops().to_vec(),
+            Err(e) => {
+                return respond_json(
+                    stream,
+                    422,
+                    &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                )
+            }
+        };
     // `limit` bounds the scan: the full-file count on a 2.5 GB sheet is a tens-of-seconds
     // request, and a preview that validates its visible window does not need it.
     let limit: Option<u64> = match params.get("limit").filter(|v| !v.is_empty()) {
@@ -1552,8 +1539,7 @@ fn start_lookup(
             engine::Engine::Sql => {
                 engine::lookup_sql(&source, delimiter, &out, &options, &tx).map(|_| ())
             }
-            _ => csvx_core::lookup::lookup(&source, delimiter, &out, &options, &tx)
-                .map(|_| ()),
+            _ => csvx_core::lookup::lookup(&source, delimiter, &out, &options, &tx).map(|_| ()),
         };
         match result {
             Ok(_) => {
@@ -3147,9 +3133,8 @@ fn edit_apply(
             // Validate before writing: a stored formula that cannot evaluate would
             // accept the request and break the next read.
             let columns = match csvx_core::workbook::base_header(&path, delimiter(params))
-                .and_then(|header| {
-                    csvx_core::workbook::column_layout(journal.ops(), &header)
-                }) {
+                .and_then(|header| csvx_core::workbook::column_layout(journal.ops(), &header))
+            {
                 Ok(layout) => layout.into_iter().map(|(name, _)| name).collect::<Vec<_>>(),
                 Err(e) => {
                     return respond_json(
@@ -3184,9 +3169,8 @@ fn edit_apply(
             // Same write-time guard as set-formula. A new column reading itself would be
             // accepted here and then fail on every later read, which is the worst order.
             let columns = match csvx_core::workbook::base_header(&path, delimiter(params))
-                .and_then(|header| {
-                    csvx_core::workbook::column_layout(journal.ops(), &header)
-                }) {
+                .and_then(|header| csvx_core::workbook::column_layout(journal.ops(), &header))
+            {
                 Ok(layout) => layout.into_iter().map(|(name, _)| name).collect::<Vec<_>>(),
                 Err(e) => {
                     return respond_json(
@@ -5168,9 +5152,7 @@ fn rows(
                                 stream,
                                 &format!(
                                     "cannot order by '{missing}': {}",
-                                    csvx_core::csv_reader::column_candidates(
-                                        missing, &known
-                                    )
+                                    csvx_core::csv_reader::column_candidates(missing, &known)
                                 ),
                                 "order",
                                 "order=<one of the columns in /columns>",
@@ -5237,9 +5219,7 @@ fn rows(
                                 stream,
                                 &format!(
                                     "cannot order by '{missing}': {}",
-                                    csvx_core::csv_reader::column_candidates(
-                                        missing, &known
-                                    )
+                                    csvx_core::csv_reader::column_candidates(missing, &known)
                                 ),
                                 "order",
                                 "order=<one of the columns in /columns>",
