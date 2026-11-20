@@ -5132,3 +5132,35 @@ fn the_aggregations_can_apply_edits() {
         "pivot must use the edit: {pivot}"
     );
 }
+
+/// An export of edited data is the one thing `/export` could not do: the endpoint reads the
+/// base file, so a filtered export of an edited cell came back empty.
+#[test]
+fn export_can_apply_edits() {
+    let dir = TempDir::new("exportapply");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=city&value=ZZ9",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let (status, raw) = get_raw(
+        &server.addr,
+        "/export?path=t.csv&where=city%3DZZ9&apply-edits=1",
+    );
+    assert_eq!(status, 200);
+    let text = String::from_utf8_lossy(&raw).to_string();
+    assert!(text.contains("ZZ9"), "the export must see the edit: {text}");
+
+    // Without the flag the base file still answers, and the edited value is absent.
+    let (status, raw) = get_raw(&server.addr, "/export?path=t.csv&where=city%3DZZ9");
+    assert_eq!(status, 200);
+    let text = String::from_utf8_lossy(&raw).to_string();
+    assert!(
+        !text.contains("ZZ9"),
+        "without apply-edits the base file answers: {text}"
+    );
+}

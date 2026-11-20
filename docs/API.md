@@ -61,7 +61,7 @@
 | `GET /validate` | `path` `checks` `delim` `limit` | 数据校验，与 CLI `validate --json` **同一份报告**：`ok` / `violations` / 每规则计数；**只读不写**；违规数据仍是 **200**（请求没错，数据错了）。`limit=N` 只校验前 N 行，报告里 `checked` 与 `partial` 明说这是前缀；2.5 GB 全量实测 **34.9 s**，`limit=200` 为 **0.11 s**；不传 `limit` 且超过查询预算时返回 504，提示用 `limit=` |
 | `GET /files` | `dir` `ext` `limit` `root` | 根目录下可读文件清单：响应 `root` `truncated` `total` `files` |
 | `GET /download` | `path` | 原样下载文件；按 1 MB 分块流出，不整份读入内存；支持单段 `Range`（206 + Content-Range，越界 416），可用 curl -C - 断点续传 |
-| `GET /export` | `path` `sql` `where` | 导出（查询结果或筛选结果）为 CSV |
+| `GET /export` | `path` `where` `whereAny` `columns` `format` `order` `desc` `limit` `sql` `apply-edits` `delim` | 执行 SQL 并把结果作为文件返回；默认读基文件，`apply-edits=1` 先物化编辑后的表再导出 |
 | `GET /query` | `path` `sql` `limit` | 一次性 SQL 结果（不分页） |
 | `GET /job` | `id` | 任务状态：`state` `phase` `fraction` `output` `error` |
 | `GET /jobs` | — | 最近的任务列表 |

@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.59.2] — 2026-11-20
+
+### Added
+
+- **/export accepts apply-edits=1.** Exporting edited data was impossible: the endpoint turns
+  the filter into SQL and DuckDB reads the base file, so a filtered export of an edited cell
+  came back empty. It now materialises the edited sheet first when asked. A test exports
+  where=city=ZZ9 with and without the flag: the edited value appears only with it.
+
 ## [3.59.1] — 2026-11-20
 
 ### Added

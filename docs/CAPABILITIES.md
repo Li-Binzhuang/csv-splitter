@@ -483,7 +483,7 @@ GET /columns 多带的四个参数属于「声明正确、对该方法无意义�
 | `/meta` | **第三种：报文件的物理事实**（行数/字节数/表头/编码）+ `edited` 计数；编辑后的表头看 `/columns`、行看 `/rows`。不是「看不到」，是「不假装是同一个东西」|
 | `/journal` `/sheet` | ✅（且三处操作数一致）|
 | `/validate` | ✅（规则按编辑后的值判定）|
-| `/export` | ❌ **只读基文件**（它把 `where` 翻成 SQL 交给 DuckDB，DuckDB 看不到 journal）|
+| `/export` | **默认只读基文件**（`where` 交给 DuckDB，看不到 journal）；`apply-edits=1` 先物化编辑后的表再导出 |
 | **`/filter`** | ❌ **只扫基文件** |
 | **`/search`** | ❌ **只扫基文件** |
 

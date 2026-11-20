@@ -560,7 +560,16 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     (
         "/export",
         &[
-            "path", "where", "whereAny", "columns", "format", "order", "desc", "limit", "sql",
+            "path",
+            "where",
+            "whereAny",
+            "columns",
+            "format",
+            "order",
+            "desc",
+            "limit",
+            "sql",
+            "apply-edits",
             "delim",
         ],
     ),
@@ -5210,6 +5219,35 @@ fn export(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
 
     // Either a query, or a `where` alone (which means "SELECT * FROM t WHERE").
     // The latter is the "filter, then keep the result" workflow.
+    // `apply-edits=1` exports the edited sheet: materialise it, then query that.
+    let (edit_tx, edit_rx) = std::sync::mpsc::channel::<ProgressEvent>();
+    drop(edit_rx);
+    let materialised = if params
+        .get("apply-edits")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false)
+    {
+        let read = csv_splitter_core::sheet::ReadOptions {
+            delimiter: delimiter(params),
+        };
+        match csv_splitter_core::sheet::materialize(&path, &read, &edit_tx) {
+            Ok(m) => Some(m),
+            Err(e) => {
+                return respond_json(
+                    stream,
+                    422,
+                    &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                )
+            }
+        }
+    } else {
+        None
+    };
+    let source: std::path::PathBuf = materialised
+        .as_ref()
+        .map(|m| m.path().to_path_buf())
+        .unwrap_or_else(|| path.clone());
+
     let statement = match (filter_clause(params), params.get("sql")) {
         (Some(clause), _) => format!("SELECT * FROM t WHERE {clause}"),
         (None, Some(query)) => query.clone(),
@@ -5222,7 +5260,7 @@ fn export(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
             )
         }
     };
-    match sql::query_with(&path, &statement, limit, delimiter(params)) {
+    match sql::query_with(&source, &statement, limit, delimiter(params)) {
         Ok(result) => {
             let mut text = String::with_capacity(result.rows.len() * 32);
             text.push_str(&csv_join(&result.columns));
