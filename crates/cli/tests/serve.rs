@@ -3959,6 +3959,56 @@ fn pivot_survives_a_quoted_newline_in_the_key() {
     );
 }
 
+/// With the parallel scan there is no timeout branch to hit: a page that runs out of
+/// budget answers 200 with a cursor, and asking again with that cursor continues from
+/// where the last wave stopped. The numbers must keep increasing with no repeats.
+#[test]
+fn a_filtered_page_resumes_with_the_cursor_instead_of_failing() {
+    let dir = TempDir::new("resumepage");
+    let mut text = String::from("id,city\n");
+    for i in 0..200_000 {
+        text.push_str(&format!("{i},CDMX\n"));
+    }
+    std::fs::write(dir.join("t.csv"), text).unwrap();
+    let server = start_with_env(
+        &dir.0,
+        &[("CSVX_SCAN_THREADS", "2"), ("CSVX_QUERY_TIMEOUT_MS", "1")],
+    );
+
+    let (code, body) = get(
+        &server.addr,
+        "/filter?path=t.csv&where=city%3DCDMX&limit=10",
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""partial":true"#), "{body}");
+    let cursor = body
+        .split(r#""next":"#)
+        .nth(1)
+        .and_then(|rest| rest.split([',', '}']).next())
+        .and_then(|n| n.trim().parse::<usize>().ok())
+        .expect("a partial page must carry a numeric next cursor");
+
+    let (code, body) = get(
+        &server.addr,
+        &format!("/filter?path=t.csv&where=city%3DCDMX&limit=10&cursor={cursor}"),
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(
+        body.contains(r#""next":null"#),
+        "the last page must end: {body}"
+    );
+    let first_row: u64 = body
+        .split(r#""rows":["#)
+        .nth(1)
+        .and_then(|rest| rest.split(',').next())
+        .and_then(|n| n.trim().parse().ok())
+        .expect("the second page must return rows");
+    assert!(
+        first_row > 10,
+        "the resume must not repeat the first page: {body}"
+    );
+}
+
 /// The filtered-page path has its own timeout branch; it must say the same thing as /query:
 /// stopped, nothing still running, safe to retry smaller.
 #[test]
