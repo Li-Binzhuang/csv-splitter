@@ -4625,6 +4625,7 @@ fn documented_fields_are_fields_the_endpoint_returns() {
         ("/stats", "/stats?path=t.csv"),
         ("/schema", "/schema?path=t.csv"),
         ("/schema", "/schema?path=t.csv&diff=t2.csv"),
+        ("/analyze", "/analyze?path=t.csv"),
     ] {
         let (status, body) = get(&server.addr, query);
         assert_eq!(status, 200, "{query}: {body}");

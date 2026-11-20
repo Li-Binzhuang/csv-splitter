@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.58.9] — 2026-11-20
+
+### Fixed
+
+- **/analyze documented a parameter the handler never reads.** The row said distinct, but the
+  handler reads distinctCap; under the default strict mode a client following the docs got 400.
+  The row now names the real parameter and the per-column fields the answer carries, and
+  /analyze joined the documented-field guard (eighteen routes).
+
 ## [3.58.8] — 2026-11-20
 
 ### Tests / Documentation
