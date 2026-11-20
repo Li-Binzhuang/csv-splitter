@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.58.4] — 2026-11-20
+
+### Tests / Documentation
+
+- The documented-field guard covers /journal: operations, count, redo, redoCount, canUndo,
+  canRedo and damaged are asserted against the live body. The API table had only said "operation
+  stack plus redo stack plus damage count"; mutation-checked by renaming canUndo, which the
+  guard reports by name.
+
 ## [3.58.3] — 2026-11-20
 
 ### Fixed
