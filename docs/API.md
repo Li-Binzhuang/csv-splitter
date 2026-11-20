@@ -43,8 +43,8 @@
 | `GET /rows` | `path` `start` `count` `where` `order` `desc` `sql` `format`（`format=csv` 把该窗口按编辑后的值输出为 CSV，是拿到编辑后文本的唯一途径）| 分页窗口；`where`/`order` 走 SQL，**套用编辑与公式列**。三条路径（普通/筛选/排序）返回同一组字段：`start` `count` `requested` `limit` `total` `columns` `frozenColumns` `rows` `edited` `operations`（筛选/排序额外有 `hasMore`） |
 | `GET /sheet` | `path` | 列、行数、编辑数、能力清单、列布局、冻结列、是否已建索引（`indexed` / `indexBytes`） |
 | `GET /book` | `max` `root` | 工作簿：响应 `root` `sheets` `hidden` `total` `truncated` `unreadable` |
-| `GET /stats` | `path` `sample` | 采样统计：响应 `columns` |
-| `GET /analyze` | `path` `distinctCap` | 全列画像：响应 `columns`（每列 `name` `rows` `ragged` `empty` `nonEmpty` `distinct` `distinctTruncated` `numeric` `mixedTypes` `top`）|
+| `GET /stats` | `path` `sample` `apply-edits` | 采样统计：响应 `columns`；`apply-edits=1` 先物化编辑后的表 |
+| `GET /analyze` | `path` `distinctCap` `apply-edits` | 全列画像：响应 `columns`（每列 `name` `rows` `ragged` `empty` `nonEmpty` `distinct` `distinctTruncated` `numeric` `mixedTypes` `top`）|
 | `GET /chart` | `path` `x` `y` `series` `type` `sortByValue` `desc` `maxPoints` `apply-edits` | 图表数据：响应 `type` `rows` `categories` `series`（每项 `name` `points`）；`apply-edits=1` 先物化编辑后的表 |
 | `GET /groupby` | `path` `by` `agg` `order` `desc` `maxGroups` `apply-edits` `engine` | 分组聚合：响应 `columns` `rows` `engine`（实际执行的引擎）；`engine=auto` 按大小自动选、`engine=sql` 在未编译 sql feature 时返回 400；`apply-edits=1` 先物化编辑后的表再聚合 |
 | `GET /pivot` | `path` `rows` `cols` `values` `qualify` `maxColumns` `maxCells` `engine` `apply-edits` | 透视矩阵：响应 `columns` `rows` `rowKeys`；`apply-edits=1` 先物化编辑后的表 |

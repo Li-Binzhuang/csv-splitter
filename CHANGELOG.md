@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.59.4] — 2026-11-20
+
+### Added
+
+- **/analyze and /stats accept apply-edits=1**, so profiling follows a renamed or added column
+  instead of describing the base file. A test renames amount to total: /analyze names the old
+  column without the flag and only the new one with it, and /stats agrees.
+
 ## [3.59.3] — 2026-11-20
 
 ### Added

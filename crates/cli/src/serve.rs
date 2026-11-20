@@ -553,7 +553,7 @@ fn write_only_param(route: &str) -> &'static [&'static str] {
 
 const SPEC_PARAMS: &[(&str, &[&str])] = &[
     ("/warm", &["path", "delim", "sql"]),
-    ("/stats", &["path", "sample", "delim"]),
+    ("/stats", &["path", "sample", "apply-edits", "delim"]),
     ("/jobs", &["path", "delim"]),
     ("/job", &["id", "action"]),
     ("/index", &["path", "interval", "delim"]),
@@ -582,7 +582,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
         ],
     ),
     ("/download", &["path", "delim"]),
-    ("/analyze", &["path", "distinctCap", "delim"]),
+    ("/analyze", &["path", "distinctCap", "apply-edits", "delim"]),
     ("/", &[]),
     ("/validate", &["path", "checks", "delim", "limit"]),
     (
@@ -1971,7 +1971,33 @@ fn analyze(
         .max(1);
     let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
     drop(rx);
-    match profile::profile(&path, delimiter(params), cap, &tx) {
+    // `apply-edits=1` profiles the edited sheet; the temp file lives until the answer is built.
+    let materialised = if params
+        .get("apply-edits")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false)
+    {
+        let read = csv_splitter_core::sheet::ReadOptions {
+            delimiter: delimiter(params),
+        };
+        match csv_splitter_core::sheet::materialize(&path, &read, &tx) {
+            Ok(m) => Some(m),
+            Err(e) => {
+                return respond_json(
+                    stream,
+                    422,
+                    &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                )
+            }
+        }
+    } else {
+        None
+    };
+    let source: std::path::PathBuf = materialised
+        .as_ref()
+        .map(|m| m.path().to_path_buf())
+        .unwrap_or_else(|| path.clone());
+    match profile::profile(&source, delimiter(params), cap, &tx) {
         Ok(cols) => {
             let items: Vec<String> = cols
                 .iter()
@@ -5985,7 +6011,33 @@ fn stats(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>) 
         .min(MAX_SAMPLE);
     let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
     drop(rx);
-    match compute_column_stats(&path, delimiter(params), sample, 100_000, &tx) {
+    // `apply-edits=1` profiles the edited sheet; the temp file lives until the answer is built.
+    let materialised = if params
+        .get("apply-edits")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false)
+    {
+        let read = csv_splitter_core::sheet::ReadOptions {
+            delimiter: delimiter(params),
+        };
+        match csv_splitter_core::sheet::materialize(&path, &read, &tx) {
+            Ok(m) => Some(m),
+            Err(e) => {
+                return respond_json(
+                    stream,
+                    422,
+                    &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                )
+            }
+        }
+    } else {
+        None
+    };
+    let source: std::path::PathBuf = materialised
+        .as_ref()
+        .map(|m| m.path().to_path_buf())
+        .unwrap_or_else(|| path.clone());
+    match compute_column_stats(&source, delimiter(params), sample, 100_000, &tx) {
         Ok(cols) => {
             let items: Vec<String> = cols
                 .iter()

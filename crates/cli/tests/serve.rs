@@ -5210,3 +5210,34 @@ fn search_can_apply_edits() {
         "the deleted row must stop matching: {edited}"
     );
 }
+
+/// Profiling the edited sheet: after a column is renamed, /analyze with the flag must name the
+/// new one; without it the base file still answers with the old name.
+#[test]
+fn analyze_and_stats_can_apply_edits() {
+    let dir = TempDir::new("profileapply");
+    std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=rename&from=amount&to=total",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let base = get(&server.addr, "/analyze?path=t.csv").1;
+    assert!(base.contains(r#""amount""#), "{base}");
+
+    let edited = get(&server.addr, "/analyze?path=t.csv&apply-edits=1").1;
+    assert!(
+        edited.contains(r#""total""#),
+        "the renamed column: {edited}"
+    );
+    assert!(
+        !edited.contains(r#""amount""#),
+        "the old name is gone: {edited}"
+    );
+
+    let stats = get(&server.addr, "/stats?path=t.csv&apply-edits=1").1;
+    assert!(stats.contains(r#""total""#), "stats follows too: {stats}");
+}
