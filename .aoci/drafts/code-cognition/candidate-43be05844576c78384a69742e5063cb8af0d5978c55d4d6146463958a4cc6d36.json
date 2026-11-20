@@ -1,0 +1,251 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "3cc892987e01f5c3f8bc23bed7da3300f57f05de1b75a675d9fcb3f54fa47186",
+  "batch_id": "43be05844576c78384a69742e5063cb8af0d5978c55d4d6146463958a4cc6d36",
+  "composite_identity": "429156bef8c67f40e9a83f7238d3cae4075009cde9ef20863ac4bdee3a82f5e9",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "38a237c66bb5736ed654e15c64f7cecbcdfbc30c8f264677bab839b1dbb470a2",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "40fabe87741a5dd6a2d86e028486ea4142d0b6465eff5d41a7d074c9cfabeec3",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.0.0 记录整仓改名为 csvx（crate、二进制、CSVX_* 环境变量、文档与脚本），并明确改名不改行为 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:Cargo.toml",
+      "path": "Cargo.toml",
+      "change": "update",
+      "source_sha256": "3dca6f79bb62a6774efaeb7d803dd4e763cbb2d221ad79507d6df9599afb2ca0",
+      "existing_entry": "Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本与 crate 元数据、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 crates/core 与 crates/cli；workspace.dependencies 以 csvx-core 为本地 crate 键；workspace.package 持有版本 4.0.0、一句话定位、仓库地址与 MIT 许可，是发布真相源；二进制的 --version 与 tag 校验都以它为准 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "3b082b657903a24911f0b631f68a91e6788d065eda6d2c970e12a6ef1d269efc",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部一句话定位 High-performance CSV editor in Rust 与 Rust 徽章；下载表列出 csvx-linux/macos/windows 四个产物；先讲取舍（base 不可变加 journal），再给命令表；命令表与默认端口被测试校验 | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；徽章与克隆链接仍指向仓库 slug Li-Binzhuang/csv-splitter，仓库改名时这些要同步"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "91e04f985986dd63ecd2fceef58136047e57906fcab622624b778e2f12af2911",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令，帮助首行自报 csvx 与版本；groupby/chart/pivot 接 --engine，view 的有序读在无编辑且大文件时交给 DuckDB；行号一律 1-based；demo 默认写 csvx-demo/ | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败；cfg 判定必须看被依赖 crate 的 feature，不能用 cli 自己的 feature 名"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "2f15c8dd80c930f91c41436e672aae3699aa9d9ac697ecc07c9ce55bc88f34d0",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:所有响应经 respond 统一附加 CORS、X-Response-Time、ETag 与 Vary；启动横幅为 csvx API on http://…；/groupby、/chart、/pivot 接 engine 参数并进缓存键；路径先 canonicalize 再要求落在 root 内；CSVX_QUERY_TIMEOUT_MS 与 CSVX_STRICT_PARAMS 在此读取 | S:gzip 是另一种表示，ETag 必须带 -gz；202 必须映射 Accepted；临时 CSV 必须用 CSV 读取器解析，lines() 会把带引号换行的单元格裂成多行"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "bd379d0c0e189550e17c6e46af555cc7aeb3f87b68e2ea8b0e5589784b84f3aa",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs | A:运算符为等于、不等于、比较、包含、in 与空值判断；比较类规则预编译为 FilterSet 避免逐行重建；scan_with_budget 每到 5 000 行查一次截止时间，超时返回 TimedOut 供 HTTP 映射 504；顺序扫描并按编码解码 | S:超时只在每 5 000 行检查一次，所以时间预算不是硬上限，最坏会多扫一个 5 000 行窗口"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/index.rs",
+      "path": "crates/core/src/index.rs",
+      "change": "update",
+      "source_sha256": "47845f0c58ff57f2873df538d5e44b09e97cee9ecad54591bb49a6a3c2f3a8fe",
+      "existing_entry": "index.rs[CP8L]: F:稀疏行索引：把每第 N 条记录的字节偏移存成 sidecar，任意行跳转与扫描起点无关 | R:code:crates/core/src/workbook/export.rs | A:默认每 1000 条一个检查点，定位后最多再跳过 999 条；UTF-16 输入拒绝建索引 | S:索引记的是字节偏移，UTF-16 的逗号与换行是两字节，算出来会是错行号"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/lib.rs",
+      "path": "crates/core/src/lib.rs",
+      "change": "update",
+      "source_sha256": "678bd6f7d3b4e2abed2d7c29e64a17d254a343df6938c886b703a40b14d089ee",
+      "existing_entry": "lib.rs[CG6T]: F:core crate 的模块清单与基础类型再导出 | R:code:crates/core/src/engine.rs | A:读取、编辑、分析、查询、SQL 与引擎选择各自成模块，pub use types 统一暴露基础类型 | S:新增模块必须同时写进 ARCHITECTURE.md，模块地图测试会逐个比对"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/scan_parallel.rs",
+      "path": "crates/core/src/scan_parallel.rs",
+      "change": "create",
+      "source_sha256": "a7053a7cc38d5e23ff011f8022b572f6bfb38e54a9c8036411f28b5696b13e9d"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/search.rs",
+      "path": "crates/core/src/search.rs",
+      "change": "update",
+      "source_sha256": "3dc0e8fa304a8d28644195e474d1d6c40f3f33052648d6f8461330d20a27d904",
+      "existing_entry": "search.rs[DA7M]: F:跨列搜索：返回命中行号而不是数据本身 | R:code:crates/core/src/index.rs | A:匹配是字面量：默认大小写不敏感子串，可限定列或整格；regex 字段走条件格式的模式子集 format::pattern_matches，不是正则引擎；search_quotes_with_budget 超时返回 TimedOut 供 HTTP 映射 504；调用方凭行号经稀疏索引跳转 | S:这里刻意不引入正则依赖——真正的正则交给 SQL 端点，用 ~ 过滤已覆盖常用的那一半搜索需求"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/API.md",
+      "path": "docs/API.md",
+      "change": "update",
+      "source_sha256": "2025637be1dc9ddd57d288e7f5ca54c57d904de8a058754a65c021dbcc448601",
+      "existing_entry": "API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；聚合端点均接受 engine=auto|native|sql，未知值返回 400；504 不含引擎原文；CSVX_STRICT_PARAMS 与 CSVX_QUERY_TIMEOUT_MS 的说明在本文 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "42220d326d52b631523e89c0e22492d61ba03a8a9535628d3129f01c264ab0dc",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列出模块，共用工具组包含 engine，并有「改一处要看哪里」一节 | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "a7d408e54fed1b64d5f2ecc70fbe39fae3012c785338b193e15ffab5da8d7ec5",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；含引擎选择一节，列出各命令在小文件与大文件上的实测对比，以及没有迁移的 sort/dedupe/渲染路径及原因 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DEPLOY.md",
+      "path": "docs/DEPLOY.md",
+      "change": "update",
+      "source_sha256": "86e3eb545a8b6bd33ab5135c9c4af28dd309321ddd5135d608af1dda184e6f1c",
+      "existing_entry": "DEPLOY.md[SO7M]: F:部署材料：三种安装、配置项、systemd、升级回滚与安全边界 | R:code:deploy/csvx.service | A:明确单机单用户、无鉴权、默认 loopback；给出 release-check 与 install-check 两条自检；产物与二进制统一叫 csvx-* | S:安全表必须写明没有鉴权与没有多用户隔离，只列防护不列边界会让人误判风险"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "54264f552c255dc5c730d16ae74729735acc8a7eab07050558bd1441402c1e45",
+      "existing_entry": "ROADMAP.md[SU5S]: F:路线图：已完成、进行中与明确不做的范围 | R:code:docs/CAPABILITIES.md | A:与能力清单分工——这里写未来与边界，已验证行为写进能力清单 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "17d6344f7241c66b76cd43a4ffbd5b0452358115288c8f9882638420a77cf432",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "40fabe87741a5dd6a2d86e028486ea4142d0b6465eff5d41a7d074c9cfabeec3",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.0.0 记录整仓改名为 csvx（crate、二进制、CSVX_* 环境变量、文档与脚本），并明确改名不改行为 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "703a30dd528cc92ae5c59452f5bfcc1527d64f7eac2322c6c28fdae80048c9c8",
+      "object_ref": "code:Cargo.toml",
+      "path": "Cargo.toml",
+      "change": "update",
+      "source_sha256": "3dca6f79bb62a6774efaeb7d803dd4e763cbb2d221ad79507d6df9599afb2ca0",
+      "existing_entry": "Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本与 crate 元数据、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 crates/core 与 crates/cli；workspace.dependencies 以 csvx-core 为本地 crate 键；workspace.package 持有版本 4.0.0、一句话定位、仓库地址与 MIT 许可，是发布真相源；二进制的 --version 与 tag 校验都以它为准 | S:-"
+    },
+    {
+      "candidate_id": "0220b33eacb239dd7bcf52c0b87228a082a40990c4601792f2fdd52e9cc9c962",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "3b082b657903a24911f0b631f68a91e6788d065eda6d2c970e12a6ef1d269efc",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部一句话定位 High-performance CSV editor in Rust 与 Rust 徽章；下载表列出 csvx-linux/macos/windows 四个产物；先讲取舍（base 不可变加 journal），再给命令表；命令表与默认端口被测试校验 | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；徽章与克隆链接仍指向仓库 slug Li-Binzhuang/csv-splitter，仓库改名时这些要同步"
+    },
+    {
+      "candidate_id": "9b248dd406fbd9538a343a3572a8b7f2a0beb22e562a751b33d8500f82532782",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "91e04f985986dd63ecd2fceef58136047e57906fcab622624b778e2f12af2911",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令，帮助首行自报 csvx 与版本；groupby/chart/pivot 接 --engine，view 的有序读在无编辑且大文件时交给 DuckDB；行号一律 1-based；demo 默认写 csvx-demo/ | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败；cfg 判定必须看被依赖 crate 的 feature，不能用 cli 自己的 feature 名"
+    },
+    {
+      "candidate_id": "73e6cd6cf12b7150d5be8ba56da5688a086d85651d08faf7fdd9f1a850f8fd3d",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "2f15c8dd80c930f91c41436e672aae3699aa9d9ac697ecc07c9ce55bc88f34d0",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:所有响应经 respond 统一附加 CORS、X-Response-Time、ETag 与 Vary；启动横幅为 csvx API on http://…；/groupby、/chart、/pivot 接 engine 参数并进缓存键；路径先 canonicalize 再要求落在 root 内；CSVX_QUERY_TIMEOUT_MS 与 CSVX_STRICT_PARAMS 在此读取 | S:gzip 是另一种表示，ETag 必须带 -gz；202 必须映射 Accepted；临时 CSV 必须用 CSV 读取器解析，lines() 会把带引号换行的单元格裂成多行"
+    },
+    {
+      "candidate_id": "b4cabe2e316552761bacc9bcd171b1dca2b976c066f17050f7e93bf09b63feb5",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "bd379d0c0e189550e17c6e46af555cc7aeb3f87b68e2ea8b0e5589784b84f3aa",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs | A:运算符为等于、不等于、比较、包含、in 与空值判断；比较类规则预编译为 FilterSet 避免逐行重建；scan_with_budget 每到 5 000 行查一次截止时间，超时返回 TimedOut 供 HTTP 映射 504；顺序扫描并按编码解码 | S:超时只在每 5 000 行检查一次，所以时间预算不是硬上限，最坏会多扫一个 5 000 行窗口"
+    },
+    {
+      "candidate_id": "01eb277f94b432ba7f512243110528144b1994bdaf96112edd8121f714b452f9",
+      "object_ref": "code:crates/core/src/index.rs",
+      "path": "crates/core/src/index.rs",
+      "change": "update",
+      "source_sha256": "47845f0c58ff57f2873df538d5e44b09e97cee9ecad54591bb49a6a3c2f3a8fe",
+      "existing_entry": "index.rs[CP8L]: F:稀疏行索引：把每第 N 条记录的字节偏移存成 sidecar，任意行跳转与扫描起点无关 | R:code:crates/core/src/workbook/export.rs | A:默认每 1000 条一个检查点，定位后最多再跳过 999 条；UTF-16 输入拒绝建索引 | S:索引记的是字节偏移，UTF-16 的逗号与换行是两字节，算出来会是错行号"
+    },
+    {
+      "candidate_id": "07333c8930bfedfba9a9271bc2fe89a6d248411b72320f68060c7c0df16196be",
+      "object_ref": "code:crates/core/src/lib.rs",
+      "path": "crates/core/src/lib.rs",
+      "change": "update",
+      "source_sha256": "678bd6f7d3b4e2abed2d7c29e64a17d254a343df6938c886b703a40b14d089ee",
+      "existing_entry": "lib.rs[CG6T]: F:core crate 的模块清单与基础类型再导出 | R:code:crates/core/src/engine.rs | A:读取、编辑、分析、查询、SQL 与引擎选择各自成模块，pub use types 统一暴露基础类型 | S:新增模块必须同时写进 ARCHITECTURE.md，模块地图测试会逐个比对"
+    },
+    {
+      "candidate_id": "370e21ddd4104a82d8eb0224f08d349ebc21a94f42a079b67738436f5a64e8e2",
+      "object_ref": "code:crates/core/src/scan_parallel.rs",
+      "path": "crates/core/src/scan_parallel.rs",
+      "change": "create",
+      "source_sha256": "a7053a7cc38d5e23ff011f8022b572f6bfb38e54a9c8036411f28b5696b13e9d"
+    },
+    {
+      "candidate_id": "367e7eb27bfbe16c7932e694c017060728d8e41463d4104e00afe19c848770ed",
+      "object_ref": "code:crates/core/src/search.rs",
+      "path": "crates/core/src/search.rs",
+      "change": "update",
+      "source_sha256": "3dc0e8fa304a8d28644195e474d1d6c40f3f33052648d6f8461330d20a27d904",
+      "existing_entry": "search.rs[DA7M]: F:跨列搜索：返回命中行号而不是数据本身 | R:code:crates/core/src/index.rs | A:匹配是字面量：默认大小写不敏感子串，可限定列或整格；regex 字段走条件格式的模式子集 format::pattern_matches，不是正则引擎；search_quotes_with_budget 超时返回 TimedOut 供 HTTP 映射 504；调用方凭行号经稀疏索引跳转 | S:这里刻意不引入正则依赖——真正的正则交给 SQL 端点，用 ~ 过滤已覆盖常用的那一半搜索需求"
+    },
+    {
+      "candidate_id": "3cb157436a220e3a81683fd4910096cb07a8ff00af0279d2179ba10a00ada0d8",
+      "object_ref": "code:docs/API.md",
+      "path": "docs/API.md",
+      "change": "update",
+      "source_sha256": "2025637be1dc9ddd57d288e7f5ca54c57d904de8a058754a65c021dbcc448601",
+      "existing_entry": "API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；聚合端点均接受 engine=auto|native|sql，未知值返回 400；504 不含引擎原文；CSVX_STRICT_PARAMS 与 CSVX_QUERY_TIMEOUT_MS 的说明在本文 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然"
+    },
+    {
+      "candidate_id": "4090e205cc9bf97767e854f2722268bd131b1b25418e49bf613329cd58bb63b1",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "42220d326d52b631523e89c0e22492d61ba03a8a9535628d3129f01c264ab0dc",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列出模块，共用工具组包含 engine，并有「改一处要看哪里」一节 | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败"
+    },
+    {
+      "candidate_id": "0e19b78d551831021c811ce1da176321a8776c1f5b765bf3fe817269522336c7",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "a7d408e54fed1b64d5f2ecc70fbe39fae3012c785338b193e15ffab5da8d7ec5",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；含引擎选择一节，列出各命令在小文件与大文件上的实测对比，以及没有迁移的 sort/dedupe/渲染路径及原因 | S:-"
+    },
+    {
+      "candidate_id": "cc5ca478afc7cec554668b968501c4a8ed04da58ae1f3b3f7708e7427265c1c9",
+      "object_ref": "code:docs/DEPLOY.md",
+      "path": "docs/DEPLOY.md",
+      "change": "update",
+      "source_sha256": "86e3eb545a8b6bd33ab5135c9c4af28dd309321ddd5135d608af1dda184e6f1c",
+      "existing_entry": "DEPLOY.md[SO7M]: F:部署材料：三种安装、配置项、systemd、升级回滚与安全边界 | R:code:deploy/csvx.service | A:明确单机单用户、无鉴权、默认 loopback；给出 release-check 与 install-check 两条自检；产物与二进制统一叫 csvx-* | S:安全表必须写明没有鉴权与没有多用户隔离，只列防护不列边界会让人误判风险"
+    },
+    {
+      "candidate_id": "27805523ea9c515ff311ed7377713bf328077341f9a12cffa205ad86c5901b90",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "54264f552c255dc5c730d16ae74729735acc8a7eab07050558bd1441402c1e45",
+      "existing_entry": "ROADMAP.md[SU5S]: F:路线图：已完成、进行中与明确不做的范围 | R:code:docs/CAPABILITIES.md | A:与能力清单分工——这里写未来与边界，已验证行为写进能力清单 | S:-"
+    }
+  ]
+}
