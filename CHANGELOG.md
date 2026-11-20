@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.57.7] — 2026-11-20
+
+### Tests
+
+- /columns is edit-aware and now says so: after renaming a column the list carries the new
+  name and not the old one. A front-end drawing headers from a stale schema is the failure this
+  guards against, and the journal-visibility table gained a row.
+
 ## [3.57.6] — 2026-11-19
 
 ### Tests

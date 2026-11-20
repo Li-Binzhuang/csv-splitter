@@ -4882,3 +4882,33 @@ fn capabilities_says_whether_strict_mode_is_on() {
     let (_, body) = get(&server.addr, "/capabilities");
     assert!(body.contains(r#""strictParams":false"#), "{body}");
 }
+
+/// A renamed or dropped column must disappear from /columns too, or the front-end draws
+/// headers for a sheet that no longer has them.
+#[test]
+fn columns_lists_the_edited_schema() {
+    let dir = TempDir::new("columnsedit");
+    std::fs::write(
+        dir.join("t.csv"),
+        "city,amount,note\nCDMX,10,a\nPuebla,20,b\n",
+    )
+    .unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=rename&from=amount&to=total",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let (status, body) = get(&server.addr, "/columns?path=t.csv");
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        body.contains("\"total\""),
+        "the new name must be listed: {body}"
+    );
+    assert!(
+        !body.contains("\"amount\""),
+        "the old name must be gone: {body}"
+    );
+}

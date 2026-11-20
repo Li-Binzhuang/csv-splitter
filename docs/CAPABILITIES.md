@@ -479,6 +479,7 @@ GET /columns 多带的四个参数属于「声明正确、对该方法无意义�
 | `/rows` | ✅（含 `where`/`order` 的 SQL 路径）|
 | `/cell` | ✅ |
 | `/style`（条件格式）| ✅（按编辑后的值判定规则）|
+| `/columns`（列清单）| ✅（改名/删列后清单跟着变）|
 | `/journal` `/sheet` | ✅（且三处操作数一致）|
 | `/validate` | ✅（规则按编辑后的值判定）|
 | `/export` | ❌ **只读基文件**（它把 `where` 翻成 SQL 交给 DuckDB，DuckDB 看不到 journal）|
