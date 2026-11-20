@@ -110,7 +110,9 @@ CAPABILITIES.md 里的反引号会被当作命令名校验，**参数名和标�
    `lookup` 读**文件**而非编辑后的表；`groupby`/`pivot`/`chart` 可加 `--apply-edits`。
 5. `dedupe` 内存随不同键数增长；`sort`/`partition` 随 `--buf-mb` 增长。
 6. 内置查看页**服务端已验证**：`GET /` 返回 200、13 KB HTML、标题正确（脚本可复现）；
-   但交互（点击、翻页、编辑）未在真实浏览器里跑过。Windows 未测。
+   但交互（点击、翻页、编辑）未在真实浏览器里跑过。
+   **Windows 由 CI 覆盖**：`.github/workflows/windows.yml` 在 windows-latest 上编译并检查
+   Rust 变更（路径过滤，文档提交不触发）；最近一次对应 6e910d5 的结论为 success。
 7. 查询有 **30 秒**上限（引擎中断），不是无限等待；`/rows?where=` 在 2.5 GB 上首屏约 8–9 秒。
 8. 并发：写入有文件锁（不会丢编辑），但**两次编辑不是事务**；`expect=` 只挡「你读完之后被改」，
    `stamp` 是变更探测器而不是版本号。

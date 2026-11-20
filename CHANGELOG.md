@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.58.0] — 2026-11-20
+
+### Documentation
+
+- **Windows is covered by CI, and the docs said it was untested.** The Windows check workflow
+  builds on windows-latest for Rust changes, and the run for 6e910d5 succeeded. Limitation 6
+  now states what the workflow does (and its path filter, so a docs commit does not pay ten
+  minutes of DuckDB compilation), instead of claiming nobody has tested Windows.
+
 ## [3.57.9] — 2026-11-20
 
 ### Documentation
