@@ -5808,3 +5808,56 @@ fn set_many_writes_all_cells_in_one_operation_batch() {
     let (_, journal) = get(&server.addr, "/journal?path=t.csv");
     assert!(journal.contains(r#""count":0"#), "{journal}");
 }
+
+/// Two entries naming the same cell are applied in order (last wins), a value may contain
+/// colons, and an empty value is a real value rather than a parse failure.
+#[test]
+fn set_many_handles_duplicates_colons_and_empty_values() {
+    let dir = TempDir::new("setmanyedges");
+    std::fs::write(dir.join("t.csv"), "city,amount\nA,1\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set-many&cells=1:city:first;1:city:http%3A%2F%2Fx.example",
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let (_, rows) = get(&server.addr, "/rows?path=t.csv&start=0&count=1");
+    assert!(
+        rows.contains(r#"[["http://x.example","1"]]"#),
+        "the later entry wins and a colon is part of the value: {rows}"
+    );
+    let (_, journal) = get(&server.addr, "/journal?path=t.csv");
+    assert!(journal.contains(r#""count":2"#), "{journal}");
+
+    // The last entry can also be empty: that is a cleared cell, not a malformed one.
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set-many&cells=1:city:",
+    );
+    assert_eq!(status, 200, "{body}");
+    let (_, rows) = get(&server.addr, "/rows?path=t.csv&start=0&count=1");
+    assert!(rows.contains(r#"[["","1"]]"#), "the cell is empty: {rows}");
+}
+
+/// A `;` inside a value cannot be expressed: it splits into an entry that fails to parse,
+/// and the batch is refused before anything is written — not half-applied.
+#[test]
+fn set_many_refuses_a_semicolon_inside_a_value() {
+    let dir = TempDir::new("setmanysemicolon");
+    std::fs::write(dir.join("t.csv"), "city,amount\nA,1\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (status, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set-many&cells=1:city:a;b",
+    );
+    assert_eq!(status, 400, "{body}");
+    assert!(body.contains(r#""parameter":"cells""#), "{body}");
+    let (_, journal) = get(&server.addr, "/journal?path=t.csv");
+    assert!(
+        journal.contains(r#""count":0"#),
+        "nothing was written: {journal}"
+    );
+}

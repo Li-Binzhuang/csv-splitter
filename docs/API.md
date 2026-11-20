@@ -89,7 +89,7 @@
 | `action` | 参数 | 说明 |
 |---|---|---|
 | `set` | `row=N` **或** `where=列=值`，`col` `value` | 单格或按条件批量（批量存成一条规则） |
-| `set-many` | `cells=row:col:value;…` | 多个单元格**一次 journal 落盘**（崩溃时全在或全不在）；行号 1-based，值可含 `:` 但不能含 `;`；校验任一格失败则整批不写；undo 仍按单元格逐个回退 |
+| `set-many` | `cells=row:col:value;…` | 多个单元格**一次 journal 落盘**（崩溃时全在或全不在）；行号 1-based，值可含 `:` 但不能含 `;`；校验任一格失败则整批不写；undo 仍按单元格逐个回退；同一格写两次按顺序「后写覆盖」，空值表示清空 |
 | `insert` | `row` `value`（CSV 行） | 插入行 |
 | `insert-after-key` / `insert-before-key` | `key` `value` | 按 **rowKey** 插行（`b:12`/`v:3`）；key 不存在 404，格式错 400 |
 | `delete` | `row` `count` | 删除行 |

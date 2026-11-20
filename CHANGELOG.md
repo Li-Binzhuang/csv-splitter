@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.61.8] — 2026-11-20
+
+### Tests / Documentation
+
+- `set-many` edge cases are pinned instead of assumed: two entries naming the same cell apply
+  in order (last wins), a value may contain colons, an empty value clears the cell, and a `;`
+  inside a value becomes a malformed entry that refuses the whole batch before anything is
+  written.
+
 ## [3.61.7] — 2026-11-20
 
 ### Added
