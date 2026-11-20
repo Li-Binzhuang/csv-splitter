@@ -114,6 +114,7 @@
 日期 year(d) month(d) day(d) date(y,m,d) datestring(d)  ── ISO 前缀（2024-03-15，带时间也行）
 其他 row lag(col[,n]) running_total(col)
 整列 sum(col) average(col) count(col)   ← 整列聚合：预扫一遍算出数字列的总和/计数
+区间 sum(B2:C2) count(B2:C2)         ← 同行区间：只读本行这两列之间的数字单元格（跨行会让流式求值看到未来行，返回 #VALUE!）
 条件 countif(col, ">1000") sumif(col, ">1000")  ← 同一遍预扫；比较类条件只统计数字单元格
 列引用 amount   [客户编号]   [city2]   ← 名字含空格**或以数字结尾**时要加方括号
 ```

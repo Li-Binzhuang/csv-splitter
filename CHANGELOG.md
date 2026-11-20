@@ -65,6 +65,10 @@
 
 ### Added
 
+- **Same-row ranges**: `sum(B2:C2)`, `count(B2:C2)` and `average(B2:C2)` read the numeric
+  cells between two columns of the current row; a range that needs another row still
+  returns `#VALUE!` because a streaming pass cannot see the future. `B2` alone stays a
+  single-cell reference.
 - **Atomic `transaction` writes**: `POST /edit?action=transaction&ops=set:1:city:CDMX;delete:2:1;insert:4:a,b`
   validates every entry against the sheet first, then appends them in one journal update.
   A rejected entry writes nothing; undo still steps one op at a time. Two rows of one

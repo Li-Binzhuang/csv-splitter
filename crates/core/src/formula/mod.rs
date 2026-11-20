@@ -66,6 +66,8 @@ enum Token {
     LParen,
     RParen,
     Comma,
+    /// The `:` in `B2:C2`.
+    Colon,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -83,6 +85,11 @@ pub(crate) enum Expr {
     CellRef {
         column: String,
         row: u64,
+    },
+    /// `B2:C2` — a same-row range. Only aggregates read it; a bare range is an error.
+    Range {
+        from: (String, u64),
+        to: (String, u64),
     },
 }
 
@@ -241,7 +248,7 @@ impl Formula {
         fn constant(expr: &Expr) -> bool {
             match expr {
                 Expr::Number(_) | Expr::Text(_) => true,
-                Expr::Column(_) | Expr::CellRef { .. } => false,
+                Expr::Column(_) | Expr::CellRef { .. } | Expr::Range { .. } => false,
                 Expr::Binary(_, left, right) | Expr::Compare(_, left, right) => {
                     constant(left) && constant(right)
                 }
@@ -362,6 +369,7 @@ fn collect_row_needs(expr: &Expr, out: &mut crate::formula::RowNeeds) {
         }
         Expr::Negate(x) | Expr::Not(x) => collect_row_needs(x, out),
         Expr::Number(_) | Expr::Text(_) | Expr::Column(_) | Expr::CellRef { .. } => {}
+        Expr::Range { .. } => {}
     }
 }
 
@@ -386,6 +394,7 @@ fn collect_sheet_refs(expr: &Expr, out: &mut Vec<(String, String, String)>) {
         }
         Expr::Negate(x) | Expr::Not(x) => collect_sheet_refs(x, out),
         Expr::Number(_) | Expr::Text(_) | Expr::Column(_) | Expr::CellRef { .. } => {}
+        Expr::Range { .. } => {}
     }
 }
 
@@ -399,7 +408,7 @@ fn collect_refs(expr: &Expr, out: &mut Vec<String>) {
         Expr::Negate(x) | Expr::Not(x) => collect_refs(x, out),
         Expr::Text(_) => {}
         Expr::Call(_, args) => args.iter().for_each(|a| collect_refs(a, out)),
-        Expr::Number(_) | Expr::CellRef { .. } => {}
+        Expr::Number(_) | Expr::CellRef { .. } | Expr::Range { .. } => {}
     }
 }
 
@@ -424,6 +433,7 @@ impl Token {
             Self::LParen => "(".into(),
             Self::RParen => ")".into(),
             Self::Comma => ",".into(),
+            Self::Colon => ":".into(),
         }
     }
 }
@@ -511,6 +521,10 @@ fn tokenize(src: &str) -> Result<Vec<Token>, String> {
             ',' => {
                 chars.next();
                 tokens.push(Token::Comma);
+            }
+            ':' => {
+                chars.next();
+                tokens.push(Token::Colon);
             }
             '[' => {
                 chars.next();
@@ -677,7 +691,22 @@ impl Parser {
                         _ => Err("missing ')' after function arguments".to_string()),
                     }
                 } else if let Some((column, row)) = split_cell_ref(&name) {
-                    Ok(Expr::CellRef { column, row })
+                    // `B2:C2` is a range; a lone `B2` stays a single-cell reference.
+                    if matches!(self.peek(), Some(Token::Colon)) {
+                        self.take();
+                        let Some(Token::Ident(end)) = self.take() else {
+                            return Err("a range needs a cell after ':'".to_string());
+                        };
+                        let Some((to_column, to_row)) = split_cell_ref(&end) else {
+                            return Err(format!("'{end}' is not a cell reference"));
+                        };
+                        Ok(Expr::Range {
+                            from: (column, row),
+                            to: (to_column, to_row),
+                        })
+                    } else {
+                        Ok(Expr::CellRef { column, row })
+                    }
                 } else {
                     Ok(Expr::Column(name))
                 }
@@ -694,7 +723,7 @@ impl Parser {
 
 /// The row a column formula is "written on": the first data row, counting the
 /// header as row 1 the way a spreadsheet does. References are relative to it.
-const FIRST_DATA_ROW: i64 = 2;
+pub(crate) const FIRST_DATA_ROW: i64 = 2;
 
 /// Split `B2` into (`B`, 2); `None` when the identifier is not a cell reference.
 ///
@@ -754,6 +783,8 @@ pub(crate) fn eval(expr: &Expr, ctx: &Ctx<'_>) -> Value {
                 _ => Value::Text(raw.clone()),
             },
         },
+        // A range is only meaningful as an aggregate argument; bare it is an error.
+        Expr::Range { .. } => Value::Error,
         Expr::CellRef { column, row } => {
             // A column formula behaves like a spreadsheet formula filled down: the
             // reference is *relative* to the row it was written on, and that row is
@@ -1059,6 +1090,62 @@ mod tests {
         assert_eq!(
             odd.eval_at(&cells, &[], &Refs::default(), 1).render(),
             "even"
+        );
+    }
+
+    #[test]
+    fn a_same_row_range_aggregates_between_columns() {
+        let columns = vec![
+            "id".to_string(),
+            "amount".to_string(),
+            "qty".to_string(),
+            "note".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        cells.insert("id".to_string(), "7".to_string());
+        cells.insert("amount".to_string(), "10".to_string());
+        cells.insert("qty".to_string(), "3".to_string());
+        cells.insert("note".to_string(), "plain".to_string());
+
+        let sum = Formula::parse("sum(B2:C2)").unwrap();
+        assert_eq!(
+            sum.eval_at(&cells, &columns, &Refs::default(), 1).render(),
+            "13"
+        );
+        let count = Formula::parse("count(B2:C2)").unwrap();
+        assert_eq!(
+            count
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "2"
+        );
+        let avg = Formula::parse("average(B2:C2)").unwrap();
+        assert_eq!(
+            avg.eval_at(&cells, &columns, &Refs::default(), 1).render(),
+            "6.5"
+        );
+
+        // A non-numeric cell in the range is skipped, exactly like the column aggregates.
+        let wider = Formula::parse("sum(B2:D2)").unwrap();
+        assert_eq!(
+            wider
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "13"
+        );
+
+        // A range that needs another row cannot be served while streaming.
+        let next = Formula::parse("sum(B3:C3)").unwrap();
+        assert_eq!(
+            next.eval_at(&cells, &columns, &Refs::default(), 1).render(),
+            "#VALUE!"
+        );
+
+        // A bare range is not a value.
+        let bare = Formula::parse("B2:C2").unwrap();
+        assert_eq!(
+            bare.eval_at(&cells, &columns, &Refs::default(), 1).render(),
+            "#VALUE!"
         );
     }
 

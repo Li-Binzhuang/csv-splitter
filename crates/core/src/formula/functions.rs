@@ -44,6 +44,19 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         // started, so every row reads the same number in O(1). The argument is a column
         // name taken from the syntax tree, exactly like `lag`.
         "sum" | "average" | "avg" | "count" => {
+            // `sum(B2:C2)` reads this row's cells between two columns; it needs no
+            // pre-pass, so it works even where the state is absent (window reads).
+            if let Some(Expr::Range { from, to }) = args.first() {
+                let Some(values) = range_values(from, to, ctx) else {
+                    return Value::Error;
+                };
+                return match lower.as_str() {
+                    "sum" => Value::Number(values.iter().sum()),
+                    "count" => Value::Number(values.len() as f64),
+                    _ if values.is_empty() => Value::Error,
+                    _ => Value::Number(values.iter().sum::<f64>() / values.len() as f64),
+                };
+            }
             let Some(state) = ctx.state else {
                 return Value::Error;
             };
@@ -546,4 +559,33 @@ fn find_in(args: &[Expr], ctx: &Ctx<'_>, case_sensitive: bool) -> Value {
         }
         None => Value::Number(0.0),
     }
+}
+
+/// Numeric cells in `from..=to` of the current row, or `None` when the range is not
+/// resolvable while streaming (another row, unknown column letters, reversed order).
+fn range_values(from: &(String, u64), to: &(String, u64), ctx: &Ctx<'_>) -> Option<Vec<f64>> {
+    if from.1 != super::FIRST_DATA_ROW as u64 || to.1 != super::FIRST_DATA_ROW as u64 {
+        return None;
+    }
+    let start_name = super::column_from_letters(&from.0, ctx.columns)?;
+    let end_name = super::column_from_letters(&to.0, ctx.columns)?;
+    let start = ctx.columns.iter().position(|c| c == &start_name)?;
+    let end = ctx.columns.iter().position(|c| c == &end_name)?;
+    if start > end {
+        return None;
+    }
+    let mut values = Vec::new();
+    for name in &ctx.columns[start..=end] {
+        let raw = ctx.cells.get(name)?;
+        let trimmed = raw.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        if let Ok(value) = trimmed.parse::<f64>() {
+            if value.is_finite() {
+                values.push(value);
+            }
+        }
+    }
+    Some(values)
 }
