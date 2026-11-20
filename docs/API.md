@@ -371,7 +371,14 @@ for i in $(seq 1 10); do csv-splitter edit set t.csv --row $i --col city --value
 ```
 
 A lock left by a killed process is treated as stale after ten seconds, so a crash
-cannot wedge the file. For "did this value change under me?" the answer is not the lock
+cannot wedge the file.
+
+**Snapshots for materialising endpoints.** `/export`, `/sort`, `/copy`, `/analyze`,
+`/stats`, `/filter`, `/search` with `apply-edits=1` load the journal **once** and then scan
+the base file, so the answer describes one consistent state; an edit that lands after that
+load is simply not in that answer, it never yields a half-applied table. A test runs thirty
+edits while fifteen exports are taken and checks every export is the whole table with a
+value that was actually written. For "did this value change under me?" the answer is not the lock
 but `expect=` — the lock keeps both edits, `expect` decides whether yours should happen.
 
 

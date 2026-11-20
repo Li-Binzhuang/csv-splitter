@@ -5691,3 +5691,43 @@ fn reads_stay_consistent_while_edits_land() {
     let (_, journal) = get(&addr, "/journal?path=t.csv");
     assert!(journal.contains(r#""count":40"#), "{journal}");
 }
+
+/// Materialising endpoints take a journal snapshot before scanning the base file. While edits
+/// land, an export must still be the whole table with a value that was actually written —
+/// never a truncated row or a half-applied value.
+#[test]
+fn export_apply_edits_snapshots_while_edits_land() {
+    let dir = TempDir::new("exportduringwrites");
+    std::fs::write(dir.join("t.csv"), "city,amount\nA,1\nB,2\nC,3\n").unwrap();
+    let server = start(&dir.0.clone());
+    let addr = server.addr.clone();
+
+    let writer = {
+        let addr = addr.clone();
+        std::thread::spawn(move || {
+            for i in 0..30 {
+                let path = format!("/edit?path=t.csv&action=set&row=1&col=city&value=W{i}");
+                assert_eq!(post(&addr, &path).0, 200);
+            }
+        })
+    };
+
+    let mut seen = 0;
+    for _ in 0..15 {
+        let (status, body) = get(
+            &server.addr,
+            "/export?path=t.csv&apply-edits=1&sql=SELECT%20city%2Camount%20FROM%20t",
+        );
+        assert_eq!(status, 200, "{body}");
+        let lines: Vec<&str> = body.trim_end_matches('\n').split('\n').collect();
+        assert_eq!(lines.len(), 4, "three rows plus header: {body}");
+        let first = lines[1].split(',').next().unwrap();
+        assert!(
+            first == "A" || first.starts_with('W'),
+            "a written value or the original: {first}"
+        );
+        seen += 1;
+    }
+    assert_eq!(seen, 15);
+    writer.join().expect("writer panicked");
+}

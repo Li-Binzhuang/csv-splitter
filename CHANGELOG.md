@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.61.5] — 2026-11-20
+
+### Tests / Documentation
+
+- Materialising endpoints snapshot the journal once, and a concurrency test now proves the
+  consequence: thirty edits land while fifteen `/export?apply-edits=1` calls run, and every
+  export is the whole table with a value that was actually written. An edit arriving after
+  the snapshot is simply absent; a half-applied table is never produced. The API note states
+  the boundary instead of leaving it to be discovered.
+
 ## [3.61.4] — 2026-11-20
 
 ### Tests
