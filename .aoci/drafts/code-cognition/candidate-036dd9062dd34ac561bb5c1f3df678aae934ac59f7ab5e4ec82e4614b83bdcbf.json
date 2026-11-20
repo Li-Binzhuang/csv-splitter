@@ -1,0 +1,141 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "794b2cb5aa4b0a9f5607c0b48afd676a2b95bd7bc95981178cabab22a4c7f620",
+  "batch_id": "036dd9062dd34ac561bb5c1f3df678aae934ac59f7ab5e4ec82e4614b83bdcbf",
+  "composite_identity": "14658d0ed1a5de638052ebf3110bbbf5e70f830449b25cc2bff1eb1aa2e8f8c4",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "43cac805e1832e5c19ba910b3ef521955601541f22fbe8e13ff669e81f21bb24",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "18d88f27855cdac8d42332361cca4dc96ca9bd3449c65ffe897bf5b062f5dfc0",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.1.0 记录 filter/search 分段并行与 11.2 GB 演练（搜索 14.8 s，界约 20–22 GB）；4.2.0 记录整列 sum/average/count 与条件 countif/sumif（预扫 0.48 s，含侧车 0.30 s）及三条 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "8e9e3d39b1ad13d19cb05b5187eb45218973066ae1ed5125cfb4c53f9c28d2c0",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:所有响应经 respond 统一附加 CORS、X-Response-Time、ETag 与 Vary；启动横幅为 csvx API on http://…；/groupby、/chart、/pivot 接 engine 参数并进缓存键；/filter 与 /search 走 scan_fast（UTF-8 分段并行，GBK 顺序），超时预算仍映射 504；路径先 canonicalize 再要求落在 root 内；CSVX_QUERY_TIMEOUT_MS 与 CSVX_STRICT_PARAMS 在此读取 | S:gzip 是另一种表示，ETag 必须带 -gz；202 必须映射 Accepted；临时 CSV 必须用 CSV 读取器解析，lines() 会把带引号换行的单元格裂成多行"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "dd33e22ad955a2bb93018f4359856ded7566fb95e28040cbe816c53ee40d2478",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:运算符为等于、不等于、比较、包含、in 与空值判断；比较类规则预编译为 FilterSet 避免逐行重建；scan_with_budget 每到 5 000 行查一次截止时间；scan_fast 在 UTF-8 大文件上按稀疏索引检查点分段并行（线程数可用 CSVX_SCAN_THREADS 覆盖，设 1 退回顺序），GBK/UTF-16 走顺序扫描 | S:超时只在每 5 000 行检查一次，所以时间预算不是硬上限，最坏会多扫一个 5 000 行窗口；并行路径必须给出与顺序路径相同的行号，parallel_scan_agrees_with_sequential 钉住这一点"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/scan_parallel.rs",
+      "path": "crates/core/src/scan_parallel.rs",
+      "change": "update",
+      "source_sha256": "0156e64a0dddf887f9262cdfa235d4396f8f373e08fcb2a4860ede30224fd3eb",
+      "existing_entry": "scan_parallel.rs[KP7M]: F:filter 与 search 共用的分段并行扫描：按索引检查点分工、按行号合并 | R:code:crates/core/src/index.rs,code:crates/core/src/filter.rs,code:crates/core/src/search.rs | A:ScanOptions 收拢 delimiter/limit/budget/threads/quotes/phase；threads_for 读 CSVX_SCAN_THREADS 覆盖，否则每核一段并封顶 8，文件小于 64 MB 或单核时退回 1；只对 UTF-8 生效（GBK/UTF-16 的字节偏移不是行边界）；每段 seek 后独立解析，结果按行号排序并截断到 limit | S:行号必须与顺序扫描一致——分段只能落在索引检查点上，按任意字节切分会把带引号换行的记录切错；超时是真实答案（HTTP 映射 504），不偷偷降级成部分结果"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/search.rs",
+      "path": "crates/core/src/search.rs",
+      "change": "update",
+      "source_sha256": "feec0ff4a541080db3fac44e500d5250d006f74f73f217228f87ab6c20172083",
+      "existing_entry": "search.rs[DA7L]: F:跨列搜索：返回命中行号而不是数据本身 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:匹配是字面量：默认大小写不敏感子串（ASCII 走无分配的字节比较，只有非 ASCII 才 to_lowercase），可限定列或整格；regex 字段走条件格式的模式子集，不是正则引擎；search_fast 在 UTF-8 大文件上分段并行，搜索列集合只解析一次 | S:正则依赖故意不引入，真正的正则交给 SQL 端点；并行与顺序路径的 rows/columns 必须一致；非 ASCII 大小写仍走分配回退，café/CAFÉ 测试钉住"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/API.md",
+      "path": "docs/API.md",
+      "change": "update",
+      "source_sha256": "eceeb4ea92a4cc322512265543d230818f0c341cce9cae9384ee3717ad2834c6",
+      "existing_entry": "API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；聚合端点均接受 engine=auto|native|sql，未知值返回 400；504 不含引擎原文；filter/search 两行说明分段并行扫描与预算；CSVX_STRICT_PARAMS 与 CSVX_QUERY_TIMEOUT_MS 的说明在本文 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "8ccb8291d837690065004ce0afbd6f493cefa93cf1a0f528971e9dbd7f5d69f9",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；公式节含整列与条件聚合；「大文件过滤与搜索」两档表已更新为搜索 14.8 s、HTTP 随负载波动，并明写 20–22 GB 的预算边界 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "41d47ce985d4ec53ea13339d755c38f190567945f1587be6638673f98ec1f52a",
+      "existing_entry": "ROADMAP.md[SU5S]: F:路线图：已完成、进行中与明确不做的范围 | R:code:docs/CAPABILITIES.md | A:与能力清单分工——这里写未来与边界；M5 记录 filter/search 分段并行与 11.2 GB 演练（索引 3.9 s、跳转 0.01 s、过滤 11.9 s、搜索 14.8 s），并把 20–22 GB 以上的游标分页列为未做 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4295f73877737b55abe3d3fcc51bb30c150d803445364d514ed9eaa7e479690d",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "18d88f27855cdac8d42332361cca4dc96ca9bd3449c65ffe897bf5b062f5dfc0",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.1.0 记录 filter/search 分段并行与 11.2 GB 演练（搜索 14.8 s，界约 20–22 GB）；4.2.0 记录整列 sum/average/count 与条件 countif/sumif（预扫 0.48 s，含侧车 0.30 s）及三条 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "b87601c55107483e6ca2dd5a099ffa4ae2b2feb16d73c8ef9a0be2d1eb16acef",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "8e9e3d39b1ad13d19cb05b5187eb45218973066ae1ed5125cfb4c53f9c28d2c0",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:所有响应经 respond 统一附加 CORS、X-Response-Time、ETag 与 Vary；启动横幅为 csvx API on http://…；/groupby、/chart、/pivot 接 engine 参数并进缓存键；/filter 与 /search 走 scan_fast（UTF-8 分段并行，GBK 顺序），超时预算仍映射 504；路径先 canonicalize 再要求落在 root 内；CSVX_QUERY_TIMEOUT_MS 与 CSVX_STRICT_PARAMS 在此读取 | S:gzip 是另一种表示，ETag 必须带 -gz；202 必须映射 Accepted；临时 CSV 必须用 CSV 读取器解析，lines() 会把带引号换行的单元格裂成多行"
+    },
+    {
+      "candidate_id": "18d30b1fe9d69d5be6cfa39470c1605f3a7d00b3f82eb44407cc4c9cc95adebd",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "dd33e22ad955a2bb93018f4359856ded7566fb95e28040cbe816c53ee40d2478",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:运算符为等于、不等于、比较、包含、in 与空值判断；比较类规则预编译为 FilterSet 避免逐行重建；scan_with_budget 每到 5 000 行查一次截止时间；scan_fast 在 UTF-8 大文件上按稀疏索引检查点分段并行（线程数可用 CSVX_SCAN_THREADS 覆盖，设 1 退回顺序），GBK/UTF-16 走顺序扫描 | S:超时只在每 5 000 行检查一次，所以时间预算不是硬上限，最坏会多扫一个 5 000 行窗口；并行路径必须给出与顺序路径相同的行号，parallel_scan_agrees_with_sequential 钉住这一点"
+    },
+    {
+      "candidate_id": "16fc10536368df008764a0929db7392e1e75393caecd7c48c0df6c13c5e6845b",
+      "object_ref": "code:crates/core/src/scan_parallel.rs",
+      "path": "crates/core/src/scan_parallel.rs",
+      "change": "update",
+      "source_sha256": "0156e64a0dddf887f9262cdfa235d4396f8f373e08fcb2a4860ede30224fd3eb",
+      "existing_entry": "scan_parallel.rs[KP7M]: F:filter 与 search 共用的分段并行扫描：按索引检查点分工、按行号合并 | R:code:crates/core/src/index.rs,code:crates/core/src/filter.rs,code:crates/core/src/search.rs | A:ScanOptions 收拢 delimiter/limit/budget/threads/quotes/phase；threads_for 读 CSVX_SCAN_THREADS 覆盖，否则每核一段并封顶 8，文件小于 64 MB 或单核时退回 1；只对 UTF-8 生效（GBK/UTF-16 的字节偏移不是行边界）；每段 seek 后独立解析，结果按行号排序并截断到 limit | S:行号必须与顺序扫描一致——分段只能落在索引检查点上，按任意字节切分会把带引号换行的记录切错；超时是真实答案（HTTP 映射 504），不偷偷降级成部分结果"
+    },
+    {
+      "candidate_id": "4507a8747ca5a4f6512c929c9697c4fc7ff9c80e572b14fcf990d3302287e7e3",
+      "object_ref": "code:crates/core/src/search.rs",
+      "path": "crates/core/src/search.rs",
+      "change": "update",
+      "source_sha256": "feec0ff4a541080db3fac44e500d5250d006f74f73f217228f87ab6c20172083",
+      "existing_entry": "search.rs[DA7L]: F:跨列搜索：返回命中行号而不是数据本身 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:匹配是字面量：默认大小写不敏感子串（ASCII 走无分配的字节比较，只有非 ASCII 才 to_lowercase），可限定列或整格；regex 字段走条件格式的模式子集，不是正则引擎；search_fast 在 UTF-8 大文件上分段并行，搜索列集合只解析一次 | S:正则依赖故意不引入，真正的正则交给 SQL 端点；并行与顺序路径的 rows/columns 必须一致；非 ASCII 大小写仍走分配回退，café/CAFÉ 测试钉住"
+    },
+    {
+      "candidate_id": "f0db1bf712f647fba320c6d7c90053996ddbe514c8096a8934ce627c1c2fcb30",
+      "object_ref": "code:docs/API.md",
+      "path": "docs/API.md",
+      "change": "update",
+      "source_sha256": "eceeb4ea92a4cc322512265543d230818f0c341cce9cae9384ee3717ad2834c6",
+      "existing_entry": "API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；聚合端点均接受 engine=auto|native|sql，未知值返回 400；504 不含引擎原文；filter/search 两行说明分段并行扫描与预算；CSVX_STRICT_PARAMS 与 CSVX_QUERY_TIMEOUT_MS 的说明在本文 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然"
+    },
+    {
+      "candidate_id": "4b9e450459912aeaea679a96d9772b3e627967eaaa7e2cd82c98c327a3187365",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "8ccb8291d837690065004ce0afbd6f493cefa93cf1a0f528971e9dbd7f5d69f9",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；公式节含整列与条件聚合；「大文件过滤与搜索」两档表已更新为搜索 14.8 s、HTTP 随负载波动，并明写 20–22 GB 的预算边界 | S:-"
+    },
+    {
+      "candidate_id": "b98a29f273e7d43e13625f8631d55dd1dfbdf7930c9cff75c1663b252def02e1",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "41d47ce985d4ec53ea13339d755c38f190567945f1587be6638673f98ec1f52a",
+      "existing_entry": "ROADMAP.md[SU5S]: F:路线图：已完成、进行中与明确不做的范围 | R:code:docs/CAPABILITIES.md | A:与能力清单分工——这里写未来与边界；M5 记录 filter/search 分段并行与 11.2 GB 演练（索引 3.9 s、跳转 0.01 s、过滤 11.9 s、搜索 14.8 s），并把 20–22 GB 以上的游标分页列为未做 | S:-"
+    }
+  ]
+}

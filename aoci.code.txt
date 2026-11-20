@@ -4,7 +4,7 @@
 .gitattributes[FV4T]: F:声明所有文本按 LF 检出，保证 AOCI 基线与跨平台检出逐字节一致 | R:- | A:唯一规则 `* text=auto eol=lf`；覆盖 Windows autocrlf 的行尾重写，否则整棵树会被基线和漂移检查判成 stale；二进制由 git 自动探测、不改写 | S:基线按原始字节计算，行尾被平台改写会让全部索引失真，所以这里必须强制 LF
 .gitignore[FV4T]: F:忽略构建产物与本地杂物 | R:- | A:忽略 `/target`、编辑器 swap、`.DS_Store`、发布打包目录 `dist/` 与 `staging/`；刻意不忽略 `.codegraph/` 与 `.aoci/`——本仓要求把两套索引的中间过程一起入库 | S:索引入库是有意的取舍：`.codegraph/codegraph.db` 是可重建的二进制，每次重建都会产生整文件变更，历史体积会稳步增长
 AGENTS.md[SV6S]: F:仓库级 Agent 指令：AOCI 认知层的接入与使用原则 | R:code:aoci.txt,code:aoci.meta.txt,code:aoci.code.txt | A:规定“模型生成、模型读取”闭环，何时读 rules/overview/maintain，以及收尾维护一次的纪律；不重复 CLI 手册 | S:机器事实以 Guide、Schema 与 Validator 为准，本文件不得覆盖；上下文压缩后的 handoff 不得携带索引语义，必须重新完整读取并认证
-CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.1.0 记录 filter/search 分段并行与 11.2 GB 演练（搜索 14.8 s，界约 20–22 GB）；4.2.0 记录整列 sum/average/count 与条件 countif/sumif（预扫 0.48 s，含侧车 0.30 s）及三条 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败
+CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.1.0 记录 filter/search 分段并行与 11.2 GB 演练；4.2.0 记录整列与条件聚合、可续扫游标页，并把基文件/区间/50 ms/处理能力边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败
 Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本与 crate 元数据、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 crates/core 与 crates/cli；workspace.dependencies 以 csvx-core 为本地 crate 键；workspace.package 持有版本 4.2.0、一句话定位、仓库地址与 MIT 许可，是发布真相源；二进制的 --version 与 tag 校验都以它为准 | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
 README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部定位与 Rust 徽章；下载表列四平台产物；快速开始指向 scripts/demo.sh（--big 读路径、--writes 写路径）；公式节说明整列与条件聚合；性能表含 2.1 GB 与 11.2 GB 两档（搜索 11.2 GB 14.8 s，大小写不敏感不再逐格分配） | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；含 scripts/ 的行不参与 flag 校验；搜索约 20–22 GB 触及 30 s 预算
@@ -19,7 +19,7 @@ Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Carg
 
 ===/<repository>/crates/cli/src/===
 main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令，帮助首行自报 csvx 与版本；groupby/chart/pivot 接 --engine，view 的有序读在无编辑且大文件时交给 DuckDB；filter 与 search 调用 scan_fast（大文件分段并行）；行号一律 1-based；demo 默认写 csvx-demo/ | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败；cfg 判定必须看被依赖 crate 的 feature，不能用 cli 自己的 feature 名
-serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:所有响应经 respond 统一附加 CORS、X-Response-Time、ETag 与 Vary；启动横幅为 csvx API on http://…；/groupby、/chart、/pivot 接 engine 参数并进缓存键；/filter 与 /search 走 scan_fast（UTF-8 分段并行，GBK 顺序），超时预算仍映射 504；路径先 canonicalize 再要求落在 root 内；CSVX_QUERY_TIMEOUT_MS 与 CSVX_STRICT_PARAMS 在此读取 | S:gzip 是另一种表示，ETag 必须带 -gz；202 必须映射 Accepted；临时 CSV 必须用 CSV 读取器解析，lines() 会把带引号换行的单元格裂成多行
+serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:/filter 与 /search 接 cursor 参数（路由参数表已声明），走 scan_page/search_page；有 next 时返回 partial 与页内 scanned/matched；非 UTF-8 或小文件回退整页扫；strict 参数校验与 CSVX_QUERY_TIMEOUT_MS 在此读取 | S:strict 模式下未在路由表声明的参数一律 400，所以新增查询参数必须同时写进 ROUTE_PARAMS；gzip 表示另存，ETag 必须带 -gz；临时 CSV 必须用 CSV 读取器解析
 
 ===/<repository>/crates/cli/src/web/===
 index.html[EU7M]: F:内置只读浏览页：用 /rows 拉窗口并把结果渲染成表格 | R:code:crates/cli/src/serve.rs | A:单文件 HTML 与内联 JS，无外部依赖；title 与页头的 h1 都是 csvx；实际调用 /files、/meta、/rows、/search、/analyze、/groupby 六个端点 | S:-
@@ -43,7 +43,7 @@ decompress.rs[MD6L]: F:解压或展开归档到输出目录，并拒绝成员路
 dedupe.rs[KD7M]: F:流式去重：保留每个键的首次出现 | R:code:crates/core/src/groupby.rs | A:键哈希成 u128 只保留哈希，一千万键约 160 MB；汇总 kept、removed、scanned | S:-
 demo.rs[RU4S]: F:生成一份故意不干净的示例 CSV，供上手与冒烟使用 | R:code:scripts/smoke.sh | A:两万行、六列，含重复行、空备注、多一个逗号的错位行与带引号换行 | S:干净的示例会教出错误预期，这些瑕疵是刻意保留的，不要为了好看而清掉
 encoding.rs[CL8L]: F:文本编码探测与解码：UTF-8 及 BOM、GBK/GB18030、UTF-16、Windows-1252 | R:code:crates/core/src/csv_reader.rs | A:只探测一次，之后把所有读取路径统一成 UTF-8；UTF-16 可以读取，但索引与随机跳转被拒绝 | S:UTF-16 的逗号与换行是两字节，按字节偏移的稀疏索引会算错行号，所以宁可拒绝也不给近似的错位置
-filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:运算符为等于、不等于、比较、包含、in 与空值判断；比较类规则预编译为 FilterSet 避免逐行重建；scan_with_budget 每到 5 000 行查一次截止时间；scan_fast 在 UTF-8 大文件上按稀疏索引检查点分段并行（线程数可用 CSVX_SCAN_THREADS 覆盖，设 1 退回顺序），GBK/UTF-16 走顺序扫描 | S:超时只在每 5 000 行检查一次，所以时间预算不是硬上限，最坏会多扫一个 5 000 行窗口；并行路径必须给出与顺序路径相同的行号，parallel_scan_agrees_with_sequential 钉住这一点
+filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:运算符为等于、不等于、比较、包含、in 与空值判断；scan_with_budget 顺序扫描并在超时时 TimedOut；scan_fast 大文件分段并行；scan_page 多了 start_checkpoint，返回 (结果, next) 供 HTTP 续扫，非 UTF-8 或单线程时返回 InvalidInput 让调用方回退 | S:超时只在每 5 000 行检查一次，预算不是硬上限；并行路径必须与顺序路径行号一致；续扫按检查点推进，不重复也不跳行
 format.rs[DU7L]: F:条件格式：服务器求值、客户端上色 | R:code:crates/core/src/filter.rs | A:返回 (row,column,style) 结果而不是重绘数据；同一单元格上后面的规则获胜；模式子集与 search 的正则共用 | S:求值成本必须只随窗口行数增长，任何一条规则都不允许触发全文件重扫
 groupby.rs[KA8L]: F:流式分组聚合，内存随组数而非行数增长 | R:code:crates/core/src/aggregate.rs | A:超过 max_groups 直接失败并说明原因；输出一行一组；自身只读文件、不看 journal，HTTP 与 CLI 在调用前用 apply-edits 把公式列物化 | S:默认上限的存在是为了让按 id 分组这类误用尽早暴露，而不是先把机器吃满再报错
 index.rs[CP8L]: F:稀疏行索引：把每第 N 条记录的字节偏移存成 sidecar，任意行跳转与扫描起点无关 | R:code:crates/core/src/workbook/export.rs | A:默认每 1000 条一个检查点，定位后最多再跳过 999 条；checkpoints() 公开检查点偏移，filter/search 的分段并行据此切分并得到每段的起始行号；UTF-16 输入拒绝建索引 | S:索引记的是字节偏移，UTF-16 的逗号与换行是两字节，算出来会是错行号
@@ -61,7 +61,7 @@ preview.rs[CU6M]: F:终端预览：前 N 行、列统计与行数估计 | R:code
 profile.rs[DA8L]: F:列画像：单遍流式统计每列取值、空值与类型分布 | R:code:crates/core/src/preview.rs | A:十 GB 文件只读一遍，输出列级摘要而非全量取值 | S:-
 reshape.rs[DD7M]: F:列整形：保留、删除、改名与重排，写新文件 | R:code:crates/core/src/workbook/rows.rs | A:ReshapeSpec 的三种操作可组合；输出是新文件，源文件不动 | S:-
 schema.rs[CG6T]: F:列集合对比：新增、缺失与移位 | R:code:crates/cli/src/serve.rs | A:same 表示集合相同而非顺序相同，重排单独放在 moved；同一份 JSON 同时供 CLI 与 GET /schema?diff= 使用，避免两处对 same 的定义漂移 | S:把重排判成 schema 变更会让日常调整列顺序看起来像破坏性变更
-search.rs[DA7L]: F:跨列搜索：返回命中行号而不是数据本身 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:匹配是字面量：默认大小写不敏感子串（ASCII 走无分配的字节比较，只有非 ASCII 才 to_lowercase），可限定列或整格；regex 字段走条件格式的模式子集，不是正则引擎；search_fast 在 UTF-8 大文件上分段并行，搜索列集合只解析一次 | S:正则依赖故意不引入，真正的正则交给 SQL 端点；并行与顺序路径的 rows/columns 必须一致；非 ASCII 大小写仍走分配回退，café/CAFÉ 测试钉住
+search.rs[DA7L]: F:跨列搜索：返回命中行号而不是数据本身 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:匹配是字面量：默认大小写不敏感子串（ASCII 走无分配字节比较，非 ASCII 才 to_lowercase）；search_fast 分段并行，search_page 可带游标续扫；regex 字段走条件格式模式子集 | S:正则依赖故意不引入；并行与顺序路径的 rows/columns 必须一致；非 ASCII 大小写走分配回退，café/CAFÉ 测试钉住
 sheet.rs[CD8L]: F:一张表的门面：base 加 journal 呈现出的列、行数、窗口与导出 | R:code:crates/core/src/workbook/export.rs | A:首次访问经 workbook 算出最终列与行映射；导出即物化编辑 | S:-
 sort.rs[KP7L]: F:外部排序：按列排序大文件，内存由字节预算而不是行数封顶 | R:code:crates/core/src/workbook/export.rs | A:分块排序后多路归并；buf-mb 是每块预算，块数上限 128 | S:分块曾按 50 万行封顶，782 列 2.5 GB 文件的峰值达 2.2 GB 等于整份入内存；改成字节预算后同样任务峰值 125 MB，输出逐字节一致，代价 29.9s 到 33.8s
 split_parallel.rs[KP7M]: F:并行切分：多个 reader 各负责一段连续分片 | R:code:crates/core/src/splitter.rs | A:按文件大小与核数决定分工，每个分片自己写表头 | S:串行 reader 的上限是磁盘顺序吞吐，实测约 490 MB/s，并行收益取决于起点是否按字节边界算准
@@ -73,7 +73,7 @@ types.rs[CD7M]: F:基础类型：分隔符、压缩格式、进度消息与取�
 validate.rs[DQ8L]: F:列约束校验：只报告不改数据，可限制扫描行数 | R:code:crates/core/src/workbook/export.rs | A:检查的是 journal 应用后的值；报告含 rows、checked、partial、truncated、每规则计数与最多一千条明细；限制扫描时 partial 与 truncated 同时置位 | S:限制只查前缀时必须标出 partial，否则读者会把前缀计数当成全量结论
 viewer.rs[CU6M]: F:窗口化读取：只持有一屏所需行 | R:code:crates/core/src/workbook/export.rs | A:请求超出缓存窗口时经稀疏索引重取，内存与文件大小无关 | S:-
 engine.rs[EG8L]: F:引擎选择器：native 与 DuckDB 分析路径的统一入口 | R:code:crates/core/src/sql.rs,code:crates/core/src/groupby.rs,code:crates/core/src/chart.rs,code:crates/core/src/pivot.rs | A:Engine 为 Auto/Native/Sql；Auto 按 SQL_AUTO_THRESHOLD_BYTES 8 MB 且必须带 sql feature 才走 DuckDB；无 feature 时显式 Sql 报错而不是静默回退；resolve_for_copy 让 concat 这类拷贝型命令保持 native；groupby_sql、chart_sql、pivot_sql 走 sql::query_with 的声明式列采样而非 read_csv_auto | S:阈值由实测定为 8 MB——旧值 64 MB 是估算，留下 7 倍区间里 native 更慢；read_csv_auto 在 782 列文件上花十秒推类型，而 query_with 采样声明列后只要两秒；SQL 的 GROUP BY 没有行序，所以 chart 类别顺序与原生不同且已在文档说明
-scan_parallel.rs[KP7M]: F:filter 与 search 共用的分段并行扫描：按索引检查点分工、按行号合并 | R:code:crates/core/src/index.rs,code:crates/core/src/filter.rs,code:crates/core/src/search.rs | A:ScanOptions 收拢 delimiter/limit/budget/threads/quotes/phase；threads_for 读 CSVX_SCAN_THREADS 覆盖，否则每核一段并封顶 8，文件小于 64 MB 或单核时退回 1；只对 UTF-8 生效（GBK/UTF-16 的字节偏移不是行边界）；每段 seek 后独立解析，结果按行号排序并截断到 limit | S:行号必须与顺序扫描一致——分段只能落在索引检查点上，按任意字节切分会把带引号换行的记录切错；超时是真实答案（HTTP 映射 504），不偷偷降级成部分结果
+scan_parallel.rs[KP7M]: F:filter 与 search 共用的分段并行、可续扫扫描 | R:code:crates/core/src/index.rs,code:crates/core/src/filter.rs,code:crates/core/src/search.rs | A:ScanOptions 收拢 delimiter/limit/budget/threads/quotes/phase/start_checkpoint/checkpoints_per_wave；每波按 64 检查点分段、波间检查预算，未跑的波用 next_checkpoint 返回；threads_for 读 CSVX_SCAN_THREADS 覆盖，小于 64 MB 或单核退回 1 | S:行号必须与顺序扫描一致——分段只能落在索引检查点上；续扫的游标按波推进，不重复行也不漏行（zero-budget 续扫测试逐行比对）；GBK/UTF-16 不支持游标
 
 ===/<repository>/crates/core/src/formula/===
 functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:与解析器分开以便持续扩展；约定跟随电子表格：if 短路求值、isblank 对空单元格返回真、isnumber 只认 Number、iferror、日期函数取 ISO 前缀；sum/average/count 与 countif/sumif 从行状态读 O(1) 结果，空列平均返回 #VALUE!，条件参数从语法树取列名与条件字符串 | S:空单元格是独立值而不是字符串 0；聚合函数在无预扫状态（视图路径）时返回 #VALUE!，绝不返回错误的 0
@@ -90,15 +90,15 @@ rows.rs[CP9L]: F:行身份映射与单元格编辑解析 | R:code:crates/core/sr
 
 ===/<repository>/docs/===
 ACCEPTANCE.md[SD6M]: F:验收证据：两档性能表、能力矩阵与平台构建矩阵 | R:code:docs/API.md | A:每行写实测数字与对应测试名；未达标项标注而不是四舍五入 | S:文档里引用的输出由测试钉住，改实现不同步更新这里会让 gate 失败
-API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；聚合端点均接受 engine=auto|native|sql，未知值返回 400；504 不含引擎原文；filter/search 两行说明分段并行扫描与预算；CSVX_STRICT_PARAMS 与 CSVX_QUERY_TIMEOUT_MS 的说明在本文 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然
+API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；filter/search 行含 cursor 参数与 next/partial 字段，并说明 scanned/matched 是本页计数；聚合端点接受 engine=auto|native|sql | S:文档测试要求本文列出的每个路由都真实存在，反之亦然；文档字段必须真的出现在响应里
 ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列出模块，共用工具组含 engine 与 scan_parallel，公式引擎组含 mod/functions/state/sheetref/totals | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败
-CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；公式节含整列与条件聚合；「大文件过滤与搜索」两档表已更新为搜索 14.8 s、HTTP 随负载波动，并明写 20–22 GB 的预算边界 | S:-
+CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；大文件节写清并行数字、20–22 GB 边界与 next 游标续扫；公式节含整列与条件聚合及其代价 | S:-
 CI.md[SO6S]: F:CI 结构说明：单 job 流水线、滚动缓存与失败注解机制 | R:code:.github/workflows/ci.yml | A:解释为什么合并成一个 job、为什么缓存 key 滚动、以及 annotation 如何让红叉可读；测试命令按 csvx-core 与 csvx-cli 包名 | S:-
 DEPLOY.md[SO7M]: F:部署材料：三种安装、配置项、systemd、升级回滚与安全边界 | R:code:deploy/csvx.service | A:明确单机单用户、无鉴权、默认 loopback；配置表含 CSVX_SCAN_THREADS（filter/search 的并行线程数，1 退回顺序）；给出 release-check 与 install-check 两条自检 | S:安全表必须写明没有鉴权与没有多用户隔离，只列防护不列边界会让人误判风险
 GETTING_STARTED.md[SU6M]: F:十分钟上手：用故意不干净的示例走完整链路 | R:code:crates/core/src/demo.rs | A:逐步骤贴真实输出，覆盖带引号换行与多一个逗号的错位行；命令一律以 csvx 开头，示例目录为 csvx-demo/ | S:-
 HANDOVER.md[SU5S]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:写明产品已改名为 csvx；AOCI（约 90 条 Entry，受版本控制）与 CodeGraph（本地可重建索引）分工：先问认知层这是什么，再读源码是怎么写的；改完后用 aoci_maintain 收尾一次 | S:.aoci 的运行时产物与 .codegraph 不入库，而 aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库，否则接手的人拿不到同一份认知
 INTEGRATION.md[SN6S]: F:前端接入走查：从起服务到翻行、改值、多文件的一页纸 | R:code:docs/API.md | A:按 0–7 步给出真实可跑的调用（起服务、打开文件、画一屏、读写单元格含 expect、行身份、写后、多文件）；每条都对应 crates/cli/tests/serve.rs 的测试 | S:-
-ROADMAP.md[SU5S]: F:路线图：已完成、进行中与明确不做的范围 | R:code:docs/CAPABILITIES.md | A:与能力清单分工——这里写未来与边界；M5 记录 filter/search 分段并行与 11.2 GB 演练（索引 3.9 s、跳转 0.01 s、过滤 11.9 s、搜索 14.8 s），并把 20–22 GB 以上的游标分页列为未做 | S:-
+ROADMAP.md[SU5S]: F:路线图：已完成、进行中与明确不做的范围 | R:code:docs/CAPABILITIES.md | A:与能力清单分工；M5 记录 filter/search 分段并行、11.2 GB 演练，并把可续扫游标页标为已完成（GBK 仍整页扫） | S:-
 TROUBLESHOOTING.md[SO6S]: F:排障：常见症状、原因与处理，以及如何读 CI 失败 | R:code:docs/CI.md | A:含 annotation 读取命令与历史根因（超时测试竞态、mingw 线程模型） | S:-
 BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 写明整列 sum/average/count 与条件 countif/sumif 已实现（0.48 s，含侧车 0.30 s），区间引用未做，并保留 50 ms 验收标准 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据
 
