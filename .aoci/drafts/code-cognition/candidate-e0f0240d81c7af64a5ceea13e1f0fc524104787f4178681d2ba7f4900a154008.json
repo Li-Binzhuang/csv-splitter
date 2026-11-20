@@ -1,0 +1,505 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "9f7a7381a5fbdf4f5970263d8c50ecbcdfbcf8508f8cf81e17094553e0b42aff",
+  "batch_id": "e0f0240d81c7af64a5ceea13e1f0fc524104787f4178681d2ba7f4900a154008",
+  "composite_identity": "89bd890804a90907e517fb8edb55b12015f78fa0eca87ef22a58ff01901523a1",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "63326825188aebf361c76e17253926561f4f9d9d1ce987ef7bc813d6367a71c7",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:.github/workflows/ci.yml",
+      "path": ".github/workflows/ci.yml",
+      "change": "update",
+      "source_sha256": "53783cd9bb2a12b60cf64c3665971a19ab88eaed3f5904a13d1c25a675e9cd26",
+      "existing_entry": "ci.yml[OV7S]: F:主 CI：格式化、引擎与 CLI 测试、性能守卫、clippy 工作区、失败注解 | R:code:scripts/smoke.sh,code:scripts/regress.sh,code:scripts/backend-smoke.sh | A:单 job 串联五个步骤；每步 tee 日志，失败时把失败测试名与首条断言转成公开 annotation 并上传 artifact；有路径过滤的 Windows 检查在独立工作流 | S:曾用两个 job 加 needs 串联，缓存配额超限时出现一个 job 跳过、红叉无信息的不可读结果，因此刻意合并成一个 job"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:.github/workflows/release.yml",
+      "path": ".github/workflows/release.yml",
+      "change": "update",
+      "source_sha256": "a6e69bbd23c1ab0b3a0a9a9e25b9b60193d637239934d6e71b23a3656c58698a",
+      "existing_entry": "release.yml[OV7S]: F:tag 触发的四平台发布：构建、打包、校验和、创建 Release | R:code:scripts/package.sh,code:scripts/release-decision.sh | A:prepare 只调用 release-decision 脚本判定 version 与 do_release；build 矩阵为 linux-x86_64、macos-arm64、macos-x86_64、windows-x86_64；Unix 打包走 scripts/package.sh，Windows 写 dist/ 后压缩；release job 仅在 do_release 为 true 时运行 | S:tag 与 Cargo.toml 版本不一致会被决策脚本拒绝，否则会发布一个 `--version` 说谎的二进制"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:.github/workflows/windows.yml",
+      "path": ".github/workflows/windows.yml",
+      "change": "update",
+      "source_sha256": "9f2b08e0c815511a5bc10939e30d160121138c53af87fd61096ad7c876bbb890",
+      "existing_entry": "windows.yml[OV6T]: F:Windows 编译检查，只在 Rust 代码或依赖清单变化时触发 | R:- | A:windows-latest + MSVC 跑 `cargo check -p csv-splitter-cli`；失败时把含 error 的行转成 annotation 并上传日志；path 过滤避免文档提交付 DuckDB 编译的代价 | S:ubuntu+mingw 交叉检查曾被否决——runner 的 mingw 是 GCC 10 与 win32 线程模型，libstdc++ 没有 std::mutex，DuckDB 头文件用到了它"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "bc47ab71247cb3cef5791de4fa2d30ab605aa2077d75917fd7be187b60a9b684",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；3.49.x 记录 DuckDB 迁移、引擎选择与复合键 lookup | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:Cargo.toml",
+      "path": "Cargo.toml",
+      "change": "update",
+      "source_sha256": "03065a45b6d26f45a4f72e12a98b1f5ac5c37c8d24afc2fd60d1cf438ff79e1a",
+      "existing_entry": "Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 core 与 cli；workspace.package 的版本是发布真相源，当前 3.49.5；二进制的 --version 与 tag 校验都以它为准 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "bafabdd52688926ec56fde368031799fb45d687bdbeb2ce9b1dbf15dedb08b34",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:先讲取舍（base 不可变加 journal），再给命令表；命令表与默认端口被测试校验 | S:文档测试要求 README 列出全部命令，并且出现真实默认端口 127.0.0.1:8787"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/Cargo.toml",
+      "path": "crates/cli/Cargo.toml",
+      "change": "update",
+      "source_sha256": "8a608c58c848c5e9e1bf48a639fe5794c45957f622eb5481f80ce1421bb410a5",
+      "existing_entry": "Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Cargo.toml | A:二进制名 `csv-splitter`，入口 src/main.rs；依赖 libc（信号处理）与 flate2（gzip 响应）；启用 core 的 sql feature | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "0fdfe468ec29154035d308359df94d036bc55d16a45272377474a32d10edad0d",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；groupby/chart/pivot 接 --engine，view 的有序读在无编辑且大文件时交给 DuckDB；行号一律 1-based | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败；cfg 判定必须看被依赖 crate 的 feature，不能用 cli 自己的 feature 名"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "4a5d0801427d5bcfcb1b89c83c6dd17852bd7ee2d7a6e6e38cf1eeab515ba161",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:所有响应经 respond 统一附加 CORS、X-Response-Time、ETag 与 Vary；/groupby、/chart、/pivot 接 engine 参数并进缓存键；路径先 canonicalize 再要求落在 root 内 | S:gzip 是另一种表示，ETag 必须带 -gz；202 必须映射 Accepted；临时 CSV 必须用 CSV 读取器解析，lines() 会把带引号换行的单元格裂成多行"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/web/index.html",
+      "path": "crates/cli/src/web/index.html",
+      "change": "update",
+      "source_sha256": "89f53f9057cc235aa129bf79ea632de705d72ea03b0427db347c7d27f7152099",
+      "existing_entry": "index.html[EU7M]: F:内置只读浏览页：用 /rows 拉窗口并把结果渲染成表格 | R:code:crates/cli/src/serve.rs | A:单文件 HTML 与内联 JS，无外部依赖；实际调用 /files、/meta、/rows、/search、/analyze、/groupby 六个端点 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/Cargo.toml",
+      "path": "crates/core/Cargo.toml",
+      "change": "update",
+      "source_sha256": "e0788b02eb3d7e696245678ec7e8db4a06d592d7bc8b19347bd126f22818ae0c",
+      "existing_entry": "Cargo.toml[FV7T]: F:core crate 清单：解析、压缩、编码与可选 DuckDB | R:code:crates/cli/Cargo.toml | A:sql 是可选 feature，只有 CLI 打开；依赖 memchr、zip、zstd、bzip2、flate2 等流式库；测试与基准同 crate | S:gate 必须用 `--features sql` 跑一次 core 测试，否则 SQL 与 parquet 路径在默认构建里无人验证"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/benches/throughput.rs",
+      "path": "crates/core/benches/throughput.rs",
+      "change": "update",
+      "source_sha256": "7ddb2813b8c9e1645e7db5c1069c6020697b53c8c1c14283d207b066e721e452",
+      "existing_entry": "throughput.rs[TP5S]: F:criterion 基准：切分与稀疏索引的吞吐 | R:code:crates/core/tests/performance.rs | A:用 criterion_group 注册、临时目录生成夹具后计时；结果仅供人看，不断言 | S:共享 CI runner 噪音太大，硬阈值放在 tests/performance.rs；在这里加阈值会让构建随机变红"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/concat.rs",
+      "path": "crates/core/src/concat.rs",
+      "change": "update",
+      "source_sha256": "d1b791d0a41a64255b22de7a4f96cdddf2b99179683804044692377082458d99",
+      "existing_entry": "concat.rs[DD7M]: F:把多个 CSV 合成一张表，比较表头而不是假设一致 | R:code:crates/core/src/merge.rs | A:表头不一致默认报错并指出文件与差异列；只有 ignore_header 才显式跳过；逐记录流式复制 | S:静默把金额列接在 id 列下面会产出一份没人察觉的错误数据，所以默认拒绝而不是尽力而为"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/engine.rs",
+      "path": "crates/core/src/engine.rs",
+      "change": "update",
+      "source_sha256": "428e6a46d7b99e05af91a709b91715d40a7611b0f9856a5a659f2d848515847c",
+      "existing_entry": "engine.rs[EG8L]: F:引擎选择器：native 与 DuckDB 分析路径的统一入口 | R:code:crates/core/src/sql.rs,code:crates/core/src/groupby.rs,code:crates/core/src/chart.rs,code:crates/core/src/pivot.rs | A:Engine 为 Auto/Native/Sql；Auto 按 64 MB 阈值选择；无 sql feature 时 Sql 明确报错；groupby_sql、chart_sql、pivot_sql 都走 sql::query_with 的声明式列采样而非 read_csv_auto | S:read_csv_auto 在 782 列文件上花十秒推类型，而 query_with 采样声明列后只要两秒；SQL 的 GROUP BY 没有行序，所以 chart 类别顺序与原生不同且已在文档说明"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "de9e617363d85c67faf9dd679bb81a25e4f35dcb6593c7f620c168f6c8632816",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs | A:运算符为等于、不等于、比较、包含、in 与空值判断；比较类规则预编译为 FilterSet 避免逐行重建；顺序扫描并按编码解码 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "7d4292385a0371fd3492d52f0ab0a67ed1d2fec686b75ab96b83324794f741c7",
+      "existing_entry": "functions.rs[KA7M]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:与解析器分开以便持续扩展；约定跟随电子表格：if 短路求值、isblank 对空单元格返回真、isnumber 只认 Number、iferror、日期函数取 ISO 前缀 | S:空单元格是独立值而不是字符串 0，文本函数不能再把空值当 0 看待"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "8432d763acceb4c8e0a04bb78e5e45c3518b6fdbafc30246ab1e0decc71c8a4d",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:Value 有 Number/Bool/Text/Empty/Error 五种；空单元格渲染为空串、算术当 0、isblank 为真；if 只求选中分支；未知列在导出前报错 | S:公式列只存在 journal 里，groupby、pivot、chart 直接读文件看不见它，要汇总必须先 apply-edits 物化"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/groupby.rs",
+      "path": "crates/core/src/groupby.rs",
+      "change": "update",
+      "source_sha256": "2c3ec7c279e7fa80fbb976e7a9dd401c0607a6378d8111e5594e649c8f3a2d5a",
+      "existing_entry": "groupby.rs[KA8L]: F:流式分组聚合，内存随组数而非行数增长 | R:code:crates/core/src/aggregate.rs | A:超过 max_groups 直接失败并说明原因；输出一行一组；支持 apply-edits 先把公式列物化 | S:默认上限的存在是为了让“按 id 分组”这类误用尽早暴露，而不是先把机器吃满再报错"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/merge.rs",
+      "path": "crates/core/src/merge.rs",
+      "change": "update",
+      "source_sha256": "159d65012ef744c3bc7a7dda1aaa66b92589737ed66b9103357d20efebaef6ea",
+      "existing_entry": "merge.rs[MP7M]: F:把切分产出的分片重新拼回一个文件 | R:code:crates/core/src/splitter.rs,code:crates/core/src/pack.rs | A:保留第一个表头丢弃其余，按文件名序拼接；可读 tar 与 zip、含压缩分片 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/schema.rs",
+      "path": "crates/core/src/schema.rs",
+      "change": "update",
+      "source_sha256": "bdc57aecd4e93d3bd3e1fda92fdc799fc920d83ba6b1773adec099d2d921ffe8",
+      "existing_entry": "schema.rs[CG6T]: F:列集合对比：新增、缺失与移位 | R:code:crates/cli/src/serve.rs | A:same 表示集合相同而非顺序相同，重排单独放在 moved | S:把重排判成 schema 变更会让日常调整列顺序看起来像破坏性变更"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/search.rs",
+      "path": "crates/core/src/search.rs",
+      "change": "update",
+      "source_sha256": "2e13f185b604702b762b514a2e7a8349dcf3a9dc237363f7374639aeb2ec05b1",
+      "existing_entry": "search.rs[DA7M]: F:跨列搜索：返回命中行号而不是数据本身 | R:code:crates/core/src/index.rs | A:支持正则子集与整格匹配；调用方凭行号经稀疏索引跳转 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/splitter.rs",
+      "path": "crates/core/src/splitter.rs",
+      "change": "update",
+      "source_sha256": "6ff36d92a69fb7ecbf019179a68bedae59c64ce2996832834f9b38065222a6c1",
+      "existing_entry": "splitter.rs[KP7L]: F:切分：按份数或按大小把文件切成多片 | R:code:crates/core/src/split_parallel.rs,code:crates/core/src/pack.rs | A:每片带表头；可选压缩；写入 tar、zip 或目录 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/sql.rs",
+      "path": "crates/core/src/sql.rs",
+      "change": "update",
+      "source_sha256": "11ad29d429ac85b01ae86fe68e2001c4b1697421932c60a60a6c944febc81ef8",
+      "existing_entry": "sql.rs[ED8L]: F:用 DuckDB 在 CSV 上执行只读单条 SQL，并统一管理引擎资源 | R:code:crates/core/src/sql_cache.rs,code:crates/core/src/engine.rs | A:由采样声明列类型避免全文件推断；watchdog 超时中断；语句校验只允许单条只读；open_limited 固定 memory_limit 512MB、线程上限 8、溢出目录 | S:不设上限时 DuckDB 会吃掉 80% 内存与全部核心；设置可用 CSV_SPLITTER_SQL_MEMORY_MB/_THREADS/_TEMP_DIR 覆盖，并有测试读回设置"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/validate.rs",
+      "path": "crates/core/src/validate.rs",
+      "change": "update",
+      "source_sha256": "559023ea57411b29ab758242429aa6fad2746a91ddc5a21d35c1f7cc28983c53",
+      "existing_entry": "validate.rs[DQ8L]: F:列约束校验：只报告不改数据，可限制扫描行数 | R:code:crates/core/src/workbook/export.rs | A:检查的是 journal 应用后的值；报告含 rows、checked、partial、每规则计数与最多一千条明细 | S:限制只查前缀时必须标出 partial，否则读者会把前缀计数当成全量结论"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/journal.rs",
+      "path": "crates/core/src/workbook/journal.rs",
+      "change": "update",
+      "source_sha256": "4a000fef8b16c6cd0cf77035e710505cbf21d86a72120249899837e900c8133c",
+      "existing_entry": "journal.rs[CP9L]: F:追加式操作日志与它的文本格式 | R:code:crates/core/src/workbook/mod.rs | A:每行一个操作的 CSV 记录；写入加锁，多进程同时编辑都保留；损坏可检测 | S:journal 是编辑的唯一载体，删掉等于丢数据，而 base 永远不被修改"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/mod.rs",
+      "path": "crates/core/src/workbook/mod.rs",
+      "change": "update",
+      "source_sha256": "a51ed9e3d88838c8022ee77ee9ba6c97db13e8e69061eaf912d0ce53d68b5b35",
+      "existing_entry": "mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序与列布局 | R:code:crates/core/src/workbook/rows.rs | A:所有编辑记录为 Op；SetColumnFormula 重算已有列，FillColumns 一次填多列；改名让既有编辑跟着新名 | S:原位重算每次都从 base 行取值，所以同一列连做两遍相同公式不会叠乘；删除列会带走该列的编辑，改名不会"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:csvx-demo/orders.csv",
+      "path": "csvx-demo/orders.csv",
+      "change": "create",
+      "source_sha256": "8a5fc586285e07f18ddb533ab11a4fdb36751932cddbe6e2883abd2026bc5462"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:deploy/csvx.service",
+      "path": "deploy/csvx.service",
+      "change": "create",
+      "source_sha256": "22e56bd7d617550b5cecc5b23db219335aa60f95df9497198d13c9920a4a291f"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ACCEPTANCE.md",
+      "path": "docs/ACCEPTANCE.md",
+      "change": "update",
+      "source_sha256": "82999915c64b2bd706cb090ba9fac10e62cb00ad3ebbe4cf1fa2dbe61c2f443b",
+      "existing_entry": "ACCEPTANCE.md[SD6M]: F:验收证据：两档性能表、能力矩阵与平台构建矩阵 | R:code:docs/API.md | A:每行写实测数字与对应测试名；未达标项标注而不是四舍五入 | S:文档里引用的输出由测试钉住，改实现不同步更新这里会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/API.md",
+      "path": "docs/API.md",
+      "change": "update",
+      "source_sha256": "37f48e6c60c0e922e7910a665ced168c00f6eb4c5666c01f97fb6f2d2bb56d87",
+      "existing_entry": "API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；聚合端点均接受 engine=auto|native|sql，未知值返回 400；504 不含引擎原文 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "create",
+      "source_sha256": "213504d62b01170ee9c8aff36cd892f9f84fc8c351c0193d106e7cc1fd52be02"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "4143e71dccbd74bc143894a2a6434b39f51b9971dc3473eefa7d8a42ade003f6",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；新增引擎选择一节，列出各命令在小文件与大文件上的实测对比，以及没有迁移的 sort/dedupe/渲染路径及原因 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CI.md",
+      "path": "docs/CI.md",
+      "change": "update",
+      "source_sha256": "887aacb7117ca92e13a0f96b51db153cc2c19d6990268d46e4aead4da84845e2",
+      "existing_entry": "CI.md[SO6S]: F:CI 结构说明：单 job 流水线、滚动缓存与失败注解机制 | R:code:.github/workflows/ci.yml | A:解释为什么合并成一个 job、为什么缓存 key 滚动、以及 annotation 如何让红叉可读 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DEPLOY.md",
+      "path": "docs/DEPLOY.md",
+      "change": "update",
+      "source_sha256": "346dcfa9840842af7178bcda847071cef08528cd9fe2d90a13637c3f81b3d81b",
+      "existing_entry": "DEPLOY.md[SO7M]: F:部署材料：三种安装、配置项、systemd、升级回滚与安全边界 | R:code:deploy/csv-splitter.service | A:明确单机单用户、无鉴权、默认 loopback；给出 release-check 与 install-check 两条自检 | S:安全表必须写明没有鉴权与没有多用户隔离，只列防护不列边界会让人误判风险"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/GETTING_STARTED.md",
+      "path": "docs/GETTING_STARTED.md",
+      "change": "update",
+      "source_sha256": "fd67d633b7b7dc87f047f723093bb8f938ebb3a85dfbc978cc53592c220c9fb3",
+      "existing_entry": "GETTING_STARTED.md[SU6M]: F:十分钟上手：用故意不干净的示例走完整链路 | R:code:crates/core/src/demo.rs | A:逐步骤贴真实输出，覆盖带引号换行与多一个逗号的错位行 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "1547d957ee8748753f707097ce24cb3936d5b0df3890405aec62a69c68b20e9b",
+      "existing_entry": "HANDOVER.md[SU5S]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:写出 AOCI（89 条 Entry，受版本控制）与 CodeGraph（本地可重建索引）分工：先问认知层这是什么，再读源码是怎么写的；改完后用 aoci_maintain 收尾一次 | S:.aoci 的运行时产物与 .codegraph 不入库，而 aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库，否则接手的人拿不到同一份认知"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/INTEGRATION.md",
+      "path": "docs/INTEGRATION.md",
+      "change": "update",
+      "source_sha256": "d029a78e534cea1d51c2158702aa00b15da0dd2fb3e43ec4fa2e5f5ab0632004",
+      "existing_entry": "INTEGRATION.md[SN6S]: F:前端接入走查：从起服务到翻行、改值、多文件的一页纸 | R:code:docs/API.md | A:按 0–7 步给出真实可跑的调用（起服务、打开文件、画一屏、读写单元格含 expect、行身份、写后、多文件）；每条都对应 crates/cli/tests/serve.rs 的测试 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/TROUBLESHOOTING.md",
+      "path": "docs/TROUBLESHOOTING.md",
+      "change": "update",
+      "source_sha256": "f6b1ebcbd10da0f88148e0c5914710024c83d7ef78ff9073bffd7af5c075cd6f",
+      "existing_entry": "TROUBLESHOOTING.md[SO6S]: F:排障：常见症状、原因与处理，以及如何读 CI 失败 | R:code:docs/CI.md | A:含 annotation 读取命令与历史根因（超时测试竞态、mingw 线程模型） | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/backend-smoke.sh",
+      "path": "scripts/backend-smoke.sh",
+      "change": "update",
+      "source_sha256": "74383bb19764c2a0281170391c11fc5b2db3895053d25d55151f1cdd193623db",
+      "existing_entry": "backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换、自引用拒绝与请求上限 | S:脚本默认跑 target/debug 的二进制，改了代码只重建 release 会在这里看到旧行为；裸 wait 会连自己起的 server 一起等，必须收集 PID 逐个等待"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/bench.sh",
+      "path": "scripts/bench.sh",
+      "change": "update",
+      "source_sha256": "245bfdba620eeb04e079edb5a32191f6b1a95daf9e2a3f46c476ed0ce84cc604",
+      "existing_entry": "bench.sh[TP5T]: F:基准脚本：切分与合并吞吐 | R:code:scripts/smoke.sh | A:生成数据、计时并打印每秒兆字节 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "e88d209aed1996b1b97fd2b369b827d9d4dee7b9e934871b71ab995f42aa45b4",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate 的统一入口 | R:code:scripts/smoke.sh | A:gate 等于 fmt、clippy 加拒绝警告、工作区测试与 core 的 sql feature 测试 | S:gate 必须带 sql feature 跑 core 测试，否则 SQL 与 parquet 路径无人验证"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/gate.sh",
+      "path": "scripts/gate.sh",
+      "change": "create",
+      "source_sha256": "2f9aac6795d1c920f793e644ff6b91a133a03d24dfba061579f85df7758621d7"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/install-check.sh",
+      "path": "scripts/install-check.sh",
+      "change": "update",
+      "source_sha256": "9f5577014c441d8aa0f237a16fda080fc9c95557a1c28fb2eb5cf6db95807b79",
+      "existing_entry": "install-check.sh[TO6T]: F:验证三条安装路径：源码构建、cargo install 与发布产物 | R:code:scripts/release-check.sh | A:每条路径各跑版本、demo 与 serve --check | S:cargo install 先离线后联网，冷缓存机器上静默联网会变成假失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package.sh",
+      "path": "scripts/package.sh",
+      "change": "update",
+      "source_sha256": "fe41aa1773f90e79830706d8f7f2759a1a4bbeffeda8abd918622f938f37a2cd",
+      "existing_entry": "package.sh[OV7T]: F:把二进制打成 tar.gz 或 zip 并生成校验和 | R:code:.github/workflows/release.yml | A:产物写 dist；Windows 打 zip 其余 tar.gz；发布工作流调用同一脚本 | S:打包与发布必须共用这一个脚本，否则本地验过的不是真正发布的那份"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/regress.sh",
+      "path": "scripts/regress.sh",
+      "change": "update",
+      "source_sha256": "cdf6e560eee21ed53e7bce976a2e09ad319ce935e9ada412ce569fe9c3ca5a7b",
+      "existing_entry": "regress.sh[TQ7S]: F:回归扫全量：逐条命令跑一遍并把 FAIL 计入退出码 | R:code:scripts/smoke.sh | A:每条命令一行 ok 或 FAIL；含 release-decision 自测与 match 分支查重；在临时工作目录里运行，所以脚本路径必须按仓库根解析成绝对路径 | S:相对调用者工作目录解析会在临时目录里找不到脚本并产生假失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/release-check.sh",
+      "path": "scripts/release-check.sh",
+      "change": "update",
+      "source_sha256": "9a741e238b8f95f62634d49d8fc8fc0316007a9813ccc5bfd814b0cd90289e59",
+      "existing_entry": "release-check.sh[TV6T]: F:在干净目录里解包发布产物并跑用户的最小验证 | R:code:scripts/package.sh | A:校验和比对、版本、demo、serve --check、健康与就绪、spec、rows 与 SIGTERM 停机；支持 --target 检查非本机目标 | S:演示数据目录必须先创建再做自检，顺序反了会让产物自检假失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/smoke.sh",
+      "path": "scripts/smoke.sh",
+      "change": "update",
+      "source_sha256": "aa238e09372868a29c979c0f0a7a59561b5e0be913c76572c7854c818532ea6c",
+      "existing_entry": "smoke.sh[TQ8M]: F:CLI 冒烟：用 demo 数据把主要命令跑一遍 | R:code:crates/core/src/demo.rs | A:覆盖预览、过滤、编辑、切分、合并、聚合、导出与缓存；每步检查退出码与产物 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "5455f3d6d933e5bd9704943c4aac29e87d74f576e8109569c6a109ecc7025e88",
+      "object_ref": "code:.github/workflows/ci.yml",
+      "path": ".github/workflows/ci.yml",
+      "change": "update",
+      "source_sha256": "53783cd9bb2a12b60cf64c3665971a19ab88eaed3f5904a13d1c25a675e9cd26",
+      "existing_entry": "ci.yml[OV7S]: F:主 CI：格式化、引擎与 CLI 测试、性能守卫、clippy 工作区、失败注解 | R:code:scripts/smoke.sh,code:scripts/regress.sh,code:scripts/backend-smoke.sh | A:单 job 串联五个步骤；每步 tee 日志，失败时把失败测试名与首条断言转成公开 annotation 并上传 artifact；有路径过滤的 Windows 检查在独立工作流 | S:曾用两个 job 加 needs 串联，缓存配额超限时出现一个 job 跳过、红叉无信息的不可读结果，因此刻意合并成一个 job"
+    },
+    {
+      "candidate_id": "851b736e6fe120cc3b40c8b534fa16886d5f932fb04c19d0655a4d4a40159b0e",
+      "object_ref": "code:.github/workflows/release.yml",
+      "path": ".github/workflows/release.yml",
+      "change": "update",
+      "source_sha256": "a6e69bbd23c1ab0b3a0a9a9e25b9b60193d637239934d6e71b23a3656c58698a",
+      "existing_entry": "release.yml[OV7S]: F:tag 触发的四平台发布：构建、打包、校验和、创建 Release | R:code:scripts/package.sh,code:scripts/release-decision.sh | A:prepare 只调用 release-decision 脚本判定 version 与 do_release；build 矩阵为 linux-x86_64、macos-arm64、macos-x86_64、windows-x86_64；Unix 打包走 scripts/package.sh，Windows 写 dist/ 后压缩；release job 仅在 do_release 为 true 时运行 | S:tag 与 Cargo.toml 版本不一致会被决策脚本拒绝，否则会发布一个 `--version` 说谎的二进制"
+    },
+    {
+      "candidate_id": "ff706896f7cd72b858a3b4743cb81cced81c396bd0051732a842286d49155897",
+      "object_ref": "code:.github/workflows/windows.yml",
+      "path": ".github/workflows/windows.yml",
+      "change": "update",
+      "source_sha256": "9f2b08e0c815511a5bc10939e30d160121138c53af87fd61096ad7c876bbb890",
+      "existing_entry": "windows.yml[OV6T]: F:Windows 编译检查，只在 Rust 代码或依赖清单变化时触发 | R:- | A:windows-latest + MSVC 跑 `cargo check -p csv-splitter-cli`；失败时把含 error 的行转成 annotation 并上传日志；path 过滤避免文档提交付 DuckDB 编译的代价 | S:ubuntu+mingw 交叉检查曾被否决——runner 的 mingw 是 GCC 10 与 win32 线程模型，libstdc++ 没有 std::mutex，DuckDB 头文件用到了它"
+    },
+    {
+      "candidate_id": "cf58bd7313b7a3d315c03e6cb4059920bd3da4ab3536215acc6d69d78b5e58ad",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "bc47ab71247cb3cef5791de4fa2d30ab605aa2077d75917fd7be187b60a9b684",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；3.49.x 记录 DuckDB 迁移、引擎选择与复合键 lookup | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "50a4b82e1852e059dd9c167327b7dc610e26195489eedbd997f60068e1207bb6",
+      "object_ref": "code:Cargo.toml",
+      "path": "Cargo.toml",
+      "change": "update",
+      "source_sha256": "03065a45b6d26f45a4f72e12a98b1f5ac5c37c8d24afc2fd60d1cf438ff79e1a",
+      "existing_entry": "Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 core 与 cli；workspace.package 的版本是发布真相源，当前 3.49.5；二进制的 --version 与 tag 校验都以它为准 | S:-"
+    },
+    {
+      "candidate_id": "f3e1a0ac8de5b38c3719bf0c7216ccaecb35b4d540d2911b8bc8f75fbf6d7c76",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "bafabdd52688926ec56fde368031799fb45d687bdbeb2ce9b1dbf15dedb08b34",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:先讲取舍（base 不可变加 journal），再给命令表；命令表与默认端口被测试校验 | S:文档测试要求 README 列出全部命令，并且出现真实默认端口 127.0.0.1:8787"
+    },
+    {
+      "candidate_id": "8bf73b0aa44b038838add1298092698718db68e8fc7b6628643bcd25ca35d493",
+      "object_ref": "code:crates/cli/Cargo.toml",
+      "path": "crates/cli/Cargo.toml",
+      "change": "update",
+      "source_sha256": "8a608c58c848c5e9e1bf48a639fe5794c45957f622eb5481f80ce1421bb410a5",
+      "existing_entry": "Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Cargo.toml | A:二进制名 `csv-splitter`，入口 src/main.rs；依赖 libc（信号处理）与 flate2（gzip 响应）；启用 core 的 sql feature | S:-"
+    },
+    {
+      "candidate_id": "c93f54517e5c70e887b06aa5df0de9029e814f09a1c67ed452bc46816299b8ee",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "0fdfe468ec29154035d308359df94d036bc55d16a45272377474a32d10edad0d",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；groupby/chart/pivot 接 --engine，view 的有序读在无编辑且大文件时交给 DuckDB；行号一律 1-based | S:新增 flag 必须同时写进 print_command_help，否则文档测试会失败；cfg 判定必须看被依赖 crate 的 feature，不能用 cli 自己的 feature 名"
+    },
+    {
+      "candidate_id": "4bf8881ecdcc01efaa2bd8216f0ecedf1e19f960875ceb9d887cb0dccc6fa0a2",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "4a5d0801427d5bcfcb1b89c83c6dd17852bd7ee2d7a6e6e38cf1eeab515ba161",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:所有响应经 respond 统一附加 CORS、X-Response-Time、ETag 与 Vary；/groupby、/chart、/pivot 接 engine 参数并进缓存键；路径先 canonicalize 再要求落在 root 内 | S:gzip 是另一种表示，ETag 必须带 -gz；202 必须映射 Accepted；临时 CSV 必须用 CSV 读取器解析，lines() 会把带引号换行的单元格裂成多行"
+    },
+    {
+      "candidate_id": "ded04b90f28384f8d6b69a48e808f271fb3c96e4c7ffa749b816a4e2ba2b41b6",
+      "object_ref": "code:crates/cli/src/web/index.html",
+      "path": "crates/cli/src/web/index.html",
+      "change": "update",
+      "source_sha256": "89f53f9057cc235aa129bf79ea632de705d72ea03b0427db347c7d27f7152099",
+      "existing_entry": "index.html[EU7M]: F:内置只读浏览页：用 /rows 拉窗口并把结果渲染成表格 | R:code:crates/cli/src/serve.rs | A:单文件 HTML 与内联 JS，无外部依赖；实际调用 /files、/meta、/rows、/search、/analyze、/groupby 六个端点 | S:-"
+    },
+    {
+      "candidate_id": "4b5e718f042a4438488041ab0ff7132096babe524aad0b103dfdb65c7f7bc643",
+      "object_ref": "code:crates/core/Cargo.toml",
+      "path": "crates/core/Cargo.toml",
+      "change": "update",
+      "source_sha256": "e0788b02eb3d7e696245678ec7e8db4a06d592d7bc8b19347bd126f22818ae0c",
+      "existing_entry": "Cargo.toml[FV7T]: F:core crate 清单：解析、压缩、编码与可选 DuckDB | R:code:crates/cli/Cargo.toml | A:sql 是可选 feature，只有 CLI 打开；依赖 memchr、zip、zstd、bzip2、flate2 等流式库；测试与基准同 crate | S:gate 必须用 `--features sql` 跑一次 core 测试，否则 SQL 与 parquet 路径在默认构建里无人验证"
+    },
+    {
+      "candidate_id": "64992655635887297a3829bebb293bae6484785e3dec4e21f72a412485a78ec1",
+      "object_ref": "code:crates/core/benches/throughput.rs",
+      "path": "crates/core/benches/throughput.rs",
+      "change": "update",
+      "source_sha256": "7ddb2813b8c9e1645e7db5c1069c6020697b53c8c1c14283d207b066e721e452",
+      "existing_entry": "throughput.rs[TP5S]: F:criterion 基准：切分与稀疏索引的吞吐 | R:code:crates/core/tests/performance.rs | A:用 criterion_group 注册、临时目录生成夹具后计时；结果仅供人看，不断言 | S:共享 CI runner 噪音太大，硬阈值放在 tests/performance.rs；在这里加阈值会让构建随机变红"
+    },
+    {
+      "candidate_id": "1d7adc775926316c02cccf20dde47b4e9a2c6390bf4fa3d9804fac12cdf839e6",
+      "object_ref": "code:crates/core/src/concat.rs",
+      "path": "crates/core/src/concat.rs",
+      "change": "update",
+      "source_sha256": "d1b791d0a41a64255b22de7a4f96cdddf2b99179683804044692377082458d99",
+      "existing_entry": "concat.rs[DD7M]: F:把多个 CSV 合成一张表，比较表头而不是假设一致 | R:code:crates/core/src/merge.rs | A:表头不一致默认报错并指出文件与差异列；只有 ignore_header 才显式跳过；逐记录流式复制 | S:静默把金额列接在 id 列下面会产出一份没人察觉的错误数据，所以默认拒绝而不是尽力而为"
+    },
+    {
+      "candidate_id": "54e3dc084638d856948f7063853f9cb361dfc858f34d99a03953a52b0d7691b3",
+      "object_ref": "code:crates/core/src/engine.rs",
+      "path": "crates/core/src/engine.rs",
+      "change": "update",
+      "source_sha256": "428e6a46d7b99e05af91a709b91715d40a7611b0f9856a5a659f2d848515847c",
+      "existing_entry": "engine.rs[EG8L]: F:引擎选择器：native 与 DuckDB 分析路径的统一入口 | R:code:crates/core/src/sql.rs,code:crates/core/src/groupby.rs,code:crates/core/src/chart.rs,code:crates/core/src/pivot.rs | A:Engine 为 Auto/Native/Sql；Auto 按 64 MB 阈值选择；无 sql feature 时 Sql 明确报错；groupby_sql、chart_sql、pivot_sql 都走 sql::query_with 的声明式列采样而非 read_csv_auto | S:read_csv_auto 在 782 列文件上花十秒推类型，而 query_with 采样声明列后只要两秒；SQL 的 GROUP BY 没有行序，所以 chart 类别顺序与原生不同且已在文档说明"
+    },
+    {
+      "candidate_id": "40c0aac24a05bd214386fe78d53a510228a8f053e32ca0351a26cc7bbd95b75e",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "de9e617363d85c67faf9dd679bb81a25e4f35dcb6593c7f620c168f6c8632816",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs | A:运算符为等于、不等于、比较、包含、in 与空值判断；比较类规则预编译为 FilterSet 避免逐行重建；顺序扫描并按编码解码 | S:-"
+    }
+  ]
+}

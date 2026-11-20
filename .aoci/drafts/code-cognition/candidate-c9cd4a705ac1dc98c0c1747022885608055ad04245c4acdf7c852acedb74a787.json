@@ -1,0 +1,123 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "c8817db3de1da53fd87af3db2b81ae436b09104b2cb6036415fef7a76cc1c684",
+  "batch_id": "c9cd4a705ac1dc98c0c1747022885608055ad04245c4acdf7c852acedb74a787",
+  "composite_identity": "05d0ef09e6283c909350eaa733bb16c995f1508bad58fcf811558b3e61975b78",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "64c91011fd502c939eddc7f4821284a4c8bb0c79dd3ed428d40c9cf57e807d84",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "e88d209aed1996b1b97fd2b369b827d9d4dee7b9e934871b71ab995f42aa45b4",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate 的统一入口 | R:code:scripts/smoke.sh | A:gate 等于 fmt、clippy 加拒绝警告、工作区测试与 core 的 sql feature 测试 | S:gate 必须带 sql feature 跑 core 测试，否则 SQL 与 parquet 路径无人验证"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/gate.sh",
+      "path": "scripts/gate.sh",
+      "change": "create",
+      "source_sha256": "2f9aac6795d1c920f793e644ff6b91a133a03d24dfba061579f85df7758621d7"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/install-check.sh",
+      "path": "scripts/install-check.sh",
+      "change": "update",
+      "source_sha256": "9f5577014c441d8aa0f237a16fda080fc9c95557a1c28fb2eb5cf6db95807b79",
+      "existing_entry": "install-check.sh[TO6T]: F:验证三条安装路径：源码构建、cargo install 与发布产物 | R:code:scripts/release-check.sh | A:每条路径各跑版本、demo 与 serve --check | S:cargo install 先离线后联网，冷缓存机器上静默联网会变成假失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package.sh",
+      "path": "scripts/package.sh",
+      "change": "update",
+      "source_sha256": "fe41aa1773f90e79830706d8f7f2759a1a4bbeffeda8abd918622f938f37a2cd",
+      "existing_entry": "package.sh[OV7T]: F:把二进制打成 tar.gz 或 zip 并生成校验和 | R:code:.github/workflows/release.yml | A:产物写 dist；Windows 打 zip 其余 tar.gz；发布工作流调用同一脚本 | S:打包与发布必须共用这一个脚本，否则本地验过的不是真正发布的那份"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/regress.sh",
+      "path": "scripts/regress.sh",
+      "change": "update",
+      "source_sha256": "cdf6e560eee21ed53e7bce976a2e09ad319ce935e9ada412ce569fe9c3ca5a7b",
+      "existing_entry": "regress.sh[TQ7S]: F:回归扫全量：逐条命令跑一遍并把 FAIL 计入退出码 | R:code:scripts/smoke.sh | A:每条命令一行 ok 或 FAIL；含 release-decision 自测与 match 分支查重；在临时工作目录里运行，所以脚本路径必须按仓库根解析成绝对路径 | S:相对调用者工作目录解析会在临时目录里找不到脚本并产生假失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/release-check.sh",
+      "path": "scripts/release-check.sh",
+      "change": "update",
+      "source_sha256": "9a741e238b8f95f62634d49d8fc8fc0316007a9813ccc5bfd814b0cd90289e59",
+      "existing_entry": "release-check.sh[TV6T]: F:在干净目录里解包发布产物并跑用户的最小验证 | R:code:scripts/package.sh | A:校验和比对、版本、demo、serve --check、健康与就绪、spec、rows 与 SIGTERM 停机；支持 --target 检查非本机目标 | S:演示数据目录必须先创建再做自检，顺序反了会让产物自检假失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/smoke.sh",
+      "path": "scripts/smoke.sh",
+      "change": "update",
+      "source_sha256": "aa238e09372868a29c979c0f0a7a59561b5e0be913c76572c7854c818532ea6c",
+      "existing_entry": "smoke.sh[TQ8M]: F:CLI 冒烟：用 demo 数据把主要命令跑一遍 | R:code:crates/core/src/demo.rs | A:覆盖预览、过滤、编辑、切分、合并、聚合、导出与缓存；每步检查退出码与产物 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ca6f28f051faade7c46c4b958df2753e3c97e185c7ce77d6f3c5714a170c18b0",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "e88d209aed1996b1b97fd2b369b827d9d4dee7b9e934871b71ab995f42aa45b4",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate 的统一入口 | R:code:scripts/smoke.sh | A:gate 等于 fmt、clippy 加拒绝警告、工作区测试与 core 的 sql feature 测试 | S:gate 必须带 sql feature 跑 core 测试，否则 SQL 与 parquet 路径无人验证"
+    },
+    {
+      "candidate_id": "2eaba762b7615fd9d951e12f66ea07cad521ac4225c3995cef60010f8b643727",
+      "object_ref": "code:scripts/gate.sh",
+      "path": "scripts/gate.sh",
+      "change": "create",
+      "source_sha256": "2f9aac6795d1c920f793e644ff6b91a133a03d24dfba061579f85df7758621d7"
+    },
+    {
+      "candidate_id": "3894cdaeda58ac78fa3c143551f062d04df5a2ead528d770b8b498071e1f32a2",
+      "object_ref": "code:scripts/install-check.sh",
+      "path": "scripts/install-check.sh",
+      "change": "update",
+      "source_sha256": "9f5577014c441d8aa0f237a16fda080fc9c95557a1c28fb2eb5cf6db95807b79",
+      "existing_entry": "install-check.sh[TO6T]: F:验证三条安装路径：源码构建、cargo install 与发布产物 | R:code:scripts/release-check.sh | A:每条路径各跑版本、demo 与 serve --check | S:cargo install 先离线后联网，冷缓存机器上静默联网会变成假失败"
+    },
+    {
+      "candidate_id": "1027892ffce19832b4a50d07591850d5f2953766c6869721a4b9cc47af436bd2",
+      "object_ref": "code:scripts/package.sh",
+      "path": "scripts/package.sh",
+      "change": "update",
+      "source_sha256": "fe41aa1773f90e79830706d8f7f2759a1a4bbeffeda8abd918622f938f37a2cd",
+      "existing_entry": "package.sh[OV7T]: F:把二进制打成 tar.gz 或 zip 并生成校验和 | R:code:.github/workflows/release.yml | A:产物写 dist；Windows 打 zip 其余 tar.gz；发布工作流调用同一脚本 | S:打包与发布必须共用这一个脚本，否则本地验过的不是真正发布的那份"
+    },
+    {
+      "candidate_id": "280c9c44e32c2d3c2fc9967067285a260943a28f47513e178dd6418b541c7c30",
+      "object_ref": "code:scripts/regress.sh",
+      "path": "scripts/regress.sh",
+      "change": "update",
+      "source_sha256": "cdf6e560eee21ed53e7bce976a2e09ad319ce935e9ada412ce569fe9c3ca5a7b",
+      "existing_entry": "regress.sh[TQ7S]: F:回归扫全量：逐条命令跑一遍并把 FAIL 计入退出码 | R:code:scripts/smoke.sh | A:每条命令一行 ok 或 FAIL；含 release-decision 自测与 match 分支查重；在临时工作目录里运行，所以脚本路径必须按仓库根解析成绝对路径 | S:相对调用者工作目录解析会在临时目录里找不到脚本并产生假失败"
+    },
+    {
+      "candidate_id": "ec9b9b754edf6d51ed9f5c302812eb85ffd7a4127c4b2622ff2efc938df85c5e",
+      "object_ref": "code:scripts/release-check.sh",
+      "path": "scripts/release-check.sh",
+      "change": "update",
+      "source_sha256": "9a741e238b8f95f62634d49d8fc8fc0316007a9813ccc5bfd814b0cd90289e59",
+      "existing_entry": "release-check.sh[TV6T]: F:在干净目录里解包发布产物并跑用户的最小验证 | R:code:scripts/package.sh | A:校验和比对、版本、demo、serve --check、健康与就绪、spec、rows 与 SIGTERM 停机；支持 --target 检查非本机目标 | S:演示数据目录必须先创建再做自检，顺序反了会让产物自检假失败"
+    },
+    {
+      "candidate_id": "f0051c6668d9d9849a6ecb4ef926a1cca81116eae558091b0e6855f8c0cb39d1",
+      "object_ref": "code:scripts/smoke.sh",
+      "path": "scripts/smoke.sh",
+      "change": "update",
+      "source_sha256": "aa238e09372868a29c979c0f0a7a59561b5e0be913c76572c7854c818532ea6c",
+      "existing_entry": "smoke.sh[TQ8M]: F:CLI 冒烟：用 demo 数据把主要命令跑一遍 | R:code:crates/core/src/demo.rs | A:覆盖预览、过滤、编辑、切分、合并、聚合、导出与缓存；每步检查退出码与产物 | S:-"
+    }
+  ]
+}
