@@ -4,3 +4,9 @@
 .DS_Store
 dist/
 staging/
+
+# Generated sidecars: index, journal, columnar cache, aggregate cache
+*.idx
+*.journal
+*.parquet
+*.agg
