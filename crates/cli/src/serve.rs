@@ -663,6 +663,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
             "qualify",
             "maxColumns",
             "maxCells",
+            "apply-edits",
         ],
     ),
     (
@@ -678,6 +679,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
             "maxPoints",
             "sortByValue",
             "desc",
+            "apply-edits",
         ],
     ),
     ("/style", &["path", "rules", "start", "count"]),
@@ -3139,16 +3141,42 @@ fn chart_endpoint(
         Ok(e) => e,
         Err(message) => return bad_request(stream, &message, "engine", "engine=auto|native|sql"),
     };
-    let planned = match engine::resolve(engine, &path) {
+    let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
+    drop(rx);
+    // `apply-edits=1` charts the edited sheet; the temp file lives until the answer is built.
+    let materialised = if params
+        .get("apply-edits")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false)
+    {
+        let read = csv_splitter_core::sheet::ReadOptions {
+            delimiter: delimiter(params),
+        };
+        match csv_splitter_core::sheet::materialize(&path, &read, &tx) {
+            Ok(m) => Some(m),
+            Err(e) => {
+                return respond_json(
+                    stream,
+                    422,
+                    &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                )
+            }
+        }
+    } else {
+        None
+    };
+    let source: std::path::PathBuf = materialised
+        .as_ref()
+        .map(|m| m.path().to_path_buf())
+        .unwrap_or_else(|| path.clone());
+    let planned = match engine::resolve(engine, &source) {
         Ok(e) => e,
         Err(message) => return bad_request(stream, &message, "engine", "engine=auto|native|sql"),
     };
-    let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
-    drop(rx);
     metrics::shared().record_engine(planned.label());
     let result = match planned {
-        engine::Engine::Sql => engine::chart_sql(&path, delimiter(params), &options, &tx),
-        _ => csv_splitter_core::chart::chart(&path, delimiter(params), &options, &tx),
+        engine::Engine::Sql => engine::chart_sql(&source, delimiter(params), &options, &tx),
+        _ => csv_splitter_core::chart::chart(&source, delimiter(params), &options, &tx),
     };
     match result {
         Ok(data) => respond_json(stream, 200, &data.to_json()),
@@ -3296,8 +3324,12 @@ fn pivot_endpoint(
         Ok(e) => e,
         Err(message) => return bad_request(stream, &message, "engine", "engine=auto|native|sql"),
     };
+    let apply_edits = params
+        .get("apply-edits")
+        .map(|v| v == "1" || v == "true")
+        .unwrap_or(false);
     let cache_key = format!(
-        "pivot|{rows}|{}|{values}|{qualify}|{max_columns}|{max_cells}|{engine:?}",
+        "pivot|{rows}|{}|{values}|{qualify}|{max_columns}|{max_cells}|{engine:?}|apply={apply_edits}",
         columns.clone().unwrap_or_default()
     );
 
@@ -3309,12 +3341,23 @@ fn pivot_endpoint(
         ));
         let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
         drop(rx);
-        let planned = engine::resolve(engine, &path).map_err(io::Error::other)?;
+        // `apply-edits=1` pivots the edited sheet; the temp file lives until this closure ends.
+        let materialised = if apply_edits {
+            let read = csv_splitter_core::sheet::ReadOptions { delimiter };
+            Some(csv_splitter_core::sheet::materialize(&path, &read, &tx)?)
+        } else {
+            None
+        };
+        let source: std::path::PathBuf = materialised
+            .as_ref()
+            .map(|m| m.path().to_path_buf())
+            .unwrap_or_else(|| path.clone());
+        let planned = engine::resolve(engine, &source).map_err(io::Error::other)?;
         metrics::shared().record_engine(planned.label());
         if planned == engine::Engine::Sql {
-            engine::pivot_sql(&path, delimiter, &out, &options, &tx)?;
+            engine::pivot_sql(&source, delimiter, &out, &options, &tx)?;
         } else {
-            csv_splitter_core::pivot::pivot(&path, delimiter, &out, &options, &tx)?;
+            csv_splitter_core::pivot::pivot(&source, delimiter, &out, &options, &tx)?;
         }
         let text = std::fs::read_to_string(&out)?;
         std::fs::remove_file(&out).ok();

@@ -5078,10 +5078,10 @@ fn chart_and_style_accept_their_documented_parameters() {
     assert_eq!(code, 200, "/style start/count must be accepted: {body}");
 }
 
-/// `apply-edits=1` groups the edited sheet: a value changed by an edit must move between groups,
-/// which cannot happen if the handler reads the base file.
+/// `apply-edits=1` groups/charts/pivots the edited sheet: a value changed by an edit must move
+/// between groups or categories, which cannot happen if the handler reads the base file.
 #[test]
-fn groupby_can_apply_edits() {
+fn the_aggregations_can_apply_edits() {
     let dir = TempDir::new("groupapply");
     std::fs::write(dir.join("t.csv"), "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
     let server = start(&dir.0.clone());
@@ -5108,5 +5108,27 @@ fn groupby_can_apply_edits() {
     assert!(
         plain.contains(r#""CDMX""#),
         "without apply-edits the base file still has CDMX: {plain}"
+    );
+
+    // chart: the edited row's city is gone from the categories with the flag.
+    let chart = get(
+        &server.addr,
+        "/chart?path=t.csv&x=city&y=amount:sum&apply-edits=1",
+    )
+    .1;
+    assert!(
+        !chart.contains(r#""CDMX""#),
+        "chart must use the edit: {chart}"
+    );
+
+    // pivot: same claim on the row keys.
+    let pivot = get(
+        &server.addr,
+        "/pivot?path=t.csv&rows=city&values=amount:sum&apply-edits=1",
+    )
+    .1;
+    assert!(
+        !pivot.contains(r#""CDMX""#),
+        "pivot must use the edit: {pivot}"
     );
 }

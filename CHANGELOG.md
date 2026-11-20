@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.59.1] — 2026-11-20
+
+### Added
+
+- **/chart and /pivot accept apply-edits too**, completing the trio: each materialises the
+  edited sheet on a cache miss and analyses that. One test now covers groupby, chart and pivot:
+  after an edit moves a row's city, all three answers omit the old city with the flag and keep
+  it without.
+
 ## [3.59.0] — 2026-11-20
 
 ### Added

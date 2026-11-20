@@ -45,10 +45,10 @@
 | `GET /book` | `max` `root` | 工作簿：响应 `root` `sheets` `hidden` `total` `truncated` `unreadable` |
 | `GET /stats` | `path` `sample` | 采样统计：响应 `columns` |
 | `GET /analyze` | `path` `distinctCap` | 全列画像：响应 `columns`（每列 `name` `rows` `ragged` `empty` `nonEmpty` `distinct` `distinctTruncated` `numeric` `mixedTypes` `top`）|
-| `GET /chart` | `path` `x` `y` `series` `type` `sortByValue` `desc` `maxPoints` | 图表数据：响应 `type` `rows` `categories` `series`（每项 `name` `points`）|
+| `GET /chart` | `path` `x` `y` `series` `type` `sortByValue` `desc` `maxPoints` `apply-edits` | 图表数据：响应 `type` `rows` `categories` `series`（每项 `name` `points`）；`apply-edits=1` 先物化编辑后的表 |
 | `GET /groupby` | `path` `by` `agg` `order` `desc` `maxGroups` `apply-edits` `engine` | 分组聚合：响应 `columns` `rows` `engine`（实际执行的引擎）；`engine=auto` 按大小自动选、`engine=sql` 在未编译 sql feature 时返回 400；`apply-edits=1` 先物化编辑后的表再聚合 |
-| `GET /pivot` | `path` `rows` `cols` `values` `qualify` `maxColumns` `maxCells` `engine` | 透视矩阵：响应 `columns` `rows` `rowKeys` |
-| `GET /chart` | `path` `x` `y` `series` `type` `sortByValue` `desc` `maxPoints` | 图表数据 |
+| `GET /pivot` | `path` `rows` `cols` `values` `qualify` `maxColumns` `maxCells` `engine` `apply-edits` | 透视矩阵：响应 `columns` `rows` `rowKeys`；`apply-edits=1` 先物化编辑后的表 |
+| `GET /chart` | `path` `x` `y` `series` `type` `sortByValue` `desc` `maxPoints` `apply-edits` | 图表数据：响应 `type` `rows` `categories` `series`（每项 `name` `points`）；`apply-edits=1` 先物化编辑后的表 |
 | `GET /style` | `path` `rules` `start` `count` | 条件格式：该上色的单元格 |
 | `GET /layout` | `path` `column` `key` `value` | 列宽/显示名/冻结/数字格式（带 `column` 即写入）：响应 `columns` |
 | `GET /edit` | `path` | 待生效的编辑操作 + 逻辑行数；`action` `row` `col` `value` `expect` 属 POST，GET 收到返回 400 并指路 |
