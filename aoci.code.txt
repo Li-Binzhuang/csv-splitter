@@ -4,7 +4,7 @@
 .gitattributes[FV4T]: F:声明所有文本按 LF 检出，保证 AOCI 基线与跨平台检出逐字节一致 | R:- | A:唯一规则 `* text=auto eol=lf`；覆盖 Windows autocrlf 的行尾重写，否则整棵树会被基线和漂移检查判成 stale；二进制由 git 自动探测、不改写 | S:基线按原始字节计算，行尾被平台改写会让全部索引失真，所以这里必须强制 LF
 .gitignore[FV4T]: F:忽略构建产物与本地杂物 | R:- | A:忽略 `/target`、编辑器 swap、`.DS_Store`、发布打包目录 `dist/` 与 `staging/`；刻意不忽略 `.codegraph/` 与 `.aoci/`——本仓要求把两套索引的中间过程一起入库 | S:索引入库是有意的取舍：`.codegraph/codegraph.db` 是可重建的二进制，每次重建都会产生整文件变更，历史体积会稳步增长
 AGENTS.md[SV6S]: F:仓库级 Agent 指令：AOCI 认知层的接入与使用原则 | R:code:aoci.txt,code:aoci.meta.txt,code:aoci.code.txt | A:规定“模型生成、模型读取”闭环，何时读 rules/overview/maintain，以及收尾维护一次的纪律；不重复 CLI 手册 | S:机器事实以 Guide、Schema 与 Validator 为准，本文件不得覆盖；上下文压缩后的 handoff 不得携带索引语义，必须重新完整读取并认证
-CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.1.0 记录 filter/search 分段并行与 11.2 GB 演练；4.2.0 记录整列与条件聚合、可续扫游标页，并把基文件/区间/50 ms/处理能力边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败
+CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录整列与条件聚合、可续扫游标页，并把基文件/区间/50 ms/公式导出逐行重写四条边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败
 Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本与 crate 元数据、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 crates/core 与 crates/cli；workspace.dependencies 以 csvx-core 为本地 crate 键；workspace.package 持有版本 4.2.0、一句话定位、仓库地址与 MIT 许可，是发布真相源；二进制的 --version 与 tag 校验都以它为准 | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
 README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部定位与 Rust 徽章；下载表列四平台产物；快速开始指向 scripts/demo.sh（--big 读路径、--writes 写路径）；公式节说明整列与条件聚合；性能表含 2.1 GB 与 11.2 GB 两档（搜索 11.2 GB 14.8 s，大小写不敏感不再逐格分配） | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；含 scripts/ 的行不参与 flag 校验；搜索约 20–22 GB 触及 30 s 预算
@@ -92,7 +92,7 @@ rows.rs[CP9L]: F:行身份映射与单元格编辑解析 | R:code:crates/core/sr
 ACCEPTANCE.md[SD6M]: F:验收证据：两档性能表、能力矩阵与平台构建矩阵 | R:code:docs/API.md | A:每行写实测数字与对应测试名；未达标项标注而不是四舍五入 | S:文档里引用的输出由测试钉住，改实现不同步更新这里会让 gate 失败
 API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；filter/search 行含 cursor 参数与 next/partial 字段，并说明 scanned/matched 是本页计数；聚合端点接受 engine=auto|native|sql | S:文档测试要求本文列出的每个路由都真实存在，反之亦然；文档字段必须真的出现在响应里
 ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列出模块，共用工具组含 engine 与 scan_parallel，公式引擎组含 mod/functions/state/sheetref/totals | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败
-CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；大文件节写清并行数字、20–22 GB 边界与 next 游标续扫；公式节含整列与条件聚合及其代价 | S:-
+CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；大文件节写并行数字、20–22 GB 边界与 next 游标续扫；公式节除聚合代价外，还写明带公式列的导出是逐行重写（2.1 GB 约 70 s），建议现场演示不要导带公式的大表 | S:-
 CI.md[SO6S]: F:CI 结构说明：单 job 流水线、滚动缓存与失败注解机制 | R:code:.github/workflows/ci.yml | A:解释为什么合并成一个 job、为什么缓存 key 滚动、以及 annotation 如何让红叉可读；测试命令按 csvx-core 与 csvx-cli 包名 | S:-
 DEPLOY.md[SO7M]: F:部署材料：三种安装、配置项、systemd、升级回滚与安全边界 | R:code:deploy/csvx.service | A:明确单机单用户、无鉴权、默认 loopback；配置表含 CSVX_SCAN_THREADS（filter/search 的并行线程数，1 退回顺序）；给出 release-check 与 install-check 两条自检 | S:安全表必须写明没有鉴权与没有多用户隔离，只列防护不列边界会让人误判风险
 GETTING_STARTED.md[SU6M]: F:十分钟上手：用故意不干净的示例走完整链路 | R:code:crates/core/src/demo.rs | A:逐步骤贴真实输出，覆盖带引号换行与多一个逗号的错位行；命令一律以 csvx 开头，示例目录为 csvx-demo/ | S:-

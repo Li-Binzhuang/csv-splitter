@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "220680ca4b9f86dcacd4a1af763f0da4427bb73b789a31f9b968a6cc04d8760d",
+  "batch_id": "2454c671edebdd0a9f7ca5724b688d0b8f5ac8f07628a2edbc72948ade932159",
+  "composite_identity": "57a23d52d41b87f0f6c6ee46f840174bf36f561dddd35546cc965087bce81d18",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "eb638ae7d0946ea0fdfe74620b86dfcec96db2dfb2d5e393f6da628ec0690e2f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "3e90f327223f22d28fed04fb62704e5d997ad107ee74e353069eac4308ef3a90",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.1.0 记录 filter/search 分段并行与 11.2 GB 演练；4.2.0 记录整列与条件聚合、可续扫游标页，并把基文件/区间/50 ms/处理能力边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "5cb12b1b69af4f62dc17b8ede25822465cb5936e6a234ca3ab52a9015ec04dc1",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；大文件节写清并行数字、20–22 GB 边界与 next 游标续扫；公式节含整列与条件聚合及其代价 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "c4a7cc60ad4738cf6a2ff632217dd05c74d74fc606dff4ebd7f892957b04a58a",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "3e90f327223f22d28fed04fb62704e5d997ad107ee74e353069eac4308ef3a90",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.1.0 记录 filter/search 分段并行与 11.2 GB 演练；4.2.0 记录整列与条件聚合、可续扫游标页，并把基文件/区间/50 ms/处理能力边界写成 Known limits | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "0a6d36493dbdf9980e3cee721795c3dbd884eb72385239d4f83e7365bfa1f7f6",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "5cb12b1b69af4f62dc17b8ede25822465cb5936e6a234ca3ab52a9015ec04dc1",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；大文件节写清并行数字、20–22 GB 边界与 next 游标续扫；公式节含整列与条件聚合及其代价 | S:-"
+    }
+  ]
+}
