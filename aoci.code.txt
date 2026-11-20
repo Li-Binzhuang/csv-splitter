@@ -92,7 +92,7 @@ transaction.rs[CP8M]: F:CLI 与 HTTP 共用的 transaction 解析、原子写入
 ===/<repository>/docs/===
 ACCEPTANCE.md[SD6M]: F:验收证据：两档性能表、能力矩阵与平台构建矩阵 | R:code:docs/API.md | A:每行写实测数字与对应测试名；未达标项标注而不是四舍五入 | S:文档里引用的输出由测试钉住，改实现不同步更新这里会让 gate 失败
 API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；filter/search 行含 cursor 与 next/partial；/edit 写入行含 transaction 的 ops 语法（set/delete/insert）与“先整体校验再一次写入”；聚合端点接受 engine=auto|native|sql | S:文档测试要求本文列出的每个路由都真实存在，反之亦然；文档字段必须真的出现在响应里
-ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列出模块，共用工具组含 engine 与 scan_parallel，公式引擎组含 mod/functions/state/sheetref/totals，编辑模型组含 workbook/mod,rows,journal,export,transaction | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败
+ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列模块（公式引擎含 totals，编辑模型含 transaction）；磁盘格式表列全部侧车：journal/redo/blocks/idx/view/agg/parquet，并给每种的失效规则；S 注明模块地图测试会逐个比对 core 模块 | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败；侧车都是生成物，可以删，但删 journal 等于丢编辑
 CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:每条给 CLI 形式、API 形式与限制；公式语法表含整列聚合、条件聚合与同行区间 B2:C2（跨行返回 #VALUE!）；编辑表含原子批量写与整批撤销；大文件节写并行数字与游标续扫 | S:-
 CI.md[SO6S]: F:CI 结构说明：单 job 流水线、滚动缓存与失败注解机制 | R:code:.github/workflows/ci.yml | A:解释为什么合并成一个 job、为什么缓存 key 滚动、以及 annotation 如何让红叉可读；测试命令按 csvx-core 与 csvx-cli 包名 | S:-
 DEPLOY.md[SO7M]: F:部署材料：三种安装、配置项、systemd、升级回滚与安全边界 | R:code:deploy/csvx.service | A:明确单机单用户、无鉴权、默认 loopback；配置表含 CSVX_SCAN_THREADS（filter/search 的并行线程数，1 退回顺序）；给出 release-check 与 install-check 两条自检 | S:安全表必须写明没有鉴权与没有多用户隔离，只列防护不列边界会让人误判风险

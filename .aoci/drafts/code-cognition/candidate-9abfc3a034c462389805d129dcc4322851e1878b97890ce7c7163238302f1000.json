@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "edd20b2b6858e1e45bb226b0cf77369235f251948059550583cda197e828a4e6",
+  "batch_id": "9abfc3a034c462389805d129dcc4322851e1878b97890ce7c7163238302f1000",
+  "composite_identity": "a352ed1d1f04e0ddd58bfb0f22f62981a0ea817a545f238112dee0e53e64ea26",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b1314bcacf9dc428bda7cee2753486292fb92bb4bdaa3f459a8fc9885e7efc9e",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "e54ef085d79693e8543eada72144894f3390ad3472aa88facfe5db0a2db9d104",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列出模块，共用工具组含 engine 与 scan_parallel，公式引擎组含 mod/functions/state/sheetref/totals，编辑模型组含 workbook/mod,rows,journal,export,transaction | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "1f363efacbde155f641c1e15f3a3b5fe27ae1a6f69e1e38ff71d696599a9812c",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "e54ef085d79693e8543eada72144894f3390ad3472aa88facfe5db0a2db9d104",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列出模块，共用工具组含 engine 与 scan_parallel，公式引擎组含 mod/functions/state/sheetref/totals，编辑模型组含 workbook/mod,rows,journal,export,transaction | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败"
+    }
+  ]
+}
