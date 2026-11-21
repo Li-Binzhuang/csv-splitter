@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "16f12caf4770a35592b12bfb470d2b6491d389db75db29e2bf34a7a44de90746",
+  "batch_id": "9f14bdb8007d17ea0625aede7e15da0f55500e3f50a47b1577706d1f18f26cd0",
+  "composite_identity": "6968c0a4cdb16bce7498e1a36b3e650f67043a99f5a67c25fcaf16f69e2c7060",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e86b0cc3e0fecaa9d1f2923a5722614e75ceb84a1988ffc3d8f2d642f348c7ad",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "ae98f5865c0d7a9ea456898204bae4047e3114b47ed1076e6751d7d10a8cc6a5",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部定位与 Rust 徽章；快速开始指向 scripts/demo.sh；公式节说明聚合与 .agg 缓存；性能表为最终二进制实测（2.1 GB 过滤 2.3 s/76 MB，11.2 GB 过滤 13.3 s/79 MB、搜索 13.8 s/78 MB，只保留 limit 条行号） | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；含 scripts/ 的行不参与 flag 校验；性能数字必须来自实测"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "1209198f8eddc9186a22cbc8ec94d6acfd5b1b7880a119d70111fc9d46b043c1",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件（含 averageifs/minifs/maxifs）/空单元格聚合与同行区间；预扫与导出分开写数字；编辑表含原子批量写与整批撤销；大文件节表为最终二进制实测：filter 13.3 s/79 MB，search 13.8 s/78 MB | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "c5baa66d821fa5fe7a28f393a11d6e89cb49cc65a56eb03928d263d37ddfd6b9",
+      "existing_entry": "HANDOVER.md[SU5S]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头给出周一一命令演示的两条命令、预期数字与演示后清理；写明已改名 csvx、版本 4.2.0；AOCI 与 CodeGraph 分工：先问认知层这是什么，再读源码怎么写，改完用 aoci_maintain 收尾 | S:.aoci 运行时产物与 .codegraph 不入库，而 aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "918c79ed565e0f879b8f44ff5d36daacf8f9a6a35db1e83536f33bfb45e30827",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "ae98f5865c0d7a9ea456898204bae4047e3114b47ed1076e6751d7d10a8cc6a5",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部定位与 Rust 徽章；快速开始指向 scripts/demo.sh；公式节说明聚合与 .agg 缓存；性能表为最终二进制实测（2.1 GB 过滤 2.3 s/76 MB，11.2 GB 过滤 13.3 s/79 MB、搜索 13.8 s/78 MB，只保留 limit 条行号） | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；含 scripts/ 的行不参与 flag 校验；性能数字必须来自实测"
+    },
+    {
+      "candidate_id": "c0421ae4ce9528355d226fb57a663eee22f8fe66dde3162ed7b3457362a6d3e7",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "1209198f8eddc9186a22cbc8ec94d6acfd5b1b7880a119d70111fc9d46b043c1",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件（含 averageifs/minifs/maxifs）/空单元格聚合与同行区间；预扫与导出分开写数字；编辑表含原子批量写与整批撤销；大文件节表为最终二进制实测：filter 13.3 s/79 MB，search 13.8 s/78 MB | S:-"
+    },
+    {
+      "candidate_id": "6d467c1b49008aabe357c13ebad091bf10311dd6c034654b6139bf7379176a58",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "c5baa66d821fa5fe7a28f393a11d6e89cb49cc65a56eb03928d263d37ddfd6b9",
+      "existing_entry": "HANDOVER.md[SU5S]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头给出周一一命令演示的两条命令、预期数字与演示后清理；写明已改名 csvx、版本 4.2.0；AOCI 与 CodeGraph 分工：先问认知层这是什么，再读源码怎么写，改完用 aoci_maintain 收尾 | S:.aoci 运行时产物与 .codegraph 不入库，而 aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库"
+    }
+  ]
+}
