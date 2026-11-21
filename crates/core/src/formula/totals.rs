@@ -38,6 +38,8 @@ pub struct ColumnTotals {
     pub filtered: HashMap<(String, String), (f64, u64)>,
     /// Numeric minimum and maximum for each column (Excel's MIN/MAX ignore text).
     pub bounds: HashMap<String, (f64, f64)>,
+    /// Sum of squares per column, so stdev/var need no second pass.
+    pub squares: HashMap<String, f64>,
 }
 
 impl ColumnTotals {
@@ -46,6 +48,9 @@ impl ColumnTotals {
             let slot = self.plain.entry(column).or_insert((0.0, 0));
             slot.0 += sum;
             slot.1 += count;
+        }
+        for (column, square) in other.squares {
+            *self.squares.entry(column).or_insert(0.0) += square;
         }
         for (column, (min, max)) in other.bounds {
             match self.bounds.entry(column) {
@@ -326,7 +331,7 @@ mod cache {
         let (len, mtime) = stamp(base)?;
         let text = std::fs::read_to_string(sidecar(base)).ok()?;
         let mut lines = text.lines();
-        if lines.next()? != "csvx-agg 2" {
+        if lines.next()? != "csvx-agg 3" {
             return None;
         }
         let cached_len: u64 = lines.next()?.strip_prefix("len ")?.parse().ok()?;
@@ -344,6 +349,11 @@ mod cache {
                     let count: u64 = parts.next()?.parse().ok()?;
                     totals.plain.insert(column, (sum, count));
                 }
+                "squares" => {
+                    let column = unesc(parts.next()?);
+                    let square: f64 = parts.next()?.parse().ok()?;
+                    totals.squares.insert(column, square);
+                }
                 "bounds" => {
                     let column = unesc(parts.next()?);
                     let min: f64 = parts.next()?.parse().ok()?;
@@ -360,11 +370,11 @@ mod cache {
                 _ => {}
             }
         }
-        if !needs
-            .aggregates
-            .iter()
-            .all(|c| totals.plain.contains_key(c) && totals.bounds.contains_key(c))
-        {
+        if !needs.aggregates.iter().all(|c| {
+            totals.plain.contains_key(c)
+                && totals.bounds.contains_key(c)
+                && totals.squares.contains_key(c)
+        }) {
             return None;
         }
         if !needs
@@ -381,11 +391,14 @@ mod cache {
         let Some((len, mtime)) = stamp(base) else {
             return;
         };
-        let mut text = String::from("csvx-agg 2\n");
+        let mut text = String::from("csvx-agg 3\n");
         text.push_str(&format!("len {len}\n"));
         text.push_str(&format!("mtime {mtime}\n"));
         for (name, (sum, count)) in &totals.plain {
             text.push_str(&format!("plain {} {sum} {count}\n", esc(name)));
+        }
+        for (name, square) in &totals.squares {
+            text.push_str(&format!("squares {} {square}\n", esc(name)));
         }
         for (name, (min, max)) in &totals.bounds {
             text.push_str(&format!("bounds {} {min} {max}\n", esc(name)));
@@ -519,6 +532,7 @@ fn compute_totals(
                         slot.0 += value;
                         slot.1 += 1;
                     }
+                    *out.squares.entry(name.clone()).or_insert(0.0) += value * value;
                     match out.bounds.entry(name.clone()) {
                         std::collections::hash_map::Entry::Vacant(slot) => {
                             slot.insert((value, value));
@@ -621,6 +635,7 @@ mod tests {
         std::fs::remove_file(cache::sidecar(&path)).ok();
         assert_eq!(totals.plain.get("amount"), Some(&(60.0, 3)));
         assert_eq!(totals.bounds.get("amount"), Some(&(10.0, 30.0)));
+        assert_eq!(totals.squares.get("amount"), Some(&1400.0));
     }
 
     #[test]

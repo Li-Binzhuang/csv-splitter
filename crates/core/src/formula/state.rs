@@ -71,6 +71,8 @@ pub struct RowState {
     filtered: HashMap<(String, String), (f64, u64)>,
     /// Numeric (min, max) per column for `min`/`max`.
     bounds: HashMap<String, (f64, f64)>,
+    /// Sum of squares per column for `stdev`/`var`.
+    squares: HashMap<String, f64>,
 }
 
 impl RowState {
@@ -86,6 +88,7 @@ impl RowState {
             totals: HashMap::new(),
             filtered: HashMap::new(),
             bounds: HashMap::new(),
+            squares: HashMap::new(),
         }
     }
 
@@ -114,6 +117,15 @@ impl RowState {
 
     pub fn bounds(&self, column: &str) -> Option<(f64, f64)> {
         self.bounds.get(column).copied()
+    }
+
+    /// Install the sum-of-squares a pre-pass computed for whole-column stdev/var.
+    pub fn set_squares(&mut self, squares: HashMap<String, f64>) {
+        self.squares = squares;
+    }
+
+    pub fn squares(&self, column: &str) -> Option<f64> {
+        self.squares.get(column).copied()
     }
 
     /// Matching cells for a `countif`/`sumif` pair: (numeric sum, count of matches).

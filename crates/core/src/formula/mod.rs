@@ -14,7 +14,7 @@
 //! factor  := number | column | '(' expr ')' | '-' factor | function '(' args ')'
 //! column  := name | [name]        (brackets for names with spaces)
 //! function:= round(x[, digits]) | roundup(x[, digits]) | rounddown(x[, digits]) | abs(x)
-//!          | min(...) | max(...) | min(range) | max(range) | sign(x) | power(x, y) | exp(x) | ln(x) | log(x[, base])
+//!          | min(...) | max(...) | min(range) | max(range) | stdev(col) | var(col) | sign(x) | power(x, y) | exp(x) | ln(x) | log(x[, base])
 //!          | len(x) | upper(x) | lower(x) | proper(x) | trim(x) | left(x, n) | right(x, n)
 //!          | mid(x, start[, len]) | replace(x, old, new) | substitute(x, old, new)
 //!          | find(needle, x[, start]) | search(needle, x[, start]) | rept(x, n)
@@ -301,7 +301,7 @@ impl Formula {
 fn is_aggregate(name: &str) -> bool {
     matches!(
         name.to_ascii_lowercase().as_str(),
-        "sum" | "average" | "avg" | "count" | "min" | "max"
+        "sum" | "average" | "avg" | "count" | "min" | "max" | "stdev" | "var"
     )
 }
 
@@ -1230,6 +1230,23 @@ mod tests {
             "13"
         );
 
+        // Sample variance of 10 and 3 is 24.5; stdev is its square root.
+        let range_var = Formula::parse("var(B2:C2)").unwrap();
+        assert_eq!(
+            range_var
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "24.5"
+        );
+        let range_sd = Formula::parse("stdev(B2:C2)").unwrap();
+        let rendered = range_sd
+            .eval_at(&cells, &columns, &Refs::default(), 1)
+            .render();
+        assert!(
+            (rendered.parse::<f64>().unwrap() - 24.5_f64.sqrt()).abs() < 0.01,
+            "stdev(range) = {rendered}"
+        );
+
         // A range that needs another row cannot be served while streaming.
         let next = Formula::parse("sum(B3:C3)").unwrap();
         assert_eq!(
@@ -1383,6 +1400,9 @@ mod tests {
         let mut bounds = HashMap::new();
         bounds.insert("amount".to_string(), (1.0, 10.0));
         state.set_bounds(bounds);
+        let mut squares = HashMap::new();
+        squares.insert("amount".to_string(), 3100.0);
+        state.set_squares(squares);
         let mut filtered = HashMap::new();
         filtered.insert(("amount".to_string(), ">5".to_string()), (100.0, 4));
         state.set_filtered(filtered);
@@ -1423,6 +1443,23 @@ mod tests {
                 .eval_stateful(&cells, &columns, &refs, 2, Some(&state))
                 .render(),
             "25"
+        );
+
+        let variance = Formula::parse("var(amount)").unwrap();
+        let rendered = variance
+            .eval_stateful(&cells, &columns, &refs, 2, Some(&state))
+            .render();
+        assert!(
+            (rendered.parse::<f64>().unwrap() - 200.0).abs() < 0.01,
+            "var = {rendered}"
+        );
+        let deviation = Formula::parse("stdev(amount)").unwrap();
+        let rendered = deviation
+            .eval_stateful(&cells, &columns, &refs, 2, Some(&state))
+            .render();
+        assert!(
+            (rendered.parse::<f64>().unwrap() - 200.0_f64.sqrt()).abs() < 0.01,
+            "stdev = {rendered}"
         );
         // No pre-pass (the view path) is an error, never a wrong zero.
         assert_eq!(

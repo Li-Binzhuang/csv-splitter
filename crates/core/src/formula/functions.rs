@@ -79,6 +79,42 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 _ => Value::Number(sum),
             }
         }
+        // Sample standard deviation / variance: Excel's STDEV.S and VAR.S. The pre-pass
+        // kept the sum of squares, so this is O(1) per row.
+        "stdev" | "var" => {
+            let (sum, squares, count) = if let Some(Expr::Range { from, to }) = args.first() {
+                let Some(values) = range_values(from, to, ctx) else {
+                    return Value::Error;
+                };
+                (
+                    values.iter().sum::<f64>(),
+                    values.iter().map(|v| v * v).sum::<f64>(),
+                    values.len() as u64,
+                )
+            } else {
+                let Some(state) = ctx.state else {
+                    return Value::Error;
+                };
+                let Some(Expr::Column(column)) = args.first() else {
+                    return Value::Error;
+                };
+                let Some((sum, count)) = state.totals(column) else {
+                    return Value::Error;
+                };
+                let Some(squares) = state.squares(column) else {
+                    return Value::Error;
+                };
+                (sum, squares, count)
+            };
+            let Some(variance) = sample_variance(sum, squares, count) else {
+                return Value::Error;
+            };
+            Value::Number(if lower == "stdev" {
+                variance.sqrt()
+            } else {
+                variance
+            })
+        }
         // Whole-column aggregates: the pre-pass installed the totals before the loop
         // started, so every row reads the same number in O(1). The argument is a column
         // name taken from the syntax tree, exactly like `lag`.
@@ -676,4 +712,15 @@ fn range_cells<'a>(
         cells.push(ctx.cells.get(name)?.as_str());
     }
     Some(cells)
+}
+
+/// Sample variance from (sum, sum of squares, n); `None` when n < 2.
+fn sample_variance(sum: f64, squares: f64, count: u64) -> Option<f64> {
+    if count < 2 {
+        return None;
+    }
+    let n = count as f64;
+    let variance = (squares - sum * sum / n) / (n - 1.0);
+    // Floating-point cancellation can make an exact variance look slightly negative.
+    Some(variance.max(0.0))
 }

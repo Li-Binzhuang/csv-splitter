@@ -68,10 +68,11 @@
 - **`averageif`**: `averageif(amount, ">5")` and `averageif(B2:C2, ">5")` reuse the
   same matching (sum, count) as `sumif`, so no extra scan; no matching cell is `#VALUE!`
   instead of a division by zero.
-- **`min`/`max`**: `min(amount)` / `max(amount)` read numeric bounds from the same
-  pre-pass as the sums (text and empty cells are ignored), and `min(B2:C2)` /
-  `max(B2:C2)` do the same over a same-row range. The `.agg` cache gained a `bounds`
-  line and its version, so an old cache is recomputed instead of misread.
+- **`min`/`max`/`stdev`/`var`**: `min(amount)` / `max(amount)` read numeric bounds,
+  `stdev(amount)` / `var(amount)` the sample deviation/variance (Excel STDEV.S/VAR.S),
+  all from the same pre-pass as the sums; `min(B2:C2)` etc. do the same over a same-row
+  range. The `.agg` cache gained `bounds` and `squares` lines and was bumped to version
+  3, so an old cache is recomputed instead of misread.
 - **Same-row ranges**: `sum(B2:C2)`, `count(B2:C2)`, `average(B2:C2)` — and the conditional
   `countif(B2:C2, ">5")` / `sumif(B2:C2, ">5")` — read the cells between two columns of
   the current row. A range that needs another row still returns `#VALUE!` because a
