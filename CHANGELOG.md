@@ -81,6 +81,9 @@
 - **`countblank`**: `countblank(amount)` and `countblank(B2:C2)` count empty cells.
   The pre-pass already skipped them for sums, so it now also keeps their count; the
   `.agg` cache gained a `blank` line and moved to version 5.
+- **`averageifs`**: `averageifs(amount, city, "CDMX", qty, "<5")` is the mean of the
+  matching values; it reuses the set's sum and count, so no extra pass (no match is
+  `#VALUE!`).
 - **`minifs` / `maxifs`**: `minifs(amount, city, "CDMX", qty, "<5")` and `maxifs(...)`
   return the smallest/largest value among rows matching every criterion. The set keeps
   sum, count, min and max from the same pass; the `.agg` cache moved to version 6.

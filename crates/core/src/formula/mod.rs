@@ -312,7 +312,7 @@ fn is_aggregate(name: &str) -> bool {
 fn is_multi_filtered(name: &str) -> bool {
     matches!(
         name.to_ascii_lowercase().as_str(),
-        "countifs" | "sumifs" | "minifs" | "maxifs"
+        "countifs" | "sumifs" | "averageifs" | "minifs" | "maxifs"
     )
 }
 
@@ -353,6 +353,7 @@ fn collect_row_needs(expr: &Expr, out: &mut crate::formula::RowNeeds) {
             let lower = name.to_ascii_lowercase();
             let op = match lower.as_str() {
                 "sumifs" => crate::formula::state::SetOp::Sum,
+                "averageifs" => crate::formula::state::SetOp::Average,
                 "minifs" => crate::formula::state::SetOp::Min,
                 "maxifs" => crate::formula::state::SetOp::Max,
                 _ => crate::formula::state::SetOp::Count,
@@ -764,7 +765,7 @@ impl Parser {
                             }
                             if matches!(
                                 name.to_ascii_lowercase().as_str(),
-                                "countifs" | "sumifs" | "minifs" | "maxifs"
+                                "countifs" | "sumifs" | "averageifs" | "minifs" | "maxifs"
                             ) {
                                 for arg in args.iter_mut() {
                                     if let Expr::Text(text) = arg {
@@ -1548,6 +1549,33 @@ mod tests {
                 .eval_stateful(&cells, &columns, &Refs::default(), 2, Some(&state))
                 .render(),
             "100"
+        );
+
+        let averaged = Formula::parse(r#"averageifs(amount, city, "CDMX")"#).unwrap();
+        let needs = averaged.row_needs();
+        assert_eq!(needs.sets[0].op, crate::formula::state::SetOp::Average);
+        let key = criteria_key(
+            crate::formula::state::SetOp::Average,
+            Some("amount"),
+            &needs.sets[0].pairs,
+        );
+        let mut state = RowState::new(needs);
+        let mut sets = HashMap::new();
+        sets.insert(
+            key,
+            crate::formula::state::SetTotals {
+                sum: 40.0,
+                count: 4,
+                min: 0.0,
+                max: 0.0,
+            },
+        );
+        state.set_sets(sets);
+        assert_eq!(
+            averaged
+                .eval_stateful(&cells, &columns, &Refs::default(), 2, Some(&state))
+                .render(),
+            "10"
         );
 
         // minifs/maxifs read the same set, but ask for the bounds instead of the sum.

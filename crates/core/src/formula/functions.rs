@@ -24,12 +24,13 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         // can see the row before it without the file being loaded.
         // Conditional aggregates: the criteria (">1000", "CDMX", "<>10") were compiled
         // and evaluated in the same pre-pass as the plain totals.
-        "countifs" | "sumifs" | "minifs" | "maxifs" => {
+        "countifs" | "sumifs" | "averageifs" | "minifs" | "maxifs" => {
             let Some(state) = ctx.state else {
                 return Value::Error;
             };
             let op = match lower.as_str() {
                 "sumifs" => SetOp::Sum,
+                "averageifs" => SetOp::Average,
                 "minifs" => SetOp::Min,
                 "maxifs" => SetOp::Max,
                 _ => SetOp::Count,
@@ -61,9 +62,12 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             match op {
                 SetOp::Count => Value::Number(values.count as f64),
                 SetOp::Sum => Value::Number(values.sum),
+                SetOp::Average if values.count > 0 => {
+                    Value::Number(values.sum / values.count as f64)
+                }
                 SetOp::Min if values.count > 0 => Value::Number(values.min),
                 SetOp::Max if values.count > 0 => Value::Number(values.max),
-                SetOp::Min | SetOp::Max => Value::Error,
+                SetOp::Average | SetOp::Min | SetOp::Max => Value::Error,
             }
         }
         "countif" | "sumif" | "averageif" => {

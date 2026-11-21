@@ -121,6 +121,7 @@
 条件 countif(col, ">1000") sumif(col, ">1000") averageif(col, ">1000")  ← 同一遍预扫；平均值由 (总和, 计数) 直接相除
 多条件 countifs(col, ">5", other, "x") sumifs(sum_col, col, ">5", other, "x")  ← 全部条件同时满足才计数/求和
      minifs(max_col, ...) maxifs(max_col, ...)  ← 满足全部条件的行里取最小/最大
+     averageifs(val_col, ...)                  ← 满足全部条件的行的平均值（sum/count）
 空单元格 countblank(col) countblank(B2:C2)  ← 空单元格数：整列或同行区间
 列引用 amount   [客户编号]   [city2]   ← 名字含空格**或以数字结尾**时要加方括号
 ```

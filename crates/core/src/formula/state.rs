@@ -13,6 +13,7 @@ pub enum SetOp {
     #[default]
     Count,
     Sum,
+    Average,
     Min,
     Max,
 }
@@ -22,6 +23,7 @@ impl SetOp {
         match self {
             Self::Count => "count",
             Self::Sum => "sum",
+            Self::Average => "avg",
             Self::Min => "min",
             Self::Max => "max",
         }
