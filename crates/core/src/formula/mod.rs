@@ -23,7 +23,7 @@
 //!          | if(cond, a[, b]) | and(...) | or(...) | not(x) | iferror(x, fallback)
 //!          | isblank(x) | isnumber(x) | row | lag(col[, n]) | running_total(col)
 //!          | sum(col) | average(col) | count(col)   (whole-column, constant per row)
-//!          | countif(col, "criteria") | sumif(col, "criteria")
+//!          | countif(col, "criteria") | sumif(col, "criteria") | averageif(col, "criteria")
 //!
 //! `column := name | [name]` — bracket a name that contains spaces **or ends in digits**,
 //! because `city2` bare is an A1-style cell reference (column CITY, row 2).
@@ -307,7 +307,10 @@ fn is_aggregate(name: &str) -> bool {
 
 /// Aggregates that count/sum only the cells matching a criteria string.
 fn is_filtered_aggregate(name: &str) -> bool {
-    matches!(name.to_ascii_lowercase().as_str(), "countif" | "sumif")
+    matches!(
+        name.to_ascii_lowercase().as_str(),
+        "countif" | "sumif" | "averageif"
+    )
 }
 
 /// Walk the expression for `lag(col[, k])` and `running_total(col)`.
@@ -703,7 +706,10 @@ impl Parser {
                             let mut args = args;
                             // `countif`'s criteria is a literal; compile it once here
                             // rather than on every row the formula is evaluated on.
-                            if matches!(name.to_ascii_lowercase().as_str(), "countif" | "sumif") {
+                            if matches!(
+                                name.to_ascii_lowercase().as_str(),
+                                "countif" | "sumif" | "averageif"
+                            ) {
                                 if let Some(Expr::Text(text)) = args.get(1).cloned() {
                                     if let Some(spec) = criteria_value(&text) {
                                         args[1] = Expr::Criteria { text, spec };
@@ -1162,6 +1168,11 @@ mod tests {
             sum.eval_at(&cells, &columns, &Refs::default(), 1).render(),
             "10"
         );
+        let avg = Formula::parse(r#"averageif(B2:C2, ">5")"#).unwrap();
+        assert_eq!(
+            avg.eval_at(&cells, &columns, &Refs::default(), 1).render(),
+            "10"
+        );
         // Text cells are not counted by an ordering criterion.
         let wider = Formula::parse(r#"countif(B2:D2, ">5")"#).unwrap();
         assert_eq!(
@@ -1372,6 +1383,9 @@ mod tests {
         let mut bounds = HashMap::new();
         bounds.insert("amount".to_string(), (1.0, 10.0));
         state.set_bounds(bounds);
+        let mut filtered = HashMap::new();
+        filtered.insert(("amount".to_string(), ">5".to_string()), (100.0, 4));
+        state.set_filtered(filtered);
 
         let cells = row(&[("amount", "10")]);
         let columns = vec!["amount".to_string()];
@@ -1402,6 +1416,13 @@ mod tests {
                 .eval_stateful(&cells, &columns, &refs, 2, Some(&state))
                 .render(),
             "10"
+        );
+        assert_eq!(
+            Formula::parse(r#"averageif(amount, ">5")"#)
+                .unwrap()
+                .eval_stateful(&cells, &columns, &refs, 2, Some(&state))
+                .render(),
+            "25"
         );
         // No pre-pass (the view path) is an error, never a wrong zero.
         assert_eq!(

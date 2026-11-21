@@ -23,7 +23,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         // can see the row before it without the file being loaded.
         // Conditional aggregates: the criteria (">1000", "CDMX", "<>10") were compiled
         // and evaluated in the same pre-pass as the plain totals.
-        "countif" | "sumif" => {
+        "countif" | "sumif" | "averageif" => {
             // A same-row range: count/sum the cells between two columns that match.
             if let (Some(Expr::Range { from, to }), Some(Expr::Criteria { spec, .. })) =
                 (args.first(), args.get(1))
@@ -56,6 +56,8 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 }
                 return match lower.as_str() {
                     "countif" => Value::Number(count as f64),
+                    "averageif" if count == 0 => Value::Error,
+                    "averageif" => Value::Number(sum / count as f64),
                     _ => Value::Number(sum),
                 };
             }
@@ -72,6 +74,8 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             };
             match lower.as_str() {
                 "countif" => Value::Number(count as f64),
+                "averageif" if count == 0 => Value::Error,
+                "averageif" => Value::Number(sum / count as f64),
                 _ => Value::Number(sum),
             }
         }
