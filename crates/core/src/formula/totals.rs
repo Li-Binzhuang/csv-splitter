@@ -40,8 +40,8 @@ pub struct ColumnTotals {
     pub bounds: HashMap<String, (f64, f64)>,
     /// Sum of squares per column, so stdev/var need no second pass.
     pub squares: HashMap<String, f64>,
-    /// Multi-criteria `(sum, count)` keyed by the canonical criteria-set key.
-    pub sets: HashMap<String, (f64, u64)>,
+    /// Multi-criteria results keyed by the canonical criteria-set key.
+    pub sets: HashMap<String, crate::formula::state::SetTotals>,
     /// Empty cells per column for `countblank`.
     pub blanks: HashMap<String, u64>,
 }
@@ -56,10 +56,12 @@ impl ColumnTotals {
         for (column, count) in other.blanks {
             *self.blanks.entry(column).or_insert(0) += count;
         }
-        for (key, (sum, count)) in other.sets {
-            let slot = self.sets.entry(key).or_insert((0.0, 0));
-            slot.0 += sum;
-            slot.1 += count;
+        for (key, values) in other.sets {
+            let slot = self
+                .sets
+                .entry(key)
+                .or_insert_with(crate::formula::state::SetTotals::empty);
+            slot.merge(&values);
         }
         for (column, square) in other.squares {
             *self.squares.entry(column).or_insert(0.0) += square;
@@ -305,12 +307,14 @@ fn accumulate_cells(
             continue;
         }
         if let Some(slot) = out.sets.get_mut(key) {
-            slot.1 += 1;
+            slot.count += 1;
             if let Some(index) = sum_index {
                 if let Some(cell) = cells.get(*index) {
                     if let Ok(value) = cell.trim().parse::<f64>() {
                         if value.is_finite() {
-                            slot.0 += value;
+                            slot.sum += value;
+                            slot.min = slot.min.min(value);
+                            slot.max = slot.max.max(value);
                         }
                     }
                 }
@@ -393,7 +397,7 @@ mod cache {
         let (len, mtime) = stamp(base)?;
         let text = std::fs::read_to_string(sidecar(base)).ok()?;
         let mut lines = text.lines();
-        if lines.next()? != "csvx-agg 5" {
+        if lines.next()? != "csvx-agg 6" {
             return None;
         }
         let cached_len: u64 = lines.next()?.strip_prefix("len ")?.parse().ok()?;
@@ -420,7 +424,17 @@ mod cache {
                     let key = unesc(parts.next()?);
                     let sum: f64 = parts.next()?.parse().ok()?;
                     let count: u64 = parts.next()?.parse().ok()?;
-                    totals.sets.insert(key, (sum, count));
+                    let min: f64 = parts.next()?.parse().ok()?;
+                    let max: f64 = parts.next()?.parse().ok()?;
+                    totals.sets.insert(
+                        key,
+                        crate::formula::state::SetTotals {
+                            sum,
+                            count,
+                            min,
+                            max,
+                        },
+                    );
                 }
                 "squares" => {
                     let column = unesc(parts.next()?);
@@ -459,7 +473,8 @@ mod cache {
         }
         if !needs.sets.iter().all(|set| {
             totals.sets.contains_key(&crate::formula::criteria_key(
-                set.sum.as_deref(),
+                set.op,
+                set.value.as_deref(),
                 &set.pairs,
             ))
         }) {
@@ -472,7 +487,7 @@ mod cache {
         let Some((len, mtime)) = stamp(base) else {
             return;
         };
-        let mut text = String::from("csvx-agg 5\n");
+        let mut text = String::from("csvx-agg 6\n");
         text.push_str(&format!("len {len}\n"));
         text.push_str(&format!("mtime {mtime}\n"));
         for (name, (sum, count)) in &totals.plain {
@@ -481,8 +496,15 @@ mod cache {
         for (column, count) in &totals.blanks {
             text.push_str(&format!("blank {} {count}\n", esc(column)));
         }
-        for (key, (sum, count)) in &totals.sets {
-            text.push_str(&format!("set {} {sum} {count}\n", esc(key)));
+        for (key, values) in &totals.sets {
+            text.push_str(&format!(
+                "set {} {} {} {} {}\n",
+                esc(key),
+                values.sum,
+                values.count,
+                values.min,
+                values.max
+            ));
         }
         for (name, square) in &totals.squares {
             text.push_str(&format!("squares {} {square}\n", esc(name)));
@@ -571,8 +593,8 @@ fn compute_totals(
     }
     let mut sets: Vec<CompiledSet> = Vec::new();
     for set in &needs.sets {
-        let key = crate::formula::criteria_key(set.sum.as_deref(), &set.pairs);
-        let sum_index = match &set.sum {
+        let key = crate::formula::criteria_key(set.op, set.value.as_deref(), &set.pairs);
+        let sum_index = match &set.value {
             Some(column) => Some(
                 resolve_column(column, &headers)
                     .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?,
@@ -587,7 +609,8 @@ fn compute_totals(
                 .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
             compiled.push((index, spec));
         }
-        out.sets.insert(key.clone(), (0.0, 0));
+        out.sets
+            .insert(key.clone(), crate::formula::state::SetTotals::empty());
         sets.push((key, sum_index, compiled));
     }
 
@@ -710,17 +733,27 @@ mod tests {
         let path = write("sets", "city,amount,qty\nA,10,1\nA,20,5\nB,30,2\n");
         let mut needs = needs(&[], &[]);
         needs.sets.push(crate::formula::state::CriteriaSet {
-            sum: Some("amount".to_string()),
+            op: crate::formula::state::SetOp::Sum,
+            value: Some("amount".to_string()),
             pairs: vec![
                 ("city".to_string(), "A".to_string()),
                 ("qty".to_string(), "<5".to_string()),
             ],
         });
         needs.sets.push(crate::formula::state::CriteriaSet {
-            sum: None,
+            op: crate::formula::state::SetOp::Count,
+            value: None,
             pairs: vec![
                 ("city".to_string(), "A".to_string()),
                 ("amount".to_string(), ">15".to_string()),
+            ],
+        });
+        needs.sets.push(crate::formula::state::CriteriaSet {
+            op: crate::formula::state::SetOp::Min,
+            value: Some("amount".to_string()),
+            pairs: vec![
+                ("city".to_string(), "A".to_string()),
+                ("qty".to_string(), "<5".to_string()),
             ],
         });
         let totals = column_totals(&path, Delimiter::Comma, QuoteStyle::Rfc4180, &needs).unwrap();
@@ -728,21 +761,33 @@ mod tests {
         std::fs::remove_file(cache::sidecar(&path)).ok();
 
         let sum_key = crate::formula::criteria_key(
+            crate::formula::state::SetOp::Sum,
             Some("amount"),
             &[
                 ("city".to_string(), "A".to_string()),
                 ("qty".to_string(), "<5".to_string()),
             ],
         );
-        assert_eq!(totals.sets.get(&sum_key), Some(&(10.0, 1)));
+        assert_eq!(totals.sets.get(&sum_key).map(|s| s.sum), Some(10.0));
         let count_key = crate::formula::criteria_key(
+            crate::formula::state::SetOp::Count,
             None,
             &[
                 ("city".to_string(), "A".to_string()),
                 ("amount".to_string(), ">15".to_string()),
             ],
         );
-        assert_eq!(totals.sets.get(&count_key), Some(&(0.0, 1)));
+        assert_eq!(totals.sets.get(&count_key).map(|s| s.count), Some(1));
+        let min_key = crate::formula::criteria_key(
+            crate::formula::state::SetOp::Min,
+            Some("amount"),
+            &[
+                ("city".to_string(), "A".to_string()),
+                ("qty".to_string(), "<5".to_string()),
+            ],
+        );
+        let values = totals.sets.get(&min_key).unwrap();
+        assert_eq!((values.min, values.max, values.count), (10.0, 10.0, 1));
     }
 
     /// The slice fast path must agree with the full parser on quoted cells.

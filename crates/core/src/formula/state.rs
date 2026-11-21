@@ -7,11 +7,61 @@
 
 use std::collections::{HashMap, VecDeque};
 
-/// A multi-criteria request: `countifs(...)` has no sum column; `sumifs(...)` sums one.
+/// Which number a multi-criteria request wants.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum SetOp {
+    #[default]
+    Count,
+    Sum,
+    Min,
+    Max,
+}
+
+impl SetOp {
+    pub fn tag(&self) -> &'static str {
+        match self {
+            Self::Count => "count",
+            Self::Sum => "sum",
+            Self::Min => "min",
+            Self::Max => "max",
+        }
+    }
+}
+
+/// The four numbers a multi-criteria pre-pass keeps for one set.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct SetTotals {
+    pub sum: f64,
+    pub count: u64,
+    pub min: f64,
+    pub max: f64,
+}
+
+impl SetTotals {
+    /// A set that has seen no matching row yet: min/max must not start at 0.
+    pub fn empty() -> Self {
+        Self {
+            sum: 0.0,
+            count: 0,
+            min: f64::INFINITY,
+            max: f64::NEG_INFINITY,
+        }
+    }
+
+    pub fn merge(&mut self, other: &Self) {
+        self.sum += other.sum;
+        self.count += other.count;
+        self.min = self.min.min(other.min);
+        self.max = self.max.max(other.max);
+    }
+}
+
+/// A multi-criteria request: which aggregated value, on which column, under which pairs.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct CriteriaSet {
-    /// Column summed by `sumifs`; `None` for `countifs`.
-    pub sum: Option<String>,
+    pub op: SetOp,
+    /// Column aggregated by sum/min/max; `None` for `countifs`.
+    pub value: Option<String>,
     /// `(column, criteria)` pairs that must all match.
     pub pairs: Vec<(String, String)>,
 }
@@ -91,7 +141,7 @@ pub struct RowState {
     /// Sum of squares per column for `stdev`/`var`.
     squares: HashMap<String, f64>,
     /// Multi-criteria results keyed by their canonical key.
-    sets: HashMap<String, (f64, u64)>,
+    sets: HashMap<String, SetTotals>,
     /// Empty cells per column for `countblank`.
     blanks: HashMap<String, u64>,
 }
@@ -151,11 +201,11 @@ impl RowState {
         self.squares.get(column).copied()
     }
 
-    pub fn set_sets(&mut self, sets: HashMap<String, (f64, u64)>) {
+    pub fn set_sets(&mut self, sets: HashMap<String, SetTotals>) {
         self.sets = sets;
     }
 
-    pub fn sets(&self, key: &str) -> Option<(f64, u64)> {
+    pub fn sets(&self, key: &str) -> Option<SetTotals> {
         self.sets.get(key).copied()
     }
 

@@ -310,7 +310,10 @@ fn is_aggregate(name: &str) -> bool {
 
 /// Multi-criteria aggregates: `countifs`, `sumifs`.
 fn is_multi_filtered(name: &str) -> bool {
-    matches!(name.to_ascii_lowercase().as_str(), "countifs" | "sumifs")
+    matches!(
+        name.to_ascii_lowercase().as_str(),
+        "countifs" | "sumifs" | "minifs" | "maxifs"
+    )
 }
 
 /// Aggregates that count/sum only the cells matching a criteria string.
@@ -347,14 +350,20 @@ fn collect_row_needs(expr: &Expr, out: &mut crate::formula::RowNeeds) {
             }
         }
         Expr::Call(name, args) if is_multi_filtered(name) => {
-            let is_sum = name.eq_ignore_ascii_case("sumifs");
-            let (sum, start) = if is_sum {
+            let lower = name.to_ascii_lowercase();
+            let op = match lower.as_str() {
+                "sumifs" => crate::formula::state::SetOp::Sum,
+                "minifs" => crate::formula::state::SetOp::Min,
+                "maxifs" => crate::formula::state::SetOp::Max,
+                _ => crate::formula::state::SetOp::Count,
+            };
+            let (value, start) = if matches!(op, crate::formula::state::SetOp::Count) {
+                (None, 0usize)
+            } else {
                 match args.first() {
                     Some(Expr::Column(column)) => (Some(column.clone()), 1usize),
                     _ => (None, 0usize),
                 }
-            } else {
-                (None, 0usize)
             };
             let mut pairs = Vec::new();
             let mut i = start;
@@ -370,7 +379,7 @@ fn collect_row_needs(expr: &Expr, out: &mut crate::formula::RowNeeds) {
             }
             if !pairs.is_empty() {
                 out.sets
-                    .push(crate::formula::state::CriteriaSet { sum, pairs });
+                    .push(crate::formula::state::CriteriaSet { op, value, pairs });
             }
         }
         Expr::Call(name, args) if is_filtered_aggregate(name) => {
@@ -753,7 +762,10 @@ impl Parser {
                                     }
                                 }
                             }
-                            if matches!(name.to_ascii_lowercase().as_str(), "countifs" | "sumifs") {
+                            if matches!(
+                                name.to_ascii_lowercase().as_str(),
+                                "countifs" | "sumifs" | "minifs" | "maxifs"
+                            ) {
                                 for arg in args.iter_mut() {
                                     if let Expr::Text(text) = arg {
                                         if let Some(spec) = criteria_value(text) {
@@ -812,9 +824,15 @@ pub(crate) const FIRST_DATA_ROW: i64 = 2;
 /// `[A1]` bracket form still reaches it.
 /// Canonical key for a multi-criteria request, shared by the parser, the pre-pass and
 /// the evaluator so a `countifs` call finds the numbers computed for it.
-pub(crate) fn criteria_key(sum: Option<&str>, pairs: &[(String, String)]) -> String {
+pub(crate) fn criteria_key(
+    op: crate::formula::state::SetOp,
+    value: Option<&str>,
+    pairs: &[(String, String)],
+) -> String {
     let mut key = String::new();
-    key.push_str(sum.unwrap_or("-"));
+    key.push_str(op.tag());
+    key.push('\u{3}');
+    key.push_str(value.unwrap_or("-"));
     for (column, criteria) in pairs {
         key.push('\u{1}');
         key.push_str(column);
@@ -1468,7 +1486,11 @@ mod tests {
     fn multi_criteria_aggregates_read_the_prepass_sets() {
         let formula = Formula::parse(r#"countifs(amount, ">5", qty, "<3")"#).unwrap();
         let needs = formula.row_needs();
-        let key = criteria_key(None, &needs.sets[0].pairs);
+        let key = criteria_key(
+            crate::formula::state::SetOp::Count,
+            None,
+            &needs.sets[0].pairs,
+        );
         assert_eq!(
             needs.sets[0].pairs,
             vec![
@@ -1479,7 +1501,15 @@ mod tests {
 
         let mut state = RowState::new(needs.clone());
         let mut sets = HashMap::new();
-        sets.insert(key, (0.0, 2));
+        sets.insert(
+            key,
+            crate::formula::state::SetTotals {
+                sum: 0.0,
+                count: 2,
+                min: 0.0,
+                max: 0.0,
+            },
+        );
         state.set_sets(sets);
         let cells = row(&[("amount", "10"), ("qty", "1")]);
         let columns = vec!["amount".to_string(), "qty".to_string()];
@@ -1492,11 +1522,24 @@ mod tests {
 
         let summed = Formula::parse(r#"sumifs(amount, city, "CDMX")"#).unwrap();
         let needs = summed.row_needs();
-        assert_eq!(needs.sets[0].sum.as_deref(), Some("amount"));
-        let key = criteria_key(Some("amount"), &needs.sets[0].pairs);
+        assert_eq!(needs.sets[0].value.as_deref(), Some("amount"));
+        assert_eq!(needs.sets[0].op, crate::formula::state::SetOp::Sum);
+        let key = criteria_key(
+            crate::formula::state::SetOp::Sum,
+            Some("amount"),
+            &needs.sets[0].pairs,
+        );
         let mut state = RowState::new(needs);
         let mut sets = HashMap::new();
-        sets.insert(key, (100.0, 4));
+        sets.insert(
+            key,
+            crate::formula::state::SetTotals {
+                sum: 100.0,
+                count: 4,
+                min: 0.0,
+                max: 0.0,
+            },
+        );
         state.set_sets(sets);
         let cells = row(&[("amount", "10"), ("city", "CDMX")]);
         let columns = vec!["amount".to_string(), "city".to_string()];
@@ -1505,6 +1548,58 @@ mod tests {
                 .eval_stateful(&cells, &columns, &Refs::default(), 2, Some(&state))
                 .render(),
             "100"
+        );
+
+        // minifs/maxifs read the same set, but ask for the bounds instead of the sum.
+        let lower = Formula::parse(r#"minifs(amount, city, "CDMX")"#).unwrap();
+        let needs = lower.row_needs();
+        let key = criteria_key(
+            crate::formula::state::SetOp::Min,
+            Some("amount"),
+            &needs.sets[0].pairs,
+        );
+        let mut state = RowState::new(needs);
+        let mut sets = HashMap::new();
+        sets.insert(
+            key,
+            crate::formula::state::SetTotals {
+                sum: 40.0,
+                count: 4,
+                min: 2.0,
+                max: 20.0,
+            },
+        );
+        state.set_sets(sets);
+        assert_eq!(
+            lower
+                .eval_stateful(&cells, &columns, &Refs::default(), 2, Some(&state))
+                .render(),
+            "2"
+        );
+        let upper = Formula::parse(r#"maxifs(amount, city, "CDMX")"#).unwrap();
+        let needs = upper.row_needs();
+        let key = criteria_key(
+            crate::formula::state::SetOp::Max,
+            Some("amount"),
+            &needs.sets[0].pairs,
+        );
+        let mut state = RowState::new(needs);
+        let mut sets = HashMap::new();
+        sets.insert(
+            key,
+            crate::formula::state::SetTotals {
+                sum: 40.0,
+                count: 4,
+                min: 2.0,
+                max: 20.0,
+            },
+        );
+        state.set_sets(sets);
+        assert_eq!(
+            upper
+                .eval_stateful(&cells, &columns, &Refs::default(), 2, Some(&state))
+                .render(),
+            "20"
         );
     }
 

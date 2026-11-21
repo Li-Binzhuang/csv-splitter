@@ -14,6 +14,7 @@
 //!   arguments is a parse-time error where possible, but reported the same way at
 //!   evaluation time.
 
+use super::state::SetOp;
 use super::{eval, truthy, Ctx, Expr, Value};
 
 pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
@@ -23,18 +24,23 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         // can see the row before it without the file being loaded.
         // Conditional aggregates: the criteria (">1000", "CDMX", "<>10") were compiled
         // and evaluated in the same pre-pass as the plain totals.
-        "countifs" | "sumifs" => {
+        "countifs" | "sumifs" | "minifs" | "maxifs" => {
             let Some(state) = ctx.state else {
                 return Value::Error;
             };
-            let is_sum = lower == "sumifs";
-            let (sum, start) = if is_sum {
+            let op = match lower.as_str() {
+                "sumifs" => SetOp::Sum,
+                "minifs" => SetOp::Min,
+                "maxifs" => SetOp::Max,
+                _ => SetOp::Count,
+            };
+            let (value, start) = if matches!(op, SetOp::Count) {
+                (None, 0usize)
+            } else {
                 match args.first() {
                     Some(Expr::Column(column)) => (Some(column.clone()), 1usize),
                     _ => return Value::Error,
                 }
-            } else {
-                (None, 0usize)
             };
             let mut pairs = Vec::new();
             let mut i = start;
@@ -48,14 +54,16 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                     return Value::Error;
                 }
             }
-            let key = super::criteria_key(sum.as_deref(), &pairs);
-            let Some((sum, count)) = state.sets(&key) else {
+            let key = super::criteria_key(op, value.as_deref(), &pairs);
+            let Some(values) = state.sets(&key) else {
                 return Value::Error;
             };
-            if is_sum {
-                Value::Number(sum)
-            } else {
-                Value::Number(count as f64)
+            match op {
+                SetOp::Count => Value::Number(values.count as f64),
+                SetOp::Sum => Value::Number(values.sum),
+                SetOp::Min if values.count > 0 => Value::Number(values.min),
+                SetOp::Max if values.count > 0 => Value::Number(values.max),
+                SetOp::Min | SetOp::Max => Value::Error,
             }
         }
         "countif" | "sumif" | "averageif" => {
