@@ -78,6 +78,9 @@
   pre-pass and report how many rows match all of them (and their sum). The cache gained
   a `set` line and moved to version 4; a range argument is `#VALUE!` rather than
   silently counting this row.
+- **`countblank`**: `countblank(amount)` and `countblank(B2:C2)` count empty cells.
+  The pre-pass already skipped them for sums, so it now also keeps their count; the
+  `.agg` cache gained a `blank` line and moved to version 5.
 - **Same-row ranges**: `sum(B2:C2)`, `count(B2:C2)`, `average(B2:C2)` — and the conditional
   `countif(B2:C2, ">5")` / `sumif(B2:C2, ">5")` — read the cells between two columns of
   the current row. A range that needs another row still returns `#VALUE!` because a

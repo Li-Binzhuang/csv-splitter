@@ -42,6 +42,8 @@ pub struct ColumnTotals {
     pub squares: HashMap<String, f64>,
     /// Multi-criteria `(sum, count)` keyed by the canonical criteria-set key.
     pub sets: HashMap<String, (f64, u64)>,
+    /// Empty cells per column for `countblank`.
+    pub blanks: HashMap<String, u64>,
 }
 
 impl ColumnTotals {
@@ -50,6 +52,9 @@ impl ColumnTotals {
             let slot = self.plain.entry(column).or_insert((0.0, 0));
             slot.0 += sum;
             slot.1 += count;
+        }
+        for (column, count) in other.blanks {
+            *self.blanks.entry(column).or_insert(0) += count;
         }
         for (key, (sum, count)) in other.sets {
             let slot = self.sets.entry(key).or_insert((0.0, 0));
@@ -232,6 +237,9 @@ fn accumulate_cells(
         };
         let trimmed = cell.trim();
         if trimmed.is_empty() {
+            if let Some(count) = out.blanks.get_mut(name) {
+                *count += 1;
+            }
             continue;
         }
         if let Ok(value) = trimmed.parse::<f64>() {
@@ -385,7 +393,7 @@ mod cache {
         let (len, mtime) = stamp(base)?;
         let text = std::fs::read_to_string(sidecar(base)).ok()?;
         let mut lines = text.lines();
-        if lines.next()? != "csvx-agg 4" {
+        if lines.next()? != "csvx-agg 5" {
             return None;
         }
         let cached_len: u64 = lines.next()?.strip_prefix("len ")?.parse().ok()?;
@@ -402,6 +410,11 @@ mod cache {
                     let sum: f64 = parts.next()?.parse().ok()?;
                     let count: u64 = parts.next()?.parse().ok()?;
                     totals.plain.insert(column, (sum, count));
+                }
+                "blank" => {
+                    let column = unesc(parts.next()?);
+                    let count: u64 = parts.next()?.parse().ok()?;
+                    totals.blanks.insert(column, count);
                 }
                 "set" => {
                     let key = unesc(parts.next()?);
@@ -459,11 +472,14 @@ mod cache {
         let Some((len, mtime)) = stamp(base) else {
             return;
         };
-        let mut text = String::from("csvx-agg 4\n");
+        let mut text = String::from("csvx-agg 5\n");
         text.push_str(&format!("len {len}\n"));
         text.push_str(&format!("mtime {mtime}\n"));
         for (name, (sum, count)) in &totals.plain {
             text.push_str(&format!("plain {} {sum} {count}\n", esc(name)));
+        }
+        for (column, count) in &totals.blanks {
+            text.push_str(&format!("blank {} {count}\n", esc(column)));
         }
         for (key, (sum, count)) in &totals.sets {
             text.push_str(&format!("set {} {sum} {count}\n", esc(key)));
@@ -551,6 +567,7 @@ fn compute_totals(
     }
     for (name, _) in &plain {
         out.plain.insert(name.clone(), (0.0, 0));
+        out.blanks.insert(name.clone(), 0);
     }
     let mut sets: Vec<CompiledSet> = Vec::new();
     for set in &needs.sets {
@@ -659,6 +676,32 @@ mod tests {
         assert_eq!(third.plain.get("amount"), Some(&(60.0, 3)));
         std::fs::remove_file(&path).ok();
         std::fs::remove_file(cache).ok();
+    }
+
+    /// Empty cells are counted without being summed, and the cache keeps the count.
+    #[test]
+    fn blank_cells_are_counted_and_cached() {
+        let path = write("blanks", "city,amount\nA,10\nB,\nC,20\n");
+        let totals = column_totals(
+            &path,
+            Delimiter::Comma,
+            QuoteStyle::Rfc4180,
+            &needs(&["amount"], &[]),
+        )
+        .unwrap();
+        assert_eq!(totals.plain.get("amount"), Some(&(30.0, 2)));
+        assert_eq!(totals.blanks.get("amount"), Some(&1));
+        // The second call answers from the sidecar, so the cache format carries it too.
+        let cached = column_totals(
+            &path,
+            Delimiter::Comma,
+            QuoteStyle::Rfc4180,
+            &needs(&["amount"], &[]),
+        )
+        .unwrap();
+        assert_eq!(cached.blanks.get("amount"), Some(&1));
+        std::fs::remove_file(&path).ok();
+        std::fs::remove_file(cache::sidecar(&path)).ok();
     }
 
     /// Multi-criteria requests are answered in the same pass, not by a second scan.

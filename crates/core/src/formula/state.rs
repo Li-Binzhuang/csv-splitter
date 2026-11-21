@@ -92,6 +92,8 @@ pub struct RowState {
     squares: HashMap<String, f64>,
     /// Multi-criteria results keyed by their canonical key.
     sets: HashMap<String, (f64, u64)>,
+    /// Empty cells per column for `countblank`.
+    blanks: HashMap<String, u64>,
 }
 
 impl RowState {
@@ -109,6 +111,7 @@ impl RowState {
             bounds: HashMap::new(),
             squares: HashMap::new(),
             sets: HashMap::new(),
+            blanks: HashMap::new(),
         }
     }
 
@@ -154,6 +157,14 @@ impl RowState {
 
     pub fn sets(&self, key: &str) -> Option<(f64, u64)> {
         self.sets.get(key).copied()
+    }
+
+    pub fn set_blanks(&mut self, blanks: HashMap<String, u64>) {
+        self.blanks = blanks;
+    }
+
+    pub fn blanks(&self, column: &str) -> Option<u64> {
+        self.blanks.get(column).copied()
     }
 
     /// Matching cells for a `countif`/`sumif` pair: (numeric sum, count of matches).

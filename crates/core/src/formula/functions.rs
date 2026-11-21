@@ -114,6 +114,26 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 _ => Value::Number(sum),
             }
         }
+        // COUNTBLANK: empty cells in a column or a same-row range.
+        "countblank" => {
+            if let Some(Expr::Range { from, to }) = args.first() {
+                let Some(cells) = range_cells(from, to, ctx) else {
+                    return Value::Error;
+                };
+                let blank = cells.iter().filter(|c| c.trim().is_empty()).count() as u64;
+                return Value::Number(blank as f64);
+            }
+            let Some(state) = ctx.state else {
+                return Value::Error;
+            };
+            let Some(Expr::Column(column)) = args.first() else {
+                return Value::Error;
+            };
+            let Some(blank) = state.blanks(column) else {
+                return Value::Error;
+            };
+            Value::Number(blank as f64)
+        }
         // Sample standard deviation / variance: Excel's STDEV.S and VAR.S. The pre-pass
         // kept the sum of squares, so this is O(1) per row.
         "stdev" | "var" => {

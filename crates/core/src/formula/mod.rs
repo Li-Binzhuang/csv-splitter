@@ -14,7 +14,7 @@
 //! factor  := number | column | '(' expr ')' | '-' factor | function '(' args ')'
 //! column  := name | [name]        (brackets for names with spaces)
 //! function:= round(x[, digits]) | roundup(x[, digits]) | rounddown(x[, digits]) | abs(x)
-//!          | min(...) | max(...) | min(range) | max(range) | stdev(col) | var(col) | sign(x) | power(x, y) | exp(x) | ln(x) | log(x[, base])
+//!          | min(...) | max(...) | min(range) | max(range) | stdev(col) | var(col) | countblank(col) | sign(x) | power(x, y) | exp(x) | ln(x) | log(x[, base])
 //!          | len(x) | upper(x) | lower(x) | proper(x) | trim(x) | left(x, n) | right(x, n)
 //!          | mid(x, start[, len]) | replace(x, old, new) | substitute(x, old, new)
 //!          | find(needle, x[, start]) | search(needle, x[, start]) | rept(x, n)
@@ -304,7 +304,7 @@ impl Formula {
 fn is_aggregate(name: &str) -> bool {
     matches!(
         name.to_ascii_lowercase().as_str(),
-        "sum" | "average" | "avg" | "count" | "min" | "max" | "stdev" | "var"
+        "sum" | "average" | "avg" | "count" | "min" | "max" | "stdev" | "var" | "countblank"
     )
 }
 
@@ -1206,6 +1206,22 @@ mod tests {
     }
 
     #[test]
+    fn countblank_reads_a_same_row_range() {
+        let columns = vec!["id".to_string(), "amount".to_string(), "qty".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("id".to_string(), "7".to_string());
+        cells.insert("amount".to_string(), "10".to_string());
+        cells.insert("qty".to_string(), String::new());
+        let blank = Formula::parse("countblank(B2:C2)").unwrap();
+        assert_eq!(
+            blank
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "1"
+        );
+    }
+
+    #[test]
     fn countif_and_sumif_read_a_same_row_range() {
         let columns = vec![
             "id".to_string(),
@@ -1507,6 +1523,9 @@ mod tests {
         let mut bounds = HashMap::new();
         bounds.insert("amount".to_string(), (1.0, 10.0));
         state.set_bounds(bounds);
+        let mut blanks = HashMap::new();
+        blanks.insert("amount".to_string(), 0);
+        state.set_blanks(blanks);
         let mut squares = HashMap::new();
         squares.insert("amount".to_string(), 3100.0);
         state.set_squares(squares);
@@ -1543,6 +1562,13 @@ mod tests {
                 .eval_stateful(&cells, &columns, &refs, 2, Some(&state))
                 .render(),
             "10"
+        );
+        assert_eq!(
+            Formula::parse("countblank(amount)")
+                .unwrap()
+                .eval_stateful(&cells, &columns, &refs, 2, Some(&state))
+                .render(),
+            "0"
         );
         assert_eq!(
             Formula::parse(r#"averageif(amount, ">5")"#)
