@@ -7,7 +7,7 @@ AGENTS.md[SV6S]: F:仓库级 Agent 指令：AOCI 认知层的接入与使用原�
 CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（min/max/stdev/var、countifs/sumifs，版本 4）、averageif、同行/条件区间、字节复制快路、原子 transaction 与整批撤销、导出丢行修复 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败
 Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本与 crate 元数据、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 crates/core 与 crates/cli；workspace.dependencies 以 csvx-core 为本地 crate 键；workspace.package 持有版本 4.2.0、一句话定位、仓库地址与 MIT 许可，是发布真相源；二进制的 --version 与 tag 校验都以它为准 | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
-README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部定位与 Rust 徽章；快速开始指向 scripts/demo.sh；公式节说明聚合、字节复制与 .agg 缓存；性能表为最新实测（2.1 GB 过滤 2.6 s/77 MB，11.2 GB 过滤 13.9 s/79 MB，只保留 limit 条行号） | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；含 scripts/ 的行不参与 flag 校验；性能数字必须来自实测
+README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部定位与 Rust 徽章；快速开始指向 scripts/demo.sh；公式节说明聚合与 .agg 缓存；性能表为最终二进制实测（2.1 GB 过滤 2.3 s/76 MB，11.2 GB 过滤 13.3 s/79 MB、搜索 13.8 s/78 MB，只保留 limit 条行号） | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；含 scripts/ 的行不参与 flag 校验；性能数字必须来自实测
 
 ===/<repository>/.github/workflows/===
 ci.yml[OV7S]: F:主 CI：格式化、引擎与 CLI 测试、性能守卫、clippy 工作区、失败注解 | R:code:scripts/smoke.sh,code:scripts/regress.sh,code:scripts/backend-smoke.sh,code:scripts/release-decision.sh | A:单 job 串联五个步骤；测试命令按新名字 cargo test -p csvx-core -p csvx-cli；每步 tee 日志，失败时把失败测试名与首条断言转成公开 annotation 并上传 artifact；有路径过滤的 Windows 检查在独立工作流 | S:曾用两个 job 加 needs 串联，缓存配额超限时出现一个 job 跳过、红叉无信息的不可读结果，因此刻意合并成一个 job
@@ -93,7 +93,7 @@ transaction.rs[CP8M]: F:CLI 与 HTTP 共用的 transaction 解析、原子写入
 ACCEPTANCE.md[SD6M]: F:验收证据：两档性能表、能力矩阵与平台构建矩阵 | R:code:docs/API.md | A:每行写实测数字与对应测试名；未达标项标注而不是四舍五入 | S:文档里引用的输出由测试钉住，改实现不同步更新这里会让 gate 失败
 API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；filter/search 行含 cursor 与 next/partial；/edit 写入行含 transaction 的 ops 语法（set/delete/insert）与“先整体校验再一次写入”；聚合端点接受 engine=auto|native|sql | S:文档测试要求本文列出的每个路由都真实存在，反之亦然；文档字段必须真的出现在响应里
 ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列模块（公式引擎含 totals，编辑模型含 transaction）；磁盘格式表列全部侧车：journal/redo/blocks/idx/view/agg/parquet，并给每种的失效规则；S 注明模块地图测试会逐个比对 core 模块 | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败；侧车都是生成物，可以删，但删 journal 等于丢编辑
-CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列 sum/average/count/min/max/stdev/var、条件 countif/sumif/averageif、同行与条件区间；预扫与导出分开写数字；编辑表含原子批量写与整批撤销；大文件节表为 filter 13.9 s/79 MB | S:-
+CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件聚合与区间；预扫与导出分开写数字；编辑表含原子批量写与整批撤销；大文件节表为最终二进制实测：filter 13.3 s/79 MB，search 13.8 s/78 MB | S:-
 CI.md[SO6S]: F:CI 结构说明：单 job 流水线、滚动缓存与失败注解机制 | R:code:.github/workflows/ci.yml | A:解释为什么合并成一个 job、为什么缓存 key 滚动、以及 annotation 如何让红叉可读；测试命令按 csvx-core 与 csvx-cli 包名 | S:-
 DEPLOY.md[SO7M]: F:部署材料：三种安装、配置项、systemd、升级回滚与安全边界 | R:code:deploy/csvx.service | A:明确单机单用户、无鉴权、默认 loopback；配置表含 CSVX_SCAN_THREADS（filter/search 的并行线程数，1 退回顺序）；给出 release-check 与 install-check 两条自检 | S:安全表必须写明没有鉴权与没有多用户隔离，只列防护不列边界会让人误判风险
 GETTING_STARTED.md[SU6M]: F:十分钟上手：用故意不干净的示例走完整链路 | R:code:crates/core/src/demo.rs | A:逐步骤贴真实输出，覆盖带引号换行与多一个逗号的错位行；命令一律以 csvx 开头，示例目录为 csvx-demo/ | S:-
