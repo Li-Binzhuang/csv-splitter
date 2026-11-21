@@ -26,8 +26,9 @@ scripts/demo.sh --big /tmp/csvx_big/big.csv --writes   # 功能巡演 + 2.1 GB �
 scripts/demo.sh --big /tmp/csvx_big/big10.csv          # 11.2 GB 读路径
 ```
 
-本机实测（release）：2.1 GB 建索引 0.76 s、打开/跳转 0.01 s、过滤 2.4 s、搜索 2.6 s、
-编辑 0.01 s、导出 1.8 s、verify 6.2 s；11.2 GB 索引 3.8 s、过滤 13.9 s、搜索 14.7 s。
+本机实测（release，多次运行取范围）：2.1 GB 建索引 0.7–1.5 s、打开/跳转 0.01 s、过滤 2.3 s、
+搜索 2.4–2.6 s、编辑 0.01 s、导出 1.7–1.8 s、verify 5.8–6.2 s；11.2 GB 索引 3.5–3.8 s、
+过滤 13.2–13.9 s、搜索 13.8–14.6 s。
 演示完 `rm -rf /tmp/csvx_big` 回收约 13 GB。端口被占也不怕：demo 会向系统要空闲端口。
 
 ---
