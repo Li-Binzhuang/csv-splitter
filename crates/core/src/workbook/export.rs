@@ -188,6 +188,7 @@ pub fn export_selected(
             state.set_filtered(totals.filtered);
             state.set_bounds(totals.bounds);
             state.set_squares(totals.squares);
+            state.set_sets(totals.sets);
         }
         Some(state)
     };

@@ -40,12 +40,19 @@ pub struct ColumnTotals {
     pub bounds: HashMap<String, (f64, f64)>,
     /// Sum of squares per column, so stdev/var need no second pass.
     pub squares: HashMap<String, f64>,
+    /// Multi-criteria `(sum, count)` keyed by the canonical criteria-set key.
+    pub sets: HashMap<String, (f64, u64)>,
 }
 
 impl ColumnTotals {
     fn add(&mut self, other: ColumnTotals) {
         for (column, (sum, count)) in other.plain {
             let slot = self.plain.entry(column).or_insert((0.0, 0));
+            slot.0 += sum;
+            slot.1 += count;
+        }
+        for (key, (sum, count)) in other.sets {
+            let slot = self.sets.entry(key).or_insert((0.0, 0));
             slot.0 += sum;
             slot.1 += count;
         }
@@ -152,6 +159,7 @@ fn scan_slab(
     quotes: QuoteStyle,
     plain: &[(String, usize)],
     filtered: &[(String, String, usize, FilterSpec)],
+    sets: &[CompiledSet],
 ) -> io::Result<ColumnTotals> {
     let mut file = File::open(path)?;
     if slab.offset > 0 {
@@ -181,7 +189,7 @@ fn scan_slab(
         // Fast path: slice the record instead of building a String per cell. Falls back
         // to the full parser for escaped quotes, backslash quoting, or bad UTF-8.
         if let Some(cells) = slice_cells(&record, delimiter.byte(), quotes) {
-            accumulate_cells(&cells, plain, filtered, &mut out);
+            accumulate_cells(&cells, plain, filtered, sets, &mut out);
         } else {
             let text = String::from_utf8_lossy(&record);
             let fields = parse_csv_record_with(
@@ -190,11 +198,15 @@ fn scan_slab(
                 quotes,
             );
             let refs: Vec<&str> = fields.iter().map(|f| f.as_str()).collect();
-            accumulate_cells(&refs, plain, filtered, &mut out);
+            accumulate_cells(&refs, plain, filtered, sets, &mut out);
         }
     }
     Ok(out)
 }
+
+/// A compiled multi-criteria set: its canonical key, the optional sum column index,
+/// and the evaluated `(column index, criteria)` pairs.
+type CompiledSet = (String, Option<usize>, Vec<(usize, FilterSpec)>);
 
 /// The record's fields as borrowed strings, or `None` when the full parser is needed.
 fn slice_cells(record: &[u8], delim: u8, quotes: QuoteStyle) -> Option<Vec<&str>> {
@@ -211,6 +223,7 @@ fn accumulate_cells(
     cells: &[&str],
     plain: &[(String, usize)],
     filtered: &[(String, String, usize, FilterSpec)],
+    sets: &[CompiledSet],
     out: &mut ColumnTotals,
 ) {
     for (name, index) in plain {
@@ -226,6 +239,17 @@ fn accumulate_cells(
                 if let Some(slot) = out.plain.get_mut(name) {
                     slot.0 += value;
                     slot.1 += 1;
+                }
+                *out.squares.entry(name.clone()).or_insert(0.0) += value * value;
+                match out.bounds.entry(name.clone()) {
+                    std::collections::hash_map::Entry::Vacant(slot) => {
+                        slot.insert((value, value));
+                    }
+                    std::collections::hash_map::Entry::Occupied(mut slot) => {
+                        let bounds = slot.get_mut();
+                        bounds.0 = bounds.0.min(value);
+                        bounds.1 = bounds.1.max(value);
+                    }
                 }
             }
         }
@@ -251,6 +275,36 @@ fn accumulate_cells(
             if let Ok(value) = cell.trim().parse::<f64>() {
                 if value.is_finite() {
                     slot.0 += value;
+                }
+            }
+        }
+    }
+    for (key, sum_index, criteria) in sets {
+        let all_match = criteria.iter().all(|(index, spec)| {
+            let Some(cell) = cells.get(*index) else {
+                return false;
+            };
+            if matches!(
+                spec.op,
+                filter::Op::Gt | filter::Op::Gte | filter::Op::Lt | filter::Op::Lte
+            ) && cell.trim().parse::<f64>().is_err()
+            {
+                return false;
+            }
+            filter::matches(cell, spec)
+        });
+        if !all_match {
+            continue;
+        }
+        if let Some(slot) = out.sets.get_mut(key) {
+            slot.1 += 1;
+            if let Some(index) = sum_index {
+                if let Some(cell) = cells.get(*index) {
+                    if let Ok(value) = cell.trim().parse::<f64>() {
+                        if value.is_finite() {
+                            slot.0 += value;
+                        }
+                    }
                 }
             }
         }
@@ -331,7 +385,7 @@ mod cache {
         let (len, mtime) = stamp(base)?;
         let text = std::fs::read_to_string(sidecar(base)).ok()?;
         let mut lines = text.lines();
-        if lines.next()? != "csvx-agg 3" {
+        if lines.next()? != "csvx-agg 4" {
             return None;
         }
         let cached_len: u64 = lines.next()?.strip_prefix("len ")?.parse().ok()?;
@@ -348,6 +402,12 @@ mod cache {
                     let sum: f64 = parts.next()?.parse().ok()?;
                     let count: u64 = parts.next()?.parse().ok()?;
                     totals.plain.insert(column, (sum, count));
+                }
+                "set" => {
+                    let key = unesc(parts.next()?);
+                    let sum: f64 = parts.next()?.parse().ok()?;
+                    let count: u64 = parts.next()?.parse().ok()?;
+                    totals.sets.insert(key, (sum, count));
                 }
                 "squares" => {
                     let column = unesc(parts.next()?);
@@ -384,6 +444,14 @@ mod cache {
         {
             return None;
         }
+        if !needs.sets.iter().all(|set| {
+            totals.sets.contains_key(&crate::formula::criteria_key(
+                set.sum.as_deref(),
+                &set.pairs,
+            ))
+        }) {
+            return None;
+        }
         Some(totals)
     }
 
@@ -391,11 +459,14 @@ mod cache {
         let Some((len, mtime)) = stamp(base) else {
             return;
         };
-        let mut text = String::from("csvx-agg 3\n");
+        let mut text = String::from("csvx-agg 4\n");
         text.push_str(&format!("len {len}\n"));
         text.push_str(&format!("mtime {mtime}\n"));
         for (name, (sum, count)) in &totals.plain {
             text.push_str(&format!("plain {} {sum} {count}\n", esc(name)));
+        }
+        for (key, (sum, count)) in &totals.sets {
+            text.push_str(&format!("set {} {sum} {count}\n", esc(key)));
         }
         for (name, square) in &totals.squares {
             text.push_str(&format!("squares {} {square}\n", esc(name)));
@@ -425,7 +496,7 @@ fn compute_totals(
     needs: &RowNeeds,
 ) -> io::Result<ColumnTotals> {
     let mut out = ColumnTotals::default();
-    if needs.aggregates.is_empty() && needs.filtered.is_empty() {
+    if needs.aggregates.is_empty() && needs.filtered.is_empty() && needs.sets.is_empty() {
         return Ok(out);
     }
 
@@ -481,6 +552,27 @@ fn compute_totals(
     for (name, _) in &plain {
         out.plain.insert(name.clone(), (0.0, 0));
     }
+    let mut sets: Vec<CompiledSet> = Vec::new();
+    for set in &needs.sets {
+        let key = crate::formula::criteria_key(set.sum.as_deref(), &set.pairs);
+        let sum_index = match &set.sum {
+            Some(column) => Some(
+                resolve_column(column, &headers)
+                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?,
+            ),
+            None => None,
+        };
+        let mut compiled = Vec::new();
+        for (column, criteria) in &set.pairs {
+            let index = resolve_column(column, &headers)
+                .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+            let spec = compile_criteria(column, criteria)
+                .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+            compiled.push((index, spec));
+        }
+        out.sets.insert(key.clone(), (0.0, 0));
+        sets.push((key, sum_index, compiled));
+    }
 
     let file_len = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
     let threads = aggregate_threads(file_len);
@@ -494,7 +586,9 @@ fn compute_totals(
             let handles: Vec<_> = plans
                 .iter()
                 .map(|slab| {
-                    scope.spawn(|| scan_slab(path, slab, delimiter, quotes, &plain, &filtered))
+                    scope.spawn(|| {
+                        scan_slab(path, slab, delimiter, quotes, &plain, &filtered, &sets)
+                    })
                 })
                 .collect();
             handles
@@ -518,59 +612,8 @@ fn compute_totals(
             delimiter.byte(),
             quotes,
         );
-        for (name, index) in &plain {
-            let Some(cell) = fields.get(*index) else {
-                continue;
-            };
-            let trimmed = cell.trim();
-            if trimmed.is_empty() {
-                continue;
-            }
-            if let Ok(value) = trimmed.parse::<f64>() {
-                if value.is_finite() {
-                    if let Some(slot) = out.plain.get_mut(name) {
-                        slot.0 += value;
-                        slot.1 += 1;
-                    }
-                    *out.squares.entry(name.clone()).or_insert(0.0) += value * value;
-                    match out.bounds.entry(name.clone()) {
-                        std::collections::hash_map::Entry::Vacant(slot) => {
-                            slot.insert((value, value));
-                        }
-                        std::collections::hash_map::Entry::Occupied(mut slot) => {
-                            let bounds = slot.get_mut();
-                            bounds.0 = bounds.0.min(value);
-                            bounds.1 = bounds.1.max(value);
-                        }
-                    }
-                }
-            }
-        }
-        for (column, criteria, index, spec) in &filtered {
-            let Some(cell) = fields.get(*index) else {
-                continue;
-            };
-            // An ordering criterion is numeric: a spreadsheet's COUNTIF(">100") does not
-            // count the cell "not-a-number" just because 'n' sorts after '1'.
-            if matches!(
-                spec.op,
-                filter::Op::Gt | filter::Op::Gte | filter::Op::Lt | filter::Op::Lte
-            ) && cell.trim().parse::<f64>().is_err()
-            {
-                continue;
-            }
-            if !filter::matches(cell, spec) {
-                continue;
-            }
-            if let Some(slot) = out.filtered.get_mut(&(column.clone(), criteria.clone())) {
-                slot.1 += 1;
-                if let Ok(value) = cell.trim().parse::<f64>() {
-                    if value.is_finite() {
-                        slot.0 += value;
-                    }
-                }
-            }
-        }
+        let refs: Vec<&str> = fields.iter().map(|f| f.as_str()).collect();
+        accumulate_cells(&refs, &plain, &filtered, &sets, &mut out);
     }
     Ok(out)
 }
@@ -595,6 +638,7 @@ mod tests {
                 .iter()
                 .map(|(c, crit)| (c.to_string(), crit.to_string()))
                 .collect(),
+            sets: Vec::new(),
         }
     }
 
@@ -615,6 +659,47 @@ mod tests {
         assert_eq!(third.plain.get("amount"), Some(&(60.0, 3)));
         std::fs::remove_file(&path).ok();
         std::fs::remove_file(cache).ok();
+    }
+
+    /// Multi-criteria requests are answered in the same pass, not by a second scan.
+    #[test]
+    fn multi_criteria_sets_are_computed_in_the_prepass() {
+        let path = write("sets", "city,amount,qty\nA,10,1\nA,20,5\nB,30,2\n");
+        let mut needs = needs(&[], &[]);
+        needs.sets.push(crate::formula::state::CriteriaSet {
+            sum: Some("amount".to_string()),
+            pairs: vec![
+                ("city".to_string(), "A".to_string()),
+                ("qty".to_string(), "<5".to_string()),
+            ],
+        });
+        needs.sets.push(crate::formula::state::CriteriaSet {
+            sum: None,
+            pairs: vec![
+                ("city".to_string(), "A".to_string()),
+                ("amount".to_string(), ">15".to_string()),
+            ],
+        });
+        let totals = column_totals(&path, Delimiter::Comma, QuoteStyle::Rfc4180, &needs).unwrap();
+        std::fs::remove_file(&path).ok();
+        std::fs::remove_file(cache::sidecar(&path)).ok();
+
+        let sum_key = crate::formula::criteria_key(
+            Some("amount"),
+            &[
+                ("city".to_string(), "A".to_string()),
+                ("qty".to_string(), "<5".to_string()),
+            ],
+        );
+        assert_eq!(totals.sets.get(&sum_key), Some(&(10.0, 1)));
+        let count_key = crate::formula::criteria_key(
+            None,
+            &[
+                ("city".to_string(), "A".to_string()),
+                ("amount".to_string(), ">15".to_string()),
+            ],
+        );
+        assert_eq!(totals.sets.get(&count_key), Some(&(0.0, 1)));
     }
 
     /// The slice fast path must agree with the full parser on quoted cells.
@@ -713,6 +798,7 @@ mod tests {
                     QuoteStyle::Rfc4180,
                     &plain,
                     &filtered,
+                    &[],
                 )
                 .unwrap(),
             );

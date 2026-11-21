@@ -266,6 +266,9 @@ impl Formula {
                 Expr::Call(name, args) if is_filtered_aggregate(name) => {
                     matches!(args.first(), Some(Expr::Column(_)))
                 }
+                Expr::Call(name, args) if is_multi_filtered(name) => args
+                    .iter()
+                    .all(|a| matches!(a, Expr::Column(_) | Expr::Criteria { .. })),
                 // These read something about the row even when every argument is a
                 // literal: `row()` its number, `ref`/`vlookup` the row's key cell.
                 Expr::Call(name, _)
@@ -305,6 +308,11 @@ fn is_aggregate(name: &str) -> bool {
     )
 }
 
+/// Multi-criteria aggregates: `countifs`, `sumifs`.
+fn is_multi_filtered(name: &str) -> bool {
+    matches!(name.to_ascii_lowercase().as_str(), "countifs" | "sumifs")
+}
+
 /// Aggregates that count/sum only the cells matching a criteria string.
 fn is_filtered_aggregate(name: &str) -> bool {
     matches!(
@@ -331,10 +339,38 @@ fn collect_row_needs(expr: &Expr, out: &mut crate::formula::RowNeeds) {
                     running: Vec::new(),
                     aggregates: Vec::new(),
                     filtered: Vec::new(),
+                    sets: Vec::new(),
                 });
             }
             for arg in args {
                 collect_row_needs(arg, out);
+            }
+        }
+        Expr::Call(name, args) if is_multi_filtered(name) => {
+            let is_sum = name.eq_ignore_ascii_case("sumifs");
+            let (sum, start) = if is_sum {
+                match args.first() {
+                    Some(Expr::Column(column)) => (Some(column.clone()), 1usize),
+                    _ => (None, 0usize),
+                }
+            } else {
+                (None, 0usize)
+            };
+            let mut pairs = Vec::new();
+            let mut i = start;
+            while i + 1 < args.len() {
+                if let (Expr::Column(column), Expr::Criteria { text, .. }) =
+                    (&args[i], &args[i + 1])
+                {
+                    pairs.push((column.clone(), text.clone()));
+                    i += 2;
+                } else {
+                    i += 1;
+                }
+            }
+            if !pairs.is_empty() {
+                out.sets
+                    .push(crate::formula::state::CriteriaSet { sum, pairs });
             }
         }
         Expr::Call(name, args) if is_filtered_aggregate(name) => {
@@ -371,6 +407,7 @@ fn collect_row_needs(expr: &Expr, out: &mut crate::formula::RowNeeds) {
                     running: vec![column.clone()],
                     aggregates: Vec::new(),
                     filtered: Vec::new(),
+                    sets: Vec::new(),
                 });
             }
             for arg in args {
@@ -716,6 +753,18 @@ impl Parser {
                                     }
                                 }
                             }
+                            if matches!(name.to_ascii_lowercase().as_str(), "countifs" | "sumifs") {
+                                for arg in args.iter_mut() {
+                                    if let Expr::Text(text) = arg {
+                                        if let Some(spec) = criteria_value(text) {
+                                            *arg = Expr::Criteria {
+                                                text: text.clone(),
+                                                spec,
+                                            };
+                                        }
+                                    }
+                                }
+                            }
                             Ok(Expr::Call(name, args))
                         }
                         _ => Err("missing ')' after function arguments".to_string()),
@@ -761,6 +810,20 @@ pub(crate) const FIRST_DATA_ROW: i64 = 2;
 /// cell. A bare `A1`-looking *column name* is therefore read as a reference — the
 /// only place this can surprise someone is a column literally named `A1`, and the
 /// `[A1]` bracket form still reaches it.
+/// Canonical key for a multi-criteria request, shared by the parser, the pre-pass and
+/// the evaluator so a `countifs` call finds the numbers computed for it.
+pub(crate) fn criteria_key(sum: Option<&str>, pairs: &[(String, String)]) -> String {
+    let mut key = String::new();
+    key.push_str(sum.unwrap_or("-"));
+    for (column, criteria) in pairs {
+        key.push('\u{1}');
+        key.push_str(column);
+        key.push('\u{2}');
+        key.push_str(criteria);
+    }
+    key
+}
+
 /// Compile a spreadsheet criteria literal (`">1000"`, `"<>10"`, `"CDMX"`) into a
 /// `FilterSpec`. The column name is a placeholder: `matches` never reads it.
 fn criteria_value(text: &str) -> Option<crate::filter::FilterSpec> {
@@ -1383,6 +1446,50 @@ mod tests {
         assert_eq!(eval_str("day(date(2026, 11, 20))", &[]), "20");
         // A nonsense date is an error, not a made-up string.
         assert_eq!(eval_str("date(2026, 13, 1)", &[]), "#VALUE!");
+    }
+
+    #[test]
+    fn multi_criteria_aggregates_read_the_prepass_sets() {
+        let formula = Formula::parse(r#"countifs(amount, ">5", qty, "<3")"#).unwrap();
+        let needs = formula.row_needs();
+        let key = criteria_key(None, &needs.sets[0].pairs);
+        assert_eq!(
+            needs.sets[0].pairs,
+            vec![
+                ("amount".to_string(), ">5".to_string()),
+                ("qty".to_string(), "<3".to_string())
+            ]
+        );
+
+        let mut state = RowState::new(needs.clone());
+        let mut sets = HashMap::new();
+        sets.insert(key, (0.0, 2));
+        state.set_sets(sets);
+        let cells = row(&[("amount", "10"), ("qty", "1")]);
+        let columns = vec!["amount".to_string(), "qty".to_string()];
+        assert_eq!(
+            formula
+                .eval_stateful(&cells, &columns, &Refs::default(), 2, Some(&state))
+                .render(),
+            "2"
+        );
+
+        let summed = Formula::parse(r#"sumifs(amount, city, "CDMX")"#).unwrap();
+        let needs = summed.row_needs();
+        assert_eq!(needs.sets[0].sum.as_deref(), Some("amount"));
+        let key = criteria_key(Some("amount"), &needs.sets[0].pairs);
+        let mut state = RowState::new(needs);
+        let mut sets = HashMap::new();
+        sets.insert(key, (100.0, 4));
+        state.set_sets(sets);
+        let cells = row(&[("amount", "10"), ("city", "CDMX")]);
+        let columns = vec!["amount".to_string(), "city".to_string()];
+        assert_eq!(
+            summed
+                .eval_stateful(&cells, &columns, &Refs::default(), 2, Some(&state))
+                .render(),
+            "100"
+        );
     }
 
     /// Whole-column aggregates are constant per row, so the formula layer must ask for

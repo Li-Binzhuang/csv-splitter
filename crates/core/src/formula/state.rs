@@ -7,6 +7,15 @@
 
 use std::collections::{HashMap, VecDeque};
 
+/// A multi-criteria request: `countifs(...)` has no sum column; `sumifs(...)` sums one.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CriteriaSet {
+    /// Column summed by `sumifs`; `None` for `countifs`.
+    pub sum: Option<String>,
+    /// `(column, criteria)` pairs that must all match.
+    pub pairs: Vec<(String, String)>,
+}
+
 /// How much history a formula column needs, gathered before the first row is read.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RowNeeds {
@@ -19,6 +28,8 @@ pub struct RowNeeds {
     pub aggregates: Vec<String>,
     /// `(column, criteria)` for `countif`/`sumif`, evaluated in the same pre-pass.
     pub filtered: Vec<(String, String)>,
+    /// Multi-criteria `countifs`/`sumifs` combinations.
+    pub sets: Vec<CriteriaSet>,
 }
 
 impl RowNeeds {
@@ -27,6 +38,7 @@ impl RowNeeds {
             && self.running.is_empty()
             && self.aggregates.is_empty()
             && self.filtered.is_empty()
+            && self.sets.is_empty()
     }
 
     pub fn max_lag(&self) -> usize {
@@ -56,6 +68,11 @@ impl RowNeeds {
                 self.filtered.push(pair.clone());
             }
         }
+        for set in &other.sets {
+            if !self.sets.contains(set) {
+                self.sets.push(set.clone());
+            }
+        }
     }
 }
 
@@ -73,6 +90,8 @@ pub struct RowState {
     bounds: HashMap<String, (f64, f64)>,
     /// Sum of squares per column for `stdev`/`var`.
     squares: HashMap<String, f64>,
+    /// Multi-criteria results keyed by their canonical key.
+    sets: HashMap<String, (f64, u64)>,
 }
 
 impl RowState {
@@ -89,6 +108,7 @@ impl RowState {
             filtered: HashMap::new(),
             bounds: HashMap::new(),
             squares: HashMap::new(),
+            sets: HashMap::new(),
         }
     }
 
@@ -126,6 +146,14 @@ impl RowState {
 
     pub fn squares(&self, column: &str) -> Option<f64> {
         self.squares.get(column).copied()
+    }
+
+    pub fn set_sets(&mut self, sets: HashMap<String, (f64, u64)>) {
+        self.sets = sets;
+    }
+
+    pub fn sets(&self, key: &str) -> Option<(f64, u64)> {
+        self.sets.get(key).copied()
     }
 
     /// Matching cells for a `countif`/`sumif` pair: (numeric sum, count of matches).
@@ -199,6 +227,7 @@ mod tests {
             running: Vec::new(),
             aggregates: Vec::new(),
             filtered: Vec::new(),
+            sets: Vec::new(),
         });
         // Evaluating the first row: nothing has been seen.
         assert_eq!(state.lagged("amount", 1), None);
@@ -224,6 +253,7 @@ mod tests {
             running: vec!["amount".to_string()],
             aggregates: Vec::new(),
             filtered: Vec::new(),
+            sets: Vec::new(),
         });
         state.observe_sums(&row(&[("amount", "10")]));
         assert_eq!(state.sum("amount"), 10.0);
@@ -241,12 +271,14 @@ mod tests {
             running: vec!["qty".to_string()],
             aggregates: Vec::new(),
             filtered: Vec::new(),
+            sets: Vec::new(),
         };
         let b = RowNeeds {
             lags: vec![("amount".to_string(), 3)],
             running: vec!["qty".to_string(), "amount".to_string()],
             aggregates: vec!["amount".to_string()],
             filtered: Vec::new(),
+            sets: Vec::new(),
         };
         a.absorb(&b);
         assert_eq!(a.lags.len(), 1);

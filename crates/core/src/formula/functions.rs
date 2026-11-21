@@ -23,6 +23,41 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         // can see the row before it without the file being loaded.
         // Conditional aggregates: the criteria (">1000", "CDMX", "<>10") were compiled
         // and evaluated in the same pre-pass as the plain totals.
+        "countifs" | "sumifs" => {
+            let Some(state) = ctx.state else {
+                return Value::Error;
+            };
+            let is_sum = lower == "sumifs";
+            let (sum, start) = if is_sum {
+                match args.first() {
+                    Some(Expr::Column(column)) => (Some(column.clone()), 1usize),
+                    _ => return Value::Error,
+                }
+            } else {
+                (None, 0usize)
+            };
+            let mut pairs = Vec::new();
+            let mut i = start;
+            while i + 1 < args.len() {
+                if let (Expr::Column(column), Expr::Criteria { text, .. }) =
+                    (&args[i], &args[i + 1])
+                {
+                    pairs.push((column.clone(), text.clone()));
+                    i += 2;
+                } else {
+                    return Value::Error;
+                }
+            }
+            let key = super::criteria_key(sum.as_deref(), &pairs);
+            let Some((sum, count)) = state.sets(&key) else {
+                return Value::Error;
+            };
+            if is_sum {
+                Value::Number(sum)
+            } else {
+                Value::Number(count as f64)
+            }
+        }
         "countif" | "sumif" | "averageif" => {
             // A same-row range: count/sum the cells between two columns that match.
             if let (Some(Expr::Range { from, to }), Some(Expr::Criteria { spec, .. })) =

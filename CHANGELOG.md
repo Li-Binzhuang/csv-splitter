@@ -73,6 +73,11 @@
   all from the same pre-pass as the sums; `min(B2:C2)` etc. do the same over a same-row
   range. The `.agg` cache gained `bounds` and `squares` lines and was bumped to version
   3, so an old cache is recomputed instead of misread.
+- **`countifs` / `sumifs`**: `countifs(city, "CDMX", qty, "<5")` and
+  `sumifs(amount, city, "CDMX", qty, "<5")` evaluate every criterion in the same
+  pre-pass and report how many rows match all of them (and their sum). The cache gained
+  a `set` line and moved to version 4; a range argument is `#VALUE!` rather than
+  silently counting this row.
 - **Same-row ranges**: `sum(B2:C2)`, `count(B2:C2)`, `average(B2:C2)` — and the conditional
   `countif(B2:C2, ">5")` / `sumif(B2:C2, ">5")` — read the cells between two columns of
   the current row. A range that needs another row still returns `#VALUE!` because a
