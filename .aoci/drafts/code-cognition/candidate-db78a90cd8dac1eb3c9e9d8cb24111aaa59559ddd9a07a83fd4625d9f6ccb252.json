@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "725391ce485b5353b439172720b92a6f62478bb28466404e5a25849372f6c890",
+  "batch_id": "db78a90cd8dac1eb3c9e9d8cb24111aaa59559ddd9a07a83fd4625d9f6ccb252",
+  "composite_identity": "a6c006744602715a28c410c20a94242c39f4a2bdf05ba24186f4fa38bd741c22",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "4cc5a9adb5d7ad93b219d277de57ff43fa76fdc28778f7642f562958b7ca033e",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "1c0ab94a891a4a557e0b9a1db07e5482ca0b543ba7e7686ea7570b1ca9e1cd59",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、averageif/ifs、日期运算、同行区间、字节复制快路、原子 transaction 与整批撤销、导出丢行修复 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "6967ac27db1aad0857c42def2838f54f21b77b6ed59a5c75cf877ff737c6da84",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合支持整列/同行区间/多条件；日期支持 year/month/day/date/datestring 与 edate/eomonth/weekday/days（加减月钳到月末、周日=1、日差跨年）；if 短路、日期取 ISO 前缀 | S:单列参数的聚合按整列解释；无预扫状态时聚合为 #VALUE!；跨行区间返回 #VALUE!；日期一律返回 ISO 文本而不是 Excel 序列号"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "b68f6475dee10e45a89e3ac553517926183d3ff079d92592fbd224333883840d",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、同行区间、A1 引用与日期运算；条件字面量解析时编译成 Expr::Criteria，含 * 或 ? 时编译为 Wildcard；criteria_key 把 (操作, 值列, 条件) 序列化为共用键 | S:公式列只存 journal；跨行区间无随机访问；日期是 ISO 文本；通配符不走 SQL，因为 LIKE 大小写语义不同"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "3dcc9f83c43659dfe35f08adf55baed874aa8b06e1a7b791c66941c8fa349bd1",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、同行区间、日期运算与条件通配符（* / ?）；预扫与导出分开写数字；编辑表含原子批量写与整批撤销；大文件节表为最终二进制实测：filter 13.2–13.9 s/79 MB，search 13.8–14.6 s/78 MB | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "8f4b8899979dfa79ecf8e7424c224fcd67a66709f0756d6bae86b80607f655fd",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "1c0ab94a891a4a557e0b9a1db07e5482ca0b543ba7e7686ea7570b1ca9e1cd59",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、averageif/ifs、日期运算、同行区间、字节复制快路、原子 transaction 与整批撤销、导出丢行修复 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "4e587c7074d46bda66da397b514139c777d2238c58bfa5928405eee0c28446d1",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "6967ac27db1aad0857c42def2838f54f21b77b6ed59a5c75cf877ff737c6da84",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合支持整列/同行区间/多条件；日期支持 year/month/day/date/datestring 与 edate/eomonth/weekday/days（加减月钳到月末、周日=1、日差跨年）；if 短路、日期取 ISO 前缀 | S:单列参数的聚合按整列解释；无预扫状态时聚合为 #VALUE!；跨行区间返回 #VALUE!；日期一律返回 ISO 文本而不是 Excel 序列号"
+    },
+    {
+      "candidate_id": "07a53803316621f0211474eeea59d4237defcc59fe6e30601590d270c60cd73e",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "b68f6475dee10e45a89e3ac553517926183d3ff079d92592fbd224333883840d",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、同行区间、A1 引用与日期运算；条件字面量解析时编译成 Expr::Criteria，含 * 或 ? 时编译为 Wildcard；criteria_key 把 (操作, 值列, 条件) 序列化为共用键 | S:公式列只存 journal；跨行区间无随机访问；日期是 ISO 文本；通配符不走 SQL，因为 LIKE 大小写语义不同"
+    },
+    {
+      "candidate_id": "0a34e276e98ccfec9e7c176b68768935360a6431f2361ee1279b7b0605f52bb9",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "3dcc9f83c43659dfe35f08adf55baed874aa8b06e1a7b791c66941c8fa349bd1",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、同行区间、日期运算与条件通配符（* / ?）；预扫与导出分开写数字；编辑表含原子批量写与整批撤销；大文件节表为最终二进制实测：filter 13.2–13.9 s/79 MB，search 13.8–14.6 s/78 MB | S:-"
+    }
+  ]
+}
