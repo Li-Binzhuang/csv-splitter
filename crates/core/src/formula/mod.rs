@@ -20,6 +20,7 @@
 //!          | find(needle, x[, start]) | search(needle, x[, start]) | rept(x, n)
 //!          | concat(...) | concatenate(...) | value(x) | exact(a, b)
 //!          | year(x) | month(x) | day(x) | date(y, m, d) | datestring(x)
+//!          | edate(date, months) | eomonth(date, months) | weekday(date) | days(end, start)
 //!          | if(cond, a[, b]) | and(...) | or(...) | not(x) | iferror(x, fallback)
 //!          | isblank(x) | isnumber(x) | row | lag(col[, n]) | running_total(col)
 //!          | sum(col) | average(col) | count(col)   (whole-column, constant per row)
@@ -1222,6 +1223,26 @@ mod tests {
             odd.eval_at(&cells, &[], &Refs::default(), 1).render(),
             "even"
         );
+    }
+
+    #[test]
+    fn date_arithmetic_stays_in_iso_text() {
+        assert_eq!(
+            eval_str(r#"edate("2024-01-31", 1)"#, &[]),
+            "2024-02-29",
+            "month-end clamps to the shorter leap February"
+        );
+        assert_eq!(eval_str(r#"edate("2024-01-31", -2)"#, &[]), "2023-11-30");
+        assert_eq!(eval_str(r#"eomonth("2024-02-10", 0)"#, &[]), "2024-02-29");
+        assert_eq!(eval_str(r#"weekday("2026-11-23")"#, &[]), "2", "Monday = 2");
+        assert_eq!(eval_str(r#"weekday("2026-11-22")"#, &[]), "1", "Sunday = 1");
+        assert_eq!(eval_str(r#"days("2026-11-23", "2026-11-20")"#, &[]), "3");
+        assert_eq!(
+            eval_str(r#"days("2023-01-01", "2022-12-31")"#, &[]),
+            "1",
+            "spans a year boundary"
+        );
+        assert_eq!(eval_str(r#"edate("not-a-date", 1)"#, &[]), "#VALUE!");
     }
 
     #[test]

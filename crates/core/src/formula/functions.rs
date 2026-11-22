@@ -596,6 +596,54 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             _ => Value::Error,
         },
+        // EDATE/EOMONTH keep the project's ISO-text date representation, so a result
+        // can feed the next formula without a serial-number round trip.
+        "edate" | "eomonth" => {
+            let (Some(date), Some(months)) = (
+                args.first().map(|a| eval(a, ctx).text()),
+                args.get(1).map(|a| eval(a, ctx).number()),
+            ) else {
+                return Value::Error;
+            };
+            let Some(months) = months else {
+                return Value::Error;
+            };
+            let Some((year, month, day)) = parse_date(&date) else {
+                return Value::Error;
+            };
+            if !(-120000.0..=120000.0).contains(&months) {
+                return Value::Error;
+            }
+            let shifted = add_months(year, month, months as i32);
+            let last = days_in_month(shifted.0, shifted.1);
+            let day_out = if lower == "eomonth" {
+                last
+            } else {
+                day.min(last)
+            };
+            Value::Text(format!("{:04}-{:02}-{:02}", shifted.0, shifted.1, day_out))
+        }
+        // WEEKDAY follows the spreadsheet default: Sunday = 1 … Saturday = 7.
+        "weekday" => match args.first().map(|a| eval(a, ctx).text()) {
+            Some(date) => match parse_date(&date) {
+                Some((year, month, day)) => Value::Number(weekday(year, month, day) as f64),
+                None => Value::Error,
+            },
+            None => Value::Error,
+        },
+        // DAYS(end, start) is end - start, like Excel's DAYS().
+        "days" => match (
+            args.first().map(|a| eval(a, ctx).text()),
+            args.get(1).map(|a| eval(a, ctx).text()),
+        ) {
+            (Some(end), Some(start)) => match (parse_date(&end), parse_date(&start)) {
+                (Some((ey, em, ed)), Some((sy, sm, sd))) => Value::Number(
+                    (days_from_civil(ey, em, ed) - days_from_civil(sy, sm, sd)) as f64,
+                ),
+                _ => Value::Error,
+            },
+            _ => Value::Error,
+        },
 
         // ---- row position ---------------------------------------------------
         "row" => Value::Number((ctx.row + 1) as f64),
@@ -790,4 +838,60 @@ fn sample_variance(sum: f64, squares: f64, count: u64) -> Option<f64> {
     let variance = (squares - sum * sum / n) / (n - 1.0);
     // Floating-point cancellation can make an exact variance look slightly negative.
     Some(variance.max(0.0))
+}
+
+/// Parse the ISO-ish date shapes the CSV world actually contains (2026-11-23,
+/// 2026/11/23, 2026.11.23) into (year, month, day).
+fn parse_date(text: &str) -> Option<(i32, u32, u32)> {
+    let trimmed = text.trim();
+    let mut pieces = trimmed.split(['-', '/', '.']);
+    let year: i32 = pieces.next()?.parse().ok()?;
+    let month: u32 = pieces.next()?.parse().ok()?;
+    let rest = pieces.next()?;
+    if pieces.next().is_some() {
+        return None;
+    }
+    let day: u32 = rest.get(..2)?.parse().ok()?;
+    if !(1..=12).contains(&month) || !(1..=31).contains(&day) || !(1..=9999).contains(&year) {
+        return None;
+    }
+    Some((year, month, day))
+}
+
+fn is_leap(year: i32) -> bool {
+    (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
+}
+
+fn days_in_month(year: i32, month: u32) -> u32 {
+    match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if is_leap(year) => 29,
+        2 => 28,
+        _ => 30,
+    }
+}
+
+/// Shift a (year, month) by `delta` months, normalising the month into 1..=12.
+fn add_months(year: i32, month: u32, delta: i32) -> (i32, u32) {
+    let index = year * 12 + month as i32 - 1 + delta;
+    (index.div_euclid(12), (index.rem_euclid(12) + 1) as u32)
+}
+
+/// Days since 1970-01-01 (Howard Hinnant's civil-from-days inverse).
+fn days_from_civil(year: i32, month: u32, day: u32) -> i64 {
+    let y = if month <= 2 { year - 1 } else { year } as i64;
+    let m = month as i64;
+    let d = day as i64;
+    let era = if y >= 0 { y } else { y - 399 } / 400;
+    let yoe = y - era * 400;
+    let doy = (153 * (m + if m > 2 { -3 } else { 9 }) + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    era * 146_097 + doe - 719_468
+}
+
+/// Spreadsheet weekday: Sunday = 1 … Saturday = 7.
+fn weekday(year: i32, month: u32, day: u32) -> i32 {
+    let days = days_from_civil(year, month, day);
+    (days + 4).rem_euclid(7) as i32 + 1
 }

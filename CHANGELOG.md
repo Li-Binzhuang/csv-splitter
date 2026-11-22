@@ -81,6 +81,10 @@
 - **`countblank`**: `countblank(amount)` and `countblank(B2:C2)` count empty cells.
   The pre-pass already skipped them for sums, so it now also keeps their count; the
   `.agg` cache gained a `blank` line and moved to version 5.
+- **Date arithmetic**: `edate(date, months)` and `eomonth(date, months)` shift an
+  ISO date (clamping a month-end to the shorter month), `weekday(date)` is Sunday=1 …
+  Saturday=7, and `days(end, start)` is the signed day difference. They return ISO
+  text, so one result can feed the next formula without a serial-number round trip.
 - **`averageifs`**: `averageifs(amount, city, "CDMX", qty, "<5")` is the mean of the
   matching values; it reuses the set's sum and count, so no extra pass (no match is
   `#VALUE!`).
