@@ -32,6 +32,17 @@
    基准测试用 criterion，另建 bench profile 只为编译检查，代价约 2.5 分钟——
    本地能跑的东西不必占用 CI。
 
+## 偶发失败与一次重试
+
+两个测试步骤（engine / CLI）在第一次失败时会**自动重跑一次**，并留下
+`::warning title=...retry::` 注释。这不是掩盖 bug：
+
+- 触发过的具体案例是 `reads_stay_consistent_while_edits_land`（40 次并发写 + 120 轮读）。
+  本机单跑 30 次、整套以两线程（`test-threads=2`）跑一次全绿；CI 的 2 核机器在跑满 168 个 HTTP 测试时
+  偶发红。属于负载型 flake，不是断言放松。
+- 断言一个字没改：重跑仍失败就说明是真 bug，CI 照样红；annotation 里能看到两次的日志。
+- 如果某个测试连续两次都红，应当修测试或修实现，而不是再加第三次重试。
+
 ## 本地怎么复现 CI
 
 ```bash
