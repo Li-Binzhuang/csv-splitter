@@ -64,6 +64,8 @@ run "$BIN" edit formula orders.csv --name all_sales --value "sum(amount)"
 run "$BIN" edit formula orders.csv --name big_orders --value "countif(amount, \">1000\")"
 run "$BIN" edit formula orders.csv --name min_sale --value "min(amount)"
 run "$BIN" edit formula orders.csv --name max_sale --value "max(amount)"
+run "$BIN" edit formula orders.csv --name next_month --value "edate(ts, 1)"
+run "$BIN" edit formula orders.csv --name city_with_m --value "countif(city, \"*M*\")"
 
 step "5. conditional formatting and layout, as data a front-end can render"
 run "$BIN" format orders.csv --rule "amount>1000:bg=red" --summary
