@@ -126,6 +126,30 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 _ => Value::Number(sum),
             }
         }
+        // SUMPRODUCT over two same-row ranges: pairwise multiply and add. Text cells
+        // count as 0, like a spreadsheet, but a length mismatch is an error.
+        "sumproduct" => {
+            let (Some(Expr::Range { from: a, to: b }), Some(Expr::Range { from: c, to: d })) =
+                (args.first(), args.get(1))
+            else {
+                return Value::Error;
+            };
+            let (Some(left), Some(right)) = (range_cells(a, b, ctx), range_cells(c, d, ctx)) else {
+                return Value::Error;
+            };
+            if left.len() != right.len() || left.is_empty() {
+                return Value::Error;
+            }
+            let mut total = 0.0;
+            for (l, r) in left.iter().zip(right.iter()) {
+                let l = l.trim().parse::<f64>().unwrap_or(0.0);
+                let r = r.trim().parse::<f64>().unwrap_or(0.0);
+                if l.is_finite() && r.is_finite() {
+                    total += l * r;
+                }
+            }
+            Value::Number(total)
+        }
         // COUNTBLANK: empty cells in a column or a same-row range.
         "countblank" => {
             if let Some(Expr::Range { from, to }) = args.first() {

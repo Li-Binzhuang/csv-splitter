@@ -1263,6 +1263,41 @@ mod tests {
     }
 
     #[test]
+    fn sumproduct_multiplies_two_same_row_ranges() {
+        let columns = vec![
+            "id".to_string(),
+            "qty".to_string(),
+            "price".to_string(),
+            "weight".to_string(),
+            "fee".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        cells.insert("id".to_string(), "7".to_string());
+        cells.insert("qty".to_string(), "10".to_string());
+        cells.insert("price".to_string(), "3".to_string());
+        cells.insert("weight".to_string(), "2".to_string());
+        cells.insert("fee".to_string(), "4".to_string());
+        let formula = Formula::parse("sumproduct(B2:C2, D2:E2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "32",
+            "10*2 + 3*4"
+        );
+        // Text is treated as 0, like a spreadsheet, not as an error.
+        cells.insert("price".to_string(), "n/a".to_string());
+        let formula = Formula::parse("sumproduct(B2:C2, D2:E2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "20",
+            "10*2 + 0*4"
+        );
+    }
+
+    #[test]
     fn date_arithmetic_stays_in_iso_text() {
         assert_eq!(
             eval_str(r#"edate("2024-01-31", 1)"#, &[]),
