@@ -84,6 +84,7 @@ step "7. export the edited sheet and prove it is readable"
 run "$BIN" edit export orders.csv -o clean.csv
 printf '  -> clean.csv: %s bytes (quoted newlines make wc -l an unreliable row count)\n' \
   "$(wc -c < clean.csv | tr -d ' ')"
+printf '  -> columns: %s\n' "$(head -1 clean.csv)"
 
 step "8. the HTTP backend starts and says everything is configured"
 # 8787 is the documented default, but a live demo must not fail because something else
