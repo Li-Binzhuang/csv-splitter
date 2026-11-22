@@ -1,0 +1,141 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "638feb0815d1d57a9cddbb0ad77d2a6796f8d0f9af7fb7d38199a90c4f10df99",
+  "batch_id": "b39833db824f95205218dfbd3041d914467741963105d731fffa996ef3a0b6b6",
+  "composite_identity": "75ce1bdb615daba80c8d250bd92a1765fbe96e55c5c5d01556d5b5b06b73a042",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "77a2faef398950e42926e8844f5782c2b917629823d37d9f4ec6af1de211c931",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "323afb72e7acb7534f488b46bbfc270581a7d9daa3c1e2b941a0bd55ef52a24a",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、sumproduct、averageif/ifs、日期运算、同行区间、字节复制快路、原子 transaction 与整批撤销、导出丢行修复 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "ba252f62e63a926ee05e0237efb9d991fec590a71a1cf6d813b4d33f5c31f000",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；edit transaction 只做参数与错误映射，解析/写入交 csvx-core；edit undo 读事务边界把整批一次撤回；单条编辑会清掉边界，避免旧标记吞掉后续撤销 | S:新增 flag 必须同时写进 print_command_help；transaction 错误映射为退出码（越界 1、语法/列名 2）；block 标记消费后必须写回 journal，否则重开后又变成块撤销"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "4049550185bf07cf4bfd2659298515e056e5cb9a0d0667917cb811138c5f44f7",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:/filter 与 /search 接 cursor 续扫；/edit 的 transaction 调 csvx-core 原子写入，undo 读 .blocks 整批撤回；sql_predicate 把条件翻译成 DuckDB 谓词，但 Wildcard 返回 None 让调用方回退原生匹配 | S:strict 参数未登记就 400；contract 只扫描 match 分支，提前处理的动作要登记；通配符不能用 LIKE 翻译，大小写语义会变"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/journal.rs",
+      "path": "crates/core/src/workbook/journal.rs",
+      "change": "update",
+      "source_sha256": "e2c016dac55eb5410a9675455fd86306f7f377f66b81ddae78d16c4a9afd3679",
+      "existing_entry": "journal.rs[CP9L]: F:追加式操作日志、事务边界标记与两者文本格式 | R:code:crates/core/src/workbook/mod.rs,code:crates/core/src/workbook/transaction.rs | A:每行一个操作的 CSV；update_locked 用 .journal.lock 把读改写合成一步；.journal.blocks 每行记 end,size 表示事务批次；record_block/clear_blocks/take_block 维护它，end 不匹配当前长度就丢弃 | S:journal 是编辑的唯一载体，删掉等于丢数据；块标记必须同时记 size，只记 end 会把事务前的单条编辑一起撤销；单条编辑必须清标记"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/mod.rs",
+      "path": "crates/core/src/workbook/mod.rs",
+      "change": "update",
+      "source_sha256": "683126133b7ec98f174d504ba4beb281879d3a94f8db465bfa79312d88bd0736",
+      "existing_entry": "mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序、列布局与 transaction 子模块 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/transaction.rs | A:所有编辑记录为 Op；改名让既有编辑跟着新名；列布局由 Op 序列推导；transaction 子模块导出 parse_ops/append_atomically，并转导出 journal 的块标记函数 | S:原位重算从 base 行取值，同一列连做两遍相同公式不会叠乘；删除列带走该列编辑，改名不会；transaction 语法只维护这一份"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/transaction.rs",
+      "path": "crates/core/src/workbook/transaction.rs",
+      "change": "update",
+      "source_sha256": "a3875a4a6d2857074cd5fab2ca3fe2b7ce6cf326d364ccc2618be1deba883bd9",
+      "existing_entry": "transaction.rs[CP8M]: F:CLI 与 HTTP 共用的 transaction 解析、原子写入与批量撤销标记 | R:code:crates/core/src/workbook/mod.rs,code:crates/core/src/workbook/journal.rs | A:parse_ops 校验后转成 0-based Op（错误分 Syntax/OutOfRange/UnknownColumn）；append_atomically 一次 update_locked 写入并记录 end,size 块标记供一次撤销 | S:校验必须先于写入，任一条不合法则一条不落；标记必须带 size（只记 end 会连带撤销事务前的单条编辑，测试钉住）；两个表面只做错误映射"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "b59977bec361fe66a6ec8c01a5cb9dc439e289b666e47169b5ee493f2c7c38f2",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列模块（公式引擎含 totals，编辑模型含 transaction）；磁盘格式表列全部侧车：journal/redo/blocks/idx/view/agg/parquet，并给每种的失效规则；S 注明模块地图测试会逐个比对 core 模块 | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败；侧车都是生成物，可以删，但删 journal 等于丢编辑"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "e91bd50fdb4211f29a264217d618575f773f109431081e3a3b17fc1541389844",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、同行区间与 sumproduct、日期运算、条件通配符；预扫与导出分开写数字；编辑表含原子批量写与整批撤销；大文件节表为最终二进制实测 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "3b3d65c6bcf7cab5f6fa338f646326ea42cacc77852fef8e503b8e2c0a8ee95b",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "323afb72e7acb7534f488b46bbfc270581a7d9daa3c1e2b941a0bd55ef52a24a",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、sumproduct、averageif/ifs、日期运算、同行区间、字节复制快路、原子 transaction 与整批撤销、导出丢行修复 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "08d55a79448b5303432e4c6eda5bef45bfb32d413158b471820734a13de5d9a7",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "ba252f62e63a926ee05e0237efb9d991fec590a71a1cf6d813b4d33f5c31f000",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；edit transaction 只做参数与错误映射，解析/写入交 csvx-core；edit undo 读事务边界把整批一次撤回；单条编辑会清掉边界，避免旧标记吞掉后续撤销 | S:新增 flag 必须同时写进 print_command_help；transaction 错误映射为退出码（越界 1、语法/列名 2）；block 标记消费后必须写回 journal，否则重开后又变成块撤销"
+    },
+    {
+      "candidate_id": "c82e6eb5867f577503647f30e39f24c4184be8d42602da62f594e7cc30a10e9e",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "4049550185bf07cf4bfd2659298515e056e5cb9a0d0667917cb811138c5f44f7",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:/filter 与 /search 接 cursor 续扫；/edit 的 transaction 调 csvx-core 原子写入，undo 读 .blocks 整批撤回；sql_predicate 把条件翻译成 DuckDB 谓词，但 Wildcard 返回 None 让调用方回退原生匹配 | S:strict 参数未登记就 400；contract 只扫描 match 分支，提前处理的动作要登记；通配符不能用 LIKE 翻译，大小写语义会变"
+    },
+    {
+      "candidate_id": "ecc7a8e7ab22c4f95a066d7aec9855d55ac297088c70b842bbd8427853bcef13",
+      "object_ref": "code:crates/core/src/workbook/journal.rs",
+      "path": "crates/core/src/workbook/journal.rs",
+      "change": "update",
+      "source_sha256": "e2c016dac55eb5410a9675455fd86306f7f377f66b81ddae78d16c4a9afd3679",
+      "existing_entry": "journal.rs[CP9L]: F:追加式操作日志、事务边界标记与两者文本格式 | R:code:crates/core/src/workbook/mod.rs,code:crates/core/src/workbook/transaction.rs | A:每行一个操作的 CSV；update_locked 用 .journal.lock 把读改写合成一步；.journal.blocks 每行记 end,size 表示事务批次；record_block/clear_blocks/take_block 维护它，end 不匹配当前长度就丢弃 | S:journal 是编辑的唯一载体，删掉等于丢数据；块标记必须同时记 size，只记 end 会把事务前的单条编辑一起撤销；单条编辑必须清标记"
+    },
+    {
+      "candidate_id": "4560ef09bf4a90718f66a6c07d0024ca8c8a320f71608b37c55ca64ee1a446dd",
+      "object_ref": "code:crates/core/src/workbook/mod.rs",
+      "path": "crates/core/src/workbook/mod.rs",
+      "change": "update",
+      "source_sha256": "683126133b7ec98f174d504ba4beb281879d3a94f8db465bfa79312d88bd0736",
+      "existing_entry": "mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序、列布局与 transaction 子模块 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/transaction.rs | A:所有编辑记录为 Op；改名让既有编辑跟着新名；列布局由 Op 序列推导；transaction 子模块导出 parse_ops/append_atomically，并转导出 journal 的块标记函数 | S:原位重算从 base 行取值，同一列连做两遍相同公式不会叠乘；删除列带走该列编辑，改名不会；transaction 语法只维护这一份"
+    },
+    {
+      "candidate_id": "cec7716b69c6820257cf501f902c14a8917f285312ebc1d22f5a460c37e552de",
+      "object_ref": "code:crates/core/src/workbook/transaction.rs",
+      "path": "crates/core/src/workbook/transaction.rs",
+      "change": "update",
+      "source_sha256": "a3875a4a6d2857074cd5fab2ca3fe2b7ce6cf326d364ccc2618be1deba883bd9",
+      "existing_entry": "transaction.rs[CP8M]: F:CLI 与 HTTP 共用的 transaction 解析、原子写入与批量撤销标记 | R:code:crates/core/src/workbook/mod.rs,code:crates/core/src/workbook/journal.rs | A:parse_ops 校验后转成 0-based Op（错误分 Syntax/OutOfRange/UnknownColumn）；append_atomically 一次 update_locked 写入并记录 end,size 块标记供一次撤销 | S:校验必须先于写入，任一条不合法则一条不落；标记必须带 size（只记 end 会连带撤销事务前的单条编辑，测试钉住）；两个表面只做错误映射"
+    },
+    {
+      "candidate_id": "bd7de5184b7ea868427b625283ffaaf5ef96b75da6d53038faf7e84c9dcedfe0",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "b59977bec361fe66a6ec8c01a5cb9dc439e289b666e47169b5ee493f2c7c38f2",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列模块（公式引擎含 totals，编辑模型含 transaction）；磁盘格式表列全部侧车：journal/redo/blocks/idx/view/agg/parquet，并给每种的失效规则；S 注明模块地图测试会逐个比对 core 模块 | S:模块地图测试逐个比对 core 模块，漏写会让 gate 失败；侧车都是生成物，可以删，但删 journal 等于丢编辑"
+    },
+    {
+      "candidate_id": "2fd1e54a1d0972a65140c855d4c21111c123b3f1b29ec2e309d225883f116d70",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "e91bd50fdb4211f29a264217d618575f773f109431081e3a3b17fc1541389844",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、同行区间与 sumproduct、日期运算、条件通配符；预扫与导出分开写数字；编辑表含原子批量写与整批撤销；大文件节表为最终二进制实测 | S:-"
+    }
+  ]
+}
