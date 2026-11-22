@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "bb7fe743f0a098c9b9ff09cb55ad8e7fbd210d66e35b401ed4fa705052bede16",
+  "batch_id": "f79fb85b0451c1c8c4d83a6a4e3f142d2cdb2f353db5900d4b9a29bf0f8b7511",
+  "composite_identity": "edfa04ca82cbdaa39aee836c0d3a68f57054ecdba3a3638850a7cfdafb1b5260",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "19233619424e231d7bcbdeab6b542d38bdc5944f4c6aacd6fe9052bdd8c03bfa",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/demo.sh",
+      "path": "scripts/demo.sh",
+      "change": "update",
+      "source_sha256": "b1a9d1e1caf3732402c0d53f5f90e11f6b18c218abb6cffae0a89240d7f26b58",
+      "existing_entry": "demo.sh[SZ6T]: F:一条命令的产品巡演：生成示例数据后按序跑预览、分析、过滤、编辑、公式（整列 sum/countif/min/max）、事务与整批撤销、格式、布局、聚合、透视、图表、导出与服务自检 | R:code:scripts/drill.sh | A:每步打印命令与输出；事务步骤用 set+delete 不依赖列序，随后一次 undo 展示整批回退；--big 调 drill.sh，--writes 转发；服务自检向 OS 要空闲端口（python3 缺失回落 8787）；BIN 解析为绝对路径因为巡演会切目录 | S:必须用 release 二进制演示——debug 慢一个数量级会让大文件耗时失真；--writes 会写一份等大小副本"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "06e2b1ede2edd772c143b9380b1cb604af2b8f7ee267c804e45c1602c64a90e2",
+      "object_ref": "code:scripts/demo.sh",
+      "path": "scripts/demo.sh",
+      "change": "update",
+      "source_sha256": "b1a9d1e1caf3732402c0d53f5f90e11f6b18c218abb6cffae0a89240d7f26b58",
+      "existing_entry": "demo.sh[SZ6T]: F:一条命令的产品巡演：生成示例数据后按序跑预览、分析、过滤、编辑、公式（整列 sum/countif/min/max）、事务与整批撤销、格式、布局、聚合、透视、图表、导出与服务自检 | R:code:scripts/drill.sh | A:每步打印命令与输出；事务步骤用 set+delete 不依赖列序，随后一次 undo 展示整批回退；--big 调 drill.sh，--writes 转发；服务自检向 OS 要空闲端口（python3 缺失回落 8787）；BIN 解析为绝对路径因为巡演会切目录 | S:必须用 release 二进制演示——debug 慢一个数量级会让大文件耗时失真；--writes 会写一份等大小副本"
+    }
+  ]
+}
