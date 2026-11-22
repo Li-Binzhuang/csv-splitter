@@ -37,8 +37,8 @@ mod rows;
 mod transaction;
 
 pub use journal::{
-    clear_blocks, record_block, repair as repair_journal, take_block, Journal, RepairSummary,
-    RowRef,
+    clear_blocks, record_block, record_redo_block, repair as repair_journal, take_block,
+    take_redo_block, Journal, RepairSummary, RowRef,
 };
 pub use rows::{
     check_formula, column_layout, compile, compile_formulas, compile_formulas_at, formulas,

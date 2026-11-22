@@ -5163,4 +5163,34 @@ fn undo_takes_a_transaction_back_in_one_step() {
         Some(1),
         "nothing should be left to undo"
     );
+
+    // Redo mirrors that: one command puts the whole batch back.
+    let redo = Command::new(bin())
+        .args(["edit", "redo", base.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert_eq!(
+        redo.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&redo.stderr)
+    );
+    let text = String::from_utf8_lossy(&redo.stdout);
+    assert!(text.contains("more in this transaction"), "{text}");
+    let exported = dir.join("after_redo.csv");
+    let out = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            base.to_str().unwrap(),
+            "-o",
+            exported.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    assert_eq!(
+        std::fs::read_to_string(&exported).unwrap(),
+        "city,amount\nZ,1\nC,3\nd,4\n"
+    );
 }

@@ -28,6 +28,7 @@
 | `x.csv.journal` | 追加式操作日志（CSV 记录）| `workbook::Journal` | 逐行追加 → 中断只损失最后一条 |
 | `x.csv.journal.redo` | 被撤销的操作 | 同上 | 有它才能 redo；`push` 时清空 |
 | `x.csv.journal.blocks` | 事务批次边界（`end,size`）| `workbook::transaction` | 单条编辑会清空；长度不匹配即丢弃，绝不猜 |
+| `x.csv.journal.redo.blocks` | 整批撤销后的重做边界 | `workbook::transaction` | 一次重做恢复整个事务；新编辑或再次撤销会清掉 |
 | `x.csv.agg` | 整列/条件聚合的（总和, 计数）| `formula::totals` | 只依赖基文件字节，按长度+mtime 失效 |
 | `x.csv.parquet` | 列式侧车（DuckDB 用）| `sql_cache` | 与基文件同生命周期，删掉只损失重建时间 |
 | `x.csv.idx` | 每 1000 行一个字节偏移 | `index::SparseIndex` | 校验不通过就重建 |

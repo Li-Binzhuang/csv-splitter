@@ -6036,4 +6036,13 @@ fn a_transaction_is_undone_in_one_step_over_http() {
         "{rows}"
     );
     assert!(!rows.contains("\"Z\"") && !rows.contains("\"d\""), "{rows}");
+
+    // Redo mirrors it: one call puts the whole transaction back.
+    let (code, body) = post(&server.addr, "/edit?path=t.csv&action=redo");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""batch":3"#), "{body}");
+    assert!(body.contains(r#""operations":3"#), "{body}");
+    let (_, rows) = get(&server.addr, "/rows?path=t.csv&count=10");
+    assert!(rows.contains("\"Z\"") && rows.contains("\"d\""), "{rows}");
+    assert!(!rows.contains("\"B\""), "{rows}");
 }

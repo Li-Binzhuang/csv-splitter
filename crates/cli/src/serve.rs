@@ -2701,6 +2701,9 @@ fn edit_apply(
                     last = op.describe();
                 }
             }
+            if undone > 1 {
+                csvx_core::workbook::record_redo_block(&sidecar, fresh.redo_len(), undone)?;
+            }
             Ok(())
         });
         let journal = match locked {
@@ -2739,9 +2742,17 @@ fn edit_apply(
     }
 
     if action == "redo" {
-        let mut redone = None;
+        let mut redone = 0usize;
+        let mut last = String::new();
         let locked = csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
-            redone = fresh.redo();
+            let count =
+                csvx_core::workbook::take_redo_block(&sidecar, fresh.redo_len())?.unwrap_or(1);
+            for _ in 0..count {
+                if let Some(op) = fresh.redo() {
+                    redone += 1;
+                    last = op.describe();
+                }
+            }
             Ok(())
         });
         let journal = match locked {
@@ -2759,19 +2770,19 @@ fn edit_apply(
             }
         };
         return match redone {
-            Some(op) => respond_json(
-                stream,
-                200,
-                &format!(
-                    r#"{{"redone":{},"operations":{}}}"#,
-                    json_str(&op.describe()),
-                    journal.len()
-                ),
-            ),
-            None => respond_json(
+            0 => respond_json(
                 stream,
                 409,
                 r#"{"error":"nothing to redo","parameter":"action","hint":"run action=undo first, or make a new edit"}"#,
+            ),
+            count => respond_json(
+                stream,
+                200,
+                &format!(
+                    r#"{{"redone":{},"batch":{count},"operations":{}}}"#,
+                    json_str(&last),
+                    journal.len()
+                ),
             ),
         };
     }

@@ -32,9 +32,10 @@
   at checkpoints when the file is large, which took 15.4 s -> 7.2 s, and only formulas that read the current row still rewrite each row.
 
 ### Fixed
-- A transaction is undone in one step: the batch boundary is recorded next to the journal
-  (`.journal.blocks`), and both `edit undo` and `POST /edit?action=undo` take the whole
-  batch back while a plain single edit still undoes one operation. Tests cover both
+- A transaction is undone (and redone) in one step: the batch boundary is recorded next to
+  the journal (`.journal.blocks`, and `.journal.redo.blocks` after an undo), so both
+  `edit undo`/`redo` and `POST /edit?action=undo|redo` move the whole batch while a plain
+  single edit still moves one operation. Tests cover both
   surfaces and that a marker never swallows earlier single edits.
 
 - An insert anchored past a delete was dropped by `edit export`: with an unknown base

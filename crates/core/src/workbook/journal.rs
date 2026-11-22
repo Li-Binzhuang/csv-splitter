@@ -610,8 +610,46 @@ pub fn repair(sidecar: &Path, dry_run: bool) -> io::Result<RepairSummary> {
 /// and `size` says how many operations the transaction added, which is what one undo
 /// must take back together.
 pub fn record_block(sidecar: &Path, end: usize, size: usize) -> io::Result<()> {
+    record_marker(&undo_marker(sidecar), end, size)
+}
+
+/// Symmetry for redo: after a block undo the redo stack holds the whole batch, and one
+/// redo should put it all back.
+pub fn record_redo_block(sidecar: &Path, end: usize, size: usize) -> io::Result<()> {
+    record_marker(&redo_marker(sidecar), end, size)
+}
+
+/// A new single edit makes any remembered transaction boundary meaningless; it also
+/// clears the redo stack, so both markers go.
+pub fn clear_blocks(sidecar: &Path) {
+    let _ = std::fs::remove_file(undo_marker(sidecar));
+    let _ = std::fs::remove_file(redo_marker(sidecar));
+}
+
+/// If the journal still ends on a transaction boundary, consume it and report how many
+/// operations to undo together. A stale marker (the journal grew or shrank since) is
+/// dropped rather than confused with a real one.
+pub fn take_block(sidecar: &Path, current_len: usize) -> io::Result<Option<usize>> {
+    take_marker(&undo_marker(sidecar), current_len)
+}
+
+pub fn take_redo_block(sidecar: &Path, current_len: usize) -> io::Result<Option<usize>> {
+    take_marker(&redo_marker(sidecar), current_len)
+}
+
+fn undo_marker(sidecar: &Path) -> std::path::PathBuf {
+    Journal::blocks_sidecar(sidecar)
+}
+
+fn redo_marker(sidecar: &Path) -> std::path::PathBuf {
+    std::path::PathBuf::from(format!(
+        "{}.redo.blocks",
+        Journal::sidecar(sidecar).display()
+    ))
+}
+
+fn record_marker(path: &Path, end: usize, size: usize) -> io::Result<()> {
     use std::io::Write;
-    let path = Journal::blocks_sidecar(sidecar);
     let mut file = std::fs::OpenOptions::new()
         .create(true)
         .append(true)
@@ -619,17 +657,8 @@ pub fn record_block(sidecar: &Path, end: usize, size: usize) -> io::Result<()> {
     writeln!(file, "{end},{size}")
 }
 
-/// A new single edit makes any remembered transaction boundary meaningless.
-pub fn clear_blocks(sidecar: &Path) {
-    let _ = std::fs::remove_file(Journal::blocks_sidecar(sidecar));
-}
-
-/// If the journal still ends on a transaction boundary, consume it and report how many
-/// operations to undo together. A stale marker (the journal grew or shrank since) is
-/// dropped rather than confused with a real one.
-pub fn take_block(sidecar: &Path, current_len: usize) -> io::Result<Option<usize>> {
-    let path = Journal::blocks_sidecar(sidecar);
-    let Ok(text) = std::fs::read_to_string(&path) else {
+fn take_marker(path: &Path, current_len: usize) -> io::Result<Option<usize>> {
+    let Ok(text) = std::fs::read_to_string(path) else {
         return Ok(None);
     };
     let mut marks: Vec<(usize, usize)> = text
@@ -642,10 +671,10 @@ pub fn take_block(sidecar: &Path, current_len: usize) -> io::Result<Option<usize
     match marks.pop() {
         Some((end, size)) if end == current_len && size > 0 => {
             if marks.is_empty() {
-                let _ = std::fs::remove_file(&path);
+                let _ = std::fs::remove_file(path);
             } else {
                 std::fs::write(
-                    &path,
+                    path,
                     marks
                         .iter()
                         .map(|(e, s)| format!("{e},{s}\n"))
@@ -655,7 +684,7 @@ pub fn take_block(sidecar: &Path, current_len: usize) -> io::Result<Option<usize
             Ok(Some(size))
         }
         _ => {
-            let _ = std::fs::remove_file(&path);
+            let _ = std::fs::remove_file(path);
             Ok(None)
         }
     }

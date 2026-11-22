@@ -6822,6 +6822,10 @@ fn cmd_edit(args: &[String]) -> i32 {
                         last = op.describe();
                     }
                 }
+                if undone > 1 {
+                    // One redo should put the whole undone batch back.
+                    csvx_core::workbook::record_redo_block(&sidecar, fresh.redo_len(), undone)?;
+                }
                 Ok(())
             });
             return match locked {
@@ -6847,28 +6851,42 @@ fn cmd_edit(args: &[String]) -> i32 {
             };
         }
         "redo" => {
-            return match journal.redo() {
-                Some(op) => {
-                    if let Err(e) = csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
-                        fresh.redo();
-                        Ok(())
-                    }) {
-                        return report_failure("edit", format!("cannot save the journal: {e}"));
+            let mut redone = 0usize;
+            let mut last = String::new();
+            let locked = csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
+                let count =
+                    csvx_core::workbook::take_redo_block(&sidecar, fresh.redo_len())?.unwrap_or(1);
+                for _ in 0..count {
+                    if let Some(op) = fresh.redo() {
+                        redone += 1;
+                        last = op.describe();
                     }
-                    println!("✓ redone: {}", op.describe());
-                    0
                 }
-                None => {
-                    eprintln!("nothing to redo");
-                    if journal.undo_len() > 0 {
-                        eprintln!(
-                            "hint: {} operation(s) are in effect; `edit undo` takes one back",
-                            journal.undo_len()
-                        );
+                Ok(())
+            });
+            return match locked {
+                Ok(journal) => {
+                    if redone == 0 {
+                        eprintln!("nothing to redo");
+                        if journal.undo_len() > 0 {
+                            eprintln!(
+                                "hint: {} operation(s) are in effect; `edit undo` takes one back",
+                                journal.undo_len()
+                            );
+                        }
                         return 1;
                     }
-                    1
+                    if redone > 1 {
+                        println!(
+                            "✓ redone: {last} (+{} more in this transaction)",
+                            redone - 1
+                        );
+                    } else {
+                        println!("✓ redone: {last}");
+                    }
+                    0
                 }
+                Err(e) => report_failure("edit", format!("cannot save the journal: {e}")),
             };
         }
         _ => {}

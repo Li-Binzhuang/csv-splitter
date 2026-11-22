@@ -191,6 +191,37 @@ mod tests {
         assert!(parse_ops("set:1:city:Q;delete:99:1", 3, &columns()).is_err());
     }
 
+    /// Redo mirrors undo: after a block undo, the marker says how many redo steps are
+    /// one transaction.
+    #[test]
+    fn a_redo_marker_covers_the_undone_batch() {
+        let dir = std::env::temp_dir().join(format!(
+            "csvx_redo_block_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0)
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let sidecar = dir.join("t.csv.journal");
+        let ops = parse_ops("set:1:city:X;delete:2:1", 5, &columns()).unwrap();
+        append_atomically(&sidecar, &ops).unwrap();
+        Journal::update_locked(&sidecar, |fresh| {
+            fresh.undo();
+            fresh.undo();
+            Ok(())
+        })
+        .unwrap();
+        crate::workbook::record_redo_block(&sidecar, 2, 2).unwrap();
+        assert_eq!(
+            crate::workbook::take_redo_block(&sidecar, 2).unwrap(),
+            Some(2)
+        );
+        assert_eq!(crate::workbook::take_redo_block(&sidecar, 0).unwrap(), None);
+        std::fs::remove_dir_all(dir).ok();
+    }
+
     /// A marker must not swallow earlier single edits: the batch size is stored, not
     /// just the journal length after the batch.
     #[test]
