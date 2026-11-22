@@ -14,7 +14,7 @@
 //! factor  := number | column | '(' expr ')' | '-' factor | function '(' args ')'
 //! column  := name | [name]        (brackets for names with spaces)
 //! function:= round(x[, digits]) | roundup(x[, digits]) | rounddown(x[, digits]) | abs(x)
-//!          | min(...) | max(...) | min(range) | max(range) | stdev(col) | var(col) | countblank(col) | sign(x) | power(x, y) | exp(x) | ln(x) | log(x[, base])
+//!          | min(...) | max(...) | min(range) | max(range) | stdev(col) | var(col) | stdevp(col) | varp(col) | countblank(col) | sign(x) | power(x, y) | exp(x) | ln(x) | log(x[, base])
 //!          | len(x) | upper(x) | lower(x) | proper(x) | trim(x) | left(x, n) | right(x, n)
 //!          | mid(x, start[, len]) | replace(x, old, new) | substitute(x, old, new)
 //!          | find(needle, x[, start]) | search(needle, x[, start]) | rept(x, n)
@@ -306,7 +306,17 @@ impl Formula {
 fn is_aggregate(name: &str) -> bool {
     matches!(
         name.to_ascii_lowercase().as_str(),
-        "sum" | "average" | "avg" | "count" | "min" | "max" | "stdev" | "var" | "countblank"
+        "sum"
+            | "average"
+            | "avg"
+            | "count"
+            | "min"
+            | "max"
+            | "stdev"
+            | "var"
+            | "stdevp"
+            | "varp"
+            | "countblank"
     )
 }
 
@@ -1472,6 +1482,21 @@ mod tests {
             "stdev(range) = {rendered}"
         );
 
+        let pop_var = Formula::parse("varp(B2:C2)").unwrap();
+        assert_eq!(
+            pop_var
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "12.25"
+        );
+        let pop_sd = Formula::parse("stdevp(B2:C2)").unwrap();
+        assert_eq!(
+            pop_sd
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "3.5"
+        );
+
         // A range that needs another row cannot be served while streaming.
         let next = Formula::parse("sum(B3:C3)").unwrap();
         assert_eq!(
@@ -1843,6 +1868,22 @@ mod tests {
         assert!(
             (rendered.parse::<f64>().unwrap() - 200.0_f64.sqrt()).abs() < 0.01,
             "stdev = {rendered}"
+        );
+        let population = Formula::parse("varp(amount)").unwrap();
+        let rendered = population
+            .eval_stateful(&cells, &columns, &refs, 2, Some(&state))
+            .render();
+        assert!(
+            (rendered.parse::<f64>().unwrap() - 150.0).abs() < 0.01,
+            "varp = {rendered}"
+        );
+        let population_sd = Formula::parse("stdevp(amount)").unwrap();
+        let rendered = population_sd
+            .eval_stateful(&cells, &columns, &refs, 2, Some(&state))
+            .render();
+        assert!(
+            (rendered.parse::<f64>().unwrap() - 150.0_f64.sqrt()).abs() < 0.01,
+            "stdevp = {rendered}"
         );
         // No pre-pass (the view path) is an error, never a wrong zero.
         assert_eq!(

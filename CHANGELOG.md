@@ -69,6 +69,8 @@
 - **`averageif`**: `averageif(amount, ">5")` and `averageif(B2:C2, ">5")` reuse the
   same matching (sum, count) as `sumif`, so no extra scan; no matching cell is `#VALUE!`
   instead of a division by zero.
+- **`stdevp` / `varp`**: population standard deviation/variance (Excel STDEV.P/VAR.P)
+  from the same sum-of-squares pass; `varp(B2:C2)` works over a same-row range too.
 - **`min`/`max`/`stdev`/`var`**: `min(amount)` / `max(amount)` read numeric bounds,
   `stdev(amount)` / `var(amount)` the sample deviation/variance (Excel STDEV.S/VAR.S),
   all from the same pre-pass as the sums; `min(B2:C2)` etc. do the same over a same-row

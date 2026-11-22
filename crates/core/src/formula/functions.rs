@@ -172,7 +172,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         }
         // Sample standard deviation / variance: Excel's STDEV.S and VAR.S. The pre-pass
         // kept the sum of squares, so this is O(1) per row.
-        "stdev" | "var" => {
+        "stdev" | "var" | "stdevp" | "varp" => {
             let (sum, squares, count) = if let Some(Expr::Range { from, to }) = args.first() {
                 let Some(values) = range_values(from, to, ctx) else {
                     return Value::Error;
@@ -197,10 +197,15 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 };
                 (sum, squares, count)
             };
-            let Some(variance) = sample_variance(sum, squares, count) else {
+            let variance = if lower.ends_with('p') {
+                population_variance(sum, squares, count)
+            } else {
+                sample_variance(sum, squares, count)
+            };
+            let Some(variance) = variance else {
                 return Value::Error;
             };
-            Value::Number(if lower == "stdev" {
+            Value::Number(if lower.starts_with("stdev") {
                 variance.sqrt()
             } else {
                 variance
@@ -960,4 +965,13 @@ fn days_from_civil(year: i32, month: u32, day: u32) -> i64 {
 fn weekday(year: i32, month: u32, day: u32) -> i32 {
     let days = days_from_civil(year, month, day);
     (days + 4).rem_euclid(7) as i32 + 1
+}
+
+/// Population variance from (sum, sum of squares, n); `None` when n == 0.
+fn population_variance(sum: f64, squares: f64, count: u64) -> Option<f64> {
+    if count == 0 {
+        return None;
+    }
+    let n = count as f64;
+    Some(((squares - sum * sum / n) / n).max(0.0))
 }
