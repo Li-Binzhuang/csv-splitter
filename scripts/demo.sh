@@ -74,6 +74,7 @@ run "$BIN" layout orders.csv --freeze-first 2 --set "amount:width=120"
 step "4b. a transaction of several ops, taken back by one undo"
 run "$BIN" edit transaction orders.csv --ops "set:1:note:VIP2;delete:2:1"
 run "$BIN" edit undo orders.csv
+run "$BIN" edit redo orders.csv
 
 step "6. aggregate, pivot, chart (same numbers through native or DuckDB)"
 run "$BIN" groupby orders.csv --by city --agg "amount:sum,amount:count" --order sum_amount --desc
