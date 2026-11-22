@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "58eb62027ab5c8172bb30aa43b366ca8189a8dbbd88d5e2cdfa0f23fb07dacab",
+  "batch_id": "82c0114aaee64226580ede06ea8d5cc6b3fe36e2413b3c1c7517e230564d3ecb",
+  "composite_identity": "09861ff1189a595133cc40ae03045e848d29b401e386bf1003b380b7faa842e8",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "ae3ef46a0604e4c2c26f76bd55e06fcfe7b7992b6593cc675bcc04cba8a28926",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:.github/workflows/ci.yml",
+      "path": ".github/workflows/ci.yml",
+      "change": "update",
+      "source_sha256": "6ee2a166ec70912df2d2d1696809dd608c5ef7fcd88aae30007b3096b550a949",
+      "existing_entry": "ci.yml[OV7S]: F:主 CI：格式化、引擎与 CLI 测试、性能守卫、clippy 工作区、失败注解 | R:code:scripts/smoke.sh,code:scripts/regress.sh,code:scripts/backend-smoke.sh,code:scripts/release-decision.sh | A:单 job 串联五个步骤；测试命令按新名字 cargo test -p csvx-core -p csvx-cli；每步 tee 日志，失败时把失败测试名与首条断言转成公开 annotation 并上传 artifact；有路径过滤的 Windows 检查在独立工作流 | S:曾用两个 job 加 needs 串联，缓存配额超限时出现一个 job 跳过、红叉无信息的不可读结果，因此刻意合并成一个 job"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CI.md",
+      "path": "docs/CI.md",
+      "change": "update",
+      "source_sha256": "3552861eb65ab100fd4ee234230e602d8e3840f79bf110828f74a95b2ea4701a",
+      "existing_entry": "CI.md[SO6S]: F:CI 结构说明：单 job 流水线、滚动缓存与失败注解机制 | R:code:.github/workflows/ci.yml | A:解释为什么合并成一个 job、为什么缓存 key 滚动、以及 annotation 如何让红叉可读；测试命令按 csvx-core 与 csvx-cli 包名 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "04cf3f06179cc450dda0ffdb1a2c2e50cc55fcc2c2b0b9d3df3f3e3549342799",
+      "object_ref": "code:.github/workflows/ci.yml",
+      "path": ".github/workflows/ci.yml",
+      "change": "update",
+      "source_sha256": "6ee2a166ec70912df2d2d1696809dd608c5ef7fcd88aae30007b3096b550a949",
+      "existing_entry": "ci.yml[OV7S]: F:主 CI：格式化、引擎与 CLI 测试、性能守卫、clippy 工作区、失败注解 | R:code:scripts/smoke.sh,code:scripts/regress.sh,code:scripts/backend-smoke.sh,code:scripts/release-decision.sh | A:单 job 串联五个步骤；测试命令按新名字 cargo test -p csvx-core -p csvx-cli；每步 tee 日志，失败时把失败测试名与首条断言转成公开 annotation 并上传 artifact；有路径过滤的 Windows 检查在独立工作流 | S:曾用两个 job 加 needs 串联，缓存配额超限时出现一个 job 跳过、红叉无信息的不可读结果，因此刻意合并成一个 job"
+    },
+    {
+      "candidate_id": "2a7cdba9ee8a915f8ebaa0555fe8ee73c8a654637fdb4e901c5339fefad08ae5",
+      "object_ref": "code:docs/CI.md",
+      "path": "docs/CI.md",
+      "change": "update",
+      "source_sha256": "3552861eb65ab100fd4ee234230e602d8e3840f79bf110828f74a95b2ea4701a",
+      "existing_entry": "CI.md[SO6S]: F:CI 结构说明：单 job 流水线、滚动缓存与失败注解机制 | R:code:.github/workflows/ci.yml | A:解释为什么合并成一个 job、为什么缓存 key 滚动、以及 annotation 如何让红叉可读；测试命令按 csvx-core 与 csvx-cli 包名 | S:-"
+    }
+  ]
+}
