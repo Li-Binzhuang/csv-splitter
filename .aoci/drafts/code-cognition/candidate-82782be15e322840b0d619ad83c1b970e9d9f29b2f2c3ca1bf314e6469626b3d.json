@@ -1,0 +1,125 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "76fb345d5d5a2bcde0280f93ed8ccc531a4eefc643a1ccae461db567f15c8876",
+  "batch_id": "82782be15e322840b0d619ad83c1b970e9d9f29b2f2c3ca1bf314e6469626b3d",
+  "composite_identity": "4c3dfa16d65fd64ded270a2216763870de66ac4cb29994106671c449c8d3d265",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b7c081db37e8d4426bfd51867fd082b5748c0cb078a29684e2af4e0c112494f5",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "0fae4172a7cfe70bbd5dba89115a7231a17f912047ee9f17fe079e1402233e48",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、averageif/ifs、日期运算、同行/条件区间、字节复制快路、原子 transaction 与整批撤销、导出丢行修复 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "40e58c2d90f5fd66a7aff292182ca137eeb87581d62f37918cb3b41018516d4b",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:/filter 与 /search 接 cursor 续扫；/edit 的 transaction 调 csvx-core 解析并原子写入；undo 读 .blocks 把整批一次撤回，响应多一个 batch 字段；单条写入前清边界；strict 参数校验与 CSVX_QUERY_TIMEOUT_MS 在此读取 | S:strict 模式下未在路由表声明的参数一律 400；contract 只扫描 match 分支，提前处理的动作要登记；undo 的 0 条与单条响应不能混"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/engine.rs",
+      "path": "crates/core/src/engine.rs",
+      "change": "update",
+      "source_sha256": "2df4fc8af1de1f7e4037ad4ee6112782f326c772887a5d02de0cb537663731c2",
+      "existing_entry": "engine.rs[EG8L]: F:引擎选择器：native 与 DuckDB 分析路径的统一入口 | R:code:crates/core/src/sql.rs,code:crates/core/src/groupby.rs,code:crates/core/src/chart.rs,code:crates/core/src/pivot.rs | A:Engine 为 Auto/Native/Sql；Auto 按 SQL_AUTO_THRESHOLD_BYTES 8 MB 且必须带 sql feature 才走 DuckDB；无 feature 时显式 Sql 报错而不是静默回退；resolve_for_copy 让 concat 这类拷贝型命令保持 native；groupby_sql、chart_sql、pivot_sql 走 sql::query_with 的声明式列采样而非 read_csv_auto | S:阈值由实测定为 8 MB——旧值 64 MB 是估算，留下 7 倍区间里 native 更慢；read_csv_auto 在 782 列文件上花十秒推类型，而 query_with 采样声明列后只要两秒；SQL 的 GROUP BY 没有行序，所以 chart 类别顺序与原生不同且已在文档说明"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "8325979e8116657c1f2ef18cee1212ad0bf013ca381eac86712321552dcced7b",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:运算符为等于、不等于、比较、包含、in 与空值判断；scan_with_budget 顺序扫描并在超时时 TimedOut；scan_fast 大文件分段并行；scan_page 多了 start_checkpoint，返回 (结果, next) 供 HTTP 续扫，非 UTF-8 或单线程时返回 InvalidInput 让调用方回退 | S:超时只在每 5 000 行检查一次，预算不是硬上限；并行路径必须与顺序路径行号一致；续扫按检查点推进，不重复也不跳行"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "893c188fe90bfb08c5cd0f27702b3ab491c9287fb36941de496b6fdf9a822d05",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、同行区间、A1 引用与日期运算；条件字面量解析时编译成 Expr::Criteria；criteria_key 把 (操作, 值列, 条件) 序列化为共用键；is_row_constant 把 ref/vlookup/row、区间及其条件聚合判为非每行相同 | S:公式列只存 journal；跨行区间无随机访问；日期是 ISO 文本，不引入序列号"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/totals.rs",
+      "path": "crates/core/src/formula/totals.rs",
+      "change": "update",
+      "source_sha256": "04d14b5b68346fdfdf714092f0f6255677112e32b085e3639eeced1b427cc367",
+      "existing_entry": "totals.rs[KP6L]: F:整列/条件/多条件聚合与 min-max/stdev/countblank 预扫及其缓存 | R:code:crates/core/src/formula/state.rs,code:crates/core/src/formula/mod.rs,code:crates/core/src/filter.rs,code:crates/core/src/index.rs,code:crates/core/src/csv_reader.rs | A:field_slices 零分配读单元格（回退全解析）；累计 sum/count、bounds、squares、blanks；多条件 CompiledSet 每命中行更新 count/sum/min/max；t.csv.agg v6 存 plain/bounds/squares/blanks/filtered/set(含 min/max)，按长度+mtime 失效；小文件列切片并行、大文件优先 parquet | S:set 的 min/max 必须与 count 同源，空集不能拿 0 当最小值；缓存版本升到 6，旧缓存忽略重算；侧车失效不得让导出失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "0db2932c564f6f80852c26a796158089e4758f870e7e514234e3981eebcf0cf1",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、同行区间与日期运算（edate/eomonth/weekday/days）；预扫与导出分开写数字；编辑表含原子批量写与整批撤销；大文件节表为最终二进制实测：filter 13.2–13.9 s/79 MB，search 13.8–14.6 s/78 MB | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ce531cbea5bf7c9b1d36bfc99b830f4f5ae84e89c6c1c20c0cdadd8e59a8977b",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "0fae4172a7cfe70bbd5dba89115a7231a17f912047ee9f17fe079e1402233e48",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、averageif/ifs、日期运算、同行/条件区间、字节复制快路、原子 transaction 与整批撤销、导出丢行修复 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "a9863260ef6510e67caae323fc3299945e363d1aec8c57adb2f4aa3e1af73727",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "40e58c2d90f5fd66a7aff292182ca137eeb87581d62f37918cb3b41018516d4b",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:/filter 与 /search 接 cursor 续扫；/edit 的 transaction 调 csvx-core 解析并原子写入；undo 读 .blocks 把整批一次撤回，响应多一个 batch 字段；单条写入前清边界；strict 参数校验与 CSVX_QUERY_TIMEOUT_MS 在此读取 | S:strict 模式下未在路由表声明的参数一律 400；contract 只扫描 match 分支，提前处理的动作要登记；undo 的 0 条与单条响应不能混"
+    },
+    {
+      "candidate_id": "5d5b00f6116f65e7bcf7a3fb10ee20c562f0ec76dda4563080a9bf27d319fc34",
+      "object_ref": "code:crates/core/src/engine.rs",
+      "path": "crates/core/src/engine.rs",
+      "change": "update",
+      "source_sha256": "2df4fc8af1de1f7e4037ad4ee6112782f326c772887a5d02de0cb537663731c2",
+      "existing_entry": "engine.rs[EG8L]: F:引擎选择器：native 与 DuckDB 分析路径的统一入口 | R:code:crates/core/src/sql.rs,code:crates/core/src/groupby.rs,code:crates/core/src/chart.rs,code:crates/core/src/pivot.rs | A:Engine 为 Auto/Native/Sql；Auto 按 SQL_AUTO_THRESHOLD_BYTES 8 MB 且必须带 sql feature 才走 DuckDB；无 feature 时显式 Sql 报错而不是静默回退；resolve_for_copy 让 concat 这类拷贝型命令保持 native；groupby_sql、chart_sql、pivot_sql 走 sql::query_with 的声明式列采样而非 read_csv_auto | S:阈值由实测定为 8 MB——旧值 64 MB 是估算，留下 7 倍区间里 native 更慢；read_csv_auto 在 782 列文件上花十秒推类型，而 query_with 采样声明列后只要两秒；SQL 的 GROUP BY 没有行序，所以 chart 类别顺序与原生不同且已在文档说明"
+    },
+    {
+      "candidate_id": "12896f4eb2b94c37a0e3b51f4ba6bc59d6e45d61a679f54cd2bc45573c1bc8d5",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "8325979e8116657c1f2ef18cee1212ad0bf013ca381eac86712321552dcced7b",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:运算符为等于、不等于、比较、包含、in 与空值判断；scan_with_budget 顺序扫描并在超时时 TimedOut；scan_fast 大文件分段并行；scan_page 多了 start_checkpoint，返回 (结果, next) 供 HTTP 续扫，非 UTF-8 或单线程时返回 InvalidInput 让调用方回退 | S:超时只在每 5 000 行检查一次，预算不是硬上限；并行路径必须与顺序路径行号一致；续扫按检查点推进，不重复也不跳行"
+    },
+    {
+      "candidate_id": "5c7607ac8e8abfc85787116891781e34027a98ef5e492f22e57cc924f374ffae",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "893c188fe90bfb08c5cd0f27702b3ab491c9287fb36941de496b6fdf9a822d05",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、同行区间、A1 引用与日期运算；条件字面量解析时编译成 Expr::Criteria；criteria_key 把 (操作, 值列, 条件) 序列化为共用键；is_row_constant 把 ref/vlookup/row、区间及其条件聚合判为非每行相同 | S:公式列只存 journal；跨行区间无随机访问；日期是 ISO 文本，不引入序列号"
+    },
+    {
+      "candidate_id": "95a907a9024f417b23d914c54a61dda3bb806ee8ca05cc93ce2ed72f190eeb12",
+      "object_ref": "code:crates/core/src/formula/totals.rs",
+      "path": "crates/core/src/formula/totals.rs",
+      "change": "update",
+      "source_sha256": "04d14b5b68346fdfdf714092f0f6255677112e32b085e3639eeced1b427cc367",
+      "existing_entry": "totals.rs[KP6L]: F:整列/条件/多条件聚合与 min-max/stdev/countblank 预扫及其缓存 | R:code:crates/core/src/formula/state.rs,code:crates/core/src/formula/mod.rs,code:crates/core/src/filter.rs,code:crates/core/src/index.rs,code:crates/core/src/csv_reader.rs | A:field_slices 零分配读单元格（回退全解析）；累计 sum/count、bounds、squares、blanks；多条件 CompiledSet 每命中行更新 count/sum/min/max；t.csv.agg v6 存 plain/bounds/squares/blanks/filtered/set(含 min/max)，按长度+mtime 失效；小文件列切片并行、大文件优先 parquet | S:set 的 min/max 必须与 count 同源，空集不能拿 0 当最小值；缓存版本升到 6，旧缓存忽略重算；侧车失效不得让导出失败"
+    },
+    {
+      "candidate_id": "327d530d658501fe2a8cfbd710736b09699024602e715b7a619a220fe05fa3c7",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "0db2932c564f6f80852c26a796158089e4758f870e7e514234e3981eebcf0cf1",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、同行区间与日期运算（edate/eomonth/weekday/days）；预扫与导出分开写数字；编辑表含原子批量写与整批撤销；大文件节表为最终二进制实测：filter 13.2–13.9 s/79 MB，search 13.8–14.6 s/78 MB | S:-"
+    }
+  ]
+}
