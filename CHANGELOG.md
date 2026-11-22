@@ -82,6 +82,9 @@
 - **`countblank`**: `countblank(amount)` and `countblank(B2:C2)` count empty cells.
   The pre-pass already skipped them for sums, so it now also keeps their count; the
   `.agg` cache gained a `blank` line and moved to version 5.
+- **Text helpers**: `textjoin(sep, ignore_empty, ...)` joins values with a separator
+  (and can drop empty ones), `char(n)` turns a code point into text, and `code(text)`
+  returns the first character's code.
 - **`sumproduct`**: `sumproduct(B2:C2, D2:E2)` multiplies two same-row ranges
   element-wise and adds them (weighted totals); text cells count as 0 and a length
   mismatch is `#VALUE!`.

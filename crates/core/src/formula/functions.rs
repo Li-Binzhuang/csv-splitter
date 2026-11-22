@@ -518,6 +518,48 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Text(out)
         }
+        // TEXTJOIN(separator, ignore_empty, value...) joins the rest with the separator.
+        "textjoin" => {
+            let Some(separator) = args.first().map(|a| eval(a, ctx).text()) else {
+                return Value::Error;
+            };
+            let Some(ignore_empty) = args.get(1).map(|a| eval(a, ctx).number()) else {
+                return Value::Error;
+            };
+            let Some(ignore_empty) = ignore_empty else {
+                return Value::Error;
+            };
+            if args.len() < 3 {
+                return Value::Error;
+            }
+            let mut parts = Vec::new();
+            for arg in args.iter().skip(2) {
+                let text = eval(arg, ctx).text();
+                if ignore_empty != 0.0 && text.is_empty() {
+                    continue;
+                }
+                parts.push(text);
+            }
+            Value::Text(parts.join(&separator))
+        }
+        // CHAR(65) = "A"; CODE("A") = 65.
+        "char" => match args.first().map(|a| eval(a, ctx).number()) {
+            Some(Some(code)) if (0.0..=0x10FFFF as f64).contains(&code) => {
+                match char::from_u32(code as u32) {
+                    Some(ch) => Value::Text(ch.to_string()),
+                    None => Value::Error,
+                }
+            }
+            _ => Value::Error,
+        },
+        "code" => match args.first().map(|a| eval(a, ctx).text()) {
+            Some(text) => match text.chars().next() {
+                Some(ch) => Value::Number(ch as u32 as f64),
+                None => Value::Error,
+            },
+            None => Value::Error,
+        },
+
         // Alias for `mid`, which is the name people reach for first.
         "substr" => call("mid", args, ctx),
         // ---- more of the spreadsheet's everyday functions --------------------

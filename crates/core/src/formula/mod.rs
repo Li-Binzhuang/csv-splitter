@@ -18,7 +18,8 @@
 //!          | len(x) | upper(x) | lower(x) | proper(x) | trim(x) | left(x, n) | right(x, n)
 //!          | mid(x, start[, len]) | replace(x, old, new) | substitute(x, old, new)
 //!          | find(needle, x[, start]) | search(needle, x[, start]) | rept(x, n)
-//!          | concat(...) | concatenate(...) | value(x) | exact(a, b)
+//!          | concat(...) | concatenate(...) | textjoin(sep, ignore_empty, ...) | char(n) | code(text)
+//!          | value(x) | exact(a, b)
 //!          | year(x) | month(x) | day(x) | date(y, m, d) | datestring(x)
 //!          | edate(date, months) | eomonth(date, months) | weekday(date) | days(end, start)
 //!          | if(cond, a[, b]) | and(...) | or(...) | not(x) | iferror(x, fallback)
@@ -1260,6 +1261,39 @@ mod tests {
                 .render(),
             "1"
         );
+    }
+
+    #[test]
+    fn textjoin_char_and_code_work_like_a_spreadsheet() {
+        let columns = vec!["city".to_string(), "note".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("city".to_string(), "CDMX".to_string());
+        cells.insert("note".to_string(), String::new());
+        let joined = Formula::parse(r#"textjoin("-", 1, city, note)"#).unwrap();
+        assert_eq!(
+            joined
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "CDMX",
+            "ignore_empty=1 drops the empty part"
+        );
+        let kept = Formula::parse(r#"textjoin("-", 0, city, note)"#).unwrap();
+        assert_eq!(
+            kept.eval_at(&cells, &columns, &Refs::default(), 1).render(),
+            "CDMX-",
+            "ignore_empty=0 keeps the separator"
+        );
+        cells.insert("note".to_string(), "ready".to_string());
+        assert_eq!(
+            joined
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "CDMX-ready"
+        );
+
+        assert_eq!(eval_str("char(65)", &[]), "A");
+        assert_eq!(eval_str("code(\"A\")", &[]), "65");
+        assert_eq!(eval_str("code(\"\")", &[]), "#VALUE!");
     }
 
     #[test]
