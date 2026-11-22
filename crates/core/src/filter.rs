@@ -29,6 +29,9 @@ pub enum Op {
     NotEmpty,
     /// Regular expression match (`col~re:PATTERN`).
     Regex,
+    /// Spreadsheet wildcards (`*` any run, `?` one character), case-insensitive.
+    /// Only the formula layer builds these, from a criteria literal.
+    Wildcard,
     /// Membership: `col in a,b,c` (values are trimmed; no escaping).
     In,
 }
@@ -46,6 +49,7 @@ impl Op {
             Self::Empty => "empty",
             Self::NotEmpty => "notempty",
             Self::Regex => "~re:",
+            Self::Wildcard => "~wc:",
             Self::In => "in",
         }
     }
@@ -586,6 +590,7 @@ pub fn matches(cell: &str, spec: &FilterSpec) -> bool {
                 // is literal; the list form is the friendly one.
                 .any(|v| v.eq_ignore_ascii_case(cell_trimmed))
         }
+        Op::Wildcard => wildcard_match(cell, &spec.value),
         Op::Regex => regex::Regex::new(&spec.value)
             .map(|re| re.is_match(cell))
             .unwrap_or(false),
@@ -983,5 +988,65 @@ mod in_tests {
         assert!(compiled.holds(&yes));
         assert!(!compiled.holds(&too_small));
         assert!(!compiled.holds(&wrong_city));
+    }
+}
+
+/// Byte-level glob matching for spreadsheet criteria: `*` matches any run, `?` one
+/// ASCII character, ASCII letters compare case-insensitively. Backtracking without
+/// allocation, because a `countif` may call this once per row.
+fn wildcard_match(text: &str, pattern: &str) -> bool {
+    fn same(a: u8, b: u8) -> bool {
+        a.eq_ignore_ascii_case(&b)
+    }
+    let text = text.as_bytes();
+    let pattern = pattern.as_bytes();
+    let (mut ti, mut pi) = (0usize, 0usize);
+    let mut star: Option<usize> = None;
+    let mut mark = 0usize;
+    while ti < text.len() {
+        if pi < pattern.len() && (pattern[pi] == b'?' || same(pattern[pi], text[ti])) {
+            ti += 1;
+            pi += 1;
+        } else if pi < pattern.len() && pattern[pi] == b'*' {
+            star = Some(pi);
+            mark = ti;
+            pi += 1;
+        } else if let Some(star_at) = star {
+            pi = star_at + 1;
+            mark += 1;
+            ti = mark;
+        } else {
+            return false;
+        }
+    }
+    while pi < pattern.len() && pattern[pi] == b'*' {
+        pi += 1;
+    }
+    pi == pattern.len()
+}
+
+#[cfg(test)]
+mod wildcard_tests {
+    use super::*;
+
+    fn spec(pattern: &str) -> FilterSpec {
+        FilterSpec {
+            column: "c".to_string(),
+            op: Op::Wildcard,
+            value: pattern.to_string(),
+        }
+    }
+
+    #[test]
+    fn spreadsheet_wildcards_match_case_insensitively() {
+        assert!(matches("CDMX", &spec("*CDM*")));
+        assert!(matches("cdmx", &spec("*CDM*")));
+        assert!(matches("CDMX", &spec("CD*")));
+        assert!(matches("CDMX", &spec("*MX")));
+        assert!(matches("CDMX", &spec("????")));
+        assert!(matches("CDMX", &spec("CDM?")));
+        assert!(!matches("CDMX", &spec("???")));
+        assert!(!matches("CDMX", &spec("CDT*")));
+        assert!(matches("", &spec("*")));
     }
 }

@@ -5706,6 +5706,8 @@ fn sql_predicate(spec: &FilterSpec) -> Option<String> {
         }
         // DuckDB's regexp_match is RE2-like; the CLI validated the pattern.
         filter::Op::Regex => format!("regexp_matches({column}, {})", quote(&spec.value)),
+        // Wildcards stay on the native matcher: LIKE's case rules would differ.
+        filter::Op::Wildcard => return None,
     };
     Some(sql)
 }

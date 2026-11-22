@@ -81,6 +81,10 @@
 - **`countblank`**: `countblank(amount)` and `countblank(B2:C2)` count empty cells.
   The pre-pass already skipped them for sums, so it now also keeps their count; the
   `.agg` cache gained a `blank` line and moved to version 5.
+- **Wildcard criteria**: text conditions in `countif`/`sumif`/`averageif` (and the
+  `*ifs` family) understand spreadsheet wildcards — `"*CDMX*"`, `"CD*"`, `"CDM?"` —
+  case-insensitively, instead of treating `*` as a literal. Matching is an
+  allocation-free glob, so a million-row condition does not compile a regex per row.
 - **Date arithmetic**: `edate(date, months)` and `eomonth(date, months)` shift an
   ISO date (clamping a month-end to the shorter month), `weekday(date)` is Sunday=1 …
   Saturday=7, and `days(end, start)` is the signed day difference. They return ISO

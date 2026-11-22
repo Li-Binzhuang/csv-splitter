@@ -789,6 +789,9 @@ pub fn filter_predicate(spec: &crate::filter::FilterSpec) -> Option<String> {
         Op::Empty => format!("trim({text}) = ''"),
         Op::NotEmpty => format!("trim({text}) <> ''"),
         Op::Regex => format!("regexp_matches({text}, '{quoted}')"),
+        // Spreadsheet wildcards stay on the native matcher: translating them to LIKE
+        // would silently change case sensitivity, and native is correct.
+        Op::Wildcard => return None,
         Op::Gt | Op::Gte | Op::Lt | Op::Lte => return None,
     })
 }

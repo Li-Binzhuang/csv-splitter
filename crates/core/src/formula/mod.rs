@@ -848,6 +848,13 @@ pub(crate) fn criteria_key(
 /// `FilterSpec`. The column name is a placeholder: `matches` never reads it.
 fn criteria_value(text: &str) -> Option<crate::filter::FilterSpec> {
     let trimmed = text.trim();
+    if trimmed.contains('*') || trimmed.contains('?') {
+        return Some(crate::filter::FilterSpec {
+            column: "_".to_string(),
+            op: crate::filter::Op::Wildcard,
+            value: trimmed.to_string(),
+        });
+    }
     let expression = if let Some(rest) = trimmed.strip_prefix("<>") {
         format!("_!={rest}")
     } else if matches!(
@@ -1222,6 +1229,36 @@ mod tests {
         assert_eq!(
             odd.eval_at(&cells, &[], &Refs::default(), 1).render(),
             "even"
+        );
+    }
+
+    #[test]
+    fn criteria_wildcards_match_like_a_spreadsheet() {
+        let columns = vec!["city".to_string(), "note".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("city".to_string(), "CDMX".to_string());
+        cells.insert("note".to_string(), "ready".to_string());
+        let count = Formula::parse(r#"countif(A2:A2, "*CDM*")"#).unwrap();
+        assert_eq!(
+            count
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "1"
+        );
+        let prefix = Formula::parse(r#"countif(A2:A2, "CD*")"#).unwrap();
+        assert_eq!(
+            prefix
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "1"
+        );
+        // Case-insensitive, like a spreadsheet.
+        let lower = Formula::parse(r#"countif(A2:A2, "*cdm*")"#).unwrap();
+        assert_eq!(
+            lower
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "1"
         );
     }
 

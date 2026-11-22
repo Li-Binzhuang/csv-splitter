@@ -119,7 +119,7 @@
      stdev(col) var(col)               ← 样本标准差/方差（Excel STDEV.S/VAR.S）
 区间 sum(B2:C2) count(B2:C2)         ← 同行区间：只读本行这两列之间的数字单元格（跨行会让流式求值看到未来行，返回 #VALUE!）
 条件区间 countif(B2:C2, ">5") sumif(B2:C2, ">5") averageif(B2:C2, ">5")  ← 条件字面量在解析时编译一次
-条件 countif(col, ">1000") sumif(col, ">1000") averageif(col, ">1000")  ← 同一遍预扫；平均值由 (总和, 计数) 直接相除
+条件 countif(col, ">1000") sumif(col, ">1000") averageif(col, ">1000")  ← 同一遍预扫；文本条件支持 Excel 通配符 * 与 ?（大小写不敏感）
 多条件 countifs(col, ">5", other, "x") sumifs(sum_col, col, ">5", other, "x")  ← 全部条件同时满足才计数/求和
      minifs(max_col, ...) maxifs(max_col, ...)  ← 满足全部条件的行里取最小/最大
      averageifs(val_col, ...)                  ← 满足全部条件的行的平均值（sum/count）

@@ -328,6 +328,13 @@ fn accumulate_cells(
 /// it `!=`.
 fn compile_criteria(column: &str, criteria: &str) -> Result<FilterSpec, String> {
     let trimmed = criteria.trim();
+    if trimmed.contains('*') || trimmed.contains('?') {
+        return Ok(FilterSpec {
+            column: column.to_string(),
+            op: filter::Op::Wildcard,
+            value: trimmed.to_string(),
+        });
+    }
     let expression = if let Some(rest) = trimmed.strip_prefix("<>") {
         format!("{column}!={rest}")
     } else if matches!(
