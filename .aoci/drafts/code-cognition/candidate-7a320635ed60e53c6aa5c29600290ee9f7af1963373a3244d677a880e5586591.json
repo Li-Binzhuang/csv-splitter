@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "e06cb615cb7a1174eaece50bad371b7d93f417358a9a36185142472f27fc6dbc",
+  "batch_id": "7a320635ed60e53c6aa5c29600290ee9f7af1963373a3244d677a880e5586591",
+  "composite_identity": "548baf5d841faf4b5d1f9801e88a28b7d4bb5b9c0ef4577b88eb78e320842e34",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "0cb356515b8c26f03c8632c0336f8e2208dd67acbee4a889b10bdc7ec0dcb9cc",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/demo.sh",
+      "path": "scripts/demo.sh",
+      "change": "update",
+      "source_sha256": "57edc3d5e501d450e56c24e63c45f733221e3e00c4b337a68a98705772b2c66b",
+      "existing_entry": "demo.sh[SZ6T]: F:一条命令的产品巡演：生成示例数据后按序跑预览、分析、过滤、编辑、公式（sum/countif/min/max/edate/通配符）、事务与整批撤销、格式、布局、聚合、透视、图表、导出与服务自检 | R:code:scripts/drill.sh | A:每步打印命令与输出；事务步骤用 set+delete 不依赖列序，随后一次 undo；日期与通配符示例让本周能力上台；--big 调 drill.sh，--writes 转发，服务自检向 OS 要空闲端口 | S:必须用 release 二进制演示——debug 慢一个数量级会让大文件耗时失真；--writes 会写一份等大小副本"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "175f504fd14ee8291fdae6e1066583d95778fecc6f1d54f6ca7d20ab7649b8c4",
+      "object_ref": "code:scripts/demo.sh",
+      "path": "scripts/demo.sh",
+      "change": "update",
+      "source_sha256": "57edc3d5e501d450e56c24e63c45f733221e3e00c4b337a68a98705772b2c66b",
+      "existing_entry": "demo.sh[SZ6T]: F:一条命令的产品巡演：生成示例数据后按序跑预览、分析、过滤、编辑、公式（sum/countif/min/max/edate/通配符）、事务与整批撤销、格式、布局、聚合、透视、图表、导出与服务自检 | R:code:scripts/drill.sh | A:每步打印命令与输出；事务步骤用 set+delete 不依赖列序，随后一次 undo；日期与通配符示例让本周能力上台；--big 调 drill.sh，--writes 转发，服务自检向 OS 要空闲端口 | S:必须用 release 二进制演示——debug 慢一个数量级会让大文件耗时失真；--writes 会写一份等大小副本"
+    }
+  ]
+}
