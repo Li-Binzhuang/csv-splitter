@@ -117,7 +117,7 @@ release-decision.sh[OV7T]: F:发布决策：tag 推送、带 tag 的手动触发
 smoke.sh[TQ8M]: F:CLI 冒烟：用 demo 数据把主要命令跑一遍 | R:code:crates/core/src/demo.rs | A:覆盖预览、过滤、编辑、切分、合并、聚合、导出与缓存；每步检查退出码与产物；BIN 默认取 target/debug/csvx | S:-
 gate.sh[XQ5T]: F:gate 包装：保住真实退出码并把失败阶段写回终端 | R:code:scripts/dev.sh | A:调用 scripts/dev.sh gate；失败时只打印 error、FAILED、panicked、Diff 的前 20 行与日志尾部；最后一行固定为 == gate exit=N == 并以它退出；GATE_FAIL_TEST=1 走注入失败的 selftest 分支 | S:把 scripts/dev.sh gate 的输出接给 tail 时，报的是 tail 的状态而不是 gate 的；直接接管道会让失败的 clippy 看起来是绿的
 drill.sh[TQ6T]: F:一条命令的端到端演练：索引、打开、跳转、过滤、搜索，可选编辑/导出/verify | R:code:scripts/bench.sh | A:打印 markdown 表格（每步墙钟与峰值 RSS）；--writes 才跑写路径（需要 2 倍文件空间的导出副本）；--where / --jump 可换谓词与行号；/usr/bin/time -l 与 -v 各一条分支，都没有时退回 bash 计时 | S:写路径默认关闭，因为 export 会复制整份文件；10 GB 文件在只剩 40 GB 的盘上跑 --writes 会把磁盘吃光
-demo.sh[SZ6S]: F:一条命令的产品巡演：生成示例数据后按序跑预览、分析、过滤、编辑、公式（sum/countif/min/max/edate/通配符）、事务与整批撤销、格式、布局、聚合、透视、图表、导出（打印表头）与服务自检 | R:code:scripts/drill.sh | A:每步打印命令与输出；事务步骤用 set+delete 不依赖列序，随后一次 undo；导出后打印首行证明计算列落地；--big 调 drill.sh，--writes 转发，服务自检向 OS 要空闲端口 | S:必须用 release 二进制演示——debug 慢一个数量级会让大文件耗时失真；--writes 会写一份等大小副本
+demo.sh[SZ6S]: F:一条命令的产品巡演：生成示例数据后跑预览、分析、过滤、编辑、公式（sum/countif/min/max/edate/通配符）、事务与整批撤销及重做、格式、布局、聚合、透视、图表、导出（打印表头）与服务自检 | R:code:scripts/drill.sh | A:每步打印命令与输出；事务步骤用 set+delete 不依赖列序，先一次 undo 再一次 redo 展示对称；导出后打印首行证明计算列落地；--big 调 drill.sh，--writes 转发，自检向 OS 要空闲端口 | S:必须用 release 二进制演示——debug 慢一个数量级会让大文件耗时失真；--writes 会写一份等大小副本
 
 ===/<repository>/csvx-demo/===
 orders.csv[AZ4L]: F:demo 命令生成的示例数据：6 列 20 120 行，含刻意保留的脏数据 | R:code:crates/core/src/demo.rs | A:列为 id,cust_no,city,amount,note,ts；20 行多一个逗号、100 行重复、900 个空备注，用来演示预览与统计对错位行的容忍 | S:脏数据是故意的，不要清理——GETTING_STARTED 与契约测试都引用这份输入

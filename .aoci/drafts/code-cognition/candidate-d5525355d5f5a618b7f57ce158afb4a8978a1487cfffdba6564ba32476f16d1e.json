@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "53307b68c04f9b1dc642395846e9c7b58ffa9dbd119ae6757b7e0774f6edae4c",
+  "batch_id": "d5525355d5f5a618b7f57ce158afb4a8978a1487cfffdba6564ba32476f16d1e",
+  "composite_identity": "f823f83700ed2a46b92fde77d0b06ad12c0ad9efbe3213bb0e9d7458962afde1",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "d6273da8a7b4cc6f97ee26aa89cc81a4cfcc6d290a19204a809f3c2bbe9b16a7",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/demo.sh",
+      "path": "scripts/demo.sh",
+      "change": "update",
+      "source_sha256": "0a60616ecff50581fd5bc3c163c25020be7e40ba3dd957a33873857b6339daf8",
+      "existing_entry": "demo.sh[SZ6S]: F:一条命令的产品巡演：生成示例数据后按序跑预览、分析、过滤、编辑、公式（sum/countif/min/max/edate/通配符）、事务与整批撤销、格式、布局、聚合、透视、图表、导出（打印表头）与服务自检 | R:code:scripts/drill.sh | A:每步打印命令与输出；事务步骤用 set+delete 不依赖列序，随后一次 undo；导出后打印首行证明计算列落地；--big 调 drill.sh，--writes 转发，服务自检向 OS 要空闲端口 | S:必须用 release 二进制演示——debug 慢一个数量级会让大文件耗时失真；--writes 会写一份等大小副本"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "b6c446d1e327de7e4398c7dae176a88f89a4dfb985266750af51dc69d534039a",
+      "object_ref": "code:scripts/demo.sh",
+      "path": "scripts/demo.sh",
+      "change": "update",
+      "source_sha256": "0a60616ecff50581fd5bc3c163c25020be7e40ba3dd957a33873857b6339daf8",
+      "existing_entry": "demo.sh[SZ6S]: F:一条命令的产品巡演：生成示例数据后按序跑预览、分析、过滤、编辑、公式（sum/countif/min/max/edate/通配符）、事务与整批撤销、格式、布局、聚合、透视、图表、导出（打印表头）与服务自检 | R:code:scripts/drill.sh | A:每步打印命令与输出；事务步骤用 set+delete 不依赖列序，随后一次 undo；导出后打印首行证明计算列落地；--big 调 drill.sh，--writes 转发，服务自检向 OS 要空闲端口 | S:必须用 release 二进制演示——debug 慢一个数量级会让大文件耗时失真；--writes 会写一份等大小副本"
+    }
+  ]
+}
