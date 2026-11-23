@@ -2,6 +2,8 @@
 // Official MCP SDK compatibility check: same flow as scripts/mcp_client.py.
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 
 function arg(name, fallback) {
   const at = process.argv.indexOf(`--${name}`);
@@ -39,6 +41,16 @@ await call("csvx_edit_set", { path: file, row: 1, col: "city", value: "SDK" });
 await call("csvx_edit_undo", { path: file });
 await call("csvx_convert", { path: file, format: "tsv", out: "sdk.tsv" });
 console.log("convert_ok=true");
+if (existsSync(join(root, "plan.csv"))) {
+  let pipelineProgress = 0;
+  const pipeline = await client.callTool(
+    { name: "csvx_pipeline_run", arguments: { path: "plan.csv" } },
+    undefined,
+    { onprogress: () => { pipelineProgress += 1; } },
+  );
+  if (pipeline.isError) throw new Error(pipeline.content?.[0]?.text ?? "pipeline failed");
+  console.log(`pipeline_progress_events=${pipelineProgress}`);
+}
 const job = await call("csvx_job_submit", {
   tool: "csvx_quality",
   arguments: { path: file, key: "id", group: "city" },
