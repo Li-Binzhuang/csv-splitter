@@ -107,7 +107,7 @@
 
 ```
 算术 + - * / %  ()      比较 = <> > >= < <=
-逻辑 if(a,b,c) and or not isblank isnumber iferror exact
+逻辑 if(a,b,c) and or not isblank isnumber istext iserror iferror exact
 文本 & "字符串" left right mid trim replace substitute find search proper rept
      concat concatenate textjoin char code upper lower len value
 数字 round roundup rounddown abs floor ceil int sqrt mod min max sign power exp ln log

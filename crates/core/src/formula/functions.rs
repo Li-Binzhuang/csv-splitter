@@ -375,6 +375,22 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             Some(arg) => Value::Bool(matches!(eval(arg, ctx), Value::Number(_))),
             None => Value::Error,
         },
+        "iserror" => match args.first() {
+            Some(arg) => {
+                let value = eval(arg, ctx);
+                // ref/vlookup signal a miss with the text "#N/A", so iserror owns both
+                // spellings; otherwise a lookup miss is invisible to IFERROR-style tests.
+                Value::Bool(
+                    matches!(value, Value::Error)
+                        || matches!(&value, Value::Text(text) if text == "#N/A"),
+                )
+            }
+            None => Value::Error,
+        },
+        "istext" => match args.first() {
+            Some(arg) => Value::Bool(matches!(eval(arg, ctx), Value::Text(_))),
+            None => Value::Error,
+        },
         "iferror" => match args.first() {
             Some(arg) => {
                 let value = eval(arg, ctx);

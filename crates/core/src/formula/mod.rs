@@ -1418,6 +1418,17 @@ mod tests {
     }
 
     #[test]
+    fn iserror_and_istext_report_types() {
+        assert_eq!(eval_str("iserror(1/0)", &[]), "TRUE");
+        assert_eq!(eval_str("iserror(1)", &[]), "FALSE");
+        // ref/vlookup spell a miss as text, so iserror must own that spelling too.
+        assert_eq!(eval_str("iserror(\"#N/A\")", &[]), "TRUE");
+        assert_eq!(eval_str(r#"istext("A")"#, &[]), "TRUE");
+        assert_eq!(eval_str("istext(1)", &[]), "FALSE");
+        assert_eq!(eval_str("istext(1/0)", &[]), "FALSE");
+    }
+
+    #[test]
     fn median_reads_a_same_row_range_and_refuses_a_whole_column() {
         let columns = vec!["a".to_string(), "b".to_string(), "c".to_string()];
         let mut cells = HashMap::new();
