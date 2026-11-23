@@ -824,12 +824,59 @@ fn extract_parallel(
         }
         return Err(error);
     }
-    for part in &parts {
-        let mut file = File::open(part)?;
-        io::copy(&mut file, &mut out)?;
-        let _ = std::fs::remove_file(part);
-    }
+    // Copy each part into its own byte range in the final file, concurrently. The
+    // parts still exist (ordered extraction made them), but the serial 20 GB concat
+    // was the 100 GB export bottleneck; parallel writes use the disk instead of one
+    // core. Ranges are disjoint and computed from the part sizes.
     out.flush()?;
+    drop(out);
+    let header_len = std::fs::metadata(output)?.len();
+    let mut offsets = Vec::with_capacity(parts.len());
+    let mut next_offset = header_len;
+    for part in &parts {
+        offsets.push(next_offset);
+        next_offset += std::fs::metadata(part)?.len();
+    }
+    let final_path = output.to_path_buf();
+    let file = std::fs::OpenOptions::new().write(true).open(&final_path)?;
+    file.set_len(next_offset)?;
+    drop(file);
+    let mut copies = Vec::with_capacity(parts.len());
+    for (part, offset) in parts.iter().zip(offsets) {
+        let part = part.clone();
+        let final_path = final_path.clone();
+        copies.push(std::thread::spawn(move || -> io::Result<()> {
+            let mut src = File::open(&part)?;
+            let mut dst = std::fs::OpenOptions::new().write(true).open(&final_path)?;
+            dst.seek(SeekFrom::Start(offset))?;
+            let mut buffer = vec![0u8; 4 * 1024 * 1024];
+            loop {
+                let read = src.read(&mut buffer)?;
+                if read == 0 {
+                    break;
+                }
+                dst.write_all(&buffer[..read])?;
+            }
+            let _ = std::fs::remove_file(&part);
+            Ok(())
+        }));
+    }
+    for copy in copies {
+        match copy.join() {
+            Ok(Ok(())) => {}
+            Ok(Err(error)) => {
+                failure = Some(error);
+            }
+            Err(_) => failure = Some(io::Error::other("a filter copy worker panicked")),
+        }
+    }
+    if let Some(error) = failure {
+        let _ = std::fs::remove_file(output);
+        for part in &parts {
+            let _ = std::fs::remove_file(part);
+        }
+        return Err(error);
+    }
     summary.bytes = std::fs::metadata(output).map(|m| m.len()).unwrap_or(0);
     tx.send(ProgressEvent::PhaseDone {
         phase: "Filtering".into(),
