@@ -110,6 +110,9 @@
   delivery drill) reads 14.9 s filter / 16.3 s search against 13.2–13.9 / 13.8–14.6 at
   250M rows, with the same 78–81 MB. Filter/search cost tracks row count, not bytes;
   CAPABILITIES tells readers to estimate capacity from rows.
+- **`workday(start, days)`**: moves a date by business days, skipping weekends and
+  accepting negative days (no holiday list in the two-argument form); zero keeps the
+  date.
 - **`networkdays(start, end)`**: counts Monday–Friday days with both ends included
   (no holiday list in the two-argument form); an end before the start is `#VALUE!`.
 - **`weeknum(date)`**: the week number with Sunday as the first day (Excel WEEKNUM's

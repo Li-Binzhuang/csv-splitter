@@ -21,7 +21,7 @@
 //!          | concat(...) | concatenate(...) | textjoin(sep, ignore_empty, ...) | char(n) | code(text)
 //!          | value(x) | exact(a, b)
 //!          | year(x) | month(x) | day(x) | date(y, m, d) | datestring(x)
-//!          | edate(date, months) | eomonth(date, months) | weekday(date) | weeknum(date) | networkdays(start, end) | days(end, start)
+//!          | edate(date, months) | eomonth(date, months) | weekday(date) | weeknum(date) | networkdays(start, end) | workday(start, days) | days(end, start)
 //!          | if(cond, a[, b]) | and(...) | or(...) | not(x) | iferror(x, fallback)
 //!          | isblank(x) | isnumber(x) | row | lag(col[, n]) | running_total(col)
 //!          | sum(col) | average(col) | count(col)   (whole-column, constant per row)
@@ -1659,6 +1659,18 @@ mod tests {
             "#VALUE!",
             "ranges of different widths have no pairwise meaning"
         );
+    }
+
+    #[test]
+    fn workday_skips_weekends_and_accepts_negative_days() {
+        assert_eq!(eval_str(r#"workday("2026-01-02", 1)"#, &[]), "2026-01-05");
+        assert_eq!(eval_str(r#"workday("2026-01-05", -1)"#, &[]), "2026-01-02");
+        assert_eq!(
+            eval_str(r#"workday("2026-01-01", 0)"#, &[]),
+            "2026-01-01",
+            "zero days keeps the same date"
+        );
+        assert_eq!(eval_str(r#"workday("not-a-date", 1)"#, &[]), "#VALUE!");
     }
 
     #[test]

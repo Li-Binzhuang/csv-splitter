@@ -917,6 +917,32 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             },
             _ => Value::Error,
         },
+        // WORKDAY(start, days): move by business days, skipping weekends (no holiday
+        // list in the two-argument form). Negative days move backwards.
+        "workday" => match (
+            args.first().map(|a| eval(a, ctx).text()),
+            args.get(1).and_then(|a| eval(a, ctx).number()),
+        ) {
+            (Some(start), Some(days)) if days.is_finite() => match parse_date(&start) {
+                Some((year, month, day)) => {
+                    let delta = days.trunc() as i64;
+                    let mut civil = days_from_civil(year, month, day);
+                    let step = delta.signum();
+                    let mut left = delta.abs();
+                    while left > 0 {
+                        civil += step;
+                        let weekday = (civil + 4).rem_euclid(7) + 1;
+                        if (2..=6).contains(&weekday) {
+                            left -= 1;
+                        }
+                    }
+                    let (y, m, d) = civil_from_days(civil);
+                    Value::Text(format!("{y:04}-{m:02}-{d:02}"))
+                }
+                None => Value::Error,
+            },
+            _ => Value::Error,
+        },
         // ---- row position ---------------------------------------------------
         "row" => Value::Number((ctx.row + 1) as f64),
 
@@ -1289,6 +1315,20 @@ fn days_from_civil(year: i32, month: u32, day: u32) -> i64 {
 }
 
 /// Spreadsheet weekday: Sunday = 1 … Saturday = 7.
+/// Inverse of `days_from_civil` (Howard Hinnant's civil_from_days).
+fn civil_from_days(z: i64) -> (i32, u32, u32) {
+    let z = z + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = mp + if mp < 10 { 3 } else { -9 };
+    (if m <= 2 { y + 1 } else { y } as i32, m as u32, d as u32)
+}
+
 fn weekday(year: i32, month: u32, day: u32) -> i32 {
     let days = days_from_civil(year, month, day);
     (days + 4).rem_euclid(7) as i32 + 1
