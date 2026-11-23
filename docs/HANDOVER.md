@@ -45,6 +45,36 @@ scripts/demo.sh --big /tmp/csvx_big/big10.csv          # 11.2 GB 读路径
 
 细节见 [`INTEGRATION.md`](INTEGRATION.md)（含错误码速查与并发约定），字段含义见 [`API.md`](API.md)。
 
+## Journal 压实（阶段 2，设计与基线）
+
+**基线（2026-11-23，1M 行 base，release）**：journal 100 万条（22 MB）：view 0.46 s / export
+1.00 s / undo 0.51 s；1000 万条（222 MB）：view **4.84 s** / export **4.61 s** / undo **5.50 s**。
+耗时随 journal 行数线性增长；1M 条以内还可用，千万级已明显拖慢打开与回滚。
+
+**为什么不能直接把 op 折进 base**：`Op::SetCell` 只存新值，不存旧值；现有 undo 的做法是从
+journal 尾部弹出一条 op，然后以 base 为底重放剩余 journal。若把已应用的 op 折进 base 并清空
+journal，undo 就失去恢复旧值的依据。因此压实必须同时保留“可回退的历史”，而不是只留当前状态。
+
+**选定方案（显式 `edit compact`，一次一层，保留 base 原始字节）**
+
+1. 前置条件：redo 为空；先写临时快照，fsync。
+2. 原 `b.csv` 改名为 `b.csv.base`（原始字节完整保留，base 仍然只读）；journal 改名为
+   `b.csv.journal.history`，blocks 一并移动；快照原子替换 `b.csv`，当前 journal 清空。
+3. 所有读者路径不变：`b.csv` 现在是快照；新编辑仍写 `b.csv.journal`（相对快照的 row 0）。
+4. **undo 跨界**：当前 journal 为空且 history 存在时，先把 `.base` 和 history 换回，再执行原来的
+   尾部 undo；redo 继续按原语义工作。若 redo 非空则拒绝跨界的 undo（因为 redo 对应快照后的状态，
+   换回会使其失效），错误里说明原因。
+5. **崩溃恢复**：压实前写标记（含快照 sha256、原 base、history 路径）；打开时校验当前 base 的
+   sha256：若已是快照，则清空 journal/删标记；若仍是原 base，则删标记保留 journal。标记损坏时
+   拒绝自动修复，提示用户运行 `edit repair`。
+6. **sidecar**：`.idx` 随原 base 改名为 `.base.idx`，快照下次访问重建；`.view` 保留（列布局与快照
+   无关，行数由 journal 决定）。
+7. 不做隐式自动压实；先显式命令，等崩溃/并发测试稳定后再评估阈值。
+
+**验收（尚未实现，下一轮起）**：压实后打开/导出时间不随已折叠历史增长（1000 万条 history 的
+view/export 回到 <0.1 s 量级）；跨界 undo/redo 状态正确；`verify` 与“压实时导出的结果”逐字节
+一致；在 2/4/5 步骤分别注入崩溃都能回到一致状态；并发写压实时走 `update_locked` 不丢编辑。
+
 ## 对 Excel / WPS 的覆盖
 
 | 电子表格操作 | 这里怎么做的 |
