@@ -7477,6 +7477,13 @@ impl McpJson {
     }
 }
 
+struct McpJob {
+    child: std::process::Child,
+    stdout: PathBuf,
+    stderr: PathBuf,
+    result: Option<(bool, i32, String)>,
+}
+
 struct McpParser<'a> {
     bytes: &'a [u8],
     pos: usize,
@@ -7701,7 +7708,7 @@ fn mcp_result(id: Option<&McpJson>, result: &str) -> String {
 }
 
 fn mcp_tools() -> &'static str {
-    r#"[{"name":"csvx_schema","description":"Columns, types and row count for a CSV; read-only.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_view","description":"A page of rows; start/count cursor paging; optional where.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"start":{"type":"integer","minimum":0},"count":{"type":"integer","minimum":1,"maximum":1000},"where":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_filter","description":"Evaluate a row predicate and return matching rows or row numbers.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"where":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":1000},"show":{"type":"boolean"}},"required":["path","where"],"additionalProperties":false}},{"name":"csvx_search","description":"Search text across columns or a chosen column set.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"query":{"type":"string"},"columns":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":1000}},"required":["path","query"],"additionalProperties":false}},{"name":"csvx_quality","description":"Quality report: candidate keys, duplicates, mixed types, outliers, groups.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"key":{"type":"string"},"group":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_pipeline_status","description":"Read the .pipeline.csv state for a plan: hashes and per-step timings.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_edit_set","description":"Set one cell (1-based row, column name); uses the journal and write lock.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"row":{"type":"integer","minimum":1},"col":{"type":"string"},"value":{"type":"string"},"expect":{"type":"string"}},"required":["path","row","col","value"],"additionalProperties":false}},{"name":"csvx_edit_delete","description":"Delete one row by number or every row matching a predicate.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"row":{"type":"integer","minimum":1},"where":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_edit_undo","description":"Undo the last journal batch.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_edit_redo","description":"Redo the last undone batch.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_convert","description":"Convert to tsv/ndjson/parquet/csv; writes a new file (xlsx is disabled).","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"format":{"type":"string","enum":["csv","tsv","ndjson","parquet"]},"out":{"type":"string"}},"required":["path","format","out"],"additionalProperties":false}}]"#
+    r#"[{"name":"csvx_schema","description":"Columns, types and row count for a CSV; read-only.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_view","description":"A page of rows; start/count cursor paging; optional where.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"start":{"type":"integer","minimum":0},"count":{"type":"integer","minimum":1,"maximum":1000},"where":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_filter","description":"Evaluate a row predicate and return matching rows or row numbers.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"where":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":1000},"show":{"type":"boolean"}},"required":["path","where"],"additionalProperties":false}},{"name":"csvx_search","description":"Search text across columns or a chosen column set.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"query":{"type":"string"},"columns":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":1000}},"required":["path","query"],"additionalProperties":false}},{"name":"csvx_quality","description":"Quality report: candidate keys, duplicates, mixed types, outliers, groups.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"key":{"type":"string"},"group":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_pipeline_status","description":"Read the .pipeline.csv state for a plan: hashes and per-step timings.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_edit_set","description":"Set one cell (1-based row, column name); uses the journal and write lock.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"row":{"type":"integer","minimum":1},"col":{"type":"string"},"value":{"type":"string"},"expect":{"type":"string"}},"required":["path","row","col","value"],"additionalProperties":false}},{"name":"csvx_edit_delete","description":"Delete one row by number or every row matching a predicate.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"row":{"type":"integer","minimum":1},"where":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_edit_undo","description":"Undo the last journal batch.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_edit_redo","description":"Redo the last undone batch.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_convert","description":"Convert to tsv/ndjson/parquet/csv; writes a new file (xlsx is disabled).","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"format":{"type":"string","enum":["csv","tsv","ndjson","parquet"]},"out":{"type":"string"}},"required":["path","format","out"],"additionalProperties":false}},{"name":"csvx_job_submit","description":"Run a tool asynchronously; returns a job id for polling.","inputSchema":{"type":"object","properties":{"tool":{"type":"string"},"arguments":{"type":"object"}},"required":["tool","arguments"],"additionalProperties":false}},{"name":"csvx_job_status","description":"Poll a submitted job; returns running, done with output, or failed.","inputSchema":{"type":"object","properties":{"id":{"type":"string"}},"required":["id"],"additionalProperties":false}}]"#
 }
 
 fn mcp_path(root: &Path, args: &McpJson) -> Result<std::path::PathBuf, String> {
@@ -7746,7 +7753,7 @@ fn mcp_output_path(root: &Path, args: &McpJson) -> Result<PathBuf, String> {
     Ok(candidate)
 }
 
-fn mcp_run_tool(root: &Path, name: &str, args: &McpJson) -> Result<String, String> {
+fn mcp_command(root: &Path, name: &str, args: &McpJson) -> Result<std::process::Command, String> {
     let bin = std::env::current_exe().map_err(|e| e.to_string())?;
     let path = mcp_path(root, args)?;
     let mut command = std::process::Command::new(bin);
@@ -7898,6 +7905,12 @@ fn mcp_run_tool(root: &Path, name: &str, args: &McpJson) -> Result<String, Strin
         }
         _ => return Err(format!("unknown tool {name}")),
     }
+    Ok(command)
+}
+
+fn mcp_run_tool(root: &Path, name: &str, args: &McpJson) -> Result<String, String> {
+    let mut command = mcp_command(root, name, args)?;
+    command.stdin(std::process::Stdio::null());
     let output = command
         .output()
         .map_err(|e| format!("cannot run csvx: {e}"))?;
@@ -7907,11 +7920,85 @@ fn mcp_run_tool(root: &Path, name: &str, args: &McpJson) -> Result<String, Strin
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
+fn mcp_start_job(
+    root: &Path,
+    tool: &str,
+    arguments: &McpJson,
+    job_id: &str,
+) -> Result<McpJob, String> {
+    if tool.starts_with("csvx_job_") {
+        return Err("job tools cannot be submitted as jobs".to_string());
+    }
+    let mut command = mcp_command(root, tool, arguments)?;
+    let stamp = format!("{}-{}", std::process::id(), job_id);
+    let stdout = std::env::temp_dir().join(format!("csvx-mcp-{stamp}.out"));
+    let stderr = std::env::temp_dir().join(format!("csvx-mcp-{stamp}.err"));
+    let out = std::fs::File::create(&stdout).map_err(|e| e.to_string())?;
+    let err = std::fs::File::create(&stderr).map_err(|e| e.to_string())?;
+    command
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::from(out))
+        .stderr(std::process::Stdio::from(err));
+    let child = command
+        .spawn()
+        .map_err(|e| format!("cannot start job: {e}"))?;
+    Ok(McpJob {
+        child,
+        stdout,
+        stderr,
+        result: None,
+    })
+}
+
+fn mcp_job_text(job_id: &str, job: &mut McpJob) -> String {
+    if let Some((success, code, message)) = &job.result {
+        return if *success {
+            format!(
+                r#"{{"job":{},"state":"done","output":{}}}"#,
+                mcp_quote(job_id),
+                mcp_quote(message)
+            )
+        } else {
+            format!(
+                r#"{{"job":{},"state":"failed","exitCode":{},"error":{}}}"#,
+                mcp_quote(job_id),
+                code,
+                mcp_quote(message)
+            )
+        };
+    }
+    match job.child.try_wait() {
+        Ok(None) => format!(r#"{{"job":{},"state":"running"}}"#, mcp_quote(job_id)),
+        Ok(Some(status)) => {
+            let text = std::fs::read_to_string(&job.stdout)
+                .map(|value| value.trim().to_string())
+                .unwrap_or_default();
+            let error = std::fs::read_to_string(&job.stderr)
+                .map(|value| value.trim().to_string())
+                .unwrap_or_default();
+            let _ = std::fs::remove_file(&job.stdout);
+            let _ = std::fs::remove_file(&job.stderr);
+            let success = status.success();
+            let code = status.code().unwrap_or(-1);
+            let message = if success { text } else { error };
+            job.result = Some((success, code, message.clone()));
+            mcp_job_text(job_id, job)
+        }
+        Err(error) => format!(
+            r#"{{"job":{},"state":"failed","error":{}}}"#,
+            mcp_quote(job_id),
+            mcp_quote(&error.to_string())
+        ),
+    }
+}
+
 /// Serve MCP over stdio. One JSON-RPC object per line, stdout reserved for protocol.
 pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
     use std::io::{BufRead, Write};
     let stdin = io::stdin();
     let mut stdout = io::stdout();
+    let mut jobs: HashMap<String, McpJob> = HashMap::new();
+    let mut next_job = 1u64;
     for line in stdin.lock().lines() {
         let line = line?;
         let trimmed = line.trim();
@@ -7957,9 +8044,40 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
                     .and_then(|envelope| envelope.get("arguments"))
                     .cloned()
                     .unwrap_or(McpJson::Object(Vec::new()));
-                match mcp_run_tool(root, name, &arguments) {
-                    Ok(text) => mcp_tool_text(id, &text, false),
-                    Err(error) => mcp_tool_text(id, &error, true),
+                if name == "csvx_job_submit" {
+                    let tool = arguments
+                        .get("tool")
+                        .and_then(McpJson::as_str)
+                        .unwrap_or("")
+                        .to_string();
+                    let job_arguments = arguments
+                        .get("arguments")
+                        .cloned()
+                        .unwrap_or(McpJson::Object(Vec::new()));
+                    let job_id = format!("job-{next_job}");
+                    next_job += 1;
+                    match mcp_start_job(root, &tool, &job_arguments, &job_id) {
+                        Ok(job) => {
+                            jobs.insert(job_id.clone(), job);
+                            mcp_tool_text(
+                                id,
+                                &format!(r#"{{"job":{},"state":"running"}}"#, mcp_quote(&job_id)),
+                                false,
+                            )
+                        }
+                        Err(error) => mcp_tool_text(id, &error, true),
+                    }
+                } else if name == "csvx_job_status" {
+                    let job_id = arguments.get("id").and_then(McpJson::as_str).unwrap_or("");
+                    match jobs.get_mut(job_id) {
+                        Some(job) => mcp_tool_text(id, &mcp_job_text(job_id, job), false),
+                        None => mcp_tool_text(id, &format!("unknown job {job_id}"), true),
+                    }
+                } else {
+                    match mcp_run_tool(root, name, &arguments) {
+                        Ok(text) => mcp_tool_text(id, &text, false),
+                        Err(error) => mcp_tool_text(id, &error, true),
+                    }
                 }
             }
             _ => mcp_error(id, -32601, &format!("method not found: {method}")),

@@ -134,8 +134,8 @@ RSS <200 MB 均满足；100 GB 是重复块，真实分布待补。复现见 `do
 
 `mcp --root DIR`：stdio JSON-RPC；读工具 `csvx_schema/view/filter/search/quality/pipeline_status`，
 写工具 `csvx_edit_set/delete/undo/redo` 与 `csvx_convert` 复用 journal 锁与 root 限制。
-CLI 测试覆盖 initialize、tools/list、schema/view/filter，以及 edit set→view→undo 和 convert TSV。
-2.3 GB/9500 万行 MCP drill：cold schema 3.11 s、warm 0.03 s、深分页 0.02 s、filter 0.77 s、
+CLI 测试覆盖 initialize、tools/list、schema/view/filter、edit set→view→undo、convert TSV，
+以及异步 job 提交/轮询（done 结果缓存）。2.3 GB/9500 万行 MCP drill：cold schema 3.11 s、warm 0.03 s、深分页 0.02 s、filter 0.77 s、
 search 0.56 s、quality 22.25 s；响应 0.4–4 KB。下一步：job 状态与真实客户端联调。
 
 ## Pipeline 工作台（A 主线，进行中）## Pipeline 工作台（A 主线，进行中）

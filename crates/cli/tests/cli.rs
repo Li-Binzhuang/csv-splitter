@@ -2743,6 +2743,78 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
     assert!(tsv.starts_with("city\tamount\n"), "{tsv}");
 }
 
+/// MCP long tools can be submitted as jobs and polled without blocking the server.
+#[test]
+fn mcp_jobs_run_asynchronously_and_report_state() {
+    use std::io::Write;
+    use std::process::Stdio;
+    let dir = TempDir::new("mcp-job");
+    let file = dir.join("t.csv");
+    std::fs::write(&file, "city,amount\nCDMX,10\nPuebla,20\n").unwrap();
+    let mut child = Command::new(bin())
+        .args(["mcp", "--root", dir.0.to_str().unwrap()])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let stdout_pipe = child.stdout.take().expect("stdout");
+    let reader = std::thread::spawn(move || {
+        use std::io::BufRead;
+        let mut text = String::new();
+        for line in std::io::BufReader::new(stdout_pipe).lines() {
+            text.push_str(&line.unwrap_or_default());
+            text.push('\n');
+        }
+        text
+    });
+    {
+        let stdin = child.stdin.as_mut().expect("stdin");
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":1,"method":"initialize","params":{{}}}}"#
+        )
+        .unwrap();
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{{"name":"csvx_job_submit","arguments":{{"tool":"csvx_schema","arguments":{{"path":"t.csv"}}}}}}}}"#
+        )
+        .unwrap();
+        stdin.flush().unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(200));
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{{"name":"csvx_job_status","arguments":{{"id":"job-1"}}}}}}"#
+        )
+        .unwrap();
+        stdin.flush().unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(1500));
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{{"name":"csvx_job_status","arguments":{{"id":"job-1"}}}}}}"#
+        )
+        .unwrap();
+        stdin.flush().unwrap();
+    }
+    drop(child.stdin.take());
+    let status = child.wait().unwrap();
+    let stderr = {
+        use std::io::Read;
+        let mut text = String::new();
+        if let Some(mut pipe) = child.stderr.take() {
+            let _ = pipe.read_to_string(&mut text);
+        }
+        text
+    };
+    assert!(status.success(), "{stderr}");
+    let stdout = reader.join().unwrap();
+    assert!(stdout.contains("job-1"), "{stdout}");
+    assert!(
+        stdout.contains("done"),
+        "stdout:\n{stdout}\nstderr:\n{stderr}"
+    );
+}
+
 /// A bulk edit is one journal entry however many rows it changes.
 #[test]
 fn bulk_edit_matches_a_filter_and_stays_one_operation() {

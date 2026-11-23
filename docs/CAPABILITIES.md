@@ -192,7 +192,9 @@ output,joined,orders,joined.csv,,,,,"customer,region"
 
 路径必须落在 `--root` 内；写工具复用 journal 锁：
 `csvx_edit_set`（row/col/value/expect）、`csvx_edit_delete`（row 或 where）、`csvx_edit_undo`、`csvx_edit_redo`、`csvx_convert`（tsv/ndjson/parquet/csv，输出限制在 root）。
-`initialize` / `tools/list` / `tools/call` 已实现；job 队列与 MCP 客户端联调后续。UTF-8 参数按字节保留，JSON-RPC 一行一条。
+长任务可走异步 job：`csvx_job_submit`（tool + arguments）返回 `job-1`，`csvx_job_status` 返回
+running/done（带 output）/failed（带 exitCode/error）；结果会缓存，重复轮询不丢输出。
+`initialize` / `tools/list` / `tools/call` 已实现；UTF-8 参数按字节保留，JSON-RPC 一行一条。
 
 2.3 GB/9500 万行 MCP drill（2026-11-23）：cold `schema` 3.11 s（建 760 KB 稀疏索引），
 warm schema 0.03 s，`view start=45,000,000` 0.02 s，`filter` 0.77 s，`search` 0.56 s，
