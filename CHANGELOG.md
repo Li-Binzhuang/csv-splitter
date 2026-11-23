@@ -176,6 +176,8 @@
 - **Run lock**: `<plan>.pipeline.lock` blocks a second run on the same plan; locks
   older than 24h are treated as stale and removed. Test holds a lock manually, asserts
   refusal/no output, then runs and asserts release.
+- **MCP status verify**: `csvx_pipeline_status` accepts verify and returns fresh
+  fields; test runs a DAG, then verifies the stored state over MCP.
 - **Status verify**: `pipeline status --verify` recomputes stamps/hashes against
   current files and reports fresh/stale; test corrupts an output and sees stale.
 - **Persisted lineage**: successful linear/DAG runs write `<plan>.lineage.csv`

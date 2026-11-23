@@ -3625,6 +3625,11 @@ fn mcp_runs_a_declarative_pipeline() {
             r#"{{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{{"name":"csvx_pipeline_run","arguments":{{"path":"plan.csv","dag":true,"jobs":2}}}}}}"#
         )
         .unwrap();
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{{"name":"csvx_pipeline_status","arguments":{{"path":"plan.csv","verify":true}}}}}}"#
+        )
+        .unwrap();
     }
     drop(child.stdin.take());
     let output = child.wait_with_output().unwrap();
@@ -3637,6 +3642,7 @@ fn mcp_runs_a_declarative_pipeline() {
     assert!(stdout.contains(r#""isError":false"#), "{stdout}");
     assert!(stdout.contains("steps"), "{stdout}");
     assert!(stdout.contains("filtered"), "{stdout}");
+    assert!(stdout.contains("fresh"), "{stdout}");
     assert_eq!(
         std::fs::read_to_string(dir.join("filtered.csv")).unwrap(),
         "id,city\n1,CDMX\n3,CDMX\n"

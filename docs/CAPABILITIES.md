@@ -224,7 +224,7 @@ delimiter 检测也读解压后的内容。压缩流不可 seek，因此自动�
 - `csvx_filter`：谓词匹配行号，`limit` 上限 1000。
 - `csvx_search`：文本搜索，可按列。
 - `csvx_quality`：`analyze --quality` 报告，支持 key/group。
-- `csvx_pipeline_status`：读 `.pipeline.csv` 的哈希与耗时。
+- `csvx_pipeline_status`：读 `.pipeline.csv`；`verify=true` 时按当前 stamp/hash 返回 fresh/stale。
 - `csvx_pipeline_run`：直接执行声明式 pipeline（`force`/`dryRun`/`dag`/`jobs`/`clean`），
   agent 可触发拓扑 DAG、并发上限与 staging 清理；长任务可再包 `csvx_job_submit`。
 
