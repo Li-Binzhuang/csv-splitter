@@ -3163,6 +3163,55 @@ fn view_marks_cells_that_match_a_formatting_rule() {
     assert!(!text.contains("matched the formatting"), "{text}");
 }
 
+/// The pivot CLI must produce the same file through either engine, including an empty
+/// column key and every documented aggregate. Skips itself when DuckDB is not compiled in.
+#[test]
+fn pivot_engines_agree_through_the_cli() {
+    let version = Command::new(bin()).arg("--version").output().unwrap();
+    let text = String::from_utf8_lossy(&version.stdout);
+    if !text.contains("compiled in") {
+        return;
+    }
+    let dir = TempDir::new("pivotengine");
+    let input = dir.join("t.csv");
+    std::fs::write(
+        &input,
+        "city,kind,amount,qty\nA,x,1,10\nA,y,2,20\nB,x,3,30\nB,,4,40\n",
+    )
+    .unwrap();
+    let native = dir.join("native.csv");
+    let sql = dir.join("sql.csv");
+    for (engine, out) in [("native", &native), ("sql", &sql)] {
+        let out = Command::new(bin())
+            .args([
+                "pivot",
+                input.to_str().unwrap(),
+                "--rows",
+                "city",
+                "--cols",
+                "kind",
+                "--values",
+                "amount:sum,amount:mean,amount:min,amount:max,amount:count,qty:max",
+                "--engine",
+                engine,
+                "-o",
+                out.to_str().unwrap(),
+            ])
+            .output()
+            .unwrap();
+        assert_eq!(
+            out.status.code(),
+            Some(0),
+            "{}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+    let native = std::fs::read_to_string(&native).unwrap();
+    let sql = std::fs::read_to_string(&sql).unwrap();
+    assert_eq!(native, sql, "native:\n{native}\nsql:\n{sql}");
+    assert!(native.contains("B,4,4,4,4,1,40"), "{native}");
+}
+
 /// A pivot with no `-o` prints the matrix instead of writing a file next to the input.
 #[test]
 fn pivot_prints_the_matrix_by_default() {
