@@ -183,6 +183,8 @@
   are spawned concurrently. Children write staging files; only a fully successful
   wave renames them over the final outputs. A failure kills siblings and removes
   staging, leaving the previous outputs untouched and the main state unwritten.
+  DAG mode backs up old outputs before each wave and restores all of them if a
+  later wave fails.
 - **Pipeline retries**: `--retries N` / `--retry-delay MS` retry failed or timed-out
   steps; each attempt starts from a removed temp output, final failure stays atomic.
 - **Pipeline step timeout**: `--step-timeout <ms>` kills a hung child, removes the

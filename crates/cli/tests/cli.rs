@@ -2864,6 +2864,45 @@ fn mcp_jobs_run_asynchronously_and_report_state() {
     );
 }
 
+/// A failed later wave restores outputs committed by earlier waves.
+#[test]
+fn pipeline_dag_rolls_back_earlier_waves() {
+    let dir = TempDir::new("pipeline-dag-rollback");
+    std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n2,Puebla\n").unwrap();
+    std::fs::write(dir.join("a.csv"), "id,city\n99,OLD\n").unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},a.csv\nb,a,convert,--format bogus -o {out},b.csv\n",
+    )
+    .unwrap();
+    let result = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--dag",
+            "--jobs",
+            "2",
+        ])
+        .output()
+        .unwrap();
+    assert!(!result.status.success());
+    assert_eq!(
+        std::fs::read_to_string(dir.join("a.csv")).unwrap(),
+        "id,city\n99,OLD\n"
+    );
+    assert!(!dir.join("b.csv").exists());
+    assert!(!dir.join("plan.csv.pipeline.csv").exists());
+    let names: Vec<_> = std::fs::read_dir(&dir.0)
+        .unwrap()
+        .filter_map(Result::ok)
+        .filter(|entry| entry.file_name().to_string_lossy().contains("dag-backup"))
+        .collect();
+    assert!(names.is_empty(), "{names:?}");
+}
+
 /// `--dag` schedules ready steps by dependencies, not manifest row order.
 #[test]
 fn pipeline_dag_runs_topological_waves() {

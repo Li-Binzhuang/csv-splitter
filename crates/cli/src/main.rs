@@ -8544,6 +8544,26 @@ fn run_branch_group(
 /// by `jobs`. Unlike the linear path, ordering follows the dependency graph, not the
 /// manifest row order.
 #[allow(clippy::too_many_arguments)]
+fn dag_output_backup(output: &std::path::Path, stamp: &str, index: usize) -> std::path::PathBuf {
+    output.with_file_name(format!(
+        ".{}.dag-backup-{stamp}-{index}",
+        output
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("out")
+    ))
+}
+
+fn restore_dag_outputs(touched: &[(std::path::PathBuf, Option<std::path::PathBuf>)]) {
+    for (output, backup) in touched {
+        let _ = std::fs::remove_file(output);
+        if let Some(backup) = backup {
+            let _ = std::fs::rename(backup, output);
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
 fn run_pipeline_dag(
     steps: &[PipelineStep],
     root: &std::path::Path,
@@ -8567,6 +8587,15 @@ fn run_pipeline_dag(
     let mut done = HashSet::new();
     let mut results = Vec::with_capacity(steps.len());
     let mut state_rows = Vec::with_capacity(steps.len());
+    let stamp = format!(
+        "{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|duration| duration.as_nanos())
+            .unwrap_or(0)
+    );
+    let mut touched: Vec<(std::path::PathBuf, Option<std::path::PathBuf>)> = Vec::new();
     while done.len() < steps.len() {
         let ready: Vec<usize> = (0..steps.len())
             .filter(|index| {
@@ -8603,7 +8632,21 @@ fn run_pipeline_dag(
             continue;
         }
         let wave: Vec<usize> = stale.into_iter().take(jobs).collect();
-        let outcomes = run_branch_group(
+        for &index in &wave {
+            let output = &steps[index].output;
+            if output.exists() {
+                let backup = dag_output_backup(output, &stamp, index);
+                let _ = std::fs::remove_file(&backup);
+                if let Err(error) = std::fs::rename(output, &backup) {
+                    restore_dag_outputs(&touched);
+                    return Err(error);
+                }
+                touched.push((output.clone(), Some(backup)));
+            } else {
+                touched.push((output.clone(), None));
+            }
+        }
+        let outcomes = match run_branch_group(
             steps,
             &wave,
             root,
@@ -8611,11 +8654,22 @@ fn run_pipeline_dag(
             step_timeout_ms,
             retries,
             retry_delay_ms,
-        )?;
+        ) {
+            Ok(outcomes) => outcomes,
+            Err(error) => {
+                restore_dag_outputs(&touched);
+                return Err(error);
+            }
+        };
         for (offset, (name, fresh, ms, output, state_row)) in outcomes.into_iter().enumerate() {
             results.push((name, fresh, ms, output));
             state_rows.push(state_row);
             done.insert(wave[offset]);
+        }
+    }
+    for (_, backup) in &touched {
+        if let Some(backup) = backup {
+            let _ = std::fs::remove_file(backup);
         }
     }
     save_pipeline_state(state_path, &state_rows)?;
