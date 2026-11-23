@@ -27,6 +27,9 @@ id,city,amount,customer
 4,Tijuana,40,C4
 5,CDMX,50,C5
 CSV
+if command -v gzip >/dev/null 2>&1; then
+  gzip -c "$DIR/orders.csv" > "$DIR/orders.csv.gz"
+fi
 cat > "$DIR/plan.csv" <<'PLAN'
 step,input,command,args,output
 filtered,orders.csv,filter,--where city=CDMX -o {out},filtered.csv

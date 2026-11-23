@@ -51,6 +51,14 @@ if (existsSync(join(root, "plan.csv"))) {
   if (pipeline.isError) throw new Error(pipeline.content?.[0]?.text ?? "pipeline failed");
   console.log(`pipeline_progress_events=${pipelineProgress}`);
 }
+if (existsSync(join(root, "orders.csv.gz"))) {
+  const gzip = await call("csvx_search", {
+    path: "orders.csv.gz",
+    query: "CDMX",
+    materialize: true,
+  });
+  console.log(`gzip_matched=${gzip.matched ?? 0}`);
+}
 const job = await call("csvx_job_submit", {
   tool: "csvx_quality",
   arguments: { path: file, key: "id", group: "city" },
