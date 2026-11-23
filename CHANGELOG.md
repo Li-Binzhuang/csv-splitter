@@ -123,6 +123,8 @@
   records via `visit_fields` instead of allocating `String` fields; search also
   rejects a record whose raw bytes cannot contain the query before splitting it.
   11 GB/280M rows: search 17.09 s -> 2.62 s, filter 15.88 s -> 3.58 s, RSS 77 MB.
+  31 GB/780M rows: index 11.11 s, search 7.38 s, filter 10.13 s, filter -o 7.81 s,
+  RSS 81 MB, so the 30 s budget now covers at least 30 GB.
 - **Parallel filter output**: UTF-8 files are split on line boundaries; workers match
   independently and write ordered part files that the main thread merges. 11 GB/280M
   rows: `filter -o` no-match 2.61 s, 56M matches with a 2.2 GB output 5.26 s (RSS
