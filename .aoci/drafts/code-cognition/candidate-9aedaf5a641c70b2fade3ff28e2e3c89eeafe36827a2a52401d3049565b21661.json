@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "898a7d51c84c512a76e2851bff78f5be6c758b3f3fb7a90f1a0f64a5133fd8ae",
+  "batch_id": "9aedaf5a641c70b2fade3ff28e2e3c89eeafe36827a2a52401d3049565b21661",
+  "composite_identity": "3cd56c5fae7a571167243d061a0e72ac7b0042615fd220e51ddfcdb4db966377",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "5c6ce63317b629f8d900a6e93951e16222be018ace882825f4444535085b9145",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "5b081409db18bdcf79b7182081c8873243317e5d6f10045abaf63cb01d6ba771",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录 filter -o 并行、字节谓词、31 GB 边界、edit compact（ENOSPC/崩溃/锁）、book --plan 声明式清单（2.1 GB/5500 万行 46–48 s、15 MB、幂等字节一致、不做 Sheet!A1）、预扫 25–30 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "106decd48c3eaa79f0bf2c3f2fa94e122d04d6cb6e6fe3bd1fd53999aefba533",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；edit transaction 映射；edit undo 先 restore_compacted；edit compact；journal 加载前 recover_compaction；book 新增 --plan 调 apply_manifest，无 --plan 仍列目录；帮助表必须列全 flag | S:新增 flag 必须写进 print_command_help；错误退出码映射固定；标记消费后必须写回 journal"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/profile.rs",
+      "path": "crates/core/src/profile.rs",
+      "change": "update",
+      "source_sha256": "f92c60d34293c5b118b19ef0b007e214784b256c9cb521d98652f8a1f4770836",
+      "existing_entry": "profile.rs[DA8L]: F:列画像：单遍流式统计每列取值、空值与类型分布 | R:code:crates/core/src/preview.rs | A:十 GB 文件只读一遍，输出列级摘要而非全量取值 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "b7ff7c9d5cd376debbd546bd2fd83cfbd23612d539812b4783dafcd8eeb52360",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表、大文件边界；阶段 1 闭环；edit compact（10M history 8.98 s、之后 0.02 s、ENOSPC 不改文件、并发等锁）；阶段 3 book 清单 book --plan（sheet/lookup/output、链式查找、幂等、未知名硬错误、不做 Sheet!A1）；2.1 GB/5500 万行两链式 lookup 46–48 s、RSS 15 MB | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "b9c467ad48a7bb28b2f4c4474ce12233608a50a4769aac51f680322176c03d1f",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "5b081409db18bdcf79b7182081c8873243317e5d6f10045abaf63cb01d6ba771",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录 filter -o 并行、字节谓词、31 GB 边界、edit compact（ENOSPC/崩溃/锁）、book --plan 声明式清单（2.1 GB/5500 万行 46–48 s、15 MB、幂等字节一致、不做 Sheet!A1）、预扫 25–30 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "859222c6e83a367e67c900c85075e2f009379c1c602f061ae4be1ccc4aeeb852",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "106decd48c3eaa79f0bf2c3f2fa94e122d04d6cb6e6fe3bd1fd53999aefba533",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；edit transaction 映射；edit undo 先 restore_compacted；edit compact；journal 加载前 recover_compaction；book 新增 --plan 调 apply_manifest，无 --plan 仍列目录；帮助表必须列全 flag | S:新增 flag 必须写进 print_command_help；错误退出码映射固定；标记消费后必须写回 journal"
+    },
+    {
+      "candidate_id": "d6dcb6ad4ecfd6c7bb860448e3032736ef46b17f55188a65a9b1f180beeaca12",
+      "object_ref": "code:crates/core/src/profile.rs",
+      "path": "crates/core/src/profile.rs",
+      "change": "update",
+      "source_sha256": "f92c60d34293c5b118b19ef0b007e214784b256c9cb521d98652f8a1f4770836",
+      "existing_entry": "profile.rs[DA8L]: F:列画像：单遍流式统计每列取值、空值与类型分布 | R:code:crates/core/src/preview.rs | A:十 GB 文件只读一遍，输出列级摘要而非全量取值 | S:-"
+    },
+    {
+      "candidate_id": "d95a1d1fabeca43ed543713b17cde45d01d6cee2131be370d18c62153b6c002d",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "b7ff7c9d5cd376debbd546bd2fd83cfbd23612d539812b4783dafcd8eeb52360",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表、大文件边界；阶段 1 闭环；edit compact（10M history 8.98 s、之后 0.02 s、ENOSPC 不改文件、并发等锁）；阶段 3 book 清单 book --plan（sheet/lookup/output、链式查找、幂等、未知名硬错误、不做 Sheet!A1）；2.1 GB/5500 万行两链式 lookup 46–48 s、RSS 15 MB | S:-"
+    }
+  ]
+}
