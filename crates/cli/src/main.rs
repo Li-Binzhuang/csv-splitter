@@ -17,7 +17,7 @@ use csvx_core::sort::SortColumn;
 use csvx_core::splitter::run_split_threads;
 use csvx_core::sql::{self, DEFAULT_LIMIT};
 use csvx_core::*;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::mpsc;
@@ -136,6 +136,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         &[
             ("--dry-run", "Report fresh/would-run steps without executing"),
             ("--force", "Rerun every step even when fresh"),
+            ("--step-timeout", "Kill a step after N milliseconds (0 = none)"),
             ("--json", "Emit JSON (run and status)"),
             ("--root", "Directory for relative inputs/outputs"),
         ],
@@ -8074,11 +8075,66 @@ fn save_pipeline_state(path: &std::path::Path, rows: &[PipelineStateRow]) -> std
     std::fs::rename(&tmp, path)
 }
 
+/// Run one pipeline child with an optional wall-clock timeout.
+///
+/// `Command::output()` waits forever; pipeline steps are external processes that
+/// can hang on a bad command. The two reader threads drain stdout/stderr while
+/// `try_wait` polls, so a verbose step cannot fill a pipe and deadlock the parent.
+fn run_step_command(
+    mut process: std::process::Command,
+    timeout_ms: u64,
+) -> std::io::Result<std::process::Output> {
+    process
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+    let mut child = process.spawn()?;
+    let mut stdout = child.stdout.take().expect("piped stdout");
+    let mut stderr = child.stderr.take().expect("piped stderr");
+    let stdout_thread = thread::spawn(move || {
+        let mut bytes = Vec::new();
+        let _ = stdout.read_to_end(&mut bytes);
+        bytes
+    });
+    let stderr_thread = thread::spawn(move || {
+        let mut bytes = Vec::new();
+        let _ = stderr.read_to_end(&mut bytes);
+        bytes
+    });
+    let started = Instant::now();
+    let status = loop {
+        match child.try_wait()? {
+            Some(status) => break status,
+            None => {
+                if timeout_ms > 0 && started.elapsed() >= Duration::from_millis(timeout_ms) {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    let _ = stdout_thread.join();
+                    let _ = stderr_thread.join();
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::TimedOut,
+                        format!("step exceeded {timeout_ms} ms"),
+                    ));
+                }
+                thread::sleep(Duration::from_millis(10));
+            }
+        }
+    };
+    let stdout = stdout_thread.join().unwrap_or_default();
+    let stderr = stderr_thread.join().unwrap_or_default();
+    Ok(std::process::Output {
+        status,
+        stdout,
+        stderr,
+    })
+}
+
 fn run_pipeline_plan(
     plan: &std::path::Path,
     root: Option<&std::path::Path>,
     force: bool,
     dry_run: bool,
+    step_timeout_ms: u64,
 ) -> std::io::Result<Vec<(String, bool, u64, String)>> {
     let root = root
         .map(std::path::Path::to_path_buf)
@@ -8306,8 +8362,21 @@ fn run_pipeline_plan(
             process.args(&command[1..]);
         }
         process.args(&args);
-        let started = std::time::Instant::now();
-        let output = process.output()?;
+        let started = Instant::now();
+        let output = match run_step_command(process, step_timeout_ms) {
+            Ok(output) => output,
+            Err(error) if error.kind() == std::io::ErrorKind::TimedOut => {
+                let _ = std::fs::remove_file(&temp);
+                return Err(std::io::Error::other(format!(
+                    "step {} timed out after {} ms",
+                    step.name, step_timeout_ms
+                )));
+            }
+            Err(error) => {
+                let _ = std::fs::remove_file(&temp);
+                return Err(error);
+            }
+        };
         let elapsed_ms = started.elapsed().as_millis() as u64;
         if !output.status.success() {
             let _ = std::fs::remove_file(&temp);
@@ -8369,6 +8438,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
     let mut root: Option<std::path::PathBuf> = None;
     let mut force = false;
     let mut dry_run = false;
+    let mut step_timeout_ms = 0u64;
     let mut json = false;
     while let Some(arg) = p.next() {
         match arg.as_str() {
@@ -8381,6 +8451,17 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             },
             "--force" => force = true,
             "--dry-run" => dry_run = true,
+            "--step-timeout" => match p.value("--step-timeout").and_then(|value| {
+                value
+                    .parse::<u64>()
+                    .map_err(|_| "bad --step-timeout (milliseconds)".to_string())
+            }) {
+                Ok(value) => step_timeout_ms = value,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 2;
+                }
+            },
             "--json" => json = true,
             "-h" | "--help" => {
                 print_command_help("pipeline");
@@ -8411,7 +8492,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
         return 2;
     };
     match action.as_str() {
-        "run" => match run_pipeline_plan(&plan, root.as_deref(), force, dry_run) {
+        "run" => match run_pipeline_plan(&plan, root.as_deref(), force, dry_run, step_timeout_ms) {
             Ok(results) => {
                 if dry_run {
                     if json {

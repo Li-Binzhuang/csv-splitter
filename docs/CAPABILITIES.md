@@ -238,6 +238,8 @@ filtered,orders.csv,filter,--where city=CDMX -o {out},filtered.csv
 joined,filtered,lookup,--key cust_no --reference customers.csv --get name --out {out},joined.csv
 ```
 
+- `--step-timeout <ms>` 对每个步骤做硬超时：kill 子进程、删除临时输出、不写 state；
+  `0` 表示不限；stdout/stderr 由独立线程并发读取，避免管道写满死锁。
 - `--dry-run` 只报告 fresh / would-run，不执行、不写 state；`--json` 输出
   `{"dryRun":true,"steps":[{"step","fresh","detail"}]}`，便于评审与 MCP 消费。
 - `input` 为空表示上一步输出；也可写前一步的 `step` 名或文件路径。

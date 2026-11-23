@@ -147,6 +147,9 @@
 - **Compressed input**: search/filter/analyze read .zst/.gz/.bz2/.xz through a
   decompressing reader; non-seekable forces the sequential path. 2.3 GB zst filter
   writes a byte-identical 411 MB output in 4.16 s at 15 MB RSS (plain 1.51 s).
+- **Pipeline step timeout**: `--step-timeout <ms>` kills a hung child, removes the
+  temp output and leaves `.pipeline.csv` untouched; reader threads drain output so
+  a verbose step cannot deadlock the parent.
 - **Pipeline --dry-run**: reports fresh vs would-run steps without executing or
   writing `.pipeline.csv`; `--json` now emits `dryRun/steps` so MCP callers get
   structured output. Covered by the CLI pipeline test.

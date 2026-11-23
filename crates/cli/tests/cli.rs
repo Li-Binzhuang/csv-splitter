@@ -2864,6 +2864,45 @@ fn mcp_jobs_run_asynchronously_and_report_state() {
     );
 }
 
+/// A hung step must not hang the whole pipeline; the temp output is removed.
+#[test]
+fn pipeline_step_timeout_kills_the_child() {
+    let dir = TempDir::new("pipeline-timeout");
+    let mut big = String::from("id,city\n");
+    for i in 0..2_000_000 {
+        big.push_str(&format!(
+            "{i},{}\n",
+            if i % 5 == 0 { "CDMX" } else { "Puebla" }
+        ));
+    }
+    std::fs::write(dir.join("big.csv"), big).unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\nfiltered,big.csv,filter,--where city=CDMX -o {out},filtered.csv\n",
+    )
+    .unwrap();
+    let result = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--step-timeout",
+            "1",
+        ])
+        .output()
+        .unwrap();
+    assert!(!result.status.success());
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(stderr.contains("timed out after 1 ms"), "{stderr}");
+    assert!(
+        !dir.join("filtered.csv").exists(),
+        "temp output must be removed"
+    );
+    assert!(!dir.join("plan.csv.pipeline.csv").exists());
+}
+
 /// An agent can run the A-line workbench through MCP, not only inspect it.
 #[test]
 fn mcp_runs_a_declarative_pipeline() {
