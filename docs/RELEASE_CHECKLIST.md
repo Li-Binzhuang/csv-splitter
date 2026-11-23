@@ -13,6 +13,7 @@
 cargo build --release
 bash scripts/demo_end_to_end.sh
 bash scripts/package_release.sh   # dist/csvx-4.2.0-<platform>.tar.gz + .sha256
+bash scripts/verify_dist.sh dist/csvx-4.2.0-<platform>.tar.gz
 ```
 
 ## 3. 2026-11-23 本机验证
@@ -26,6 +27,7 @@ bash scripts/package_release.sh   # dist/csvx-4.2.0-<platform>.tar.gz + .sha256
 
 ## 4. 交付
 - 同时交付 tar.gz 与 `.sha256`；接收方先 `shasum -a 256 -c ...`；
+- 发布方可用 `scripts/verify_dist.sh` 校验 checksum、必需成员与包内二进制版本；
 - 首次运行建议 `csvx --version` 核对 `4.2.0` 与 DuckDB 编译状态；
 - macOS arm64 已验证；其他平台需在目标平台重建并重跑 demo。
 
