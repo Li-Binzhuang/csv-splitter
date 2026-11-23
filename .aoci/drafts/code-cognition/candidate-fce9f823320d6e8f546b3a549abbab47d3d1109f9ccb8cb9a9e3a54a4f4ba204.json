@@ -1,0 +1,93 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "00c6f1c5d90b27e667a1244d2289048bb41b637f3f1fb32ffb90a55c22c25d47",
+  "batch_id": "fce9f823320d6e8f546b3a549abbab47d3d1109f9ccb8cb9a9e3a54a4f4ba204",
+  "composite_identity": "ccd3ec20d18e4e03578a32534bb329603057cd48fa31261d9ddb7008eaade56d",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "6a9cbe0e4505021b80935d02c183254e11b727e27e97dc493b1297d5afcf8332",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "4d73619632d05705ed9a3f1e5f3cf4233e46362502b0eadf462d6c628dfff06c",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/--step-timeout/--retries、SQL lookup 无上限、mcp 读写+job/pipeline_run、官方 SDK、压缩输入、100 GB/81 GB 演练、demo、外发模板 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "cf9a4f8d73be3e31ce2a28d40bd2c2f37a59191c8d6a726cd24c565e4c767b67",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 读写与 job；run_mcp_stdio 一行一条 JSON-RPC，自写 UTF-8 parser；工具含 schema/view/filter/search/quality/pipeline_status/pipeline_run、edit_set/delete/undo/redo、convert、job_submit/job_status；pipeline_run 委派 CLI 并支持 force/dryRun；未知工具先判身份；父目录组件在 canonicalize 前拒绝 | S:strict 参数未登记即 400；MCP stdout 只走协议，工具失败 isError；job 结果缓存避免重复轮询丢输出"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "b6971bec8ce93ec1495811473e6cfee3a0b0427202ab41391f4cb4081c555205",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过/--dry-run（JSON）/--step-timeout/--retries；mcp 读写+job 与 pipeline_run、官方 SDK；压缩输入 zst/gz/bz2/xz 顺序读；C 100 GB/81 GB 演练；64 GB 自适应 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "update",
+      "source_sha256": "eab9c08376455e3fce3ebf8a6cd147d50df179f8d82a230c26712b2b6f44da09",
+      "existing_entry": "DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 + 官方 SDK | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs | A:一条命令演示 filter/quality、13 个 MCP 工具、edit/undo/convert/job；官方 SDK 1.32.2 也跑通；该文件是产品演示/销售材料入口 | S:演示全程本地、无 GUI、无网络、无 xlsx；终端输出必须与脚本一致；npm 依赖只在 scripts/mcp_sdk"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/SALES.md",
+      "path": "docs/SALES.md",
+      "change": "update",
+      "source_sha256": "c00e2a98deabf70fcbf632a127aa9bfa498824136172abd4cc70e5c7246935bb",
+      "existing_entry": "SALES.md[SD7T]: F:销售 one-pager：定位、证据、演示话术、4 周试点清单与异议处理 | R:code:docs/DEMO.md,code:docs/BENCHMARKS.md,code:docs/BUSINESS.md | A:100 GB 三大可卖点；5 分钟 demo 命令；目标客户与触发问题；免费/Pilot/团队/企业边界候选；30 天验证目标；常见异议回应 | S:不是公开承诺，定价/SLA/合同需用户确认；当前无 License 强制、无遥测"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "b1f4d572f5016da05d779002223cb38c1dcda7e6135f197f945279c3c200e521",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "4d73619632d05705ed9a3f1e5f3cf4233e46362502b0eadf462d6c628dfff06c",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/--step-timeout/--retries、SQL lookup 无上限、mcp 读写+job/pipeline_run、官方 SDK、压缩输入、100 GB/81 GB 演练、demo、外发模板 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "d020ed14144f414b5f56b036c770b602a9761f6fcef037e0c66f8f4450c328f9",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "cf9a4f8d73be3e31ce2a28d40bd2c2f37a59191c8d6a726cd24c565e4c767b67",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 读写与 job；run_mcp_stdio 一行一条 JSON-RPC，自写 UTF-8 parser；工具含 schema/view/filter/search/quality/pipeline_status/pipeline_run、edit_set/delete/undo/redo、convert、job_submit/job_status；pipeline_run 委派 CLI 并支持 force/dryRun；未知工具先判身份；父目录组件在 canonicalize 前拒绝 | S:strict 参数未登记即 400；MCP stdout 只走协议，工具失败 isError；job 结果缓存避免重复轮询丢输出"
+    },
+    {
+      "candidate_id": "c9783a34d9d028bfd7f5d9f6b2fbd5aee656a3bcdc3c355d142c1969d05fc509",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "b6971bec8ce93ec1495811473e6cfee3a0b0427202ab41391f4cb4081c555205",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过/--dry-run（JSON）/--step-timeout/--retries；mcp 读写+job 与 pipeline_run、官方 SDK；压缩输入 zst/gz/bz2/xz 顺序读；C 100 GB/81 GB 演练；64 GB 自适应 | S:-"
+    },
+    {
+      "candidate_id": "c42bd1b6c4b13019e6dc651ff5fc20095b8226f34534ef6d1c844a5759bb0791",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "update",
+      "source_sha256": "eab9c08376455e3fce3ebf8a6cd147d50df179f8d82a230c26712b2b6f44da09",
+      "existing_entry": "DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 + 官方 SDK | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs | A:一条命令演示 filter/quality、13 个 MCP 工具、edit/undo/convert/job；官方 SDK 1.32.2 也跑通；该文件是产品演示/销售材料入口 | S:演示全程本地、无 GUI、无网络、无 xlsx；终端输出必须与脚本一致；npm 依赖只在 scripts/mcp_sdk"
+    },
+    {
+      "candidate_id": "707eb14adadcf14b5404461f0b1a17ca4e7b18272ed26919cd254ad90c38fe80",
+      "object_ref": "code:docs/SALES.md",
+      "path": "docs/SALES.md",
+      "change": "update",
+      "source_sha256": "c00e2a98deabf70fcbf632a127aa9bfa498824136172abd4cc70e5c7246935bb",
+      "existing_entry": "SALES.md[SD7T]: F:销售 one-pager：定位、证据、演示话术、4 周试点清单与异议处理 | R:code:docs/DEMO.md,code:docs/BENCHMARKS.md,code:docs/BUSINESS.md | A:100 GB 三大可卖点；5 分钟 demo 命令；目标客户与触发问题；免费/Pilot/团队/企业边界候选；30 天验证目标；常见异议回应 | S:不是公开承诺，定价/SLA/合同需用户确认；当前无 License 强制、无遥测"
+    }
+  ]
+}
