@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "652b5d245ee7d4cad1cff831c78cc12e34c6e0211eae5a1eb6dcb16d917566ae",
+  "batch_id": "6c4681bc65f68a61e69ecbc512e5e7bd5ba66fa39856ba32f95f5cc6e4f6780e",
+  "composite_identity": "f2c89ca823571cee2915d234c35f603c65d8b1d546fbcf6b63dac6d8f7553e72",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "8b76cabcb604f0b45b95dfc137a90ffbf47142b4dac857daf03b1547c10e1ece",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "update",
+      "source_sha256": "d75b6b84591e9c8f6fd82feaec6124cf2925243711170367097dd075f17320a0",
+      "existing_entry": "DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 + 官方 SDK | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs | A:一条命令演示 filter/quality、16 个 MCP 工具、edit/undo/convert/job；官方 SDK 1.32.2 也跑通 progressToken 与 structuredContent；该文件是产品演示/销售材料入口 | S:演示全程本地、无 GUI、无网络、无 xlsx；终端输出必须与脚本一致；npm 依赖只在 scripts/mcp_sdk"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "73823a8e0591343cbf15f92ca83472d6a602d97eba1ab2452289c88bf73ea249",
+      "existing_entry": "client.mjs[XQ7T]: F:官方 MCP SDK 兼容性客户端（Node） | R:code:scripts/mcp_sdk/package.json,code:docs/DEMO.md | A:用 @modelcontextprotocol/sdk Client + StdioClientTransport；env CSVX_BIN/ROOT/FILE；覆盖 tools/list、schema/filter/view、edit_set/undo、convert、job_submit；job_status wait 带 onprogress 并检查 structuredContent.ok | S:仅演示；npm 依赖不进 Rust 构建；job 超时非零退出；路径在 root 内"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "b211d09f087eaf2a83108b15ee917585314282dd145a36a93094b345c17f3b24",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "update",
+      "source_sha256": "d75b6b84591e9c8f6fd82feaec6124cf2925243711170367097dd075f17320a0",
+      "existing_entry": "DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 + 官方 SDK | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs | A:一条命令演示 filter/quality、16 个 MCP 工具、edit/undo/convert/job；官方 SDK 1.32.2 也跑通 progressToken 与 structuredContent；该文件是产品演示/销售材料入口 | S:演示全程本地、无 GUI、无网络、无 xlsx；终端输出必须与脚本一致；npm 依赖只在 scripts/mcp_sdk"
+    },
+    {
+      "candidate_id": "236b46b1e655956b9108b95237e959cc3fabb571eb74a2a0c7ea39721684ca9b",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "73823a8e0591343cbf15f92ca83472d6a602d97eba1ab2452289c88bf73ea249",
+      "existing_entry": "client.mjs[XQ7T]: F:官方 MCP SDK 兼容性客户端（Node） | R:code:scripts/mcp_sdk/package.json,code:docs/DEMO.md | A:用 @modelcontextprotocol/sdk Client + StdioClientTransport；env CSVX_BIN/ROOT/FILE；覆盖 tools/list、schema/filter/view、edit_set/undo、convert、job_submit；job_status wait 带 onprogress 并检查 structuredContent.ok | S:仅演示；npm 依赖不进 Rust 构建；job 超时非零退出；路径在 root 内"
+    }
+  ]
+}
