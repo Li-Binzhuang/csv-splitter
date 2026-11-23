@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "397d84b72c403842752a6fa1c7c77d3825c1f7a24240bcc2b8f98687f31e7acc",
+  "batch_id": "c8190ddae933f37cb67eb4a658cc38889038ab29c795ebe26305cd2373832f3a",
+  "composite_identity": "107e6f0256c4f1b16de93688e205c99893bf44487cecee0113e6a486ce504681",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "4e0bdb5f8ae06a0f54adf187816514ec8064cc08b8a1be7b4e9b803c77b39b2c",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "1d9cf5260e1e3394330daf379563d984beca8141e61688244f2bd4aaae03b89c",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、stdev/var 与 stdevp/varp、median 同行区间、多段 sumproduct、行内多条件聚合、文本拼接、日期运算；collect_sheet_refs 识别 ref/vlookup/xlookup 并预加载跨表引用；is_row_constant 排除这三者与 row | S:公式列只存 journal；跨行区间无随机访问；整列 median 会保留全部值，故不支持；别名不喂给加载器就会在打开时失败"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "dfa9c1f1ea54d72dff4570d980eba0a01f8b93e378cff31652aec506def329de",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "1d9cf5260e1e3394330daf379563d984beca8141e61688244f2bd4aaae03b89c",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、stdev/var 与 stdevp/varp、median 同行区间、多段 sumproduct、行内多条件聚合、文本拼接、日期运算；collect_sheet_refs 识别 ref/vlookup/xlookup 并预加载跨表引用；is_row_constant 排除这三者与 row | S:公式列只存 journal；跨行区间无随机访问；整列 median 会保留全部值，故不支持；别名不喂给加载器就会在打开时失败"
+    }
+  ]
+}
