@@ -97,7 +97,10 @@
 - **Text helpers**: `textjoin(sep, ignore_empty, ...)` joins values with a separator
   (and can drop empty ones), `char(n)` turns a code point into text, and `code(text)`
   returns the first character's code.
-- **`sumproduct`**: `sumproduct(B2:C2, D2:E2)` multiplies two same-row ranges
+- **`sumproduct` over any number of ranges**: `sumproduct(B2:C2, D2:E2, F2:G2)`
+  multiplies each row position across every range and adds the products; two ranges
+  still behave as before, and different widths are `#VALUE!`.
+ `sumproduct(B2:C2, D2:E2)` multiplies two same-row ranges
   element-wise and adds them (weighted totals); text cells count as 0 and a length
   mismatch is `#VALUE!`.
 - **Wildcard criteria**: text conditions in `countif`/`sumif`/`averageif` (and the

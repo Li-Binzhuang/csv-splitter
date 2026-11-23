@@ -129,23 +129,37 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         // SUMPRODUCT over two same-row ranges: pairwise multiply and add. Text cells
         // count as 0, like a spreadsheet, but a length mismatch is an error.
         "sumproduct" => {
-            let (Some(Expr::Range { from: a, to: b }), Some(Expr::Range { from: c, to: d })) =
-                (args.first(), args.get(1))
-            else {
+            if args.len() < 2 {
                 return Value::Error;
-            };
-            let (Some(left), Some(right)) = (range_cells(a, b, ctx), range_cells(c, d, ctx)) else {
-                return Value::Error;
-            };
-            if left.len() != right.len() || left.is_empty() {
+            }
+            let mut columns: Vec<Vec<&str>> = Vec::with_capacity(args.len());
+            for arg in args {
+                let Expr::Range { from, to } = arg else {
+                    return Value::Error;
+                };
+                let Some(cells) = range_cells(from, to, ctx) else {
+                    return Value::Error;
+                };
+                columns.push(cells);
+            }
+            let len = columns[0].len();
+            if len == 0 || columns.iter().any(|column| column.len() != len) {
                 return Value::Error;
             }
             let mut total = 0.0;
-            for (l, r) in left.iter().zip(right.iter()) {
-                let l = l.trim().parse::<f64>().unwrap_or(0.0);
-                let r = r.trim().parse::<f64>().unwrap_or(0.0);
-                if l.is_finite() && r.is_finite() {
-                    total += l * r;
+            for index in 0..len {
+                let mut product = 1.0;
+                let mut usable = true;
+                for column in &columns {
+                    let value = column[index].trim().parse::<f64>().unwrap_or(0.0);
+                    if !value.is_finite() {
+                        usable = false;
+                        break;
+                    }
+                    product *= value;
+                }
+                if usable {
+                    total += product;
                 }
             }
             Value::Number(total)

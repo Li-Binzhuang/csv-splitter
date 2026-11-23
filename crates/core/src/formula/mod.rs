@@ -1347,6 +1347,8 @@ mod tests {
             "price".to_string(),
             "weight".to_string(),
             "fee".to_string(),
+            "f".to_string(),
+            "g".to_string(),
         ];
         let mut cells = HashMap::new();
         cells.insert("id".to_string(), "7".to_string());
@@ -1354,6 +1356,8 @@ mod tests {
         cells.insert("price".to_string(), "3".to_string());
         cells.insert("weight".to_string(), "2".to_string());
         cells.insert("fee".to_string(), "4".to_string());
+        cells.insert("f".to_string(), "0.5".to_string());
+        cells.insert("g".to_string(), "1".to_string());
         let formula = Formula::parse("sumproduct(B2:C2, D2:E2)").unwrap();
         assert_eq!(
             formula
@@ -1371,6 +1375,23 @@ mod tests {
                 .render(),
             "20",
             "10*2 + 0*4"
+        );
+        cells.insert("price".to_string(), "3".to_string());
+        let three = Formula::parse("sumproduct(B2:C2, D2:E2, F2:G2)").unwrap();
+        assert_eq!(
+            three
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "22",
+            "10*2*0.5 + 3*4*1"
+        );
+        let ragged = Formula::parse("sumproduct(B2:C2, F2:F2)").unwrap();
+        assert_eq!(
+            ragged
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!",
+            "ranges of different widths have no pairwise meaning"
         );
     }
 
