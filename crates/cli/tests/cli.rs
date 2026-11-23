@@ -2716,6 +2716,10 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
             r#"{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"csvx_view","arguments":{"path":"t.csv","start":0,"count":1}}}"#,
             r#"{"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"csvx_edit_undo","arguments":{"path":"t.csv"}}}"#,
             r#"{"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"csvx_convert","arguments":{"path":"t.csv","format":"tsv","out":"out.tsv"}}}"#,
+            r#"{"jsonrpc":"2.0","id":10,"method":"no/such/method"}"#,
+            r#"{"jsonrpc":"2.0","id":11,"method":"tools/call","params":{"name":"csvx_nope","arguments":{}}}"#,
+            r#"{"jsonrpc":"2.0","id":12,"method":"tools/call","params":{"name":"csvx_schema","arguments":{"path":"../escape.csv"}}}"#,
+            r#"not-json"#,
         ] {
             writeln!(stdin, "{line}").unwrap();
         }
@@ -2738,7 +2742,10 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
     assert!(stdout.contains("20"), "{stdout}");
     assert!(stdout.contains("matched"), "{stdout}");
     assert!(stdout.contains("X"), "{stdout}");
-    assert!(!stdout.contains("parse error"), "{stdout}");
+    assert!(stdout.contains(r#""code":-32601"#), "{stdout}");
+    assert!(stdout.contains("unknown tool"), "{stdout}");
+    assert!(stdout.contains("outside the MCP root"), "{stdout}");
+    assert!(stdout.contains(r#""code":-32700"#), "{stdout}");
     let tsv = std::fs::read_to_string(dir.join("out.tsv")).unwrap();
     assert!(tsv.starts_with("city\tamount\n"), "{tsv}");
 }

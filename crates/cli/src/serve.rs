@@ -7721,6 +7721,17 @@ fn mcp_path(root: &Path, args: &McpJson) -> Result<std::path::PathBuf, String> {
     } else {
         root.join(raw)
     };
+    // Reject parent traversal lexically: a missing ../escape.csv must still be reported
+    // as outside the root, not as an unrelated file-not-found.
+    if candidate
+        .components()
+        .any(|component| matches!(component, std::path::Component::ParentDir))
+    {
+        return Err(format!(
+            "path {} is outside the MCP root",
+            candidate.display()
+        ));
+    }
     let canonical = std::fs::canonicalize(&candidate)
         .map_err(|e| format!("cannot resolve {}: {e}", candidate.display()))?;
     let root = std::fs::canonicalize(root).map_err(|e| format!("cannot resolve root: {e}"))?;
@@ -7755,6 +7766,25 @@ fn mcp_output_path(root: &Path, args: &McpJson) -> Result<PathBuf, String> {
 
 fn mcp_command(root: &Path, name: &str, args: &McpJson) -> Result<std::process::Command, String> {
     let bin = std::env::current_exe().map_err(|e| e.to_string())?;
+    // Tool identity is checked before the path: an unknown tool must not be reported as
+    // a missing path (the caller did pass a path, it just named the wrong tool).
+    let known = matches!(
+        name,
+        "csvx_schema"
+            | "csvx_view"
+            | "csvx_filter"
+            | "csvx_search"
+            | "csvx_quality"
+            | "csvx_pipeline_status"
+            | "csvx_edit_set"
+            | "csvx_edit_delete"
+            | "csvx_edit_undo"
+            | "csvx_edit_redo"
+            | "csvx_convert"
+    );
+    if !known {
+        return Err(format!("unknown tool {name}"));
+    }
     let path = mcp_path(root, args)?;
     let mut command = std::process::Command::new(bin);
     match name {
