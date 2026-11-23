@@ -179,6 +179,8 @@
 - **Run lock**: `<plan>.pipeline.lock` blocks a second run on the same plan; locks
   older than 24h are treated as stale and removed. Test holds a lock manually, asserts
   refusal/no output, then runs and asserts release.
+- **Fail-on-stale**: `status --verify --fail-on-stale` exits 3 on any stale row,
+  so cron/CI can gate on freshness; test covers the stale exit.
 - **MCP status verify**: `csvx_pipeline_status` accepts verify and returns fresh
   fields; test runs a DAG, then verifies the stored state over MCP.
 - **Status verify**: `pipeline status --verify` recomputes stamps/hashes against

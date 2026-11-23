@@ -139,6 +139,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--clean", "Remove stale pipeline staging files before running"),
             ("--unlock", "Remove the plan lock before running (use with care)"),
             ("--verify", "Status: re-check current stamps/hashes"),
+            ("--fail-on-stale", "Status: exit 3 when verify finds stale steps"),
             ("--dag", "Run ready steps by dependency order (requires --jobs > 1)"),
             ("--jobs", "Concurrency for groups/DAG (default 1)"),
             ("--retries", "Retry a failed step N times (default 0)"),
@@ -9271,6 +9272,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
     let mut clean = false;
     let mut unlock = false;
     let mut verify = false;
+    let mut fail_on_stale = false;
     let mut json = false;
     while let Some(arg) = p.next() {
         match arg.as_str() {
@@ -9283,6 +9285,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             },
             "--force" => force = true,
             "--dry-run" => dry_run = true,
+            "--fail-on-stale" => fail_on_stale = true,
             "--verify" => verify = true,
             "--unlock" => unlock = true,
             "--clean" => clean = true,
@@ -9479,6 +9482,9 @@ fn cmd_pipeline(args: &[String]) -> i32 {
                 .collect();
             if json {
                 println!(r#"{{"steps":[{}]}}"#, items.join(","));
+                if verify && fail_on_stale && fresh.iter().any(|is_fresh| !*is_fresh) {
+                    return 3;
+                }
                 return 0;
             }
             if verify {
@@ -9503,6 +9509,9 @@ fn cmd_pipeline(args: &[String]) -> i32 {
                         row.name, row.output, row.input_hash, row.elapsed_ms, row.output_hash
                     );
                 }
+            }
+            if verify && fail_on_stale && fresh.iter().any(|is_fresh| !*is_fresh) {
+                return 3;
             }
             0
         }

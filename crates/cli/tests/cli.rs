@@ -3287,6 +3287,18 @@ fn pipeline_status_verify_detects_stale_output() {
         .unwrap();
     assert!(stale.status.success());
     assert!(String::from_utf8_lossy(&stale.stdout).contains(r#""fresh":false"#));
+    let gate = Command::new(bin())
+        .args([
+            "pipeline",
+            "status",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--verify",
+            "--fail-on-stale",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(gate.status.code(), Some(3));
 }
 
 /// A successful run persists the dependency edges next to the plan.
