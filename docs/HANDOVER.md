@@ -115,6 +115,15 @@ mixed-type、数值 mean ± 3σ 离群估计、分组组数/最大组占比/空�
 固定 fixture 的 JSON/Markdown 期望值已入 CLI 测试；2.03 GB / 5600 万行 drill：**18.71 s**、
 RSS **17 MB**，`key` 报 55,999,000 重复、`city` 报 5,600,000 空值，候选键为空（id 被 cap 截断）。
 
+## 格式互操作（阶段 5，已完成；xlsx 挂起）
+
+`convert f.csv --format tsv|ndjson|parquet -o out` 与 `convert out.parquet --format csv -o back`
+覆盖 CSV/TSV/NDJSON/Parquet 任一方向；DuckDB 负责解析与写出，引号字段、Unicode 保持。
+round-trip CLI 测试三种格式均回到逐字节相同的 CSV；`--format xlsx` 明确报错且不写文件。
+2.2 GB / 5500 万行 drill（2026-11-23）：CSV→Parquet **5.36 s**、输出 224 MB、RSS 581 MB；
+Parquet→CSV **2.15 s**、RSS 424 MB；返回 CSV 与原始 CSV **逐字节一致**、55,000,001 行。
+xlsx 仍按硬约束挂起，等用户明确解除。
+
 ## 对 Excel / WPS 的覆盖
 
 | 电子表格操作 | 这里怎么做的 |

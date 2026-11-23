@@ -2453,6 +2453,71 @@ fn analyze_quality_reports_group_dominance() {
     assert!(text.contains("dominant group"), "{text}");
 }
 
+/// CSV -> tsv/ndjson/parquet -> CSV keeps quoted fields and unicode intact.
+#[test]
+fn convert_formats_round_trip_to_the_same_csv() {
+    let dir = TempDir::new("formats");
+    let base = dir.join("in.csv");
+    std::fs::write(&base, "id,city,note\n1,\"CD, MX\",café\n2,Puebla,plain\n").unwrap();
+    for (format, extension) in [("tsv", "tsv"), ("ndjson", "ndjson"), ("parquet", "parquet")] {
+        let mid = dir.join(&format!("out.{extension}"));
+        let status = Command::new(bin())
+            .args([
+                "convert",
+                base.to_str().unwrap(),
+                "--format",
+                format,
+                "--out",
+                mid.to_str().unwrap(),
+            ])
+            .status()
+            .unwrap();
+        assert_eq!(
+            status.code(),
+            Some(0),
+            "{format}: forward conversion failed"
+        );
+        let back = dir.join(&format!("back-{format}.csv"));
+        let status = Command::new(bin())
+            .args([
+                "convert",
+                mid.to_str().unwrap(),
+                "--format",
+                "csv",
+                "--out",
+                back.to_str().unwrap(),
+            ])
+            .status()
+            .unwrap();
+        assert_eq!(
+            status.code(),
+            Some(0),
+            "{format}: reverse conversion failed"
+        );
+        let text = std::fs::read_to_string(&back).unwrap();
+        assert_eq!(
+            text, "id,city,note\n1,\"CD, MX\",café\n2,Puebla,plain\n",
+            "{format}: round trip changed the data"
+        );
+    }
+
+    let bad = Command::new(bin())
+        .args([
+            "convert",
+            base.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            dir.join("out.xlsx").to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(bad.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&bad.stderr);
+    assert!(stderr.contains("xlsx"), "{stderr}");
+    assert!(!dir.join("out.xlsx").exists(), "xlsx must remain disabled");
+}
+
 /// A bulk edit is one journal entry however many rows it changes.
 #[test]
 fn bulk_edit_matches_a_filter_and_stays_one_operation() {

@@ -903,6 +903,87 @@ pub fn concat_sql(
     ))
 }
 
+/// User-level format conversion: CSV/TSV/NDJSON/Parquet in any direction. DuckDB does
+/// the parsing and writing, so quoted fields, unicode and nested JSON stay correct.
+/// xlsx is deliberately absent.
+pub fn convert_format(
+    input: &Path,
+    output: &Path,
+    target: &str,
+    delimiter: crate::types::Delimiter,
+    tx: &crate::types::ProgressSender,
+) -> std::io::Result<()> {
+    let target = target.trim().to_ascii_lowercase();
+    if !matches!(target.as_str(), "csv" | "tsv" | "ndjson" | "parquet") {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!(
+                "unsupported --format {target:?}; use csv/tsv/ndjson/parquet (xlsx is disabled)"
+            ),
+        ));
+    }
+    if !sql_available() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "this build cannot convert formats (no DuckDB feature)",
+        ));
+    }
+    let source = source_expr(input, delimiter)?;
+    let options = match target.as_str() {
+        "csv" => "(HEADER, DELIMITER ',')",
+        "tsv" => "(HEADER, DELIMITER '\\t')",
+        "ndjson" => "(FORMAT JSON)",
+        "parquet" => "(FORMAT PARQUET)",
+        _ => unreachable!(),
+    };
+    tx.send(crate::types::ProgressEvent::PhaseStart {
+        phase: "Converting".into(),
+        total_bytes: std::fs::metadata(input).map(|m| m.len()).unwrap_or(0),
+    })
+    .ok();
+    let sql = format!(
+        "COPY (SELECT * FROM {source}) TO '{}' {options};",
+        sql_path(output)
+    );
+    crate::sql::run_copy_with_timeout(input, &sql, 600_000)?;
+    tx.send(crate::types::ProgressEvent::PhaseDone {
+        phase: "Converting".into(),
+    })
+    .ok();
+    Ok(())
+}
+
+fn sql_path(path: &Path) -> String {
+    path.display().to_string().replace('\'', "''")
+}
+
+fn source_expr(input: &Path, delimiter: crate::types::Delimiter) -> std::io::Result<String> {
+    let name = input
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    let path = sql_path(input);
+    let kind = if name.ends_with(".parquet") {
+        "parquet"
+    } else if name.ends_with(".ndjson") || name.ends_with(".jsonl") || name.ends_with(".json") {
+        "ndjson"
+    } else if name.ends_with(".tsv") {
+        "tsv"
+    } else {
+        "csv"
+    };
+    Ok(match kind {
+        "parquet" => format!("read_parquet('{path}')"),
+        "ndjson" => format!("read_json_auto('{path}')"),
+        "tsv" => format!("read_csv_auto('{path}', delim='\\t')"),
+        _ => {
+            let delim = delimiter.byte() as char;
+            format!("read_csv_auto('{path}', delim='{delim}')")
+        }
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

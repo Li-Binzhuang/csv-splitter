@@ -119,6 +119,10 @@
 - **`workday(start, days)`**: moves a date by business days, skipping weekends and
   accepting negative days (no holiday list in the two-argument form); zero keeps the
   date.
+- **`convert --format`**: CSV/TSV/NDJSON/Parquet conversions via DuckDB in any
+  direction; round-trip tests return byte-identical CSV, and xlsx is rejected while
+  still disabled. 2.2 GB/55M rows: CSV→Parquet 5.36 s (224 MB, 581 MB RSS),
+  Parquet→CSV 2.15 s (424 MB RSS), byte-identical result.
 - **`analyze --quality`**: candidate keys, duplicate/empty key checks, mixed-type and
   numeric outlier findings (mean ± 3σ estimate), JSON (`quality.checks/findings`) or
   Markdown; `--group` adds group count/top share and dominance warnings.

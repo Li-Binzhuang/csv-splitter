@@ -361,6 +361,30 @@ pub fn run_statement_with_timeout(path: &Path, statement: &str, timeout_ms: u64)
     })
 }
 
+/// Run a COPY that reads a non-CSV source (Parquet/NDJSON/TSV) or writes a non-CSV
+/// target. It deliberately does not create the `t` CSV view or the delimiter-shape
+/// check: the conversion statement names its own reader and writer.
+pub fn run_copy_with_timeout(path: &Path, statement: &str, timeout_ms: u64) -> io::Result<()> {
+    if !path.is_file() {
+        return Err(io::Error::new(io::ErrorKind::NotFound, "file not found"));
+    }
+    let conn = open_limited()?;
+    let handle = conn.interrupt_handle();
+    let (done_tx, done_rx) = std::sync::mpsc::channel::<()>();
+    let watchdog = std::thread::spawn(move || {
+        if done_rx
+            .recv_timeout(std::time::Duration::from_millis(timeout_ms))
+            .is_err()
+        {
+            handle.interrupt();
+        }
+    });
+    let result = conn.execute_batch(statement).map_err(to_io);
+    let _ = done_tx.send(());
+    let _ = watchdog.join();
+    result
+}
+
 /// Run a query with a wall-clock limit, interrupting the engine when it expires.
 ///
 /// The interrupt is what makes this honest: DuckDB stops the scan and returns an error,

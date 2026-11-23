@@ -176,6 +176,8 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
     (
         "convert",
         &[
+            ("--format", "Data format: csv | tsv | ndjson | parquet (xlsx disabled)"),
+            ("--delim", "Field delimiter for CSV input"),
             ("--from", "Source encoding"),
             ("--out", "Output path"),
             ("--quiet", "Only errors"),
@@ -3092,12 +3094,28 @@ fn cmd_convert(args: &[String]) -> i32 {
     let mut out: Option<PathBuf> = None;
     let mut from = "auto".to_string();
     let mut to = "utf-8".to_string();
+    let mut convert_format: Option<String> = None;
+    let mut delim = "comma".to_string();
     let mut quiet = false;
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
             "-o" | "--out" => match p.value("--out") {
                 Ok(v) => out = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--format" => match p.value("--format") {
+                Ok(v) => convert_format = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-d" | "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -3134,6 +3152,58 @@ fn cmd_convert(args: &[String]) -> i32 {
         eprintln!("error: convert needs an <input> path");
         return 2;
     };
+
+    if let Some(target) = convert_format {
+        let Some(out) = out else {
+            eprintln!("error: --format needs --out <path>");
+            return 2;
+        };
+        // A TSV/Parquet/NDJSON source has its own delimiter; validating a CSV header
+        // with the CSV default would reject a perfectly good TSV before conversion.
+        let name = input
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        let delimiter = if name.ends_with(".tsv") {
+            csvx_core::types::Delimiter::Tab
+        } else if name.ends_with(".parquet")
+            || name.ends_with(".ndjson")
+            || name.ends_with(".jsonl")
+            || name.ends_with(".json")
+        {
+            csvx_core::types::Delimiter::Comma
+        } else {
+            match parse_delimiter(&delim, &input) {
+                Ok(d) => d,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            }
+        };
+        let (tx, rx) = mpsc::channel();
+        let reporter = spawn_reporter("convert", rx, true);
+        let result = csvx_core::engine::convert_format(&input, &out, &target, delimiter, &tx);
+        drop(tx);
+        let _ = reporter.join();
+        return match result {
+            Ok(()) => {
+                if !quiet {
+                    println!(
+                        "✓ converted {} → {} ({target})",
+                        input.display(),
+                        out.display()
+                    );
+                }
+                0
+            }
+            Err(e) => {
+                eprintln!("error: {e}");
+                1
+            }
+        };
+    }
 
     let from_enc = match from.as_str() {
         "auto" | "" => None,
