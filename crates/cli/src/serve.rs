@@ -7449,7 +7449,7 @@ mod tests {
     }
 
     #[test]
-    fn cache_evicts_fifo_when_limit_is_exceeded() {
+    fn cache_evicts_lru_when_limit_is_exceeded() {
         let dir = std::env::temp_dir().join(format!("csvs_cache_evict_{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let first = dir.join("first.csv");
@@ -7483,6 +7483,61 @@ mod tests {
         assert!(second.exists());
         cleanup_mcp_materialized();
         std::fs::remove_file(&second).ok();
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn cache_lookup_moves_a_hit_to_the_back() {
+        let dir = std::env::temp_dir().join(format!("csvs_cache_lru_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let first = dir.join("first.csv");
+        let second = dir.join("second.csv");
+        let third = dir.join("third.csv");
+        for path in [&first, &second, &third] {
+            std::fs::write(path, "a\n1\n").unwrap();
+        }
+        let mut entries = Vec::new();
+        for (key, path) in [("first", &first), ("second", &second)] {
+            cache_insert(
+                &mut entries,
+                CachedMaterialized {
+                    key: key.to_string(),
+                    path: path.clone(),
+                    size: 10,
+                },
+                100,
+                2,
+            );
+        }
+        assert_eq!(cache_lookup(&mut entries, "first"), Some(first.clone()));
+        assert_eq!(
+            entries
+                .iter()
+                .map(|entry| entry.key.as_str())
+                .collect::<Vec<_>>(),
+            vec!["second", "first"]
+        );
+        cache_insert(
+            &mut entries,
+            CachedMaterialized {
+                key: "third".to_string(),
+                path: third.clone(),
+                size: 10,
+            },
+            100,
+            2,
+        );
+        assert_eq!(
+            entries
+                .iter()
+                .map(|entry| entry.key.as_str())
+                .collect::<Vec<_>>(),
+            vec!["first", "third"]
+        );
+        assert!(!second.exists());
+        assert!(first.exists());
+        assert!(third.exists());
+        cleanup_mcp_materialized();
         std::fs::remove_dir_all(&dir).ok();
     }
 
@@ -7954,6 +8009,17 @@ fn materialize_cache_limits() -> (u64, usize) {
     )
 }
 
+fn cache_lookup(entries: &mut Vec<CachedMaterialized>, key: &str) -> Option<std::path::PathBuf> {
+    let position = entries.iter().position(|entry| entry.key == key)?;
+    let entry = entries.remove(position);
+    if !entry.path.exists() {
+        return None;
+    }
+    let path = entry.path.clone();
+    entries.push(entry);
+    Some(path)
+}
+
 fn cache_insert(
     entries: &mut Vec<CachedMaterialized>,
     entry: CachedMaterialized,
@@ -8044,12 +8110,10 @@ fn mcp_materialize(input: &Path) -> Result<std::path::PathBuf, String> {
         identity
     );
     let cache = MATERIALIZE_CACHE.get_or_init(|| std::sync::Mutex::new(Vec::new()));
-    if let Ok(entries) = cache.lock() {
-        if let Some(entry) = entries.iter().find(|entry| entry.key == key) {
-            if entry.path.exists() {
-                MATERIALIZE_HITS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                return Ok(entry.path.clone());
-            }
+    if let Ok(mut entries) = cache.lock() {
+        if let Some(path) = cache_lookup(&mut entries, &key) {
+            MATERIALIZE_HITS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            return Ok(path);
         }
     }
     MATERIALIZE_MISSES.fetch_add(1, std::sync::atomic::Ordering::Relaxed);

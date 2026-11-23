@@ -182,7 +182,9 @@ delimiter 检测也读解压后的内容。压缩流不可 seek，因此自动�
 输出与 plain `cmp` 逐字节一致；zst search 12.13 s/11 MB；zst quality 21.73 s/20 MB。
 2.3 GB zst `search --materialize` 3.51 s/89 MB（普通顺序读 11.87 s/12 MB）；
 `filter --materialize` 扫描 3.62 s、导出 2.60 s（普通 6.94/4.06 s），输出逐字节一致。
-临时文件带 PID，下次解压前会清理“持有进程已死亡”的 `csvx-materialized-*` 残留。
+临时文件带 PID，下次解压前会清理“持有进程已死亡”的 `csvx-materialized-*` 残留；
+同一 server 内按 path+size+mtime+ctime+inode 复用解压结果，默认 4 GiB/16 项 LRU，
+`CSVX_MCP_CACHE_BYTES`/`CSVX_MCP_CACHE_ENTRIES` 可调，`CSVX_MCP_CACHE_STATS` 退出打印 hits/misses。
 压缩读是 CPU 受限，不能用它推断 100 GB 指标。
 
 ### 100 GB 级（C 主线，已达标）
