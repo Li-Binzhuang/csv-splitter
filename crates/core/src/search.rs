@@ -77,6 +77,44 @@ impl SearchSpec {
         }
         cell.to_lowercase().contains(&self.query.to_lowercase())
     }
+
+    /// Cheap necessary condition: if the query cannot appear anywhere in the raw record,
+    /// no selected cell can match. Misses are the common case, so this avoids splitting
+    /// every record into fields. Regex/whole-cell/Unicode queries keep the full path.
+    fn record_may_match(&self, record: &[u8]) -> bool {
+        let query = self.query.as_bytes();
+        if self.regex || self.whole_cell || query.is_empty() || !self.query.is_ascii() {
+            return true;
+        }
+        if self.case_sensitive {
+            return memchr::memmem::find(record, query).is_some();
+        }
+        let first = query[0];
+        let lower = first.to_ascii_lowercase();
+        let upper = first.to_ascii_uppercase();
+        if lower == upper {
+            let mut at = 0;
+            while let Some(pos) = memchr::memchr(lower, &record[at..]) {
+                let start = at + pos;
+                if record[start..].starts_with(query) {
+                    return true;
+                }
+                at = start + 1;
+            }
+            return false;
+        }
+        let mut at = 0;
+        while let Some(pos) = memchr::memchr2(lower, upper, &record[at..]) {
+            let start = at + pos;
+            if record.len() - start >= query.len()
+                && record[start..start + query.len()].eq_ignore_ascii_case(query)
+            {
+                return true;
+            }
+            at = start + 1;
+        }
+        false
+    }
 }
 
 /// Case-insensitive substring search over ASCII bytes, without allocating.
@@ -308,6 +346,39 @@ pub fn search_page(
 
 /// The parallel half of [`search_fast`], with threads made explicit so a test can force
 /// four of them on a file small enough to check by eye.
+/// Check only the selected cells of a record, without building `String` fields.
+/// `None` means the full parser is needed; missing cells are ignored exactly as the
+/// string path ignores them.
+fn record_matches(
+    record: &[u8],
+    delim: u8,
+    quotes: QuoteStyle,
+    indices: &[usize],
+    spec: &SearchSpec,
+) -> Option<bool> {
+    if !spec.record_may_match(record) {
+        return Some(false);
+    }
+    let mut hit = false;
+    let mut invalid = false;
+    let complete = crate::csv_reader::visit_fields(record, delim, quotes, |at, bytes| {
+        if hit || invalid || !indices.contains(&at) {
+            return;
+        }
+        let Ok(cell) = std::str::from_utf8(bytes) else {
+            invalid = true;
+            return;
+        };
+        if spec.matches(cell) {
+            hit = true;
+        }
+    });
+    if !complete || invalid {
+        return None;
+    }
+    Some(hit)
+}
+
 fn search_parallel(
     path: &Path,
     spec: &SearchSpec,
@@ -335,13 +406,17 @@ fn search_parallel(
         found
     };
     let columns: Vec<String> = indices.iter().map(|&i| headers[i].clone()).collect();
-    let predicate = |fields: &[String]| {
-        indices
-            .iter()
-            .filter_map(|&i| fields.get(i))
-            .any(|cell| spec.matches(cell))
+    let predicate = |record: &[u8], delim: u8, quotes: QuoteStyle| {
+        record_matches(record, delim, quotes, &indices, spec).unwrap_or_else(|| {
+            let text = String::from_utf8_lossy(record);
+            let fields = parse_csv_record_with(text.trim_end_matches(['\n', '\r']), delim, quotes);
+            indices
+                .iter()
+                .filter_map(|&i| fields.get(i))
+                .any(|cell| spec.matches(cell))
+        })
     };
-    let batch = crate::scan_parallel::scan_parallel(path, options, tx, predicate)?;
+    let batch = crate::scan_parallel::scan_parallel_bytes(path, options, tx, predicate)?;
     Ok((
         SearchResult {
             rows: batch.rows,
@@ -357,6 +432,56 @@ fn search_parallel(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn record_matches_selects_cells_without_allocating() {
+        let spec = SearchSpec::new("CDMX");
+        assert_eq!(
+            record_matches(b"1,CDMX,10\n", b',', QuoteStyle::Rfc4180, &[1], &spec),
+            Some(true)
+        );
+        assert_eq!(
+            record_matches(b"1,Puebla,10\n", b',', QuoteStyle::Rfc4180, &[1], &spec),
+            Some(false)
+        );
+        assert_eq!(
+            record_matches(b"1,\"CDMX\",10\n", b',', QuoteStyle::Rfc4180, &[1], &spec),
+            Some(true)
+        );
+        assert_eq!(
+            record_matches(
+                b"1,\"CD\"\"MX\",10\n",
+                b',',
+                QuoteStyle::Rfc4180,
+                &[1],
+                &spec
+            ),
+            Some(false),
+            "the raw prefilter rules out a query that is split by the doubled quote"
+        );
+        assert!(spec.record_may_match(b"1,\"CDMX\"\"X\",10\n"));
+        assert_eq!(
+            record_matches(
+                b"1,\"CDMX\"\"X\",10\n",
+                b',',
+                QuoteStyle::Rfc4180,
+                &[1],
+                &spec
+            ),
+            None,
+            "a present query still needs the parser for escaped quotes"
+        );
+        assert_eq!(
+            record_matches(b"1,\xff,10\n", b',', QuoteStyle::Rfc4180, &[1], &spec),
+            Some(false),
+            "the prefilter can rule out a record without looking at a non-UTF-8 cell"
+        );
+        assert_eq!(
+            record_matches(b"1,CDMX\n", b',', QuoteStyle::Rfc4180, &[4], &spec),
+            Some(false),
+            "a missing selected cell is ignored"
+        );
+    }
 
     struct TempDir(std::path::PathBuf);
     impl TempDir {

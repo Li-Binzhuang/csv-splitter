@@ -174,7 +174,7 @@ fn scan_plan<P>(
     limit: usize,
 ) -> io::Result<BatchResult>
 where
-    P: Fn(&[String]) -> bool + Sync,
+    P: Fn(&[u8], u8, QuoteStyle) -> bool + Sync,
 {
     let mut file = File::open(path)?;
     if plan.offset > 0 {
@@ -194,9 +194,7 @@ where
             break;
         }
         result.scanned += 1;
-        let text = String::from_utf8_lossy(&record);
-        let fields = parse_csv_record_with(text.trim_end_matches(['\n', '\r']), delim, quotes);
-        if predicate(&fields) {
+        if predicate(&record, delim, quotes) {
             result.matched += 1;
             if result.rows.len() < limit {
                 result.rows.push(plan.start_row + i);
@@ -214,14 +212,14 @@ where
 /// header (to resolve columns), so this path never parses it again. When a budget is set
 /// and a wave does not get to start before it expires, `next_checkpoint` says where to
 /// resume; callers that do not care about resuming can ignore it.
-pub fn scan_parallel<P>(
+pub fn scan_parallel_bytes<P>(
     path: &Path,
     options: &ScanOptions<'_>,
     tx: &ProgressSender,
     predicate: P,
 ) -> io::Result<BatchResult>
 where
-    P: Fn(&[String]) -> bool + Sync,
+    P: Fn(&[u8], u8, QuoteStyle) -> bool + Sync,
 {
     let delim = options.delimiter.byte();
     let index = match SparseIndex::load(&SparseIndex::sidecar_path(path)) {
@@ -305,6 +303,25 @@ where
     })
     .ok();
     Ok(merged)
+}
+
+/// Compatibility entry point for predicates that need parsed `String` fields.
+/// New hot paths should call [`scan_parallel_bytes`] and inspect only the cells they
+/// need, so a plain record never allocates a field vector.
+pub fn scan_parallel<P>(
+    path: &Path,
+    options: &ScanOptions<'_>,
+    tx: &ProgressSender,
+    predicate: P,
+) -> io::Result<BatchResult>
+where
+    P: Fn(&[String]) -> bool + Sync,
+{
+    scan_parallel_bytes(path, options, tx, move |record, delim, quotes| {
+        let text = String::from_utf8_lossy(record);
+        let fields = parse_csv_record_with(text.trim_end_matches(['\n', '\r']), delim, quotes);
+        predicate(&fields)
+    })
 }
 
 #[cfg(test)]

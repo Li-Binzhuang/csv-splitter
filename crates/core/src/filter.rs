@@ -179,6 +179,35 @@ pub fn scan(
 /// A synchronous HTTP request has no cancel button: the client can walk away, but the
 /// thread keeps reading. A budget turns "busy forever" into a 504 that says to narrow the
 /// filter or page instead.
+/// Does one record satisfy a single-column predicate? `None` means the full parser
+/// is required (quotes, backslash quoting or non-UTF-8). A short row reads as "".
+fn record_cell_matches(
+    record: &[u8],
+    delim: u8,
+    quotes: QuoteStyle,
+    index: usize,
+    spec: &FilterSpec,
+) -> Option<bool> {
+    let mut seen = false;
+    let mut hit = false;
+    let mut invalid = false;
+    let complete = crate::csv_reader::visit_fields(record, delim, quotes, |at, bytes| {
+        if at != index || invalid {
+            return;
+        }
+        seen = true;
+        let Ok(cell) = std::str::from_utf8(bytes) else {
+            invalid = true;
+            return;
+        };
+        hit = matches(cell, spec);
+    });
+    if !complete || invalid {
+        return None;
+    }
+    Some(if seen { hit } else { matches("", spec) })
+}
+
 pub fn scan_with_budget(
     path: &Path,
     delimiter: Delimiter,
@@ -227,14 +256,17 @@ pub fn scan_with_budget(
                 ));
             }
         }
-        let text = String::from_utf8_lossy(&record);
-        let fields = parse_csv_record_with(
-            text.trim_end_matches(['\n', '\r']),
-            delim,
-            QuoteStyle::Rfc4180,
-        );
-        let cell = fields.get(col_idx).map(String::as_str).unwrap_or("");
-        if matches(cell, spec) {
+        let hit = record_cell_matches(&record, delim, QuoteStyle::Rfc4180, col_idx, spec)
+            .unwrap_or_else(|| {
+                let text = String::from_utf8_lossy(&record);
+                let fields = parse_csv_record_with(
+                    text.trim_end_matches(['\n', '\r']),
+                    delim,
+                    QuoteStyle::Rfc4180,
+                );
+                matches(fields.get(col_idx).map(String::as_str).unwrap_or(""), spec)
+            });
+        if hit {
             result.matched += 1;
             if result.rows.len() < limit {
                 result.rows.push(result.scanned - 1);
@@ -353,8 +385,13 @@ fn filter_parallel(
 ) -> io::Result<(ScanResult, Option<usize>)> {
     let delim = delimiter.byte();
     let col_idx = column_index(path, delim, spec)?;
-    let predicate =
-        |fields: &[String]| matches(fields.get(col_idx).map(String::as_str).unwrap_or(""), spec);
+    let predicate = |record: &[u8], delim: u8, quotes: QuoteStyle| {
+        record_cell_matches(record, delim, quotes, col_idx, spec).unwrap_or_else(|| {
+            let text = String::from_utf8_lossy(record);
+            let fields = parse_csv_record_with(text.trim_end_matches(['\n', '\r']), delim, quotes);
+            matches(fields.get(col_idx).map(String::as_str).unwrap_or(""), spec)
+        })
+    };
     let phase = format!("Filtering {}", spec.column);
     let options = crate::scan_parallel::ScanOptions {
         delimiter,
@@ -366,7 +403,7 @@ fn filter_parallel(
         start_checkpoint,
         checkpoints_per_wave: crate::scan_parallel::CHECKPOINTS_PER_WAVE,
     };
-    let batch = crate::scan_parallel::scan_parallel(path, &options, tx, predicate)?;
+    let batch = crate::scan_parallel::scan_parallel_bytes(path, &options, tx, predicate)?;
     Ok((
         ScanResult {
             rows: batch.rows,
@@ -1191,6 +1228,37 @@ mod set_tests {
         assert!(text.contains("3,CDMX,500"), "{text}");
         assert!(text.contains("4,Tijuana,20"), "{text}");
         assert!(!text.contains("1,CDMX,10"), "{text}");
+    }
+
+    #[test]
+    fn record_cell_matches_handles_plain_quoted_short_and_escaped_rows() {
+        let spec = FilterSpec::parse("city=CDMX").unwrap();
+        assert_eq!(
+            record_cell_matches(b"1,CDMX,10\n", b',', QuoteStyle::Rfc4180, 1, &spec),
+            Some(true)
+        );
+        assert_eq!(
+            record_cell_matches(b"1,Puebla,10\n", b',', QuoteStyle::Rfc4180, 1, &spec),
+            Some(false)
+        );
+        assert_eq!(
+            record_cell_matches(b"1,\"CDMX\",10\n", b',', QuoteStyle::Rfc4180, 1, &spec),
+            Some(true)
+        );
+        assert_eq!(
+            record_cell_matches(b"1,\"CD\"\"MX\",10\n", b',', QuoteStyle::Rfc4180, 1, &spec),
+            None,
+            "escaped quotes need the parser"
+        );
+        assert_eq!(
+            record_cell_matches(b"1,\xff,10\n", b',', QuoteStyle::Rfc4180, 1, &spec),
+            None
+        );
+        assert_eq!(
+            record_cell_matches(b"1\n", b',', QuoteStyle::Rfc4180, 1, &spec),
+            Some(false),
+            "a short row reads as an empty cell"
+        );
     }
 
     #[test]
