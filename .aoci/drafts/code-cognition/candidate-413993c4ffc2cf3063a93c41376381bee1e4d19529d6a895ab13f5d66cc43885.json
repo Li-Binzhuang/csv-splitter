@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "94a2536ab4ed5b9993eeba27cc7028007df1ac86515d91a5fab23aed5bff7769",
+  "batch_id": "413993c4ffc2cf3063a93c41376381bee1e4d19529d6a895ab13f5d66cc43885",
+  "composite_identity": "5b908d80e872261529820b0ccb05629b2d95950455fccacd56519593b0e3da38",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "89c18e8d55cd8481899e73beb66af7ec6a3b6011fe7c954cbc3c91cf42fadd20",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "0315c2b4c8bdf58945439d76b9df56dacc49a83a8151a1202b366af3fd6481d4",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/--dag/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/cancel/list+pipeline DAG 参数、view 游标、官方 SDK、压缩输入、100 GB/81 GB 演练、demo、外发、试点报告、打包 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "ca71436f33d0b2827b537c844f1c5af917bb4188e9761a051148da1d506448c5",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 读写与 job；run_mcp_stdio 一行一条 JSON-RPC；工具含 schema/view/filter/search/quality/pipeline_status/pipeline_run、edit_set/delete/undo/redo、convert、job_submit/job_status/job_cancel/job_list（16）；pipeline_run 接受 force/dryRun/dag/jobs/clean；job_status 支持 0–30s wait；job_cancel kill 子进程并清临时输出；job_list 汇总；未知工具先判身份；父目录组件在 canonicalize 前拒绝 | S:strict 参数未登记即 400；MCP stdout 只走协议，工具失败 isError；job 结果缓存；tools/list 必须能被 McpParser 解析"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "1495923e4b20760d8cb61d213fa9c981afa07b541be45dfbefcb5235d8aa314a",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "0315c2b4c8bdf58945439d76b9df56dacc49a83a8151a1202b366af3fd6481d4",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/--dag/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/cancel/list+pipeline DAG 参数、view 游标、官方 SDK、压缩输入、100 GB/81 GB 演练、demo、外发、试点报告、打包 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "629a802dd2daf881323a00aff2d420e57805ebea61afe9da362dcb35c681e787",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "ca71436f33d0b2827b537c844f1c5af917bb4188e9761a051148da1d506448c5",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 读写与 job；run_mcp_stdio 一行一条 JSON-RPC；工具含 schema/view/filter/search/quality/pipeline_status/pipeline_run、edit_set/delete/undo/redo、convert、job_submit/job_status/job_cancel/job_list（16）；pipeline_run 接受 force/dryRun/dag/jobs/clean；job_status 支持 0–30s wait；job_cancel kill 子进程并清临时输出；job_list 汇总；未知工具先判身份；父目录组件在 canonicalize 前拒绝 | S:strict 参数未登记即 400；MCP stdout 只走协议，工具失败 isError；job 结果缓存；tools/list 必须能被 McpParser 解析"
+    }
+  ]
+}
