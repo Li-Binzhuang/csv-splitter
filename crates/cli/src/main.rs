@@ -8311,8 +8311,18 @@ fn run_branch_group(
         std::fs::write(&plan, format!("step,input,command,args,output\n{row}"))?;
         plans.push(plan);
     }
+    struct BranchChild {
+        index: usize,
+        child: std::process::Child,
+        stdout: std::path::PathBuf,
+        stderr: std::path::PathBuf,
+    }
     let mut children = Vec::with_capacity(plans.len());
-    for plan in &plans {
+    for (index, plan) in plans.iter().enumerate() {
+        let out_path = std::env::temp_dir().join(format!("csvx-branch-{stamp}-{index}.out"));
+        let err_path = std::env::temp_dir().join(format!("csvx-branch-{stamp}-{index}.err"));
+        let out = std::fs::File::create(&out_path)?;
+        let err = std::fs::File::create(&err_path)?;
         let mut process = std::process::Command::new(&bin);
         process.args([
             "pipeline",
@@ -8336,31 +8346,86 @@ fn run_branch_group(
                 &retry_delay_ms.to_string(),
             ]);
         }
-        children.push(
-            process
-                .stdout(std::process::Stdio::piped())
-                .stderr(std::process::Stdio::piped())
-                .spawn()?,
-        );
+        let child = process
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::from(out))
+            .stderr(std::process::Stdio::from(err))
+            .spawn()?;
+        children.push(BranchChild {
+            index,
+            child,
+            stdout: out_path,
+            stderr: err_path,
+        });
     }
     let started = Instant::now();
-    let mut outputs = Vec::with_capacity(children.len());
-    for child in children {
-        outputs.push(child.wait_with_output()?);
+    let mut statuses: Vec<Option<std::process::ExitStatus>> = vec![None; children.len()];
+    let mut failure: Option<String> = None;
+    loop {
+        let mut running = 0usize;
+        for branch in children.iter_mut() {
+            if statuses[branch.index].is_some() {
+                continue;
+            }
+            match branch.child.try_wait() {
+                Ok(Some(status)) => {
+                    statuses[branch.index] = Some(status);
+                    if !status.success() && failure.is_none() {
+                        let error = std::fs::read_to_string(&branch.stderr)
+                            .unwrap_or_default()
+                            .trim()
+                            .to_string();
+                        failure = Some(format!(
+                            "step {} failed: {error}",
+                            inputs[branch.index].0.name
+                        ));
+                    }
+                }
+                Ok(None) => running += 1,
+                Err(error) => {
+                    if failure.is_none() {
+                        failure = Some(format!(
+                            "step {} failed: {error}",
+                            inputs[branch.index].0.name
+                        ));
+                    }
+                }
+            }
+        }
+        if failure.is_some() || running == 0 {
+            break;
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
+    for branch in children.iter_mut() {
+        if failure.is_some() {
+            let _ = branch.child.kill();
+        }
+        let _ = branch.child.wait();
+        let _ = std::fs::remove_file(&branch.stdout);
+        let _ = std::fs::remove_file(&branch.stderr);
+    }
+    for (plan, (step, _)) in plans.iter().zip(inputs.iter()) {
+        let _ = std::fs::remove_file(plan);
+        let _ = std::fs::remove_file(pipeline_state_path(plan));
+        if failure.is_some() {
+            let _ = std::fs::remove_file(&step.output);
+            let temp = step.output.with_file_name(format!(
+                ".{}.pipeline.tmp",
+                step.output
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .unwrap_or("out")
+            ));
+            let _ = std::fs::remove_file(&temp);
+        }
     }
     let elapsed_ms = started.elapsed().as_millis() as u64;
+    if let Some(error) = failure {
+        return Err(std::io::Error::other(error));
+    }
     let mut results = Vec::with_capacity(group_indices.len());
-    let mut failure: Option<String> = None;
-    for (index, (step, input_path)) in inputs.iter().enumerate() {
-        let output = &outputs[index];
-        if !output.status.success() {
-            failure = Some(format!(
-                "step {} failed: {}",
-                step.name,
-                String::from_utf8_lossy(&output.stderr).trim()
-            ));
-            continue;
-        }
+    for (step, input_path) in inputs.iter() {
         let input_hash = pipeline_hash_file(input_path)?;
         let output_hash = pipeline_hash_file(&step.output)?;
         let input_stamp = pipeline_file_stamp(input_path)?;
@@ -8386,13 +8451,6 @@ fn run_branch_group(
                 output_stamp,
             },
         ));
-    }
-    for plan in &plans {
-        let _ = std::fs::remove_file(plan);
-        let _ = std::fs::remove_file(pipeline_state_path(plan));
-    }
-    if let Some(error) = failure {
-        return Err(std::io::Error::other(error));
     }
     Ok(results)
 }

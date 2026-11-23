@@ -2970,6 +2970,46 @@ fn pipeline_dry_run_reports_dependencies() {
     assert!(!dir.join("b.csv").exists());
 }
 
+/// A failed parallel member cancels siblings and removes the wave's outputs.
+#[test]
+fn pipeline_parallel_group_failure_is_atomic() {
+    let dir = TempDir::new("pipeline-group-fail");
+    let mut big = String::from("id,city\n");
+    for i in 0..2_000_000 {
+        big.push_str(&format!(
+            "{i},{}\n",
+            if i % 5 == 0 { "CDMX" } else { "Puebla" }
+        ));
+    }
+    std::fs::write(dir.join("big.csv"), big).unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output,group\nslow,big.csv,filter,--where city=CDMX -o {out},a.csv,wave\nbad,big.csv,convert,--format bogus -o {out},b.csv,wave\n",
+    )
+    .unwrap();
+    let result = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--jobs",
+            "2",
+        ])
+        .output()
+        .unwrap();
+    assert!(!result.status.success());
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(stderr.contains("failed"), "{stderr}");
+    assert!(
+        !dir.join("a.csv").exists(),
+        "slow sibling output must be removed"
+    );
+    assert!(!dir.join("b.csv").exists());
+    assert!(!dir.join("plan.csv.pipeline.csv").exists());
+}
+
 /// Steps sharing a group run concurrently; their outputs are all committed.
 #[test]
 fn pipeline_parallel_group_runs_branches() {

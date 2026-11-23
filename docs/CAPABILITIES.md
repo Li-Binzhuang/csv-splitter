@@ -253,8 +253,8 @@ joined,filtered,lookup,--key cust_no --reference customers.csv --get name --out 
   每波只启动 stale 就绪步骤，fresh 步骤复用 state；失败不写主 state。`group` 列在 DAG 模式被忽略。
 - 可选第 6 列 `group`：同一 group 的**连续**步骤在 `--jobs N`（N>1）下并发执行；
   组内步骤必须显式指定 input（源文件或更早步骤输出），不能互相依赖。组内逐步骤判断
-  fresh：fresh 成员直接复用上轮 state，只把 stale 成员交给并发子进程；失败时已完成的
-  兄弟输出会保留，但主 `.pipeline.csv` 不写。
+  fresh：fresh 成员直接复用上轮 state，只把 stale 成员交给并发子进程；任一兄弟姐妹失败时，本波其余子进程被 kill，本波所有输出与临时文件清理；
+  主 `.pipeline.csv` 不写；更早成功波的输出仍保留。
 - `--step-timeout <ms>` 对每个步骤做硬超时：kill 子进程、删除临时输出、不写 state；
   `0` 表示不限；stdout/stderr 由独立线程并发读取，避免管道写满死锁。
 - `--retries <n>` 与 `--retry-delay <ms>`：失败/超时后重试，默认 0 次、250 ms；

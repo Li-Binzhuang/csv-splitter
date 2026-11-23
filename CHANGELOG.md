@@ -166,7 +166,8 @@
   the same group run as concurrent child pipelines under `--jobs N`. Group members
   must name an explicit input and cannot depend on each other. Each member is
   freshness-checked; fresh members reuse their prior row while only stale members
-  are spawned concurrently.
+  are spawned concurrently; if any member fails, the rest of the wave is killed and
+  the wave's outputs/temps are removed before returning an error.
 - **Pipeline retries**: `--retries N` / `--retry-delay MS` retry failed or timed-out
   steps; each attempt starts from a removed temp output, final failure stays atomic.
 - **Pipeline step timeout**: `--step-timeout <ms>` kills a hung child, removes the
