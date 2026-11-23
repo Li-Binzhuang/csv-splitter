@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a89351ce51cf87a649f164dc7e2a0244970224a3d6ab4dfc994f415a5a2df24d",
+  "batch_id": "ed3443ad6e0c05bd1243341bbec3c7b3f5b668dd515814069b6c3994ecf241f4",
+  "composite_identity": "46e22270a97834b97dea61d8152f168af78a8653764716500f3f1d1dcd6073c0",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b33341b639a94bdd1b9b102255fb71785f58b9a7863a17bf6e972bfd68bbdc5c",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "9c8845c08913fa7a68be4a3f0d47c84e5a0ce474683f46f3d80b8994524bdd14",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-23 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 16 工具与 SDK progress/status/gzip；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程已实测 -T4 仅 2%，不引入外部 CLI；job 历史/缓存监控已落地；Ubuntu/Windows CI 与 macOS 均绿；含 Round 100 checkpoint | S:未测数字不写；价格/SLA 需用户确认；随离线包分发；MCP 缓存 gzip/zst/bz2 已验证"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "c8a7ee8db05c6de48879f2657318c69cba47ca4c4595e6382ef8e6bd2fa58f87",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "9c8845c08913fa7a68be4a3f0d47c84e5a0ce474683f46f3d80b8994524bdd14",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-23 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 16 工具与 SDK progress/status/gzip；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程已实测 -T4 仅 2%，不引入外部 CLI；job 历史/缓存监控已落地；Ubuntu/Windows CI 与 macOS 均绿；含 Round 100 checkpoint | S:未测数字不写；价格/SLA 需用户确认；随离线包分发；MCP 缓存 gzip/zst/bz2 已验证"
+    }
+  ]
+}
