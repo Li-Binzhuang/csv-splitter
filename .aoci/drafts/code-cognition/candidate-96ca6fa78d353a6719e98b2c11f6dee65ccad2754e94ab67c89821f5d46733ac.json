@@ -1,0 +1,157 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "872c2722309c2668078b0be4e90f7575aa7999d3aaa9ecd4f1d17397d4305a3d",
+  "batch_id": "96ca6fa78d353a6719e98b2c11f6dee65ccad2754e94ab67c89821f5d46733ac",
+  "composite_identity": "17702bf37e0926d647fdae2ee96dc10874911d6c8172997868a999e4767f0e01",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "ce60183c072977b6304f3f4978e4a97d9c55700a3ba12288e52a1dc70c8f1ead",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "bce26bb3831b32a576a6cadcf1a93a50ca5d7051abd86ae33704a68adf837675",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run、SQL lookup 无上限、mcp 读写与 job、官方 SDK、100 GB/81 GB 演练、demo、外发模板 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "8ff56e6517a96272c2e38da7784d01f78649794d5b28b49bd52c9ff4c9d2984b",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；pipeline run/status 支持 size+mtime 跳过、--force、--dry-run、--json；mcp --root 调 serve；convert/lookup/analyze 共享解析；帮助表列全 flag | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state；dry-run 不执行不写 state；mcp stdout 只走 JSON-RPC"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/encoding.rs",
+      "path": "crates/core/src/encoding.rs",
+      "change": "update",
+      "source_sha256": "9a2fb706d67a0463da21c33f4e1dfed66aa4e68e63bd57643c38fb27ea9f0215",
+      "existing_entry": "encoding.rs[CL8L]: F:文本编码探测与解码：UTF-8 及 BOM、GBK/GB18030、UTF-16、Windows-1252 | R:code:crates/core/src/csv_reader.rs | A:只探测一次，之后把所有读取路径统一成 UTF-8；UTF-16 可以读取，但索引与随机跳转被拒绝 | S:UTF-16 的逗号与换行是两字节，按字节偏移的稀疏索引会算错行号，所以宁可拒绝也不给近似的错位置"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "25bd9e7852e7e8a3a87f1d9d93e1807aa7912e3f72626997a40a8253b9538a63",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:运算符等于/不等/比较/包含/in/空值/Wildcard；holds_record 单遍；extract 按输入大小自适应：≥64 GB 两遍扫描（第一遍计数、第二遍直接写最终文件不相交区间），\u003c64 GB 保留 part 并行写 + 并行区间 copy；单写有序通道实验因串行化被回退 | S:并行与顺序行号一致；仅 UTF-8 且 ≤64 spec 分片；输出源字节原样；第二遍字节数必须等于第一遍计数；阈值来自 29 GB vs 100 GB 实测"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/scan_parallel.rs",
+      "path": "crates/core/src/scan_parallel.rs",
+      "change": "update",
+      "source_sha256": "fb73741697e619c0d7bfb01019016e00e3b2ac336c437817871a7b87cf080f5e",
+      "existing_entry": "scan_parallel.rs[KP7M]: F:filter 与 search 共用的分段并行、可续扫扫描 | R:code:crates/core/src/index.rs,code:crates/core/src/filter.rs,code:crates/core/src/search.rs | A:ScanOptions 收拢参数；scan_parallel_bytes 接受字节谓词，scan_parallel 保留字符串谓词兼容入口；每波按 64 检查点分段，未跑的波以 next 返回，保留行号永远不超过 limit | S:行号必须与顺序扫描一致；行数上限每波兑现；GBK/UTF-16 不支持游标"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/search.rs",
+      "path": "crates/core/src/search.rs",
+      "change": "update",
+      "source_sha256": "6982da5d37cb913f23541ca07d192fbc9f5ea21db81d3cc47cc517c2746cc7b5",
+      "existing_entry": "search.rs[DA7L]: F:跨列搜索：返回命中行号而不是数据本身 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:默认大小写不敏感子串；ASCII 走无分配字节比较；scan_parallel_bytes 只检查选定列，record_may_match 先用 memchr/memmem 排除原始字节中不可能含 query 的记录；search_fast 分段并行，search_page 可续扫；regex 走条件格式模式子集 | S:并行与顺序 rows/columns 必须一致；非 ASCII 大小写走分配回退；预过滤只是必要条件，命中仍按单元格边界判定"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "c76dd940d8f3b89844a1531170d196f701fcdf9ccf397046c0328c49d01fae4a",
+      "existing_entry": "BENCHMARKS.md[SD7L]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:100 GB search 20 s、filter 25.75 s；100 GB 全量导出 79.62 s/28 MB；81 GB/11.6 亿行 7 列 search 39.42 s、filter 46.70 s、17% 导出 196.9M 行/13 GB 62.03 s；64 GB 自适应 | S:未 drop cache；100 GB 与 81 GB 均为重复块；100 GB 估算不是实测；不得把合成数字当真实承诺"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "e2647647d88c688de70ab369d09bdb57688ab5256f21ddab833e62eaf2daf0d7",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过/--dry-run；mcp 读写+job 与官方 SDK 1.32.2；C 100 GB/81 GB 演练；端到端 demo；64 GB 自适应 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "4113d8222b12dc1b7164859ca220a760fa788727b7180ec33b004101096891b7",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5；A Pipeline 含 --dry-run；B MCP 读写+job 与官方 SDK；C 100 GB/81 GB 演练达标；64 GB 自适应；demo 与 OUTREACH；下一步商业化/真实数据 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "fdb89771d1eb9e21ee6464360ad4e2ca9d99f2874e07c2257f9cdcf6da1125e1",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "bce26bb3831b32a576a6cadcf1a93a50ca5d7051abd86ae33704a68adf837675",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run、SQL lookup 无上限、mcp 读写与 job、官方 SDK、100 GB/81 GB 演练、demo、外发模板 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "21cf5b6d480674e5cb8937670a38d1aaacf9d2a23c430f485018d09e15b61c0f",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "8ff56e6517a96272c2e38da7784d01f78649794d5b28b49bd52c9ff4c9d2984b",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；pipeline run/status 支持 size+mtime 跳过、--force、--dry-run、--json；mcp --root 调 serve；convert/lookup/analyze 共享解析；帮助表列全 flag | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state；dry-run 不执行不写 state；mcp stdout 只走 JSON-RPC"
+    },
+    {
+      "candidate_id": "7ebd264d359685b3df367952990baaf77e785fa67ea36ce09e39455080c1eee1",
+      "object_ref": "code:crates/core/src/encoding.rs",
+      "path": "crates/core/src/encoding.rs",
+      "change": "update",
+      "source_sha256": "9a2fb706d67a0463da21c33f4e1dfed66aa4e68e63bd57643c38fb27ea9f0215",
+      "existing_entry": "encoding.rs[CL8L]: F:文本编码探测与解码：UTF-8 及 BOM、GBK/GB18030、UTF-16、Windows-1252 | R:code:crates/core/src/csv_reader.rs | A:只探测一次，之后把所有读取路径统一成 UTF-8；UTF-16 可以读取，但索引与随机跳转被拒绝 | S:UTF-16 的逗号与换行是两字节，按字节偏移的稀疏索引会算错行号，所以宁可拒绝也不给近似的错位置"
+    },
+    {
+      "candidate_id": "b0b9907b9e2c8479e334a017f432a7be8c4d6c3b919b52b61b5b330fa52cc13b",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "25bd9e7852e7e8a3a87f1d9d93e1807aa7912e3f72626997a40a8253b9538a63",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:运算符等于/不等/比较/包含/in/空值/Wildcard；holds_record 单遍；extract 按输入大小自适应：≥64 GB 两遍扫描（第一遍计数、第二遍直接写最终文件不相交区间），\u003c64 GB 保留 part 并行写 + 并行区间 copy；单写有序通道实验因串行化被回退 | S:并行与顺序行号一致；仅 UTF-8 且 ≤64 spec 分片；输出源字节原样；第二遍字节数必须等于第一遍计数；阈值来自 29 GB vs 100 GB 实测"
+    },
+    {
+      "candidate_id": "ad1132ddf9755cff7b98209e3554a5964adc9c29703629399ecc0069885e4d6d",
+      "object_ref": "code:crates/core/src/scan_parallel.rs",
+      "path": "crates/core/src/scan_parallel.rs",
+      "change": "update",
+      "source_sha256": "fb73741697e619c0d7bfb01019016e00e3b2ac336c437817871a7b87cf080f5e",
+      "existing_entry": "scan_parallel.rs[KP7M]: F:filter 与 search 共用的分段并行、可续扫扫描 | R:code:crates/core/src/index.rs,code:crates/core/src/filter.rs,code:crates/core/src/search.rs | A:ScanOptions 收拢参数；scan_parallel_bytes 接受字节谓词，scan_parallel 保留字符串谓词兼容入口；每波按 64 检查点分段，未跑的波以 next 返回，保留行号永远不超过 limit | S:行号必须与顺序扫描一致；行数上限每波兑现；GBK/UTF-16 不支持游标"
+    },
+    {
+      "candidate_id": "24744b81b210210068ece0ed8652b995ec248292e756f12ad903e98ce76fe7ca",
+      "object_ref": "code:crates/core/src/search.rs",
+      "path": "crates/core/src/search.rs",
+      "change": "update",
+      "source_sha256": "6982da5d37cb913f23541ca07d192fbc9f5ea21db81d3cc47cc517c2746cc7b5",
+      "existing_entry": "search.rs[DA7L]: F:跨列搜索：返回命中行号而不是数据本身 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:默认大小写不敏感子串；ASCII 走无分配字节比较；scan_parallel_bytes 只检查选定列，record_may_match 先用 memchr/memmem 排除原始字节中不可能含 query 的记录；search_fast 分段并行，search_page 可续扫；regex 走条件格式模式子集 | S:并行与顺序 rows/columns 必须一致；非 ASCII 大小写走分配回退；预过滤只是必要条件，命中仍按单元格边界判定"
+    },
+    {
+      "candidate_id": "f15d8f2aaba94dc7adde95910e1407d13bcc79939e43628c5d03817259a31028",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "c76dd940d8f3b89844a1531170d196f701fcdf9ccf397046c0328c49d01fae4a",
+      "existing_entry": "BENCHMARKS.md[SD7L]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:100 GB search 20 s、filter 25.75 s；100 GB 全量导出 79.62 s/28 MB；81 GB/11.6 亿行 7 列 search 39.42 s、filter 46.70 s、17% 导出 196.9M 行/13 GB 62.03 s；64 GB 自适应 | S:未 drop cache；100 GB 与 81 GB 均为重复块；100 GB 估算不是实测；不得把合成数字当真实承诺"
+    },
+    {
+      "candidate_id": "5af5528da5ac870d935370bdea89a6192c759d5ff5d599e6f25630fe470babc4",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "e2647647d88c688de70ab369d09bdb57688ab5256f21ddab833e62eaf2daf0d7",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过/--dry-run；mcp 读写+job 与官方 SDK 1.32.2；C 100 GB/81 GB 演练；端到端 demo；64 GB 自适应 | S:-"
+    },
+    {
+      "candidate_id": "d937df9a40b18c4b1f9531560f3daf69eb124ffa6b59330ca46cee2f267d5430",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "4113d8222b12dc1b7164859ca220a760fa788727b7180ec33b004101096891b7",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5；A Pipeline 含 --dry-run；B MCP 读写+job 与官方 SDK；C 100 GB/81 GB 演练达标；64 GB 自适应；demo 与 OUTREACH；下一步商业化/真实数据 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    }
+  ]
+}
