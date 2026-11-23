@@ -36,3 +36,20 @@
 - 先量后改：任何优化先有可复现测量，再动代码。
 - 每个里程碑最多一次 push；gate 绿、AOCI aligned、tree clean。
 - 商业化价格/合同/SLA 由用户确认，不自行承诺。
+
+## Round 100 checkpoint（2026-11-23）
+
+已稳定：
+- A：Pipeline/DAG、内容哈希（≤1 MiB 默认 + `--content-check`）、实时 `CSVX_STEP`、原子提交、血缘/恢复；
+- B：16 MCP 工具、progress、job、严格 schema、解压缓存与启动清理；
+- C：100 GB search 20.18 s / filter 25.75 s；压缩 materialize + gzip/zst/bz2 缓存复测；
+- CI：Ubuntu/Windows 已有；macOS gate 手动与 push 两条路径均绿（12m21s / 11m32s）；
+- 交付：离线包、`verify_dist` 自验、demo、BENCHMARKS/ROADMAP/PILOT_INTAKE/RELEASE_CHECKLIST。
+
+唯一外部缺口：
+- 真实客户试点：需要用户提供脱敏样本或联系人；没有真实数据就无法给出付费结论。
+
+剩余技术项（不阻塞试点）：
+- 压缩解压仍单线程；job 历史无上限；缓存命中率未持续监控。
+
+决策：目标保持 active；不打 tag、不加 License 强制/遥测；价格/SLA 需用户确认。
