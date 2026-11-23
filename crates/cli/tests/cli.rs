@@ -2566,6 +2566,28 @@ fn pipeline_runs_incrementally_and_fails_atomically() {
         !dir.join("plan.csv.pipeline.csv").exists(),
         "dry-run must not write state"
     );
+    let dry_json = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            plan.to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--dry-run",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(dry_json.status.success(), "{:?}", dry_json.stderr);
+    let dry_json_stdout = String::from_utf8_lossy(&dry_json.stdout);
+    assert!(
+        dry_json_stdout.contains(r#""dryRun":true"#),
+        "{dry_json_stdout}"
+    );
+    assert!(
+        dry_json_stdout.contains(r#""step":"filtered""#),
+        "{dry_json_stdout}"
+    );
 
     let first = run();
     assert!(first.status.success(), "{:?}", first.stderr);

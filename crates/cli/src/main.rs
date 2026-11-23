@@ -8414,11 +8414,27 @@ fn cmd_pipeline(args: &[String]) -> i32 {
         "run" => match run_pipeline_plan(&plan, root.as_deref(), force, dry_run) {
             Ok(results) => {
                 if dry_run {
-                    for (name, fresh, _, detail) in results {
-                        if fresh {
-                            println!("↷ {name}");
-                        } else {
-                            println!("→ {name} ({detail})");
+                    if json {
+                        let steps = results
+                            .iter()
+                            .map(|(name, fresh, _, detail)| {
+                                format!(
+                                    r#"{{"step":{},"fresh":{},"detail":{}}}"#,
+                                    json_quote(name),
+                                    fresh,
+                                    json_quote(detail)
+                                )
+                            })
+                            .collect::<Vec<_>>()
+                            .join(",");
+                        println!(r#"{{"dryRun":true,"steps":[{steps}]}}"#);
+                    } else {
+                        for (name, fresh, _, detail) in results {
+                            if fresh {
+                                println!("↷ {name}");
+                            } else {
+                                println!("→ {name} ({detail})");
+                            }
                         }
                     }
                     return 0;

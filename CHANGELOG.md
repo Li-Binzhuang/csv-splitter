@@ -148,7 +148,8 @@
   decompressing reader; non-seekable forces the sequential path. 2.3 GB zst filter
   writes a byte-identical 411 MB output in 4.16 s at 15 MB RSS (plain 1.51 s).
 - **Pipeline --dry-run**: reports fresh vs would-run steps without executing or
-  writing `.pipeline.csv`; covered by the CLI pipeline test.
+  writing `.pipeline.csv`; `--json` now emits `dryRun/steps` so MCP callers get
+  structured output. Covered by the CLI pipeline test.
 - **Pipeline fast skip**: state records input/output size+mtime; an unchanged 2.3 GB
   pipeline reruns in 17 ms (was 5.08 s of hashing). Touching the same bytes still
   invalidates via mtime, and legacy state without stamps falls back to content hashes.
