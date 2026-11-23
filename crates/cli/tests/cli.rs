@@ -3418,6 +3418,33 @@ fn search_materializes_compressed_input() {
     assert!(out.contains("matched 2"), "{out}");
 }
 
+/// Two steps cannot declare the same output; that would let them clobber each other.
+#[test]
+fn pipeline_rejects_duplicate_outputs() {
+    let dir = TempDir::new("pipeline-duplicate-output");
+    std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n").unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},a.csv\nb,orders.csv,filter,--where city=Puebla -o {out},a.csv\n",
+    )
+    .unwrap();
+    let result = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--dry-run",
+        ])
+        .output()
+        .unwrap();
+    assert!(!result.status.success());
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(stderr.contains("same output"), "{stderr}");
+    assert!(!dir.join("a.csv").exists());
+}
+
 /// A successful run persists the dependency edges next to the plan.
 #[test]
 fn pipeline_persists_lineage() {

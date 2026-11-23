@@ -9039,6 +9039,22 @@ fn run_pipeline_plan(
             }
         }
     }
+    for (index, step) in steps.iter().enumerate() {
+        if let Some(other) = steps[index + 1..]
+            .iter()
+            .find(|candidate| candidate.output == step.output)
+        {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!(
+                    "steps {} and {} declare the same output {}",
+                    step.name,
+                    other.name,
+                    step.output.display()
+                ),
+            ));
+        }
+    }
     if unlock {
         let _ = std::fs::remove_file(format!("{}.pipeline.lock", plan.display()));
     }
