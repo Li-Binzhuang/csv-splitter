@@ -81,8 +81,13 @@ journal，undo 就失去恢复旧值的依据。因此压实必须同时保留�
 after_install 四个窗口真实 abort 进程，下一命令都能恢复且编辑只应用一次；单测覆盖安装前回滚、
 安装后补清空、锁等待、已有快照时拒绝且不改文件。
 
-**仍待补**：真实磁盘满（现只验证了写前拒绝）；1000 万条 history 的压实耗时/空间；HTTP 并发写
-与压实竞争（CLI 侧 `update_locked` 已串行）；`.idx`/`.view` sidecar 的搬迁测试。
+2.2 GB / 5500 万行 drill（2026-11-23）：index 1.86 s；压实 **1.77 s**、RSS **8 MB**；
+压实前后 export **1.76 s / 1.68 s** 且逐字节一致；压实后首次深跳重建索引 0.82 s，之后 0.01 s；
+跨界 undo **0.03 s**、redo 0.01 s，编辑在正确行上被移除/恢复。`.idx` 随原 base 归档为
+`.base.idx`，跨界 undo 再换回；快照写入失败（temp 被目录占用）时 base/journal 不变。
+
+**仍待补**：真实 ENOSPC（现验证的是写失败不改文件）；1000 万条 history 的压实耗时/空间；
+HTTP 并发写与压实竞争（CLI 侧 `update_locked` 已串行）；`.view` 在压实后的行为测试。
 
 ## 对 Excel / WPS 的覆盖
 

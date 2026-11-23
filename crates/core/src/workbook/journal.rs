@@ -770,6 +770,12 @@ pub fn compact(
     let summary = super::export(base, &journal.ops, &tmp, delimiter, tx)?;
     std::fs::copy(base, &archive)?;
     std::fs::copy(&sidecar, &history)?;
+    let index = crate::index::SparseIndex::sidecar_path(base);
+    let index_archive = crate::index::SparseIndex::sidecar_path(&archive);
+    if index.exists() {
+        let _ = std::fs::remove_file(&index_archive);
+        std::fs::rename(&index, &index_archive)?;
+    }
     crash_point("after_copies");
     let blocks = Journal::blocks_sidecar(base);
     let blocks_history = history_blocks_path(&sidecar);
@@ -815,7 +821,14 @@ pub fn recover_compaction(base: &Path) -> io::Result<()> {
         if tmp.exists() {
             // The snapshot was never installed: drop the copies, keep the sheet.
             let _ = std::fs::remove_file(&tmp);
-            let _ = std::fs::remove_file(archive_path(base));
+            let archive = archive_path(base);
+            let index_archive = crate::index::SparseIndex::sidecar_path(&archive);
+            let index = crate::index::SparseIndex::sidecar_path(base);
+            if index_archive.exists() {
+                let _ = std::fs::remove_file(&index);
+                let _ = std::fs::rename(&index_archive, &index);
+            }
+            let _ = std::fs::remove_file(&archive);
             let _ = std::fs::remove_file(history_path(&sidecar));
             let _ = std::fs::remove_file(history_blocks_path(&sidecar));
             let _ = std::fs::remove_file(&prepared);
@@ -835,6 +848,12 @@ pub fn recover_compaction(base: &Path) -> io::Result<()> {
     if archive.exists() && history.exists() {
         let journal = Journal::load(&sidecar)?;
         if !journal.is_empty() {
+            let index_archive = crate::index::SparseIndex::sidecar_path(&archive);
+            let index = crate::index::SparseIndex::sidecar_path(base);
+            if index_archive.exists() {
+                let _ = std::fs::remove_file(&index);
+                let _ = std::fs::rename(&index_archive, &index);
+            }
             let _ = std::fs::remove_file(&archive);
             let _ = std::fs::remove_file(&history);
             let _ = std::fs::remove_file(history_blocks_path(&sidecar));
@@ -864,8 +883,15 @@ pub fn restore_compacted(base: &Path) -> io::Result<bool> {
             "cannot undo past a compacted snapshot while a redo branch exists",
         ));
     }
+    let index = crate::index::SparseIndex::sidecar_path(base);
+    let index_archive = crate::index::SparseIndex::sidecar_path(&archive);
+    let _ = std::fs::remove_file(&index);
     std::fs::remove_file(base)?;
     std::fs::rename(&archive, base)?;
+    if index_archive.exists() {
+        let _ = std::fs::remove_file(&index);
+        std::fs::rename(&index_archive, &index)?;
+    }
     std::fs::rename(&history, &sidecar)?;
     let blocks = Journal::blocks_sidecar(base);
     let blocks_history = history_blocks_path(&sidecar);
@@ -1113,6 +1139,54 @@ mod compact_tests {
         assert_eq!(Journal::load(&sidecar).unwrap().len(), 2);
         assert!(!archive_path(&base).exists());
         assert!(!history_path(&sidecar).exists());
+        std::fs::remove_dir_all(&d).ok();
+    }
+
+    #[test]
+    fn compaction_moves_the_index_sidecar_and_restore_brings_it_back() {
+        let d = dir("index");
+        let base = d.join("b.csv");
+        std::fs::write(&base, "id,city,amount\n1,CDMX,10\n2,Puebla,20\n").unwrap();
+        let sidecar = Journal::sidecar(&base);
+        edited_journal().save(&sidecar).unwrap();
+        let index = crate::index::SparseIndex::sidecar_path(&base);
+        let index_archive = crate::index::SparseIndex::sidecar_path(&archive_path(&base));
+        std::fs::write(&index, b"old index").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        compact(&base, Delimiter::Comma, &tx).unwrap();
+        assert!(!index.exists(), "the snapshot must rebuild its own index");
+        assert!(
+            index_archive.exists(),
+            "the old index follows the original base"
+        );
+        assert!(restore_compacted(&base).unwrap());
+        assert!(
+            index.exists(),
+            "undo across the boundary restores the old index"
+        );
+        assert!(!index_archive.exists());
+        std::fs::remove_dir_all(&d).ok();
+    }
+
+    #[test]
+    fn a_snapshot_write_failure_leaves_the_sheet_untouched() {
+        let d = dir("writefail");
+        let base = d.join("b.csv");
+        std::fs::write(&base, "id,city,amount\n1,CDMX,10\n2,Puebla,20\n").unwrap();
+        let sidecar = Journal::sidecar(&base);
+        edited_journal().save(&sidecar).unwrap();
+        // A directory where the snapshot temp belongs makes File::create fail.
+        std::fs::create_dir(snapshot_tmp(&base)).unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        assert!(compact(&base, Delimiter::Comma, &tx).is_err());
+        assert_eq!(
+            std::fs::read_to_string(&base).unwrap(),
+            "id,city,amount\n1,CDMX,10\n2,Puebla,20\n"
+        );
+        assert_eq!(Journal::load(&sidecar).unwrap().len(), 2);
+        assert!(!archive_path(&base).exists());
+        assert!(!history_path(&sidecar).exists());
+        assert!(!prepared_marker(&base).exists());
         std::fs::remove_dir_all(&d).ok();
     }
 
