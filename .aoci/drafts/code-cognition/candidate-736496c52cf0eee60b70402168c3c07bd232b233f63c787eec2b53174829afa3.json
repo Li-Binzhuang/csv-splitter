@@ -1,0 +1,93 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "14828342bd8183d2156d8282b7b1bae503a59ea950e17946d4c4c9cd1422e833",
+  "batch_id": "736496c52cf0eee60b70402168c3c07bd232b233f63c787eec2b53174829afa3",
+  "composite_identity": "925dadd8bbfe52f6006ddf34b051dfd90d26dd32c061837310ddd5aaa0d44502",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "21fe496566cad7897551c9987b5f16ad07213f3faa53b1dd67e3985e548173c6",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "7f7b47d55ee48574880ba8b13e40396d7576cc43cc5bc7369173649a8092d3b6",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过、SQL lookup 无上限、mcp 读写与 job、100 GB profile、全量 filter -o 两遍扫描 79.62 s、单写实验回退 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "019c2bc90703fed492aedb38ea59068105c4bfd56d9e92c2df0f4af339d62fe3",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:运算符等于/不等/比较/包含/in/空值/Wildcard；holds_record 单遍；UTF-8 extract 两遍扫描：第一遍只数每 slab 输出字节，第二遍直接写最终文件不相交区间，无 part 文件；单写有序通道实验因串行化被回退 | S:并行与顺序行号一致；仅 UTF-8 且 ≤64 spec 分片；切分重叠回退顺序；输出源字节原样；第二遍字节数必须等于第一遍计数"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "c60f6ddad527fa8c51ebc18621d5df1016a529b5c1651a11f499be8c46b0159b",
+      "existing_entry": "BENCHMARKS.md[SD7L]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:100 GB search 20.18–20.42 s/93 MB、filter 25.75 s/95 MB、index 24.57 s、深跳 0.02 s；全量 filter -o 200M 行 20 GB 两遍扫描 79.62 s/28 MB；2.3 GB 1.57→1.93 s | S:未 drop cache、100 GB 为重复块；全量导出靠多读一遍避免双写，小文件会慢；不得把合成数字当真实分布承诺"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "9bb8b1ecfb50b9203fdb37dfe346f4b232b800fbb8e902baed0110476d7cec76",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过；mcp 读写+job；C 100 GB 扫描与全量 filter -o（79.62 s）均达标 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "458adb6c967257dd4cd4225c13da8a6f16888b67a1a90d2420364d4517d39a71",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5；A Pipeline；B MCP 读写+job；C 100 GB 扫描达标、全量 filter -o 两遍扫描 79.62 s 也达标；小文件多读一遍代价；下一步真实分布、商业化 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "2c1606878890455b41903ab37f192760419a40abe3e0a6e3f63be945a5d70a9d",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "7f7b47d55ee48574880ba8b13e40396d7576cc43cc5bc7369173649a8092d3b6",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过、SQL lookup 无上限、mcp 读写与 job、100 GB profile、全量 filter -o 两遍扫描 79.62 s、单写实验回退 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "248eba047296de2a10f6afe7f76aee7a0a36b55500133516673546b74f81a103",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "019c2bc90703fed492aedb38ea59068105c4bfd56d9e92c2df0f4af339d62fe3",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:运算符等于/不等/比较/包含/in/空值/Wildcard；holds_record 单遍；UTF-8 extract 两遍扫描：第一遍只数每 slab 输出字节，第二遍直接写最终文件不相交区间，无 part 文件；单写有序通道实验因串行化被回退 | S:并行与顺序行号一致；仅 UTF-8 且 ≤64 spec 分片；切分重叠回退顺序；输出源字节原样；第二遍字节数必须等于第一遍计数"
+    },
+    {
+      "candidate_id": "c2b6e6300d309ca4715b89821686a69d818960859cd26ec85464b2d6ed8fca65",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "c60f6ddad527fa8c51ebc18621d5df1016a529b5c1651a11f499be8c46b0159b",
+      "existing_entry": "BENCHMARKS.md[SD7L]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:100 GB search 20.18–20.42 s/93 MB、filter 25.75 s/95 MB、index 24.57 s、深跳 0.02 s；全量 filter -o 200M 行 20 GB 两遍扫描 79.62 s/28 MB；2.3 GB 1.57→1.93 s | S:未 drop cache、100 GB 为重复块；全量导出靠多读一遍避免双写，小文件会慢；不得把合成数字当真实分布承诺"
+    },
+    {
+      "candidate_id": "45cd34bed883f93c440069c4cc4fb88c933b3ef4ab63fe663cbb66ac59ca71ea",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "9bb8b1ecfb50b9203fdb37dfe346f4b232b800fbb8e902baed0110476d7cec76",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过；mcp 读写+job；C 100 GB 扫描与全量 filter -o（79.62 s）均达标 | S:-"
+    },
+    {
+      "candidate_id": "064b9c786025c7e9ed6dab89ecf7a76e46ec8ee4f4b84b74080dca90c98136a0",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "458adb6c967257dd4cd4225c13da8a6f16888b67a1a90d2420364d4517d39a71",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5；A Pipeline；B MCP 读写+job；C 100 GB 扫描达标、全量 filter -o 两遍扫描 79.62 s 也达标；小文件多读一遍代价；下一步真实分布、商业化 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    }
+  ]
+}
