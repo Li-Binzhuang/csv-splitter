@@ -33,6 +33,31 @@ job=done
    - `csvx_job_submit` quality → `csvx_job_status` 直到 done
 3. 全程本地、无 GUI、无网络、无 xlsx，不写遥测。
 
+## 官方 MCP SDK 兼容性
+
+用 `@modelcontextprotocol/sdk` **1.32.2**（官方 TypeScript SDK）的 `Client` +
+`StdioClientTransport` 跑同一闭环：
+
+```bash
+cd scripts/mcp_sdk && npm install
+CSVX_BIN=../../target/release/csvx CSVX_ROOT="$DIR" CSVX_FILE=orders.csv node client.mjs
+```
+
+实际输出：
+
+```text
+sdk_tools=13
+schema_rows=3
+filter_matched=2
+view_rows=2
+convert_ok=true
+job=done
+exit=0
+```
+
+说明：csvx 的 MCP server 与官方 SDK 的 initialize/tools/list/tools/call/job 流程兼容；
+npm 依赖只在演示目录，不进入 Rust 构建。
+
 ## 适合谁看
 - 数据工程：把 100 GB CSV 的搜索/过滤/导出当本地数据库用；
 - 运营/财务：分页查看、编辑、撤销、质量报告；

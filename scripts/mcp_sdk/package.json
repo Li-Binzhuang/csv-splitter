@@ -1,0 +1,8 @@
+{
+  "name": "csvx-mcp-sdk-demo",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2"
+  }
+}

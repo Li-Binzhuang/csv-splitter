@@ -133,6 +133,8 @@
   process (no server blocking), cache the finished output, and report exit code/error.
 - **MCP 2.3 GB drill**: cold schema 3.11 s (760 KB index), warm 0.03 s, deep view
   0.02 s, filter 0.77 s, search 0.56 s, quality 22.25 s; responses stay 0.4–4 KB.
+- **Official MCP SDK check**: `@modelcontextprotocol/sdk` 1.32.2 Client over
+  StdioClientTransport lists 13 tools and completes schema/filter/view/edit/undo/convert/job.
 - **End-to-end demo**: `scripts/demo_end_to_end.sh` + dependency-free
   `scripts/mcp_client.py`; pipeline 12/11 ms, 13 MCP tools, edit/undo/convert/job done.
 - **MCP write tools**: `csvx_edit_set/delete/undo/redo` and `csvx_convert` share the

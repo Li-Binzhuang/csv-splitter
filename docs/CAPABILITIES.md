@@ -210,6 +210,8 @@ output,joined,orders,joined.csv,,,,,"customer,region"
 running/done（带 output）/failed（带 exitCode/error）；结果会缓存，重复轮询不丢输出。
 `initialize` / `tools/list` / `tools/call` 已实现；UTF-8 参数按字节保留，JSON-RPC 一行一条。
 
+官方 `@modelcontextprotocol/sdk` 1.32.2 客户端联调通过：13 工具、schema/filter/view、
+edit/undo/convert、异步 job 均完成（见 `docs/DEMO.md`）。
 2.3 GB/9500 万行 MCP drill（2026-11-23）：cold `schema` 3.11 s（建 760 KB 稀疏索引），
 warm schema 0.03 s，`view start=45,000,000` 0.02 s，`filter` 0.77 s，`search` 0.56 s，
 `quality` 22.25 s（9500 万行全量）；响应 0.4–4 KB。
