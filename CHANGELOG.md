@@ -119,6 +119,8 @@
 - **`workday(start, days)`**: moves a date by business days, skipping weekends and
   accepting negative days (no holiday list in the two-argument form); zero keeps the
   date.
+- **81 GB / 1.16B-row 7-column drill**: search 39.42 s, filter 46.70 s, full 17%
+  export 196.9M rows/13 GB in 62.03 s at 28 MB RSS (still a repeated 21.8 GB block).
 - **100 GB full export**: two-pass counting + direct range writes remove the part-file
   double write; 200M-row/20 GB export drops to 79.62 s at 28 MB RSS (from 98.56 s),
   now under 90 s. Adaptive at 64 GB keeps the faster part path for smaller files
@@ -131,6 +133,8 @@
   process (no server blocking), cache the finished output, and report exit code/error.
 - **MCP 2.3 GB drill**: cold schema 3.11 s (760 KB index), warm 0.03 s, deep view
   0.02 s, filter 0.77 s, search 0.56 s, quality 22.25 s; responses stay 0.4–4 KB.
+- **End-to-end demo**: `scripts/demo_end_to_end.sh` + dependency-free
+  `scripts/mcp_client.py`; pipeline 12/11 ms, 13 MCP tools, edit/undo/convert/job done.
 - **MCP write tools**: `csvx_edit_set/delete/undo/redo` and `csvx_convert` share the
   CLI journal lock and root confinement; CLI MCP test covers edit→view→undo and TSV export.
 - **`mcp`**: stdio JSON-RPC MCP server with read-only tools

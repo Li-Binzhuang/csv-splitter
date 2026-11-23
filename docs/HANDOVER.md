@@ -132,6 +132,16 @@ filter <90 s、RSS <200 MB 满足；全量 filter -o（200M 行/20 GB）改用�
 **79.62 s / 28 MB**，进入 90 s；按输入 64 GB 自适应，小/中文件保留 part 并行 copy
 （29 GB A/B：选择性 7.64 s、20% 15.16 s，无回归）。100 GB 仍是重复块。复现见 `docs/BENCHMARKS.md`。
 
+## 81 GB 真实字段演练
+
+7 列、11.6 亿行、87.4 GB（21.8 GB 块重复 4 次）：search 39.42 s、filter 46.70 s、
+全量 17% 导出 196.9M 行/13 GB 62.03 s/28 MB；100 GB 数字仍以 104.5 GB 实测为准。
+
+## 端到端 demo
+
+`bash scripts/demo_end_to_end.sh` 跑 pipeline + `scripts/mcp_client.py`：filter/quality 12/11 ms，
+schema/filter/view/edit/undo/convert/job 全部通过；13 个 MCP 工具。见 `docs/DEMO.md`。
+
 ## MCP 后端（B 主线，只读首版）
 
 `mcp --root DIR`：stdio JSON-RPC；读工具 `csvx_schema/view/filter/search/quality/pipeline_status`，

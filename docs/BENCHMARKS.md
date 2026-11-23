@@ -39,6 +39,20 @@ csvx index big.csv
 /usr/bin/time -l csvx filter big.csv --where city=CDMX
 ```
 
+## 1b. 81 GB / 11.6 亿行 7 列（更接近真实字段）
+
+文件 87,389,224,844 bytes，7 列（id/city/region/amount/customer/note/ts），城市比例
+17/23/31/29%；仍由 21.8 GB 块重复 4 次（不是独立真实数据）。
+
+| 操作 | 耗时 | RSS | 结果 |
+|---|---:|---:|---|
+| search（0 命中，全扫） | 39.42 s | 87 MB | — |
+| filter city=CDMX（无输出） | 46.70 s | 86 MB | — |
+| filter -o（全量 17%） | **62.03 s** | **28 MB** | 196,928,881 行 / 13 GB |
+
+按字节线性估算 100 GB 约 48/57/76 s，但**这是估算，不是实测**；100 GB 的实测仍以
+104.5 GB 合成文件为准。
+
 ## 2. 其他已验证数字（摘要）
 
 | 场景 | 文件/规模 | 结果 |

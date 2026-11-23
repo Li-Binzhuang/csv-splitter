@@ -182,6 +182,17 @@ output,joined,orders,joined.csv,,,,,"customer,region"
 按输入大小自适应（≥64 GB 两遍，<64 GB 保留 part 并行 copy），避免中等文件回归；
 详见 `docs/BENCHMARKS.md`。
 
+### 81 GB 真实字段演练
+
+7 列、11.6 亿行、87.4 GB：search 39.42 s、filter 46.70 s、全量 17% 导出
+196,928,881 行/13 GB **62.03 s / 28 MB**；仍为 21.8 GB 块重复 4 次。
+
+### 端到端 demo
+
+`BIN=target/release/csvx bash scripts/demo_end_to_end.sh`：pipeline filter→quality（12/11 ms）
+后，`scripts/mcp_client.py` 走 schema/filter/view/edit/undo/convert/job，13 个工具。
+见 `docs/DEMO.md`。
+
 ### MCP（B agent 后端，只读首版）
 
 `mcp --root DIR` 在 stdio 上跑 JSON-RPC MCP server，stdout 只走协议，工具只读：
