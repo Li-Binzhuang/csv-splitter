@@ -267,7 +267,7 @@ joined,filtered,lookup,--key cust_no --reference customers.csv --get name --out 
 - `--retries <n>` 与 `--retry-delay <ms>`：失败/超时后重试，默认 0 次、250 ms；
   每次重试先删除临时输出；命令必须可重复写 `{out}`，否则不要开启重试。
 - 同一计划有 `<plan>.pipeline.lock` 运行锁：已存在且未超过 24 小时会拒绝第二次运行；
-超过 24 小时、或其 PID 已不存在的锁视为残留并自动移除。锁在正常返回/失败时释放。
+PID 已不存在 → 立即视为残留；文件无 PID 且超过 24 小时 → 才按年龄视为残留。锁在正常返回/失败时释放。
 `--unlock` 可在运行前显式删除锁；仅在确认没有其他 run 时使用。
 `pipeline status --verify` 按当前 input/output 的 stamp/hash 重新判断 fresh/stale；
 JSON 增加 `"fresh"`；配合 `--fail-on-stale` 在发现 stale 时以退出码 3 结束，

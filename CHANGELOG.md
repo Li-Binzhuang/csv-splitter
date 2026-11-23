@@ -181,6 +181,9 @@
   graph (empty input → previous step, step name → earlier step, file → no step
   dependency), freshness-checks each ready step and runs stale ready steps in
   bounded concurrent waves. Test covers a diamond and all-fresh second pass.
+- **Live locks are never age-stale**: the 24h fallback now applies only when the
+  lock has no readable PID; a live owner is kept even if the lock is older. Test
+  sets a 2-day-old lock with the current PID and asserts refusal.
 - **Dead-owner lock cleanup**: the lock records its PID and `ps -p` proves whether
   it is alive; a dead owner is removed immediately instead of waiting 24h. Test
   plants a fake PID and asserts the run proceeds.

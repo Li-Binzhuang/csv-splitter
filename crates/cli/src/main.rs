@@ -8306,8 +8306,9 @@ fn acquire_pipeline_lock(plan: &std::path::Path) -> std::io::Result<PipelineLock
             .ok()
             .and_then(|modified| modified.elapsed().ok())
             .unwrap_or_default();
-        let stale_by_age = age >= Duration::from_secs(24 * 3600);
-        let stale_by_owner = matches!(lock_owner_alive(&path), Some(false));
+        let owner = lock_owner_alive(&path);
+        let stale_by_age = owner.is_none() && age >= Duration::from_secs(24 * 3600);
+        let stale_by_owner = matches!(owner, Some(false));
         if !stale_by_age && !stale_by_owner {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::WouldBlock,

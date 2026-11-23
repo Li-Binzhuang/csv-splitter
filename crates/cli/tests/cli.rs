@@ -3011,6 +3011,39 @@ fn pipeline_recovers_interrupted_dag_backup() {
     assert!(!dir.join("plan.csv.pipeline.csv").exists());
 }
 
+/// A lock older than 24h is kept while its PID is still alive.
+#[test]
+fn pipeline_keeps_lock_with_live_old_owner() {
+    let dir = TempDir::new("pipeline-live-lock");
+    std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n").unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},a.csv\n",
+    )
+    .unwrap();
+    let lock = dir.join("plan.csv.pipeline.lock");
+    std::fs::write(&lock, format!("pid={}\n", std::process::id())).unwrap();
+    let file = std::fs::OpenOptions::new().write(true).open(&lock).unwrap();
+    file.set_modified(std::time::SystemTime::now() - std::time::Duration::from_secs(2 * 24 * 3600))
+        .unwrap();
+    let result = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(!result.status.success());
+    assert!(
+        String::from_utf8_lossy(&result.stderr).contains("already running"),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+}
+
 /// A lock whose PID no longer exists is treated as stale immediately.
 #[test]
 fn pipeline_clears_lock_from_dead_process() {
