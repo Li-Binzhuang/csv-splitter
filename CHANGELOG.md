@@ -119,9 +119,10 @@
 - **`workday(start, days)`**: moves a date by business days, skipping weekends and
   accepting negative days (no holiday list in the two-argument form); zero keeps the
   date.
-- **100 GB full export**: parallel-range final copy cuts 200M-row/20 GB export from
-  101.93 s to 98.56 s (54 MB RSS); still over 90 s because parts are written twice.
-  The single-writer experiment was reverted (2.3 GB regression 0.65 -> 3.2 s).
+- **100 GB full export**: two-pass counting + direct range writes remove the part-file
+  double write; 200M-row/20 GB export drops to 79.62 s at 28 MB RSS (from 98.56 s),
+  now under 90 s. 2.3 GB trades 1.57 -> 1.93 s for the extra scan. The single-writer
+  experiment was reverted as a serialisation regression.
 - **100 GB profile**: 104.5 GB/1.3B rows search 20.18–20.42 s (93 MB), filter
   25.75 s (95 MB), selective filter -o 19.54 s, index 24.57 s, deep view 0.02 s;
   meets <60/90 s and <200 MB targets. See docs/BENCHMARKS.md.

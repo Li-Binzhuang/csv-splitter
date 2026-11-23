@@ -15,13 +15,14 @@
 | search（第 2 次） | 同上 | 20.42 s | 93 MB | 0 命中 |
 | filter（无输出） | `filter big.csv --where city=CDMX` | 25.75 s | 95 MB | 1,300,001,299 scanned / 260,000,000 matched |
 | filter -o（选择性） | `filter big.csv --where id=1 -o sel.csv` | 19.54 s | 17 MB | 输出 94 KB（1,300 行） |
-| **filter -o（全量 20%）** | `filter big.csv --where city=CDMX -o cdmx.csv` | **98.56 s** | **54 MB** | **200,000,000 行 / 20 GB** |
+| **filter -o（全量 20%）** | `filter big.csv --where city=CDMX -o cdmx.csv` | **79.62 s** | **28 MB** | **200,000,000 行 / 20 GB** |
 | 深跳 | `view big.csv --start 700000000 --count 5` | 0.02 s | 29 MB | 第 7 亿行 |
 
 **C 验收**：100 GB search <60 s、filter（扫描/无输出）<90 s、RSS <200 MB —— **满足**。
-但**全量物化**（200,000,000 行、20 GB 输出）实测 **98.56 s**，超过 90 s。并行 part 文件
-保留、最终拼接改为并行区间写入（相对串行拼接 101.93 s 仅省 3.4 s）；瓶颈仍是约 40 GB
-写入（20 GB part + 20 GB final）。这是已识别缺口，不算作扫描达标。
+**全量物化**（200,000,000 行、20 GB 输出）用两遍扫描 + 预计算偏移：第一遍只数每个
+slab 的输出字节，第二遍直接写最终文件的不相交区间；**79.62 s / 28 MB**，首次进入 90 s。
+代价是 2.3 GB 小文件从并行 part 的 1.57 s 变为 1.93 s（多读一遍）；100 GB 上省掉 20 GB
+part 写入，收益远大于代价。
 
 复现：
 

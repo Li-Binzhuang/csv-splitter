@@ -761,121 +761,95 @@ fn extract_parallel(
     })
     .ok();
 
-    let mut out = BufWriter::with_capacity(4 * 1024 * 1024, File::create(output)?);
-    crate::encoding::keep_bom(&mut out, path)?;
-    out.write_all(&header)?;
+    let mut header_out = BufWriter::with_capacity(4 * 1024 * 1024, File::create(output)?);
+    crate::encoding::keep_bom(&mut header_out, path)?;
+    header_out.write_all(&header)?;
     if !header.ends_with(b"\n") {
-        out.write_all(b"\n")?;
+        header_out.write_all(b"\n")?;
     }
+    header_out.flush()?;
+    drop(header_out);
 
     let delim = delimiter.byte();
     let width = headers.len();
-    let mut parts = Vec::with_capacity(starts.len());
-    let mut handles = Vec::with_capacity(starts.len());
-    for (index, start) in starts.iter().copied().enumerate() {
-        let end = starts.get(index + 1).copied().unwrap_or(len);
-        let part = output.with_file_name(format!(
-            ".{}.part{index}",
-            output
-                .file_name()
-                .and_then(|name| name.to_str())
-                .unwrap_or("filter")
-        ));
-        parts.push(part.clone());
-        let compiled = compiled.clone();
-        let path = path.to_path_buf();
-        let skip_header = index == 0;
-        handles.push(std::thread::spawn(move || {
-            let slab = Slab {
-                path: &path,
-                start,
-                end,
-                skip_header,
-                compiled: &compiled,
-                width,
-                delim,
-                quotes,
-                part: &part,
-            };
-            extract_slab(slab)
-        }));
-    }
+    let base = std::fs::metadata(output)?.len();
 
-    let mut summary = ExtractSummary::default();
-    let mut failure = None;
-    for handle in handles {
-        match handle.join() {
-            Ok(Ok(slab)) => {
-                summary.scanned += slab.scanned;
-                summary.matched += slab.matched;
-                summary.matched_ragged += slab.matched_ragged;
-            }
-            Ok(Err(error)) => {
-                failure = Some(error);
-            }
-            Err(_) => {
-                failure = Some(io::Error::other("a filter worker panicked"));
-            }
+    let output_path = output.to_path_buf();
+    let scan_pass = |write_ranges: Option<&[(u64, u64)]>| -> io::Result<Vec<SlabStats>> {
+        let mut handles = Vec::with_capacity(starts.len());
+        for (index, start) in starts.iter().copied().enumerate() {
+            let end = starts.get(index + 1).copied().unwrap_or(len);
+            let compiled = compiled.clone();
+            let path = path.to_path_buf();
+            let out_path = output_path.clone();
+            let skip_header = index == 0;
+            let range = write_ranges.map(|ranges| ranges[index]);
+            handles.push(std::thread::spawn(move || {
+                let slab = Slab {
+                    path: &path,
+                    start,
+                    end,
+                    skip_header,
+                    compiled: &compiled,
+                    width,
+                    delim,
+                    quotes,
+                };
+                scan_slab(slab, range.map(|(at, _)| (out_path.as_path(), at)))
+            }));
         }
-    }
-    if let Some(error) = failure {
-        for part in &parts {
-            let _ = std::fs::remove_file(part);
+        let mut stats = Vec::with_capacity(handles.len());
+        for handle in handles {
+            stats.push(match handle.join() {
+                Ok(Ok(stats)) => stats,
+                Ok(Err(error)) => return Err(error),
+                Err(_) => return Err(io::Error::other("a filter worker panicked")),
+            });
         }
-        return Err(error);
+        Ok(stats)
+    };
+
+    // Pass 1: count output bytes per slab without writing them. This is the price of
+    // avoiding the part-file double write: one extra parallel scan, no extra bytes.
+    let stats = match scan_pass(None) {
+        Ok(stats) => stats,
+        Err(error) => {
+            let _ = std::fs::remove_file(output);
+            return Err(error);
+        }
+    };
+    let total: u64 = stats.iter().map(|slab| slab.bytes).sum();
+    let mut ranges = Vec::with_capacity(stats.len());
+    let mut at = base;
+    for slab in &stats {
+        let end = at + slab.bytes;
+        ranges.push((at, end));
+        at = end;
     }
-    // Copy each part into its own byte range in the final file, concurrently. The
-    // parts still exist (ordered extraction made them), but the serial 20 GB concat
-    // was the 100 GB export bottleneck; parallel writes use the disk instead of one
-    // core. Ranges are disjoint and computed from the part sizes.
-    out.flush()?;
-    drop(out);
-    let header_len = std::fs::metadata(output)?.len();
-    let mut offsets = Vec::with_capacity(parts.len());
-    let mut next_offset = header_len;
-    for part in &parts {
-        offsets.push(next_offset);
-        next_offset += std::fs::metadata(part)?.len();
-    }
-    let final_path = output.to_path_buf();
-    let file = std::fs::OpenOptions::new().write(true).open(&final_path)?;
-    file.set_len(next_offset)?;
+    let file = std::fs::OpenOptions::new().write(true).open(output)?;
+    file.set_len(at)?;
     drop(file);
-    let mut copies = Vec::with_capacity(parts.len());
-    for (part, offset) in parts.iter().zip(offsets) {
-        let part = part.clone();
-        let final_path = final_path.clone();
-        copies.push(std::thread::spawn(move || -> io::Result<()> {
-            let mut src = File::open(&part)?;
-            let mut dst = std::fs::OpenOptions::new().write(true).open(&final_path)?;
-            dst.seek(SeekFrom::Start(offset))?;
-            let mut buffer = vec![0u8; 4 * 1024 * 1024];
-            loop {
-                let read = src.read(&mut buffer)?;
-                if read == 0 {
-                    break;
-                }
-                dst.write_all(&buffer[..read])?;
-            }
-            let _ = std::fs::remove_file(&part);
-            Ok(())
-        }));
-    }
-    for copy in copies {
-        match copy.join() {
-            Ok(Ok(())) => {}
-            Ok(Err(error)) => {
-                failure = Some(error);
-            }
-            Err(_) => failure = Some(io::Error::other("a filter copy worker panicked")),
+
+    // Pass 2: parse again and write each slab straight into its final byte range.
+    let written = match scan_pass(Some(&ranges)) {
+        Ok(stats) => stats,
+        Err(error) => {
+            let _ = std::fs::remove_file(output);
+            return Err(error);
         }
-    }
-    if let Some(error) = failure {
+    };
+    let written_bytes: u64 = written.iter().map(|slab| slab.bytes).sum();
+    if written_bytes != total {
         let _ = std::fs::remove_file(output);
-        for part in &parts {
-            let _ = std::fs::remove_file(part);
-        }
-        return Err(error);
+        return Err(io::Error::other(format!(
+            "filter output size mismatch: counted {total} bytes, wrote {written_bytes}"
+        )));
+    }
+    let mut summary = ExtractSummary::default();
+    for slab in &written {
+        summary.scanned += slab.scanned;
+        summary.matched += slab.matched;
+        summary.matched_ragged += slab.matched_ragged;
     }
     summary.bytes = std::fs::metadata(output).map(|m| m.len()).unwrap_or(0);
     tx.send(ProgressEvent::PhaseDone {
@@ -917,6 +891,14 @@ fn next_line_start(path: &Path, mut at: u64, len: u64) -> io::Result<u64> {
     }
 }
 
+#[derive(Default, Clone, Copy)]
+struct SlabStats {
+    scanned: u64,
+    matched: u64,
+    matched_ragged: u64,
+    bytes: u64,
+}
+
 struct Slab<'a> {
     path: &'a Path,
     start: u64,
@@ -926,10 +908,10 @@ struct Slab<'a> {
     width: usize,
     delim: u8,
     quotes: QuoteStyle,
-    part: &'a Path,
 }
 
-fn extract_slab(slab: Slab<'_>) -> io::Result<ExtractSummary> {
+fn scan_slab(slab: Slab<'_>, writer: Option<(&Path, u64)>) -> io::Result<SlabStats> {
+    const WRITE_BUFFER: usize = 1024 * 1024;
     let Slab {
         path,
         start,
@@ -939,7 +921,6 @@ fn extract_slab(slab: Slab<'_>) -> io::Result<ExtractSummary> {
         width,
         delim,
         quotes,
-        part,
     } = slab;
     let mut file = File::open(path)?;
     file.seek(SeekFrom::Start(start))?;
@@ -952,8 +933,15 @@ fn extract_slab(slab: Slab<'_>) -> io::Result<ExtractSummary> {
         }
         offset += record.len() as u64;
     }
-    let mut summary = ExtractSummary::default();
-    let mut out = BufWriter::with_capacity(1024 * 1024, File::create(part)?);
+    let mut out = match writer {
+        Some((output, at)) => {
+            let mut file = std::fs::OpenOptions::new().write(true).open(output)?;
+            file.seek(SeekFrom::Start(at))?;
+            Some(BufWriter::with_capacity(WRITE_BUFFER, file))
+        }
+        None => None,
+    };
+    let mut stats = SlabStats::default();
     while records.next_record(&mut record)? {
         if offset >= end {
             break;
@@ -969,19 +957,24 @@ fn extract_slab(slab: Slab<'_>) -> io::Result<ExtractSummary> {
         };
         if hit {
             if field_count != width {
-                summary.matched_ragged += 1;
+                stats.matched_ragged += 1;
             }
-            out.write_all(&record)?;
-            if !record.ends_with(b"\n") {
-                out.write_all(b"\n")?;
+            if let Some(out) = out.as_mut() {
+                out.write_all(&record)?;
+                if !record.ends_with(b"\n") {
+                    out.write_all(b"\n")?;
+                }
             }
-            summary.matched += 1;
+            stats.bytes += record.len() as u64 + u64::from(!record.ends_with(b"\n"));
+            stats.matched += 1;
         }
-        summary.scanned += 1;
+        stats.scanned += 1;
         offset += record.len() as u64;
     }
-    out.flush()?;
-    Ok(summary)
+    if let Some(mut out) = out {
+        out.flush()?;
+    }
+    Ok(stats)
 }
 
 /// Single-cell predicate.
