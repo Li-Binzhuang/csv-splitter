@@ -1,0 +1,119 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "befa2df3fe8c3d731b75a3d1f6aeaac994a0f8be7359224ef4b01ebebd37369d",
+  "batch_id": "337e8dee265869e4ce91c1eedf257f5bb3ebe087b29f8f0355450cf041f151d0",
+  "composite_identity": "c0ea47817180475619f0b93aa15f2100ab0448e874818aa029df7b9239222747",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "ffa4890a3b7654b4613a8f4de87784d0d5a62fd3baf5df541baf0cf540081354",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "0a7c4571a7cd5a9a0ae53c2b360a8c7724a1938bb72fc13ffd10206c91abbb0b",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过、SQL lookup 无上限、mcp 读写与 job、100 GB profile、全量 filter -o 两遍扫描 79.62 s、按 64 GB 自适应 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "0de3537b75165e29b638336fd650f9af81e7310254d829b56fce94500e56fe0a",
+      "existing_entry": "BENCHMARKS.md[SD7L]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:100 GB search 20.18–20.42 s、filter 25.75 s、index 24.57 s、深跳 0.02 s；100 GB 全量 filter -o 79.62 s/28 MB；29 GB A/B 选择性 7.21 vs 两遍 14.52 s、20% 15.18 vs 17.90 s，故 64 GB 自适应 | S:未 drop cache、100 GB 为重复块；两遍只在大文件回本；不得把合成数字当真实分布承诺"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "805425c5374b98b63ddedbeab9ca1c5f22b8968221bbfb79aaba29fd0bd3cc33",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过；mcp 读写+job；C 100 GB 扫描与全量 filter -o（79.62 s）达标；64 GB 自适应 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "create",
+      "source_sha256": "630cfe994b1d1839077336b8527b8f45bd2aec1e2d094ade6373c881b40704a0"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "22716668e252c7f370c8aa0dabbeb1567008cd3dc949a1d642775a09d3510457",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5；A Pipeline；B MCP 读写+job；C 100 GB 扫描与全量 filter -o 79.62 s 达标；64 GB 自适应保留中等文件性能；下一步真实分布/商业化 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/demo_end_to_end.sh",
+      "path": "scripts/demo_end_to_end.sh",
+      "change": "create",
+      "source_sha256": "3d139f6bb59fef8841dfa9566585e2215e1f6537b0a0ea1f6c27c03c931695f2"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/mcp_client.py",
+      "path": "scripts/mcp_client.py",
+      "change": "create",
+      "source_sha256": "1f75b8d8cc4eb5854bf8178055d0e2d43e01c21c7a59338b7aaf4a2b27e8f77f"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4f7638c3132eee7e85221e0c89496da283225a269e634f8dfcc76da33bf5f1df",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "0a7c4571a7cd5a9a0ae53c2b360a8c7724a1938bb72fc13ffd10206c91abbb0b",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过、SQL lookup 无上限、mcp 读写与 job、100 GB profile、全量 filter -o 两遍扫描 79.62 s、按 64 GB 自适应 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "06400851b6a65e586327866d3c3b4b9ceb61cc51aaee1e0d05492b4bcdcf59be",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "0de3537b75165e29b638336fd650f9af81e7310254d829b56fce94500e56fe0a",
+      "existing_entry": "BENCHMARKS.md[SD7L]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:100 GB search 20.18–20.42 s、filter 25.75 s、index 24.57 s、深跳 0.02 s；100 GB 全量 filter -o 79.62 s/28 MB；29 GB A/B 选择性 7.21 vs 两遍 14.52 s、20% 15.18 vs 17.90 s，故 64 GB 自适应 | S:未 drop cache、100 GB 为重复块；两遍只在大文件回本；不得把合成数字当真实分布承诺"
+    },
+    {
+      "candidate_id": "219a5c011b077742504050724d900bf941afabbc0f7092b8c0bdc6e39eb141ce",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "805425c5374b98b63ddedbeab9ca1c5f22b8968221bbfb79aaba29fd0bd3cc33",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过；mcp 读写+job；C 100 GB 扫描与全量 filter -o（79.62 s）达标；64 GB 自适应 | S:-"
+    },
+    {
+      "candidate_id": "fa6a6fa6adc0ecd0760b9358d1749b7615e66b6dd0cfa9f3610c69abdfddf1cc",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "create",
+      "source_sha256": "630cfe994b1d1839077336b8527b8f45bd2aec1e2d094ade6373c881b40704a0"
+    },
+    {
+      "candidate_id": "9808d3ef205f6ad0a9de055292f34b42314b48b2eecb31e9b7149f4dbfbd6927",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "22716668e252c7f370c8aa0dabbeb1567008cd3dc949a1d642775a09d3510457",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5；A Pipeline；B MCP 读写+job；C 100 GB 扫描与全量 filter -o 79.62 s 达标；64 GB 自适应保留中等文件性能；下一步真实分布/商业化 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    },
+    {
+      "candidate_id": "7ab5125672bad2e84853224920c637c48136525f98c6d3a64f7972222161ab1e",
+      "object_ref": "code:scripts/demo_end_to_end.sh",
+      "path": "scripts/demo_end_to_end.sh",
+      "change": "create",
+      "source_sha256": "3d139f6bb59fef8841dfa9566585e2215e1f6537b0a0ea1f6c27c03c931695f2"
+    },
+    {
+      "candidate_id": "fdcb9cb9a89c53d0242ee6f017fe6531094dcc6a649f748300b74ddb8df27c30",
+      "object_ref": "code:scripts/mcp_client.py",
+      "path": "scripts/mcp_client.py",
+      "change": "create",
+      "source_sha256": "1f75b8d8cc4eb5854bf8178055d0e2d43e01c21c7a59338b7aaf4a2b27e8f77f"
+    }
+  ]
+}
