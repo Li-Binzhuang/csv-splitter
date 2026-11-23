@@ -142,6 +142,9 @@
 - **`mcp`**: stdio JSON-RPC MCP server with read-only tools
   (`csvx_schema/view/filter/search/quality/pipeline_status`), root-confined paths,
   UTF-8 arguments; initialize/tools/list/tools/call covered by a CLI test.
+- **MCP job cancel**: `csvx_job_cancel` kills a running child and returns
+  `{"state":"cancelled"}`; finished jobs return done/failed. Reader threads and
+  cached results are cleaned up.
 - **MCP pipeline_run**: agents can execute a declarative pipeline (force/dryRun)
   through MCP; long runs can be wrapped in the existing job tools.
 - **Compressed input**: search/filter/analyze read .zst/.gz/.bz2/.xz through a

@@ -13,14 +13,14 @@
 ## 三个可卖的能力（有实测证据）
 1. **大文件交互**：104.5 GB/13 亿行 search 20.2 s、filter 25.8 s、全量导出 79.6 s，RSS <200 MB。
 2. **可复现 Pipeline**：2.3 GB/9500 万行 filter→lookup→groupby 6.55 s；未变重跑 17 ms；失败不写坏输出。
-3. **MCP 数据后端**：13 个只读/写工具 + 异步 job；schema→filter→view→edit→undo→convert 闭环，演示见 `docs/DEMO.md`。
+3. **MCP 数据后端**：15 个只读/写工具 + 异步 job；schema→filter→view→edit→undo→convert 闭环，演示见 `docs/DEMO.md`。
 
 ## 演示话术（5 分钟）
 ```bash
 BIN=target/release/csvx bash scripts/demo_end_to_end.sh
 ```
 - 先看 pipeline：两步 12/11 ms、重跑跳过；
-- 再看 MCP：13 个工具、编辑/撤销、格式转换、后台 quality job；
+- 再看 MCP：15 个工具、编辑/撤销、格式转换、后台 quality job；
 - 最后打开 `docs/BENCHMARKS.md` 指 100 GB 数字。
 
 ## 适合先找谁

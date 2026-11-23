@@ -2934,6 +2934,57 @@ fn pipeline_step_timeout_kills_the_child() {
     assert!(!dir.join("plan.csv.pipeline.csv").exists());
 }
 
+/// A long-running MCP job can be cancelled without waiting for it to finish.
+#[test]
+fn mcp_cancels_a_running_job() {
+    use std::io::Write;
+    use std::process::Stdio;
+    let dir = TempDir::new("mcp-cancel");
+    let mut big = String::from("id,city\n");
+    for i in 0..2_000_000 {
+        big.push_str(&format!(
+            "{i},{}\n",
+            if i % 5 == 0 { "CDMX" } else { "Puebla" }
+        ));
+    }
+    std::fs::write(dir.join("big.csv"), big).unwrap();
+    let mut child = Command::new(bin())
+        .args(["mcp", "--root", dir.0.to_str().unwrap()])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    {
+        let stdin = child.stdin.as_mut().expect("stdin");
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":1,"method":"initialize","params":{{}}}}"#
+        )
+        .unwrap();
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{{"name":"csvx_job_submit","arguments":{{"tool":"csvx_quality","arguments":{{"path":"big.csv","key":"id"}}}}}}}}"#
+        )
+        .unwrap();
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{{"name":"csvx_job_cancel","arguments":{{"id":"job-1"}}}}}}"#
+        )
+        .unwrap();
+    }
+    drop(child.stdin.take());
+    let output = child.wait_with_output().unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("cancelled"), "{stdout}");
+    assert!(stdout.contains("job-1"), "{stdout}");
+}
+
 /// An agent can run the A-line workbench through MCP, not only inspect it.
 #[test]
 fn mcp_runs_a_declarative_pipeline() {
