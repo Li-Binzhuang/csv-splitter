@@ -172,6 +172,13 @@ output,joined,orders,joined.csv,,,,,"customer,region"
 2.03 GB / 5600 万行 drill（2026-11-23）：analyze --quality **18.71 s**，RSS **17 MB**；
 `key` 检查报 55,999,000 个重复值，`city` 报 5,600,000 个空值；候选键为空（id 的 distinct 被 cap 截断）。
 
+### 100 GB 级（C 主线，已达标）
+
+104.5 GB / 13 亿行（重复块合成）：`preview` 0.02 s/8 MB，`index` 24.57 s/21 MB（索引 9.9 MB），
+`search` 20.18–20.42 s/93 MB，`filter` 25.75 s/95 MB（1.3B scanned、2.6 亿 matched），
+选择性 `filter -o` 19.54 s/17 MB，深跳第 7 亿行 0.02 s/29 MB。
+验收目标 search <60 s、filter <90 s、RSS <200 MB 全部满足；详见 `docs/BENCHMARKS.md`。
+
 ### MCP（B agent 后端，只读首版）
 
 `mcp --root DIR` 在 stdio 上跑 JSON-RPC MCP server，stdout 只走协议，工具只读：
