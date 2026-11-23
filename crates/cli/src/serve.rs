@@ -7827,7 +7827,11 @@ fn mcp_output_path(root: &Path, args: &McpJson) -> Result<PathBuf, String> {
 struct CachedMaterialized {
     key: String,
     path: std::path::PathBuf,
+    size: u64,
 }
+
+const MATERIALIZE_CACHE_MAX_BYTES: u64 = 4 * 1024 * 1024 * 1024;
+const MATERIALIZE_CACHE_MAX_ENTRIES: usize = 16;
 
 static MATERIALIZE_CACHE: std::sync::OnceLock<std::sync::Mutex<Vec<CachedMaterialized>>> =
     std::sync::OnceLock::new();
@@ -7884,10 +7888,23 @@ fn mcp_materialize(input: &Path) -> Result<std::path::PathBuf, String> {
     let mut reader = csvx_core::encoding::open_decoded(input).map_err(|error| error.to_string())?;
     let mut writer = std::fs::File::create(&path).map_err(|error| error.to_string())?;
     std::io::copy(&mut reader, &mut writer).map_err(|error| error.to_string())?;
+    let size = std::fs::metadata(&path)
+        .map(|metadata| metadata.len())
+        .unwrap_or(0);
     if let Ok(mut entries) = cache.lock() {
+        let mut total: u64 = entries.iter().map(|entry| entry.size).sum();
+        while !entries.is_empty()
+            && (entries.len() >= MATERIALIZE_CACHE_MAX_ENTRIES
+                || total.saturating_add(size) > MATERIALIZE_CACHE_MAX_BYTES)
+        {
+            let evicted = entries.remove(0);
+            total = total.saturating_sub(evicted.size);
+            let _ = std::fs::remove_file(evicted.path);
+        }
         entries.push(CachedMaterialized {
             key,
             path: path.clone(),
+            size,
         });
     }
     Ok(path)
