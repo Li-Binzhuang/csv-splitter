@@ -3507,6 +3507,65 @@ fn pipeline_rejects_duplicate_outputs() {
     assert!(!dir.join("a.csv").exists());
 }
 
+/// Same size and mtime can hide a content change; --content-check hashes anyway.
+#[cfg(unix)]
+#[test]
+fn pipeline_content_check_detects_rewritten_input() {
+    let dir = TempDir::new("pipeline-content-check");
+    let source = dir.join("orders.csv");
+    let reference = dir.join("reference.csv");
+    std::fs::write(&source, "id,city\n1,CDMX\n").unwrap();
+    std::fs::write(&reference, "same").unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},a.csv\n",
+    )
+    .unwrap();
+    Command::new("touch")
+        .args(["-r", reference.to_str().unwrap(), source.to_str().unwrap()])
+        .status()
+        .unwrap();
+    let run = |extra: &[&str]| {
+        let mut args = vec![
+            "pipeline".to_string(),
+            "run".to_string(),
+            dir.join("plan.csv").to_str().unwrap().to_string(),
+            "--root".to_string(),
+            dir.0.to_str().unwrap().to_string(),
+        ];
+        args.extend(extra.iter().map(|value| value.to_string()));
+        Command::new(bin()).args(args).output().unwrap()
+    };
+    let first = run(&[]);
+    assert!(
+        first.status.success(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    assert_eq!(
+        std::fs::read_to_string(dir.join("a.csv")).unwrap(),
+        "id,city\n1,CDMX\n"
+    );
+    std::fs::write(&source, "id,city\n2,CDMX\n").unwrap();
+    Command::new("touch")
+        .args(["-r", reference.to_str().unwrap(), source.to_str().unwrap()])
+        .status()
+        .unwrap();
+    let skipped = run(&[]);
+    assert!(skipped.status.success());
+    assert!(String::from_utf8_lossy(&skipped.stdout).contains("↷ a"));
+    assert_eq!(
+        std::fs::read_to_string(dir.join("a.csv")).unwrap(),
+        "id,city\n1,CDMX\n"
+    );
+    let checked = run(&["--content-check"]);
+    assert!(checked.status.success());
+    assert_eq!(
+        std::fs::read_to_string(dir.join("a.csv")).unwrap(),
+        "id,city\n2,CDMX\n"
+    );
+}
+
 /// Stable markers let MCP count steps without depending on check glyphs.
 #[test]
 fn pipeline_emits_progress_markers() {

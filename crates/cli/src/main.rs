@@ -140,6 +140,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--unlock", "Remove the plan lock before running (use with care)"),
             ("--verify", "Status: re-check current stamps/hashes"),
             ("--progress-markers", "Run: emit stable CSVX_STEP lines"),
+            ("--content-check", "Run: hash content even when stamps match"),
             ("--fail-on-stale", "Status: exit 3 when verify finds stale steps"),
             ("--dag", "Run ready steps by dependency order (requires --jobs > 1)"),
             ("--jobs", "Concurrency for groups/DAG (default 1)"),
@@ -8520,6 +8521,7 @@ fn pipeline_fresh_row(
     input_path: &std::path::Path,
     previous: &[PipelineStateRow],
     force: bool,
+    content_check: bool,
 ) -> std::io::Result<Option<PipelineStateRow>> {
     if force {
         return Ok(None);
@@ -8540,7 +8542,13 @@ fn pipeline_fresh_row(
     }) else {
         return Ok(None);
     };
-    let fresh = if !row.input_stamp.is_empty() && !row.output_stamp.is_empty() {
+    let fresh = if content_check && !row.input_hash.is_empty() && !row.output_hash.is_empty() {
+        output_exists
+            && pipeline_hash_file(input_path)? == row.input_hash
+            && pipeline_hash_file(&step.output)
+                .map(|hash| hash == row.output_hash)
+                .unwrap_or(false)
+    } else if !row.input_stamp.is_empty() && !row.output_stamp.is_empty() {
         output_exists && row.input_stamp == input_stamp && row.output_stamp == output_stamp
     } else {
         let input_hash = pipeline_hash_file(input_path)?;
@@ -8833,6 +8841,7 @@ fn run_pipeline_dag(
     previous: &[PipelineStateRow],
     state_path: &std::path::Path,
     progress_markers: bool,
+    content_check: bool,
 ) -> std::io::Result<PipelineResults> {
     use std::collections::HashSet;
     let dependencies: Vec<Vec<usize>> = (0..steps.len())
@@ -8873,7 +8882,7 @@ fn run_pipeline_dag(
         let mut stale = Vec::new();
         for &index in &ready {
             let input_path = pipeline_resolve_input(&steps[index], steps, root)?;
-            match pipeline_fresh_row(&steps[index], &input_path, previous, force)? {
+            match pipeline_fresh_row(&steps[index], &input_path, previous, force, content_check)? {
                 Some(row) => {
                     results.push((
                         steps[index].name.clone(),
@@ -8976,6 +8985,7 @@ fn run_pipeline_plan(
     clean: bool,
     unlock: bool,
     progress_markers: bool,
+    content_check: bool,
 ) -> std::io::Result<(PipelineResults, PipelineLineage)> {
     let root = root
         .map(std::path::Path::to_path_buf)
@@ -9143,6 +9153,7 @@ fn run_pipeline_plan(
             &previous,
             &state_path,
             progress_markers,
+            content_check,
         )?;
         let lineage = steps
             .iter()
@@ -9167,7 +9178,9 @@ fn run_pipeline_plan(
             let mut stale = Vec::new();
             for (offset, candidate) in steps[index..end].iter().enumerate() {
                 let input_path = pipeline_resolve_input(candidate, &steps, &root)?;
-                if let Some(row) = pipeline_fresh_row(candidate, &input_path, &previous, force)? {
+                if let Some(row) =
+                    pipeline_fresh_row(candidate, &input_path, &previous, force, content_check)?
+                {
                     fresh_rows.push((offset, Some(row)));
                 } else {
                     stale.push(index + offset);
@@ -9266,7 +9279,13 @@ fn run_pipeline_plan(
         let fresh = !force
             && match prior {
                 Some(row) => {
-                    if !row.input_stamp.is_empty() && !row.output_stamp.is_empty() {
+                    if content_check && !row.input_hash.is_empty() && !row.output_hash.is_empty() {
+                        output_exists
+                            && pipeline_hash_file(&input_path)? == row.input_hash
+                            && pipeline_hash_file(&step.output)
+                                .map(|hash| hash == row.output_hash)
+                                .unwrap_or(false)
+                    } else if !row.input_stamp.is_empty() && !row.output_stamp.is_empty() {
                         // Fast path: metadata alone proves the input and output unchanged.
                         output_exists
                             && row.input_stamp == input_stamp
@@ -9464,6 +9483,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
     let mut verify = false;
     let mut fail_on_stale = false;
     let mut progress_markers = false;
+    let mut content_check = false;
     let mut json = false;
     while let Some(arg) = p.next() {
         match arg.as_str() {
@@ -9477,6 +9497,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             "--force" => force = true,
             "--dry-run" => dry_run = true,
             "--progress-markers" => progress_markers = true,
+            "--content-check" => content_check = true,
             "--fail-on-stale" => fail_on_stale = true,
             "--verify" => verify = true,
             "--unlock" => unlock = true,
@@ -9568,6 +9589,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             clean,
             unlock,
             progress_markers,
+            content_check,
         ) {
             Ok((results, lineage)) => {
                 if dry_run {
