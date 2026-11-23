@@ -18,6 +18,8 @@ for doc in CAPABILITIES HANDOVER BENCHMARKS BUSINESS DEMO PILOT PILOT_SAMPLE PIL
   [[ -f "docs/$doc.md" ]] && cp "docs/$doc.md" "$STAGE/docs/"
 done
 cp scripts/demo_end_to_end.sh scripts/mcp_client.py scripts/pilot_report.py "$STAGE/"
+mkdir -p "$STAGE/mcp_sdk"
+cp scripts/mcp_sdk/client.mjs scripts/mcp_sdk/package.json "$STAGE/mcp_sdk/"
 tar -czf "dist/$NAME.tar.gz" -C dist "$NAME"
 shasum -a 256 "dist/$NAME.tar.gz" > "dist/$NAME.tar.gz.sha256"
 du -h "dist/$NAME.tar.gz"

@@ -31,7 +31,10 @@ job=done
    - `csvx_edit_set` → `csvx_edit_undo`（journal 锁）
    - `csvx_convert` 输出 TSV
    - `csvx_job_submit` quality → `csvx_job_status` 直到 done
-3. 全程本地、无 GUI、无网络、无 xlsx，不写遥测。
+3. 若 `scripts/mcp_sdk/node_modules` 存在，demo 还会跑官方 SDK 客户端：
+   - `progress_events=1`（progressToken 通知）
+   - `structured_ok=true`（structuredContent 成功码）
+4. 全程本地、无 GUI、无网络、无 xlsx，不写遥测。
 
 ## 官方 MCP SDK 兼容性
 
@@ -51,6 +54,8 @@ schema_rows=3
 filter_matched=2
 view_rows=2
 convert_ok=true
+progress_events=1
+structured_ok=true
 job=done
 exit=0
 ```

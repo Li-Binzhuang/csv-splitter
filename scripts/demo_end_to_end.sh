@@ -22,4 +22,10 @@ echo "== pipeline =="
 "$BIN" pipeline run "$DIR/plan.csv" --root "$DIR"
 echo "== MCP client =="
 python3 scripts/mcp_client.py --binary "$BIN" --root "$DIR" --file orders.csv
+if command -v node >/dev/null 2>&1 && [[ -d scripts/mcp_sdk/node_modules ]]; then
+  echo "== MCP official SDK =="
+  node scripts/mcp_sdk/client.mjs --binary "$BIN" --root "$DIR" --file orders.csv
+else
+  echo "(official SDK check skipped: run npm install in scripts/mcp_sdk first)"
+fi
 echo "== accepted =="

@@ -1164,7 +1164,7 @@ fn every_documented_flag_exists() {
             if path.is_dir() {
                 if path
                     .file_name()
-                    .is_some_and(|n| n != "target" && n != ".git")
+                    .is_some_and(|n| n != "target" && n != ".git" && n != "node_modules")
                 {
                     stack.push(path);
                 }

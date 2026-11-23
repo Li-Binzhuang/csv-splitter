@@ -43,13 +43,28 @@ const job = await call("csvx_job_submit", {
   tool: "csvx_quality",
   arguments: { path: file, key: "id", group: "city" },
 });
-for (let i = 0; i < 100; i += 1) {
-  const status = await call("csvx_job_status", { id: job.job });
-  if (status.state !== "running") {
-    console.log(`job=${status.state}`);
-    await client.close();
-    process.exit(status.state === "done" ? 0 : 1);
-  }
+let progressEvents = 0;
+const waited = await client.callTool(
+  { name: "csvx_job_status", arguments: { id: job.job, wait: 2 } },
+  undefined,
+  { onprogress: () => { progressEvents += 1; } },
+);
+const waitedText = waited.content?.[0]?.text ?? "";
+const status = json(waitedText);
+console.log(`progress_events=${progressEvents}`);
+console.log(`structured_ok=${waited.structuredContent?.ok === true}`);
+for (let i = 0; i < 100 && status.state === "running"; i += 1) {
   await new Promise((resolve) => setTimeout(resolve, 100));
+  const polled = await call("csvx_job_status", { id: job.job });
+  if (polled.state !== "running") {
+    console.log(`job=${polled.state}`);
+    await client.close();
+    process.exit(polled.state === "done" ? 0 : 1);
+  }
+}
+if (status.state !== "running") {
+  console.log(`job=${status.state}`);
+  await client.close();
+  process.exit(status.state === "done" ? 0 : 1);
 }
 throw new Error("job did not finish");
