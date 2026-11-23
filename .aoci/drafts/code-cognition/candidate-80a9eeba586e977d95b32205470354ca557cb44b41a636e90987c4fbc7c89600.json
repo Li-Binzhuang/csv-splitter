@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "ffe704fd0dd3b182dd603c13a02561668ca8f5adaca48d978325e96c933c09a1",
+  "batch_id": "80a9eeba586e977d95b32205470354ca557cb44b41a636e90987c4fbc7c89600",
+  "composite_identity": "bbcf3ded80872d9cfacf8a62ecc2f5945dfdb39836256430d37416e2e5395c49",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "17535cb8ae0c3eb6d1e0729512a9b6bb5a3a3841201587a0485e56dfefec3dc7",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "89ec084bea54605d27d948f7a787bf4cd3ed963342b72562dc34d2f62d95397d",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、行内多条件聚合、median/large/small 区间、iserror/isna/istext、文本函数、日期运算、原子 transaction 与整批撤销/重做、vlookup 别名修复、xlookup fallback、预扫冷启动约 25–30 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "ed5e14a20ec50e6e01f7d70ea1b3aea8805354089fa9cfb60b289bb509e741de",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合支持整列/同行区间/多条件；sumifs 家族区间形式按同位置配对；stdev/var 与 stdevp/varp；median 与 large/small 仅同行区间；sumproduct 多段；跨表 ref/vlookup 返回 #N/A 文本，xlookup 可带 fallback；iserror 认错误值与 #N/A，isna 只认 #N/A，istext 区分文本；文本 textjoin/char/code；日期 edate/eomonth/weekday/days | S:单列参数的聚合按整列解释；无预扫状态时整列聚合为 #VALUE!；跨行区间与整列 median 返回 #VALUE!；large/small 的 k 超出 1..n 报错"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "e4dc5c205beca0605804e02606d8e70e1f67ed865fc1d2de7abcc87b4d98682c",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、stdev/var 与 stdevp/varp、median/large/small 同行区间、多段 sumproduct、行内多条件聚合（五种都有测试）、iserror/isna/istext、文本拼接、日期运算；collect_sheet_refs 识别 ref/vlookup/xlookup 并预加载引用；is_row_constant 排除这三者与 row | S:公式列只存 journal；跨行区间无随机访问；整列 median 会保留全部值，故不支持；别名不喂给加载器就会在打开时失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "62c17f1d720cca44c0f67270059678c1427487d83feb0e87afef9f86c71812f6",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、行内多条件、iserror/isna/istext、stdev/var/stdevp/varp、median/large/small 同行区间、多段 sumproduct、跨表 ref/vlookup/xlookup（fallback 可是字面量或列引用）、文本函数、日期运算、条件通配符；编辑表含原子批量写、一次撤销/重做整批；透视表列出五种聚合与多值列 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "d02463a3e6a146aa6eb487814d1dddb9e116dedb027e539148ad77a5dc509eab",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "89ec084bea54605d27d948f7a787bf4cd3ed963342b72562dc34d2f62d95397d",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、行内多条件聚合、median/large/small 区间、iserror/isna/istext、文本函数、日期运算、原子 transaction 与整批撤销/重做、vlookup 别名修复、xlookup fallback、预扫冷启动约 25–30 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "833001cfec192a8e100a67ead7c6bae898c565f0acb82de7fa8512a32058adf7",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "ed5e14a20ec50e6e01f7d70ea1b3aea8805354089fa9cfb60b289bb509e741de",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合支持整列/同行区间/多条件；sumifs 家族区间形式按同位置配对；stdev/var 与 stdevp/varp；median 与 large/small 仅同行区间；sumproduct 多段；跨表 ref/vlookup 返回 #N/A 文本，xlookup 可带 fallback；iserror 认错误值与 #N/A，isna 只认 #N/A，istext 区分文本；文本 textjoin/char/code；日期 edate/eomonth/weekday/days | S:单列参数的聚合按整列解释；无预扫状态时整列聚合为 #VALUE!；跨行区间与整列 median 返回 #VALUE!；large/small 的 k 超出 1..n 报错"
+    },
+    {
+      "candidate_id": "636dba616af491b1a602b45c1e9e2c8be7915d40cace2daeee4159a181a176c9",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "e4dc5c205beca0605804e02606d8e70e1f67ed865fc1d2de7abcc87b4d98682c",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、stdev/var 与 stdevp/varp、median/large/small 同行区间、多段 sumproduct、行内多条件聚合（五种都有测试）、iserror/isna/istext、文本拼接、日期运算；collect_sheet_refs 识别 ref/vlookup/xlookup 并预加载引用；is_row_constant 排除这三者与 row | S:公式列只存 journal；跨行区间无随机访问；整列 median 会保留全部值，故不支持；别名不喂给加载器就会在打开时失败"
+    },
+    {
+      "candidate_id": "d5907ae0ab9e2fe4f134db7f5a3687091e3fd181072ae1d0ab3172a2f78bf0dc",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "62c17f1d720cca44c0f67270059678c1427487d83feb0e87afef9f86c71812f6",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、行内多条件、iserror/isna/istext、stdev/var/stdevp/varp、median/large/small 同行区间、多段 sumproduct、跨表 ref/vlookup/xlookup（fallback 可是字面量或列引用）、文本函数、日期运算、条件通配符；编辑表含原子批量写、一次撤销/重做整批；透视表列出五种聚合与多值列 | S:-"
+    }
+  ]
+}
