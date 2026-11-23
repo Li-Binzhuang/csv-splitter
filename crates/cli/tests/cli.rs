@@ -3769,6 +3769,11 @@ fn mcp_job_status_can_wait() {
             r#"{{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{{"name":"csvx_schema","arguments":{{"path":"../secret.csv"}}}}}}"#
         )
         .unwrap();
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{{"name":"csvx_search","arguments":{{"path":"t.csv","query":"CDMX","materialize":true}}}}}}"#
+        )
+        .unwrap();
     }
     drop(child.stdin.take());
     let output = child.wait_with_output().unwrap();
@@ -3787,6 +3792,7 @@ fn mcp_job_status_can_wait() {
     assert!(stdout.contains(r#""code":"unknown_tool""#), "{stdout}");
     assert!(stdout.contains("path"), "{stdout}");
     assert!(stdout.contains(r#""code":"path_escape""#), "{stdout}");
+    assert!(stdout.contains("matched"), "{stdout}");
 }
 
 /// Job listing exposes every submitted job, including done/cancelled state.

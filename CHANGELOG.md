@@ -176,6 +176,8 @@
 - **Compressed input**: search/filter/analyze read .zst/.gz/.bz2/.xz through a
   decompressing reader; non-seekable forces the sequential path. 2.3 GB zst filter
   writes a byte-identical 411 MB output in 4.16 s at 15 MB RSS (plain 1.51 s).
+- **MCP materialize options**: `csvx_search`/`csvx_filter` accept materialize and
+  forward `--materialize`, so agents can search compressed inputs with random access.
 - **Search/filter materialize**: `--materialize` streams compressed input to a temp
   file and searches/filters it with random access; 2.3 GB zst search went 11.87 s ->
   3.51 s with the same 19M matches; filter scan went 6.94->3.62 s and export
