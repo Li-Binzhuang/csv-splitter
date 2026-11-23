@@ -119,6 +119,9 @@
 - **`workday(start, days)`**: moves a date by business days, skipping weekends and
   accepting negative days (no holiday list in the two-argument form); zero keeps the
   date.
+- **`book --plan`**: a CSV manifest declares sheets, chained lookups and outputs;
+  `book --plan book.csv --root .` materializes each output, reruns idempotently,
+  and rejects unknown sheets/lookups before writing. No `Sheet!A1`.
 - **`edit compact`**: folds the current journal into a snapshot while keeping the
   original base as `.base` and the old journal as `.journal.history`, so undo can
   cross the boundary (it restores both, then undoes the tail) and redo still works.

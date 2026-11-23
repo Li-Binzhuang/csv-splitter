@@ -118,6 +118,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         &[
             ("--json", "Emit JSON"),
             ("--max", "Maximum sheets to list"),
+            ("--plan", "Apply a manifest of sheets, lookups and outputs"),
             ("--root", "Directory to serve / list"),
         ],
     ),
@@ -643,6 +644,7 @@ COMMANDS
   layout   <input> [--set C:k=v]    Column widths, names, freeze and number formats
   lookup   <input> --key C --from R Join a reference table onto the file (VLOOKUP)
   book     <dir>                  List every CSV in a directory as one workbook
+  book     --plan <file>          Apply a declarative sheet/lookup/output manifest
   demo     [-o <dir>]           Write a sample file to try the commands on
   search   <input> <text>        Find text anywhere (or in chosen columns)
   files    --root <dir>          List readable files under a directory
@@ -3671,6 +3673,7 @@ fn parse_sort_columns(spec: &str, default_descending: bool) -> Result<Vec<SortCo
 fn cmd_book(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
     let mut root: Option<PathBuf> = None;
+    let mut plan: Option<PathBuf> = None;
     let mut json = false;
     let mut max_sheets = csvx_core::book::DEFAULT_MAX_SHEETS;
 
@@ -3688,6 +3691,13 @@ fn cmd_book(args: &[String]) -> i32 {
                 .and_then(|v| v.parse().map_err(|_| "bad --max".to_string()))
             {
                 Ok(v) => max_sheets = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--plan" => match p.value("--plan") {
+                Ok(v) => plan = Some(PathBuf::from(v)),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -3713,8 +3723,49 @@ fn cmd_book(args: &[String]) -> i32 {
         }
     }
 
+    if let Some(plan) = plan {
+        let (tx, rx) = mpsc::channel();
+        let reporter = spawn_reporter("book", rx, true);
+        let result = csvx_core::book::apply_manifest(&plan, root.as_deref(), &tx);
+        drop(tx);
+        let _ = reporter.join();
+        return match result {
+            Ok(outputs) => {
+                if json {
+                    let items: Vec<String> = outputs
+                        .iter()
+                        .map(|output| {
+                            format!(
+                                r#"{{"name":"{}","path":"{}","rows":{},"bytes":{}}}"#,
+                                output.name,
+                                output.path.display(),
+                                output.rows,
+                                output.bytes
+                            )
+                        })
+                        .collect();
+                    println!(r#"{{"outputs":[{}]}}"#, items.join(","));
+                } else {
+                    for output in &outputs {
+                        println!(
+                            "✓ {} → {} ({} rows, {})",
+                            output.name,
+                            output.path.display(),
+                            output.rows,
+                            human_bytes(output.bytes)
+                        );
+                    }
+                }
+                0
+            }
+            Err(e) => {
+                eprintln!("error: {e}");
+                1
+            }
+        };
+    }
     let Some(root) = root else {
-        eprintln!("error: book needs a directory (--root <dir>)");
+        eprintln!("error: book needs a directory (--root <dir>) or a manifest (--plan <file>)");
         return 2;
     };
     let book = match csvx_core::book::scan(&root, max_sheets) {

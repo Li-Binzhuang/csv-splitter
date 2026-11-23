@@ -2276,6 +2276,78 @@ fn a_concurrent_edit_waits_for_compaction_and_survives() {
     assert_eq!(text.lines().count(), 4);
 }
 
+/// A declarative book manifest chains lookups and reruns to the same bytes.
+#[test]
+fn book_plan_applies_two_lookups_idempotently() {
+    let dir = TempDir::new("book-plan");
+    std::fs::write(dir.join("orders.csv"), "order,cust_no\nA,1\nB,9\n").unwrap();
+    std::fs::write(dir.join("customers.csv"), "cust_no,name\n1,Ana\n").unwrap();
+    std::fs::write(dir.join("regions.csv"), "cust_no,region\n1,NORTH\n").unwrap();
+    let plan = dir.join("book.csv");
+    let manifest = concat!(
+        "kind,name,table,path,key,reference,reference_key,get,lookups\n",
+        "sheet,orders,,orders.csv,,,,,\n",
+        "sheet,customers,,customers.csv,,,,,\n",
+        "sheet,regions,,regions.csv,,,,,\n",
+        "lookup,customer,orders,,cust_no,customers,cust_no,name,\n",
+        "lookup,region,orders,,cust_no,regions,cust_no,region,\n",
+        "output,joined,orders,joined.csv,,,,,\"customer,region\"\n"
+    );
+    std::fs::write(&plan, manifest).unwrap();
+    for attempt in 0..2 {
+        let status = Command::new(bin())
+            .args([
+                "book",
+                "--plan",
+                plan.to_str().unwrap(),
+                "--root",
+                dir.0.to_str().unwrap(),
+            ])
+            .status()
+            .unwrap();
+        assert_eq!(status.code(), Some(0), "attempt {attempt} failed");
+        let joined = std::fs::read_to_string(dir.join("joined.csv")).unwrap();
+        assert_eq!(
+            joined, "order,cust_no,name,region\nA,1,Ana,NORTH\nB,9,#N/A,#N/A\n",
+            "attempt {attempt}"
+        );
+    }
+    let status = Command::new(bin())
+        .args(["book", "--root", dir.0.to_str().unwrap()])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+}
+
+/// An unknown lookup is a hard error and must not leave a partial output behind.
+#[test]
+fn book_plan_rejects_unknown_lookup_without_writing_output() {
+    let dir = TempDir::new("book-bad");
+    std::fs::write(dir.join("orders.csv"), "order,cust_no\nA,1\n").unwrap();
+    let plan = dir.join("book.csv");
+    let manifest = concat!(
+        "kind,name,table,path,key,reference,reference_key,get,lookups\n",
+        "sheet,orders,,orders.csv,,,,,\n",
+        "output,joined,orders,joined.csv,,,,,\"missing\"\n"
+    );
+    std::fs::write(&plan, manifest).unwrap();
+    let status = Command::new(bin())
+        .args([
+            "book",
+            "--plan",
+            plan.to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(1));
+    assert!(
+        !dir.join("joined.csv").exists(),
+        "a failed plan must not write output"
+    );
+}
+
 /// A bulk edit is one journal entry however many rows it changes.
 #[test]
 fn bulk_edit_matches_a_filter_and_stays_one_operation() {

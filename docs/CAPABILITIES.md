@@ -137,6 +137,25 @@
 跨表 ref/vlookup 用本行键取目标表的值；同一行可同时引用多张表；xlookup 多一个 fallback（字面量或列引用），未命中返回它而不是 #N/A
 ```
 
+### 声明式 book 清单（阶段 3）
+
+`book --plan book.csv --root .` 按 CSV 清单批量物化输出；清单只有三种行，按名字引用，
+未知表/未知 lookup/重复名都是硬错误，不会写半个输出。示例：
+
+```text
+kind,name,table,path,key,reference,reference_key,get,lookups
+sheet,orders,,orders.csv,,,,,
+sheet,customers,,customers.csv,,,,,
+lookup,customer,orders,,cust_no,customers,cust_no,name,
+output,joined,orders,joined.csv,,,,,"customer,region"
+```
+
+- `sheet`：名字 → 路径（相对清单目录；`--root` 可覆盖根）。
+- `lookup`：从 `table` 用 `key` 查 `reference` 的 `reference_key`，取 `get` 列。
+- `output`：从 `table` 起按 `lookups` 顺序链式查找，最后一个写出 `path`；重跑覆盖同一路径，
+  因而刷新是幂等的。缺键返回 `#N/A`，与 `lookup` 一致。
+- 不做 `Sheet!A1`：输出是物化文件，不是跨表按行随机引用。
+
 `if` 只算选中的分支（`if(qty=0, 0, amount/qty)` 不会除零）。
 
 整列聚合（`sum`/`average`/`count`）在公式开始前扫一遍**基文件**，把数字列的
