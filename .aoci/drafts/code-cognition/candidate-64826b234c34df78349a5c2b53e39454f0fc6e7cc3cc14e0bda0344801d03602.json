@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "e21d33bfe9dee154b76c917128245abb296c2b42b13f7377b4e479a35605cb2b",
+  "batch_id": "64826b234c34df78349a5c2b53e39454f0fc6e7cc3cc14e0bda0344801d03602",
+  "composite_identity": "8cd5fc32694c0ed17fa0a6affb41ef02b22828530c81dfa3c8225eec72799b4c",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "dd60ea584a2279f3fc36f16d0da83c7b33cd44cfdc99f8be52a51055cdf93e3f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "e1222fd66ac17c36962a806e229db2271429a234095613b0fdb995d9e0255643",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/run lock 死主检测与活主不按年龄清/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码+pipeline DAG 参数、view 游标、官方 SDK、压缩输入与 search/filter --materialize 残留清理、100 GB/81 GB 演练、demo、外发、试点报告、打包 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "63e6a2fe34eab6a27f4298dfedca2cf9589a35c3ca6403d043a7876648c88295",
+      "existing_entry": "BENCHMARKS.md[SD7T]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md,code:docs/PILOT_SAMPLE.md | A:100 GB search 20 s/filter 25.75 s/全量导出 79.62 s；81 GB 7 列 search 39.42/filter 46.70/导出 62.03；2.3 GB zst filter 4.16 s、search 12.13 s、quality 21.73 s；zst materialize 11.87→3.51 s/89 MB；release 冒烟 2.3 GB filter 2.78/88 MB、导出 0.71/60 MB、search 1.57/86 MB、quality 20.79/18.3 MB；DAG 扇出 7.60 s、增量 0.02 s、父 peak 187 MB（含子进程） | S:未 drop cache；100/81 GB 为重复块；同文件 pilot 0.69/0.43 s 属缓存方差；压缩读 CPU 受限；materialize 需临时磁盘；DAG 父 RSS 含并发子进程"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "26ab730de44c2ec038756a3cfe01a0052038e003de51ebf4e0e0815bf8a86c92",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 成功写 lineage、status --verify（MCP verify）/--fail-on-stale、run lock（死 PID 即清、活主不按年龄）/--unlock、--dry-run(JSON)、--dag 跨波回滚/崩溃恢复、--step-timeout、--retries、group 并发、--clean；mcp 读写+job 与 pipeline_run（dag/jobs/clean）/job_cancel/job_list（16 工具）、view 游标、官方 SDK；压缩输入顺序读，search/filter --materialize 3.51 s 且清死 PID 残留；C 100 GB/81 GB 演练；64 GB 自适应；试点报告；离线发布包 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "d533831d179e2d26e420404d5a1e6d7b660a65a3230ba935c4a9c9b2db578dfa",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "e1222fd66ac17c36962a806e229db2271429a234095613b0fdb995d9e0255643",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/run lock 死主检测与活主不按年龄清/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码+pipeline DAG 参数、view 游标、官方 SDK、压缩输入与 search/filter --materialize 残留清理、100 GB/81 GB 演练、demo、外发、试点报告、打包 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "62d6020b8046ecd4642b585f0a4eae400932082a86da33479a4707482c1a3c1e",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "63e6a2fe34eab6a27f4298dfedca2cf9589a35c3ca6403d043a7876648c88295",
+      "existing_entry": "BENCHMARKS.md[SD7T]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md,code:docs/PILOT_SAMPLE.md | A:100 GB search 20 s/filter 25.75 s/全量导出 79.62 s；81 GB 7 列 search 39.42/filter 46.70/导出 62.03；2.3 GB zst filter 4.16 s、search 12.13 s、quality 21.73 s；zst materialize 11.87→3.51 s/89 MB；release 冒烟 2.3 GB filter 2.78/88 MB、导出 0.71/60 MB、search 1.57/86 MB、quality 20.79/18.3 MB；DAG 扇出 7.60 s、增量 0.02 s、父 peak 187 MB（含子进程） | S:未 drop cache；100/81 GB 为重复块；同文件 pilot 0.69/0.43 s 属缓存方差；压缩读 CPU 受限；materialize 需临时磁盘；DAG 父 RSS 含并发子进程"
+    },
+    {
+      "candidate_id": "324a2cfe59be9d11b7e128c2fd53103a3ca29018c46d90fbf4e01ff9cc6ecdbb",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "26ab730de44c2ec038756a3cfe01a0052038e003de51ebf4e0e0815bf8a86c92",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 成功写 lineage、status --verify（MCP verify）/--fail-on-stale、run lock（死 PID 即清、活主不按年龄）/--unlock、--dry-run(JSON)、--dag 跨波回滚/崩溃恢复、--step-timeout、--retries、group 并发、--clean；mcp 读写+job 与 pipeline_run（dag/jobs/clean）/job_cancel/job_list（16 工具）、view 游标、官方 SDK；压缩输入顺序读，search/filter --materialize 3.51 s 且清死 PID 残留；C 100 GB/81 GB 演练；64 GB 自适应；试点报告；离线发布包 | S:-"
+    }
+  ]
+}
