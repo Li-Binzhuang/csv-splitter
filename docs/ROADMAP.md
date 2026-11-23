@@ -23,7 +23,7 @@
 2. **压缩多线程**：`.zst/.gz` 顺序解码；`--materialize` 是 3–4× 的实测加速，但仍受单线程解压限制。
 3. **MCP 解压缓存**：已实现并实测 4.61→1.63 s（2.04 GB gzip）；后续只需监控命中率与容量。
 4. **默认内容哈希阈值**：1 MiB 硬编码，仅能用 `CSVX_CONTENT_CHECK_LIMIT` 调整；大文件仍可能被同尺寸+mtime 改写欺骗。
-5. **发布自动化**：包与 checklist 仍是手动脚本；没有 CI 构建矩阵。
+5. **发布自动化**：包与 checklist 仍是手动脚本；已有 Ubuntu CI 与 Windows/release 工作流，但没有 macOS CI。
 
 ## 下一阶段（30/60/90 天口径）
 
