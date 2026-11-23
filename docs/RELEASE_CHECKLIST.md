@@ -12,8 +12,8 @@
 ```bash
 cargo build --release
 bash scripts/demo_end_to_end.sh
-bash scripts/package_release.sh   # dist/csvx-4.2.0-<platform>.tar.gz + .sha256
-bash scripts/verify_dist.sh dist/csvx-4.2.0-<platform>.tar.gz
+bash scripts/package_release.sh   # dist tar.gz + .sha256，末尾自动 verify_dist
+bash scripts/verify_dist.sh dist/csvx-4.2.0-<platform>.tar.gz   # 可选手工复验
 ```
 
 ## 3. 2026-11-23 本机验证
