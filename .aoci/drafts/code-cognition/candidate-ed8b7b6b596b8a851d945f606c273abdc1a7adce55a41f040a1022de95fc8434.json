@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "85f52d191a6bb0d07052c9973e4a8c0fa2e4116ebe12805ba4c771a1305f8f6d",
+  "batch_id": "ed8b7b6b596b8a851d945f606c273abdc1a7adce55a41f040a1022de95fc8434",
+  "composite_identity": "e77876a2eefc7371341466ef96640c36a8fccea53d7483fe30a8f794de4907f1",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b680aec5f6a96b809d115a35bbda8d3ac357d116405880486e6f9fe2edd3132a",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "684040c856e92cfcf5b254db1cde2154cf83033b3811e0498d58bd050a47d700",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合、通配符、sumproduct、顺序统计、日期函数、多表 ref、事务、filter -o 并行分片（11 GB 2.61/5.26 s）、search/filter 字节谓词（11 GB 2.62/3.58 s）、预扫 25–30 ms、耗时随行数 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "146954cba0f8fa066e371c868ed51d45928295334f19302ffdc4158c84a9e551",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表、大文件边界；阶段 1 profile 与冻结验收：11 GB filter -o 2.61/5.26 s、filter 无输出 3.58 s、search 2.62 s，RSS 17–77 MB，四项均达标；搜索命中 5600 万行、唯一 id 行号准确、跨分隔符 0 命中；剩余 30 GB 边界与 2 GB+ drill | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "81972f57c5204a862d5b964ba26ee1d60672e97c903476bae4cc38577e806c07",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "684040c856e92cfcf5b254db1cde2154cf83033b3811e0498d58bd050a47d700",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合、通配符、sumproduct、顺序统计、日期函数、多表 ref、事务、filter -o 并行分片（11 GB 2.61/5.26 s）、search/filter 字节谓词（11 GB 2.62/3.58 s）、预扫 25–30 ms、耗时随行数 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "be0aac902baa0c68559cc221e30bd8afe4aa440abac42053fa65ca5150df3dbd",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "146954cba0f8fa066e371c868ed51d45928295334f19302ffdc4158c84a9e551",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表、大文件边界；阶段 1 profile 与冻结验收：11 GB filter -o 2.61/5.26 s、filter 无输出 3.58 s、search 2.62 s，RSS 17–77 MB，四项均达标；搜索命中 5600 万行、唯一 id 行号准确、跨分隔符 0 命中；剩余 30 GB 边界与 2 GB+ drill | S:-"
+    }
+  ]
+}
