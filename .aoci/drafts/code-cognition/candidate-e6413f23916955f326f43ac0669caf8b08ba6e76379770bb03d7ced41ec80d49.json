@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "309a9d894d8926ec31a77d08da0942dec06bc313224bce1614ccd34c6d6158de",
+  "batch_id": "e6413f23916955f326f43ac0669caf8b08ba6e76379770bb03d7ced41ec80d49",
+  "composite_identity": "766d86fd7c2a3d7e977aaa6e8c92ccaa0a66736fc379d82425cd4cb0ba9bae7b",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "4693f62db09628aef36ef538de7dfa2492ec22431e00c8d9327990714d5cbc42",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "update",
+      "source_sha256": "fa862adc758ff05c5aa2e060e9035f34ebbe2b70528adf1a8e9a67ae6ae332fa",
+      "existing_entry": "DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 + 官方 SDK | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs | A:一条命令演示 filter/quality、16 个 MCP 工具、edit/undo/convert/job；官方 SDK 1.32.2 跑通 pipeline 每步 progress、job wait progress 与 structuredContent；release 旧于源码时 demo 拒绝运行 | S:演示全程本地、无 GUI、无网络、无 xlsx；终端输出必须与脚本一致；npm 依赖只在 scripts/mcp_sdk；CSVX_DEMO_BUILD=1 可自动重建"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/demo_end_to_end.sh",
+      "path": "scripts/demo_end_to_end.sh",
+      "change": "update",
+      "source_sha256": "98c66ded2296c089b0553eb683e008c6a1e35863dea15151e197a499411fbfe1",
+      "existing_entry": "demo_end_to_end.sh[XQ7T]: F:一键产品演示：pipeline + MCP 客户端（可选官方 SDK） | R:code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs,code:docs/DEMO.md | A:启动时检查 release binary 存在且不比 crates/**/*.rs 旧，旧则报错除非 CSVX_DEMO_BUILD=1 自动重建；临时目录生成 orders.csv/plan.csv；pipeline 后调 mcp_client.py；node+node_modules 时跑 SDK；trap 清理 | S:无网络/无 GUI/无 xlsx；BIN 可覆盖；SDK 缺 node_modules 只提示；临时目录不得残留"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "87e814e7b7113cf4cd28a00c102b594be2dff2b523f32ea655081d23e8b5ddcd",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "update",
+      "source_sha256": "fa862adc758ff05c5aa2e060e9035f34ebbe2b70528adf1a8e9a67ae6ae332fa",
+      "existing_entry": "DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 + 官方 SDK | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs | A:一条命令演示 filter/quality、16 个 MCP 工具、edit/undo/convert/job；官方 SDK 1.32.2 跑通 pipeline 每步 progress、job wait progress 与 structuredContent；release 旧于源码时 demo 拒绝运行 | S:演示全程本地、无 GUI、无网络、无 xlsx；终端输出必须与脚本一致；npm 依赖只在 scripts/mcp_sdk；CSVX_DEMO_BUILD=1 可自动重建"
+    },
+    {
+      "candidate_id": "e1a3c044cbe6d6c6e7d357ffc7a77f9a03d4080c024dd8420dbdb625c88b6113",
+      "object_ref": "code:scripts/demo_end_to_end.sh",
+      "path": "scripts/demo_end_to_end.sh",
+      "change": "update",
+      "source_sha256": "98c66ded2296c089b0553eb683e008c6a1e35863dea15151e197a499411fbfe1",
+      "existing_entry": "demo_end_to_end.sh[XQ7T]: F:一键产品演示：pipeline + MCP 客户端（可选官方 SDK） | R:code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs,code:docs/DEMO.md | A:启动时检查 release binary 存在且不比 crates/**/*.rs 旧，旧则报错除非 CSVX_DEMO_BUILD=1 自动重建；临时目录生成 orders.csv/plan.csv；pipeline 后调 mcp_client.py；node+node_modules 时跑 SDK；trap 清理 | S:无网络/无 GUI/无 xlsx；BIN 可覆盖；SDK 缺 node_modules 只提示；临时目录不得残留"
+    }
+  ]
+}
