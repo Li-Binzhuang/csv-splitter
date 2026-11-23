@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "8ec3d01cee67ba8f854fb6c06b0394099728904a68b51ea74f490d7075e240fb",
+  "batch_id": "95ae8f6ced019a3f0598ae4eb0c349a89aa1fd20438935cab27c0719c24b6e1f",
+  "composite_identity": "64d9f5ef6e203b24575a6f4a62f7d06d5dde25e399a06fc475399218711ab91c",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "47807e3104d558f5ec26441c2b68649ad581e7b7eae297f1ee7f8d113428fa51",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:.github/workflows/ci.yml",
+      "path": ".github/workflows/ci.yml",
+      "change": "update",
+      "source_sha256": "7257832bb35d07c8d5e0db83788badafc4d8672ae0cdb84340a262b2ce445591",
+      "existing_entry": "ci.yml[OV7S]: F:主 CI：格式化、引擎与 CLI 测试、性能守卫、clippy 工作区、失败注解 | R:code:scripts/smoke.sh,code:scripts/regress.sh,code:scripts/backend-smoke.sh,code:scripts/release-decision.sh | A:单 job 串联；engine 与 CLI 两个测试步骤失败时各重试一次并留 warning annotation（本地单跑/两线程均绿的负载型 flake）；每步 tee 日志，失败时把测试名转成公开 annotation 并上传 artifact | S:曾因双 job + 缓存配额出现“跳过一半、红叉无信息”，故单 job；重试只限一次且日志保留，真 bug 仍会两次失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "a8f7a32f6e405f8216456c786c25883d3b22aaee39a83eb7d9f60bb8a8bf5b00",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，再用 verify_dist.sh 校验 SHA256、必需成员与包内二进制版本；记录 2026-11-23 release 30.28 s、pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2、SDK 2 条 pipeline progress 与 job progress；MCP 缓存 2.04 GB 重查 4.61→1.63 s/86 MB；SHA 由打包脚本输出 | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "2d3f9c53e048c1319d1ab9fd0b8be5fe13ddcf5ab1f5e740e794aac29d8629e9",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-23 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 16 工具与 SDK progress/status/gzip；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程、缓存命中监控、阈值、发布自动化为后续 | S:未测数字不写；价格/SLA 需用户确认；随离线包分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "688d77da716cf8bba68c60851fd013e1b7b16ef9253b2b80c0fd79b3c2aae2a7",
+      "object_ref": "code:.github/workflows/ci.yml",
+      "path": ".github/workflows/ci.yml",
+      "change": "update",
+      "source_sha256": "7257832bb35d07c8d5e0db83788badafc4d8672ae0cdb84340a262b2ce445591",
+      "existing_entry": "ci.yml[OV7S]: F:主 CI：格式化、引擎与 CLI 测试、性能守卫、clippy 工作区、失败注解 | R:code:scripts/smoke.sh,code:scripts/regress.sh,code:scripts/backend-smoke.sh,code:scripts/release-decision.sh | A:单 job 串联；engine 与 CLI 两个测试步骤失败时各重试一次并留 warning annotation（本地单跑/两线程均绿的负载型 flake）；每步 tee 日志，失败时把测试名转成公开 annotation 并上传 artifact | S:曾因双 job + 缓存配额出现“跳过一半、红叉无信息”，故单 job；重试只限一次且日志保留，真 bug 仍会两次失败"
+    },
+    {
+      "candidate_id": "b42c2ab8c42c50e142245eaa64c1a8bdaca798feb3040f631df683b9ba0a167f",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "a8f7a32f6e405f8216456c786c25883d3b22aaee39a83eb7d9f60bb8a8bf5b00",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，再用 verify_dist.sh 校验 SHA256、必需成员与包内二进制版本；记录 2026-11-23 release 30.28 s、pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2、SDK 2 条 pipeline progress 与 job progress；MCP 缓存 2.04 GB 重查 4.61→1.63 s/86 MB；SHA 由打包脚本输出 | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    },
+    {
+      "candidate_id": "dba28a2c8e287b743582885b1d823dc0fdb3f99145ffab08568ab68e7ca31fe7",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "2d3f9c53e048c1319d1ab9fd0b8be5fe13ddcf5ab1f5e740e794aac29d8629e9",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-23 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 16 工具与 SDK progress/status/gzip；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程、缓存命中监控、阈值、发布自动化为后续 | S:未测数字不写；价格/SLA 需用户确认；随离线包分发"
+    }
+  ]
+}

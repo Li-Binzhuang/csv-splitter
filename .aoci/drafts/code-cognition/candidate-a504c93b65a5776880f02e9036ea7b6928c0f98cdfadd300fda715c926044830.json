@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "dc5fe37311640d14701625ab7aec96080fb9c86b9dc848e5c06fc0609190ebde",
+  "batch_id": "a504c93b65a5776880f02e9036ea7b6928c0f98cdfadd300fda715c926044830",
+  "composite_identity": "64d9f5ef6e203b24575a6f4a62f7d06d5dde25e399a06fc475399218711ab91c",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "47807e3104d558f5ec26441c2b68649ad581e7b7eae297f1ee7f8d113428fa51",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "689a70b6eeb5d3706062b7b49d7eff71fdc3c884f1be2d12ac5b9fdee4281544",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-23 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 16 工具与 SDK progress/status/gzip；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程、缓存命中监控、阈值、发布自动化为后续 | S:未测数字不写；价格/SLA 需用户确认；随离线包分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "a26922deee7720dad5bb4de7f11667a0c54878aa601d539cc79a2ba3881ebc65",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "689a70b6eeb5d3706062b7b49d7eff71fdc3c884f1be2d12ac5b9fdee4281544",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-23 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 16 工具与 SDK progress/status/gzip；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程、缓存命中监控、阈值、发布自动化为后续 | S:未测数字不写；价格/SLA 需用户确认；随离线包分发"
+    }
+  ]
+}
