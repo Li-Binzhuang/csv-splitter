@@ -7580,6 +7580,29 @@ struct McpJob {
     started: std::time::Instant,
 }
 
+const MCP_JOB_HISTORY: usize = 128;
+
+fn drop_mcp_job_files(job: &McpJob) {
+    let _ = std::fs::remove_file(&job.stdout);
+    let _ = std::fs::remove_file(&job.stderr);
+}
+
+fn prune_mcp_jobs(jobs: &mut std::collections::HashMap<String, McpJob>) {
+    while jobs.len() >= MCP_JOB_HISTORY {
+        let oldest = jobs
+            .iter()
+            .filter(|(_, job)| job.result.is_some())
+            .min_by_key(|(_, job)| job.started)
+            .map(|(id, _)| id.clone());
+        let Some(oldest) = oldest else {
+            break;
+        };
+        if let Some(job) = jobs.remove(&oldest) {
+            drop_mcp_job_files(&job);
+        }
+    }
+}
+
 struct McpParser<'a> {
     bytes: &'a [u8],
     pos: usize,
@@ -8665,6 +8688,7 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
                     next_job += 1;
                     match mcp_start_job(root, &tool, &job_arguments, &job_id) {
                         Ok(job) => {
+                            prune_mcp_jobs(&mut jobs);
                             jobs.insert(job_id.clone(), job);
                             mcp_tool_text(
                                 id,
@@ -8767,5 +8791,10 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
         stdout.flush()?;
     }
     cleanup_mcp_materialized();
+    for job in jobs.values() {
+        if job.result.is_some() {
+            drop_mcp_job_files(job);
+        }
+    }
     Ok(())
 }

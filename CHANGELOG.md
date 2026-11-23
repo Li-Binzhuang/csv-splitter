@@ -137,6 +137,9 @@
   StdioClientTransport lists 13 tools and completes schema/filter/view/edit/undo/convert/job.
 - **End-to-end demo**: `scripts/demo_end_to_end.sh` + dependency-free
   `scripts/mcp_client.py`; pipeline 12/11 ms, 13 MCP tools, edit/undo/convert/job done.
+- **MCP job retention**: completed job history is capped at 128 entries; pruning removes
+  the oldest completed entries and their temp stdout/stderr files. Server shutdown also
+  removes files for completed jobs.
 - **MCP write tools**: `csvx_edit_set/delete/undo/redo` and `csvx_convert` share the
   CLI journal lock and root confinement; CLI MCP test covers edit→view→undo and TSV export.
 - **`mcp`**: stdio JSON-RPC MCP server with read-only tools
