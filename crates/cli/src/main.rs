@@ -8943,6 +8943,11 @@ fn normalize_lexical_path(path: &std::path::Path) -> std::path::PathBuf {
     out
 }
 
+fn normalize_plan_path(path: &std::path::Path) -> std::path::PathBuf {
+    path.canonicalize()
+        .unwrap_or_else(|_| normalize_lexical_path(path))
+}
+
 #[allow(clippy::too_many_arguments)]
 fn run_pipeline_plan(
     plan: &std::path::Path,
@@ -9081,7 +9086,7 @@ fn run_pipeline_plan(
             if steps.iter().any(|known| known.name == input) {
                 continue;
             }
-            if normalize_lexical_path(&root.join(input)) == normalize_lexical_path(&step.output) {
+            if normalize_plan_path(&root.join(input)) == normalize_plan_path(&step.output) {
                 return Err(std::io::Error::new(
                     std::io::ErrorKind::InvalidInput,
                     format!(

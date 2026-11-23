@@ -3418,6 +3418,38 @@ fn search_materializes_compressed_input() {
     assert!(out.contains("matched 2"), "{out}");
 }
 
+/// A symlink alias of the source file is also rejected as in-place output.
+#[cfg(unix)]
+#[test]
+fn pipeline_rejects_symlinked_source_output() {
+    let dir = TempDir::new("pipeline-symlink");
+    let source = dir.join("orders.csv");
+    std::fs::write(&source, "id,city\n1,CDMX\n").unwrap();
+    std::os::unix::fs::symlink(&source, dir.join("alias.csv")).unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\na,alias.csv,filter,--where city=CDMX -o {out},orders.csv\n",
+    )
+    .unwrap();
+    let result = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--dry-run",
+        ])
+        .output()
+        .unwrap();
+    assert!(!result.status.success());
+    assert!(
+        String::from_utf8_lossy(&result.stderr).contains("in place"),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+}
+
 /// A step cannot overwrite the source file it reads.
 #[test]
 fn pipeline_rejects_in_place_source_output() {
