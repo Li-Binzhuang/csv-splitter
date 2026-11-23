@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "c96486799d2d6f1093a3321962467fc1c5c4296c8cd9d48b03cfd0ee3009b670",
+  "batch_id": "e6f198c56d03f3489abc15f09cf073ff5853eb9836bb5380501a77f76e60757b",
+  "composite_identity": "a42c40c42962bfbf1ec626670b96bae3169c4f273bd54f648c2cf5b9ce48d7c6",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "4e7c7fcaa38b76b053b36eedb1de91f48558467207820f9cc2e22ae8edcdd41f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "7d5f9f6e466707faea093da0f1a6d4a46cd027991ee5c05039f80ae17f69ab74",
+      "existing_entry": "BENCHMARKS.md[SD7L]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md,code:docs/PILOT_SAMPLE.md | A:100 GB search 20 s/filter 25.75 s/全量导出 79.62 s；81 GB 7 列 search 39.42/filter 46.70/导出 62.03；2.3 GB zst filter 4.16 s、search 12.13 s、quality 21.73 s；release 冒烟 2.3 GB filter 2.78/88 MB、导出 0.71/60 MB、search 1.57/86 MB、quality 20.79/18.3 MB | S:未 drop cache；100/81 GB 为重复块；同文件 pilot 0.69/0.43 s 属缓存方差；压缩读 CPU 受限，不可推断 100 GB 指标"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ffd516f25f6af7d332c8596a9061234ddde40867206c6df1f32d3e0ac410a754",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "7d5f9f6e466707faea093da0f1a6d4a46cd027991ee5c05039f80ae17f69ab74",
+      "existing_entry": "BENCHMARKS.md[SD7L]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md,code:docs/PILOT_SAMPLE.md | A:100 GB search 20 s/filter 25.75 s/全量导出 79.62 s；81 GB 7 列 search 39.42/filter 46.70/导出 62.03；2.3 GB zst filter 4.16 s、search 12.13 s、quality 21.73 s；release 冒烟 2.3 GB filter 2.78/88 MB、导出 0.71/60 MB、search 1.57/86 MB、quality 20.79/18.3 MB | S:未 drop cache；100/81 GB 为重复块；同文件 pilot 0.69/0.43 s 属缓存方差；压缩读 CPU 受限，不可推断 100 GB 指标"
+    }
+  ]
+}
