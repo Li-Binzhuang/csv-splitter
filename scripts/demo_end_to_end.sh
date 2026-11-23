@@ -7,7 +7,7 @@ if [[ ! -x "$BIN" ]]; then
   echo "error: $BIN is missing; run cargo build --release (or set CSVX_DEMO_BUILD=1)" >&2
   exit 1
 fi
-if find crates -name '*.rs' -newer "$BIN" -print -quit | grep -q .; then
+if find crates -path '*/src/*' -name '*.rs' -newer "$BIN" -print -quit | grep -q .; then
   if [[ "${CSVX_DEMO_BUILD:-0}" == "1" ]]; then
     cargo build --release -p csvx-cli
   else

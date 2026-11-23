@@ -37,7 +37,7 @@ job=done
 == accepted ==
 ```
 
-> demo 会检查 release 二进制是否比 `crates/**/*.rs` 旧；旧则拒绝运行，避免演示结果与源码不符。
+> demo 会检查 release 二进制是否比 `crates/*/src/**/*.rs` 旧；旧则拒绝运行，避免演示结果与源码不符。
 > 需要自动重建时用 `CSVX_DEMO_BUILD=1 bash scripts/demo_end_to_end.sh`。
 
 ## 演示覆盖

@@ -44,7 +44,7 @@ console.log("convert_ok=true");
 if (existsSync(join(root, "plan.csv"))) {
   let pipelineProgress = 0;
   const pipeline = await client.callTool(
-    { name: "csvx_pipeline_run", arguments: { path: "plan.csv" } },
+    { name: "csvx_pipeline_run", arguments: { path: "plan.csv", contentCheck: true } },
     undefined,
     { onprogress: () => { pipelineProgress += 1; } },
   );
