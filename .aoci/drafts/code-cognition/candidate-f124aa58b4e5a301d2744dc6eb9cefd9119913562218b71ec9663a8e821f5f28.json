@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "db8b03b5c56c7953263128981426d7c165f0a2f9d2d02cd7cc9dec7c0535d442",
+  "batch_id": "f124aa58b4e5a301d2744dc6eb9cefd9119913562218b71ec9663a8e821f5f28",
+  "composite_identity": "60998951d904b3f39a472402ea626751ab2f7d2a4d070e152749fdc2ee6c83d5",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "a516e302fae134fb57815b16c7dba026f31be300210954d347e64e5c09d3bcb8",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "39d8725d92d9a92f8391897888cb3be68ae15845a990dbff52f8f7316bbe5718",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、sumproduct、文本函数、日期运算、同行区间、原子 transaction 与整批撤销/重做 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/engine.rs",
+      "path": "crates/core/src/engine.rs",
+      "change": "update",
+      "source_sha256": "af9c2efcfe7f1cee2a3daa9d9c4c83976fbebe5e56699f8ea0eeb1192bf5af78",
+      "existing_entry": "engine.rs[EG8L]: F:引擎选择器：native 与 DuckDB 分析路径的统一入口 | R:code:crates/core/src/sql.rs,code:crates/core/src/groupby.rs,code:crates/core/src/chart.rs,code:crates/core/src/pivot.rs | A:Engine 为 Auto/Native/Sql；Auto 按 8 MB 且必须带 sql feature 才走 DuckDB；filter_predicate 把多数条件翻译成 SQL，Wildcard 与排序类返回 None 交给原生路径 | S:阈值由实测定为 8 MB；read_csv_auto 大宽表推类型很慢，query_with 采样声明列；SQL GROUP BY 无行序，chart 顺序与原生不同"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "8ba9fa40f971c58a7880d4e80f53cfd5cc2fc8fe00f09cac935a83a74f1f8763",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、stdev/var/stdevp/varp、同行区间与 sumproduct、文本函数、日期运算、条件通配符；编辑表含原子批量写、一次撤销/重做整批 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "c9ec09366cdc9fa7b11ca7add641d525cc5e6a2dd6ed6381d94feab401d425ee",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "39d8725d92d9a92f8391897888cb3be68ae15845a990dbff52f8f7316bbe5718",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、sumproduct、文本函数、日期运算、同行区间、原子 transaction 与整批撤销/重做 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "e2217942a0f992e434c9ea3d0d88b06549d248b7de039846016fa36e7f7f38f5",
+      "object_ref": "code:crates/core/src/engine.rs",
+      "path": "crates/core/src/engine.rs",
+      "change": "update",
+      "source_sha256": "af9c2efcfe7f1cee2a3daa9d9c4c83976fbebe5e56699f8ea0eeb1192bf5af78",
+      "existing_entry": "engine.rs[EG8L]: F:引擎选择器：native 与 DuckDB 分析路径的统一入口 | R:code:crates/core/src/sql.rs,code:crates/core/src/groupby.rs,code:crates/core/src/chart.rs,code:crates/core/src/pivot.rs | A:Engine 为 Auto/Native/Sql；Auto 按 8 MB 且必须带 sql feature 才走 DuckDB；filter_predicate 把多数条件翻译成 SQL，Wildcard 与排序类返回 None 交给原生路径 | S:阈值由实测定为 8 MB；read_csv_auto 大宽表推类型很慢，query_with 采样声明列；SQL GROUP BY 无行序，chart 顺序与原生不同"
+    },
+    {
+      "candidate_id": "0d957cd8e5607a571485c3bf34a5ed0f066a0f7a9d59339484b1b1896968f9cf",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "8ba9fa40f971c58a7880d4e80f53cfd5cc2fc8fe00f09cac935a83a74f1f8763",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、stdev/var/stdevp/varp、同行区间与 sumproduct、文本函数、日期运算、条件通配符；编辑表含原子批量写、一次撤销/重做整批 | S:-"
+    }
+  ]
+}
