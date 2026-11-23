@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "bf917e8e393c9500146996f83666fc13f95fa70403a1769b047cf31025305f0d",
+  "batch_id": "decf0aae1200cb0aacbc8ddfe3b886be87b020f08dbdada38d37809f8c3f263e",
+  "composite_identity": "873cd554e5daeabe6551d65750ee789926c846986be4e4a98a6e9228a42e1930",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "7d6a0ed2e2e3e41f26df5ad660b2450458deedc24efe755bd730002e776f617f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "bb3f4c153f599cf4040bde399b4345fdcce81c642bd49cb85d2853202c259a5b",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，打包脚本末尾自动 verify_dist（SHA256、必需成员、包内 binary），失败时删半成品 tar/sha；记录 2026-11-23 release 30.28 s、pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2、SDK 2 条 pipeline progress 与 job progress；macOS gate dispatch 45198239384 12m21s 与 push 45202447374 11m32s 均 success；MCP 缓存 2.04 GB 重查 4.61→1.63 s/86 MB；包含 job 历史 128/退出取消、bench_mcp_cache/PILOT_INTAKE/ROADMAP | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "c85d8af8e549b40d696685245db41221d0691483ef8959d02aa3995dfdc3f586",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "bb3f4c153f599cf4040bde399b4345fdcce81c642bd49cb85d2853202c259a5b",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，打包脚本末尾自动 verify_dist（SHA256、必需成员、包内 binary），失败时删半成品 tar/sha；记录 2026-11-23 release 30.28 s、pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2、SDK 2 条 pipeline progress 与 job progress；macOS gate dispatch 45198239384 12m21s 与 push 45202447374 11m32s 均 success；MCP 缓存 2.04 GB 重查 4.61→1.63 s/86 MB；包含 job 历史 128/退出取消、bench_mcp_cache/PILOT_INTAKE/ROADMAP | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ]
+}
