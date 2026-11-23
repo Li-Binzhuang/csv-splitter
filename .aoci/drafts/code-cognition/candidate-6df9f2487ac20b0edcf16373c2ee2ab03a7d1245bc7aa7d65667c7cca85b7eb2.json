@@ -1,0 +1,59 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "62e7abae4cc81d5fbe732d86ccce3f0f997a257e2102aa1153945b7361be86ad",
+  "batch_id": "6df9f2487ac20b0edcf16373c2ee2ab03a7d1245bc7aa7d65667c7cca85b7eb2",
+  "composite_identity": "633d1da6a7e3f053a31d99af62062fab57b18b6669e81ebe1f82587e5bbb29c5",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "8c65353280c14ec392fad331d0f9692be590dadf14a9e49e840d796ea74d59ca",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "9b41814eb4ce065bcac051b61ac9a06599c753c627c39758c9d378e4613a4c6c",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md,code:docs/PILOT_SAMPLE.md | A:100 GB search 20 s/filter 25.75 s/全量导出 79.62 s；81 GB 7 列 search 39.42/filter 46.70/导出 62.03；2.3 GB zst filter 4.16 s、search 12.13 s、quality 21.73 s；zst materialize search 11.87→3.51/89 MB、filter 6.94→3.62/4.06→2.60；release 冒烟 2.3 GB filter 2.78/88 MB、导出 0.71/60 MB、search 1.57/86 MB、quality 20.79/18.3 MB；DAG 扇出 7.60 s、增量 0.02 s、父 peak 187 MB（含子进程） | S:未 drop cache；100/81 GB 为重复块；同文件 pilot 0.69/0.43 s 属缓存方差；压缩读 CPU 受限；materialize 需临时磁盘；DAG 父 RSS 含并发子进程；MCP 缓存 gzip 2.04 GB 4.61→1.63 s/86 MB、zst 0.279→0.101、bz2 0.693→0.100（110 MB/7M）"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/bench_mcp_cache.py",
+      "path": "scripts/bench_mcp_cache.py",
+      "change": "create",
+      "source_sha256": "0953b9f7794800ddc9dd8891ca7a849613c4e398f21ae88c4c3b7b20cbc24137"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "ff058fd53c085331a86fb0462dcca45f1a0b17b53fbe388f72c1541c5de245db",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 | R:code:README.md,code:docs/SALES.md | A:binary 缺失先 cargo build --release；版本取 csvx --version；平台 uname；打包二进制、README/CHANGELOG/LICENSE、主要 docs（含 RELEASE_CHECKLIST/ROADMAP/PILOT_INTAKE/PILOT_SAMPLE/PILOT_CONFIRMATION）、demo/pilot 脚本与 mcp_sdk client/package.json；输出 dist tar.gz 与 sha256 | S:不打 tag、不联网、不发布 registry；dist 已 gitignore；只用于企业内部分发/试点"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "86ff409bdb65746a99ec19b5d984a23e3e668a38114f8e4e32f180b02f053201",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "9b41814eb4ce065bcac051b61ac9a06599c753c627c39758c9d378e4613a4c6c",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md,code:docs/PILOT_SAMPLE.md | A:100 GB search 20 s/filter 25.75 s/全量导出 79.62 s；81 GB 7 列 search 39.42/filter 46.70/导出 62.03；2.3 GB zst filter 4.16 s、search 12.13 s、quality 21.73 s；zst materialize search 11.87→3.51/89 MB、filter 6.94→3.62/4.06→2.60；release 冒烟 2.3 GB filter 2.78/88 MB、导出 0.71/60 MB、search 1.57/86 MB、quality 20.79/18.3 MB；DAG 扇出 7.60 s、增量 0.02 s、父 peak 187 MB（含子进程） | S:未 drop cache；100/81 GB 为重复块；同文件 pilot 0.69/0.43 s 属缓存方差；压缩读 CPU 受限；materialize 需临时磁盘；DAG 父 RSS 含并发子进程；MCP 缓存 gzip 2.04 GB 4.61→1.63 s/86 MB、zst 0.279→0.101、bz2 0.693→0.100（110 MB/7M）"
+    },
+    {
+      "candidate_id": "f5b7ca2e4a23bbed8572b71bb2fbe11550be87714abe85a1ac120ce986a785c7",
+      "object_ref": "code:scripts/bench_mcp_cache.py",
+      "path": "scripts/bench_mcp_cache.py",
+      "change": "create",
+      "source_sha256": "0953b9f7794800ddc9dd8891ca7a849613c4e398f21ae88c4c3b7b20cbc24137"
+    },
+    {
+      "candidate_id": "c041157217ad8591ab9a4a2b6514cc46cb0a521b76715969106c3bf1264b0c46",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "ff058fd53c085331a86fb0462dcca45f1a0b17b53fbe388f72c1541c5de245db",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 | R:code:README.md,code:docs/SALES.md | A:binary 缺失先 cargo build --release；版本取 csvx --version；平台 uname；打包二进制、README/CHANGELOG/LICENSE、主要 docs（含 RELEASE_CHECKLIST/ROADMAP/PILOT_INTAKE/PILOT_SAMPLE/PILOT_CONFIRMATION）、demo/pilot 脚本与 mcp_sdk client/package.json；输出 dist tar.gz 与 sha256 | S:不打 tag、不联网、不发布 registry；dist 已 gitignore；只用于企业内部分发/试点"
+    }
+  ]
+}
