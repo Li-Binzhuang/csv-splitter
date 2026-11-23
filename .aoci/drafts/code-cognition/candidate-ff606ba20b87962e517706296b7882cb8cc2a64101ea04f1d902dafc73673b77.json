@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "f34c65ef9320f882ccc29966fd2daa2ee23d377bdb193275e2f200c8eb9e0f0d",
+  "batch_id": "ff606ba20b87962e517706296b7882cb8cc2a64101ea04f1d902dafc73673b77",
+  "composite_identity": "e694f0d3ad1fe691f1c36441fc3f0313e5faa3c7c52dd7e5b5987d98287c8eaf",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "7958193e951b7cc1c27d1cf3b9562ecdb3888303e0b6f4d40138acf4235a8b68",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "0717f681b82875aa9ffdc5c7e5197e3f6ab65499f394ff672ebbfc3a9c3e5040",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/锁规则/重复输出拒绝/源覆盖拒绝/内容校验(run+status)/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码、步骤 progress/CSVX_STEP 即时、压缩/MCP materialize 残留清理（search 3.51 s、filter 3.62/2.60 s） | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 解压缓存按 path+size+mtime+ctime+inode，上限 4 GiB/16 项（env 可调），2.04 GB 重查 4.61→1.63 s"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "604701e9f40393eebf8a201588339db59d2dbadae2855ba4732450d0497c36d1",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 读写与 job；stdio JSON-RPC；16 工具（schema/view/filter/search/quality/pipeline*、edit*、convert、job*）；pipeline_status 支持 verify/contentCheck；pipeline_run 接受 dag/jobs/clean/contentCheck；job_status 支持 0–30s wait，有 token 时发 progress，返回 structuredContent ok/code；job_cancel kill 子进程；job_list 默认摘要，full=true 完整；未知工具先判身份；父目录组件在 canonicalize 前拒绝 | S:strict 参数未登记即 400；MCP stdout 只走协议；search/filter 支持 materialize 且 server 缓存解压结果（4 GiB/16 项 FIFO，CSVX_MCP_CACHE_BYTES/ENTRIES 可调）；错误码分 unknown_tool/unknown_job/path_escape/cli_error/job_start_error；job 结果缓存；progress 覆盖 job wait 与 pipeline CSVX_STEP i/n（带 total）；tools/list 必须能被 McpParser 解析"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "761ef8abd7dfdf72bd08d39c03879602df73795a5edfe46c712387526d213a64",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "0717f681b82875aa9ffdc5c7e5197e3f6ab65499f394ff672ebbfc3a9c3e5040",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/锁规则/重复输出拒绝/源覆盖拒绝/内容校验(run+status)/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码、步骤 progress/CSVX_STEP 即时、压缩/MCP materialize 残留清理（search 3.51 s、filter 3.62/2.60 s） | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 解压缓存按 path+size+mtime+ctime+inode，上限 4 GiB/16 项（env 可调），2.04 GB 重查 4.61→1.63 s"
+    },
+    {
+      "candidate_id": "a9cf7ca98cf92f407dcaa90eacffe7b8b6c148d9db708973a31e5064d7c4be23",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "604701e9f40393eebf8a201588339db59d2dbadae2855ba4732450d0497c36d1",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 读写与 job；stdio JSON-RPC；16 工具（schema/view/filter/search/quality/pipeline*、edit*、convert、job*）；pipeline_status 支持 verify/contentCheck；pipeline_run 接受 dag/jobs/clean/contentCheck；job_status 支持 0–30s wait，有 token 时发 progress，返回 structuredContent ok/code；job_cancel kill 子进程；job_list 默认摘要，full=true 完整；未知工具先判身份；父目录组件在 canonicalize 前拒绝 | S:strict 参数未登记即 400；MCP stdout 只走协议；search/filter 支持 materialize 且 server 缓存解压结果（4 GiB/16 项 FIFO，CSVX_MCP_CACHE_BYTES/ENTRIES 可调）；错误码分 unknown_tool/unknown_job/path_escape/cli_error/job_start_error；job 结果缓存；progress 覆盖 job wait 与 pipeline CSVX_STEP i/n（带 total）；tools/list 必须能被 McpParser 解析"
+    }
+  ]
+}
