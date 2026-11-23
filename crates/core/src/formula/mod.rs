@@ -1432,6 +1432,55 @@ mod tests {
     }
 
     #[test]
+    fn mode_picks_the_most_frequent_value_of_a_same_row_range() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [("a", "10"), ("b", "3"), ("c", "10"), ("d", "7")] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        let formula = Formula::parse("mode(A2:D2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "10"
+        );
+        // A tie picks the smaller value so the answer is deterministic.
+        for (name, value) in [("a", "1"), ("b", "2"), ("c", "1"), ("d", "2")] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "1"
+        );
+        // No repeated value has no mode.
+        for (name, value) in [("a", "10"), ("b", "3"), ("c", "7"), ("d", "5")] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+        cells.insert("d".to_string(), "n/a".to_string());
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!",
+            "text is ignored and leaves three distinct numbers"
+        );
+    }
+
+    #[test]
     fn percentile_interpolates_a_same_row_range() {
         let columns = vec![
             "a".to_string(),

@@ -309,6 +309,41 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             let fraction = rank - low as f64;
             Value::Number(values[low] + fraction * (values[high] - values[low]))
         }
+        // MODE.SNGL over a same-row range: the most frequent numeric value; ties pick the
+        // smallest so the answer is deterministic, and no repeated value is #VALUE!.
+        "mode" => {
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            if values.is_empty() {
+                return Value::Error;
+            }
+            let mut counts: Vec<(f64, usize)> = Vec::new();
+            for value in values {
+                match counts.iter_mut().find(|(seen, _)| *seen == value) {
+                    Some((_, count)) => *count += 1,
+                    None => counts.push((value, 1)),
+                }
+            }
+            let most = counts.iter().map(|(_, count)| *count).max().unwrap_or(0);
+            if most < 2 {
+                return Value::Error;
+            }
+            let mut winners = counts
+                .iter()
+                .filter(|(_, count)| *count == most)
+                .map(|(value, _)| *value);
+            let mut best = winners.next().unwrap_or(f64::NAN);
+            for candidate in winners {
+                if candidate < best {
+                    best = candidate;
+                }
+            }
+            Value::Number(best)
+        }
         // Whole-column aggregates: the pre-pass installed the totals before the loop
         // started, so every row reads the same number in O(1). The argument is a column
         // name taken from the syntax tree, exactly like `lag`.
