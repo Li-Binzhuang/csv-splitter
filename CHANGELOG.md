@@ -171,6 +171,9 @@
   graph (empty input → previous step, step name → earlier step, file → no step
   dependency), freshness-checks each ready step and runs stale ready steps in
   bounded concurrent waves. Test covers a diamond and all-fresh second pass.
+- **Run lock**: `<plan>.pipeline.lock` blocks a second run on the same plan; locks
+  older than 24h are treated as stale and removed. Test holds a lock manually, asserts
+  refusal/no output, then runs and asserts release.
 - **Persisted lineage**: successful linear/DAG runs write `<plan>.lineage.csv`
   (`step,deps`) next to the plan; dry-run and failures do not write it.
 - **Pipeline lineage**: dry-run JSON now includes each step's `deps` (previous

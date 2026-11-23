@@ -8168,6 +8168,63 @@ fn run_step_command(
 /// Recover outputs left mid-wave by a crashed run. A backup exists only after the
 /// previous output was moved aside, so restoring it is the safe state: any current
 /// output belongs to an uncommitted run and state was never written.
+struct PipelineLock {
+    path: std::path::PathBuf,
+}
+
+impl Drop for PipelineLock {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.path);
+    }
+}
+
+fn acquire_pipeline_lock(plan: &std::path::Path) -> std::io::Result<PipelineLock> {
+    let path = std::path::PathBuf::from(format!("{}.pipeline.lock", plan.display()));
+    if path.exists() {
+        let age = path
+            .metadata()
+            .and_then(|meta| meta.modified())
+            .ok()
+            .and_then(|modified| modified.elapsed().ok())
+            .unwrap_or_default();
+        if age < Duration::from_secs(24 * 3600) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::WouldBlock,
+                format!(
+                    "pipeline is already running (lock {}); remove it if no process is active",
+                    path.display()
+                ),
+            ));
+        }
+        let _ = std::fs::remove_file(&path);
+    }
+    match std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&path)
+    {
+        Ok(mut file) => {
+            let _ = writeln!(
+                file,
+                "pid={} started={:?}",
+                std::process::id(),
+                std::time::SystemTime::now()
+            );
+            Ok(PipelineLock { path })
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::WouldBlock,
+                format!(
+                    "pipeline is already running (lock {}); remove it if no process is active",
+                    path.display()
+                ),
+            ))
+        }
+        Err(error) => Err(error),
+    }
+}
+
 fn recover_dag_backups(steps: &[PipelineStep]) -> std::io::Result<usize> {
     let mut recovered = 0usize;
     for step in steps {
@@ -8839,6 +8896,7 @@ fn run_pipeline_plan(
             }
         }
     }
+    let _lock = acquire_pipeline_lock(plan)?;
     let recovered = recover_dag_backups(&steps)?;
     if recovered > 0 {
         eprintln!("recovered {recovered} interrupted DAG output(s)");

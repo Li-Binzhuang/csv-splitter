@@ -3011,6 +3011,56 @@ fn pipeline_recovers_interrupted_dag_backup() {
     assert!(!dir.join("plan.csv.pipeline.csv").exists());
 }
 
+/// A second run against the same plan is refused by the run lock.
+#[test]
+fn pipeline_refuses_concurrent_runs() {
+    let dir = TempDir::new("pipeline-lock");
+    std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n").unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},a.csv\n",
+    )
+    .unwrap();
+    std::fs::write(dir.join("plan.csv.pipeline.lock"), "held").unwrap();
+    let blocked = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(!blocked.status.success());
+    assert!(
+        String::from_utf8_lossy(&blocked.stderr).contains("already running"),
+        "{}",
+        String::from_utf8_lossy(&blocked.stderr)
+    );
+    assert!(!dir.join("a.csv").exists());
+    std::fs::remove_file(dir.join("plan.csv.pipeline.lock")).unwrap();
+    let ok = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        ok.status.success(),
+        "{}",
+        String::from_utf8_lossy(&ok.stderr)
+    );
+    assert!(
+        !dir.join("plan.csv.pipeline.lock").exists(),
+        "lock released"
+    );
+}
+
 /// `--clean` removes leftovers from an interrupted parallel run.
 #[test]
 fn pipeline_clean_removes_stale_staging() {
