@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "664aff0d7a18dfece417efa545fb2637b6e922cd168fcdf397ecb82dbc67d044",
+  "batch_id": "b0de4646738dc3f0d829f77fcc27ae3d6cc7603fd2e897dd5fb6a61015791763",
+  "composite_identity": "d8bd37e4a5df91be39ab4583b3f16afb13904df87c23cb7ba5728dfa6bf98972",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "446f3a8bee98996ad4d743c7d5db7aa9b99ec8609e91390bf06aef9f80c1b68a",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "99794603f0440a2683f860b74fb0db29e72d8d3560bb7847e1172d1ad5876932",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/--dag 跨波回滚与崩溃恢复/run lock/--unlock/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/cancel/list 摘要+pipeline DAG 参数、view 游标、官方 SDK、压缩输入、100 GB/81 GB 演练、demo、外发、试点报告、打包 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "96fb4dcf1c8ffa4af43bd24b693357dfb3f3ad67b74c5e25beca55d7ba8ee372",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；pipeline run/status 支持 size+mtime 跳过、--force、--dry-run、--json、--dag、--jobs、--step-timeout、--retries、--clean、--unlock；run 前取 \u003cplan\u003e.pipeline.lock（24h 残留自清，Drop 释放，--unlock 强制清）；成功运行写 \u003cplan\u003e.lineage.csv；DAG 按 lineage 拓扑调度，波前备份旧输出，后续失败恢复、启动自动恢复崩溃 backup；组/DAG 子进程写 staging，整波成功才 rename；view --json 返回 start/nextStart/hasMore；mcp --root | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state/lineage；并发 run 被锁拒绝；--unlock 需确认无活跃 run；group 是连续同组，dag 才是任意拓扑；mcp stdout 只走 JSON-RPC"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "e654cc38f55a0ad9bc2179992f05cc98e0dd54ef6133232391d0ddc7bc383534",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 成功写 lineage、run lock/--unlock、--dry-run(JSON)、--dag 跨波回滚/崩溃恢复、--step-timeout、--retries、group 并发、--clean；mcp 读写+job 与 pipeline_run（dag/jobs/clean）/job_cancel/job_list（16 工具）、view 游标、官方 SDK；压缩输入顺序读；C 100 GB/81 GB 演练；64 GB 自适应；试点报告；离线发布包 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4fbb93b0119948b93ce754e9e956216a9ea30511def319456d7ecd08bfbc5042",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "99794603f0440a2683f860b74fb0db29e72d8d3560bb7847e1172d1ad5876932",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/--dag 跨波回滚与崩溃恢复/run lock/--unlock/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/cancel/list 摘要+pipeline DAG 参数、view 游标、官方 SDK、压缩输入、100 GB/81 GB 演练、demo、外发、试点报告、打包 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "8248e900cac4055b0f413d037e1bd75882e8ce8ea7c6221a3e028113d4841aba",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "96fb4dcf1c8ffa4af43bd24b693357dfb3f3ad67b74c5e25beca55d7ba8ee372",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；pipeline run/status 支持 size+mtime 跳过、--force、--dry-run、--json、--dag、--jobs、--step-timeout、--retries、--clean、--unlock；run 前取 \u003cplan\u003e.pipeline.lock（24h 残留自清，Drop 释放，--unlock 强制清）；成功运行写 \u003cplan\u003e.lineage.csv；DAG 按 lineage 拓扑调度，波前备份旧输出，后续失败恢复、启动自动恢复崩溃 backup；组/DAG 子进程写 staging，整波成功才 rename；view --json 返回 start/nextStart/hasMore；mcp --root | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state/lineage；并发 run 被锁拒绝；--unlock 需确认无活跃 run；group 是连续同组，dag 才是任意拓扑；mcp stdout 只走 JSON-RPC"
+    },
+    {
+      "candidate_id": "b74e01d50216ece72c7855611083ceb1e93098d638a5a22ce6863ed9bc34faad",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "e654cc38f55a0ad9bc2179992f05cc98e0dd54ef6133232391d0ddc7bc383534",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 成功写 lineage、run lock/--unlock、--dry-run(JSON)、--dag 跨波回滚/崩溃恢复、--step-timeout、--retries、group 并发、--clean；mcp 读写+job 与 pipeline_run（dag/jobs/clean）/job_cancel/job_list（16 工具）、view 游标、官方 SDK；压缩输入顺序读；C 100 GB/81 GB 演练；64 GB 自适应；试点报告；离线发布包 | S:-"
+    }
+  ]
+}
