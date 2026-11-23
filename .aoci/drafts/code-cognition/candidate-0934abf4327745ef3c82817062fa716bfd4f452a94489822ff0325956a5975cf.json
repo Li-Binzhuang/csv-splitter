@@ -1,0 +1,109 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "21fac60bb90342ab056078d17036fba6a0e584914a32147214664a512de056eb",
+  "batch_id": "0934abf4327745ef3c82817062fa716bfd4f452a94489822ff0325956a5975cf",
+  "composite_identity": "4c6af8adf2ca346137e6cf5ecc116f22ff42341e70f1b6ce316a0edb6a7bff39",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "bd0bec2e296b89358cb84223d7fc2ddfcc0295e0f70214dbcb14260f0015bb35",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "82ce6502c605c1e1931ccaf1af727f05f0e7ccec4851faa3160e88d1c1e01e31",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录 filter 并行、edit compact、book、quality、convert、pipeline（size+mtime 快跳过 17 ms、耗时/status JSON）、SQL lookup 无上限、2.3 GB drill、31 GB 基线 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "2c02c90434865cd63764f65a121e6c27c6f9ab4deef81e5d2af27449c5fa4d04",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部定位与 Rust 徽章；快速开始指向 scripts/demo.sh；公式节说明聚合与 .agg 缓存；性能表为最终二进制多轮实测（2.1 GB 过滤 2.3 s/77 MB、搜索 2.4 s/75 MB；11.2 GB 过滤 13.2–13.9 s/79 MB、搜索 13.8–14.6 s/78 MB） | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；含 scripts/ 的行不参与 flag 校验；性能数字必须来自实测，波动范围直接写范围"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "7ab7b871735eb29b9e800ce0566316eb2d2c78b97b7b349453b373084c4adb9b",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；pipeline run/status（CSV 清单、size+mtime 快跳过、legacy 哈希回退、{out} 原子 rename、每步耗时、--json、前向引用拒绝）；lookup/convert/analyze 共享解析；帮助表列全 flag | S:新增 flag 必须写进 print_command_help；pipeline 子进程复用现有命令，失败不写 state；同字节重写但 mtime 变会重跑"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "638dcfac917a7ff8adb2b5fe1b49f03b8001911f21dec4e27f4fe4042c80bf7d",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:/filter /search 接 cursor；/edit transaction 原子写入；undo 整批撤回并记录 redo 边界，redo 整批恢复，响应带 batch；sql_predicate 对 Wildcard 返回 None 让原生匹配 | S:strict 参数未登记即 400；contract 只扫描 match 分支，提前处理的动作要登记；redo 边界看 redo_len，不是 journal 长度"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "25c992bdf23bbbd58b56a3f8d88ba2f1a0aa1e70357bcb8f191f0411aaef3dd2",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表、大文件边界；阶段 1–5 已闭环；edit compact/book --plan/analyze --quality/convert --format；pipeline 清单/原子输出/status JSON/2.3 GB 6.55 s 与 17 ms 跳过；SQL lookup 全量 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "e2b01ffdaa06fc7ddf37cd51306f227e1e622f4bf6414d4f8b310209b2eb6197",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5 已闭环（xlsx 挂起）；A 主线 Pipeline：2.3 GB/95M 行 6.55 s，增量 17 ms（size+mtime），SQL lookup 100k 截断已修；下一步 B/C 与商业化 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "baac376f1bdf1967f16a1557cbe8fed37bfb853f8cb1e9665b9d6ce4dd1f445f",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "82ce6502c605c1e1931ccaf1af727f05f0e7ccec4851faa3160e88d1c1e01e31",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录 filter 并行、edit compact、book、quality、convert、pipeline（size+mtime 快跳过 17 ms、耗时/status JSON）、SQL lookup 无上限、2.3 GB drill、31 GB 基线 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "031e9374183a92cc7404927468f6c59b88028e95edefe25f34ae54aa6cfbe12e",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "2c02c90434865cd63764f65a121e6c27c6f9ab4deef81e5d2af27449c5fa4d04",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部定位与 Rust 徽章；快速开始指向 scripts/demo.sh；公式节说明聚合与 .agg 缓存；性能表为最终二进制多轮实测（2.1 GB 过滤 2.3 s/77 MB、搜索 2.4 s/75 MB；11.2 GB 过滤 13.2–13.9 s/79 MB、搜索 13.8–14.6 s/78 MB） | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；含 scripts/ 的行不参与 flag 校验；性能数字必须来自实测，波动范围直接写范围"
+    },
+    {
+      "candidate_id": "eef3f709680970862601631f7a063902fa44d11387b22d95d9b168a1042608f0",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "7ab7b871735eb29b9e800ce0566316eb2d2c78b97b7b349453b373084c4adb9b",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；pipeline run/status（CSV 清单、size+mtime 快跳过、legacy 哈希回退、{out} 原子 rename、每步耗时、--json、前向引用拒绝）；lookup/convert/analyze 共享解析；帮助表列全 flag | S:新增 flag 必须写进 print_command_help；pipeline 子进程复用现有命令，失败不写 state；同字节重写但 mtime 变会重跑"
+    },
+    {
+      "candidate_id": "96eebf445124c312876e4dd34c673a2b3bc5ac36f1fe30ffd009fb55deac144b",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "638dcfac917a7ff8adb2b5fe1b49f03b8001911f21dec4e27f4fe4042c80bf7d",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端：路由分发、CORS/ETag/gzip、job 注册表、指标与自检 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:/filter /search 接 cursor；/edit transaction 原子写入；undo 整批撤回并记录 redo 边界，redo 整批恢复，响应带 batch；sql_predicate 对 Wildcard 返回 None 让原生匹配 | S:strict 参数未登记即 400；contract 只扫描 match 分支，提前处理的动作要登记；redo 边界看 redo_len，不是 journal 长度"
+    },
+    {
+      "candidate_id": "aef87677bcb28fcec9ee189989384c85edb2826b0ddc8a29ec186b58f18e1c5d",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "25c992bdf23bbbd58b56a3f8d88ba2f1a0aa1e70357bcb8f191f0411aaef3dd2",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表、大文件边界；阶段 1–5 已闭环；edit compact/book --plan/analyze --quality/convert --format；pipeline 清单/原子输出/status JSON/2.3 GB 6.55 s 与 17 ms 跳过；SQL lookup 全量 | S:-"
+    },
+    {
+      "candidate_id": "52daf50eb70beebee004fecb12617ec455d929a45b06ab2d729d1bef7e311a7d",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "e2b01ffdaa06fc7ddf37cd51306f227e1e622f4bf6414d4f8b310209b2eb6197",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5 已闭环（xlsx 挂起）；A 主线 Pipeline：2.3 GB/95M 行 6.55 s，增量 17 ms（size+mtime），SQL lookup 100k 截断已修；下一步 B/C 与商业化 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    }
+  ]
+}
