@@ -1,0 +1,93 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "0029476f2d1c33d6779765bdf6031c70e481a8cbc7de51bf368569a5c64ba6f8",
+  "batch_id": "07cb4b82ccd853865c873c5ded6b3c0e02ab275e2fdc81eb55f762f8b854ee75",
+  "composite_identity": "8ac34c86a6ac0ffa2eac0d249e5843680446573f8ccef32d61f0883f1780f371",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "98fdfd2d700e8df4c26ef1fe59dc6ddc9e4eaf5bd4bcf0d1c66a95ba5183d4fc",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "a80c8d0740f96acb61f16c60afa8383f219881bb2a7930874ee5b7b1aac65f6a",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、行内多条件聚合、median 区间、文本函数、日期运算、原子 transaction 与整批撤销/重做、vlookup 预加载修复、预扫冷启动约 25–30 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "3c5808e9cad7cd5218b271c88578e58b90bd4ef04097b474a313c9dd0d27bb10",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合支持整列/同行区间/多条件；sumifs 家族首参为区间时按同位置配对（sum/count/average/min/max）；stdev/var 与 stdevp/varp 共用平方和；median 只接受同行区间；sumproduct 支持多段；文本 textjoin/char/code；日期 edate/eomonth/weekday/days | S:单列参数的聚合按整列解释；无预扫状态时整列聚合为 #VALUE!；跨行区间与整列 median 返回 #VALUE!；区间条件聚合宽度必须一致"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "331dbd6a47a7929ad66dcb76a58506a2cd4fd5528f20f300975d8adfdbcc9ffe",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、stdev/var 与 stdevp/varp、median 同行区间、多段 sumproduct、行内多条件聚合、文本拼接、日期运算；collect_sheet_refs 同时识别 ref 与 vlookup，负责预加载跨表引用 | S:公式列只存 journal；跨行区间无随机访问；整列 median 会保留全部值，故不支持；别名不喂给加载器就会在打开时失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "f2d2c607a22667355fb8d04d8e6cdcceb97bb20fc143f59340aaba200626fc37",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、行内多条件、stdev/var/stdevp/varp、median 同行区间、多段 sumproduct、文本函数、日期运算、条件通配符；编辑表含原子批量写、一次撤销/重做整批；透视表列出五种聚合与多值列 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "83ea8d115da59cef8fd1ef8af2cf849a9bcaf95ddbe08be2489d2ce646997b04",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头给周一两命令演示、最终二进制实测范围（2.1 GB 过滤 2.3 s、导出 1.7–1.8 s、verify 5.8–6.2 s；11.2 GB 过滤 13.2–13.9 s、搜索 13.8–14.6 s）与演示后清理；写明已改名 csvx、版本 4.2.0；AOCI 与 CodeGraph 分工：先问认知层，再读源码，改完 maintain 收尾 | S:.aoci 运行时产物与 .codegraph 不入库，而 aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围，不要写单次幸运值"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "b3c475ab8be9261c9abce71efa8a7972a9ac4af2a5dc1e71221fe9ce3232583e",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "a80c8d0740f96acb61f16c60afa8383f219881bb2a7930874ee5b7b1aac65f6a",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、行内多条件聚合、median 区间、文本函数、日期运算、原子 transaction 与整批撤销/重做、vlookup 预加载修复、预扫冷启动约 25–30 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "93801b403c66a3da67979fc936e5b2cbeadba365379711de2adbedb6d38eba9a",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "3c5808e9cad7cd5218b271c88578e58b90bd4ef04097b474a313c9dd0d27bb10",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合支持整列/同行区间/多条件；sumifs 家族首参为区间时按同位置配对（sum/count/average/min/max）；stdev/var 与 stdevp/varp 共用平方和；median 只接受同行区间；sumproduct 支持多段；文本 textjoin/char/code；日期 edate/eomonth/weekday/days | S:单列参数的聚合按整列解释；无预扫状态时整列聚合为 #VALUE!；跨行区间与整列 median 返回 #VALUE!；区间条件聚合宽度必须一致"
+    },
+    {
+      "candidate_id": "1302852d6185b58c63033a47d338f6594e16081ada3da534824d116da1a1f41c",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "331dbd6a47a7929ad66dcb76a58506a2cd4fd5528f20f300975d8adfdbcc9ffe",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、stdev/var 与 stdevp/varp、median 同行区间、多段 sumproduct、行内多条件聚合、文本拼接、日期运算；collect_sheet_refs 同时识别 ref 与 vlookup，负责预加载跨表引用 | S:公式列只存 journal；跨行区间无随机访问；整列 median 会保留全部值，故不支持；别名不喂给加载器就会在打开时失败"
+    },
+    {
+      "candidate_id": "b9fb9e7e602a0666aa08358ba1f6103e5024f2f3d839624dd9eb2e8d1e41d6ee",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "f2d2c607a22667355fb8d04d8e6cdcceb97bb20fc143f59340aaba200626fc37",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、行内多条件、stdev/var/stdevp/varp、median 同行区间、多段 sumproduct、文本函数、日期运算、条件通配符；编辑表含原子批量写、一次撤销/重做整批；透视表列出五种聚合与多值列 | S:-"
+    },
+    {
+      "candidate_id": "1afc42758aaa63f0e3cd115d457c12c28627546edd9f3c2478617a510064102e",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "83ea8d115da59cef8fd1ef8af2cf849a9bcaf95ddbe08be2489d2ce646997b04",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头给周一两命令演示、最终二进制实测范围（2.1 GB 过滤 2.3 s、导出 1.7–1.8 s、verify 5.8–6.2 s；11.2 GB 过滤 13.2–13.9 s、搜索 13.8–14.6 s）与演示后清理；写明已改名 csvx、版本 4.2.0；AOCI 与 CodeGraph 分工：先问认知层，再读源码，改完 maintain 收尾 | S:.aoci 运行时产物与 .codegraph 不入库，而 aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围，不要写单次幸运值"
+    }
+  ]
+}
