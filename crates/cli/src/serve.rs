@@ -8791,10 +8791,12 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
         stdout.flush()?;
     }
     cleanup_mcp_materialized();
-    for job in jobs.values() {
-        if job.result.is_some() {
-            drop_mcp_job_files(job);
+    for job in jobs.values_mut() {
+        if job.result.is_none() {
+            let _ = job.child.kill();
+            let _ = job.child.wait();
         }
+        drop_mcp_job_files(job);
     }
     Ok(())
 }
