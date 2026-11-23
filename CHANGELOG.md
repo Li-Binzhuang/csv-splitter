@@ -182,6 +182,8 @@
 - **Compressed input**: search/filter/analyze read .zst/.gz/.bz2/.xz through a
   decompressing reader; non-seekable forces the sequential path. 2.3 GB zst filter
   writes a byte-identical 411 MB output in 4.16 s at 15 MB RSS (plain 1.51 s).
+- **Cache stats**: setting `CSVX_MCP_CACHE_STATS` makes the MCP server print
+  materialize-cache hits/misses on exit.
 - **Cache env diagnostics**: invalid `CSVX_MCP_CACHE_BYTES/ENTRIES` values warn once
   and fall back to the defaults instead of silently changing behavior.
 - **MCP materialize cache**: the server decompresses a compressed input once and

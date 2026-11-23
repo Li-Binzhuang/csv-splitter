@@ -8008,6 +8008,9 @@ fn cleanup_stale_mcp_materialized() {
     }
 }
 
+static MATERIALIZE_HITS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+static MATERIALIZE_MISSES: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
 fn mcp_materialize(input: &Path) -> Result<std::path::PathBuf, String> {
     if !csvx_core::encoding::is_compressed(input) {
         return Ok(input.to_path_buf());
@@ -8044,10 +8047,12 @@ fn mcp_materialize(input: &Path) -> Result<std::path::PathBuf, String> {
     if let Ok(entries) = cache.lock() {
         if let Some(entry) = entries.iter().find(|entry| entry.key == key) {
             if entry.path.exists() {
+                MATERIALIZE_HITS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 return Ok(entry.path.clone());
             }
         }
     }
+    MATERIALIZE_MISSES.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let stamp = format!(
         "{}-{}",
         std::process::id(),
@@ -8802,6 +8807,13 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
     }
     cleanup_mcp_materialized();
     shutdown_mcp_jobs(&mut jobs);
+    if std::env::var_os("CSVX_MCP_CACHE_STATS").is_some() {
+        eprintln!(
+            "mcp cache: hits={} misses={}",
+            MATERIALIZE_HITS.load(std::sync::atomic::Ordering::Relaxed),
+            MATERIALIZE_MISSES.load(std::sync::atomic::Ordering::Relaxed)
+        );
+    }
     Ok(())
 }
 
