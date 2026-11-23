@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "614343aa00f6f5ec17756a35704931487225d309ac20d39cdb195ecfcb1f2e2b",
+  "batch_id": "28984e133cab3df2fd3aee9325f42f449ed6514f216ba8dea3e372516ab19e82",
+  "composite_identity": "67deaa3aa325af150060e0d563336ef341ec64cbaaf0bf09172bfe5fecc35f4f",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b21e00a3b843f30a5039e9980b5278bf72848be63108158adae101d02187bd20",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "6d62080634a23ea627135e60c59f4cc25010a7f06650242c1f047b71f588fe9d",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/run lock 规则/重复输出拒绝/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码、压缩输入与 search/filter --materialize 残留清理（search 3.51 s、filter 3.62/2.60 s）、100 GB/81 GB 演练、demo、试点报告、打包 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "c68ab8e8bfbde11cbd3e4f13c8f5a586d03e53967e242ba88b0319cd9087bdcf",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十命令；pipeline run/status 快跳过、--force、--dry-run、--json、--dag、--jobs、--step-timeout、--retries、--clean、--unlock、--verify、--fail-on-stale；status verify 按 stamp/hash 判 fresh/stale；run 前取 \u003cplan\u003e.pipeline.lock（死 PID 即清，活主不按年龄清，Drop 释放，--unlock 强制清）；成功运行写 \u003cplan\u003e.lineage.csv；DAG 按 lineage 拓扑调度，波前备份旧输出，后续失败恢复、启动自动恢复崩溃 backup；组/DAG 子进程写 staging，整波成功才 rename；view --json 返回 start/nextStart；mcp --root | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state/lineage；重复输出在解析期拒绝；并发 run 被锁拒绝；--unlock 需确认无活跃 run；search/filter --materialize 解压临时文件并清死 PID 残留；group 是连续同组，dag 才是任意拓扑"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "7cfb405b4c39bbc9c9bfcbf4ec2d819c941880f7bfdd853d2c4d7175104aa960",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "6d62080634a23ea627135e60c59f4cc25010a7f06650242c1f047b71f588fe9d",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/run lock 规则/重复输出拒绝/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码、压缩输入与 search/filter --materialize 残留清理（search 3.51 s、filter 3.62/2.60 s）、100 GB/81 GB 演练、demo、试点报告、打包 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "d362fa2e93a86d62f42156150db0f2fe16696906075c7eceefee72397a9c331b",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "c68ab8e8bfbde11cbd3e4f13c8f5a586d03e53967e242ba88b0319cd9087bdcf",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十命令；pipeline run/status 快跳过、--force、--dry-run、--json、--dag、--jobs、--step-timeout、--retries、--clean、--unlock、--verify、--fail-on-stale；status verify 按 stamp/hash 判 fresh/stale；run 前取 \u003cplan\u003e.pipeline.lock（死 PID 即清，活主不按年龄清，Drop 释放，--unlock 强制清）；成功运行写 \u003cplan\u003e.lineage.csv；DAG 按 lineage 拓扑调度，波前备份旧输出，后续失败恢复、启动自动恢复崩溃 backup；组/DAG 子进程写 staging，整波成功才 rename；view --json 返回 start/nextStart；mcp --root | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state/lineage；重复输出在解析期拒绝；并发 run 被锁拒绝；--unlock 需确认无活跃 run；search/filter --materialize 解压临时文件并清死 PID 残留；group 是连续同组，dag 才是任意拓扑"
+    }
+  ]
+}
