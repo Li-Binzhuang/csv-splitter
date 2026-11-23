@@ -80,6 +80,8 @@ csvx index big.csv
 - 重复查询约 **2.8×**；gzip 压缩耗时（4.30 s）不计入。
 - 未清 page cache，非 SLA；缓存上限默认 4 GiB，本测试文件 2.04 GB 可容纳。
 
+复现：`python3 scripts/bench_mcp_cache.py --binary <csvx> --root <dir> --file <compressed.csv.gz>`。
+
 ### MCP 缓存：zstd / bzip2（2026-11-23，110 MB / 700 万行）
 
 | 输入 | 第一次（含解压） | 第二次（缓存命中） | 扫描行数 |
