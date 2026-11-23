@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-23T14:42:41Z",
+  "updated_at": "2026-11-23T14:45:49Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -52,9 +52,9 @@
     },
     "CHANGELOG.md": {
       "role": "index",
-      "sha256": "0717f681b82875aa9ffdc5c7e5197e3f6ab65499f394ff672ebbfc3a9c3e5040",
-      "size": 237132,
-      "normalized_sha256": "0717f681b82875aa9ffdc5c7e5197e3f6ab65499f394ff672ebbfc3a9c3e5040"
+      "sha256": "70bdd70cd07d26a0c62b1d64db464a5fdecfd9bbec604e8b175b1842599957a4",
+      "size": 237171,
+      "normalized_sha256": "70bdd70cd07d26a0c62b1d64db464a5fdecfd9bbec604e8b175b1842599957a4"
     },
     "Cargo.lock": {
       "role": "observe",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "96fa6b4a2e8c221a5dfa37d2143e70c79907445b8c699b790fe5e234bc7d7dcf",
-      "size": 51263,
-      "normalized_sha256": "96fa6b4a2e8c221a5dfa37d2143e70c79907445b8c699b790fe5e234bc7d7dcf"
+      "sha256": "8c65353280c14ec392fad331d0f9692be590dadf14a9e49e840d796ea74d59ca",
+      "size": 51345,
+      "normalized_sha256": "8c65353280c14ec392fad331d0f9692be590dadf14a9e49e840d796ea74d59ca"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -544,9 +544,9 @@
     },
     "docs/BENCHMARKS.md": {
       "role": "index",
-      "sha256": "bebda122cecf69fd1fcb8aa3154ffba97fcf1104974e02f787e6c8b387b0eb90",
-      "size": 6200,
-      "normalized_sha256": "bebda122cecf69fd1fcb8aa3154ffba97fcf1104974e02f787e6c8b387b0eb90"
+      "sha256": "9db47f878735512d078edcb3ff47b4f9e49e0d3dbd549f0b4683c582628b6cf5",
+      "size": 6714,
+      "normalized_sha256": "9db47f878735512d078edcb3ff47b4f9e49e0d3dbd549f0b4683c582628b6cf5"
     },
     "docs/BEYOND_EXCEL.md": {
       "role": "index",
@@ -640,9 +640,9 @@
     },
     "docs/ROADMAP.md": {
       "role": "index",
-      "sha256": "d23129d86fcb28632fe735c9ecc64660ec641de4e6ae63794b664b36b5078334",
-      "size": 2598,
-      "normalized_sha256": "d23129d86fcb28632fe735c9ecc64660ec641de4e6ae63794b664b36b5078334"
+      "sha256": "56c0e22ecea1a59bdd13301395a33af96cd143321a923c5b9e6103321ce50268",
+      "size": 2637,
+      "normalized_sha256": "56c0e22ecea1a59bdd13301395a33af96cd143321a923c5b9e6103321ce50268"
     },
     "docs/SALES.md": {
       "role": "index",
