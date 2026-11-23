@@ -172,6 +172,16 @@ output,joined,orders,joined.csv,,,,,"customer,region"
 2.03 GB / 5600 万行 drill（2026-11-23）：analyze --quality **18.71 s**，RSS **17 MB**；
 `key` 检查报 55,999,000 个重复值，`city` 报 5,600,000 个空值；候选键为空（id 的 distinct 被 cap 截断）。
 
+### 压缩输入（顺序流）
+
+`search` / `filter` / `analyze` 可直接读 `.zst/.zstd/.gz/.gzip/.bz2/.xz`，解压流在内部完成；
+delimiter 检测也读解压后的内容。压缩流不可 seek，因此自动退回顺序路径；`index`/`view`
+仍未承诺随机访问。
+
+2.3 GB/9500 万行 drill：plain filter 1.51 s/57 MB；`big.csv.zst`（51 MB）filter **4.16 s/15 MB**，
+输出与 plain `cmp` 逐字节一致；zst search 12.13 s/11 MB；zst quality 21.73 s/20 MB。
+压缩读是 CPU 受限，不能用它推断 100 GB 指标。
+
 ### 100 GB 级（C 主线，已达标）
 
 104.5 GB / 13 亿行（重复块合成）：`preview` 0.02 s/8 MB，`index` 24.57 s/21 MB（索引 9.9 MB），

@@ -53,6 +53,7 @@ csvx index big.csv
 按字节线性估算 100 GB 约 48/57/76 s，但**这是估算，不是实测**；100 GB 的实测仍以
 104.5 GB 合成文件为准。
 
+| 2.3 GB .csv.zst（51 MB） | filter 4.16 s/15 MB；search 12.13 s/11 MB；quality 21.73 s/20 MB | 输出与 plain `cmp` 一致；顺序读 |
 ## 2. 其他已验证数字（摘要）
 
 | 场景 | 文件/规模 | 结果 |

@@ -859,7 +859,8 @@ impl Parser {
 fn parse_delimiter(spec: &str, input: &Path) -> Result<Delimiter, String> {
     match spec.to_ascii_lowercase().as_str() {
         "" | "auto" => {
-            let mut f = std::fs::File::open(input).map_err(|e| e.to_string())?;
+            let mut f =
+                csvx_core::encoding::open_maybe_compressed(input).map_err(|e| e.to_string())?;
             match detect_delimiter(&mut f) {
                 Ok((d, _)) => Ok(d),
                 Err(_) => Ok(Delimiter::Comma),

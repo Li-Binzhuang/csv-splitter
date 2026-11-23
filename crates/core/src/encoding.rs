@@ -118,8 +118,51 @@ pub fn detect_bytes(sample: &[u8]) -> TextEncoding {
 
 /// Open a file as a UTF-8 byte stream, decoding and stripping any BOM.
 pub fn open_decoded(path: &Path) -> io::Result<Box<dyn Read + Send>> {
+    if is_compressed(path) {
+        // A compressed byte stream cannot be sniffed for encoding without decompressing;
+        // csvx's compressed CSV convention is UTF-8. BOM handling still applies.
+        return Ok(decoded_reader(
+            open_maybe_compressed(path)?,
+            TextEncoding::Utf8 { bom: true },
+        ));
+    }
     let encoding = detect(path)?;
     Ok(decoded_reader(File::open(path)?, encoding))
+}
+
+/// Whether the path names a single-file compressed CSV (not an archive).
+pub fn is_compressed(path: &Path) -> bool {
+    path.extension()
+        .and_then(|extension| extension.to_str())
+        .map(|extension| {
+            matches!(
+                extension.to_ascii_lowercase().as_str(),
+                "zst" | "zstd" | "gz" | "gzip" | "bz2" | "bzip2" | "xz"
+            )
+        })
+        .unwrap_or(false)
+}
+
+/// Open a plain or compressed CSV as a byte stream. Compressed streams are sequential:
+/// callers that need seeking must check [`is_compressed`] first.
+pub fn open_maybe_compressed(path: &Path) -> io::Result<Box<dyn Read + Send>> {
+    let file = File::open(path)?;
+    let extension = path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    match extension.as_str() {
+        "zst" | "zstd" => {
+            Ok(Box::new(zstd::Decoder::new(file).map_err(|e| {
+                io::Error::new(io::ErrorKind::InvalidData, e)
+            })?))
+        }
+        "gz" | "gzip" => Ok(Box::new(flate2::read::MultiGzDecoder::new(file))),
+        "bz2" | "bzip2" => Ok(Box::new(bzip2::read::BzDecoder::new(file))),
+        "xz" => Ok(Box::new(xz2::read::XzDecoder::new(file))),
+        _ => Ok(Box::new(file)),
+    }
 }
 
 /// Wrap any reader so it yields UTF-8, decoding according to `encoding`.

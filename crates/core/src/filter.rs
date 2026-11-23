@@ -1592,6 +1592,39 @@ mod set_tests {
     }
 
     #[test]
+    fn extract_reads_gzip_and_zstd_input() {
+        use flate2::write::GzEncoder;
+        use flate2::Compression;
+        use std::io::Write;
+
+        let d = Dir::new("compressed");
+        let plain = d.join("plain.csv");
+        let csv = "id,city,amount\n1,CDMX,10\n2,Puebla,20\n3,CDMX,30\n";
+        std::fs::write(&plain, csv).unwrap();
+        let set = FilterSet::single(FilterSpec::parse("city=CDMX").unwrap());
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let expected = d.join("expected.csv");
+        extract(&plain, Delimiter::Comma, &set, &expected, &tx).unwrap();
+        let expected_bytes = std::fs::read(&expected).unwrap();
+
+        let gz = d.join("plain.csv.gz");
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(csv.as_bytes()).unwrap();
+        std::fs::write(&gz, encoder.finish().unwrap()).unwrap();
+        let gz_out = d.join("gz.csv");
+        extract(&gz, Delimiter::Comma, &set, &gz_out, &tx).unwrap();
+        assert_eq!(std::fs::read(&gz_out).unwrap(), expected_bytes);
+
+        let zst = d.join("plain.csv.zst");
+        let mut encoder = zstd::Encoder::new(Vec::new(), 3).unwrap();
+        encoder.write_all(csv.as_bytes()).unwrap();
+        std::fs::write(&zst, encoder.finish().unwrap()).unwrap();
+        let zst_out = d.join("zst.csv");
+        extract(&zst, Delimiter::Comma, &set, &zst_out, &tx).unwrap();
+        assert_eq!(std::fs::read(&zst_out).unwrap(), expected_bytes);
+    }
+
+    #[test]
     fn parallel_extract_agrees_with_sequential_and_cleans_parts() {
         let d = Dir::new("parallel");
         let p = d.join("p.csv");

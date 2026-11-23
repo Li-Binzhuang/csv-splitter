@@ -142,6 +142,9 @@
 - **`mcp`**: stdio JSON-RPC MCP server with read-only tools
   (`csvx_schema/view/filter/search/quality/pipeline_status`), root-confined paths,
   UTF-8 arguments; initialize/tools/list/tools/call covered by a CLI test.
+- **Compressed input**: search/filter/analyze read .zst/.gz/.bz2/.xz through a
+  decompressing reader; non-seekable forces the sequential path. 2.3 GB zst filter
+  writes a byte-identical 411 MB output in 4.16 s at 15 MB RSS (plain 1.51 s).
 - **Pipeline --dry-run**: reports fresh vs would-run steps without executing or
   writing `.pipeline.csv`; covered by the CLI pipeline test.
 - **Pipeline fast skip**: state records input/output size+mtime; an unchanged 2.3 GB

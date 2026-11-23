@@ -124,7 +124,13 @@ round-trip CLI 测试三种格式均回到逐字节相同的 CSV；`--format xls
 Parquet→CSV **2.15 s**、RSS 424 MB；返回 CSV 与原始 CSV **逐字节一致**、55,000,001 行。
 xlsx 仍按硬约束挂起，等用户明确解除。
 
-## 100 GB 引擎（C 主线，首轮 profile 达标）
+## 压缩输入
+
+`encoding::open_decoded` 识别 `.zst/.gz/.bz2/.xz` 并解压；`scan_parallel::is_seekable` 对压缩
+返回 false，search/filter 自动走顺序路径。2.3 GB drill：zst filter 4.16 s/15 MB（plain 1.51 s），
+输出逐字节一致；zst search 12.13 s、quality 21.73 s。index/view 仍不承诺压缩随机访问。
+
+## 100 GB 引擎（C 主线，首轮 profile 达标）## 100 GB 引擎（C 主线，首轮 profile 达标）
 
 104.5 GB / 13 亿行合成文件：preview 0.02 s、index 24.57 s（9.9 MB 索引）、search 20.2 s/93 MB、
 filter 25.75 s/95 MB、选择性 filter -o 19.54 s、深跳 0.02 s。扫描目标 search <60 s、

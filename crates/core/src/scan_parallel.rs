@@ -91,6 +91,9 @@ pub fn threads_for(file_len: u64) -> usize {
 
 /// Whether byte offsets in this file are row boundaries.
 pub fn is_seekable(path: &Path) -> io::Result<bool> {
+    if encoding::is_compressed(path) {
+        return Ok(false);
+    }
     Ok(matches!(
         encoding::detect(path)?,
         encoding::TextEncoding::Utf8 { .. }

@@ -434,6 +434,43 @@ mod tests {
     use super::*;
 
     #[test]
+    fn search_reads_compressed_input() {
+        use flate2::write::GzEncoder;
+        use flate2::Compression;
+        use std::io::Write;
+        let dir = std::env::temp_dir().join(format!(
+            "csvs_search_gz_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let csv = "id,city\n1,CDMX\n2,Puebla\n3,CDMX\n";
+        let gz = dir.join("t.csv.gz");
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(csv.as_bytes()).unwrap();
+        std::fs::write(&gz, encoder.finish().unwrap()).unwrap();
+        let spec = SearchSpec::new("CDMX");
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let result = search_quotes_with_budget(
+            &gz,
+            crate::types::Delimiter::Comma,
+            &spec,
+            10,
+            None,
+            crate::csv_reader::QuoteStyle::Rfc4180,
+            &tx,
+        )
+        .unwrap();
+        assert_eq!(result.scanned, 3);
+        assert_eq!(result.matched, 2);
+        assert_eq!(result.row_numbers(), vec![1, 3]);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
     fn record_matches_selects_cells_without_allocating() {
         let spec = SearchSpec::new("CDMX");
         assert_eq!(
