@@ -2929,6 +2929,31 @@ fn pipeline_parallel_group_runs_branches() {
     let second_stdout = String::from_utf8_lossy(&second.stdout);
     assert!(second_stdout.contains("↷ cdmx"), "{second_stdout}");
     assert!(second_stdout.contains("↷ puebla"), "{second_stdout}");
+    std::fs::write(dir.join("a.csv"), "id,city\n9,STALE\n").unwrap();
+    let third = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--jobs",
+            "2",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        third.status.success(),
+        "{}",
+        String::from_utf8_lossy(&third.stderr)
+    );
+    let third_stdout = String::from_utf8_lossy(&third.stdout);
+    assert!(third_stdout.contains("✓ cdmx"), "{third_stdout}");
+    assert!(third_stdout.contains("↷ puebla"), "{third_stdout}");
+    assert_eq!(
+        std::fs::read_to_string(dir.join("a.csv")).unwrap(),
+        "id,city\n1,CDMX\n3,CDMX\n"
+    );
 }
 
 /// Retries are bounded and the final failure still cleans up.

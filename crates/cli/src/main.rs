@@ -8230,7 +8230,7 @@ fn pipeline_fresh_row(
 
 fn run_branch_group(
     all: &[PipelineStep],
-    group: &[PipelineStep],
+    group_indices: &[usize],
     root: &std::path::Path,
     force: bool,
     step_timeout_ms: u64,
@@ -8238,14 +8238,12 @@ fn run_branch_group(
     retry_delay_ms: u64,
 ) -> std::io::Result<Vec<BranchOutcome>> {
     let bin = std::env::current_exe()?;
-    let stamp = format!(
-        "{}-{}",
-        std::process::id(),
-        fnv_hash(group[0].name.as_bytes())
-    );
-    let mut plans = Vec::with_capacity(group.len());
-    let mut inputs = Vec::with_capacity(group.len());
-    for (index, step) in group.iter().enumerate() {
+    let first = all[group_indices[0]].name.as_bytes();
+    let stamp = format!("{}-{}", std::process::id(), fnv_hash(first));
+    let mut plans = Vec::with_capacity(group_indices.len());
+    let mut inputs = Vec::with_capacity(group_indices.len());
+    for (index, &step_index) in group_indices.iter().enumerate() {
+        let step = &all[step_index];
         let name = step.input.as_ref().ok_or_else(|| {
             std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
@@ -8254,9 +8252,7 @@ fn run_branch_group(
         })?;
         let input_path =
             if let Some(position) = all.iter().position(|candidate| &candidate.name == name) {
-                if all[position].group == step.group
-                    && group.iter().any(|s| s.name == all[position].name)
-                {
+                if group_indices.contains(&position) {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::InvalidInput,
                         format!(
@@ -8332,7 +8328,7 @@ fn run_branch_group(
         outputs.push(child.wait_with_output()?);
     }
     let elapsed_ms = started.elapsed().as_millis() as u64;
-    let mut results = Vec::with_capacity(group.len());
+    let mut results = Vec::with_capacity(group_indices.len());
     let mut failure: Option<String> = None;
     for (index, (step, input_path)) in inputs.iter().enumerate() {
         let output = &outputs[index];
@@ -8510,16 +8506,33 @@ fn run_pipeline_plan(
                 end += 1;
             }
             let mut fresh_rows = Vec::with_capacity(end - index);
-            for candidate in &steps[index..end] {
+            let mut stale = Vec::new();
+            for (offset, candidate) in steps[index..end].iter().enumerate() {
                 let input_path = pipeline_resolve_input(candidate, &steps, &root)?;
-                fresh_rows.push((
-                    pipeline_fresh_row(candidate, &input_path, &previous, force)?,
-                    input_path,
-                ));
+                if let Some(row) = pipeline_fresh_row(candidate, &input_path, &previous, force)? {
+                    fresh_rows.push((offset, Some(row)));
+                } else {
+                    stale.push(index + offset);
+                    fresh_rows.push((offset, None));
+                }
             }
-            if fresh_rows.iter().all(|(row, _)| row.is_some()) {
-                for (step, (row, _)) in steps[index..end].iter().zip(fresh_rows) {
-                    let row = row.expect("all-fresh checked");
+            let outcomes = if stale.is_empty() {
+                Vec::new()
+            } else {
+                run_branch_group(
+                    &steps,
+                    &stale,
+                    &root,
+                    force,
+                    step_timeout_ms,
+                    retries,
+                    retry_delay_ms,
+                )?
+            };
+            let mut outcomes = outcomes.into_iter();
+            for (offset, (_, fresh_row)) in fresh_rows.into_iter().enumerate() {
+                let step = &steps[index + offset];
+                if let Some(row) = fresh_row {
                     results.push((
                         step.name.clone(),
                         true,
@@ -8527,23 +8540,12 @@ fn run_pipeline_plan(
                         step.output.display().to_string(),
                     ));
                     state_rows.push(row);
+                } else {
+                    let (name, fresh, ms, output, state_row) =
+                        outcomes.next().expect("one outcome per stale step");
+                    results.push((name, fresh, ms, output));
+                    state_rows.push(state_row);
                 }
-                previous_output = Some(steps[end - 1].output.clone());
-                skip = end - index - 1;
-                continue;
-            }
-            let outcomes = run_branch_group(
-                &steps,
-                &steps[index..end],
-                &root,
-                force,
-                step_timeout_ms,
-                retries,
-                retry_delay_ms,
-            )?;
-            for (name, fresh, ms, output, state_row) in outcomes {
-                results.push((name, fresh, ms, output));
-                state_rows.push(state_row);
             }
             previous_output = Some(steps[end - 1].output.clone());
             skip = end - index - 1;
