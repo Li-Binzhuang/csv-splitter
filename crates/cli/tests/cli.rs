@@ -3520,7 +3520,7 @@ fn mcp_job_status_can_wait() {
         .unwrap();
         writeln!(
             stdin,
-            r#"{{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{{"name":"csvx_job_status","arguments":{{"id":"job-1","wait":2}}}}}}"#
+            r#"{{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{{"name":"csvx_job_status","arguments":{{"id":"job-1","wait":2}},"_meta":{{"progressToken":"p-1"}}}}}}"#
         )
         .unwrap();
     }
@@ -3533,6 +3533,8 @@ fn mcp_job_status_can_wait() {
     );
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("done"), "{stdout}");
+    assert!(stdout.contains("notifications/progress"), "{stdout}");
+    assert!(stdout.contains("p-1"), "{stdout}");
 }
 
 /// Job listing exposes every submitted job, including done/cancelled state.

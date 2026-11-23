@@ -149,6 +149,9 @@
   `start`, `nextStart` and `hasMore`; clients can page without guessing counts.
 - **MCP pipeline DAG options**: `csvx_pipeline_run` accepts dag/jobs/clean and forwards
   them to the CLI, so agents can run topological waves and bound concurrency.
+- **MCP progress notifications**: when tools/call carries `_meta.progressToken`,
+  job_status wait emits `notifications/progress` (0 then once per second). Test
+  asserts the notification line and token.
 - **MCP job list summary**: default list entries are `state/outputChars` rather than
   full payloads; `full=true` restores the previous behavior.
 - **MCP job wait**: `csvx_job_status` accepts `wait` (0–30 s) and long-polls the

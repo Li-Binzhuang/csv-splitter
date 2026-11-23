@@ -8153,6 +8153,13 @@ fn mcp_job_text(job_id: &str, job: &mut McpJob) -> String {
 }
 
 /// Serve MCP over stdio. One JSON-RPC object per line, stdout reserved for protocol.
+fn mcp_progress_notification(token: &str, progress: u64, total: u64) -> String {
+    format!(
+        r#"{{"jsonrpc":"2.0","method":"notifications/progress","params":{{"progressToken":{},"progress":{},"total":{}}}}}"#,
+        token, progress, total
+    )
+}
+
 pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
     use std::io::{BufRead, Write};
     let stdin = io::stdin();
@@ -8204,6 +8211,16 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
                     .and_then(|envelope| envelope.get("arguments"))
                     .cloned()
                     .unwrap_or(McpJson::Object(Vec::new()));
+                let progress_token = request
+                    .get("params")
+                    .and_then(|envelope| envelope.get("_meta"))
+                    .and_then(|meta| meta.get("progressToken"))
+                    .map(|value| match value {
+                        McpJson::String(text) => mcp_quote(text),
+                        McpJson::Number(number) => number.to_string(),
+                        _ => String::new(),
+                    })
+                    .unwrap_or_default();
                 if name == "csvx_job_submit" {
                     let tool = arguments
                         .get("tool")
@@ -8237,14 +8254,37 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
                     match jobs.get_mut(job_id) {
                         Some(job) => {
                             let started = std::time::Instant::now();
+                            if !progress_token.is_empty() && wait > 0 {
+                                writeln!(
+                                    stdout,
+                                    "{}",
+                                    mcp_progress_notification(&progress_token, 0, wait)
+                                )?;
+                                stdout.flush()?;
+                            }
+                            let mut last_note = std::time::Instant::now();
                             loop {
                                 let text = mcp_job_text(job_id, job);
-                                let running = text.contains(r#""state":"running""#)
-                                    || text.contains(r#""state":"running""#);
+                                let running = text.contains(r#""state":"running""#);
                                 if !running
                                     || started.elapsed() >= std::time::Duration::from_secs(wait)
                                 {
                                     break mcp_tool_text(id, &text, false);
+                                }
+                                if !progress_token.is_empty()
+                                    && last_note.elapsed() >= std::time::Duration::from_secs(1)
+                                {
+                                    writeln!(
+                                        stdout,
+                                        "{}",
+                                        mcp_progress_notification(
+                                            &progress_token,
+                                            started.elapsed().as_secs().min(wait),
+                                            wait,
+                                        )
+                                    )?;
+                                    stdout.flush()?;
+                                    last_note = std::time::Instant::now();
                                 }
                                 std::thread::sleep(std::time::Duration::from_millis(100));
                             }
