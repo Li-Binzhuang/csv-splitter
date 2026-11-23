@@ -8800,3 +8800,64 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
     }
     Ok(())
 }
+
+#[cfg(all(test, unix))]
+mod mcp_job_retention_tests {
+    use super::*;
+
+    #[test]
+    fn prune_keeps_the_cap_and_deletes_the_oldest_files() {
+        let mut jobs = std::collections::HashMap::new();
+        let prefix = format!("csvx-mcp-prune-{}", std::process::id());
+        for index in 0..=MCP_JOB_HISTORY {
+            let mut child = std::process::Command::new("true")
+                .spawn()
+                .expect("spawn true");
+            child.wait().expect("wait true");
+            let stdout = std::env::temp_dir().join(format!("{prefix}-{index}.out"));
+            let stderr = std::env::temp_dir().join(format!("{prefix}-{index}.err"));
+            std::fs::write(&stdout, b"ok").unwrap();
+            std::fs::write(&stderr, b"").unwrap();
+            jobs.insert(
+                format!("job-{index}"),
+                McpJob {
+                    child,
+                    stdout,
+                    stderr,
+                    result: Some((true, 0, "ok".to_string())),
+                    started: std::time::Instant::now(),
+                },
+            );
+        }
+        assert_eq!(jobs.len(), MCP_JOB_HISTORY + 1);
+        // Called just before an insert, pruning leaves one free slot.
+        prune_mcp_jobs(&mut jobs);
+        assert_eq!(jobs.len(), MCP_JOB_HISTORY - 1);
+        let remaining = std::fs::read_dir(std::env::temp_dir())
+            .unwrap()
+            .filter_map(Result::ok)
+            .filter(|entry| entry.file_name().to_string_lossy().starts_with(&prefix))
+            .count();
+        assert_eq!(remaining, (MCP_JOB_HISTORY - 1) * 2);
+        let mut child = std::process::Command::new("true").spawn().unwrap();
+        child.wait().unwrap();
+        let stdout = std::env::temp_dir().join(format!("{prefix}-new.out"));
+        let stderr = std::env::temp_dir().join(format!("{prefix}-new.err"));
+        std::fs::write(&stdout, b"ok").unwrap();
+        std::fs::write(&stderr, b"").unwrap();
+        jobs.insert(
+            "job-new".to_string(),
+            McpJob {
+                child,
+                stdout,
+                stderr,
+                result: Some((true, 0, "ok".to_string())),
+                started: std::time::Instant::now(),
+            },
+        );
+        assert_eq!(jobs.len(), MCP_JOB_HISTORY);
+        for job in jobs.values() {
+            drop_mcp_job_files(job);
+        }
+    }
+}
