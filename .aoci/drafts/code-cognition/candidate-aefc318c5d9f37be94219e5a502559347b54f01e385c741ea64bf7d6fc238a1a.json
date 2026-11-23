@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a721472d89b012dc1c3608c797184a33e7b540093cfc87e664a534b3626ee4be",
+  "batch_id": "aefc318c5d9f37be94219e5a502559347b54f01e385c741ea64bf7d6fc238a1a",
+  "composite_identity": "2c7fb9e8c9f101ba772e2ab75b6a5e37e16bcf3220f58637b2ca4a9c203deb49",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "3b444217281f8d2976e996a1a347926354efa5e30f1a9a1b0f7ef12faabe75a4",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "9bbb569ddfb9c20194b535974763ca5c33a93d6ae3bad34e54eef98cd31369ec",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage/--dag/--step-timeout/--retries/group 并发与失败清理、mcp 读写+job、view 游标、官方 SDK、压缩输入、100 GB/81 GB 演练、demo、外发、试点报告、打包 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "e758ce953b4ff7be8fae13500ed5325b47db99b23ffff787412333f0338022ee",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；pipeline run/status 支持 size+mtime 跳过、--force、--dry-run、--json、--dag、--jobs、--step-timeout、--retries；DAG 按 lineage 拓扑调度，ready 逐项判 fresh，stale 波次并发；组/DAG 子进程写 stdout/stderr 临时文件并轮询，任一失败 kill 其余并清理本波输出；view --json 返回 start/nextStart/hasMore；mcp --root | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state；更早成功波的输出可能保留；group 是连续同组，dag 才是任意拓扑；mcp stdout 只走 JSON-RPC"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "f684f407fae42b2a2b12a66e594908f6bf185dbb4216e9d31785660c1af57160",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过/--dry-run（JSON+lineage）/--dag 拓扑调度/--step-timeout/--retries/group 并发；波内失败 kill 其余并清理本波输出；mcp 读写+job 与 pipeline_run/job_cancel/job_list（16 工具）、view 游标 nextStart/hasMore、官方 SDK；压缩输入 zst/gz/bz2/xz 顺序读；C 100 GB/81 GB 演练；64 GB 自适应；试点报告；离线发布包 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "324fe8fbf206ec55c52911b107865edfbed363a8faea2938430228eacb05ee8b",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "9bbb569ddfb9c20194b535974763ca5c33a93d6ae3bad34e54eef98cd31369ec",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage/--dag/--step-timeout/--retries/group 并发与失败清理、mcp 读写+job、view 游标、官方 SDK、压缩输入、100 GB/81 GB 演练、demo、外发、试点报告、打包 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "8a92017a7f057a0dfc5f5d974ee36f04e6dfa192f257744b450870c1100baf2c",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "e758ce953b4ff7be8fae13500ed5325b47db99b23ffff787412333f0338022ee",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；pipeline run/status 支持 size+mtime 跳过、--force、--dry-run、--json、--dag、--jobs、--step-timeout、--retries；DAG 按 lineage 拓扑调度，ready 逐项判 fresh，stale 波次并发；组/DAG 子进程写 stdout/stderr 临时文件并轮询，任一失败 kill 其余并清理本波输出；view --json 返回 start/nextStart/hasMore；mcp --root | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state；更早成功波的输出可能保留；group 是连续同组，dag 才是任意拓扑；mcp stdout 只走 JSON-RPC"
+    },
+    {
+      "candidate_id": "dcf5eb895ce19b559cca8d9a6cce8b32fca302fee122a2dbad7a9d3b3bb2f375",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "f684f407fae42b2a2b12a66e594908f6bf185dbb4216e9d31785660c1af57160",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过/--dry-run（JSON+lineage）/--dag 拓扑调度/--step-timeout/--retries/group 并发；波内失败 kill 其余并清理本波输出；mcp 读写+job 与 pipeline_run/job_cancel/job_list（16 工具）、view 游标 nextStart/hasMore、官方 SDK；压缩输入 zst/gz/bz2/xz 顺序读；C 100 GB/81 GB 演练；64 GB 自适应；试点报告；离线发布包 | S:-"
+    }
+  ]
+}
