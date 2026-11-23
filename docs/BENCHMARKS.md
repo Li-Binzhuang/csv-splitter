@@ -77,6 +77,7 @@ csvx index big.csv
 | edit compact | 1000 万 journal | 8.98 s，压后打开/导出 0.02 s |
 | pipeline 全量 | 2.3 GB / 9500 万行，filter→lookup→groupby | 6.55 s（0.65/0.70/0.40 s） |
 | pipeline 增量 | 同上，未变 | 17 ms |
+| pipeline DAG 扇出 | 2.3 GB / 9500 万行：filter → filter + groupby 并发 | 7.60 s；增量 0.02 s；父进程 peak 187 MB（含并发子进程） |
 | quality | 2.03 GB / 5600 万行 | 18.71 s，RSS 17 MB |
 | convert | 2.2 GB → Parquet | 5.36 s；回程 2.15 s，逐字节一致 |
 | MCP 深分页 | 2.3 GB / 9500 万行 | 0.02 s（warm）；cold schema 3.11 s |
