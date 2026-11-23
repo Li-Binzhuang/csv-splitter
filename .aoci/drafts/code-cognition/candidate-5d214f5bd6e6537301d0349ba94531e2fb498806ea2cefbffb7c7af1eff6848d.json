@@ -1,0 +1,93 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "3db91ac13bc1b8b72a5ecad19dec0feaf12aaa6702514ffc023a1ad8feceb301",
+  "batch_id": "5d214f5bd6e6537301d0349ba94531e2fb498806ea2cefbffb7c7af1eff6848d",
+  "composite_identity": "010246864af91a35e7b5f923f75bde415daa23427db8e57bd19926ea15a6dd47",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "8660535298c3136029cc62bf4d4cc8d08fc8f8fe715a35facda7e1228ff4f8d0",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "88e29c0bb335cd956ba1ff76178108932001c9136d1dd42c5cfe1b88ce687b70",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、sumproduct、sumsq/product、median/large/small/percentile/mode、iserror/isna/istext、日期函数、多表 ref、文本函数、事务与整批撤销/重做、filter -o 并行分片（11 GB 无命中 2.61 s、5600 万命中 5.26 s）、预扫冷启动约 25–30 ms、大文件耗时随行数而非字节数 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "4a589d581dd90fe7c0e1fb489a312afb613f782ab52b65a88613defaeff27464",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:运算符为等于/不等于/比较/包含/in/空值，以及公式专用 Wildcard；holds_record 用 visit_fields 单遍检查只读列（64 位 seen/hit 掩码），引号/转义/非 UTF-8 回退全解析；UTF-8 提取按行边界分片，worker 写有序 part 后合并；scan_page 接 next 供 HTTP 续扫 | S:并行与顺序路径行号必须一致；分片仅在 UTF-8 且 ≤64 spec 时启用，切分重叠即回退顺序；超时每 5000 行检查一次；extract 源字节原样输出"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/scan_parallel.rs",
+      "path": "crates/core/src/scan_parallel.rs",
+      "change": "update",
+      "source_sha256": "955c3a7a597d4d53357513f3585854cc6e2675877b1584a899514cb71ec1363a",
+      "existing_entry": "scan_parallel.rs[KP7M]: F:filter 与 search 共用的分段并行、可续扫扫描 | R:code:crates/core/src/index.rs,code:crates/core/src/filter.rs,code:crates/core/src/search.rs | A:ScanOptions 收拢参数；每波按 64 检查点分段、波间检查预算，未跑的波以 next_checkpoint 返回；每波合并时只取剩余额度，所以保留的行号永远不会超过 limit，但 scanned/matched 仍统计全部行 | S:行号必须与顺序扫描一致；行数上限必须在每波兑现而不只是最后截断，否则千万级命中会先囤几百 MB 再丢（本次实测 339→79 MB）；GBK/UTF-16 不支持游标"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/search.rs",
+      "path": "crates/core/src/search.rs",
+      "change": "update",
+      "source_sha256": "e092a501fdf032ec62d7969a3f73c8f019ad5a978ba8aba899a7cbf365ae85ce",
+      "existing_entry": "search.rs[DA7L]: F:跨列搜索：返回命中行号而不是数据本身 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:匹配是字面量：默认大小写不敏感子串（ASCII 走无分配字节比较，非 ASCII 才 to_lowercase）；search_fast 分段并行，search_page 可带游标续扫；regex 字段走条件格式模式子集 | S:正则依赖故意不引入；并行与顺序路径的 rows/columns 必须一致；非 ASCII 大小写走分配回退，café/CAFÉ 测试钉住"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "3f231c569ee3ae9f903ada123a200574b8eb9d52796db6fbd255e31bfa89b386",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件聚合、行内多条件、iserror/isna/istext、stdev/var、median/large/small/percentile/mode/sumsq/product 同行区间、sumproduct、跨表 ref/vlookup/xlookup、文本/日期函数、条件通配符；大文件节含阶段 1 profile 与冻结验收，并记录三轮优化后 11 GB filter -o 无命中 2.61 s、5600 万命中 5.26 s（目标 ≤8 s 达成）；search/无输出 filter 仍待优化（17.09/15.88 s） | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "47d68a0b93524e122dc74f134b12b09b886352172495c102c6f35111301ace46",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "88e29c0bb335cd956ba1ff76178108932001c9136d1dd42c5cfe1b88ce687b70",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、sumproduct、sumsq/product、median/large/small/percentile/mode、iserror/isna/istext、日期函数、多表 ref、文本函数、事务与整批撤销/重做、filter -o 并行分片（11 GB 无命中 2.61 s、5600 万命中 5.26 s）、预扫冷启动约 25–30 ms、大文件耗时随行数而非字节数 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "98c1346fdd735948d11fef4974e8ed601c8f7aa6546631a6b72a359a23b18de8",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "4a589d581dd90fe7c0e1fb489a312afb613f782ab52b65a88613defaeff27464",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:运算符为等于/不等于/比较/包含/in/空值，以及公式专用 Wildcard；holds_record 用 visit_fields 单遍检查只读列（64 位 seen/hit 掩码），引号/转义/非 UTF-8 回退全解析；UTF-8 提取按行边界分片，worker 写有序 part 后合并；scan_page 接 next 供 HTTP 续扫 | S:并行与顺序路径行号必须一致；分片仅在 UTF-8 且 ≤64 spec 时启用，切分重叠即回退顺序；超时每 5000 行检查一次；extract 源字节原样输出"
+    },
+    {
+      "candidate_id": "a56ede588ee641bb59a91d526f4f0d06b13988d19a0eb692c46dbe38956459d0",
+      "object_ref": "code:crates/core/src/scan_parallel.rs",
+      "path": "crates/core/src/scan_parallel.rs",
+      "change": "update",
+      "source_sha256": "955c3a7a597d4d53357513f3585854cc6e2675877b1584a899514cb71ec1363a",
+      "existing_entry": "scan_parallel.rs[KP7M]: F:filter 与 search 共用的分段并行、可续扫扫描 | R:code:crates/core/src/index.rs,code:crates/core/src/filter.rs,code:crates/core/src/search.rs | A:ScanOptions 收拢参数；每波按 64 检查点分段、波间检查预算，未跑的波以 next_checkpoint 返回；每波合并时只取剩余额度，所以保留的行号永远不会超过 limit，但 scanned/matched 仍统计全部行 | S:行号必须与顺序扫描一致；行数上限必须在每波兑现而不只是最后截断，否则千万级命中会先囤几百 MB 再丢（本次实测 339→79 MB）；GBK/UTF-16 不支持游标"
+    },
+    {
+      "candidate_id": "5e9119234d5d384b83ef96baf7e93c28a233b310e9c716da780d69caf853ccd1",
+      "object_ref": "code:crates/core/src/search.rs",
+      "path": "crates/core/src/search.rs",
+      "change": "update",
+      "source_sha256": "e092a501fdf032ec62d7969a3f73c8f019ad5a978ba8aba899a7cbf365ae85ce",
+      "existing_entry": "search.rs[DA7L]: F:跨列搜索：返回命中行号而不是数据本身 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:匹配是字面量：默认大小写不敏感子串（ASCII 走无分配字节比较，非 ASCII 才 to_lowercase）；search_fast 分段并行，search_page 可带游标续扫；regex 字段走条件格式模式子集 | S:正则依赖故意不引入；并行与顺序路径的 rows/columns 必须一致；非 ASCII 大小写走分配回退，café/CAFÉ 测试钉住"
+    },
+    {
+      "candidate_id": "34517dba4d0bcda89118182dbdc968f70387912644283ba76fa9c28183f7c827",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "3f231c569ee3ae9f903ada123a200574b8eb9d52796db6fbd255e31bfa89b386",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件聚合、行内多条件、iserror/isna/istext、stdev/var、median/large/small/percentile/mode/sumsq/product 同行区间、sumproduct、跨表 ref/vlookup/xlookup、文本/日期函数、条件通配符；大文件节含阶段 1 profile 与冻结验收，并记录三轮优化后 11 GB filter -o 无命中 2.61 s、5600 万命中 5.26 s（目标 ≤8 s 达成）；search/无输出 filter 仍待优化（17.09/15.88 s） | S:-"
+    }
+  ]
+}
