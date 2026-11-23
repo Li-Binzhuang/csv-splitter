@@ -54,6 +54,18 @@ csvx index big.csv
 104.5 GB 合成文件为准。
 
 | 2.3 GB .csv.zst（51 MB） | filter 4.16 s/15 MB；search 12.13 s/11 MB；quality 21.73 s/20 MB | 输出与 plain `cmp` 一致；顺序读 |
+### release 冒烟（2026-11-23，4.2.0，2.3 GB / 9500 万行）
+
+| 操作 | 墙钟 | 进程 peak RSS |
+|---|---:|---:|
+| filter city=CDMX（扫描） | 2.78 s | 88 MB |
+| filter -o（1900 万行 / 411 MB） | 0.71 s | 60 MB |
+| search CDMX | 1.57 s | 86 MB |
+| analyze --quality | 20.79 s | 18.3 MB |
+
+单次 release 二进制运行，未清 page cache；同一文件此前 pilot 报告出现 0.69/0.43 s
+等更快数字，属于缓存与运行方差，不构成 SLA。
+
 ## 2. 其他已验证数字（摘要）
 
 | 场景 | 文件/规模 | 结果 |
