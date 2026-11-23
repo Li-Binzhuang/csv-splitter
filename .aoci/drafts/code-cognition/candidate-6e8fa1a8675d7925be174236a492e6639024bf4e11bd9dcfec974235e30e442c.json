@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "8a07b959e28cadd205cca2acd987d6479ae4fd738fb7247592dc72d3a7e68fbd",
+  "batch_id": "6e8fa1a8675d7925be174236a492e6639024bf4e11bd9dcfec974235e30e442c",
+  "composite_identity": "908bb17de611902ca1cc09801b10b38f0eb71ce32084ae164a572c4190c0782a",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "a10225cd8160565c0e7dd9122f2e4b3592782673af97d0c465cf7cade7b36d9b",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "7bd0692d89922039783978782834b36b62b6f83d98faa7a005000f04c7eacdd4",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、行内多条件聚合、median/large/small/percentile/mode 区间、iserror/isna/istext、文本函数、日期运算、原子 transaction 与整批撤销/重做、vlookup 别名修复、xlookup fallback、预扫冷启动约 25–30 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "c0876d4fa69e976d1385bbefce02eb33ac59f196ed340792ec9795d1bf4bd9e7",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、行内多条件、iserror/isna/istext、stdev/var/stdevp/varp、median/large/small/percentile/mode 同行区间、多段 sumproduct、跨表 ref/vlookup/xlookup（fallback 可是字面量或列引用）、文本函数、日期运算、条件通配符；编辑表含原子批量写、一次撤销/重做整批；透视表列出五种聚合与多值列 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "bad3256b021b05282db44fec44a278e95d9dc081f44c99840d94a4697681ff63",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头给周一两命令演示、最终二进制实测范围（2.1 GB 过滤 2.3 s、导出 1.7–1.8 s、verify 5.8–6.2 s；11.2 GB 过滤 13.2–13.9 s、搜索 13.8–14.6 s）与演示后清理；写明已改名 csvx、版本 4.2.0；虚拟列含 ref/vlookup/xlookup；AOCI 与 CodeGraph 分工 | S:.aoci 运行时产物与 .codegraph 不入库，而 aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围，不要写单次幸运值"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "b95e2283546dc9b59f2d1fe3e8774673e09004de1e8102d7254f693b696e6583",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "7bd0692d89922039783978782834b36b62b6f83d98faa7a005000f04c7eacdd4",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、行内多条件聚合、median/large/small/percentile/mode 区间、iserror/isna/istext、文本函数、日期运算、原子 transaction 与整批撤销/重做、vlookup 别名修复、xlookup fallback、预扫冷启动约 25–30 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "9a1e81c173d6597550ff8dd8088f10d66695da307c1fa3953a81e41e764f0005",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "c0876d4fa69e976d1385bbefce02eb33ac59f196ed340792ec9795d1bf4bd9e7",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、行内多条件、iserror/isna/istext、stdev/var/stdevp/varp、median/large/small/percentile/mode 同行区间、多段 sumproduct、跨表 ref/vlookup/xlookup（fallback 可是字面量或列引用）、文本函数、日期运算、条件通配符；编辑表含原子批量写、一次撤销/重做整批；透视表列出五种聚合与多值列 | S:-"
+    },
+    {
+      "candidate_id": "46aaa027d89e87682dc249e6fc124b2070b2dbd8278fc8a97f3cf84a80732fbb",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "bad3256b021b05282db44fec44a278e95d9dc081f44c99840d94a4697681ff63",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头给周一两命令演示、最终二进制实测范围（2.1 GB 过滤 2.3 s、导出 1.7–1.8 s、verify 5.8–6.2 s；11.2 GB 过滤 13.2–13.9 s、搜索 13.8–14.6 s）与演示后清理；写明已改名 csvx、版本 4.2.0；虚拟列含 ref/vlookup/xlookup；AOCI 与 CodeGraph 分工 | S:.aoci 运行时产物与 .codegraph 不入库，而 aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围，不要写单次幸运值"
+    }
+  ]
+}
