@@ -142,6 +142,8 @@
 - **`mcp`**: stdio JSON-RPC MCP server with read-only tools
   (`csvx_schema/view/filter/search/quality/pipeline_status`), root-confined paths,
   UTF-8 arguments; initialize/tools/list/tools/call covered by a CLI test.
+- **MCP job list**: `csvx_job_list` returns every job's state; running jobs also
+  report `elapsedMs`. 16 tools; the schema unit test guards tools/list JSON.
 - **MCP job cancel**: `csvx_job_cancel` kills a running child and returns
   `{"state":"cancelled"}`; finished jobs return done/failed. Reader threads and
   cached results are cleaned up.
