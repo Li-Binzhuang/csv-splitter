@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-23T07:12:54Z",
+  "updated_at": "2026-11-23T07:19:15Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -46,9 +46,9 @@
     },
     "CHANGELOG.md": {
       "role": "index",
-      "sha256": "4c7876f2f3f682fc19b18566c1c6f7b4050889d239f00db701a5d94cdc874575",
-      "size": 225909,
-      "normalized_sha256": "4c7876f2f3f682fc19b18566c1c6f7b4050889d239f00db701a5d94cdc874575"
+      "sha256": "4ec30ad8ba2a37a8a2516df1466f628bcb71fec6e06865ce04ce4fd7741aa58a",
+      "size": 226022,
+      "normalized_sha256": "4ec30ad8ba2a37a8a2516df1466f628bcb71fec6e06865ce04ce4fd7741aa58a"
     },
     "Cargo.lock": {
       "role": "observe",
@@ -76,9 +76,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "f9c93143e93d426555ed681ccb9637a0decdb7548692f1101ce2fb33a2293dbd",
-      "size": 40105,
-      "normalized_sha256": "f9c93143e93d426555ed681ccb9637a0decdb7548692f1101ce2fb33a2293dbd"
+      "sha256": "5c6ce63317b629f8d900a6e93951e16222be018ace882825f4444535085b9145",
+      "size": 40118,
+      "normalized_sha256": "5c6ce63317b629f8d900a6e93951e16222be018ace882825f4444535085b9145"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -544,9 +544,9 @@
     },
     "docs/CAPABILITIES.md": {
       "role": "index",
-      "sha256": "0e4886a281c36e0821d84e35c9ecb88a00f3efa6cf1ef7bfc75de607ffc4f07c",
-      "size": 52654,
-      "normalized_sha256": "0e4886a281c36e0821d84e35c9ecb88a00f3efa6cf1ef7bfc75de607ffc4f07c"
+      "sha256": "925a41a09e1c84c722aed9942e44ed1c78f078ed5935546690eccf4ec9843d1e",
+      "size": 52766,
+      "normalized_sha256": "925a41a09e1c84c722aed9942e44ed1c78f078ed5935546690eccf4ec9843d1e"
     },
     "docs/CI.md": {
       "role": "index",
@@ -568,9 +568,9 @@
     },
     "docs/HANDOVER.md": {
       "role": "index",
-      "sha256": "9c7ed1a5e98ea301e86b9fff26547e36a881fa90edf11f1aa16291c6a56d7a4a",
-      "size": 17828,
-      "normalized_sha256": "9c7ed1a5e98ea301e86b9fff26547e36a881fa90edf11f1aa16291c6a56d7a4a"
+      "sha256": "40659a7ec8a2aef3fd95b0a5005a19a887d05bd09e83b7bea290a25628d9f0d7",
+      "size": 18459,
+      "normalized_sha256": "40659a7ec8a2aef3fd95b0a5005a19a887d05bd09e83b7bea290a25628d9f0d7"
     },
     "docs/INTEGRATION.md": {
       "role": "index",

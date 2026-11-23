@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "c406a605e17b9b013264a52b5f048c6c9ad469c264e95fb4698dc7488fdaae6e",
+  "batch_id": "b938078a7c33359655605e3877c7a2047e0b4656945001c42d6fcb3127b404c2",
+  "composite_identity": "63144d4f2ceff4d4c6dfb38c9a10e0731d2f09254831f14d5454b67eadfb3fae",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "f9c93143e93d426555ed681ccb9637a0decdb7548692f1101ce2fb33a2293dbd",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "4ec30ad8ba2a37a8a2516df1466f628bcb71fec6e06865ce04ce4fd7741aa58a",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合、filter -o 并行、字节谓词、31 GB 边界、edit compact（含 ENOSPC/崩溃/锁）、book --plan 声明式清单（sheet/lookup/output，链式查找、幂等重跑、未知名硬错误、不做 Sheet!A1）、预扫 25–30 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "925a41a09e1c84c722aed9942e44ed1c78f078ed5935546690eccf4ec9843d1e",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表、大文件边界；阶段 1 闭环；日志压实 edit compact（10M history 8.98 s、之后 0.02 s、ENOSPC 不改文件、并发等锁）；新增声明式 book 清单 book --plan（sheet/lookup/output、链式查找、幂等重跑、未知名硬错误、不做 Sheet!A1） | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "40659a7ec8a2aef3fd95b0a5005a19a887d05bd09e83b7bea290a25628d9f0d7",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示与实测范围；csvx 4.2.0；阶段 1 已闭环；阶段 2 已完成：10M history 压实 8.98 s/8 MB 后 0.02/0.03 s、2.2 GB drill 1.77 s、前后导出逐字节一致、跨界 undo 0.03 s、四窗口崩溃恢复、真实 ENOSPC 不改文件、并发写等锁、.idx/.view sidecar 处理；仍待 HTTP 压实端到端压测 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围，容量先看行数"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4da8fc2d8c03c76a13c71044af9b762c98d35ae7ef259c4a9f50beed0894306b",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "4ec30ad8ba2a37a8a2516df1466f628bcb71fec6e06865ce04ce4fd7741aa58a",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合、filter -o 并行、字节谓词、31 GB 边界、edit compact（含 ENOSPC/崩溃/锁）、book --plan 声明式清单（sheet/lookup/output，链式查找、幂等重跑、未知名硬错误、不做 Sheet!A1）、预扫 25–30 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "2c04e4951140a3deff195e350de351ac0fa44a912d3529e91600b19774f7e9ba",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "925a41a09e1c84c722aed9942e44ed1c78f078ed5935546690eccf4ec9843d1e",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表、大文件边界；阶段 1 闭环；日志压实 edit compact（10M history 8.98 s、之后 0.02 s、ENOSPC 不改文件、并发等锁）；新增声明式 book 清单 book --plan（sheet/lookup/output、链式查找、幂等重跑、未知名硬错误、不做 Sheet!A1） | S:-"
+    },
+    {
+      "candidate_id": "7e09ec3402095d7c4a15486422d2f525a1fceece0d2d8ee5a8098f84e679c8c8",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "40659a7ec8a2aef3fd95b0a5005a19a887d05bd09e83b7bea290a25628d9f0d7",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示与实测范围；csvx 4.2.0；阶段 1 已闭环；阶段 2 已完成：10M history 压实 8.98 s/8 MB 后 0.02/0.03 s、2.2 GB drill 1.77 s、前后导出逐字节一致、跨界 undo 0.03 s、四窗口崩溃恢复、真实 ENOSPC 不改文件、并发写等锁、.idx/.view sidecar 处理；仍待 HTTP 压实端到端压测 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围，容量先看行数"
+    }
+  ]
+}
