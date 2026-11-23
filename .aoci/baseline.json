@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-23T15:47:25Z",
+  "updated_at": "2026-11-23T15:49:58Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "61a254e130f7fd18a8a51befe356e365f1b89ef97bbb03329aed5cdf34fa40cb",
-      "size": 52343,
-      "normalized_sha256": "61a254e130f7fd18a8a51befe356e365f1b89ef97bbb03329aed5cdf34fa40cb"
+      "sha256": "824d983108f21afc2538f30bd94bb13602f2c3999d911954544c0aca3581707b",
+      "size": 52381,
+      "normalized_sha256": "824d983108f21afc2538f30bd94bb13602f2c3999d911954544c0aca3581707b"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -544,9 +544,9 @@
     },
     "docs/BENCHMARKS.md": {
       "role": "index",
-      "sha256": "2901e60c8b59ee4c4dff92534ee459ae9c05ce080df27cdf8897556855eb557c",
-      "size": 6906,
-      "normalized_sha256": "2901e60c8b59ee4c4dff92534ee459ae9c05ce080df27cdf8897556855eb557c"
+      "sha256": "ba79fafd22f3f32bc4e67e849508026ba835a7a7670df095fdaf9306f33bfacc",
+      "size": 7250,
+      "normalized_sha256": "ba79fafd22f3f32bc4e67e849508026ba835a7a7670df095fdaf9306f33bfacc"
     },
     "docs/BEYOND_EXCEL.md": {
       "role": "index",
@@ -640,9 +640,9 @@
     },
     "docs/ROADMAP.md": {
       "role": "index",
-      "sha256": "cd917d813dc8b861dea5fc4931ffa4f437b1ae9ed4bdd05df0344321db32756a",
-      "size": 3595,
-      "normalized_sha256": "cd917d813dc8b861dea5fc4931ffa4f437b1ae9ed4bdd05df0344321db32756a"
+      "sha256": "5e9ba49090f5ff96105a55c2656624ff1a7bfb41ef9f4921c89327e33d820167",
+      "size": 3638,
+      "normalized_sha256": "5e9ba49090f5ff96105a55c2656624ff1a7bfb41ef9f4921c89327e33d820167"
     },
     "docs/SALES.md": {
       "role": "index",

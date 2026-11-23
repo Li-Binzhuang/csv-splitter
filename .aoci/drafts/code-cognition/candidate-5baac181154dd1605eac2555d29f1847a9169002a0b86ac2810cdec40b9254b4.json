@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "006bb90c0c79d158c967366bcdcaed890bb054f413013dbd1680e37b7c67c47f",
+  "batch_id": "5baac181154dd1605eac2555d29f1847a9169002a0b86ac2810cdec40b9254b4",
+  "composite_identity": "e786d9047d8af33fd503d386cfe1efc02fc4147a38398d9df12cc46e1253f650",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "61a254e130f7fd18a8a51befe356e365f1b89ef97bbb03329aed5cdf34fa40cb",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "ba79fafd22f3f32bc4e67e849508026ba835a7a7670df095fdaf9306f33bfacc",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md,code:docs/PILOT_SAMPLE.md | A:100 GB search 20 s/filter 25.75 s/全量导出 79.62 s；81 GB 7 列 search 39.42/filter 46.70/导出 62.03；2.3 GB zst filter 4.16 s、search 12.13 s、quality 21.73 s；zst materialize search 11.87→3.51/89 MB、filter 6.94→3.62/4.06→2.60；release 冒烟 2.3 GB filter 2.78/88 MB、导出 0.71/60 MB、search 1.57/86 MB、quality 20.79/18.3 MB；DAG 扇出 7.60 s、增量 0.02 s、父 peak 187 MB（含子进程） | S:未 drop cache；100/81 GB 为重复块；同文件 pilot 0.69/0.43 s 属缓存方差；压缩读 CPU 受限；materialize 需磁盘；DAG 父 RSS 含并发子进程；MCP 缓存 2 GB+ gzip 4.545→1.590 s/82 MB（120M 行）、zst 0.279→0.101、bz2 0.693→0.100；复现用 bench_mcp_cache.py"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "5e9ba49090f5ff96105a55c2656624ff1a7bfb41ef9f4921c89327e33d820167",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-23 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 16 工具与 SDK progress/status/gzip；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程、job 历史上限、缓存命中监控为后续；Ubuntu/Windows CI 已有，macOS gate 手动/push 均绿；含 Round 100 checkpoint | S:未测数字不写；价格/SLA 需用户确认；随离线包分发；MCP 缓存 gzip/zst/bz2 已验证"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ce59af800bc5edd5ed90ff36bc9791490ad9d2e2a9bc84bbb76154283c0b8e0c",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "ba79fafd22f3f32bc4e67e849508026ba835a7a7670df095fdaf9306f33bfacc",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md,code:docs/PILOT_SAMPLE.md | A:100 GB search 20 s/filter 25.75 s/全量导出 79.62 s；81 GB 7 列 search 39.42/filter 46.70/导出 62.03；2.3 GB zst filter 4.16 s、search 12.13 s、quality 21.73 s；zst materialize search 11.87→3.51/89 MB、filter 6.94→3.62/4.06→2.60；release 冒烟 2.3 GB filter 2.78/88 MB、导出 0.71/60 MB、search 1.57/86 MB、quality 20.79/18.3 MB；DAG 扇出 7.60 s、增量 0.02 s、父 peak 187 MB（含子进程） | S:未 drop cache；100/81 GB 为重复块；同文件 pilot 0.69/0.43 s 属缓存方差；压缩读 CPU 受限；materialize 需磁盘；DAG 父 RSS 含并发子进程；MCP 缓存 2 GB+ gzip 4.545→1.590 s/82 MB（120M 行）、zst 0.279→0.101、bz2 0.693→0.100；复现用 bench_mcp_cache.py"
+    },
+    {
+      "candidate_id": "b12da014cde21bf1f2ddd07634ab257abe809868afcd643458410cd3d4be519e",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "5e9ba49090f5ff96105a55c2656624ff1a7bfb41ef9f4921c89327e33d820167",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-23 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 16 工具与 SDK progress/status/gzip；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程、job 历史上限、缓存命中监控为后续；Ubuntu/Windows CI 已有，macOS gate 手动/push 均绿；含 Round 100 checkpoint | S:未测数字不写；价格/SLA 需用户确认；随离线包分发；MCP 缓存 gzip/zst/bz2 已验证"
+    }
+  ]
+}
