@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "791ba195b5055a955c0c491d487fb5e76dbcd5ccaaf037bbbf07b8b53609004d",
+  "batch_id": "1269d84e9e11f52a8e1cc2b2351be4efe33dd6a35509166f1d4142628f6c12ac",
+  "composite_identity": "0bbc144f815d41d9341e3a34a4d3b4590b57e6a8b96cac5d56b747982d0ae2ae",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "a7207686987aa845987f8a583ad05f539337ff8cf9a74c88c552ad2cb0a98e21",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "bf4105d780af97866a2b58454ad117527da62ca01761b48c5a1676dfa652cbf1",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/锁规则/重复输出拒绝/源覆盖拒绝/路径检查/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码、步骤 progress/CSVX_STEP i/n、压缩 search 与 search/filter --materialize 残留清理（search 3.51 s、filter 3.62/2.60 s） | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "2432958b13dfe1e1e2d3cf0a9f75a893b5fc28444a1e08c116496ae85aecb173",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十命令；pipeline run/status 快跳过、--force、--dry-run、--json、--dag、--jobs、--step-timeout、--retries、--clean、--unlock、--verify、--fail-on-stale；status verify 按 stamp/hash 判 fresh/stale；run 前取 \u003cplan\u003e.pipeline.lock（死 PID 即清，活主不按年龄清，Drop 释放，--unlock 强制清）；成功运行写 \u003cplan\u003e.lineage.csv；DAG 按 lineage 拓扑调度，波前备份旧输出，后续失败恢复、启动自动恢复崩溃 backup；组/DAG 子进程写 staging，整波成功才 rename；view --json 返回 start/nextStart；mcp --root | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state/lineage；重复输出与输出=源文件在解析期按 canonical/词法路径拒绝；并发 run 被锁拒绝；--unlock 需确认无活跃 run；search/filter --materialize 解压临时文件并清死 PID 残留；--progress-markers 输出带 i/n 的 CSVX_STEP 稳定行；group 是连续同组，dag 才是任意拓扑"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "188f42eb4a8956a2ab34e31e05d4b35af1a69c364e978dbf47bf011c6e61e48c",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "bf4105d780af97866a2b58454ad117527da62ca01761b48c5a1676dfa652cbf1",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/锁规则/重复输出拒绝/源覆盖拒绝/路径检查/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码、步骤 progress/CSVX_STEP i/n、压缩 search 与 search/filter --materialize 残留清理（search 3.51 s、filter 3.62/2.60 s） | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "d2d0cd12d4ddce5a07697ae9f6b7a8ef564a8d9968aa2d692848beea0961c34f",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "2432958b13dfe1e1e2d3cf0a9f75a893b5fc28444a1e08c116496ae85aecb173",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十命令；pipeline run/status 快跳过、--force、--dry-run、--json、--dag、--jobs、--step-timeout、--retries、--clean、--unlock、--verify、--fail-on-stale；status verify 按 stamp/hash 判 fresh/stale；run 前取 \u003cplan\u003e.pipeline.lock（死 PID 即清，活主不按年龄清，Drop 释放，--unlock 强制清）；成功运行写 \u003cplan\u003e.lineage.csv；DAG 按 lineage 拓扑调度，波前备份旧输出，后续失败恢复、启动自动恢复崩溃 backup；组/DAG 子进程写 staging，整波成功才 rename；view --json 返回 start/nextStart；mcp --root | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state/lineage；重复输出与输出=源文件在解析期按 canonical/词法路径拒绝；并发 run 被锁拒绝；--unlock 需确认无活跃 run；search/filter --materialize 解压临时文件并清死 PID 残留；--progress-markers 输出带 i/n 的 CSVX_STEP 稳定行；group 是连续同组，dag 才是任意拓扑"
+    }
+  ]
+}
