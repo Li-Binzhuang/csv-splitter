@@ -119,6 +119,11 @@
 - **`workday(start, days)`**: moves a date by business days, skipping weekends and
   accepting negative days (no holiday list in the two-argument form); zero keeps the
   date.
+- **`edit compact`**: folds the current journal into a snapshot while keeping the
+  original base as `.base` and the old journal as `.journal.history`, so undo can
+  cross the boundary (it restores both, then undoes the tail) and redo still works.
+  Crash markers repair an interrupted swap; a redo branch blocks compaction/undo.
+  1M rows + 1M ops: view 1.13 s/export 0.91 s -> 0.02 s/0.02 s after a 1.04 s compact.
 - **Byte predicates for parallel scans**: search and no-output filter now check
   records via `visit_fields` instead of allocating `String` fields; search also
   rejects a record whose raw bytes cannot contain the query before splitting it.

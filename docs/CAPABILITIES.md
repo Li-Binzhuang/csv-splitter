@@ -94,6 +94,7 @@
 | 公式列（**重算已有列**） | `edit set-formula --col C --value "EXPR"` | `POST /edit?action=set-formula&col=&value=`（自引用/未知列写入前拒绝）|
 | 原子批量写（失败全不写；一次撤销/重做整批） | `edit transaction --ops 'set:1:city:X;delete:2:1;insert:4:a,b'` | `POST /edit?action=transaction&ops=` |
 | 撤销 | `edit undo` | `POST /edit?action=undo` |
+| 日志压实 | `edit compact`（保留 `.base`/history，跨越边界仍可 undo/redo） | 暂无 HTTP 动作 |
 | 查看待生效 | `edit status` | `GET /edit` |
 | 物化 | `edit export -o out.csv` | `POST /edit?action=export` |
 

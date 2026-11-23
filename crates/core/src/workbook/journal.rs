@@ -690,6 +690,172 @@ fn take_marker(path: &Path, current_len: usize) -> io::Result<Option<usize>> {
     }
 }
 
+/// Summary of one explicit journal compaction.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CompactSummary {
+    pub operations: usize,
+    pub bytes: u64,
+    pub base_archive: PathBuf,
+}
+
+fn archive_path(base: &Path) -> PathBuf {
+    PathBuf::from(format!("{}.base", base.display()))
+}
+fn history_path(sidecar: &Path) -> PathBuf {
+    PathBuf::from(format!("{}.history", sidecar.display()))
+}
+fn history_blocks_path(sidecar: &Path) -> PathBuf {
+    PathBuf::from(format!("{}.blocks.history", sidecar.display()))
+}
+fn prepared_marker(base: &Path) -> PathBuf {
+    PathBuf::from(format!("{}.compact.prepared", base.display()))
+}
+fn installed_marker(base: &Path) -> PathBuf {
+    PathBuf::from(format!("{}.compact.installed", base.display()))
+}
+fn snapshot_tmp(base: &Path) -> PathBuf {
+    PathBuf::from(format!("{}.compact.tmp", base.display()))
+}
+
+/// Fold the current journal into a snapshot at `base`, keeping the original bytes in
+/// `base.base` and the old journal in `base.journal.history` so undo can cross the
+/// boundary. One level only; refuses when a compaction or redo branch is already there.
+pub fn compact(
+    base: &Path,
+    delimiter: Delimiter,
+    tx: &ProgressSender,
+) -> io::Result<CompactSummary> {
+    let sidecar = Journal::sidecar(base);
+    let journal = Journal::load(&sidecar)?;
+    if journal.redo_len() > 0 {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "cannot compact while a redo branch exists; clear it first",
+        ));
+    }
+    if journal.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "the journal is already empty",
+        ));
+    }
+    let archive = archive_path(base);
+    let history = history_path(&sidecar);
+    if archive.exists() || history.exists() {
+        return Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            "this file already has a compacted snapshot",
+        ));
+    }
+    let tmp = snapshot_tmp(base);
+    let _ = std::fs::remove_file(&tmp);
+    let summary = super::export(base, &journal.ops, &tmp, delimiter, tx)?;
+    std::fs::copy(base, &archive)?;
+    std::fs::copy(&sidecar, &history)?;
+    let blocks = Journal::blocks_sidecar(base);
+    let blocks_history = history_blocks_path(&sidecar);
+    if blocks.exists() {
+        std::fs::copy(&blocks, &blocks_history)?;
+    }
+    std::fs::write(prepared_marker(base), b"prepared\n")?;
+    std::fs::rename(&tmp, base)?;
+    std::fs::write(installed_marker(base), b"installed\n")?;
+    Journal::new().save(&sidecar)?;
+    if blocks.exists() {
+        std::fs::remove_file(&blocks)?;
+    }
+    let _ = std::fs::remove_file(prepared_marker(base));
+    let _ = std::fs::remove_file(installed_marker(base));
+    Ok(CompactSummary {
+        operations: journal.len(),
+        bytes: summary.bytes,
+        base_archive: archive,
+    })
+}
+
+/// Finish or roll back a compaction interrupted between its file renames. Called
+/// before a journal is loaded, so a crash cannot apply the old journal to a snapshot.
+pub fn recover_compaction(base: &Path) -> io::Result<()> {
+    let sidecar = Journal::sidecar(base);
+    let prepared = prepared_marker(base);
+    let installed = installed_marker(base);
+    let tmp = snapshot_tmp(base);
+    if installed.exists() {
+        // The snapshot is in place; the old journal must not replay on top of it.
+        Journal::new().save(&sidecar)?;
+        let blocks = Journal::blocks_sidecar(base);
+        let _ = std::fs::remove_file(blocks);
+        let _ = std::fs::remove_file(&prepared);
+        let _ = std::fs::remove_file(&installed);
+        return Ok(());
+    }
+    if prepared.exists() {
+        if tmp.exists() {
+            // The snapshot was never installed: drop the copies, keep the sheet.
+            let _ = std::fs::remove_file(&tmp);
+            let _ = std::fs::remove_file(archive_path(base));
+            let _ = std::fs::remove_file(history_path(&sidecar));
+            let _ = std::fs::remove_file(history_blocks_path(&sidecar));
+            let _ = std::fs::remove_file(&prepared);
+        } else {
+            // Renamed but the installed marker never landed: finish the compaction.
+            Journal::new().save(&sidecar)?;
+            let blocks = Journal::blocks_sidecar(base);
+            let _ = std::fs::remove_file(blocks);
+            let _ = std::fs::remove_file(&prepared);
+        }
+        return Ok(());
+    }
+    // No marker at all: copies left by a crash before the marker are stale while the
+    // journal still has operations. An empty journal means a finished compaction.
+    let archive = archive_path(base);
+    let history = history_path(&sidecar);
+    if archive.exists() && history.exists() {
+        let journal = Journal::load(&sidecar)?;
+        if !journal.is_empty() {
+            let _ = std::fs::remove_file(&archive);
+            let _ = std::fs::remove_file(&history);
+            let _ = std::fs::remove_file(history_blocks_path(&sidecar));
+        }
+    }
+    Ok(())
+}
+
+/// Put the pre-compaction base and journal back so undo can cross the boundary.
+/// Returns false when there is nothing to restore, and refuses while a redo branch
+/// exists (that branch belongs to the compacted state).
+pub fn restore_compacted(base: &Path) -> io::Result<bool> {
+    let sidecar = Journal::sidecar(base);
+    let archive = archive_path(base);
+    let history = history_path(&sidecar);
+    if !archive.exists() || !history.exists() {
+        return Ok(false);
+    }
+    let journal = Journal::load(&sidecar)?;
+    if !journal.is_empty() {
+        return Ok(false);
+    }
+    if journal.redo_len() > 0 {
+        return Err(io::Error::new(
+            io::ErrorKind::WouldBlock,
+            "cannot undo past a compacted snapshot while a redo branch exists",
+        ));
+    }
+    std::fs::remove_file(base)?;
+    std::fs::rename(&archive, base)?;
+    std::fs::rename(&history, &sidecar)?;
+    let blocks = Journal::blocks_sidecar(base);
+    let blocks_history = history_blocks_path(&sidecar);
+    if blocks_history.exists() {
+        let _ = std::fs::remove_file(&blocks);
+        std::fs::rename(&blocks_history, &blocks)?;
+    }
+    let _ = std::fs::remove_file(prepared_marker(base));
+    let _ = std::fs::remove_file(installed_marker(base));
+    let _ = std::fs::remove_file(snapshot_tmp(base));
+    Ok(true)
+}
+
 #[cfg(test)]
 mod damaged_tests {
     use super::Journal;
@@ -862,5 +1028,105 @@ mod damaged_tests {
             assert!(found, "edit {worker} is missing: {journal:?}");
         }
         std::fs::remove_dir_all(&dir).ok();
+    }
+}
+
+#[cfg(test)]
+mod compact_tests {
+    use super::*;
+
+    fn dir(tag: &str) -> PathBuf {
+        let d = std::env::temp_dir().join(format!(
+            "csvs_compact_{tag}_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    fn edited_journal() -> Journal {
+        Journal {
+            ops: vec![
+                Op::SetCell {
+                    row: 0,
+                    column: "city".into(),
+                    value: "Tijuana".into(),
+                },
+                Op::SetCell {
+                    row: 1,
+                    column: "amount".into(),
+                    value: "99".into(),
+                },
+            ],
+            redo: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn compact_then_restore_preserves_the_snapshot_and_history() {
+        let d = dir("round");
+        let base = d.join("b.csv");
+        std::fs::write(&base, "id,city,amount\n1,CDMX,10\n2,Puebla,20\n").unwrap();
+        let sidecar = Journal::sidecar(&base);
+        edited_journal().save(&sidecar).unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let summary = compact(&base, Delimiter::Comma, &tx).unwrap();
+        assert_eq!(summary.operations, 2);
+        let snapshot = std::fs::read_to_string(&base).unwrap();
+        assert!(snapshot.contains("1,Tijuana,10"), "{snapshot}");
+        assert!(snapshot.contains("2,Puebla,99"), "{snapshot}");
+        assert!(Journal::load(&sidecar).unwrap().is_empty());
+        assert!(archive_path(&base).exists());
+        assert!(history_path(&sidecar).exists());
+        assert!(restore_compacted(&base).unwrap());
+        assert_eq!(
+            std::fs::read_to_string(&base).unwrap(),
+            "id,city,amount\n1,CDMX,10\n2,Puebla,20\n"
+        );
+        assert_eq!(Journal::load(&sidecar).unwrap().len(), 2);
+        assert!(!archive_path(&base).exists());
+        assert!(!history_path(&sidecar).exists());
+        std::fs::remove_dir_all(&d).ok();
+    }
+
+    #[test]
+    fn recovery_rolls_back_when_the_snapshot_was_never_installed() {
+        let d = dir("rollback");
+        let base = d.join("b.csv");
+        std::fs::write(&base, "id,city\n1,CDMX\n2,Puebla\n").unwrap();
+        let sidecar = Journal::sidecar(&base);
+        edited_journal().save(&sidecar).unwrap();
+        std::fs::copy(&base, archive_path(&base)).unwrap();
+        std::fs::copy(&sidecar, history_path(&sidecar)).unwrap();
+        std::fs::write(snapshot_tmp(&base), "id,city\n1,Tijuana\n").unwrap();
+        std::fs::write(prepared_marker(&base), b"prepared\n").unwrap();
+        recover_compaction(&base).unwrap();
+        assert_eq!(Journal::load(&sidecar).unwrap().len(), 2);
+        assert!(!snapshot_tmp(&base).exists());
+        assert!(!archive_path(&base).exists());
+        assert!(!history_path(&sidecar).exists());
+        assert!(!prepared_marker(&base).exists());
+        std::fs::remove_dir_all(&d).ok();
+    }
+
+    #[test]
+    fn recovery_finishes_when_the_snapshot_was_installed() {
+        let d = dir("installed");
+        let base = d.join("b.csv");
+        std::fs::write(&base, "id,city\n1,Tijuana\n2,Puebla\n").unwrap();
+        let sidecar = Journal::sidecar(&base);
+        edited_journal().save(&sidecar).unwrap();
+        std::fs::copy(&base, archive_path(&base)).unwrap();
+        std::fs::copy(&sidecar, history_path(&sidecar)).unwrap();
+        std::fs::write(prepared_marker(&base), b"prepared\n").unwrap();
+        recover_compaction(&base).unwrap();
+        assert!(Journal::load(&sidecar).unwrap().is_empty());
+        assert!(!prepared_marker(&base).exists());
+        assert!(!installed_marker(&base).exists());
+        std::fs::remove_dir_all(&d).ok();
     }
 }

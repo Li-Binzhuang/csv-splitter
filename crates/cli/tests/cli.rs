@@ -2023,6 +2023,96 @@ fn one_row_can_read_two_referenced_sheets() {
     assert_eq!(text.lines().nth(2).unwrap(), "B,9,#N/A,#N/A");
 }
 
+/// Compaction keeps the original base and journal so undo/redo can cross the boundary.
+#[test]
+fn compact_preserves_undo_and_redo_across_the_boundary() {
+    let dir = TempDir::new("compact");
+    let base = dir.join("b.csv");
+    std::fs::write(
+        &base,
+        "id,city,amount\n1,CDMX,10\n2,Puebla,20\n3,Monterrey,30\n",
+    )
+    .unwrap();
+    for (row, col, value) in [(2, "city", "Tijuana"), (3, "amount", "99")] {
+        let status = Command::new(bin())
+            .args([
+                "edit",
+                "set",
+                base.to_str().unwrap(),
+                "--row",
+                &row.to_string(),
+                "--col",
+                col,
+                "--value",
+                value,
+            ])
+            .status()
+            .unwrap();
+        assert_eq!(status.code(), Some(0));
+    }
+    let status = Command::new(bin())
+        .args(["edit", "compact", base.to_str().unwrap()])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0), "compact failed");
+    let snapshot = std::fs::read_to_string(&base).unwrap();
+    assert!(snapshot.contains("2,Tijuana,20"), "{snapshot}");
+    assert!(snapshot.contains("3,Monterrey,99"), "{snapshot}");
+    let archive = dir.join("b.csv.base");
+    assert!(archive.exists(), "the original base must be archived");
+    assert!(dir.join("b.csv.journal.history").exists());
+
+    let export = |name: &str| -> String {
+        let out = dir.join(name);
+        let status = Command::new(bin())
+            .args([
+                "edit",
+                "export",
+                base.to_str().unwrap(),
+                "-o",
+                out.to_str().unwrap(),
+            ])
+            .status()
+            .unwrap();
+        assert_eq!(status.code(), Some(0));
+        std::fs::read_to_string(&out).unwrap()
+    };
+
+    // First undo crosses the boundary: it restores the pre-compaction stack, then takes
+    // back the second edit only.
+    let status = Command::new(bin())
+        .args(["edit", "undo", base.to_str().unwrap()])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = export("undo1.csv");
+    assert!(text.contains("2,Tijuana,20"), "{text}");
+    assert!(text.contains("3,Monterrey,30"), "{text}");
+
+    let status = Command::new(bin())
+        .args(["edit", "undo", base.to_str().unwrap()])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = export("undo2.csv");
+    assert_eq!(
+        text,
+        "id,city,amount\n1,CDMX,10\n2,Puebla,20\n3,Monterrey,30\n"
+    );
+
+    for expected in ["2,Tijuana,20", "2,Tijuana,20"] {
+        let status = Command::new(bin())
+            .args(["edit", "redo", base.to_str().unwrap()])
+            .status()
+            .unwrap();
+        assert_eq!(status.code(), Some(0));
+        let text = export("redo.csv");
+        assert!(text.contains(expected), "{text}");
+    }
+    let text = export("redo-last.csv");
+    assert!(text.contains("3,Monterrey,99"), "{text}");
+}
+
 /// A bulk edit is one journal entry however many rows it changes.
 #[test]
 fn bulk_edit_matches_a_filter_and_stays_one_operation() {

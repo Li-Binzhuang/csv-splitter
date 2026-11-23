@@ -133,6 +133,9 @@ impl Sheet {
     /// Open a sheet. A missing journal means "no edits", not "error".
     pub fn open(base: &Path, options: ReadOptions) -> io::Result<Self> {
         let journal_path = Journal::sidecar(base);
+        // A crash during compaction must be repaired before the old journal is loaded,
+        // or its operations would replay on top of the snapshot.
+        crate::workbook::recover_compaction(base)?;
         let journal = Journal::load(&journal_path)?;
         let base_columns = workbook::base_header(base, options.delimiter)?;
         if base_columns.is_empty() {

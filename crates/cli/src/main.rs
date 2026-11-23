@@ -6513,7 +6513,7 @@ fn cmd_edit(args: &[String]) -> i32 {
 
     let Some(action) = action else {
         eprintln!(
-            "error: edit needs an action: set | insert | delete | replace | undo | status | export"
+            "error: edit needs an action: set | insert | delete | replace | undo | status | export | compact"
         );
         return 2;
     };
@@ -6809,9 +6809,41 @@ fn cmd_edit(args: &[String]) -> i32 {
                 0
             };
         }
+        "compact" => {
+            let (tx, rx) = mpsc::channel();
+            let reporter = spawn_reporter("compact", rx, true);
+            let result = csvx_core::workbook::compact(&input, delimiter, &tx);
+            drop(tx);
+            let _ = reporter.join();
+            return match result {
+                Ok(summary) => {
+                    println!(
+                        "✓ compacted {} operations → {} (archive {}); journal is now empty",
+                        summary.operations,
+                        human_bytes(summary.bytes),
+                        summary.base_archive.display()
+                    );
+                    0
+                }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    1
+                }
+            };
+        }
         "undo" => {
             // A transaction boundary makes one undo take the whole batch back; the group
             // is only consumed when the journal still ends there.
+            // Undo may cross a compacted boundary: put the original base and journal
+            // back first, then let the normal tail-undo run against the restored stack.
+            match csvx_core::workbook::restore_compacted(&input) {
+                Ok(true) => eprintln!("restored the pre-compaction base and journal"),
+                Ok(false) => {}
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 1;
+                }
+            }
             let mut undone = 0usize;
             let mut last = String::new();
             let locked = csvx_core::workbook::Journal::update_locked(&sidecar, |fresh| {
