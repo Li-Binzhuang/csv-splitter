@@ -155,6 +155,10 @@
 - **Compressed input**: search/filter/analyze read .zst/.gz/.bz2/.xz through a
   decompressing reader; non-seekable forces the sequential path. 2.3 GB zst filter
   writes a byte-identical 411 MB output in 4.16 s at 15 MB RSS (plain 1.51 s).
+- **Topological DAG**: `--dag --jobs N` schedules ready steps from the lineage
+  graph (empty input → previous step, step name → earlier step, file → no step
+  dependency), freshness-checks each ready step and runs stale ready steps in
+  bounded concurrent waves. Test covers a diamond and all-fresh second pass.
 - **Pipeline lineage**: dry-run JSON now includes each step's `deps` (previous
   step for empty input, earlier step names, or none for source files); text dry-run
   prints the same edges. No execution/state write.

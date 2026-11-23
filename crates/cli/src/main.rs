@@ -136,7 +136,8 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         &[
             ("--dry-run", "Report fresh/would-run steps without executing"),
             ("--force", "Rerun every step even when fresh"),
-            ("--jobs", "Run steps with the same group concurrently (default 1)"),
+            ("--dag", "Run ready steps by dependency order (requires --jobs > 1)"),
+            ("--jobs", "Concurrency for groups/DAG (default 1)"),
             ("--retries", "Retry a failed step N times (default 0)"),
             ("--retry-delay", "Milliseconds between retries (default 250)"),
             ("--step-timeout", "Kill a step after N milliseconds (0 = none)"),
@@ -8163,12 +8164,22 @@ fn pipeline_resolve_input(
     steps: &[PipelineStep],
     root: &std::path::Path,
 ) -> std::io::Result<std::path::PathBuf> {
-    let name = step.input.as_ref().ok_or_else(|| {
-        std::io::Error::new(
-            std::io::ErrorKind::InvalidInput,
-            format!("grouped step {} needs an explicit input", step.name),
-        )
-    })?;
+    let position = steps
+        .iter()
+        .position(|candidate| candidate.name == step.name)
+        .ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::InvalidInput, "unknown pipeline step")
+        })?;
+    let name = match &step.input {
+        Some(name) => name,
+        None if position > 0 => &steps[position - 1].name,
+        None => {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("step {} has no input", step.name),
+            ))
+        }
+    };
     let path = if let Some(position) = steps.iter().position(|candidate| &candidate.name == name) {
         steps[position].output.clone()
     } else if std::path::Path::new(name).is_absolute() {
@@ -8386,6 +8397,89 @@ fn run_branch_group(
     Ok(results)
 }
 
+/// Topological scheduler: ready steps (all dependencies done) are freshness-checked;
+/// fresh ones reuse their prior rows and stale ones run as one concurrent wave, bounded
+/// by `jobs`. Unlike the linear path, ordering follows the dependency graph, not the
+/// manifest row order.
+#[allow(clippy::too_many_arguments)]
+fn run_pipeline_dag(
+    steps: &[PipelineStep],
+    root: &std::path::Path,
+    force: bool,
+    step_timeout_ms: u64,
+    retries: usize,
+    retry_delay_ms: u64,
+    jobs: usize,
+    previous: &[PipelineStateRow],
+    state_path: &std::path::Path,
+) -> std::io::Result<PipelineResults> {
+    use std::collections::HashSet;
+    let dependencies: Vec<Vec<usize>> = (0..steps.len())
+        .map(|index| {
+            pipeline_dependencies(steps, index)
+                .into_iter()
+                .filter_map(|name| steps.iter().position(|step| step.name == name))
+                .collect()
+        })
+        .collect();
+    let mut done = HashSet::new();
+    let mut results = Vec::with_capacity(steps.len());
+    let mut state_rows = Vec::with_capacity(steps.len());
+    while done.len() < steps.len() {
+        let ready: Vec<usize> = (0..steps.len())
+            .filter(|index| {
+                !done.contains(index)
+                    && dependencies[*index]
+                        .iter()
+                        .all(|dependency| done.contains(dependency))
+            })
+            .collect();
+        if ready.is_empty() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "pipeline dependency cycle",
+            ));
+        }
+        let mut stale = Vec::new();
+        for &index in &ready {
+            let input_path = pipeline_resolve_input(&steps[index], steps, root)?;
+            match pipeline_fresh_row(&steps[index], &input_path, previous, force)? {
+                Some(row) => {
+                    results.push((
+                        steps[index].name.clone(),
+                        true,
+                        0,
+                        steps[index].output.display().to_string(),
+                    ));
+                    state_rows.push(row);
+                    done.insert(index);
+                }
+                None => stale.push(index),
+            }
+        }
+        if stale.is_empty() {
+            continue;
+        }
+        let wave: Vec<usize> = stale.into_iter().take(jobs).collect();
+        let outcomes = run_branch_group(
+            steps,
+            &wave,
+            root,
+            force,
+            step_timeout_ms,
+            retries,
+            retry_delay_ms,
+        )?;
+        for (offset, (name, fresh, ms, output, state_row)) in outcomes.into_iter().enumerate() {
+            results.push((name, fresh, ms, output));
+            state_rows.push(state_row);
+            done.insert(wave[offset]);
+        }
+    }
+    save_pipeline_state(state_path, &state_rows)?;
+    Ok(results)
+}
+
 #[allow(clippy::too_many_arguments)]
 fn run_pipeline_plan(
     plan: &std::path::Path,
@@ -8396,6 +8490,7 @@ fn run_pipeline_plan(
     retries: usize,
     retry_delay_ms: u64,
     jobs: usize,
+    dag: bool,
 ) -> std::io::Result<(PipelineResults, PipelineLineage)> {
     let root = root
         .map(std::path::Path::to_path_buf)
@@ -8504,6 +8599,25 @@ fn run_pipeline_plan(
     let mut state_rows = Vec::with_capacity(steps.len());
     let mut results: Vec<(String, bool, u64, String)> = Vec::with_capacity(steps.len());
     let mut previous_output: Option<std::path::PathBuf> = None;
+    if dag && jobs > 1 && !dry_run {
+        let results = run_pipeline_dag(
+            &steps,
+            &root,
+            force,
+            step_timeout_ms,
+            retries,
+            retry_delay_ms,
+            jobs,
+            &previous,
+            &state_path,
+        )?;
+        let lineage = steps
+            .iter()
+            .enumerate()
+            .map(|(index, step)| (step.name.clone(), pipeline_dependencies(&steps, index)))
+            .collect();
+        return Ok((results, lineage));
+    }
     let mut skip = 0usize;
     for (index, step) in steps.iter().enumerate() {
         if skip > 0 {
@@ -8795,6 +8909,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
     let mut retries = 0usize;
     let mut retry_delay_ms = 250u64;
     let mut jobs = 1usize;
+    let mut dag = false;
     let mut json = false;
     while let Some(arg) = p.next() {
         match arg.as_str() {
@@ -8807,6 +8922,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             },
             "--force" => force = true,
             "--dry-run" => dry_run = true,
+            "--dag" => dag = true,
             "--jobs" => match p
                 .value("--jobs")
                 .and_then(|value| value.parse::<usize>().map_err(|_| "bad --jobs".to_string()))
@@ -8889,6 +9005,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             retries,
             retry_delay_ms,
             jobs,
+            dag,
         ) {
             Ok((results, lineage)) => {
                 if dry_run {

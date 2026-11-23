@@ -2864,6 +2864,78 @@ fn mcp_jobs_run_asynchronously_and_report_state() {
     );
 }
 
+/// `--dag` schedules ready steps by dependencies, not manifest row order.
+#[test]
+fn pipeline_dag_runs_topological_waves() {
+    let dir = TempDir::new("pipeline-dag");
+    std::fs::write(
+        dir.join("orders.csv"),
+        "id,city\n1,CDMX\n2,Puebla\n3,CDMX\n",
+    )
+    .unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},a.csv\nb,orders.csv,filter,--where city=Puebla -o {out},b.csv\nc,a,filter,--where id=1 -o {out},c.csv\nd,b,filter,--where id=2 -o {out},d.csv\n",
+    )
+    .unwrap();
+    let first = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--dag",
+            "--jobs",
+            "2",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        first.status.success(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    assert_eq!(
+        std::fs::read_to_string(dir.join("a.csv")).unwrap(),
+        "id,city\n1,CDMX\n3,CDMX\n"
+    );
+    assert_eq!(
+        std::fs::read_to_string(dir.join("c.csv")).unwrap(),
+        "id,city\n1,CDMX\n"
+    );
+    assert_eq!(
+        std::fs::read_to_string(dir.join("d.csv")).unwrap(),
+        "id,city\n2,Puebla\n"
+    );
+    assert!(dir.join("plan.csv.pipeline.csv").exists());
+    let second = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--dag",
+            "--jobs",
+            "2",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        second.status.success(),
+        "{}",
+        String::from_utf8_lossy(&second.stderr)
+    );
+    let second_stdout = String::from_utf8_lossy(&second.stdout);
+    for name in ["a", "b", "c", "d"] {
+        assert!(
+            second_stdout.contains(&format!("↷ {name}")),
+            "{second_stdout}"
+        );
+    }
+}
+
 /// Dry-run exposes the lineage/dependency edges used by the DAG evaluator.
 #[test]
 fn pipeline_dry_run_reports_dependencies() {

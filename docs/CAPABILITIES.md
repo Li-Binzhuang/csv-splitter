@@ -249,6 +249,8 @@ filtered,orders.csv,filter, -o {out},filtered.csv
 joined,filtered,lookup,--key cust_no --reference customers.csv --get name --out {out},joined.csv
 ```
 
+- `--dag --jobs N`：按依赖拓扑调度（空输入依赖上一步、步骤名依赖更早步骤、文件路径无依赖）；
+  每波只启动 stale 就绪步骤，fresh 步骤复用 state；失败不写主 state。`group` 列在 DAG 模式被忽略。
 - 可选第 6 列 `group`：同一 group 的**连续**步骤在 `--jobs N`（N>1）下并发执行；
   组内步骤必须显式指定 input（源文件或更早步骤输出），不能互相依赖。组内逐步骤判断
   fresh：fresh 成员直接复用上轮 state，只把 stale 成员交给并发子进程；失败时已完成的
