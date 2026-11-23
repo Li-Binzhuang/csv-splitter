@@ -1,0 +1,121 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "adf42d943b18adc9603ca44148f7dea259e1ada79521e8dc9873a28709d64d63",
+  "batch_id": "1f961b14ef7b69c2a663300c2aa3b5d6a2a12750d4e2574ec2a1b14d63b60a27",
+  "composite_identity": "94abdb4d5f51ed90a8ed387cb5b7ca4979b992873ea02ed2cc9881b836fba7c5",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "d7a808d46bc5e929dc4343804ca73b7eb610e679bedf81aff6432302ba62dc20",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:.gitignore",
+      "path": ".gitignore",
+      "change": "update",
+      "source_sha256": "f4e94c79fbbf024eb8bb49fd2ee9d570d7d7932d62e9c2b8921b6028b9690532",
+      "existing_entry": ".gitignore[FV4T]: F:忽略构建产物、生成侧车与本地杂物 | R:- | A:忽略 `/target`、编辑器 swap、`.DS_Store`、发布包、数据侧车（*.idx/*.journal/*.parquet/*.agg）以及 `scripts/mcp_sdk/node_modules/`；刻意不忽略 `.codegraph/` 与 `.aoci/` | S:MCP SDK 的 npm 依赖只用于本地演示，不应进版本库；侧车属生成物"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "2559f977a2e915d6fcedeb00a7323fff49736c2750d9680c852c2181369577b5",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/--step-timeout/--retries、SQL lookup 无上限、mcp 读写+job/pipeline_run/job_cancel/job_list、官方 SDK、压缩输入、100 GB/81 GB 演练、demo、外发模板、试点报告 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "e1f0f3b2aad9576140b4820614d530ac913b6279bf02495498af15ba7d0dd801",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过/--dry-run（JSON）/--step-timeout/--retries；mcp 读写+job 与 pipeline_run/job_cancel/job_list（16 工具）、官方 SDK；压缩输入 zst/gz/bz2/xz 顺序读；C 100 GB/81 GB 演练；64 GB 自适应；试点报告脚本 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "a2b5e1342bc125c55692b04110551cca5080f48d74835f661302ebbf7cb7f14f",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5；A Pipeline 含 --dry-run（JSON）、--step-timeout、--retries；B MCP 读写+job+pipeline_run 与官方 SDK；C 100/81 GB 演练达标；压缩输入顺序读；64 GB 自适应；demo 与 OUTREACH；下一步商业化/真实数据 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/PILOT_CONFIRMATION.md",
+      "path": "docs/PILOT_CONFIRMATION.md",
+      "change": "create",
+      "source_sha256": "a947008f8e731c88b326df3f3474dad07cfe114855865aecd2266e2cf9aedcac"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/SALES.md",
+      "path": "docs/SALES.md",
+      "change": "update",
+      "source_sha256": "0deba984e8c271edcafe47acbfd767396f8b8308ef0fdc91319e1a59ff6c905a",
+      "existing_entry": "SALES.md[SD7T]: F:销售 one-pager：定位、证据、演示话术、4 周试点清单与异议处理 | R:code:docs/DEMO.md,code:docs/BENCHMARKS.md,code:docs/BUSINESS.md,code:docs/PILOT.md | A:100 GB 三大可卖点；5 分钟 demo 命令；16 个 MCP 工具；客户样本报告命令；目标客户与触发问题；免费/Pilot/团队/企业边界候选；30 天验证目标；常见异议回应 | S:不是公开承诺，定价/SLA/合同需用户确认；当前无 License 强制、无遥测"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "create",
+      "source_sha256": "eeaede09c44120d792669ec353e1c91b0d5c4fd6c493ea67627022f0b53a86a8"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "13e739947fb6b912a8d43777a9caec67e5d68e9c86cff132c0d2b7da05c3a352",
+      "object_ref": "code:.gitignore",
+      "path": ".gitignore",
+      "change": "update",
+      "source_sha256": "f4e94c79fbbf024eb8bb49fd2ee9d570d7d7932d62e9c2b8921b6028b9690532",
+      "existing_entry": ".gitignore[FV4T]: F:忽略构建产物、生成侧车与本地杂物 | R:- | A:忽略 `/target`、编辑器 swap、`.DS_Store`、发布包、数据侧车（*.idx/*.journal/*.parquet/*.agg）以及 `scripts/mcp_sdk/node_modules/`；刻意不忽略 `.codegraph/` 与 `.aoci/` | S:MCP SDK 的 npm 依赖只用于本地演示，不应进版本库；侧车属生成物"
+    },
+    {
+      "candidate_id": "69d26d92395e9f2471f492a3da0d3184cc8767704b00e56daee3280ded4eba91",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "2559f977a2e915d6fcedeb00a7323fff49736c2750d9680c852c2181369577b5",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/--step-timeout/--retries、SQL lookup 无上限、mcp 读写+job/pipeline_run/job_cancel/job_list、官方 SDK、压缩输入、100 GB/81 GB 演练、demo、外发模板、试点报告 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "eeff3788f6db7ea081fc0e842cf5682e981708b7f5506d881e2d2bf41bbca751",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "e1f0f3b2aad9576140b4820614d530ac913b6279bf02495498af15ba7d0dd801",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过/--dry-run（JSON）/--step-timeout/--retries；mcp 读写+job 与 pipeline_run/job_cancel/job_list（16 工具）、官方 SDK；压缩输入 zst/gz/bz2/xz 顺序读；C 100 GB/81 GB 演练；64 GB 自适应；试点报告脚本 | S:-"
+    },
+    {
+      "candidate_id": "5fcede1597a767c69b80f18e2499d1675de9b800b52bcb5c613e35d2bc715241",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "a2b5e1342bc125c55692b04110551cca5080f48d74835f661302ebbf7cb7f14f",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5；A Pipeline 含 --dry-run（JSON）、--step-timeout、--retries；B MCP 读写+job+pipeline_run 与官方 SDK；C 100/81 GB 演练达标；压缩输入顺序读；64 GB 自适应；demo 与 OUTREACH；下一步商业化/真实数据 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    },
+    {
+      "candidate_id": "bff0af15abb50468de329f2f4c00d93aba5314e65451b89e6185e3c2828218bc",
+      "object_ref": "code:docs/PILOT_CONFIRMATION.md",
+      "path": "docs/PILOT_CONFIRMATION.md",
+      "change": "create",
+      "source_sha256": "a947008f8e731c88b326df3f3474dad07cfe114855865aecd2266e2cf9aedcac"
+    },
+    {
+      "candidate_id": "63959fe1deecfa729300ef8d3b01520f379bde7c0d4d9bd292728a680cb86711",
+      "object_ref": "code:docs/SALES.md",
+      "path": "docs/SALES.md",
+      "change": "update",
+      "source_sha256": "0deba984e8c271edcafe47acbfd767396f8b8308ef0fdc91319e1a59ff6c905a",
+      "existing_entry": "SALES.md[SD7T]: F:销售 one-pager：定位、证据、演示话术、4 周试点清单与异议处理 | R:code:docs/DEMO.md,code:docs/BENCHMARKS.md,code:docs/BUSINESS.md,code:docs/PILOT.md | A:100 GB 三大可卖点；5 分钟 demo 命令；16 个 MCP 工具；客户样本报告命令；目标客户与触发问题；免费/Pilot/团队/企业边界候选；30 天验证目标；常见异议回应 | S:不是公开承诺，定价/SLA/合同需用户确认；当前无 License 强制、无遥测"
+    },
+    {
+      "candidate_id": "21f8b42a8645fb14a578ea1a88aee69e3b0ecaa1c19c62b52f33a6e3b20f52ac",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "create",
+      "source_sha256": "eeaede09c44120d792669ec353e1c91b0d5c4fd6c493ea67627022f0b53a86a8"
+    }
+  ]
+}
