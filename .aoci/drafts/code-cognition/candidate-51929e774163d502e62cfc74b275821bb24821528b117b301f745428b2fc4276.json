@@ -1,0 +1,93 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "b34e794702a770054cfc4e507219546b34903eb185ba7be8670d209160a40346",
+  "batch_id": "51929e774163d502e62cfc74b275821bb24821528b117b301f745428b2fc4276",
+  "composite_identity": "4ba6e5ecf5d3a15e11d1570b2721fa5648319194f1f436ac079eafa3e965b7e7",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "a32e60d9790d03365765f0956aa32b2f9df17bb4eaa8985f19f68b91c99af55c",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "e48821f1134b163c1c0255936977517e2e9726402260cfd600b14b374f2ef493",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过、SQL lookup 无上限、mcp 读写与 job、100 GB profile、100 GB 全量 filter -o 101.93 s 超 90 s 缺口 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "606f93dcf5e859502b422396d5b88c8c5834c8d9e745977c63d4019891d0dc37",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:运算符为等于/不等于/比较/包含/in/空值及 Wildcard；holds_record 单遍检查只读列；UTF-8 提取按行边界分片并行；无输出路径改走 scan_parallel_bytes 的 record_cell_matches，避免每行 String 字段 | S:并行与顺序路径行号必须一致；分片仅在 UTF-8 且 ≤64 spec 时启用，切分重叠即回退顺序；超时每 5000 行检查一次；extract 源字节原样输出"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "1d7e47c6e3d419bd03ad70e0c9a63f71add812e78fec74c37d094f7005980255",
+      "existing_entry": "BENCHMARKS.md[SD7L]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:100 GB/13 亿行 search 20.18–20.42 s/93 MB、filter 25.75 s/95 MB、index 24.57 s、深跳 0.02 s；另加 100 GB/10 亿行全量 filter -o 200M 行 20 GB 101.93 s/25 MB | S:未 drop cache、100 GB 为重复块；全量物化超 90 s，瓶颈是 part 文件二次写入，不得算作扫描达标"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "188fc5931b4bac48effff25cea55d546da92d393fe0afa65323f2b55189fb64d",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过；mcp 读写+job；C 100 GB 扫描达标但全量 filter -o 101.93 s 超 90 s | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "88a4deb1daacb607cc591188112385dfc123bdcb6964514c4473e0875322b58b",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5；A Pipeline；B MCP 读写+job；C 100 GB 扫描达标、全量 filter -o 101.93 s 超 90 s（part 双写）；下一步去双写、真实分布、商业化 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "7ba9ccc1a4980af8f01949fb8b1d3eeae6d85417f4abb8f7953fe3f00d20a1c7",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "e48821f1134b163c1c0255936977517e2e9726402260cfd600b14b374f2ef493",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过、SQL lookup 无上限、mcp 读写与 job、100 GB profile、100 GB 全量 filter -o 101.93 s 超 90 s 缺口 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "7591f633f80cff1130d709a39b8993bbafd0fc6a1f6402dcf980300c7c6e44f0",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "606f93dcf5e859502b422396d5b88c8c5834c8d9e745977c63d4019891d0dc37",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:运算符为等于/不等于/比较/包含/in/空值及 Wildcard；holds_record 单遍检查只读列；UTF-8 提取按行边界分片并行；无输出路径改走 scan_parallel_bytes 的 record_cell_matches，避免每行 String 字段 | S:并行与顺序路径行号必须一致；分片仅在 UTF-8 且 ≤64 spec 时启用，切分重叠即回退顺序；超时每 5000 行检查一次；extract 源字节原样输出"
+    },
+    {
+      "candidate_id": "bfdfdbe8ae3f67be9f043f2831898730fadf7aba30a2b26e6cee179fa6976fde",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "1d7e47c6e3d419bd03ad70e0c9a63f71add812e78fec74c37d094f7005980255",
+      "existing_entry": "BENCHMARKS.md[SD7L]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:100 GB/13 亿行 search 20.18–20.42 s/93 MB、filter 25.75 s/95 MB、index 24.57 s、深跳 0.02 s；另加 100 GB/10 亿行全量 filter -o 200M 行 20 GB 101.93 s/25 MB | S:未 drop cache、100 GB 为重复块；全量物化超 90 s，瓶颈是 part 文件二次写入，不得算作扫描达标"
+    },
+    {
+      "candidate_id": "ffe085f7819f01362995d7028218dada022bca6133aec5001b88b97f83d3d74a",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "188fc5931b4bac48effff25cea55d546da92d393fe0afa65323f2b55189fb64d",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过；mcp 读写+job；C 100 GB 扫描达标但全量 filter -o 101.93 s 超 90 s | S:-"
+    },
+    {
+      "candidate_id": "5070a6f70297e7ff27a517c86062b5999c7263249697c1feb1dbd3b99e6c7315",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "88a4deb1daacb607cc591188112385dfc123bdcb6964514c4473e0875322b58b",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5；A Pipeline；B MCP 读写+job；C 100 GB 扫描达标、全量 filter -o 101.93 s 超 90 s（part 双写）；下一步去双写、真实分布、商业化 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    }
+  ]
+}
