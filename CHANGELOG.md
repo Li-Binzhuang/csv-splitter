@@ -152,6 +152,9 @@
 - **MCP structured results**: every tool response carries
   `structuredContent: {"ok":bool,"code":"ok|tool_error|unknown_tool|unknown_job|path_escape|cli_error"}`
   next to text content; tests cover unknown_tool and path_escape.
+- **Pipeline step progress**: `csvx_pipeline_run` with a progressToken streams the
+  CLI's step lines and emits one notification per step; without a token it keeps
+  returning the JSON result.
 - **MCP progress notifications**: when tools/call carries `_meta.progressToken`,
   job_status wait emits `notifications/progress` (0 then once per second). Test
   asserts the notification line and token.

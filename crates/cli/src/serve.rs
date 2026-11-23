@@ -8175,6 +8175,110 @@ fn mcp_progress_notification(token: &str, progress: u64, total: u64) -> String {
     )
 }
 
+fn mcp_run_pipeline_streaming(
+    root: &Path,
+    name: &str,
+    args: &McpJson,
+    id: Option<&McpJson>,
+    stdout: &mut io::Stdout,
+    progress_token: &str,
+) -> Result<String, String> {
+    use std::io::{BufRead, Write};
+    let path = args.get("path").and_then(McpJson::as_str).unwrap_or("");
+    if path.is_empty() {
+        return Err("path missing".to_string());
+    }
+    let plan = {
+        let path = std::path::Path::new(path);
+        if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            root.join(path)
+        }
+    };
+    let mut command =
+        std::process::Command::new(std::env::current_exe().map_err(|error| error.to_string())?);
+    command.args([
+        "pipeline",
+        "run",
+        plan.to_str().unwrap_or(""),
+        "--root",
+        root.to_str().unwrap_or(""),
+    ]);
+    let flag = |name: &str| {
+        args.get(name)
+            .and_then(|value| match value {
+                McpJson::Bool(flag) => Some(*flag),
+                _ => None,
+            })
+            .unwrap_or(false)
+    };
+    if flag("force") {
+        command.arg("--force");
+    }
+    if flag("dryRun") {
+        command.arg("--dry-run");
+    }
+    if flag("dag") {
+        command.arg("--dag");
+    }
+    if let Some(jobs) = args.get("jobs").and_then(McpJson::as_u64) {
+        command.args(["--jobs", &jobs.clamp(1, 64).to_string()]);
+    }
+    if flag("clean") {
+        command.arg("--clean");
+    }
+    let _ = name;
+    command
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+    let mut child = command
+        .spawn()
+        .map_err(|error| format!("cannot run csvx: {error}"))?;
+    let stderr = child.stderr.take();
+    let stderr_thread = stderr.map(|stderr| {
+        std::thread::spawn(move || {
+            let mut text = String::new();
+            let mut reader = std::io::BufReader::new(stderr);
+            let _ = std::io::Read::read_to_string(&mut reader, &mut text);
+            text
+        })
+    });
+    let mut text = String::new();
+    let mut steps = 0u64;
+    if let Some(pipe) = child.stdout.take() {
+        let reader = std::io::BufReader::new(pipe);
+        for line in reader.lines().map_while(Result::ok) {
+            if line.starts_with('✓') || line.starts_with('↷') {
+                steps += 1;
+                let note = format!(
+                    r#"{{"jsonrpc":"2.0","method":"notifications/progress","params":{{"progressToken":{},"progress":{}}}}}"#,
+                    progress_token, steps
+                );
+                writeln!(stdout, "{note}").map_err(|error| error.to_string())?;
+                stdout.flush().map_err(|error| error.to_string())?;
+            }
+            text.push_str(&line);
+            text.push('\n');
+        }
+    }
+    let status = child.wait().map_err(|error| error.to_string())?;
+    let stderr_text = stderr_thread
+        .and_then(|thread| thread.join().ok())
+        .unwrap_or_default();
+    if !status.success() {
+        let error = stderr_text.trim();
+        return Err(if error.is_empty() {
+            format!("pipeline failed with {status}")
+        } else {
+            error.to_string()
+        });
+    }
+    let _ = id;
+    Ok(text.trim_end().to_string())
+}
+
 pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
     use std::io::{BufRead, Write};
     let stdin = io::stdin();
@@ -8321,6 +8425,18 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
                         })
                         .unwrap_or(false);
                     mcp_tool_text(id, &mcp_job_list(&mut jobs, full), false)
+                } else if name == "csvx_pipeline_run" && !progress_token.is_empty() {
+                    match mcp_run_pipeline_streaming(
+                        root,
+                        name,
+                        &arguments,
+                        id,
+                        &mut stdout,
+                        &progress_token,
+                    ) {
+                        Ok(text) => mcp_tool_text(id, &text, false),
+                        Err(error) => mcp_tool_error(id, &error, "cli_error"),
+                    }
                 } else {
                     match mcp_run_tool(root, name, &arguments) {
                         Ok(text) => mcp_tool_text(id, &text, false),
