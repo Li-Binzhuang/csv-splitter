@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "ab4ac89dc0c7f34292bca30ba3849e413a161594172ab71469b70260bf64d4bf",
+  "batch_id": "ffd9d17561ac79447a6431470dc676f3e3687c583bfc371d179f650a725f015e",
+  "composite_identity": "f6a2712c552143d66dc7822fe8207a3c51026527a524dd773d5dd40639d5e4ef",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "9c5e81f162410a0c7811ac1235048029568e1fcad7182f6d19b81dd74e66ebe2",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "3ba46698d5ed46899749fac9e84eec9518a113688ce466c6c47669e937a9d065",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，再用 verify_dist.sh 校验 SHA256、必需成员与包内二进制版本；记录 2026-11-23 release 30.28 s、pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2、SDK 2 条 pipeline progress 与 job progress；macOS gate run 45198239384 12m21s success；MCP 缓存 2.04 GB 重查 4.61→1.63 s/86 MB；SHA 由打包脚本输出 | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "712d7afd4b12a7681128e7cac43a0c3c46c1291539c8bd2b0912929450f7157f",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "3ba46698d5ed46899749fac9e84eec9518a113688ce466c6c47669e937a9d065",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，再用 verify_dist.sh 校验 SHA256、必需成员与包内二进制版本；记录 2026-11-23 release 30.28 s、pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2、SDK 2 条 pipeline progress 与 job progress；macOS gate run 45198239384 12m21s success；MCP 缓存 2.04 GB 重查 4.61→1.63 s/86 MB；SHA 由打包脚本输出 | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ]
+}
