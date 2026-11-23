@@ -3326,6 +3326,8 @@ fn search_materializes_compressed_input() {
         "{}",
         String::from_utf8_lossy(&compressed.stderr)
     );
+    let stale = std::env::temp_dir().join("csvx-materialized-999999-1.csv");
+    std::fs::write(&stale, "stale").unwrap();
     let materialized = Command::new(bin())
         .args(["search", "orders.csv.gz", "CDMX", "--materialize"])
         .current_dir(&dir.0)
@@ -3335,6 +3337,10 @@ fn search_materializes_compressed_input() {
         materialized.status.success(),
         "{}",
         String::from_utf8_lossy(&materialized.stderr)
+    );
+    assert!(
+        !stale.exists(),
+        "dead-PID materialized file should be removed"
     );
     let out = String::from_utf8_lossy(&materialized.stdout);
     assert!(out.contains("matched 2"), "{out}");

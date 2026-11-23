@@ -172,7 +172,8 @@
   writes a byte-identical 411 MB output in 4.16 s at 15 MB RSS (plain 1.51 s).
 - **Search materialize**: `search --materialize` streams compressed input to a temp
   file and searches it with random access; 2.3 GB zst went 11.87 s -> 3.51 s with the
-  same 19M matches. Temp file is removed on exit.
+  same 19M matches. Temp file is removed on exit; a later materialize also removes
+  leftovers whose PID is dead.
 - **Staging cleanup**: each run removes matching `.branch-*.tmp`/`.pipeline.tmp`
   leftovers older than an hour; `--clean` forces cleanup before executing. Test uses
   dry-run so the cleanup can be verified without touching outputs.

@@ -2898,10 +2898,35 @@ impl Drop for MaterializedInput {
     }
 }
 
+fn cleanup_stale_materialized() {
+    let dir = std::env::temp_dir();
+    let Ok(entries) = std::fs::read_dir(&dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        let Some(rest) = name.strip_prefix("csvx-materialized-") else {
+            continue;
+        };
+        let Some(pid) = rest
+            .split('-')
+            .next()
+            .and_then(|value| value.parse::<u32>().ok())
+        else {
+            continue;
+        };
+        if pid != std::process::id() && !process_alive(pid) {
+            let _ = std::fs::remove_file(entry.path());
+        }
+    }
+}
+
 fn materialize_compressed(input: &std::path::Path) -> std::io::Result<Option<MaterializedInput>> {
     if !csvx_core::encoding::is_compressed(input) {
         return Ok(None);
     }
+    cleanup_stale_materialized();
     let stamp = format!(
         "{}-{}",
         std::process::id(),
@@ -8231,6 +8256,16 @@ impl Drop for PipelineLock {
     }
 }
 
+fn process_alive(pid: u32) -> bool {
+    let output = std::process::Command::new("ps")
+        .args(["-p", &pid.to_string(), "-o", "pid="])
+        .output();
+    match output {
+        Ok(output) => output.status.success() && !output.stdout.is_empty(),
+        Err(_) => true,
+    }
+}
+
 fn lock_owner_alive(path: &std::path::Path) -> Option<bool> {
     let text = std::fs::read_to_string(path).ok()?;
     let pid = text
@@ -8238,11 +8273,7 @@ fn lock_owner_alive(path: &std::path::Path) -> Option<bool> {
         .find_map(|line| line.trim().strip_prefix("pid="))
         .and_then(|value| value.split_whitespace().next())
         .and_then(|value| value.parse::<u32>().ok())?;
-    let output = std::process::Command::new("ps")
-        .args(["-p", &pid.to_string(), "-o", "pid="])
-        .output()
-        .ok()?;
-    Some(output.status.success() && !output.stdout.is_empty())
+    Some(process_alive(pid))
 }
 
 fn acquire_pipeline_lock(plan: &std::path::Path) -> std::io::Result<PipelineLock> {
