@@ -22,6 +22,10 @@ mkdir -p "$STAGE/mcp_sdk"
 cp scripts/mcp_sdk/client.mjs scripts/mcp_sdk/package.json "$STAGE/mcp_sdk/"
 tar -czf "dist/$NAME.tar.gz" -C dist "$NAME"
 shasum -a 256 "dist/$NAME.tar.gz" > "dist/$NAME.tar.gz.sha256"
-bash scripts/verify_dist.sh "dist/$NAME.tar.gz"
+if ! bash scripts/verify_dist.sh "dist/$NAME.tar.gz"; then
+  echo "package verification failed; removing incomplete artifacts" >&2
+  rm -f "dist/$NAME.tar.gz" "dist/$NAME.tar.gz.sha256"
+  exit 1
+fi
 du -h "dist/$NAME.tar.gz"
 cat "dist/$NAME.tar.gz.sha256"
