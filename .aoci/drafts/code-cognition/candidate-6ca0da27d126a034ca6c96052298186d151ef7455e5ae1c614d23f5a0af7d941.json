@@ -1,0 +1,59 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "4349576f9625101697869699623eb92183185d1886f3af886eb37d6f5288eeaf",
+  "batch_id": "6ca0da27d126a034ca6c96052298186d151ef7455e5ae1c614d23f5a0af7d941",
+  "composite_identity": "3adc6288129fbb467b99ffd151b0a31ba4a9d6355899bf40de1ee549c26b04e5",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "32b2fe5dc110b000c5815c14eb5622318b54b76ddd4d4154a69df6a3337361f5",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/PILOT_INTAKE.md",
+      "path": "docs/PILOT_INTAKE.md",
+      "change": "create",
+      "source_sha256": "b80c1472dc43ed92f2247b2309d1e6888ec609844ec027a6b976730cfbded39a"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "61281ef037146de37f0ac0422c547d0f68b4b065c0a3b7f5626c462b43c08c2f",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/DEMO.md | A:2026-11-23 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 16 工具与 SDK progress/status/gzip；真实客户试点是最大缺口；压缩多线程、缓存命中监控、阈值、发布自动化为后续 | S:未测数字不写；价格/SLA 需用户确认；随离线包分发"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "ee6d1ff1049e5c1cc04fd728473301e9b763f555e0d39dcb1010d5fd0ca6a30b",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 | R:code:README.md,code:docs/SALES.md | A:binary 缺失先 cargo build --release；版本取 csvx --version；平台 uname；打包二进制、README/CHANGELOG/LICENSE、主要 docs（含 RELEASE_CHECKLIST/ROADMAP/PILOT_SAMPLE/PILOT_CONFIRMATION）、demo/pilot 脚本与 mcp_sdk client/package.json；输出 dist tar.gz 与 sha256 | S:不打 tag、不联网、不发布 registry；dist 已 gitignore；只用于企业内部分发/试点"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "643d864f0c2c89ed380ab6f5c02aeb7b47b42e2154c429c461641d188d18f76d",
+      "object_ref": "code:docs/PILOT_INTAKE.md",
+      "path": "docs/PILOT_INTAKE.md",
+      "change": "create",
+      "source_sha256": "b80c1472dc43ed92f2247b2309d1e6888ec609844ec027a6b976730cfbded39a"
+    },
+    {
+      "candidate_id": "e6ead6469a011c7d77e225f8b95c9fba755ca5f38dce8ef7d6c2448441e0a78b",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "61281ef037146de37f0ac0422c547d0f68b4b065c0a3b7f5626c462b43c08c2f",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/DEMO.md | A:2026-11-23 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 16 工具与 SDK progress/status/gzip；真实客户试点是最大缺口；压缩多线程、缓存命中监控、阈值、发布自动化为后续 | S:未测数字不写；价格/SLA 需用户确认；随离线包分发"
+    },
+    {
+      "candidate_id": "b29b890bd9835f81f62ee23c6c729ccfa957101f08d9c6a9f4c3c4dede1dcc29",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "ee6d1ff1049e5c1cc04fd728473301e9b763f555e0d39dcb1010d5fd0ca6a30b",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 | R:code:README.md,code:docs/SALES.md | A:binary 缺失先 cargo build --release；版本取 csvx --version；平台 uname；打包二进制、README/CHANGELOG/LICENSE、主要 docs（含 RELEASE_CHECKLIST/ROADMAP/PILOT_SAMPLE/PILOT_CONFIRMATION）、demo/pilot 脚本与 mcp_sdk client/package.json；输出 dist tar.gz 与 sha256 | S:不打 tag、不联网、不发布 registry；dist 已 gitignore；只用于企业内部分发/试点"
+    }
+  ]
+}
