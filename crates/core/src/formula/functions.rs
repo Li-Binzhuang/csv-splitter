@@ -606,6 +606,19 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             },
             None => Value::Error,
         },
+        // WEEKNUM with the default Sunday start (Excel's return_type 1).
+        "weeknum" => match args.first().map(|a| eval(a, ctx)) {
+            Some(v) => match parse_date(&v.text()) {
+                Some((year, month, day)) => {
+                    let day_of_year =
+                        days_from_civil(year, month, day) - days_from_civil(year, 1, 1) + 1;
+                    let offset = weekday(year, 1, 1) - 1;
+                    Value::Number((((day_of_year + offset as i64 - 1) / 7) + 1) as f64)
+                }
+                None => Value::Error,
+            },
+            None => Value::Error,
+        },
         "datestring" | "datekey" => match args.first().map(|a| eval(a, ctx)) {
             Some(v) => {
                 let text = v.text();

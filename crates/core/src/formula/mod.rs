@@ -21,7 +21,7 @@
 //!          | concat(...) | concatenate(...) | textjoin(sep, ignore_empty, ...) | char(n) | code(text)
 //!          | value(x) | exact(a, b)
 //!          | year(x) | month(x) | day(x) | date(y, m, d) | datestring(x)
-//!          | edate(date, months) | eomonth(date, months) | weekday(date) | days(end, start)
+//!          | edate(date, months) | eomonth(date, months) | weekday(date) | weeknum(date) | days(end, start)
 //!          | if(cond, a[, b]) | and(...) | or(...) | not(x) | iferror(x, fallback)
 //!          | isblank(x) | isnumber(x) | row | lag(col[, n]) | running_total(col)
 //!          | sum(col) | average(col) | count(col)   (whole-column, constant per row)
@@ -1659,6 +1659,27 @@ mod tests {
             "#VALUE!",
             "ranges of different widths have no pairwise meaning"
         );
+    }
+
+    #[test]
+    fn weeknum_uses_sunday_as_the_first_day() {
+        assert_eq!(eval_str(r#"weeknum("2026-01-01")"#, &[]), "1");
+        assert_eq!(
+            eval_str(r#"weeknum("2026-01-03")"#, &[]),
+            "1",
+            "Saturday Jan 3 closes the week that contains Jan 1"
+        );
+        assert_eq!(
+            eval_str(r#"weeknum("2026-01-04")"#, &[]),
+            "2",
+            "the Sunday after Jan 1 starts a new week"
+        );
+        assert_eq!(
+            eval_str(r#"weeknum("2026-01-05")"#, &[]),
+            "2",
+            "Monday stays in the week the Sunday opened"
+        );
+        assert_eq!(eval_str(r#"weeknum("not-a-date")"#, &[]), "#VALUE!");
     }
 
     #[test]

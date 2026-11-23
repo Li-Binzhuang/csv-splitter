@@ -110,6 +110,8 @@
   delivery drill) reads 14.9 s filter / 16.3 s search against 13.2–13.9 / 13.8–14.6 at
   250M rows, with the same 78–81 MB. Filter/search cost tracks row count, not bytes;
   CAPABILITIES tells readers to estimate capacity from rows.
+- **`weeknum(date)`**: the week number with Sunday as the first day (Excel WEEKNUM's
+  default); Jan 1–4 2026 all read 1 and Jan 5 reads 2. Dates stay ISO text.
 - **Text helpers**: `textjoin(sep, ignore_empty, ...)` joins values with a separator
   (and can drop empty ones), `char(n)` turns a code point into text, and `code(text)`
   returns the first character's code.
