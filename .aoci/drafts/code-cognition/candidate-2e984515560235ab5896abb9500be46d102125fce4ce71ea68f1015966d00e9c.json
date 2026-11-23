@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "ba1be3b8d44bb436e4189b8455b836540fe4f002a0068d908087d36cdff73e9d",
+  "batch_id": "2e984515560235ab5896abb9500be46d102125fce4ce71ea68f1015966d00e9c",
+  "composite_identity": "09d49d74a144fb0ed69bd1265f63ab9c37c19c79d0517e3f389567c6e66054ca",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "d5ba32eb711f305c319cc8c54aeeb64d344db69c2d6bbadc7f8ba1ebffc24499",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "ed5dfea48f046d7744e0cf45b3ea6d9a8e73e9114b6628080cd307a45fc193ff",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、行内多条件聚合、median/large/small/percentile/mode 区间、iserror/isna/istext、weeknum/networkdays、文本函数、日期运算、原子 transaction 与整批撤销/重做、vlookup 别名修复、xlookup fallback、预扫冷启动约 25–30 ms、大文件耗时随行数而非字节数 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "9811ed200540019ddd4a401164fb5f3b11c286dc14fca6e47146671a2d50fd3b",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合支持整列/同行区间/多条件；sumifs 家族区间形式按同位置配对；stdev/var 与 stdevp/varp；median/large/small/percentile/mode 仅同行区间；sumproduct 多段；跨表 ref/vlookup 返回 #N/A 文本，xlookup 可带 fallback；iserror 认错误值与 #N/A，isna 只认 #N/A，istext 区分文本；textjoin/char/code；日期含 edate/eomonth/weekday/weeknum/networkdays/days | S:单列参数的聚合按整列解释；无预扫状态时整列聚合为 #VALUE!；跨行区间与整列 median 返回 #VALUE!；large/small 的 k、percentile 的 p 越界报错，mode 无重复值报错；networkdays 无节假日参数"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "6b3d7a310d2a4ba81b1d2b4cb20073fe6031d3adc47f1e9cd1dc6e12584da694",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、stdev/var 与 stdevp/varp、median/large/small/percentile/mode 同行区间、多段 sumproduct、行内多条件聚合（五种都有测试）、iserror/isna/istext、weeknum/networkdays、文本拼接、日期运算；collect_sheet_refs 识别 ref/vlookup/xlookup 并预加载引用 | S:公式列只存 journal；跨行区间无随机访问；整列 median 会保留全部值，故不支持；别名不喂给加载器就会在打开时失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "4a61d820ee24152ac1c6e898aa3e6d1af3db4a368b63fa9640925e106420ea80",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、行内多条件、iserror/isna/istext、stdev/var/stdevp/varp、median/large/small/percentile/mode 同行区间、多段 sumproduct、跨表 ref/vlookup/xlookup（fallback 可是字面量或列引用）、文本/日期函数（含 weeknum/networkdays）、条件通配符；大文件节写明耗时随行数而非字节数；编辑表含一次撤销/重做整批 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ce4f4cf5308bb4f709263ba4198a4b836bc7ffdd163d0518829bc87cb817f61f",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "ed5dfea48f046d7744e0cf45b3ea6d9a8e73e9114b6628080cd307a45fc193ff",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、行内多条件聚合、median/large/small/percentile/mode 区间、iserror/isna/istext、weeknum/networkdays、文本函数、日期运算、原子 transaction 与整批撤销/重做、vlookup 别名修复、xlookup fallback、预扫冷启动约 25–30 ms、大文件耗时随行数而非字节数 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "045c50ea51494ef19d5c7e750e23573ae406b42f1a2c9d30011d91e181b17178",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "9811ed200540019ddd4a401164fb5f3b11c286dc14fca6e47146671a2d50fd3b",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合支持整列/同行区间/多条件；sumifs 家族区间形式按同位置配对；stdev/var 与 stdevp/varp；median/large/small/percentile/mode 仅同行区间；sumproduct 多段；跨表 ref/vlookup 返回 #N/A 文本，xlookup 可带 fallback；iserror 认错误值与 #N/A，isna 只认 #N/A，istext 区分文本；textjoin/char/code；日期含 edate/eomonth/weekday/weeknum/networkdays/days | S:单列参数的聚合按整列解释；无预扫状态时整列聚合为 #VALUE!；跨行区间与整列 median 返回 #VALUE!；large/small 的 k、percentile 的 p 越界报错，mode 无重复值报错；networkdays 无节假日参数"
+    },
+    {
+      "candidate_id": "b99cbb109de4cda7a26c54ae749d427ea62b3074335b67de4b78f07e1a7a343e",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "6b3d7a310d2a4ba81b1d2b4cb20073fe6031d3adc47f1e9cd1dc6e12584da694",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、stdev/var 与 stdevp/varp、median/large/small/percentile/mode 同行区间、多段 sumproduct、行内多条件聚合（五种都有测试）、iserror/isna/istext、weeknum/networkdays、文本拼接、日期运算；collect_sheet_refs 识别 ref/vlookup/xlookup 并预加载引用 | S:公式列只存 journal；跨行区间无随机访问；整列 median 会保留全部值，故不支持；别名不喂给加载器就会在打开时失败"
+    },
+    {
+      "candidate_id": "243fb13393678e3cb661d8f108c2f1c7e4881d71143522366f24b2850f18d724",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "4a61d820ee24152ac1c6e898aa3e6d1af3db4a368b63fa9640925e106420ea80",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、行内多条件、iserror/isna/istext、stdev/var/stdevp/varp、median/large/small/percentile/mode 同行区间、多段 sumproduct、跨表 ref/vlookup/xlookup（fallback 可是字面量或列引用）、文本/日期函数（含 weeknum/networkdays）、条件通配符；大文件节写明耗时随行数而非字节数；编辑表含一次撤销/重做整批 | S:-"
+    }
+  ]
+}
