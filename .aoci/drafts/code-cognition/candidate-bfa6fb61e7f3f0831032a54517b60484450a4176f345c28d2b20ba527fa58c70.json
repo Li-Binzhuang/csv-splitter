@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "d7c2ee6a86eccc058b1108c8c40ef535d3c0c0cd515218a3ec49295a44b907cd",
+  "batch_id": "bfa6fb61e7f3f0831032a54517b60484450a4176f345c28d2b20ba527fa58c70",
+  "composite_identity": "9e746ca6e9953ca6427c053eb8bc544e356ab528e8ae0aca9a2d5c48130b4628",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "3fe4c7a859787c100825552879223de41f730b64ed94203fccc6d69855bcd5ad",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "bd562143b60df5c3868ab2f017999b0a5c2f4418a0555df68e2b76de55606484",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage/--dag/--step-timeout/--retries/group 并发与 staging 提交、mcp 读写+job、view 游标、官方 SDK、压缩输入、100 GB/81 GB 演练、demo、外发、试点报告、打包 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "23d50f75749db8a524effe502d9ba406e111b2e32fd13324d3e7e868d01e7f7f",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；pipeline run/status 支持 size+mtime 跳过、--force、--dry-run、--json、--dag、--jobs、--step-timeout、--retries；DAG 按 lineage 拓扑调度，ready 逐项判 fresh，stale 波次并发；组/DAG 子进程写 staging 文件，整波成功后才 rename 最终输出；任一失败 kill 其余并删 staging，保留旧输出；dry-run 返回 deps；view --json 返回 start/nextStart/hasMore；mcp --root | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state；更早成功波已提交输出保留；group 是连续同组，dag 才是任意拓扑；mcp stdout 只走 JSON-RPC"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "60c8ee4edd304a9d554fb418ccef96d73bd555c01c3e44ce19760f8085bc7967",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过/--dry-run（JSON+lineage）/--dag 拓扑调度/--step-timeout/--retries/group 并发；波内失败 kill 其余、删 staging、保留旧输出；mcp 读写+job 与 pipeline_run/job_cancel/job_list（16 工具）、view 游标 nextStart/hasMore、官方 SDK；压缩输入 zst/gz/bz2/xz 顺序读；C 100 GB/81 GB 演练；64 GB 自适应；试点报告；离线发布包 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "37173708297739020dc66399da92425260306f2e80b48386698a9b3e8390fda1",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5；A Pipeline 含 --dry-run（JSON）、--step-timeout、--retries；B MCP 读写+job+pipeline_run/job_cancel/job_list 与官方 SDK；C 100/81 GB 演练达标；压缩输入顺序读；64 GB 自适应；demo/OUTREACH/试点报告/打包；下一步 DAG 并行与真实客户 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "b882cf91c0e703188a5bac39f9c0631b4c0eefc9e54028a55c093996a13c0eef",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "bd562143b60df5c3868ab2f017999b0a5c2f4418a0555df68e2b76de55606484",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage/--dag/--step-timeout/--retries/group 并发与 staging 提交、mcp 读写+job、view 游标、官方 SDK、压缩输入、100 GB/81 GB 演练、demo、外发、试点报告、打包 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "3cb9719af67e3d1f4e6f736fecd161af21f524cb5aba01bfb89a4d7452b9152a",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "23d50f75749db8a524effe502d9ba406e111b2e32fd13324d3e7e868d01e7f7f",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；pipeline run/status 支持 size+mtime 跳过、--force、--dry-run、--json、--dag、--jobs、--step-timeout、--retries；DAG 按 lineage 拓扑调度，ready 逐项判 fresh，stale 波次并发；组/DAG 子进程写 staging 文件，整波成功后才 rename 最终输出；任一失败 kill 其余并删 staging，保留旧输出；dry-run 返回 deps；view --json 返回 start/nextStart/hasMore；mcp --root | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state；更早成功波已提交输出保留；group 是连续同组，dag 才是任意拓扑；mcp stdout 只走 JSON-RPC"
+    },
+    {
+      "candidate_id": "26060fa61b70e0c3b4a65afcd50c0665b1c381677591fd6433f1d75a0019147c",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "60c8ee4edd304a9d554fb418ccef96d73bd555c01c3e44ce19760f8085bc7967",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过/--dry-run（JSON+lineage）/--dag 拓扑调度/--step-timeout/--retries/group 并发；波内失败 kill 其余、删 staging、保留旧输出；mcp 读写+job 与 pipeline_run/job_cancel/job_list（16 工具）、view 游标 nextStart/hasMore、官方 SDK；压缩输入 zst/gz/bz2/xz 顺序读；C 100 GB/81 GB 演练；64 GB 自适应；试点报告；离线发布包 | S:-"
+    },
+    {
+      "candidate_id": "e1e06fe38f1a6cfc7fdeeefd44686f37e0b7c1c6bb4f3015fe8816591fe7448e",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "37173708297739020dc66399da92425260306f2e80b48386698a9b3e8390fda1",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5；A Pipeline 含 --dry-run（JSON）、--step-timeout、--retries；B MCP 读写+job+pipeline_run/job_cancel/job_list 与官方 SDK；C 100/81 GB 演练达标；压缩输入顺序读；64 GB 自适应；demo/OUTREACH/试点报告/打包；下一步 DAG 并行与真实客户 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    }
+  ]
+}
