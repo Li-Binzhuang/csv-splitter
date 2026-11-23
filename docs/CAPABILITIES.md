@@ -226,6 +226,7 @@ filtered,orders.csv,filter,--where city=CDMX -o {out},filtered.csv
 joined,filtered,lookup,--key cust_no --reference customers.csv --get name --out {out},joined.csv
 ```
 
+- `--dry-run` 只报告 fresh / would-run，不执行、不写 state；便于评审计划。
 - `input` 为空表示上一步输出；也可写前一步的 `step` 名或文件路径。
 - `{out}` 会被替换为原子临时文件，成功后才 rename；不带 `{out}` 时捕获 stdout 写成输出。
 - `.pipeline.csv` 记录输入/参数/输出哈希；未变步骤显示 `↷` 跳过，变了的重跑，`--force` 全跑。

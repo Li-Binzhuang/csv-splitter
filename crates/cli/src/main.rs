@@ -134,6 +134,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
     (
         "pipeline",
         &[
+            ("--dry-run", "Report fresh/would-run steps without executing"),
             ("--force", "Rerun every step even when fresh"),
             ("--json", "Emit JSON (run and status)"),
             ("--root", "Directory for relative inputs/outputs"),
@@ -8076,6 +8077,7 @@ fn run_pipeline_plan(
     plan: &std::path::Path,
     root: Option<&std::path::Path>,
     force: bool,
+    dry_run: bool,
 ) -> std::io::Result<Vec<(String, bool, u64, String)>> {
     let root = root
         .map(std::path::Path::to_path_buf)
@@ -8193,6 +8195,16 @@ fn run_pipeline_plan(
                 .unwrap_or_else(|| root.join(name)),
         };
         if !input_path.exists() {
+            if dry_run {
+                results.push((
+                    step.name.clone(),
+                    false,
+                    0,
+                    format!("missing input {}", input_path.display()),
+                ));
+                previous_output = Some(step.output.clone());
+                continue;
+            }
             return Err(std::io::Error::new(
                 std::io::ErrorKind::NotFound,
                 format!(
@@ -8254,6 +8266,11 @@ fn run_pipeline_plan(
                 input_stamp,
                 output_stamp,
             });
+            previous_output = Some(step.output.clone());
+            continue;
+        }
+        if dry_run {
+            results.push((step.name.clone(), false, 0, "would run".to_string()));
             previous_output = Some(step.output.clone());
             continue;
         }
@@ -8338,7 +8355,9 @@ fn run_pipeline_plan(
             break;
         }
     }
-    save_pipeline_state(&state_path, &state_rows)?;
+    if !dry_run {
+        save_pipeline_state(&state_path, &state_rows)?;
+    }
     Ok(results)
 }
 
@@ -8348,6 +8367,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
     let mut plan: Option<std::path::PathBuf> = None;
     let mut root: Option<std::path::PathBuf> = None;
     let mut force = false;
+    let mut dry_run = false;
     let mut json = false;
     while let Some(arg) = p.next() {
         match arg.as_str() {
@@ -8359,6 +8379,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
                 }
             },
             "--force" => force = true,
+            "--dry-run" => dry_run = true,
             "--json" => json = true,
             "-h" | "--help" => {
                 print_command_help("pipeline");
@@ -8389,8 +8410,18 @@ fn cmd_pipeline(args: &[String]) -> i32 {
         return 2;
     };
     match action.as_str() {
-        "run" => match run_pipeline_plan(&plan, root.as_deref(), force) {
+        "run" => match run_pipeline_plan(&plan, root.as_deref(), force, dry_run) {
             Ok(results) => {
+                if dry_run {
+                    for (name, fresh, _, detail) in results {
+                        if fresh {
+                            println!("↷ {name}");
+                        } else {
+                            println!("→ {name} ({detail})");
+                        }
+                    }
+                    return 0;
+                }
                 if json {
                     let items: Vec<String> = results
                         .iter()

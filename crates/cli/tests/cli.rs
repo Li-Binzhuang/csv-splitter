@@ -2547,6 +2547,26 @@ fn pipeline_runs_incrementally_and_fails_atomically() {
             .output()
             .unwrap()
     };
+    let dry = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            plan.to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--dry-run",
+        ])
+        .output()
+        .unwrap();
+    assert!(dry.status.success(), "{:?}", dry.stderr);
+    let dry_stdout = String::from_utf8_lossy(&dry.stdout);
+    assert!(dry_stdout.contains("→ filtered"), "{dry_stdout}");
+    assert!(!dir.join("filtered.csv").exists(), "dry-run must not write");
+    assert!(
+        !dir.join("plan.csv.pipeline.csv").exists(),
+        "dry-run must not write state"
+    );
+
     let first = run();
     assert!(first.status.success(), "{:?}", first.stderr);
     assert_eq!(
