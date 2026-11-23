@@ -7707,8 +7707,7 @@ fn mcp_error(id: Option<&McpJson>, code: i64, message: &str) -> String {
     )
 }
 
-fn mcp_tool_text(id: Option<&McpJson>, text: &str, is_error: bool) -> String {
-    let code = if is_error { "tool_error" } else { "ok" };
+fn mcp_tool_text_code(id: Option<&McpJson>, text: &str, is_error: bool, code: &str) -> String {
     format!(
         r#"{{"jsonrpc":"2.0","id":{},"result":{{"content":[{{"type":"text","text":{}}}],"structuredContent":{{"ok":{},"code":{}}},"isError":{}}}}}"#,
         mcp_id(id),
@@ -7717,6 +7716,19 @@ fn mcp_tool_text(id: Option<&McpJson>, text: &str, is_error: bool) -> String {
         mcp_quote(code),
         is_error
     )
+}
+
+fn mcp_tool_text(id: Option<&McpJson>, text: &str, is_error: bool) -> String {
+    mcp_tool_text_code(
+        id,
+        text,
+        is_error,
+        if is_error { "tool_error" } else { "ok" },
+    )
+}
+
+fn mcp_tool_error(id: Option<&McpJson>, text: &str, code: &str) -> String {
+    mcp_tool_text_code(id, text, true, code)
 }
 
 fn mcp_result(id: Option<&McpJson>, result: &str) -> String {
@@ -8245,7 +8257,7 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
                                 false,
                             )
                         }
-                        Err(error) => mcp_tool_text(id, &error, true),
+                        Err(error) => mcp_tool_error(id, &error, "job_start_error"),
                     }
                 } else if name == "csvx_job_status" {
                     let job_id = arguments.get("id").and_then(McpJson::as_str).unwrap_or("");
@@ -8292,13 +8304,13 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
                                 std::thread::sleep(std::time::Duration::from_millis(100));
                             }
                         }
-                        None => mcp_tool_text(id, &format!("unknown job {job_id}"), true),
+                        None => mcp_tool_error(id, &format!("unknown job {job_id}"), "unknown_job"),
                     }
                 } else if name == "csvx_job_cancel" {
                     let job_id = arguments.get("id").and_then(McpJson::as_str).unwrap_or("");
                     match jobs.get_mut(job_id) {
                         Some(job) => mcp_tool_text(id, &mcp_cancel_job(job_id, job), false),
-                        None => mcp_tool_text(id, &format!("unknown job {job_id}"), true),
+                        None => mcp_tool_error(id, &format!("unknown job {job_id}"), "unknown_job"),
                     }
                 } else if name == "csvx_job_list" {
                     let full = arguments
@@ -8312,7 +8324,13 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
                 } else {
                     match mcp_run_tool(root, name, &arguments) {
                         Ok(text) => mcp_tool_text(id, &text, false),
-                        Err(error) => mcp_tool_text(id, &error, true),
+                        Err(error) if error.starts_with("unknown tool") => {
+                            mcp_tool_error(id, &error, "unknown_tool")
+                        }
+                        Err(error) if error.contains("outside the MCP root") => {
+                            mcp_tool_error(id, &error, "path_escape")
+                        }
+                        Err(error) => mcp_tool_error(id, &error, "cli_error"),
                     }
                 }
             }

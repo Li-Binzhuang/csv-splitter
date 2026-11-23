@@ -3523,6 +3523,16 @@ fn mcp_job_status_can_wait() {
             r#"{{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{{"name":"csvx_job_status","arguments":{{"id":"job-1","wait":2}},"_meta":{{"progressToken":"p-1"}}}}}}"#
         )
         .unwrap();
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{{"name":"csvx_nope","arguments":{{}}}}}}"#
+        )
+        .unwrap();
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{{"name":"csvx_schema","arguments":{{"path":"../secret.csv"}}}}}}"#
+        )
+        .unwrap();
     }
     drop(child.stdin.take());
     let output = child.wait_with_output().unwrap();
@@ -3537,6 +3547,10 @@ fn mcp_job_status_can_wait() {
     assert!(stdout.contains("p-1"), "{stdout}");
     assert!(stdout.contains("structuredContent"), "{stdout}");
     assert!(stdout.contains(r#""code":"ok""#), "{stdout}");
+    assert!(stdout.contains("unknown tool"), "{stdout}");
+    assert!(stdout.contains(r#""code":"unknown_tool""#), "{stdout}");
+    assert!(stdout.contains("path"), "{stdout}");
+    assert!(stdout.contains(r#""code":"path_escape""#), "{stdout}");
 }
 
 /// Job listing exposes every submitted job, including done/cancelled state.

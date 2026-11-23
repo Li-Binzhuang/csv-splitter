@@ -150,7 +150,8 @@
 - **MCP pipeline DAG options**: `csvx_pipeline_run` accepts dag/jobs/clean and forwards
   them to the CLI, so agents can run topological waves and bound concurrency.
 - **MCP structured results**: every tool response carries
-  `structuredContent: {"ok":bool,"code":"ok|tool_error"}` next to text content.
+  `structuredContent: {"ok":bool,"code":"ok|tool_error|unknown_tool|unknown_job|path_escape|cli_error"}`
+  next to text content; tests cover unknown_tool and path_escape.
 - **MCP progress notifications**: when tools/call carries `_meta.progressToken`,
   job_status wait emits `notifications/progress` (0 then once per second). Test
   asserts the notification line and token.
