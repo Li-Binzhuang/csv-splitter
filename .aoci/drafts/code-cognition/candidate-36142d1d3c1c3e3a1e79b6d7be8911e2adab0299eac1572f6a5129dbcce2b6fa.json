@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "cde563c69b5e508355513dc93987e1d895ebe4ef4b5299635ce7d3b16e341240",
+  "batch_id": "36142d1d3c1c3e3a1e79b6d7be8911e2adab0299eac1572f6a5129dbcce2b6fa",
+  "composite_identity": "c1c1b507f362760794dd380bc8e6e8d60864422ac51bbb7dd968b5017f929af6",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "a77e83c82a049047f8c9f41b90b8ff3eaf77f0dbe6313560f68854cd56f8c579",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "87929188fc2b23f4683e34bd731790adf3ff83246aa02b831fc7e01e55bb14a9",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/--dag 跨波回滚与崩溃恢复/run lock/--unlock/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/cancel/list 摘要+pipeline DAG 参数、view 游标、官方 SDK、压缩输入、100 GB/81 GB 演练、demo、外发、试点报告、打包 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "9303e6c72f9c19c2fd14b37a864360f1f4f32043bc4bb8c5474e84773ef6bba8",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 读写与 job；run_mcp_stdio 一行一条 JSON-RPC；工具含 schema/view/filter/search/quality/pipeline_status/pipeline_run、edit_set/delete/undo/redo、convert、job_submit/job_status/job_cancel/job_list（16）；pipeline_run 接受 force/dryRun/dag/jobs/clean；job_status 支持 0–30s wait；job_cancel kill 子进程；job_list 默认状态+outputChars，full=true 返回完整输出；未知工具先判身份；父目录组件在 canonicalize 前拒绝 | S:strict 参数未登记即 400；MCP stdout 只走协议，工具失败 isError；job 结果缓存；tools/list 必须能被 McpParser 解析"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "9b32fcb42a0a3017b3e3c5841f37d1b3ca7355c8f7f82a4129db443450699360",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 成功写 lineage、status --verify、run lock/--unlock、--dry-run(JSON)、--dag 跨波回滚/崩溃恢复、--step-timeout、--retries、group 并发、--clean；mcp 读写+job 与 pipeline_run（dag/jobs/clean）/job_cancel/job_list（16 工具）、view 游标、官方 SDK；压缩输入顺序读；C 100 GB/81 GB 演练；64 GB 自适应；试点报告；离线发布包 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "97b324a330c3276f4eedc48cd1967c0737fb2f6d15b76fa01fd0ad8536db444c",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "87929188fc2b23f4683e34bd731790adf3ff83246aa02b831fc7e01e55bb14a9",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/--dag 跨波回滚与崩溃恢复/run lock/--unlock/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/cancel/list 摘要+pipeline DAG 参数、view 游标、官方 SDK、压缩输入、100 GB/81 GB 演练、demo、外发、试点报告、打包 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "afb4ca33527f6b385e7e804d24fee2664c48cda61adfbe6fe9d73be751b5095e",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "9303e6c72f9c19c2fd14b37a864360f1f4f32043bc4bb8c5474e84773ef6bba8",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 读写与 job；run_mcp_stdio 一行一条 JSON-RPC；工具含 schema/view/filter/search/quality/pipeline_status/pipeline_run、edit_set/delete/undo/redo、convert、job_submit/job_status/job_cancel/job_list（16）；pipeline_run 接受 force/dryRun/dag/jobs/clean；job_status 支持 0–30s wait；job_cancel kill 子进程；job_list 默认状态+outputChars，full=true 返回完整输出；未知工具先判身份；父目录组件在 canonicalize 前拒绝 | S:strict 参数未登记即 400；MCP stdout 只走协议，工具失败 isError；job 结果缓存；tools/list 必须能被 McpParser 解析"
+    },
+    {
+      "candidate_id": "38117e01c975eb4e2f71e099ed8f8875b063f643486187d24d68f8d96aa9e730",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "9b32fcb42a0a3017b3e3c5841f37d1b3ca7355c8f7f82a4129db443450699360",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 成功写 lineage、status --verify、run lock/--unlock、--dry-run(JSON)、--dag 跨波回滚/崩溃恢复、--step-timeout、--retries、group 并发、--clean；mcp 读写+job 与 pipeline_run（dag/jobs/clean）/job_cancel/job_list（16 工具）、view 游标、官方 SDK；压缩输入顺序读；C 100 GB/81 GB 演练；64 GB 自适应；试点报告；离线发布包 | S:-"
+    }
+  ]
+}
