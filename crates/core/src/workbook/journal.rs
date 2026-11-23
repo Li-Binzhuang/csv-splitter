@@ -744,6 +744,11 @@ pub fn compact(
 ) -> io::Result<CompactSummary> {
     let sidecar = Journal::sidecar(base);
     let _lock = JournalLock::acquire(&sidecar)?;
+    if let Ok(ms) = std::env::var("CSVX_COMPACT_SLEEP_MS") {
+        if let Ok(ms) = ms.parse::<u64>() {
+            std::thread::sleep(std::time::Duration::from_millis(ms));
+        }
+    }
     let journal = Journal::load(&sidecar)?;
     if journal.redo_len() > 0 {
         return Err(io::Error::new(
@@ -767,7 +772,14 @@ pub fn compact(
     }
     let tmp = snapshot_tmp(base);
     let _ = std::fs::remove_file(&tmp);
-    let summary = super::export(base, &journal.ops, &tmp, delimiter, tx)?;
+    let summary = match super::export(base, &journal.ops, &tmp, delimiter, tx) {
+        Ok(summary) => summary,
+        Err(error) => {
+            // A disk-full snapshot leaves a partial temp; the sheet itself is intact.
+            let _ = std::fs::remove_file(&tmp);
+            return Err(error);
+        }
+    };
     std::fs::copy(base, &archive)?;
     std::fs::copy(&sidecar, &history)?;
     let index = crate::index::SparseIndex::sidecar_path(base);
@@ -1139,6 +1151,23 @@ mod compact_tests {
         assert_eq!(Journal::load(&sidecar).unwrap().len(), 2);
         assert!(!archive_path(&base).exists());
         assert!(!history_path(&sidecar).exists());
+        std::fs::remove_dir_all(&d).ok();
+    }
+
+    #[test]
+    fn compaction_leaves_the_view_layout_sidecar_in_place() {
+        let d = dir("view");
+        let base = d.join("b.csv");
+        std::fs::write(&base, "id,city,amount\n1,CDMX,10\n2,Puebla,20\n").unwrap();
+        let sidecar = Journal::sidecar(&base);
+        edited_journal().save(&sidecar).unwrap();
+        let view = PathBuf::from(format!("{}.view", base.display()));
+        std::fs::write(&view, b"widths,id=8\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        compact(&base, Delimiter::Comma, &tx).unwrap();
+        assert_eq!(std::fs::read(&view).unwrap(), b"widths,id=8\n");
+        assert!(restore_compacted(&base).unwrap());
+        assert_eq!(std::fs::read(&view).unwrap(), b"widths,id=8\n");
         std::fs::remove_dir_all(&d).ok();
     }
 

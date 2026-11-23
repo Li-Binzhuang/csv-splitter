@@ -128,6 +128,9 @@
   next command recovers with edits applied once; exports before/after are byte-equal.
   2.2 GB/55M rows: compact 1.77 s (8 MB RSS), boundary undo 0.03 s, deep jump rebuilds
   the snapshot index in 0.82 s then 0.01 s; the old .idx is archived with .base.
+  10M-op history (227 MB): compact 8.98 s, then view/export 0.02/0.03 s; exports byte-equal.
+  Real ENOSPC on a 300 MB volume leaves base/journal byte-identical and removes the temp;
+  a waiting concurrent edit lands after the snapshot.
 - **Byte predicates for parallel scans**: search and no-output filter now check
   records via `visit_fields` instead of allocating `String` fields; search also
   rejects a record whose raw bytes cannot contain the query before splitting it.

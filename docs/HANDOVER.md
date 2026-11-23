@@ -86,8 +86,19 @@ after_install 四个窗口真实 abort 进程，下一命令都能恢复且编�
 跨界 undo **0.03 s**、redo 0.01 s，编辑在正确行上被移除/恢复。`.idx` 随原 base 归档为
 `.base.idx`，跨界 undo 再换回；快照写入失败（temp 被目录占用）时 base/journal 不变。
 
-**仍待补**：真实 ENOSPC（现验证的是写失败不改文件）；1000 万条 history 的压实耗时/空间；
-HTTP 并发写与压实竞争（CLI 侧 `update_locked` 已串行）；`.view` 在压实后的行为测试。
+1000 万条 history（227 MB）压实（2026-11-23）：压实前 view **9.27 s** / export **7.29 s**，
+compact **8.98 s**、RSS **8 MB**；压实后 view/export **0.02 / 0.03 s**；副本 18 MB + 218 MB；
+前后 export 逐字节一致。
+
+真实 ENOSPC（300 MB HFS+ 卷，填至 3 MB 空闲）：compact 退出 1、`os error 28`；base/journal
+sha256 不变、journal 仍 2 行；快照失败会删除 partial `.compact.tmp`，无 marker/archive 残留。
+
+并发写：`CSVX_COMPACT_SLEEP_MS` 让压实持锁停 800 ms，此时启动的 `edit set` 等待并在快照落地后
+成功；导出同时包含压实前编辑与等待编辑，行数不变。`.view` 布局在压实与跨界 undo 后都原样保留。
+
+**阶段 2 已完成**：打开时间不再随已折叠历史增长、跨界 undo/redo 正确、崩馈四窗口可恢复、
+真实 ENOSPC 不破坏文件、CLI 并发写不丢。HTTP 写走同一 `update_locked` 锁路径，但未单独做
+serve 端到端压测；`.idx` 已随 `.base` 归档并在跨界 undo 恢复。
 
 ## 对 Excel / WPS 的覆盖
 

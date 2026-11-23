@@ -2206,6 +2206,76 @@ fn crashed_compactions_recover_once_at_every_window() {
     }
 }
 
+/// A writer that starts while compaction holds the lock must wait and then land on
+/// the snapshot instead of disappearing.
+#[test]
+fn a_concurrent_edit_waits_for_compaction_and_survives() {
+    let dir = TempDir::new("compact-race");
+    let base = dir.join("b.csv");
+    std::fs::write(
+        &base,
+        "id,city,amount\n1,CDMX,10\n2,Puebla,20\n3,Monterrey,30\n",
+    )
+    .unwrap();
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "set",
+            base.to_str().unwrap(),
+            "--row",
+            "2",
+            "--col",
+            "city",
+            "--value",
+            "Tijuana",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let mut compact = Command::new(bin())
+        .args(["edit", "compact", base.to_str().unwrap()])
+        .env("CSVX_COMPACT_SLEEP_MS", "800")
+        .spawn()
+        .unwrap();
+    std::thread::sleep(std::time::Duration::from_millis(150));
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "set",
+            base.to_str().unwrap(),
+            "--row",
+            "3",
+            "--col",
+            "amount",
+            "--value",
+            "99",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(
+        status.code(),
+        Some(0),
+        "the waiting writer must apply after compaction"
+    );
+    assert!(compact.wait().unwrap().success());
+    let out = dir.join("out.csv");
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            base.to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&out).unwrap();
+    assert!(text.contains("2,Tijuana,20"), "{text}");
+    assert!(text.contains("3,Monterrey,99"), "{text}");
+    assert_eq!(text.lines().count(), 4);
+}
+
 /// A bulk edit is one journal entry however many rows it changes.
 #[test]
 fn bulk_edit_matches_a_filter_and_stays_one_operation() {
