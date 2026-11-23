@@ -1,0 +1,34 @@
+name: macOS gate
+
+# The release demo is verified on macOS arm64, but the existing CI only covers Ubuntu
+# (gate) and Windows (compile check). This workflow runs the same gate on macOS.
+# No cargo cache: the repository's cache quota was already exceeded once.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "scripts/gate.sh"
+  pull_request:
+    paths:
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "scripts/gate.sh"
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: gate
+        run: bash scripts/gate.sh
