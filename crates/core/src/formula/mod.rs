@@ -1423,6 +1423,9 @@ mod tests {
         assert_eq!(eval_str("iserror(1)", &[]), "FALSE");
         // ref/vlookup spell a miss as text, so iserror must own that spelling too.
         assert_eq!(eval_str("iserror(\"#N/A\")", &[]), "TRUE");
+        assert_eq!(eval_str("isna(\"#N/A\")", &[]), "TRUE");
+        assert_eq!(eval_str("isna(1/0)", &[]), "FALSE");
+        assert_eq!(eval_str("isna(1)", &[]), "FALSE");
         assert_eq!(eval_str(r#"istext("A")"#, &[]), "TRUE");
         assert_eq!(eval_str("istext(1)", &[]), "FALSE");
         assert_eq!(eval_str("istext(1/0)", &[]), "FALSE");

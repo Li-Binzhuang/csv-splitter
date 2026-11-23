@@ -387,6 +387,15 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             None => Value::Error,
         },
+        // ISNA is the narrow test: ref/vlookup spell a miss as the text "#N/A", so
+        // that spelling is the only thing it accepts (expression errors are ISERROR's).
+        "isna" => match args.first() {
+            Some(arg) => {
+                let value = eval(arg, ctx);
+                Value::Bool(matches!(&value, Value::Text(text) if text == "#N/A"))
+            }
+            None => Value::Error,
+        },
         "istext" => match args.first() {
             Some(arg) => Value::Bool(matches!(eval(arg, ctx), Value::Text(_))),
             None => Value::Error,

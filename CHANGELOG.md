@@ -100,9 +100,11 @@
 - **Text helpers**: `textjoin(sep, ignore_empty, ...)` joins values with a separator
   (and can drop empty ones), `char(n)` turns a code point into text, and `code(text)`
   returns the first character's code.
-- **`iserror` / `istext`**: `iserror(x)` is true for `#VALUE!`-style errors and for
-  the text `#N/A` that ref/vlookup return on a miss; `istext(x)` distinguishes a text
-  value from a number.
+- **`iserror` / `isna` / `istext`**: `iserror(x)` is true for `#VALUE!`-style errors
+  and for the text `#N/A` that ref/vlookup return on a miss; `isna(x)` is the narrow
+  test that only accepts that `#N/A` spelling; `istext(x)` distinguishes a text
+  value from a number. Excel's ISNA/ISERROR split is preserved, with the deliberate rule
+  that a lookup miss counts as an error because it is spelled as text here.
 - **`xlookup`**: `xlookup(sheet, key, value, fallback)` is ref/vlookup plus an
   if-not-found value; a miss returns the fallback expression (a literal or a column
   reference such as `default_name`) instead of the text `#N/A`, which `iferror`
