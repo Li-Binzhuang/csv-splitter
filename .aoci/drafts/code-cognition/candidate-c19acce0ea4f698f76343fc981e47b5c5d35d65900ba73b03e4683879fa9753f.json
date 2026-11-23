@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "52a656c327d1169596dbe2d489d34a74b47dd7b62f343074076072b73de439e7",
+  "batch_id": "c19acce0ea4f698f76343fc981e47b5c5d35d65900ba73b03e4683879fa9753f",
+  "composite_identity": "d57d3569ae4a5136fdf9bca30dc79b2e0c52f876d1cbade3246981c2450183c5",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "8dfc37b27ab419baa4816179721e6b5befd90013b3e63588ed6ea84355c60623",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "a35cd79d967d2c6f4bddfb9a7072b62bf91b3759a763507f6386741f81ea70f4",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、median 区间、文本函数、日期运算、原子 transaction 与整批撤销/重做、pivot/groupby 全聚合等价测试，以及预扫 100 万行冷启动约 25 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "a5adfecc742b72c7e0365d3ea287867d5f103911ebf8145e21387b0219d44c7c",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合支持整列/同行区间/多条件；stdev/var 与 stdevp/varp 共用平方和；median 只接受同行区间；sumproduct 接受任意多段同行区间逐项乘加；文本有 textjoin/char/code；日期支持 edate/eomonth/weekday/days | S:单列参数的聚合按整列解释；无预扫状态时聚合为 #VALUE!；跨行区间与整列 median 返回 #VALUE!；sumproduct 各段宽度必须一致"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "17de4b6c3435cf0464f5273a65f44891d8f529b6ca7a83a0bc308de9be25cb93",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、stdev/var 与 stdevp/varp、median 同行区间、多段 sumproduct、文本拼接、日期运算；条件字面量含 * 或 ? 时编译为 Wildcard | S:公式列只存 journal；跨行区间无随机访问；整列 median 会保留全部值，故不支持；日期是 ISO 文本"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "45ecf9d65c0764790f6336d4d8f83bd89d3ed2a553ae01b0fea290751ee56466",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、stdev/var/stdevp/varp、median 同行区间、多段 sumproduct、文本函数、日期运算、条件通配符；编辑表含原子批量写、一次撤销/重做整批；透视表列出五种聚合与多值列 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "09d8ec44306de9de37c18217effcef25193086790a9e21a41f61983c7c19062d",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "a35cd79d967d2c6f4bddfb9a7072b62bf91b3759a763507f6386741f81ea70f4",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、median 区间、文本函数、日期运算、原子 transaction 与整批撤销/重做、pivot/groupby 全聚合等价测试，以及预扫 100 万行冷启动约 25 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "8d138288bc0e5598883b9ae5af4ae3576291ed75a894e7c55066c7902ffdeb19",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "a5adfecc742b72c7e0365d3ea287867d5f103911ebf8145e21387b0219d44c7c",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合支持整列/同行区间/多条件；stdev/var 与 stdevp/varp 共用平方和；median 只接受同行区间；sumproduct 接受任意多段同行区间逐项乘加；文本有 textjoin/char/code；日期支持 edate/eomonth/weekday/days | S:单列参数的聚合按整列解释；无预扫状态时聚合为 #VALUE!；跨行区间与整列 median 返回 #VALUE!；sumproduct 各段宽度必须一致"
+    },
+    {
+      "candidate_id": "0c9980de494ef0648f3ff5be4c26199beef60c12b7f15a126aff9b6dd4897370",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "17de4b6c3435cf0464f5273a65f44891d8f529b6ca7a83a0bc308de9be25cb93",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、stdev/var 与 stdevp/varp、median 同行区间、多段 sumproduct、文本拼接、日期运算；条件字面量含 * 或 ? 时编译为 Wildcard | S:公式列只存 journal；跨行区间无随机访问；整列 median 会保留全部值，故不支持；日期是 ISO 文本"
+    },
+    {
+      "candidate_id": "cfff02531b8bbbcafe6a6d5298def7f9b8dc8ea16ce1abed4304a8e9f416d699",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "45ecf9d65c0764790f6336d4d8f83bd89d3ed2a553ae01b0fea290751ee56466",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、stdev/var/stdevp/varp、median 同行区间、多段 sumproduct、文本函数、日期运算、条件通配符；编辑表含原子批量写、一次撤销/重做整批；透视表列出五种聚合与多值列 | S:-"
+    }
+  ]
+}
