@@ -183,8 +183,13 @@ output,joined,orders,joined.csv,,,,,"customer,region"
 - `csvx_quality`：`analyze --quality` 报告，支持 key/group。
 - `csvx_pipeline_status`：读 `.pipeline.csv` 的哈希与耗时。
 
-路径必须落在 `--root` 内；`initialize` / `tools/list` / `tools/call` 已实现，写工具与 job 队列后续。
-JSON-RPC 一行一条，UTF-8 参数按字节保留。
+路径必须落在 `--root` 内；写工具复用 journal 锁：
+`csvx_edit_set`（row/col/value/expect）、`csvx_edit_delete`（row 或 where）、`csvx_edit_undo`、`csvx_edit_redo`、`csvx_convert`（tsv/ndjson/parquet/csv，输出限制在 root）。
+`initialize` / `tools/list` / `tools/call` 已实现；job 队列与 MCP 客户端联调后续。UTF-8 参数按字节保留，JSON-RPC 一行一条。
+
+2.3 GB/9500 万行 MCP drill（2026-11-23）：cold `schema` 3.11 s（建 760 KB 稀疏索引），
+warm schema 0.03 s，`view start=45,000,000` 0.02 s，`filter` 0.77 s，`search` 0.56 s，
+`quality` 22.25 s（9500 万行全量）；响应 0.4–4 KB。
 
 ### Pipeline（A 工作台，进行中）
 

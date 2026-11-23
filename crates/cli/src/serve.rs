@@ -7701,7 +7701,7 @@ fn mcp_result(id: Option<&McpJson>, result: &str) -> String {
 }
 
 fn mcp_tools() -> &'static str {
-    r#"[{"name":"csvx_schema","description":"Columns, types and row count for a CSV; read-only.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_view","description":"A page of rows; start/count cursor paging; optional where.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"start":{"type":"integer","minimum":0},"count":{"type":"integer","minimum":1,"maximum":1000},"where":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_filter","description":"Evaluate a row predicate and return matching rows or row numbers.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"where":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":1000},"show":{"type":"boolean"}},"required":["path","where"],"additionalProperties":false}},{"name":"csvx_search","description":"Search text across columns or a chosen column set.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"query":{"type":"string"},"columns":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":1000}},"required":["path","query"],"additionalProperties":false}},{"name":"csvx_quality","description":"Quality report: candidate keys, duplicates, mixed types, outliers, groups.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"key":{"type":"string"},"group":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_pipeline_status","description":"Read the .pipeline.csv state for a plan: hashes and per-step timings.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}}]"#
+    r#"[{"name":"csvx_schema","description":"Columns, types and row count for a CSV; read-only.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_view","description":"A page of rows; start/count cursor paging; optional where.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"start":{"type":"integer","minimum":0},"count":{"type":"integer","minimum":1,"maximum":1000},"where":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_filter","description":"Evaluate a row predicate and return matching rows or row numbers.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"where":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":1000},"show":{"type":"boolean"}},"required":["path","where"],"additionalProperties":false}},{"name":"csvx_search","description":"Search text across columns or a chosen column set.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"query":{"type":"string"},"columns":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":1000}},"required":["path","query"],"additionalProperties":false}},{"name":"csvx_quality","description":"Quality report: candidate keys, duplicates, mixed types, outliers, groups.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"key":{"type":"string"},"group":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_pipeline_status","description":"Read the .pipeline.csv state for a plan: hashes and per-step timings.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_edit_set","description":"Set one cell (1-based row, column name); uses the journal and write lock.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"row":{"type":"integer","minimum":1},"col":{"type":"string"},"value":{"type":"string"},"expect":{"type":"string"}},"required":["path","row","col","value"],"additionalProperties":false}},{"name":"csvx_edit_delete","description":"Delete one row by number or every row matching a predicate.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"row":{"type":"integer","minimum":1},"where":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_edit_undo","description":"Undo the last journal batch.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_edit_redo","description":"Redo the last undone batch.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_convert","description":"Convert to tsv/ndjson/parquet/csv; writes a new file (xlsx is disabled).","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"format":{"type":"string","enum":["csv","tsv","ndjson","parquet"]},"out":{"type":"string"}},"required":["path","format","out"],"additionalProperties":false}}]"#
 }
 
 fn mcp_path(root: &Path, args: &McpJson) -> Result<std::path::PathBuf, String> {
@@ -7724,6 +7724,26 @@ fn mcp_path(root: &Path, args: &McpJson) -> Result<std::path::PathBuf, String> {
         ));
     }
     Ok(canonical)
+}
+
+fn mcp_output_path(root: &Path, args: &McpJson) -> Result<PathBuf, String> {
+    let raw = args
+        .get("out")
+        .and_then(McpJson::as_str)
+        .ok_or("out is required")?;
+    let candidate = if Path::new(raw).is_absolute() {
+        PathBuf::from(raw)
+    } else {
+        root.join(raw)
+    };
+    let parent = candidate.parent().ok_or("out has no parent directory")?;
+    let parent = std::fs::canonicalize(parent)
+        .map_err(|e| format!("cannot resolve output directory: {e}"))?;
+    let root = std::fs::canonicalize(root).map_err(|e| format!("cannot resolve root: {e}"))?;
+    if !parent.starts_with(&root) {
+        return Err("output is outside the MCP root".to_string());
+    }
+    Ok(candidate)
 }
 
 fn mcp_run_tool(root: &Path, name: &str, args: &McpJson) -> Result<String, String> {
@@ -7815,6 +7835,66 @@ fn mcp_run_tool(root: &Path, name: &str, args: &McpJson) -> Result<String, Strin
         }
         "csvx_pipeline_status" => {
             command.args(["pipeline", "status", path.to_str().unwrap_or(""), "--json"]);
+        }
+        "csvx_edit_set" => {
+            let row = args
+                .get("row")
+                .and_then(McpJson::as_u64)
+                .ok_or("row is required")?;
+            let col = args
+                .get("col")
+                .and_then(McpJson::as_str)
+                .ok_or("col is required")?;
+            let value = args
+                .get("value")
+                .and_then(McpJson::as_str)
+                .ok_or("value is required")?;
+            command.args([
+                "edit",
+                "set",
+                path.to_str().unwrap_or(""),
+                "--row",
+                &row.to_string(),
+                "--col",
+                col,
+                "--value",
+                value,
+                "--json",
+            ]);
+            if let Some(expect) = args.get("expect").and_then(McpJson::as_str) {
+                command.args(["--expect", expect]);
+            }
+        }
+        "csvx_edit_delete" => {
+            command.args(["edit", "delete", path.to_str().unwrap_or(""), "--json"]);
+            if let Some(row) = args.get("row").and_then(McpJson::as_u64) {
+                command.args(["--row", &row.to_string()]);
+            } else if let Some(where_clause) = args.get("where").and_then(McpJson::as_str) {
+                command.args(["--where", where_clause]);
+            } else {
+                return Err("row or where is required".to_string());
+            }
+        }
+        "csvx_edit_undo" => {
+            command.args(["edit", "undo", path.to_str().unwrap_or(""), "--json"]);
+        }
+        "csvx_edit_redo" => {
+            command.args(["edit", "redo", path.to_str().unwrap_or(""), "--json"]);
+        }
+        "csvx_convert" => {
+            let format = args
+                .get("format")
+                .and_then(McpJson::as_str)
+                .ok_or("format is required")?;
+            let out = mcp_output_path(root, args)?;
+            command.args([
+                "convert",
+                path.to_str().unwrap_or(""),
+                "--format",
+                format,
+                "--out",
+                out.to_str().unwrap_or(""),
+            ]);
         }
         _ => return Err(format!("unknown tool {name}")),
     }

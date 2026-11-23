@@ -126,9 +126,11 @@ xlsx 仍按硬约束挂起，等用户明确解除。
 
 ## MCP 后端（B 主线，只读首版）
 
-`mcp --root DIR`：stdio JSON-RPC，工具 `csvx_schema/view/filter/search/quality/pipeline_status`；
-路径限制在 root，UTF-8 参数保留。CLI 测试覆盖 initialize、tools/list、schema/view/filter 调用。
-下一步：编辑工具（复用 journal 锁）、`/jobs` 状态、严格错误码与 MCP 客户端联调。
+`mcp --root DIR`：stdio JSON-RPC；读工具 `csvx_schema/view/filter/search/quality/pipeline_status`，
+写工具 `csvx_edit_set/delete/undo/redo` 与 `csvx_convert` 复用 journal 锁与 root 限制。
+CLI 测试覆盖 initialize、tools/list、schema/view/filter，以及 edit set→view→undo 和 convert TSV。
+2.3 GB/9500 万行 MCP drill：cold schema 3.11 s、warm 0.03 s、深分页 0.02 s、filter 0.77 s、
+search 0.56 s、quality 22.25 s；响应 0.4–4 KB。下一步：job 状态与真实客户端联调。
 
 ## Pipeline 工作台（A 主线，进行中）## Pipeline 工作台（A 主线，进行中）
 

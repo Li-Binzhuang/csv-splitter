@@ -2712,6 +2712,10 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
             r#"{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"csvx_schema","arguments":{"path":"t.csv"}}}"#,
             r#"{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"csvx_view","arguments":{"path":"t.csv","start":1,"count":1}}}"#,
             r#"{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"csvx_filter","arguments":{"path":"t.csv","where":"city=CDMX","show":true}}}"#,
+            r#"{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"csvx_edit_set","arguments":{"path":"t.csv","row":1,"col":"city","value":"X"}}}"#,
+            r#"{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"csvx_view","arguments":{"path":"t.csv","start":0,"count":1}}}"#,
+            r#"{"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"csvx_edit_undo","arguments":{"path":"t.csv"}}}"#,
+            r#"{"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"csvx_convert","arguments":{"path":"t.csv","format":"tsv","out":"out.tsv"}}}"#,
         ] {
             writeln!(stdin, "{line}").unwrap();
         }
@@ -2733,7 +2737,10 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
     assert!(stdout.contains("Puebla"), "{stdout}");
     assert!(stdout.contains("20"), "{stdout}");
     assert!(stdout.contains("matched"), "{stdout}");
+    assert!(stdout.contains("X"), "{stdout}");
     assert!(!stdout.contains("parse error"), "{stdout}");
+    let tsv = std::fs::read_to_string(dir.join("out.tsv")).unwrap();
+    assert!(tsv.starts_with("city\tamount\n"), "{tsv}");
 }
 
 /// A bulk edit is one journal entry however many rows it changes.

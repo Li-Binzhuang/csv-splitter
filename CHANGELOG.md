@@ -119,6 +119,10 @@
 - **`workday(start, days)`**: moves a date by business days, skipping weekends and
   accepting negative days (no holiday list in the two-argument form); zero keeps the
   date.
+- **MCP 2.3 GB drill**: cold schema 3.11 s (760 KB index), warm 0.03 s, deep view
+  0.02 s, filter 0.77 s, search 0.56 s, quality 22.25 s; responses stay 0.4–4 KB.
+- **MCP write tools**: `csvx_edit_set/delete/undo/redo` and `csvx_convert` share the
+  CLI journal lock and root confinement; CLI MCP test covers edit→view→undo and TSV export.
 - **`mcp`**: stdio JSON-RPC MCP server with read-only tools
   (`csvx_schema/view/filter/search/quality/pipeline_status`), root-confined paths,
   UTF-8 arguments; initialize/tools/list/tools/call covered by a CLI test.
