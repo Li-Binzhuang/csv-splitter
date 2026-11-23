@@ -124,6 +124,7 @@
 加权汇总 sumproduct(B2:C2, D2:E2, ...)      ← 同行多段逐项乘加（文本当 0，宽度不等报错）
 条件 countif(col, ">1000") sumif(col, ">1000") averageif(col, ">1000")  ← 同一遍预扫；文本条件支持 Excel 通配符 * 与 ?（大小写不敏感）
 多条件 countifs(col, ">5", other, "x") sumifs(sum_col, col, ">5", other, "x")  ← 全部条件同时满足才计数/求和
+行内多条件 sumifs(A2:C2, D2:F2, ">0", D2:F2, "<3")  ← 同行区间按位置配对（宽度必须一致）
      minifs(max_col, ...) maxifs(max_col, ...)  ← 满足全部条件的行里取最小/最大
      averageifs(val_col, ...)                  ← 满足全部条件的行的平均值（sum/count）
 空单元格 countblank(col) countblank(B2:C2)  ← 空单元格数：整列或同行区间

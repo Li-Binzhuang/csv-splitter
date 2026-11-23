@@ -97,6 +97,10 @@
 - **Text helpers**: `textjoin(sep, ignore_empty, ...)` joins values with a separator
   (and can drop empty ones), `char(n)` turns a code point into text, and `code(text)`
   returns the first character's code.
+- **Row-local multi-criteria aggregates**: `sumifs(A2:C2, D2:F2, ">0")` and the
+  countifs/averageifs/minifs/maxifs forms pair same-row ranges position by position;
+  widths must match, and a sum with no matching numeric cell is 0 while
+  average/min/max are `#VALUE!`.
 - **`sumproduct` over any number of ranges**: `sumproduct(B2:C2, D2:E2, F2:G2)`
   multiplies each row position across every range and adds the products; two ranges
   still behave as before, and different widths are `#VALUE!`.

@@ -1307,6 +1307,65 @@ mod tests {
     }
 
     #[test]
+    fn multi_criteria_aggregates_work_over_same_row_ranges() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+            "e".to_string(),
+            "f".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [
+            ("a", "10"),
+            ("b", "3"),
+            ("c", "7"),
+            ("d", "5"),
+            ("e", "0"),
+            ("f", "2"),
+        ] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        let sum = Formula::parse(r#"sumifs(A2:C2, D2:F2, ">0")"#).unwrap();
+        assert_eq!(
+            sum.eval_at(&cells, &columns, &Refs::default(), 1).render(),
+            "17",
+            "10 + 7; the pair whose criterion is 0 is excluded"
+        );
+        let count = Formula::parse(r#"countifs(D2:F2, ">0")"#).unwrap();
+        assert_eq!(
+            count
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "2"
+        );
+        let average = Formula::parse(r#"averageifs(A2:C2, D2:F2, ">0")"#).unwrap();
+        assert_eq!(
+            average
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "8.5"
+        );
+        let narrow = Formula::parse(r#"sumifs(A2:C2, D2:F2, ">0", D2:F2, "<3")"#).unwrap();
+        assert_eq!(
+            narrow
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "7",
+            "only the position whose criterion cell is 2 passes both pairs"
+        );
+        let mismatched = Formula::parse(r#"sumifs(A2:C2, D2:D2, ">0")"#).unwrap();
+        assert_eq!(
+            mismatched
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!",
+            "ranges of different widths cannot be paired"
+        );
+    }
+
+    #[test]
     fn median_reads_a_same_row_range_and_refuses_a_whole_column() {
         let columns = vec!["a".to_string(), "b".to_string(), "c".to_string()];
         let mut cells = HashMap::new();

@@ -25,6 +25,11 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         // Conditional aggregates: the criteria (">1000", "CDMX", "<>10") were compiled
         // and evaluated in the same pre-pass as the plain totals.
         "countifs" | "sumifs" | "averageifs" | "minifs" | "maxifs" => {
+            // A range as the first argument is the row-local form: both the values
+            // and the criteria cells live in this same row.
+            if matches!(args.first(), Some(Expr::Range { .. })) {
+                return multi_range(lower.as_str(), args, ctx);
+            }
             let Some(state) = ctx.state else {
                 return Value::Error;
             };
@@ -782,6 +787,106 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
         }
         _ => Value::Error,
+    }
+}
+
+/// Row-local SUMIFS/COUNTIFS family: `sumifs(A2:C2, D2:F2, ">0", G2:I2, "<>x")`
+/// sums the positions whose criteria cells all match. Widths must agree.
+fn multi_range(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
+    let op = match name {
+        "sumifs" => SetOp::Sum,
+        "averageifs" => SetOp::Average,
+        "minifs" => SetOp::Min,
+        "maxifs" => SetOp::Max,
+        _ => SetOp::Count,
+    };
+    let (measure, start) = if matches!(op, SetOp::Count) {
+        (None, 0usize)
+    } else {
+        let Some(Expr::Range { from, to }) = args.first() else {
+            return Value::Error;
+        };
+        let Some(cells) = range_cells(from, to, ctx) else {
+            return Value::Error;
+        };
+        (Some(cells), 1usize)
+    };
+    let mut pairs: Vec<(Vec<&str>, &crate::filter::FilterSpec)> = Vec::new();
+    let mut index = start;
+    while index + 1 < args.len() {
+        let Expr::Range { from, to } = &args[index] else {
+            return Value::Error;
+        };
+        let Expr::Criteria { spec, .. } = &args[index + 1] else {
+            return Value::Error;
+        };
+        let Some(cells) = range_cells(from, to, ctx) else {
+            return Value::Error;
+        };
+        pairs.push((cells, spec));
+        index += 2;
+    }
+    if pairs.is_empty() {
+        return Value::Error;
+    }
+    let width = measure
+        .as_ref()
+        .map(|cells| cells.len())
+        .unwrap_or(pairs[0].0.len());
+    if width == 0
+        || pairs.iter().any(|(cells, _)| cells.len() != width)
+        || measure.as_ref().is_some_and(|cells| cells.len() != width)
+    {
+        return Value::Error;
+    }
+    let mut matched = 0usize;
+    let mut numeric = 0usize;
+    let mut sum = 0.0;
+    let mut min = f64::INFINITY;
+    let mut max = f64::NEG_INFINITY;
+    for position in 0..width {
+        if !pairs.iter().all(|(cells, spec)| {
+            crate::filter::matches(cells.get(position).copied().unwrap_or(""), spec)
+        }) {
+            continue;
+        }
+        matched += 1;
+        let Some(measure) = measure.as_ref() else {
+            continue;
+        };
+        let Some(value) = measure.get(position) else {
+            continue;
+        };
+        let Ok(value) = value.trim().parse::<f64>() else {
+            continue;
+        };
+        if !value.is_finite() {
+            continue;
+        }
+        numeric += 1;
+        sum += value;
+        min = min.min(value);
+        max = max.max(value);
+    }
+    match op {
+        SetOp::Count => Value::Number(matched as f64),
+        SetOp::Sum => Value::Number(sum),
+        SetOp::Average => {
+            if numeric == 0 {
+                Value::Error
+            } else {
+                Value::Number(sum / numeric as f64)
+            }
+        }
+        SetOp::Min | SetOp::Max => {
+            if numeric == 0 {
+                Value::Error
+            } else if matches!(op, SetOp::Min) {
+                Value::Number(min)
+            } else {
+                Value::Number(max)
+            }
+        }
     }
 }
 
