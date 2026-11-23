@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "8d0b3717b04b2a6a2bf9c94edbf3adab892378b3eaea00b51be658a6d21efbdd",
+  "batch_id": "b9d34e397e0aa9dfedb6814642b8d29bccdaa0eef06239e5d43b160516e74252",
+  "composite_identity": "e629379f1e92533f8881ed10d443c8b9235594693b9cf84167663d84266808b1",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "85ccc1de5bcde96de45947f4d317d0580294630af8267c23f9aad724556fd52b",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "update",
+      "source_sha256": "9a67e3a5a9e0f6b95dbe691438411e064b3457af7031e55143e9d58fc613015a",
+      "existing_entry": "DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 + 官方 SDK | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs | A:一条命令演示 filter/quality、16 个 MCP 工具、edit/undo/convert/job；官方 SDK 1.32.2 跑通 pipeline 每步 progress、job wait progress 与 structuredContent；该文件是产品演示/销售材料入口 | S:演示全程本地、无 GUI、无网络、无 xlsx；终端输出必须与脚本一致；npm 依赖只在 scripts/mcp_sdk"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/demo_end_to_end.sh",
+      "path": "scripts/demo_end_to_end.sh",
+      "change": "update",
+      "source_sha256": "bb85ea2800c72b88d09cecf1b5bd820606ae7734a4343a8b0b72aca61ac12448",
+      "existing_entry": "demo_end_to_end.sh[XQ7T]: F:一键产品演示：pipeline + MCP 客户端（可选官方 SDK） | R:code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs,code:docs/DEMO.md | A:临时目录生成 orders.csv 和 plan.csv；先 pipeline filter+quality，再调 mcp_client.py；node + node_modules 存在时跑 SDK client；trap 清理临时文件 | S:无网络/无 GUI/无 xlsx；BIN 可覆盖，默认 target/release/csvx；SDK 缺 node_modules 时只提示不失败；临时目录不得残留"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "6c61000b8e93bcca0d5bd583463985cf2b94b2782ab21683160d0ffd1ed8f822",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "update",
+      "source_sha256": "9a67e3a5a9e0f6b95dbe691438411e064b3457af7031e55143e9d58fc613015a",
+      "existing_entry": "DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 + 官方 SDK | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs | A:一条命令演示 filter/quality、16 个 MCP 工具、edit/undo/convert/job；官方 SDK 1.32.2 跑通 pipeline 每步 progress、job wait progress 与 structuredContent；该文件是产品演示/销售材料入口 | S:演示全程本地、无 GUI、无网络、无 xlsx；终端输出必须与脚本一致；npm 依赖只在 scripts/mcp_sdk"
+    },
+    {
+      "candidate_id": "dc1d8f3173afddba9541e156ea335b9a737eda09173797ab1c549e72e81f9f55",
+      "object_ref": "code:scripts/demo_end_to_end.sh",
+      "path": "scripts/demo_end_to_end.sh",
+      "change": "update",
+      "source_sha256": "bb85ea2800c72b88d09cecf1b5bd820606ae7734a4343a8b0b72aca61ac12448",
+      "existing_entry": "demo_end_to_end.sh[XQ7T]: F:一键产品演示：pipeline + MCP 客户端（可选官方 SDK） | R:code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs,code:docs/DEMO.md | A:临时目录生成 orders.csv 和 plan.csv；先 pipeline filter+quality，再调 mcp_client.py；node + node_modules 存在时跑 SDK client；trap 清理临时文件 | S:无网络/无 GUI/无 xlsx；BIN 可覆盖，默认 target/release/csvx；SDK 缺 node_modules 时只提示不失败；临时目录不得残留"
+    }
+  ]
+}
