@@ -37,6 +37,18 @@
 - 每个里程碑最多一次 push；gate 绿、AOCI aligned、tree clean。
 - 商业化价格/合同/SLA 由用户确认，不自行承诺。
 
+## Round 113 checkpoint（2026-11-23）
+
+自 Round 100 后新增/关闭：
+- MCP job 历史上限 128、退出取消、两条单测；
+- 解压缓存 LRU + 可选 hits/misses 统计；
+- 2 GB+ gzip drill 4.545→1.590 s / 82 MB；
+- 压缩多线程实测 `-T4` 仅约 2%，明确不引入外部 CLI；
+- macOS CI dispatch 与 push 两条路径均绿（12m21s / 11m32s）；
+- 离线包重建并自验（LRU、job 保留、cache stats 已包含）。
+
+唯一外部缺口仍是真实客户试点；技术侧没有已知高价值缺口。
+
 ## Round 100 checkpoint（2026-11-23）
 
 已稳定：
