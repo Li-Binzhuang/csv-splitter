@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "d69c560527333da1122217aa6353086074f6f1e20022f80d2b7601b01b62f1c1",
+  "batch_id": "78126cd53f77ca4f99bb912b39ff43b1100d841d3497cbba3a1f5f77848b73b9",
+  "composite_identity": "1e3216cfe9810b9f0c5595c00b1004d8ffcc8110e30b03d419cdd89b06fd8036",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "ddb7b4bb09eff4b135d9508ad3071a493cfa8a55486d71db0b6e99aa1244d5fd",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "656e491cbceed85c6e94d8b20ebd2061b0f6c3abc8322e1f5233ab39c5ab5436",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过、SQL lookup 无上限、mcp 读写、100 GB profile（search 20 s/filter 25.75 s/93–95 MB）、31 GB 基线 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "4dcff11b95a329214f2114e16e7e91cd08b9d6366a8e838aaab786f0953493f0",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 路径读/写与 job；run_mcp_stdio：一行一条 JSON-RPC，自写 UTF-8 parser；读工具 schema/view/filter/search/quality/pipeline_status，写工具 edit_set/delete/undo/redo 与 convert，复用 CLI journal 锁，路径与输出限制 root | S:strict 参数未登记即 400；MCP stdout 只走协议，子进程失败以 isError 返回；contract 扫描 params.get 会误报，变量名避开"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "9be2be325e552c7ea1171c733f5878f3b50880a02c37e273ff2ce32503e999f5",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；edit compact/book/quality/convert；pipeline 快跳过；mcp 读写；C 100 GB profile 达标（search 20 s/filter 25.75 s/RSS 93–95 MB） | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "152645495731d560cda57f27e96a8b0a5bfd39c5b4fd842b91eb53ad81305fb6",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5 已闭环（xlsx 挂起）；A Pipeline 2.3 GB 6.55 s/17 ms；B MCP 读写与 2.3 GB drill；C 100 GB search 20 s/filter 25.75 s 达标；下一步真实分布、job、商业化 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "3698907ea6303aa7a99ced448189df4fbf3cd8c90ed859b950509543c76c0cd6",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "656e491cbceed85c6e94d8b20ebd2061b0f6c3abc8322e1f5233ab39c5ab5436",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过、SQL lookup 无上限、mcp 读写、100 GB profile（search 20 s/filter 25.75 s/93–95 MB）、31 GB 基线 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "895483c52acd131ed2d6a9f0090a16442edf06827e1659bbdba5b1e5cbade788",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "4dcff11b95a329214f2114e16e7e91cd08b9d6366a8e838aaab786f0953493f0",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 路径读/写与 job；run_mcp_stdio：一行一条 JSON-RPC，自写 UTF-8 parser；读工具 schema/view/filter/search/quality/pipeline_status，写工具 edit_set/delete/undo/redo 与 convert，复用 CLI journal 锁，路径与输出限制 root | S:strict 参数未登记即 400；MCP stdout 只走协议，子进程失败以 isError 返回；contract 扫描 params.get 会误报，变量名避开"
+    },
+    {
+      "candidate_id": "c47508b44463aa6cbf1f21c3a13db0939f93670a900629c4a0ceb118306e2599",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "9be2be325e552c7ea1171c733f5878f3b50880a02c37e273ff2ce32503e999f5",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；edit compact/book/quality/convert；pipeline 快跳过；mcp 读写；C 100 GB profile 达标（search 20 s/filter 25.75 s/RSS 93–95 MB） | S:-"
+    },
+    {
+      "candidate_id": "a51f83c197611dbb90659562b7c38139da227e754b2faceff32127fed452d4f3",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "152645495731d560cda57f27e96a8b0a5bfd39c5b4fd842b91eb53ad81305fb6",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5 已闭环（xlsx 挂起）；A Pipeline 2.3 GB 6.55 s/17 ms；B MCP 读写与 2.3 GB drill；C 100 GB search 20 s/filter 25.75 s 达标；下一步真实分布、job、商业化 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    }
+  ]
+}
