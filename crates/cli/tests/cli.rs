@@ -3309,7 +3309,12 @@ fn mcp_lists_jobs() {
         .unwrap();
         writeln!(
             stdin,
-            r#"{{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{{"name":"csvx_job_list","arguments":{{}}}}}}"#
+            r#"{{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{{"name":"csvx_job_status","arguments":{{"id":"job-1","wait":2}}}}}}"#
+        )
+        .unwrap();
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{{"name":"csvx_job_list","arguments":{{}}}}}}"#
         )
         .unwrap();
     }
@@ -3323,6 +3328,7 @@ fn mcp_lists_jobs() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("jobs"), "{stdout}");
     assert!(stdout.contains("job-1"), "{stdout}");
+    assert!(stdout.contains("outputChars"), "{stdout}");
 }
 
 /// A long-running MCP job can be cancelled without waiting for it to finish.
