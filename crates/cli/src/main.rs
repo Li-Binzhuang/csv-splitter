@@ -8165,6 +8165,55 @@ fn run_step_command(
 /// Remove remnants of an interrupted parallel run. Only files that exactly match a
 /// declared output's staging/legacy temp prefix are touched; a normal run only deletes
 /// them after an hour, `--clean` forces it.
+/// Recover outputs left mid-wave by a crashed run. A backup exists only after the
+/// previous output was moved aside, so restoring it is the safe state: any current
+/// output belongs to an uncommitted run and state was never written.
+fn recover_dag_backups(steps: &[PipelineStep]) -> std::io::Result<usize> {
+    let mut recovered = 0usize;
+    for step in steps {
+        let Some(parent) = step.output.parent() else {
+            continue;
+        };
+        if !parent.exists() {
+            continue;
+        }
+        let name = step
+            .output
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("out");
+        let prefix = format!(".{name}.dag-backup-");
+        let mut backups: Vec<std::path::PathBuf> = Vec::new();
+        for entry in std::fs::read_dir(parent)?.flatten() {
+            let file = entry.file_name();
+            if file.to_string_lossy().starts_with(&prefix) {
+                backups.push(entry.path());
+            }
+        }
+        if backups.is_empty() {
+            continue;
+        }
+        let newest = backups
+            .iter()
+            .max_by_key(|path| {
+                path.metadata()
+                    .and_then(|meta| meta.modified())
+                    .unwrap_or(std::time::SystemTime::UNIX_EPOCH)
+            })
+            .cloned()
+            .expect("non-empty backups");
+        let _ = std::fs::remove_file(&step.output);
+        std::fs::rename(&newest, &step.output)?;
+        for backup in &backups {
+            if backup != &newest {
+                let _ = std::fs::remove_file(backup);
+            }
+        }
+        recovered += 1;
+    }
+    Ok(recovered)
+}
+
 fn cleanup_stale_staging(steps: &[PipelineStep], force: bool) -> std::io::Result<usize> {
     let mut removed = 0usize;
     for step in steps {
@@ -8789,6 +8838,10 @@ fn run_pipeline_plan(
                 }
             }
         }
+    }
+    let recovered = recover_dag_backups(&steps)?;
+    if recovered > 0 {
+        eprintln!("recovered {recovered} interrupted DAG output(s)");
     }
     let cleaned = cleanup_stale_staging(&steps, clean)?;
     if cleaned > 0 {

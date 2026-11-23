@@ -2975,6 +2975,42 @@ fn pipeline_dag_runs_topological_waves() {
     }
 }
 
+/// A crashed DAG leaves a backup; the next run restores it before doing anything.
+#[test]
+fn pipeline_recovers_interrupted_dag_backup() {
+    let dir = TempDir::new("pipeline-recover");
+    std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n").unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},a.csv\n",
+    )
+    .unwrap();
+    std::fs::write(dir.join(".a.csv.dag-backup-123-0"), "id,city\n99,OLD\n").unwrap();
+    std::fs::write(dir.join("a.csv"), "id,city\n1,NEW\n").unwrap();
+    let result = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--dry-run",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert_eq!(
+        std::fs::read_to_string(dir.join("a.csv")).unwrap(),
+        "id,city\n99,OLD\n"
+    );
+    assert!(!dir.join(".a.csv.dag-backup-123-0").exists());
+    assert!(!dir.join("plan.csv.pipeline.csv").exists());
+}
+
 /// `--clean` removes leftovers from an interrupted parallel run.
 #[test]
 fn pipeline_clean_removes_stale_staging() {
