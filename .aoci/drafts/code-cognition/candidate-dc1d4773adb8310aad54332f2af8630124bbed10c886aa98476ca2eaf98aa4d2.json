@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "637a0267ba3636b509dccdc1c0502ca8ebf4f2df691edafd2036a9ddc903621d",
+  "batch_id": "dc1d4773adb8310aad54332f2af8630124bbed10c886aa98476ca2eaf98aa4d2",
+  "composite_identity": "1a596caf58580376457dbfd18305142861232b8190f5902f2cc4c32912d054b1",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "48e142e239b846220a9ab500d9e4d7a4cb0c50736c2b8661743b25befffbeb16",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "7da0e6b751b9c4258a8c9935a90a56d303b62c77807d71654108ca93cbd4399c",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，打包脚本末尾自动 verify_dist（SHA256、必需成员、包内 binary），失败时删半成品 tar/sha；记录 2026-11-23 release 30.28 s、pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2、SDK 2 条 pipeline progress 与 job progress；macOS gate dispatch 45198239384 12m21s 与 push 45202447374 11m32s 均 success；MCP 缓存 2 GB+ gzip 4.545→1.590 s/82 MB；包含 job 保留/退出取消、缓存 hits/misses、bench_mcp_cache/PILOT_INTAKE/ROADMAP | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "67d57a4aa2f0a73cf476ff33b9d8dfb518aac38115189ba5737f86e323e594fc",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "7da0e6b751b9c4258a8c9935a90a56d303b62c77807d71654108ca93cbd4399c",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，打包脚本末尾自动 verify_dist（SHA256、必需成员、包内 binary），失败时删半成品 tar/sha；记录 2026-11-23 release 30.28 s、pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2、SDK 2 条 pipeline progress 与 job progress；macOS gate dispatch 45198239384 12m21s 与 push 45202447374 11m32s 均 success；MCP 缓存 2 GB+ gzip 4.545→1.590 s/82 MB；包含 job 保留/退出取消、缓存 hits/misses、bench_mcp_cache/PILOT_INTAKE/ROADMAP | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ]
+}
