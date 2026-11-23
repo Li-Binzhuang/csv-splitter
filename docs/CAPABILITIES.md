@@ -112,7 +112,7 @@
      concat concatenate textjoin char code upper lower len value
 数字 round roundup rounddown abs floor ceil int sqrt mod min max sign power exp ln log
 日期 year(d) month(d) day(d) date(y,m,d) datestring(d)  ── ISO 前缀（2024-03-15，带时间也行）
-     edate(d,n) eomonth(d,n) weekday(d) weeknum(d) days(end,start)  ── 加减月/月末/星期几(周日=1)/第几周/日差；仍返回 ISO 文本
+     edate(d,n) eomonth(d,n) weekday(d) weeknum(d) networkdays(a,b) days(end,start)  ── 加减月/月末/星期几(周日=1)/第几周/工作日数/日差；仍返回 ISO 文本
 其他 row lag(col[,n]) running_total(col)
 整列 sum(col) average(col) count(col)   ← 整列聚合：预扫一遍算出数字列的总和/计数
      min(col) max(col)                 ← 整列最小/最大（文本与空单元格忽略）

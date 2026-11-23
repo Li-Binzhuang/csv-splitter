@@ -887,6 +887,36 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             _ => Value::Error,
         },
 
+        // NETWORKDAYS(start, end) without a holiday list: weekdays only, both ends
+        // included. Sunday=1..Saturday=7, so business days are 2..=6.
+        "networkdays" => match (
+            args.first().map(|a| eval(a, ctx).text()),
+            args.get(1).map(|a| eval(a, ctx).text()),
+        ) {
+            (Some(start), Some(end)) => match (parse_date(&start), parse_date(&end)) {
+                (Some((sy, sm, sd)), Some((ey, em, ed))) => {
+                    let start_day = days_from_civil(sy, sm, sd);
+                    let end_day = days_from_civil(ey, em, ed);
+                    if end_day < start_day {
+                        return Value::Error;
+                    }
+                    let total = end_day - start_day + 1;
+                    let full_weeks = total / 7 * 5;
+                    let remainder = total % 7;
+                    let start_weekday = weekday(sy, sm, sd);
+                    let mut extra = 0i64;
+                    for step in 0..remainder {
+                        let day = (start_weekday - 1 + step as i32) % 7 + 1;
+                        if (2..=6).contains(&day) {
+                            extra += 1;
+                        }
+                    }
+                    Value::Number((full_weeks + extra) as f64)
+                }
+                _ => Value::Error,
+            },
+            _ => Value::Error,
+        },
         // ---- row position ---------------------------------------------------
         "row" => Value::Number((ctx.row + 1) as f64),
 
