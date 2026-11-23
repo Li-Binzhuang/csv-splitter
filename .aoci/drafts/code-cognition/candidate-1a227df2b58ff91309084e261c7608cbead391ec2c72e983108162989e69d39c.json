@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "583931284a8334fc87e8fb376a6e863598100c11ca1f7e5f564bfe430ea42fef",
+  "batch_id": "1a227df2b58ff91309084e261c7608cbead391ec2c72e983108162989e69d39c",
+  "composite_identity": "9205beaf06da32daf6592d6e5f7840afcfd916b1aee2038255990c5f530ba1c4",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "03d304d1a77d5fc7c60be0e51dd90e53b772033c6f2bbef520b4a4ab119084e4",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "8eab90b1b2baa16e8427dcb064606ea8578e3200e7ec2d44c0d365e0c6e2b0cb",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、行内多条件聚合、median 区间、文本函数、日期运算、原子 transaction 与整批撤销/重做、vlookup 别名修复、xlookup fallback、预扫冷启动约 25–30 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "d7199b2b3b982eab92e65f2a777379b51ebf498312c15236e9a52dd848437097",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、行内多条件、stdev/var/stdevp/varp、median 同行区间、多段 sumproduct、跨表 ref/vlookup/xlookup、文本函数、日期运算、条件通配符；编辑表含原子批量写、一次撤销/重做整批；透视表列出五种聚合与多值列 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "88f4bc404cb9f2de3b36d283417f644bfa52cdb22d19c4a611cdff0f11e9d205",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "8eab90b1b2baa16e8427dcb064606ea8578e3200e7ec2d44c0d365e0c6e2b0cb",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、行内多条件聚合、median 区间、文本函数、日期运算、原子 transaction 与整批撤销/重做、vlookup 别名修复、xlookup fallback、预扫冷启动约 25–30 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "e6187cc5869d6e36022658e18b240198b3a478adb54ca6316337fdbf61209ef5",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "d7199b2b3b982eab92e65f2a777379b51ebf498312c15236e9a52dd848437097",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、行内多条件、stdev/var/stdevp/varp、median 同行区间、多段 sumproduct、跨表 ref/vlookup/xlookup、文本函数、日期运算、条件通配符；编辑表含原子批量写、一次撤销/重做整批；透视表列出五种聚合与多值列 | S:-"
+    }
+  ]
+}
