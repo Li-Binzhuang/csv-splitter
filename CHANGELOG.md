@@ -171,6 +171,9 @@
   graph (empty input → previous step, step name → earlier step, file → no step
   dependency), freshness-checks each ready step and runs stale ready steps in
   bounded concurrent waves. Test covers a diamond and all-fresh second pass.
+- **Dead-owner lock cleanup**: the lock records its PID and `ps -p` proves whether
+  it is alive; a dead owner is removed immediately instead of waiting 24h. Test
+  plants a fake PID and asserts the run proceeds.
 - **Unlock escape**: `pipeline run --unlock` removes the plan lock first; test
   holds a false lock and asserts the run succeeds and the lock is released.
 - **Run lock**: `<plan>.pipeline.lock` blocks a second run on the same plan; locks

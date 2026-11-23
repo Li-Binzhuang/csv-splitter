@@ -8180,6 +8180,20 @@ impl Drop for PipelineLock {
     }
 }
 
+fn lock_owner_alive(path: &std::path::Path) -> Option<bool> {
+    let text = std::fs::read_to_string(path).ok()?;
+    let pid = text
+        .lines()
+        .find_map(|line| line.trim().strip_prefix("pid="))
+        .and_then(|value| value.split_whitespace().next())
+        .and_then(|value| value.parse::<u32>().ok())?;
+    let output = std::process::Command::new("ps")
+        .args(["-p", &pid.to_string(), "-o", "pid="])
+        .output()
+        .ok()?;
+    Some(output.status.success() && !output.stdout.is_empty())
+}
+
 fn acquire_pipeline_lock(plan: &std::path::Path) -> std::io::Result<PipelineLock> {
     let path = std::path::PathBuf::from(format!("{}.pipeline.lock", plan.display()));
     if path.exists() {
@@ -8189,7 +8203,9 @@ fn acquire_pipeline_lock(plan: &std::path::Path) -> std::io::Result<PipelineLock
             .ok()
             .and_then(|modified| modified.elapsed().ok())
             .unwrap_or_default();
-        if age < Duration::from_secs(24 * 3600) {
+        let stale_by_age = age >= Duration::from_secs(24 * 3600);
+        let stale_by_owner = matches!(lock_owner_alive(&path), Some(false));
+        if !stale_by_age && !stale_by_owner {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::WouldBlock,
                 format!(

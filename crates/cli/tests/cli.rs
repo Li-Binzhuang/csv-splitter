@@ -3011,6 +3011,40 @@ fn pipeline_recovers_interrupted_dag_backup() {
     assert!(!dir.join("plan.csv.pipeline.csv").exists());
 }
 
+/// A lock whose PID no longer exists is treated as stale immediately.
+#[test]
+fn pipeline_clears_lock_from_dead_process() {
+    let dir = TempDir::new("pipeline-dead-lock");
+    std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n").unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},a.csv\n",
+    )
+    .unwrap();
+    std::fs::write(
+        dir.join("plan.csv.pipeline.lock"),
+        "pid=999999 started=never\n",
+    )
+    .unwrap();
+    let result = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(dir.join("a.csv").exists());
+    assert!(!dir.join("plan.csv.pipeline.lock").exists());
+}
+
 /// `--unlock` clears a stale/false lock before running.
 #[test]
 fn pipeline_unlock_bypasses_a_lock() {
