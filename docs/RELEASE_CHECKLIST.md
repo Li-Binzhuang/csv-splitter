@@ -20,6 +20,7 @@ bash scripts/verify_dist.sh dist/csvx-4.2.0-<platform>.tar.gz
 - release 构建：30.28 s；
 - demo：pipeline 15/13 ms；Python 与官方 SDK 均 `gzip_matched=3`、`status_fresh=2`；SDK `pipeline_progress_events=2`、`progress_events=1`、`structured_ok=true`、`job=done`；
 - MCP 缓存 drill：2.04 GB gzip 重查 4.61→1.63 s，server peak 86 MB；
+- macOS gate（workflow_dispatch）：run `45198239384`，12m21s，success；
 - 包：`csvx-4.2.0-darwin-arm64.tar.gz` 约 20 MB；
 - SHA256：构建时由 `package_release.sh` 输出，不在此处固定（会随构建变化）。
 
