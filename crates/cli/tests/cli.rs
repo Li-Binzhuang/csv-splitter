@@ -3328,6 +3328,71 @@ fn groupby_apply_edits_materialises_the_journal() {
     assert!(text.contains("CDMX,130"), "edited sheet: {text}");
 }
 
+/// The pivot command has the same base-file/journal split as groupby; `--apply-edits`
+/// must make a pending edit move the matrix cell.
+#[test]
+fn pivot_apply_edits_materialises_the_journal() {
+    let dir = TempDir::new("pvapply");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "city,kind,amount\nA,x,10\nB,x,20\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "set",
+            input.to_str().unwrap(),
+            "--row",
+            "1",
+            "--col",
+            "amount",
+            "--value",
+            "100",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    let plain = dir.join("plain.csv");
+    let status = Command::new(bin())
+        .args([
+            "pivot",
+            input.to_str().unwrap(),
+            "--rows",
+            "city",
+            "--cols",
+            "kind",
+            "--values",
+            "amount:sum",
+            "-o",
+            plain.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&plain).unwrap();
+    assert!(text.contains("A,10"), "base file: {text}");
+
+    let edited = dir.join("edited.csv");
+    let status = Command::new(bin())
+        .args([
+            "pivot",
+            input.to_str().unwrap(),
+            "--rows",
+            "city",
+            "--cols",
+            "kind",
+            "--values",
+            "amount:sum",
+            "--apply-edits",
+            "-o",
+            edited.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&edited).unwrap();
+    assert!(text.contains("A,100"), "edited sheet: {text}");
+}
+
 /// groupby must also agree byte for byte through the CLI on every documented aggregate.
 #[test]
 fn groupby_engines_agree_through_the_cli() {
