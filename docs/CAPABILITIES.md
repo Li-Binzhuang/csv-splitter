@@ -225,8 +225,8 @@ delimiter 检测也读解压后的内容。压缩流不可 seek，因此自动�
 - `csvx_search`：文本搜索，可按列。
 - `csvx_quality`：`analyze --quality` 报告，支持 key/group。
 - `csvx_pipeline_status`：读 `.pipeline.csv` 的哈希与耗时。
-- `csvx_pipeline_run`：直接执行声明式 pipeline（`force`/`dryRun`），agent 可把 A 工作台跑起来；
-  长任务可再包 `csvx_job_submit`。
+- `csvx_pipeline_run`：直接执行声明式 pipeline（`force`/`dryRun`/`dag`/`jobs`/`clean`），
+  agent 可触发拓扑 DAG、并发上限与 staging 清理；长任务可再包 `csvx_job_submit`。
 
 路径必须落在 `--root` 内；写工具复用 journal 锁：
 `csvx_edit_set`（row/col/value/expect）、`csvx_edit_delete`（row 或 where）、`csvx_edit_undo`、`csvx_edit_redo`、`csvx_convert`（tsv/ndjson/parquet/csv，输出限制在 root）。

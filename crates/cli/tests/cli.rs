@@ -3379,7 +3379,7 @@ fn mcp_runs_a_declarative_pipeline() {
         .unwrap();
         writeln!(
             stdin,
-            r#"{{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{{"name":"csvx_pipeline_run","arguments":{{"path":"plan.csv"}}}}}}"#
+            r#"{{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{{"name":"csvx_pipeline_run","arguments":{{"path":"plan.csv","dag":true,"jobs":2}}}}}}"#
         )
         .unwrap();
     }

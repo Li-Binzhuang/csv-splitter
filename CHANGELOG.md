@@ -147,6 +147,8 @@
   fill-in 4-week pilot agreement template.
 - **View cursor**: `view --json` (and the MCP `csvx_view` tool) now returns
   `start`, `nextStart` and `hasMore`; clients can page without guessing counts.
+- **MCP pipeline DAG options**: `csvx_pipeline_run` accepts dag/jobs/clean and forwards
+  them to the CLI, so agents can run topological waves and bound concurrency.
 - **MCP job wait**: `csvx_job_status` accepts `wait` (0–30 s) and long-polls the
   child instead of returning running immediately; test asks for a 2 s wait on a
   quick schema job and gets done.
