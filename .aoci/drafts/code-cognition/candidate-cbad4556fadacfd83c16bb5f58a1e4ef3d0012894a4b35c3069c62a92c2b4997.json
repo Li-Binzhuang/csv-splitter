@@ -1,0 +1,43 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "bcfc66cc638eb5b93da3b7c61e5f4c63b3241bddd00e11b27bb39bdcc83e2e73",
+  "batch_id": "cbad4556fadacfd83c16bb5f58a1e4ef3d0012894a4b35c3069c62a92c2b4997",
+  "composite_identity": "cadf05a25d72aeb20e9e696d691f22723529336fd93e82bc181a04cdc36df749",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e7da57621a9c81b21acfa05e94c9395480202130d776b4f5e6cd249695f592f8",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:.github/workflows/macos.yml",
+      "path": ".github/workflows/macos.yml",
+      "change": "create",
+      "source_sha256": "b1df58896b3a7d1f02f336993d82f223d9c084567b1827cb43aa1b1b9dbbf1cd"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "d23129d86fcb28632fe735c9ecc64660ec641de4e6ae63794b664b36b5078334",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-23 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 16 工具与 SDK progress/status/gzip；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程、缓存命中监控、阈值、发布自动化为后续；已有 Ubuntu CI/Windows/release，无 macOS CI | S:未测数字不写；价格/SLA 需用户确认；随离线包分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4b01bf6539679881aa8b78318fb817b70c7091db24e3d16905f36c5866f0d9be",
+      "object_ref": "code:.github/workflows/macos.yml",
+      "path": ".github/workflows/macos.yml",
+      "change": "create",
+      "source_sha256": "b1df58896b3a7d1f02f336993d82f223d9c084567b1827cb43aa1b1b9dbbf1cd"
+    },
+    {
+      "candidate_id": "6c206d9588bfb498650da82eaa2bc01bfbf97ae54bf0a97061cbd97c9665d1f2",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "d23129d86fcb28632fe735c9ecc64660ec641de4e6ae63794b664b36b5078334",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-23 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 16 工具与 SDK progress/status/gzip；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程、缓存命中监控、阈值、发布自动化为后续；已有 Ubuntu CI/Windows/release，无 macOS CI | S:未测数字不写；价格/SLA 需用户确认；随离线包分发"
+    }
+  ]
+}
