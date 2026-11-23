@@ -119,6 +119,10 @@
 - **`workday(start, days)`**: moves a date by business days, skipping weekends and
   accepting negative days (no holiday list in the two-argument form); zero keeps the
   date.
+- **Parallel filter output**: UTF-8 files are split on line boundaries; workers match
+  independently and write ordered part files that the main thread merges. 11 GB/280M
+  rows: `filter -o` no-match 2.61 s, 56M matches with a 2.2 GB output 5.26 s (RSS
+  17–28 MB), down from 14.9 s.
 - **`networkdays(start, end)`**: counts Monday–Friday days with both ends included
   (no holiday list in the two-argument form); an end before the start is `#VALUE!`.
 - **`weeknum(date)`**: the week number with Sunday as the first day (Excel WEEKNUM's

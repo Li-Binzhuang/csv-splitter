@@ -13,7 +13,7 @@ use crate::index::SparseIndex;
 use crate::types::{Delimiter, ProgressEvent, ProgressSender};
 use std::cmp::Ordering;
 use std::fs::File;
-use std::io::{self, BufReader, BufWriter, Write};
+use std::io::{self, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::path::Path;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -594,6 +594,16 @@ pub fn extract_style(
             "no filter expressions",
         ));
     }
+    // UTF-8 files can be split on line boundaries; workers write ordered part files
+    // and the main thread concatenates them. Non-UTF-8 and >64 predicates stay serial.
+    let file_len = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
+    let threads = crate::scan_parallel::threads_for(file_len);
+    if threads > 1 && set.specs.len() <= 64 && crate::scan_parallel::is_seekable(path)? {
+        if let Some(summary) = extract_parallel(path, delimiter, set, output, quotes, tx, threads)?
+        {
+            return Ok(summary);
+        }
+    }
     let total_bytes = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
     tx.send(ProgressEvent::PhaseStart {
         phase: "Filtering".into(),
@@ -674,6 +684,220 @@ pub struct ExtractSummary {
     /// Matched rows whose field count differed from the header (inherited from
     /// the source, and passed through verbatim).
     pub matched_ragged: u64,
+}
+
+fn extract_parallel(
+    path: &Path,
+    delimiter: Delimiter,
+    set: &FilterSet,
+    output: &Path,
+    quotes: QuoteStyle,
+    tx: &ProgressSender,
+    threads: usize,
+) -> io::Result<Option<ExtractSummary>> {
+    let len = std::fs::metadata(path)?.len();
+    let bom = match encoding::detect(path)? {
+        encoding::TextEncoding::Utf8 { bom: true } => 3,
+        _ => 0,
+    };
+    let Some(starts) = slab_starts(path, len, threads, bom)? else {
+        return Ok(None);
+    };
+
+    let reader = encoding::open_decoded(path)?;
+    let mut records = RecordReader::new(
+        BufReader::with_capacity(4 * 1024 * 1024, reader),
+        4 * 1024 * 1024,
+    );
+    let mut header = Vec::with_capacity(4096);
+    if !records.next_record(&mut header)? {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "empty file"));
+    }
+    let headers =
+        parse_csv_record_with(&String::from_utf8_lossy(&header), delimiter.byte(), quotes);
+    let compiled = std::sync::Arc::new(set.compile(&headers)?);
+    drop(records);
+
+    tx.send(ProgressEvent::PhaseStart {
+        phase: "Filtering".into(),
+        total_bytes: len,
+    })
+    .ok();
+
+    let mut out = BufWriter::with_capacity(4 * 1024 * 1024, File::create(output)?);
+    crate::encoding::keep_bom(&mut out, path)?;
+    out.write_all(&header)?;
+    if !header.ends_with(b"\n") {
+        out.write_all(b"\n")?;
+    }
+
+    let delim = delimiter.byte();
+    let width = headers.len();
+    let mut parts = Vec::with_capacity(starts.len());
+    let mut handles = Vec::with_capacity(starts.len());
+    for (index, start) in starts.iter().copied().enumerate() {
+        let end = starts.get(index + 1).copied().unwrap_or(len);
+        let part = output.with_file_name(format!(
+            ".{}.part{index}",
+            output
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or("filter")
+        ));
+        parts.push(part.clone());
+        let compiled = compiled.clone();
+        let path = path.to_path_buf();
+        let skip_header = index == 0;
+        handles.push(std::thread::spawn(move || {
+            let slab = Slab {
+                path: &path,
+                start,
+                end,
+                skip_header,
+                compiled: &compiled,
+                width,
+                delim,
+                quotes,
+                part: &part,
+            };
+            extract_slab(slab)
+        }));
+    }
+
+    let mut summary = ExtractSummary::default();
+    let mut failure = None;
+    for handle in handles {
+        match handle.join() {
+            Ok(Ok(slab)) => {
+                summary.scanned += slab.scanned;
+                summary.matched += slab.matched;
+                summary.matched_ragged += slab.matched_ragged;
+            }
+            Ok(Err(error)) => {
+                failure = Some(error);
+            }
+            Err(_) => {
+                failure = Some(io::Error::other("a filter worker panicked"));
+            }
+        }
+    }
+    if let Some(error) = failure {
+        for part in &parts {
+            let _ = std::fs::remove_file(part);
+        }
+        return Err(error);
+    }
+    for part in &parts {
+        let mut file = File::open(part)?;
+        io::copy(&mut file, &mut out)?;
+        let _ = std::fs::remove_file(part);
+    }
+    out.flush()?;
+    summary.bytes = std::fs::metadata(output).map(|m| m.len()).unwrap_or(0);
+    tx.send(ProgressEvent::PhaseDone {
+        phase: "Filtering".into(),
+    })
+    .ok();
+    Ok(Some(summary))
+}
+
+/// One aligned start per worker. Returns `None` if splits would overlap (the caller
+/// then takes the plain sequential path).
+fn slab_starts(path: &Path, len: u64, threads: usize, bom: u64) -> io::Result<Option<Vec<u64>>> {
+    let mut starts = Vec::with_capacity(threads);
+    starts.push(bom.min(len));
+    for index in 1..threads {
+        let target = (len.saturating_mul(index as u64) / threads as u64).max(bom);
+        let start = next_line_start(path, target, len)?;
+        if start < len && start <= *starts.last().unwrap() {
+            return Ok(None);
+        }
+        starts.push(start);
+    }
+    Ok(Some(starts))
+}
+
+fn next_line_start(path: &Path, mut at: u64, len: u64) -> io::Result<u64> {
+    let mut file = File::open(path)?;
+    file.seek(SeekFrom::Start(at))?;
+    let mut buf = [0u8; 8192];
+    loop {
+        let read = file.read(&mut buf)?;
+        if read == 0 {
+            return Ok(len);
+        }
+        if let Some(pos) = buf[..read].iter().position(|byte| *byte == b'\n') {
+            return Ok(at + pos as u64 + 1);
+        }
+        at += read as u64;
+    }
+}
+
+struct Slab<'a> {
+    path: &'a Path,
+    start: u64,
+    end: u64,
+    skip_header: bool,
+    compiled: &'a CompiledSet,
+    width: usize,
+    delim: u8,
+    quotes: QuoteStyle,
+    part: &'a Path,
+}
+
+fn extract_slab(slab: Slab<'_>) -> io::Result<ExtractSummary> {
+    let Slab {
+        path,
+        start,
+        end,
+        skip_header,
+        compiled,
+        width,
+        delim,
+        quotes,
+        part,
+    } = slab;
+    let mut file = File::open(path)?;
+    file.seek(SeekFrom::Start(start))?;
+    let mut records = RecordReader::new(BufReader::with_capacity(1024 * 1024, file), 1024 * 1024);
+    let mut record = Vec::with_capacity(64 * 1024);
+    let mut offset = start;
+    if skip_header {
+        if !records.next_record(&mut record)? {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "empty file"));
+        }
+        offset += record.len() as u64;
+    }
+    let mut summary = ExtractSummary::default();
+    let mut out = BufWriter::with_capacity(1024 * 1024, File::create(part)?);
+    while records.next_record(&mut record)? {
+        if offset >= end {
+            break;
+        }
+        let (hit, field_count) = match compiled.holds_record(&record, delim, quotes) {
+            Some(result) => result,
+            None => {
+                let text = String::from_utf8_lossy(&record);
+                let fields =
+                    parse_csv_record_with(text.trim_end_matches(['\n', '\r']), delim, quotes);
+                (compiled.holds(&fields), fields.len())
+            }
+        };
+        if hit {
+            if field_count != width {
+                summary.matched_ragged += 1;
+            }
+            out.write_all(&record)?;
+            if !record.ends_with(b"\n") {
+                out.write_all(b"\n")?;
+            }
+            summary.matched += 1;
+        }
+        summary.scanned += 1;
+        offset += record.len() as u64;
+    }
+    out.flush()?;
+    Ok(summary)
 }
 
 /// Single-cell predicate.
@@ -967,6 +1191,53 @@ mod set_tests {
         assert!(text.contains("3,CDMX,500"), "{text}");
         assert!(text.contains("4,Tijuana,20"), "{text}");
         assert!(!text.contains("1,CDMX,10"), "{text}");
+    }
+
+    #[test]
+    fn parallel_extract_agrees_with_sequential_and_cleans_parts() {
+        let d = Dir::new("parallel");
+        let p = d.join("p.csv");
+        let mut csv = String::from("id,city,amount\n");
+        for i in 0..100 {
+            let city = match i % 4 {
+                0 => "CDMX",
+                1 => "Puebla",
+                2 => "Tijuana",
+                _ => "CDMX",
+            };
+            csv.push_str(&format!("{i},{city},{}\n", 100 + i));
+        }
+        // A quoted plain cell must survive both paths byte-for-byte.
+        csv.push_str("100,\"CDMX\",999\n");
+        std::fs::write(&p, csv).unwrap();
+        let set = FilterSet::single(FilterSpec::parse("city=CDMX").unwrap());
+        let seq_out = d.join("seq.csv");
+        let par_out = d.join("par.csv");
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let seq = extract(&p, Delimiter::Comma, &set, &seq_out, &tx).unwrap();
+        let par = extract_parallel(
+            &p,
+            Delimiter::Comma,
+            &set,
+            &par_out,
+            QuoteStyle::Rfc4180,
+            &tx,
+            4,
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(
+            std::fs::read(&seq_out).unwrap(),
+            std::fs::read(&par_out).unwrap()
+        );
+        assert_eq!((seq.scanned, seq.matched), (par.scanned, par.matched));
+        assert_eq!(seq.scanned, 101);
+        let leftovers: Vec<_> = std::fs::read_dir(&d.0)
+            .unwrap()
+            .filter_map(Result::ok)
+            .filter(|entry| entry.file_name().to_string_lossy().contains(".part"))
+            .collect();
+        assert!(leftovers.is_empty(), "{leftovers:?}");
     }
 
     #[test]
