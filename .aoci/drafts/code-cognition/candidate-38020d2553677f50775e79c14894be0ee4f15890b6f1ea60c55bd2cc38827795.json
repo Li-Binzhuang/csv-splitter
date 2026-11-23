@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "19c23c9538083786b06e3403ad1136750a8cc30dcf5128d3ba114b4205a7e9a1",
+  "batch_id": "38020d2553677f50775e79c14894be0ee4f15890b6f1ea60c55bd2cc38827795",
+  "composite_identity": "b87162998db2a6da75a651b74956fb29e477e0207786b9d980e821088376142e",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "7df8b00b6f8484146dc4c86e2f6ada3ad5b7db17e540160b54dbd2a6dcb35f65",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "8ec300d549be00ad293160a57839ed8172577d856dfdcd30a92f0cf84f4655fd",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合、filter -o 并行、search/filter 字节谓词、31 GB 边界、edit compact（1M 行 + 1M ops：view/export 1.13/0.91→0.02/0.02 s）、预扫 25–30 ms、耗时随行数 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "0268ec60b4e6cd4d54ea0c21633a969f08016199db038cbe3b92d21e7ecba893",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；edit transaction 只做参数/错误映射；edit undo 读 .blocks 整批撤回，undo 前先 restore_compacted 以跨压实边界；edit redo 读重做边界；新增 edit compact 调 core 压实；日志输出人类可读 | S:新增 flag 必须同时写进 print_command_help；错误退出码映射固定；标记消费后必须写回 journal"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/journal.rs",
+      "path": "crates/core/src/workbook/journal.rs",
+      "change": "update",
+      "source_sha256": "38767b563a4a3a3d6c24045d86ed1a897e363e271b7b3efa0aeb38edf108c1f6",
+      "existing_entry": "journal.rs[CP9L]: F:追加式操作日志、撤销/重做边界、压实与崩溃恢复 | R:code:crates/core/src/workbook/mod.rs,code:crates/core/src/workbook/transaction.rs | A:每行一个 op 的 CSV；update_locked 锁住读改写；.blocks/.redo.blocks 记整批边界；compact 导出快照、保留 .base 与 .journal.history、prepared/installed 标记、清空 journal；recover_compaction 按标记回滚或补清空；restore_compacted 还原旧 base+history 供跨界 undo | S:journal 是编辑唯一载体；SetCell 无旧值故不可直接折叠；redo 非空拒绝 compact/跨界 undo；标记必须带 size；单条编辑清标记"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "b20f2e31661d021abffcd10b518cee21fb5a0636594cd1271ab22ca27322e1fb",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示与实测范围；csvx 4.2.0；阶段 1 性能收尾；Journal 压实设计与实现：1000 万条 journal 时 view 4.84 s/export 4.61 s/undo 5.50 s，SetCell 无旧值故不能直接折叠；edit compact 保留 .base/history、跨界 undo 还原、标记恢复；实测 1M 行 + 1M ops 压缩前后 1.13/0.91→0.02/0.02 s；仍待真实崩溃注入、磁盘满、并发、verify 比对 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围，容量先看行数"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "c2e21a0a93180d0d3afbcd8236a641186c1327a60fddde99f507e753c7923c15",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "8ec300d549be00ad293160a57839ed8172577d856dfdcd30a92f0cf84f4655fd",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合、filter -o 并行、search/filter 字节谓词、31 GB 边界、edit compact（1M 行 + 1M ops：view/export 1.13/0.91→0.02/0.02 s）、预扫 25–30 ms、耗时随行数 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "003e22c3beb26f021cf4267c207cccf32c60dd24ba0c83b0ef1e37cfdfaa93e1",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "0268ec60b4e6cd4d54ea0c21633a969f08016199db038cbe3b92d21e7ecba893",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；edit transaction 只做参数/错误映射；edit undo 读 .blocks 整批撤回，undo 前先 restore_compacted 以跨压实边界；edit redo 读重做边界；新增 edit compact 调 core 压实；日志输出人类可读 | S:新增 flag 必须同时写进 print_command_help；错误退出码映射固定；标记消费后必须写回 journal"
+    },
+    {
+      "candidate_id": "b598c8bb499eb300bcae57fe109635c4373a9d1e3d04dd30d381bc20c2bba1af",
+      "object_ref": "code:crates/core/src/workbook/journal.rs",
+      "path": "crates/core/src/workbook/journal.rs",
+      "change": "update",
+      "source_sha256": "38767b563a4a3a3d6c24045d86ed1a897e363e271b7b3efa0aeb38edf108c1f6",
+      "existing_entry": "journal.rs[CP9L]: F:追加式操作日志、撤销/重做边界、压实与崩溃恢复 | R:code:crates/core/src/workbook/mod.rs,code:crates/core/src/workbook/transaction.rs | A:每行一个 op 的 CSV；update_locked 锁住读改写；.blocks/.redo.blocks 记整批边界；compact 导出快照、保留 .base 与 .journal.history、prepared/installed 标记、清空 journal；recover_compaction 按标记回滚或补清空；restore_compacted 还原旧 base+history 供跨界 undo | S:journal 是编辑唯一载体；SetCell 无旧值故不可直接折叠；redo 非空拒绝 compact/跨界 undo；标记必须带 size；单条编辑清标记"
+    },
+    {
+      "candidate_id": "35614b2acdedfc3f0a679fc000eb73cfa838fd7f2d1b9dc9ec6fd2a22a0577f5",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "b20f2e31661d021abffcd10b518cee21fb5a0636594cd1271ab22ca27322e1fb",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示与实测范围；csvx 4.2.0；阶段 1 性能收尾；Journal 压实设计与实现：1000 万条 journal 时 view 4.84 s/export 4.61 s/undo 5.50 s，SetCell 无旧值故不能直接折叠；edit compact 保留 .base/history、跨界 undo 还原、标记恢复；实测 1M 行 + 1M ops 压缩前后 1.13/0.91→0.02/0.02 s；仍待真实崩溃注入、磁盘满、并发、verify 比对 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围，容量先看行数"
+    }
+  ]
+}
