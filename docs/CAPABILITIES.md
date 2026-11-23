@@ -181,8 +181,8 @@ delimiter 检测也读解压后的内容。压缩流不可 seek，因此自动�
 2.3 GB/9500 万行 drill：plain filter 1.51 s/57 MB；`big.csv.zst`（51 MB）filter **4.16 s/15 MB**，
 输出与 plain `cmp` 逐字节一致；zst search 12.13 s/11 MB；zst quality 21.73 s/20 MB。
 2.3 GB zst `search --materialize` 3.51 s/89 MB（普通顺序读 11.87 s/12 MB），
-命中数一致；适合需要随机访问/多次查询时使用。临时文件带 PID，下次解压前会
-清理“持有进程已死亡”的 `csvx-materialized-*` 残留。
+命中数一致；`filter --materialize` 也可先把压缩输入解到临时文件再过滤。
+临时文件带 PID，下次解压前会清理“持有进程已死亡”的 `csvx-materialized-*` 残留。
 压缩读是 CPU 受限，不能用它推断 100 GB 指标。
 
 ### 100 GB 级（C 主线，已达标）

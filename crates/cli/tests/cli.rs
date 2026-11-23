@@ -3301,6 +3301,45 @@ fn pipeline_status_verify_detects_stale_output() {
     assert_eq!(gate.status.code(), Some(3));
 }
 
+/// `filter --materialize` writes the same rows from a compressed input.
+#[test]
+fn filter_materializes_compressed_input() {
+    let dir = TempDir::new("filter-materialize");
+    std::fs::write(
+        dir.join("orders.csv"),
+        "id,city\n1,CDMX\n2,Puebla\n3,CDMX\n",
+    )
+    .unwrap();
+    let status = Command::new("gzip")
+        .args(["-k", "orders.csv"])
+        .current_dir(&dir.0)
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let result = Command::new(bin())
+        .args([
+            "filter",
+            "orders.csv.gz",
+            "--where",
+            "city=CDMX",
+            "-o",
+            "out.csv",
+            "--materialize",
+        ])
+        .current_dir(&dir.0)
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert_eq!(
+        std::fs::read_to_string(dir.join("out.csv")).unwrap(),
+        "id,city\n1,CDMX\n3,CDMX\n"
+    );
+}
+
 /// `search --materialize` decompresses first, then finds the same rows.
 #[test]
 fn search_materializes_compressed_input() {

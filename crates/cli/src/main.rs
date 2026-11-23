@@ -293,6 +293,10 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--desc", "Descending order"),
             ("--json", "Emit JSON"),
             ("--limit", "Maximum rows to report / return"),
+            (
+                "--materialize",
+                "Decompress .zst/.gz input to a temp file before filtering",
+            ),
             ("--order", "Sort rows, e.g. \"city,amount:desc\""),
             ("--out", "Output path"),
             ("--quotes", "Quote style: rfc4180 | backslash | none"),
@@ -2634,11 +2638,13 @@ fn cmd_filter(args: &[String]) -> i32 {
     let mut verify = false;
     let mut limit = 10_000usize;
     let mut json = false;
+    let mut materialize = false;
     let mut show = 0usize;
     let mut delim = "auto".to_string();
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
+            "--materialize" => materialize = true,
             "--where" => match p.value("--where") {
                 Ok(v) => where_exprs.push(v),
                 Err(e) => {
@@ -2715,6 +2721,21 @@ fn cmd_filter(args: &[String]) -> i32 {
         return 2;
     };
     warn_pending_edits(&input);
+    let _materialized = if materialize {
+        match materialize_compressed(&input) {
+            Ok(value) => value,
+            Err(error) => {
+                eprintln!("error: {error}");
+                return 1;
+            }
+        }
+    } else {
+        None
+    };
+    let input = _materialized
+        .as_ref()
+        .map(|value| value.path.clone())
+        .unwrap_or(input);
     if where_exprs.is_empty() {
         eprintln!("error: filter needs at least one --where <expr>");
         return 2;
