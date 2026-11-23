@@ -172,6 +172,21 @@ output,joined,orders,joined.csv,,,,,"customer,region"
 2.03 GB / 5600 万行 drill（2026-11-23）：analyze --quality **18.71 s**，RSS **17 MB**；
 `key` 检查报 55,999,000 个重复值，`city` 报 5,600,000 个空值；候选键为空（id 的 distinct 被 cap 截断）。
 
+### Pipeline（A 工作台，进行中）
+
+`pipeline run plan.csv --root .` 按 CSV 清单顺序执行步骤，复用现有命令：
+
+```text
+step,input,command,args,output
+filtered,orders.csv,filter,--where city=CDMX -o {out},filtered.csv
+joined,filtered,lookup,--key cust_no --reference customers.csv --get name --out {out},joined.csv
+```
+
+- `input` 为空表示上一步输出；也可写前一步的 `step` 名或文件路径。
+- `{out}` 会被替换为原子临时文件，成功后才 rename；不带 `{out}` 时捕获 stdout 写成输出。
+- `.pipeline.csv` 记录输入/参数/输出哈希；未变步骤显示 `↷` 跳过，变了的重跑，`--force` 全跑。
+- 失败不写状态、不留 partial 输出；`pipeline status` 查看血缘哈希。
+
 `if` 只算选中的分支（`if(qty=0, 0, amount/qty)` 不会除零）。
 
 整列聚合（`sum`/`average`/`count`）在公式开始前扫一遍**基文件**，把数字列的

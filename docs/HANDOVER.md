@@ -124,6 +124,13 @@ round-trip CLI 测试三种格式均回到逐字节相同的 CSV；`--format xls
 Parquet→CSV **2.15 s**、RSS 424 MB；返回 CSV 与原始 CSV **逐字节一致**、55,000,001 行。
 xlsx 仍按硬约束挂起，等用户明确解除。
 
+## Pipeline 工作台（A 主线，进行中）
+
+`pipeline run plan.csv --root .`：CSV 清单（step/input/command/args/output）顺序执行，
+复用现有命令；`{out}` 写临时文件后 rename，失败不留 partial；未变步骤按输入/参数/输出
+哈希跳过，`--force` 全跑；`.pipeline.csv` 即血缘。CLI 测试覆盖首次运行、第二次全跳过、
+输入变更后重跑、坏步骤不写目标/状态。
+
 ## 对 Excel / WPS 的覆盖
 
 | 电子表格操作 | 这里怎么做的 |

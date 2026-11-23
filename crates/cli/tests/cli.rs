@@ -2518,6 +2518,87 @@ fn convert_formats_round_trip_to_the_same_csv() {
     assert!(!dir.join("out.xlsx").exists(), "xlsx must remain disabled");
 }
 
+/// The pipeline runner chains commands, skips unchanged steps and reruns downstream
+/// when an input changes; a failed step leaves no partial output.
+#[test]
+fn pipeline_runs_incrementally_and_fails_atomically() {
+    let dir = TempDir::new("pipeline");
+    let orders = dir.join("orders.csv");
+    std::fs::write(&orders, "order,city\nA,CDMX\nB,Puebla\nC,CDMX\n").unwrap();
+    let plan = dir.join("plan.csv");
+    std::fs::write(
+        &plan,
+        concat!(
+            "step,input,command,args,output\n",
+            "filtered,orders.csv,filter,--where city=CDMX -o {out},filtered.csv\n",
+            "quality,filtered,analyze,--quality --json,quality.json\n"
+        ),
+    )
+    .unwrap();
+    let run = || {
+        Command::new(bin())
+            .args([
+                "pipeline",
+                "run",
+                plan.to_str().unwrap(),
+                "--root",
+                dir.0.to_str().unwrap(),
+            ])
+            .output()
+            .unwrap()
+    };
+    let first = run();
+    assert!(first.status.success(), "{:?}", first.stderr);
+    assert_eq!(
+        std::fs::read_to_string(dir.join("filtered.csv")).unwrap(),
+        "order,city\nA,CDMX\nC,CDMX\n"
+    );
+    let quality: String = std::fs::read_to_string(dir.join("quality.json")).unwrap();
+    assert!(quality.contains(r#""columns""#), "{quality}");
+
+    let second = run();
+    assert!(second.status.success());
+    let stdout = String::from_utf8_lossy(&second.stdout);
+    assert!(stdout.contains("↷ filtered"), "{stdout}");
+    assert!(stdout.contains("↷ quality"), "{stdout}");
+
+    std::fs::write(&orders, "order,city\nA,CDMX\nB,Puebla\nC,CDMX\nD,CDMX\n").unwrap();
+    let third = run();
+    assert!(third.status.success());
+    assert_eq!(
+        std::fs::read_to_string(dir.join("filtered.csv")).unwrap(),
+        "order,city\nA,CDMX\nC,CDMX\nD,CDMX\n"
+    );
+    let stdout = String::from_utf8_lossy(&third.stdout);
+    assert!(stdout.contains("✓ filtered"), "{stdout}");
+    assert!(stdout.contains("✓ quality"), "{stdout}");
+
+    // A failing second step must not write the target or a success state.
+    let bad = dir.join("bad-plan.csv");
+    std::fs::write(
+        &bad,
+        concat!(
+            "step,input,command,args,output\n",
+            "filtered,orders.csv,filter,--where city=CDMX -o {out},bad-filtered.csv\n",
+            "joined,bad-filtered,lookup,--key nope --reference orders.csv --get city --out {out},bad-joined.csv\n"
+        ),
+    )
+    .unwrap();
+    let failed = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            bad.to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(failed.status.code(), Some(1));
+    assert!(!dir.join("bad-joined.csv").exists());
+    assert!(!dir.join("bad-plan.csv.pipeline.csv").exists());
+}
+
 /// A bulk edit is one journal entry however many rows it changes.
 #[test]
 fn bulk_edit_matches_a_filter_and_stays_one_operation() {

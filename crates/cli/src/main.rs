@@ -56,6 +56,7 @@ fn main() -> ExitCode {
         Some("layout") => cmd_layout(&args[1..]),
         Some("lookup") => cmd_lookup(&args[1..]),
         Some("book") => cmd_book(&args[1..]),
+        Some("pipeline") => cmd_pipeline(&args[1..]),
         Some("demo") => cmd_demo(&args[1..]),
         Some("sql") => cmd_sql(&args[1..]),
         Some("search") => cmd_search(&args[1..]),
@@ -127,6 +128,13 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--max", "Maximum sheets to list"),
             ("--plan", "Apply a manifest of sheets, lookups and outputs"),
             ("--root", "Directory to serve / list"),
+        ],
+    ),
+    (
+        "pipeline",
+        &[
+            ("--force", "Rerun every step even when fresh"),
+            ("--root", "Directory for relative inputs/outputs"),
         ],
     ),
     (
@@ -654,6 +662,7 @@ COMMANDS
   lookup   <input> --key C --from R Join a reference table onto the file (VLOOKUP)
   book     <dir>                  List every CSV in a directory as one workbook
   book     --plan <file>          Apply a declarative sheet/lookup/output manifest
+  pipeline run <plan>             Run a declarative, incremental CSV pipeline
   demo     [-o <dir>]           Write a sample file to try the commands on
   search   <input> <text>        Find text anywhere (or in chosen columns)
   files    --root <dir>          List readable files under a directory
@@ -7852,6 +7861,449 @@ fn print_quality_markdown(
         println!("## Findings");
         for (severity, column, message) in findings {
             println!("- **{severity}** `{column}`: {message}");
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+struct PipelineStep {
+    name: String,
+    input: Option<String>,
+    command: String,
+    args: String,
+    output: std::path::PathBuf,
+}
+
+#[derive(Clone, Debug, Default)]
+struct PipelineStateRow {
+    name: String,
+    command: String,
+    args: String,
+    input: String,
+    output: String,
+    input_hash: String,
+    args_hash: String,
+    output_hash: String,
+}
+
+fn pipeline_state_path(plan: &std::path::Path) -> std::path::PathBuf {
+    std::path::PathBuf::from(format!("{}.pipeline.csv", plan.display()))
+}
+
+fn fnv_hash(bytes: &[u8]) -> u64 {
+    let mut hash = 0xcbf2_9ce4_8422_2325u64;
+    for byte in bytes {
+        hash ^= *byte as u64;
+        hash = hash.wrapping_mul(0x100_0000_01b3);
+    }
+    hash
+}
+
+fn pipeline_hash_file(path: &std::path::Path) -> std::io::Result<String> {
+    use std::io::Read;
+    let mut file = std::fs::File::open(path)?;
+    let mut buffer = vec![0u8; 1024 * 1024];
+    let mut hash = 0xcbf2_9ce4_8422_2325u64;
+    loop {
+        let read = file.read(&mut buffer)?;
+        if read == 0 {
+            break;
+        }
+        for byte in &buffer[..read] {
+            hash ^= *byte as u64;
+            hash = hash.wrapping_mul(0x100_0000_01b3);
+        }
+    }
+    Ok(format!("{hash:016x}"))
+}
+
+fn pipeline_hash_text(text: &str) -> String {
+    format!("{:016x}", fnv_hash(text.as_bytes()))
+}
+
+fn split_pipeline_args(text: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut current = String::new();
+    let mut quote: Option<char> = None;
+    for ch in text.chars() {
+        match quote {
+            Some(q) if ch == q => quote = None,
+            Some(_) => current.push(ch),
+            None if ch == '\'' || ch == '"' => quote = Some(ch),
+            None if ch.is_whitespace() => {
+                if !current.is_empty() {
+                    out.push(std::mem::take(&mut current));
+                }
+            }
+            None => current.push(ch),
+        }
+    }
+    if !current.is_empty() {
+        out.push(current);
+    }
+    out
+}
+
+fn load_pipeline_state(path: &std::path::Path) -> Vec<PipelineStateRow> {
+    let Ok(file) = std::fs::File::open(path) else {
+        return Vec::new();
+    };
+    let mut reader = csvx_core::csv_reader::RecordReader::new(
+        std::io::BufReader::with_capacity(256 * 1024, file),
+        256 * 1024,
+    );
+    let mut record = Vec::new();
+    let mut rows = Vec::new();
+    let mut header: Option<Vec<String>> = None;
+    while reader.next_record(&mut record).unwrap_or(false) {
+        let cells: Vec<String> = csvx_core::csv_reader::parse_csv_record_with(
+            &String::from_utf8_lossy(&record),
+            b',',
+            csvx_core::csv_reader::QuoteStyle::Rfc4180,
+        );
+        if header.is_none() {
+            header = Some(cells);
+            continue;
+        }
+        if cells.len() != 8 {
+            continue;
+        }
+        rows.push(PipelineStateRow {
+            name: cells[0].clone(),
+            command: cells[1].clone(),
+            args: cells[2].clone(),
+            input: cells[3].clone(),
+            output: cells[4].clone(),
+            input_hash: cells[5].clone(),
+            args_hash: cells[6].clone(),
+            output_hash: cells[7].clone(),
+        });
+    }
+    rows
+}
+
+fn save_pipeline_state(path: &std::path::Path, rows: &[PipelineStateRow]) -> std::io::Result<()> {
+    use std::io::Write;
+    let tmp = std::path::PathBuf::from(format!("{}.tmp", path.display()));
+    let mut file = std::fs::File::create(&tmp)?;
+    writeln!(
+        file,
+        "step,command,args,input,output,input_hash,args_hash,output_hash"
+    )?;
+    for row in rows {
+        writeln!(
+            file,
+            "{},{},{},{},{},{},{},{}",
+            row.name,
+            row.command,
+            row.args,
+            row.input,
+            row.output,
+            row.input_hash,
+            row.args_hash,
+            row.output_hash
+        )?;
+    }
+    file.flush()?;
+    std::fs::rename(&tmp, path)
+}
+
+fn run_pipeline_plan(
+    plan: &std::path::Path,
+    root: Option<&std::path::Path>,
+    force: bool,
+) -> std::io::Result<Vec<(String, bool)>> {
+    let root = root
+        .map(std::path::Path::to_path_buf)
+        .or_else(|| plan.parent().map(std::path::Path::to_path_buf))
+        .unwrap_or_else(|| std::path::PathBuf::from("."));
+    let reader = csvx_core::encoding::open_decoded(plan)?;
+    let mut records = csvx_core::csv_reader::RecordReader::new(
+        std::io::BufReader::with_capacity(256 * 1024, reader),
+        256 * 1024,
+    );
+    let mut record = Vec::new();
+    if !records.next_record(&mut record)? {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "the pipeline plan is empty",
+        ));
+    }
+    let header: Vec<String> = csvx_core::csv_reader::parse_csv_record_with(
+        &String::from_utf8_lossy(&record),
+        b',',
+        csvx_core::csv_reader::QuoteStyle::Rfc4180,
+    );
+    let expected = ["step", "input", "command", "args", "output"];
+    if header.len() != 5
+        || header
+            .iter()
+            .zip(expected)
+            .any(|(cell, want)| cell.trim() != want)
+    {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "the pipeline plan header must be step,input,command,args,output",
+        ));
+    }
+    let mut steps: Vec<PipelineStep> = Vec::new();
+    while records.next_record(&mut record)? {
+        let cells: Vec<String> = csvx_core::csv_reader::parse_csv_record_with(
+            &String::from_utf8_lossy(&record),
+            b',',
+            csvx_core::csv_reader::QuoteStyle::Rfc4180,
+        );
+        if cells.iter().all(|cell| cell.trim().is_empty()) {
+            continue;
+        }
+        if cells.len() != 5 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "a pipeline step needs 5 columns",
+            ));
+        }
+        let name = cells[0].trim().to_string();
+        if name.is_empty() || cells[2].trim().is_empty() || cells[4].trim().is_empty() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "a pipeline step needs a name, command and output",
+            ));
+        }
+        if steps.iter().any(|step| step.name == name) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("duplicate pipeline step {name}"),
+            ));
+        }
+        steps.push(PipelineStep {
+            name,
+            input: if cells[1].trim().is_empty() {
+                None
+            } else {
+                Some(cells[1].trim().to_string())
+            },
+            command: cells[2].trim().to_string(),
+            args: cells[3].to_string(),
+            output: root.join(cells[4].trim()),
+        });
+    }
+    if steps.is_empty() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "the pipeline plan has no steps",
+        ));
+    }
+    let state_path = pipeline_state_path(plan);
+    let previous = load_pipeline_state(&state_path);
+    let bin = std::env::current_exe()?;
+    let mut state_rows = Vec::with_capacity(steps.len());
+    let mut results = Vec::with_capacity(steps.len());
+    let mut previous_output: Option<std::path::PathBuf> = None;
+    for (index, step) in steps.iter().enumerate() {
+        let input_path = match &step.input {
+            None => previous_output.clone().ok_or_else(|| {
+                std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "the first pipeline step needs an input",
+                )
+            })?,
+            Some(name) => steps
+                .iter()
+                .find(|candidate| &candidate.name == name)
+                .map(|candidate| candidate.output.clone())
+                .unwrap_or_else(|| root.join(name)),
+        };
+        if !input_path.exists() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!(
+                    "step {}: input {} not found",
+                    step.name,
+                    input_path.display()
+                ),
+            ));
+        }
+        let input_string = input_path.display().to_string();
+        let input_hash = pipeline_hash_file(&input_path)?;
+        let args_hash = pipeline_hash_text(&step.args);
+        let fresh = !force
+            && previous.iter().any(|row| {
+                row.name == step.name
+                    && row.command == step.command
+                    && row.args == step.args
+                    && row.input == input_string
+                    && row.input_hash == input_hash
+                    && step.output.exists()
+                    && pipeline_hash_file(&step.output)
+                        .map(|hash| hash == row.output_hash)
+                        .unwrap_or(false)
+            });
+        if fresh {
+            results.push((step.name.clone(), true));
+            let output_string = step.output.display().to_string();
+            let output_hash = pipeline_hash_file(&step.output).unwrap_or_default();
+            state_rows.push(PipelineStateRow {
+                name: step.name.clone(),
+                command: step.command.clone(),
+                args: step.args.clone(),
+                input: input_string,
+                output: output_string,
+                input_hash,
+                args_hash,
+                output_hash,
+            });
+            previous_output = Some(step.output.clone());
+            continue;
+        }
+        if let Some(parent) = step.output.parent() {
+            if !parent.as_os_str().is_empty() && !parent.exists() {
+                std::fs::create_dir_all(parent)?;
+            }
+        }
+        let temp = step.output.with_file_name(format!(
+            ".{}.pipeline.tmp",
+            step.output
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or("out")
+        ));
+        let _ = std::fs::remove_file(&temp);
+        let out_string = temp.display().to_string();
+        let args = split_pipeline_args(&step.args)
+            .into_iter()
+            .map(|arg| {
+                arg.replace("{in}", &input_string)
+                    .replace("{out}", &out_string)
+            })
+            .collect::<Vec<_>>();
+        let uses_out = step.args.contains("{out}");
+        let command = split_pipeline_args(&step.command);
+        let mut process = std::process::Command::new(&bin);
+        process.arg(command.first().map(String::as_str).unwrap_or(""));
+        process.arg(&input_path);
+        if command.len() > 1 {
+            process.args(&command[1..]);
+        }
+        process.args(&args);
+        let output = process.output()?;
+        if !output.status.success() {
+            let _ = std::fs::remove_file(&temp);
+            return Err(std::io::Error::other(format!(
+                "step {} failed: {}",
+                step.name,
+                String::from_utf8_lossy(&output.stderr).trim()
+            )));
+        }
+        if uses_out {
+            if !temp.exists() {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("step {} did not write its output", step.name),
+                ));
+            }
+        } else {
+            use std::io::Write;
+            let mut file = std::fs::File::create(&temp)?;
+            file.write_all(&output.stdout)?;
+            file.flush()?;
+        }
+        std::fs::rename(&temp, &step.output)?;
+        let output_hash = pipeline_hash_file(&step.output)?;
+        state_rows.push(PipelineStateRow {
+            name: step.name.clone(),
+            command: step.command.clone(),
+            args: step.args.clone(),
+            input: input_string,
+            output: step.output.display().to_string(),
+            input_hash,
+            args_hash,
+            output_hash,
+        });
+        results.push((step.name.clone(), false));
+        previous_output = Some(step.output.clone());
+        if index + 1 == steps.len() {
+            break;
+        }
+    }
+    save_pipeline_state(&state_path, &state_rows)?;
+    Ok(results)
+}
+
+fn cmd_pipeline(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut action: Option<String> = None;
+    let mut plan: Option<std::path::PathBuf> = None;
+    let mut root: Option<std::path::PathBuf> = None;
+    let mut force = false;
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--root" => match p.value("--root") {
+                Ok(value) => root = Some(std::path::PathBuf::from(value)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--force" => force = true,
+            "-h" | "--help" => {
+                print_command_help("pipeline");
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => {
+                if action.is_none() {
+                    action = Some(other.to_string());
+                } else if plan.is_none() {
+                    plan = Some(std::path::PathBuf::from(other));
+                } else {
+                    eprintln!("error: unexpected argument: {other}");
+                    return 2;
+                }
+            }
+        }
+    }
+    let Some(action) = action else {
+        eprintln!("error: pipeline needs run|status <plan>");
+        return 2;
+    };
+    let Some(plan) = plan else {
+        eprintln!("error: pipeline needs a plan file");
+        return 2;
+    };
+    match action.as_str() {
+        "run" => match run_pipeline_plan(&plan, root.as_deref(), force) {
+            Ok(results) => {
+                for (name, fresh) in results {
+                    println!("{} {}", if fresh { "↷" } else { "✓" }, name);
+                }
+                0
+            }
+            Err(e) => {
+                eprintln!("error: {e}");
+                1
+            }
+        },
+        "status" => {
+            let rows = load_pipeline_state(&pipeline_state_path(&plan));
+            if rows.is_empty() {
+                println!("(no pipeline state yet)");
+                return 0;
+            }
+            println!("{:<20} {:<32} {:<10} state", "step", "output", "input");
+            for row in rows {
+                println!(
+                    "{:<20} {:<32} {:<10} {}",
+                    row.name, row.output, row.input_hash, row.output_hash
+                );
+            }
+            0
+        }
+        other => {
+            eprintln!("error: unknown pipeline action {other}; use run|status");
+            2
         }
     }
 }
