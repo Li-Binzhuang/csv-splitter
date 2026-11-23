@@ -7924,6 +7924,7 @@ struct PipelineStep {
 
 type PipelineResults = Vec<(String, bool, u64, String)>;
 type BranchOutcome = (String, bool, u64, String, PipelineStateRow);
+type PipelineLineage = Vec<(String, Vec<String>)>;
 
 #[derive(Clone, Debug, Default)]
 struct PipelineStateRow {
@@ -8134,6 +8135,15 @@ fn run_step_command(
         stdout,
         stderr,
     })
+}
+
+fn pipeline_dependencies(steps: &[PipelineStep], index: usize) -> Vec<String> {
+    match &steps[index].input {
+        Some(name) if steps[..index].iter().any(|step| &step.name == name) => vec![name.clone()],
+        Some(_) => Vec::new(),
+        None if index > 0 => vec![steps[index - 1].name.clone()],
+        None => Vec::new(),
+    }
 }
 
 fn pipeline_csv_cell(value: &str) -> String {
@@ -8386,7 +8396,7 @@ fn run_pipeline_plan(
     retries: usize,
     retry_delay_ms: u64,
     jobs: usize,
-) -> std::io::Result<PipelineResults> {
+) -> std::io::Result<(PipelineResults, PipelineLineage)> {
     let root = root
         .map(std::path::Path::to_path_buf)
         .or_else(|| plan.parent().map(std::path::Path::to_path_buf))
@@ -8766,7 +8776,12 @@ fn run_pipeline_plan(
     if !dry_run {
         save_pipeline_state(&state_path, &state_rows)?;
     }
-    Ok(results)
+    let lineage = steps
+        .iter()
+        .enumerate()
+        .map(|(index, step)| (step.name.clone(), pipeline_dependencies(&steps, index)))
+        .collect();
+    Ok((results, lineage))
 }
 
 fn cmd_pipeline(args: &[String]) -> i32 {
@@ -8875,28 +8890,44 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             retry_delay_ms,
             jobs,
         ) {
-            Ok(results) => {
+            Ok((results, lineage)) => {
                 if dry_run {
                     if json {
-                        let steps = results
+                        let items = results
                             .iter()
-                            .map(|(name, fresh, _, detail)| {
+                            .enumerate()
+                            .map(|(index, (name, fresh, _, detail))| {
+                                let deps = lineage
+                                    .get(index)
+                                    .map(|(_, deps)| deps)
+                                    .unwrap_or(&Vec::new())
+                                    .iter()
+                                    .map(|dep| json_quote(dep))
+                                    .collect::<Vec<_>>()
+                                    .join(",");
                                 format!(
-                                    r#"{{"step":{},"fresh":{},"detail":{}}}"#,
+                                    r#"{{"step":{},"fresh":{},"detail":{},"deps":[{}]}}"#,
                                     json_quote(name),
                                     fresh,
-                                    json_quote(detail)
+                                    json_quote(detail),
+                                    deps
                                 )
                             })
                             .collect::<Vec<_>>()
                             .join(",");
-                        println!(r#"{{"dryRun":true,"steps":[{steps}]}}"#);
+                        println!(r#"{{"dryRun":true,"steps":[{items}]}}"#);
                     } else {
-                        for (name, fresh, _, detail) in results {
-                            if fresh {
+                        for (index, (name, fresh, _, detail)) in results.iter().enumerate() {
+                            let deps = lineage
+                                .get(index)
+                                .map(|(_, deps)| deps.clone())
+                                .unwrap_or_default();
+                            if *fresh {
                                 println!("↷ {name}");
-                            } else {
+                            } else if deps.is_empty() {
                                 println!("→ {name} ({detail})");
+                            } else {
+                                println!("→ {name} ({detail}; deps: {})", deps.join(","));
                             }
                         }
                     }

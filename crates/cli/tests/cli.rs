@@ -2864,6 +2864,40 @@ fn mcp_jobs_run_asynchronously_and_report_state() {
     );
 }
 
+/// Dry-run exposes the lineage/dependency edges used by the DAG evaluator.
+#[test]
+fn pipeline_dry_run_reports_dependencies() {
+    let dir = TempDir::new("pipeline-lineage");
+    std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n2,Puebla\n").unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},a.csv\nb,a,filter,--where city=Puebla -o {out},b.csv\n",
+    )
+    .unwrap();
+    let result = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--dry-run",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&result.stdout);
+    assert!(stdout.contains(r#""step":"b""#), "{stdout}");
+    assert!(stdout.contains(r#""deps":["a"]"#), "{stdout}");
+    assert!(!dir.join("a.csv").exists());
+    assert!(!dir.join("b.csv").exists());
+}
+
 /// Steps sharing a group run concurrently; their outputs are all committed.
 #[test]
 fn pipeline_parallel_group_runs_branches() {
