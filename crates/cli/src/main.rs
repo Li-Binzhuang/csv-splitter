@@ -9055,6 +9055,26 @@ fn run_pipeline_plan(
             ));
         }
     }
+    for step in &steps {
+        for candidate in &steps {
+            let Some(input) = candidate.input.as_deref() else {
+                continue;
+            };
+            if steps.iter().any(|known| known.name == input) {
+                continue;
+            }
+            if root.join(input) == step.output {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!(
+                        "step {} writes the source input {} in place",
+                        step.name,
+                        step.output.display()
+                    ),
+                ));
+            }
+        }
+    }
     if unlock {
         let _ = std::fs::remove_file(format!("{}.pipeline.lock", plan.display()));
     }

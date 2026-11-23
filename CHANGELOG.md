@@ -197,6 +197,8 @@
   so cron/CI can gate on freshness; test covers the stale exit.
 - **MCP status verify**: `csvx_pipeline_status` accepts verify and returns fresh
   fields; test runs a DAG, then verifies the stored state over MCP.
+- **In-place source guard**: a step output equal to any declared source input is
+  rejected, so `filter ... -o orders.csv` cannot silently replace the original.
 - **Duplicate output validation**: a plan whose two steps write the same output is
   rejected before locking/executing; test asserts no file is created.
 - **Status verify**: `pipeline status --verify` recomputes stamps/hashes against

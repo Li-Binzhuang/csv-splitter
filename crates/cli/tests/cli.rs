@@ -3418,6 +3418,36 @@ fn search_materializes_compressed_input() {
     assert!(out.contains("matched 2"), "{out}");
 }
 
+/// A step cannot overwrite the source file it reads.
+#[test]
+fn pipeline_rejects_in_place_source_output() {
+    let dir = TempDir::new("pipeline-in-place");
+    std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n").unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},orders.csv\n",
+    )
+    .unwrap();
+    let result = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--dry-run",
+        ])
+        .output()
+        .unwrap();
+    assert!(!result.status.success());
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(stderr.contains("in place"), "{stderr}");
+    assert_eq!(
+        std::fs::read_to_string(dir.join("orders.csv")).unwrap(),
+        "id,city\n1,CDMX\n"
+    );
+}
+
 /// Two steps cannot declare the same output; that would let them clobber each other.
 #[test]
 fn pipeline_rejects_duplicate_outputs() {
