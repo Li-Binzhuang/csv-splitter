@@ -280,6 +280,35 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 values[k - 1]
             })
         }
+        // PERCENTILE.INC over a same-row range: p is 0..1 and the result interpolates
+        // between the two neighbouring values.
+        "percentile" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            let Some(p) = eval(&args[1], ctx).number() else {
+                return Value::Error;
+            };
+            if values.is_empty() || !p.is_finite() || !(0.0..=1.0).contains(&p) {
+                return Value::Error;
+            }
+            let mut values = values;
+            values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+            if values.len() == 1 {
+                return Value::Number(values[0]);
+            }
+            let rank = p * (values.len() - 1) as f64;
+            let low = rank.floor() as usize;
+            let high = (low + 1).min(values.len() - 1);
+            let fraction = rank - low as f64;
+            Value::Number(values[low] + fraction * (values[high] - values[low]))
+        }
         // Whole-column aggregates: the pre-pass installed the totals before the loop
         // started, so every row reads the same number in O(1). The argument is a column
         // name taken from the syntax tree, exactly like `lag`.

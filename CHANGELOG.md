@@ -69,6 +69,9 @@
 - **`averageif`**: `averageif(amount, ">5")` and `averageif(B2:C2, ">5")` reuse the
   same matching (sum, count) as `sumif`, so no extra scan; no matching cell is `#VALUE!`
   instead of a division by zero.
+- **`percentile(range, p)`**: the p-quantile (0..1) of a same-row range with
+  PERCENTILE.INC interpolation; text and blanks are ignored, p outside 0..1 is
+  `#VALUE!`.
 - **`large(range, k)` / `small(range, k)`**: the k-th largest/smallest value of a
   same-row range (k is 1-based and truncated toward zero); text and blanks are ignored,
   and k outside 1..n is `#VALUE!`.

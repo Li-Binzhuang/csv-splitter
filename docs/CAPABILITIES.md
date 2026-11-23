@@ -120,6 +120,7 @@
      stdevp(col) varp(col)             ← 总体标准差/方差（Excel STDEV.P/VAR.P）
      median(A2:C2)                     ← 同行区间的中位数（整列中位数需保留全部值，未做）
      large(A2:C2, 1) small(A2:C2, 1)  ← 同行区间第 k 大/小（k 从 1 起，文本忽略）
+     percentile(A2:C2, 0.5)           ← 同行区间分位数（0..1 线性插值，Excel PERCENTILE.INC）
 区间 sum(B2:C2) count(B2:C2)         ← 同行区间：只读本行这两列之间的数字单元格（跨行会让流式求值看到未来行，返回 #VALUE!）
 条件区间 countif(B2:C2, ">5") sumif(B2:C2, ">5") averageif(B2:C2, ">5")  ← 条件字面量在解析时编译一次
 加权汇总 sumproduct(B2:C2, D2:E2, ...)      ← 同行多段逐项乘加（文本当 0，宽度不等报错）

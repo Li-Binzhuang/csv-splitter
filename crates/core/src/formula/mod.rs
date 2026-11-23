@@ -1432,6 +1432,49 @@ mod tests {
     }
 
     #[test]
+    fn percentile_interpolates_a_same_row_range() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [("a", "1"), ("b", "2"), ("c", "3"), ("d", "4")] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        for (p, expected) in [("0", "1"), ("0.5", "2.5"), ("0.25", "1.75"), ("1", "4")] {
+            let formula = Formula::parse(&format!("percentile(A2:D2, {p})")).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "p={p}"
+            );
+        }
+        for p in ["-0.1", "1.1"] {
+            let formula = Formula::parse(&format!("percentile(A2:D2, {p})")).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "#VALUE!",
+                "p={p} is outside 0..1"
+            );
+        }
+        cells.insert("c".to_string(), "n/a".to_string());
+        let formula = Formula::parse("percentile(A2:D2, 0.5)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "2",
+            "one text cell leaves 1, 2, 4"
+        );
+    }
+
+    #[test]
     fn large_and_small_read_a_same_row_range() {
         let columns = vec!["a".to_string(), "b".to_string(), "c".to_string()];
         let mut cells = HashMap::new();
