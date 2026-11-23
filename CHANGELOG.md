@@ -106,6 +106,10 @@
 - **`countblank`**: `countblank(amount)` and `countblank(B2:C2)` count empty cells.
   The pre-pass already skipped them for sums, so it now also keeps their count; the
   `.agg` cache gained a `blank` line and moved to version 5.
+- **Scaling note**: a 2026-11-23 recheck on 11 GB at 280M rows (12% more rows than the
+  delivery drill) reads 14.9 s filter / 16.3 s search against 13.2–13.9 / 13.8–14.6 at
+  250M rows, with the same 78–81 MB. Filter/search cost tracks row count, not bytes;
+  CAPABILITIES tells readers to estimate capacity from rows.
 - **Text helpers**: `textjoin(sep, ignore_empty, ...)` joins values with a separator
   (and can drop empty ones), `char(n)` turns a code point into text, and `code(text)`
   returns the first character's code.
