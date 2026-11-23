@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "314a0eeb0c155e1a7d29b01a7d3a356ce09a54f28a0a3e954e7915b7d9641f4b",
+  "batch_id": "fe6e6df0f7357495e81a9b2dc96a461ec0929d88154cc3ab642584df619f49d8",
+  "composite_identity": "3ee6a63a104f14727cdf23cb450000a060a1356a530f71a1dc5269e51cfcc43a",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "66cac49c51512ee445a09193dc8362b900902cb2b0d9180171830a863ef570c4",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "update",
+      "source_sha256": "db175eb4b04bdd1f3b9f9a2b3e8bb999048c06025798ac382494c609e9c81dca",
+      "existing_entry": "DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 + 官方 SDK | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs | A:一条命令演示 filter/quality、16 个 MCP 工具、edit/undo/convert/job；官方 SDK 1.32.2 也跑通；该文件是产品演示/销售材料入口 | S:演示全程本地、无 GUI、无网络、无 xlsx；终端输出必须与脚本一致；npm 依赖只在 scripts/mcp_sdk"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/demo_end_to_end.sh",
+      "path": "scripts/demo_end_to_end.sh",
+      "change": "update",
+      "source_sha256": "d766246d6bd34150b236e14b005d249aaaf65a9a16fa4386ef46107677936749",
+      "existing_entry": "demo_end_to_end.sh[XQ7T]: F:一键产品演示：pipeline + MCP 客户端 | R:code:scripts/mcp_client.py,code:docs/DEMO.md | A:临时目录生成 orders.csv 和 plan.csv；先 pipeline filter+quality，再调 mcp_client.py；用 trap 清理临时文件 | S:无网络/无 GUI/无 xlsx；BIN 可覆盖，默认 target/release/csvx；临时目录不得残留"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "bf9699f0cc57361887283896244e5551bb07827681dc73e941d3dda8e395205a",
+      "existing_entry": "client.mjs[XQ7T]: F:官方 MCP SDK 兼容性客户端（Node） | R:code:scripts/mcp_sdk/package.json,code:docs/DEMO.md | A:用 @modelcontextprotocol/sdk Client + StdioClientTransport；env CSVX_BIN/ROOT/FILE；覆盖 tools/list、schema/filter/view、edit_set/undo、convert、job_submit/job_status | S:仅演示；npm 依赖不进 Rust 构建；job 轮询需超时非零退出；路径在 root 内"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "03f43af1feca1baecf2fd11109a8bba4332a21493868ebf82cf71f51b6938a9e",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 | R:code:README.md,code:docs/SALES.md | A:若 binary 不存在先 cargo build --release；版本取 csvx --version；平台 uname；打包二进制、README/CHANGELOG/LICENSE、主要 docs（含 PILOT_SAMPLE/PILOT_CONFIRMATION）、demo/pilot 脚本；输出 dist tar.gz 与 sha256 | S:不打 tag、不联网、不发布 registry；dist 已 gitignore；只用于企业内部分发/试点"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "969cdbb7e830ef0bf61e8e8e22e4cf542922864e6fa22a09fae03b4da0106fde",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "update",
+      "source_sha256": "db175eb4b04bdd1f3b9f9a2b3e8bb999048c06025798ac382494c609e9c81dca",
+      "existing_entry": "DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 + 官方 SDK | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs | A:一条命令演示 filter/quality、16 个 MCP 工具、edit/undo/convert/job；官方 SDK 1.32.2 也跑通；该文件是产品演示/销售材料入口 | S:演示全程本地、无 GUI、无网络、无 xlsx；终端输出必须与脚本一致；npm 依赖只在 scripts/mcp_sdk"
+    },
+    {
+      "candidate_id": "26dda090ba9219acd05056c43dcbc6c3897bc2e4bcdbd3800fad383360731899",
+      "object_ref": "code:scripts/demo_end_to_end.sh",
+      "path": "scripts/demo_end_to_end.sh",
+      "change": "update",
+      "source_sha256": "d766246d6bd34150b236e14b005d249aaaf65a9a16fa4386ef46107677936749",
+      "existing_entry": "demo_end_to_end.sh[XQ7T]: F:一键产品演示：pipeline + MCP 客户端 | R:code:scripts/mcp_client.py,code:docs/DEMO.md | A:临时目录生成 orders.csv 和 plan.csv；先 pipeline filter+quality，再调 mcp_client.py；用 trap 清理临时文件 | S:无网络/无 GUI/无 xlsx；BIN 可覆盖，默认 target/release/csvx；临时目录不得残留"
+    },
+    {
+      "candidate_id": "09259594cf0efc941bae4466d8dac7ef32a5e2121de209d31f42ac9d11e8ba71",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "bf9699f0cc57361887283896244e5551bb07827681dc73e941d3dda8e395205a",
+      "existing_entry": "client.mjs[XQ7T]: F:官方 MCP SDK 兼容性客户端（Node） | R:code:scripts/mcp_sdk/package.json,code:docs/DEMO.md | A:用 @modelcontextprotocol/sdk Client + StdioClientTransport；env CSVX_BIN/ROOT/FILE；覆盖 tools/list、schema/filter/view、edit_set/undo、convert、job_submit/job_status | S:仅演示；npm 依赖不进 Rust 构建；job 轮询需超时非零退出；路径在 root 内"
+    },
+    {
+      "candidate_id": "1310ff7516abbeea7932882caf68ab5a7b337b9dbfb741ad378079a51b976db7",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "03f43af1feca1baecf2fd11109a8bba4332a21493868ebf82cf71f51b6938a9e",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 | R:code:README.md,code:docs/SALES.md | A:若 binary 不存在先 cargo build --release；版本取 csvx --version；平台 uname；打包二进制、README/CHANGELOG/LICENSE、主要 docs（含 PILOT_SAMPLE/PILOT_CONFIRMATION）、demo/pilot 脚本；输出 dist tar.gz 与 sha256 | S:不打 tag、不联网、不发布 registry；dist 已 gitignore；只用于企业内部分发/试点"
+    }
+  ]
+}
