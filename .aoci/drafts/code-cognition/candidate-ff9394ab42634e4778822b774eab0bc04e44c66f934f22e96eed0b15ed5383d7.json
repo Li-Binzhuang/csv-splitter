@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "cb77c61795b30f96d261753065a33ff99b2c3acbc1726da63964e4949296c304",
+  "batch_id": "ff9394ab42634e4778822b774eab0bc04e44c66f934f22e96eed0b15ed5383d7",
+  "composite_identity": "03b9d6ab29fb4d82d5a5eb0003384dce1ea27d1aba7012d172a16084046a1206",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "59b7347854a47dd42b06eb1028e2e00aa568b653c401b9ccadf80b21fb6c291a",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "76d6dc21390d40d455efbfc66e99ed41b34186237265ed087f4a149defc4d791",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/--dag/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/cancel/list 摘要+pipeline DAG 参数、view 游标、官方 SDK、压缩输入、100 GB/81 GB 演练、demo、外发、试点报告、打包 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "e1f6903fa90212df9e363698c77c2e615a4ea9893feeb268e869a8493c96c7e6",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；pipeline run/status 支持 size+mtime 跳过、--force、--dry-run、--json、--dag、--jobs、--step-timeout、--retries、--clean；成功运行写 \u003cplan\u003e.lineage.csv；DAG 按 lineage 拓扑调度，ready 逐项判 fresh，stale 波次并发；组/DAG 子进程写 staging，整波成功后才 rename；失败 kill 其余、删 staging、保留旧输出；view --json 返回 start/nextStart/hasMore；mcp --root | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state/lineage；更早成功波已提交输出保留；group 是连续同组，dag 才是任意拓扑；mcp stdout 只走 JSON-RPC"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "1b3fa9af880b9c0bc79f25c1c49cb652739648d511210c923a8b1d77f6d513b6",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "76d6dc21390d40d455efbfc66e99ed41b34186237265ed087f4a149defc4d791",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/--dag/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/cancel/list 摘要+pipeline DAG 参数、view 游标、官方 SDK、压缩输入、100 GB/81 GB 演练、demo、外发、试点报告、打包 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "bfec4c7029baa51cb382a22f3b62e5e2421f999fe9d181d746c9c37ce3eeb21e",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "e1f6903fa90212df9e363698c77c2e615a4ea9893feeb268e869a8493c96c7e6",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；pipeline run/status 支持 size+mtime 跳过、--force、--dry-run、--json、--dag、--jobs、--step-timeout、--retries、--clean；成功运行写 \u003cplan\u003e.lineage.csv；DAG 按 lineage 拓扑调度，ready 逐项判 fresh，stale 波次并发；组/DAG 子进程写 staging，整波成功后才 rename；失败 kill 其余、删 staging、保留旧输出；view --json 返回 start/nextStart/hasMore；mcp --root | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state/lineage；更早成功波已提交输出保留；group 是连续同组，dag 才是任意拓扑；mcp stdout 只走 JSON-RPC"
+    }
+  ]
+}
