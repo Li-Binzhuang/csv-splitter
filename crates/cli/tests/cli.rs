@@ -3535,6 +3535,8 @@ fn mcp_job_status_can_wait() {
     assert!(stdout.contains("done"), "{stdout}");
     assert!(stdout.contains("notifications/progress"), "{stdout}");
     assert!(stdout.contains("p-1"), "{stdout}");
+    assert!(stdout.contains("structuredContent"), "{stdout}");
+    assert!(stdout.contains(r#""code":"ok""#), "{stdout}");
 }
 
 /// Job listing exposes every submitted job, including done/cancelled state.

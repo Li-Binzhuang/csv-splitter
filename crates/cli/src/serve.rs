@@ -7708,10 +7708,13 @@ fn mcp_error(id: Option<&McpJson>, code: i64, message: &str) -> String {
 }
 
 fn mcp_tool_text(id: Option<&McpJson>, text: &str, is_error: bool) -> String {
+    let code = if is_error { "tool_error" } else { "ok" };
     format!(
-        r#"{{"jsonrpc":"2.0","id":{},"result":{{"content":[{{"type":"text","text":{}}}],"isError":{}}}}}"#,
+        r#"{{"jsonrpc":"2.0","id":{},"result":{{"content":[{{"type":"text","text":{}}}],"structuredContent":{{"ok":{},"code":{}}},"isError":{}}}}}"#,
         mcp_id(id),
         mcp_quote(text),
+        !is_error,
+        mcp_quote(code),
         is_error
     )
 }
