@@ -157,6 +157,19 @@ output,joined,orders,joined.csv,,,,,"customer,region"
 - 不做 `Sheet!A1`：输出是物化文件，不是跨表按行随机引用。
 - 2.1 GB / 5500 万行、两条链式 lookup：输出 3.1 GB，46–48 s，RSS 15 MB；重跑逐字节一致。
 
+### 质量报告（阶段 4）
+
+`analyze FILE --quality [--key col] [--json | --markdown]` 将逐列画像升级为可执行报告：
+
+- 候选键：非空且 distinct 未截断、distinct == 非空值的列。
+- 键检查：`--key key` 报重复值与空键（distinct 截断时明确写“≥”）。
+- 类型冲突：同列既有数字又有非数字时 `mixedTypes=true`，并列出数量。
+- 数值离群：均值和总体标准差，按 reservoir 估计 mean ± 3σ 之外的数量。
+- 空值率与 ragged 行数；JSON 含 `quality.candidateKeys/checks/findings`，Markdown 输出表格 + findings。
+
+2.03 GB / 5600 万行 drill（2026-11-23）：analyze --quality **18.71 s**，RSS **17 MB**；
+`key` 检查报 55,999,000 个重复值，`city` 报 5,600,000 个空值；候选键为空（id 的 distinct 被 cap 截断）。
+
 `if` 只算选中的分支（`if(qty=0, 0, amount/qty)` 不会除零）。
 
 整列聚合（`sum`/`average`/`count`）在公式开始前扫一遍**基文件**，把数字列的

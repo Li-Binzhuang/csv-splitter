@@ -34,6 +34,10 @@ pub struct NumericSummary {
     pub mean: f64,
     /// Estimated from the reservoir; `None` when nothing was numeric.
     pub median: Option<f64>,
+    /// Population standard deviation over the numeric values.
+    pub std_dev: f64,
+    /// Reservoir estimate of values outside mean ± 3σ, scaled to the column.
+    pub outliers: u64,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -72,6 +76,7 @@ struct Acc {
     rng_state: u64,
     numeric_count: u64,
     numeric_sum: f64,
+    numeric_sum_sq: f64,
     numeric_min: f64,
     numeric_max: f64,
     non_numeric: u64,
@@ -92,6 +97,7 @@ impl Acc {
             rng_state: 0x2545_F491_4F6C_DD1D,
             numeric_count: 0,
             numeric_sum: 0.0,
+            numeric_sum_sq: 0.0,
             numeric_min: f64::INFINITY,
             numeric_max: f64::NEG_INFINITY,
             non_numeric: 0,
@@ -153,6 +159,7 @@ impl Acc {
             Ok(n) if n.is_finite() => {
                 self.numeric_count += 1;
                 self.numeric_sum += n;
+                self.numeric_sum_sq += n * n;
                 if n < self.numeric_min {
                     self.numeric_min = n;
                 }
@@ -181,13 +188,27 @@ impl Acc {
             } else {
                 Some(sample[sample.len() / 2])
             };
+            let mean = self.numeric_sum / self.numeric_count as f64;
+            let variance = (self.numeric_sum_sq / self.numeric_count as f64 - mean * mean).max(0.0);
+            let std_dev = variance.sqrt();
+            let outliers = if !sample.is_empty() && std_dev > 0.0 {
+                let hits = sample
+                    .iter()
+                    .filter(|value| (*value - mean).abs() > 3.0 * std_dev)
+                    .count() as f64;
+                ((hits / sample.len() as f64) * self.numeric_count as f64).round() as u64
+            } else {
+                0
+            };
             Some(NumericSummary {
                 count: self.numeric_count,
                 min: self.numeric_min,
                 max: self.numeric_max,
                 sum: self.numeric_sum,
-                mean: self.numeric_sum / self.numeric_count as f64,
+                mean,
                 median,
+                std_dev,
+                outliers,
             })
         } else {
             None
@@ -374,6 +395,22 @@ mod tests {
         let (_d, p) = fixture(csv, tag);
         let (tx, _rx) = std::sync::mpsc::channel();
         profile(&p, Delimiter::Comma, DEFAULT_DISTINCT_CAP, &tx).unwrap()
+    }
+
+    #[test]
+    fn reports_standard_deviation_and_outliers() {
+        let mut csv = String::from("x\n");
+        for value in 1..=100 {
+            csv.push_str(&format!("{value}\n"));
+        }
+        csv.push_str("1000\n");
+        let p = run(&csv, "outlier");
+        let n = p[0].numeric.clone().expect("numeric column");
+        assert!(n.std_dev > 0.0);
+        assert!(
+            n.outliers >= 1,
+            "1000 is far outside the 1..100 mean ± 3σ: {n:?}"
+        );
     }
 
     #[test]

@@ -105,10 +105,16 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
                 "Stop counting distinct values past this many",
             ),
             ("--json", "Emit JSON"),
+            ("--key", "Column to check for uniqueness (comma separated)"),
             (
                 "--limit",
                 "Check only the first N rows (reports what it skipped)",
             ),
+            (
+                "--markdown",
+                "Markdown quality report (requires --quality)",
+            ),
+            ("--quality", "Add key/duplicate/type/outlier findings"),
             ("--quotes", "Quote style: rfc4180 | backslash | none"),
             ("--sample", "Sample this many rows instead of reading all"),
         ],
@@ -7450,6 +7456,218 @@ fn cmd_edit(args: &[String]) -> i32 {
     0
 }
 
+fn quality_checks(
+    profiles: &[csvx_core::profile::ColumnProfile],
+    keys: &[String],
+) -> (Vec<String>, Vec<(String, String, String)>) {
+    // (JSON check object, (severity, column, message))
+    let mut checks = Vec::new();
+    let mut findings = Vec::new();
+    let mut candidates = Vec::new();
+    for profile in profiles {
+        if profile.non_empty > 0
+            && !profile.distinct_truncated
+            && profile.distinct == profile.non_empty
+        {
+            candidates.push(json_quote(&profile.name));
+        }
+        if profile.mixed_types {
+            findings.push((
+                "warning".to_string(),
+                profile.name.clone(),
+                format!(
+                    "{} numeric and {} non-numeric values",
+                    profile.numeric.as_ref().map(|n| n.count).unwrap_or(0),
+                    profile.empty + profile.non_empty
+                        - profile.numeric.as_ref().map(|n| n.count).unwrap_or(0)
+                        - profile.empty
+                ),
+            ));
+        }
+        if let Some(numeric) = &profile.numeric {
+            if numeric.outliers > 0 {
+                findings.push((
+                    "warning".to_string(),
+                    profile.name.clone(),
+                    format!(
+                        "≈{} value(s) outside mean ± 3σ (std {:.3})",
+                        numeric.outliers, numeric.std_dev
+                    ),
+                ));
+            }
+        }
+        if profile.empty > 0 {
+            findings.push((
+                "info".to_string(),
+                profile.name.clone(),
+                format!("{} empty value(s)", profile.empty),
+            ));
+        }
+    }
+    for key in keys {
+        if let Some(profile) = profiles.iter().find(|profile| &profile.name == key) {
+            let duplicates = profile.non_empty.saturating_sub(profile.distinct);
+            let severity = if duplicates > 0 || profile.empty > 0 {
+                "error"
+            } else {
+                "info"
+            };
+            findings.push((
+                severity.to_string(),
+                key.clone(),
+                if profile.distinct_truncated {
+                    format!(
+                        "key uniqueness is truncated at the distinct cap; ≥{} duplicate value(s)",
+                        duplicates
+                    )
+                } else if duplicates > 0 || profile.empty > 0 {
+                    format!(
+                        "{} duplicate value(s), {} empty key(s)",
+                        duplicates, profile.empty
+                    )
+                } else {
+                    "unique and non-empty".to_string()
+                },
+            ));
+            checks.push(format!(
+                r#"{{"column":"{}","kind":"unique","duplicates":{},"empty":{},"truncated":{}}}"#,
+                json_quote(key).trim_matches('"'),
+                duplicates,
+                profile.empty,
+                profile.distinct_truncated
+            ));
+        }
+    }
+    (checks, findings)
+}
+
+fn quality_json(profiles: &[csvx_core::profile::ColumnProfile], keys: &[String]) -> String {
+    let (checks, findings) = quality_checks(profiles, keys);
+    let candidates: Vec<String> = profiles
+        .iter()
+        .filter(|profile| {
+            profile.non_empty > 0
+                && !profile.distinct_truncated
+                && profile.distinct == profile.non_empty
+        })
+        .map(|profile| json_quote(&profile.name))
+        .collect();
+    let keys_json: Vec<String> = keys.iter().map(|key| json_quote(key)).collect();
+    let findings_json: Vec<String> = findings
+        .iter()
+        .map(|(severity, column, message)| {
+            format!(
+                r#"{{"severity":"{}","column":"{}","message":"{}"}}"#,
+                severity,
+                json_quote(column).trim_matches('"'),
+                json_quote(message).trim_matches('"')
+            )
+        })
+        .collect();
+    format!(
+        r#"{{"keys":[{}],"candidateKeys":[{}],"checks":[{}],"findings":[{}]}}"#,
+        keys_json.join(","),
+        candidates.join(","),
+        checks.join(","),
+        findings_json.join(",")
+    )
+}
+
+fn print_quality_text(profiles: &[csvx_core::profile::ColumnProfile], keys: &[String]) {
+    let rows = profiles.first().map(|profile| profile.rows).unwrap_or(0);
+    let ragged = profiles.first().map(|profile| profile.ragged).unwrap_or(0);
+    println!(
+        "quality report: {rows} rows, {} columns, {ragged} ragged",
+        profiles.len()
+    );
+    let candidates: Vec<String> = profiles
+        .iter()
+        .filter(|profile| {
+            profile.non_empty > 0
+                && !profile.distinct_truncated
+                && profile.distinct == profile.non_empty
+        })
+        .map(|profile| profile.name.clone())
+        .collect();
+    println!(
+        "candidate keys: {}",
+        if candidates.is_empty() {
+            "-".to_string()
+        } else {
+            candidates.join(", ")
+        }
+    );
+    let (_, findings) = quality_checks(profiles, keys);
+    for (severity, column, message) in findings {
+        println!("  {severity:>7}  {column}: {message}");
+    }
+}
+
+fn print_quality_markdown(
+    input: &std::path::Path,
+    profiles: &[csvx_core::profile::ColumnProfile],
+    keys: &[String],
+) {
+    let rows = profiles.first().map(|profile| profile.rows).unwrap_or(0);
+    let ragged = profiles.first().map(|profile| profile.ragged).unwrap_or(0);
+    println!("# Profile: {}", input.display());
+    println!();
+    println!("{rows} rows, {} columns, {ragged} ragged", profiles.len());
+    println!();
+    println!("| column | empty | distinct | type | outliers |");
+    println!("|---|---:|---:|---|---:|");
+    for profile in profiles {
+        let kind = match &profile.numeric {
+            Some(_) if profile.non_empty > 0 => "numeric",
+            Some(_) => "numeric (empty)",
+            None if profile.mixed_types => "mixed",
+            None => "text",
+        };
+        let outliers = profile
+            .numeric
+            .as_ref()
+            .map(|numeric| numeric.outliers.to_string())
+            .unwrap_or_else(|| "-".to_string());
+        println!(
+            "| {} | {} | {}{} | {} | {} |",
+            profile.name,
+            profile.empty,
+            profile.distinct,
+            if profile.distinct_truncated { "+" } else { "" },
+            kind,
+            outliers
+        );
+    }
+    println!();
+    let candidates: Vec<String> = profiles
+        .iter()
+        .filter(|profile| {
+            profile.non_empty > 0
+                && !profile.distinct_truncated
+                && profile.distinct == profile.non_empty
+        })
+        .map(|profile| profile.name.clone())
+        .collect();
+    println!(
+        "**Candidate keys:** {}",
+        if candidates.is_empty() {
+            "-".to_string()
+        } else {
+            candidates.join(", ")
+        }
+    );
+    println!();
+    let (_, findings) = quality_checks(profiles, keys);
+    if findings.is_empty() {
+        println!("No quality findings.");
+    } else {
+        println!("## Findings");
+        for (severity, column, message) in findings {
+            println!("- **{severity}** `{column}`: {message}");
+        }
+    }
+}
+
 fn cmd_analyze(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
     let mut quotes_text = String::new();
@@ -7457,10 +7675,26 @@ fn cmd_analyze(args: &[String]) -> i32 {
     let mut input: Option<PathBuf> = None;
     let mut distinct_cap = csvx_core::profile::DEFAULT_DISTINCT_CAP;
     let mut json = false;
+    let mut quality = false;
+    let mut markdown = false;
+    let mut keys: Vec<String> = Vec::new();
     let mut delim = "auto".to_string();
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
+            "--quality" => quality = true,
+            "--markdown" => markdown = true,
+            "--key" => match p.value("--key") {
+                Ok(v) => keys.extend(
+                    v.split(',')
+                        .map(|item| item.trim().to_string())
+                        .filter(|item| !item.is_empty()),
+                ),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--quotes" => match p.value("--quotes") {
                 Ok(v) => quotes_text = v,
                 Err(e) => {
@@ -7544,6 +7778,33 @@ fn cmd_analyze(args: &[String]) -> i32 {
         }
     };
 
+    if quality {
+        for key in &keys {
+            if !profiles.iter().any(|profile| &profile.name == key) {
+                eprintln!("error: unknown key column {key}");
+                return 2;
+            }
+        }
+        if markdown {
+            print_quality_markdown(&input, &profiles, &keys);
+            return 0;
+        }
+        if json {
+            let cols: Vec<String> = profiles.iter().map(profile_json).collect();
+            println!(
+                r#"{{"columns":[{}],"quality":{}}}"#,
+                cols.join(","),
+                quality_json(&profiles, &keys)
+            );
+            return 0;
+        }
+        print_quality_text(&profiles, &keys);
+        return 0;
+    }
+    if markdown {
+        eprintln!("error: --markdown needs --quality");
+        return 2;
+    }
     if json {
         let cols: Vec<String> = profiles.iter().map(profile_json).collect();
         println!(r#"{{"columns":[{}]}}"#, cols.join(","));

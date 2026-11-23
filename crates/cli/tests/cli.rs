@@ -2348,6 +2348,71 @@ fn book_plan_rejects_unknown_lookup_without_writing_output() {
     );
 }
 
+/// analyze --quality turns per-column profiles into key/duplicate/type findings.
+#[test]
+fn analyze_quality_reports_duplicate_keys_and_candidates() {
+    let dir = TempDir::new("quality");
+    let base = dir.join("q.csv");
+    std::fs::write(
+        &base,
+        "id,key,amount,city\n1,A,10,CDMX\n2,A,10,\n3,B,n/a,Puebla\n4,C,-5,CDMX\n",
+    )
+    .unwrap();
+    let output = Command::new(bin())
+        .args([
+            "analyze",
+            base.to_str().unwrap(),
+            "--quality",
+            "--json",
+            "--key",
+            "key",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let json = String::from_utf8_lossy(&output.stdout);
+    assert!(json.contains(r#""candidateKeys":["id"]"#), "{json}");
+    assert!(
+        json.contains(r#""column":"key","kind":"unique","duplicates":1"#),
+        "{json}"
+    );
+    assert!(json.contains(r#""severity":"error""#), "{json}");
+    assert!(
+        json.contains("mixedTypes") || json.contains(r#""mixed_types""#),
+        "{json}"
+    );
+
+    let markdown = Command::new(bin())
+        .args([
+            "analyze",
+            base.to_str().unwrap(),
+            "--quality",
+            "--markdown",
+            "--key",
+            "key",
+        ])
+        .output()
+        .unwrap();
+    assert!(markdown.status.success());
+    let text = String::from_utf8_lossy(&markdown.stdout);
+    assert!(text.contains("# Profile:"), "{text}");
+    assert!(text.contains("**Candidate keys:** id"), "{text}");
+    assert!(text.contains("duplicate value"), "{text}");
+
+    let bad = Command::new(bin())
+        .args([
+            "analyze",
+            base.to_str().unwrap(),
+            "--quality",
+            "--json",
+            "--key",
+            "missing",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(bad.status.code(), Some(2));
+}
+
 /// A bulk edit is one journal entry however many rows it changes.
 #[test]
 fn bulk_edit_matches_a_filter_and_stays_one_operation() {
