@@ -58,6 +58,11 @@ BIN=target/release/csvx bash scripts/demo_end_to_end.sh
 - [ ] 收集 3 个“愿意付费的理由”与 1 个“不会买的原因”
 - [ ] 输出 2 页报告：现状 vs csvx、可节省工时、下一步
 
+## 交付与分发
+- 试点确认书模板：`docs/PILOT_CONFIRMATION.md`（范围/交付/成功标准/费用/数据安全）。
+- 离线发布包：`bash scripts/package_release.sh` 生成 `dist/csvx-<version>-<platform>.tar.gz`
+  与 SHA256，内含二进制、README、LICENSE、主要 docs 与 demo/pilot 脚本；不打 tag、不联网。
+
 ## 30 天验证目标
 - 5 个设计伙伴，至少 3 个愿意迁移现有脚本；
 - 2 个付费试点，至少 1 个签意向/合同；

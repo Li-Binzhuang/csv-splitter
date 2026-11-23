@@ -142,6 +142,9 @@
 - **`mcp`**: stdio JSON-RPC MCP server with read-only tools
   (`csvx_schema/view/filter/search/quality/pipeline_status`), root-confined paths,
   UTF-8 arguments; initialize/tools/list/tools/call covered by a CLI test.
+- **Packaging & pilot confirmation**: `scripts/package_release.sh` builds an
+  offline tarball with SHA256 (no tag, no registry); PILOT_CONFIRMATION.md is a
+  fill-in 4-week pilot agreement template.
 - **MCP job list**: `csvx_job_list` returns every job's state; running jobs also
   report `elapsedMs`. 16 tools; the schema unit test guards tools/list JSON.
 - **MCP job cancel**: `csvx_job_cancel` kills a running child and returns

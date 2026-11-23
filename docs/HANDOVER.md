@@ -143,6 +143,11 @@ filter <90 s、RSS <200 MB 满足；全量 filter -o（200M 行/20 GB）改用�
 7 列、11.6 亿行、87.4 GB（21.8 GB 块重复 4 次）：search 39.42 s、filter 46.70 s、
 全量 17% 导出 196.9M 行/13 GB 62.03 s/28 MB；100 GB 数字仍以 104.5 GB 实测为准。
 
+## 分发
+
+`scripts/package_release.sh` 产出 19 MB 级 tar.gz（二进制 + 文档 + demo/pilot 脚本）与
+SHA256；`docs/PILOT_CONFIRMATION.md` 是试点确认书模板。
+
 ## 端到端 demo
 
 `bash scripts/demo_end_to_end.sh` 跑 pipeline + `scripts/mcp_client.py`：filter/quality 12/11 ms，

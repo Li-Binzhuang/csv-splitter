@@ -197,6 +197,11 @@ delimiter 检测也读解压后的内容。压缩流不可 seek，因此自动�
 7 列、11.6 亿行、87.4 GB：search 39.42 s、filter 46.70 s、全量 17% 导出
 196,928,881 行/13 GB **62.03 s / 28 MB**；仍为 21.8 GB 块重复 4 次。
 
+### 离线发布包
+
+`bash scripts/package_release.sh` 生成带 SHA256 的 `dist/csvx-<version>-<platform>.tar.gz`；
+含二进制、README、LICENSE、主要文档与 demo/pilot 脚本。用于企业内部分发/试点，不打 tag。
+
 ### 试点报告
 
 `CSVX_PILOT_FILE=sample.csv python3 scripts/pilot_report.py`

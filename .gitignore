@@ -13,3 +13,6 @@ staging/
 
 # MCP SDK demo dependencies
 scripts/mcp_sdk/node_modules/
+
+# Local release artifacts
+dist/
