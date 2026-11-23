@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "28ea9dc7a5d5e8713af4502116171a3068cc0810fe60b3b74c6662542e1f0e7f",
+  "batch_id": "44b5155733694441825699112b7913b2d0b0ae9b46b26e9b537701e52ab4d54f",
+  "composite_identity": "e444465cbcd36b96c46474d64a82142a9f1e768f3458d8709285f350c6774563",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "23f3b1735487eb5d95a9e4d34cfc433b940b1f47a81b0fd36d4cb9d05ce93ad7",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "149ba592a3f4bd17412cd25307f71d14cef909322a04881418d94f5bf179c025",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:运算符为等于/不等于/比较/包含/in/空值判断，以及公式专用的通配符（* 任意串、? 单字符，ASCII 大小写不敏感，零分配回溯 glob）；scan_page 接 start_checkpoint 返回 next 供 HTTP 续扫 | S:超时每 5000 行检查一次，不是硬上限；并行与顺序路径行号必须一致；Wildcard 只由公式层构造，文本解析不会产出它"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "ff931a39899ba46175665f55a1248e081e474bf61da0d6d5e589fe7c8681554a",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、行内多条件、iserror/isna/istext、stdev/var/stdevp/varp、median/large/small/percentile/mode/sumsq/product 同行区间、多段 sumproduct、跨表 ref/vlookup/xlookup（同一行可引用多表）、文本/日期函数、条件通配符；大文件节写明耗时随行数而非字节数，并新增阶段 1 profile（1 GB/2000 万行 filter -o 串行 4.1 s、无输出/search 8 线程约 1.2 s/GB）与冻结验收（11 GB filter -o ≤8 s、search ≤11 s、30 GB 在 30 s 内、RSS ≤90 MB） | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ac121b6680d61e9027ffb668bd5ae1d9aff8831a1289e18f934412881eabccb5",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "149ba592a3f4bd17412cd25307f71d14cef909322a04881418d94f5bf179c025",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:运算符为等于/不等于/比较/包含/in/空值判断，以及公式专用的通配符（* 任意串、? 单字符，ASCII 大小写不敏感，零分配回溯 glob）；scan_page 接 start_checkpoint 返回 next 供 HTTP 续扫 | S:超时每 5000 行检查一次，不是硬上限；并行与顺序路径行号必须一致；Wildcard 只由公式层构造，文本解析不会产出它"
+    },
+    {
+      "candidate_id": "eafcecb4ad5293228d8f1f5b09e200e45d5aa7f942c742d1d52a19f1c4108729",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "ff931a39899ba46175665f55a1248e081e474bf61da0d6d5e589fe7c8681554a",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、行内多条件、iserror/isna/istext、stdev/var/stdevp/varp、median/large/small/percentile/mode/sumsq/product 同行区间、多段 sumproduct、跨表 ref/vlookup/xlookup（同一行可引用多表）、文本/日期函数、条件通配符；大文件节写明耗时随行数而非字节数，并新增阶段 1 profile（1 GB/2000 万行 filter -o 串行 4.1 s、无输出/search 8 线程约 1.2 s/GB）与冻结验收（11 GB filter -o ≤8 s、search ≤11 s、30 GB 在 30 s 内、RSS ≤90 MB） | S:-"
+    }
+  ]
+}
