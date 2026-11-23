@@ -129,7 +129,8 @@ xlsx 仍按硬约束挂起，等用户明确解除。
 104.5 GB / 13 亿行合成文件：preview 0.02 s、index 24.57 s（9.9 MB 索引）、search 20.2 s/93 MB、
 filter 25.75 s/95 MB、选择性 filter -o 19.54 s、深跳 0.02 s。扫描目标 search <60 s、
 filter <90 s、RSS <200 MB 满足；全量 filter -o（200M 行/20 GB）改用两遍扫描 + 预计算偏移，
-**79.62 s / 28 MB**，进入 90 s；代价是 2.3 GB 小文件 1.57→1.93 s。100 GB 仍是重复块。复现见 `docs/BENCHMARKS.md`。
+**79.62 s / 28 MB**，进入 90 s；按输入 64 GB 自适应，小/中文件保留 part 并行 copy
+（29 GB A/B：选择性 7.64 s、20% 15.16 s，无回归）。100 GB 仍是重复块。复现见 `docs/BENCHMARKS.md`。
 
 ## MCP 后端（B 主线，只读首版）
 

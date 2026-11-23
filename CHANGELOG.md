@@ -121,7 +121,8 @@
   date.
 - **100 GB full export**: two-pass counting + direct range writes remove the part-file
   double write; 200M-row/20 GB export drops to 79.62 s at 28 MB RSS (from 98.56 s),
-  now under 90 s. 2.3 GB trades 1.57 -> 1.93 s for the extra scan. The single-writer
+  now under 90 s. Adaptive at 64 GB keeps the faster part path for smaller files
+  (29 GB A/B: selective 7.21 vs 14.52 s, 20% 15.18 vs 17.90 s). The single-writer
   experiment was reverted as a serialisation regression.
 - **100 GB profile**: 104.5 GB/1.3B rows search 20.18–20.42 s (93 MB), filter
   25.75 s (95 MB), selective filter -o 19.54 s, index 24.57 s, deep view 0.02 s;
