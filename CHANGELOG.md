@@ -153,8 +153,8 @@
   `structuredContent: {"ok":bool,"code":"ok|tool_error|unknown_tool|unknown_job|path_escape|cli_error"}`
   next to text content; tests cover unknown_tool and path_escape.
 - **Content-check fast-skip guard**: `--content-check` hashes input/output even when
-  size+mtime match, also for `pipeline status --verify`; tests rewrite the same-length
-  input, restore its mtime, and check both run and status.
+  size+mtime match, also for `pipeline status --verify`; files ≤1 MiB hash by default,
+  larger ones require the flag. Tests cover small default, large flag, and status.
 - **Stable step markers**: `--progress-markers` emits
   `CSVX_STEP done|skip <step> <i>/<n>` **as each step completes** (not after the run);
   MCP streaming parses it and includes `total` in progress notifications. Test asserts the marker and total form.

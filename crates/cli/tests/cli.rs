@@ -2614,14 +2614,14 @@ fn pipeline_runs_incrementally_and_fails_atomically() {
     );
     assert!(status_json.contains(r#""ms""#), "{status_json}");
 
-    // Re-writing the same bytes still changes size+mtime, so the fast path must rerun
-    // rather than trusting a possibly-restored clock.
+    // Re-writing the same bytes changes mtime but not content; the content hash still
+    // proves the step fresh, so it skips instead of rerunning.
     std::thread::sleep(std::time::Duration::from_millis(20));
     std::fs::write(&orders, "order,city\nA,CDMX\nB,Puebla\nC,CDMX\n").unwrap();
     let touched = run();
     assert!(touched.status.success());
     let stdout = String::from_utf8_lossy(&touched.stdout);
-    assert!(stdout.contains("✓ filtered"), "{stdout}");
+    assert!(stdout.contains("↷ filtered"), "{stdout}");
 
     std::fs::write(&orders, "order,city\nA,CDMX\nB,Puebla\nC,CDMX\nD,CDMX\n").unwrap();
     let third = run();
@@ -3507,11 +3507,79 @@ fn pipeline_rejects_duplicate_outputs() {
     assert!(!dir.join("a.csv").exists());
 }
 
-/// Same size and mtime can hide a content change; --content-check hashes anyway.
+/// Build >1 MiB so the default fast path stays metadata-only.
+fn large_orders() -> String {
+    let mut text = String::from("id,city\n");
+    for id in 0..120_000 {
+        text.push_str(&format!("{id},CDMX\n"));
+    }
+    text
+}
+
+/// Same size and mtime can hide a content change on large inputs; --content-check hashes anyway.
 #[cfg(unix)]
 #[test]
 fn pipeline_content_check_detects_rewritten_input() {
     let dir = TempDir::new("pipeline-content-check");
+    let source = dir.join("orders.csv");
+    let reference = dir.join("reference.csv");
+    let data = large_orders();
+    std::fs::write(&source, &data).unwrap();
+    std::fs::write(&reference, "same").unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},a.csv\n",
+    )
+    .unwrap();
+    Command::new("touch")
+        .args(["-r", reference.to_str().unwrap(), source.to_str().unwrap()])
+        .status()
+        .unwrap();
+    let run = |extra: &[&str]| {
+        let mut args = vec![
+            "pipeline".to_string(),
+            "run".to_string(),
+            dir.join("plan.csv").to_str().unwrap().to_string(),
+            "--root".to_string(),
+            dir.0.to_str().unwrap().to_string(),
+        ];
+        args.extend(extra.iter().map(|value| value.to_string()));
+        Command::new(bin()).args(args).output().unwrap()
+    };
+    let first = run(&[]);
+    assert!(
+        first.status.success(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    let first_output = std::fs::read_to_string(dir.join("a.csv")).unwrap();
+    let mutated = data.replacen("CDMX", "MEXI", 1);
+    std::fs::write(&source, &mutated).unwrap();
+    Command::new("touch")
+        .args(["-r", reference.to_str().unwrap(), source.to_str().unwrap()])
+        .status()
+        .unwrap();
+    let skipped = run(&[]);
+    assert!(skipped.status.success());
+    assert!(String::from_utf8_lossy(&skipped.stdout).contains("↷ a"));
+    assert_eq!(
+        std::fs::read_to_string(dir.join("a.csv")).unwrap(),
+        first_output
+    );
+    let checked = run(&["--content-check"]);
+    assert!(checked.status.success());
+    assert!(!String::from_utf8_lossy(&checked.stdout).contains("↷ a"));
+    assert_ne!(
+        std::fs::read_to_string(dir.join("a.csv")).unwrap(),
+        first_output
+    );
+}
+
+/// Small files are hashed by default, so the same-size rewrite is caught without a flag.
+#[cfg(unix)]
+#[test]
+fn pipeline_small_rewrite_is_hashed_by_default() {
+    let dir = TempDir::new("pipeline-small-content");
     let source = dir.join("orders.csv");
     let reference = dir.join("reference.csv");
     std::fs::write(&source, "id,city\n1,CDMX\n").unwrap();
@@ -3542,38 +3610,29 @@ fn pipeline_content_check_detects_rewritten_input() {
         "{}",
         String::from_utf8_lossy(&first.stderr)
     );
-    assert_eq!(
-        std::fs::read_to_string(dir.join("a.csv")).unwrap(),
-        "id,city\n1,CDMX\n"
-    );
     std::fs::write(&source, "id,city\n2,CDMX\n").unwrap();
     Command::new("touch")
         .args(["-r", reference.to_str().unwrap(), source.to_str().unwrap()])
         .status()
         .unwrap();
-    let skipped = run(&[]);
-    assert!(skipped.status.success());
-    assert!(String::from_utf8_lossy(&skipped.stdout).contains("↷ a"));
-    assert_eq!(
-        std::fs::read_to_string(dir.join("a.csv")).unwrap(),
-        "id,city\n1,CDMX\n"
-    );
-    let checked = run(&["--content-check"]);
-    assert!(checked.status.success());
+    let rerun = run(&[]);
+    assert!(rerun.status.success());
+    assert!(!String::from_utf8_lossy(&rerun.stdout).contains("↷ a"));
     assert_eq!(
         std::fs::read_to_string(dir.join("a.csv")).unwrap(),
         "id,city\n2,CDMX\n"
     );
 }
 
-/// Status verify can also hash when stamps match.
+/// Status verify hashes small files by default and can still force hashing on large ones.
 #[cfg(unix)]
 #[test]
 fn pipeline_status_content_check_detects_rewritten_input() {
     let dir = TempDir::new("pipeline-status-content");
     let source = dir.join("orders.csv");
     let reference = dir.join("reference.csv");
-    std::fs::write(&source, "id,city\n1,CDMX\n").unwrap();
+    let data = large_orders();
+    std::fs::write(&source, &data).unwrap();
     std::fs::write(&reference, "same").unwrap();
     std::fs::write(
         dir.join("plan.csv"),
@@ -3599,7 +3658,8 @@ fn pipeline_status_content_check_detects_rewritten_input() {
         "{}",
         String::from_utf8_lossy(&run.stderr)
     );
-    std::fs::write(&source, "id,city\n2,CDMX\n").unwrap();
+    let mutated = data.replacen("CDMX", "MEXI", 1);
+    std::fs::write(&source, &mutated).unwrap();
     Command::new("touch")
         .args(["-r", reference.to_str().unwrap(), source.to_str().unwrap()])
         .status()

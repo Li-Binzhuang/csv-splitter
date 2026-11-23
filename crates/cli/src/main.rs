@@ -8438,13 +8438,25 @@ fn cleanup_stale_staging(steps: &[PipelineStep], force: bool) -> std::io::Result
     Ok(removed)
 }
 
+const AUTO_CONTENT_CHECK_LIMIT: u64 = 1 << 20;
+
+fn pipeline_auto_content_check(input: &std::path::Path, output: &std::path::Path) -> bool {
+    let size = |path: &std::path::Path| {
+        std::fs::metadata(path)
+            .map(|metadata| metadata.len())
+            .unwrap_or(u64::MAX)
+    };
+    size(input) <= AUTO_CONTENT_CHECK_LIMIT && size(output) <= AUTO_CONTENT_CHECK_LIMIT
+}
+
 fn pipeline_state_is_fresh(row: &PipelineStateRow, content_check: bool) -> bool {
     let input = std::path::Path::new(&row.input);
     let output = std::path::Path::new(&row.output);
     if !input.exists() || !output.exists() {
         return false;
     }
-    if content_check && !row.input_hash.is_empty() && !row.output_hash.is_empty() {
+    let hash_content = content_check || pipeline_auto_content_check(input, output);
+    if hash_content && !row.input_hash.is_empty() && !row.output_hash.is_empty() {
         return pipeline_hash_file(input)
             .map(|hash| hash == row.input_hash)
             .unwrap_or(false)
@@ -8542,6 +8554,7 @@ fn pipeline_fresh_row(
     } else {
         String::new()
     };
+    let hash_content = content_check || pipeline_auto_content_check(input_path, &step.output);
     let Some(row) = previous.iter().find(|row| {
         row.name == step.name
             && row.command == step.command
@@ -8550,7 +8563,7 @@ fn pipeline_fresh_row(
     }) else {
         return Ok(None);
     };
-    let fresh = if content_check && !row.input_hash.is_empty() && !row.output_hash.is_empty() {
+    let fresh = if hash_content && !row.input_hash.is_empty() && !row.output_hash.is_empty() {
         output_exists
             && pipeline_hash_file(input_path)? == row.input_hash
             && pipeline_hash_file(&step.output)
@@ -9278,6 +9291,7 @@ fn run_pipeline_plan(
         } else {
             String::new()
         };
+        let hash_content = content_check || pipeline_auto_content_check(&input_path, &step.output);
         let prior = previous.iter().find(|row| {
             row.name == step.name
                 && row.command == step.command
@@ -9287,7 +9301,7 @@ fn run_pipeline_plan(
         let fresh = !force
             && match prior {
                 Some(row) => {
-                    if content_check && !row.input_hash.is_empty() && !row.output_hash.is_empty() {
+                    if hash_content && !row.input_hash.is_empty() && !row.output_hash.is_empty() {
                         output_exists
                             && pipeline_hash_file(&input_path)? == row.input_hash
                             && pipeline_hash_file(&step.output)
