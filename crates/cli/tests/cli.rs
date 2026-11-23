@@ -2864,6 +2864,37 @@ fn mcp_jobs_run_asynchronously_and_report_state() {
     );
 }
 
+/// Retries are bounded and the final failure still cleans up.
+#[test]
+fn pipeline_retries_then_fails_atomically() {
+    let dir = TempDir::new("pipeline-retry");
+    std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n").unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\nbad,orders.csv,convert,--format bogus -o {out},bad.out\n",
+    )
+    .unwrap();
+    let result = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--retries",
+            "2",
+            "--retry-delay",
+            "1",
+        ])
+        .output()
+        .unwrap();
+    assert!(!result.status.success());
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(stderr.contains("after 3 attempts"), "{stderr}");
+    assert!(!dir.join("bad.out").exists(), "no partial output");
+    assert!(!dir.join("plan.csv.pipeline.csv").exists());
+}
+
 /// A hung step must not hang the whole pipeline; the temp output is removed.
 #[test]
 fn pipeline_step_timeout_kills_the_child() {

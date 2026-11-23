@@ -136,6 +136,8 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         &[
             ("--dry-run", "Report fresh/would-run steps without executing"),
             ("--force", "Rerun every step even when fresh"),
+            ("--retries", "Retry a failed step N times (default 0)"),
+            ("--retry-delay", "Milliseconds between retries (default 250)"),
             ("--step-timeout", "Kill a step after N milliseconds (0 = none)"),
             ("--json", "Emit JSON (run and status)"),
             ("--root", "Directory for relative inputs/outputs"),
@@ -8135,6 +8137,8 @@ fn run_pipeline_plan(
     force: bool,
     dry_run: bool,
     step_timeout_ms: u64,
+    retries: usize,
+    retry_delay_ms: u64,
 ) -> std::io::Result<Vec<(String, bool, u64, String)>> {
     let root = root
         .map(std::path::Path::to_path_buf)
@@ -8355,37 +8359,62 @@ fn run_pipeline_plan(
             .collect::<Vec<_>>();
         let uses_out = step.args.contains("{out}");
         let command = split_pipeline_args(&step.command);
-        let mut process = std::process::Command::new(&bin);
-        process.arg(command.first().map(String::as_str).unwrap_or(""));
-        process.arg(&input_path);
-        if command.len() > 1 {
-            process.args(&command[1..]);
-        }
-        process.args(&args);
-        let started = Instant::now();
-        let output = match run_step_command(process, step_timeout_ms) {
-            Ok(output) => output,
-            Err(error) if error.kind() == std::io::ErrorKind::TimedOut => {
-                let _ = std::fs::remove_file(&temp);
-                return Err(std::io::Error::other(format!(
-                    "step {} timed out after {} ms",
-                    step.name, step_timeout_ms
-                )));
-            }
-            Err(error) => {
-                let _ = std::fs::remove_file(&temp);
-                return Err(error);
-            }
-        };
-        let elapsed_ms = started.elapsed().as_millis() as u64;
-        if !output.status.success() {
+        let mut output = None;
+        let mut elapsed_ms = 0u64;
+        for attempt in 0..=retries {
             let _ = std::fs::remove_file(&temp);
-            return Err(std::io::Error::other(format!(
-                "step {} failed: {}",
-                step.name,
-                String::from_utf8_lossy(&output.stderr).trim()
-            )));
+            let mut process = std::process::Command::new(&bin);
+            process.arg(command.first().map(String::as_str).unwrap_or(""));
+            process.arg(&input_path);
+            if command.len() > 1 {
+                process.args(&command[1..]);
+            }
+            process.args(&args);
+            let started = Instant::now();
+            match run_step_command(process, step_timeout_ms) {
+                Ok(result) => {
+                    elapsed_ms = started.elapsed().as_millis() as u64;
+                    if result.status.success() {
+                        output = Some(result);
+                        break;
+                    }
+                    let last = format!(
+                        "step {} failed: {}",
+                        step.name,
+                        String::from_utf8_lossy(&result.stderr).trim()
+                    );
+                    if attempt < retries {
+                        eprintln!("{last}; retrying ({}/{})", attempt + 1, retries);
+                        thread::sleep(Duration::from_millis(retry_delay_ms));
+                        continue;
+                    }
+                    let _ = std::fs::remove_file(&temp);
+                    return Err(std::io::Error::other(format!(
+                        "{last} (after {} attempts)",
+                        attempt + 1
+                    )));
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::TimedOut => {
+                    let last = format!("step {} timed out after {} ms", step.name, step_timeout_ms);
+                    if attempt < retries {
+                        eprintln!("{last}; retrying ({}/{})", attempt + 1, retries);
+                        thread::sleep(Duration::from_millis(retry_delay_ms));
+                        continue;
+                    }
+                    let _ = std::fs::remove_file(&temp);
+                    return Err(std::io::Error::other(format!(
+                        "{last} (after {} attempts)",
+                        attempt + 1
+                    )));
+                }
+                Err(error) => {
+                    let _ = std::fs::remove_file(&temp);
+                    return Err(error);
+                }
+            }
         }
+        let output = output.expect("successful attempt sets output");
+        let _ = &output;
         if uses_out {
             if !temp.exists() {
                 return Err(std::io::Error::new(
@@ -8439,6 +8468,8 @@ fn cmd_pipeline(args: &[String]) -> i32 {
     let mut force = false;
     let mut dry_run = false;
     let mut step_timeout_ms = 0u64;
+    let mut retries = 0usize;
+    let mut retry_delay_ms = 250u64;
     let mut json = false;
     while let Some(arg) = p.next() {
         match arg.as_str() {
@@ -8451,6 +8482,28 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             },
             "--force" => force = true,
             "--dry-run" => dry_run = true,
+            "--retries" => match p.value("--retries").and_then(|value| {
+                value
+                    .parse::<usize>()
+                    .map_err(|_| "bad --retries".to_string())
+            }) {
+                Ok(value) => retries = value,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 2;
+                }
+            },
+            "--retry-delay" => match p.value("--retry-delay").and_then(|value| {
+                value
+                    .parse::<u64>()
+                    .map_err(|_| "bad --retry-delay (milliseconds)".to_string())
+            }) {
+                Ok(value) => retry_delay_ms = value,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 2;
+                }
+            },
             "--step-timeout" => match p.value("--step-timeout").and_then(|value| {
                 value
                     .parse::<u64>()
@@ -8492,7 +8545,15 @@ fn cmd_pipeline(args: &[String]) -> i32 {
         return 2;
     };
     match action.as_str() {
-        "run" => match run_pipeline_plan(&plan, root.as_deref(), force, dry_run, step_timeout_ms) {
+        "run" => match run_pipeline_plan(
+            &plan,
+            root.as_deref(),
+            force,
+            dry_run,
+            step_timeout_ms,
+            retries,
+            retry_delay_ms,
+        ) {
             Ok(results) => {
                 if dry_run {
                     if json {

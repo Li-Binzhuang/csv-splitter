@@ -147,6 +147,8 @@
 - **Compressed input**: search/filter/analyze read .zst/.gz/.bz2/.xz through a
   decompressing reader; non-seekable forces the sequential path. 2.3 GB zst filter
   writes a byte-identical 411 MB output in 4.16 s at 15 MB RSS (plain 1.51 s).
+- **Pipeline retries**: `--retries N` / `--retry-delay MS` retry failed or timed-out
+  steps; each attempt starts from a removed temp output, final failure stays atomic.
 - **Pipeline step timeout**: `--step-timeout <ms>` kills a hung child, removes the
   temp output and leaves `.pipeline.csv` untouched; reader threads drain output so
   a verbose step cannot deadlock the parent.
