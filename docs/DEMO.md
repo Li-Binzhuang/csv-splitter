@@ -9,9 +9,11 @@ BIN=target/release/csvx bash scripts/demo_end_to_end.sh
 实际输出：
 
 ```text
+== csvx version ==
+csvx 4.2.0 (DuckDB: compiled in)
 == pipeline ==
-✓ filtered (12 ms)
-✓ quality (11 ms)
+✓ filtered (15 ms)
+✓ quality (15 ms)
 == MCP client ==
 tools=16
 schema_rows=5
@@ -19,6 +21,16 @@ filter_matched=3
 view_rows=2
 edit_ok=True
 convert_ok=True
+job=done
+== MCP official SDK ==
+sdk_tools=16
+schema_rows=5
+filter_matched=3
+view_rows=2
+convert_ok=true
+pipeline_progress_events=2
+progress_events=1
+structured_ok=true
 job=done
 == accepted ==
 ```

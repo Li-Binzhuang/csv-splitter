@@ -15,6 +15,8 @@ if find crates -name '*.rs' -newer "$BIN" -print -quit | grep -q .; then
     exit 1
   fi
 fi
+echo "== csvx version =="
+"$BIN" --version
 DIR=$(mktemp -d)
 trap 'rm -rf "$DIR"' EXIT
 cat > "$DIR/orders.csv" <<'CSV'
