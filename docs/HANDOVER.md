@@ -150,7 +150,7 @@ schema/filter/view/edit/undo/convert/job 全部通过；13 个 MCP 工具。见 
 
 ## MCP 后端（B 主线，只读首版）
 
-`mcp --root DIR`：stdio JSON-RPC；读工具 `csvx_schema/view/filter/search/quality/pipeline_status`，
+`mcp --root DIR`：stdio JSON-RPC；读工具 `csvx_schema/view/filter/search/quality/pipeline_status/pipeline_run`，
 写工具 `csvx_edit_set/delete/undo/redo` 与 `csvx_convert` 复用 journal 锁与 root 限制。
 CLI 测试覆盖 initialize、tools/list、schema/view/filter、edit set→view→undo、convert TSV，
 以及异步 job 提交/轮询（done 结果缓存）；官方 MCP SDK 1.32.2 客户端也已跑通（13 工具闭环）。2.3 GB/9500 万行 MCP drill：cold schema 3.11 s、warm 0.03 s、深分页 0.02 s、filter 0.77 s、

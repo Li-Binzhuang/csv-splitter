@@ -2842,6 +2842,60 @@ fn mcp_jobs_run_asynchronously_and_report_state() {
     );
 }
 
+/// An agent can run the A-line workbench through MCP, not only inspect it.
+#[test]
+fn mcp_runs_a_declarative_pipeline() {
+    use std::io::Write;
+    use std::process::Stdio;
+    let dir = TempDir::new("mcp-pipeline");
+    std::fs::write(
+        dir.join("orders.csv"),
+        "id,city\n1,CDMX\n2,Puebla\n3,CDMX\n",
+    )
+    .unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\nfiltered,orders.csv,filter,--where city=CDMX -o {out},filtered.csv\n",
+    )
+    .unwrap();
+    let mut child = Command::new(bin())
+        .args(["mcp", "--root", dir.0.to_str().unwrap()])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    {
+        let stdin = child.stdin.as_mut().expect("stdin");
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":1,"method":"initialize","params":{{}}}}"#
+        )
+        .unwrap();
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{{"name":"csvx_pipeline_run","arguments":{{"path":"plan.csv"}}}}}}"#
+        )
+        .unwrap();
+    }
+    drop(child.stdin.take());
+    let output = child.wait_with_output().unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains(r#""isError":false"#), "{stdout}");
+    assert!(stdout.contains("steps"), "{stdout}");
+    assert!(stdout.contains("filtered"), "{stdout}");
+    assert_eq!(
+        std::fs::read_to_string(dir.join("filtered.csv")).unwrap(),
+        "id,city\n1,CDMX\n3,CDMX\n"
+    );
+    assert!(dir.join("plan.csv.pipeline.csv").exists());
+}
+
 /// A bulk edit is one journal entry however many rows it changes.
 #[test]
 fn bulk_edit_matches_a_filter_and_stays_one_operation() {
