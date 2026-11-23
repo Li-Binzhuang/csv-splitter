@@ -8148,6 +8148,86 @@ fn pipeline_csv_cell(value: &str) -> String {
 /// gets a one-step plan so it can reuse the normal command/temp/rename path. Grouped
 /// steps must name an explicit input (a source file or an earlier step's output);
 /// we do not try to infer freshness here, so they rerun when the group is reached.
+fn pipeline_resolve_input(
+    step: &PipelineStep,
+    steps: &[PipelineStep],
+    root: &std::path::Path,
+) -> std::io::Result<std::path::PathBuf> {
+    let name = step.input.as_ref().ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("grouped step {} needs an explicit input", step.name),
+        )
+    })?;
+    let path = if let Some(position) = steps.iter().position(|candidate| &candidate.name == name) {
+        steps[position].output.clone()
+    } else if std::path::Path::new(name).is_absolute() {
+        std::path::PathBuf::from(name)
+    } else {
+        root.join(name)
+    };
+    if !path.exists() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("step {}: input {} not found", step.name, path.display()),
+        ));
+    }
+    Ok(path)
+}
+
+fn pipeline_fresh_row(
+    step: &PipelineStep,
+    input_path: &std::path::Path,
+    previous: &[PipelineStateRow],
+    force: bool,
+) -> std::io::Result<Option<PipelineStateRow>> {
+    if force {
+        return Ok(None);
+    }
+    let input_string = input_path.display().to_string();
+    let output_exists = step.output.exists();
+    let input_stamp = pipeline_file_stamp(input_path)?;
+    let output_stamp = if output_exists {
+        pipeline_file_stamp(&step.output)?
+    } else {
+        String::new()
+    };
+    let Some(row) = previous.iter().find(|row| {
+        row.name == step.name
+            && row.command == step.command
+            && row.args == step.args
+            && row.input == input_string
+    }) else {
+        return Ok(None);
+    };
+    let fresh = if !row.input_stamp.is_empty() && !row.output_stamp.is_empty() {
+        output_exists && row.input_stamp == input_stamp && row.output_stamp == output_stamp
+    } else {
+        let input_hash = pipeline_hash_file(input_path)?;
+        output_exists
+            && input_hash == row.input_hash
+            && pipeline_hash_file(&step.output)
+                .map(|hash| hash == row.output_hash)
+                .unwrap_or(false)
+    };
+    if !fresh {
+        return Ok(None);
+    }
+    Ok(Some(PipelineStateRow {
+        name: step.name.clone(),
+        command: step.command.clone(),
+        args: step.args.clone(),
+        input: input_string,
+        output: step.output.display().to_string(),
+        input_hash: row.input_hash.clone(),
+        args_hash: row.args_hash.clone(),
+        output_hash: row.output_hash.clone(),
+        elapsed_ms: 0,
+        input_stamp,
+        output_stamp,
+    }))
+}
+
 fn run_branch_group(
     all: &[PipelineStep],
     group: &[PipelineStep],
@@ -8428,6 +8508,29 @@ fn run_pipeline_plan(
             let mut end = index + 1;
             while end < steps.len() && steps[end].group == step.group {
                 end += 1;
+            }
+            let mut fresh_rows = Vec::with_capacity(end - index);
+            for candidate in &steps[index..end] {
+                let input_path = pipeline_resolve_input(candidate, &steps, &root)?;
+                fresh_rows.push((
+                    pipeline_fresh_row(candidate, &input_path, &previous, force)?,
+                    input_path,
+                ));
+            }
+            if fresh_rows.iter().all(|(row, _)| row.is_some()) {
+                for (step, (row, _)) in steps[index..end].iter().zip(fresh_rows) {
+                    let row = row.expect("all-fresh checked");
+                    results.push((
+                        step.name.clone(),
+                        true,
+                        0,
+                        step.output.display().to_string(),
+                    ));
+                    state_rows.push(row);
+                }
+                previous_output = Some(steps[end - 1].output.clone());
+                skip = end - index - 1;
+                continue;
             }
             let outcomes = run_branch_group(
                 &steps,

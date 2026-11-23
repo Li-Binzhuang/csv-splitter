@@ -2909,6 +2909,26 @@ fn pipeline_parallel_group_runs_branches() {
         stdout.contains("cdmx") && stdout.contains("puebla"),
         "{stdout}"
     );
+    let second = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--jobs",
+            "2",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        second.status.success(),
+        "{}",
+        String::from_utf8_lossy(&second.stderr)
+    );
+    let second_stdout = String::from_utf8_lossy(&second.stdout);
+    assert!(second_stdout.contains("↷ cdmx"), "{second_stdout}");
+    assert!(second_stdout.contains("↷ puebla"), "{second_stdout}");
 }
 
 /// Retries are bounded and the final failure still cleans up.

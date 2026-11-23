@@ -250,8 +250,9 @@ joined,filtered,lookup,--key cust_no --reference customers.csv --get name --out 
 ```
 
 - 可选第 6 列 `group`：同一 group 的**连续**步骤在 `--jobs N`（N>1）下并发执行；
-  组内步骤必须显式指定 input（源文件或更早步骤输出），不能互相依赖；组步骤目前每次到达都重跑，
-  不走增量快跳过；失败时已完成的兄弟输出会保留，但主 `.pipeline.csv` 不写。
+  组内步骤必须显式指定 input（源文件或更早步骤输出），不能互相依赖。整组都 fresh 时
+  整组跳过；只要有一项 stale，该组整体重跑（组级混合增量尚未做）。失败时已完成的
+  兄弟输出会保留，但主 `.pipeline.csv` 不写。
 - `--step-timeout <ms>` 对每个步骤做硬超时：kill 子进程、删除临时输出、不写 state；
   `0` 表示不限；stdout/stderr 由独立线程并发读取，避免管道写满死锁。
 - `--retries <n>` 与 `--retry-delay <ms>`：失败/超时后重试，默认 0 次、250 ms；
