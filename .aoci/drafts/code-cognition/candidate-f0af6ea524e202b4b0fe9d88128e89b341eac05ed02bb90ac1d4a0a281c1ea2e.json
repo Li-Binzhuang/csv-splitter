@@ -1,0 +1,73 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "cdecd2ff6050c81dca4e4938a8fd5f4ad3b681e819901aa37c9f8c0528729aa8",
+  "batch_id": "f0af6ea524e202b4b0fe9d88128e89b341eac05ed02bb90ac1d4a0a281c1ea2e",
+  "composite_identity": "d3fab14baa7c9956b3fee440fe9602e1a27fda37d15a56fc2b6ea27f2741aeb5",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "ac2f66c204927da3e78da770080e2ac6ad6f23cb5b84c74884971b0ea481a2ac",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "6dec5fce82526cae1679d94454c6a6dcbd5b4fb0136e713427ac889253407310",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过/--dry-run（JSON）/--step-timeout/--retries；mcp 读写+job/pipeline_run/job_cancel（15 工具）、官方 SDK；压缩输入 zst/gz/bz2/xz 顺序读；C 100 GB/81 GB 演练；64 GB 自适应 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/PILOT.md",
+      "path": "docs/PILOT.md",
+      "change": "create",
+      "source_sha256": "04f3af75e611ee95cd498b171bf85c1e31dbe1f038562b34f5e01d7e827cd434"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/SALES.md",
+      "path": "docs/SALES.md",
+      "change": "update",
+      "source_sha256": "ed199f6e278a266d7eba4303ce3741b2715f2069c288100f07f5d48c441570f2",
+      "existing_entry": "SALES.md[SD7T]: F:销售 one-pager：定位、证据、演示话术、4 周试点清单与异议处理 | R:code:docs/DEMO.md,code:docs/BENCHMARKS.md,code:docs/BUSINESS.md | A:100 GB 三大可卖点；5 分钟 demo 命令；15 个 MCP 工具；目标客户与触发问题；免费/Pilot/团队/企业边界候选；30 天验证目标；常见异议回应 | S:不是公开承诺，定价/SLA/合同需用户确认；当前无 License 强制、无遥测"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/pilot_report.py",
+      "path": "scripts/pilot_report.py",
+      "change": "create",
+      "source_sha256": "eb094fe5fa884d61949f4eb2de61e81b7c9cf1dea522352a1196d61d9f3110cc"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "6c60146182f07f982cb98a3c2ec15b609bf2e95063b53a89275e4a0a978bbc91",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "6dec5fce82526cae1679d94454c6a6dcbd5b4fb0136e713427ac889253407310",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过/--dry-run（JSON）/--step-timeout/--retries；mcp 读写+job/pipeline_run/job_cancel（15 工具）、官方 SDK；压缩输入 zst/gz/bz2/xz 顺序读；C 100 GB/81 GB 演练；64 GB 自适应 | S:-"
+    },
+    {
+      "candidate_id": "5457aa7863e73d4aa06dc3b6acd56bb6c9a40ea9e9d1d29c8a9da42230898c18",
+      "object_ref": "code:docs/PILOT.md",
+      "path": "docs/PILOT.md",
+      "change": "create",
+      "source_sha256": "04f3af75e611ee95cd498b171bf85c1e31dbe1f038562b34f5e01d7e827cd434"
+    },
+    {
+      "candidate_id": "6abdff547c87fe2104342e0308920c66d3f965009f92a9e8da67cedd11024685",
+      "object_ref": "code:docs/SALES.md",
+      "path": "docs/SALES.md",
+      "change": "update",
+      "source_sha256": "ed199f6e278a266d7eba4303ce3741b2715f2069c288100f07f5d48c441570f2",
+      "existing_entry": "SALES.md[SD7T]: F:销售 one-pager：定位、证据、演示话术、4 周试点清单与异议处理 | R:code:docs/DEMO.md,code:docs/BENCHMARKS.md,code:docs/BUSINESS.md | A:100 GB 三大可卖点；5 分钟 demo 命令；15 个 MCP 工具；目标客户与触发问题；免费/Pilot/团队/企业边界候选；30 天验证目标；常见异议回应 | S:不是公开承诺，定价/SLA/合同需用户确认；当前无 License 强制、无遥测"
+    },
+    {
+      "candidate_id": "af7d79fe0cb7f3cc527c956a355620e173c3686f9cfdbd099e3ea2048691535f",
+      "object_ref": "code:scripts/pilot_report.py",
+      "path": "scripts/pilot_report.py",
+      "change": "create",
+      "source_sha256": "eb094fe5fa884d61949f4eb2de61e81b7c9cf1dea522352a1196d61d9f3110cc"
+    }
+  ]
+}
