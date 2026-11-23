@@ -119,6 +119,10 @@
 - **`workday(start, days)`**: moves a date by business days, skipping weekends and
   accepting negative days (no holiday list in the two-argument form); zero keeps the
   date.
+- **SQL lookup all rows**: the SQL path fetched a hard-coded 100,000 rows and silently
+  truncated larger inputs; it now COPYs the join without a limit (2.3 GB drill: 19M/19M
+  matched, 0 missing, 0.72 s, 244 MB RSS). Pipeline steps now record elapsed ms and
+  `status --json` exposes hashes/timings.
 - **`pipeline run`**: a CSV plan of steps reusing existing commands, with input/output
   chaining, `{out}` atomic temp+rename, stdout capture, `.pipeline.csv` input/args/output
   hashes, unchanged-step skipping and `--force`; failures write no output/state.

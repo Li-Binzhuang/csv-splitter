@@ -160,8 +160,18 @@ pub fn copy_to_csv(
         select,
         output.to_string_lossy().replace('\'', "''")
     );
-    conn.execute_batch(&copy)
-        .map_err(|e| io::Error::other(e.to_string()))?;
+    conn.execute_batch(&copy).map_err(|e| {
+        let message = e.to_string();
+        // A missing key column reaches DuckDB as a binder error; that is bad input, not
+        // an I/O failure, and callers/tests distinguish the two kinds.
+        let kind = if message.contains("Binder Error") || message.contains("does not have a column")
+        {
+            io::ErrorKind::InvalidInput
+        } else {
+            io::ErrorKind::Other
+        };
+        io::Error::new(kind, message)
+    })?;
     // The row count costs a second scan of the inputs; the native path gets it for free
     // while copying. Reported rather than guessed, because a summary that lies about rows
     // is worse than one that is slower.
@@ -169,6 +179,42 @@ pub fn copy_to_csv(
         .query_row("SELECT count(*) FROM t", [], |row| row.get(0))
         .unwrap_or(0);
     Ok(rows as u64)
+}
+
+/// Copy the result of a SELECT that joins `t` (main) and `ref` (reference) to a CSV,
+/// without materialising the rows in memory and without a row limit. `counts` must be a
+/// `SELECT count(*), count(*) FILTER (...)` over the same join, used for the summary.
+pub fn copy_with_reference(
+    main: &Path,
+    reference: &Path,
+    select: &str,
+    counts: &str,
+    output: &Path,
+    delimiter: Delimiter,
+) -> io::Result<(u64, u64)> {
+    validate(select).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+    let conn = open_limited()?;
+    register_view(&conn, "t", main, delimiter)?;
+    register_view(&conn, "ref", reference, delimiter)?;
+    let copy = format!(
+        "COPY ({}) TO '{}' (HEADER, DELIMITER ',')",
+        select,
+        output.to_string_lossy().replace('\'', "\'\'")
+    );
+    conn.execute_batch(&copy).map_err(|e| {
+        let message = e.to_string();
+        let kind = if message.contains("Binder Error") || message.contains("does not have a column")
+        {
+            io::ErrorKind::InvalidInput
+        } else {
+            io::ErrorKind::Other
+        };
+        io::Error::new(kind, message)
+    })?;
+    let (rows, missing): (i64, i64) = conn
+        .query_row(counts, [], |row| Ok((row.get(0)?, row.get(1)?)))
+        .map_err(to_io)?;
+    Ok((rows as u64, missing as u64))
 }
 
 /// Validate a user query before it reaches DuckDB.

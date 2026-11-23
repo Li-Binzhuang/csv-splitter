@@ -2561,6 +2561,16 @@ fn pipeline_runs_incrementally_and_fails_atomically() {
     let stdout = String::from_utf8_lossy(&second.stdout);
     assert!(stdout.contains("↷ filtered"), "{stdout}");
     assert!(stdout.contains("↷ quality"), "{stdout}");
+    let status = Command::new(bin())
+        .args(["pipeline", "status", plan.to_str().unwrap(), "--json"])
+        .output()
+        .unwrap();
+    let status_json = String::from_utf8_lossy(&status.stdout);
+    assert!(
+        status_json.contains(r#""step":"filtered""#),
+        "{status_json}"
+    );
+    assert!(status_json.contains(r#""ms""#), "{status_json}");
 
     std::fs::write(&orders, "order,city\nA,CDMX\nB,Puebla\nC,CDMX\nD,CDMX\n").unwrap();
     let third = run();
@@ -2597,6 +2607,76 @@ fn pipeline_runs_incrementally_and_fails_atomically() {
     assert_eq!(failed.status.code(), Some(1));
     assert!(!dir.join("bad-joined.csv").exists());
     assert!(!dir.join("bad-plan.csv.pipeline.csv").exists());
+
+    let forward = dir.join("forward.csv");
+    std::fs::write(
+        &forward,
+        concat!(
+            "step,input,command,args,output\n",
+            "first,after.csv,filter,--where city=CDMX -o {out},first.csv\n",
+            "after,orders.csv,filter,--where city=CDMX -o {out},after.csv\n"
+        ),
+    )
+    .unwrap();
+    let status = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            forward.to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(
+        status.status.code(),
+        Some(1),
+        "forward references must be rejected"
+    );
+}
+
+/// The SQL lookup must stream every row; it used to stop at exactly 100,000.
+#[test]
+fn lookup_sql_streams_past_one_hundred_thousand_rows() {
+    let dir = TempDir::new("lookup-sql-large");
+    let main = dir.join("main.csv");
+    let mut rows = String::from("id,key\n");
+    for i in 0..100_005 {
+        rows.push_str(&format!("{i},K{}\n", i % 1000));
+    }
+    std::fs::write(&main, rows).unwrap();
+    let reference = dir.join("ref.csv");
+    let mut refs = String::from("key,value\n");
+    for i in 0..1000 {
+        refs.push_str(&format!("K{i},V{i}\n"));
+    }
+    std::fs::write(&reference, refs).unwrap();
+    let out = dir.join("joined.csv");
+    let output = Command::new(bin())
+        .args([
+            "lookup",
+            main.to_str().unwrap(),
+            "--engine",
+            "sql",
+            "--key",
+            "key",
+            "--reference",
+            reference.to_str().unwrap(),
+            "--get",
+            "value",
+            "--out",
+            out.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let text = std::fs::read_to_string(&out).unwrap();
+    assert_eq!(text.lines().count(), 100_006, "header + every input row");
+    assert!(text.ends_with("V4\n"), "the last row joined");
 }
 
 /// A bulk edit is one journal entry however many rows it changes.

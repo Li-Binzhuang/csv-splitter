@@ -134,6 +134,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         "pipeline",
         &[
             ("--force", "Rerun every step even when fresh"),
+            ("--json", "Emit JSON (run and status)"),
             ("--root", "Directory for relative inputs/outputs"),
         ],
     ),
@@ -7884,6 +7885,7 @@ struct PipelineStateRow {
     input_hash: String,
     args_hash: String,
     output_hash: String,
+    elapsed_ms: u64,
 }
 
 fn pipeline_state_path(plan: &std::path::Path) -> std::path::PathBuf {
@@ -7965,7 +7967,7 @@ fn load_pipeline_state(path: &std::path::Path) -> Vec<PipelineStateRow> {
             header = Some(cells);
             continue;
         }
-        if cells.len() != 8 {
+        if cells.len() < 8 {
             continue;
         }
         rows.push(PipelineStateRow {
@@ -7977,6 +7979,10 @@ fn load_pipeline_state(path: &std::path::Path) -> Vec<PipelineStateRow> {
             input_hash: cells[5].clone(),
             args_hash: cells[6].clone(),
             output_hash: cells[7].clone(),
+            elapsed_ms: cells
+                .get(8)
+                .and_then(|value| value.parse().ok())
+                .unwrap_or(0),
         });
     }
     rows
@@ -7988,12 +7994,12 @@ fn save_pipeline_state(path: &std::path::Path, rows: &[PipelineStateRow]) -> std
     let mut file = std::fs::File::create(&tmp)?;
     writeln!(
         file,
-        "step,command,args,input,output,input_hash,args_hash,output_hash"
+        "step,command,args,input,output,input_hash,args_hash,output_hash,elapsed_ms"
     )?;
     for row in rows {
         writeln!(
             file,
-            "{},{},{},{},{},{},{},{}",
+            "{},{},{},{},{},{},{},{},{}",
             row.name,
             row.command,
             row.args,
@@ -8001,7 +8007,8 @@ fn save_pipeline_state(path: &std::path::Path, rows: &[PipelineStateRow]) -> std
             row.output,
             row.input_hash,
             row.args_hash,
-            row.output_hash
+            row.output_hash,
+            row.elapsed_ms
         )?;
     }
     file.flush()?;
@@ -8012,7 +8019,7 @@ fn run_pipeline_plan(
     plan: &std::path::Path,
     root: Option<&std::path::Path>,
     force: bool,
-) -> std::io::Result<Vec<(String, bool)>> {
+) -> std::io::Result<Vec<(String, bool, u64, String)>> {
     let root = root
         .map(std::path::Path::to_path_buf)
         .or_else(|| plan.parent().map(std::path::Path::to_path_buf))
@@ -8093,11 +8100,26 @@ fn run_pipeline_plan(
             "the pipeline plan has no steps",
         ));
     }
+    for (index, step) in steps.iter().enumerate() {
+        if let Some(input) = &step.input {
+            if let Some(position) = steps.iter().position(|candidate| &candidate.name == input) {
+                if position >= index {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        format!(
+                            "step {} refers to {} which is not an earlier step",
+                            step.name, input
+                        ),
+                    ));
+                }
+            }
+        }
+    }
     let state_path = pipeline_state_path(plan);
     let previous = load_pipeline_state(&state_path);
     let bin = std::env::current_exe()?;
     let mut state_rows = Vec::with_capacity(steps.len());
-    let mut results = Vec::with_capacity(steps.len());
+    let mut results: Vec<(String, bool, u64, String)> = Vec::with_capacity(steps.len());
     let mut previous_output: Option<std::path::PathBuf> = None;
     for (index, step) in steps.iter().enumerate() {
         let input_path = match &step.input {
@@ -8139,8 +8161,8 @@ fn run_pipeline_plan(
                         .unwrap_or(false)
             });
         if fresh {
-            results.push((step.name.clone(), true));
             let output_string = step.output.display().to_string();
+            results.push((step.name.clone(), true, 0, output_string.clone()));
             let output_hash = pipeline_hash_file(&step.output).unwrap_or_default();
             state_rows.push(PipelineStateRow {
                 name: step.name.clone(),
@@ -8151,6 +8173,7 @@ fn run_pipeline_plan(
                 input_hash,
                 args_hash,
                 output_hash,
+                elapsed_ms: 0,
             });
             previous_output = Some(step.output.clone());
             continue;
@@ -8185,7 +8208,9 @@ fn run_pipeline_plan(
             process.args(&command[1..]);
         }
         process.args(&args);
+        let started = std::time::Instant::now();
         let output = process.output()?;
+        let elapsed_ms = started.elapsed().as_millis() as u64;
         if !output.status.success() {
             let _ = std::fs::remove_file(&temp);
             return Err(std::io::Error::other(format!(
@@ -8218,8 +8243,14 @@ fn run_pipeline_plan(
             input_hash,
             args_hash,
             output_hash,
+            elapsed_ms,
         });
-        results.push((step.name.clone(), false));
+        results.push((
+            step.name.clone(),
+            false,
+            elapsed_ms,
+            step.output.display().to_string(),
+        ));
         previous_output = Some(step.output.clone());
         if index + 1 == steps.len() {
             break;
@@ -8235,6 +8266,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
     let mut plan: Option<std::path::PathBuf> = None;
     let mut root: Option<std::path::PathBuf> = None;
     let mut force = false;
+    let mut json = false;
     while let Some(arg) = p.next() {
         match arg.as_str() {
             "--root" => match p.value("--root") {
@@ -8245,6 +8277,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
                 }
             },
             "--force" => force = true,
+            "--json" => json = true,
             "-h" | "--help" => {
                 print_command_help("pipeline");
                 return 0;
@@ -8276,8 +8309,28 @@ fn cmd_pipeline(args: &[String]) -> i32 {
     match action.as_str() {
         "run" => match run_pipeline_plan(&plan, root.as_deref(), force) {
             Ok(results) => {
-                for (name, fresh) in results {
-                    println!("{} {}", if fresh { "↷" } else { "✓" }, name);
+                if json {
+                    let items: Vec<String> = results
+                        .iter()
+                        .map(|(name, fresh, ms, output)| {
+                            format!(
+                                r#"{{"step":"{}","fresh":{},"ms":{},"output":"{}"}}"#,
+                                name,
+                                fresh,
+                                ms,
+                                output.replace('\\', "\\\\")
+                            )
+                        })
+                        .collect();
+                    println!(r#"{{"steps":[{}]}}"#, items.join(","));
+                } else {
+                    for (name, fresh, ms, _) in results {
+                        if fresh {
+                            println!("↷ {name}");
+                        } else {
+                            println!("✓ {name} ({ms} ms)");
+                        }
+                    }
                 }
                 0
             }
@@ -8292,11 +8345,31 @@ fn cmd_pipeline(args: &[String]) -> i32 {
                 println!("(no pipeline state yet)");
                 return 0;
             }
-            println!("{:<20} {:<32} {:<10} state", "step", "output", "input");
+            let items: Vec<String> = rows
+                .iter()
+                .map(|row| {
+                    format!(
+                        r#"{{"step":"{}","output":"{}","inputHash":"{}","outputHash":"{}","ms":{}}}"#,
+                        row.name,
+                        row.output.replace('\\', "\\\\"),
+                        row.input_hash,
+                        row.output_hash,
+                        row.elapsed_ms
+                    )
+                })
+                .collect();
+            if json {
+                println!(r#"{{"steps":[{}]}}"#, items.join(","));
+                return 0;
+            }
+            println!(
+                "{:<20} {:<32} {:<10} {:>8} state",
+                "step", "output", "input", "ms"
+            );
             for row in rows {
                 println!(
-                    "{:<20} {:<32} {:<10} {}",
-                    row.name, row.output, row.input_hash, row.output_hash
+                    "{:<20} {:<32} {:<10} {:>8} {}",
+                    row.name, row.output, row.input_hash, row.elapsed_ms, row.output_hash
                 );
             }
             0

@@ -633,7 +633,7 @@ pub fn lookup_sql(
     options: &crate::lookup::LookupOptions,
     tx: &crate::types::ProgressSender,
 ) -> std::io::Result<crate::lookup::LookupSummary> {
-    use std::io::{self, Write};
+    use std::io;
 
     let total_bytes = std::fs::metadata(main).map(|m| m.len()).unwrap_or(0);
     tx.send(crate::types::ProgressEvent::PhaseStart {
@@ -706,27 +706,21 @@ pub fn lookup_sql(
         .join(", ");
     let query = format!("SELECT m.*, {projected} FROM t m LEFT JOIN ref r ON {on}");
 
-    let result =
-        crate::sql::query_with_reference(main, &options.reference, &query, 100_000, delimiter)?;
-
-    let mut out = std::io::BufWriter::new(std::fs::File::create(output)?);
-    writeln!(out, "{}", quote_cells(&columns).join(","))?;
-    let mut missing = 0u64;
-    for row in &result.rows {
-        let cells: Vec<String> = row.clone();
-        if cells
-            .iter()
-            .rev()
-            .take(output_names.len())
-            .all(|v| v == "#N/A")
-        {
-            missing += 1;
-        }
-        writeln!(out, "{}", quote_cells(&cells).join(","))?;
-    }
-    out.flush()?;
-
-    let rows = result.rows.len() as u64;
+    // Copy the join instead of fetching 100k rows into memory: the old path silently
+    // truncated a multi-million-row file at exactly 100,000 rows.
+    let counts = format!(
+        "SELECT count(*), count(*) FILTER (WHERE r.{} IS NULL) FROM t m LEFT JOIN ref r ON {}",
+        ident(&reference_keys[0]),
+        on
+    );
+    let (rows, missing) = crate::sql::copy_with_reference(
+        main,
+        &options.reference,
+        &query,
+        &counts,
+        output,
+        delimiter,
+    )?;
     let bytes = std::fs::metadata(output).map(|m| m.len()).unwrap_or(0);
     tx.send(crate::types::ProgressEvent::PhaseDone {
         phase: "Looking up (duckdb)".into(),
@@ -1224,6 +1218,7 @@ mod tests {
         );
     }
 
+    #[cfg(feature = "sql")]
     #[test]
     fn json_and_native_groupby_agree_byte_for_byte() {
         use crate::aggregate::AggSpec;
@@ -1382,11 +1377,12 @@ mod tests {
         std::fs::remove_dir_all(&dir).ok();
     }
 
-    /// The SQL lookup must reproduce the native file byte for byte, including `#N/A` for
-    /// a key that is not in the reference and the `_ref` suffix on a clashing name.
+    /// The SQL lookup must reproduce the native cells, including `#N/A` for a key that is
+    /// not in the reference and the `_ref` suffix on a clashing name. DuckDB quotes `#N/A`
+    /// while the native writer leaves it bare; both are valid CSV, so compare parsed cells.
     #[cfg(feature = "sql")]
     #[test]
-    fn lookup_engines_agree_byte_for_byte() {
+    fn lookup_engines_agree_on_cells() {
         use crate::lookup::{lookup_quotes, LookupOptions};
         use crate::types::{Delimiter, ProgressSender};
 
@@ -1420,7 +1416,18 @@ mod tests {
         lookup_sql(&main, Delimiter::Comma, &sql_out, &options, &tx_sql).unwrap();
         let native = std::fs::read_to_string(&native_out).unwrap();
         let sql = std::fs::read_to_string(&sql_out).unwrap();
-        assert_eq!(native, sql, "native:\n{native}\nsql:\n{sql}");
+        let rows = |text: &str| -> Vec<Vec<String>> {
+            text.lines()
+                .map(|line| {
+                    crate::csv_reader::parse_csv_record_with(
+                        line,
+                        b',',
+                        crate::csv_reader::QuoteStyle::Rfc4180,
+                    )
+                })
+                .collect()
+        };
+        assert_eq!(rows(&native), rows(&sql), "native:\n{native}\nsql:\n{sql}");
         std::fs::remove_dir_all(&dir).ok();
     }
 

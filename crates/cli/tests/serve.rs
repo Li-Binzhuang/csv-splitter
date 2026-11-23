@@ -4084,7 +4084,24 @@ fn lookup_over_http_agrees_across_engines() {
 
     let native = std::fs::read_to_string(dir.join("out-native.csv")).unwrap();
     let sql = std::fs::read_to_string(dir.join("out-sql.csv")).unwrap();
-    assert_eq!(native, sql, "engines must agree: {native} vs {sql}");
+    let rows = |text: &str| -> Vec<Vec<String>> {
+        text.lines()
+            .map(|line| {
+                csvx_core::csv_reader::parse_csv_record_with(
+                    line,
+                    b',',
+                    csvx_core::csv_reader::QuoteStyle::Rfc4180,
+                )
+            })
+            .collect()
+    };
+    // DuckDB quotes a literal like #N/A (it treats # as special); that is valid CSV but
+    // not byte-identical to the native writer. Compare the cells, not the quoting.
+    assert_eq!(
+        rows(&native),
+        rows(&sql),
+        "engines must agree: {native} vs {sql}"
+    );
 
     // An unknown engine is refused rather than ignored.
     let (status, body) = post(
