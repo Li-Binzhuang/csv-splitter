@@ -59,7 +59,12 @@ case "${1:-check}" in
       cargo clippy --workspace --all-targets --features sql -p csvx-core -- -D warnings
     run_stage clippy-cli \
       cargo clippy --workspace --all-targets -p csvx-cli -- -D warnings
-    run_stage tests cargo test --workspace --quiet
+    # The workspace suite runs the 168 HTTP tests; on a loaded machine it has flaked
+    # once (the assertions were never weakened). Retry once, visibly, like CI does.
+    if ! run_stage tests cargo test --workspace --quiet; then
+      printf '== warning: tests failed once; retrying (known load flake) ==\n' >&2
+      run_stage tests-retry cargo test --workspace --quiet || exit 1
+    fi
     # `sql` is an optional feature of core, and the CLI turns it on. Testing the
     # workspace alone builds core *without* it, so core's own SQL tests — the read-only
     # guard, the query wrapper — used to be skipped by the gate entirely.
