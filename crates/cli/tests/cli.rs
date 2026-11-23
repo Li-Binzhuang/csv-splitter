@@ -1867,6 +1867,48 @@ fn formulas_can_reference_another_sheet() {
     assert_eq!(text.lines().nth(2).unwrap(), "B,9,#N/A");
 }
 
+/// `vlookup` is the friendly spelling of `ref`, and it must load the sheet too; a
+/// formula that only mentions vlookup used to fail because the loader looked for ref.
+#[test]
+fn vlookup_loads_the_referenced_sheet_like_ref() {
+    let dir = TempDir::new("vlookup");
+    let orders = dir.join("orders.csv");
+    let customers = dir.join("customers.csv");
+    std::fs::write(&orders, "order,cust_no\nA,1\nB,9\n").unwrap();
+    std::fs::write(&customers, "cust_no,name\n1,Ana\n").unwrap();
+
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "formula",
+            orders.to_str().unwrap(),
+            "--name",
+            "customer",
+            "--value",
+            r#"vlookup("customers.csv","cust_no","name")"#,
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    let out = dir.join("joined.csv");
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            orders.to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&out).unwrap();
+    assert_eq!(text.lines().next().unwrap(), "order,cust_no,customer");
+    assert_eq!(text.lines().nth(1).unwrap(), "A,1,Ana");
+    assert_eq!(text.lines().nth(2).unwrap(), "B,9,#N/A");
+}
+
 /// A bulk edit is one journal entry however many rows it changes.
 #[test]
 fn bulk_edit_matches_a_filter_and_stays_one_operation() {

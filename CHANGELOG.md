@@ -98,6 +98,9 @@
 - **Text helpers**: `textjoin(sep, ignore_empty, ...)` joins values with a separator
   (and can drop empty ones), `char(n)` turns a code point into text, and `code(text)`
   returns the first character's code.
+- **`vlookup` alias fixed**: the evaluator treated `vlookup` like `ref`, but the
+  reference loader only recognized `ref`, so a formula that used only `vlookup`
+  never loaded its sheet. Both spellings now feed the loader.
 - **Row-local multi-criteria aggregates**: `sumifs(A2:C2, D2:F2, ">0")` and the
   countifs/averageifs/minifs/maxifs forms pair same-row ranges position by position;
   widths must match, and a sum with no matching numeric cell is 0 while

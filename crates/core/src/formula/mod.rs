@@ -449,7 +449,9 @@ fn collect_row_needs(expr: &Expr, out: &mut crate::formula::RowNeeds) {
 
 fn collect_sheet_refs(expr: &Expr, out: &mut Vec<(String, String, String)>) {
     match expr {
-        Expr::Call(name, args) if name.eq_ignore_ascii_case("ref") => {
+        Expr::Call(name, args)
+            if name.eq_ignore_ascii_case("ref") || name.eq_ignore_ascii_case("vlookup") =>
+        {
             if args.len() == 3 {
                 if let (Expr::Text(sheet), Expr::Text(key), Expr::Text(value)) =
                     (&args[0], &args[1], &args[2])
@@ -1362,6 +1364,20 @@ mod tests {
                 .render(),
             "#VALUE!",
             "ranges of different widths cannot be paired"
+        );
+    }
+
+    #[test]
+    fn vlookup_preloads_the_same_reference_as_ref() {
+        let formula = Formula::parse(r#"vlookup("people.csv", "cust", "name")"#).unwrap();
+        assert_eq!(
+            formula.sheet_references(),
+            vec![(
+                "people.csv".to_string(),
+                "cust".to_string(),
+                "name".to_string()
+            )],
+            "the alias must feed the loader, not only the evaluator"
         );
     }
 
