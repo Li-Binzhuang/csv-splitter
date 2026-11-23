@@ -3,6 +3,18 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 BIN=${BIN:-target/release/csvx}
+if [[ ! -x "$BIN" ]]; then
+  echo "error: $BIN is missing; run cargo build --release (or set CSVX_DEMO_BUILD=1)" >&2
+  exit 1
+fi
+if find crates -name '*.rs' -newer "$BIN" -print -quit | grep -q .; then
+  if [[ "${CSVX_DEMO_BUILD:-0}" == "1" ]]; then
+    cargo build --release -p csvx-cli
+  else
+    echo "error: $BIN is older than Rust sources; run cargo build --release (or set CSVX_DEMO_BUILD=1)" >&2
+    exit 1
+  fi
+fi
 DIR=$(mktemp -d)
 trap 'rm -rf "$DIR"' EXIT
 cat > "$DIR/orders.csv" <<'CSV'

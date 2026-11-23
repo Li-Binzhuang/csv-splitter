@@ -23,6 +23,9 @@ job=done
 == accepted ==
 ```
 
+> demo 会检查 release 二进制是否比 `crates/**/*.rs` 旧；旧则拒绝运行，避免演示结果与源码不符。
+> 需要自动重建时用 `CSVX_DEMO_BUILD=1 bash scripts/demo_end_to_end.sh`。
+
 ## 演示覆盖
 1. `pipeline run`：filter → quality，列出每步耗时；`.pipeline.csv` 记录血缘，重跑会跳过。
 2. `scripts/mcp_client.py`：真实 stdio JSON-RPC 客户端，不依赖第三方库：
