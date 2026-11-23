@@ -3203,6 +3203,58 @@ fn pipeline_parallel_group_failure_is_atomic() {
     assert!(!dir.join("plan.csv.pipeline.csv").exists());
 }
 
+/// `status --verify` recomputes freshness from current files, not just stored hashes.
+#[test]
+fn pipeline_status_verify_detects_stale_output() {
+    let dir = TempDir::new("pipeline-status");
+    std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n2,Puebla\n").unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},a.csv\n",
+    )
+    .unwrap();
+    let run = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        run.status.success(),
+        "{}",
+        String::from_utf8_lossy(&run.stderr)
+    );
+    let fresh = Command::new(bin())
+        .args([
+            "pipeline",
+            "status",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--verify",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(fresh.status.success());
+    assert!(String::from_utf8_lossy(&fresh.stdout).contains(r#""fresh":true"#));
+    std::fs::write(dir.join("a.csv"), "id,city\n1,STALE\n").unwrap();
+    let stale = Command::new(bin())
+        .args([
+            "pipeline",
+            "status",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--verify",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(stale.status.success());
+    assert!(String::from_utf8_lossy(&stale.stdout).contains(r#""fresh":false"#));
+}
+
 /// A successful run persists the dependency edges next to the plan.
 #[test]
 fn pipeline_persists_lineage() {

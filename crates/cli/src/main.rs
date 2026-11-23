@@ -138,6 +138,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--force", "Rerun every step even when fresh"),
             ("--clean", "Remove stale pipeline staging files before running"),
             ("--unlock", "Remove the plan lock before running (use with care)"),
+            ("--verify", "Status: re-check current stamps/hashes"),
             ("--dag", "Run ready steps by dependency order (requires --jobs > 1)"),
             ("--jobs", "Concurrency for groups/DAG (default 1)"),
             ("--retries", "Retry a failed step N times (default 0)"),
@@ -8315,6 +8316,26 @@ fn cleanup_stale_staging(steps: &[PipelineStep], force: bool) -> std::io::Result
     Ok(removed)
 }
 
+fn pipeline_state_is_fresh(row: &PipelineStateRow) -> bool {
+    let input = std::path::Path::new(&row.input);
+    let output = std::path::Path::new(&row.output);
+    if !input.exists() || !output.exists() {
+        return false;
+    }
+    if !row.input_stamp.is_empty() && !row.output_stamp.is_empty() {
+        let input_stamp = pipeline_file_stamp(input).ok();
+        let output_stamp = pipeline_file_stamp(output).ok();
+        return input_stamp.as_deref() == Some(row.input_stamp.as_str())
+            && output_stamp.as_deref() == Some(row.output_stamp.as_str());
+    }
+    pipeline_hash_file(input)
+        .map(|hash| hash == row.input_hash)
+        .unwrap_or(false)
+        && pipeline_hash_file(output)
+            .map(|hash| hash == row.output_hash)
+            .unwrap_or(false)
+}
+
 fn pipeline_dependencies(steps: &[PipelineStep], index: usize) -> Vec<String> {
     match &steps[index].input {
         Some(name) if steps[..index].iter().any(|step| &step.name == name) => vec![name.clone()],
@@ -9233,6 +9254,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
     let mut dag = false;
     let mut clean = false;
     let mut unlock = false;
+    let mut verify = false;
     let mut json = false;
     while let Some(arg) = p.next() {
         match arg.as_str() {
@@ -9245,6 +9267,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             },
             "--force" => force = true,
             "--dry-run" => dry_run = true,
+            "--verify" => verify = true,
             "--unlock" => unlock = true,
             "--clean" => clean = true,
             "--dag" => dag = true,
@@ -9413,16 +9436,28 @@ fn cmd_pipeline(args: &[String]) -> i32 {
                 println!("(no pipeline state yet)");
                 return 0;
             }
+            let fresh: Vec<bool> = if verify {
+                rows.iter().map(pipeline_state_is_fresh).collect()
+            } else {
+                vec![false; rows.len()]
+            };
             let items: Vec<String> = rows
                 .iter()
-                .map(|row| {
+                .zip(fresh.iter())
+                .map(|(row, is_fresh)| {
+                    let verify_field = if verify {
+                        format!(r#","fresh":{}"#, is_fresh)
+                    } else {
+                        String::new()
+                    };
                     format!(
-                        r#"{{"step":"{}","output":"{}","inputHash":"{}","outputHash":"{}","ms":{}}}"#,
+                        r#"{{"step":"{}","output":"{}","inputHash":"{}","outputHash":"{}","ms":{}{} }}"#,
                         row.name,
                         row.output.replace('\\', "\\\\"),
                         row.input_hash,
                         row.output_hash,
-                        row.elapsed_ms
+                        row.elapsed_ms,
+                        verify_field
                     )
                 })
                 .collect();
@@ -9430,15 +9465,28 @@ fn cmd_pipeline(args: &[String]) -> i32 {
                 println!(r#"{{"steps":[{}]}}"#, items.join(","));
                 return 0;
             }
-            println!(
-                "{:<20} {:<32} {:<10} {:>8} state",
-                "step", "output", "input", "ms"
-            );
-            for row in rows {
+            if verify {
+                println!("{:<20} {:<32} {:>8} status", "step", "output", "ms");
+                for (row, is_fresh) in rows.iter().zip(fresh.iter()) {
+                    println!(
+                        "{:<20} {:<32} {:>8} {}",
+                        row.name,
+                        row.output,
+                        row.elapsed_ms,
+                        if *is_fresh { "fresh" } else { "stale" }
+                    );
+                }
+            } else {
                 println!(
-                    "{:<20} {:<32} {:<10} {:>8} {}",
-                    row.name, row.output, row.input_hash, row.elapsed_ms, row.output_hash
+                    "{:<20} {:<32} {:<10} {:>8} state",
+                    "step", "output", "input", "ms"
                 );
+                for row in &rows {
+                    println!(
+                        "{:<20} {:<32} {:<10} {:>8} {}",
+                        row.name, row.output, row.input_hash, row.elapsed_ms, row.output_hash
+                    );
+                }
             }
             0
         }
