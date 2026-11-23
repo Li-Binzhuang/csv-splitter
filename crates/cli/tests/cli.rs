@@ -2864,6 +2864,53 @@ fn mcp_jobs_run_asynchronously_and_report_state() {
     );
 }
 
+/// Steps sharing a group run concurrently; their outputs are all committed.
+#[test]
+fn pipeline_parallel_group_runs_branches() {
+    let dir = TempDir::new("pipeline-group");
+    std::fs::write(
+        dir.join("orders.csv"),
+        "id,city\n1,CDMX\n2,Puebla\n3,CDMX\n",
+    )
+    .unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output,group\ncdmx,orders.csv,filter,--where city=CDMX -o {out},a.csv,branches\npuebla,orders.csv,filter,--where city=Puebla -o {out},b.csv,branches\n",
+    )
+    .unwrap();
+    let result = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--jobs",
+            "2",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert_eq!(
+        std::fs::read_to_string(dir.join("a.csv")).unwrap(),
+        "id,city\n1,CDMX\n3,CDMX\n"
+    );
+    assert_eq!(
+        std::fs::read_to_string(dir.join("b.csv")).unwrap(),
+        "id,city\n2,Puebla\n"
+    );
+    assert!(dir.join("plan.csv.pipeline.csv").exists());
+    let stdout = String::from_utf8_lossy(&result.stdout);
+    assert!(
+        stdout.contains("cdmx") && stdout.contains("puebla"),
+        "{stdout}"
+    );
+}
+
 /// Retries are bounded and the final failure still cleans up.
 #[test]
 fn pipeline_retries_then_fails_atomically() {

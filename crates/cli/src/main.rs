@@ -136,6 +136,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         &[
             ("--dry-run", "Report fresh/would-run steps without executing"),
             ("--force", "Rerun every step even when fresh"),
+            ("--jobs", "Run steps with the same group concurrently (default 1)"),
             ("--retries", "Retry a failed step N times (default 0)"),
             ("--retry-delay", "Milliseconds between retries (default 250)"),
             ("--step-timeout", "Kill a step after N milliseconds (0 = none)"),
@@ -7918,7 +7919,11 @@ struct PipelineStep {
     command: String,
     args: String,
     output: std::path::PathBuf,
+    group: String,
 }
+
+type PipelineResults = Vec<(String, bool, u64, String)>;
+type BranchOutcome = (String, bool, u64, String, PipelineStateRow);
 
 #[derive(Clone, Debug, Default)]
 struct PipelineStateRow {
@@ -8131,6 +8136,171 @@ fn run_step_command(
     })
 }
 
+fn pipeline_csv_cell(value: &str) -> String {
+    if value.contains([',', '"', '\n', '\r']) {
+        format!("\"{}\"", value.replace('"', "\"\""))
+    } else {
+        value.to_string()
+    }
+}
+
+/// Run one `group` of independent steps as concurrent child pipelines. Each child
+/// gets a one-step plan so it can reuse the normal command/temp/rename path. Grouped
+/// steps must name an explicit input (a source file or an earlier step's output);
+/// we do not try to infer freshness here, so they rerun when the group is reached.
+fn run_branch_group(
+    all: &[PipelineStep],
+    group: &[PipelineStep],
+    root: &std::path::Path,
+    force: bool,
+    step_timeout_ms: u64,
+    retries: usize,
+    retry_delay_ms: u64,
+) -> std::io::Result<Vec<BranchOutcome>> {
+    let bin = std::env::current_exe()?;
+    let stamp = format!(
+        "{}-{}",
+        std::process::id(),
+        fnv_hash(group[0].name.as_bytes())
+    );
+    let mut plans = Vec::with_capacity(group.len());
+    let mut inputs = Vec::with_capacity(group.len());
+    for (index, step) in group.iter().enumerate() {
+        let name = step.input.as_ref().ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("grouped step {} needs an explicit input", step.name),
+            )
+        })?;
+        let input_path =
+            if let Some(position) = all.iter().position(|candidate| &candidate.name == name) {
+                if all[position].group == step.group
+                    && group.iter().any(|s| s.name == all[position].name)
+                {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        format!(
+                            "grouped step {} depends on {} in the same group",
+                            step.name, name
+                        ),
+                    ));
+                }
+                all[position].output.clone()
+            } else if std::path::Path::new(name).is_absolute() {
+                std::path::PathBuf::from(name)
+            } else {
+                root.join(name)
+            };
+        if !input_path.exists() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!(
+                    "step {}: input {} not found",
+                    step.name,
+                    input_path.display()
+                ),
+            ));
+        }
+        inputs.push((step, input_path.clone()));
+        let plan = std::env::temp_dir().join(format!("csvx-branch-{stamp}-{index}.csv"));
+        let row = format!(
+            "{},{},{},{},{}\n",
+            pipeline_csv_cell(&step.name),
+            pipeline_csv_cell(&input_path.display().to_string()),
+            pipeline_csv_cell(&step.command),
+            pipeline_csv_cell(&step.args),
+            pipeline_csv_cell(&step.output.display().to_string())
+        );
+        std::fs::write(&plan, format!("step,input,command,args,output\n{row}"))?;
+        plans.push(plan);
+    }
+    let mut children = Vec::with_capacity(plans.len());
+    for plan in &plans {
+        let mut process = std::process::Command::new(&bin);
+        process.args([
+            "pipeline",
+            "run",
+            plan.to_str().unwrap_or(""),
+            "--root",
+            root.to_str().unwrap_or(""),
+            "--json",
+        ]);
+        if force {
+            process.arg("--force");
+        }
+        if step_timeout_ms > 0 {
+            process.args(["--step-timeout", &step_timeout_ms.to_string()]);
+        }
+        if retries > 0 {
+            process.args([
+                "--retries",
+                &retries.to_string(),
+                "--retry-delay",
+                &retry_delay_ms.to_string(),
+            ]);
+        }
+        children.push(
+            process
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .spawn()?,
+        );
+    }
+    let started = Instant::now();
+    let mut outputs = Vec::with_capacity(children.len());
+    for child in children {
+        outputs.push(child.wait_with_output()?);
+    }
+    let elapsed_ms = started.elapsed().as_millis() as u64;
+    let mut results = Vec::with_capacity(group.len());
+    let mut failure: Option<String> = None;
+    for (index, (step, input_path)) in inputs.iter().enumerate() {
+        let output = &outputs[index];
+        if !output.status.success() {
+            failure = Some(format!(
+                "step {} failed: {}",
+                step.name,
+                String::from_utf8_lossy(&output.stderr).trim()
+            ));
+            continue;
+        }
+        let input_hash = pipeline_hash_file(input_path)?;
+        let output_hash = pipeline_hash_file(&step.output)?;
+        let input_stamp = pipeline_file_stamp(input_path)?;
+        let output_stamp = pipeline_file_stamp(&step.output)?;
+        let args_hash = pipeline_hash_text(&step.args);
+        let output_string = step.output.display().to_string();
+        results.push((
+            step.name.clone(),
+            false,
+            elapsed_ms,
+            output_string.clone(),
+            PipelineStateRow {
+                name: step.name.clone(),
+                command: step.command.clone(),
+                args: step.args.clone(),
+                input: input_path.display().to_string(),
+                output: output_string,
+                input_hash,
+                args_hash,
+                output_hash,
+                elapsed_ms,
+                input_stamp,
+                output_stamp,
+            },
+        ));
+    }
+    for plan in &plans {
+        let _ = std::fs::remove_file(plan);
+        let _ = std::fs::remove_file(pipeline_state_path(plan));
+    }
+    if let Some(error) = failure {
+        return Err(std::io::Error::other(error));
+    }
+    Ok(results)
+}
+
+#[allow(clippy::too_many_arguments)]
 fn run_pipeline_plan(
     plan: &std::path::Path,
     root: Option<&std::path::Path>,
@@ -8139,7 +8309,8 @@ fn run_pipeline_plan(
     step_timeout_ms: u64,
     retries: usize,
     retry_delay_ms: u64,
-) -> std::io::Result<Vec<(String, bool, u64, String)>> {
+    jobs: usize,
+) -> std::io::Result<PipelineResults> {
     let root = root
         .map(std::path::Path::to_path_buf)
         .or_else(|| plan.parent().map(std::path::Path::to_path_buf))
@@ -8162,15 +8333,17 @@ fn run_pipeline_plan(
         csvx_core::csv_reader::QuoteStyle::Rfc4180,
     );
     let expected = ["step", "input", "command", "args", "output"];
-    if header.len() != 5
-        || header
+    let header_ok = (header.len() == 5 || header.len() == 6)
+        && header
             .iter()
+            .take(5)
             .zip(expected)
-            .any(|(cell, want)| cell.trim() != want)
-    {
+            .all(|(cell, want)| cell.trim() == want)
+        && header.get(5).is_none_or(|cell| cell.trim() == "group");
+    if !header_ok {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
-            "the pipeline plan header must be step,input,command,args,output",
+            "the pipeline plan header must be step,input,command,args,output[,group]",
         ));
     }
     let mut steps: Vec<PipelineStep> = Vec::new();
@@ -8183,10 +8356,10 @@ fn run_pipeline_plan(
         if cells.iter().all(|cell| cell.trim().is_empty()) {
             continue;
         }
-        if cells.len() != 5 {
+        if cells.len() != 5 && cells.len() != 6 {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
-                "a pipeline step needs 5 columns",
+                "a pipeline step needs 5 or 6 columns",
             ));
         }
         let name = cells[0].trim().to_string();
@@ -8212,6 +8385,10 @@ fn run_pipeline_plan(
             command: cells[2].trim().to_string(),
             args: cells[3].to_string(),
             output: root.join(cells[4].trim()),
+            group: cells
+                .get(5)
+                .map(|cell| cell.trim().to_string())
+                .unwrap_or_default(),
         });
     }
     if steps.is_empty() {
@@ -8241,7 +8418,34 @@ fn run_pipeline_plan(
     let mut state_rows = Vec::with_capacity(steps.len());
     let mut results: Vec<(String, bool, u64, String)> = Vec::with_capacity(steps.len());
     let mut previous_output: Option<std::path::PathBuf> = None;
+    let mut skip = 0usize;
     for (index, step) in steps.iter().enumerate() {
+        if skip > 0 {
+            skip -= 1;
+            continue;
+        }
+        if jobs > 1 && !step.group.is_empty() && !dry_run {
+            let mut end = index + 1;
+            while end < steps.len() && steps[end].group == step.group {
+                end += 1;
+            }
+            let outcomes = run_branch_group(
+                &steps,
+                &steps[index..end],
+                &root,
+                force,
+                step_timeout_ms,
+                retries,
+                retry_delay_ms,
+            )?;
+            for (name, fresh, ms, output, state_row) in outcomes {
+                results.push((name, fresh, ms, output));
+                state_rows.push(state_row);
+            }
+            previous_output = Some(steps[end - 1].output.clone());
+            skip = end - index - 1;
+            continue;
+        }
         let input_path = match &step.input {
             None => previous_output.clone().ok_or_else(|| {
                 std::io::Error::new(
@@ -8470,6 +8674,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
     let mut step_timeout_ms = 0u64;
     let mut retries = 0usize;
     let mut retry_delay_ms = 250u64;
+    let mut jobs = 1usize;
     let mut json = false;
     while let Some(arg) = p.next() {
         match arg.as_str() {
@@ -8482,6 +8687,16 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             },
             "--force" => force = true,
             "--dry-run" => dry_run = true,
+            "--jobs" => match p
+                .value("--jobs")
+                .and_then(|value| value.parse::<usize>().map_err(|_| "bad --jobs".to_string()))
+            {
+                Ok(value) => jobs = value.max(1),
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 2;
+                }
+            },
             "--retries" => match p.value("--retries").and_then(|value| {
                 value
                     .parse::<usize>()
@@ -8553,6 +8768,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             step_timeout_ms,
             retries,
             retry_delay_ms,
+            jobs,
         ) {
             Ok(results) => {
                 if dry_run {

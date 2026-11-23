@@ -155,6 +155,10 @@
 - **Compressed input**: search/filter/analyze read .zst/.gz/.bz2/.xz through a
   decompressing reader; non-seekable forces the sequential path. 2.3 GB zst filter
   writes a byte-identical 411 MB output in 4.16 s at 15 MB RSS (plain 1.51 s).
+- **Pipeline groups**: optional 6th manifest column `group`; consecutive steps with
+  the same group run as concurrent child pipelines under `--jobs N`. Group members
+  must name an explicit input, cannot depend on each other, and rerun on every pass
+  (no group-level incremental skip yet).
 - **Pipeline retries**: `--retries N` / `--retry-delay MS` retry failed or timed-out
   steps; each attempt starts from a removed temp output, final failure stays atomic.
 - **Pipeline step timeout**: `--step-timeout <ms>` kills a hung child, removes the
