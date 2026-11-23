@@ -3566,6 +3566,65 @@ fn pipeline_content_check_detects_rewritten_input() {
     );
 }
 
+/// Status verify can also hash when stamps match.
+#[cfg(unix)]
+#[test]
+fn pipeline_status_content_check_detects_rewritten_input() {
+    let dir = TempDir::new("pipeline-status-content");
+    let source = dir.join("orders.csv");
+    let reference = dir.join("reference.csv");
+    std::fs::write(&source, "id,city\n1,CDMX\n").unwrap();
+    std::fs::write(&reference, "same").unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},a.csv\n",
+    )
+    .unwrap();
+    Command::new("touch")
+        .args(["-r", reference.to_str().unwrap(), source.to_str().unwrap()])
+        .status()
+        .unwrap();
+    let run = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        run.status.success(),
+        "{}",
+        String::from_utf8_lossy(&run.stderr)
+    );
+    std::fs::write(&source, "id,city\n2,CDMX\n").unwrap();
+    Command::new("touch")
+        .args(["-r", reference.to_str().unwrap(), source.to_str().unwrap()])
+        .status()
+        .unwrap();
+    let status = |extra: &[&str]| {
+        let mut args = vec![
+            "pipeline".to_string(),
+            "status".to_string(),
+            dir.join("plan.csv").to_str().unwrap().to_string(),
+            "--verify".to_string(),
+            "--fail-on-stale".to_string(),
+        ];
+        args.extend(extra.iter().map(|value| value.to_string()));
+        Command::new(bin()).args(args).output().unwrap()
+    };
+    let metadata_only = status(&[]);
+    assert!(
+        metadata_only.status.success(),
+        "{}",
+        String::from_utf8_lossy(&metadata_only.stderr)
+    );
+    let hashed = status(&["--content-check"]);
+    assert_eq!(hashed.status.code(), Some(3));
+}
+
 /// Stable markers let MCP count steps without depending on check glyphs.
 #[test]
 fn pipeline_emits_progress_markers() {

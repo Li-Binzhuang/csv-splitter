@@ -8438,11 +8438,19 @@ fn cleanup_stale_staging(steps: &[PipelineStep], force: bool) -> std::io::Result
     Ok(removed)
 }
 
-fn pipeline_state_is_fresh(row: &PipelineStateRow) -> bool {
+fn pipeline_state_is_fresh(row: &PipelineStateRow, content_check: bool) -> bool {
     let input = std::path::Path::new(&row.input);
     let output = std::path::Path::new(&row.output);
     if !input.exists() || !output.exists() {
         return false;
+    }
+    if content_check && !row.input_hash.is_empty() && !row.output_hash.is_empty() {
+        return pipeline_hash_file(input)
+            .map(|hash| hash == row.input_hash)
+            .unwrap_or(false)
+            && pipeline_hash_file(output)
+                .map(|hash| hash == row.output_hash)
+                .unwrap_or(false);
     }
     if !row.input_stamp.is_empty() && !row.output_stamp.is_empty() {
         let input_stamp = pipeline_file_stamp(input).ok();
@@ -9679,7 +9687,9 @@ fn cmd_pipeline(args: &[String]) -> i32 {
                 return 0;
             }
             let fresh: Vec<bool> = if verify {
-                rows.iter().map(pipeline_state_is_fresh).collect()
+                rows.iter()
+                    .map(|row| pipeline_state_is_fresh(row, content_check))
+                    .collect()
             } else {
                 vec![false; rows.len()]
             };
