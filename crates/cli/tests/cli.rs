@@ -2936,6 +2936,41 @@ fn pipeline_dag_runs_topological_waves() {
     }
 }
 
+/// `--clean` removes leftovers from an interrupted parallel run.
+#[test]
+fn pipeline_clean_removes_stale_staging() {
+    let dir = TempDir::new("pipeline-clean");
+    std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n").unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},a.csv\n",
+    )
+    .unwrap();
+    std::fs::write(dir.join(".a.csv.branch-999.tmp"), "stale").unwrap();
+    std::fs::write(dir.join(".a.csv.pipeline.tmp"), "stale").unwrap();
+    let result = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--dry-run",
+            "--clean",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(!dir.join(".a.csv.branch-999.tmp").exists());
+    assert!(!dir.join(".a.csv.pipeline.tmp").exists());
+    assert!(!dir.join("a.csv").exists());
+    assert!(!dir.join("plan.csv.pipeline.csv").exists());
+}
+
 /// Dry-run exposes the lineage/dependency edges used by the DAG evaluator.
 #[test]
 fn pipeline_dry_run_reports_dependencies() {

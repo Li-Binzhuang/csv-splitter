@@ -257,6 +257,8 @@ joined,filtered,lookup,--key cust_no --reference customers.csv --get name --out 
   fresh：fresh 成员直接复用上轮 state，只把 stale 成员交给并发子进程；任一兄弟姐妹失败时，本波其余子进程被 kill，本波 staging 文件清理；最终输出
   只在整波成功后 rename，因此失败不会破坏上一版输出；主 `.pipeline.csv` 不写；
   更早成功波已提交的输出仍保留。
+- `--clean` 在运行前清理本计划输出对应的 staging/legacy 临时文件；普通运行只自动清理
+  超过 1 小时的残留，`--clean` 强制立即清理。
 - `--step-timeout <ms>` 对每个步骤做硬超时：kill 子进程、删除临时输出、不写 state；
   `0` 表示不限；stdout/stderr 由独立线程并发读取，避免管道写满死锁。
 - `--retries <n>` 与 `--retry-delay <ms>`：失败/超时后重试，默认 0 次、250 ms；

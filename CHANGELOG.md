@@ -157,6 +157,9 @@
 - **Compressed input**: search/filter/analyze read .zst/.gz/.bz2/.xz through a
   decompressing reader; non-seekable forces the sequential path. 2.3 GB zst filter
   writes a byte-identical 411 MB output in 4.16 s at 15 MB RSS (plain 1.51 s).
+- **Staging cleanup**: each run removes matching `.branch-*.tmp`/`.pipeline.tmp`
+  leftovers older than an hour; `--clean` forces cleanup before executing. Test uses
+  dry-run so the cleanup can be verified without touching outputs.
 - **Topological DAG**: `--dag --jobs N` schedules ready steps from the lineage
   graph (empty input → previous step, step name → earlier step, file → no step
   dependency), freshness-checks each ready step and runs stale ready steps in

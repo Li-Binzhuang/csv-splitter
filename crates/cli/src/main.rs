@@ -136,6 +136,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         &[
             ("--dry-run", "Report fresh/would-run steps without executing"),
             ("--force", "Rerun every step even when fresh"),
+            ("--clean", "Remove stale pipeline staging files before running"),
             ("--dag", "Run ready steps by dependency order (requires --jobs > 1)"),
             ("--jobs", "Concurrency for groups/DAG (default 1)"),
             ("--retries", "Retry a failed step N times (default 0)"),
@@ -8146,6 +8147,52 @@ fn run_step_command(
     })
 }
 
+/// Remove remnants of an interrupted parallel run. Only files that exactly match a
+/// declared output's staging/legacy temp prefix are touched; a normal run only deletes
+/// them after an hour, `--clean` forces it.
+fn cleanup_stale_staging(steps: &[PipelineStep], force: bool) -> std::io::Result<usize> {
+    let mut removed = 0usize;
+    for step in steps {
+        let Some(parent) = step.output.parent() else {
+            continue;
+        };
+        if !parent.exists() {
+            continue;
+        }
+        let name = step
+            .output
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("out");
+        let branch_prefix = format!(".{name}.branch-");
+        let legacy = format!(".{name}.pipeline.tmp");
+        for entry in std::fs::read_dir(parent)?.flatten() {
+            let file = entry.file_name();
+            let file = file.to_string_lossy();
+            let matches =
+                file == legacy || (file.starts_with(&branch_prefix) && file.ends_with(".tmp"));
+            if !matches {
+                continue;
+            }
+            if !force {
+                let age = entry
+                    .metadata()
+                    .and_then(|meta| meta.modified())
+                    .ok()
+                    .and_then(|modified| modified.elapsed().ok())
+                    .unwrap_or_default();
+                if age < Duration::from_secs(3600) {
+                    continue;
+                }
+            }
+            if std::fs::remove_file(entry.path()).is_ok() {
+                removed += 1;
+            }
+        }
+    }
+    Ok(removed)
+}
+
 fn pipeline_dependencies(steps: &[PipelineStep], index: usize) -> Vec<String> {
     match &steps[index].input {
         Some(name) if steps[..index].iter().any(|step| &step.name == name) => vec![name.clone()],
@@ -8571,6 +8618,7 @@ fn run_pipeline_plan(
     retry_delay_ms: u64,
     jobs: usize,
     dag: bool,
+    clean: bool,
 ) -> std::io::Result<(PipelineResults, PipelineLineage)> {
     let root = root
         .map(std::path::Path::to_path_buf)
@@ -8672,6 +8720,10 @@ fn run_pipeline_plan(
                 }
             }
         }
+    }
+    let cleaned = cleanup_stale_staging(&steps, clean)?;
+    if cleaned > 0 {
+        eprintln!("cleaned {cleaned} stale pipeline staging file(s)");
     }
     let state_path = pipeline_state_path(plan);
     let previous = load_pipeline_state(&state_path);
@@ -8990,6 +9042,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
     let mut retry_delay_ms = 250u64;
     let mut jobs = 1usize;
     let mut dag = false;
+    let mut clean = false;
     let mut json = false;
     while let Some(arg) = p.next() {
         match arg.as_str() {
@@ -9002,6 +9055,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             },
             "--force" => force = true,
             "--dry-run" => dry_run = true,
+            "--clean" => clean = true,
             "--dag" => dag = true,
             "--jobs" => match p
                 .value("--jobs")
@@ -9086,6 +9140,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             retry_delay_ms,
             jobs,
             dag,
+            clean,
         ) {
             Ok((results, lineage)) => {
                 if dry_run {
