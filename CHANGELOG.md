@@ -69,6 +69,11 @@
 - **`averageif`**: `averageif(amount, ">5")` and `averageif(B2:C2, ">5")` reuse the
   same matching (sum, count) as `sumif`, so no extra scan; no matching cell is `#VALUE!`
   instead of a division by zero.
+- **Aggregate pre-pass**: whole-column sums no longer build a field vector per record,
+  and the column-name key is no longer reallocated for every numeric cell. On a 1M-row
+  file the cold pre-pass measures ~25 ms (cold export 0.12 s minus warm 0.09 s, 8 threads);
+  a run immediately after a rebuild can still read ~0.6 s while binary and file pages are
+  cold, so compare medians, not single runs.
 - **Analysis equivalence coverage**: the native-vs-DuckDB byte-for-byte tests for
   pivot now compare count/sum/mean/min/max and a second measure column, and the groupby
   test compares min/max as well, so the documented op set is actually exercised.

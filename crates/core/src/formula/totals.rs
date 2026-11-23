@@ -193,6 +193,13 @@ fn scan_slab(
         if !records.next_record(&mut record)? {
             break;
         }
+        // The narrowest fast path: plain whole-column sums need no field vector at all.
+        if filtered.is_empty()
+            && sets.is_empty()
+            && accumulate_plain_unquoted(&record, delimiter.byte(), plain, &mut out)
+        {
+            continue;
+        }
         // Fast path: slice the record instead of building a String per cell. Falls back
         // to the full parser for escaped quotes, backslash quoting, or bad UTF-8.
         if let Some(cells) = slice_cells(&record, delimiter.byte(), quotes) {
@@ -225,6 +232,83 @@ fn slice_cells(record: &[u8], delim: u8, quotes: QuoteStyle) -> Option<Vec<&str>
     Some(out)
 }
 
+/// Fold one plain (whole-column) cell into the totals, bounds, squares and blank count.
+fn observe_plain(name: &str, cell: &str, out: &mut ColumnTotals) {
+    let trimmed = cell.trim();
+    if trimmed.is_empty() {
+        if let Some(count) = out.blanks.get_mut(name) {
+            *count += 1;
+        }
+        return;
+    }
+    let Ok(value) = trimmed.parse::<f64>() else {
+        return;
+    };
+    if !value.is_finite() {
+        return;
+    }
+    if let Some(slot) = out.plain.get_mut(name) {
+        slot.0 += value;
+        slot.1 += 1;
+    }
+    match out.squares.get_mut(name) {
+        Some(square) => *square += value * value,
+        None => {
+            out.squares.insert(name.to_string(), value * value);
+        }
+    }
+    match out.bounds.get_mut(name) {
+        Some(bounds) => {
+            bounds.0 = bounds.0.min(value);
+            bounds.1 = bounds.1.max(value);
+        }
+        None => {
+            out.bounds.insert(name.to_string(), (value, value));
+        }
+    }
+}
+
+/// Plain-only fast path: walk a quote-free record with memchr and fold the wanted
+/// columns immediately, without building a field vector. Returns false when the record
+/// needs the general path (quotes, bad UTF-8, or an unexpected shape).
+fn accumulate_plain_unquoted(
+    record: &[u8],
+    delim: u8,
+    plain: &[(String, usize)],
+    out: &mut ColumnTotals,
+) -> bool {
+    if memchr::memchr(b'"', record).is_some() {
+        return false;
+    }
+    let body = record
+        .strip_suffix(b"\r\n")
+        .or_else(|| record.strip_suffix(b"\n"))
+        .or_else(|| record.strip_suffix(b"\r"))
+        .unwrap_or(record);
+    let mut field = 0usize;
+    let mut start = 0usize;
+    let mut handled = false;
+    for pos in memchr::memchr_iter(delim, body) {
+        if let Some((name, _)) = plain.iter().find(|(_, index)| *index == field) {
+            let Some(text) = std::str::from_utf8(&body[start..pos]).ok() else {
+                return false;
+            };
+            observe_plain(name, text, out);
+            handled = true;
+        }
+        field += 1;
+        start = pos + 1;
+    }
+    if let Some((name, _)) = plain.iter().find(|(_, index)| *index == field) {
+        let Some(text) = std::str::from_utf8(&body[start..]).ok() else {
+            return false;
+        };
+        observe_plain(name, text, out);
+        handled = true;
+    }
+    handled
+}
+
 /// Fold one record's cells into the running totals.
 fn accumulate_cells(
     cells: &[&str],
@@ -234,34 +318,8 @@ fn accumulate_cells(
     out: &mut ColumnTotals,
 ) {
     for (name, index) in plain {
-        let Some(cell) = cells.get(*index) else {
-            continue;
-        };
-        let trimmed = cell.trim();
-        if trimmed.is_empty() {
-            if let Some(count) = out.blanks.get_mut(name) {
-                *count += 1;
-            }
-            continue;
-        }
-        if let Ok(value) = trimmed.parse::<f64>() {
-            if value.is_finite() {
-                if let Some(slot) = out.plain.get_mut(name) {
-                    slot.0 += value;
-                    slot.1 += 1;
-                }
-                *out.squares.entry(name.clone()).or_insert(0.0) += value * value;
-                match out.bounds.entry(name.clone()) {
-                    std::collections::hash_map::Entry::Vacant(slot) => {
-                        slot.insert((value, value));
-                    }
-                    std::collections::hash_map::Entry::Occupied(mut slot) => {
-                        let bounds = slot.get_mut();
-                        bounds.0 = bounds.0.min(value);
-                        bounds.1 = bounds.1.max(value);
-                    }
-                }
-            }
+        if let Some(cell) = cells.get(*index) {
+            observe_plain(name, cell, out);
         }
     }
     for (column, criteria, index, spec) in filtered {
@@ -653,6 +711,12 @@ fn compute_totals(
     }
 
     while records.next_record(&mut record)? {
+        if filtered.is_empty()
+            && sets.is_empty()
+            && accumulate_plain_unquoted(&record, delimiter.byte(), &plain, &mut out)
+        {
+            continue;
+        }
         let text = String::from_utf8_lossy(&record);
         let fields = parse_csv_record_with(
             text.trim_end_matches(['\n', '\r']),
@@ -730,6 +794,26 @@ mod tests {
         )
         .unwrap();
         assert_eq!(cached.blanks.get("amount"), Some(&1));
+        std::fs::remove_file(&path).ok();
+        std::fs::remove_file(cache::sidecar(&path)).ok();
+    }
+
+    /// The quote-free fast path must fill the same bounds/squares/blanks the full parser
+    /// does, because min/max/stdev read them.
+    #[test]
+    fn the_unquoted_fast_path_keeps_bounds_squares_and_blanks() {
+        let path = write("bounds", "city,amount\nA,10\nB,30\nC,\n");
+        let totals = column_totals(
+            &path,
+            Delimiter::Comma,
+            QuoteStyle::Rfc4180,
+            &needs(&["amount"], &[]),
+        )
+        .unwrap();
+        assert_eq!(totals.plain.get("amount"), Some(&(40.0, 2)));
+        assert_eq!(totals.bounds.get("amount"), Some(&(10.0, 30.0)));
+        assert_eq!(totals.squares.get("amount"), Some(&1000.0));
+        assert_eq!(totals.blanks.get("amount"), Some(&1));
         std::fs::remove_file(&path).ok();
         std::fs::remove_file(cache::sidecar(&path)).ok();
     }
