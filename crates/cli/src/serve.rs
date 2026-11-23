@@ -8253,10 +8253,21 @@ fn mcp_run_pipeline_streaming(
         for line in reader.lines().map_while(Result::ok) {
             if line.starts_with("CSVX_STEP ") {
                 steps += 1;
-                let note = format!(
-                    r#"{{"jsonrpc":"2.0","method":"notifications/progress","params":{{"progressToken":{},"progress":{}}}}}"#,
-                    progress_token, steps
-                );
+                let total = line
+                    .split_whitespace()
+                    .last()
+                    .and_then(|value| value.split('/').nth(1))
+                    .and_then(|value| value.parse::<u64>().ok());
+                let note = match total {
+                    Some(total) => format!(
+                        r#"{{"jsonrpc":"2.0","method":"notifications/progress","params":{{"progressToken":{},"progress":{},"total":{}}}}}"#,
+                        progress_token, steps, total
+                    ),
+                    None => format!(
+                        r#"{{"jsonrpc":"2.0","method":"notifications/progress","params":{{"progressToken":{},"progress":{}}}}}"#,
+                        progress_token, steps
+                    ),
+                };
                 writeln!(stdout, "{note}").map_err(|error| error.to_string())?;
                 stdout.flush().map_err(|error| error.to_string())?;
             }

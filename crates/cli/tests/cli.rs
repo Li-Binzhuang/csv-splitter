@@ -3535,7 +3535,7 @@ fn pipeline_emits_progress_markers() {
         String::from_utf8_lossy(&result.stderr)
     );
     let stdout = String::from_utf8_lossy(&result.stdout);
-    assert!(stdout.contains("CSVX_STEP done a"), "{stdout}");
+    assert!(stdout.contains("CSVX_STEP done a 1/1"), "{stdout}");
 }
 
 /// A successful run persists the dependency edges next to the plan.

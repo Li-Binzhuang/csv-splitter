@@ -152,8 +152,9 @@
 - **MCP structured results**: every tool response carries
   `structuredContent: {"ok":bool,"code":"ok|tool_error|unknown_tool|unknown_job|path_escape|cli_error"}`
   next to text content; tests cover unknown_tool and path_escape.
-- **Stable step markers**: `--progress-markers` emits `CSVX_STEP done|skip <step>`;
-  MCP streaming parses that prefix instead of check glyphs. Test asserts the marker.
+- **Stable step markers**: `--progress-markers` emits
+  `CSVX_STEP done|skip <step> <i>/<n>`; MCP streaming parses it and includes `total`
+  in progress notifications. Test asserts the marker and total form.
 - **Pipeline step progress**: `csvx_pipeline_run` with a progressToken streams the
   CLI's step lines and emits one notification per step; without a token it keeps
   returning the JSON result.

@@ -9575,8 +9575,10 @@ fn cmd_pipeline(args: &[String]) -> i32 {
                                 .unwrap_or_default();
                             if progress_markers {
                                 println!(
-                                    "CSVX_STEP {} {name}",
-                                    if *fresh { "skip" } else { "done" }
+                                    "CSVX_STEP {} {name} {}/{}",
+                                    if *fresh { "skip" } else { "done" },
+                                    index + 1,
+                                    results.len()
                                 );
                             }
                             if *fresh {
@@ -9605,11 +9607,17 @@ fn cmd_pipeline(args: &[String]) -> i32 {
                         .collect();
                     println!(r#"{{"steps":[{}]}}"#, items.join(","));
                 } else {
-                    for (name, fresh, ms, _) in results {
+                    let total = results.len();
+                    for (index, (name, fresh, ms, _)) in results.iter().enumerate() {
                         if progress_markers {
-                            println!("CSVX_STEP {} {name}", if fresh { "skip" } else { "done" });
+                            println!(
+                                "CSVX_STEP {} {name} {}/{}",
+                                if *fresh { "skip" } else { "done" },
+                                index + 1,
+                                total
+                            );
                         }
-                        if fresh {
+                        if *fresh {
                             println!("↷ {name}");
                         } else {
                             println!("✓ {name} ({ms} ms)");
