@@ -3267,6 +3267,67 @@ fn view_marks_cells_that_match_a_formatting_rule() {
     assert!(!text.contains("matched the formatting"), "{text}");
 }
 
+/// Analysis reads the base file unless asked to materialise the journal: `--apply-edits`
+/// must make a pending edit move the group total.
+#[test]
+fn groupby_apply_edits_materialises_the_journal() {
+    let dir = TempDir::new("gbapply");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "city,amount\nCDMX,10\nPuebla,20\nCDMX,30\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "set",
+            input.to_str().unwrap(),
+            "--row",
+            "1",
+            "--col",
+            "amount",
+            "--value",
+            "100",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    let plain = dir.join("plain.csv");
+    let status = Command::new(bin())
+        .args([
+            "groupby",
+            input.to_str().unwrap(),
+            "--by",
+            "city",
+            "--agg",
+            "amount:sum",
+            "-o",
+            plain.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&plain).unwrap();
+    assert!(text.contains("CDMX,40"), "base file: {text}");
+
+    let edited = dir.join("edited.csv");
+    let status = Command::new(bin())
+        .args([
+            "groupby",
+            input.to_str().unwrap(),
+            "--by",
+            "city",
+            "--agg",
+            "amount:sum",
+            "--apply-edits",
+            "-o",
+            edited.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&edited).unwrap();
+    assert!(text.contains("CDMX,130"), "edited sheet: {text}");
+}
+
 /// groupby must also agree byte for byte through the CLI on every documented aggregate.
 #[test]
 fn groupby_engines_agree_through_the_cli() {
