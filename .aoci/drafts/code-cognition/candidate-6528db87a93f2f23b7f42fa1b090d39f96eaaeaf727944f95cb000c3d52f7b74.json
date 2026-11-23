@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "db6897475853b19befc3729d74127b2b94b9b3c5d80425696768f9f2fd610be4",
+  "batch_id": "6528db87a93f2f23b7f42fa1b090d39f96eaaeaf727944f95cb000c3d52f7b74",
+  "composite_identity": "b526160082ed563ef9c87d1830e9759649c91bcaeb21fe59b2055a122f00d896",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "48c0cb35f8e48c53e505357e221af74258a1742cabff8a000713fa24c3ba97d5",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "c9556645547f0c4068a7232a002828d3e29f2e7a5b81026a04606e7feebe17fa",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、sumproduct、文本函数、日期运算、原子 transaction 与整批撤销/重做，以及 pivot/groupby 全聚合的等价测试 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/totals.rs",
+      "path": "crates/core/src/formula/totals.rs",
+      "change": "update",
+      "source_sha256": "410edee308bf8c4ba8417de4182999b7d774d91c21e2ad7e4c757401cf33f7ec",
+      "existing_entry": "totals.rs[KP6L]: F:整列/条件/多条件聚合与 min-max/stdev/countblank 预扫及其缓存 | R:code:crates/core/src/formula/state.rs,code:crates/core/src/formula/mod.rs,code:crates/core/src/filter.rs,code:crates/core/src/index.rs,code:crates/core/src/csv_reader.rs | A:field_slices 零分配读单元格；累计 sum/count、bounds、squares、blanks；多条件 CompiledSet 更新 count/sum/min/max；条件文本含 * 或 ? 时编译为 Wildcard FilterSpec；t.csv.agg v6 按长度+mtime 失效 | S:set 的 min/max 与 count 同源，空集不能拿 0 当最小值；旧缓存忽略重算；侧车失效不得让导出失败"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "87ea54ce26d53ada4fd91cabd28ef23b6f06d5365f4970b78bffbcc5882e8dd7",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "c9556645547f0c4068a7232a002828d3e29f2e7a5b81026a04606e7feebe17fa",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、sumproduct、文本函数、日期运算、原子 transaction 与整批撤销/重做，以及 pivot/groupby 全聚合的等价测试 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "72acaca980b9025e87c3d66a38b3085f7251edd8ddbf3f38a6f0ff5aeedc50bd",
+      "object_ref": "code:crates/core/src/formula/totals.rs",
+      "path": "crates/core/src/formula/totals.rs",
+      "change": "update",
+      "source_sha256": "410edee308bf8c4ba8417de4182999b7d774d91c21e2ad7e4c757401cf33f7ec",
+      "existing_entry": "totals.rs[KP6L]: F:整列/条件/多条件聚合与 min-max/stdev/countblank 预扫及其缓存 | R:code:crates/core/src/formula/state.rs,code:crates/core/src/formula/mod.rs,code:crates/core/src/filter.rs,code:crates/core/src/index.rs,code:crates/core/src/csv_reader.rs | A:field_slices 零分配读单元格；累计 sum/count、bounds、squares、blanks；多条件 CompiledSet 更新 count/sum/min/max；条件文本含 * 或 ? 时编译为 Wildcard FilterSpec；t.csv.agg v6 按长度+mtime 失效 | S:set 的 min/max 与 count 同源，空集不能拿 0 当最小值；旧缓存忽略重算；侧车失效不得让导出失败"
+    }
+  ]
+}
