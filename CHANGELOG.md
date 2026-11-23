@@ -75,6 +75,8 @@
 - **`percentile(range, p)`**: the p-quantile (0..1) of a same-row range with
   PERCENTILE.INC interpolation; text and blanks are ignored, p outside 0..1 is
   `#VALUE!`.
+- **`sumsq` / `product`**: one or more same-row ranges, skipping text and blanks;
+  product of no numeric cell is `#VALUE!` rather than an invented 1.
 - **`large(range, k)` / `small(range, k)`**: the k-th largest/smallest value of a
   same-row range (k is 1-based and truncated toward zero); text and blanks are ignored,
   and k outside 1..n is `#VALUE!`.

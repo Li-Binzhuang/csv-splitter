@@ -111,6 +111,7 @@
 文本 & "字符串" left right mid trim replace substitute find search proper rept
      concat concatenate textjoin char code upper lower len value
 数字 round roundup rounddown abs floor ceil int sqrt mod min max sign power exp ln log
+     sumsq(A2:C2) product(A2:C2)        ← 同行区间的平方和/乘积（文本忽略，全无数字报错）
 日期 year(d) month(d) day(d) date(y,m,d) datestring(d)  ── ISO 前缀（2024-03-15，带时间也行）
      edate(d,n) eomonth(d,n) weekday(d) weeknum(d) networkdays(a,b) workday(d,n) days(end,start)  ── 加减月/月末/星期几(周日=1)/第几周/工作日数/工作日推进/日差；仍返回 ISO 文本
 其他 row lag(col[,n]) running_total(col)

@@ -169,6 +169,39 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number(total)
         }
+        // SUMSQ/PRODUCT over one or more same-row ranges. Text and blanks are skipped;
+        // no numeric cell at all is #VALUE! (an empty product has no meaning here).
+        "sumsq" | "product" => {
+            if args.is_empty() {
+                return Value::Error;
+            }
+            let mut squares = 0.0;
+            let mut product = 1.0;
+            let mut count = 0usize;
+            for arg in args {
+                let Expr::Range { from, to } = arg else {
+                    return Value::Error;
+                };
+                let Some(cells) = range_cells(from, to, ctx) else {
+                    return Value::Error;
+                };
+                for cell in cells {
+                    let Ok(value) = cell.trim().parse::<f64>() else {
+                        continue;
+                    };
+                    if !value.is_finite() {
+                        continue;
+                    }
+                    count += 1;
+                    squares += value * value;
+                    product *= value;
+                }
+            }
+            if count == 0 {
+                return Value::Error;
+            }
+            Value::Number(if lower == "sumsq" { squares } else { product })
+        }
         // COUNTBLANK: empty cells in a column or a same-row range.
         "countblank" => {
             if let Some(Expr::Range { from, to }) = args.first() {

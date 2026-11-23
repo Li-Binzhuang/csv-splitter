@@ -1524,6 +1524,54 @@ mod tests {
     }
 
     #[test]
+    fn sumsq_and_product_read_same_row_ranges() {
+        let columns = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        let mut cells = HashMap::new();
+        for (name, value) in [("a", "10"), ("b", "3"), ("c", "7")] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        assert_eq!(
+            Formula::parse("sumsq(A2:C2)")
+                .unwrap()
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "158"
+        );
+        assert_eq!(
+            Formula::parse("product(A2:C2)")
+                .unwrap()
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "210"
+        );
+        cells.insert("b".to_string(), "n/a".to_string());
+        assert_eq!(
+            Formula::parse("sumsq(A2:C2)")
+                .unwrap()
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "149",
+            "text is skipped"
+        );
+        assert_eq!(
+            Formula::parse("product(A2:C2)")
+                .unwrap()
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "70"
+        );
+        cells.insert("a".to_string(), "n/a".to_string());
+        assert_eq!(
+            Formula::parse("sumsq(A2:B2)")
+                .unwrap()
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!",
+            "no numeric cell has no sum of squares"
+        );
+    }
+
+    #[test]
     fn large_and_small_read_a_same_row_range() {
         let columns = vec!["a".to_string(), "b".to_string(), "c".to_string()];
         let mut cells = HashMap::new();
