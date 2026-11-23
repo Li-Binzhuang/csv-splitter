@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-23T15:03:22Z",
+  "updated_at": "2026-11-23T15:06:07Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -52,9 +52,9 @@
     },
     "CHANGELOG.md": {
       "role": "index",
-      "sha256": "70bdd70cd07d26a0c62b1d64db464a5fdecfd9bbec604e8b175b1842599957a4",
-      "size": 237171,
-      "normalized_sha256": "70bdd70cd07d26a0c62b1d64db464a5fdecfd9bbec604e8b175b1842599957a4"
+      "sha256": "be06ba863624c2f67cf1859411e04d16866229b17c7437fc1df5ea86ba217486",
+      "size": 237218,
+      "normalized_sha256": "be06ba863624c2f67cf1859411e04d16866229b17c7437fc1df5ea86ba217486"
     },
     "Cargo.lock": {
       "role": "observe",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "325a09fb40699baaf95a3a3943eb71ce2d659793f7b55fc89a75a0d136cc940c",
-      "size": 51900,
-      "normalized_sha256": "325a09fb40699baaf95a3a3943eb71ce2d659793f7b55fc89a75a0d136cc940c"
+      "sha256": "9153106eb3d04e3eaae45bb11301aa01e815804344741299dca7942d4f9fd09b",
+      "size": 51981,
+      "normalized_sha256": "9153106eb3d04e3eaae45bb11301aa01e815804344741299dca7942d4f9fd09b"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -634,9 +634,9 @@
     },
     "docs/RELEASE_CHECKLIST.md": {
       "role": "index",
-      "sha256": "3ba46698d5ed46899749fac9e84eec9518a113688ce466c6c47669e937a9d065",
-      "size": 1853,
-      "normalized_sha256": "3ba46698d5ed46899749fac9e84eec9518a113688ce466c6c47669e937a9d065"
+      "sha256": "c17bd2ed1afacca0be6cdb932e926ac9f6c20384c13bd448a85839b06d3274fe",
+      "size": 1881,
+      "normalized_sha256": "c17bd2ed1afacca0be6cdb932e926ac9f6c20384c13bd448a85839b06d3274fe"
     },
     "docs/ROADMAP.md": {
       "role": "index",
@@ -774,9 +774,9 @@
     },
     "scripts/package_release.sh": {
       "role": "index",
-      "sha256": "ff058fd53c085331a86fb0462dcca45f1a0b17b53fbe388f72c1541c5de245db",
-      "size": 1111,
-      "normalized_sha256": "ff058fd53c085331a86fb0462dcca45f1a0b17b53fbe388f72c1541c5de245db"
+      "sha256": "f1bc57c99c99679c200922f305a950ddd80b40b2516bc6d39903232b63960375",
+      "size": 1159,
+      "normalized_sha256": "f1bc57c99c99679c200922f305a950ddd80b40b2516bc6d39903232b63960375"
     },
     "scripts/pilot_report.py": {
       "role": "index",
