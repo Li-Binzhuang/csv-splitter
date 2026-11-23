@@ -1,0 +1,91 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "1d481d60e0af17d528483050bfd72d2807f41930860b3f68ce84fbd62ad061bb",
+  "batch_id": "744c2bfdbaf1ad942b7ba2689b9327111e72b5cb26c2c4a3b2ce1a865ff9c020",
+  "composite_identity": "3cf7cf7dfb6320be25be4f67316c726c151305586e57e9a3c7382c0b871dfe8a",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "64b31cbbefbe992b951cab54a488e6415bbc1d00405e33a3b90a1180bc8d62b7",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "dd5e6373bbc476d676ad7ff86927cb35de4e5b12cc736058ca2c253972166467",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过、SQL lookup 无上限、mcp 读写与 job、官方 MCP SDK 联调、100 GB profile、81 GB 演练、端到端 demo | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "3ff62f89191369345345c8c3d4cc1964dd4336d136c74ea982aaa0d04e5ba62d",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；pipeline run/status；mcp --root 调 serve::run_mcp_stdio；convert/lookup/analyze 共享解析；帮助表列全 flag | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state；mcp stdout 只走 JSON-RPC 协议"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "faa84512dc76374d59814ea2e14708ff5ba44ad71bb95ce601ea81ee46fe4ed6",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过；mcp 读写+job 与官方 SDK 1.32.2 联调；C 100 GB 与 81 GB 演练；端到端 demo；64 GB 自适应 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "b1afb9836cff8630eac628bbf6a8c45011e8b9c620d48d0646b2f9625df61e7c",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5；A Pipeline；B MCP 读写+job 与官方 SDK 1.32.2；C 100 GB/81 GB 演练达标；64 GB 自适应；端到端 demo；下一步商业化/真实数据 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/OUTREACH.md",
+      "path": "docs/OUTREACH.md",
+      "change": "create",
+      "source_sha256": "c677c28601f6a72623ab1c7e844db0db1737e8946e3f97ba1e8063ad0595ac58"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "d06c7a50e90a35289462885a3c5d3a680018390b4a98397bdef516f3fa043380",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "dd5e6373bbc476d676ad7ff86927cb35de4e5b12cc736058ca2c253972166467",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过、SQL lookup 无上限、mcp 读写与 job、官方 MCP SDK 联调、100 GB profile、81 GB 演练、端到端 demo | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "28d377ed526db2c426b6a04e270e4e2ff2f3027a3acda891010c1498e7c6797f",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "3ff62f89191369345345c8c3d4cc1964dd4336d136c74ea982aaa0d04e5ba62d",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；pipeline run/status；mcp --root 调 serve::run_mcp_stdio；convert/lookup/analyze 共享解析；帮助表列全 flag | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state；mcp stdout 只走 JSON-RPC 协议"
+    },
+    {
+      "candidate_id": "223de4593dbf8d1961e6396193356912acc6a31fbcdf9811d0ba7ff2323ea9a6",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "faa84512dc76374d59814ea2e14708ff5ba44ad71bb95ce601ea81ee46fe4ed6",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过；mcp 读写+job 与官方 SDK 1.32.2 联调；C 100 GB 与 81 GB 演练；端到端 demo；64 GB 自适应 | S:-"
+    },
+    {
+      "candidate_id": "bfc0a6dbd9dfd114904714968f767076eb7f9d109bcb170430d60e5c0bdb758f",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "b1afb9836cff8630eac628bbf6a8c45011e8b9c620d48d0646b2f9625df61e7c",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5；A Pipeline；B MCP 读写+job 与官方 SDK 1.32.2；C 100 GB/81 GB 演练达标；64 GB 自适应；端到端 demo；下一步商业化/真实数据 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    },
+    {
+      "candidate_id": "dda0191d9449e14c15f51d14fdaf0a6d7531b5bb8c51db1a239a2e519dda4390",
+      "object_ref": "code:docs/OUTREACH.md",
+      "path": "docs/OUTREACH.md",
+      "change": "create",
+      "source_sha256": "c677c28601f6a72623ab1c7e844db0db1737e8946e3f97ba1e8063ad0595ac58"
+    }
+  ]
+}
