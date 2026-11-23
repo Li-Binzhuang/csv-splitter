@@ -8812,6 +8812,15 @@ fn restore_dag_outputs(touched: &[(std::path::PathBuf, Option<std::path::PathBuf
     }
 }
 
+fn print_step_marker(name: &str, fresh: bool, index: usize, total: usize) {
+    println!(
+        "CSVX_STEP {} {name} {}/{}",
+        if fresh { "skip" } else { "done" },
+        index + 1,
+        total
+    );
+}
+
 #[allow(clippy::too_many_arguments)]
 fn run_pipeline_dag(
     steps: &[PipelineStep],
@@ -8823,6 +8832,7 @@ fn run_pipeline_dag(
     jobs: usize,
     previous: &[PipelineStateRow],
     state_path: &std::path::Path,
+    progress_markers: bool,
 ) -> std::io::Result<PipelineResults> {
     use std::collections::HashSet;
     let dependencies: Vec<Vec<usize>> = (0..steps.len())
@@ -8911,6 +8921,9 @@ fn run_pipeline_dag(
             }
         };
         for (offset, (name, fresh, ms, output, state_row)) in outcomes.into_iter().enumerate() {
+            if progress_markers {
+                print_step_marker(&name, fresh, wave[offset], steps.len());
+            }
             results.push((name, fresh, ms, output));
             state_rows.push(state_row);
             done.insert(wave[offset]);
@@ -8962,6 +8975,7 @@ fn run_pipeline_plan(
     dag: bool,
     clean: bool,
     unlock: bool,
+    progress_markers: bool,
 ) -> std::io::Result<(PipelineResults, PipelineLineage)> {
     let root = root
         .map(std::path::Path::to_path_buf)
@@ -9128,6 +9142,7 @@ fn run_pipeline_plan(
             jobs,
             &previous,
             &state_path,
+            progress_markers,
         )?;
         let lineage = steps
             .iter()
@@ -9176,6 +9191,9 @@ fn run_pipeline_plan(
             for (offset, (_, fresh_row)) in fresh_rows.into_iter().enumerate() {
                 let step = &steps[index + offset];
                 if let Some(row) = fresh_row {
+                    if !dry_run && progress_markers {
+                        print_step_marker(step.name.as_str(), true, index + offset, steps.len());
+                    }
                     results.push((
                         step.name.clone(),
                         true,
@@ -9186,6 +9204,9 @@ fn run_pipeline_plan(
                 } else {
                     let (name, fresh, ms, output, state_row) =
                         outcomes.next().expect("one outcome per stale step");
+                    if !dry_run && progress_markers {
+                        print_step_marker(&name, fresh, index + offset, steps.len());
+                    }
                     results.push((name, fresh, ms, output));
                     state_rows.push(state_row);
                 }
@@ -9265,6 +9286,9 @@ fn run_pipeline_plan(
         if fresh {
             let row = prior.expect("fresh requires a prior state row");
             let output_string = step.output.display().to_string();
+            if !dry_run && progress_markers {
+                print_step_marker(&step.name, true, index, steps.len());
+            }
             results.push((step.name.clone(), true, 0, output_string.clone()));
             state_rows.push(PipelineStateRow {
                 name: step.name.clone(),
@@ -9395,6 +9419,9 @@ fn run_pipeline_plan(
             input_stamp,
             output_stamp: pipeline_file_stamp(&step.output)?,
         });
+        if !dry_run && progress_markers {
+            print_step_marker(&step.name, false, index, steps.len());
+        }
         results.push((
             step.name.clone(),
             false,
@@ -9540,6 +9567,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             dag,
             clean,
             unlock,
+            progress_markers,
         ) {
             Ok((results, lineage)) => {
                 if dry_run {
@@ -9607,16 +9635,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
                         .collect();
                     println!(r#"{{"steps":[{}]}}"#, items.join(","));
                 } else {
-                    let total = results.len();
-                    for (index, (name, fresh, ms, _)) in results.iter().enumerate() {
-                        if progress_markers {
-                            println!(
-                                "CSVX_STEP {} {name} {}/{}",
-                                if *fresh { "skip" } else { "done" },
-                                index + 1,
-                                total
-                            );
-                        }
+                    for (name, fresh, ms, _) in results.iter() {
                         if *fresh {
                             println!("↷ {name}");
                         } else {

@@ -3524,7 +3524,6 @@ fn pipeline_emits_progress_markers() {
             dir.join("plan.csv").to_str().unwrap(),
             "--root",
             dir.0.to_str().unwrap(),
-            "--dry-run",
             "--progress-markers",
         ])
         .output()
