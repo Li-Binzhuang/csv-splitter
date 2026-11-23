@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "b47c1063e56d0ea2c6ea8d350d26b48a2cf16aac7ad24bef156cd1d7770c3288",
+  "batch_id": "0a627a93eb77028c0f06c95ff7e505d8619e175012f53b5dcdb286d3f502112d",
+  "composite_identity": "64a2565f41c11fac328516c207f554ff53ac2fee6e4a009d9b6b1b905e415cf3",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "d90b6aaf5a330927f447f54f96a838ae3808f8ccd52dd755d9064594641f96bf",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "979e3ed702d4410214004db7429632dd20b0123ca3b60920ca19bfc9afb0bffa",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录 filter -o 并行、字节谓词、31 GB、edit compact、book --plan、analyze --quality、convert --format（TSV/NDJSON/Parquet 往返；2.2 GB CSV→Parquet 5.36 s、回程 2.15 s、逐字节一致；xlsx 拒绝）、预扫 25–30 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "74cf299983506ec4720f06520403b83dc0f4f4d3566066e3a570559dd1c46a59",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；edit compact/undo 跨压实、加载前 recover；book --plan；analyze --quality/--key/--group/--markdown；convert 新增 --format tsv/ndjson/parquet/csv 与按输入类型选 delim；帮助表列全 flag | S:新增 flag 必须写进 print_command_help；错误退出码映射固定；标记消费后必须写回 journal"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "4b69c6dfbcce664b8aba02941deb617b4a9b13db165de2a1cce4a33bd72fd3ae",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表、大文件边界；阶段 1–5 已闭环（5 仅非 xlsx）；edit compact；book --plan；analyze --quality；convert --format（TSV/NDJSON/Parquet 往返、2.2 GB 5.36/2.15 s、xlsx 禁用） | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "0057a7d785b9261003cd7da2597708c8c02a2533d51e47109f65de1cb37ba747",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示与实测范围；csvx 4.2.0；阶段 1–5 已闭环（xlsx 挂起）：阶段 5 convert --format CSV/TSV/NDJSON/Parquet 往返（2.2 GB 5.36/2.15 s、逐字节一致、xlsx 拒绝） | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围，容量先看行数"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "b6df1323740db44ffbedec43c4c2a58e83d4ebf030d189417a63ac32a6396413",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "979e3ed702d4410214004db7429632dd20b0123ca3b60920ca19bfc9afb0bffa",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录 filter -o 并行、字节谓词、31 GB、edit compact、book --plan、analyze --quality、convert --format（TSV/NDJSON/Parquet 往返；2.2 GB CSV→Parquet 5.36 s、回程 2.15 s、逐字节一致；xlsx 拒绝）、预扫 25–30 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "7af497dcb0b97dc6c9752847f1f9b7305b4a35ad2aee25f7e99e2d7835ee382a",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "74cf299983506ec4720f06520403b83dc0f4f4d3566066e3a570559dd1c46a59",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；edit compact/undo 跨压实、加载前 recover；book --plan；analyze --quality/--key/--group/--markdown；convert 新增 --format tsv/ndjson/parquet/csv 与按输入类型选 delim；帮助表列全 flag | S:新增 flag 必须写进 print_command_help；错误退出码映射固定；标记消费后必须写回 journal"
+    },
+    {
+      "candidate_id": "45663af0ffd20d70346757b60a2ba875c6b86b378f37771c2e68dc5be56c225d",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "4b69c6dfbcce664b8aba02941deb617b4a9b13db165de2a1cce4a33bd72fd3ae",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表、大文件边界；阶段 1–5 已闭环（5 仅非 xlsx）；edit compact；book --plan；analyze --quality；convert --format（TSV/NDJSON/Parquet 往返、2.2 GB 5.36/2.15 s、xlsx 禁用） | S:-"
+    },
+    {
+      "candidate_id": "ac41708092aa185d86176d5d4029e3111abd25548b6274f1b813f3d60f62e0c2",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "0057a7d785b9261003cd7da2597708c8c02a2533d51e47109f65de1cb37ba747",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示与实测范围；csvx 4.2.0；阶段 1–5 已闭环（xlsx 挂起）：阶段 5 convert --format CSV/TSV/NDJSON/Parquet 往返（2.2 GB 5.36/2.15 s、逐字节一致、xlsx 拒绝） | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围，容量先看行数"
+    }
+  ]
+}
