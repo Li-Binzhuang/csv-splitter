@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "b9ade110e0a747010bff5f7bd7d2aefd87a7b5554b96bfe0cf3b4e2ac1d19ba6",
+  "batch_id": "fefc3cd3e1787bef9740f1e5f7948fd0418791d2bc5c4a27a387bb9debcb55cd",
+  "composite_identity": "30e3b6f8824494075b2aeae0266129aa20799e0d17f8edfd165878f601163310",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "4f1e4ffd012a4e49c599d8df58a2b70d52b73edf84b9978d08319bf39c1b4039",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "cd917d813dc8b861dea5fc4931ffa4f437b1ae9ed4bdd05df0344321db32756a",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-23 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 16 工具与 SDK progress/status/gzip；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程、缓存命中监控、阈值、发布自动化为后续；Ubuntu/Windows CI 已有，macOS gate 跑绿 12m21s | S:未测数字不写；价格/SLA 需用户确认；随离线包分发；MCP 缓存 gzip/zst/bz2 已验证"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "03df3ca593ac2c10f333076d0bd4e51427a9b6a57a690646cccc77a188d97963",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "cd917d813dc8b861dea5fc4931ffa4f437b1ae9ed4bdd05df0344321db32756a",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-23 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 16 工具与 SDK progress/status/gzip；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程、缓存命中监控、阈值、发布自动化为后续；Ubuntu/Windows CI 已有，macOS gate 跑绿 12m21s | S:未测数字不写；价格/SLA 需用户确认；随离线包分发；MCP 缓存 gzip/zst/bz2 已验证"
+    }
+  ]
+}
