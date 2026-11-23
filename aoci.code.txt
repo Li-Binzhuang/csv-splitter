@@ -4,7 +4,7 @@
 .gitattributes[FV4T]: F:声明所有文本按 LF 检出，保证 AOCI 基线与跨平台检出逐字节一致 | R:- | A:唯一规则 `* text=auto eol=lf`；覆盖 Windows autocrlf 的行尾重写，否则整棵树会被基线和漂移检查判成 stale；二进制由 git 自动探测、不改写 | S:基线按原始字节计算，行尾被平台改写会让全部索引失真，所以这里必须强制 LF
 .gitignore[FV4T]: F:忽略构建产物、生成侧车与本地杂物 | R:- | A:忽略 `/target`、编辑器 swap、`.DS_Store`、发布打包目录、以及每个数据文件自己的生成物（`*.idx`、`*.journal`、`*.parquet`、`*.agg`）；刻意不忽略 `.codegraph/` 与 `.aoci/`——本仓要求把两套索引的中间过程一起入库 | S:侧车属生成物，不应该因为跑过一次 demo 就进版本库；而 `.codegraph/codegraph.db` 是可重建二进制，入库带来的历史体积增长是有意取舍
 AGENTS.md[SV6S]: F:仓库级 Agent 指令：AOCI 认知层的接入与使用原则 | R:code:aoci.txt,code:aoci.meta.txt,code:aoci.code.txt | A:规定“模型生成、模型读取”闭环，何时读 rules/overview/maintain，以及收尾维护一次的纪律；不重复 CLI 手册 | S:机器事实以 Guide、Schema 与 Validator 为准，本文件不得覆盖；上下文压缩后的 handoff 不得携带索引语义，必须重新完整读取并认证
-CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、行内多条件聚合、median 区间、文本函数、日期运算、原子 transaction 与整批撤销/重做、预扫冷启动约 25 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败
+CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、行内多条件聚合、median 区间、文本函数、日期运算、原子 transaction 与整批撤销/重做、预扫冷启动约 25–30 ms（两次实测） | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败
 Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本与 crate 元数据、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 crates/core 与 crates/cli；workspace.dependencies 以 csvx-core 为本地 crate 键；workspace.package 持有版本 4.2.0、一句话定位、仓库地址与 MIT 许可，是发布真相源；二进制的 --version 与 tag 校验都以它为准 | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
 README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部定位与 Rust 徽章；快速开始指向 scripts/demo.sh；公式节说明聚合与 .agg 缓存；性能表为最终二进制多轮实测（2.1 GB 过滤 2.3 s/77 MB、搜索 2.4 s/75 MB；11.2 GB 过滤 13.2–13.9 s/79 MB、搜索 13.8–14.6 s/78 MB） | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；含 scripts/ 的行不参与 flag 校验；性能数字必须来自实测，波动范围直接写范围
@@ -101,7 +101,7 @@ HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本�
 INTEGRATION.md[SN6S]: F:前端接入走查：从起服务到翻行、改值、多文件的一页纸 | R:code:docs/API.md | A:按 0–7 步给出真实可跑的调用（起服务、打开文件、画一屏、读写单元格含 expect、行身份、写后、多文件）；每条都对应 crates/cli/tests/serve.rs 的测试 | S:-
 ROADMAP.md[SU5S]: F:路线图：已完成、进行中与明确不做的范围 | R:code:docs/CAPABILITIES.md | A:与能力清单分工；M5 记录 filter/search 分段并行、11.2 GB 演练，并把可续扫游标页标为已完成（GBK 仍整页扫） | S:-
 TROUBLESHOOTING.md[SO6S]: F:排障：常见症状、原因与处理，以及如何读 CI 失败 | R:code:docs/CI.md | A:含 annotation 读取命令与历史根因（超时测试竞态、mingw 线程模型） | S:-
-BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：已实测优势与未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 区分整列/同行/跨行：冷启动预扫实测约 25 ms（冷导出 0.12 s − warm 0.09 s），跨行需按列前缀和（5000 万行每列约 400 MB）故暂不做；缺口 5 已含整批撤销与重做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据
+BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：已实测优势与未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 区分整列/同行/跨行：冷启动预扫实测约 25–30 ms（两次：0.11/0.08 与 0.12/0.09，8 线程中位数），跨行需按列前缀和（5000 万行每列约 400 MB）故暂不做；缺口 5 已含整批撤销与重做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据
 
 ===/<repository>/scripts/===
 backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换、自引用拒绝与请求上限；BIN 默认取 ./target/debug/csvx | S:脚本默认跑 target/debug 的二进制，改了代码只重建 release 会在这里看到旧行为；裸 wait 会连自己起的 server 一起等，必须收集 PID 逐个等待
