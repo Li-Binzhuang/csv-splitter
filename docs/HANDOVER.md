@@ -108,6 +108,13 @@ serve 端到端压测；`.idx` 已随 `.base` 归档并在跨界 undo 恢复。
 55,000,001 行，首行 `o1,...,Customer-1,Region-1`；重跑 sha256 一致、无 `.booktmp` 残留。
 慢于单次 lookup 的原因是要落一次中间文件（链式两遍读写）；功能正确性与内存已达标。
 
+## 质量报告（阶段 4，已完成）
+
+`analyze FILE --quality [--key col] [--group col] [--json|--markdown]`：候选键、重复/空键、
+mixed-type、数值 mean ± 3σ 离群估计、分组组数/最大组占比/空组；单组或占比 ≥80% 告警。
+固定 fixture 的 JSON/Markdown 期望值已入 CLI 测试；2.03 GB / 5600 万行 drill：**18.71 s**、
+RSS **17 MB**，`key` 报 55,999,000 重复、`city` 报 5,600,000 空值，候选键为空（id 被 cap 截断）。
+
 ## 对 Excel / WPS 的覆盖
 
 | 电子表格操作 | 这里怎么做的 |

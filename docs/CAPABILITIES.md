@@ -165,7 +165,8 @@ output,joined,orders,joined.csv,,,,,"customer,region"
 - 键检查：`--key key` 报重复值与空键（distinct 截断时明确写“≥”）。
 - 类型冲突：同列既有数字又有非数字时 `mixedTypes=true`，并列出数量。
 - 数值离群：均值和总体标准差，按 reservoir 估计 mean ± 3σ 之外的数量。
-- 空值率与 ragged 行数；JSON 含 `quality.candidateKeys/checks/findings`，Markdown 输出表格 + findings。
+- 分组质量：`--group col` 报组数、空组、最大组占比；单组或占比 ≥80% 告警，distinct 截断时标下界。
+- 空值率与 ragged 行数；JSON 含 `quality.candidateKeys/checks/groups/findings`，Markdown 输出表格 + findings。
 
 2.03 GB / 5600 万行 drill（2026-11-23）：analyze --quality **18.71 s**，RSS **17 MB**；
 `key` 检查报 55,999,000 个重复值，`city` 报 5,600,000 个空值；候选键为空（id 的 distinct 被 cap 截断）。

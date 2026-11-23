@@ -2413,6 +2413,46 @@ fn analyze_quality_reports_duplicate_keys_and_candidates() {
     assert_eq!(bad.status.code(), Some(2));
 }
 
+/// Group quality reports the group count, top share and a dominance warning.
+#[test]
+fn analyze_quality_reports_group_dominance() {
+    let dir = TempDir::new("quality-group");
+    let base = dir.join("g.csv");
+    std::fs::write(&base, "id,city\n1,CDMX\n2,CDMX\n3,CDMX\n4,CDMX\n5,Puebla\n").unwrap();
+    let output = Command::new(bin())
+        .args([
+            "analyze",
+            base.to_str().unwrap(),
+            "--quality",
+            "--json",
+            "--group",
+            "city",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let json = String::from_utf8_lossy(&output.stdout);
+    assert!(json.contains(r#""column":"city","groups":2"#), "{json}");
+    assert!(json.contains(r#""topShare":0.800"#), "{json}");
+    assert!(json.contains(r#""severity":"warning""#), "{json}");
+
+    let markdown = Command::new(bin())
+        .args([
+            "analyze",
+            base.to_str().unwrap(),
+            "--quality",
+            "--markdown",
+            "--group",
+            "city",
+        ])
+        .output()
+        .unwrap();
+    assert!(markdown.status.success());
+    let text = String::from_utf8_lossy(&markdown.stdout);
+    assert!(text.contains("## Groups"), "{text}");
+    assert!(text.contains("dominant group"), "{text}");
+}
+
 /// A bulk edit is one journal entry however many rows it changes.
 #[test]
 fn bulk_edit_matches_a_filter_and_stays_one_operation() {

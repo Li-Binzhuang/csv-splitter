@@ -104,6 +104,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
                 "--distinct-cap",
                 "Stop counting distinct values past this many",
             ),
+            ("--group", "Grouping column for group-quality checks"),
             ("--json", "Emit JSON"),
             ("--key", "Column to check for uniqueness (comma separated)"),
             (
@@ -7459,6 +7460,7 @@ fn cmd_edit(args: &[String]) -> i32 {
 fn quality_checks(
     profiles: &[csvx_core::profile::ColumnProfile],
     keys: &[String],
+    groups: &[String],
 ) -> (Vec<String>, Vec<(String, String, String)>) {
     // (JSON check object, (severity, column, message))
     let mut checks = Vec::new();
@@ -7538,11 +7540,49 @@ fn quality_checks(
             ));
         }
     }
+    for group in groups {
+        if let Some(profile) = profiles.iter().find(|profile| &profile.name == group) {
+            if profile.distinct_truncated {
+                findings.push((
+                    "info".to_string(),
+                    group.clone(),
+                    format!(
+                        "distinct count capped at {} groups (lower bound)",
+                        profile.distinct
+                    ),
+                ));
+            } else if profile.non_empty > 0 {
+                if profile.distinct == 1 {
+                    findings.push((
+                        "warning".to_string(),
+                        group.clone(),
+                        "only one group value (constant column)".to_string(),
+                    ));
+                } else if let Some((value, count)) = profile.top.first() {
+                    let share = *count as f64 / profile.non_empty as f64;
+                    if share >= 0.8 {
+                        findings.push((
+                            "warning".to_string(),
+                            group.clone(),
+                            format!(
+                                "dominant group {value:?} holds {:.1}% of rows",
+                                share * 100.0
+                            ),
+                        ));
+                    }
+                }
+            }
+        }
+    }
     (checks, findings)
 }
 
-fn quality_json(profiles: &[csvx_core::profile::ColumnProfile], keys: &[String]) -> String {
-    let (checks, findings) = quality_checks(profiles, keys);
+fn quality_json(
+    profiles: &[csvx_core::profile::ColumnProfile],
+    keys: &[String],
+    groups: &[String],
+) -> String {
+    let (checks, findings) = quality_checks(profiles, keys, groups);
     let candidates: Vec<String> = profiles
         .iter()
         .filter(|profile| {
@@ -7553,6 +7593,29 @@ fn quality_json(profiles: &[csvx_core::profile::ColumnProfile], keys: &[String])
         .map(|profile| json_quote(&profile.name))
         .collect();
     let keys_json: Vec<String> = keys.iter().map(|key| json_quote(key)).collect();
+    let groups_json: Vec<String> = groups
+        .iter()
+        .filter_map(|name| profiles.iter().find(|profile| &profile.name == name))
+        .map(|profile| {
+            let share = if profile.non_empty > 0 && !profile.distinct_truncated {
+                profile
+                    .top
+                    .first()
+                    .map(|(_, count)| *count as f64 / profile.non_empty as f64)
+                    .unwrap_or(0.0)
+            } else {
+                0.0
+            };
+            format!(
+                r#"{{"column":"{}","groups":{},"empty":{},"topShare":{:.3},"truncated":{}}}"#,
+                json_quote(&profile.name).trim_matches('"'),
+                profile.distinct,
+                profile.empty,
+                share,
+                profile.distinct_truncated
+            )
+        })
+        .collect();
     let findings_json: Vec<String> = findings
         .iter()
         .map(|(severity, column, message)| {
@@ -7565,15 +7628,20 @@ fn quality_json(profiles: &[csvx_core::profile::ColumnProfile], keys: &[String])
         })
         .collect();
     format!(
-        r#"{{"keys":[{}],"candidateKeys":[{}],"checks":[{}],"findings":[{}]}}"#,
+        r#"{{"keys":[{}],"candidateKeys":[{}],"checks":[{}],"groups":[{}],"findings":[{}]}}"#,
         keys_json.join(","),
         candidates.join(","),
         checks.join(","),
+        groups_json.join(","),
         findings_json.join(",")
     )
 }
 
-fn print_quality_text(profiles: &[csvx_core::profile::ColumnProfile], keys: &[String]) {
+fn print_quality_text(
+    profiles: &[csvx_core::profile::ColumnProfile],
+    keys: &[String],
+    groups: &[String],
+) {
     let rows = profiles.first().map(|profile| profile.rows).unwrap_or(0);
     let ragged = profiles.first().map(|profile| profile.ragged).unwrap_or(0);
     println!(
@@ -7597,7 +7665,28 @@ fn print_quality_text(profiles: &[csvx_core::profile::ColumnProfile], keys: &[St
             candidates.join(", ")
         }
     );
-    let (_, findings) = quality_checks(profiles, keys);
+    for group in groups {
+        if let Some(profile) = profiles.iter().find(|profile| &profile.name == group) {
+            let share = if profile.non_empty > 0 && !profile.distinct_truncated {
+                profile
+                    .top
+                    .first()
+                    .map(|(_, count)| *count as f64 / profile.non_empty as f64)
+                    .unwrap_or(0.0)
+            } else {
+                0.0
+            };
+            println!(
+                "  group {}: {}{} groups, top share {:.1}%, empty {}",
+                group,
+                profile.distinct,
+                if profile.distinct_truncated { "+" } else { "" },
+                share * 100.0,
+                profile.empty
+            );
+        }
+    }
+    let (_, findings) = quality_checks(profiles, keys, groups);
     for (severity, column, message) in findings {
         println!("  {severity:>7}  {column}: {message}");
     }
@@ -7607,6 +7696,7 @@ fn print_quality_markdown(
     input: &std::path::Path,
     profiles: &[csvx_core::profile::ColumnProfile],
     keys: &[String],
+    groups: &[String],
 ) {
     let rows = profiles.first().map(|profile| profile.rows).unwrap_or(0);
     let ragged = profiles.first().map(|profile| profile.ragged).unwrap_or(0);
@@ -7657,7 +7747,35 @@ fn print_quality_markdown(
         }
     );
     println!();
-    let (_, findings) = quality_checks(profiles, keys);
+    if !groups.is_empty() {
+        println!("## Groups");
+        println!();
+        println!("| column | groups | empty | top share |");
+        println!("|---|---:|---:|---:|");
+        for group in groups {
+            if let Some(profile) = profiles.iter().find(|profile| &profile.name == group) {
+                let share = if profile.non_empty > 0 && !profile.distinct_truncated {
+                    profile
+                        .top
+                        .first()
+                        .map(|(_, count)| *count as f64 / profile.non_empty as f64)
+                        .unwrap_or(0.0)
+                } else {
+                    0.0
+                };
+                println!(
+                    "| {} | {}{} | {} | {:.1}% |",
+                    group,
+                    profile.distinct,
+                    if profile.distinct_truncated { "+" } else { "" },
+                    profile.empty,
+                    share * 100.0
+                );
+            }
+        }
+        println!();
+    }
+    let (_, findings) = quality_checks(profiles, keys, groups);
     if findings.is_empty() {
         println!("No quality findings.");
     } else {
@@ -7678,6 +7796,7 @@ fn cmd_analyze(args: &[String]) -> i32 {
     let mut quality = false;
     let mut markdown = false;
     let mut keys: Vec<String> = Vec::new();
+    let mut groups: Vec<String> = Vec::new();
     let mut delim = "auto".to_string();
 
     while let Some(arg) = p.next() {
@@ -7690,6 +7809,13 @@ fn cmd_analyze(args: &[String]) -> i32 {
                         .map(|item| item.trim().to_string())
                         .filter(|item| !item.is_empty()),
                 ),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--group" => match p.value("--group") {
+                Ok(v) => groups.push(v.trim().to_string()),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -7785,8 +7911,14 @@ fn cmd_analyze(args: &[String]) -> i32 {
                 return 2;
             }
         }
+        for group in &groups {
+            if !profiles.iter().any(|profile| &profile.name == group) {
+                eprintln!("error: unknown group column {group}");
+                return 2;
+            }
+        }
         if markdown {
-            print_quality_markdown(&input, &profiles, &keys);
+            print_quality_markdown(&input, &profiles, &keys, &groups);
             return 0;
         }
         if json {
@@ -7794,11 +7926,11 @@ fn cmd_analyze(args: &[String]) -> i32 {
             println!(
                 r#"{{"columns":[{}],"quality":{}}}"#,
                 cols.join(","),
-                quality_json(&profiles, &keys)
+                quality_json(&profiles, &keys, &groups)
             );
             return 0;
         }
-        print_quality_text(&profiles, &keys);
+        print_quality_text(&profiles, &keys, &groups);
         return 0;
     }
     if markdown {
