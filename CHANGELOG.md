@@ -74,7 +74,9 @@
 - **Aggregate pre-pass**: whole-column sums no longer build a field vector per record,
   and the column-name key is no longer reallocated for every numeric cell. On a 1M-row
   file the cold pre-pass measures ~25-30 ms (2026-11-23 recheck: cold export 0.11 s minus
-  warm 0.08 s, 8 threads; the earlier run read 0.12/0.09);
+  warm 0.08 s, 8 threads; the earlier run read 0.12/0.09). The same 1M rows with
+  `countif` and with `countifs` also read ~30 ms (0.09-0.10 and 0.11 cold against
+  0.06-0.08 warm), so filtered and set paths are not a hidden cost;
   a run immediately after a rebuild can still read ~0.6 s while binary and file pages are
   cold, so compare medians, not single runs.
 - **Analysis equivalence coverage**: the native-vs-DuckDB byte-for-byte tests for
