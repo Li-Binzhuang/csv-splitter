@@ -98,6 +98,9 @@
 - **Text helpers**: `textjoin(sep, ignore_empty, ...)` joins values with a separator
   (and can drop empty ones), `char(n)` turns a code point into text, and `code(text)`
   returns the first character's code.
+- **`xlookup`**: `xlookup(sheet, key, value, fallback)` is ref/vlookup plus an
+  if-not-found value; a miss returns the fallback expression instead of the text
+  `#N/A`, which `iferror` cannot catch.
 - **`vlookup` alias fixed**: the evaluator treated `vlookup` like `ref`, but the
   reference loader only recognized `ref`, so a formula that used only `vlookup`
   never loaded its sheet. Both spellings now feed the loader.

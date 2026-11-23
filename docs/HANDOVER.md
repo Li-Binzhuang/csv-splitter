@@ -51,7 +51,7 @@ scripts/demo.sh --big /tmp/csvx_big/big10.csv          # 11.2 GB 读路径
 |---|---|
 | 改单元格 | `edit set --row --col`（1-based，可 `--where` 批量）|
 | 增删行列 | `edit insert-rows` / `delete`（按行、按条件、**按校验规则**、按内容）/ `insert-column` / `drop` / `rename` |
-| 虚拟列 | `edit formula`：`lag()`、`running_total()`、A1 引用、`ref()/vlookup()` 跨表 |
+| 虚拟列 | `edit formula`：`lag()`、`running_total()`、A1 引用、`ref()/vlookup()/xlookup()` 跨表（xlookup 可给 fallback） |
 | 查找替换 | `search`（含 `--regex`）、`edit replace`（文本 / 正则 / 按列 / 第 n 个）|
 | 撤销重做 | `edit undo` / `edit redo`（journal 的栈，跨进程有效）|
 | 排序 | `sort`（跨块归并，稳定），或 `edit export --order` |

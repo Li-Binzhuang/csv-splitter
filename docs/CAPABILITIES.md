@@ -129,6 +129,7 @@
      averageifs(val_col, ...)                  ← 满足全部条件的行的平均值（sum/count）
 空单元格 countblank(col) countblank(B2:C2)  ← 空单元格数：整列或同行区间
 列引用 amount   [客户编号]   [city2]   ← 名字含空格**或以数字结尾**时要加方括号
+跨表 ref/vlookup 用本行键取目标表的值；xlookup 多一个 fallback，未命中返回它而不是 #N/A
 ```
 
 `if` 只算选中的分支（`if(qty=0, 0, amount/qty)` 不会除零）。

@@ -763,6 +763,32 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         // ref("customers.csv", "cust_no", "name"): this row's cust_no looked up
         // in that sheet. The referenced sheet is already in memory; the current
         // sheet stays streamed.
+        // XLOOKUP's if_not_found: a miss returns the caller's fallback instead of
+        // the "#N/A" text that `iferror` cannot catch.
+        "xlookup" => {
+            if args.len() < 3 || args.len() > 4 {
+                return Value::Error;
+            }
+            let (Expr::Text(sheet), Expr::Text(key_column), Expr::Text(value_column)) =
+                (&args[0], &args[1], &args[2])
+            else {
+                return Value::Error;
+            };
+            let Some(reference) = ctx.refs.get(sheet, key_column, value_column) else {
+                return Value::Error;
+            };
+            let key = match ctx.cells.get(key_column) {
+                Some(k) => k.trim().to_string(),
+                None => return Value::Error,
+            };
+            match reference.get(&key) {
+                Some(value) => Value::Text(value.clone()),
+                None => match args.get(3) {
+                    Some(fallback) => eval(fallback, ctx),
+                    None => Value::Text("#N/A".to_string()),
+                },
+            }
+        }
         "ref" | "vlookup" => {
             if args.len() != 3 {
                 return Value::Error;

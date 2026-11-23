@@ -276,7 +276,7 @@ impl Formula {
                 Expr::Call(name, _)
                     if matches!(
                         name.to_ascii_lowercase().as_str(),
-                        "ref" | "vlookup" | "row"
+                        "ref" | "vlookup" | "xlookup" | "row"
                     ) =>
                 {
                     false
@@ -450,9 +450,11 @@ fn collect_row_needs(expr: &Expr, out: &mut crate::formula::RowNeeds) {
 fn collect_sheet_refs(expr: &Expr, out: &mut Vec<(String, String, String)>) {
     match expr {
         Expr::Call(name, args)
-            if name.eq_ignore_ascii_case("ref") || name.eq_ignore_ascii_case("vlookup") =>
+            if name.eq_ignore_ascii_case("ref")
+                || name.eq_ignore_ascii_case("vlookup")
+                || name.eq_ignore_ascii_case("xlookup") =>
         {
-            if args.len() == 3 {
+            if args.len() >= 3 {
                 if let (Expr::Text(sheet), Expr::Text(key), Expr::Text(value)) =
                     (&args[0], &args[1], &args[2])
                 {
@@ -1365,6 +1367,25 @@ mod tests {
             "#VALUE!",
             "ranges of different widths cannot be paired"
         );
+    }
+
+    #[test]
+    fn xlookup_preloads_its_reference_with_or_without_a_fallback() {
+        for text in [
+            r#"xlookup("people.csv", "cust", "name")"#,
+            r#"xlookup("people.csv", "cust", "name", "unknown")"#,
+        ] {
+            let formula = Formula::parse(text).unwrap();
+            assert_eq!(
+                formula.sheet_references(),
+                vec![(
+                    "people.csv".to_string(),
+                    "cust".to_string(),
+                    "name".to_string()
+                )],
+                "{text}"
+            );
+        }
     }
 
     #[test]
