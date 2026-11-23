@@ -115,11 +115,25 @@ pub fn parse_csv_line_with(line: &str, delim: u8, style: QuoteStyle) -> Vec<Stri
 /// (`""`) whose decoded value is not the raw bytes, unbalanced quotes, or text after a
 /// closing quote. A caller must fall back rather than guess.
 pub fn field_slices(record: &[u8], delim: u8, style: QuoteStyle) -> Option<Vec<&[u8]>> {
-    if style == QuoteStyle::Backslash {
+    let mut fields = Vec::with_capacity(8);
+    if !visit_fields(record, delim, style, |_, field| fields.push(field)) {
         return None;
     }
+    Some(fields)
+}
+
+/// Walk quote-free fields without allocating, calling `visit(index, bytes)`.
+/// Returns `false` when the record needs the full parser (backslash quoting or a
+/// doubled quote); the caller must then take the lossy parser path.
+pub fn visit_fields<'a, F>(record: &'a [u8], delim: u8, style: QuoteStyle, mut visit: F) -> bool
+where
+    F: FnMut(usize, &'a [u8]),
+{
+    if style == QuoteStyle::Backslash {
+        return false;
+    }
     let len = record.len();
-    let mut fields = Vec::with_capacity(8);
+    let mut index = 0usize;
     let mut i = 0usize;
     let mut ended_with_delim = false;
     while i < len {
@@ -128,51 +142,52 @@ pub fn field_slices(record: &[u8], delim: u8, style: QuoteStyle) -> Option<Vec<&
             let mut j = start;
             loop {
                 if j >= len {
-                    return None;
+                    return false;
                 }
                 if record[j] == b'"' {
-                    // A doubled quote means the decoded value differs from the bytes.
                     if j + 1 < len && record[j + 1] == b'"' {
-                        return None;
+                        return false;
                     }
-                    fields.push(&record[start..j]);
+                    visit(index, &record[start..j]);
+                    index += 1;
                     j += 1;
                     break;
                 }
                 j += 1;
             }
             if j >= len {
-                return Some(fields);
+                return true;
             }
             match record[j] {
-                b'\n' | b'\r' => return Some(fields),
+                b'\n' | b'\r' => return true,
                 byte if byte == delim => {
                     ended_with_delim = true;
                     i = j + 1;
                 }
-                _ => return None,
+                _ => return false,
             }
         } else {
             let start = i;
             while i < len && record[i] != delim && record[i] != b'\n' && record[i] != b'\r' {
                 i += 1;
             }
-            fields.push(&record[start..i]);
+            visit(index, &record[start..i]);
+            index += 1;
             if i >= len {
-                return Some(fields);
+                return true;
             }
             if record[i] == delim {
                 ended_with_delim = true;
                 i += 1;
             } else {
-                return Some(fields);
+                return true;
             }
         }
     }
     if len == 0 || ended_with_delim {
-        fields.push(&record[len..len]);
+        visit(index, &record[len..len]);
     }
-    Some(fields)
+    true
 }
 
 /// Parse one complete CSV record, which may contain embedded newlines inside

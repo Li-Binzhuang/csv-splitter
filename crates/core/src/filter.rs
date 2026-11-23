@@ -495,6 +495,74 @@ impl CompiledSet {
             Combine::Any => any,
         })
     }
+
+    /// Evaluate a whole record from its bytes, with no per-row allocation: fields are
+    /// visited once and only the columns this filter reads are inspected. `None` means
+    /// the full parser is required (quotes, backslash quoting, non-UTF-8, or >64 specs).
+    pub fn holds_record(
+        &self,
+        record: &[u8],
+        delim: u8,
+        quotes: QuoteStyle,
+    ) -> Option<(bool, usize)> {
+        let specs = self.specs.len();
+        if specs > 64 {
+            return None;
+        }
+        let mut seen = 0u64;
+        let mut hits = 0u64;
+        let mut fields = 0usize;
+        let mut invalid = false;
+        let complete = crate::csv_reader::visit_fields(record, delim, quotes, |index, bytes| {
+            fields += 1;
+            if invalid {
+                return;
+            }
+            for (i, spec) in self.specs.iter().enumerate() {
+                if self.columns[i].1 != index {
+                    continue;
+                }
+                let Ok(cell) = std::str::from_utf8(bytes) else {
+                    invalid = true;
+                    return;
+                };
+                let hit = match &self.regexes[i] {
+                    Some(re) => re.is_match(cell),
+                    None => matches(cell, spec),
+                };
+                seen |= 1u64 << i;
+                if hit {
+                    hits |= 1u64 << i;
+                }
+            }
+        });
+        if !complete || invalid {
+            return None;
+        }
+        for (i, spec) in self.specs.iter().enumerate() {
+            if seen & (1u64 << i) == 0 {
+                let hit = match &self.regexes[i] {
+                    Some(re) => re.is_match(""),
+                    None => matches("", spec),
+                };
+                if hit {
+                    hits |= 1u64 << i;
+                }
+            }
+        }
+        let all = if specs == 64 {
+            u64::MAX
+        } else {
+            (1u64 << specs) - 1
+        };
+        Some((
+            match self.combine {
+                Combine::All => hits == all,
+                Combine::Any => hits != 0,
+            },
+            fields,
+        ))
+    }
 }
 
 /// Write the rows matching `set` to `output` as CSV, streaming.
@@ -564,22 +632,14 @@ pub fn extract_style(
         written += record.len() as u64;
         // Fast path: quote-free records are matched from borrowed fields, with no
         // per-row String or field vector. Anything else falls back to the parser.
-        let (hit, field_count) = if let Some(cells) =
-            crate::csv_reader::field_slices(&record, delim, quotes)
-        {
-            match compiled.holds_bytes(&cells) {
-                Some(hit) => (hit, cells.len()),
-                None => {
-                    let text = String::from_utf8_lossy(&record);
-                    let fields =
-                        parse_csv_record_with(text.trim_end_matches(['\n', '\r']), delim, quotes);
-                    (compiled.holds(&fields), fields.len())
-                }
+        let (hit, field_count) = match compiled.holds_record(&record, delim, quotes) {
+            Some(result) => result,
+            None => {
+                let text = String::from_utf8_lossy(&record);
+                let fields =
+                    parse_csv_record_with(text.trim_end_matches(['\n', '\r']), delim, quotes);
+                (compiled.holds(&fields), fields.len())
             }
-        } else {
-            let text = String::from_utf8_lossy(&record);
-            let fields = parse_csv_record_with(text.trim_end_matches(['\n', '\r']), delim, quotes);
-            (compiled.holds(&fields), fields.len())
         };
         if hit {
             if field_count != width {
@@ -985,6 +1045,37 @@ mod regex_tests {
         assert_eq!(
             std::fs::read_to_string(&output).unwrap(),
             "id,city,note\n3,Puebla,REFUND-2\n"
+        );
+    }
+
+    #[test]
+    fn holds_record_matches_plain_quoted_and_escaped_rows() {
+        let set = FilterSet {
+            specs: vec![
+                FilterSpec::parse("city=CDMX").unwrap(),
+                FilterSpec::parse("amount>5").unwrap(),
+            ],
+            combine: Combine::All,
+        };
+        let compiled = set
+            .compile(&["city".to_string(), "amount".to_string()])
+            .unwrap();
+        assert_eq!(
+            compiled.holds_record(b"CDMX,10\n", b',', QuoteStyle::Rfc4180),
+            Some((true, 2))
+        );
+        assert_eq!(
+            compiled.holds_record(b"Puebla,10\n", b',', QuoteStyle::Rfc4180),
+            Some((false, 2))
+        );
+        // A quoted plain cell is still readable; a doubled quote needs the parser.
+        assert_eq!(
+            compiled.holds_record(b"\"CDMX\",10\n", b',', QuoteStyle::Rfc4180),
+            Some((true, 2))
+        );
+        assert_eq!(
+            compiled.holds_record(b"\"CD\"\"MX\",10\n", b',', QuoteStyle::Rfc4180),
+            None
         );
     }
 
