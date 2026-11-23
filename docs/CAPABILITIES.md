@@ -197,6 +197,12 @@ delimiter 检测也读解压后的内容。压缩流不可 seek，因此自动�
 7 列、11.6 亿行、87.4 GB：search 39.42 s、filter 46.70 s、全量 17% 导出
 196,928,881 行/13 GB **62.03 s / 28 MB**；仍为 21.8 GB 块重复 4 次。
 
+### 试点报告
+
+`CSVX_PILOT_FILE=sample.csv python3 scripts/pilot_report.py`
+对客户样本跑 schema/filter/search/quality，产出 Markdown 报告；默认本地、无遥测。
+见 `docs/PILOT.md`。
+
 ### 端到端 demo
 
 `BIN=target/release/csvx bash scripts/demo_end_to_end.sh`：pipeline filter→quality（12/11 ms）
@@ -234,7 +240,7 @@ warm schema 0.03 s，`view start=45,000,000` 0.02 s，`filter` 0.77 s，`search`
 
 ```text
 step,input,command,args,output
-filtered,orders.csv,filter,--where city=CDMX -o {out},filtered.csv
+filtered,orders.csv,filter, -o {out},filtered.csv
 joined,filtered,lookup,--key cust_no --reference customers.csv --get name --out {out},joined.csv
 ```
 

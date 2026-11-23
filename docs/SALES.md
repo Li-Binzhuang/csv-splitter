@@ -15,6 +15,16 @@
 2. **可复现 Pipeline**：2.3 GB/9500 万行 filter→lookup→groupby 6.55 s；未变重跑 17 ms；失败不写坏输出。
 3. **MCP 数据后端**：15 个只读/写工具 + 异步 job；schema→filter→view→edit→undo→convert 闭环，演示见 `docs/DEMO.md`。
 
+## 客户样本报告
+
+```bash
+CSVX_PILOT_FILE=sample.csv CSVX_PILOT_WHERE=city=CDMX \
+  python3 scripts/pilot_report.py
+```
+
+输出本地实测的扫描/导出/质量耗时与近似 RSS；见 `docs/PILOT.md`。这是试点交付物，
+不是实验室 benchmark 的替代。
+
 ## 演示话术（5 分钟）
 ```bash
 BIN=target/release/csvx bash scripts/demo_end_to_end.sh
