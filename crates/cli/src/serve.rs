@@ -7435,6 +7435,44 @@ mod tests {
         std::fs::remove_dir_all(&root).ok();
     }
 
+    #[test]
+    fn cache_evicts_fifo_when_limit_is_exceeded() {
+        let dir = std::env::temp_dir().join(format!("csvs_cache_evict_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let first = dir.join("first.csv");
+        let second = dir.join("second.csv");
+        std::fs::write(&first, "a\n1\n").unwrap();
+        std::fs::write(&second, "a\n2\n").unwrap();
+        let mut entries = Vec::new();
+        cache_insert(
+            &mut entries,
+            CachedMaterialized {
+                key: "first".to_string(),
+                path: first.clone(),
+                size: 10,
+            },
+            100,
+            1,
+        );
+        cache_insert(
+            &mut entries,
+            CachedMaterialized {
+                key: "second".to_string(),
+                path: second.clone(),
+                size: 10,
+            },
+            100,
+            1,
+        );
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].key, "second");
+        assert!(!first.exists());
+        assert!(second.exists());
+        cleanup_mcp_materialized();
+        std::fs::remove_file(&second).ok();
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
     #[cfg(unix)]
     #[test]
     fn materialize_cache_reuses_one_temp_file() {
@@ -7833,6 +7871,37 @@ struct CachedMaterialized {
 const MATERIALIZE_CACHE_MAX_BYTES: u64 = 4 * 1024 * 1024 * 1024;
 const MATERIALIZE_CACHE_MAX_ENTRIES: usize = 16;
 
+fn materialize_cache_limits() -> (u64, usize) {
+    let bytes = std::env::var("CSVX_MCP_CACHE_BYTES")
+        .ok()
+        .and_then(|value| value.parse::<u64>().ok())
+        .filter(|value| *value > 0)
+        .unwrap_or(MATERIALIZE_CACHE_MAX_BYTES);
+    let entries = std::env::var("CSVX_MCP_CACHE_ENTRIES")
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .filter(|value| *value > 0)
+        .unwrap_or(MATERIALIZE_CACHE_MAX_ENTRIES);
+    (bytes, entries)
+}
+
+fn cache_insert(
+    entries: &mut Vec<CachedMaterialized>,
+    entry: CachedMaterialized,
+    max_bytes: u64,
+    max_entries: usize,
+) {
+    let mut total: u64 = entries.iter().map(|entry| entry.size).sum();
+    while !entries.is_empty()
+        && (entries.len() >= max_entries || total.saturating_add(entry.size) > max_bytes)
+    {
+        let evicted = entries.remove(0);
+        total = total.saturating_sub(evicted.size);
+        let _ = std::fs::remove_file(evicted.path);
+    }
+    entries.push(entry);
+}
+
 static MATERIALIZE_CACHE: std::sync::OnceLock<std::sync::Mutex<Vec<CachedMaterialized>>> =
     std::sync::OnceLock::new();
 
@@ -7891,21 +7960,18 @@ fn mcp_materialize(input: &Path) -> Result<std::path::PathBuf, String> {
     let size = std::fs::metadata(&path)
         .map(|metadata| metadata.len())
         .unwrap_or(0);
+    let (max_bytes, max_entries) = materialize_cache_limits();
     if let Ok(mut entries) = cache.lock() {
-        let mut total: u64 = entries.iter().map(|entry| entry.size).sum();
-        while !entries.is_empty()
-            && (entries.len() >= MATERIALIZE_CACHE_MAX_ENTRIES
-                || total.saturating_add(size) > MATERIALIZE_CACHE_MAX_BYTES)
-        {
-            let evicted = entries.remove(0);
-            total = total.saturating_sub(evicted.size);
-            let _ = std::fs::remove_file(evicted.path);
-        }
-        entries.push(CachedMaterialized {
-            key,
-            path: path.clone(),
-            size,
-        });
+        cache_insert(
+            &mut entries,
+            CachedMaterialized {
+                key,
+                path: path.clone(),
+                size,
+            },
+            max_bytes,
+            max_entries,
+        );
     }
     Ok(path)
 }
