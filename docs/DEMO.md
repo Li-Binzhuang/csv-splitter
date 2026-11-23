@@ -19,6 +19,7 @@ tools=16
 schema_rows=5
 filter_matched=3
 gzip_matched=3
+status_fresh=2
 view_rows=2
 edit_ok=True
 convert_ok=True
@@ -30,6 +31,7 @@ filter_matched=3
 view_rows=2
 convert_ok=true
 pipeline_progress_events=2
+status_fresh=2
 gzip_matched=3
 progress_events=1
 structured_ok=true
@@ -50,6 +52,7 @@ job=done
    - `csvx_job_submit` quality → `csvx_job_status` 直到 done
 3. 若 `scripts/mcp_sdk/node_modules` 存在，demo 还会跑官方 SDK 客户端：
    - `pipeline_progress_events=2`（pipeline 每步通知）
+   - `status_fresh=2`（MCP `pipeline_status` 带 `contentCheck` 核验）
    - `gzip_matched=3`（MCP `search` 对 `.gz` 输入开启 `materialize`）
    - `progress_events=1`（job wait 通知）
    - `structured_ok=true`（structuredContent 成功码）

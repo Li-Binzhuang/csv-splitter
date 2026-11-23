@@ -50,6 +50,12 @@ if (existsSync(join(root, "plan.csv"))) {
   );
   if (pipeline.isError) throw new Error(pipeline.content?.[0]?.text ?? "pipeline failed");
   console.log(`pipeline_progress_events=${pipelineProgress}`);
+  const status = await call("csvx_pipeline_status", {
+    path: "plan.csv",
+    verify: true,
+    contentCheck: true,
+  });
+  console.log(`status_fresh=${(status.steps ?? []).filter((step) => step.fresh).length}`);
 }
 if (existsSync(join(root, "orders.csv.gz"))) {
   const gzip = await call("csvx_search", {
