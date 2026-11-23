@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "705cea2c72762a7f0cf758b5677970cc6c943a7940d07ac45f1c0f5b238aea9f",
+  "batch_id": "9fa9862ba07ef841cc45a7797f6099e19d5fcd52461a5b25075fb8002b3d2648",
+  "composite_identity": "0e837d67c516c6f0457d6813cb99d0266b99aa9fd84ff8f4621db54272e4c1d3",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "ea29e0c54c22af1caf1b7ec8a7792e984345405bdf7fb0799a30475ea65acb44",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "6a6a50d337b609fd2cfa6d4cb27a0b47df46e0de3f972e3146fae79e8e481d82",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:docs/DEMO.md | A:发布前 gate/demo/package；记录 2026-11-23 release 30.28 s、pipeline 15/13 ms、官方 SDK 2 条 pipeline progress 与 job progress；SHA 由打包脚本输出，不写死 | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "38ea22aa7ff6e2eed9579a80863cb8596548a58ff9d8bb7d518b8d4e52ef23d4",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "6a6a50d337b609fd2cfa6d4cb27a0b47df46e0de3f972e3146fae79e8e481d82",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:docs/DEMO.md | A:发布前 gate/demo/package；记录 2026-11-23 release 30.28 s、pipeline 15/13 ms、官方 SDK 2 条 pipeline progress 与 job progress；SHA 由打包脚本输出，不写死 | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ]
+}
