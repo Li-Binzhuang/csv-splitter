@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-23T14:48:03Z",
+  "updated_at": "2026-11-23T15:02:27Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -17,9 +17,9 @@
     },
     ".github/workflows/macos.yml": {
       "role": "index",
-      "sha256": "b1df58896b3a7d1f02f336993d82f223d9c084567b1827cb43aa1b1b9dbbf1cd",
-      "size": 773,
-      "normalized_sha256": "b1df58896b3a7d1f02f336993d82f223d9c084567b1827cb43aa1b1b9dbbf1cd"
+      "sha256": "ba1636cf20133370cadfda49904e641e76177ec09b0ea3094f95a9cb8e0ac2bc",
+      "size": 794,
+      "normalized_sha256": "ba1636cf20133370cadfda49904e641e76177ec09b0ea3094f95a9cb8e0ac2bc"
     },
     ".github/workflows/release.yml": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "103f8fb3f4a4a91f06e72c25c6baa92dcaa2a3f520cf3ee0bf0e871ce7a81b8e",
-      "size": 51755,
-      "normalized_sha256": "103f8fb3f4a4a91f06e72c25c6baa92dcaa2a3f520cf3ee0bf0e871ce7a81b8e"
+      "sha256": "9c5e81f162410a0c7811ac1235048029568e1fcad7182f6d19b81dd74e66ebe2",
+      "size": 51854,
+      "normalized_sha256": "9c5e81f162410a0c7811ac1235048029568e1fcad7182f6d19b81dd74e66ebe2"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -634,15 +634,15 @@
     },
     "docs/RELEASE_CHECKLIST.md": {
       "role": "index",
-      "sha256": "2391e41519f3b31275b821a8287ca17176087a188a4a2b1447fc374cc0fabd0c",
-      "size": 1710,
-      "normalized_sha256": "2391e41519f3b31275b821a8287ca17176087a188a4a2b1447fc374cc0fabd0c"
+      "sha256": "22b705667ee8aad1e485537dcc95c0b18fbbe823a6ec92bbd7f9feb897ee20e5",
+      "size": 1788,
+      "normalized_sha256": "22b705667ee8aad1e485537dcc95c0b18fbbe823a6ec92bbd7f9feb897ee20e5"
     },
     "docs/ROADMAP.md": {
       "role": "index",
-      "sha256": "56c0e22ecea1a59bdd13301395a33af96cd143321a923c5b9e6103321ce50268",
-      "size": 2637,
-      "normalized_sha256": "56c0e22ecea1a59bdd13301395a33af96cd143321a923c5b9e6103321ce50268"
+      "sha256": "75e3b99a461714cfac1af85d00e2ad70f42e7d56bb98b4ceee0f33f69874ddc3",
+      "size": 2649,
+      "normalized_sha256": "75e3b99a461714cfac1af85d00e2ad70f42e7d56bb98b4ceee0f33f69874ddc3"
     },
     "docs/SALES.md": {
       "role": "index",

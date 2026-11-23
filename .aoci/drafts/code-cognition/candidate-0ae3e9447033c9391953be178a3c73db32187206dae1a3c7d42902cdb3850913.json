@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "269b4417a7b636a0654765825cb7099a07201ad66f23a8c896e893a867c2e761",
+  "batch_id": "0ae3e9447033c9391953be178a3c73db32187206dae1a3c7d42902cdb3850913",
+  "composite_identity": "5bad3159595ff2b371e5a4392662d884e02fe7e97fc608566ef8f0db2f456162",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "103f8fb3f4a4a91f06e72c25c6baa92dcaa2a3f520cf3ee0bf0e871ce7a81b8e",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:.github/workflows/macos.yml",
+      "path": ".github/workflows/macos.yml",
+      "change": "update",
+      "source_sha256": "ba1636cf20133370cadfda49904e641e76177ec09b0ea3094f95a9cb8e0ac2bc",
+      "existing_entry": "macos.yml[OV7T]: F:macOS 专用 gate CI（与 Ubuntu/Windows 分开） | R:code:scripts/gate.sh,code:.github/workflows/ci.yml | A:push main/PR 且 crates/Cargo/gate.sh 变更触发；macos-latest 跑 bash scripts/gate.sh；无 cargo 缓存（仓库缓存配额曾超限）；不改现有 Ubuntu/Windows/release workflow | S:仅 macOS gate；远端尚未跑绿；不联网发布、不打 tag"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "22b705667ee8aad1e485537dcc95c0b18fbbe823a6ec92bbd7f9feb897ee20e5",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，再用 verify_dist.sh 校验 SHA256、必需成员与包内二进制版本；记录 2026-11-23 release 30.28 s、pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2、SDK 2 条 pipeline progress 与 job progress；MCP 缓存 2.04 GB 重查 4.61→1.63 s/86 MB；SHA 由打包脚本输出 | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "75e3b99a461714cfac1af85d00e2ad70f42e7d56bb98b4ceee0f33f69874ddc3",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-23 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 16 工具与 SDK progress/status/gzip；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程、缓存命中监控、阈值、发布自动化为后续；已有 Ubuntu/Windows CI，新增 macOS gate 尚未远端跑绿 | S:未测数字不写；价格/SLA 需用户确认；随离线包分发；MCP 缓存 gzip/zst/bz2 已验证"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "b76e32bdf6d94129ae1a2ce2c0202a87771bf683fd109332ad7ebeba9ee8e7a8",
+      "object_ref": "code:.github/workflows/macos.yml",
+      "path": ".github/workflows/macos.yml",
+      "change": "update",
+      "source_sha256": "ba1636cf20133370cadfda49904e641e76177ec09b0ea3094f95a9cb8e0ac2bc",
+      "existing_entry": "macos.yml[OV7T]: F:macOS 专用 gate CI（与 Ubuntu/Windows 分开） | R:code:scripts/gate.sh,code:.github/workflows/ci.yml | A:push main/PR 且 crates/Cargo/gate.sh 变更触发；macos-latest 跑 bash scripts/gate.sh；无 cargo 缓存（仓库缓存配额曾超限）；不改现有 Ubuntu/Windows/release workflow | S:仅 macOS gate；远端尚未跑绿；不联网发布、不打 tag"
+    },
+    {
+      "candidate_id": "538247333ed3545bcd72b5e52b7269f1d0d4f3b643f4097bc56660e5e6d32472",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "22b705667ee8aad1e485537dcc95c0b18fbbe823a6ec92bbd7f9feb897ee20e5",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，再用 verify_dist.sh 校验 SHA256、必需成员与包内二进制版本；记录 2026-11-23 release 30.28 s、pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2、SDK 2 条 pipeline progress 与 job progress；MCP 缓存 2.04 GB 重查 4.61→1.63 s/86 MB；SHA 由打包脚本输出 | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    },
+    {
+      "candidate_id": "a17a31cd77de19432d031ab8db659b805ae88a51ccd0acb70fdcc27ee47b15ad",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "75e3b99a461714cfac1af85d00e2ad70f42e7d56bb98b4ceee0f33f69874ddc3",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-23 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 16 工具与 SDK progress/status/gzip；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程、缓存命中监控、阈值、发布自动化为后续；已有 Ubuntu/Windows CI，新增 macOS gate 尚未远端跑绿 | S:未测数字不写；价格/SLA 需用户确认；随离线包分发；MCP 缓存 gzip/zst/bz2 已验证"
+    }
+  ]
+}
