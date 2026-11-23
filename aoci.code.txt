@@ -72,7 +72,7 @@ tempdir.rs[CG5T]: F:临时目录与唯一命名 | R:- | A:进程内自增序号�
 types.rs[CD7M]: F:基础类型：分隔符、压缩格式、进度消息与取消令牌 | R:code:crates/core/src/json.rs | A:Delimiter 负责分隔符解析与字节；ProgressSender 是 mpsc 别名；CancelToken 用原子布尔 | S:-
 validate.rs[DQ8L]: F:列约束校验：只报告不改数据，可限制扫描行数 | R:code:crates/core/src/workbook/export.rs | A:检查的是 journal 应用后的值；报告含 rows、checked、partial、truncated、每规则计数与最多一千条明细；限制扫描时 partial 与 truncated 同时置位 | S:限制只查前缀时必须标出 partial，否则读者会把前缀计数当成全量结论
 viewer.rs[CU6M]: F:窗口化读取：只持有一屏所需行 | R:code:crates/core/src/workbook/export.rs | A:请求超出缓存窗口时经稀疏索引重取，内存与文件大小无关 | S:-
-engine.rs[EG8L]: F:引擎选择器：native 与 DuckDB 分析路径的统一入口 | R:code:crates/core/src/sql.rs,code:crates/core/src/groupby.rs,code:crates/core/src/chart.rs,code:crates/core/src/pivot.rs | A:Engine 为 Auto/Native/Sql；Auto 按 8 MB 且必须带 sql feature 才走 DuckDB；新增 convert_format：CSV/TSV/NDJSON/Parquet 任一方向，用 COPY，不建 CSV 视图也不做分隔符预检；xlsx 明确拒绝 | S:阈值 8 MB 由实测；convert 的 COPY 超时 600 s；非 CSV 源不能走 CSV 视图预检
+engine.rs[EG8L]: F:引擎选择器：native 与 DuckDB 分析路径的统一入口 | R:code:crates/core/src/sql.rs,code:crates/core/src/groupby.rs,code:crates/core/src/chart.rs,code:crates/core/src/pivot.rs | A:Engine 为 Auto/Native/Sql；Auto 按 8 MB 且必须带 sql feature 才走 DuckDB；convert_format 覆盖 CSV/TSV/NDJSON/Parquet 任一方向，用 COPY 且不建 CSV 视图/分隔符预检；无 sql feature 时整个实现被 cfg 掉，只留明确 Unsupported 错误；xlsx 拒绝 | S:阈值 8 MB 由实测；convert COPY 超时 600 s；非 CSV 源不能走 CSV 视图预检；新增 sql 调用必须同时考虑无 feature 构建
 scan_parallel.rs[KP7M]: F:filter 与 search 共用的分段并行、可续扫扫描 | R:code:crates/core/src/index.rs,code:crates/core/src/filter.rs,code:crates/core/src/search.rs | A:ScanOptions 收拢参数；scan_parallel_bytes 接受字节谓词，scan_parallel 保留字符串谓词兼容入口；每波按 64 检查点分段，未跑的波以 next 返回，保留行号永远不超过 limit | S:行号必须与顺序扫描一致；行数上限每波兑现；GBK/UTF-16 不支持游标
 
 ===/<repository>/crates/core/src/formula/===

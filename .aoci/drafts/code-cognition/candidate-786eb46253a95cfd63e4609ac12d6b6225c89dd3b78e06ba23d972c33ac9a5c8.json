@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "5092147644610244f976e5deb851a8337d7c7664d6efddda69370f4bed26f569",
+  "batch_id": "786eb46253a95cfd63e4609ac12d6b6225c89dd3b78e06ba23d972c33ac9a5c8",
+  "composite_identity": "9df8a27d17493b4be20be05c03d62014082718ab0808c98364f93133079668a4",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "a70f8e54a9d104285e85e43a5b10518b2c2e393a113f24758d65bff425d81378",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/engine.rs",
+      "path": "crates/core/src/engine.rs",
+      "change": "update",
+      "source_sha256": "3219bea3ba9ccc81fbbd804d1ebb9423426fddf54dfde0280d4bc1628b235794",
+      "existing_entry": "engine.rs[EG8L]: F:引擎选择器：native 与 DuckDB 分析路径的统一入口 | R:code:crates/core/src/sql.rs,code:crates/core/src/groupby.rs,code:crates/core/src/chart.rs,code:crates/core/src/pivot.rs | A:Engine 为 Auto/Native/Sql；Auto 按 8 MB 且必须带 sql feature 才走 DuckDB；新增 convert_format：CSV/TSV/NDJSON/Parquet 任一方向，用 COPY，不建 CSV 视图也不做分隔符预检；xlsx 明确拒绝 | S:阈值 8 MB 由实测；convert 的 COPY 超时 600 s；非 CSV 源不能走 CSV 视图预检"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "9ed7cc602219aa2f416b74efd1711da77a38dd56a2bd80f2ecb1264d5deabf56",
+      "object_ref": "code:crates/core/src/engine.rs",
+      "path": "crates/core/src/engine.rs",
+      "change": "update",
+      "source_sha256": "3219bea3ba9ccc81fbbd804d1ebb9423426fddf54dfde0280d4bc1628b235794",
+      "existing_entry": "engine.rs[EG8L]: F:引擎选择器：native 与 DuckDB 分析路径的统一入口 | R:code:crates/core/src/sql.rs,code:crates/core/src/groupby.rs,code:crates/core/src/chart.rs,code:crates/core/src/pivot.rs | A:Engine 为 Auto/Native/Sql；Auto 按 8 MB 且必须带 sql feature 才走 DuckDB；新增 convert_format：CSV/TSV/NDJSON/Parquet 任一方向，用 COPY，不建 CSV 视图也不做分隔符预检；xlsx 明确拒绝 | S:阈值 8 MB 由实测；convert 的 COPY 超时 600 s；非 CSV 源不能走 CSV 视图预检"
+    }
+  ]
+}
