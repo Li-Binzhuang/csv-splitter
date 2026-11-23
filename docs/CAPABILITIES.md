@@ -177,7 +177,8 @@ output,joined,orders,joined.csv,,,,,"customer,region"
 104.5 GB / 13 亿行（重复块合成）：`preview` 0.02 s/8 MB，`index` 24.57 s/21 MB（索引 9.9 MB），
 `search` 20.18–20.42 s/93 MB，`filter` 25.75 s/95 MB（1.3B scanned、2.6 亿 matched），
 选择性 `filter -o` 19.54 s/17 MB，深跳第 7 亿行 0.02 s/29 MB。
-验收目标 search <60 s、filter <90 s、RSS <200 MB 全部满足；详见 `docs/BENCHMARKS.md`。
+验收目标 search <60 s、filter（扫描）<90 s、RSS <200 MB 满足；但全量物化 `filter -o`
+（200M 行/20 GB）101.93 s，超过 90 s，瓶颈是 part 文件二次写入；详见 `docs/BENCHMARKS.md`。
 
 ### MCP（B agent 后端，只读首版）
 

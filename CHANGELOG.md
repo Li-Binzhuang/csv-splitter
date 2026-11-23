@@ -119,6 +119,9 @@
 - **`workday(start, days)`**: moves a date by business days, skipping weekends and
   accepting negative days (no holiday list in the two-argument form); zero keeps the
   date.
+- **100 GB full export**: 1.0B rows -> 200M-row/20 GB CSV in 101.93 s at 25 MB RSS;
+  scan filter remains 25.75 s, but full materialisation exceeds the 90 s target because
+  parts are written twice (identified, not hidden).
 - **100 GB profile**: 104.5 GB/1.3B rows search 20.18–20.42 s (93 MB), filter
   25.75 s (95 MB), selective filter -o 19.54 s, index 24.57 s, deep view 0.02 s;
   meets <60/90 s and <200 MB targets. See docs/BENCHMARKS.md.

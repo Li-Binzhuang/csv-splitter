@@ -127,10 +127,11 @@ xlsx 仍按硬约束挂起，等用户明确解除。
 ## 100 GB 引擎（C 主线，首轮 profile 达标）
 
 104.5 GB / 13 亿行合成文件：preview 0.02 s、index 24.57 s（9.9 MB 索引）、search 20.2 s/93 MB、
-filter 25.75 s/95 MB、选择性 filter -o 19.54 s、深跳 0.02 s。目标 search <60 s、filter <90 s、
-RSS <200 MB 均满足；100 GB 是重复块，真实分布待补。复现见 `docs/BENCHMARKS.md`。
+filter 25.75 s/95 MB、选择性 filter -o 19.54 s、深跳 0.02 s。扫描目标 search <60 s、
+filter <90 s、RSS <200 MB 满足；全量 filter -o（200M 行/20 GB）101.93 s，超 90 s，已知
+瓶颈是 part 文件二次写入。100 GB 仍是重复块。复现见 `docs/BENCHMARKS.md`。
 
-## MCP 后端（B 主线，只读首版）## MCP 后端（B 主线，只读首版）
+## MCP 后端（B 主线，只读首版）
 
 `mcp --root DIR`：stdio JSON-RPC；读工具 `csvx_schema/view/filter/search/quality/pipeline_status`，
 写工具 `csvx_edit_set/delete/undo/redo` 与 `csvx_convert` 复用 journal 锁与 root 限制。

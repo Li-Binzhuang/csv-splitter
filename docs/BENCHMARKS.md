@@ -15,10 +15,13 @@
 | search（第 2 次） | 同上 | 20.42 s | 93 MB | 0 命中 |
 | filter（无输出） | `filter big.csv --where city=CDMX` | 25.75 s | 95 MB | 1,300,001,299 scanned / 260,000,000 matched |
 | filter -o（选择性） | `filter big.csv --where id=1 -o sel.csv` | 19.54 s | 17 MB | 输出 94 KB（1,300 行） |
+| **filter -o（全量 20%）** | `filter big.csv --where city=CDMX -o cdmx.csv` | **101.93 s** | **25 MB** | **200,000,000 行 / 20 GB** |
 | 深跳 | `view big.csv --start 700000000 --count 5` | 0.02 s | 29 MB | 第 7 亿行 |
 
-**C 验收**：100 GB search <60 s、filter <90 s、RSS <200 MB —— **全部满足**。
-注意：`filter -o` 这里只测了选择性输出；全员输出会受磁盘写入影响，未在此表声称。
+**C 验收**：100 GB search <60 s、filter（扫描/无输出）<90 s、RSS <200 MB —— **满足**。
+但**全量物化**（200,000,000 行、20 GB 输出）实测 **101.93 s**，超过 90 s：瓶颈在
+并行 part 文件再串行拼接到最终文件（约 40 GB 写入）；这是已识别缺口，下一步优化目标是
+避免双写，而不是把它算作扫描达标。
 
 复现：
 
