@@ -4170,6 +4170,8 @@ fn view_applies_edits_and_filters() {
         text.starts_with(r#"{"columns":["id","city","amount"]"#),
         "{text}"
     );
+    assert!(text.contains(r#""nextStart":1"#), "{text}");
+    assert!(text.contains(r#""hasMore":true"#), "{text}");
 }
 
 /// Tables line up even with CJK column values, and `--order` pages sorted rows.

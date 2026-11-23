@@ -219,7 +219,8 @@ delimiter 检测也读解压后的内容。压缩流不可 seek，因此自动�
 `mcp --root DIR` 在 stdio 上跑 JSON-RPC MCP server，stdout 只走协议，工具只读：
 
 - `csvx_schema`：列、类型、行数。
-- `csvx_view`：`start/count` 分页、可选 `where`。
+- `csvx_view`：`start/count` 分页、可选 `where`；JSON 返回 `start/nextStart/hasMore`
+  游标，客户端用 `nextStart` 取下一页。
 - `csvx_filter`：谓词匹配行号，`limit` 上限 1000。
 - `csvx_search`：文本搜索，可按列。
 - `csvx_quality`：`analyze --quality` 报告，支持 key/group。

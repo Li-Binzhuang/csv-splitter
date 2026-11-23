@@ -2499,14 +2499,22 @@ fn cmd_view(args: &[String]) -> i32 {
             })
             .collect::<Vec<_>>()
             .join(",");
+        let next_start = start + rows.len() as u64;
+        let has_more = match page_total {
+            Some(total) => next_start < total,
+            None => rows.len() as u64 >= count,
+        };
         println!(
-            r#"{{"columns":[{}],"rows":[{}]}}"#,
+            r#"{{"columns":[{}],"rows":[{}],"start":{},"nextStart":{},"hasMore":{}}}"#,
             columns
                 .iter()
                 .map(|c| serve::json_str(c))
                 .collect::<Vec<_>>()
                 .join(","),
-            body
+            body,
+            start,
+            next_start,
+            has_more
         );
         return 0;
     }
