@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "16ca5d84dbc1c8414393843aa2507f37c7f32b6f060d188d4b34dd4463832a31",
+  "batch_id": "85b0e0d2082376cb0d57a62ba354d4bcc3617f4ff7fa435cbe675aa95ed145db",
+  "composite_identity": "80358ecc8f9b3eba5e6cc5312b5d8d2f37f2e48542fe28664cfc72c6626982a8",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "325a09fb40699baaf95a3a3943eb71ce2d659793f7b55fc89a75a0d136cc940c",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "be06ba863624c2f67cf1859411e04d16866229b17c7437fc1df5ea86ba217486",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/锁规则/重复输出拒绝/源覆盖拒绝/内容校验(run+status)/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码、步骤 progress/CSVX_STEP 即时、压缩/MCP materialize 残留清理（search 3.51 s、filter 3.62/2.60 s） | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存按 path/stat，4 GiB/16（env），启动清死 PID；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "c17bd2ed1afacca0be6cdb932e926ac9f6c20384c13bd448a85839b06d3274fe",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，再用 verify_dist.sh 校验 SHA256、必需成员与包内二进制版本；记录 2026-11-23 release 30.28 s、pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2、SDK 2 条 pipeline progress 与 job progress；macOS gate run 45198239384 12m21s success；MCP 缓存 2.04 GB 重查 4.61→1.63 s/86 MB；包含 bench_mcp_cache/PILOT_INTAKE/ROADMAP；SHA 由打包脚本输出 | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "f1bc57c99c99679c200922f305a950ddd80b40b2516bc6d39903232b63960375",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 | R:code:README.md,code:docs/SALES.md | A:binary 缺失先 cargo build --release；版本取 csvx --version；平台 uname；打包二进制、README/CHANGELOG/LICENSE、主要 docs（含 RELEASE_CHECKLIST/ROADMAP/PILOT_INTAKE/PILOT_SAMPLE/PILOT_CONFIRMATION）、demo/pilot/bench 脚本与 mcp_sdk client/package.json；输出 dist tar.gz 与 sha256 | S:不打 tag、不联网、不发布 registry；dist 已 gitignore；只用于企业内部分发/试点"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "33a1b54d421ebc5f9a93f873cc0de77a80387aa0543fc725e04cadca40b9504f",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "be06ba863624c2f67cf1859411e04d16866229b17c7437fc1df5ea86ba217486",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/锁规则/重复输出拒绝/源覆盖拒绝/内容校验(run+status)/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码、步骤 progress/CSVX_STEP 即时、压缩/MCP materialize 残留清理（search 3.51 s、filter 3.62/2.60 s） | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存按 path/stat，4 GiB/16（env），启动清死 PID；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100"
+    },
+    {
+      "candidate_id": "0599e712ddc74d1dfbc318826f202ef1fd7dd869156c7feb806623a8e1400086",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "c17bd2ed1afacca0be6cdb932e926ac9f6c20384c13bd448a85839b06d3274fe",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，再用 verify_dist.sh 校验 SHA256、必需成员与包内二进制版本；记录 2026-11-23 release 30.28 s、pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2、SDK 2 条 pipeline progress 与 job progress；macOS gate run 45198239384 12m21s success；MCP 缓存 2.04 GB 重查 4.61→1.63 s/86 MB；包含 bench_mcp_cache/PILOT_INTAKE/ROADMAP；SHA 由打包脚本输出 | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    },
+    {
+      "candidate_id": "e5311c6d123b8f5742be40fef168408562d76833e991fc717d4b993ee6a28ed6",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "f1bc57c99c99679c200922f305a950ddd80b40b2516bc6d39903232b63960375",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 | R:code:README.md,code:docs/SALES.md | A:binary 缺失先 cargo build --release；版本取 csvx --version；平台 uname；打包二进制、README/CHANGELOG/LICENSE、主要 docs（含 RELEASE_CHECKLIST/ROADMAP/PILOT_INTAKE/PILOT_SAMPLE/PILOT_CONFIRMATION）、demo/pilot/bench 脚本与 mcp_sdk client/package.json；输出 dist tar.gz 与 sha256 | S:不打 tag、不联网、不发布 registry；dist 已 gitignore；只用于企业内部分发/试点"
+    }
+  ]
+}
