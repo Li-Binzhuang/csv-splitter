@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "2d598d4224dc3fb1899ebad41f6cec49fd23dfcfd71bee047e1ee01d833e4040",
+  "batch_id": "c339b24a8beb71664aac00d066d2773784c4c0a58fb377a2640f1ff56e564efd",
+  "composite_identity": "8316161a55dbcec186f164e48f2652a8fd8f39c9a2f0d0bf273d95c477a6a012",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "67463752c49aad58f38906a7cce3148e38e3a664f5d36ee2c08977fd35ff1ce5",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "c3e809b4d41ef4181167858c4d2d605d11484ab6f65d9fde4e4398b500dd8c6f",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/--step-timeout、SQL lookup 无上限、mcp 读写+job/pipeline_run、官方 SDK、压缩输入、100 GB/81 GB 演练、demo、外发模板 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "35d693b2d0488971ed9493ada21abd31d7f05597195411ff64378a606524d526",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；pipeline run/status 支持 size+mtime 跳过、--force、--dry-run、--json、--step-timeout；步骤由并发 reader 线程+try_wait 轮询，超时 kill 并清理临时输出；mcp --root；delimiter 自动检测通过 open_maybe_compressed 读压缩流 | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state；dry-run/超时不写 state；mcp stdout 只走 JSON-RPC"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "b3cb909ad8713c1ebd58ae174a0c9bd38c765a7c9c00c9fed5160386af4e61af",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过/--dry-run（JSON）/--step-timeout；mcp 读写+job 与 pipeline_run、官方 SDK；压缩输入 zst/gz/bz2/xz 顺序读；C 100 GB/81 GB 演练；64 GB 自适应 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "0ff44c53cf00d06b6a578243db3338d560633835445b6a71b8ac281db21fac8c",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5；A Pipeline 含 --dry-run（JSON）与 --step-timeout；B MCP 读写+job+pipeline_run 与官方 SDK；C 100/81 GB 演练达标；压缩输入顺序读；64 GB 自适应；demo 与 OUTREACH；下一步商业化/真实数据 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "c998f37dd2c66c91208334031f2223627035ce189539c95a6c4beb576693c948",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "c3e809b4d41ef4181167858c4d2d605d11484ab6f65d9fde4e4398b500dd8c6f",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/--step-timeout、SQL lookup 无上限、mcp 读写+job/pipeline_run、官方 SDK、压缩输入、100 GB/81 GB 演练、demo、外发模板 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "a2711697576eed7f739d2d0ed7dbf3b15db8d6d5c068585ee3551a9f96dec30b",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "35d693b2d0488971ed9493ada21abd31d7f05597195411ff64378a606524d526",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；pipeline run/status 支持 size+mtime 跳过、--force、--dry-run、--json、--step-timeout；步骤由并发 reader 线程+try_wait 轮询，超时 kill 并清理临时输出；mcp --root；delimiter 自动检测通过 open_maybe_compressed 读压缩流 | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state；dry-run/超时不写 state；mcp stdout 只走 JSON-RPC"
+    },
+    {
+      "candidate_id": "8ab240d0ed498bca1ad540a118d6fabcd71fd992c6122774d99282f6effe1891",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "b3cb909ad8713c1ebd58ae174a0c9bd38c765a7c9c00c9fed5160386af4e61af",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 快跳过/--dry-run（JSON）/--step-timeout；mcp 读写+job 与 pipeline_run、官方 SDK；压缩输入 zst/gz/bz2/xz 顺序读；C 100 GB/81 GB 演练；64 GB 自适应 | S:-"
+    },
+    {
+      "candidate_id": "a12c4f67c1322bc8f01f8ee3aae091131cac8d6c8c55ca2b33b07f1e029d6dca",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "0ff44c53cf00d06b6a578243db3338d560633835445b6a71b8ac281db21fac8c",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5；A Pipeline 含 --dry-run（JSON）与 --step-timeout；B MCP 读写+job+pipeline_run 与官方 SDK；C 100/81 GB 演练达标；压缩输入顺序读；64 GB 自适应；demo 与 OUTREACH；下一步商业化/真实数据 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围"
+    }
+  ]
+}
