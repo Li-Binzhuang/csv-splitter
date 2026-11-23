@@ -211,6 +211,27 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 variance
             })
         }
+        // MEDIAN over a same-row range; a whole-column median would need every value
+        // kept, which is not affordable at 50M rows, so it stays a documented #VALUE!.
+        "median" => {
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            if values.is_empty() {
+                return Value::Error;
+            }
+            let mut values = values;
+            values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+            let len = values.len();
+            Value::Number(if len % 2 == 1 {
+                values[len / 2]
+            } else {
+                (values[len / 2 - 1] + values[len / 2]) / 2.0
+            })
+        }
         // Whole-column aggregates: the pre-pass installed the totals before the loop
         // started, so every row reads the same number in O(1). The argument is a column
         // name taken from the syntax tree, exactly like `lag`.

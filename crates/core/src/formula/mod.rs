@@ -1307,6 +1307,39 @@ mod tests {
     }
 
     #[test]
+    fn median_reads_a_same_row_range_and_refuses_a_whole_column() {
+        let columns = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("a".to_string(), "10".to_string());
+        cells.insert("b".to_string(), "3".to_string());
+        cells.insert("c".to_string(), "7".to_string());
+        let even = Formula::parse("median(A2:B2)").unwrap();
+        assert_eq!(
+            even.eval_at(&cells, &columns, &Refs::default(), 1).render(),
+            "6.5"
+        );
+        let odd = Formula::parse("median(A2:C2)").unwrap();
+        assert_eq!(
+            odd.eval_at(&cells, &columns, &Refs::default(), 1).render(),
+            "7"
+        );
+        cells.insert("c".to_string(), "n/a".to_string());
+        assert_eq!(
+            odd.eval_at(&cells, &columns, &Refs::default(), 1).render(),
+            "6.5",
+            "text is ignored, like the other aggregate range functions"
+        );
+        let column = Formula::parse("median(a)").unwrap();
+        assert_eq!(
+            column
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!",
+            "a whole-column median would have to keep every value"
+        );
+    }
+
+    #[test]
     fn sumproduct_multiplies_two_same_row_ranges() {
         let columns = vec![
             "id".to_string(),
