@@ -218,6 +218,7 @@ csvx extract chunks.tar -o ./out
 | `convert` | 转码（GBK → UTF-8 等），流式 |
 | `demo` | 生成一份带脏数据的示例文件 |
 | `serve` | 本地 HTTP API + 内置浏览页面 |
+| `mcp` | stdio MCP server（只读数据工具，给 agent 用） |
 
 ### 设计上的三个保证 / Three guarantees
 

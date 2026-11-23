@@ -124,7 +124,13 @@ round-trip CLI 测试三种格式均回到逐字节相同的 CSV；`--format xls
 Parquet→CSV **2.15 s**、RSS 424 MB；返回 CSV 与原始 CSV **逐字节一致**、55,000,001 行。
 xlsx 仍按硬约束挂起，等用户明确解除。
 
-## Pipeline 工作台（A 主线，进行中）
+## MCP 后端（B 主线，只读首版）
+
+`mcp --root DIR`：stdio JSON-RPC，工具 `csvx_schema/view/filter/search/quality/pipeline_status`；
+路径限制在 root，UTF-8 参数保留。CLI 测试覆盖 initialize、tools/list、schema/view/filter 调用。
+下一步：编辑工具（复用 journal 锁）、`/jobs` 状态、严格错误码与 MCP 客户端联调。
+
+## Pipeline 工作台（A 主线，进行中）## Pipeline 工作台（A 主线，进行中）
 
 `pipeline run plan.csv --root .`：CSV 清单（step/input/command/args/output）顺序执行，
 复用现有命令；`{out}` 写临时文件后 rename，失败不留 partial；未变步骤按输入/参数/输出

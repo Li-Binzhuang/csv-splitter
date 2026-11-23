@@ -2688,6 +2688,54 @@ fn lookup_sql_streams_past_one_hundred_thousand_rows() {
     assert!(text.ends_with("V4\n"), "the last row joined");
 }
 
+/// The MCP stdio server speaks JSON-RPC, lists tools and serves read-only calls.
+#[test]
+fn mcp_stdio_lists_and_calls_read_only_tools() {
+    use std::io::Write;
+    use std::process::Stdio;
+    let dir = TempDir::new("mcp");
+    let file = dir.join("t.csv");
+    std::fs::write(&file, "city,amount\nCDMX,10\nPuebla,20\nTijuana,30\n").unwrap();
+    let mut child = Command::new(bin())
+        .args(["mcp", "--root", dir.0.to_str().unwrap()])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    {
+        let stdin = child.stdin.as_mut().expect("stdin");
+        for line in [
+            r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}"#,
+            r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#,
+            r#"{"jsonrpc":"2.0","id":2,"method":"tools/list"}"#,
+            r#"{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"csvx_schema","arguments":{"path":"t.csv"}}}"#,
+            r#"{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"csvx_view","arguments":{"path":"t.csv","start":1,"count":1}}}"#,
+            r#"{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"csvx_filter","arguments":{"path":"t.csv","where":"city=CDMX","show":true}}}"#,
+        ] {
+            writeln!(stdin, "{line}").unwrap();
+        }
+    }
+    drop(child.stdin.take());
+    let output = child.wait_with_output().unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains(r#""protocolVersion":"2024-11-05""#),
+        "{stdout}"
+    );
+    assert!(stdout.contains(r#""name":"csvx_schema""#), "{stdout}");
+    assert!(stdout.contains(r#""isError":false"#), "{stdout}");
+    assert!(stdout.contains("Puebla"), "{stdout}");
+    assert!(stdout.contains("20"), "{stdout}");
+    assert!(stdout.contains("matched"), "{stdout}");
+    assert!(!stdout.contains("parse error"), "{stdout}");
+}
+
 /// A bulk edit is one journal entry however many rows it changes.
 #[test]
 fn bulk_edit_matches_a_filter_and_stays_one_operation() {

@@ -38,6 +38,7 @@ fn main() -> ExitCode {
         Some("index") => cmd_index(&args[1..]),
         Some("cache") => cmd_cache(&args[1..]),
         Some("serve") => cmd_serve(&args[1..]),
+        Some("mcp") => cmd_mcp(&args[1..]),
         Some("convert") => cmd_convert(&args[1..]),
         Some("filter") => cmd_filter(&args[1..]),
         Some("view") => cmd_view(&args[1..]),
@@ -470,6 +471,12 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         ],
     ),
     (
+        "mcp",
+        &[
+            ("--root", "Directory the tools may read (default: cwd)"),
+        ],
+    ),
+    (
         "serve",
         &[
             ("--addr", "Bind address (127.0.0.1:0 picks a free port)"),
@@ -646,6 +653,7 @@ COMMANDS
   index    <input>              Build a sparse row index for instant paging
   cache    <input>              Columnar cache for fast filtered/ordered pages
   serve    --root <dir>          Local HTTP API (JSON) for a web front-end
+  mcp      --root <dir>          MCP stdio server (read-only tools) for agents
   convert  <input>               Transcode a CSV to UTF-8 (GBK / UTF-16 input)
   filter   <input> --where EXPR  Row numbers matching a column predicate
   sort     <input> --by COLS -o F Sort the whole file (a,b or a:desc,b:asc)
@@ -7862,6 +7870,38 @@ fn print_quality_markdown(
         println!("## Findings");
         for (severity, column, message) in findings {
             println!("- **{severity}** `{column}`: {message}");
+        }
+    }
+}
+
+fn cmd_mcp(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut root: Option<PathBuf> = None;
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--root" => match p.value("--root") {
+                Ok(value) => root = Some(PathBuf::from(value)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_command_help("mcp");
+                return 0;
+            }
+            other => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+        }
+    }
+    let root = root.unwrap_or_else(|| std::path::PathBuf::from("."));
+    match serve::run_mcp_stdio(&root) {
+        Ok(()) => 0,
+        Err(e) => {
+            eprintln!("error: {e}");
+            1
         }
     }
 }

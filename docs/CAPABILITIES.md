@@ -172,6 +172,20 @@ output,joined,orders,joined.csv,,,,,"customer,region"
 2.03 GB / 5600 万行 drill（2026-11-23）：analyze --quality **18.71 s**，RSS **17 MB**；
 `key` 检查报 55,999,000 个重复值，`city` 报 5,600,000 个空值；候选键为空（id 的 distinct 被 cap 截断）。
 
+### MCP（B agent 后端，只读首版）
+
+`mcp --root DIR` 在 stdio 上跑 JSON-RPC MCP server，stdout 只走协议，工具只读：
+
+- `csvx_schema`：列、类型、行数。
+- `csvx_view`：`start/count` 分页、可选 `where`。
+- `csvx_filter`：谓词匹配行号，`limit` 上限 1000。
+- `csvx_search`：文本搜索，可按列。
+- `csvx_quality`：`analyze --quality` 报告，支持 key/group。
+- `csvx_pipeline_status`：读 `.pipeline.csv` 的哈希与耗时。
+
+路径必须落在 `--root` 内；`initialize` / `tools/list` / `tools/call` 已实现，写工具与 job 队列后续。
+JSON-RPC 一行一条，UTF-8 参数按字节保留。
+
 ### Pipeline（A 工作台，进行中）
 
 `pipeline run plan.csv --root .` 按 CSV 清单顺序执行步骤，复用现有命令：

@@ -7435,3 +7435,457 @@ mod tests {
         std::fs::remove_dir_all(&root).ok();
     }
 }
+
+// ---------------------------------------------------------------------------
+// MCP stdio server (B: agent-facing backend)
+// ---------------------------------------------------------------------------
+
+/// Minimal JSON value for the MCP envelope. Arguments are small and the protocol
+/// needs one object per line, so this avoids a new dependency in the hot CLI.
+#[derive(Clone, Debug)]
+enum McpJson {
+    Null,
+    Bool(bool),
+    Number(f64),
+    String(String),
+    #[allow(dead_code)]
+    Array(Vec<McpJson>),
+    Object(Vec<(String, McpJson)>),
+}
+
+impl McpJson {
+    fn get(&self, key: &str) -> Option<&McpJson> {
+        match self {
+            Self::Object(pairs) => pairs
+                .iter()
+                .find(|(name, _)| name == key)
+                .map(|(_, value)| value),
+            _ => None,
+        }
+    }
+    fn as_str(&self) -> Option<&str> {
+        match self {
+            Self::String(value) => Some(value),
+            _ => None,
+        }
+    }
+    fn as_u64(&self) -> Option<u64> {
+        match self {
+            Self::Number(value) if *value >= 0.0 => Some(*value as u64),
+            _ => None,
+        }
+    }
+}
+
+struct McpParser<'a> {
+    bytes: &'a [u8],
+    pos: usize,
+}
+
+impl<'a> McpParser<'a> {
+    fn parse(text: &'a str) -> Result<McpJson, String> {
+        let mut parser = Self {
+            bytes: text.as_bytes(),
+            pos: 0,
+        };
+        let value = parser.value()?;
+        parser.whitespace();
+        if parser.pos != parser.bytes.len() {
+            return Err(format!("trailing input at byte {}", parser.pos));
+        }
+        Ok(value)
+    }
+    fn whitespace(&mut self) {
+        while self
+            .bytes
+            .get(self.pos)
+            .is_some_and(|byte| byte.is_ascii_whitespace())
+        {
+            self.pos += 1;
+        }
+    }
+    fn value(&mut self) -> Result<McpJson, String> {
+        self.whitespace();
+        match self.bytes.get(self.pos).copied() {
+            Some(b'n') => {
+                self.literal(b"null")?;
+                Ok(McpJson::Null)
+            }
+            Some(b't') => {
+                self.literal(b"true")?;
+                Ok(McpJson::Bool(true))
+            }
+            Some(b'f') => {
+                self.literal(b"false")?;
+                Ok(McpJson::Bool(false))
+            }
+            Some(b'"') => Ok(McpJson::String(self.string()?)),
+            Some(b'[') => {
+                self.pos += 1;
+                let mut items = Vec::new();
+                self.whitespace();
+                if self.bytes.get(self.pos) == Some(&b']') {
+                    self.pos += 1;
+                    return Ok(McpJson::Array(items));
+                }
+                loop {
+                    items.push(self.value()?);
+                    self.whitespace();
+                    match self.bytes.get(self.pos) {
+                        Some(b',') => self.pos += 1,
+                        Some(b']') => {
+                            self.pos += 1;
+                            break;
+                        }
+                        _ => return Err(format!("expected , or ] at byte {}", self.pos)),
+                    }
+                }
+                Ok(McpJson::Array(items))
+            }
+            Some(b'{') => {
+                self.pos += 1;
+                let mut pairs = Vec::new();
+                self.whitespace();
+                if self.bytes.get(self.pos) == Some(&b'}') {
+                    self.pos += 1;
+                    return Ok(McpJson::Object(pairs));
+                }
+                loop {
+                    self.whitespace();
+                    let key = self.string()?;
+                    self.whitespace();
+                    if self.bytes.get(self.pos) != Some(&b':') {
+                        return Err(format!("expected : at byte {}", self.pos));
+                    }
+                    self.pos += 1;
+                    let value = self.value()?;
+                    pairs.push((key, value));
+                    self.whitespace();
+                    match self.bytes.get(self.pos) {
+                        Some(b',') => self.pos += 1,
+                        Some(b'}') => {
+                            self.pos += 1;
+                            break;
+                        }
+                        _ => return Err(format!("expected , or }} at byte {}", self.pos)),
+                    }
+                }
+                Ok(McpJson::Object(pairs))
+            }
+            Some(byte) if byte == b'-' || byte.is_ascii_digit() => {
+                let start = self.pos;
+                if self.bytes[self.pos] == b'-' {
+                    self.pos += 1;
+                }
+                while self.bytes.get(self.pos).is_some_and(|byte| {
+                    byte.is_ascii_digit()
+                        || *byte == b'.'
+                        || *byte == b'e'
+                        || *byte == b'E'
+                        || *byte == b'-'
+                        || *byte == b'+'
+                }) {
+                    self.pos += 1;
+                }
+                let raw =
+                    std::str::from_utf8(&self.bytes[start..self.pos]).map_err(|e| e.to_string())?;
+                raw.parse::<f64>()
+                    .map(McpJson::Number)
+                    .map_err(|_| format!("bad number {raw:?}"))
+            }
+            _ => Err(format!("unexpected value at byte {}", self.pos)),
+        }
+    }
+    fn literal(&mut self, word: &[u8]) -> Result<(), String> {
+        if self.bytes.get(self.pos..self.pos + word.len()) == Some(word) {
+            self.pos += word.len();
+            Ok(())
+        } else {
+            Err(format!(
+                "expected {} at byte {}",
+                String::from_utf8_lossy(word),
+                self.pos
+            ))
+        }
+    }
+    fn string(&mut self) -> Result<String, String> {
+        if self.bytes.get(self.pos) != Some(&b'"') {
+            return Err(format!("expected string at byte {}", self.pos));
+        }
+        self.pos += 1;
+        let mut out: Vec<u8> = Vec::new();
+        while let Some(byte) = self.bytes.get(self.pos).copied() {
+            self.pos += 1;
+            match byte {
+                b'"' => {
+                    return String::from_utf8(out)
+                        .map_err(|_| "invalid UTF-8 in string".to_string())
+                }
+                b'\\' => {
+                    let escape = self
+                        .bytes
+                        .get(self.pos)
+                        .copied()
+                        .ok_or("unterminated escape")?;
+                    self.pos += 1;
+                    let ch = match escape {
+                        b'"' => '"',
+                        b'\\' => '\\',
+                        b'/' => '/',
+                        b'b' => '\u{0008}',
+                        b'f' => '\u{000c}',
+                        b'n' => '\n',
+                        b'r' => '\r',
+                        b't' => '\t',
+                        b'u' => {
+                            let hex = self
+                                .bytes
+                                .get(self.pos..self.pos + 4)
+                                .ok_or("short unicode escape")?;
+                            self.pos += 4;
+                            let code =
+                                u16::from_str_radix(std::str::from_utf8(hex).unwrap_or(""), 16)
+                                    .map_err(|_| "bad unicode escape")?;
+                            char::from_u32(code as u32).unwrap_or('\u{fffd}')
+                        }
+                        _ => return Err(format!("bad escape \\{escape}")),
+                    };
+                    out.extend_from_slice(ch.to_string().as_bytes());
+                }
+                _ => out.push(byte),
+            }
+        }
+        Err("unterminated string".into())
+    }
+}
+
+fn mcp_quote(text: &str) -> String {
+    csvx_core::json::quote(text)
+}
+
+fn mcp_id(id: Option<&McpJson>) -> String {
+    match id {
+        None => "null".to_string(),
+        Some(McpJson::Null) => "null".to_string(),
+        Some(McpJson::Bool(value)) => value.to_string(),
+        Some(McpJson::Number(value)) => format!("{value}"),
+        Some(McpJson::String(value)) => mcp_quote(value),
+        Some(_) => "null".to_string(),
+    }
+}
+
+fn mcp_error(id: Option<&McpJson>, code: i64, message: &str) -> String {
+    format!(
+        r#"{{"jsonrpc":"2.0","id":{},"error":{{"code":{},"message":{}}}}}"#,
+        mcp_id(id),
+        code,
+        mcp_quote(message)
+    )
+}
+
+fn mcp_tool_text(id: Option<&McpJson>, text: &str, is_error: bool) -> String {
+    format!(
+        r#"{{"jsonrpc":"2.0","id":{},"result":{{"content":[{{"type":"text","text":{}}}],"isError":{}}}}}"#,
+        mcp_id(id),
+        mcp_quote(text),
+        is_error
+    )
+}
+
+fn mcp_result(id: Option<&McpJson>, result: &str) -> String {
+    format!(
+        r#"{{"jsonrpc":"2.0","id":{},"result":{}}}"#,
+        mcp_id(id),
+        result
+    )
+}
+
+fn mcp_tools() -> &'static str {
+    r#"[{"name":"csvx_schema","description":"Columns, types and row count for a CSV; read-only.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_view","description":"A page of rows; start/count cursor paging; optional where.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"start":{"type":"integer","minimum":0},"count":{"type":"integer","minimum":1,"maximum":1000},"where":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_filter","description":"Evaluate a row predicate and return matching rows or row numbers.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"where":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":1000},"show":{"type":"boolean"}},"required":["path","where"],"additionalProperties":false}},{"name":"csvx_search","description":"Search text across columns or a chosen column set.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"query":{"type":"string"},"columns":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":1000}},"required":["path","query"],"additionalProperties":false}},{"name":"csvx_quality","description":"Quality report: candidate keys, duplicates, mixed types, outliers, groups.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"key":{"type":"string"},"group":{"type":"string"}},"required":["path"],"additionalProperties":false}},{"name":"csvx_pipeline_status","description":"Read the .pipeline.csv state for a plan: hashes and per-step timings.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}}]"#
+}
+
+fn mcp_path(root: &Path, args: &McpJson) -> Result<std::path::PathBuf, String> {
+    let raw = args
+        .get("path")
+        .and_then(McpJson::as_str)
+        .ok_or("path is required")?;
+    let candidate = if Path::new(raw).is_absolute() {
+        PathBuf::from(raw)
+    } else {
+        root.join(raw)
+    };
+    let canonical = std::fs::canonicalize(&candidate)
+        .map_err(|e| format!("cannot resolve {}: {e}", candidate.display()))?;
+    let root = std::fs::canonicalize(root).map_err(|e| format!("cannot resolve root: {e}"))?;
+    if !canonical.starts_with(&root) {
+        return Err(format!(
+            "path {} is outside the MCP root",
+            candidate.display()
+        ));
+    }
+    Ok(canonical)
+}
+
+fn mcp_run_tool(root: &Path, name: &str, args: &McpJson) -> Result<String, String> {
+    let bin = std::env::current_exe().map_err(|e| e.to_string())?;
+    let path = mcp_path(root, args)?;
+    let mut command = std::process::Command::new(bin);
+    match name {
+        "csvx_schema" => {
+            command.args(["schema", path.to_str().unwrap_or(""), "--json"]);
+        }
+        "csvx_view" => {
+            command.args(["view", path.to_str().unwrap_or(""), "--json"]);
+            let start = args.get("start").and_then(McpJson::as_u64).unwrap_or(0);
+            let count = args
+                .get("count")
+                .and_then(McpJson::as_u64)
+                .unwrap_or(100)
+                .min(1000);
+            command.args(["--start", &start.to_string(), "--count", &count.to_string()]);
+            if let Some(where_clause) = args.get("where").and_then(McpJson::as_str) {
+                command.args(["--where", where_clause]);
+            }
+        }
+        "csvx_filter" => {
+            let where_clause = args
+                .get("where")
+                .and_then(McpJson::as_str)
+                .ok_or("where is required")?;
+            let limit = args
+                .get("limit")
+                .and_then(McpJson::as_u64)
+                .unwrap_or(100)
+                .min(1000);
+            command.args([
+                "filter",
+                path.to_str().unwrap_or(""),
+                "--where",
+                where_clause,
+                "--json",
+                "--limit",
+                &limit.to_string(),
+            ]);
+            if args
+                .get("show")
+                .and_then(|value| match value {
+                    McpJson::Bool(flag) => Some(*flag),
+                    _ => None,
+                })
+                .unwrap_or(true)
+            {
+                command.args(["--show", &limit.to_string()]);
+            }
+        }
+        "csvx_search" => {
+            let query = args
+                .get("query")
+                .and_then(McpJson::as_str)
+                .ok_or("query is required")?;
+            let limit = args
+                .get("limit")
+                .and_then(McpJson::as_u64)
+                .unwrap_or(100)
+                .min(1000);
+            command.args([
+                "search",
+                path.to_str().unwrap_or(""),
+                query,
+                "--json",
+                "--limit",
+                &limit.to_string(),
+            ]);
+            if let Some(columns) = args.get("columns").and_then(McpJson::as_str) {
+                command.args(["--columns", columns]);
+            }
+        }
+        "csvx_quality" => {
+            command.args([
+                "analyze",
+                path.to_str().unwrap_or(""),
+                "--quality",
+                "--json",
+            ]);
+            if let Some(key) = args.get("key").and_then(McpJson::as_str) {
+                command.args(["--key", key]);
+            }
+            if let Some(group) = args.get("group").and_then(McpJson::as_str) {
+                command.args(["--group", group]);
+            }
+        }
+        "csvx_pipeline_status" => {
+            command.args(["pipeline", "status", path.to_str().unwrap_or(""), "--json"]);
+        }
+        _ => return Err(format!("unknown tool {name}")),
+    }
+    let output = command
+        .output()
+        .map_err(|e| format!("cannot run csvx: {e}"))?;
+    if !output.status.success() {
+        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+    }
+    Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+}
+
+/// Serve MCP over stdio. One JSON-RPC object per line, stdout reserved for protocol.
+pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
+    use std::io::{BufRead, Write};
+    let stdin = io::stdin();
+    let mut stdout = io::stdout();
+    for line in stdin.lock().lines() {
+        let line = line?;
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        let request = match McpParser::parse(trimmed) {
+            Ok(value) => value,
+            Err(error) => {
+                let response = mcp_error(None, -32700, &format!("parse error: {error}"));
+                writeln!(stdout, "{response}")?;
+                stdout.flush()?;
+                continue;
+            }
+        };
+        let id = request.get("id");
+        let method = request
+            .get("method")
+            .and_then(McpJson::as_str)
+            .unwrap_or("");
+        let response = match method {
+            "initialize" => {
+                let result = format!(
+                    r#"{{"protocolVersion":"2024-11-05","capabilities":{{"tools":{{}}}},"serverInfo":{{"name":"csvx","version":{}}}}}"#,
+                    mcp_quote(env!("CARGO_PKG_VERSION"))
+                );
+                mcp_result(id, &result)
+            }
+            "notifications/initialized" | "notifications/cancelled" => continue,
+            "ping" => format!(r#"{{"jsonrpc":"2.0","id":{},"result":{{}}}}"#, mcp_id(id)),
+            "tools/list" => {
+                let result = format!(r#"{{"tools":{}}}"#, mcp_tools());
+                mcp_result(id, &result)
+            }
+            "tools/call" => {
+                let name = request
+                    .get("params")
+                    .and_then(|envelope| envelope.get("name"))
+                    .and_then(McpJson::as_str)
+                    .unwrap_or("");
+                let arguments = request
+                    .get("params")
+                    .and_then(|envelope| envelope.get("arguments"))
+                    .cloned()
+                    .unwrap_or(McpJson::Object(Vec::new()));
+                match mcp_run_tool(root, name, &arguments) {
+                    Ok(text) => mcp_tool_text(id, &text, false),
+                    Err(error) => mcp_tool_text(id, &error, true),
+                }
+            }
+            _ => mcp_error(id, -32601, &format!("method not found: {method}")),
+        };
+        writeln!(stdout, "{response}")?;
+        stdout.flush()?;
+    }
+    Ok(())
+}
