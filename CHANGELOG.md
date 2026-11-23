@@ -122,6 +122,8 @@
 - **`book --plan`**: a CSV manifest declares sheets, chained lookups and outputs;
   `book --plan book.csv --root .` materializes each output, reruns idempotently,
   and rejects unknown sheets/lookups before writing. No `Sheet!A1`.
+  2.1 GB/55M rows + two chained lookups: 3.1 GB output in 46-48 s, 15 MB RSS,
+  idempotent rerun byte-identical.
 - **`edit compact`**: folds the current journal into a snapshot while keeping the
   original base as `.base` and the old journal as `.journal.history`, so undo can
   cross the boundary (it restores both, then undoes the tail) and redo still works.

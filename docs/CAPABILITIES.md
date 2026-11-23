@@ -155,6 +155,7 @@ output,joined,orders,joined.csv,,,,,"customer,region"
 - `output`：从 `table` 起按 `lookups` 顺序链式查找，最后一个写出 `path`；重跑覆盖同一路径，
   因而刷新是幂等的。缺键返回 `#N/A`，与 `lookup` 一致。
 - 不做 `Sheet!A1`：输出是物化文件，不是跨表按行随机引用。
+- 2.1 GB / 5500 万行、两条链式 lookup：输出 3.1 GB，46–48 s，RSS 15 MB；重跑逐字节一致。
 
 `if` 只算选中的分支（`if(qty=0, 0, amount/qty)` 不会除零）。
 

@@ -100,6 +100,14 @@ sha256 不变、journal 仍 2 行；快照失败会删除 partial `.compact.tmp`
 真实 ENOSPC 不破坏文件、CLI 并发写不丢。HTTP 写走同一 `update_locked` 锁路径，但未单独做
 serve 端到端压测；`.idx` 已随 `.base` 归档并在跨界 undo 恢复。
 
+## Book 多表清单（阶段 3，已完成）
+
+`book --plan book.csv --root .` 用 CSV 清单声明 sheet/lookup/output，按名字链式查找并物化输出；
+未知表/未知 lookup/重复名在写任何输出前报错，重跑覆盖同一路径（幂等），不做 `Sheet!A1`。
+2.1 GB / 5500 万行 drill（2026-11-23）：两条链式 lookup 输出 3.1 GB，**46–48 s**、峰值 RSS **15 MB**；
+55,000,001 行，首行 `o1,...,Customer-1,Region-1`；重跑 sha256 一致、无 `.booktmp` 残留。
+慢于单次 lookup 的原因是要落一次中间文件（链式两遍读写）；功能正确性与内存已达标。
+
 ## 对 Excel / WPS 的覆盖
 
 | 电子表格操作 | 这里怎么做的 |
