@@ -7436,6 +7436,19 @@ mod tests {
     }
 
     #[test]
+    fn startup_cleanup_removes_dead_materialized_files() {
+        let dir = std::env::temp_dir();
+        let dead = dir.join("csvx-materialized-4294967295-1.csv");
+        let live = dir.join(format!("csvx-materialized-{}-test.csv", std::process::id()));
+        std::fs::write(&dead, "x").unwrap();
+        std::fs::write(&live, "x").unwrap();
+        cleanup_stale_mcp_materialized();
+        assert!(!dead.exists());
+        assert!(live.exists());
+        std::fs::remove_file(live).ok();
+    }
+
+    #[test]
     fn cache_evicts_fifo_when_limit_is_exceeded() {
         let dir = std::env::temp_dir().join(format!("csvs_cache_evict_{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
@@ -7904,6 +7917,40 @@ fn cache_insert(
 
 static MATERIALIZE_CACHE: std::sync::OnceLock<std::sync::Mutex<Vec<CachedMaterialized>>> =
     std::sync::OnceLock::new();
+
+fn mcp_process_alive(pid: u32) -> bool {
+    let output = std::process::Command::new("ps")
+        .args(["-p", &pid.to_string(), "-o", "pid="])
+        .output();
+    match output {
+        Ok(output) => output.status.success() && !output.stdout.is_empty(),
+        Err(_) => true,
+    }
+}
+
+fn cleanup_stale_mcp_materialized() {
+    let dir = std::env::temp_dir();
+    let Ok(entries) = std::fs::read_dir(&dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        let Some(rest) = name.strip_prefix("csvx-materialized-") else {
+            continue;
+        };
+        let Some(pid) = rest
+            .split('-')
+            .next()
+            .and_then(|value| value.parse::<u32>().ok())
+        else {
+            continue;
+        };
+        if pid != std::process::id() && !mcp_process_alive(pid) {
+            let _ = std::fs::remove_file(entry.path());
+        }
+    }
+}
 
 fn mcp_materialize(input: &Path) -> Result<std::path::PathBuf, String> {
     if !csvx_core::encoding::is_compressed(input) {
@@ -8520,6 +8567,7 @@ fn mcp_run_pipeline_streaming(
 }
 
 pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
+    cleanup_stale_mcp_materialized();
     use std::io::{BufRead, Write};
     let stdin = io::stdin();
     let mut stdout = io::stdout();

@@ -182,7 +182,8 @@
 - **MCP materialize cache**: the server decompresses a compressed input once and
   reuses the temp CSV for later search/filter calls keyed by path+size+mtime+ctime+inode;
   cache is capped at 4 GiB/16 entries (tunable via CSVX_MCP_CACHE_BYTES/ENTRIES) with
-  FIFO eviction; 2.04 GB gzip repeated query measured 4.61→1.63 s, 86 MB RSS.
+  FIFO eviction; startup removes dead-PID temp files; 2.04 GB gzip repeated query
+  measured 4.61→1.63 s, 86 MB RSS.
 - **MCP materialize options**: `csvx_search`/`csvx_filter` accept materialize and
   forward `--materialize`, so agents can search compressed inputs with random access.
 - **Search/filter materialize**: `--materialize` streams compressed input to a temp
