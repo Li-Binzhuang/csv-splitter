@@ -1971,6 +1971,58 @@ fn xlookup_returns_the_fallback_on_a_miss() {
     assert_eq!(text.lines().nth(2).unwrap(), "B,9,Backup,unknown,Backup");
 }
 
+/// One row can read two different reference sheets: ref() is loaded per triple, so
+/// multiple tables compose instead of fighting for one slot.
+#[test]
+fn one_row_can_read_two_referenced_sheets() {
+    let dir = TempDir::new("sheets2");
+    let orders = dir.join("orders.csv");
+    let customers = dir.join("customers.csv");
+    let regions = dir.join("regions.csv");
+    std::fs::write(&orders, "order,cust_no\nA,1\nB,9\n").unwrap();
+    std::fs::write(&customers, "cust_no,name\n1,Ana\n").unwrap();
+    std::fs::write(&regions, "cust_no,region\n1,NORTH\n").unwrap();
+
+    for (name, value) in [
+        ("customer", r#"ref("customers.csv","cust_no","name")"#),
+        ("region", r#"ref("regions.csv","cust_no","region")"#),
+    ] {
+        let status = Command::new(bin())
+            .args([
+                "edit",
+                "formula",
+                orders.to_str().unwrap(),
+                "--name",
+                name,
+                "--value",
+                value,
+            ])
+            .status()
+            .unwrap();
+        assert_eq!(status.code(), Some(0));
+    }
+
+    let out = dir.join("joined.csv");
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            orders.to_str().unwrap(),
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let text = std::fs::read_to_string(&out).unwrap();
+    assert_eq!(
+        text.lines().next().unwrap(),
+        "order,cust_no,customer,region"
+    );
+    assert_eq!(text.lines().nth(1).unwrap(), "A,1,Ana,NORTH");
+    assert_eq!(text.lines().nth(2).unwrap(), "B,9,#N/A,#N/A");
+}
+
 /// A bulk edit is one journal entry however many rows it changes.
 #[test]
 fn bulk_edit_matches_a_filter_and_stays_one_operation() {

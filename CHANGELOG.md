@@ -110,6 +110,10 @@
   delivery drill) reads 14.9 s filter / 16.3 s search against 13.2–13.9 / 13.8–14.6 at
   250M rows, with the same 78–81 MB. Filter/search cost tracks row count, not bytes;
   CAPABILITIES tells readers to estimate capacity from rows.
+- **Multi-table references**: one formula row can read several reference sheets at
+  once (the CLI test exports customer and region from two files in one pass); the
+  gap table now states that `Sheet!A1` is not planned because row-aligned random
+  access across files is not available to a streaming export.
 - **`workday(start, days)`**: moves a date by business days, skipping weekends and
   accepting negative days (no holiday list in the two-argument form); zero keeps the
   date.
