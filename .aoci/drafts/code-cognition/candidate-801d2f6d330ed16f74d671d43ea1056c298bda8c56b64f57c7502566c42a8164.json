@@ -1,0 +1,93 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "c4ac8fc108b08d7b7b058ea6cfa2c0df27b70c16fd7fa09b2d222ade6a80848c",
+  "batch_id": "801d2f6d330ed16f74d671d43ea1056c298bda8c56b64f57c7502566c42a8164",
+  "composite_identity": "732e1125cceca2f97555678c6584e43c241a9cb6ba3125718a25c2e33d779ab2",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b663bf0e212798963de6abf45e7cf914eacef91bfd8dcea6c92d79cca1622c77",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "b38cd40d4bd95184fe65054caf2d49ef95189924445518aa430b91ade0eafbb6",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、sumproduct、文本函数、日期运算、原子 transaction 与整批撤销/重做、pivot/groupby 全聚合等价测试，以及预扫 100 万行冷启动约 25 ms 的测量 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "24f3a812a70f847836a8776bcda8f4769376b001361d968afad0d16c96c986b0",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合支持整列/同行区间/多条件；stdev/var（样本）与 stdevp/varp（总体）共用平方和；sumproduct 逐项乘加；文本有 textjoin/char/code；日期支持 edate/eomonth/weekday/days | S:单列参数的聚合按整列解释；无预扫状态时聚合为 #VALUE!；跨行区间返回 #VALUE!；总体方差要求 n≥1"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "4141fdc68616dfbaa543b58df6f1fa7d1ea9e4e6f1fee1b719f0ed90d1eb0b42",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、stdev/var 与 stdevp/varp、同行区间与 sumproduct、文本拼接、日期运算；条件字面量含 * 或 ? 时编译为 Wildcard | S:公式列只存 journal；跨行区间无随机访问；日期是 ISO 文本"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "91cbb48022341151f0596183141cf8630b01920ce3c7c27c48a79e035e7fb5a2",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 区分预扫与导出：重复预扫约 30 ms（达标），冷启动 50–60 ms（列切片后从 80 ms 降下，仍略高于 50 ms）；同行区间已做、跨行未做；缺口 5 已做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "41820ea6ad3a8938aa864d12ded8ba5141e46374b389ec55163f367cbfa08013",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、stdev/var/stdevp/varp、同行区间与 sumproduct、文本函数、日期运算、条件通配符；编辑表含原子批量写、一次撤销/重做整批；透视表列出 count/sum/mean/min/max 与多值列 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "d11198565eaef4d324ce84b5ddc7a62a85e6a0bed5bf971789b20ce9968682ef",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "b38cd40d4bd95184fe65054caf2d49ef95189924445518aa430b91ade0eafbb6",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、sumproduct、文本函数、日期运算、原子 transaction 与整批撤销/重做、pivot/groupby 全聚合等价测试，以及预扫 100 万行冷启动约 25 ms 的测量 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "52a78954e156c99bf8d3344a28b4120cf290f6433d3bc2659193144fca43b59f",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "24f3a812a70f847836a8776bcda8f4769376b001361d968afad0d16c96c986b0",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合支持整列/同行区间/多条件；stdev/var（样本）与 stdevp/varp（总体）共用平方和；sumproduct 逐项乘加；文本有 textjoin/char/code；日期支持 edate/eomonth/weekday/days | S:单列参数的聚合按整列解释；无预扫状态时聚合为 #VALUE!；跨行区间返回 #VALUE!；总体方差要求 n≥1"
+    },
+    {
+      "candidate_id": "a2406a73a15266bc3e1afbd7bc21e4f9c62b47c44687701a58e1281efa92f359",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "4141fdc68616dfbaa543b58df6f1fa7d1ea9e4e6f1fee1b719f0ed90d1eb0b42",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、stdev/var 与 stdevp/varp、同行区间与 sumproduct、文本拼接、日期运算；条件字面量含 * 或 ? 时编译为 Wildcard | S:公式列只存 journal；跨行区间无随机访问；日期是 ISO 文本"
+    },
+    {
+      "candidate_id": "4ec99aa2c77e18c1024807ef6994c6fb9086ce1ce92027ab71c548d8075e5a33",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "91cbb48022341151f0596183141cf8630b01920ce3c7c27c48a79e035e7fb5a2",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：8 条已实测优势与 6 条未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 区分预扫与导出：重复预扫约 30 ms（达标），冷启动 50–60 ms（列切片后从 80 ms 降下，仍略高于 50 ms）；同行区间已做、跨行未做；缺口 5 已做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    },
+    {
+      "candidate_id": "09f55e300dfdc031e355eb94198d753911afa972bf40432cccb7b18675d494c4",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "41820ea6ad3a8938aa864d12ded8ba5141e46374b389ec55163f367cbfa08013",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、stdev/var/stdevp/varp、同行区间与 sumproduct、文本函数、日期运算、条件通配符；编辑表含原子批量写、一次撤销/重做整批；透视表列出 count/sum/mean/min/max 与多值列 | S:-"
+    }
+  ]
+}
