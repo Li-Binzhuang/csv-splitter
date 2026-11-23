@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a8e714016909098f9d45e3dd6223f048aea77a066886347f9bdce15829910329",
+  "batch_id": "62d2456518b8bd07cfdfbdaeeb6945a99754480ddcc041132e78093a4b97466b",
+  "composite_identity": "7afd842599531a34a36f0ac26ac952fa780745048edbec5fdd50d2bd2a7ff505",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "7f03c8c85597281e7f9a67c9869a00c0094068ec9b9a34414ce8cce09460c17a",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "db06cdbd0c4d44596b12fa055668daf2e91e79693f3358fdbf039ce052a696ac",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:离线发布包验收：SHA256、必需成员、包内二进制 | R:code:scripts/package_release.sh | A:参数 tar.gz；要求同名 .sha256，shasum -c；临时解包后检查 csvx/README/RELEASE_CHECKLIST/ROADMAP/mcp_sdk client，再运行包内 csvx --version；trap 清理 | S:仅用于发布方；不联网、不打 tag；缺文件或校验失败非零退出"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "815802d55a54e38d9f5ba542209c2c28e039f88287f46259f49294670696a4b6",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "db06cdbd0c4d44596b12fa055668daf2e91e79693f3358fdbf039ce052a696ac",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:离线发布包验收：SHA256、必需成员、包内二进制 | R:code:scripts/package_release.sh | A:参数 tar.gz；要求同名 .sha256，shasum -c；临时解包后检查 csvx/README/RELEASE_CHECKLIST/ROADMAP/mcp_sdk client，再运行包内 csvx --version；trap 清理 | S:仅用于发布方；不联网、不打 tag；缺文件或校验失败非零退出"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "aa5194281607f72964820741507f9f8a791d1b7ef38ada9f3fdf61994db02de8",
+  "batch_id": "a6fd8a99ac96a7034d44a3707e393bde94dea0858585eab6b19fe6d614ee447a",
+  "composite_identity": "0731a09edb671d4af7c9abe0233e79842d590689c2f83dd871b99d9d32ff5e45",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "2881dfafd9f2f4f31acc5bbe0a5b5a2b25fc4cfbdce2868e9fe41678e55d3400",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "2391e41519f3b31275b821a8287ca17176087a188a4a2b1447fc374cc0fabd0c",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:docs/DEMO.md | A:发布前 gate/demo/package；记录 2026-11-23 release 30.28 s、pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2、SDK 2 条 pipeline progress 与 job progress；MCP 缓存 2.04 GB 重查 4.61→1.63 s/86 MB；SHA 由打包脚本输出 | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "create",
+      "source_sha256": "db06cdbd0c4d44596b12fa055668daf2e91e79693f3358fdbf039ce052a696ac"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "95175f09e9a2ab4837e97cd7318e20e156222ead55db87791e9b4866fd09320c",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "2391e41519f3b31275b821a8287ca17176087a188a4a2b1447fc374cc0fabd0c",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:docs/DEMO.md | A:发布前 gate/demo/package；记录 2026-11-23 release 30.28 s、pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2、SDK 2 条 pipeline progress 与 job progress；MCP 缓存 2.04 GB 重查 4.61→1.63 s/86 MB；SHA 由打包脚本输出 | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    },
+    {
+      "candidate_id": "cc270353135a304a0673506ff7fe93cabd549e81b434beea6dfe2cfc380fc6c0",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "create",
+      "source_sha256": "db06cdbd0c4d44596b12fa055668daf2e91e79693f3358fdbf039ce052a696ac"
+    }
+  ]
+}
