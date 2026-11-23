@@ -1432,6 +1432,55 @@ mod tests {
     }
 
     #[test]
+    fn large_and_small_read_a_same_row_range() {
+        let columns = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("a".to_string(), "10".to_string());
+        cells.insert("b".to_string(), "3".to_string());
+        cells.insert("c".to_string(), "7".to_string());
+        for (formula, expected) in [
+            ("large(A2:C2, 1)", "10"),
+            ("large(A2:C2, 2)", "7"),
+            ("small(A2:C2, 1)", "3"),
+            ("small(A2:C2, 2)", "7"),
+        ] {
+            assert_eq!(
+                Formula::parse(formula)
+                    .unwrap()
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{formula}"
+            );
+        }
+        assert_eq!(
+            Formula::parse("large(A2:C2, 0)")
+                .unwrap()
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!",
+            "k is 1-based"
+        );
+        assert_eq!(
+            Formula::parse("small(A2:C2, 4)")
+                .unwrap()
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!",
+            "k past the end"
+        );
+        cells.insert("c".to_string(), "n/a".to_string());
+        assert_eq!(
+            Formula::parse("large(A2:C2, 2)")
+                .unwrap()
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "3",
+            "text is ignored, leaving two numbers"
+        );
+    }
+
+    #[test]
     fn median_reads_a_same_row_range_and_refuses_a_whole_column() {
         let columns = vec!["a".to_string(), "b".to_string(), "c".to_string()];
         let mut cells = HashMap::new();

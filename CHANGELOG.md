@@ -69,6 +69,9 @@
 - **`averageif`**: `averageif(amount, ">5")` and `averageif(B2:C2, ">5")` reuse the
   same matching (sum, count) as `sumif`, so no extra scan; no matching cell is `#VALUE!`
   instead of a division by zero.
+- **`large(range, k)` / `small(range, k)`**: the k-th largest/smallest value of a
+  same-row range (k is 1-based and truncated toward zero); text and blanks are ignored,
+  and k outside 1..n is `#VALUE!`.
 - **`median(range)`**: returns the median of a same-row range, ignoring text and blanks;
   a whole-column median is `#VALUE!` because it would have to keep every value.
 - **Aggregate pre-pass**: whole-column sums no longer build a field vector per record,

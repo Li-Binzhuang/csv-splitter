@@ -251,6 +251,35 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 (values[len / 2 - 1] + values[len / 2]) / 2.0
             })
         }
+        // LARGE/SMALL over a same-row range: k is 1-based, truncated toward zero.
+        "large" | "small" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            let Some(k) = eval(&args[1], ctx).number() else {
+                return Value::Error;
+            };
+            if !k.is_finite() || k < 1.0 {
+                return Value::Error;
+            }
+            let k = k.floor() as usize;
+            if k == 0 || k > values.len() {
+                return Value::Error;
+            }
+            let mut values = values;
+            values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+            Value::Number(if lower == "large" {
+                values[values.len() - k]
+            } else {
+                values[k - 1]
+            })
+        }
         // Whole-column aggregates: the pre-pass installed the totals before the loop
         // started, so every row reads the same number in O(1). The argument is a column
         // name taken from the syntax tree, exactly like `lag`.
