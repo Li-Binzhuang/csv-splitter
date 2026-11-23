@@ -2088,6 +2088,11 @@ fn cmd_view(args: &[String]) -> i32 {
     // No `warn_pending_edits` here: unlike the read-only commands, `view` applies them.
 
     let sidecar = csvx_core::workbook::Journal::sidecar(&input);
+    // An interrupted compaction must be repaired before this command loads the journal.
+    if let Err(e) = csvx_core::workbook::recover_compaction(&input) {
+        eprintln!("error: {e}");
+        return 1;
+    }
     warn_journal_damage(&input);
     let journal = match csvx_core::workbook::Journal::load(&sidecar) {
         Ok(j) => j,
@@ -6536,6 +6541,10 @@ fn cmd_edit(args: &[String]) -> i32 {
         }
     };
     let sidecar = csvx_core::workbook::Journal::sidecar(&input);
+    if let Err(e) = csvx_core::workbook::recover_compaction(&input) {
+        eprintln!("error: {e}");
+        return 1;
+    }
     warn_journal_damage(&input);
     let mut journal = match csvx_core::workbook::Journal::load(&sidecar) {
         Ok(j) => j,

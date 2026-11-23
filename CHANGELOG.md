@@ -124,6 +124,8 @@
   cross the boundary (it restores both, then undoes the tail) and redo still works.
   Crash markers repair an interrupted swap; a redo branch blocks compaction/undo.
   1M rows + 1M ops: view 1.13 s/export 0.91 s -> 0.02 s/0.02 s after a 1.04 s compact.
+  Compaction holds the journal lock; crash hooks abort at four swap windows and the
+  next command recovers with edits applied once; exports before/after are byte-equal.
 - **Byte predicates for parallel scans**: search and no-output filter now check
   records via `visit_fields` instead of allocating `String` fields; search also
   rejects a record whose raw bytes cannot contain the query before splitting it.

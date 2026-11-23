@@ -13,6 +13,53 @@ pub struct Journal {
     redo: Vec<Op>,
 }
 
+/// An exclusive writer lock. Dropping it removes the lock file.
+pub struct JournalLock {
+    path: PathBuf,
+}
+
+impl JournalLock {
+    /// Wait up to five seconds for a writer, treating a lock older than ten seconds as
+    /// left behind by a killed process. The same policy as `update_locked` always had.
+    pub fn acquire(sidecar: &Path) -> io::Result<Self> {
+        let path = sidecar.with_extension("journal.lock");
+        let started = std::time::Instant::now();
+        loop {
+            match std::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&path)
+            {
+                Ok(_) => return Ok(Self { path }),
+                Err(e) if e.kind() == io::ErrorKind::AlreadyExists => {
+                    if let Ok(meta) = std::fs::metadata(&path) {
+                        if let Ok(modified) = meta.modified() {
+                            if modified.elapsed().map(|d| d.as_secs()).unwrap_or(0) > 10 {
+                                let _ = std::fs::remove_file(&path);
+                                continue;
+                            }
+                        }
+                    }
+                    if started.elapsed() > std::time::Duration::from_secs(5) {
+                        return Err(io::Error::new(
+                            io::ErrorKind::WouldBlock,
+                            format!("another writer holds {}; retry in a moment", path.display()),
+                        ));
+                    }
+                    std::thread::sleep(std::time::Duration::from_millis(10));
+                }
+                Err(e) => return Err(e),
+            }
+        }
+    }
+}
+
+impl Drop for JournalLock {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.path);
+    }
+}
+
 impl Journal {
     pub fn new() -> Self {
         Self::default()
@@ -163,47 +210,11 @@ impl Journal {
     where
         F: FnOnce(&mut Journal) -> io::Result<()>,
     {
-        let lock = sidecar.with_extension("journal.lock");
-        let mut held = None;
-        let started = std::time::Instant::now();
-        while held.is_none() {
-            match std::fs::OpenOptions::new()
-                .write(true)
-                .create_new(true)
-                .open(&lock)
-            {
-                Ok(file) => held = Some(file),
-                Err(e) if e.kind() == io::ErrorKind::AlreadyExists => {
-                    // A lock left behind by a killed process must not wedge the file
-                    // forever: after ten seconds it is presumed stale.
-                    if let Ok(meta) = std::fs::metadata(&lock) {
-                        if let Ok(modified) = meta.modified() {
-                            if modified.elapsed().map(|d| d.as_secs()).unwrap_or(0) > 10 {
-                                let _ = std::fs::remove_file(&lock);
-                                continue;
-                            }
-                        }
-                    }
-                    if started.elapsed() > std::time::Duration::from_secs(5) {
-                        return Err(io::Error::new(
-                            io::ErrorKind::WouldBlock,
-                            format!("another writer holds {}; retry in a moment", lock.display()),
-                        ));
-                    }
-                    std::thread::sleep(std::time::Duration::from_millis(10));
-                }
-                Err(e) => return Err(e),
-            }
-        }
-        let result = (|| {
-            let mut journal = Self::load(sidecar)?;
-            apply(&mut journal)?;
-            journal.save(sidecar)?;
-            Ok(journal)
-        })();
-        drop(held.take());
-        let _ = std::fs::remove_file(&lock);
-        result
+        let _lock = JournalLock::acquire(sidecar)?;
+        let mut journal = Self::load(sidecar)?;
+        apply(&mut journal)?;
+        journal.save(sidecar)?;
+        Ok(journal)
     }
 
     /// Record a new operation.
@@ -690,6 +701,12 @@ fn take_marker(path: &Path, current_len: usize) -> io::Result<Option<usize>> {
     }
 }
 
+fn crash_point(name: &str) {
+    if std::env::var("CSVX_COMPACT_CRASH_AT").ok().as_deref() == Some(name) {
+        std::process::abort();
+    }
+}
+
 /// Summary of one explicit journal compaction.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CompactSummary {
@@ -726,6 +743,7 @@ pub fn compact(
     tx: &ProgressSender,
 ) -> io::Result<CompactSummary> {
     let sidecar = Journal::sidecar(base);
+    let _lock = JournalLock::acquire(&sidecar)?;
     let journal = Journal::load(&sidecar)?;
     if journal.redo_len() > 0 {
         return Err(io::Error::new(
@@ -752,14 +770,18 @@ pub fn compact(
     let summary = super::export(base, &journal.ops, &tmp, delimiter, tx)?;
     std::fs::copy(base, &archive)?;
     std::fs::copy(&sidecar, &history)?;
+    crash_point("after_copies");
     let blocks = Journal::blocks_sidecar(base);
     let blocks_history = history_blocks_path(&sidecar);
     if blocks.exists() {
         std::fs::copy(&blocks, &blocks_history)?;
     }
     std::fs::write(prepared_marker(base), b"prepared\n")?;
+    crash_point("after_prepared");
     std::fs::rename(&tmp, base)?;
+    crash_point("after_rename");
     std::fs::write(installed_marker(base), b"installed\n")?;
+    crash_point("after_install");
     Journal::new().save(&sidecar)?;
     if blocks.exists() {
         std::fs::remove_file(&blocks)?;
@@ -816,6 +838,7 @@ pub fn recover_compaction(base: &Path) -> io::Result<()> {
             let _ = std::fs::remove_file(&archive);
             let _ = std::fs::remove_file(&history);
             let _ = std::fs::remove_file(history_blocks_path(&sidecar));
+            let _ = std::fs::remove_file(snapshot_tmp(base));
         }
     }
     Ok(())
@@ -1090,6 +1113,59 @@ mod compact_tests {
         assert_eq!(Journal::load(&sidecar).unwrap().len(), 2);
         assert!(!archive_path(&base).exists());
         assert!(!history_path(&sidecar).exists());
+        std::fs::remove_dir_all(&d).ok();
+    }
+
+    #[test]
+    fn compact_refuses_a_second_level_and_leaves_the_sheet_untouched() {
+        let d = dir("occupied");
+        let base = d.join("b.csv");
+        std::fs::write(&base, "id,city,amount\n1,CDMX,10\n2,Puebla,20\n").unwrap();
+        let sidecar = Journal::sidecar(&base);
+        edited_journal().save(&sidecar).unwrap();
+        std::fs::create_dir(archive_path(&base)).unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let error = compact(&base, Delimiter::Comma, &tx).unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::AlreadyExists);
+        assert_eq!(
+            std::fs::read_to_string(&base).unwrap(),
+            "id,city,amount\n1,CDMX,10\n2,Puebla,20\n"
+        );
+        assert_eq!(Journal::load(&sidecar).unwrap().len(), 2);
+        assert!(!snapshot_tmp(&base).exists());
+        std::fs::remove_dir_all(&d).ok();
+    }
+
+    #[test]
+    fn a_writer_waits_for_the_journal_lock() {
+        let d = dir("lock");
+        let base = d.join("b.csv");
+        std::fs::write(&base, "id\n1\n").unwrap();
+        let sidecar = Journal::sidecar(&base);
+        let held = JournalLock::acquire(&sidecar).unwrap();
+        let done = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let flag = done.clone();
+        let path = sidecar.clone();
+        let handle = std::thread::spawn(move || {
+            Journal::update_locked(&path, |journal| {
+                journal.push(Op::SetCell {
+                    row: 0,
+                    column: "id".into(),
+                    value: "2".into(),
+                });
+                Ok(())
+            })
+            .unwrap();
+            flag.store(true, std::sync::atomic::Ordering::SeqCst);
+        });
+        std::thread::sleep(std::time::Duration::from_millis(150));
+        assert!(
+            !done.load(std::sync::atomic::Ordering::SeqCst),
+            "a second writer must wait for the lock"
+        );
+        drop(held);
+        handle.join().unwrap();
+        assert_eq!(Journal::load(&sidecar).unwrap().len(), 1);
         std::fs::remove_dir_all(&d).ok();
     }
 

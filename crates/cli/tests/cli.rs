@@ -2050,6 +2050,19 @@ fn compact_preserves_undo_and_redo_across_the_boundary() {
             .unwrap();
         assert_eq!(status.code(), Some(0));
     }
+    // The pre-compaction export is the byte-for-byte oracle for the snapshot.
+    let before = dir.join("before.csv");
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            base.to_str().unwrap(),
+            "-o",
+            before.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
     let status = Command::new(bin())
         .args(["edit", "compact", base.to_str().unwrap()])
         .status()
@@ -2058,6 +2071,23 @@ fn compact_preserves_undo_and_redo_across_the_boundary() {
     let snapshot = std::fs::read_to_string(&base).unwrap();
     assert!(snapshot.contains("2,Tijuana,20"), "{snapshot}");
     assert!(snapshot.contains("3,Monterrey,99"), "{snapshot}");
+    let after = dir.join("after.csv");
+    let status = Command::new(bin())
+        .args([
+            "edit",
+            "export",
+            base.to_str().unwrap(),
+            "-o",
+            after.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    assert_eq!(
+        std::fs::read(&before).unwrap(),
+        std::fs::read(&after).unwrap(),
+        "compaction must export byte-for-byte the same sheet"
+    );
     let archive = dir.join("b.csv.base");
     assert!(archive.exists(), "the original base must be archived");
     assert!(dir.join("b.csv.journal.history").exists());
@@ -2111,6 +2141,69 @@ fn compact_preserves_undo_and_redo_across_the_boundary() {
     }
     let text = export("redo-last.csv");
     assert!(text.contains("3,Monterrey,99"), "{text}");
+}
+
+/// Kill the compactor at each file-swap window and prove the next command recovers
+/// to the same sheet, with each edit applied exactly once.
+#[test]
+fn crashed_compactions_recover_once_at_every_window() {
+    for scenario in [
+        "after_copies",
+        "after_prepared",
+        "after_rename",
+        "after_install",
+    ] {
+        let dir = TempDir::new(&format!("crash-{scenario}"));
+        let base = dir.join("b.csv");
+        std::fs::write(
+            &base,
+            "id,city,amount\n1,CDMX,10\n2,Puebla,20\n3,Monterrey,30\n",
+        )
+        .unwrap();
+        for (row, col, value) in [(2, "city", "Tijuana"), (3, "amount", "99")] {
+            let status = Command::new(bin())
+                .args([
+                    "edit",
+                    "set",
+                    base.to_str().unwrap(),
+                    "--row",
+                    &row.to_string(),
+                    "--col",
+                    col,
+                    "--value",
+                    value,
+                ])
+                .status()
+                .unwrap();
+            assert_eq!(status.code(), Some(0));
+        }
+        let status = Command::new(bin())
+            .args(["edit", "compact", base.to_str().unwrap()])
+            .env("CSVX_COMPACT_CRASH_AT", scenario)
+            .status()
+            .unwrap();
+        assert!(!status.success(), "{scenario}: the crash hook did not fire");
+        let out = dir.join("out.csv");
+        let status = Command::new(bin())
+            .args([
+                "edit",
+                "export",
+                base.to_str().unwrap(),
+                "-o",
+                out.to_str().unwrap(),
+            ])
+            .status()
+            .unwrap();
+        assert_eq!(status.code(), Some(0), "{scenario}: recovery failed");
+        let text = std::fs::read_to_string(&out).unwrap();
+        assert_eq!(
+            text, "id,city,amount\n1,CDMX,10\n2,Tijuana,20\n3,Monterrey,99\n",
+            "{scenario}: edits must appear exactly once"
+        );
+        assert!(!dir.join("b.csv.compact.prepared").exists(), "{scenario}");
+        assert!(!dir.join("b.csv.compact.installed").exists(), "{scenario}");
+        assert!(!dir.join("b.csv.compact.tmp").exists(), "{scenario}");
+    }
 }
 
 /// A bulk edit is one journal entry however many rows it changes.

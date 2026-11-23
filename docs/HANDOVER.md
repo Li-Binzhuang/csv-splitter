@@ -72,13 +72,17 @@ journal，undo 就失去恢复旧值的依据。因此压实必须同时保留�
 7. 不做隐式自动压实；先显式命令，等崩溃/并发测试稳定后再评估阈值。
 
 **已实现（2026-11-23，`edit compact`）**：CLI 压实、标记驱动的恢复（未安装快照则回滚、已安装则
-清空旧 journal）、跨界 undo/redo 还原。实测 1M 行 base + 100 万条 journal（22 MB）：压实前
-view **1.13 s** / export **0.91 s**，压实 **1.04 s**；压实后 view/export **0.02 s / 0.02 s**。
-原 base 与 history 均保留（18 MB + 22 MB）。CLI 端到端测试钉住“压实 → 两次 undo 跨边界 → 两次
-redo 回到快照态”；journal 单测覆盖快照安装前回滚、安装后补清空两种崩溃窗口。
+清空旧 journal）、跨界 undo/redo 还原；压实全程持有 journal 写锁，`update_locked` 的并发写会等锁。
+实测 1M 行 base + 100 万条 journal（22 MB）：压实前 view **1.13 s** / export **0.91 s**，压实
+**1.04 s**；压实后 view/export **0.02 s / 0.02 s**；原 base 与 history 保留（18 MB + 22 MB）。
 
-**仍待补**：真实进程崩溃注入（kill 在 rename 前后，而不只是构造标记）；磁盘满；并发写与压实
-竞争；`verify` 与压实时导出的结果逐字节比对；1000 万条 history 的压实耗时与空间。
+测试：CLI 端到端钉住“压实 → 两次 undo 跨边界 → 两次 redo 回到快照态”，并比对压实前后导出
+**逐字节一致**；`CSVX_COMPACT_CRASH_AT` 在 after_copies / after_prepared / after_rename /
+after_install 四个窗口真实 abort 进程，下一命令都能恢复且编辑只应用一次；单测覆盖安装前回滚、
+安装后补清空、锁等待、已有快照时拒绝且不改文件。
+
+**仍待补**：真实磁盘满（现只验证了写前拒绝）；1000 万条 history 的压实耗时/空间；HTTP 并发写
+与压实竞争（CLI 侧 `update_locked` 已串行）；`.idx`/`.view` sidecar 的搬迁测试。
 
 ## 对 Excel / WPS 的覆盖
 
