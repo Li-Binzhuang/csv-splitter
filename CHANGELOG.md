@@ -73,7 +73,8 @@
   a whole-column median is `#VALUE!` because it would have to keep every value.
 - **Aggregate pre-pass**: whole-column sums no longer build a field vector per record,
   and the column-name key is no longer reallocated for every numeric cell. On a 1M-row
-  file the cold pre-pass measures ~25 ms (cold export 0.12 s minus warm 0.09 s, 8 threads);
+  file the cold pre-pass measures ~25-30 ms (2026-11-23 recheck: cold export 0.11 s minus
+  warm 0.08 s, 8 threads; the earlier run read 0.12/0.09);
   a run immediately after a rebuild can still read ~0.6 s while binary and file pages are
   cold, so compare medians, not single runs.
 - **Analysis equivalence coverage**: the native-vs-DuckDB byte-for-byte tests for
