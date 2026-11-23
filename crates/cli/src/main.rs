@@ -7955,6 +7955,21 @@ fn pipeline_state_path(plan: &std::path::Path) -> std::path::PathBuf {
     std::path::PathBuf::from(format!("{}.pipeline.csv", plan.display()))
 }
 
+fn pipeline_lineage_path(plan: &std::path::Path) -> std::path::PathBuf {
+    std::path::PathBuf::from(format!("{}.lineage.csv", plan.display()))
+}
+
+fn save_pipeline_lineage(plan: &std::path::Path, lineage: &PipelineLineage) -> std::io::Result<()> {
+    let mut text = String::from("step,deps\n");
+    for (name, deps) in lineage {
+        text.push_str(&pipeline_csv_cell(name));
+        text.push(',');
+        text.push_str(&pipeline_csv_cell(&deps.join(";")));
+        text.push('\n');
+    }
+    std::fs::write(pipeline_lineage_path(plan), text)
+}
+
 fn fnv_hash(bytes: &[u8]) -> u64 {
     let mut hash = 0xcbf2_9ce4_8422_2325u64;
     for byte in bytes {
@@ -8748,6 +8763,7 @@ fn run_pipeline_plan(
             .enumerate()
             .map(|(index, step)| (step.name.clone(), pipeline_dependencies(&steps, index)))
             .collect();
+        save_pipeline_lineage(plan, &lineage)?;
         return Ok((results, lineage));
     }
     let mut skip = 0usize;
@@ -9027,6 +9043,9 @@ fn run_pipeline_plan(
         .enumerate()
         .map(|(index, step)| (step.name.clone(), pipeline_dependencies(&steps, index)))
         .collect();
+    if !dry_run {
+        save_pipeline_lineage(plan, &lineage)?;
+    }
     Ok((results, lineage))
 }
 

@@ -169,6 +169,8 @@
   graph (empty input → previous step, step name → earlier step, file → no step
   dependency), freshness-checks each ready step and runs stale ready steps in
   bounded concurrent waves. Test covers a diamond and all-fresh second pass.
+- **Persisted lineage**: successful linear/DAG runs write `<plan>.lineage.csv`
+  (`step,deps`) next to the plan; dry-run and failures do not write it.
 - **Pipeline lineage**: dry-run JSON now includes each step's `deps` (previous
   step for empty input, earlier step names, or none for source files); text dry-run
   prints the same edges. No execution/state write.

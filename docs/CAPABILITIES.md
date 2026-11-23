@@ -263,7 +263,8 @@ joined,filtered,lookup,--key cust_no --reference customers.csv --get name --out 
   `0` 表示不限；stdout/stderr 由独立线程并发读取，避免管道写满死锁。
 - `--retries <n>` 与 `--retry-delay <ms>`：失败/超时后重试，默认 0 次、250 ms；
   每次重试先删除临时输出；命令必须可重复写 `{out}`，否则不要开启重试。
-- `--dry-run` 只报告 fresh / would-run，不执行、不写 state；`--json` 输出
+- 成功运行后会写 `<plan>.lineage.csv`（列 `step,deps`，deps 以 `;` 分隔），dry-run 不写。
+`--dry-run` 只报告 fresh / would-run，不执行、不写 state；`--json` 输出
   `{"dryRun":true,"steps":[{"step","fresh","detail","deps":[...]}]}`，`deps` 是声明式
   血缘（空输入依赖上一步，步骤名依赖更早步骤，文件路径无步骤依赖）。
 - `input` 为空表示上一步输出；也可写前一步的 `step` 名或文件路径。

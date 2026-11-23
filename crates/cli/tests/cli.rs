@@ -3047,6 +3047,35 @@ fn pipeline_parallel_group_failure_is_atomic() {
     assert!(!dir.join("plan.csv.pipeline.csv").exists());
 }
 
+/// A successful run persists the dependency edges next to the plan.
+#[test]
+fn pipeline_persists_lineage() {
+    let dir = TempDir::new("pipeline-lineage");
+    std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n2,Puebla\n").unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},a.csv\nb,a,filter,--where id=1 -o {out},b.csv\n",
+    )
+    .unwrap();
+    let result = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let lineage = std::fs::read_to_string(dir.join("plan.csv.lineage.csv")).unwrap();
+    assert_eq!(lineage, "step,deps\na,\nb,a\n");
+}
+
 /// Steps sharing a group run concurrently; their outputs are all committed.
 #[test]
 fn pipeline_parallel_group_runs_branches() {
