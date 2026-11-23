@@ -137,6 +137,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--dry-run", "Report fresh/would-run steps without executing"),
             ("--force", "Rerun every step even when fresh"),
             ("--clean", "Remove stale pipeline staging files before running"),
+            ("--unlock", "Remove the plan lock before running (use with care)"),
             ("--dag", "Run ready steps by dependency order (requires --jobs > 1)"),
             ("--jobs", "Concurrency for groups/DAG (default 1)"),
             ("--retries", "Retry a failed step N times (default 0)"),
@@ -8794,6 +8795,7 @@ fn run_pipeline_plan(
     jobs: usize,
     dag: bool,
     clean: bool,
+    unlock: bool,
 ) -> std::io::Result<(PipelineResults, PipelineLineage)> {
     let root = root
         .map(std::path::Path::to_path_buf)
@@ -8895,6 +8897,9 @@ fn run_pipeline_plan(
                 }
             }
         }
+    }
+    if unlock {
+        let _ = std::fs::remove_file(format!("{}.pipeline.lock", plan.display()));
     }
     let _lock = acquire_pipeline_lock(plan)?;
     let recovered = recover_dag_backups(&steps)?;
@@ -9227,6 +9232,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
     let mut jobs = 1usize;
     let mut dag = false;
     let mut clean = false;
+    let mut unlock = false;
     let mut json = false;
     while let Some(arg) = p.next() {
         match arg.as_str() {
@@ -9239,6 +9245,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             },
             "--force" => force = true,
             "--dry-run" => dry_run = true,
+            "--unlock" => unlock = true,
             "--clean" => clean = true,
             "--dag" => dag = true,
             "--jobs" => match p
@@ -9325,6 +9332,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             jobs,
             dag,
             clean,
+            unlock,
         ) {
             Ok((results, lineage)) => {
                 if dry_run {

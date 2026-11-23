@@ -171,6 +171,8 @@
   graph (empty input → previous step, step name → earlier step, file → no step
   dependency), freshness-checks each ready step and runs stale ready steps in
   bounded concurrent waves. Test covers a diamond and all-fresh second pass.
+- **Unlock escape**: `pipeline run --unlock` removes the plan lock first; test
+  holds a false lock and asserts the run succeeds and the lock is released.
 - **Run lock**: `<plan>.pipeline.lock` blocks a second run on the same plan; locks
   older than 24h are treated as stale and removed. Test holds a lock manually, asserts
   refusal/no output, then runs and asserts release.

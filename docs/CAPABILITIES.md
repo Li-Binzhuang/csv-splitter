@@ -265,6 +265,7 @@ joined,filtered,lookup,--key cust_no --reference customers.csv --get name --out 
   每次重试先删除临时输出；命令必须可重复写 `{out}`，否则不要开启重试。
 - 同一计划有 `<plan>.pipeline.lock` 运行锁：已存在且未超过 24 小时会拒绝第二次运行；
 超过 24 小时的锁视为残留并自动移除。锁在正常返回/失败时释放。
+`--unlock` 可在运行前显式删除锁；仅在确认没有其他 run 时使用。
 成功运行后会写 `<plan>.lineage.csv`（列 `step,deps`，deps 以 `;` 分隔），dry-run 不写。
 `--dry-run` 只报告 fresh / would-run，不执行、不写 state；`--json` 输出
   `{"dryRun":true,"steps":[{"step","fresh","detail","deps":[...]}]}`，`deps` 是声明式
