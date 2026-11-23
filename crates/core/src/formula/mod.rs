@@ -1359,6 +1359,21 @@ mod tests {
             "7",
             "only the position whose criterion cell is 2 passes both pairs"
         );
+        let minimum = Formula::parse(r#"minifs(A2:C2, D2:F2, ">0")"#).unwrap();
+        assert_eq!(
+            minimum
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "7",
+            "10 and 7 match; 3 is paired with a 0 criterion"
+        );
+        let maximum = Formula::parse(r#"maxifs(A2:C2, D2:F2, ">0")"#).unwrap();
+        assert_eq!(
+            maximum
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "10"
+        );
         let mismatched = Formula::parse(r#"sumifs(A2:C2, D2:D2, ">0")"#).unwrap();
         assert_eq!(
             mismatched
