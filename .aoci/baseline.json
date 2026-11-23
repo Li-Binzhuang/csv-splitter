@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-23T12:22:10Z",
+  "updated_at": "2026-11-23T12:26:00Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -76,9 +76,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "86fd350c050f66365a6ee49afb9a3d1bd2252ccf16e75d99f4b279e84ab746b1",
-      "size": 46826,
-      "normalized_sha256": "86fd350c050f66365a6ee49afb9a3d1bd2252ccf16e75d99f4b279e84ab746b1"
+      "sha256": "4e7c7fcaa38b76b053b36eedb1de91f48558467207820f9cc2e22ae8edcdd41f",
+      "size": 47045,
+      "normalized_sha256": "4e7c7fcaa38b76b053b36eedb1de91f48558467207820f9cc2e22ae8edcdd41f"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -538,9 +538,9 @@
     },
     "docs/BENCHMARKS.md": {
       "role": "index",
-      "sha256": "c76dd940d8f3b89844a1531170d196f701fcdf9ccf397046c0328c49d01fae4a",
-      "size": 4628,
-      "normalized_sha256": "c76dd940d8f3b89844a1531170d196f701fcdf9ccf397046c0328c49d01fae4a"
+      "sha256": "51e8d85ef5423291cbbaabe31c5fe6856df77c259789ed943f4efff448883eb9",
+      "size": 5101,
+      "normalized_sha256": "51e8d85ef5423291cbbaabe31c5fe6856df77c259789ed943f4efff448883eb9"
     },
     "docs/BEYOND_EXCEL.md": {
       "role": "index",
@@ -750,9 +750,9 @@
     },
     "scripts/package_release.sh": {
       "role": "index",
-      "sha256": "eeaede09c44120d792669ec353e1c91b0d5c4fd6c493ea67627022f0b53a86a8",
-      "size": 910,
-      "normalized_sha256": "eeaede09c44120d792669ec353e1c91b0d5c4fd6c493ea67627022f0b53a86a8"
+      "sha256": "da0fa9215feecd48f7700fed5f7c7d9307b39444a3d70b3d46fcda454d10bd4d",
+      "size": 942,
+      "normalized_sha256": "da0fa9215feecd48f7700fed5f7c7d9307b39444a3d70b3d46fcda454d10bd4d"
     },
     "scripts/pilot_report.py": {
       "role": "index",

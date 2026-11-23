@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "8d6b26141d27fcca531f54c96abceede13bd3ddd965dd4441eb4c50c779a3abf",
+  "batch_id": "9a149620fd1887620e73f094b5c202f1108be21012f9e0b683da39ec89cb4d0a",
+  "composite_identity": "bbb173e42e835cdd6baa1cf166a1bc3894f81baca8951cf8d4871a0d606eb90a",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "86fd350c050f66365a6ee49afb9a3d1bd2252ccf16e75d99f4b279e84ab746b1",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "51e8d85ef5423291cbbaabe31c5fe6856df77c259789ed943f4efff448883eb9",
+      "existing_entry": "BENCHMARKS.md[SD7L]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:100 GB search 20 s/filter 25.75 s/全量导出 79.62 s；81 GB 7 列 search 39.42/filter 46.70/导出 62.03；2.3 GB zst filter 4.16 s、search 12.13 s、quality 21.73 s | S:未 drop cache；100/81 GB 为重复块；压缩读 CPU 受限，不可推断 100 GB 指标"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "da0fa9215feecd48f7700fed5f7c7d9307b39444a3d70b3d46fcda454d10bd4d",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 | R:code:README.md,code:docs/SALES.md | A:若 binary 不存在先 cargo build --release；版本取 csvx --version；平台 uname；打包二进制、README/CHANGELOG/LICENSE、主要 docs、demo/pilot 脚本；输出 dist tar.gz 与 sha256 | S:不打 tag、不联网、不发布 registry；dist 已 gitignore；只用于企业内部分发/试点"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "a9a9a4a9c75182d28278bb816225b02d5177688cab4908db3feeb9b5522d59c4",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "51e8d85ef5423291cbbaabe31c5fe6856df77c259789ed943f4efff448883eb9",
+      "existing_entry": "BENCHMARKS.md[SD7L]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:100 GB search 20 s/filter 25.75 s/全量导出 79.62 s；81 GB 7 列 search 39.42/filter 46.70/导出 62.03；2.3 GB zst filter 4.16 s、search 12.13 s、quality 21.73 s | S:未 drop cache；100/81 GB 为重复块；压缩读 CPU 受限，不可推断 100 GB 指标"
+    },
+    {
+      "candidate_id": "1b147b019286a8f87e543f97299d6fad9ca43286487402c51a5d992c655215c0",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "da0fa9215feecd48f7700fed5f7c7d9307b39444a3d70b3d46fcda454d10bd4d",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 | R:code:README.md,code:docs/SALES.md | A:若 binary 不存在先 cargo build --release；版本取 csvx --version；平台 uname；打包二进制、README/CHANGELOG/LICENSE、主要 docs、demo/pilot 脚本；输出 dist tar.gz 与 sha256 | S:不打 tag、不联网、不发布 registry；dist 已 gitignore；只用于企业内部分发/试点"
+    }
+  ]
+}
