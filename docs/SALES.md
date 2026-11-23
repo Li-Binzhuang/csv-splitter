@@ -22,7 +22,8 @@ CSVX_PILOT_FILE=sample.csv CSVX_PILOT_WHERE=city=CDMX \
   python3 scripts/pilot_report.py
 ```
 
-输出本地实测的扫描/导出/质量耗时与近似 RSS；见 `docs/PILOT.md`。这是试点交付物，
+输出本地实测的扫描/导出/质量耗时与近似 RSS；见 `docs/PILOT.md`，2.3 GB 样例见
+`docs/PILOT_SAMPLE.md`。这是试点交付物，
 不是实验室 benchmark 的替代。
 
 ## 演示话术（5 分钟）

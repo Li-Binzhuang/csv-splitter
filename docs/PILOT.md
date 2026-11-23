@@ -22,5 +22,9 @@ python3 scripts/pilot_report.py
 - 压缩输入可用，但报告要标注压缩比/CPU 受限。
 - 报告不含数据内容、遥测；分享前仍应确认样本授权。
 
+## 示例
+`docs/PILOT_SAMPLE.md` 是一份 2.3 GB / 9500 万行合成样本的报告：filter 0.69 s、
+导出 0.76 s（430 MB）、search 0.43 s、quality 20.22 s、近似峰值 RSS 76.7 MB。
+
 ## 适合
 销售试点、客户 POC、内部对比；与 `docs/BENCHMARKS.md` 的实验室数字分开引用。
