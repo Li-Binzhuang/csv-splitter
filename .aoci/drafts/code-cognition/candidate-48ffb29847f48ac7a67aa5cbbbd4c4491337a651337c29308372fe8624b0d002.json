@@ -1,0 +1,59 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "30937eb5e7265ecad9f0020a9fb93a0eb7b938b0fe4485f91ef09c7f2b610b77",
+  "batch_id": "48ffb29847f48ac7a67aa5cbbbd4c4491337a651337c29308372fe8624b0d002",
+  "composite_identity": "838094b5411d64e75f12b2696897e6883a21a5db6b5c94dae30a3eb05ba11c6e",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "c24c181766015e187124cfd26ee252406eb9aacde02bf2fb9ac33c042ef3a3e1",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/PILOT.md",
+      "path": "docs/PILOT.md",
+      "change": "update",
+      "source_sha256": "a982dbdcc4bbf93f9e88d58073b47daf55aad7b19203b1af7edd0d8b8c478326",
+      "existing_entry": "PILOT.md[SD7T]: F:试点报告生成器说明：输入、输出、边界与适用场景 | R:code:scripts/pilot_report.py,code:docs/SALES.md | A:环境变量驱动，避免文档误报 CLI flag；报告含文件大小/行列/filter/search/quality 墙钟与 RSS；明确非 SLA、未 drop cache、不含数据内容 | S:默认会做物化导出，大样本应设 CSVX_PILOT_SKIP_EXPORT；报告需与样本授权一起解读"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/PILOT_SAMPLE.md",
+      "path": "docs/PILOT_SAMPLE.md",
+      "change": "create",
+      "source_sha256": "a6dc5eed7b534ca0fdd5ae944d11c5e2533c31bf683c864b959b3d5a666fbb48"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/SALES.md",
+      "path": "docs/SALES.md",
+      "change": "update",
+      "source_sha256": "1e69e670f605dd60afff9b32ea74fbd2fef375eca275165334402d67d20c6644",
+      "existing_entry": "SALES.md[SD7T]: F:销售 one-pager：定位、证据、演示话术、4 周试点清单与异议处理 | R:code:docs/DEMO.md,code:docs/BENCHMARKS.md,code:docs/BUSINESS.md,code:docs/PILOT.md,code:docs/PILOT_CONFIRMATION.md | A:100 GB 三大可卖点；5 分钟 demo 命令；16 个 MCP 工具；客户样本报告命令；交付与分发（离线 tar+SHA256）；免费/Pilot/团队/企业边界候选；异议回应 | S:不是公开承诺，定价/SLA/合同需用户确认；当前无 License 强制、无遥测"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "9752581d65c8029ecedc9d59bf6748fd6140e5cd77be061d7af88b43da8e6272",
+      "object_ref": "code:docs/PILOT.md",
+      "path": "docs/PILOT.md",
+      "change": "update",
+      "source_sha256": "a982dbdcc4bbf93f9e88d58073b47daf55aad7b19203b1af7edd0d8b8c478326",
+      "existing_entry": "PILOT.md[SD7T]: F:试点报告生成器说明：输入、输出、边界与适用场景 | R:code:scripts/pilot_report.py,code:docs/SALES.md | A:环境变量驱动，避免文档误报 CLI flag；报告含文件大小/行列/filter/search/quality 墙钟与 RSS；明确非 SLA、未 drop cache、不含数据内容 | S:默认会做物化导出，大样本应设 CSVX_PILOT_SKIP_EXPORT；报告需与样本授权一起解读"
+    },
+    {
+      "candidate_id": "72cc261075f7e0cdda0fd0bc690707edda06950ac033bc3e17ae269787e4b7c0",
+      "object_ref": "code:docs/PILOT_SAMPLE.md",
+      "path": "docs/PILOT_SAMPLE.md",
+      "change": "create",
+      "source_sha256": "a6dc5eed7b534ca0fdd5ae944d11c5e2533c31bf683c864b959b3d5a666fbb48"
+    },
+    {
+      "candidate_id": "ddf9ff0c453fdda563e222388ff559a8b7b9435d832cb5aab7c62bda6cb8eb72",
+      "object_ref": "code:docs/SALES.md",
+      "path": "docs/SALES.md",
+      "change": "update",
+      "source_sha256": "1e69e670f605dd60afff9b32ea74fbd2fef375eca275165334402d67d20c6644",
+      "existing_entry": "SALES.md[SD7T]: F:销售 one-pager：定位、证据、演示话术、4 周试点清单与异议处理 | R:code:docs/DEMO.md,code:docs/BENCHMARKS.md,code:docs/BUSINESS.md,code:docs/PILOT.md,code:docs/PILOT_CONFIRMATION.md | A:100 GB 三大可卖点；5 分钟 demo 命令；16 个 MCP 工具；客户样本报告命令；交付与分发（离线 tar+SHA256）；免费/Pilot/团队/企业边界候选；异议回应 | S:不是公开承诺，定价/SLA/合同需用户确认；当前无 License 强制、无遥测"
+    }
+  ]
+}
