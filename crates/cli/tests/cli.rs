@@ -3301,6 +3301,45 @@ fn pipeline_status_verify_detects_stale_output() {
     assert_eq!(gate.status.code(), Some(3));
 }
 
+/// `search --materialize` decompresses first, then finds the same rows.
+#[test]
+fn search_materializes_compressed_input() {
+    let dir = TempDir::new("search-materialize");
+    std::fs::write(
+        dir.join("orders.csv"),
+        "id,city\n1,CDMX\n2,Puebla\n3,CDMX\n",
+    )
+    .unwrap();
+    let status = Command::new("gzip")
+        .args(["-k", "orders.csv"])
+        .current_dir(&dir.0)
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let compressed = Command::new(bin())
+        .args(["search", "orders.csv.gz", "CDMX"])
+        .current_dir(&dir.0)
+        .output()
+        .unwrap();
+    assert!(
+        compressed.status.success(),
+        "{}",
+        String::from_utf8_lossy(&compressed.stderr)
+    );
+    let materialized = Command::new(bin())
+        .args(["search", "orders.csv.gz", "CDMX", "--materialize"])
+        .current_dir(&dir.0)
+        .output()
+        .unwrap();
+    assert!(
+        materialized.status.success(),
+        "{}",
+        String::from_utf8_lossy(&materialized.stderr)
+    );
+    let out = String::from_utf8_lossy(&materialized.stdout);
+    assert!(out.contains("matched 2"), "{out}");
+}
+
 /// A successful run persists the dependency edges next to the plan.
 #[test]
 fn pipeline_persists_lineage() {

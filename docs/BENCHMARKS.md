@@ -54,6 +54,7 @@ csvx index big.csv
 104.5 GB 合成文件为准。
 
 | 2.3 GB .csv.zst（51 MB） | filter 4.16 s/15 MB；search 12.13 s/11 MB；quality 21.73 s/20 MB | 输出与 plain `cmp` 一致；顺序读 |
+| 2.3 GB zst search materialize | 11.87 s/12 MB → 3.51 s/89 MB | 命中 1900 万一致；解压到临时文件后随机/并行读 |
 ### release 冒烟（2026-11-23，4.2.0，2.3 GB / 9500 万行）
 
 | 操作 | 墙钟 | 进程 peak RSS |

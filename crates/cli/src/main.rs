@@ -472,6 +472,10 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--exact", "Match the whole cell"),
             ("--json", "Emit JSON"),
             ("--limit", "Maximum rows to report / return"),
+            (
+                "--materialize",
+                "Decompress .zst/.gz input to a temp file before searching",
+            ),
             ("--quotes", "Quote style: rfc4180 | backslash | none"),
             (
                 "--regex",
@@ -2884,6 +2888,35 @@ fn cmd_filter(args: &[String]) -> i32 {
     0
 }
 
+struct MaterializedInput {
+    path: std::path::PathBuf,
+}
+
+impl Drop for MaterializedInput {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.path);
+    }
+}
+
+fn materialize_compressed(input: &std::path::Path) -> std::io::Result<Option<MaterializedInput>> {
+    if !csvx_core::encoding::is_compressed(input) {
+        return Ok(None);
+    }
+    let stamp = format!(
+        "{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|duration| duration.as_nanos())
+            .unwrap_or(0)
+    );
+    let path = std::env::temp_dir().join(format!("csvx-materialized-{stamp}.csv"));
+    let mut reader = csvx_core::encoding::open_decoded(input)?;
+    let mut writer = std::fs::File::create(&path)?;
+    std::io::copy(&mut reader, &mut writer)?;
+    Ok(Some(MaterializedInput { path }))
+}
+
 fn cmd_search(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
     let mut quotes_text = String::new();
@@ -2896,10 +2929,12 @@ fn cmd_search(args: &[String]) -> i32 {
     let mut limit = 1_000usize;
     let mut show = 0usize;
     let mut json = false;
+    let mut materialize = false;
     let mut delim = "auto".to_string();
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
+            "--materialize" => materialize = true,
             "--columns" => match p.value("--columns") {
                 Ok(v) => columns = v.split(',').map(|s| s.trim().to_string()).collect(),
                 Err(e) => {
@@ -2970,6 +3005,21 @@ fn cmd_search(args: &[String]) -> i32 {
         eprintln!("error: search needs <input> and <text>");
         return 2;
     };
+    let _materialized = if materialize {
+        match materialize_compressed(&input) {
+            Ok(value) => value,
+            Err(error) => {
+                eprintln!("error: {error}");
+                return 1;
+            }
+        }
+    } else {
+        None
+    };
+    let input = _materialized
+        .as_ref()
+        .map(|value| value.path.clone())
+        .unwrap_or(input);
     let delimiter = match parse_delimiter(&delim, &input) {
         Ok(d) => d,
         Err(e) => {

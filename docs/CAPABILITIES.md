@@ -65,7 +65,7 @@
 | 图表数据 | `chart --x C --y c:op [--series S] [--engine auto\|native\|sql]` | `GET /chart` | `--max-points` 5000；两引擎数值相等，类别顺序可能不同（原生保留首次出现顺序）|
 | SQL | `sql f.csv "SELECT ..."` | `GET /query`、`/rows?sql=` | DuckDB，只读单语句，结果封顶 |
 | 筛选 | `filter --where "c=v"` | `GET /filter`、`/rows?where=` | 支持 `= != > >= < <= ~ in empty` |
-| 搜索 | `search f.csv "text" [--regex]` | `GET /search?regex=1` | 返回行号；`--regex` 用条件格式那套模式子集 |
+| 搜索 | `search f.csv "text" [--regex] [--materialize]` | `GET /search?regex=1` | 返回行号；`--regex` 用条件格式那套模式子集；`--materialize` 先把压缩输入解到临时文件再搜索 |
 | 跨表查找 | `lookup --key C --from R --get cols` | `POST /lookup`（job）| `--max-keys` 默认 500 万（公式里的 `ref()` 默认 200 万） `--engine auto\|native\|sql`，`--key a,b` 支持复合键 |
 
 `groupby` / `pivot` / `chart` 读的是**文件**，所以公式列（只在 journal 里）对它们不可见；
@@ -180,6 +180,8 @@ delimiter 检测也读解压后的内容。压缩流不可 seek，因此自动�
 
 2.3 GB/9500 万行 drill：plain filter 1.51 s/57 MB；`big.csv.zst`（51 MB）filter **4.16 s/15 MB**，
 输出与 plain `cmp` 逐字节一致；zst search 12.13 s/11 MB；zst quality 21.73 s/20 MB。
+2.3 GB zst `search --materialize` 3.51 s/89 MB（普通顺序读 11.87 s/12 MB），
+命中数一致；适合需要随机访问/多次查询时使用。
 压缩读是 CPU 受限，不能用它推断 100 GB 指标。
 
 ### 100 GB 级（C 主线，已达标）
