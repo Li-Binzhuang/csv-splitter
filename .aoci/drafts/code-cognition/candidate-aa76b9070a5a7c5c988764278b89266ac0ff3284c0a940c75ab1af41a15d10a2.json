@@ -1,0 +1,27 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "1413479c526a7eb5c3e579336a30e20ba7f8a98a6246894fe5f13cd6c7948bfa",
+  "batch_id": "aa76b9070a5a7c5c988764278b89266ac0ff3284c0a940c75ab1af41a15d10a2",
+  "composite_identity": "b1cdc56af3fda45a86bbdddcece83b2f2f7dc80b7a8ae5d106a59fc18e9e53dd",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "4b738125cada87040ec98c2da2cd42a5f045900b9b8dc3dca6e1c809c2a68ef6",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "create",
+      "source_sha256": "6a27426eddeb75c1a1f2070381da45b7fb0ca31db05f568564f1895670277c64"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "87739d83acd79f04e2fcdc674819d1c66dc8bc7b2fda41fc876bada2ce54566c",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "create",
+      "source_sha256": "6a27426eddeb75c1a1f2070381da45b7fb0ca31db05f568564f1895670277c64"
+    }
+  ]
+}
