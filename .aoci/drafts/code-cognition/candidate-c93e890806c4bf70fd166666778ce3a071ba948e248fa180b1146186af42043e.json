@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "5849a3b3e91510d258adf9df3f5ab92b091ed96da6b88f2daf3973646f3d5e5c",
+  "batch_id": "c93e890806c4bf70fd166666778ce3a071ba948e248fa180b1146186af42043e",
+  "composite_identity": "36bc9c1f9ebdf18b9811d36d7c3320741cacd59c5517faf536a733baa76f069d",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "ee5a27e314440faf6f1b365d922fb33c281f190c1b5b6fe5f419c79555805021",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CI.md",
+      "path": "docs/CI.md",
+      "change": "update",
+      "source_sha256": "5bd66787af7d4bd35c90d92043a9628eb73e97ce756d366303a3e3c9727a8f60",
+      "existing_entry": "CI.md[SO6S]: F:CI 结构说明：单 job 流水线、滚动缓存、重试策略与失败注解机制 | R:code:.github/workflows/ci.yml | A:解释为何合并单 job、缓存 key 滚动；新增“偶发失败与一次重试”节：具体案例 reads_stay_consistent_while_edits_land、本地 30 次与两线程全绿、断言未改、两次都红就修测试；测试命令按包名 | S:重试不得用来掩盖真 bug；annotation 保留两次日志"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "efbbbc77c1402f4253339d6ec64d9fdc73c54caceee936ee9d2465e7e9ceecc0",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate 的统一入口 | R:code:scripts/smoke.sh | A:check 默认检查 csvx-core 的 --all-targets；test 的参数直传 cargo test；gate 依次跑 fmt、两个 crate 的 clippy -D warnings、workspace 测试、csvx-core --features sql 测试，每个阶段自报开始与结束 | S:gate 必须带 sql feature 跑 core 测试，否则 SQL 与 parquet 路径无人验证"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "b4b6bba74c72eae62a4ef98f67f5676ea5d63a63d869e55c308f3b0b21e59ddd",
+      "object_ref": "code:docs/CI.md",
+      "path": "docs/CI.md",
+      "change": "update",
+      "source_sha256": "5bd66787af7d4bd35c90d92043a9628eb73e97ce756d366303a3e3c9727a8f60",
+      "existing_entry": "CI.md[SO6S]: F:CI 结构说明：单 job 流水线、滚动缓存、重试策略与失败注解机制 | R:code:.github/workflows/ci.yml | A:解释为何合并单 job、缓存 key 滚动；新增“偶发失败与一次重试”节：具体案例 reads_stay_consistent_while_edits_land、本地 30 次与两线程全绿、断言未改、两次都红就修测试；测试命令按包名 | S:重试不得用来掩盖真 bug；annotation 保留两次日志"
+    },
+    {
+      "candidate_id": "74689b89e65917737886dd42a059862f5360ced826ca1ec1dd02ab5dfea591f8",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "efbbbc77c1402f4253339d6ec64d9fdc73c54caceee936ee9d2465e7e9ceecc0",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate 的统一入口 | R:code:scripts/smoke.sh | A:check 默认检查 csvx-core 的 --all-targets；test 的参数直传 cargo test；gate 依次跑 fmt、两个 crate 的 clippy -D warnings、workspace 测试、csvx-core --features sql 测试，每个阶段自报开始与结束 | S:gate 必须带 sql feature 跑 core 测试，否则 SQL 与 parquet 路径无人验证"
+    }
+  ]
+}
