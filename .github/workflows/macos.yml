@@ -5,6 +5,7 @@ name: macOS gate
 # No cargo cache: the repository's cache quota was already exceeded once.
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
