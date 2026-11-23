@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "76e4d802b5c6312ed8696af923fdffa0a40e25826290cf16b4de1c8cb0a67936",
+  "batch_id": "69e0ca2f631c36e5bb6923e4cadab0b2a514376a24c82490b57030b852a3280b",
+  "composite_identity": "5d8933551065a69470ef234233cf681f2beef2bf4424880ca9b29a386776fc9e",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "d5a400037afb8e6dcfa40c83cd26c14589e17c4be7a4e12df2f09dc31607f15e",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "7813edd0f022893f7d2fced9270b9ab79923ce60111b6e71b66c815dad9011d2",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合、filter -o 并行、search/filter 字节谓词、31 GB 边界、edit compact（1M 行+1M ops 1.13/0.91→0.02/0.02 s；2.2 GB/5500 万行 1.77 s/8 MB，前后导出逐字节一致，跨界 undo 0.03 s；.idx 随 .base 归档）、预扫 25–30 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/journal.rs",
+      "path": "crates/core/src/workbook/journal.rs",
+      "change": "update",
+      "source_sha256": "401f3308be48457a182ca8fb0cf458997b0e161c49d9360443ccedf82e03ba8e",
+      "existing_entry": "journal.rs[CP9L]: F:追加式操作日志、撤销/重做边界、压实与崩溃恢复 | R:code:crates/core/src/workbook/mod.rs,code:crates/core/src/workbook/transaction.rs | A:每行一个 op 的 CSV；update_locked 用 JournalLock 串行读改写；compact 在锁内导出快照、保留 .base/.journal.history、prepared/installed 标记、迁移 .idx 到 .base.idx、清空 journal，支持 CSVX_COMPACT_CRASH_AT；recover_compaction 按标记回滚/补清空并恢复索引；restore_compacted 还原旧 base+history 供跨界 undo | S:journal 是编辑唯一载体；SetCell 无旧值故不可直接折叠；redo 非空拒绝 compact/跨界 undo；锁 10 秒后才视为陈旧；崩溃恢复必须先于 journal 加载"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "3f2b30b8146a18d63bde0619ec749f9ee333058999625c1ebfe65b7fc4b20ee6",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表、大文件边界；阶段 1 已闭环（11 GB 四项、31 GB 边界、RSS）；新增日志压实 edit compact（保留 .base/history、跨界 undo/redo），压缩后 view/export 0.02 s；HTTP 暂无 compact 动作 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "9c7ed1a5e98ea301e86b9fff26547e36a881fa90edf11f1aa16291c6a56d7a4a",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示与实测范围；csvx 4.2.0；阶段 1 性能收尾；Journal 压实：基线 10M 条 view 4.84 s/export 4.61 s/undo 5.50 s，SetCell 无旧值不能直接折叠；edit compact 保留 .base/history、锁内执行、跨界 undo、标记恢复；1M 行+1M ops 1.13/0.91→0.02/0.02 s；2.2 GB drill 压实 1.77 s/8 MB、前后导出逐字节一致、首跳重建 0.82 s、跨界 undo 0.03 s；.idx 随 .base 归档；写失败不改文件 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围，容量先看行数"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ec339ca53cd89f0de85b62f614fa5ba955a75a015ecab9254664b8c1371c9d5f",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "7813edd0f022893f7d2fced9270b9ab79923ce60111b6e71b66c815dad9011d2",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合、filter -o 并行、search/filter 字节谓词、31 GB 边界、edit compact（1M 行+1M ops 1.13/0.91→0.02/0.02 s；2.2 GB/5500 万行 1.77 s/8 MB，前后导出逐字节一致，跨界 undo 0.03 s；.idx 随 .base 归档）、预扫 25–30 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "2b45c3b55f3d6bfb2df41a7d52dd015f1e0d89671cbcdcdd643149f9815b4215",
+      "object_ref": "code:crates/core/src/workbook/journal.rs",
+      "path": "crates/core/src/workbook/journal.rs",
+      "change": "update",
+      "source_sha256": "401f3308be48457a182ca8fb0cf458997b0e161c49d9360443ccedf82e03ba8e",
+      "existing_entry": "journal.rs[CP9L]: F:追加式操作日志、撤销/重做边界、压实与崩溃恢复 | R:code:crates/core/src/workbook/mod.rs,code:crates/core/src/workbook/transaction.rs | A:每行一个 op 的 CSV；update_locked 用 JournalLock 串行读改写；compact 在锁内导出快照、保留 .base/.journal.history、prepared/installed 标记、迁移 .idx 到 .base.idx、清空 journal，支持 CSVX_COMPACT_CRASH_AT；recover_compaction 按标记回滚/补清空并恢复索引；restore_compacted 还原旧 base+history 供跨界 undo | S:journal 是编辑唯一载体；SetCell 无旧值故不可直接折叠；redo 非空拒绝 compact/跨界 undo；锁 10 秒后才视为陈旧；崩溃恢复必须先于 journal 加载"
+    },
+    {
+      "candidate_id": "424287c83ab35f56b5eda2120d982a0f15fd5277bbe05befbdf2693fcdfec1cd",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "3f2b30b8146a18d63bde0619ec749f9ee333058999625c1ebfe65b7fc4b20ee6",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表、大文件边界；阶段 1 已闭环（11 GB 四项、31 GB 边界、RSS）；新增日志压实 edit compact（保留 .base/history、跨界 undo/redo），压缩后 view/export 0.02 s；HTTP 暂无 compact 动作 | S:-"
+    },
+    {
+      "candidate_id": "4eefa4a19138b060cce14728ff377ae27ef0b1a437ddb7c3d234357dd8983fae",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "9c7ed1a5e98ea301e86b9fff26547e36a881fa90edf11f1aa16291c6a56d7a4a",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示与实测范围；csvx 4.2.0；阶段 1 性能收尾；Journal 压实：基线 10M 条 view 4.84 s/export 4.61 s/undo 5.50 s，SetCell 无旧值不能直接折叠；edit compact 保留 .base/history、锁内执行、跨界 undo、标记恢复；1M 行+1M ops 1.13/0.91→0.02/0.02 s；2.2 GB drill 压实 1.77 s/8 MB、前后导出逐字节一致、首跳重建 0.82 s、跨界 undo 0.03 s；.idx 随 .base 归档；写失败不改文件 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围，容量先看行数"
+    }
+  ]
+}
