@@ -3209,6 +3209,49 @@ fn pipeline_step_timeout_kills_the_child() {
     assert!(!dir.join("plan.csv.pipeline.csv").exists());
 }
 
+/// `wait` turns a poll into a bounded long-poll; a quick job returns done.
+#[test]
+fn mcp_job_status_can_wait() {
+    use std::io::Write;
+    use std::process::Stdio;
+    let dir = TempDir::new("mcp-job-wait");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,CDMX\n").unwrap();
+    let mut child = Command::new(bin())
+        .args(["mcp", "--root", dir.0.to_str().unwrap()])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    {
+        let stdin = child.stdin.as_mut().expect("stdin");
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":1,"method":"initialize","params":{{}}}}"#
+        )
+        .unwrap();
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{{"name":"csvx_job_submit","arguments":{{"tool":"csvx_schema","arguments":{{"path":"t.csv"}}}}}}}}"#
+        )
+        .unwrap();
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{{"name":"csvx_job_status","arguments":{{"id":"job-1","wait":2}}}}}}"#
+        )
+        .unwrap();
+    }
+    drop(child.stdin.take());
+    let output = child.wait_with_output().unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("done"), "{stdout}");
+}
+
 /// Job listing exposes every submitted job, including done/cancelled state.
 #[test]
 fn mcp_lists_jobs() {

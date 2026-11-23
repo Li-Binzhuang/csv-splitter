@@ -147,6 +147,9 @@
   fill-in 4-week pilot agreement template.
 - **View cursor**: `view --json` (and the MCP `csvx_view` tool) now returns
   `start`, `nextStart` and `hasMore`; clients can page without guessing counts.
+- **MCP job wait**: `csvx_job_status` accepts `wait` (0–30 s) and long-polls the
+  child instead of returning running immediately; test asks for a 2 s wait on a
+  quick schema job and gets done.
 - **MCP job list**: `csvx_job_list` returns every job's state; running jobs also
   report `elapsedMs`. 16 tools; the schema unit test guards tools/list JSON.
 - **MCP job cancel**: `csvx_job_cancel` kills a running child and returns
