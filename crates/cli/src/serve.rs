@@ -7580,6 +7580,16 @@ struct McpJob {
     started: std::time::Instant,
 }
 
+fn shutdown_mcp_jobs(jobs: &mut std::collections::HashMap<String, McpJob>) {
+    for job in jobs.values_mut() {
+        if job.result.is_none() {
+            let _ = job.child.kill();
+            let _ = job.child.wait();
+        }
+        drop_mcp_job_files(job);
+    }
+}
+
 const MCP_JOB_HISTORY: usize = 128;
 
 fn drop_mcp_job_files(job: &McpJob) {
@@ -8791,14 +8801,45 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
         stdout.flush()?;
     }
     cleanup_mcp_materialized();
-    for job in jobs.values_mut() {
-        if job.result.is_none() {
-            let _ = job.child.kill();
-            let _ = job.child.wait();
-        }
-        drop_mcp_job_files(job);
-    }
+    shutdown_mcp_jobs(&mut jobs);
     Ok(())
+}
+
+#[cfg(all(test, unix))]
+mod mcp_job_shutdown_tests {
+    use super::*;
+
+    #[test]
+    fn shutdown_kills_a_running_job_and_removes_its_files() {
+        let child = std::process::Command::new("sleep")
+            .arg("30")
+            .spawn()
+            .expect("spawn sleep");
+        let prefix = format!("csvx-mcp-shutdown-{}", std::process::id());
+        let stdout = std::env::temp_dir().join(format!("{prefix}.out"));
+        let stderr = std::env::temp_dir().join(format!("{prefix}.err"));
+        std::fs::write(&stdout, b"partial").unwrap();
+        std::fs::write(&stderr, b"partial").unwrap();
+        let mut jobs = std::collections::HashMap::new();
+        jobs.insert(
+            "job-running".to_string(),
+            McpJob {
+                child,
+                stdout: stdout.clone(),
+                stderr: stderr.clone(),
+                result: None,
+                started: std::time::Instant::now(),
+            },
+        );
+        shutdown_mcp_jobs(&mut jobs);
+        let job = jobs.get_mut("job-running").expect("job retained");
+        assert!(
+            job.child.try_wait().unwrap().is_some(),
+            "running child should be reaped"
+        );
+        assert!(!stdout.exists());
+        assert!(!stderr.exists());
+    }
 }
 
 #[cfg(all(test, unix))]
