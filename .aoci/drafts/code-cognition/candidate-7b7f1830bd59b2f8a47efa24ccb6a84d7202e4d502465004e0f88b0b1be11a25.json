@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "ba8a24ddb9991f5dbbcc1156f1f55580d6ef4a663f6967d4d0ff2a8687bb654b",
+  "batch_id": "7b7f1830bd59b2f8a47efa24ccb6a84d7202e4d502465004e0f88b0b1be11a25",
+  "composite_identity": "208f0d182bbfeda7b0732d8f618d0e95432ad0536179593602fe57cd0e2bee75",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "4f0483a223d78e48169bb2f142f0e03ae157794144e0149ecd59dad4729233cc",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "bc615e136b0f6449292e0bebeefb09af30b3056f1cad378a6cd5175794b0d3ed",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、行内多条件聚合、median 区间、文本函数、日期运算、原子 transaction 与整批撤销/重做、vlookup 别名修复、xlookup fallback（字面量或列引用）、预扫冷启动约 25–30 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "5a85e072390cb465d493bebd51fe3af99a8edd42da06ca12ddbcbae93638789e",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：已实测优势与未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 区分整列/同行/跨行：冷启动预扫实测约 25–30 ms（两次：0.11/0.08 与 0.12/0.09，8 线程中位数），跨行需按列前缀和（5000 万行每列约 400 MB）故暂不做；缺口 5 已含整批撤销与重做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "3044e5923ece95c77034dc1a404f9adcb13f2585a9f96f6d13ef80be3b290b19",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "bc615e136b0f6449292e0bebeefb09af30b3056f1cad378a6cd5175794b0d3ed",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、行内多条件聚合、median 区间、文本函数、日期运算、原子 transaction 与整批撤销/重做、vlookup 别名修复、xlookup fallback（字面量或列引用）、预扫冷启动约 25–30 ms | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "5cfe2147b1710c07b391c6dc8d905b0a129fd0ebd2766a05e2562041064cee45",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "5a85e072390cb465d493bebd51fe3af99a8edd42da06ca12ddbcbae93638789e",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：已实测优势与未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 区分整列/同行/跨行：冷启动预扫实测约 25–30 ms（两次：0.11/0.08 与 0.12/0.09，8 线程中位数），跨行需按列前缀和（5000 万行每列约 400 MB）故暂不做；缺口 5 已含整批撤销与重做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    }
+  ]
+}
