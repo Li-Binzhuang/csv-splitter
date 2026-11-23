@@ -8204,6 +8204,7 @@ fn mcp_run_pipeline_streaming(
         plan.to_str().unwrap_or(""),
         "--root",
         root.to_str().unwrap_or(""),
+        "--progress-markers",
     ]);
     let flag = |name: &str| {
         args.get(name)
@@ -8250,7 +8251,7 @@ fn mcp_run_pipeline_streaming(
     if let Some(pipe) = child.stdout.take() {
         let reader = std::io::BufReader::new(pipe);
         for line in reader.lines().map_while(Result::ok) {
-            if line.starts_with('✓') || line.starts_with('↷') {
+            if line.starts_with("CSVX_STEP ") {
                 steps += 1;
                 let note = format!(
                     r#"{{"jsonrpc":"2.0","method":"notifications/progress","params":{{"progressToken":{},"progress":{}}}}}"#,

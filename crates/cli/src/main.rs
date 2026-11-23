@@ -139,6 +139,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--clean", "Remove stale pipeline staging files before running"),
             ("--unlock", "Remove the plan lock before running (use with care)"),
             ("--verify", "Status: re-check current stamps/hashes"),
+            ("--progress-markers", "Run: emit stable CSVX_STEP lines"),
             ("--fail-on-stale", "Status: exit 3 when verify finds stale steps"),
             ("--dag", "Run ready steps by dependency order (requires --jobs > 1)"),
             ("--jobs", "Concurrency for groups/DAG (default 1)"),
@@ -9435,6 +9436,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
     let mut unlock = false;
     let mut verify = false;
     let mut fail_on_stale = false;
+    let mut progress_markers = false;
     let mut json = false;
     while let Some(arg) = p.next() {
         match arg.as_str() {
@@ -9447,6 +9449,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             },
             "--force" => force = true,
             "--dry-run" => dry_run = true,
+            "--progress-markers" => progress_markers = true,
             "--fail-on-stale" => fail_on_stale = true,
             "--verify" => verify = true,
             "--unlock" => unlock = true,
@@ -9570,6 +9573,12 @@ fn cmd_pipeline(args: &[String]) -> i32 {
                                 .get(index)
                                 .map(|(_, deps)| deps.clone())
                                 .unwrap_or_default();
+                            if progress_markers {
+                                println!(
+                                    "CSVX_STEP {} {name}",
+                                    if *fresh { "skip" } else { "done" }
+                                );
+                            }
                             if *fresh {
                                 println!("↷ {name}");
                             } else if deps.is_empty() {
@@ -9597,6 +9606,9 @@ fn cmd_pipeline(args: &[String]) -> i32 {
                     println!(r#"{{"steps":[{}]}}"#, items.join(","));
                 } else {
                     for (name, fresh, ms, _) in results {
+                        if progress_markers {
+                            println!("CSVX_STEP {} {name}", if fresh { "skip" } else { "done" });
+                        }
                         if fresh {
                             println!("↷ {name}");
                         } else {

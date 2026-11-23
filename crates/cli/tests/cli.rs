@@ -3507,6 +3507,37 @@ fn pipeline_rejects_duplicate_outputs() {
     assert!(!dir.join("a.csv").exists());
 }
 
+/// Stable markers let MCP count steps without depending on check glyphs.
+#[test]
+fn pipeline_emits_progress_markers() {
+    let dir = TempDir::new("pipeline-markers");
+    std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n").unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},a.csv\n",
+    )
+    .unwrap();
+    let result = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--dry-run",
+            "--progress-markers",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&result.stdout);
+    assert!(stdout.contains("CSVX_STEP done a"), "{stdout}");
+}
+
 /// A successful run persists the dependency edges next to the plan.
 #[test]
 fn pipeline_persists_lineage() {
