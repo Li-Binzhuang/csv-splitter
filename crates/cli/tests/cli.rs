@@ -3425,7 +3425,7 @@ fn pipeline_rejects_in_place_source_output() {
     std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n").unwrap();
     std::fs::write(
         dir.join("plan.csv"),
-        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},orders.csv\n",
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},./orders.csv\n",
     )
     .unwrap();
     let result = Command::new(bin())
@@ -3455,7 +3455,7 @@ fn pipeline_rejects_duplicate_outputs() {
     std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n").unwrap();
     std::fs::write(
         dir.join("plan.csv"),
-        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},a.csv\nb,orders.csv,filter,--where city=Puebla -o {out},a.csv\n",
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},a.csv\nb,orders.csv,filter,--where city=Puebla -o {out},./a.csv\n",
     )
     .unwrap();
     let result = Command::new(bin())

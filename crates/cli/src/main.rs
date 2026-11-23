@@ -8924,6 +8924,25 @@ fn run_pipeline_dag(
     Ok(results)
 }
 
+fn normalize_lexical_path(path: &std::path::Path) -> std::path::PathBuf {
+    use std::path::Component;
+    let mut out = std::path::PathBuf::new();
+    for component in path.components() {
+        match component {
+            Component::CurDir => {}
+            Component::ParentDir => {
+                if !out.pop() {
+                    out.push("..");
+                }
+            }
+            Component::RootDir | Component::Prefix(_) | Component::Normal(_) => {
+                out.push(component.as_os_str());
+            }
+        }
+    }
+    out
+}
+
 #[allow(clippy::too_many_arguments)]
 fn run_pipeline_plan(
     plan: &std::path::Path,
@@ -9040,10 +9059,9 @@ fn run_pipeline_plan(
         }
     }
     for (index, step) in steps.iter().enumerate() {
-        if let Some(other) = steps[index + 1..]
-            .iter()
-            .find(|candidate| candidate.output == step.output)
-        {
+        if let Some(other) = steps[index + 1..].iter().find(|candidate| {
+            normalize_lexical_path(&candidate.output) == normalize_lexical_path(&step.output)
+        }) {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 format!(
@@ -9063,7 +9081,7 @@ fn run_pipeline_plan(
             if steps.iter().any(|known| known.name == input) {
                 continue;
             }
-            if root.join(input) == step.output {
+            if normalize_lexical_path(&root.join(input)) == normalize_lexical_path(&step.output) {
                 return Err(std::io::Error::new(
                     std::io::ErrorKind::InvalidInput,
                     format!(

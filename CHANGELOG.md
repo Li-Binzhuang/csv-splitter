@@ -197,6 +197,8 @@
   so cron/CI can gate on freshness; test covers the stale exit.
 - **MCP status verify**: `csvx_pipeline_status` accepts verify and returns fresh
   fields; test runs a DAG, then verifies the stored state over MCP.
+- **Lexical path normalization**: duplicate-output and in-place guards compare
+  normalized paths, so `./a.csv` cannot bypass `a.csv` checks; tests use `./` forms.
 - **In-place source guard**: a step output equal to any declared source input is
   rejected, so `filter ... -o orders.csv` cannot silently replace the original.
 - **Duplicate output validation**: a plan whose two steps write the same output is
