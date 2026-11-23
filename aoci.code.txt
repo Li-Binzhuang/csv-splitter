@@ -7,7 +7,7 @@ AGENTS.md[SV6S]: F:仓库级 Agent 指令：AOCI 认知层的接入与使用原�
 CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过、SQL lookup 无上限、mcp 读写与 job、100 GB profile、全量 filter -o 两遍扫描 79.62 s、81 GB 7 列演练、端到端 demo | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败
 Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本与 crate 元数据、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 crates/core 与 crates/cli；workspace.dependencies 以 csvx-core 为本地 crate 键；workspace.package 持有版本 4.2.0、一句话定位、仓库地址与 MIT 许可，是发布真相源；二进制的 --version 与 tag 校验都以它为准 | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
-README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部定位与 Rust 徽章；快速开始；公式节；性能表为最终二进制实测；命令表新增 serve/mcp | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；性能数字必须来自实测
+README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部定位与 Rust 徽章；快速开始；公式节；性能表为最终二进制实测；命令表含 serve/mcp；新增销售/试点材料入口 SALES/DEMO/BENCHMARKS | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；性能数字必须来自实测
 
 ===/<repository>/.github/workflows/===
 ci.yml[OV7S]: F:主 CI：格式化、引擎与 CLI 测试、性能守卫、clippy 工作区、失败注解 | R:code:scripts/smoke.sh,code:scripts/regress.sh,code:scripts/backend-smoke.sh,code:scripts/release-decision.sh | A:单 job 串联；engine 与 CLI 两个测试步骤失败时各重试一次并留 warning annotation（本地单跑/两线程均绿的负载型 flake）；每步 tee 日志，失败时把测试名转成公开 annotation 并上传 artifact | S:曾因双 job + 缓存配额出现“跳过一半、红叉无信息”，故单 job；重试只限一次且日志保留，真 bug 仍会两次失败
@@ -19,7 +19,7 @@ Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Carg
 
 ===/<repository>/crates/cli/src/===
 main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:约三十个命令；pipeline run/status；mcp --root 调 serve::run_mcp_stdio；convert/lookup/analyze 共享解析；帮助表列全 flag | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state；mcp stdout 只走 JSON-RPC 协议
-serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 读写与 job；run_mcp_stdio 一行一条 JSON-RPC，自写 UTF-8 parser；读/写工具外，新增 job_submit/job_status：子进程 stdin null、stdout/stderr 文件、try_wait 轮询并缓存结果 | S:strict 参数未登记即 400；MCP stdout 只走协议，工具失败 isError；job 结果缓存避免重复轮询丢输出
+serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 读写与 job；run_mcp_stdio 一行一条 JSON-RPC，自写 UTF-8 parser；工具含 schema/view/filter/search/quality/pipeline_status、edit_set/delete/undo/redo、convert、job_submit/job_status；未知工具先判身份；父目录组件在 canonicalize 前拒绝 | S:strict 参数未登记即 400；MCP stdout 只走协议，工具失败 isError；job 结果缓存避免重复轮询丢输出
 
 ===/<repository>/crates/cli/src/web/===
 index.html[EU7M]: F:内置只读浏览页：用 /rows 拉窗口并把结果渲染成表格 | R:code:crates/cli/src/serve.rs | A:单文件 HTML 与内联 JS，无外部依赖；title 与页头的 h1 都是 csvx；实际调用 /files、/meta、/rows、/search、/analyze、/groupby 六个端点 | S:-
@@ -103,8 +103,9 @@ ROADMAP.md[SU5S]: F:路线图：已完成、进行中与明确不做的范围 | 
 TROUBLESHOOTING.md[SO6S]: F:排障：常见症状、原因与处理，以及如何读 CI 失败 | R:code:docs/CI.md | A:含 annotation 读取命令与历史根因（超时测试竞态、mingw 线程模型） | S:-
 BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：已实测优势与未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 区分整列/同行/跨行：纯 sum 冷启动约 25–30 ms，countif/countifs 冷 0.09–0.11 s；跨行需按列前缀和故暂不做；缺口 2 多表 ref 可并行（CLI 测试），Sheet!A1 因流式导出无跨表按行随机访问而不做；缺口 5 已含整批撤销与重做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据
 BENCHMARKS.md[SD7L]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:100 GB search 20 s、filter 25.75 s；100 GB 全量导出 79.62 s/28 MB；81 GB/11.6 亿行 7 列 search 39.42 s、filter 46.70 s、17% 导出 196.9M 行/13 GB 62.03 s；64 GB 自适应 | S:未 drop cache；100 GB 与 81 GB 均为重复块；100 GB 估算不是实测；不得把合成数字当真实承诺
-BUSINESS.md[SD6L]: F:商业化假设：定位、目标客户、免费/付费边界、定价假设与验证实验 | R:code:docs/BENCHMARKS.md,code:docs/CAPABILITIES.md | A:本地 CSV 工作台；个人/团队/企业三档候选；不回收现有 CLI；不做多用户/GUI/SaaS；90 天访谈与试点实验；收费与 License 需用户确认 | S:当前代码无 License 强制/遥测；不得把候选定价写成已承诺价格
+BUSINESS.md[SD6L]: F:商业化假设：定位、目标客户、免费/付费边界、定价假设与验证实验 | R:code:docs/BENCHMARKS.md,code:docs/CAPABILITIES.md,code:docs/SALES.md | A:本地 CSV 工作台；个人/团队/企业三档候选；不回收现有 CLI；不做多用户/GUI/SaaS；90 天访谈与试点实验；销售执行材料指向 SALES/DEMO/BENCHMARKS | S:当前代码无 License 强制/遥测；不得把候选定价写成已承诺价格
 DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py | A:一条命令演示 filter/quality、13 个 MCP 工具、edit/undo/convert/job；该文件是产品演示和销售材料入口 | S:演示全程本地、无 GUI、无网络、无 xlsx；终端输出为 12/11 ms 时必须与脚本实际输出一致
+SALES.md[SD7T]: F:销售 one-pager：定位、证据、演示话术、4 周试点清单与异议处理 | R:code:docs/DEMO.md,code:docs/BENCHMARKS.md,code:docs/BUSINESS.md | A:100 GB 三大可卖点；5 分钟 demo 命令；目标客户与触发问题；免费/Pilot/团队/企业边界候选；30 天验证目标；常见异议回应 | S:不是公开承诺，定价/SLA/合同需用户确认；当前无 License 强制、无遥测
 
 ===/<repository>/scripts/===
 backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换、自引用拒绝与请求上限；BIN 默认取 ./target/debug/csvx | S:脚本默认跑 target/debug 的二进制，改了代码只重建 release 会在这里看到旧行为；裸 wait 会连自己起的 server 一起等，必须收集 PID 逐个等待

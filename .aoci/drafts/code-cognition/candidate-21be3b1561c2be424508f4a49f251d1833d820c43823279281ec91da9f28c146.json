@@ -1,0 +1,75 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "e101ddac6886c07453aeb1eaa18e1020389d1208b21b44285c472f84031658e1",
+  "batch_id": "21be3b1561c2be424508f4a49f251d1833d820c43823279281ec91da9f28c146",
+  "composite_identity": "be0d7b5ee0b2ece5d412a4302248da91ba9c4475208caa1bf9b1f312ec069853",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "62461e18be9923c668ac745050ca3940c1204209b199f07f72bd77a5a46ee853",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "4ea32bf8f2e7c3e243709aa582064166fea02ce9d60553c28b022b2d9bddf3c3",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部定位与 Rust 徽章；快速开始；公式节；性能表为最终二进制实测；命令表新增 serve/mcp | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；性能数字必须来自实测"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "b3bcd989d3398ad268f1a6b1256d2fe99287b4394229cde0455669b5b87a0bc4",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 读写与 job；run_mcp_stdio 一行一条 JSON-RPC，自写 UTF-8 parser；读/写工具外，新增 job_submit/job_status：子进程 stdin null、stdout/stderr 文件、try_wait 轮询并缓存结果 | S:strict 参数未登记即 400；MCP stdout 只走协议，工具失败 isError；job 结果缓存避免重复轮询丢输出"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BUSINESS.md",
+      "path": "docs/BUSINESS.md",
+      "change": "update",
+      "source_sha256": "0fdb579250428a8df8380ae6523e86539941ecdeb7bd4a06ff8cf6aa17eb84ba",
+      "existing_entry": "BUSINESS.md[SD6L]: F:商业化假设：定位、目标客户、免费/付费边界、定价假设与验证实验 | R:code:docs/BENCHMARKS.md,code:docs/CAPABILITIES.md | A:本地 CSV 工作台；个人/团队/企业三档候选；不回收现有 CLI；不做多用户/GUI/SaaS；90 天访谈与试点实验；收费与 License 需用户确认 | S:当前代码无 License 强制/遥测；不得把候选定价写成已承诺价格"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/SALES.md",
+      "path": "docs/SALES.md",
+      "change": "create",
+      "source_sha256": "bd59c1c7395a1fde3a11cb5c4518149227826f204797ba93bb7eefb7af34f9d9"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "3be6cb1c4ec6c0b5486c7c0811f441bdd3946b370700dc88a8d32f8f1ef292d8",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "4ea32bf8f2e7c3e243709aa582064166fea02ce9d60553c28b022b2d9bddf3c3",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部定位与 Rust 徽章；快速开始；公式节；性能表为最终二进制实测；命令表新增 serve/mcp | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；性能数字必须来自实测"
+    },
+    {
+      "candidate_id": "ceddae2c94fe9d48c75fb37c66fe8664f71fba5a5cdfddecb6b9f5f45d1c231e",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "b3bcd989d3398ad268f1a6b1256d2fe99287b4394229cde0455669b5b87a0bc4",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 读写与 job；run_mcp_stdio 一行一条 JSON-RPC，自写 UTF-8 parser；读/写工具外，新增 job_submit/job_status：子进程 stdin null、stdout/stderr 文件、try_wait 轮询并缓存结果 | S:strict 参数未登记即 400；MCP stdout 只走协议，工具失败 isError；job 结果缓存避免重复轮询丢输出"
+    },
+    {
+      "candidate_id": "8243a07f5accb88bc5a6342528de8b5239dbdfd47b612966dcf4b19afcb2ccec",
+      "object_ref": "code:docs/BUSINESS.md",
+      "path": "docs/BUSINESS.md",
+      "change": "update",
+      "source_sha256": "0fdb579250428a8df8380ae6523e86539941ecdeb7bd4a06ff8cf6aa17eb84ba",
+      "existing_entry": "BUSINESS.md[SD6L]: F:商业化假设：定位、目标客户、免费/付费边界、定价假设与验证实验 | R:code:docs/BENCHMARKS.md,code:docs/CAPABILITIES.md | A:本地 CSV 工作台；个人/团队/企业三档候选；不回收现有 CLI；不做多用户/GUI/SaaS；90 天访谈与试点实验；收费与 License 需用户确认 | S:当前代码无 License 强制/遥测；不得把候选定价写成已承诺价格"
+    },
+    {
+      "candidate_id": "aadbd27d79bcb42f7d0617606987b9fc246b8b19f87ea91818fe96430fb11556",
+      "object_ref": "code:docs/SALES.md",
+      "path": "docs/SALES.md",
+      "change": "create",
+      "source_sha256": "bd59c1c7395a1fde3a11cb5c4518149227826f204797ba93bb7eefb7af34f9d9"
+    }
+  ]
+}
