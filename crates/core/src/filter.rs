@@ -468,6 +468,33 @@ impl CompiledSet {
             Combine::Any => any,
         }
     }
+
+    /// Borrowed-field predicate for the quote-free fast path. `None` means a cell
+    /// this filter reads is not valid UTF-8, so the caller must use the full parser.
+    pub fn holds_bytes(&self, cells: &[&[u8]]) -> Option<bool> {
+        let mut any = false;
+        for (i, spec) in self.specs.iter().enumerate() {
+            let index = self.columns[i].1;
+            let cell = match cells.get(index) {
+                Some(bytes) => std::str::from_utf8(bytes).ok()?,
+                None => "",
+            };
+            let hit = match &self.regexes[i] {
+                Some(re) => re.is_match(cell),
+                None => matches(cell, spec),
+            };
+            match self.combine {
+                Combine::All if !hit => return Some(false),
+                Combine::All => {}
+                Combine::Any if hit => return Some(true),
+                Combine::Any => any |= hit,
+            }
+        }
+        Some(match self.combine {
+            Combine::All => true,
+            Combine::Any => any,
+        })
+    }
 }
 
 /// Write the rows matching `set` to `output` as CSV, streaming.
@@ -535,19 +562,35 @@ pub fn extract_style(
     while records.next_record(&mut record)? {
         summary.scanned += 1;
         written += record.len() as u64;
-        let text = String::from_utf8_lossy(&record);
-        let fields = parse_csv_record_with(text.trim_end_matches(['\n', '\r']), delim, quotes);
-        if compiled.holds(&fields) {
-            if fields.len() != width {
-                summary.matched_ragged += 1;
+        // Fast path: quote-free records are matched from borrowed fields, with no
+        // per-row String or field vector. Anything else falls back to the parser.
+        let (hit, field_count) = if let Some(cells) =
+            crate::csv_reader::field_slices(&record, delim, quotes)
+        {
+            match compiled.holds_bytes(&cells) {
+                Some(hit) => (hit, cells.len()),
+                None => {
+                    let text = String::from_utf8_lossy(&record);
+                    let fields =
+                        parse_csv_record_with(text.trim_end_matches(['\n', '\r']), delim, quotes);
+                    (compiled.holds(&fields), fields.len())
+                }
             }
-            let mut line = record.clone();
-            if !line.ends_with(b"\n") {
-                line.push(b'\n');
+        } else {
+            let text = String::from_utf8_lossy(&record);
+            let fields = parse_csv_record_with(text.trim_end_matches(['\n', '\r']), delim, quotes);
+            (compiled.holds(&fields), fields.len())
+        };
+        if hit {
+            if field_count != width {
+                summary.matched_ragged += 1;
             }
             // Keep the source bytes verbatim: re-serialising would normalise
             // quoting and line endings for no benefit.
-            out.write_all(&line)?;
+            out.write_all(&record)?;
+            if !record.ends_with(b"\n") {
+                out.write_all(b"\n")?;
+            }
             summary.matched += 1;
         }
         if summary.scanned.is_multiple_of(200_000) {
@@ -943,6 +986,29 @@ mod regex_tests {
             std::fs::read_to_string(&output).unwrap(),
             "id,city,note\n3,Puebla,REFUND-2\n"
         );
+    }
+
+    #[test]
+    fn holds_bytes_agrees_with_holds_and_refuses_non_utf8() {
+        let set = FilterSet {
+            specs: vec![
+                FilterSpec::parse("city=CDMX").unwrap(),
+                FilterSpec::parse("amount>5").unwrap(),
+            ],
+            combine: Combine::All,
+        };
+        let compiled = set
+            .compile(&["city".to_string(), "amount".to_string()])
+            .unwrap();
+        let cells: [&[u8]; 2] = [b"CDMX", b"10"];
+        assert_eq!(compiled.holds_bytes(&cells), Some(true));
+        let cells: [&[u8]; 2] = [b"Puebla", b"10"];
+        assert_eq!(compiled.holds_bytes(&cells), Some(false));
+        let fields = vec!["CDMX".to_string(), "10".to_string()];
+        assert!(compiled.holds(&fields), "reference path agrees");
+        // A cell the predicate reads must be UTF-8, or the caller falls back.
+        let cells: [&[u8]; 2] = [b"CDMX", &[0xff]];
+        assert_eq!(compiled.holds_bytes(&cells), None);
     }
 
     #[test]
