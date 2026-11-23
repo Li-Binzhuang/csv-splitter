@@ -906,6 +906,7 @@ pub fn concat_sql(
 /// User-level format conversion: CSV/TSV/NDJSON/Parquet in any direction. DuckDB does
 /// the parsing and writing, so quoted fields, unicode and nested JSON stay correct.
 /// xlsx is deliberately absent.
+#[cfg(feature = "sql")]
 pub fn convert_format(
     input: &Path,
     output: &Path,
@@ -953,10 +954,28 @@ pub fn convert_format(
     Ok(())
 }
 
+/// A build without DuckDB cannot parse TSV/NDJSON/Parquet; say so instead of
+/// compiling a call to a module that does not exist.
+#[cfg(not(feature = "sql"))]
+pub fn convert_format(
+    _input: &Path,
+    _output: &Path,
+    _target: &str,
+    _delimiter: crate::types::Delimiter,
+    _tx: &crate::types::ProgressSender,
+) -> std::io::Result<()> {
+    Err(std::io::Error::new(
+        std::io::ErrorKind::Unsupported,
+        "this build cannot convert formats (no DuckDB feature)",
+    ))
+}
+
+#[cfg(feature = "sql")]
 fn sql_path(path: &Path) -> String {
     path.display().to_string().replace('\'', "''")
 }
 
+#[cfg(feature = "sql")]
 fn source_expr(input: &Path, delimiter: crate::types::Delimiter) -> std::io::Result<String> {
     let name = input
         .file_name()
