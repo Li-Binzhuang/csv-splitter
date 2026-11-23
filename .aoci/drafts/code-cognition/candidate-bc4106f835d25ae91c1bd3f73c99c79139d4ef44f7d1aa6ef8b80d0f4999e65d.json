@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "8e0ea6e9e2445dc36cbab03c2e5d7113645e65605207c7c94d366c5d72d5d784",
+  "batch_id": "bc4106f835d25ae91c1bd3f73c99c79139d4ef44f7d1aa6ef8b80d0f4999e65d",
+  "composite_identity": "b922d4e2490925a435b671b0eb8608b0633e783c881906db57a8866876a048d3",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b246a2b475df8520882d63551e77eb2eb914a35d53832836451ef4a4883420d1",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "481d8939e8a6ef8da674afaae1821c2b97385c266b08a6ddc14637a64f37fb0b",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、行内多条件聚合、median 区间、文本函数、日期运算、原子 transaction 与整批撤销/重做、预扫冷启动约 25–30 ms（两次实测） | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "9ed8e060dcddd96538a1c562fcbdf53eeb4da1c920f8e5a9df8682d338daaa32",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、stdev/var 与 stdevp/varp、median 同行区间、多段 sumproduct、行内多条件聚合、文本拼接、日期运算；条件字面量含 * 或 ? 时编译为 Wildcard | S:公式列只存 journal；跨行区间无随机访问；整列 median 会保留全部值，故不支持；日期是 ISO 文本"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "471909c189d150cd1506381b084bd80906a225d4bd720911e541f8a0d1be8cdd",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "481d8939e8a6ef8da674afaae1821c2b97385c266b08a6ddc14637a64f37fb0b",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、行内多条件聚合、median 区间、文本函数、日期运算、原子 transaction 与整批撤销/重做、预扫冷启动约 25–30 ms（两次实测） | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "97de9c047d051dc8c98410d1262231f504e4e0b58cc2d4321a1a6d64cd12a0d1",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "9ed8e060dcddd96538a1c562fcbdf53eeb4da1c920f8e5a9df8682d338daaa32",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、stdev/var 与 stdevp/varp、median 同行区间、多段 sumproduct、行内多条件聚合、文本拼接、日期运算；条件字面量含 * 或 ? 时编译为 Wildcard | S:公式列只存 journal；跨行区间无随机访问；整列 median 会保留全部值，故不支持；日期是 ISO 文本"
+    }
+  ]
+}
