@@ -7435,6 +7435,34 @@ mod tests {
         std::fs::remove_dir_all(&root).ok();
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn materialize_cache_reuses_one_temp_file() {
+        let dir = std::env::temp_dir().join(format!("csvs_materialize_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let source = dir.join("orders.csv");
+        std::fs::write(&source, "id,city\n1,CDMX\n").unwrap();
+        let gzip = dir.join("orders.csv.gz");
+        let status = std::process::Command::new("gzip")
+            .arg("-c")
+            .arg(&source)
+            .stdout(std::fs::File::create(&gzip).unwrap())
+            .status();
+        if !status.map(|status| status.success()).unwrap_or(false) {
+            std::fs::remove_dir_all(&dir).ok();
+            return;
+        }
+        let first = mcp_materialize(&gzip).unwrap();
+        let second = mcp_materialize(&gzip).unwrap();
+        assert_eq!(first, second);
+        assert_eq!(
+            std::fs::read_to_string(&first).unwrap(),
+            "id,city\n1,CDMX\n"
+        );
+        cleanup_mcp_materialized();
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
     #[test]
     fn mcp_tools_is_valid_json_and_has_all_tools() {
         let value = McpParser::parse(mcp_tools()).expect("tools/list must be valid JSON");
@@ -7796,6 +7824,87 @@ fn mcp_output_path(root: &Path, args: &McpJson) -> Result<PathBuf, String> {
     Ok(candidate)
 }
 
+struct CachedMaterialized {
+    key: String,
+    path: std::path::PathBuf,
+}
+
+static MATERIALIZE_CACHE: std::sync::OnceLock<std::sync::Mutex<Vec<CachedMaterialized>>> =
+    std::sync::OnceLock::new();
+
+fn mcp_materialize(input: &Path) -> Result<std::path::PathBuf, String> {
+    if !csvx_core::encoding::is_compressed(input) {
+        return Ok(input.to_path_buf());
+    }
+    let metadata = std::fs::metadata(input).map_err(|error| error.to_string())?;
+    let modified = metadata
+        .modified()
+        .ok()
+        .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|duration| duration.as_nanos())
+        .unwrap_or(0);
+    #[cfg(unix)]
+    let identity = {
+        use std::os::unix::fs::MetadataExt;
+        format!(
+            "{}:{}",
+            metadata.ino(),
+            metadata.ctime_nsec() + metadata.ctime() * 1_000_000_000
+        )
+    };
+    #[cfg(not(unix))]
+    let identity = "0".to_string();
+    let key = format!(
+        "{}:{}:{}:{}",
+        input
+            .canonicalize()
+            .unwrap_or_else(|_| input.to_path_buf())
+            .display(),
+        metadata.len(),
+        modified,
+        identity
+    );
+    let cache = MATERIALIZE_CACHE.get_or_init(|| std::sync::Mutex::new(Vec::new()));
+    if let Ok(entries) = cache.lock() {
+        if let Some(entry) = entries.iter().find(|entry| entry.key == key) {
+            if entry.path.exists() {
+                return Ok(entry.path.clone());
+            }
+        }
+    }
+    let stamp = format!(
+        "{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|duration| duration.as_nanos())
+            .unwrap_or(0)
+    );
+    let path = std::env::temp_dir().join(format!("csvx-materialized-{stamp}.csv"));
+    let mut reader = csvx_core::encoding::open_decoded(input).map_err(|error| error.to_string())?;
+    let mut writer = std::fs::File::create(&path).map_err(|error| error.to_string())?;
+    std::io::copy(&mut reader, &mut writer).map_err(|error| error.to_string())?;
+    if let Ok(mut entries) = cache.lock() {
+        entries.push(CachedMaterialized {
+            key,
+            path: path.clone(),
+        });
+    }
+    Ok(path)
+}
+
+fn cleanup_mcp_materialized() {
+    // The cache is process-local; descriptors that survive a crash are handled by the
+    // CLI's stale-materialized sweep.
+    if let Some(cache) = MATERIALIZE_CACHE.get() {
+        if let Ok(mut entries) = cache.lock() {
+            for entry in entries.drain(..) {
+                let _ = std::fs::remove_file(entry.path);
+            }
+        }
+    }
+}
+
 fn mcp_command(root: &Path, name: &str, args: &McpJson) -> Result<std::process::Command, String> {
     let bin = std::env::current_exe().map_err(|e| e.to_string())?;
     // Tool identity is checked before the path: an unknown tool must not be reported as
@@ -7819,6 +7928,19 @@ fn mcp_command(root: &Path, name: &str, args: &McpJson) -> Result<std::process::
         return Err(format!("unknown tool {name}"));
     }
     let path = mcp_path(root, args)?;
+    let wants_materialize = matches!(name, "csvx_filter" | "csvx_search")
+        && args
+            .get("materialize")
+            .and_then(|value| match value {
+                McpJson::Bool(flag) => Some(*flag),
+                _ => None,
+            })
+            .unwrap_or(false);
+    let path = if wants_materialize {
+        mcp_materialize(&path).map_err(|error| error.to_string())?
+    } else {
+        path
+    };
     let mut command = std::process::Command::new(bin);
     match name {
         "csvx_schema" => {
@@ -7866,16 +7988,6 @@ fn mcp_command(root: &Path, name: &str, args: &McpJson) -> Result<std::process::
             {
                 command.args(["--show", &limit.to_string()]);
             }
-            if args
-                .get("materialize")
-                .and_then(|value| match value {
-                    McpJson::Bool(flag) => Some(*flag),
-                    _ => None,
-                })
-                .unwrap_or(false)
-            {
-                command.arg("--materialize");
-            }
         }
         "csvx_search" => {
             let query = args
@@ -7897,16 +8009,6 @@ fn mcp_command(root: &Path, name: &str, args: &McpJson) -> Result<std::process::
             ]);
             if let Some(columns) = args.get("columns").and_then(McpJson::as_str) {
                 command.args(["--columns", columns]);
-            }
-            if args
-                .get("materialize")
-                .and_then(|value| match value {
-                    McpJson::Bool(flag) => Some(*flag),
-                    _ => None,
-                })
-                .unwrap_or(false)
-            {
-                command.arg("--materialize");
             }
         }
         "csvx_quality" => {
@@ -8510,5 +8612,6 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
         writeln!(stdout, "{response}")?;
         stdout.flush()?;
     }
+    cleanup_mcp_materialized();
     Ok(())
 }
