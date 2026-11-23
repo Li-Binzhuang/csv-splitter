@@ -1,0 +1,17 @@
+{
+  "version": "cognition-optimization-checkpoint/v1",
+  "optimization_id": "4d60bc945155372b4f325e1adf9d4d2090940daf6aa090984fb5325113e7d2dd",
+  "current_batch_id": "",
+  "remaining_object_refs": [],
+  "reviewed_count": 1,
+  "no_change_count": 0,
+  "replaced_count": 1,
+  "completed_count": 1,
+  "last_completed_batch_id": "b6bf8386ad75c54ecdbb98082004d24defccce2c9cda1c04e0882d96f77e1cfc",
+  "last_submission_sha256": "9f7e699c21561080797cd50f223db74add258b0d4ce08dd39560b91939e52cad",
+  "last_reviewed_count": 1,
+  "last_no_change_count": 0,
+  "last_replaced_count": 1,
+  "completed": true,
+  "explicit_object_refs": true
+}

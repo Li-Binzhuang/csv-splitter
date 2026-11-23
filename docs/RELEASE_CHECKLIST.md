@@ -17,7 +17,7 @@ bash scripts/package_release.sh   # dist/csvx-4.2.0-<platform>.tar.gz + .sha256
 
 ## 3. 2026-11-23 本机验证
 - release 构建：30.28 s；
-- demo：pipeline 15/13 ms；官方 SDK `pipeline_progress_events=2`、`progress_events=1`、`structured_ok=true`、`job=done`；
+- demo：pipeline 15/13 ms；Python 与官方 SDK 均 `gzip_matched=3`；SDK `pipeline_progress_events=2`、`progress_events=1`、`structured_ok=true`、`job=done`；
 - 包：`csvx-4.2.0-darwin-arm64.tar.gz` 约 20 MB；
 - SHA256：构建时由 `package_release.sh` 输出，不在此处固定（会随构建变化）。
 

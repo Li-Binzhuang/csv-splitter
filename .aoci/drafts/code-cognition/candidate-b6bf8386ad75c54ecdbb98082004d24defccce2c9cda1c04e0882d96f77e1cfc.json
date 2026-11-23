@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a7d469517f434001d5e712e9d26a328ab31e98d5938a8194e7319ae54c539e22",
+  "batch_id": "b6bf8386ad75c54ecdbb98082004d24defccce2c9cda1c04e0882d96f77e1cfc",
+  "composite_identity": "4a281f98734b6c177fb5eb8814f23425d16fd7c33e52a75fd5d2850cc7cf9ea4",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "826f5362908fe74766b0c498efbb3d497e9a2d328fde7d37747f2ebf3e117d28",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/mcp_client.py",
+      "path": "scripts/mcp_client.py",
+      "change": "update",
+      "source_sha256": "89c21e6deda038c6d09b36cf58c513c9b84de5b5b6ef62d7e0ac94e07cd11047",
+      "existing_entry": "mcp_client.py[XQ7T]: F:无依赖 MCP stdio 客户端，供端到端演示 | R:code:scripts/demo_end_to_end.sh | A:spawn csvx mcp；initialize/notifications、tools/list、tools/call；示例调用 schema/filter/view/edit_set/undo/convert/job_submit/job_status；orders.csv.gz 存在时 search 带 materialize；所有结果按 JSON 解析 | S:只用于本地演示；必须处理 job 轮询超时并以非零退出；不得写入 MCP root 之外"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ea303e9eed0aaa55c6d992ba7d8643d6595b81475acae16dd2bc7f0f6df542ea",
+      "object_ref": "code:scripts/mcp_client.py",
+      "path": "scripts/mcp_client.py",
+      "change": "update",
+      "source_sha256": "89c21e6deda038c6d09b36cf58c513c9b84de5b5b6ef62d7e0ac94e07cd11047",
+      "existing_entry": "mcp_client.py[XQ7T]: F:无依赖 MCP stdio 客户端，供端到端演示 | R:code:scripts/demo_end_to_end.sh | A:spawn csvx mcp；initialize/notifications、tools/list、tools/call；示例调用 schema/filter/view/edit_set/undo/convert/job_submit/job_status；orders.csv.gz 存在时 search 带 materialize；所有结果按 JSON 解析 | S:只用于本地演示；必须处理 job 轮询超时并以非零退出；不得写入 MCP root 之外"
+    }
+  ]
+}
