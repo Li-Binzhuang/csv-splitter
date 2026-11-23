@@ -2,6 +2,7 @@
 """Minimal MCP stdio client used by the end-to-end demo (no dependencies)."""
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -66,6 +67,10 @@ def main():
         print(f"schema_rows={schema['rows']}")
         filtered = client.call("csvx_filter", {"path": args.file, "where": "city=CDMX", "limit": 10})
         print(f"filter_matched={filtered['matched']}")
+        gzip_path = os.path.join(args.root, "orders.csv.gz")
+        if os.path.exists(gzip_path):
+            gzip = client.call("csvx_search", {"path": "orders.csv.gz", "query": "CDMX", "materialize": True})
+            print(f"gzip_matched={gzip.get('matched', 0)}")
         page = client.call("csvx_view", {"path": args.file, "start": 0, "count": 2})
         print(f"view_rows={len(page['rows'])}")
         edited = client.call("csvx_edit_set", {"path": args.file, "row": 1, "col": "city", "value": "DEMO"})

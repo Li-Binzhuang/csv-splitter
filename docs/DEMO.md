@@ -18,6 +18,7 @@ csvx 4.2.0 (DuckDB: compiled in)
 tools=16
 schema_rows=5
 filter_matched=3
+gzip_matched=3
 view_rows=2
 edit_ok=True
 convert_ok=True
