@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "08828fdaf09a09fccfe2d43849f7dc36481d6de3e3bcd6f01903a7b9920a6e31",
+  "batch_id": "00507584e0b7673998b660750d7e3b7153153a5a975de54e6f041a63e3c3c132",
+  "composite_identity": "5f3d84796dcabd56f5d66543cd70aaa353e725ba4ccaa5ee49829ea3396fdab6",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e21c70cf1a7e8789d15b0cb3cd05ae1aef17a6f49a470903ca9d1f2182680de2",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "f8c520aa9d88a89243a21889bd7333388de3faa8e78be5295a7c87a64304211e",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、sumsq/product、行内多条件聚合、median/large/small/percentile/mode 区间、iserror/isna/istext、weeknum/networkdays/workday、多表 ref 并行、文本函数、日期运算、事务与整批撤销/重做、预扫冷启动约 25–30 ms、大文件耗时随行数而非字节数 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "45d0589e13e8d3e3163319b63f01d09b579408349ee82d700e6eed25981d9ab6",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:运算符为等于/不等于/比较/包含/in/空值，以及公式专用 Wildcard；holds_record 用 visit_fields 单遍检查只读列（64 位 seen/hit 掩码），引号/转义/非 UTF-8 回退全解析；extract 直接写源记录字节；scan_page 接 next 供 HTTP 续扫 | S:并行与顺序路径行号必须一致；超时每 5000 行检查一次；Wildcard 只由公式层构造；extract 源字节原样输出，反序列化会改引号与行尾"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "f5a4799a86658a89d670dcdc1e1b368f7271a9f0af1e2975752c6a335363d27b",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、行内多条件、iserror/isna/istext、stdev/var/stdevp/varp、median/large/small/percentile/mode/sumsq/product 同行区间、多段 sumproduct、跨表 ref/vlookup/xlookup（同一行可引用多表）、文本/日期函数、条件通配符；大文件节含阶段 1 profile 与冻结验收（11 GB filter -o ≤8 s、search ≤11 s、30 GB/30 s、RSS ≤90 MB），并记录两轮优化把 1 GB filter -o 从 4.81→0.88–0.90 s | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4d06df99f663fc2c841a8cb4711e6ad43cb41e9291560690170bc45ae55a6586",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "f8c520aa9d88a89243a21889bd7333388de3faa8e78be5295a7c87a64304211e",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、sumsq/product、行内多条件聚合、median/large/small/percentile/mode 区间、iserror/isna/istext、weeknum/networkdays/workday、多表 ref 并行、文本函数、日期运算、事务与整批撤销/重做、预扫冷启动约 25–30 ms、大文件耗时随行数而非字节数 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "9a076fdbfc7b5aa3f68460e946f5862d4211e0296a3d749d0b7421ce39944d7c",
+      "object_ref": "code:crates/core/src/filter.rs",
+      "path": "crates/core/src/filter.rs",
+      "change": "update",
+      "source_sha256": "45d0589e13e8d3e3163319b63f01d09b579408349ee82d700e6eed25981d9ab6",
+      "existing_entry": "filter.rs[DA8L]: F:整文件的列过滤，返回数据行号供上层分页 | R:code:crates/core/src/index.rs,code:crates/core/src/scan_parallel.rs | A:运算符为等于/不等于/比较/包含/in/空值，以及公式专用 Wildcard；holds_record 用 visit_fields 单遍检查只读列（64 位 seen/hit 掩码），引号/转义/非 UTF-8 回退全解析；extract 直接写源记录字节；scan_page 接 next 供 HTTP 续扫 | S:并行与顺序路径行号必须一致；超时每 5000 行检查一次；Wildcard 只由公式层构造；extract 源字节原样输出，反序列化会改引号与行尾"
+    },
+    {
+      "candidate_id": "1e3f82600647b6258ec3ccd876add3877b27172eec94e437aeece59ea96d2a9d",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "f5a4799a86658a89d670dcdc1e1b368f7271a9f0af1e2975752c6a335363d27b",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、行内多条件、iserror/isna/istext、stdev/var/stdevp/varp、median/large/small/percentile/mode/sumsq/product 同行区间、多段 sumproduct、跨表 ref/vlookup/xlookup（同一行可引用多表）、文本/日期函数、条件通配符；大文件节含阶段 1 profile 与冻结验收（11 GB filter -o ≤8 s、search ≤11 s、30 GB/30 s、RSS ≤90 MB），并记录两轮优化把 1 GB filter -o 从 4.81→0.88–0.90 s | S:-"
+    }
+  ]
+}
