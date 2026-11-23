@@ -3246,6 +3246,51 @@ fn view_marks_cells_that_match_a_formatting_rule() {
     assert!(!text.contains("matched the formatting"), "{text}");
 }
 
+/// groupby must also agree byte for byte through the CLI on every documented aggregate.
+#[test]
+fn groupby_engines_agree_through_the_cli() {
+    let version = Command::new(bin()).arg("--version").output().unwrap();
+    if !String::from_utf8_lossy(&version.stdout).contains("compiled in") {
+        return;
+    }
+    let dir = TempDir::new("gbengine");
+    let input = dir.join("t.csv");
+    std::fs::write(
+        &input,
+        "city,amount,qty\nCDMX,10,2\nPuebla,7,3\nCDMX,5,4\nPuebla,1,5\n",
+    )
+    .unwrap();
+    let native = dir.join("native.csv");
+    let sql = dir.join("sql.csv");
+    for (engine, out) in [("native", &native), ("sql", &sql)] {
+        let out = Command::new(bin())
+            .args([
+                "groupby",
+                input.to_str().unwrap(),
+                "--by",
+                "city",
+                "--agg",
+                "amount:sum,amount:mean,amount:min,amount:max,amount:count,qty:max",
+                "--engine",
+                engine,
+                "-o",
+                out.to_str().unwrap(),
+            ])
+            .output()
+            .unwrap();
+        assert_eq!(
+            out.status.code(),
+            Some(0),
+            "{}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+    let native = std::fs::read_to_string(&native).unwrap();
+    let sql = std::fs::read_to_string(&sql).unwrap();
+    assert_eq!(native, sql, "native:\n{native}\nsql:\n{sql}");
+    assert!(native.contains("CDMX,15,7.5,5,10,2,4"), "{native}");
+}
+
 /// The pivot CLI must produce the same file through either engine, including an empty
 /// column key and every documented aggregate. Skips itself when DuckDB is not compiled in.
 #[test]
