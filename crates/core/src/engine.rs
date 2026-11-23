@@ -1140,10 +1140,17 @@ mod tests {
         .unwrap();
         let options = GroupOptions {
             keys: vec!["city".into()],
-            aggregates: ["amount:sum", "amount:mean", "qty:count"]
-                .iter()
-                .map(|s| AggSpec::parse_list(s).unwrap().remove(0))
-                .collect(),
+            aggregates: [
+                "amount:sum",
+                "amount:mean",
+                "amount:min",
+                "amount:max",
+                "qty:count",
+                "qty:max",
+            ]
+            .iter()
+            .map(|s| AggSpec::parse_list(s).unwrap().remove(0))
+            .collect(),
             order_by: None,
             descending: false,
             max_groups: 1000,
@@ -1236,11 +1243,18 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("csvs_engine5_{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let input = dir.join("t.csv");
-        std::fs::write(&input, "city,kind,amount\nA,x,1\nA,y,2\nB,x,3\nB,,4\n").unwrap();
+        std::fs::write(
+            &input,
+            "city,kind,amount,qty\nA,x,1,10\nA,y,2,20\nB,x,3,30\nB,,4,40\n",
+        )
+        .unwrap();
         let options = PivotOptions {
             rows: vec!["city".into()],
             columns: Some("kind".into()),
-            values: vec![AggSpec::parse_list("amount:sum").unwrap().remove(0)],
+            values: AggSpec::parse_list(
+                "amount:sum,amount:mean,amount:min,amount:max,amount:count,qty:max",
+            )
+            .unwrap(),
             order_by: None,
             descending: false,
             qualify_names: false,

@@ -60,7 +60,7 @@
 | 能力 | CLI | API | 边界 |
 |---|---|---|---|
 | 分组聚合 | `groupby --by K --agg c:op [--apply-edits] [--engine auto\|native\|sql]` | `GET /groupby` | `--max-groups` 默认 100 万；`--engine auto` 在输入 ≥8 MB 时走 DuckDB |
-| 透视表 | `pivot --rows R --cols C --values c:op [--engine auto\|native\|sql]` | `GET /pivot` | `--max-columns` 512 / `--max-cells` 200 万；写文件时 `--engine auto` 在 ≥8 MB 走 DuckDB，终端矩阵始终原生 |
+| 透视表 | `pivot --rows R --cols C --values c:op [--engine auto\|native\|sql]` | `GET /pivot` | 值聚合支持 count/sum/mean(avg)/min/max 与多值列；`--max-columns` 512 / `--max-cells` 200 万；写文件时 `--engine auto` 在 ≥8 MB 走 DuckDB，终端矩阵始终原生 |
 | 图表数据 | `chart --x C --y c:op [--series S] [--engine auto\|native\|sql]` | `GET /chart` | `--max-points` 5000；两引擎数值相等，类别顺序可能不同（原生保留首次出现顺序）|
 | SQL | `sql f.csv "SELECT ..."` | `GET /query`、`/rows?sql=` | DuckDB，只读单语句，结果封顶 |
 | 筛选 | `filter --where "c=v"` | `GET /filter`、`/rows?where=` | 支持 `= != > >= < <= ~ in empty` |

@@ -69,6 +69,9 @@
 - **`averageif`**: `averageif(amount, ">5")` and `averageif(B2:C2, ">5")` reuse the
   same matching (sum, count) as `sumif`, so no extra scan; no matching cell is `#VALUE!`
   instead of a division by zero.
+- **Analysis equivalence coverage**: the native-vs-DuckDB byte-for-byte tests for
+  pivot now compare count/sum/mean/min/max and a second measure column, and the groupby
+  test compares min/max as well, so the documented op set is actually exercised.
 - **`stdevp` / `varp`**: population standard deviation/variance (Excel STDEV.P/VAR.P)
   from the same sum-of-squares pass; `varp(B2:C2)` works over a same-row range too.
 - **`min`/`max`/`stdev`/`var`**: `min(amount)` / `max(amount)` read numeric bounds,
