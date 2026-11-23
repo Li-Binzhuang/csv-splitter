@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "882a3100028cb6ae52dbd53780485423354ab8eb5add481f460b2a03145ca418",
+  "batch_id": "0aba08116300b9f6ec0116243c069f10f03ea87a10b8462e661334e797b4b46c",
+  "composite_identity": "6510cacdce52ff04d90f7b6c7f5e5978bf9e33a7a575b6d97ab5ddc1141de5c8",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "9291431d56685372219fd9ec77914906929f85a15ed4143aa93b718a86def3a2",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "5f19dbcddcfb506efc34e64ebc2d0554f5cbebd2a79c2d606dbae7501a1eefd9",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:docs/DEMO.md | A:发布前 gate/demo/package；记录 2026-11-23 release 30.28 s、pipeline 15/13 ms、官方 SDK 2 条 pipeline progress 与 job progress；SHA 由打包脚本输出，不写死 | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "74cf100408ac852f6c3b4fe0954d857e7553062b32721ecf10e0c7ac561f0229",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 | R:code:README.md,code:docs/SALES.md | A:binary 缺失先 cargo build --release；版本取 csvx --version；平台 uname；打包二进制、README/CHANGELOG/LICENSE、主要 docs（含 PILOT_SAMPLE/PILOT_CONFIRMATION）、demo/pilot 脚本与 mcp_sdk client/package.json；输 dist tar.gz 与 sha256 | S:不打 tag、不联网、不发布 registry；dist 已 gitignore；只用于企业内部分发/试点"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ffee0258e9952a87fce8cdd294044b58e741921d7d09ae78447c562308fc06c6",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "5f19dbcddcfb506efc34e64ebc2d0554f5cbebd2a79c2d606dbae7501a1eefd9",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:docs/DEMO.md | A:发布前 gate/demo/package；记录 2026-11-23 release 30.28 s、pipeline 15/13 ms、官方 SDK 2 条 pipeline progress 与 job progress；SHA 由打包脚本输出，不写死 | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑"
+    },
+    {
+      "candidate_id": "ad174bd28b42e29959b0d7ad5beae81fe1438b75bac9bd012fc3dcd2f70162bc",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "74cf100408ac852f6c3b4fe0954d857e7553062b32721ecf10e0c7ac561f0229",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 | R:code:README.md,code:docs/SALES.md | A:binary 缺失先 cargo build --release；版本取 csvx --version；平台 uname；打包二进制、README/CHANGELOG/LICENSE、主要 docs（含 PILOT_SAMPLE/PILOT_CONFIRMATION）、demo/pilot 脚本与 mcp_sdk client/package.json；输 dist tar.gz 与 sha256 | S:不打 tag、不联网、不发布 registry；dist 已 gitignore；只用于企业内部分发/试点"
+    }
+  ]
+}
