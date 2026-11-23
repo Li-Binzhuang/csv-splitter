@@ -2982,6 +2982,7 @@ fn pipeline_parallel_group_failure_is_atomic() {
         ));
     }
     std::fs::write(dir.join("big.csv"), big).unwrap();
+    std::fs::write(dir.join("a.csv"), "id,city\n99,OLD\n").unwrap();
     std::fs::write(
         dir.join("plan.csv"),
         "step,input,command,args,output,group\nslow,big.csv,filter,--where city=CDMX -o {out},a.csv,wave\nbad,big.csv,convert,--format bogus -o {out},b.csv,wave\n",
@@ -3002,9 +3003,10 @@ fn pipeline_parallel_group_failure_is_atomic() {
     assert!(!result.status.success());
     let stderr = String::from_utf8_lossy(&result.stderr);
     assert!(stderr.contains("failed"), "{stderr}");
-    assert!(
-        !dir.join("a.csv").exists(),
-        "slow sibling output must be removed"
+    assert_eq!(
+        std::fs::read_to_string(dir.join("a.csv")).unwrap(),
+        "id,city\n99,OLD\n",
+        "old output must survive a failed wave"
     );
     assert!(!dir.join("b.csv").exists());
     assert!(!dir.join("plan.csv.pipeline.csv").exists());

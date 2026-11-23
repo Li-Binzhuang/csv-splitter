@@ -8271,6 +8271,7 @@ fn run_branch_group(
     let stamp = format!("{}-{}", std::process::id(), fnv_hash(first));
     let mut plans = Vec::with_capacity(group_indices.len());
     let mut inputs = Vec::with_capacity(group_indices.len());
+    let mut staged = Vec::with_capacity(group_indices.len());
     for (index, &step_index) in group_indices.iter().enumerate() {
         let step = &all[step_index];
         let name = step.input.as_ref().ok_or_else(|| {
@@ -8307,6 +8308,14 @@ fn run_branch_group(
             ));
         }
         inputs.push((step, input_path.clone()));
+        let stage = step.output.with_file_name(format!(
+            ".{}.branch-{stamp}-{index}.tmp",
+            step.output
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or("out")
+        ));
+        staged.push(stage.clone());
         let plan = std::env::temp_dir().join(format!("csvx-branch-{stamp}-{index}.csv"));
         let row = format!(
             "{},{},{},{},{}\n",
@@ -8314,7 +8323,7 @@ fn run_branch_group(
             pipeline_csv_cell(&input_path.display().to_string()),
             pipeline_csv_cell(&step.command),
             pipeline_csv_cell(&step.args),
-            pipeline_csv_cell(&step.output.display().to_string())
+            pipeline_csv_cell(&stage.display().to_string())
         );
         std::fs::write(&plan, format!("step,input,command,args,output\n{row}"))?;
         plans.push(plan);
@@ -8413,24 +8422,29 @@ fn run_branch_group(
         let _ = std::fs::remove_file(&branch.stdout);
         let _ = std::fs::remove_file(&branch.stderr);
     }
-    for (plan, (step, _)) in plans.iter().zip(inputs.iter()) {
+    for plan in &plans {
         let _ = std::fs::remove_file(plan);
         let _ = std::fs::remove_file(pipeline_state_path(plan));
-        if failure.is_some() {
-            let _ = std::fs::remove_file(&step.output);
-            let temp = step.output.with_file_name(format!(
-                ".{}.pipeline.tmp",
-                step.output
-                    .file_name()
-                    .and_then(|name| name.to_str())
-                    .unwrap_or("out")
-            ));
-            let _ = std::fs::remove_file(&temp);
-        }
     }
     let elapsed_ms = started.elapsed().as_millis() as u64;
     if let Some(error) = failure {
+        for stage in &staged {
+            let _ = std::fs::remove_file(stage);
+        }
         return Err(std::io::Error::other(error));
+    }
+    // Commit the whole wave only after every child succeeded. Existing outputs are
+    // replaced, but a failed wave never touches them.
+    for ((step, _), stage) in inputs.iter().zip(staged.iter()) {
+        if step.output.exists() {
+            let _ = std::fs::remove_file(&step.output);
+        }
+        if let Err(error) = std::fs::rename(stage, &step.output) {
+            for stage in &staged {
+                let _ = std::fs::remove_file(stage);
+            }
+            return Err(error);
+        }
     }
     let mut results = Vec::with_capacity(group_indices.len());
     for (step, input_path) in inputs.iter() {
