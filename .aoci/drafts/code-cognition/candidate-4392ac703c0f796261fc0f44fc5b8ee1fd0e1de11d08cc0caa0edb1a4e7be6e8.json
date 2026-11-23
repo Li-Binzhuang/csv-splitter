@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "fbe413c9092e5c0331feb380685b44c9113fce2b516b7080386a0bc6cbb39043",
+  "batch_id": "4392ac703c0f796261fc0f44fc5b8ee1fd0e1de11d08cc0caa0edb1a4e7be6e8",
+  "composite_identity": "bb059d1e36cf106047463f85d39de7e5ffab4a7520a390bea74d2557e481d13a",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "07a1ac211ccc63591f4fa16da1d973bd1d59cbb6fc513438845900771bc8b973",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "eaacc1ddfe964d82b9e1d7adb432d8b89f571327a9ec7906b52f5b15d2dc0a25",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头给周一两命令演示、最终二进制实测范围（2.1 GB 过滤 2.3 s、导出 1.7–1.8 s、verify 5.8–6.2 s；11.2 GB 过滤 13.2–13.9 s、搜索 13.8–14.6 s；2026-11-23 复测 11 GB/2.8 亿行 14.9/16.3 s，耗时随行数而非字节数）与演示后清理；写明已改名 csvx、版本 4.2.0；虚拟列含 ref/vlookup/xlookup；AOCI 与 CodeGraph 分工 | S:.aoci 运行时产物与 .codegraph 不入库，而 aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围，容量先看行数"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "0c4b6be533f6a7aa8098a68e2427aeb4925d2cd23f68c9597ff97777b1639dc3",
+      "object_ref": "code:docs/HANDOVER.md",
+      "path": "docs/HANDOVER.md",
+      "change": "update",
+      "source_sha256": "eaacc1ddfe964d82b9e1d7adb432d8b89f571327a9ec7906b52f5b15d2dc0a25",
+      "existing_entry": "HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头给周一两命令演示、最终二进制实测范围（2.1 GB 过滤 2.3 s、导出 1.7–1.8 s、verify 5.8–6.2 s；11.2 GB 过滤 13.2–13.9 s、搜索 13.8–14.6 s；2026-11-23 复测 11 GB/2.8 亿行 14.9/16.3 s，耗时随行数而非字节数）与演示后清理；写明已改名 csvx、版本 4.2.0；虚拟列含 ref/vlookup/xlookup；AOCI 与 CodeGraph 分工 | S:.aoci 运行时产物与 .codegraph 不入库，而 aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围，容量先看行数"
+    }
+  ]
+}
