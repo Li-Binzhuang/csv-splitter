@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "b0cb5caf179d3fb457aa6c96cf61f8aed8cb9776d1b4de46de6aeb105863c813",
+  "batch_id": "6c7bc8cb38fd634a07fd86a68ee0b3e25516e6cca954ad6f9de3567f394cb019",
+  "composite_identity": "89d2c193b4ebfb7e348a35810938f191b954607a664a4c4826015d9419d4d9b9",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "2eb1e40a08e4d9c7d7a8f523e5373defa48e12b94fb1afa6f0d324a54f3cf2b8",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "9081d5d89c381bdf68883a77e1fca67292cf077e6d5c6f2a4ec12ca70e6a80b9",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、行内多条件聚合、median/large/small/percentile/mode 区间、iserror/isna/istext、weeknum/networkdays/workday、文本函数、日期运算、原子 transaction 与整批撤销/重做、vlookup 别名修复、xlookup fallback、预扫冷启动约 25–30 ms、大文件耗时随行数而非字节数 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "7911a3ff5098c14c51bc1bebf444ef5ae1ab49244fed4b1f8a24d03b52129152",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：已实测优势与未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 区分整列/同行/跨行：纯 sum 冷启动约 25–30 ms，countif 冷 0.09–0.10 s、countifs 冷 0.11 s（warm 0.06–0.08），8 线程中位数；跨行需按列前缀和（5000 万行每列约 400 MB）故暂不做；缺口 5 已含整批撤销与重做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "945d661dfe87e197a5a4bc326bc72f3f25d25579fe650c9c0597cc6b8b587d32",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、行内多条件、iserror/isna/istext、stdev/var/stdevp/varp、median/large/small/percentile/mode 同行区间、多段 sumproduct、跨表 ref/vlookup/xlookup（fallback 可是字面量或列引用）、文本/日期函数（含 weeknum/networkdays/workday）、条件通配符；大文件节写明耗时随行数而非字节数；编辑表含一次撤销/重做整批 | S:-"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "7a5455e0ea76a887fff410750e2b7d272f9adb9a4ec50fc084c1d11025bc7d76",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "9081d5d89c381bdf68883a77e1fca67292cf077e6d5c6f2a4ec12ca70e6a80b9",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡，保留未达标项与已知债；4.2.0 记录聚合/.agg 缓存（版本 6）、条件通配符、多段 sumproduct、行内多条件聚合、median/large/small/percentile/mode 区间、iserror/isna/istext、weeknum/networkdays/workday、文本函数、日期运算、原子 transaction 与整批撤销/重做、vlookup 别名修复、xlookup fallback、预扫冷启动约 25–30 ms、大文件耗时随行数而非字节数 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败"
+    },
+    {
+      "candidate_id": "278cf5d037ebfbd7e33b69f1f234c53fbed145044dfc9c9d0e885a4384597c8d",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "7911a3ff5098c14c51bc1bebf444ef5ae1ab49244fed4b1f8a24d03b52129152",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：已实测优势与未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 区分整列/同行/跨行：纯 sum 冷启动约 25–30 ms，countif 冷 0.09–0.10 s、countifs 冷 0.11 s（warm 0.06–0.08），8 线程中位数；跨行需按列前缀和（5000 万行每列约 400 MB）故暂不做；缺口 5 已含整批撤销与重做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    },
+    {
+      "candidate_id": "24dcd638a548b333b03411d76d68ef5f5d9a8d0ace1cc1c2f18f3bcd79455197",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "945d661dfe87e197a5a4bc326bc72f3f25d25579fe650c9c0597cc6b8b587d32",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式语法表含整列/条件/多条件/空单元格聚合、行内多条件、iserror/isna/istext、stdev/var/stdevp/varp、median/large/small/percentile/mode 同行区间、多段 sumproduct、跨表 ref/vlookup/xlookup（fallback 可是字面量或列引用）、文本/日期函数（含 weeknum/networkdays/workday）、条件通配符；大文件节写明耗时随行数而非字节数；编辑表含一次撤销/重做整批 | S:-"
+    }
+  ]
+}
