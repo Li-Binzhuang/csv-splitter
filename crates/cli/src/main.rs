@@ -8440,13 +8440,21 @@ fn cleanup_stale_staging(steps: &[PipelineStep], force: bool) -> std::io::Result
 
 const AUTO_CONTENT_CHECK_LIMIT: u64 = 1 << 20;
 
+fn auto_content_check_limit() -> u64 {
+    std::env::var("CSVX_CONTENT_CHECK_LIMIT")
+        .ok()
+        .and_then(|value| value.parse::<u64>().ok())
+        .unwrap_or(AUTO_CONTENT_CHECK_LIMIT)
+}
+
 fn pipeline_auto_content_check(input: &std::path::Path, output: &std::path::Path) -> bool {
+    let limit = auto_content_check_limit();
     let size = |path: &std::path::Path| {
         std::fs::metadata(path)
             .map(|metadata| metadata.len())
             .unwrap_or(u64::MAX)
     };
-    size(input) <= AUTO_CONTENT_CHECK_LIMIT && size(output) <= AUTO_CONTENT_CHECK_LIMIT
+    size(input) <= limit && size(output) <= limit
 }
 
 fn pipeline_state_is_fresh(row: &PipelineStateRow, content_check: bool) -> bool {

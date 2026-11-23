@@ -3624,6 +3624,57 @@ fn pipeline_small_rewrite_is_hashed_by_default() {
     );
 }
 
+/// CSVX_CONTENT_CHECK_LIMIT=0 disables automatic hashing for small files.
+#[cfg(unix)]
+#[test]
+fn pipeline_content_check_limit_env() {
+    let dir = TempDir::new("pipeline-content-limit");
+    let source = dir.join("orders.csv");
+    let reference = dir.join("reference.csv");
+    std::fs::write(&source, "id,city\n1,CDMX\n").unwrap();
+    std::fs::write(&reference, "same").unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\na,orders.csv,filter,--where city=CDMX -o {out},a.csv\n",
+    )
+    .unwrap();
+    Command::new("touch")
+        .args(["-r", reference.to_str().unwrap(), source.to_str().unwrap()])
+        .status()
+        .unwrap();
+    let run = |limit: Option<&str>| {
+        let mut command = Command::new(bin());
+        command.args([
+            "pipeline",
+            "run",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+        ]);
+        if let Some(limit) = limit {
+            command.env("CSVX_CONTENT_CHECK_LIMIT", limit);
+        }
+        command.output().unwrap()
+    };
+    let first = run(None);
+    assert!(
+        first.status.success(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    std::fs::write(&source, "id,city\n2,CDMX\n").unwrap();
+    Command::new("touch")
+        .args(["-r", reference.to_str().unwrap(), source.to_str().unwrap()])
+        .status()
+        .unwrap();
+    let metadata_only = run(Some("0"));
+    assert!(metadata_only.status.success());
+    assert!(String::from_utf8_lossy(&metadata_only.stdout).contains("↷ a"));
+    let auto = run(None);
+    assert!(auto.status.success());
+    assert!(!String::from_utf8_lossy(&auto.stdout).contains("↷ a"));
+}
+
 /// Status verify hashes small files by default and can still force hashing on large ones.
 #[cfg(unix)]
 #[test]

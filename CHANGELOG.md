@@ -154,7 +154,7 @@
   next to text content; tests cover unknown_tool and path_escape.
 - **Content-check fast-skip guard**: `--content-check` hashes input/output even when
   size+mtime match, also for `pipeline status --verify`; files ≤1 MiB hash by default,
-  larger ones require the flag. Tests cover small default, large flag, and status.
+  larger ones require the flag; `CSVX_CONTENT_CHECK_LIMIT` tunes or disables the auto limit. Tests cover small default, large flag, and status.
 - **Stable step markers**: `--progress-markers` emits
   `CSVX_STEP done|skip <step> <i>/<n>` **as each step completes** (not after the run);
   MCP streaming parses it and includes `total` in progress notifications. Test asserts the marker and total form.
