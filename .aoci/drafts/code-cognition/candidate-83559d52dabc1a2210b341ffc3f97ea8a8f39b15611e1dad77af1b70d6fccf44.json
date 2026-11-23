@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "6401053a5de4dbe6f509f2218cbf1f777ade94d5809ac5e92bb5ee9141014858",
+  "batch_id": "83559d52dabc1a2210b341ffc3f97ea8a8f39b15611e1dad77af1b70d6fccf44",
+  "composite_identity": "ae9ca3427f63a7b00ddb1bf9e82c848a47f76afce3dc93c26984a4dd00335ec4",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "bf395cba55875a526979ff89a3a58264176054b8e747d221e1e495ff09120354",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "c723814e4d91adabf5b635fbf29de83ea34bc428c47c65a12d1c47b09eac7163",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/锁规则/重复输出拒绝/源覆盖拒绝/内容校验(run+status)/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码、步骤 progress/CSVX_STEP 即时、压缩/MCP materialize 残留清理（search 3.51 s、filter 3.62/2.60 s） | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "2cb9361c72d7f41a9541836a11c044ddf348a11ecfc6923fa8f190b503abc35e",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 读写与 job；stdio JSON-RPC；16 工具（schema/view/filter/search/quality/pipeline*、edit*、convert、job*）；pipeline_status 支持 verify/contentCheck；pipeline_run 接受 dag/jobs/clean/contentCheck；job_status 支持 0–30s wait，有 token 时发 progress，返回 structuredContent ok/code；job_cancel kill 子进程；job_list 默认摘要，full=true 完整；未知工具先判身份；父目录组件在 canonicalize 前拒绝 | S:strict 参数未登记即 400；MCP stdout 只走协议；search/filter 支持 materialize；错误码分 unknown_tool/unknown_job/path_escape/cli_error/job_start_error；job 结果缓存；progress 覆盖 job wait 与 pipeline CSVX_STEP i/n（带 total）；tools/list 必须能被 McpParser 解析"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "71cbf285e50757f707cd7a138bb3a1fc4c874814edcbb8f8f73687b44f0785d8",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "c723814e4d91adabf5b635fbf29de83ea34bc428c47c65a12d1c47b09eac7163",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/锁规则/重复输出拒绝/源覆盖拒绝/内容校验(run+status)/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码、步骤 progress/CSVX_STEP 即时、压缩/MCP materialize 残留清理（search 3.51 s、filter 3.62/2.60 s） | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭"
+    },
+    {
+      "candidate_id": "a2568441fbb29de366da74eeab3b101255d8effe8b2114748d0a6ff30cd8aaa2",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "2cb9361c72d7f41a9541836a11c044ddf348a11ecfc6923fa8f190b503abc35e",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 读写与 job；stdio JSON-RPC；16 工具（schema/view/filter/search/quality/pipeline*、edit*、convert、job*）；pipeline_status 支持 verify/contentCheck；pipeline_run 接受 dag/jobs/clean/contentCheck；job_status 支持 0–30s wait，有 token 时发 progress，返回 structuredContent ok/code；job_cancel kill 子进程；job_list 默认摘要，full=true 完整；未知工具先判身份；父目录组件在 canonicalize 前拒绝 | S:strict 参数未登记即 400；MCP stdout 只走协议；search/filter 支持 materialize；错误码分 unknown_tool/unknown_job/path_escape/cli_error/job_start_error；job 结果缓存；progress 覆盖 job wait 与 pipeline CSVX_STEP i/n（带 total）；tools/list 必须能被 McpParser 解析"
+    }
+  ]
+}
