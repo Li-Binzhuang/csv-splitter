@@ -21,6 +21,8 @@ bash scripts/package_release.sh   # dist/csvx-4.2.0-<platform>.tar.gz + .sha256
 - 包：`csvx-4.2.0-darwin-arm64.tar.gz` 约 20 MB；
 - SHA256：构建时由 `package_release.sh` 输出，不在此处固定（会随构建变化）。
 
+> 本清单随离线包一起分发（`docs/RELEASE_CHECKLIST.md`）。
+
 ## 4. 交付
 - 同时交付 tar.gz 与 `.sha256`；接收方先 `shasum -a 256 -c ...`；
 - 首次运行建议 `csvx --version` 核对 `4.2.0` 与 DuckDB 编译状态；
