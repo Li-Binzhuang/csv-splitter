@@ -7887,15 +7887,38 @@ const MATERIALIZE_CACHE_MAX_ENTRIES: usize = 16;
 fn materialize_cache_limits() -> (u64, usize) {
     let bytes = std::env::var("CSVX_MCP_CACHE_BYTES")
         .ok()
-        .and_then(|value| value.parse::<u64>().ok())
-        .filter(|value| *value > 0)
-        .unwrap_or(MATERIALIZE_CACHE_MAX_BYTES);
+        .and_then(|value| match value.parse::<u64>() {
+            Ok(parsed) if parsed > 0 => Some(parsed),
+            _ => {
+                static WARNED: std::sync::Once = std::sync::Once::new();
+                WARNED.call_once(|| {
+                    eprintln!(
+                        "warning: CSVX_MCP_CACHE_BYTES={value:?} is invalid; using default {}",
+                        MATERIALIZE_CACHE_MAX_BYTES
+                    );
+                });
+                None
+            }
+        });
     let entries = std::env::var("CSVX_MCP_CACHE_ENTRIES")
         .ok()
-        .and_then(|value| value.parse::<usize>().ok())
-        .filter(|value| *value > 0)
-        .unwrap_or(MATERIALIZE_CACHE_MAX_ENTRIES);
-    (bytes, entries)
+        .and_then(|value| match value.parse::<usize>() {
+            Ok(parsed) if parsed > 0 => Some(parsed),
+            _ => {
+                static WARNED: std::sync::Once = std::sync::Once::new();
+                WARNED.call_once(|| {
+                    eprintln!(
+                        "warning: CSVX_MCP_CACHE_ENTRIES={value:?} is invalid; using default {}",
+                        MATERIALIZE_CACHE_MAX_ENTRIES
+                    );
+                });
+                None
+            }
+        });
+    (
+        bytes.unwrap_or(MATERIALIZE_CACHE_MAX_BYTES),
+        entries.unwrap_or(MATERIALIZE_CACHE_MAX_ENTRIES),
+    )
 }
 
 fn cache_insert(
