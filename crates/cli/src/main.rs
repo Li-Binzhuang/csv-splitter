@@ -7886,6 +7886,8 @@ struct PipelineStateRow {
     args_hash: String,
     output_hash: String,
     elapsed_ms: u64,
+    input_stamp: String,
+    output_stamp: String,
 }
 
 fn pipeline_state_path(plan: &std::path::Path) -> std::path::PathBuf {
@@ -7917,6 +7919,17 @@ fn pipeline_hash_file(path: &std::path::Path) -> std::io::Result<String> {
         }
     }
     Ok(format!("{hash:016x}"))
+}
+
+fn pipeline_file_stamp(path: &std::path::Path) -> std::io::Result<String> {
+    let meta = std::fs::metadata(path)?;
+    let modified = meta
+        .modified()
+        .ok()
+        .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|duration| duration.as_nanos())
+        .unwrap_or(0);
+    Ok(format!("{}:{modified}", meta.len()))
 }
 
 fn pipeline_hash_text(text: &str) -> String {
@@ -7983,6 +7996,8 @@ fn load_pipeline_state(path: &std::path::Path) -> Vec<PipelineStateRow> {
                 .get(8)
                 .and_then(|value| value.parse().ok())
                 .unwrap_or(0),
+            input_stamp: cells.get(9).cloned().unwrap_or_default(),
+            output_stamp: cells.get(10).cloned().unwrap_or_default(),
         });
     }
     rows
@@ -7994,12 +8009,12 @@ fn save_pipeline_state(path: &std::path::Path, rows: &[PipelineStateRow]) -> std
     let mut file = std::fs::File::create(&tmp)?;
     writeln!(
         file,
-        "step,command,args,input,output,input_hash,args_hash,output_hash,elapsed_ms"
+        "step,command,args,input,output,input_hash,args_hash,output_hash,elapsed_ms,input_stamp,output_stamp"
     )?;
     for row in rows {
         writeln!(
             file,
-            "{},{},{},{},{},{},{},{},{}",
+            "{},{},{},{},{},{},{},{},{},{},{}",
             row.name,
             row.command,
             row.args,
@@ -8008,7 +8023,9 @@ fn save_pipeline_state(path: &std::path::Path, rows: &[PipelineStateRow]) -> std
             row.input_hash,
             row.args_hash,
             row.output_hash,
-            row.elapsed_ms
+            row.elapsed_ms,
+            row.input_stamp,
+            row.output_stamp
         )?;
     }
     file.flush()?;
@@ -8146,38 +8163,61 @@ fn run_pipeline_plan(
             ));
         }
         let input_string = input_path.display().to_string();
-        let input_hash = pipeline_hash_file(&input_path)?;
         let args_hash = pipeline_hash_text(&step.args);
+        let input_stamp = pipeline_file_stamp(&input_path)?;
+        let output_exists = step.output.exists();
+        let output_stamp = if output_exists {
+            pipeline_file_stamp(&step.output)?
+        } else {
+            String::new()
+        };
+        let prior = previous.iter().find(|row| {
+            row.name == step.name
+                && row.command == step.command
+                && row.args == step.args
+                && row.input == input_string
+        });
         let fresh = !force
-            && previous.iter().any(|row| {
-                row.name == step.name
-                    && row.command == step.command
-                    && row.args == step.args
-                    && row.input == input_string
-                    && row.input_hash == input_hash
-                    && step.output.exists()
-                    && pipeline_hash_file(&step.output)
-                        .map(|hash| hash == row.output_hash)
-                        .unwrap_or(false)
-            });
+            && match prior {
+                Some(row) => {
+                    if !row.input_stamp.is_empty() && !row.output_stamp.is_empty() {
+                        // Fast path: metadata alone proves the input and output unchanged.
+                        output_exists
+                            && row.input_stamp == input_stamp
+                            && row.output_stamp == output_stamp
+                    } else {
+                        // Legacy state without stamps: fall back to content hashes.
+                        let input_hash = pipeline_hash_file(&input_path)?;
+                        output_exists
+                            && input_hash == row.input_hash
+                            && pipeline_hash_file(&step.output)
+                                .map(|hash| hash == row.output_hash)
+                                .unwrap_or(false)
+                    }
+                }
+                None => false,
+            };
         if fresh {
+            let row = prior.expect("fresh requires a prior state row");
             let output_string = step.output.display().to_string();
             results.push((step.name.clone(), true, 0, output_string.clone()));
-            let output_hash = pipeline_hash_file(&step.output).unwrap_or_default();
             state_rows.push(PipelineStateRow {
                 name: step.name.clone(),
                 command: step.command.clone(),
                 args: step.args.clone(),
                 input: input_string,
                 output: output_string,
-                input_hash,
+                input_hash: row.input_hash.clone(),
                 args_hash,
-                output_hash,
+                output_hash: row.output_hash.clone(),
                 elapsed_ms: 0,
+                input_stamp,
+                output_stamp,
             });
             previous_output = Some(step.output.clone());
             continue;
         }
+        let input_hash = pipeline_hash_file(&input_path)?;
         if let Some(parent) = step.output.parent() {
             if !parent.as_os_str().is_empty() && !parent.exists() {
                 std::fs::create_dir_all(parent)?;
@@ -8244,6 +8284,8 @@ fn run_pipeline_plan(
             args_hash,
             output_hash,
             elapsed_ms,
+            input_stamp,
+            output_stamp: pipeline_file_stamp(&step.output)?,
         });
         results.push((
             step.name.clone(),

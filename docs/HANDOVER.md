@@ -131,9 +131,9 @@ xlsx 仍按硬约束挂起，等用户明确解除。
 哈希跳过，`--force` 全跑；`.pipeline.csv` 即血缘并记录每步耗时。CLI 测试覆盖首次运行、
 第二次全跳过、输入变更后重跑、坏步骤不写目标/状态、前向引用拒绝。
 
-2.3 GB/9500 万行 drill：filter→lookup→groupby 总 6.57 s；filter 0.67 s/29 MB，SQL lookup
-0.72 s/244 MB（1900 万行全 join），groupby 0.41 s/194 MB；增量重跑 5.08 s，慢在逐文件哈希，
-下一轮改 size+mtime 快路径。drill 同时发现并修复 SQL lookup 硬编码 100,000 行截断。
+2.3 GB/9500 万行 drill：filter→lookup→groupby 总 6.55 s；filter 0.65 s/29 MB，SQL lookup
+0.70 s/244 MB（1900 万行全 join），groupby 0.40 s/194 MB；增量重跑 **17 ms**（size+mtime
+快路径，文件变了才重算哈希）。drill 同时发现并修复 SQL lookup 硬编码 100,000 行截断。
 
 ## 对 Excel / WPS 的覆盖
 

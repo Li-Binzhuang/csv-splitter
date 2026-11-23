@@ -2572,6 +2572,15 @@ fn pipeline_runs_incrementally_and_fails_atomically() {
     );
     assert!(status_json.contains(r#""ms""#), "{status_json}");
 
+    // Re-writing the same bytes still changes size+mtime, so the fast path must rerun
+    // rather than trusting a possibly-restored clock.
+    std::thread::sleep(std::time::Duration::from_millis(20));
+    std::fs::write(&orders, "order,city\nA,CDMX\nB,Puebla\nC,CDMX\n").unwrap();
+    let touched = run();
+    assert!(touched.status.success());
+    let stdout = String::from_utf8_lossy(&touched.stdout);
+    assert!(stdout.contains("✓ filtered"), "{stdout}");
+
     std::fs::write(&orders, "order,city\nA,CDMX\nB,Puebla\nC,CDMX\nD,CDMX\n").unwrap();
     let third = run();
     assert!(third.status.success());

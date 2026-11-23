@@ -119,6 +119,9 @@
 - **`workday(start, days)`**: moves a date by business days, skipping weekends and
   accepting negative days (no holiday list in the two-argument form); zero keeps the
   date.
+- **Pipeline fast skip**: state records input/output size+mtime; an unchanged 2.3 GB
+  pipeline reruns in 17 ms (was 5.08 s of hashing). Touching the same bytes still
+  invalidates via mtime, and legacy state without stamps falls back to content hashes.
 - **SQL lookup all rows**: the SQL path fetched a hard-coded 100,000 rows and silently
   truncated larger inputs; it now COPYs the join without a limit (2.3 GB drill: 19M/19M
   matched, 0 missing, 0.72 s, 244 MB RSS). Pipeline steps now record elapsed ms and
