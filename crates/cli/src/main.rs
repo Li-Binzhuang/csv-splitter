@@ -521,6 +521,11 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--root", "Directory the agent API may operate in"),
             ("--addr", "Listen address (default 127.0.0.1:8788)"),
             ("--port", "Listen port shorthand"),
+            ("--endpoint", "OpenAI-compatible chat endpoint for agent run"),
+            ("--model", "Model id for agent run"),
+            ("--prompt", "Prompt for agent run"),
+            ("--max-steps", "Maximum tool steps (default 4)"),
+            ("--allow-apply", "Allow destructive tools during agent run"),
         ],
     ),
     (
@@ -727,6 +732,7 @@ COMMANDS
   serve    --root <dir>          Local HTTP API (JSON) for a web front-end
   mcp      --root <dir>          MCP stdio server (read-only tools) for agents
   agent    serve --root <dir>     HTTP Agent API (sessions, actions, audit)
+  agent    run --root <dir>       OpenAI-compatible model loop over csvx tools
   convert  <input>               Transcode a CSV to UTF-8 (GBK / UTF-16 input)
   filter   <input> --where EXPR  Row numbers matching a column predicate
   sort     <input> --by COLS -o F Sort the whole file (a,b or a:desc,b:asc)
@@ -3594,12 +3600,50 @@ fn cmd_agent(args: &[String]) -> i32 {
     let mut root: Option<PathBuf> = None;
     let mut addr = "127.0.0.1:8788".to_string();
     let mut action = "serve".to_string();
+    let mut endpoint: Option<String> = None;
+    let mut model: Option<String> = None;
+    let mut prompt: Option<String> = None;
+    let mut max_steps = 4usize;
+    let mut allow_apply = false;
     if let Some(first) = args.first().filter(|arg| !arg.starts_with('-')) {
         action = first.clone();
     }
     while let Some(arg) = p.next() {
         match arg.as_str() {
-            "serve" | "manifest" => action = arg,
+            "serve" | "manifest" | "run" => action = arg,
+            "--endpoint" => match p.value("--endpoint") {
+                Ok(value) => endpoint = Some(value),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--model" => match p.value("--model") {
+                Ok(value) => model = Some(value),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--prompt" => match p.value("--prompt") {
+                Ok(value) => prompt = Some(value),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--max-steps" => match p.value("--max-steps").and_then(|value| {
+                value
+                    .parse::<usize>()
+                    .map_err(|_| format!("--max-steps takes a number, not {value:?}"))
+            }) {
+                Ok(value) => max_steps = value,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--allow-apply" => allow_apply = true,
             "--root" => match p.value("--root") {
                 Ok(value) => root = Some(PathBuf::from(value)),
                 Err(e) => {
@@ -3640,6 +3684,31 @@ fn cmd_agent(args: &[String]) -> i32 {
     if action == "manifest" {
         println!("{}", agent::manifest());
         return 0;
+    }
+    if action == "run" {
+        let (Some(endpoint), Some(model), Some(prompt), Some(root)) =
+            (endpoint, model, prompt, root)
+        else {
+            eprintln!("error: agent run needs --root, --endpoint, --model and --prompt");
+            return 2;
+        };
+        return match agent::run(
+            &root,
+            &endpoint,
+            &model,
+            &prompt,
+            max_steps.clamp(1, 12),
+            allow_apply,
+        ) {
+            Ok(answer) => {
+                println!("{answer}");
+                0
+            }
+            Err(error) => {
+                eprintln!("error: {error}");
+                1
+            }
+        };
     }
     let Some(root) = root else {
         eprintln!("error: agent serve needs --root <dir>");

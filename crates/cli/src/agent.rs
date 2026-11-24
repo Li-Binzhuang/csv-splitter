@@ -522,3 +522,202 @@ mod tests {
         assert!(!constant_eq("a", "aa"));
     }
 }
+
+// ---------------------------------------------------------------------------
+// Local model runner
+// ---------------------------------------------------------------------------
+
+const SYSTEM_PROMPT: &str = "You are csvx-agent, a local CSV operator. You must answer with exactly one JSON object on each turn. To call a tool: {\"tool\":\"csvx_schema\",\"arguments\":{\"path\":\"t.csv\"}}. When finished: {\"final\":\"short answer\"}. Do not use markdown fences or prose. Use csvx_schema and csvx_view before editing. Prefer csvx_edit_preview before any destructive change. Available tools: csvx_schema(path), csvx_view(path,start,count), csvx_filter(path,where,limit,show), csvx_quality(path,key,group), csvx_edit_preview(path,ops), csvx_edit_apply(path,ops), csvx_report(path,specText or spec,format), csvx_gate(path,minRows,maxEmpty,unique), csvx_convert(path,format,out,sheet), csvx_job_submit(tool,arguments), csvx_job_status(id).";
+
+enum Action {
+    Tool { tool: String, arguments: McpJson },
+    Final(String),
+}
+
+/// Run a small model-driven loop against an OpenAI-compatible endpoint.
+///
+/// The API key is read from `CSVX_AGENT_API_KEY` (or `OPENAI_API_KEY`) and is
+/// passed to curl on stdin, never in argv or on disk. curl is used instead of
+/// adding a TLS client dependency to the whole CLI.
+pub fn run(
+    root: &Path,
+    endpoint: &str,
+    model: &str,
+    prompt: &str,
+    max_steps: usize,
+    allow_apply: bool,
+) -> Result<String, String> {
+    let key = std::env::var("CSVX_AGENT_API_KEY")
+        .or_else(|_| std::env::var("OPENAI_API_KEY"))
+        .map_err(|_| {
+            "set CSVX_AGENT_API_KEY (or OPENAI_API_KEY); the key is never written to disk"
+                .to_string()
+        })?;
+    let mut messages: Vec<(String, String)> = vec![
+        ("system".to_string(), SYSTEM_PROMPT.to_string()),
+        ("user".to_string(), prompt.to_string()),
+    ];
+    let mut last = String::new();
+    for step in 1..=max_steps {
+        let content = call_model(endpoint, &key, model, &messages)?;
+        let action = parse_action(&content)?;
+        match action {
+            Action::Final(answer) => return Ok(answer),
+            Action::Tool { tool, arguments } => {
+                if is_destructive(&tool) && !allow_apply {
+                    messages.push(("assistant".into(), content));
+                    messages.push((
+                        "user".into(),
+                        format!("{{\"error\":\"{tool} is destructive; rerun with allow-apply or use a preview tool\"}}"),
+                    ));
+                    continue;
+                }
+                eprintln!("step {step}: {tool}");
+                let observation = match mcp_run_tool(root, &tool, &arguments) {
+                    Ok(text) => text,
+                    Err(error) => format!("{{\"error\":{}}}", json_str(&error)),
+                };
+                // Keep the transcript bounded; a tool result can be huge.
+                let observation: String = observation.chars().take(20_000).collect();
+                last = observation.clone();
+                messages.push(("assistant".into(), content));
+                messages.push(("user".into(), format!("observation: {observation}")));
+            }
+        }
+    }
+    Err(format!(
+        "agent stopped after {max_steps} steps; last observation: {last}"
+    ))
+}
+
+fn call_model(
+    endpoint: &str,
+    key: &str,
+    model: &str,
+    messages: &[(String, String)],
+) -> Result<String, String> {
+    let mut list = String::from("[");
+    for (index, (role, content)) in messages.iter().enumerate() {
+        if index > 0 {
+            list.push(',');
+        }
+        list.push_str(&format!(
+            r#"{{"role":{},"content":{}}}"#,
+            json_str(role),
+            json_str(content)
+        ));
+    }
+    list.push(']');
+    let body = format!(
+        r#"{{"model":{},"temperature":0,"messages":{}}}"#,
+        json_str(model),
+        list
+    );
+    let path = std::env::temp_dir().join(format!(
+        "csvx_agent_body_{}_{}.json",
+        std::process::id(),
+        random_id("body")
+    ));
+    std::fs::write(&path, body).map_err(|e| format!("cannot write request: {e}"))?;
+    let config = format!(
+        "header = \"Authorization: Bearer {}\"\nheader = \"Content-Type: application/json\"\n",
+        key
+    );
+    let mut child = std::process::Command::new("curl")
+        .args([
+            "--silent",
+            "--show-error",
+            "--max-time",
+            "180",
+            "--config",
+            "-",
+            "--data-binary",
+            &format!("@{}", path.display()),
+            endpoint,
+        ])
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("cannot start curl: {e}"))?;
+    use std::io::Write as _;
+    if let Some(stdin) = child.stdin.as_mut() {
+        let _ = stdin.write_all(config.as_bytes());
+    }
+    let output = child
+        .wait_with_output()
+        .map_err(|e| format!("curl wait: {e}"))?;
+    let _ = std::fs::remove_file(&path);
+    if !output.status.success() {
+        return Err(format!(
+            "model endpoint failed: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
+    }
+    let response = String::from_utf8_lossy(&output.stdout);
+    let value =
+        McpParser::parse(&response).map_err(|e| format!("model response is not JSON: {e}"))?;
+    let content = value
+        .get("choices")
+        .and_then(|choices| match choices {
+            McpJson::Array(items) => items.first(),
+            _ => None,
+        })
+        .and_then(|choice| choice.get("message"))
+        .and_then(|message| message.get("content"))
+        .and_then(McpJson::as_str)
+        .unwrap_or("");
+    if content.trim().is_empty() {
+        return Err("model returned empty content (check max_tokens / endpoint)".to_string());
+    }
+    Ok(content.to_string())
+}
+
+fn parse_action(content: &str) -> Result<Action, String> {
+    let text = content.trim();
+    let text = text
+        .strip_prefix("```json")
+        .or_else(|| text.strip_prefix("```"))
+        .and_then(|inner| inner.strip_suffix("```"))
+        .unwrap_or(text)
+        .trim();
+    let start = text.find('{').ok_or("model did not return a JSON object")?;
+    let end = text
+        .rfind('}')
+        .ok_or("model did not return a JSON object")?;
+    let json = &text[start..=end];
+    let value = McpParser::parse(json).map_err(|e| format!("invalid action JSON: {e}"))?;
+    if let Some(final_text) = value.get("final").and_then(McpJson::as_str) {
+        return Ok(Action::Final(final_text.to_string()));
+    }
+    let tool = value
+        .get("tool")
+        .and_then(McpJson::as_str)
+        .ok_or("action needs tool or final")?;
+    let arguments = value.get("arguments").cloned().unwrap_or(McpJson::Null);
+    Ok(Action::Tool {
+        tool: tool.to_string(),
+        arguments,
+    })
+}
+
+#[cfg(test)]
+mod runner_tests {
+    use super::*;
+
+    #[test]
+    fn parses_tool_and_final_actions() {
+        let action =
+            parse_action(r#"{"tool":"csvx_schema","arguments":{"path":"t.csv"}}"#).unwrap();
+        match action {
+            Action::Tool { tool, .. } => assert_eq!(tool, "csvx_schema"),
+            _ => panic!("expected tool"),
+        }
+        let final_action = parse_action("```json\n{\"final\":\"done\"}\n```").unwrap();
+        match final_action {
+            Action::Final(text) => assert_eq!(text, "done"),
+            _ => panic!("expected final"),
+        }
+        assert!(parse_action("just text").is_err());
+    }
+}

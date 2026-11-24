@@ -41,6 +41,33 @@ csvx://agent
 - safety：preview_before_apply、root_bound、single_user、gui=false
 - instructions 同一段话
 
+## 内置 runner（OpenAI-compatible）
+
+```bash
+export CSVX_AGENT_API_KEY=...   # 不写入仓库
+csvx agent run --root /path/to/data \
+  --endpoint https://.../chat/completions \
+  --model DeepSeek-V4.1-Flash-1017-Ark-Economy \
+  --prompt 'Use csvx_schema on t.csv, then reply with the row count.'
+```
+
+- 只从环境变量读取 key；curl 通过 stdin 收到 Authorization，key 不进 argv/磁盘；
+- 模型每轮必须返回一个 JSON 动作：
+  - `{"tool":"csvx_schema","arguments":{...}}`
+  - `{"final":"..."}`
+- 执行复用 `mcp_run_tool`；
+- 默认不允许破坏性工具；`--allow-apply` 才放行；
+- `--max-steps` 限制循环。
+
+实测 Ark Economy：
+
+```text
+step 1: csvx_schema
+step 2: csvx_view
+2
+real 6.10 s
+```
+
 ## HTTP Agent API（最小实现）
 
 ```bash
