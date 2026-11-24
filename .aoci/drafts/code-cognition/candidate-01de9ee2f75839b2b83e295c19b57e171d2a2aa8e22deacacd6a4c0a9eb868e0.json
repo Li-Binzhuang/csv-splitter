@@ -1,0 +1,167 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "16dda7e7dcdc920f648e95f18648143fbfa12d9f46dcb134ae59ef9ce3bbd334",
+  "batch_id": "01de9ee2f75839b2b83e295c19b57e171d2a2aa8e22deacacd6a4c0a9eb868e0",
+  "composite_identity": "d8a3091016a5d4a8db1287c58fe35c993034fdccd612d6c0cee4ee72b0974bdc",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "7510a2374315b57b792425bc31d8a663228de2fa583d281ecc965c85e78d9365",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/Cargo.toml",
+      "path": "crates/cli/Cargo.toml",
+      "change": "update",
+      "source_sha256": "8b725c089b8af1f96360d4acea726dd3c25940a5f1a76d3b35ba8d9d6e22d652",
+      "existing_entry": "Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Cargo.toml | A:包名 csvx-cli，二进制名 csvx，入口 src/main.rs；依赖 libc（信号处理）与 flate2（gzip 响应）；启用 core 的 sql feature；元数据从 workspace 继承 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "3bbb3cc609496d88432f52a1363f2801dd8dd97458084eeda61846783f37deb4",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:CLI 入口；report spec/specText（summary/columns/quality/groups/chart（count 或 sum）/compare/rows，--root）；gate 文件/目录，unique-global 短 failure；concat 目录；edit transaction typed apply；typed view/filter；watch/ops | S:chart 无 measure 时 count；unique-global 成本高；report compare 限 root；dry-run 仅 transaction；≤1 MiB 哈希"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "bb5a9719a7db4ab56f3fa50ea968c64d288807775a7627b96506b783e8797864",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:HTTP 读写/job；/ops；/report --root；/gate 文件/目录 + uniqueGlobal；/rows ViewRequest；/edit EditApplyRequest；/concat paths/dir；out canonical；MCP 23 工具，gate 描述含 uniqueGlobal | S:uniqueGlobal 需配 unique 并跨文件查重；gate 目录聚合；out=./sub 排除自身；report compare 限 root；/rows 复杂分支仍 SQL；缓存 4 GiB/16"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/engine.rs",
+      "path": "crates/core/src/engine.rs",
+      "change": "update",
+      "source_sha256": "150c0ba1da88948847a4d39076186981eca6511a8fbe717f162a882d8e8369b5",
+      "existing_entry": "engine.rs[EG8L]: F:引擎选择器：native 与 DuckDB 分析路径的统一入口 | R:code:crates/core/src/sql.rs,code:crates/core/src/groupby.rs,code:crates/core/src/chart.rs,code:crates/core/src/pivot.rs | A:Engine Auto/Native/Sql（Auto 8 MB）；convert_format 四格式；lookup_sql 改为 COPY join，不再 100k 截断，counts 来自同一 join；binder 错误映射 InvalidInput | S:阈值 8 MB 由实测；convert COPY 超时 600 s；非 CSV 源不能走 CSV 视图预检；新增 sql 调用必须考虑无 feature 构建"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/lib.rs",
+      "path": "crates/core/src/lib.rs",
+      "change": "update",
+      "source_sha256": "8edab63890caf8af103f2b3acb3279ee43d61ba20d8128929174ff9c5a62ac19",
+      "existing_entry": "lib.rs[CG6T]: F:core crate 的模块清单与基础类型再导出 | R:code:crates/core/src/engine.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:读取、编辑、分析、查询、SQL 与引擎选择各自成模块；scan_parallel 承载 filter/search 共用的分段扫描；contract 提供适配器共用目录；ops 提供 schema/view/filter typed 请求/响应；pub use types 统一暴露基础类型 | S:新增模块必须同时写进 ARCHITECTURE.md，模块地图测试会逐个比对；contract 与 ops 的公开类型是适配器契约"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "create",
+      "source_sha256": "90ffa8cf94bc1f538d244914cc092e0d5d736e8104045dda550e7f22b001920c"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "ab6c4a801fd33617c661b23e32dc7b638352b1db7a38a9ee088f6a055a5d0619",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径、操作契约与模块地图 | R:code:crates/core/src/lib.rs,code:docs/OPERATIONS.md,code:crates/core/src/ops.rs | A:模块地图按九组列模块（公式引擎含 totals，编辑模型含 transaction）；磁盘格式表列全部侧车；操作契约段；ops 为 typed schema/view/filter 请求/响应 | S:模块地图测试逐个比对 core 模块；侧车可删，但删 journal 等于丢编辑；redo 与撤销边界两份文件；typed ops 尚未接入 adapter"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BIG_PLAN.md",
+      "path": "docs/BIG_PLAN.md",
+      "change": "create",
+      "source_sha256": "6f2ba6dfe4654256b38badfa3701711c9dde0e170c9673cda0dd069b5133c3f0"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "71b7672faa9916c83e72169a2495c9f3324d8a0d3a51ebc0b811cb8fe9a965d0",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter 压缩；gate 文件/目录三端 + unique-global（4M 行实测 7.03 s）；concat 三端；report spec/specText + chart(count/sum) SVG + compare 限 root；typed view/apply；mcp 23 工具 | S:report 无 GUI；chart 静态 SVG；compare 限 root；gate 失败 JSON 带原因；unique-global 先 concat 再排序、成本高；typed view 简单窗口"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/XLSX.md",
+      "path": "docs/XLSX.md",
+      "change": "create",
+      "source_sha256": "fceb9e2b9ef9d6c6dca41ca21b4c6a327fc0e547f225260ebe1dce80b3a9ec81"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "a5f01318501195dbba3768cbc22b11c134ad6f6133dfdcd8aec10a51ad3f47dc",
+      "object_ref": "code:crates/cli/Cargo.toml",
+      "path": "crates/cli/Cargo.toml",
+      "change": "update",
+      "source_sha256": "8b725c089b8af1f96360d4acea726dd3c25940a5f1a76d3b35ba8d9d6e22d652",
+      "existing_entry": "Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Cargo.toml | A:包名 csvx-cli，二进制名 csvx，入口 src/main.rs；依赖 libc（信号处理）与 flate2（gzip 响应）；启用 core 的 sql feature；元数据从 workspace 继承 | S:-"
+    },
+    {
+      "candidate_id": "66777c43d1aff16b1d0e4ed91cae97bf6a19da51963b18e5e1a7e3503b0a517b",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "3bbb3cc609496d88432f52a1363f2801dd8dd97458084eeda61846783f37deb4",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:CLI 入口；report spec/specText（summary/columns/quality/groups/chart（count 或 sum）/compare/rows，--root）；gate 文件/目录，unique-global 短 failure；concat 目录；edit transaction typed apply；typed view/filter；watch/ops | S:chart 无 measure 时 count；unique-global 成本高；report compare 限 root；dry-run 仅 transaction；≤1 MiB 哈希"
+    },
+    {
+      "candidate_id": "64e464b8e4f39c678ab4665b3f208cad999180ec9a4d24c0243f48632e25564e",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "bb5a9719a7db4ab56f3fa50ea968c64d288807775a7627b96506b783e8797864",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:HTTP 读写/job；/ops；/report --root；/gate 文件/目录 + uniqueGlobal；/rows ViewRequest；/edit EditApplyRequest；/concat paths/dir；out canonical；MCP 23 工具，gate 描述含 uniqueGlobal | S:uniqueGlobal 需配 unique 并跨文件查重；gate 目录聚合；out=./sub 排除自身；report compare 限 root；/rows 复杂分支仍 SQL；缓存 4 GiB/16"
+    },
+    {
+      "candidate_id": "50b391f5c43b30eaeea96043327b90641f17652acd17e1ed2275de80aac245ae",
+      "object_ref": "code:crates/core/src/engine.rs",
+      "path": "crates/core/src/engine.rs",
+      "change": "update",
+      "source_sha256": "150c0ba1da88948847a4d39076186981eca6511a8fbe717f162a882d8e8369b5",
+      "existing_entry": "engine.rs[EG8L]: F:引擎选择器：native 与 DuckDB 分析路径的统一入口 | R:code:crates/core/src/sql.rs,code:crates/core/src/groupby.rs,code:crates/core/src/chart.rs,code:crates/core/src/pivot.rs | A:Engine Auto/Native/Sql（Auto 8 MB）；convert_format 四格式；lookup_sql 改为 COPY join，不再 100k 截断，counts 来自同一 join；binder 错误映射 InvalidInput | S:阈值 8 MB 由实测；convert COPY 超时 600 s；非 CSV 源不能走 CSV 视图预检；新增 sql 调用必须考虑无 feature 构建"
+    },
+    {
+      "candidate_id": "aee0b5551cd6c339508e6ce5e83ef111890b6d6e096eb842027242fa647f3dea",
+      "object_ref": "code:crates/core/src/lib.rs",
+      "path": "crates/core/src/lib.rs",
+      "change": "update",
+      "source_sha256": "8edab63890caf8af103f2b3acb3279ee43d61ba20d8128929174ff9c5a62ac19",
+      "existing_entry": "lib.rs[CG6T]: F:core crate 的模块清单与基础类型再导出 | R:code:crates/core/src/engine.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:读取、编辑、分析、查询、SQL 与引擎选择各自成模块；scan_parallel 承载 filter/search 共用的分段扫描；contract 提供适配器共用目录；ops 提供 schema/view/filter typed 请求/响应；pub use types 统一暴露基础类型 | S:新增模块必须同时写进 ARCHITECTURE.md，模块地图测试会逐个比对；contract 与 ops 的公开类型是适配器契约"
+    },
+    {
+      "candidate_id": "70f33661d3af13b7517c4fceea7bc57175f5d3fc142ede597365af969ac0a82b",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "create",
+      "source_sha256": "90ffa8cf94bc1f538d244914cc092e0d5d736e8104045dda550e7f22b001920c"
+    },
+    {
+      "candidate_id": "612e1c0b257b004921b4168cc85d7ac2083a4fc7647f28295d11f6d2f274ac36",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "ab6c4a801fd33617c661b23e32dc7b638352b1db7a38a9ee088f6a055a5d0619",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径、操作契约与模块地图 | R:code:crates/core/src/lib.rs,code:docs/OPERATIONS.md,code:crates/core/src/ops.rs | A:模块地图按九组列模块（公式引擎含 totals，编辑模型含 transaction）；磁盘格式表列全部侧车；操作契约段；ops 为 typed schema/view/filter 请求/响应 | S:模块地图测试逐个比对 core 模块；侧车可删，但删 journal 等于丢编辑；redo 与撤销边界两份文件；typed ops 尚未接入 adapter"
+    },
+    {
+      "candidate_id": "c7942b3cf42ddbb862b12649665b6a70249791d558cf763c1b23c5aacaa6654f",
+      "object_ref": "code:docs/BIG_PLAN.md",
+      "path": "docs/BIG_PLAN.md",
+      "change": "create",
+      "source_sha256": "6f2ba6dfe4654256b38badfa3701711c9dde0e170c9673cda0dd069b5133c3f0"
+    },
+    {
+      "candidate_id": "7f9ba961b22e86261c57490aa2936a21cb264654dad56f57f60a60f6c808f35a",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "71b7672faa9916c83e72169a2495c9f3324d8a0d3a51ebc0b811cb8fe9a965d0",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter 压缩；gate 文件/目录三端 + unique-global（4M 行实测 7.03 s）；concat 三端；report spec/specText + chart(count/sum) SVG + compare 限 root；typed view/apply；mcp 23 工具 | S:report 无 GUI；chart 静态 SVG；compare 限 root；gate 失败 JSON 带原因；unique-global 先 concat 再排序、成本高；typed view 简单窗口"
+    },
+    {
+      "candidate_id": "31bd45a83360aaa075649df49ee09d91782d4f3504e4bc45523d1a374ddefb73",
+      "object_ref": "code:docs/XLSX.md",
+      "path": "docs/XLSX.md",
+      "change": "create",
+      "source_sha256": "fceb9e2b9ef9d6c6dca41ca21b4c6a327fc0e547f225260ebe1dce80b3a9ec81"
+    }
+  ]
+}

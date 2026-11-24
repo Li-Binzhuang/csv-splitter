@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-24T11:29:07Z",
+  "updated_at": "2026-11-24T12:05:05Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -58,9 +58,9 @@
     },
     "Cargo.lock": {
       "role": "observe",
-      "sha256": "66e0065839a84493c905a84a15a865a675eb96c6727a8dbc77b2ed814482a694",
-      "size": 56860,
-      "normalized_sha256": "66e0065839a84493c905a84a15a865a675eb96c6727a8dbc77b2ed814482a694"
+      "sha256": "858a6d645701a386d26dc6dc41164eacc4286f87ac00fc6b6b6758a217814090",
+      "size": 56868,
+      "normalized_sha256": "858a6d645701a386d26dc6dc41164eacc4286f87ac00fc6b6b6758a217814090"
     },
     "Cargo.toml": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "933c4f03f2003824c22592726ff8b4ca01cfddc3f88d90d1412172993c143732",
+      "sha256": "7510a2374315b57b792425bc31d8a663228de2fa583d281ecc965c85e78d9365",
       "size": 55543,
-      "normalized_sha256": "933c4f03f2003824c22592726ff8b4ca01cfddc3f88d90d1412172993c143732"
+      "normalized_sha256": "7510a2374315b57b792425bc31d8a663228de2fa583d281ecc965c85e78d9365"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -124,9 +124,9 @@
     },
     "crates/cli/tests/cli.rs": {
       "role": "observe",
-      "sha256": "600cfb83af3c2a00139a48dc1163a38056f8b879f4a42d919d6c4e0d2c972ee8",
-      "size": 275828,
-      "normalized_sha256": "600cfb83af3c2a00139a48dc1163a38056f8b879f4a42d919d6c4e0d2c972ee8"
+      "sha256": "c8a45ffd019914888f8f90788759f3db6a04f7a3cb721ae8b872d57c644920cd",
+      "size": 276235,
+      "normalized_sha256": "c8a45ffd019914888f8f90788759f3db6a04f7a3cb721ae8b872d57c644920cd"
     },
     "crates/cli/tests/contract.rs": {
       "role": "observe",
@@ -616,9 +616,9 @@
     },
     "docs/NIGHT_CHECKPOINT.md": {
       "role": "index",
-      "sha256": "e9947cfc9677237e49796e1cbb5ef17c719150127a899176029d90b82f22c688",
+      "sha256": "c47d74d1f85289985c2d0fc00cedc998eb44c996a117ef1dad1faf9abe8125d9",
       "size": 2182,
-      "normalized_sha256": "e9947cfc9677237e49796e1cbb5ef17c719150127a899176029d90b82f22c688"
+      "normalized_sha256": "c47d74d1f85289985c2d0fc00cedc998eb44c996a117ef1dad1faf9abe8125d9"
     },
     "docs/NIGHT_QUEUE.md": {
       "role": "index",
