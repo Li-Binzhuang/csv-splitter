@@ -17,6 +17,7 @@ use csvx_core::search::SearchSpec;
 use csvx_core::sort::SortColumn;
 use csvx_core::splitter::run_split_threads;
 use csvx_core::sql::{self, DEFAULT_LIMIT};
+use csvx_core::viewer::WindowViewer;
 use csvx_core::*;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -5400,7 +5401,7 @@ fn cmd_report(args: &[String]) -> i32 {
             }
             if !matches!(
                 kind.as_str(),
-                "summary" | "columns" | "rows" | "quality" | "groups" | "chart"
+                "summary" | "columns" | "rows" | "quality" | "groups" | "chart" | "compare"
             ) {
                 eprintln!("error: unknown report section {kind:?}");
                 return 2;
@@ -5766,6 +5767,122 @@ fn cmd_report(args: &[String]) -> i32 {
                         ));
                     }
                     body.push_str("</svg>\n");
+                }
+            }
+            "compare" => {
+                let other_arg = arg.trim();
+                if other_arg.is_empty() {
+                    eprintln!("error: compare needs <other.csv>");
+                    return 2;
+                }
+                let other = if Path::new(other_arg).is_absolute() {
+                    std::path::PathBuf::from(other_arg)
+                } else {
+                    input
+                        .parent()
+                        .unwrap_or_else(|| Path::new("."))
+                        .join(other_arg)
+                };
+                let base = match csvx_core::sheet::Sheet::open(
+                    &input,
+                    csvx_core::sheet::ReadOptions { delimiter },
+                ) {
+                    Ok(sheet) => sheet,
+                    Err(e) => return report_failure("report", e),
+                };
+                let base_rows = base.rows().unwrap_or(0);
+                let base_columns = match base.columns() {
+                    Ok(columns) => columns,
+                    Err(e) => return report_failure("report", e),
+                };
+                let viewer = match WindowViewer::open(&other, delimiter) {
+                    Ok(viewer) => viewer,
+                    Err(e) => return report_failure("report", e),
+                };
+                let other_columns = match viewer.headers() {
+                    Ok(columns) => columns,
+                    Err(e) => return report_failure("report", e),
+                };
+                let other_rows = viewer.total_rows();
+                let diff = csvx_core::schema::diff(&base_columns, &other_columns);
+                let columns_delta = base_columns.len() as i64 - other_columns.len() as i64;
+                let rows_delta = base_rows as i64 - other_rows as i64;
+                let list = |items: &[String]| {
+                    if items.is_empty() {
+                        "-".to_string()
+                    } else {
+                        items.join(", ")
+                    }
+                };
+                let moved = diff
+                    .moved
+                    .iter()
+                    .map(|item| format!("{} ({}→{})", item.name, item.here, item.there))
+                    .collect::<Vec<_>>();
+                let base_bytes = std::fs::metadata(&input).map(|m| m.len()).unwrap_or(0);
+                let other_bytes = std::fs::metadata(&other).map(|m| m.len()).unwrap_or(0);
+                let table = vec![
+                    vec![
+                        "rows".to_string(),
+                        base_rows.to_string(),
+                        other_rows.to_string(),
+                        format!("{rows_delta:+}"),
+                    ],
+                    vec![
+                        "columns".to_string(),
+                        base_columns.len().to_string(),
+                        other_columns.len().to_string(),
+                        format!("{columns_delta:+}"),
+                    ],
+                    vec![
+                        "added".to_string(),
+                        list(&diff.added),
+                        "-".to_string(),
+                        "-".to_string(),
+                    ],
+                    vec![
+                        "removed".to_string(),
+                        list(&diff.removed),
+                        "-".to_string(),
+                        "-".to_string(),
+                    ],
+                    vec![
+                        "moved".to_string(),
+                        list(&moved),
+                        "-".to_string(),
+                        "-".to_string(),
+                    ],
+                    vec![
+                        "bytes".to_string(),
+                        base_bytes.to_string(),
+                        other_bytes.to_string(),
+                        format!("{:+}", base_bytes as i64 - other_bytes as i64),
+                    ],
+                ];
+                let title = format!("Compare: {}", other_arg);
+                if format == "md" {
+                    body.push_str(&format!("## {title}\n\n"));
+                    body.push_str("| property | base | other | delta |\n|---|---|---|---|\n");
+                    for row in &table {
+                        body.push_str(&format!(
+                            "| {} | {} | {} | {} |\n",
+                            md_cell(&row[0]),
+                            md_cell(&row[1]),
+                            md_cell(&row[2]),
+                            md_cell(&row[3])
+                        ));
+                    }
+                    body.push('\n');
+                } else {
+                    body.push_str(&format!("<h2>{}</h2>\n<table><tr><th>property</th><th>base</th><th>other</th><th>delta</th></tr>\n", html_escape(&title)));
+                    for row in &table {
+                        body.push_str("<tr>");
+                        for cell in row {
+                            body.push_str(&format!("<td>{}</td>", html_escape(cell)));
+                        }
+                        body.push_str("</tr>\n");
+                    }
+                    body.push_str("</table>\n");
                 }
             }
             _ => {}

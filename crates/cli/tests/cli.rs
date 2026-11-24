@@ -7728,8 +7728,13 @@ fn report_renders_a_csv_spec() {
     )
     .unwrap();
     std::fs::write(
+        dir.join("other.csv"),
+        "id,city,extra\n1,CDMX,x\n3,<x>,y\n4,<x>,z\n",
+    )
+    .unwrap();
+    std::fs::write(
         dir.join("spec.csv"),
-        "title,Sales report\nsummary,\ncolumns,\nquality,id\ngroups,city:2\nchart,city:amount\nrows,2\n",
+        "title,Sales report\nsummary,\ncolumns,\nquality,id\ngroups,city:2\nchart,city:amount\ncompare,other.csv\nrows,2\n",
     )
     .unwrap();
     let md = Command::new(bin())
@@ -7752,6 +7757,9 @@ fn report_renders_a_csv_spec() {
     assert!(text.contains("| city | count_id |"), "{text}");
     assert!(text.contains("| CDMX | 1 |"), "{text}");
     assert!(text.contains("## Chart: city · sum(amount)"), "{text}");
+    assert!(text.contains("## Compare: other.csv"), "{text}");
+    assert!(text.contains("| rows | 2 | 3 | -1 |"), "{text}");
+    assert!(text.contains("| added | extra | - | - |"), "{text}");
 
     let inline = Command::new(bin())
         .args([

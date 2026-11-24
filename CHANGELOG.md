@@ -173,6 +173,7 @@
   Markdown/HTML from summary/columns/quality/groups/rows sections, escaping cells;
   groups is real groupby (count or sum/mean/min/max on a measure); `chart,<x>:<measure>`
   adds a deterministic static SVG bar chart in HTML (a table in Markdown);
+  `compare,<other.csv>` reports row/column/added/removed/moved/byte deltas.
   `GET /report` and MCP `csvx_report` return the same Markdown/HTML body;
   both also accept an inline spec instead of a file.
 - **Gate on HTTP and MCP**: `GET /gate` returns the JSON gate report with failure
