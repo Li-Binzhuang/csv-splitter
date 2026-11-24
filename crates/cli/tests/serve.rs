@@ -3596,6 +3596,22 @@ fn concat_stacks_files_over_http() {
     // The directory input has the same guards as the explicit list.
     std::fs::create_dir(dir.join("solo")).unwrap();
     std::fs::write(dir.join("solo/only.csv"), "id\n1\n").unwrap();
+    // An output inside the input directory is excluded even with a ./-prefixed path.
+    let (code, body) = post(&server.addr, "/concat?dir=sub&out=./sub/self.csv");
+    assert_eq!(code, 202, "{body}");
+    let job = body
+        .split("\"job\":\"")
+        .nth(1)
+        .and_then(|s| s.split('"').next())
+        .expect("job id")
+        .to_string();
+    let status = wait_for_job(&server.addr, &job);
+    assert!(status.contains(r#""state":"done""#), "{status}");
+    assert_eq!(
+        std::fs::read_to_string(dir.join("sub/self.csv")).unwrap(),
+        "id,city\n1,Puebla\n2,Monterrey\n"
+    );
+
     let (code, body) = post(&server.addr, "/concat?dir=solo&out=x.csv");
     assert_eq!(code, 400, "{body}");
     assert!(body.contains(r#""parameter":"dir""#), "{body}");

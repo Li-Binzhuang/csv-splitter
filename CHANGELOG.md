@@ -160,6 +160,8 @@
   contract (17 operations), published by CLI `/ops` and MCP resource.
 - **Typed read operations**: `core::ops` owns schema/view/filter requests and responses;
   `schema`/`filter` CLI+HTTP and `view` CLI's simple path use typed requests.
+- **HTTP out normalisation**: write endpoints now canonicalise `out`'s parent,
+  so `/concat?dir=sub&out=./sub/out.csv` excludes the output from its own inputs.
 - **MCP concat**: `csvx_concat` concatenates files or a directory into `out`, with
   the same root guards and job-free synchronous write as the CLI.
 - **HTTP concat directories**: `POST /concat?dir=sub&out=all.csv` discovers the

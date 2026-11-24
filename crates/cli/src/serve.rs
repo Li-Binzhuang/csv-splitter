@@ -2046,11 +2046,13 @@ fn resolve_out(root: &Path, params: &HashMap<String, String>, key: &str) -> Opti
     }
     let candidate = root.join(&rel);
     // The file may not exist yet, so canonicalise the parent directory instead.
+    // Normalising `./` here matters: /concat?dir=sub&out=./sub/out.csv must still
+    // recognise the output as a member of `sub` and exclude it from its own inputs.
     let parent = candidate.parent()?.canonicalize().ok()?;
     if !parent.starts_with(root) {
         return None;
     }
-    Some(candidate)
+    Some(parent.join(candidate.file_name()?))
 }
 
 fn start_split(
