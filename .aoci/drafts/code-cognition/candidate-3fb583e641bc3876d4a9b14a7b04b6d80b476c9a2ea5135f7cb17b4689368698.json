@@ -1,0 +1,121 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "3f511806ff2d2930832ad23128444de4c01688ed1bb8e5974b1e6914a3c3bdb2",
+  "batch_id": "3fb583e641bc3876d4a9b14a7b04b6d80b476c9a2ea5135f7cb17b4689368698",
+  "composite_identity": "cc9231f36ea1fe916f9c47908ada72ed3ff7a08e0aebcc1449a58c4ffe2c9796",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "1a7f1fc8922775aa1e6a6bfe0fafc0e69a74b2c3ad2f3a0b148339e651d83ce4",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "22404eee284406803154f1624fb4de8e5641f247a6976edb0dc5be4d50c561a2",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/锁规则/重复输出拒绝/源覆盖拒绝/内容校验(run+status)/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码/18 工具（含 cache_stats/clear + annotations）、progress 即时、压缩/MCP materialize 残留清理 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16（env），启动清死 PID；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "f87dbdff70d3fb769d37f741229e4653a514e0d046dc2c48143db1e3b3d81a9a",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部定位与 Rust 徽章；快速开始；公式节；性能表为最终二进制实测；命令表含 serve/mcp；新增销售/试点材料入口 SALES/DEMO/BENCHMARKS | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；性能数字必须来自实测"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "7ab7a776f7416cd0cd36c0a816b212bc87d4dcb2177d8854580ccc406c76bd40",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:CLI 入口；pipeline run/status/watch 快跳过、--force、--dry-run、--json、--dag、--jobs、--step-timeout、--retries、--clean、--unlock、--verify、--fail-on-stale；watch 轮询（--interval-ms/--backoff-max-ms/--max-failures/--state/--iterations/--verbose/--json 含 success/failures/nextDelay），state 含 lastError/nextDelayMs/恢复；status verify 按 stamp/hash 判 fresh/stale；run 前取 \u003cplan\u003e.pipeline.lock（死 PID 清/活主不按年龄/Drop/--unlock） | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state/lineage；重复输出与输出=源文件在解析期按 canonical/词法路径拒绝；≤1 MiB 默认哈希（CSVX_CONTENT_CHECK_LIMIT 可调，0 关闭），--content-check 强制所有大小（run/status/watch）；并发 run 被锁拒绝；--unlock 需确认无活跃 run；search/filter --materialize 解压临时文件并清死 PID 残留；--progress-markers 在每步完成时立即输出 i/n CSVX_STEP 行；group 是连续同组，dag 才是任意拓扑"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/contract.rs",
+      "path": "crates/core/src/contract.rs",
+      "change": "create",
+      "source_sha256": "3e7532ac41ee4e04dc59f4af6d5b34791c4c1e23298b77187f602f44a76b015c"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/lib.rs",
+      "path": "crates/core/src/lib.rs",
+      "change": "update",
+      "source_sha256": "327ce1e9ffab4547650f2d291f5fae9b76b7b005c1c34a975272e6d0be6395d3",
+      "existing_entry": "lib.rs[CG6T]: F:core crate 的模块清单与基础类型再导出 | R:code:crates/core/src/engine.rs | A:读取、编辑、分析、查询、SQL 与引擎选择各自成模块；scan_parallel 承载 filter/search 共用的分段扫描；pub use types 统一暴露基础类型 | S:新增模块必须同时写进 ARCHITECTURE.md，模块地图测试会逐个比对"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "51079c375496d6342b04e77103d4d346867fb28ea683315bc09996efb734ead7",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列模块（公式引擎含 totals，编辑模型含 transaction）；磁盘格式表列全部侧车：journal/redo/blocks/redo-blocks/idx/view/agg/parquet，并给失效规则 | S:模块地图测试逐个比对 core 模块；侧车可删，但删 journal 等于丢编辑；redo 边界与撤销边界是两份文件"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/OPERATIONS.md",
+      "path": "docs/OPERATIONS.md",
+      "change": "create",
+      "source_sha256": "d3818feec597bdfbfc34663f7ba47555d5e6d8a5f7a57b6204db6c666274d25c"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "e6a0b4723b489ec6b6ecfd31662826afa4808e1c366c376fa1964efd77af0ccf",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "22404eee284406803154f1624fb4de8e5641f247a6976edb0dc5be4d50c561a2",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/锁规则/重复输出拒绝/源覆盖拒绝/内容校验(run+status)/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码/18 工具（含 cache_stats/clear + annotations）、progress 即时、压缩/MCP materialize 残留清理 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16（env），启动清死 PID；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "ba39792b67d38d2f67abf75d80a7516d0b0d0fc2ca555dfa45b420675b976dc3",
+      "object_ref": "code:README.md",
+      "path": "README.md",
+      "change": "update",
+      "source_sha256": "f87dbdff70d3fb769d37f741229e4653a514e0d046dc2c48143db1e3b3d81a9a",
+      "existing_entry": "README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md | A:顶部定位与 Rust 徽章；快速开始；公式节；性能表为最终二进制实测；命令表含 serve/mcp；新增销售/试点材料入口 SALES/DEMO/BENCHMARKS | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；性能数字必须来自实测"
+    },
+    {
+      "candidate_id": "697cbf5a71ff0b3e74cb7432b97b9eb3b214053a909855bd68c23f40ea37911c",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "7ab7a776f7416cd0cd36c0a816b212bc87d4dcb2177d8854580ccc406c76bd40",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:CLI 入口；pipeline run/status/watch 快跳过、--force、--dry-run、--json、--dag、--jobs、--step-timeout、--retries、--clean、--unlock、--verify、--fail-on-stale；watch 轮询（--interval-ms/--backoff-max-ms/--max-failures/--state/--iterations/--verbose/--json 含 success/failures/nextDelay），state 含 lastError/nextDelayMs/恢复；status verify 按 stamp/hash 判 fresh/stale；run 前取 \u003cplan\u003e.pipeline.lock（死 PID 清/活主不按年龄/Drop/--unlock） | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state/lineage；重复输出与输出=源文件在解析期按 canonical/词法路径拒绝；≤1 MiB 默认哈希（CSVX_CONTENT_CHECK_LIMIT 可调，0 关闭），--content-check 强制所有大小（run/status/watch）；并发 run 被锁拒绝；--unlock 需确认无活跃 run；search/filter --materialize 解压临时文件并清死 PID 残留；--progress-markers 在每步完成时立即输出 i/n CSVX_STEP 行；group 是连续同组，dag 才是任意拓扑"
+    },
+    {
+      "candidate_id": "3165338d89e1e7b9b01eec35018b0f23d607ffec1bc5b3c2430c39874b326eeb",
+      "object_ref": "code:crates/core/src/contract.rs",
+      "path": "crates/core/src/contract.rs",
+      "change": "create",
+      "source_sha256": "3e7532ac41ee4e04dc59f4af6d5b34791c4c1e23298b77187f602f44a76b015c"
+    },
+    {
+      "candidate_id": "de64592db051654040b1316ea9a63dc29f86323660a7f78efaf4cfd0f8a97358",
+      "object_ref": "code:crates/core/src/lib.rs",
+      "path": "crates/core/src/lib.rs",
+      "change": "update",
+      "source_sha256": "327ce1e9ffab4547650f2d291f5fae9b76b7b005c1c34a975272e6d0be6395d3",
+      "existing_entry": "lib.rs[CG6T]: F:core crate 的模块清单与基础类型再导出 | R:code:crates/core/src/engine.rs | A:读取、编辑、分析、查询、SQL 与引擎选择各自成模块；scan_parallel 承载 filter/search 共用的分段扫描；pub use types 统一暴露基础类型 | S:新增模块必须同时写进 ARCHITECTURE.md，模块地图测试会逐个比对"
+    },
+    {
+      "candidate_id": "e7ca97576f7e683fb9b6037085c80fc10b7498a9412a1a65016a72ca9f87924f",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "51079c375496d6342b04e77103d4d346867fb28ea683315bc09996efb734ead7",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs | A:模块地图按九组列模块（公式引擎含 totals，编辑模型含 transaction）；磁盘格式表列全部侧车：journal/redo/blocks/redo-blocks/idx/view/agg/parquet，并给失效规则 | S:模块地图测试逐个比对 core 模块；侧车可删，但删 journal 等于丢编辑；redo 边界与撤销边界是两份文件"
+    },
+    {
+      "candidate_id": "15d18f6e1a4d64c6f41b65c04c30858cddd907f8282aa99634efd3e45753076c",
+      "object_ref": "code:docs/OPERATIONS.md",
+      "path": "docs/OPERATIONS.md",
+      "change": "create",
+      "source_sha256": "d3818feec597bdfbfc34663f7ba47555d5e6d8a5f7a57b6204db6c666274d25c"
+    }
+  ]
+}
