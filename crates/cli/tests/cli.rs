@@ -7804,6 +7804,7 @@ fn pipeline_watch_runs_and_then_reports_fresh() {
     let state = std::fs::read_to_string(dir.join("watch-state.json")).unwrap();
     assert!(state.contains(r#""round":1"#), "{state}");
     assert!(state.contains(r#""success":true"#), "{state}");
+    assert!(state.contains(r#""lastSuccessAtMs":"#), "{state}");
 }
 
 /// A permanently failing plan does not retry forever when a failure cap is set.

@@ -9007,6 +9007,14 @@ fn normalize_plan_path(path: &std::path::Path) -> std::path::PathBuf {
         .unwrap_or_else(|_| normalize_lexical_path(path))
 }
 
+fn now_millis() -> u128 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_millis())
+        .unwrap_or(0)
+}
+
+#[allow(clippy::too_many_arguments)]
 fn write_watch_state(
     path: &std::path::Path,
     round: usize,
@@ -9014,14 +9022,19 @@ fn write_watch_state(
     total: usize,
     success: bool,
     failures: usize,
+    last_success_ms: u128,
+    last_failure_ms: u128,
 ) -> std::io::Result<()> {
-    let updated = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|duration| duration.as_millis())
-        .unwrap_or(0);
     let body = format!(
-        r#"{{"round":{},"ran":{},"total":{},"success":{},"consecutiveFailures":{},"updatedAtMs":{}}}"#,
-        round, ran, total, success, failures, updated
+        r#"{{"round":{},"ran":{},"total":{},"success":{},"consecutiveFailures":{},"lastSuccessAtMs":{},"lastFailureAtMs":{},"updatedAtMs":{}}}"#,
+        round,
+        ran,
+        total,
+        success,
+        failures,
+        last_success_ms,
+        last_failure_ms,
+        now_millis()
     );
     let temp = path.with_extension(format!("tmp-{}", std::process::id()));
     std::fs::write(&temp, body)?;
@@ -9055,6 +9068,8 @@ fn watch_pipeline(
     let backoff_max_ms = backoff_max_ms.max(interval_ms);
     let mut delay_ms = interval_ms;
     let mut failures = 0usize;
+    let mut last_success_ms = 0u128;
+    let mut last_failure_ms = 0u128;
     let mut round = 0usize;
     loop {
         round += 1;
@@ -9107,9 +9122,18 @@ fn watch_pipeline(
                 }
                 delay_ms = interval_ms;
                 failures = 0;
+                last_success_ms = now_millis();
                 if let Some(path) = state_path {
-                    if let Err(error) = write_watch_state(path, round, ran, results.len(), true, 0)
-                    {
+                    if let Err(error) = write_watch_state(
+                        path,
+                        round,
+                        ran,
+                        results.len(),
+                        true,
+                        0,
+                        last_success_ms,
+                        last_failure_ms,
+                    ) {
                         eprintln!("watch: state write failed: {error}");
                     }
                 }
@@ -9117,9 +9141,18 @@ fn watch_pipeline(
             Err(error) => {
                 eprintln!("watch: {error}");
                 failures += 1;
+                last_failure_ms = now_millis();
                 if let Some(path) = state_path {
-                    if let Err(write_error) = write_watch_state(path, round, 0, 0, false, failures)
-                    {
+                    if let Err(write_error) = write_watch_state(
+                        path,
+                        round,
+                        0,
+                        0,
+                        false,
+                        failures,
+                        last_success_ms,
+                        last_failure_ms,
+                    ) {
                         eprintln!("watch: state write failed: {write_error}");
                     }
                 }
