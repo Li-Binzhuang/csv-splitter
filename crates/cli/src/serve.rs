@@ -635,7 +635,15 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     ),
     (
         "/concat",
-        &["paths", "out", "ignoreHeader", "byName", "delim", "engine"],
+        &[
+            "paths",
+            "dir",
+            "out",
+            "ignoreHeader",
+            "byName",
+            "delim",
+            "engine",
+        ],
     ),
     ("/convert", &["path", "out", "from", "to"]),
     ("/copy", &["path", "out", "apply-edits", "delim"]),
@@ -1186,43 +1194,85 @@ fn start_concat(
     jobs: &JobRegistry,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
-    let Some(list) = params.get("paths").filter(|p| !p.trim().is_empty()) else {
+    let list = params.get("paths").filter(|p| !p.trim().is_empty());
+    let directory = params.get("dir").filter(|p| !p.trim().is_empty());
+    if list.is_some() && directory.is_some() {
         return bad_request(
             stream,
-            "paths is required",
-            "paths",
-            "pass paths=a.csv,b.csv (comma separated, relative to the root)",
+            "use paths or dir, not both",
+            "dir",
+            "pass paths=a.csv,b.csv or dir=<subdirectory>",
         );
+    }
+    let Some(out) = resolve_out(root, params, "out") else {
+        return bad_out(stream);
     };
     let mut inputs: Vec<PathBuf> = Vec::new();
-    for name in list.split(',').map(str::trim).filter(|n| !n.is_empty()) {
-        let relative = name.trim_start_matches(['/', '\\']).to_string();
-        let candidate = match root.join(&relative).canonicalize() {
-            Ok(path) if path.is_file() && path.starts_with(root) => path,
+    if let Some(directory) = directory {
+        let relative = directory.trim_start_matches(['/', '\\']).to_string();
+        let canonical = match root.join(&relative).canonicalize() {
+            Ok(path) if path.is_dir() && path.starts_with(root) => path,
             _ => {
                 return respond_json(
                     stream,
                     404,
                     &format!(
                         r#"{{"error":{}}}"#,
-                        json_str(&format!("{name} is not a file inside the served directory"))
+                        json_str(&format!(
+                            "{directory} is not a directory inside the served directory"
+                        ))
                     ),
                 )
             }
         };
-        inputs.push(candidate);
+        let mut files: Vec<PathBuf> = std::fs::read_dir(&canonical)
+            .map_err(io::Error::other)?
+            .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+            .filter(|path| {
+                path.is_file()
+                    && path
+                        .extension()
+                        .and_then(|extension| extension.to_str())
+                        .is_some_and(|extension| extension.eq_ignore_ascii_case("csv"))
+                    && path != &out
+            })
+            .collect();
+        files.sort_by_key(|path| path.file_name().map(|name| name.to_os_string()));
+        inputs = files;
+    } else if let Some(list) = list {
+        for name in list.split(',').map(str::trim).filter(|n| !n.is_empty()) {
+            let relative = name.trim_start_matches(['/', '\\']).to_string();
+            let candidate = match root.join(&relative).canonicalize() {
+                Ok(path) if path.is_file() && path.starts_with(root) => path,
+                _ => {
+                    return respond_json(
+                        stream,
+                        404,
+                        &format!(
+                            r#"{{"error":{}}}"#,
+                            json_str(&format!("{name} is not a file inside the served directory"))
+                        ),
+                    )
+                }
+            };
+            inputs.push(candidate);
+        }
+    } else {
+        return bad_request(
+            stream,
+            "paths or dir is required",
+            "paths",
+            "pass paths=a.csv,b.csv or dir=<subdirectory>",
+        );
     }
     if inputs.len() < 2 {
         return bad_request(
             stream,
             "concat needs at least two files",
-            "paths",
-            "pass paths=a.csv,b.csv",
+            if directory.is_some() { "dir" } else { "paths" },
+            "pass paths=a.csv,b.csv or dir=<subdirectory with at least two .csv files>",
         );
     }
-    let Some(out) = resolve_out(root, params, "out") else {
-        return bad_out(stream);
-    };
     let ignore_header = params
         .get("ignoreHeader")
         .is_some_and(|v| v == "1" || v == "true");

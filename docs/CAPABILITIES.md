@@ -355,7 +355,7 @@ JSON 增加 `"fresh"`；配合 `--fail-on-stale` 在发现 stale 时以退出码
 | 删掉不合格的行 | `edit delete --invalid "ts:date"`（一次操作，一次撤销） | — |
 | 去重 | `dedupe -o out.csv [--by C]` | `POST /dedupe` |
 | 分文件 | `partition --by C -o parts.tar` | `POST /partition` |
-| 拼接 | `concat a.csv b.csv ...`；`concat <dir>` 取目录内全部 `.csv`（按文件名排序，默认输出在目录旁） | `POST /concat`（job） `--engine auto\|native\|sql`；SQL 走 `COPY`，表头仍先原生校验 |
+| 拼接 | `concat a.csv b.csv ...`；`concat <dir>` 取目录内全部 `.csv`（按文件名排序，默认输出在目录旁） | `POST /concat`（job）：`paths=` 或 `dir=`；`engine auto\|native\|sql`；SQL 走 `COPY`，表头仍先原生校验 |
 | 导列/改名 | `columns --keep/--drop/--rename` | `POST /columns?keep=&drop=&rename=`（job，写新文件）|
 | 下载/导出 | — | `GET /download`、`/export` |
 | 起本地服务 | `serve --root DIR` | 全部端点 |

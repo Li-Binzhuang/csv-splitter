@@ -82,7 +82,7 @@
 | `POST /convert` | `path` `out` `from` `to` | 编码转换（job）：默认自动探测源编码，`to=utf-8` 或 `utf-8-bom`；未知编码 400 |
 | `POST /copy` | `path` `out` `apply-edits` `delim` | 整份复制（job）：「另存为」；`apply-edits=1` 复制的是编辑后的表而不是基文件 |
 | `POST /columns` | `path` `out` `keep` `drop` `rename` `delim` | **写**的列变换（job）：产出一个列集合不同的新文件；源文件不动。与 `GET /columns`（只读的列清单）是两个方向 |
-| `POST /concat` | `paths` `out` `ignoreHeader` `byName` `delim` | 拼接多个文件（job）；每个输入与输出都过 root 守卫，`engine=auto\|native\|sql` |
+| `POST /concat` | `paths` 或 `dir`、`out`、`ignoreHeader` `byName` `delim` | 拼接文件（job）：`paths` 逗号列表，或 `dir` 取目录内 `.csv`（按文件名排序）；输入/输出都过 root 守卫 |
 | `POST /warm` | `path` `sql` `start` `count` | 预热查询缓存 |
 | `POST /index` | `path` `interval` | 后台建稀疏索引（翻页前先跑，避免首个请求里含着全表扫描） |
 

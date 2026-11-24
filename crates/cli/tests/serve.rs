@@ -3572,6 +3572,26 @@ fn concat_stacks_files_over_http() {
     let (code, body) = post(&server.addr, "/concat?paths=a.csv&out=x.csv");
     assert_eq!(code, 400, "{body}");
     assert!(body.contains(r#""parameter":"paths""#), "{body}");
+
+    // A directory is the same operation with the file list discovered server-side.
+    let subdir = dir.join("sub");
+    std::fs::create_dir(&subdir).unwrap();
+    std::fs::write(subdir.join("a.csv"), "id,city\n1,Puebla\n").unwrap();
+    std::fs::write(subdir.join("b.csv"), "id,city\n2,Monterrey\n").unwrap();
+    let (code, body) = post(&server.addr, "/concat?dir=sub&out=sub-all.csv");
+    assert_eq!(code, 202, "{body}");
+    let job = body
+        .split("\"job\":\"")
+        .nth(1)
+        .and_then(|s| s.split('"').next())
+        .expect("job id")
+        .to_string();
+    let status = wait_for_job(&server.addr, &job);
+    assert!(status.contains(r#""state":"done""#), "{status}");
+    assert_eq!(
+        std::fs::read_to_string(dir.join("sub-all.csv")).unwrap(),
+        "id,city\n1,Puebla\n2,Monterrey\n"
+    );
 }
 
 /// `POST /columns` writes a reshaped copy; the source is untouched.

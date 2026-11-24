@@ -160,6 +160,8 @@
   contract (17 operations), published by CLI `/ops` and MCP resource.
 - **Typed read operations**: `core::ops` owns schema/view/filter requests and responses;
   `schema`/`filter` CLI+HTTP and `view` CLI's simple path use typed requests.
+- **HTTP concat directories**: `POST /concat?dir=sub&out=all.csv` discovers the
+  directory's CSV files (sorted by name, output excluded) just like the CLI.
 - **Typed edit apply**: CLI and HTTP transaction applies now share
   `core::ops::EditApplyRequest`; MCP `csvx_edit_apply` calls the same CLI path;
   preview already shared `preview_edit`.
