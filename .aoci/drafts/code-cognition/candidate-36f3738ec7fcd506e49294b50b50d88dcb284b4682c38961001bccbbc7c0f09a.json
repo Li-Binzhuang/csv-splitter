@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "1519039c0ecf2a8a59c68383cce89b4ce6c659d095182631e583e206369c9649",
+  "batch_id": "36f3738ec7fcd506e49294b50b50d88dcb284b4682c38961001bccbbc7c0f09a",
+  "composite_identity": "546136f8039f8a95b47b2d0c5be9ce2d044f49c9068908ee849c8a9ae7cc174f",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "24fe149bdf0bedf51fbb0034e384f02861778d79d249f803fe333d5e1cd72bcb",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "614b9a1139836c43c8056a06d6162fd76287b784155481723a43dab0a90ee819",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 压缩、gate 三端+目录、concat 目录、report 三端+chart SVG、ops 17、typed view HTTP、typed edit apply 三端、pipeline、mcp 22 工具 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "08f518fdbb9f891e26434a7b42616a00a8e0d392b6d23810c871b400582e8a03",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:HTTP 读写与 job；/ops；/report；/gate；/rows ViewRequest；/edit EditApplyRequest；MCP 22 工具含 preview/edit_apply/report/gate；stdio JSON-RPC/resources | S:/rows where/order/sql 仍 SQL；apply 与 CLI 共用 typed request；MCP apply 是 destructive；gate 失败 200/isError 语义分开；MCP 22 annotations；缓存 4 GiB/16；错误码稳定"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/API.md",
+      "path": "docs/API.md",
+      "change": "update",
+      "source_sha256": "588fb505c88b76c1a3c7f84f8af7a5776ac248a09cc6db9ab27495c9dc64f41f",
+      "existing_entry": "API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；/ops 17 操作；/report spec/specText；/gate 接受文件或目录（目录返回 files/failed/reports），失败保持 200+passed:false+failures；filter/search cursor；/edit preview=1 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然；文档字段必须真的出现在响应里；gate 的 200 不等于通过"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "7c4c35ef15833c1730021e3fa9d498778c2b3c93ac91b79f7e6d52be7ffd3738",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter -o 压缩；gate 文件/目录三端；concat 目录；report spec/specText 三端 + chart SVG；typed view HTTP；typed edit apply 三端；pipeline gate；mcp 22 工具/SDK | S:report 无 GUI；chart 是静态 SVG 非交互前端；groups 走 groupby；gate 失败 JSON 带原因；HTTP/MCP report 限 root；typed view 仅简单窗口；目录 gate 逐文件"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "c1434bc09c8f2e752452aff54b895989f03d649285061b00ed1ccfed593f9d46",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "614b9a1139836c43c8056a06d6162fd76287b784155481723a43dab0a90ee819",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 压缩、gate 三端+目录、concat 目录、report 三端+chart SVG、ops 17、typed view HTTP、typed edit apply 三端、pipeline、mcp 22 工具 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "19b579f885053ff38f535cbe1d2e36404b5cf38bd7a15f9cfc2884ec4885a28f",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "08f518fdbb9f891e26434a7b42616a00a8e0d392b6d23810c871b400582e8a03",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:HTTP 读写与 job；/ops；/report；/gate；/rows ViewRequest；/edit EditApplyRequest；MCP 22 工具含 preview/edit_apply/report/gate；stdio JSON-RPC/resources | S:/rows where/order/sql 仍 SQL；apply 与 CLI 共用 typed request；MCP apply 是 destructive；gate 失败 200/isError 语义分开；MCP 22 annotations；缓存 4 GiB/16；错误码稳定"
+    },
+    {
+      "candidate_id": "6bdb8bb017f6ae98fa6d6ea317becb61f6e6829521ebdf68d672d1c645486039",
+      "object_ref": "code:docs/API.md",
+      "path": "docs/API.md",
+      "change": "update",
+      "source_sha256": "588fb505c88b76c1a3c7f84f8af7a5776ac248a09cc6db9ab27495c9dc64f41f",
+      "existing_entry": "API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；/ops 17 操作；/report spec/specText；/gate 接受文件或目录（目录返回 files/failed/reports），失败保持 200+passed:false+failures；filter/search cursor；/edit preview=1 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然；文档字段必须真的出现在响应里；gate 的 200 不等于通过"
+    },
+    {
+      "candidate_id": "d763909b283041da0a4af2e0abe9e502c1f6a1b170065a245f2125854373af98",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "7c4c35ef15833c1730021e3fa9d498778c2b3c93ac91b79f7e6d52be7ffd3738",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter -o 压缩；gate 文件/目录三端；concat 目录；report spec/specText 三端 + chart SVG；typed view HTTP；typed edit apply 三端；pipeline gate；mcp 22 工具/SDK | S:report 无 GUI；chart 是静态 SVG 非交互前端；groups 走 groupby；gate 失败 JSON 带原因；HTTP/MCP report 限 root；typed view 仅简单窗口；目录 gate 逐文件"
+    }
+  ]
+}
