@@ -2798,6 +2798,7 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
     )
     .unwrap();
     std::fs::write(dir.join("other.csv"), "city,amount\nMexico,40\n").unwrap();
+    std::fs::write(dir.join("../outside-mcp.csv"), "id\n9\n").unwrap();
     let mut child = Command::new(bin())
         .args(["mcp", "--root", dir.0.to_str().unwrap()])
         .stdin(Stdio::piped())
@@ -2832,6 +2833,7 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
             r#"{"jsonrpc":"2.0","id":21,"method":"tools/call","params":{"name":"csvx_edit_apply","arguments":{"path":"t.csv","ops":"set:1:city:Z"}}}"#,
             r#"{"jsonrpc":"2.0","id":22,"method":"tools/call","params":{"name":"csvx_concat","arguments":{"paths":"t.csv,other.csv","out":"all.csv"}}}"#,
             r#"{"jsonrpc":"2.0","id":23,"method":"tools/call","params":{"name":"csvx_concat","arguments":{"paths":"../escape.csv","out":"escape.csv"}}}"#,
+            r#"{"jsonrpc":"2.0","id":24,"method":"tools/call","params":{"name":"csvx_report","arguments":{"path":"t.csv","specText":"title,Escape\ncompare,../outside-mcp.csv","format":"md"}}}"#,
             r#"not-json"#,
         ] {
             writeln!(stdin, "{line}").unwrap();
@@ -2876,6 +2878,7 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
     assert!(stdout.contains(r#""name":"csvx_concat""#), "{stdout}");
     assert!(stdout.contains(r#""rows\":4"#), "{stdout}");
     assert!(stdout.contains("outside the MCP root"), "{stdout}");
+    assert!(stdout.contains("outside --root"), "{stdout}");
     assert!(stdout.contains(r#""isError":false"#), "{stdout}");
     assert!(stdout.contains("Puebla"), "{stdout}");
     assert!(stdout.contains("20"), "{stdout}");
@@ -7777,6 +7780,23 @@ fn report_renders_a_csv_spec() {
     let text = String::from_utf8_lossy(&inline.stdout);
     assert!(text.contains("# Inline report"), "{text}");
     assert!(text.contains("## Summary"), "{text}");
+
+    // --root is the same guard the HTTP/MCP adapters rely on.
+    std::fs::write(dir.join("../outside-cli.csv"), "id\n9\n").unwrap();
+    let escaped = Command::new(bin())
+        .args([
+            "report",
+            dir.join("t.csv").to_str().unwrap(),
+            "--spec-text",
+            "title,CLI escape\ncompare,../outside-cli.csv",
+            "--root",
+            dir.0.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(escaped.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&escaped.stderr);
+    assert!(stderr.contains("outside --root"), "{stderr}");
 
     let html = Command::new(bin())
         .args([
