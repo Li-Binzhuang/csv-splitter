@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-24T08:57:07Z",
+  "updated_at": "2026-11-24T08:59:08Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -46,9 +46,9 @@
     },
     "AGENTS.md": {
       "role": "index",
-      "sha256": "8dfc9de92509cb22289cefa4ad652c5df2d079221b407b6a67572d5ef75007e8",
-      "size": 14078,
-      "normalized_sha256": "8dfc9de92509cb22289cefa4ad652c5df2d079221b407b6a67572d5ef75007e8"
+      "sha256": "52a2a78f856231cd46b0b6ecc946483380ec371f57f68491090cc462058edd0b",
+      "size": 15111,
+      "normalized_sha256": "52a2a78f856231cd46b0b6ecc946483380ec371f57f68491090cc462058edd0b"
     },
     "CHANGELOG.md": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "295c5cab7caa0e59de06e7af8696f42fa4b21c441d34004a54ae11ac5f294de5",
-      "size": 53260,
-      "normalized_sha256": "295c5cab7caa0e59de06e7af8696f42fa4b21c441d34004a54ae11ac5f294de5"
+      "sha256": "b5910ab441dea6dc54da5b279512a6692b54af696cf29f4a1ee176057f5f702c",
+      "size": 54261,
+      "normalized_sha256": "b5910ab441dea6dc54da5b279512a6692b54af696cf29f4a1ee176057f5f702c"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -613,6 +613,18 @@
       "sha256": "d029a78e534cea1d51c2158702aa00b15da0dd2fb3e43ec4fa2e5f5ab0632004",
       "size": 6759,
       "normalized_sha256": "d029a78e534cea1d51c2158702aa00b15da0dd2fb3e43ec4fa2e5f5ab0632004"
+    },
+    "docs/NIGHT_CHECKPOINT.md": {
+      "role": "index",
+      "sha256": "1bc8977963100a6f646ba9a1f844f270caadef5a92f3345f3a98ebc9b35db976",
+      "size": 404,
+      "normalized_sha256": "1bc8977963100a6f646ba9a1f844f270caadef5a92f3345f3a98ebc9b35db976"
+    },
+    "docs/NIGHT_QUEUE.md": {
+      "role": "index",
+      "sha256": "d8437ff09c61e114cbce88af407d82b09e5d45f7eea6365ccd29dd4b459d6fca",
+      "size": 323,
+      "normalized_sha256": "d8437ff09c61e114cbce88af407d82b09e5d45f7eea6365ccd29dd4b459d6fca"
     },
     "docs/OPERATIONS.md": {
       "role": "index",

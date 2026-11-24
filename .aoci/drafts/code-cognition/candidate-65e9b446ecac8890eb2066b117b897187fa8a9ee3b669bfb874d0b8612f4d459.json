@@ -1,0 +1,57 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "85842523d825ca40e0152f97b4fcf89812d7909e3807d0f4d168893702ef07c4",
+  "batch_id": "65e9b446ecac8890eb2066b117b897187fa8a9ee3b669bfb874d0b8612f4d459",
+  "composite_identity": "6885ffaaace19d5115054e2e3115a7c878c3cd47c3cf8c7132baa8936bca64d9",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "295c5cab7caa0e59de06e7af8696f42fa4b21c441d34004a54ae11ac5f294de5",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:AGENTS.md",
+      "path": "AGENTS.md",
+      "change": "update",
+      "source_sha256": "52a2a78f856231cd46b0b6ecc946483380ec371f57f68491090cc462058edd0b",
+      "existing_entry": "AGENTS.md[SV6S]: F:仓库级 Agent 指令：AOCI 认知层的接入与使用原则 | R:code:aoci.txt,code:aoci.meta.txt,code:aoci.code.txt | A:规定“模型生成、模型读取”闭环，何时读 rules/overview/maintain，以及收尾维护一次的纪律；不重复 CLI 手册 | S:机器事实以 Guide、Schema 与 Validator 为准，本文件不得覆盖；上下文压缩后的 handoff 不得携带索引语义，必须重新完整读取并认证"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "create",
+      "source_sha256": "1bc8977963100a6f646ba9a1f844f270caadef5a92f3345f3a98ebc9b35db976"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NIGHT_QUEUE.md",
+      "path": "docs/NIGHT_QUEUE.md",
+      "change": "create",
+      "source_sha256": "d8437ff09c61e114cbce88af407d82b09e5d45f7eea6365ccd29dd4b459d6fca"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "803ce00a4093444901c3700a21b188c7085d57fc8b4fd1b592394433ed8170db",
+      "object_ref": "code:AGENTS.md",
+      "path": "AGENTS.md",
+      "change": "update",
+      "source_sha256": "52a2a78f856231cd46b0b6ecc946483380ec371f57f68491090cc462058edd0b",
+      "existing_entry": "AGENTS.md[SV6S]: F:仓库级 Agent 指令：AOCI 认知层的接入与使用原则 | R:code:aoci.txt,code:aoci.meta.txt,code:aoci.code.txt | A:规定“模型生成、模型读取”闭环，何时读 rules/overview/maintain，以及收尾维护一次的纪律；不重复 CLI 手册 | S:机器事实以 Guide、Schema 与 Validator 为准，本文件不得覆盖；上下文压缩后的 handoff 不得携带索引语义，必须重新完整读取并认证"
+    },
+    {
+      "candidate_id": "b5cd5ff8a04db181f32cdd325c6932c8b3ce422168ff5c13e876540d11b7d1c3",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "create",
+      "source_sha256": "1bc8977963100a6f646ba9a1f844f270caadef5a92f3345f3a98ebc9b35db976"
+    },
+    {
+      "candidate_id": "6bade3131f9fe912bde9a5c921da0426fe20cf3e58db7ab942bda83f20c3d016",
+      "object_ref": "code:docs/NIGHT_QUEUE.md",
+      "path": "docs/NIGHT_QUEUE.md",
+      "change": "create",
+      "source_sha256": "d8437ff09c61e114cbce88af407d82b09e5d45f7eea6365ccd29dd4b459d6fca"
+    }
+  ]
+}
