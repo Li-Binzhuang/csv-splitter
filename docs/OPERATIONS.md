@@ -81,7 +81,8 @@ MCP adapter ─┘        │
 - 下一步：preview 的“应用后内容指纹”，以及 `apply` 的失败回滚测试；
 - 所有错误从 `ErrorCode` 映射，禁止新增平行字符串。
 
-**Stage 4**
+**Stage 4（已开始）**
+- `filter -o out.csv.gz/.zst/.bz2/.xz` 压缩输出：先流式写 plain，再压缩并删除中间文件；`.zip` 明确拒绝；
 - JSON Schema 由 Rust 类型生成，接入 MCP `inputSchema` 与 `docs/API.md`；
 - 前端只消费契约，不解析 `--help`。
 

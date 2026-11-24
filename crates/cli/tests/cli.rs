@@ -698,6 +698,28 @@ fn filter_writes_a_csv_and_sort_orders_the_file() {
         "city,amount\nCDMX,500\n"
     );
 
+    // A .gz output is written compressed, not just renamed.
+    let gz = dir.join("and.csv.gz");
+    let status = Command::new(bin())
+        .args([
+            "filter",
+            input.to_str().unwrap(),
+            "--where",
+            "city=CDMX",
+            "--where",
+            "amount>100",
+            "-o",
+            gz.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    use std::io::Read;
+    let mut decoder = flate2::read::GzDecoder::new(std::fs::File::open(&gz).unwrap());
+    let mut decoded = String::new();
+    decoder.read_to_string(&mut decoded).unwrap();
+    assert_eq!(decoded, "city,amount\nCDMX,500\n");
+
     // OR keeps either side.
     let any = dir.join("any.csv");
     let status = Command::new(bin())

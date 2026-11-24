@@ -158,6 +158,8 @@
   the same 14 operations, four effects and 10 error codes; ADR in `docs/OPERATIONS.md`.
 - **Typed read operations**: `core::ops` owns schema/view/filter requests and responses;
   `schema`/`filter` CLI+HTTP and `view` CLI's simple path use typed requests.
+- **Compressed filter output**: `filter -o out.csv.gz` (also `.zst/.bz2/.xz`) keeps the
+  streaming path and compresses the plain result; `.zip` is rejected explicitly.
 - **Transaction preview**: `edit transaction --dry-run` validates against real rows/columns
   and reports row delta, affected ranges, rule/structural counts and the journal hash,
   without creating the journal; HTTP `preview=1` and MCP `csvx_edit_preview`

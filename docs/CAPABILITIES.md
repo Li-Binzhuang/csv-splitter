@@ -64,7 +64,7 @@
 | 透视表 | `pivot --rows R --cols C --values c:op [--engine auto\|native\|sql]` | `GET /pivot` | 值聚合支持 count/sum/mean(avg)/min/max 与多值列；`--max-columns` 512 / `--max-cells` 200 万；写文件时 `--engine auto` 在 ≥8 MB 走 DuckDB，终端矩阵始终原生 |
 | 图表数据 | `chart --x C --y c:op [--series S] [--engine auto\|native\|sql]` | `GET /chart` | `--max-points` 5000；两引擎数值相等，类别顺序可能不同（原生保留首次出现顺序）|
 | SQL | `sql f.csv "SELECT ..."` | `GET /query`、`/rows?sql=` | DuckDB，只读单语句，结果封顶 |
-| 筛选 | `filter --where "c=v"` | `GET /filter`、`/rows?where=` | 支持 `= != > >= < <= ~ in empty` |
+| 筛选 | `filter --where "c=v"`；`-o out.csv.gz/.zst/.bz2/.xz` 直接写压缩结果 | `GET /filter`、`/rows?where=` | 支持 `= != > >= < <= ~ in empty`；`.zip` 输出明确拒绝 |
 | 搜索 | `search f.csv "text" [--regex] [--materialize]` | `GET /search?regex=1` | 返回行号；`--regex` 用条件格式那套模式子集；`--materialize` 先把压缩输入解到临时文件再搜索 |
 | 跨表查找 | `lookup --key C --from R --get cols` | `POST /lookup`（job）| `--max-keys` 默认 500 万（公式里的 `ref()` 默认 200 万） `--engine auto\|native\|sql`，`--key a,b` 支持复合键 |
 

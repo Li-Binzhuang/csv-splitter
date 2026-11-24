@@ -10,7 +10,7 @@
 use crate::csv_reader::{parse_csv_record_with, QuoteStyle, RecordReader};
 use crate::encoding;
 use crate::index::SparseIndex;
-use crate::types::{Delimiter, ProgressEvent, ProgressSender};
+use crate::types::{CompressFormat, Delimiter, ProgressEvent, ProgressSender};
 use std::cmp::Ordering;
 use std::fs::File;
 use std::io::{self, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
@@ -625,6 +625,44 @@ pub fn extract_style(
     quotes: QuoteStyle,
     tx: &ProgressSender,
 ) -> io::Result<ExtractSummary> {
+    let format = compressed_output(output);
+    let Some(format) = format else {
+        return extract_style_plain(path, delimiter, set, output, quotes, tx);
+    };
+    if format == CompressFormat::Zip {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "zip output is not supported by filter; use .gz, .zst, .bz2 or .xz",
+        ));
+    }
+    // Extract to a plain sibling, then compress it. This keeps the streaming and
+    // ordered-part logic untouched; only the final write differs.
+    let temp = output.with_extension(format!(
+        "{}.tmp.csv",
+        output.extension().and_then(|e| e.to_str()).unwrap_or("")
+    ));
+    let result = extract_style_plain(path, delimiter, set, &temp, quotes, tx);
+    let summary = match result {
+        Ok(summary) => summary,
+        Err(error) => {
+            let _ = std::fs::remove_file(&temp);
+            return Err(error);
+        }
+    };
+    let bytes = compress_plain(&temp, output, format);
+    let _ = std::fs::remove_file(&temp);
+    let bytes = bytes?;
+    Ok(ExtractSummary { bytes, ..summary })
+}
+
+fn extract_style_plain(
+    path: &Path,
+    delimiter: Delimiter,
+    set: &FilterSet,
+    output: &Path,
+    quotes: QuoteStyle,
+    tx: &ProgressSender,
+) -> io::Result<ExtractSummary> {
     if set.specs.is_empty() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -711,6 +749,41 @@ pub fn extract_style(
     })
     .ok();
     Ok(ExtractSummary { bytes, ..summary })
+}
+
+fn compressed_output(path: &Path) -> Option<CompressFormat> {
+    match path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_ascii_lowercase())
+        .as_deref()
+    {
+        Some("gz") => Some(CompressFormat::Gzip),
+        Some("zst") => Some(CompressFormat::Zstd),
+        Some("bz2") => Some(CompressFormat::Bzip2),
+        Some("xz") => Some(CompressFormat::Xz),
+        Some("zip") => Some(CompressFormat::Zip),
+        _ => None,
+    }
+}
+
+fn compress_level(format: CompressFormat) -> i32 {
+    match format {
+        CompressFormat::Gzip => 6,
+        CompressFormat::Zstd => 3,
+        CompressFormat::Bzip2 => 4,
+        CompressFormat::Xz => 6,
+        _ => 0,
+    }
+}
+
+fn compress_plain(plain: &Path, output: &Path, format: CompressFormat) -> io::Result<u64> {
+    let mut input = File::open(plain)?;
+    let mut encoder =
+        crate::compress::make_compressor(output, format, compress_level(format), 256 * 1024)?;
+    io::copy(&mut input, &mut encoder)?;
+    crate::compress::finish_compressor(encoder)?;
+    Ok(std::fs::metadata(output).map(|m| m.len()).unwrap_or(0))
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -1519,6 +1592,26 @@ mod set_tests {
         assert!(text.contains("3,CDMX,500"), "{text}");
         assert!(text.contains("4,Tijuana,20"), "{text}");
         assert!(!text.contains("1,CDMX,10"), "{text}");
+    }
+
+    #[test]
+    fn gzip_output_round_trips_the_matched_rows() {
+        let (_d, p) = fixture();
+        let set = FilterSet::single(FilterSpec::parse("city=CDMX").unwrap());
+        let out_dir = Dir::new("gzip_out");
+        let out = out_dir.join("r.csv.gz");
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let summary = extract(&p, Delimiter::Comma, &set, &out, &tx).unwrap();
+        assert_eq!(summary.matched, 2);
+        assert!(summary.bytes > 0, "compressed file must have bytes");
+        let mut decoder = flate2::read::GzDecoder::new(std::fs::File::open(&out).unwrap());
+        let mut text = String::new();
+        use std::io::Read;
+        decoder.read_to_string(&mut text).unwrap();
+        assert!(text.starts_with("id,city,amount\n"), "{text}");
+        assert!(text.contains("1,CDMX,10"), "{text}");
+        assert!(text.contains("3,CDMX,500"), "{text}");
+        assert!(!text.contains("2,Puebla,500"), "{text}");
     }
 
     #[test]
