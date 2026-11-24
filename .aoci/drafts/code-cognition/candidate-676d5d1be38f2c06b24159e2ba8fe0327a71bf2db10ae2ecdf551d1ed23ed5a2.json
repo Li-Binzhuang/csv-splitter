@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "66770d316e2ecd6207a265ea47c12a0031b1c955c6206898d02022e6f77bca26",
+  "batch_id": "676d5d1be38f2c06b24159e2ba8fe0327a71bf2db10ae2ecdf551d1ed23ed5a2",
+  "composite_identity": "fa2f19da94505431d147180a2ee45c278689583f58e5b3b25886031fe3cdb70b",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "bfef3bf643f1f47a7f802ddf76cbebe79aeb4b8e691e4c8d38e4ca3f8b14f177",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "737cb2d8542dd8f9614ff279a093aa41e92bc1f562eb5614fc841763c0decf72",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 压缩、gate 三端+目录、concat CLI/HTTP/MCP、report 三端+chart SVG、ops 17、typed view HTTP、typed edit apply、pipeline、mcp 23 工具 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "54dc1cee7f5b467c382c5a0b490de8f7a67fb5d9515737f13ad180828beddd00",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:CLI 入口；report --spec/--spec-text（summary/columns/quality/groups/chart SVG/rows）；gate 文件/目录 JSON failures；concat 目录；edit transaction --dry-run 与 typed EditApplyRequest；typed view/filter；watch/ops | S:chart 用 groupby sum 并只生成静态 SVG/表格；report 无 GUI；gate failures 是测试契约；--spec/--spec-text 互斥；dry-run 仅 transaction；≤1 MiB 哈希"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "76cd9efc12f5dc0ddfdcc14d474ee6c3081c3006a9754fb100cf16641bddeb76",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter -o 压缩；gate 文件/目录三端；concat CLI/HTTP/MCP 目录；report spec/specText 三端 + chart SVG；typed view HTTP；typed edit apply 三端；pipeline gate；mcp 23 工具/SDK | S:report 无 GUI；chart 是静态 SVG；groups 走 groupby；gate 失败 JSON 带原因；HTTP/MCP concat 限 root；typed view 仅简单窗口"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "a115fe4f5bbe364baad86f352bdd82b4465d63b3532185a0a8dc8215c991e47c",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "737cb2d8542dd8f9614ff279a093aa41e92bc1f562eb5614fc841763c0decf72",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 压缩、gate 三端+目录、concat CLI/HTTP/MCP、report 三端+chart SVG、ops 17、typed view HTTP、typed edit apply、pipeline、mcp 23 工具 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "6b8c4dc43cab4314c925f2a597feac13323460959848a78048aaf6c30704462b",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "54dc1cee7f5b467c382c5a0b490de8f7a67fb5d9515737f13ad180828beddd00",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:CLI 入口；report --spec/--spec-text（summary/columns/quality/groups/chart SVG/rows）；gate 文件/目录 JSON failures；concat 目录；edit transaction --dry-run 与 typed EditApplyRequest；typed view/filter；watch/ops | S:chart 用 groupby sum 并只生成静态 SVG/表格；report 无 GUI；gate failures 是测试契约；--spec/--spec-text 互斥；dry-run 仅 transaction；≤1 MiB 哈希"
+    },
+    {
+      "candidate_id": "0a7799df8e5c0a69ebae951a934d84c5939b0e4bd62fb702fb5dfee7542ada39",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "76cd9efc12f5dc0ddfdcc14d474ee6c3081c3006a9754fb100cf16641bddeb76",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter -o 压缩；gate 文件/目录三端；concat CLI/HTTP/MCP 目录；report spec/specText 三端 + chart SVG；typed view HTTP；typed edit apply 三端；pipeline gate；mcp 23 工具/SDK | S:report 无 GUI；chart 是静态 SVG；groups 走 groupby；gate 失败 JSON 带原因；HTTP/MCP concat 限 root；typed view 仅简单窗口"
+    }
+  ]
+}
