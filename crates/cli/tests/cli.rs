@@ -7789,6 +7789,8 @@ fn pipeline_watch_runs_and_then_reports_fresh() {
             dir.0.to_str().unwrap(),
             "--iterations",
             "1",
+            "--backoff-max-ms",
+            "10",
             "--json",
         ])
         .output()

@@ -149,6 +149,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--step-timeout", "Kill a step after N milliseconds (0 = none)"),
             ("--json", "Emit JSON (run, status and watch)"),
             ("--interval-ms", "Watch: milliseconds between runs (default 5000)"),
+            ("--backoff-max-ms", "Watch: cap for failure backoff (default 60000)"),
             ("--iterations", "Watch: run N rounds then exit (0 = forever)"),
             ("--verbose", "Watch: print even when every step is fresh"),
             ("--root", "Directory for relative inputs/outputs"),
@@ -9021,10 +9022,13 @@ fn watch_pipeline(
     content_check: bool,
     json: bool,
     interval_ms: u64,
+    backoff_max_ms: u64,
     iterations: usize,
     verbose: bool,
 ) -> std::io::Result<()> {
-    let interval = std::time::Duration::from_millis(interval_ms.max(10));
+    let interval_ms = interval_ms.max(10);
+    let backoff_max_ms = backoff_max_ms.max(interval_ms);
+    let mut delay_ms = interval_ms;
     let mut round = 0usize;
     loop {
         round += 1;
@@ -9075,18 +9079,20 @@ fn watch_pipeline(
                         }
                     }
                 }
+                delay_ms = interval_ms;
             }
             Err(error) => {
                 eprintln!("watch: {error}");
                 if iterations > 0 {
                     return Err(error);
                 }
+                delay_ms = delay_ms.saturating_mul(2).min(backoff_max_ms);
             }
         }
         if iterations > 0 && round >= iterations {
             return Ok(());
         }
-        std::thread::sleep(interval);
+        std::thread::sleep(std::time::Duration::from_millis(delay_ms));
     }
 }
 
@@ -9606,6 +9612,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
     let mut content_check = false;
     let mut json = false;
     let mut watch_interval_ms = 5_000u64;
+    let mut watch_backoff_max_ms = 60_000u64;
     let mut watch_iterations = 0usize;
     let mut verbose = false;
     while let Some(arg) = p.next() {
@@ -9692,6 +9699,17 @@ fn cmd_pipeline(args: &[String]) -> i32 {
                     return 2;
                 }
             },
+            "--backoff-max-ms" => match p.value("--backoff-max-ms").and_then(|value| {
+                value
+                    .parse::<u64>()
+                    .map_err(|_| "bad --backoff-max-ms".to_string())
+            }) {
+                Ok(value) => watch_backoff_max_ms = value,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 2;
+                }
+            },
             "--verbose" => verbose = true,
             "-h" | "--help" => {
                 print_command_help("pipeline");
@@ -9738,6 +9756,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             content_check,
             json,
             watch_interval_ms,
+            watch_backoff_max_ms,
             watch_iterations,
             verbose,
         ) {
