@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "f0d887ce2c35ccc69e59f993d3d6e4d23699d88bcbb242223019feda91b06c5a",
+  "batch_id": "6693a1476fb029b013f580cc1bed2f6617a689a7e747002443597c4390f22615",
+  "composite_identity": "639a57c27f3994b65981c583e409c9d4b2fa34a35793b78908fa11468636b122",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "80b8dccd101c4379d60f2b86cceed346434eb8ca4772d1898bb2b04df429647d",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "e183d634b21b99b47a087df0576800c9b1cf921fdb348db18f47ac0bc7d55556",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，打包脚本末尾自动 verify_dist，失败时删半成品 tar/sha；pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2、SDK progress；macOS gate dispatch 45198239384 12m21s 与 push 45202447374 11m32s 均 success；MCP 缓存 2 GB+ gzip 4.545→1.590 s/82 MB；含 17 工具/cache_stats（Python/SDK demo 命中/不可 job；白名单）、watch/--json/退避/--max-failures/--state（时间戳/轮次/lastError）、LRU | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "41c11eefda6b92dc97a22f697e1054e5f8dacc776b234fde6df10dd191808544",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "e183d634b21b99b47a087df0576800c9b1cf921fdb348db18f47ac0bc7d55556",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，打包脚本末尾自动 verify_dist，失败时删半成品 tar/sha；pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2、SDK progress；macOS gate dispatch 45198239384 12m21s 与 push 45202447374 11m32s 均 success；MCP 缓存 2 GB+ gzip 4.545→1.590 s/82 MB；含 17 工具/cache_stats（Python/SDK demo 命中/不可 job；白名单）、watch/--json/退避/--max-failures/--state（时间戳/轮次/lastError）、LRU | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ]
+}
