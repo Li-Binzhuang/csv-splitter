@@ -14,15 +14,15 @@
 - **多文件/目录**：concat CLI/HTTP/MCP，均支持目录；HTTP 目录按文件名排序并排除输出。
 - **报表 spec**：CLI/HTTP/MCP；sections `summary/columns/quality/groups/chart（count/sum）SVG/compare/rows`；内联 `specText`；HTTP/MCP 下 `compare` 目标受 root 守卫。
 - **安全**：report compare 的第二文件路径不能越 root；MCP concat 的 paths/dir/out 也受限。
-- **发布验收**：`scripts/smoke_http.py` 用发布包自动验证 /ops、/report chart+compare、gate 文件/global、concat 目录；本次 errors=[]。
+- **发布验收**：`scripts/smoke_http.py` 用发布包自动验证 viewer、/ops、/report chart+compare、gate 文件/global、concat 目录；本次 7/7，errors=[]。
 
 ### 当前产物
 
 - MCP 工具 **23**（23 annotations；demo 验证 23/23）。
 - AOCI **123** entries，治理 aligned。
 - 包：`dist/csvx-4.2.0-darwin-arm64.tar.gz`
-  - SHA256 `9303866efa0c379c15fbbcf61f3e13bb4b2c26490268bab7a138339f72066607`
-- 最新代码：`6b8e37d`（已 push）；夜间轮次继续在本地累积，下一轮 push。
+  - SHA256 `300de540992cf74ab7f7b9544726c76fc4539f53fe243ed9064769b94168b02d`
+- 最新代码：`2b33aba`（已 push）；夜间轮次继续在本地累积，下一轮 push。
 
 ### 待白天决策
 
