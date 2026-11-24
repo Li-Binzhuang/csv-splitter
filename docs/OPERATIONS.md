@@ -77,8 +77,8 @@ MCP adapter ─┘        │
 - `edit transaction --ops ... --dry-run`：完整解析并对照真实行/列校验，打印 `operations/rows/applied:0`，**不创建 journal**；
 - preview 现在返回 `rowsBefore/rowsAfter/rowDelta/affectedRows/affectedRanges`、
   `ruleOperations`、`structuralOperations` 与 journal hash（FNV，非 SHA）；
-- CLI `--dry-run` 与 HTTP `POST /edit?...&preview=1` 共用 `preview_edit`；
-- 下一步：MCP `edit_*` 共用同一事务/预览路径；
+- CLI `--dry-run`、HTTP `POST /edit?...&preview=1` 与 MCP `csvx_edit_preview` 共用 `preview_edit`；
+- 下一步：preview 的“应用后内容指纹”，以及 `apply` 的失败回滚测试；
 - 所有错误从 `ErrorCode` 映射，禁止新增平行字符串。
 
 **Stage 4**

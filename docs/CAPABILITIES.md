@@ -216,7 +216,7 @@ delimiter 检测也读解压后的内容。压缩流不可 seek，因此自动�
 ### 端到端 demo
 
 `BIN=target/release/csvx bash scripts/demo_end_to_end.sh`：pipeline filter→quality（12/11 ms）
-后，`scripts/mcp_client.py` 走 schema/filter/view/edit/undo/convert/job，18 个工具。
+后，`scripts/mcp_client.py` 走 schema/filter/view/edit/preview/undo/convert/job，19 个工具。
 见 `docs/DEMO.md`。
 
 ### MCP（B agent 后端，只读首版）
@@ -237,7 +237,7 @@ delimiter 检测也读解压后的内容。压缩流不可 seek，因此自动�
   步骤输出并逐条发 `notifications/progress`（最终文本是人类可读步骤行，不是 JSON）。
 
 路径必须落在 `--root` 内；写工具复用 journal 锁：
-`csvx_edit_set`（row/col/value/expect）、`csvx_edit_delete`（row 或 where）、`csvx_edit_undo`、`csvx_edit_redo`、`csvx_convert`（tsv/ndjson/parquet/csv，输出限制在 root）。
+`csvx_edit_preview`（transaction ops，只读）、`csvx_edit_set`（row/col/value/expect）、`csvx_edit_delete`（row 或 where）、`csvx_edit_undo`、`csvx_edit_redo`、`csvx_convert`（tsv/ndjson/parquet/csv，输出限制在 root）。
 长任务可走异步 job：`csvx_job_submit`（tool + arguments）返回 `job-1`，`csvx_job_status` 返回
 running/done（带 output）/failed（带 exitCode/error）；结果会缓存，重复轮询不丢输出。
 `initialize` / `tools/list` / `tools/call` 已实现；UTF-8 参数按字节保留，JSON-RPC 一行一条。
