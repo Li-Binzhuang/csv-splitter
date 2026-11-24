@@ -37,6 +37,19 @@
 - 每个里程碑最多一次 push；gate 绿、AOCI aligned、tree clean。
 - 商业化价格/合同/SLA 由用户确认，不自行承诺。
 
+## Round 137 checkpoint（2026-11-24）
+
+自 Round 113 后新增/关闭：
+- `pipeline watch` 完整化：立即跑、轮询、`--json`、失败 2× 退避、`--max-failures`、
+  `--state`（时间戳/轮次恢复）；
+- MCP 第 17 个工具 `csvx_cache_stats`（hits/misses/entries/bytes/上限）；
+- `csvx_job_submit` 改为 CLI 工具白名单，server 内部/未知工具直接 `job_start_error`；
+- 解压缓存 LRU 命中重排；
+- 2 GB+ gzip drill 4.545→1.590 s / 82 MB；
+- 离线包重建并自验（17 工具、watch、job 白名单）。
+
+技术侧没有新的高价值缺口；真实客户试点仍由用户决定，不阻塞继续维护。
+
 ## Round 113 checkpoint（2026-11-23）
 
 自 Round 100 后新增/关闭：
