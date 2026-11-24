@@ -12,6 +12,7 @@
 ```bash
 cargo build --release
 bash scripts/demo_end_to_end.sh
+python3 scripts/smoke_http.py   # 发布包 HTTP：/ops、/report chart+compare、/gate global、/concat dir
 bash scripts/package_release.sh   # dist tar.gz + .sha256，末尾自动 verify_dist（失败会删半成品）
 bash scripts/verify_dist.sh dist/csvx-4.2.0-<platform>.tar.gz   # 可选手工复验
 ```
