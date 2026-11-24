@@ -89,7 +89,7 @@
 
 | 能力 | CLI | 说明 |
 |---|---|---|
-| 确定性 Markdown/HTML 报表 | `report data.csv --spec report.csv -o report.html` | spec 是 CSV：`title,...`、`summary`、`columns`、`quality[,key]`、`rows,<N>`；无 spec 时默认 summary/columns/rows 20；quality 看编辑后的值 |
+| 确定性 Markdown/HTML 报表 | `report data.csv --spec report.csv -o report.html` | spec 是 CSV：`title,...`、`summary`、`columns`、`quality[,key]`、`groups,<column>[:N]`、`rows,<N>`；无 spec 时默认 summary/columns/rows 20；quality/groups 看编辑后的值 |
 | 无 GUI 的分享产物 | `--format md` / `--format html`（按输出扩展名推断） | 所有单元格 HTML 转义；Markdown 转义 `\|` |
 
 ## 编辑（不重写原文件）

@@ -5118,13 +5118,11 @@ fn truncate_for_display(text: &str, width: usize) -> String {
     format!("{kept}…")
 }
 
-fn report_quality(
+fn report_profiles(
     input: &Path,
     delimiter: csvx_core::types::Delimiter,
-    keys: &[String],
-    columns: &[String],
-) -> Result<Vec<(String, String, String)>, String> {
-    // The quality section must see pending edits, like the rows section does.
+) -> Result<Vec<csvx_core::profile::ColumnProfile>, String> {
+    // Report sections must see pending edits, like the rows section does.
     let mut materialized = None;
     let target = if csvx_core::sheet::has_edits(input) {
         let (tx, rx) = mpsc::channel();
@@ -5149,13 +5147,23 @@ fn report_quality(
         &tx,
     )
     .map_err(|error| error.to_string())?;
+    drop(materialized);
+    Ok(profiles)
+}
+
+fn report_quality(
+    input: &Path,
+    delimiter: csvx_core::types::Delimiter,
+    keys: &[String],
+    columns: &[String],
+) -> Result<Vec<(String, String, String)>, String> {
+    let profiles = report_profiles(input, delimiter)?;
     let keys = keys
         .iter()
         .filter(|key| columns.iter().any(|column| column == *key))
         .cloned()
         .collect::<Vec<_>>();
     let (_checks, findings) = quality_checks(&profiles, &keys, &[]);
-    drop(materialized);
     Ok(findings)
 }
 
@@ -5288,7 +5296,10 @@ fn cmd_report(args: &[String]) -> i32 {
                 }
                 continue;
             }
-            if !matches!(kind.as_str(), "summary" | "columns" | "rows" | "quality") {
+            if !matches!(
+                kind.as_str(),
+                "summary" | "columns" | "rows" | "quality" | "groups"
+            ) {
                 eprintln!("error: unknown report section {kind:?}");
                 return 2;
             }
@@ -5459,6 +5470,64 @@ fn cmd_report(args: &[String]) -> i32 {
                     body.push_str("</table>\n");
                 }
             }
+            "groups" => {
+                let mut pieces = arg.splitn(2, ':');
+                let column = pieces.next().unwrap_or_default().trim();
+                let limit: usize = pieces
+                    .next()
+                    .and_then(|value| value.trim().parse().ok())
+                    .unwrap_or(10);
+                if !columns.iter().any(|name| name == column) {
+                    eprintln!("error: groups names unknown column {column:?}");
+                    return 2;
+                }
+                let profiles = match report_profiles(&input, delimiter) {
+                    Ok(profiles) => profiles,
+                    Err(e) => return report_failure("report", e),
+                };
+                let Some(profile) = profiles.iter().find(|profile| profile.name == column) else {
+                    return 2;
+                };
+                let total = profile.empty + profile.non_empty;
+                let top: Vec<&(String, u64)> = profile.top.iter().take(limit).collect();
+                if format == "md" {
+                    body.push_str(&format!("## Groups: {column}\n\n"));
+                    body.push_str("| value | rows | share |\n|---|---|---|\n");
+                    for (value, count) in &top {
+                        let share = if total == 0 {
+                            0.0
+                        } else {
+                            *count as f64 / total as f64 * 100.0
+                        };
+                        body.push_str(&format!(
+                            "| {} | {} | {:.1}% |\n",
+                            md_cell(value),
+                            count,
+                            share
+                        ));
+                    }
+                    body.push('\n');
+                } else {
+                    body.push_str(&format!(
+                        "<h2>Groups: {}</h2><table><tr><th>value</th><th>rows</th><th>share</th></tr>\n",
+                        html_escape(column)
+                    ));
+                    for (value, count) in &top {
+                        let share = if total == 0 {
+                            0.0
+                        } else {
+                            *count as f64 / total as f64 * 100.0
+                        };
+                        body.push_str(&format!(
+                            "<tr><td>{}</td><td>{}</td><td>{:.1}%</td></tr>\n",
+                            html_escape(value),
+                            count,
+                            share
+                        ));
+                    }
+                    body.push_str("</table>\n");
+                }
+            }
             _ => {}
         }
     }
@@ -5504,6 +5573,9 @@ fn html_escape(value: &str) -> String {
 
 fn md_cell(value: &str) -> String {
     value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
         .replace('\\', "\\\\")
         .replace('|', "\\|")
         .replace(['\n', '\r'], " ")
