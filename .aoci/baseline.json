@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-24T07:29:01Z",
+  "updated_at": "2026-11-24T07:35:01Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -52,9 +52,9 @@
     },
     "CHANGELOG.md": {
       "role": "index",
-      "sha256": "dc92acebf5789f1973d19b42dc80e2137d99c095b25ceeb4f0c5f830417f37ab",
-      "size": 238866,
-      "normalized_sha256": "dc92acebf5789f1973d19b42dc80e2137d99c095b25ceeb4f0c5f830417f37ab"
+      "sha256": "fe18ffd88785c877fb25cae4e58460c2321230da16c33e9d3bdce81837f78133",
+      "size": 238913,
+      "normalized_sha256": "fe18ffd88785c877fb25cae4e58460c2321230da16c33e9d3bdce81837f78133"
     },
     "Cargo.lock": {
       "role": "observe",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "728d5184995d5cb8dd2fd97faa873d334ab3c8e50e5215df06537d9a754c50da",
-      "size": 54339,
-      "normalized_sha256": "728d5184995d5cb8dd2fd97faa873d334ab3c8e50e5215df06537d9a754c50da"
+      "sha256": "60696c867489066cc330277db12ee804fce1270bec904c1823385a825935cb8f",
+      "size": 54204,
+      "normalized_sha256": "60696c867489066cc330277db12ee804fce1270bec904c1823385a825935cb8f"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -106,9 +106,9 @@
     },
     "crates/cli/src/main.rs": {
       "role": "index",
-      "sha256": "cc738145794f6db1274b89c62163452ce902a430b2e310b16db0cad0bf95a3e9",
-      "size": 395591,
-      "normalized_sha256": "cc738145794f6db1274b89c62163452ce902a430b2e310b16db0cad0bf95a3e9"
+      "sha256": "2a17569c64910197abb3cf4e9b502d04dca39ccef88020a1f7fb3c768eba5c7f",
+      "size": 396861,
+      "normalized_sha256": "2a17569c64910197abb3cf4e9b502d04dca39ccef88020a1f7fb3c768eba5c7f"
     },
     "crates/cli/src/serve.rs": {
       "role": "index",
@@ -124,9 +124,9 @@
     },
     "crates/cli/tests/cli.rs": {
       "role": "observe",
-      "sha256": "8fa4a55e2920f2ce9464d51d2e89cd3b447aa788b29b4acfddfb8901dfed42c8",
-      "size": 259602,
-      "normalized_sha256": "8fa4a55e2920f2ce9464d51d2e89cd3b447aa788b29b4acfddfb8901dfed42c8"
+      "sha256": "a36cd072cbe828e058fc4363ff600cbca9b428433a2edc94fbd9c7152514a446",
+      "size": 259733,
+      "normalized_sha256": "a36cd072cbe828e058fc4363ff600cbca9b428433a2edc94fbd9c7152514a446"
     },
     "crates/cli/tests/contract.rs": {
       "role": "observe",
@@ -346,9 +346,9 @@
     },
     "crates/core/src/ops.rs": {
       "role": "index",
-      "sha256": "8559e5e49eefa9665f87c13bae0bc2cc436ac3306ace19b0bdb991abb5dff429",
-      "size": 9433,
-      "normalized_sha256": "8559e5e49eefa9665f87c13bae0bc2cc436ac3306ace19b0bdb991abb5dff429"
+      "sha256": "840e924c669fac3cb572adb19dba09874d2da1978a85100ebfc136e5bdf98632",
+      "size": 15732,
+      "normalized_sha256": "840e924c669fac3cb572adb19dba09874d2da1978a85100ebfc136e5bdf98632"
     },
     "crates/core/src/pack.rs": {
       "role": "index",
@@ -574,9 +574,9 @@
     },
     "docs/CAPABILITIES.md": {
       "role": "index",
-      "sha256": "3ec595696a6a0b1f1c9748e88592e1351fdd28e1855fdb9c32e226eaa2acfb94",
-      "size": 62610,
-      "normalized_sha256": "3ec595696a6a0b1f1c9748e88592e1351fdd28e1855fdb9c32e226eaa2acfb94"
+      "sha256": "1aab31a6e257a4dec89197fe9f281d00f3a037a1bb85d495b9ab24e677c920d3",
+      "size": 62650,
+      "normalized_sha256": "1aab31a6e257a4dec89197fe9f281d00f3a037a1bb85d495b9ab24e677c920d3"
     },
     "docs/CI.md": {
       "role": "index",
@@ -616,9 +616,9 @@
     },
     "docs/OPERATIONS.md": {
       "role": "index",
-      "sha256": "2d51867b87d8dc8fdd9d42638defbbd5f3b2e5504abc0b0bef42260f205c18b3",
-      "size": 4529,
-      "normalized_sha256": "2d51867b87d8dc8fdd9d42638defbbd5f3b2e5504abc0b0bef42260f205c18b3"
+      "sha256": "bb4f0a69552ea5b196bee2dcd5fcbc3134b38b274f295af3667c7d3a05f6068b",
+      "size": 4626,
+      "normalized_sha256": "bb4f0a69552ea5b196bee2dcd5fcbc3134b38b274f295af3667c7d3a05f6068b"
     },
     "docs/OUTREACH.md": {
       "role": "index",
@@ -652,9 +652,9 @@
     },
     "docs/PRODUCT_PLAN.md": {
       "role": "index",
-      "sha256": "06866817039838709161d511676e0b3a8c34c1368a97b9daa1d3be34bcc4e3a9",
-      "size": 2742,
-      "normalized_sha256": "06866817039838709161d511676e0b3a8c34c1368a97b9daa1d3be34bcc4e3a9"
+      "sha256": "eaf0d66425a1b096dca9bf1b0b809d7d1b0b43fbfd57242ed354b3bd15dd624c",
+      "size": 2769,
+      "normalized_sha256": "eaf0d66425a1b096dca9bf1b0b809d7d1b0b43fbfd57242ed354b3bd15dd624c"
     },
     "docs/RELEASE_CHECKLIST.md": {
       "role": "index",
