@@ -255,7 +255,7 @@ bash scripts/package_release.sh      # 打包并 verify_dist
 | 跨文件唯一性 | `gate --unique-global` / `uniqueGlobal` | 4M 行、2 文件：7.03 s，短失败原因 |
 | 报表 spec | `report` CLI/HTTP/MCP | summary/columns/quality/groups/chart SVG/compare/rows；内联 `specText` |
 | 报表安全 | HTTP/MCP `--root` | compare 第二文件路径不能越 root |
-| 发布包 HTTP | `smoke_http.py` | 6/6 检查通过，errors=[] |
+| 发布包 HTTP | `smoke_http.py` | 7/7 检查通过（含 opt-in viewer 可达），errors=[] |
 
 ### 约束核对
 
@@ -267,7 +267,7 @@ bash scripts/package_release.sh      # 打包并 verify_dist
 
 ### 尚未收尾
 
-- **薄前端**：与“无 GUI”硬约束存在范围冲突；现有 opt-in 网页 viewer 是否算薄前端，需用户裁决（见 `docs/NIGHT_QUEUE.md`）。
+- **薄前端**：与“无 GUI”硬约束存在范围冲突；现有 opt-in 网页 viewer 可达（smoke 检查 `GET /` 200），但未作为 GUI 产品推广；是否算薄前端需用户裁决（见 `docs/NIGHT_QUEUE.md`）。
 - **xlsx / 数据库只读连接**：需用户明确解除约束后才能做。
 
 ### 当前产物

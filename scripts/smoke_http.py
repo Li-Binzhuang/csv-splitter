@@ -62,6 +62,9 @@ def main():
             except (urllib.error.URLError, ConnectionError):
                 time.sleep(0.1)
         check("server ready", ready)
+        status, body = request(base, "/")
+        check("viewer html", status == 200 and "<h1>" in body, str(status))
+
         status, body = request(base, "/ops")
         check("ops 17", status == 200 and len(json.loads(body)["operations"]) == 17, str(status))
 
