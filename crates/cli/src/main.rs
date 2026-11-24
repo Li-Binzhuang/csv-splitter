@@ -10496,11 +10496,15 @@ fn cmd_schema(args: &[String]) -> i32 {
             return 2;
         }
     };
-    let sheet =
-        match csvx_core::sheet::Sheet::open(&input, csvx_core::sheet::ReadOptions { delimiter }) {
-            Ok(sheet) => sheet,
-            Err(e) => return report_failure("schema", format!("cannot open the sheet: {e}")),
-        };
+    let request = csvx_core::ops::SchemaRequest {
+        path: input.clone(),
+        delimiter,
+        sample,
+    };
+    let sheet = match request.open() {
+        Ok(sheet) => sheet,
+        Err(e) => return report_failure("schema", format!("cannot open the sheet: {e}")),
+    };
 
     if let Some(other) = &diff_with {
         let other_sheet =
@@ -10602,11 +10606,12 @@ fn cmd_schema(args: &[String]) -> i32 {
             }
         }
     } else {
-        let schema = match sheet.schema(sample) {
-            Ok(schema) => schema,
+        let response = match request.response(&sheet) {
+            Ok(response) => response,
             Err(e) => return report_failure("schema", format!("cannot profile the columns: {e}")),
         };
-        let rows = sheet.rows().unwrap_or(0);
+        let schema = response.columns;
+        let rows = response.rows;
         if json {
             let body: Vec<String> = schema
                 .iter()

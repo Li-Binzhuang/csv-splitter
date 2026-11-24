@@ -4731,10 +4731,16 @@ fn columns_endpoint(
         Ok(v) => v,
         Err(reason) => return bad_path_reason(stream, reason),
     };
-    let options = csvx_core::sheet::ReadOptions {
+    let sample: u64 = params
+        .get("sample")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(10);
+    let request = csvx_core::ops::SchemaRequest {
+        path: path.clone(),
         delimiter: delimiter(params),
+        sample,
     };
-    let sheet = match csvx_core::sheet::Sheet::open(&path, options) {
+    let sheet = match request.open() {
         Ok(s) => s,
         Err(e) => {
             return respond_json(
@@ -4766,10 +4772,6 @@ fn columns_endpoint(
         return respond_json(stream, 200, &body);
     }
 
-    let sample: u64 = params
-        .get("sample")
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(10);
     let known_kinds = ["number", "date", "text", "empty", "mixed"];
     let kind_filter: Option<String> = params.get("kind").map(|k| k.trim().to_ascii_lowercase());
     if let Some(kind) = &kind_filter {
@@ -4791,7 +4793,7 @@ fn columns_endpoint(
     // added ones and their rows are not the base file's.
     let pristine = !csvx_core::sheet::has_edits(&path);
     let mut schema = if pristine {
-        match csvx_core::sheet::schema_sample(&path, delimiter(params), sample) {
+        match request.sample() {
             Ok(schema) => schema,
             Err(e) => {
                 return respond_json(
@@ -4802,8 +4804,8 @@ fn columns_endpoint(
             }
         }
     } else {
-        match sheet.schema(sample) {
-            Ok(schema) => schema,
+        match request.response(&sheet) {
+            Ok(response) => response.columns,
             Err(e) => {
                 return respond_json(
                     stream,

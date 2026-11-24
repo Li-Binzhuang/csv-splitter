@@ -28,16 +28,31 @@ pub struct SchemaResponse {
 }
 
 impl SchemaRequest {
-    pub fn execute(&self) -> io::Result<SchemaResponse> {
-        let sheet = Sheet::open(
+    /// Open the sheet once; adapters that also need `--has`/`--diff` reuse it.
+    pub fn open(&self) -> io::Result<Sheet> {
+        Sheet::open(
             &self.path,
             ReadOptions {
                 delimiter: self.delimiter,
             },
-        )?;
+        )
+    }
+
+    /// Sample columns without building the row index (the pristine-file path).
+    pub fn sample(&self) -> io::Result<Vec<ColumnInfo>> {
+        crate::sheet::schema_sample(&self.path, self.delimiter, self.sample.max(1))
+    }
+
+    /// Build the response from an already-open sheet, avoiding a second index pass.
+    pub fn response(&self, sheet: &Sheet) -> io::Result<SchemaResponse> {
         let rows = sheet.rows()?;
         let columns = sheet.schema(self.sample.max(1))?;
         Ok(SchemaResponse { rows, columns })
+    }
+
+    pub fn execute(&self) -> io::Result<SchemaResponse> {
+        let sheet = self.open()?;
+        self.response(&sheet)
     }
 }
 
