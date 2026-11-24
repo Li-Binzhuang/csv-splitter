@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "44a9526968487f55bfeaf42086d62bdf629e5d57be4d48fff67e4daad8f18e74",
+  "batch_id": "c0543e0ffba1e831e89a1b543b763bf8d04d7e7064df1566cc8964b72740bee9",
+  "composite_identity": "7150d8cfc7e11bfa41ab81e253c3ec72c18e69fee4d6d5903f26bf32c5dacff5",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "4625893039448d478328782d2963252d19a04aebf2ced59f62945b661b8c1b3b",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "ddd7aaa7124f6070eb866c384a715f89da3c7492331c64b224e5f180f61f44ca",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:HTTP 读写/job；/ops；/report --root；/gate 文件/目录 + uniqueGlobal；/rows ViewRequest；/edit EditApplyRequest；/concat paths/dir；out canonical；MCP 23 工具含 uniqueGlobal | S:uniqueGlobal 需配 unique；gate 目录聚合；out=./sub 排除自身；report compare 限 root；/rows 复杂分支仍 SQL；缓存 4 GiB/16"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "7239417c97c87da2cb99526cf9f2e4e05b49d1565f8cd21332c58864cacc0fbd",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "ddd7aaa7124f6070eb866c384a715f89da3c7492331c64b224e5f180f61f44ca",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:HTTP 读写/job；/ops；/report --root；/gate 文件/目录 + uniqueGlobal；/rows ViewRequest；/edit EditApplyRequest；/concat paths/dir；out canonical；MCP 23 工具含 uniqueGlobal | S:uniqueGlobal 需配 unique；gate 目录聚合；out=./sub 排除自身；report compare 限 root；/rows 复杂分支仍 SQL；缓存 4 GiB/16"
+    }
+  ]
+}
