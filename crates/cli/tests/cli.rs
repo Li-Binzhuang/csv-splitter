@@ -7682,6 +7682,8 @@ fn a_transaction_dry_run_validates_without_writing() {
     );
     let text = String::from_utf8_lossy(&out.stdout);
     assert!(text.contains("transaction-preview"), "{text}");
+    assert!(text.contains("\"rowsAfter\":1"), "{text}");
+    assert!(text.contains("\"affectedRanges\":[[1,1],[2,2]]"), "{text}");
     assert!(text.contains("\"applied\":0"), "{text}");
     assert!(
         !dir.join("t.csv.journal").exists(),

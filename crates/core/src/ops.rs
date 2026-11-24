@@ -293,10 +293,191 @@ mod tests {
     }
 
     #[test]
+    fn preview_reports_rows_ranges_and_journal_hash() {
+        use crate::workbook::Op;
+        let (dir, path) = fixture("preview_reports_rows_ranges_and_journal_hash");
+        let ops = vec![
+            Op::SetCell {
+                row: 0,
+                column: "a".to_string(),
+                value: "9".to_string(),
+            },
+            Op::DeleteRows { at: 1, count: 1 },
+        ];
+        let preview = preview_edit(&path, &ops, 3, &["a".to_string(), "b".to_string()]).unwrap();
+        assert_eq!(preview.operations, 2);
+        assert_eq!(preview.rows_before, 3);
+        assert_eq!(preview.rows_after, 2);
+        assert_eq!(preview.row_delta, -1);
+        assert_eq!(preview.affected_ranges, vec![(1, 1), (2, 2)]);
+        assert_eq!(preview.columns, 2);
+        assert!(!preview.journal_hash.is_empty());
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn preview_marks_rule_ops_instead_of_inventing_rows() {
+        use crate::workbook::Op;
+        let (dir, path) = fixture("preview_marks_rule_ops_instead_of_inventing_rows");
+        let ops = vec![Op::SetWhere {
+            filter: "a>1".to_string(),
+            column: "b".to_string(),
+            value: "z".to_string(),
+        }];
+        let preview = preview_edit(&path, &ops, 3, &["a".to_string(), "b".to_string()]).unwrap();
+        assert_eq!(preview.rule_operations, 1);
+        assert!(preview.affected_ranges.is_empty());
+        assert_eq!(preview.rows_after, 3);
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
     fn filter_rejects_a_bad_expression_without_scanning() {
         let (dir, path) = fixture("filter_rejects_a_bad_expression_without_scanning");
         let error = FilterRequest::parse(path.clone(), Delimiter::Comma, "", 10).unwrap_err();
         assert_eq!(error.kind(), io::ErrorKind::InvalidInput);
         std::fs::remove_dir_all(dir).ok();
     }
+}
+
+/// A transaction preview: what the ops would do, without writing anything.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EditPreview {
+    pub operations: usize,
+    pub rows_before: u64,
+    pub rows_after: u64,
+    pub row_delta: i64,
+    /// 1-based inclusive ranges with an exact row target. Rule/structural ops are
+    /// counted separately because they do not name concrete rows.
+    pub affected_ranges: Vec<(u64, u64)>,
+    pub rule_operations: usize,
+    pub structural_operations: usize,
+    pub columns: usize,
+    pub base_bytes: u64,
+    pub journal_bytes: u64,
+    /// FNV-1a of the current journal bytes; a change detector, not a SHA.
+    pub journal_hash: String,
+}
+
+impl EditPreview {
+    pub fn affected_rows(&self) -> u64 {
+        self.affected_ranges
+            .iter()
+            .map(|(start, end)| end.saturating_sub(*start) + 1)
+            .sum()
+    }
+
+    pub fn affected_label(&self) -> String {
+        if self.affected_ranges.is_empty() {
+            return "-".to_string();
+        }
+        let shown: Vec<String> = self
+            .affected_ranges
+            .iter()
+            .take(8)
+            .map(|(start, end)| {
+                if start == end {
+                    start.to_string()
+                } else {
+                    format!("{start}-{end}")
+                }
+            })
+            .collect();
+        let extra = self.affected_ranges.len().saturating_sub(shown.len());
+        if extra > 0 {
+            format!("{} (+{extra} more)", shown.join(", "))
+        } else {
+            shown.join(", ")
+        }
+    }
+}
+
+fn fnv1a(bytes: &[u8]) -> u64 {
+    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    for byte in bytes {
+        hash ^= *byte as u64;
+        hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+    }
+    hash
+}
+
+/// Describe a validated transaction against the current sheet shape.
+///
+/// The caller supplies the already-parsed ops and the current logical row count;
+/// this function never opens the journal for writing and never touches the base file.
+pub fn preview_edit(
+    base: &Path,
+    ops: &[crate::workbook::Op],
+    total_rows: u64,
+    columns: &[String],
+) -> io::Result<EditPreview> {
+    use crate::workbook::Op;
+
+    let mut rows_after = total_rows as i64;
+    let mut affected_ranges: Vec<(u64, u64)> = Vec::new();
+    let mut rule_operations = 0usize;
+    let mut structural_operations = 0usize;
+
+    for op in ops {
+        match op {
+            Op::SetCell { row, .. } => affected_ranges.push((row + 1, row + 1)),
+            Op::InsertRows { at, rows } => {
+                if !rows.is_empty() {
+                    affected_ranges.push((at + 1, at + rows.len() as u64));
+                    rows_after += rows.len() as i64;
+                }
+            }
+            Op::DeleteRows { at, count } => {
+                if *count > 0 {
+                    affected_ranges.push((at + 1, at + count));
+                    rows_after -= *count as i64;
+                }
+            }
+            Op::DeleteRanges { runs } => {
+                for (at, count) in runs {
+                    if *count > 0 {
+                        affected_ranges.push((at + 1, at + count));
+                        rows_after -= *count as i64;
+                    }
+                }
+            }
+            Op::FillRange { from, to, .. } | Op::FillColumns { from, to, .. } => {
+                if from <= to {
+                    affected_ranges.push((from + 1, to + 1));
+                }
+            }
+            Op::PasteBlock { row, rows, .. } => {
+                if !rows.is_empty() {
+                    affected_ranges.push((row + 1, row + rows.len() as u64));
+                }
+            }
+            Op::SetWhere { .. } | Op::Substitute { .. } | Op::SubstituteRegex { .. } => {
+                rule_operations += 1;
+            }
+            Op::SplitColumn { .. }
+            | Op::AddColumn { .. }
+            | Op::AddColumnAt { .. }
+            | Op::DropColumn { .. }
+            | Op::RenameColumn { .. }
+            | Op::SetColumnFormula { .. } => structural_operations += 1,
+        }
+    }
+
+    let rows_after = rows_after.max(0) as u64;
+    let sidecar = crate::workbook::Journal::sidecar(base);
+    let journal = std::fs::read(&sidecar).unwrap_or_default();
+    let base_bytes = std::fs::metadata(base).map(|m| m.len()).unwrap_or(0);
+    Ok(EditPreview {
+        operations: ops.len(),
+        rows_before: total_rows,
+        rows_after,
+        row_delta: rows_after as i64 - total_rows as i64,
+        affected_ranges,
+        rule_operations,
+        structural_operations,
+        columns: columns.len(),
+        base_bytes,
+        journal_bytes: journal.len() as u64,
+        journal_hash: format!("{:016x}", fnv1a(&journal)),
+    })
 }

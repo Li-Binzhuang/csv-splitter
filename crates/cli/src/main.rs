@@ -7300,18 +7300,40 @@ fn cmd_edit(args: &[String]) -> i32 {
             }
         };
         if dry_run {
+            let preview = match csvx_core::ops::preview_edit(&input, &ops, total, &columns) {
+                Ok(preview) => preview,
+                Err(e) => return report_failure("edit", e.to_string()),
+            };
             if json {
+                let ranges: Vec<String> = preview
+                    .affected_ranges
+                    .iter()
+                    .map(|(start, end)| format!("[{start},{end}]"))
+                    .collect();
+                let journal_hash = format!("\"{}\"", json_escape(&preview.journal_hash));
                 println!(
-                    r#"{{"op":"transaction-preview","operations":{},"rows":{},"atomic":true,"wouldApply":{},"applied":0}}"#,
-                    ops.len(),
-                    total,
-                    ops.len()
+                    r#"{{"op":"transaction-preview","operations":{},"rows":{},"rowsAfter":{},"rowDelta":{},"affectedRows":{},"affectedRanges":[{}],"ruleOperations":{},"structuralOperations":{},"columns":{},"journalBytes":{},"journalHash":{},"atomic":true,"wouldApply":{},"applied":0}}"#,
+                    preview.operations,
+                    preview.rows_before,
+                    preview.rows_after,
+                    preview.row_delta,
+                    preview.affected_rows(),
+                    ranges.join(","),
+                    preview.rule_operations,
+                    preview.structural_operations,
+                    preview.columns,
+                    preview.journal_bytes,
+                    journal_hash,
+                    preview.operations
                 );
             } else {
                 println!(
-                    "preview: {} operation(s) valid against {} row(s); nothing written",
-                    ops.len(),
-                    total
+                    "preview: {} operation(s) valid; rows {}→{}, affected {}, journal hash {}; nothing written",
+                    preview.operations,
+                    preview.rows_before,
+                    preview.rows_after,
+                    preview.affected_label(),
+                    preview.journal_hash
                 );
             }
             return 0;

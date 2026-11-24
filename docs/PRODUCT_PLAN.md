@@ -25,7 +25,7 @@ AI 不直接改文件：先预览，再应用，可撤销。
 | S0 契约目录 | 操作名、效果、错误码可发现 | `csvx ops --json` | ✅ |
 | S1 三端目录 | CLI/HTTP/MCP 同一份目录 | `GET /ops`、MCP `csvx://operations`、测试对齐 | ✅ |
 | S2 typed operations | `schema/view/filter` 请求/响应类型进 core | schema/filter CLI/HTTP、view CLI 简单路径已接入；view HTTP 待接 | 进行中 |
-| S3 preview/apply | 写操作先预览，应用失败不写半条 | `edit transaction --dry-run` 已落；affected rows/hash 待做 | 进行中 |
+| S3 preview/apply | 写操作先预览，应用失败不写半条 | `edit transaction --dry-run` 已落；CLI preview 有 affected rows/hash，HTTP/MCP 待接 | 进行中 |
 | S4 数据能力 | 压缩输出、Pipeline 质量门禁、多文件/目录 | 各自实测 + 测试 | 待做 |
 | S5 薄前端 | 虚拟网格、编辑/撤销、公式/筛选/透视 | 只消费契约，不解析 help | 待做 |
 | S6 报表 | 声明式 report spec + 确定性渲染 | AI 生成 → 前端渲染 → 导出 | 待做 |
