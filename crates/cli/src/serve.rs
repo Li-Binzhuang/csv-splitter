@@ -7442,7 +7442,8 @@ mod tests {
         let live = dir.join(format!("csvx-materialized-{}-test.csv", std::process::id()));
         std::fs::write(&dead, "x").unwrap();
         std::fs::write(&live, "x").unwrap();
-        cleanup_stale_mcp_materialized();
+        let removed = cleanup_stale_mcp_materialized();
+        assert_eq!(removed, 1);
         assert!(!dead.exists());
         assert!(live.exists());
         std::fs::remove_file(live).ok();
