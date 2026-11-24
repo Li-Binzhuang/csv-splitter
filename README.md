@@ -68,6 +68,7 @@ $ csvx serve --root .  # 本地 JSON API，打开 http://127.0.0.1:8787/ 就能�
 
 ## Roadmap / 路线图
 
+产品进化阶段与验收见 [docs/PRODUCT_PLAN.md](docs/PRODUCT_PLAN.md)；
 当前进度、北极星指标与后续里程碑见 [docs/ROADMAP.md](docs/ROADMAP.md)。
 
 ## Screenshots / 截图

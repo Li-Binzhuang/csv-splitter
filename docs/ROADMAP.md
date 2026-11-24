@@ -37,6 +37,12 @@
 - 每个里程碑最多一次 push；gate 绿、AOCI aligned、tree clean。
 - 商业化价格/合同/SLA 由用户确认，不自行承诺。
 
+## 产品进化计划（2026-11-24 起）
+
+产品形态与阶段验收见 [`PRODUCT_PLAN.md`](PRODUCT_PLAN.md)：
+S0 契约目录、S1 三端目录已完成；S2 typed operations、S3 preview/apply、
+S4 压缩输出/质量门禁/多文件、S5 薄前端、S6 报表、S7 数据库/xlsx 按顺序推进。
+
 ## Round 190 checkpoint（2026-11-24）
 
 自 Round 175 后新增/关闭：
