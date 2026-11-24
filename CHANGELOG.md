@@ -151,7 +151,8 @@
 - **View cursor**: `view --json` (and the MCP `csvx_view` tool) now returns
   `start`, `nextStart` and `hasMore`; clients can page without guessing counts.
 - **MCP cache stats**: `csvx_cache_stats` exposes materialize-cache hits/misses,
-  entries and bytes for the current server process.
+  entries and bytes; submitting it via `csvx_job_submit` returns `job_start_error`
+  because it is not a CLI command.
 - **Pipeline watch**: `csvx pipeline watch <plan>` reruns stale steps on an interval;
   supports failure backoff, `--max-failures`, JSON rounds, and an atomic `--state` file
   with last success/failure timestamps and round resume across restarts.

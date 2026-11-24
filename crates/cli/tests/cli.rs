@@ -7856,3 +7856,37 @@ fn pipeline_watch_stops_after_the_failure_cap() {
         "{stderr}"
     );
 }
+
+/// Server-only tools cannot be submitted to the CLI job runner.
+#[test]
+fn mcp_job_submit_rejects_the_cache_stats_tool() {
+    use std::io::Write;
+    use std::process::Stdio;
+    let dir = TempDir::new("mcp-job-server-tool");
+    let mut child = Command::new(bin())
+        .args(["mcp", "--root", dir.0.to_str().unwrap()])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    {
+        let stdin = child.stdin.as_mut().expect("stdin");
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":1,"method":"initialize","params":{{}}}}"#
+        )
+        .unwrap();
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{{"name":"csvx_job_submit","arguments":{{"tool":"csvx_cache_stats","arguments":{{}}}}}}}}"#
+        )
+        .unwrap();
+    }
+    drop(child.stdin.take());
+    let output = child.wait_with_output().unwrap();
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("server tool"), "{stdout}");
+    assert!(stdout.contains(r#""code":"job_start_error""#), "{stdout}");
+}
