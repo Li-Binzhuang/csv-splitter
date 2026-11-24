@@ -1,0 +1,107 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "b149e4be6116abfcec526acceb91c24d357aacf18c0d6840357c96d8b16f405a",
+  "batch_id": "e722b3ce7b3f40bdc351ca7498cd2be1a895276dd9ae023f3efae5cce8e2ca1d",
+  "composite_identity": "d90755257af932237194d3c55b1f8a668ba287205545aeee9bad4abe83ed44c7",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "4ed98c846a8a224bcb0807ff1129d3f762f923bbfa658a7efe62f6994bfc363c",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "create",
+      "source_sha256": "6ed9a83110debf4cd9bc3534822f914d778b6099208104983c2aa139a52e5c6d"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "f4020eb5b37d13ccadadd464b9a1a58f5b16b91e43ac475a096b9089be8b7905",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs,code:crates/core/src/xlsx.rs,code:crates/core/src/contract.rs | A:CLI 入口；convert xlsx 导出/只读导入/目录→多 sheet，--sheet 选工作表，check_output 防覆盖；report/gate/concat/edit/view/filter/watch | S:unique-global 成本高；report compare 限 root；xlsx 受 Excel 行上限；日期暂按数值；目录模式排除输出自身"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "7abde1401d0d8dfeb86cf98f7cbfd20e0024045c05c53047df159e60f0646fe5",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/xlsx.rs,code:crates/core/src/contract.rs | A:HTTP 读写/job；/ops；/report --root；/gate + uniqueGlobal；/rows ViewRequest；/edit typed；/concat；MCP 23 工具；initialize 带 Agent instructions；csvx://agent manifest（tools/workflow/safety） | S:uniqueGlobal 需配 unique；gate 目录聚合；out 规范化；report compare 限 root；MCP instructions 是行为提示不是权限；缓存 4 GiB/16"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "c892812e2c4142660a1e4958c6598eb3795bbbd9d405112be7cf6c9c7379d64b",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入现状：MCP instructions/manifest 已可用，HTTP API 计划 | R:code:crates/cli/src/serve.rs,code:docs/BIG_PLAN.md,code:docs/DSH_MODEL_TEST.md | A:MCP 配置；initialize instructions 六条；csvx://agent 字段；计划中 /agent/v1 manifest/sessions/actions/events/approvals/audit；token/审计/root 约束 | S:HTTP API 尚未实现，不写成已完成；无 GUI/多用户；模型 key 不入仓库"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BIG_PLAN.md",
+      "path": "docs/BIG_PLAN.md",
+      "change": "update",
+      "source_sha256": "c1b5b97bdef07d488b86535125497571f46e3b2a7b72ecd0ab250e4cb5ecbd4b",
+      "existing_entry": "BIG_PLAN.md[SW7S]: F:xlsx + Agent 原生后端的大计划：工作流、接口、里程碑、非目标 | R:code:docs/PRODUCT_PLAN.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/DSH_MODEL_TEST.md | A:M1 xlsx 导出、M2 导入/目录多 sheet 已落；M4 MCP instructions+csvx://agent 已落，HTTP 待做；M3 公式缓存/M5 runner；Agent API 端点与安全 | S:不写 GUI/多用户/宏；apply 需审批；计划中的 flag 未实现前不可写进帮助"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "2647eb722d81b7ce88302156776a9d73b58b4b78bb3b0a0a8e7de9e94716b00e",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:crates/core/src/engine.rs | A:公式、边界；filter 压缩；gate 文件/目录 + unique-global；concat；report spec/chart/compare/root；convert xlsx 单文件/目录/导入；typed view/apply；MCP 23 工具 + instructions + csvx://agent | S:report 无 GUI；xlsx 日期暂按数值；unique-global 成本高；HTTP Agent API 未实现"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "1082512aeda813fa13839be182ecfdd1392dfb4314bd458f957437a6060c6d12",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "create",
+      "source_sha256": "6ed9a83110debf4cd9bc3534822f914d778b6099208104983c2aa139a52e5c6d"
+    },
+    {
+      "candidate_id": "12b36dde73526b9616d1f08a6a4969ee2057113cf0aaf0461def830793bbce5d",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "f4020eb5b37d13ccadadd464b9a1a58f5b16b91e43ac475a096b9089be8b7905",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs,code:crates/core/src/xlsx.rs,code:crates/core/src/contract.rs | A:CLI 入口；convert xlsx 导出/只读导入/目录→多 sheet，--sheet 选工作表，check_output 防覆盖；report/gate/concat/edit/view/filter/watch | S:unique-global 成本高；report compare 限 root；xlsx 受 Excel 行上限；日期暂按数值；目录模式排除输出自身"
+    },
+    {
+      "candidate_id": "2f1ad69dab1f3f241bae52e4db332836835918a1a68ed99faac5fe8b4877ca94",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "7abde1401d0d8dfeb86cf98f7cbfd20e0024045c05c53047df159e60f0646fe5",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/xlsx.rs,code:crates/core/src/contract.rs | A:HTTP 读写/job；/ops；/report --root；/gate + uniqueGlobal；/rows ViewRequest；/edit typed；/concat；MCP 23 工具；initialize 带 Agent instructions；csvx://agent manifest（tools/workflow/safety） | S:uniqueGlobal 需配 unique；gate 目录聚合；out 规范化；report compare 限 root；MCP instructions 是行为提示不是权限；缓存 4 GiB/16"
+    },
+    {
+      "candidate_id": "6761c70bd7ca1df273aa8f355c7de59da09e492fedbefa21579b946dbdb45052",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "c892812e2c4142660a1e4958c6598eb3795bbbd9d405112be7cf6c9c7379d64b",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入现状：MCP instructions/manifest 已可用，HTTP API 计划 | R:code:crates/cli/src/serve.rs,code:docs/BIG_PLAN.md,code:docs/DSH_MODEL_TEST.md | A:MCP 配置；initialize instructions 六条；csvx://agent 字段；计划中 /agent/v1 manifest/sessions/actions/events/approvals/audit；token/审计/root 约束 | S:HTTP API 尚未实现，不写成已完成；无 GUI/多用户；模型 key 不入仓库"
+    },
+    {
+      "candidate_id": "ae5ceef6b22b4a2937df069533f957bee3514845854945db3fc3727fd63e9d8b",
+      "object_ref": "code:docs/BIG_PLAN.md",
+      "path": "docs/BIG_PLAN.md",
+      "change": "update",
+      "source_sha256": "c1b5b97bdef07d488b86535125497571f46e3b2a7b72ecd0ab250e4cb5ecbd4b",
+      "existing_entry": "BIG_PLAN.md[SW7S]: F:xlsx + Agent 原生后端的大计划：工作流、接口、里程碑、非目标 | R:code:docs/PRODUCT_PLAN.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/DSH_MODEL_TEST.md | A:M1 xlsx 导出、M2 导入/目录多 sheet 已落；M4 MCP instructions+csvx://agent 已落，HTTP 待做；M3 公式缓存/M5 runner；Agent API 端点与安全 | S:不写 GUI/多用户/宏；apply 需审批；计划中的 flag 未实现前不可写进帮助"
+    },
+    {
+      "candidate_id": "c3f62681bba841496d9d3f3df17ba85b4878092826cca68b4f010a79f1687683",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "2647eb722d81b7ce88302156776a9d73b58b4b78bb3b0a0a8e7de9e94716b00e",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:crates/core/src/engine.rs | A:公式、边界；filter 压缩；gate 文件/目录 + unique-global；concat；report spec/chart/compare/root；convert xlsx 单文件/目录/导入；typed view/apply；MCP 23 工具 + instructions + csvx://agent | S:report 无 GUI；xlsx 日期暂按数值；unique-global 成本高；HTTP Agent API 未实现"
+    }
+  ]
+}
