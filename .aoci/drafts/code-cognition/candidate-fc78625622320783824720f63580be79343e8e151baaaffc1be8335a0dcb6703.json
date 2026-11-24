@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "44d7892db423a6be6cc31509de7f2abaa5db569b2bfc808934601ed585e54c41",
+  "batch_id": "fc78625622320783824720f63580be79343e8e151baaaffc1be8335a0dcb6703",
+  "composite_identity": "91a26852985b41452b334f4134303d493ae98e0963403da50459ee49f37cfc8c",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "f23200dbc6d15311de983685699496e9306d919c148cef51cde2d680a64fafbf",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "update",
+      "source_sha256": "5d59569bdbe9eddf506163860132fb297a52aa1e0d1c72032306b9c05304adf6",
+      "existing_entry": "DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 + 官方 SDK | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs | A:一条命令演示版本号、filter/quality、watch JSON、18 个 MCP 工具、edit/undo/convert/job；Python 与官方 SDK 1.32.2 都跑通 pipeline 每步 progress、pipeline_status contentCheck、job wait progress、gzip materialize、cache 命中/清空/structuredContent；SDK progress 偶发合并（raw 10/10 为 2，SDK 10 次 1 次为 1）；release 旧于 src 时 demo 拒绝运行 | S:演示全程本地、无 GUI、无网络、无 xlsx；终端输出必须与脚本一致；npm 依赖只在 scripts/mcp_sdk；CSVX_DEMO_BUILD=1 可自动重建；gzip 不存在时跳过压缩段"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/mcp_client.py",
+      "path": "scripts/mcp_client.py",
+      "change": "update",
+      "source_sha256": "1ced79bc267b9ca39f09f0dbf8125874b3da8f8e4813ac9a038f5ba5166b5ab0",
+      "existing_entry": "mcp_client.py[XQ7S]: F:无依赖 MCP stdio 客户端，供端到端演示 | R:code:scripts/demo_end_to_end.sh | A:spawn csvx mcp；initialize/notifications、tools/list、tools/call；示例调用 schema/filter/view/edit_set/undo/convert/job_submit/job_status；plan.csv 存在时 pipeline_status 带 contentCheck；orders.csv.gz 存在时两次 search materialize 并调 cache_stats/clear 打印命中/条目/清空；所有结果按 JSON 解析 | S:只用于本地演示；必须处理 job 轮询超时并以非零退出；不得写入 MCP root 之外"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "3433cc8f9da81ab548a2d1d21f170a6587dac2713ea0f924b40fd0b5ccdb568f",
+      "existing_entry": "client.mjs[XQ7T]: F:官方 MCP SDK 兼容性客户端（Node） | R:code:scripts/mcp_sdk/package.json,code:docs/DEMO.md | A:用 @modelcontextprotocol/sdk Client + StdioClientTransport；env CSVX_BIN/ROOT/FILE；覆盖 tools/list、schema/filter/view、edit_set/undo、convert、job_submit；plan.csv 存在时 pipeline_run 带 contentCheck 并用 onprogress 收每步通知，pipeline_status 也带 contentCheck；orders.csv.gz 存在时两次 search materialize，再调 cache_stats/clear 打印命中/清空；job_status wait 也带 onprogress 并检查 structuredContent.ok | S:仅演示；npm 依赖不进 Rust 构建；job 超时非零退出；路径在 root 内"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4ac6b34e7e56923df9e3f83a4747b948cf9dde6c78d5db606107244ea64d7e21",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "update",
+      "source_sha256": "5d59569bdbe9eddf506163860132fb297a52aa1e0d1c72032306b9c05304adf6",
+      "existing_entry": "DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 + 官方 SDK | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs | A:一条命令演示版本号、filter/quality、watch JSON、18 个 MCP 工具、edit/undo/convert/job；Python 与官方 SDK 1.32.2 都跑通 pipeline 每步 progress、pipeline_status contentCheck、job wait progress、gzip materialize、cache 命中/清空/structuredContent；SDK progress 偶发合并（raw 10/10 为 2，SDK 10 次 1 次为 1）；release 旧于 src 时 demo 拒绝运行 | S:演示全程本地、无 GUI、无网络、无 xlsx；终端输出必须与脚本一致；npm 依赖只在 scripts/mcp_sdk；CSVX_DEMO_BUILD=1 可自动重建；gzip 不存在时跳过压缩段"
+    },
+    {
+      "candidate_id": "629360d1812ad4ade9857107ac6c1c84ea3b9b8544e432ca9d02856811c8dca2",
+      "object_ref": "code:scripts/mcp_client.py",
+      "path": "scripts/mcp_client.py",
+      "change": "update",
+      "source_sha256": "1ced79bc267b9ca39f09f0dbf8125874b3da8f8e4813ac9a038f5ba5166b5ab0",
+      "existing_entry": "mcp_client.py[XQ7S]: F:无依赖 MCP stdio 客户端，供端到端演示 | R:code:scripts/demo_end_to_end.sh | A:spawn csvx mcp；initialize/notifications、tools/list、tools/call；示例调用 schema/filter/view/edit_set/undo/convert/job_submit/job_status；plan.csv 存在时 pipeline_status 带 contentCheck；orders.csv.gz 存在时两次 search materialize 并调 cache_stats/clear 打印命中/条目/清空；所有结果按 JSON 解析 | S:只用于本地演示；必须处理 job 轮询超时并以非零退出；不得写入 MCP root 之外"
+    },
+    {
+      "candidate_id": "f73ef4e8b425338b48a39df4fb9616765c49ebd9e3d568e9c67d0e663cf1955b",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "3433cc8f9da81ab548a2d1d21f170a6587dac2713ea0f924b40fd0b5ccdb568f",
+      "existing_entry": "client.mjs[XQ7T]: F:官方 MCP SDK 兼容性客户端（Node） | R:code:scripts/mcp_sdk/package.json,code:docs/DEMO.md | A:用 @modelcontextprotocol/sdk Client + StdioClientTransport；env CSVX_BIN/ROOT/FILE；覆盖 tools/list、schema/filter/view、edit_set/undo、convert、job_submit；plan.csv 存在时 pipeline_run 带 contentCheck 并用 onprogress 收每步通知，pipeline_status 也带 contentCheck；orders.csv.gz 存在时两次 search materialize，再调 cache_stats/clear 打印命中/清空；job_status wait 也带 onprogress 并检查 structuredContent.ok | S:仅演示；npm 依赖不进 Rust 构建；job 超时非零退出；路径在 root 内"
+    }
+  ]
+}
