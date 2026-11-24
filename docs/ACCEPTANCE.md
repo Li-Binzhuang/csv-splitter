@@ -254,6 +254,7 @@ bash scripts/package_release.sh      # 打包并 verify_dist
 | 多文件/目录 | `concat` CLI/HTTP/MCP；`gate` 目录 | HTTP 目录排序并排除输出；4M 行 concat 0.59 s（MCP） |
 | 跨文件唯一性 | `gate --unique-global` / `uniqueGlobal` | 4M 行、2 文件：7.03 s，短失败原因 |
 | 报表 spec | `report` CLI/HTTP/MCP | summary/columns/quality/groups/chart SVG/compare/rows；内联 `specText` |
+| 报表 count chart | `chart,city` | 2M 行：Markdown 0.44 s / 147 B；HTML SVG 0.48 s / 872 B |
 | 报表安全 | HTTP/MCP `--root` | compare 第二文件路径不能越 root |
 | 发布包 HTTP | `smoke_http.py` | 7/7 检查通过（含 opt-in viewer 可达），errors=[] |
 
