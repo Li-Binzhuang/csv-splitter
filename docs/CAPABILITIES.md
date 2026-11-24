@@ -221,7 +221,9 @@ delimiter 检测也读解压后的内容。压缩流不可 seek，因此自动�
 
 ### MCP（B agent 后端，只读首版）
 
-`mcp --root DIR` 在 stdio 上跑 JSON-RPC MCP server，stdout 只走协议，工具只读：
+`mcp --root DIR` 在 stdio 上跑 JSON-RPC MCP server，stdout 只走协议；`initialize`
+声明 `tools` 与 `resources`，资源 `csvx://operations` 返回与 CLI `ops --json`、`GET /ops`
+同一份操作目录。工具只读：
 
 - `csvx_schema`：列、类型、行数。
 - `csvx_view`：`start/count` 分页、可选 `where`；JSON 返回 `start/nextStart/hasMore`

@@ -2761,6 +2761,9 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
             r#"{"jsonrpc":"2.0","id":10,"method":"no/such/method"}"#,
             r#"{"jsonrpc":"2.0","id":11,"method":"tools/call","params":{"name":"csvx_nope","arguments":{}}}"#,
             r#"{"jsonrpc":"2.0","id":12,"method":"tools/call","params":{"name":"csvx_schema","arguments":{"path":"../escape.csv"}}}"#,
+            r#"{"jsonrpc":"2.0","id":13,"method":"resources/list"}"#,
+            r#"{"jsonrpc":"2.0","id":14,"method":"resources/read","params":{"uri":"csvx://operations"}}"#,
+            r#"{"jsonrpc":"2.0","id":15,"method":"resources/read","params":{"uri":"csvx://missing"}}"#,
             r#"not-json"#,
         ] {
             writeln!(stdin, "{line}").unwrap();
@@ -2778,6 +2781,11 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
         stdout.contains(r#""protocolVersion":"2024-11-05""#),
         "{stdout}"
     );
+    assert!(stdout.contains(r#""resources":{}"#), "{stdout}");
+    assert!(stdout.contains(r#""uri":"csvx://operations""#), "{stdout}");
+    assert!(stdout.contains("operations"), "{stdout}");
+    assert!(stdout.contains("unknown resource"), "{stdout}");
+    assert!(stdout.contains(r#""code":-32002"#), "{stdout}");
     assert!(stdout.contains(r#""name":"csvx_schema""#), "{stdout}");
     assert!(stdout.contains(r#""isError":false"#), "{stdout}");
     assert!(stdout.contains("Puebla"), "{stdout}");

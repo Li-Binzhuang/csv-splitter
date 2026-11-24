@@ -2926,6 +2926,20 @@ fn array_after(body: &str, marker: &str) -> Vec<String> {
         .collect()
 }
 
+/// `/ops` is the HTTP half of the shared contract; it must not be a separate copy.
+#[test]
+fn ops_endpoint_publishes_the_shared_contract() {
+    let dir = TempDir::new("ops-endpoint");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n").unwrap();
+    let server = start(&dir.0);
+    let (code, body) = get(&server.addr, "/ops");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""version":"4.2.0""#), "{body}");
+    assert!(body.contains(r#""name":"edit_apply""#), "{body}");
+    assert!(body.contains(r#""errorCodes":["#), "{body}");
+    assert!(body.contains(r#""effect":"job""#), "{body}");
+}
+
 /// `/spec` must describe the server that is answering: the fields it lists are the
 /// fields a response actually has.
 #[test]

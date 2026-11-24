@@ -485,6 +485,7 @@ fn handle(
         "/columns" => columns_endpoint(&mut stream, root, &params),
         "/capabilities" => capabilities_endpoint(&mut stream),
         "/spec" => spec_endpoint(&mut stream),
+        "/ops" => respond_json(&mut stream, 200, &csvx_core::contract::operations_json()),
         "/schema" => {
             if params.contains_key("diff") {
                 schema_diff_endpoint(&mut stream, root, &params)
@@ -640,6 +641,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     ("/health", &[]),
     ("/capabilities", &[]),
     ("/spec", &[]),
+    ("/ops", &[]),
     ("/metrics", &[]),
     ("/parquet", &["path", "delim"]),
     (
@@ -839,6 +841,7 @@ const SPEC_FIELDS: &[(&str, &[&str])] = &[
         ],
     ),
     ("/spec", &[]),
+    ("/ops", &["version", "operations", "errorCodes"]),
 ];
 
 /// Every GET route this server answers, in one place.
@@ -858,6 +861,7 @@ const READ_ROUTES: &[&str] = &[
     "/sheet",
     "/capabilities",
     "/spec",
+    "/ops",
     "/metrics",
     "/book",
     "/pivot",
@@ -8789,7 +8793,7 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
         let response = match method {
             "initialize" => {
                 let result = format!(
-                    r#"{{"protocolVersion":"2024-11-05","capabilities":{{"tools":{{}}}},"serverInfo":{{"name":"csvx","version":{}}}}}"#,
+                    r#"{{"protocolVersion":"2024-11-05","capabilities":{{"tools":{{}},"resources":{{}}}},"serverInfo":{{"name":"csvx","version":{}}}}}"#,
                     mcp_quote(env!("CARGO_PKG_VERSION"))
                 );
                 mcp_result(id, &result)
@@ -8799,6 +8803,26 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
             "tools/list" => {
                 let result = format!(r#"{{"tools":{}}}"#, mcp_tools());
                 mcp_result(id, &result)
+            }
+            "resources/list" => {
+                let result = r#"{"resources":[{"uri":"csvx://operations","name":"operations","description":"Shared CLI/HTTP/MCP operation catalog (JSON)","mimeType":"application/json"}]}"#;
+                mcp_result(id, result)
+            }
+            "resources/read" => {
+                let uri = request
+                    .get("params")
+                    .and_then(|envelope| envelope.get("uri"))
+                    .and_then(McpJson::as_str)
+                    .unwrap_or("");
+                if uri == "csvx://operations" {
+                    let result = format!(
+                        r#"{{"contents":[{{"uri":"csvx://operations","mimeType":"application/json","text":{}}}]}}"#,
+                        mcp_quote(&csvx_core::contract::operations_json())
+                    );
+                    mcp_result(id, &result)
+                } else {
+                    mcp_error(id, -32002, "unknown resource")
+                }
             }
             "tools/call" => {
                 let name = request

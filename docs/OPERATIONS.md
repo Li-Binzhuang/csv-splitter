@@ -1,7 +1,7 @@
 # 操作契约层 / Operations Contract
 
-状态：**Stage 1 已落地**（2026-11-24）  
-范围：`crates/core/src/contract.rs`、`csvx ops --json`
+状态：**Stage 1 已完成；Stage 2 目录部分已落地**（2026-11-24）  
+范围：`crates/core/src/contract.rs`、`csvx ops --json`、`GET /ops`、MCP `csvx://operations`
 
 ## 问题 / Context
 
@@ -42,7 +42,7 @@ MCP adapter ─┘        │
 
 ## 当前目录 / Current catalog
 
-`csvx ops --json` 输出：
+`csvx ops --json`、`GET /ops` 与 MCP `csvx://operations` 输出同一份：
 
 ```json
 {
@@ -64,9 +64,9 @@ MCP adapter ─┘        │
 - 目录 + 错误码 + 效果 + CLI `ops`；
 - 单元测试锁住唯一名称与 JSON 结构。
 
-**Stage 2**
-- 把 `schema`、`view`、`filter` 的请求/响应类型移入 core；
-- HTTP 的 `/ops` 与 MCP 的目录返回同一份 `operations_json()`；
+**Stage 2（目录部分已完成）**
+- HTTP `GET /ops` 与 MCP `csvx://operations` 返回同一份 `operations_json()`；
+- 剩余：把 `schema`、`view`、`filter` 的请求/响应类型移入 core；
 - CLI 只做字符串到类型的适配。
 
 **Stage 3**
@@ -80,7 +80,7 @@ MCP adapter ─┘        │
 
 ## 验收 / Acceptance
 
-- `csvx ops --json` 与未来 `GET /ops`、MCP 目录返回同一版本/同一操作集合；
+- `csvx ops --json`、`GET /ops`、MCP `csvx://operations` 返回同一版本/同一操作集合；
 - 任一操作的 effect 变更会同时被 CLI/HTTP/MCP 测试发现；
 - 错误码改动必须过契约测试；
 - `preview` 不产生 journal/output 字节；`apply` 失败不写半条。
