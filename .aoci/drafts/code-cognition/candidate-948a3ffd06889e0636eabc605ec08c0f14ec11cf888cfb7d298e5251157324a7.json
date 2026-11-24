@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "336a721e5ef18630ae61e7537f2a403e994cf7901bbdf32f14ad1faf48eb8048",
+  "batch_id": "948a3ffd06889e0636eabc605ec08c0f14ec11cf888cfb7d298e5251157324a7",
+  "composite_identity": "756cc6dcb7b6c26e72982189c27c9e518be7c497e4229df387e75df459d771f8",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "d7d70c606e5734e7170849ad37dd15d34c72711b365bcef5edfd3b9df7352cf3",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "8d38fe68dc3a156aa84a5f8427c45d1bfcc0d578416ff4dc6b2059063290a478",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 读写与 job；stdio JSON-RPC；18 工具（schema/view/filter/search/quality/pipeline*、edit*、convert、job*、cache_stats/clear）；pipeline_status 支持 verify/contentCheck；pipeline_run 接受 dag/jobs/clean/contentCheck；job_status 支持 0–30s wait，有 token 时发 progress，返回 structuredContent ok/code；job_cancel kill；job_list 默认摘要，full=true 完整；未知工具先判身份；父目录组件在 canonicalize 前拒绝 | S:strict 参数未登记即 400；MCP stdout 只走协议；search/filter 支持 materialize 且 server 缓存解压结果（4 GiB/16 项 LRU，env 可调，非法警告一次，启动清死 PID）；已完成 job 历史上限 128，淘汰最旧并删 out/err；退出取消运行中 job 并清输出；单测 129→127+插入=128、kill/文件；cache_stats readOnlyHint、cache_clear destructive/idempotent，均删临时文件/不可 job；job_submit 白名单：cache_stats/clear 与未知/非 CLI 直接 job_start_error；错误码分 unknown_tool/unknown_job/path_escape/cli_error/job_start_error；progress 覆盖 job wait 与 pipeline CSVX_STEP i/n（带 total）；tools/list 必须能被 McpParser 解析"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "82920b58d2ec48fe1845dba586e1eea1d6c05bde405c8c623ef4847dbc205568",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "8d38fe68dc3a156aa84a5f8427c45d1bfcc0d578416ff4dc6b2059063290a478",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 读写与 job；stdio JSON-RPC；18 工具（schema/view/filter/search/quality/pipeline*、edit*、convert、job*、cache_stats/clear）；pipeline_status 支持 verify/contentCheck；pipeline_run 接受 dag/jobs/clean/contentCheck；job_status 支持 0–30s wait，有 token 时发 progress，返回 structuredContent ok/code；job_cancel kill；job_list 默认摘要，full=true 完整；未知工具先判身份；父目录组件在 canonicalize 前拒绝 | S:strict 参数未登记即 400；MCP stdout 只走协议；search/filter 支持 materialize 且 server 缓存解压结果（4 GiB/16 项 LRU，env 可调，非法警告一次，启动清死 PID）；已完成 job 历史上限 128，淘汰最旧并删 out/err；退出取消运行中 job 并清输出；单测 129→127+插入=128、kill/文件；cache_stats readOnlyHint、cache_clear destructive/idempotent，均删临时文件/不可 job；job_submit 白名单：cache_stats/clear 与未知/非 CLI 直接 job_start_error；错误码分 unknown_tool/unknown_job/path_escape/cli_error/job_start_error；progress 覆盖 job wait 与 pipeline CSVX_STEP i/n（带 total）；tools/list 必须能被 McpParser 解析"
+    }
+  ]
+}
