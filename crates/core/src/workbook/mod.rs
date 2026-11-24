@@ -49,8 +49,9 @@ pub use rows::{
 pub use transaction::{append_atomically, parse_ops, TransactionError, TransactionErrorKind};
 
 pub use export::{
-    export, export_filtered, export_quotes, export_selected, find_row, logical_rows, rows_by_keys,
-    runs_matching, window, ExportOptions, ExportSummary, Pager, Window,
+    clear_window_cache, export, export_filtered, export_quotes, export_selected, find_row,
+    logical_rows, rows_by_keys, runs_matching, window, window_cache_stats, ExportOptions,
+    ExportSummary, Pager, Window,
 };
 
 use std::io::{self, BufReader, BufWriter, Write};

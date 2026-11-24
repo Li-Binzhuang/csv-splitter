@@ -106,6 +106,7 @@
 | 分页浏览（筛选/排序都看编辑后的值） | `view f.csv [--where EXPR] [--order COL[--desc]] [--find TEXT [--regex] [--nth N] [--context N]] [--start N] [--count M] [--json]` | `GET /rows?where=` |
 | 查找替换 | `edit replace --from X --to Y [--col C]` | `action=replace` |
 | 删列/改名 | `edit drop --name C` / `edit rename` | `action=drop/rename` |
+| 公式读窗口缓存 | `workbook::window` 按文件+journal+窗口缓存；`cache_clear` 清空，`cache_stats` 返回 windowHits/windowMisses | 2k 行 0.040→0.007 s，见 `docs/FORMULA_CACHE.md` |
 | 公式列（新增） | `edit formula --name N --value "EXPR"` | `POST /edit?action=formula&name=&value=` |
 | 公式列（**重算已有列**） | `edit set-formula --col C --value "EXPR"` | `POST /edit?action=set-formula&col=&value=`（自引用/未知列写入前拒绝）|
 | 原子批量写（失败全不写；一次撤销/重做整批） | `edit transaction --ops 'set:1:city:X;delete:2:1;insert:4:a,b'`；`--dry-run` 校验并报告 rows/affected ranges/journal hash，不写 journal | `POST /edit?action=transaction&ops=`；`&preview=1` 同样只读 |

@@ -842,7 +842,125 @@ pub fn window(
     count: u64,
     delimiter: Delimiter,
 ) -> io::Result<Window> {
-    Pager::open(base, ops, delimiter)?.page(start, count)
+    // Formula columns are evaluated on read. A page that lands on the same
+    // file+journal+window should not pay for that twice; the key includes the
+    // journal ops and the base file's size/mtime, so an edit or a fresh export
+    // invalidates it automatically.
+    let key = window_cache_key(base, ops, start, count, delimiter);
+    if let Ok(cache) = window_cache().lock() {
+        if let Some(window) = cache.get(&key) {
+            WINDOW_CACHE_HITS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            return Ok(window.clone());
+        }
+    }
+    WINDOW_CACHE_MISSES.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let window = Pager::open(base, ops, delimiter)?.page(start, count)?;
+    if let Ok(mut cache) = window_cache().lock() {
+        if cache.len() >= WINDOW_CACHE_CAPACITY {
+            cache.clear();
+        }
+        cache.insert(key, window.clone());
+    }
+    Ok(window)
+}
+
+const WINDOW_CACHE_CAPACITY: usize = 64;
+static WINDOW_CACHE_HITS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+static WINDOW_CACHE_MISSES: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+fn window_cache() -> &'static std::sync::Mutex<std::collections::HashMap<String, Window>> {
+    static CACHE: std::sync::OnceLock<std::sync::Mutex<std::collections::HashMap<String, Window>>> =
+        std::sync::OnceLock::new();
+    CACHE.get_or_init(|| std::sync::Mutex::new(std::collections::HashMap::new()))
+}
+
+fn window_cache_key(
+    base: &Path,
+    ops: &[Op],
+    start: u64,
+    count: u64,
+    delimiter: Delimiter,
+) -> String {
+    let metadata = std::fs::metadata(base).ok();
+    let len = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
+    let modified = metadata
+        .and_then(|m| m.modified().ok())
+        .and_then(|m| m.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    format!(
+        "{}\u{1f}{len}\u{1f}{modified}\u{1f}{}\u{1f}{delimiter:?}\u{1f}{start}\u{1f}{count}",
+        base.display(),
+        ops.len(),
+        delimiter = delimiter
+    ) + &format!("{:?}", ops)
+}
+
+/// Cache hits/misses since the process started, for diagnostics and tests.
+#[allow(dead_code)]
+pub fn window_cache_stats() -> (u64, u64) {
+    (
+        WINDOW_CACHE_HITS.load(std::sync::atomic::Ordering::Relaxed),
+        WINDOW_CACHE_MISSES.load(std::sync::atomic::Ordering::Relaxed),
+    )
+}
+
+/// Test/diagnostic hook: clear the read-window cache and reset its counters.
+#[allow(dead_code)]
+pub fn clear_window_cache() {
+    if let Ok(mut cache) = window_cache().lock() {
+        cache.clear();
+    }
+    WINDOW_CACHE_HITS.store(0, std::sync::atomic::Ordering::Relaxed);
+    WINDOW_CACHE_MISSES.store(0, std::sync::atomic::Ordering::Relaxed);
+}
+
+#[cfg(test)]
+mod window_cache_tests {
+    use super::*;
+
+    fn temp(tag: &str) -> std::path::PathBuf {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let path = std::env::temp_dir().join(format!("csvx_cache_{tag}_{nanos}"));
+        std::fs::create_dir_all(&path).unwrap();
+        path
+    }
+
+    #[test]
+    fn a_window_is_reused_and_invalidated_by_data_or_journal() {
+        let dir = temp("window");
+        let base = dir.join("t.csv");
+        std::fs::write(&base, "id,amount\n1,10\n2,20\n").unwrap();
+        clear_window_cache();
+        let ops = vec![Op::AddColumn {
+            name: "double".into(),
+            formula: "amount * 2".into(),
+        }];
+        let first = window(&base, &ops, 0, 2, Delimiter::Comma).unwrap();
+        let (hits_before, _misses) = window_cache_stats();
+        let index = first.columns.iter().position(|c| c == "double").unwrap();
+        assert_eq!(first.rows[0][index], "20");
+        let second = window(&base, &ops, 0, 2, Delimiter::Comma).unwrap();
+        let (hits_after, _misses) = window_cache_stats();
+        assert!(hits_after > hits_before);
+        assert_eq!(second.rows[1][index], "40");
+
+        // A file change and a journal change both produce a different key.
+        std::fs::write(&base, "id,amount\n1,10\n2,20\n3,30\n").unwrap();
+        let after = window(&base, &ops, 0, 2, Delimiter::Comma).unwrap();
+        assert_eq!(after.total, 3);
+        let ops2 = vec![Op::AddColumn {
+            name: "double".into(),
+            formula: "amount * 3".into(),
+        }];
+        let journal = window(&base, &ops2, 0, 1, Delimiter::Comma).unwrap();
+        let index = journal.columns.iter().position(|c| c == "double").unwrap();
+        assert_eq!(journal.rows[0][index], "30");
+        std::fs::remove_dir_all(dir).ok();
+    }
 }
 
 #[cfg(test)]
