@@ -6222,6 +6222,10 @@ fn gate_endpoint_can_require_global_uniqueness() {
     assert_eq!(code, 200, "{body}");
     assert!(body.contains(r#""passed":false"#), "{body}");
     assert!(body.contains(r#""uniqueGlobal":{"passed":false"#), "{body}");
+    assert!(
+        body.contains("unique column has duplicates across files"),
+        "{body}"
+    );
 }
 
 /// The HTTP undo honours the same transaction boundary as the CLI.

@@ -7771,6 +7771,10 @@ fn gate_directory_can_require_global_uniqueness() {
     let text = String::from_utf8_lossy(&global.stdout);
     assert!(text.contains(r#""uniqueGlobal":{"passed":false"#), "{text}");
     assert!(text.contains("uniqueDuplicates"), "{text}");
+    assert!(
+        text.contains("unique column has duplicates across files"),
+        "{text}"
+    );
 }
 
 /// A CSV spec drives a deterministic Markdown/HTML report; values are escaped.

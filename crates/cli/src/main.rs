@@ -6100,7 +6100,12 @@ fn gate_directory(
                     Ok(result) if result.status.success() => {}
                     Ok(result) => {
                         global_passed = false;
-                        global_failure = String::from_utf8_lossy(&result.stdout).trim().to_string();
+                        let detail = String::from_utf8_lossy(&result.stdout);
+                        global_failure = if detail.contains("\"uniqueDuplicates\":true") {
+                            "unique column has duplicates across files".to_string()
+                        } else {
+                            format!("unique check failed: {}", detail.trim())
+                        };
                     }
                     Err(error) => {
                         global_passed = false;
