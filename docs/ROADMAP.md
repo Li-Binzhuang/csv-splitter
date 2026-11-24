@@ -37,6 +37,18 @@
 - 每个里程碑最多一次 push；gate 绿、AOCI aligned、tree clean。
 - 商业化价格/合同/SLA 由用户确认，不自行承诺。
 
+## Round 150 checkpoint（2026-11-24）
+
+自 Round 137 后新增/关闭：
+- watch `--state` 生命周期完整：轮次续接、失败计数持久、`--max-failures` 跨重启生效、
+  `lastError` 落盘与重启时打印上次原因；
+- MCP 17 工具与 cache_stats 已在 Python/官方 SDK demo 中命中；
+- job_submit 通用 CLI 白名单；
+- 最新 2 GB+ gzip drill 4.914→1.726 s / 82 MB，与 4.545→1.590 同量级；
+- 离线包重建并自验（SHA `c0f3c55f`）。
+
+技术侧仍无新的高价值缺口；真实客户试点由用户决定。
+
 ## Round 137 checkpoint（2026-11-24）
 
 自 Round 113 后新增/关闭：
