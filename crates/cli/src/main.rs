@@ -2387,6 +2387,20 @@ fn cmd_view(args: &[String]) -> i32 {
         }
         let _ = std::fs::remove_file(path);
         page_total = None;
+    } else if order.is_none() && where_expr.is_none() && find.is_none() {
+        let request = csvx_core::ops::ViewRequest {
+            path: input.clone(),
+            delimiter,
+            start,
+            count,
+        };
+        let response = match request.execute() {
+            Ok(response) => response,
+            Err(e) => return report_failure("view", e.to_string()),
+        };
+        columns = response.window.columns;
+        rows = response.window.rows;
+        page_total = Some(response.window.total);
     } else {
         // `--find` turns "search then copy the row number" into one command: the
         // match is located first, and the page is centred on it.

@@ -69,7 +69,8 @@ MCP adapter ─┘        │
 - 已新增 `core::ops` 的 `SchemaRequest/Response`、`ViewRequest/Response`、`FilterRequest/Response`；
 - `schema` 的 CLI 与 HTTP 已改用 `SchemaRequest`（含 pristine sample / edited response）；
 - `filter` 的 CLI 与 HTTP 已改用 `FilterRequest`（CLI `execute_fast`，HTTP `execute_page` 保留 cursor/预算）；
-- 剩余：`view` 的 adapter 迁移；
+- `view` 的 CLI 简单路径（无 order/where/find）已改用 `ViewRequest`；
+- 剩余：`view` 的 HTTP `/rows` 与复杂 CLI 路径；
 - CLI 只做字符串到类型的适配。
 
 **Stage 3**
