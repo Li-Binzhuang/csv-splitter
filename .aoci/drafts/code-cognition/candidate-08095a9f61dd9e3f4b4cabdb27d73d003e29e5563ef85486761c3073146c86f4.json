@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "03b1306d3de350b3571abced87f7fffbb58a0350ec2d71a31b8d9e57137cc283",
+  "batch_id": "08095a9f61dd9e3f4b4cabdb27d73d003e29e5563ef85486761c3073146c86f4",
+  "composite_identity": "b1d0135df70121460c19059ebe32790354e9eb2d32e5ea16ef65cc993baa197b",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b88b81c6fc200352aebb2698066f86fa1c3c60ed30c1476ba2f66ee04e71a9c7",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "c32a7829fa93a6a3d53bf83fba4f03b2e827a1484af1d0943ab0baab488c3d83",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，打包脚本末尾自动 verify_dist，失败时删半成品 tar/sha；解包冒烟通过（--version、watch nextDelayMs、18/18 annotations）；pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2；MCP 缓存 2 GB+ gzip 4.545→1.590 s/82 MB；18 annotations（demo）；18 工具/cache_stats+clear（stale，demo 命中/清空/死进程/复查 0，均不可 job）、watch --state/nextDelay | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "a3a113bb299ed95361a38dff4c5e1bee6929cd0d715f718516860475ee11e5ee",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "c32a7829fa93a6a3d53bf83fba4f03b2e827a1484af1d0943ab0baab488c3d83",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，打包脚本末尾自动 verify_dist，失败时删半成品 tar/sha；解包冒烟通过（--version、watch nextDelayMs、18/18 annotations）；pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2；MCP 缓存 2 GB+ gzip 4.545→1.590 s/82 MB；18 annotations（demo）；18 工具/cache_stats+clear（stale，demo 命中/清空/死进程/复查 0，均不可 job）、watch --state/nextDelay | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ]
+}
