@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "17519ec6a8e3bb29711ecd0e78613cdf38260d826c65253072d6335c41732a37",
+  "batch_id": "b3bb5546c1a2224fc52a648680191ac378fa8f854deb2dc7eee739eadc3722ac",
+  "composite_identity": "9cc822f124c8883dce8f004d2cfa7879ba2be548b46b0c7728150713d87203cf",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "f08f8d504c4e38069a9de9435305bc991020f8c13f5341c98909b42af7fd4bc0",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "44010af952a5d16f212e5af2bdacdbb4df05de9cd28e837219f16b4566460917",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，打包脚本末尾自动 verify_dist，失败时删半成品 tar/sha；pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2、SDK pipeline progress 与 job progress；macOS gate dispatch 45198239384 12m21s 与 push 45202447374 11m32s 均 success；MCP 缓存 2 GB+ gzip 4.545→1.590 s/82 MB；含 17 工具/cache_stats（不可 job）、watch/--json/退避/--max-failures/--state（时间戳/轮次）、job 保留/退出取消、LRU/hits | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "8ff92daab7640a8924a5355e1ab307d5dc88018d188810cc447000e2545acaf7",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "44010af952a5d16f212e5af2bdacdbb4df05de9cd28e837219f16b4566460917",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，打包脚本末尾自动 verify_dist，失败时删半成品 tar/sha；pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2、SDK pipeline progress 与 job progress；macOS gate dispatch 45198239384 12m21s 与 push 45202447374 11m32s 均 success；MCP 缓存 2 GB+ gzip 4.545→1.590 s/82 MB；含 17 工具/cache_stats（不可 job）、watch/--json/退避/--max-failures/--state（时间戳/轮次）、job 保留/退出取消、LRU/hits | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ]
+}
