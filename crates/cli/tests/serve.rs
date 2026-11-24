@@ -6077,6 +6077,34 @@ fn a_transaction_preview_does_not_write() {
     assert!(!rows.contains('Q'), "a rejected preview wrote: {rows}");
 }
 
+/// GET /report runs the same CSV-spec renderer as `csvx report` and returns the
+/// rendered body, not a JSON envelope.
+#[test]
+fn report_endpoint_renders_markdown_and_html() {
+    let dir = TempDir::new("http_report");
+    std::fs::write(dir.join("t.csv"), "id,city,amount\n1,CDMX,10\n2,<x>,20\n").unwrap();
+    std::fs::write(
+        dir.join("spec.csv"),
+        "title,HTTP report\nsummary,\ngroups,city:amount:sum\n",
+    )
+    .unwrap();
+    let server = start(&dir.0.clone());
+    let (code, body) = get(&server.addr, "/report?path=t.csv&spec=spec.csv");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.starts_with("# HTTP report"), "{body}");
+    assert!(body.contains("## Groups: city · sum(amount)"), "{body}");
+
+    let (code, body) = get(&server.addr, "/report?path=t.csv&spec=spec.csv&format=html");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.starts_with("<!doctype html>"), "{body}");
+    assert!(body.contains("&lt;"), "html escaping: {body}");
+
+    let (code, _) = get(&server.addr, "/report?path=t.csv&spec=missing.csv");
+    assert_eq!(code, 400);
+    let (code, _) = get(&server.addr, "/report?path=t.csv&spec=../escape.csv");
+    assert_eq!(code, 400);
+}
+
 /// The HTTP undo honours the same transaction boundary as the CLI.
 #[test]
 fn a_transaction_is_undone_in_one_step_over_http() {

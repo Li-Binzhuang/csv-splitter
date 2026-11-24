@@ -486,6 +486,7 @@ fn handle(
         "/capabilities" => capabilities_endpoint(&mut stream),
         "/spec" => spec_endpoint(&mut stream),
         "/ops" => respond_json(&mut stream, 200, &csvx_core::contract::operations_json()),
+        "/report" => report_endpoint(&mut stream, root, &params),
         "/schema" => {
             if params.contains_key("diff") {
                 schema_diff_endpoint(&mut stream, root, &params)
@@ -581,6 +582,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
         ],
     ),
     ("/download", &["path", "delim"]),
+    ("/report", &["path", "spec", "format", "title"]),
     ("/analyze", &["path", "distinctCap", "apply-edits", "delim"]),
     ("/", &[]),
     ("/validate", &["path", "checks", "delim", "limit"]),
@@ -762,6 +764,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
 
 /// Response fields, per route. Empty means "not JSON" (files, jobs with their own shape).
 const SPEC_FIELDS: &[(&str, &[&str])] = &[
+    ("/report", &[]),
     (
         "/rows",
         &[
@@ -863,6 +866,7 @@ const READ_ROUTES: &[&str] = &[
     "/spec",
     "/ops",
     "/metrics",
+    "/report",
     "/book",
     "/pivot",
     "/style",
@@ -904,6 +908,7 @@ const PATH_REQUIRED: &[&str] = &[
     "/download",
     "/export",
     "/query",
+    "/report",
 ];
 
 /// Every POST route, same rule.
@@ -4744,6 +4749,103 @@ fn respond_window_as_csv(
         "inline",
         body.as_bytes(),
     )
+}
+
+/// `GET /report?path=data.csv&spec=spec.csv&format=md` renders the same report
+/// as `csvx report`, returning the body as text (the CLI remains the writer).
+fn report_endpoint(
+    stream: &mut TcpStream,
+    root: &Path,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
+    };
+    let Some(spec_raw) = params.get("spec").filter(|s| !s.trim().is_empty()) else {
+        return bad_request(
+            stream,
+            "spec is required",
+            "spec",
+            "pass spec=report.csv (a section,arg file inside the root)",
+        );
+    };
+    let spec = match resolve_inside_file(root, spec_raw) {
+        Ok(spec) => spec,
+        Err(error) => {
+            return respond_json(
+                stream,
+                400,
+                &format!(r#"{{"error":{},"parameter":"spec"}}"#, json_str(&error)),
+            )
+        }
+    };
+    let format = params
+        .get("format")
+        .map(|value| value.trim().to_ascii_lowercase())
+        .unwrap_or_else(|| "md".to_string());
+    if !matches!(format.as_str(), "md" | "html") {
+        return bad_request(stream, "format must be md or html", "format", "format=md");
+    }
+    let binary = match std::env::current_exe() {
+        Ok(path) => path,
+        Err(error) => {
+            return respond_json(
+                stream,
+                500,
+                &format!(r#"{{"error":{}}}"#, json_str(&error.to_string())),
+            )
+        }
+    };
+    let mut command = std::process::Command::new(binary);
+    command.args([
+        "report",
+        path.to_str().unwrap_or(""),
+        "--spec",
+        spec.to_str().unwrap_or(""),
+    ]);
+    command.args(["--format", &format]);
+    if let Some(title) = params.get("title").filter(|title| !title.is_empty()) {
+        command.args(["--title", title]);
+    }
+    let output = match command.output() {
+        Ok(output) => output,
+        Err(error) => {
+            return respond_json(
+                stream,
+                500,
+                &format!(r#"{{"error":{}}}"#, json_str(&error.to_string())),
+            )
+        }
+    };
+    if !output.status.success() {
+        let message = String::from_utf8_lossy(&output.stderr);
+        return respond_json(
+            stream,
+            422,
+            &format!(r#"{{"error":{}}}"#, json_str(message.trim())),
+        );
+    }
+    let content_type = if format == "html" {
+        "text/html; charset=utf-8"
+    } else {
+        "text/markdown; charset=utf-8"
+    };
+    respond_bytes(stream, 200, content_type, "inline", &output.stdout)
+}
+
+fn resolve_inside_file(root: &Path, raw: &str) -> Result<PathBuf, String> {
+    let relative = raw.trim_start_matches(['/', '\\']).to_string();
+    let candidate = root.join(relative);
+    let canonical = candidate
+        .canonicalize()
+        .map_err(|_| format!("{raw} is not a readable file inside the served directory"))?;
+    if !canonical.starts_with(root) || !canonical.is_file() {
+        return Err(format!(
+            "{raw} is outside the served directory or not a file"
+        ));
+    }
+    Ok(canonical)
 }
 
 /// Everything a front-end needs to render the sheet chrome (GET /sheet).
