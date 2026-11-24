@@ -7583,6 +7583,12 @@ mod tests {
             assert!(pairs.iter().any(|(key, _)| key == "name"));
             assert!(pairs.iter().any(|(key, _)| key == "inputSchema"));
         }
+        assert!(mcp_tools().contains(
+            r#""name":"csvx_cache_clear","description":"Delete cached materialized temp files and clear the cache; returns removed count and bytes.","annotations":{"destructiveHint":true,"idempotentHint":true}"#
+        ));
+        assert!(mcp_tools().contains(
+            r#""name":"csvx_cache_stats","description":"Materialize-cache hits/misses, entries and byte usage in this server process.","annotations":{"readOnlyHint":true}"#
+        ));
     }
 }
 
