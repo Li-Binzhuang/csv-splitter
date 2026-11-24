@@ -37,6 +37,16 @@
 - 每个里程碑最多一次 push；gate 绿、AOCI aligned、tree clean。
 - 商业化价格/合同/SLA 由用户确认，不自行承诺。
 
+## Round 190 checkpoint（2026-11-24）
+
+自 Round 175 后新增/关闭：
+- watch 状态与 `--json` 都带 `nextDelayMs`，重启在未达上限时沿用；
+- 失败 JSON 实测 `success=false`/`nextDelayMs=20`/原始错误；
+- 退避封顶实测停在 20，重启 20→40；
+- 离线包重建并自验（18 工具，SHA `6d3c9f04`）。
+
+技术侧仍无新的高价值缺口；真实客户试点由用户决定。
+
 ## Round 175 checkpoint（2026-11-24）
 
 自 Round 159 后新增/关闭：
