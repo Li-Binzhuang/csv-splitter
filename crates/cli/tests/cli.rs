@@ -7785,6 +7785,31 @@ fn gate_directory_can_require_global_uniqueness() {
     );
 }
 
+/// Global uniqueness needs compatible headers; the concat failure is reported,
+/// not silently treated as a pass.
+#[test]
+fn gate_directory_global_uniqueness_reports_header_mismatch() {
+    let dir = TempDir::new("gateglobalheader");
+    std::fs::create_dir_all(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,v\n1,a\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "code,v\n2,b\n").unwrap();
+    let output = Command::new(bin())
+        .args([
+            "gate",
+            dir.join("parts").to_str().unwrap(),
+            "--unique",
+            "id",
+            "--unique-global",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(1));
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains(r#""uniqueGlobal":{"passed":false"#), "{text}");
+    assert!(text.contains("header"), "{text}");
+}
+
 /// A CSV spec drives a deterministic Markdown/HTML report; values are escaped.
 #[test]
 fn report_renders_a_csv_spec() {
