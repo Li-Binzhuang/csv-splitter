@@ -9205,7 +9205,7 @@ fn watch_pipeline(
                         .collect::<Vec<_>>()
                         .join(",");
                     println!(
-                        r#"{{"watch":true,"round":{},"ran":{},"total":{},"consecutiveFailures":0,"nextDelayMs":{},"steps":[{}]}}"#,
+                        r#"{{"watch":true,"round":{},"success":true,"ran":{},"total":{},"consecutiveFailures":0,"nextDelayMs":{},"steps":[{}]}}"#,
                         round,
                         ran,
                         results.len(),

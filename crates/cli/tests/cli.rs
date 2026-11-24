@@ -7801,6 +7801,7 @@ fn pipeline_watch_runs_and_then_reports_fresh() {
     let json_stdout = String::from_utf8_lossy(&json.stdout);
     assert!(json_stdout.contains(r#""watch":true"#), "{json_stdout}");
     assert!(json_stdout.contains(r#""fresh":true"#), "{json_stdout}");
+    assert!(json_stdout.contains(r#""success":true"#), "{json_stdout}");
     assert!(
         json_stdout.contains(r#""nextDelayMs":5000"#),
         "{json_stdout}"
