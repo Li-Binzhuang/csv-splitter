@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-24T12:31:01Z",
+  "updated_at": "2026-11-24T12:42:31Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "16e9193a4d0971b3ba63a0c8109db41e0f8c0264109b60aa197fd8fa1639617b",
-      "size": 57679,
-      "normalized_sha256": "16e9193a4d0971b3ba63a0c8109db41e0f8c0264109b60aa197fd8fa1639617b"
+      "sha256": "60e1bc902f90e05dcac26795081dc33c3c8a26205483538d8b87c694955e2db7",
+      "size": 58006,
+      "normalized_sha256": "60e1bc902f90e05dcac26795081dc33c3c8a26205483538d8b87c694955e2db7"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -118,9 +118,9 @@
     },
     "crates/cli/src/serve.rs": {
       "role": "index",
-      "sha256": "7abde1401d0d8dfeb86cf98f7cbfd20e0024045c05c53047df159e60f0646fe5",
-      "size": 356204,
-      "normalized_sha256": "7abde1401d0d8dfeb86cf98f7cbfd20e0024045c05c53047df159e60f0646fe5"
+      "sha256": "68d4bc93f0f801dc4b6fee7a98d9b1652438318c92d23d42a8a30040e26420d3",
+      "size": 356443,
+      "normalized_sha256": "68d4bc93f0f801dc4b6fee7a98d9b1652438318c92d23d42a8a30040e26420d3"
     },
     "crates/cli/src/web/index.html": {
       "role": "index",
@@ -478,9 +478,9 @@
     },
     "crates/core/src/workbook/export.rs": {
       "role": "index",
-      "sha256": "d5ff2ff1172557b935bc925045de306ccc31d45553b5eaa0384481eb5a4b7607",
-      "size": 42487,
-      "normalized_sha256": "d5ff2ff1172557b935bc925045de306ccc31d45553b5eaa0384481eb5a4b7607"
+      "sha256": "92a081e91a6da6b7f026928134cd19fe8b6854654a3d76188a75a5b59353b75e",
+      "size": 47118,
+      "normalized_sha256": "92a081e91a6da6b7f026928134cd19fe8b6854654a3d76188a75a5b59353b75e"
     },
     "crates/core/src/workbook/journal.rs": {
       "role": "index",
@@ -490,9 +490,9 @@
     },
     "crates/core/src/workbook/mod.rs": {
       "role": "index",
-      "sha256": "be2b8d3854ca7486f60c19b07e1c29d7aa923531f05def60a5808daa5e85e9f1",
-      "size": 48350,
-      "normalized_sha256": "be2b8d3854ca7486f60c19b07e1c29d7aa923531f05def60a5808daa5e85e9f1"
+      "sha256": "9ba77a56f5ba7b7f5fe64faa11eb135fe428adc796383fa07d02a747842d54f0",
+      "size": 48394,
+      "normalized_sha256": "9ba77a56f5ba7b7f5fe64faa11eb135fe428adc796383fa07d02a747842d54f0"
     },
     "crates/core/src/workbook/rows.rs": {
       "role": "index",
@@ -592,9 +592,9 @@
     },
     "docs/BIG_PLAN.md": {
       "role": "index",
-      "sha256": "c1b5b97bdef07d488b86535125497571f46e3b2a7b72ecd0ab250e4cb5ecbd4b",
-      "size": 6493,
-      "normalized_sha256": "c1b5b97bdef07d488b86535125497571f46e3b2a7b72ecd0ab250e4cb5ecbd4b"
+      "sha256": "3627468de33da54f602ee3edf65f94d2575f97cc1fb3e1df7f74478fd15408b1",
+      "size": 6540,
+      "normalized_sha256": "3627468de33da54f602ee3edf65f94d2575f97cc1fb3e1df7f74478fd15408b1"
     },
     "docs/BUSINESS.md": {
       "role": "index",
@@ -604,9 +604,9 @@
     },
     "docs/CAPABILITIES.md": {
       "role": "index",
-      "sha256": "2647eb722d81b7ce88302156776a9d73b58b4b78bb3b0a0a8e7de9e94716b00e",
-      "size": 65027,
-      "normalized_sha256": "2647eb722d81b7ce88302156776a9d73b58b4b78bb3b0a0a8e7de9e94716b00e"
+      "sha256": "11929be4f127a68b4b03b5e18bdaa1412ef96353e08512fee92966afeca46d49",
+      "size": 65230,
+      "normalized_sha256": "11929be4f127a68b4b03b5e18bdaa1412ef96353e08512fee92966afeca46d49"
     },
     "docs/CI.md": {
       "role": "index",
@@ -631,6 +631,12 @@
       "sha256": "9ae0466ac5f3d629d1c621bbaf6eacf58242013862ec33e602ccb1ae651077d1",
       "size": 1097,
       "normalized_sha256": "9ae0466ac5f3d629d1c621bbaf6eacf58242013862ec33e602ccb1ae651077d1"
+    },
+    "docs/FORMULA_CACHE.md": {
+      "role": "index",
+      "sha256": "67d9bb19363b00010f05ec37aeeb7615a3fe121b29fb5078972463d8a8e3ae35",
+      "size": 916,
+      "normalized_sha256": "67d9bb19363b00010f05ec37aeeb7615a3fe121b29fb5078972463d8a8e3ae35"
     },
     "docs/GETTING_STARTED.md": {
       "role": "index",

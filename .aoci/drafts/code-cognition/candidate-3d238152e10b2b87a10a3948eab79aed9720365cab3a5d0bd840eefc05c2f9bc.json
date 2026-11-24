@@ -1,0 +1,93 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "7aea817ade68c88ed2872a299ffd500c0716764fd43ff3698daf34a4856a8ce1",
+  "batch_id": "3d238152e10b2b87a10a3948eab79aed9720365cab3a5d0bd840eefc05c2f9bc",
+  "composite_identity": "040e492ec3ab99eb180a534faed93a3a27ce25869827fdc4e8836a4844962d8e",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "60e1bc902f90e05dcac26795081dc33c3c8a26205483538d8b87c694955e2db7",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "7cb02c8924c8aa79063148a08be97e16feffd99a38575bc2ac9bb47edda30648",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API：会话、MCP 动作、审批、审计与 SSE 回放 | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md | A:loopback 独立服务；POST sessions 生成 8h token 与 root 内审计；actions 复用 mcp_run_tool；破坏性工具需 approvalId；events 回放 audit；constant-time token 比较 | S:SSE 只回放不实时；token 只在创建响应返回一次；root canonical 且必须在 served root；无多用户；审批单次消费"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "17536241bdc48c91d326e5a320aac69ab9c0dee590fa8e3a2e04b036d072b5d9",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/cli/src/agent.rs,code:crates/core/src/xlsx.rs,code:crates/core/src/engine.rs | A:CLI 入口；convert xlsx 导出/导入/目录多 sheet；report/gate/concat/edit/view/filter/watch；agent serve/manifest 子命令与帮助 | S:unique-global 成本高；report compare 限 root；xlsx 行上限；日期暂按数值；agent 端口默认 8788"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "0032b079e5a23b16bbef3cf1c152b37fab6c9c1a4780b65906539bcafa39523d",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入：MCP instructions/manifest 与 HTTP Agent API | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:docs/BIG_PLAN.md | A:csvx agent serve/manifest；/agent/v1 sessions/actions/approvals/close/events；428 审批流程；token/audit/root 约束；MCP 配置 | S:SSE 只回放不实时；无 GUI/多用户；token 不入审计；模型 key 不入仓库"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BIG_PLAN.md",
+      "path": "docs/BIG_PLAN.md",
+      "change": "update",
+      "source_sha256": "813064587ed453e54d3a726e2ef0dfc5b6d7290b70c3a8bad6c7b54c87b9c91c",
+      "existing_entry": "BIG_PLAN.md[SW7S]: F:xlsx + Agent 原生后端的大计划：工作流、接口、里程碑、非目标 | R:code:docs/PRODUCT_PLAN.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/FORMULA_CACHE.md | A:M1 xlsx、M2 导入/多 sheet、M3 公式读窗口缓存、M4 MCP+HTTP Agent API 已落；M5 runner 待做；2k 行 0.040→0.007s | S:不写 GUI/多用户/宏；apply 需审批；SSE 非实时；计划中的 flag 未实现前不可写帮助"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DSH_MODEL_TEST.md",
+      "path": "docs/DSH_MODEL_TEST.md",
+      "change": "update",
+      "source_sha256": "b4b79381e9e2ea6d1aae153d7485c18bc166bb4be1aed761296a68370df63967",
+      "existing_entry": "DSH_MODEL_TEST.md[SD7T]: F:本地 DSH 的 Ark Economy 模型接入实测记录 | R:code:docs/BIG_PLAN.md | A:只测 DeepSeek-V4.1-Flash-1017-Ark-Economy；OpenAI-compatible tokenplan；模型在线 239 个；1.10s、35 prompt/11 completion/9 reasoning、content OK；key 不落仓库 | S:只允许该模型；不打印/保存 key；max_tokens 太小时只有 reasoning 无 content；尚未跑 Agent read→preview→apply"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "a9a2ae3384d467f4b3cef075319812b5b2ac3afe4dcf93fd8cf8009c90c9f787",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "7cb02c8924c8aa79063148a08be97e16feffd99a38575bc2ac9bb47edda30648",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API：会话、MCP 动作、审批、审计与 SSE 回放 | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md | A:loopback 独立服务；POST sessions 生成 8h token 与 root 内审计；actions 复用 mcp_run_tool；破坏性工具需 approvalId；events 回放 audit；constant-time token 比较 | S:SSE 只回放不实时；token 只在创建响应返回一次；root canonical 且必须在 served root；无多用户；审批单次消费"
+    },
+    {
+      "candidate_id": "c4f7fd10998bb2d42c04455f3085196370ae4bcd8e4ef40f8ec94a3ba12e5485",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "17536241bdc48c91d326e5a320aac69ab9c0dee590fa8e3a2e04b036d072b5d9",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/cli/src/agent.rs,code:crates/core/src/xlsx.rs,code:crates/core/src/engine.rs | A:CLI 入口；convert xlsx 导出/导入/目录多 sheet；report/gate/concat/edit/view/filter/watch；agent serve/manifest 子命令与帮助 | S:unique-global 成本高；report compare 限 root；xlsx 行上限；日期暂按数值；agent 端口默认 8788"
+    },
+    {
+      "candidate_id": "6efa2fcf4920517a74ce4e07ee0b886bc1fb4ca53e0ce10930c09fb815de46e2",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "0032b079e5a23b16bbef3cf1c152b37fab6c9c1a4780b65906539bcafa39523d",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入：MCP instructions/manifest 与 HTTP Agent API | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:docs/BIG_PLAN.md | A:csvx agent serve/manifest；/agent/v1 sessions/actions/approvals/close/events；428 审批流程；token/audit/root 约束；MCP 配置 | S:SSE 只回放不实时；无 GUI/多用户；token 不入审计；模型 key 不入仓库"
+    },
+    {
+      "candidate_id": "89305213da2a9f1ffb33a4f06d7ca9e4f26485b436e15dd193549b87de341ab8",
+      "object_ref": "code:docs/BIG_PLAN.md",
+      "path": "docs/BIG_PLAN.md",
+      "change": "update",
+      "source_sha256": "813064587ed453e54d3a726e2ef0dfc5b6d7290b70c3a8bad6c7b54c87b9c91c",
+      "existing_entry": "BIG_PLAN.md[SW7S]: F:xlsx + Agent 原生后端的大计划：工作流、接口、里程碑、非目标 | R:code:docs/PRODUCT_PLAN.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/FORMULA_CACHE.md | A:M1 xlsx、M2 导入/多 sheet、M3 公式读窗口缓存、M4 MCP+HTTP Agent API 已落；M5 runner 待做；2k 行 0.040→0.007s | S:不写 GUI/多用户/宏；apply 需审批；SSE 非实时；计划中的 flag 未实现前不可写帮助"
+    },
+    {
+      "candidate_id": "a926f789880595eefff1f789a73777c1db3ca10d5194210d46e556ea6a25ddfa",
+      "object_ref": "code:docs/DSH_MODEL_TEST.md",
+      "path": "docs/DSH_MODEL_TEST.md",
+      "change": "update",
+      "source_sha256": "b4b79381e9e2ea6d1aae153d7485c18bc166bb4be1aed761296a68370df63967",
+      "existing_entry": "DSH_MODEL_TEST.md[SD7T]: F:本地 DSH 的 Ark Economy 模型接入实测记录 | R:code:docs/BIG_PLAN.md | A:只测 DeepSeek-V4.1-Flash-1017-Ark-Economy；OpenAI-compatible tokenplan；模型在线 239 个；1.10s、35 prompt/11 completion/9 reasoning、content OK；key 不落仓库 | S:只允许该模型；不打印/保存 key；max_tokens 太小时只有 reasoning 无 content；尚未跑 Agent read→preview→apply"
+    }
+  ]
+}
