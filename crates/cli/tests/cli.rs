@@ -7882,6 +7882,10 @@ fn pipeline_watch_stops_after_the_failure_cap() {
         restarted_stderr.contains("previous state already reached the failure cap"),
         "{restarted_stderr}"
     );
+    assert!(
+        restarted_stderr.contains("previous failure") && restarted_stderr.contains("bogus"),
+        "{restarted_stderr}"
+    );
 }
 
 /// Server-only tools cannot be submitted to the CLI job runner.

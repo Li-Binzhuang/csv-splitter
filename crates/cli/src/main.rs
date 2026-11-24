@@ -9036,6 +9036,33 @@ fn read_watch_failures(path: &std::path::Path) -> usize {
     digits.parse::<usize>().unwrap_or(0)
 }
 
+fn read_watch_last_error(path: &std::path::Path) -> Option<String> {
+    let text = std::fs::read_to_string(path).ok()?;
+    let rest = text.split(r#""lastError":""#).nth(1)?;
+    let mut out = String::new();
+    let mut chars = rest.chars();
+    while let Some(ch) = chars.next() {
+        match ch {
+            '"' => break,
+            '\\' => match chars.next() {
+                Some('n') => out.push('\n'),
+                Some('r') => out.push('\r'),
+                Some('t') => out.push('\t'),
+                Some('"') => out.push('"'),
+                Some('\\') => out.push('\\'),
+                Some('u') => {
+                    let _ = chars.by_ref().take(4).count();
+                    out.push('?');
+                }
+                Some(other) => out.push(other),
+                None => break,
+            },
+            other => out.push(other),
+        }
+    }
+    (!out.is_empty()).then_some(out)
+}
+
 fn read_watch_previous_failure(path: &std::path::Path) -> bool {
     std::fs::read_to_string(path)
         .map(|text| text.contains(r#""success":false"#))
@@ -9120,6 +9147,9 @@ fn watch_pipeline(
     if let Some(path) = state_path {
         if failures > 0 {
             eprintln!("watch: previous state has {failures} consecutive failure(s)");
+            if let Some(error) = read_watch_last_error(path) {
+                eprintln!("watch: previous failure: {error}");
+            }
             if max_failures > 0 && failures >= max_failures {
                 return Err(std::io::Error::new(
                     std::io::ErrorKind::InvalidInput,
