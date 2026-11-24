@@ -5,6 +5,7 @@ pub mod chart;
 pub mod check;
 pub mod compress;
 pub mod concat;
+pub mod contract;
 pub mod csv_reader;
 pub mod decompress;
 pub mod dedupe;

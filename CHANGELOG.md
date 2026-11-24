@@ -154,6 +154,9 @@
   entries and bytes; `csvx_cache_clear` (destructiveHint/idempotentHint) deletes cache and dead-process
   temp files, returning removed/stale counts and bytes.
   Neither is a CLI job command.
+- **Operations contract**: `csvx ops --json` publishes 14 shared operations and 10 stable
+  error codes so CLI/HTTP/MCP clients can discover the same effects; ADR in `docs/OPERATIONS.md`.
+
 - **Pipeline watch**: `csvx pipeline watch <plan>` reruns stale steps on an interval;
   supports failure backoff, `--max-failures`, JSON rounds, and an atomic `--state` file
   with last success/failure timestamps, next retry delay, the last error text, and

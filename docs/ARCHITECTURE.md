@@ -82,6 +82,11 @@
 
 **成本**：前两条是常数时间；第三条每个不同的查询扫一次文件，结果进缓存（20 万行/条，40 万行总量）。
 
+## 操作契约 / Operations contract
+
+CLI、HTTP、MCP 共用的操作名称、效果（read/preview/apply/job）与稳定错误码，入口是
+`csvx ops --json`。迁移计划与验收见 [`docs/OPERATIONS.md`](OPERATIONS.md)。
+
 ## 模块地图 / Module map
 
 core 里 40 个模块，按职责分组（文件名即模块名）：
@@ -95,7 +100,7 @@ core 里 40 个模块，按职责分组（文件名即模块名）：
 | **结构比对** | `schema`（列集合的增/减/移位；CLI 与 `GET /schema?diff=` 共用同一份实现）|
 | **切分与压缩** | `splitter` `split_parallel` `merge` `compress` `pack` `decompress` `partition` `check` |
 | **面向客户端** | `sheet` `book` `listing` `jobs` `cache` `demo` |
-| **共用工具** | `json`（唯一的 JSON 字符串转义）、`types`、`engine`（native 与 DuckDB 的选择器）|
+| **共用工具** | `json`（唯一的 JSON 字符串转义）、`types`、`engine`（native 与 DuckDB 的选择器）、`contract`（CLI/HTTP/MCP 共用的操作与错误码目录）|
 | **入口** | `crates/cli/src/main.rs`（命令行）· `serve.rs`（HTTP 后端，前端由别人接）|
 
 ## 不变式在哪守 / Where the invariants live

@@ -66,6 +66,7 @@ fn main() -> ExitCode {
         Some("repair") => cmd_repair(&args[1..]),
         Some("extract") => cmd_extract(&args[1..]),
         Some("verify") => cmd_verify(&args[1..]),
+        Some("ops") => cmd_ops(&args[1..]),
         Some("-h" | "--help" | "help") | None => {
             print_help();
             0
@@ -404,6 +405,10 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         ],
     ),
     (
+        "ops",
+        &[("--json", "Emit the operation and error-code catalog as JSON")],
+    ),
+    (
         "partition",
         &[
             ("--buf-mb", "Sort buffer size in MB"),
@@ -706,6 +711,7 @@ COMMANDS
   stats    <input>              Column statistics via reservoir sampling
   extract  <input> -o DIR       Extract any supported compressed archive
   verify   <input>              Split + merge and prove the result is lossless
+  ops      --json               Machine-readable operation and error-code catalog
 
 COMMON OPTIONS
   -d, --delim <c>    auto | comma | tab | semicolon | pipe | <single char>   (default: auto)
@@ -10999,6 +11005,33 @@ fn files_differ(first: &Path, second: &Path) -> std::io::Result<Option<(u64, u64
         }
         offset += a_read as u64;
     }
+}
+
+fn cmd_ops(args: &[String]) -> i32 {
+    let mut json = false;
+    for arg in args {
+        match arg.as_str() {
+            "--json" => json = true,
+            "-h" | "--help" => {
+                print_command_help("ops");
+                return 0;
+            }
+            other => {
+                eprintln!("error: unknown option for ops: {other}");
+                return 2;
+            }
+        }
+    }
+    if json {
+        println!("{}", csvx_core::contract::operations_json());
+    } else {
+        println!("operations ({}):", csvx_core::contract::OPERATIONS.len());
+        for op in csvx_core::contract::OPERATIONS {
+            println!("{:<18} {:<8} {}", op.name, op.effect.as_str(), op.summary);
+        }
+        println!("error codes: {}", csvx_core::contract::ERROR_CODES.len());
+    }
+    0
 }
 
 fn cmd_verify(args: &[String]) -> i32 {

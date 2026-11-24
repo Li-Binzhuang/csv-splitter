@@ -183,13 +183,14 @@ csvx extract chunks.tar -o ./out
 
 ### 命令总览 / Commands
 
-三十条命令，每条一句话。`csvx <command> --help` 给出该命令的全部参数。
+全部命令，每条一句话。`csvx <command> --help` 给出该命令的全部参数。
 
 | 命令 | 做什么 |
 |---|---|
 | `split` | 切成若干份（按片数、按大小、按列值），可压缩 |
 | `merge` | 把分片合回单文件 |
 | `verify` | 证明 split → merge 逐字节无损 |
+| `ops` | 输出 CLI/HTTP/MCP 共用的操作与错误码目录（`--json`） |
 | `extract` | 解压 tar/zip/7z（成员路径越界会被拒绝） |
 | `preview` | 打开看一下，可跳任意行 |
 | `view` | 看**套用编辑后**的表：翻页、筛选、排序、查找、条件格式 |

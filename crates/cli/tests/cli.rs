@@ -7903,6 +7903,27 @@ fn pipeline_watch_stops_after_the_failure_cap() {
     );
 }
 
+/// The operation catalog is the adapter-independent contract front-end/AI clients read.
+#[test]
+fn ops_catalog_lists_effects_and_error_codes() {
+    let output = Command::new(bin())
+        .args(["ops", "--json"])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let body = String::from_utf8_lossy(&output.stdout);
+    assert!(body.contains(r#""version":"4.2.0""#), "{body}");
+    for operation in ["schema", "view", "filter", "edit_apply", "pipeline_run"] {
+        assert!(body.contains(&format!(r#""name":"{operation}""#)), "{body}");
+    }
+    for effect in ["read", "preview", "apply", "job"] {
+        assert!(body.contains(&format!(r#""effect":"{effect}""#)), "{body}");
+    }
+    for code in ["invalid_request", "path_escape", "job_start_error"] {
+        assert!(body.contains(code), "{body}");
+    }
+}
+
 /// Server-only tools cannot be submitted to the CLI job runner.
 #[test]
 fn mcp_job_submit_rejects_the_cache_stats_tool() {
