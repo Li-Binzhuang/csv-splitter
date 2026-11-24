@@ -21,8 +21,8 @@
 - MCP 工具 **23**（23 annotations；demo 验证 23/23）。
 - AOCI **123** entries，治理 aligned。
 - 包：`dist/csvx-4.2.0-darwin-arm64.tar.gz`
-  - SHA256 `300de540992cf74ab7f7b9544726c76fc4539f53fe243ed9064769b94168b02d`
-- 最新代码：`2b33aba`（已 push）；夜间轮次继续在本地累积，下一轮 push。
+  - SHA256 `3b92abb172e16f36ffff926e36fc11111e1193af157920e893590f481a9ab6e2`
+- 最新代码：`38ec7ee`（已 push）；夜间轮次继续在本地累积，下一轮 push。
 
 ### 待白天决策
 
