@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "ce1ba982979e3f1a156108a639a9900d7ab2882a8f19a9ae04b56b8a96952568",
+  "batch_id": "711652e20459cbe3f80d4b5729f189bc56d8f05527a9c4fc052b247245072ffb",
+  "composite_identity": "db6cb72faae5dfbf886dde2f1c186f1e7e05e3eb68d691711fa8ff9806ceb538",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "d4258a06ef530a28fc2d38ca0679ff65897993bf4cb3f95a0abf46e8b4672193",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "63c46d9735fb80c354f26ba1ec48c8d304b3b4cf81afe0dd0a45b7affc93e87f",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/锁规则/重复输出拒绝/源覆盖拒绝/内容校验(run+status)/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码、步骤 progress/CSVX_STEP 即时、压缩/MCP materialize 残留清理（search 3.51 s、filter 3.62/2.60 s）、job 历史/缓存统计 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16（env），启动清死 PID；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包自验"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "e7b20d560143697c2e56cf077b29d11628c72fb244c9c5c1a187eaa88d70c0b0",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:CLI 入口；pipeline run/status/watch 快跳过、--force、--dry-run、--json、--dag、--jobs、--step-timeout、--retries、--clean、--unlock、--verify、--fail-on-stale；watch 轮询（--interval-ms/--backoff-max-ms/--max-failures/--state/--iterations/--verbose/--json），state 带最后成功/失败时间戳；status verify 按 stamp/hash 判 fresh/stale；run 前取 \u003cplan\u003e.pipeline.lock（死 PID 即清，活主不按年龄清，Drop 释放，--unlock 强制清）；写 lineage；DAG 拓扑/备份/恢复 | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state/lineage；重复输出与输出=源文件在解析期按 canonical/词法路径拒绝；≤1 MiB 默认哈希（CSVX_CONTENT_CHECK_LIMIT 可调，0 关闭），--content-check 强制所有大小（run/status verify）；并发 run 被锁拒绝；--unlock 需确认无活跃 run；search/filter --materialize 解压临时文件并清死 PID 残留；--progress-markers 在每步完成时立即输出 i/n CSVX_STEP 行；group 是连续同组，dag 才是任意拓扑"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "9e502ab166ead0313ce39df55b0fe3f8279487737affe94bbbd27ee524e2105e",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 成功写 lineage、status --verify（MCP verify）/--fail-on-stale、run lock（死 PID 即清、活主不按年龄）/--unlock、--dry-run(JSON)、--dag 跨波回滚/崩溃恢复、--step-timeout、--retries、group 并发、--clean、watch 轮询自动重跑（--json 逐轮）；mcp 16 工具、view 游标、SDK；压缩 search/filter --materialize（3.51/3.62/2.60 s），server 内 stat 复用解压 4 GiB/16 LRU；100 GB/81 GB 演练；64 GB 自适应；试点报告；离线发布包 | S:progress 覆盖 job wait 与 pipeline 步骤"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ac9e01338f30ceff2c0233e2aba20dcea6dbb954e5ecb546ef4010847a3f2dfa",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "63c46d9735fb80c354f26ba1ec48c8d304b3b4cf81afe0dd0a45b7affc93e87f",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/锁规则/重复输出拒绝/源覆盖拒绝/内容校验(run+status)/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码、步骤 progress/CSVX_STEP 即时、压缩/MCP materialize 残留清理（search 3.51 s、filter 3.62/2.60 s）、job 历史/缓存统计 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16（env），启动清死 PID；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包自验"
+    },
+    {
+      "candidate_id": "56a84514b087aca09246230806c62abb89bf492e1e8c5dff5cdfdbb790fcccc2",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "e7b20d560143697c2e56cf077b29d11628c72fb244c9c5c1a187eaa88d70c0b0",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:CLI 入口；pipeline run/status/watch 快跳过、--force、--dry-run、--json、--dag、--jobs、--step-timeout、--retries、--clean、--unlock、--verify、--fail-on-stale；watch 轮询（--interval-ms/--backoff-max-ms/--max-failures/--state/--iterations/--verbose/--json），state 带最后成功/失败时间戳；status verify 按 stamp/hash 判 fresh/stale；run 前取 \u003cplan\u003e.pipeline.lock（死 PID 即清，活主不按年龄清，Drop 释放，--unlock 强制清）；写 lineage；DAG 拓扑/备份/恢复 | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state/lineage；重复输出与输出=源文件在解析期按 canonical/词法路径拒绝；≤1 MiB 默认哈希（CSVX_CONTENT_CHECK_LIMIT 可调，0 关闭），--content-check 强制所有大小（run/status verify）；并发 run 被锁拒绝；--unlock 需确认无活跃 run；search/filter --materialize 解压临时文件并清死 PID 残留；--progress-markers 在每步完成时立即输出 i/n CSVX_STEP 行；group 是连续同组，dag 才是任意拓扑"
+    },
+    {
+      "candidate_id": "18490de36642efdc7cea9d3445de74c07a569a1fc5f6f8fcfba8c1dec9d414c8",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "9e502ab166ead0313ce39df55b0fe3f8279487737affe94bbbd27ee524e2105e",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 成功写 lineage、status --verify（MCP verify）/--fail-on-stale、run lock（死 PID 即清、活主不按年龄）/--unlock、--dry-run(JSON)、--dag 跨波回滚/崩溃恢复、--step-timeout、--retries、group 并发、--clean、watch 轮询自动重跑（--json 逐轮）；mcp 16 工具、view 游标、SDK；压缩 search/filter --materialize（3.51/3.62/2.60 s），server 内 stat 复用解压 4 GiB/16 LRU；100 GB/81 GB 演练；64 GB 自适应；试点报告；离线发布包 | S:progress 覆盖 job wait 与 pipeline 步骤"
+    }
+  ]
+}
