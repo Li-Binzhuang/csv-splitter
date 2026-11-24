@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "d4067db8d7811daf316fd3173580c7a54b59c7eb0b46ea6e248828b29e5e1bbf",
+  "batch_id": "bd9639391d72242b1d1b9d7b7d20637d288dbe8dfdc899992f4f42b126b32542",
+  "composite_identity": "323154de470b4adf92c0ee0b1e6d892741569493eed9fed5e5999a1fcf5dc9e1",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e3f9fda5c1e6193a8bfd1a578a6db971e687cf8667779cea4907283f5eec9f5d",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "4c704c47cbf9e15ea889f3b1355886b07a3670fdd2d6f704d08444dc38b3f4e1",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:夜间静默工作的交接摘要：完成/未完成/数字/待决策，供用户次日 10:00 查看 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-24 记录 17 操作、23 工具、typed view/apply、压缩/gate 三端含 unique-global、concat 三端、report spec/chart/compare/root、AOCI 122 与包 SHA；待决策 xlsx/数据库/薄前端 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NIGHT_QUEUE.md",
+      "path": "docs/NIGHT_QUEUE.md",
+      "change": "update",
+      "source_sha256": "c14b873af6b738ef7482fd084062120a1afda869b0c7d5fd82dceb636b220f2f",
+      "existing_entry": "NIGHT_QUEUE.md[SG8T]: F:夜间静默窗口不自行决定、留到白天的用户决策队列 | R:code:AGENTS.md,code:docs/NIGHT_CHECKPOINT.md | A:列 xlsx 解禁、商业化定价/license/遥测、删除用户文件/不可逆迁移/force push、需要产品取舍的界面方向；夜间只记录不执行 | S:不得把队列项当作已获授权；白天由用户决定后才动作"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "f3c4f66f6d59b0a25d9b14ed33bd935e11e8836a38fd92f2809209328a9b7957",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "4c704c47cbf9e15ea889f3b1355886b07a3670fdd2d6f704d08444dc38b3f4e1",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:夜间静默工作的交接摘要：完成/未完成/数字/待决策，供用户次日 10:00 查看 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-24 记录 17 操作、23 工具、typed view/apply、压缩/gate 三端含 unique-global、concat 三端、report spec/chart/compare/root、AOCI 122 与包 SHA；待决策 xlsx/数据库/薄前端 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "d5c0e4630c7bb6b69e6f8189a8bc6b9d60961911ea897d99903b6a23a059b772",
+      "object_ref": "code:docs/NIGHT_QUEUE.md",
+      "path": "docs/NIGHT_QUEUE.md",
+      "change": "update",
+      "source_sha256": "c14b873af6b738ef7482fd084062120a1afda869b0c7d5fd82dceb636b220f2f",
+      "existing_entry": "NIGHT_QUEUE.md[SG8T]: F:夜间静默窗口不自行决定、留到白天的用户决策队列 | R:code:AGENTS.md,code:docs/NIGHT_CHECKPOINT.md | A:列 xlsx 解禁、商业化定价/license/遥测、删除用户文件/不可逆迁移/force push、需要产品取舍的界面方向；夜间只记录不执行 | S:不得把队列项当作已获授权；白天由用户决定后才动作"
+    }
+  ]
+}
