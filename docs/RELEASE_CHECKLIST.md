@@ -21,7 +21,7 @@ bash scripts/verify_dist.sh dist/csvx-4.2.0-<platform>.tar.gz   # 可选手工�
 - demo：pipeline 15/13 ms；Python 与官方 SDK 均 `gzip_matched=3`、`status_fresh=2`；SDK `pipeline_progress_events=2`、`progress_events=1`、`structured_ok=true`、`job=done`；
 - MCP 缓存 drill：2 GB+ gzip 重查 4.545→1.590 s，server peak 82 MB；
 - macOS gate：workflow_dispatch run `45198239384` 12m21s；push run `45202447374` 11m32s；均 success；
-- 包：`csvx-4.2.0-darwin-arm64.tar.gz` 约 20 MB；已含 18 工具（17 工具 annotations；cache_stats/clear + stale sweep，Python/SDK demo 命中/清空/死进程/复查 0），均不可 job；白名单）、pipeline watch（demo 覆盖，含 `--json`、失败退避、`--max-failures`、`--state`（含成功/失败时间戳/轮次恢复/lastError/失败上限/上次原因））、job 保留/退出取消、缓存 LRU/hits-misses 统计、`bench_mcp_cache.py`、`PILOT_INTAKE.md`、`ROADMAP.md`；
+- 包：`csvx-4.2.0-darwin-arm64.tar.gz` 约 20 MB；已含 18 工具（17 工具 annotations（demo 验证）；cache_stats/clear + stale sweep，Python/SDK demo 命中/清空/死进程/复查 0），均不可 job；白名单）、pipeline watch（demo 覆盖，含 `--json`、失败退避、`--max-failures`、`--state`（含成功/失败时间戳/轮次恢复/lastError/失败上限/上次原因））、job 保留/退出取消、缓存 LRU/hits-misses 统计、`bench_mcp_cache.py`、`PILOT_INTAKE.md`、`ROADMAP.md`；
 - SHA256：构建时由 `package_release.sh` 输出，不在此处固定（会随构建变化）。
 
 > 本清单随离线包一起分发（`docs/RELEASE_CHECKLIST.md`）。
