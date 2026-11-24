@@ -4985,6 +4985,7 @@ fn report_endpoint(
     };
     let mut command = std::process::Command::new(binary);
     command.args(["report", path.to_str().unwrap_or("")]);
+    command.args(["--root", root.to_str().unwrap_or("")]);
     if let Some(text) = spec_text {
         command.args(["--spec-text", text]);
     } else if let Some(raw) = spec_file {
@@ -8769,7 +8770,14 @@ fn mcp_command(root: &Path, name: &str, args: &McpJson) -> Result<std::process::
             } else {
                 "md"
             };
-            command.args(["report", path.to_str().unwrap_or(""), "--format", format]);
+            command.args([
+                "report",
+                path.to_str().unwrap_or(""),
+                "--root",
+                root.to_str().unwrap_or(""),
+                "--format",
+                format,
+            ]);
             if let Some(text) = args.get("specText").and_then(McpJson::as_str) {
                 command.args(["--spec-text", text]);
             } else if let Some(spec) = mcp_named_file(root, args, "spec")? {

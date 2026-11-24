@@ -6130,6 +6130,15 @@ fn report_endpoint_renders_markdown_and_html() {
     assert_eq!(code, 400);
     let (code, _) = get(&server.addr, "/report?path=t.csv&spec=../escape.csv");
     assert_eq!(code, 400);
+
+    // A compare section is a second read path; HTTP must keep it inside the root.
+    std::fs::write(dir.join("../outside-report.csv"), "id\n9\n").unwrap();
+    let (code, body) = get(
+        &server.addr,
+        "/report?path=t.csv&specText=title,Escape%0Acompare,../outside-report.csv",
+    );
+    assert_eq!(code, 422, "{body}");
+    assert!(body.contains("outside --root"), "{body}");
 }
 
 /// A failed gate is a successful HTTP answer with `passed:false`; the JSON is

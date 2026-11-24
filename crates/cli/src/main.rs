@@ -592,6 +592,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--out", "Output path (default: write to stdout)"),
             ("--spec", "Report spec CSV: section,arg (summary/columns/rows)"),
             ("--spec-text", "Inline report spec instead of a file"),
+            ("--root", "Require compare inputs to stay inside this directory"),
             ("--title", "Report title"),
         ],
     ),
@@ -5262,6 +5263,7 @@ fn cmd_report(args: &[String]) -> i32 {
     let mut input: Option<PathBuf> = None;
     let mut spec: Option<PathBuf> = None;
     let mut spec_text: Option<String> = None;
+    let mut report_root: Option<PathBuf> = None;
     let mut title = "CSV report".to_string();
     let mut out: Option<PathBuf> = None;
     let mut format = "md".to_string();
@@ -5279,6 +5281,13 @@ fn cmd_report(args: &[String]) -> i32 {
             },
             "--spec-text" => match p.value("--spec-text") {
                 Ok(v) => spec_text = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--root" => match p.value("--root") {
+                Ok(v) => report_root = Some(PathBuf::from(v)),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -5783,6 +5792,26 @@ fn cmd_report(args: &[String]) -> i32 {
                         .unwrap_or_else(|| Path::new("."))
                         .join(other_arg)
                 };
+                if let Some(root) = &report_root {
+                    let canonical_root = match root.canonicalize() {
+                        Ok(root) => root,
+                        Err(e) => {
+                            eprintln!("error: cannot resolve --root {}: {e}", root.display());
+                            return 2;
+                        }
+                    };
+                    let canonical_other = match other.canonicalize() {
+                        Ok(path) if path.starts_with(&canonical_root) => path,
+                        _ => {
+                            eprintln!("error: compare path {other_arg} is outside --root");
+                            return 2;
+                        }
+                    };
+                    if !canonical_other.is_file() {
+                        eprintln!("error: compare path {other_arg} is not a file");
+                        return 2;
+                    }
+                }
                 let base = match csvx_core::sheet::Sheet::open(
                     &input,
                     csvx_core::sheet::ReadOptions { delimiter },

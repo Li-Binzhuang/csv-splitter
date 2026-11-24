@@ -311,7 +311,7 @@ written on refusal, and `actual` says what the value is now.
 | GET | `/meta` | 行数、字节数、表头、分隔符、编码 |
 | GET | `/rows` | 窗口（`start`/`count`/`where`/`order`/`columns`/`start-col`/`keys`）|
 | GET | `/columns` `/schema` | 列清单（`name=` 查存在性，`kind=`/`limit=` 过滤）|
-| GET | `/report` | 用 CSV spec 渲染报表：`path` `spec` 或内联 `specText`、`format=md\|html`、`title`；返回 `text/markdown` 或 `text/html` 正文，不包 JSON |
+| GET | `/report` | 用 CSV spec 渲染报表：`path` `spec` 或内联 `specText`、`format=md\|html`、`title`；spec 的 `compare` 目标必须留在 root 内；返回正文，不包 JSON |
 | GET | `/gate` | 质量门禁：`path`（文件或目录）`minRows` `maxEmpty` `unique`；目录返回 `files/failed/reports` 聚合；失败仍是 **200 + `passed:false` + `failures` 原因** |
 | GET | `/cell` | 单个单元格：`row` `column` `value`、稳定行 `key`、总行数 `total` |
 | GET | `/journal` | 操作栈 `operations`、`count`、undo/redo 栈 `redo` `redoCount` `canUndo` `canRedo`、损坏计数 `damaged` |
