@@ -88,7 +88,7 @@ impl ViewRequest {
 pub struct FilterRequest {
     pub path: PathBuf,
     pub delimiter: Delimiter,
-    pub expression: String,
+    pub spec: FilterSpec,
     pub limit: usize,
     pub budget: Option<Duration>,
 }
@@ -103,17 +103,52 @@ pub struct FilterResponse {
 }
 
 impl FilterRequest {
-    pub fn execute(&self) -> io::Result<FilterResponse> {
-        let spec = FilterSpec::parse(&self.expression)
+    pub fn parse(
+        path: PathBuf,
+        delimiter: Delimiter,
+        expression: &str,
+        limit: usize,
+    ) -> io::Result<Self> {
+        let spec = FilterSpec::parse(expression)
             .map_err(|message| io::Error::new(io::ErrorKind::InvalidInput, message))?;
+        Ok(Self {
+            path,
+            delimiter,
+            spec,
+            limit,
+            budget: None,
+        })
+    }
+
+    pub fn execute(&self) -> io::Result<FilterResponse> {
         let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
         drop(rx);
         let result = filter::scan_with_budget(
             &self.path,
             self.delimiter,
-            &spec,
+            &self.spec,
             self.limit.max(1),
             self.budget,
+            &tx,
+        )?;
+        Ok(FilterResponse {
+            rows: result.row_numbers(),
+            scanned: result.scanned,
+            matched: result.matched,
+            truncated: result.truncated,
+        })
+    }
+
+    /// The CLI's optimized path: same predicate, no page budget.
+    pub fn execute_fast(&self) -> io::Result<FilterResponse> {
+        let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
+        drop(rx);
+        let result = filter::scan_fast(
+            &self.path,
+            self.delimiter,
+            &self.spec,
+            self.limit.max(1),
+            None,
             &tx,
         )?;
         Ok(FilterResponse {
@@ -182,7 +217,7 @@ mod tests {
         let response = FilterRequest {
             path: path.clone(),
             delimiter: Delimiter::Comma,
-            expression: "a>1".to_string(),
+            spec: FilterSpec::parse("a>1").unwrap(),
             limit: 10,
             budget: None,
         }
@@ -195,17 +230,21 @@ mod tests {
     }
 
     #[test]
+    fn filter_fast_path_matches_the_budgeted_path() {
+        let (dir, path) = fixture("filter_fast_path_matches_the_budgeted_path");
+        let request = FilterRequest::parse(path.clone(), Delimiter::Comma, "a>1", 10).unwrap();
+        let slow = request.execute().unwrap();
+        let fast = request.execute_fast().unwrap();
+        assert_eq!(fast.rows, slow.rows);
+        assert_eq!(fast.scanned, slow.scanned);
+        assert_eq!(fast.matched, slow.matched);
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
     fn filter_rejects_a_bad_expression_without_scanning() {
         let (dir, path) = fixture("filter_rejects_a_bad_expression_without_scanning");
-        let error = FilterRequest {
-            path: path.clone(),
-            delimiter: Delimiter::Comma,
-            expression: "".to_string(),
-            limit: 10,
-            budget: None,
-        }
-        .execute()
-        .unwrap_err();
+        let error = FilterRequest::parse(path.clone(), Delimiter::Comma, "", 10).unwrap_err();
         assert_eq!(error.kind(), io::ErrorKind::InvalidInput);
         std::fs::remove_dir_all(dir).ok();
     }

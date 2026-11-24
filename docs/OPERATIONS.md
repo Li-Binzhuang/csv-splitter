@@ -68,7 +68,8 @@ MCP adapter ─┘        │
 - HTTP `GET /ops` 与 MCP `csvx://operations` 返回同一份 `operations_json()`；
 - 已新增 `core::ops` 的 `SchemaRequest/Response`、`ViewRequest/Response`、`FilterRequest/Response`；
 - `schema` 的 CLI 与 HTTP 已改用 `SchemaRequest`（含 pristine sample / edited response）；
-- 剩余：`view`、`filter` 的 adapter 迁移；
+- `filter` 的 CLI 已改用 `FilterRequest`（`execute_fast` 保留原优化路径）；
+- 剩余：`filter` 的 HTTP、`view` 的 adapter 迁移；
 - CLI 只做字符串到类型的适配。
 
 **Stage 3**

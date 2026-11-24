@@ -157,7 +157,8 @@
 - **Operations contract**: `csvx ops --json`, `GET /ops` and MCP `csvx://operations` publish
   the same 14 operations, four effects and 10 error codes; ADR in `docs/OPERATIONS.md`.
 - **Typed read operations**: `core::ops` owns schema/view/filter requests and responses;
-  `schema` CLI/HTTP now use `SchemaRequest`, view/filter adapters migrate next.
+  `schema` CLI/HTTP and `filter` CLI now use typed requests; filter HTTP/view
+  adapters migrate next.
 
 - **Pipeline watch**: `csvx pipeline watch <plan>` reruns stale steps on an interval;
   supports failure backoff, `--max-failures`, JSON rounds, and an atomic `--state` file

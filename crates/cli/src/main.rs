@@ -2864,10 +2864,16 @@ fn cmd_filter(args: &[String]) -> i32 {
         };
     }
 
-    let (tx, _rx) = mpsc::channel();
     let spec = set.specs.first().cloned();
     let Some(spec) = spec else { return 2 };
-    let result = match filter::scan_fast(&input, delimiter, &spec, limit, None, &tx) {
+    let request = csvx_core::ops::FilterRequest {
+        path: input.clone(),
+        delimiter,
+        spec,
+        limit,
+        budget: None,
+    };
+    let result = match request.execute_fast() {
         Ok(r) => r,
         Err(e) => {
             return report_failure("filter", e);
@@ -2875,7 +2881,7 @@ fn cmd_filter(args: &[String]) -> i32 {
     };
 
     if json {
-        let rows: Vec<String> = result.row_numbers().iter().map(|n| n.to_string()).collect();
+        let rows: Vec<String> = result.rows.iter().map(|n| n.to_string()).collect();
         println!(
             r#"{{"scanned":{},"matched":{},"truncated":{},"rows":[{}]}}"#,
             result.scanned,
@@ -2893,12 +2899,7 @@ fn cmd_filter(args: &[String]) -> i32 {
         result.rows.len(),
         if result.truncated { ", truncated" } else { "" }
     );
-    let shown: Vec<String> = result
-        .row_numbers()
-        .iter()
-        .take(50)
-        .map(|n| n.to_string())
-        .collect();
+    let shown: Vec<String> = result.rows.iter().take(50).map(|n| n.to_string()).collect();
     println!("rows (1-based, header excluded): {}", shown.join(", "));
     if result.matched > 50 {
         println!(
@@ -2907,8 +2908,13 @@ fn cmd_filter(args: &[String]) -> i32 {
         );
     }
     if show > 0 {
-        let picked = &result.rows[..result.rows.len().min(show)];
-        match csvx_core::filter::read_rows(&input, delimiter, picked) {
+        let picked: Vec<u64> = result
+            .rows
+            .iter()
+            .take(show)
+            .map(|row| row.saturating_sub(1))
+            .collect();
+        match csvx_core::filter::read_rows(&input, delimiter, &picked) {
             Ok(rows) => {
                 println!();
                 for r in rows {
