@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "d3169df00b4420889f9b450b48600cec0eb01a220de2a73e7dd944315fa77088",
+  "batch_id": "5657cda2c749ec2bdb330f31ca549b99ebe829f2975ca0ab7365451eee48fcdc",
+  "composite_identity": "fa1daad715b85f159236d28d4165e98a5a7f9f4c20006962dbd09ac32d7dd9bd",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "587dffb5c9fe5dfd137921afd56a74fa413c395022ec0dd5380b7bb342b5c5b5",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "update",
+      "source_sha256": "250839830802ac23a6b2e73e42e912db2507802c93ec6c8ee54f49ba2dfaea8f",
+      "existing_entry": "DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 + 官方 SDK | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs | A:一条命令演示版本号、filter/quality、16 个 MCP 工具、edit/undo/convert/job；Python 与官方 SDK 1.32.2 都跑通 pipeline 每步 progress、pipeline_status contentCheck、job wait progress、gzip materialize 搜索与 structuredContent；release 旧于 src 源码时 demo 拒绝运行 | S:演示全程本地、无 GUI、无网络、无 xlsx；终端输出必须与脚本一致；npm 依赖只在 scripts/mcp_sdk；CSVX_DEMO_BUILD=1 可自动重建；gzip 不存在时跳过压缩段"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4b3e5f3b1d15f1a46a03eb0634d843d3bb5d60711151113d00b3809a3e59c27b",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "update",
+      "source_sha256": "250839830802ac23a6b2e73e42e912db2507802c93ec6c8ee54f49ba2dfaea8f",
+      "existing_entry": "DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 + 官方 SDK | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs | A:一条命令演示版本号、filter/quality、16 个 MCP 工具、edit/undo/convert/job；Python 与官方 SDK 1.32.2 都跑通 pipeline 每步 progress、pipeline_status contentCheck、job wait progress、gzip materialize 搜索与 structuredContent；release 旧于 src 源码时 demo 拒绝运行 | S:演示全程本地、无 GUI、无网络、无 xlsx；终端输出必须与脚本一致；npm 依赖只在 scripts/mcp_sdk；CSVX_DEMO_BUILD=1 可自动重建；gzip 不存在时跳过压缩段"
+    }
+  ]
+}
