@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "74c3136450735632f206248ae9ea3642e6b998256b51b99debfe59589565f681",
+  "batch_id": "ed582bd56cf057e81f49b8326d16887868553bd73ab14a0d0b44f89188629241",
+  "composite_identity": "ac486643d7c200d2e5c81e8f9b3061f375a57d0a52af971f3005240f07adbabf",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "52b45638bd9ef8123f80717c2eb6c01014ec5bb38d75fddc10e8fa921a94e248",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "9057f8b30f774cbc5ae234dfd950b317c5be8f961cdbf09176dd09176d08b3d4",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:CLI 入口；pipeline run/status/watch 快跳过、--force、--dry-run、--json、--dag、--jobs、--step-timeout、--retries、--clean、--unlock、--verify、--fail-on-stale；watch 轮询（--interval-ms/--backoff-max-ms/--max-failures/--state/--iterations/--verbose/--json），state 时间戳/lastError/nextDelayMs 并读回原因（已达上限拒绝重启）；status verify 按 stamp/hash 判 fresh/stale；run 前取 \u003cplan\u003e.pipeline.lock（死 PID 即清，活主不按年龄清，Drop 释放，--unlock 强制清）；DAG/恢复 | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state/lineage；重复输出与输出=源文件在解析期按 canonical/词法路径拒绝；≤1 MiB 默认哈希（CSVX_CONTENT_CHECK_LIMIT 可调，0 关闭），--content-check 强制所有大小（run/status verify）；并发 run 被锁拒绝；--unlock 需确认无活跃 run；search/filter --materialize 解压临时文件并清死 PID 残留；--progress-markers 在每步完成时立即输出 i/n CSVX_STEP 行；group 是连续同组，dag 才是任意拓扑"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ca9788a4bf4a1f99b26b7189b179c4325512d8b065d53abcc4c22444a8ef9c1d",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "9057f8b30f774cbc5ae234dfd950b317c5be8f961cdbf09176dd09176d08b3d4",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs | A:CLI 入口；pipeline run/status/watch 快跳过、--force、--dry-run、--json、--dag、--jobs、--step-timeout、--retries、--clean、--unlock、--verify、--fail-on-stale；watch 轮询（--interval-ms/--backoff-max-ms/--max-failures/--state/--iterations/--verbose/--json），state 时间戳/lastError/nextDelayMs 并读回原因（已达上限拒绝重启）；status verify 按 stamp/hash 判 fresh/stale；run 前取 \u003cplan\u003e.pipeline.lock（死 PID 即清，活主不按年龄清，Drop 释放，--unlock 强制清）；DAG/恢复 | S:新增 flag 必须写进 print_command_help；pipeline 失败不写 state/lineage；重复输出与输出=源文件在解析期按 canonical/词法路径拒绝；≤1 MiB 默认哈希（CSVX_CONTENT_CHECK_LIMIT 可调，0 关闭），--content-check 强制所有大小（run/status verify）；并发 run 被锁拒绝；--unlock 需确认无活跃 run；search/filter --materialize 解压临时文件并清死 PID 残留；--progress-markers 在每步完成时立即输出 i/n CSVX_STEP 行；group 是连续同组，dag 才是任意拓扑"
+    }
+  ]
+}
