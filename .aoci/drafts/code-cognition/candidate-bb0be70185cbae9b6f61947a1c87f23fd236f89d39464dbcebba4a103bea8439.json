@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "f1fd135f22eb8fdf2fa4367b22e0b996c0be23f3b5ce6a2a06e8df0cc0db4646",
+  "batch_id": "bb0be70185cbae9b6f61947a1c87f23fd236f89d39464dbcebba4a103bea8439",
+  "composite_identity": "97ddd2601cbc16164fac13e4fec6414c3ad2e90ea3247a2d2c34115f9358ae80",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "c8a4b3c0a7b5e82b973a05f388320da4fde42d847ed1f4196fdf9fdce962dc7f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "9e910609d0bfd073fe1b4a658766e1db01cfe54333223188b2e57079b831fd43",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter -o 压缩；gate 文件/目录三端 + unique-global；concat CLI/HTTP/MCP；report spec/specText + chart（count/sum）SVG + compare 限 root；typed view HTTP；typed edit apply；pipeline；mcp 23 工具 | S:report 无 GUI；chart 静态 SVG；compare 只读限 root；gate 失败 JSON 带原因；unique-global 成本高；typed view 简单窗口"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "70bb3900abbcc3b7c7ea5cba687ea0fcae3ff6d3ec01990b7540b310c6e2ec11",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "9e910609d0bfd073fe1b4a658766e1db01cfe54333223188b2e57079b831fd43",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter -o 压缩；gate 文件/目录三端 + unique-global；concat CLI/HTTP/MCP；report spec/specText + chart（count/sum）SVG + compare 限 root；typed view HTTP；typed edit apply；pipeline；mcp 23 工具 | S:report 无 GUI；chart 静态 SVG；compare 只读限 root；gate 失败 JSON 带原因；unique-global 成本高；typed view 简单窗口"
+    }
+  ]
+}
