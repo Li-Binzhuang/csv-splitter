@@ -37,6 +37,16 @@
 - 每个里程碑最多一次 push；gate 绿、AOCI aligned、tree clean。
 - 商业化价格/合同/SLA 由用户确认，不自行承诺。
 
+## Round 159 checkpoint（2026-11-24）
+
+自 Round 150 后新增/关闭：
+- 第 17/18 个 MCP 工具 `csvx_cache_clear` / `csvx_cache_stats`；
+- 两个缓存工具都不可提交为 job（`server tool` 错误）；
+- Python 与官方 SDK demo 命中缓存、清空并复查 `cache_after=0`；
+- 离线包重建并自验（18 工具，SHA `45ab459b`）。
+
+技术侧没有新的高价值缺口；真实客户试点仍由用户决定。
+
 ## Round 150 checkpoint（2026-11-24）
 
 自 Round 137 后新增/关闭：
