@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a16e7e17fb792b11e0cf8f7d05faf05bcf8b219d27747f1da042aed049053548",
+  "batch_id": "ba4784970988b15c81abaa3c608759e7bd92c79a88a2153aeb3dcfd805a0a729",
+  "composite_identity": "dbdbd46ce922edce27d3dd5c5d447cb69558b64b0defd0803e182b14a58f9e45",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "47ee88f5f927a0e41f70ccbd44eef0e3fec789cec2c39bbc3680fe6c51884104",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "1c75d1a4ae816a7b8ad9a2db7cf89ba89bbe6a12dda9be3378b213eceaa27459",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-24 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 18 工具与 SDK；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程已实测 -T4 仅 2%，不引入外部 CLI；job 历史/LRU/缓存监控/白名单/watch 状态生命周期已落地；Ubuntu/Windows CI 与 macOS 均绿；含 Round 100/113/137/150 checkpoint | S:未测数字不写；价格/SLA 需用户确认；随离线包分发；MCP 缓存 gzip/zst/bz2 已验证"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "b3c8d869f00f46fc694fb5ccf4ac2c7b6005765a965fedbaf83bfc88ee6143e3",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "1c75d1a4ae816a7b8ad9a2db7cf89ba89bbe6a12dda9be3378b213eceaa27459",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-24 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 18 工具与 SDK；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程已实测 -T4 仅 2%，不引入外部 CLI；job 历史/LRU/缓存监控/白名单/watch 状态生命周期已落地；Ubuntu/Windows CI 与 macOS 均绿；含 Round 100/113/137/150 checkpoint | S:未测数字不写；价格/SLA 需用户确认；随离线包分发；MCP 缓存 gzip/zst/bz2 已验证"
+    }
+  ]
+}
