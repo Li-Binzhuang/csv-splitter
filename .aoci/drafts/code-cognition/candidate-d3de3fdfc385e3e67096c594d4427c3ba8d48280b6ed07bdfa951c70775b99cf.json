@@ -1,0 +1,75 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a5baa500a10b6b42df032276931f816887aa13b30caf2ca76a1264b394fa0940",
+  "batch_id": "d3de3fdfc385e3e67096c594d4427c3ba8d48280b6ed07bdfa951c70775b99cf",
+  "composite_identity": "d89b3ed6cbea760f97f8815cfc622f14688b2f2198ed7ab17d809cdd001c0d28",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e3bcb03e65b80c804c564a996b408e08787201466d870d1d728611a3ca237e30",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "edae5d288a1c9ed06300971421a5abcbf73e12e0aacd43d5ebdb670f32ea11a3",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/xlsx.rs,code:crates/core/src/contract.rs | A:HTTP 读写/job；/ops；/report --root；/gate 文件/目录 + uniqueGlobal；/rows ViewRequest；/edit EditApplyRequest；/concat paths/dir；MCP 23 工具，convert enum 含 xlsx+sheet | S:uniqueGlobal 需配 unique；gate 目录聚合；out=./sub 排除自身；report compare 限 root；/rows 复杂分支仍 SQL；缓存 4 GiB/16"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "create",
+      "source_sha256": "30f2cb165c270a97241dfd9909c07e2f5075c28274167e05b7d4b1e6b0d7253c"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BIG_PLAN.md",
+      "path": "docs/BIG_PLAN.md",
+      "change": "update",
+      "source_sha256": "bb60e3fd5c822485fe929f90f269ec80edbc553adfa97392ae8ea8aa93e1d846",
+      "existing_entry": "BIG_PLAN.md[SW7S]: F:xlsx + Agent 原生后端的大计划：工作流、接口、里程碑、非目标 | R:code:docs/PRODUCT_PLAN.md,code:docs/XLSX.md,code:docs/DSH_MODEL_TEST.md | A:M1 xlsx 导出、M2 导入与目录→多 sheet 已落；M3 公式缓存/M4 Agent API/M5 runner 与 DSH/M6 整理；Agent API manifest/sessions/actions/SSE/approvals/audit | S:不写 GUI/多用户/宏；apply 需审批；前端仍不做；计划中的 flag 未实现前不可写进帮助"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "70215aa41e2a29044876bb1b2d08da102e923e606b380b16546023296cf48aa0",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:docs/XLSX.md,code:crates/core/src/engine.rs | A:公式、边界；filter 压缩；gate 文件/目录三端 + unique-global；concat 三端；report spec/chart/compare/root；convert xlsx 单文件/目录多 sheet + 只读导入；typed view/apply；mcp 23 工具 | S:report 无 GUI；chart 静态 SVG；compare 限 root；xlsx 日期暂按数值；unique-global 成本高；typed view 简单窗口"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "bdcda4d0b3e2d8e258d78c94f1be6ce4519866415347cd4d68b45fe15b7c6c7a",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "edae5d288a1c9ed06300971421a5abcbf73e12e0aacd43d5ebdb670f32ea11a3",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/xlsx.rs,code:crates/core/src/contract.rs | A:HTTP 读写/job；/ops；/report --root；/gate 文件/目录 + uniqueGlobal；/rows ViewRequest；/edit EditApplyRequest；/concat paths/dir；MCP 23 工具，convert enum 含 xlsx+sheet | S:uniqueGlobal 需配 unique；gate 目录聚合；out=./sub 排除自身；report compare 限 root；/rows 复杂分支仍 SQL；缓存 4 GiB/16"
+    },
+    {
+      "candidate_id": "ae0fc82814e36e1c11e644bfe7c9ea8dc2f28fcae5826003e836bc95b0279f84",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "create",
+      "source_sha256": "30f2cb165c270a97241dfd9909c07e2f5075c28274167e05b7d4b1e6b0d7253c"
+    },
+    {
+      "candidate_id": "26da33ac83a11ca5c83e83c08b74dbc455546dd5e4dfe8372cfe49a3e7d4641d",
+      "object_ref": "code:docs/BIG_PLAN.md",
+      "path": "docs/BIG_PLAN.md",
+      "change": "update",
+      "source_sha256": "bb60e3fd5c822485fe929f90f269ec80edbc553adfa97392ae8ea8aa93e1d846",
+      "existing_entry": "BIG_PLAN.md[SW7S]: F:xlsx + Agent 原生后端的大计划：工作流、接口、里程碑、非目标 | R:code:docs/PRODUCT_PLAN.md,code:docs/XLSX.md,code:docs/DSH_MODEL_TEST.md | A:M1 xlsx 导出、M2 导入与目录→多 sheet 已落；M3 公式缓存/M4 Agent API/M5 runner 与 DSH/M6 整理；Agent API manifest/sessions/actions/SSE/approvals/audit | S:不写 GUI/多用户/宏；apply 需审批；前端仍不做；计划中的 flag 未实现前不可写进帮助"
+    },
+    {
+      "candidate_id": "9e7ae12b8ff2c300d86736ea4983b48e990081344e0efb4d5a40d43afa464619",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "70215aa41e2a29044876bb1b2d08da102e923e606b380b16546023296cf48aa0",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:docs/XLSX.md,code:crates/core/src/engine.rs | A:公式、边界；filter 压缩；gate 文件/目录三端 + unique-global；concat 三端；report spec/chart/compare/root；convert xlsx 单文件/目录多 sheet + 只读导入；typed view/apply；mcp 23 工具 | S:report 无 GUI；chart 静态 SVG；compare 限 root；xlsx 日期暂按数值；unique-global 成本高；typed view 简单窗口"
+    }
+  ]
+}
