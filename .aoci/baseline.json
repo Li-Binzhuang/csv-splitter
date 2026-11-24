@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-24T12:05:06Z",
+  "updated_at": "2026-11-24T12:06:53Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "094f35a22c4a3aa35408a9bc4dcd923ec079eca42ffaecfa4ca4cc18a6c0c505",
-      "size": 56431,
-      "normalized_sha256": "094f35a22c4a3aa35408a9bc4dcd923ec079eca42ffaecfa4ca4cc18a6c0c505"
+      "sha256": "20106eba238e1322d8487ae78835d1f1bad06378d58a55e5130523cd8cd86bc3",
+      "size": 56874,
+      "normalized_sha256": "20106eba238e1322d8487ae78835d1f1bad06378d58a55e5130523cd8cd86bc3"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -574,9 +574,9 @@
     },
     "docs/BIG_PLAN.md": {
       "role": "index",
-      "sha256": "6f2ba6dfe4654256b38badfa3701711c9dde0e170c9673cda0dd069b5133c3f0",
-      "size": 6275,
-      "normalized_sha256": "6f2ba6dfe4654256b38badfa3701711c9dde0e170c9673cda0dd069b5133c3f0"
+      "sha256": "57bfe99ab112babca5d3dc54532b567252b73d41145f7fb435dedd8ef5037a35",
+      "size": 6399,
+      "normalized_sha256": "57bfe99ab112babca5d3dc54532b567252b73d41145f7fb435dedd8ef5037a35"
     },
     "docs/BUSINESS.md": {
       "role": "index",
@@ -607,6 +607,12 @@
       "sha256": "86e3eb545a8b6bd33ab5135c9c4af28dd309321ddd5135d608af1dda184e6f1c",
       "size": 9393,
       "normalized_sha256": "86e3eb545a8b6bd33ab5135c9c4af28dd309321ddd5135d608af1dda184e6f1c"
+    },
+    "docs/DSH_MODEL_TEST.md": {
+      "role": "index",
+      "sha256": "9ae0466ac5f3d629d1c621bbaf6eacf58242013862ec33e602ccb1ae651077d1",
+      "size": 1097,
+      "normalized_sha256": "9ae0466ac5f3d629d1c621bbaf6eacf58242013862ec33e602ccb1ae651077d1"
     },
     "docs/GETTING_STARTED.md": {
       "role": "index",
