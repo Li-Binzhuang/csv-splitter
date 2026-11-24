@@ -64,6 +64,10 @@ if (existsSync(join(root, "orders.csv.gz"))) {
     materialize: true,
   });
   console.log(`gzip_matched=${gzip.matched ?? 0}`);
+  await call("csvx_search", { path: "orders.csv.gz", query: "CDMX", materialize: true });
+  const cache = await call("csvx_cache_stats", {});
+  console.log(`cache_hits=${cache.hits}`);
+  console.log(`cache_entries=${cache.entries}`);
 }
 const job = await call("csvx_job_submit", {
   tool: "csvx_quality",
