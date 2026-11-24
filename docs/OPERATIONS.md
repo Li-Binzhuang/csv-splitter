@@ -66,7 +66,8 @@ MCP adapter ─┘        │
 
 **Stage 2（目录部分已完成）**
 - HTTP `GET /ops` 与 MCP `csvx://operations` 返回同一份 `operations_json()`；
-- 剩余：把 `schema`、`view`、`filter` 的请求/响应类型移入 core；
+- 已新增 `core::ops` 的 `SchemaRequest/Response`、`ViewRequest/Response`、`FilterRequest/Response`；
+- 剩余：让三个 adapter 改用 typed 类型（当前仍各自解析字符串）；
 - CLI 只做字符串到类型的适配。
 
 **Stage 3**

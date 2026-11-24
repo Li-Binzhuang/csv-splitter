@@ -100,7 +100,7 @@ core 里 40 个模块，按职责分组（文件名即模块名）：
 | **结构比对** | `schema`（列集合的增/减/移位；CLI 与 `GET /schema?diff=` 共用同一份实现）|
 | **切分与压缩** | `splitter` `split_parallel` `merge` `compress` `pack` `decompress` `partition` `check` |
 | **面向客户端** | `sheet` `book` `listing` `jobs` `cache` `demo` |
-| **共用工具** | `json`（唯一的 JSON 字符串转义）、`types`、`engine`（native 与 DuckDB 的选择器）、`contract`（CLI/HTTP/MCP 共用的操作与错误码目录）|
+| **共用工具** | `json`（唯一的 JSON 字符串转义）、`types`、`engine`（native 与 DuckDB 的选择器）、`contract`（CLI/HTTP/MCP 共用的操作与错误码目录）、`ops`（schema/view/filter 的 typed 请求/响应）|
 | **入口** | `crates/cli/src/main.rs`（命令行）· `serve.rs`（HTTP 后端，前端由别人接）|
 
 ## 不变式在哪守 / Where the invariants live

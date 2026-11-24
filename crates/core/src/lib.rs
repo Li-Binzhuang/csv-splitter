@@ -23,6 +23,7 @@ pub mod layout;
 pub mod listing;
 pub mod lookup;
 pub mod merge;
+pub mod ops;
 pub mod pack;
 pub mod partition;
 pub mod pivot;
