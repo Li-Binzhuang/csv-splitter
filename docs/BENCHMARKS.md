@@ -89,7 +89,8 @@ csvx index big.csv
 | `orders.csv.zst`（3.2 MB） | 0.279 s | 0.101 s | 7,000,000 |
 | `orders.csv.bz2`（7.4 MB） | 0.693 s | 0.100 s | 7,000,000 |
 
-- MCP server peak RSS 85 MB；查询 `ZZZ` 无命中，强制扫全量。2 GB+ 复测（120M 行，2026-11-23）：gzip 426 MB，4.545→1.590 s，RSS 82 MB。
+- MCP server peak RSS 85 MB；查询 `ZZZ` 无命中，强制扫全量。2 GB+ 复测（120M 行）：2026-11-23 为 4.545→1.590 s；2026-11-24 为 4.914→1.726 s；
+两次 RSS 均 82 MB，差异按机器噪声处理。
 - 首次含解压到临时 CSV；第二次复用缓存。
 - 未清 page cache；非 SLA；110 MB 文件远小于默认 4 GiB 上限。
 
