@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "2c984c7df745f2a645b6db653ed4d6eb1a1cd5f3a98e2561e334e9515bf6e3c0",
+  "batch_id": "fc2d718ddb5b561da0c593e8967a84c89eb4dcda0b82e6840650a0b839cd0cd2",
+  "composite_identity": "6f1436057393893bcdfddc40ee2db7572e271de28b1628fab28227f0ebd83107",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "6f772e4d575850bdf800f87128359f1c8b1aadaf15cc353bd57ec5083ad8aabf",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "26ca07abdb5c4667d1899ff033e9ac51203f694b60bf812e6d6b4b9035abef2c",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行/压缩输出、gate 门槛、compact/book/quality/convert、pipeline 快跳过/--dry-run/JSON/lineage/verify/锁/group/staging、mcp 19 工具+resources、ops/typed ops、edit preview 三端、MCP 残留清理 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16（env），启动清死 PID；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "5724f1c171ad5ab24a2b005d73d2de438e1f15766045e44f55b8d78c0b0afdce",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:CLI 入口；gate 质量门禁（min-rows/max-empty/unique，失败 1）；pipeline 可用 gate 作步骤；edit transaction --dry-run；schema/filter/view 简单路径 typed；watch JSON/state；ops 目录 | S:新增 flag 必须写进 print_command_help；gate --unique 用 1-based column_index 再转 0-based；dry-run 只支持 transaction；pipeline 失败不写 state/lineage；重复输出/输出=源拒绝；≤1 MiB 哈希；锁/CSVX_STEP；group 连续，dag 任意拓扑"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "eda5a08fcae2dfe0b96190f3d3cba16b2b1b0903485ead9b499eaee343262e28",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter -o 压缩；gate min-rows/max-empty/unique + JSON 报告；pipeline 用 gate 步骤失败即停；compact/book/quality/convert；mcp 19 工具；压缩 materialize | S:progress 覆盖 job wait 与 pipeline 步骤；gate 唯一性最多 100 万值"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/OPERATIONS.md",
+      "path": "docs/OPERATIONS.md",
+      "change": "update",
+      "source_sha256": "347925e5b75fa2aa2b9d1c5796eb19c2dd6609296e357fb7eaca7eac57d8379c",
+      "existing_entry": "OPERATIONS.md[SG8T]: F:操作契约层 ADR：Stage 1 目录、适配器迁移与 preview/apply 规则 | R:code:crates/core/src/contract.rs,code:crates/core/src/ops.rs,code:crates/cli/src/main.rs,code:crates/cli/src/serve.rs,code:docs/ARCHITECTURE.md | A:问题/决定/14 操作；Stage 1 CLI ops；Stage 2 /ops+MCP resource、typed、schema/filter CLI+HTTP、view CLI 简单路径；Stage 3 preview 三端；Stage 4 filter 压缩、gate 门禁、schema/前端 | S:Stage 1 只有目录；view HTTP/复杂路径未接；journal hash 非 SHA；gate 唯一性 cap；input/output 摘要不冒充 JSON Schema"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4e49f558efee74a0d01e79eea96c2b409009c8eb18baa4c1cc2c556b4782799d",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "26ca07abdb5c4667d1899ff033e9ac51203f694b60bf812e6d6b4b9035abef2c",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行/压缩输出、gate 门槛、compact/book/quality/convert、pipeline 快跳过/--dry-run/JSON/lineage/verify/锁/group/staging、mcp 19 工具+resources、ops/typed ops、edit preview 三端、MCP 残留清理 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16（env），启动清死 PID；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "c86e76ce641a02a1d7c3af5cae39531da58acf4af1617ea897a5e6e5222e69a6",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "5724f1c171ad5ab24a2b005d73d2de438e1f15766045e44f55b8d78c0b0afdce",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:CLI 入口；gate 质量门禁（min-rows/max-empty/unique，失败 1）；pipeline 可用 gate 作步骤；edit transaction --dry-run；schema/filter/view 简单路径 typed；watch JSON/state；ops 目录 | S:新增 flag 必须写进 print_command_help；gate --unique 用 1-based column_index 再转 0-based；dry-run 只支持 transaction；pipeline 失败不写 state/lineage；重复输出/输出=源拒绝；≤1 MiB 哈希；锁/CSVX_STEP；group 连续，dag 任意拓扑"
+    },
+    {
+      "candidate_id": "a264f7954f0dd6afed7a536c1d7f419ceaeb1b5ab3b6633a3435011f6ce9f992",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "eda5a08fcae2dfe0b96190f3d3cba16b2b1b0903485ead9b499eaee343262e28",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter -o 压缩；gate min-rows/max-empty/unique + JSON 报告；pipeline 用 gate 步骤失败即停；compact/book/quality/convert；mcp 19 工具；压缩 materialize | S:progress 覆盖 job wait 与 pipeline 步骤；gate 唯一性最多 100 万值"
+    },
+    {
+      "candidate_id": "3dc019719637991962dedf9f92554ea52b49e5fcc54ffe2a7bbc5c53b92172c8",
+      "object_ref": "code:docs/OPERATIONS.md",
+      "path": "docs/OPERATIONS.md",
+      "change": "update",
+      "source_sha256": "347925e5b75fa2aa2b9d1c5796eb19c2dd6609296e357fb7eaca7eac57d8379c",
+      "existing_entry": "OPERATIONS.md[SG8T]: F:操作契约层 ADR：Stage 1 目录、适配器迁移与 preview/apply 规则 | R:code:crates/core/src/contract.rs,code:crates/core/src/ops.rs,code:crates/cli/src/main.rs,code:crates/cli/src/serve.rs,code:docs/ARCHITECTURE.md | A:问题/决定/14 操作；Stage 1 CLI ops；Stage 2 /ops+MCP resource、typed、schema/filter CLI+HTTP、view CLI 简单路径；Stage 3 preview 三端；Stage 4 filter 压缩、gate 门禁、schema/前端 | S:Stage 1 只有目录；view HTTP/复杂路径未接；journal hash 非 SHA；gate 唯一性 cap；input/output 摘要不冒充 JSON Schema"
+    }
+  ]
+}
