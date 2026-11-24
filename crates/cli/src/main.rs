@@ -9205,7 +9205,7 @@ fn watch_pipeline(
                         .collect::<Vec<_>>()
                         .join(",");
                     println!(
-                        r#"{{"watch":true,"round":{},"ran":{},"total":{},"nextDelayMs":{},"steps":[{}]}}"#,
+                        r#"{{"watch":true,"round":{},"ran":{},"total":{},"consecutiveFailures":0,"nextDelayMs":{},"steps":[{}]}}"#,
                         round,
                         ran,
                         results.len(),
@@ -9249,8 +9249,9 @@ fn watch_pipeline(
                 let next_delay_ms = delay_ms.saturating_mul(2).min(backoff_max_ms);
                 if json {
                     println!(
-                        r#"{{"watch":true,"round":{},"success":false,"nextDelayMs":{},"error":{}}}"#,
+                        r#"{{"watch":true,"round":{},"success":false,"consecutiveFailures":{},"nextDelayMs":{},"error":{}}}"#,
                         round,
+                        failures,
                         next_delay_ms,
                         json_quote(&error.to_string())
                     );

@@ -249,7 +249,7 @@ warm schema 0.03 s，`view start=45,000,000` 0.02 s，`filter` 0.77 s，`search`
 ### Pipeline（A 工作台，进行中）
 
 `pipeline run plan.csv --root .` 按 CSV 清单顺序执行步骤；`pipeline watch plan.csv
---interval-ms 5000` 持续轮询并按新鲜度自动重跑（`--iterations` 限轮数，`--json` 逐轮输出；
+--interval-ms 5000` 持续轮询并按新鲜度自动重跑（`--iterations` 限轮数，`--json` 逐轮输出（含 failures/nextDelayMs）；
 失败按 2× 退避、`--backoff-max-ms` 封顶、`--max-failures` 连续失败上限；`--state`
 原子写 round/ran/success/failures/最后成功/最后失败/nextDelayMs/lastError/updatedAtMs，启动时读回轮次/失败计数与上次原因，失败计数已达上限则拒绝重启）。
 复用现有命令：
