@@ -6132,6 +6132,16 @@ fn gate_endpoint_reports_200_even_when_the_gate_fails() {
 
     let (code, body) = get(&server.addr, "/gate?path=t.csv&minRows=oops");
     assert_eq!(code, 400, "{body}");
+
+    // A directory runs the aggregate gate: one failing child fails the whole call.
+    std::fs::create_dir(dir.join("sub")).unwrap();
+    std::fs::write(dir.join("sub").join("a.csv"), "id\n1\n").unwrap();
+    std::fs::write(dir.join("sub").join("b.csv"), "id\n2\n3\n").unwrap();
+    let (code, body) = get(&server.addr, "/gate?path=sub&minRows=2");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""files":2"#), "{body}");
+    assert!(body.contains(r#""failed":1"#), "{body}");
+    assert!(body.contains(r#""passed":false"#), "{body}");
 }
 
 /// The HTTP undo honours the same transaction boundary as the CLI.

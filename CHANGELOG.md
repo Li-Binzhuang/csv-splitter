@@ -166,8 +166,8 @@
   `GET /report` and MCP `csvx_report` return the same Markdown/HTML body;
   both also accept an inline spec instead of a file.
 - **Gate on HTTP and MCP**: `GET /gate` returns the JSON gate report with failure
-  reasons and keeps a failed gate at 200 + `passed:false`; MCP `csvx_gate` turns
-  the same failure into a tool error so an agent cannot miss it.
+  reasons and keeps a failed gate at 200 + `passed:false`; a directory path returns
+  the files/failed/reports aggregate; MCP `csvx_gate` turns failure into a tool error.
 - **Directory gate**: `gate <dir>` applies the same thresholds to each `.csv`
   independently and returns one aggregate report; any failing file exits 1.
 - **Directory concat**: `concat <dir>` reads every `.csv` in name order and defaults

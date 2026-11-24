@@ -4775,10 +4775,40 @@ fn gate_endpoint(
     root: &Path,
     params: &HashMap<String, String>,
 ) -> io::Result<()> {
-    let (path, _rel) = match resolve_reason(root, params) {
-        Ok(v) => v,
-        Err(reason) => return bad_path_reason(stream, reason),
+    let Some(raw) = params.get("path").filter(|value| !value.trim().is_empty()) else {
+        return bad_request(
+            stream,
+            "path is required",
+            "path",
+            "pass path=a.csv or path=subdir (inside the root)",
+        );
     };
+    let relative = raw.trim_start_matches(['/', '\\']).to_string();
+    let candidate = root.join(relative);
+    let canonical = match candidate.canonicalize() {
+        Ok(canonical) if canonical.starts_with(root) => canonical,
+        _ => {
+            return respond_json(
+                stream,
+                404,
+                &format!(
+                    r#"{{"error":{}}}"#,
+                    json_str("path is missing or outside the served directory")
+                ),
+            )
+        }
+    };
+    if !canonical.is_file() && !canonical.is_dir() {
+        return respond_json(
+            stream,
+            404,
+            &format!(
+                r#"{{"error":{}}}"#,
+                json_str("path is not a file or directory")
+            ),
+        );
+    }
+    let path = canonical;
     let binary = match std::env::current_exe() {
         Ok(path) => path,
         Err(error) => {
