@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-24T11:13:22Z",
+  "updated_at": "2026-11-24T11:20:41Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "46a61321a4b866e86f71c257c3bc41d7e355efff43c309aa27cb3d68a769c534",
-      "size": 54888,
-      "normalized_sha256": "46a61321a4b866e86f71c257c3bc41d7e355efff43c309aa27cb3d68a769c534"
+      "sha256": "0ba6e873b3361ebe3ff40acef086cb7831c6c6adb56944e4bd52d19d6423d84e",
+      "size": 55536,
+      "normalized_sha256": "0ba6e873b3361ebe3ff40acef086cb7831c6c6adb56944e4bd52d19d6423d84e"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -124,9 +124,9 @@
     },
     "crates/cli/tests/cli.rs": {
       "role": "observe",
-      "sha256": "69b90bcf02ccfb951a7ebf7211c87ea90c6a7113d96cb97a0d532741503c927f",
-      "size": 274411,
-      "normalized_sha256": "69b90bcf02ccfb951a7ebf7211c87ea90c6a7113d96cb97a0d532741503c927f"
+      "sha256": "760727cc28dbc507d1570dbd8efef736edf182bed39f226b5318d214fe130140",
+      "size": 275338,
+      "normalized_sha256": "760727cc28dbc507d1570dbd8efef736edf182bed39f226b5318d214fe130140"
     },
     "crates/cli/tests/contract.rs": {
       "role": "observe",
@@ -142,9 +142,9 @@
     },
     "crates/cli/tests/serve.rs": {
       "role": "observe",
-      "sha256": "4def6df63a89ad3a59a69a7b8346c3623c3593998c2fce409e92288833c348c8",
-      "size": 232295,
-      "normalized_sha256": "4def6df63a89ad3a59a69a7b8346c3623c3593998c2fce409e92288833c348c8"
+      "sha256": "8a1ce3cd0f77decf168423f6ac97a1695e1d44554b6e2c6b09e53d5fe4a55fcd",
+      "size": 232898,
+      "normalized_sha256": "8a1ce3cd0f77decf168423f6ac97a1695e1d44554b6e2c6b09e53d5fe4a55fcd"
     },
     "crates/cli/tests/viewer.rs": {
       "role": "observe",
@@ -622,9 +622,9 @@
     },
     "docs/NIGHT_QUEUE.md": {
       "role": "index",
-      "sha256": "c14b873af6b738ef7482fd084062120a1afda869b0c7d5fd82dceb636b220f2f",
-      "size": 484,
-      "normalized_sha256": "c14b873af6b738ef7482fd084062120a1afda869b0c7d5fd82dceb636b220f2f"
+      "sha256": "cfe909638cb54c232d431d7cc2fa174a51d6db6ef4fc948e15493e64714458c3",
+      "size": 537,
+      "normalized_sha256": "cfe909638cb54c232d431d7cc2fa174a51d6db6ef4fc948e15493e64714458c3"
     },
     "docs/OPERATIONS.md": {
       "role": "index",
@@ -685,6 +685,12 @@
       "sha256": "57a2f7e4db7d6f0e14ae4cdeed797f595c8c34f9380a8163ddc71f9a6d6bcb3f",
       "size": 4307,
       "normalized_sha256": "57a2f7e4db7d6f0e14ae4cdeed797f595c8c34f9380a8163ddc71f9a6d6bcb3f"
+    },
+    "docs/THIN_FRONTEND_PLAN.md": {
+      "role": "index",
+      "sha256": "151573c1f139a00321f063957e4583b65fb202660270a919b6a901d4ba31546c",
+      "size": 1816,
+      "normalized_sha256": "151573c1f139a00321f063957e4583b65fb202660270a919b6a901d4ba31546c"
     },
     "docs/TROUBLESHOOTING.md": {
       "role": "index",
