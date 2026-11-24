@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-24T10:13:38Z",
+  "updated_at": "2026-11-24T10:19:17Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "ef4dbbdad404d9ddfd24a1cdd0114ce19dd2f40df8b6ce7c8b00ab8a8e61e868",
-      "size": 54081,
-      "normalized_sha256": "ef4dbbdad404d9ddfd24a1cdd0114ce19dd2f40df8b6ce7c8b00ab8a8e61e868"
+      "sha256": "09ec9408b14122c606caad27c254354ce20399f10738df5223b2f0c2d883f9e8",
+      "size": 54125,
+      "normalized_sha256": "09ec9408b14122c606caad27c254354ce20399f10738df5223b2f0c2d883f9e8"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -124,9 +124,9 @@
     },
     "crates/cli/tests/cli.rs": {
       "role": "observe",
-      "sha256": "23bd787bdc882a6be7e11af1b3475e3ab93fa5c9e8fcf532c8ca541a33336ee6",
-      "size": 270325,
-      "normalized_sha256": "23bd787bdc882a6be7e11af1b3475e3ab93fa5c9e8fcf532c8ca541a33336ee6"
+      "sha256": "2a96bedbe5d91e0bfe920105512c719bb5adb2d84e31fd011418eeceb91def65",
+      "size": 270546,
+      "normalized_sha256": "2a96bedbe5d91e0bfe920105512c719bb5adb2d84e31fd011418eeceb91def65"
     },
     "crates/cli/tests/contract.rs": {
       "role": "observe",
@@ -142,9 +142,9 @@
     },
     "crates/cli/tests/serve.rs": {
       "role": "observe",
-      "sha256": "b923cce83fa26a27b05ea4d38ae3dc31a1e30a962d9d5c534be01f2102c243a5",
-      "size": 229989,
-      "normalized_sha256": "b923cce83fa26a27b05ea4d38ae3dc31a1e30a962d9d5c534be01f2102c243a5"
+      "sha256": "755702e91441f3aa690456a688b95e805cea9493cfdd9fd984d662c2b85e3212",
+      "size": 230695,
+      "normalized_sha256": "755702e91441f3aa690456a688b95e805cea9493cfdd9fd984d662c2b85e3212"
     },
     "crates/cli/tests/viewer.rs": {
       "role": "observe",
@@ -208,9 +208,9 @@
     },
     "crates/core/src/contract.rs": {
       "role": "index",
-      "sha256": "7ca9e3d711f446969f1dcd6c754147973ebbaf9b95410606fc1f320d29dcf435",
-      "size": 8625,
-      "normalized_sha256": "7ca9e3d711f446969f1dcd6c754147973ebbaf9b95410606fc1f320d29dcf435"
+      "sha256": "bca361653733dee7a324a21b11b67dcf2f9985ef2a5dae3b490d4ec6e28b57b0",
+      "size": 8644,
+      "normalized_sha256": "bca361653733dee7a324a21b11b67dcf2f9985ef2a5dae3b490d4ec6e28b57b0"
     },
     "crates/core/src/csv_reader.rs": {
       "role": "index",
