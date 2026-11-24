@@ -25,7 +25,7 @@ edit_ok=True
 convert_ok=True
 job=done
 == MCP official SDK ==
-sdk_tools=20
+sdk_tools=21
 schema_rows=5
 filter_matched=3
 view_rows=2
@@ -76,7 +76,7 @@ CSVX_BIN=../../target/release/csvx CSVX_ROOT="$DIR" CSVX_FILE=orders.csv node cl
 实际输出：
 
 ```text
-sdk_tools=20
+sdk_tools=21
 schema_rows=3
 filter_matched=2
 view_rows=2

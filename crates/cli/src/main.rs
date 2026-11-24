@@ -6097,13 +6097,36 @@ fn cmd_gate(args: &[String]) -> i32 {
         .as_ref()
         .is_none_or(|_| !unique_duplicate && unique_values == seen);
     let passed = min_ok && empty_ok && unique_ok;
+    let mut failures = Vec::new();
+    if !min_ok {
+        failures.push(format!("rows {total} < minimum {}", min_rows.unwrap_or(0)));
+    }
+    if !empty_ok {
+        failures.push(format!(
+            "empty {empty} > maximum {}",
+            max_empty.unwrap_or(0)
+        ));
+    }
+    if !unique_ok {
+        if unique_duplicate {
+            failures.push("unique column has duplicates".to_string());
+        } else {
+            failures.push("unique column could not be proven unique".to_string());
+        }
+    }
+    let failures_json = failures
+        .iter()
+        .map(|failure| format!("\"{}\"", json_escape(failure)))
+        .collect::<Vec<_>>()
+        .join(",");
     if let Some(path) = &out {
         let mut text = String::from("{\"passed\":");
         text.push_str(if passed { "true" } else { "false" });
         text.push_str(&format!(
-            ",\"rows\":{total},\"empty\":{empty},\"uniqueValues\":{},\"uniqueDuplicates\":{},\"checks\":{{\"minRows\":{:?},\"maxEmpty\":{:?},\"unique\":{:?}}}",
+            ",\"rows\":{total},\"empty\":{empty},\"uniqueValues\":{},\"uniqueDuplicates\":{},\"failures\":[{}],\"checks\":{{\"minRows\":{:?},\"maxEmpty\":{:?},\"unique\":{:?}}}",
             unique_values,
             unique_duplicate,
+            failures_json,
             min_rows,
             max_empty,
             unique.as_deref().map(json_escape)
@@ -6115,12 +6138,13 @@ fn cmd_gate(args: &[String]) -> i32 {
     }
     if json {
         println!(
-            "{{\"passed\":{},\"rows\":{},\"empty\":{},\"uniqueValues\":{},\"uniqueDuplicates\":{}}}",
+            "{{\"passed\":{},\"rows\":{},\"empty\":{},\"uniqueValues\":{},\"uniqueDuplicates\":{},\"failures\":[{}]}}",
             passed,
             total,
             empty,
             unique_values,
-            unique_duplicate
+            unique_duplicate,
+            failures_json
         );
     } else {
         println!(

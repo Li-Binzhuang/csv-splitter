@@ -165,6 +165,8 @@
   groups is real groupby (count or sum/mean/min/max on a measure);
   `GET /report` and MCP `csvx_report` return the same Markdown/HTML body;
   both also accept an inline spec instead of a file.
+- **MCP gate**: `csvx_gate` returns the JSON gate report, including failure
+  reasons; a failing gate is an MCP tool error so an agent cannot miss it.
 - **Directory gate**: `gate <dir>` applies the same thresholds to each `.csv`
   independently and returns one aggregate report; any failing file exits 1.
 - **Directory concat**: `concat <dir>` reads every `.csv` in name order and defaults

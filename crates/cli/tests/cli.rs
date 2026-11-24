@@ -2826,6 +2826,8 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
             r#"{"jsonrpc":"2.0","id":16,"method":"tools/call","params":{"name":"csvx_edit_preview","arguments":{"path":"t.csv","ops":"set:1:city:Y;delete:2:1"}}}"#,
             r#"{"jsonrpc":"2.0","id":17,"method":"tools/call","params":{"name":"csvx_report","arguments":{"path":"t.csv","spec":"spec.csv","format":"md"}}}"#,
             r#"{"jsonrpc":"2.0","id":18,"method":"tools/call","params":{"name":"csvx_report","arguments":{"path":"t.csv","specText":"title,Inline MCP\nsummary,","format":"md"}}}"#,
+            r#"{"jsonrpc":"2.0","id":19,"method":"tools/call","params":{"name":"csvx_gate","arguments":{"path":"t.csv","minRows":2,"unique":"city"}}}"#,
+            r#"{"jsonrpc":"2.0","id":20,"method":"tools/call","params":{"name":"csvx_gate","arguments":{"path":"t.csv","minRows":99}}}"#,
             r#"not-json"#,
         ] {
             writeln!(stdin, "{line}").unwrap();
@@ -2855,6 +2857,15 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
     assert!(stdout.contains(r#""name":"csvx_report""#), "{stdout}");
     assert!(stdout.contains("# MCP report"), "{stdout}");
     assert!(stdout.contains("# Inline MCP"), "{stdout}");
+    assert!(stdout.contains(r#""name":"csvx_gate""#), "{stdout}");
+    assert!(
+        stdout.contains("gate failed"),
+        "failed gate must be reported: {stdout}"
+    );
+    assert!(
+        stdout.contains("minimum 99"),
+        "gate reason must be named: {stdout}"
+    );
     assert!(stdout.contains(r#""isError":false"#), "{stdout}");
     assert!(stdout.contains("Puebla"), "{stdout}");
     assert!(stdout.contains("20"), "{stdout}");
