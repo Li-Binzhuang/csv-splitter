@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "b8f66edc7d440b5097b0df5903cc83788cae98422997d747bbaff1183914d697",
+  "batch_id": "289ab9ee6ba3bb644175b23598bd9382e2f3e0866e2b043a7b720a196e4da676",
+  "composite_identity": "4ce1d7819f6bded4780e606751440d9535d6493ffc54256e983ee9c3cbca630e",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "8bda85fd3abfeec413d401bbe906f61b2f2865462b0fff04b8cdfac2f1b30f5a",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "b96ac3c52ee0791120689bb103bedd7f5aacd8b0ddcdebc9845f6ca40c8d231f",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-23 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 16 工具与 SDK progress/status/gzip；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程已实测 -T4 仅 2%，不引入外部 CLI；job 历史/LRU/缓存监控已落地；Ubuntu/Windows CI 与 macOS 均绿；含 Round 100/113 checkpoint | S:未测数字不写；价格/SLA 需用户确认；随离线包分发；MCP 缓存 gzip/zst/bz2 已验证"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "02ebf5bac0593ec8a7213ca4897dcc7b7ba737b399a3dc83b1c7fed19f763d8a",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "b96ac3c52ee0791120689bb103bedd7f5aacd8b0ddcdebc9845f6ca40c8d231f",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-23 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 16 工具与 SDK progress/status/gzip；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程已实测 -T4 仅 2%，不引入外部 CLI；job 历史/LRU/缓存监控已落地；Ubuntu/Windows CI 与 macOS 均绿；含 Round 100/113 checkpoint | S:未测数字不写；价格/SLA 需用户确认；随离线包分发；MCP 缓存 gzip/zst/bz2 已验证"
+    }
+  ]
+}
