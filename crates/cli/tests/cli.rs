@@ -2930,7 +2930,7 @@ fn mcp_jobs_run_asynchronously_and_report_state() {
         std::thread::sleep(std::time::Duration::from_millis(1500));
         writeln!(
             stdin,
-            r#"{{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{{"name":"csvx_job_status","arguments":{{"id":"job-1"}}}}}}"#
+            r#"{{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{{"name":"csvx_job_status","arguments":{{"id":"job-1","wait":5}}}}}}"#
         )
         .unwrap();
         stdin.flush().unwrap();
@@ -7718,10 +7718,14 @@ fn gate_accepts_a_directory_of_csv_files() {
 #[test]
 fn report_renders_a_csv_spec() {
     let dir = TempDir::new("reportspec");
-    std::fs::write(dir.join("t.csv"), "id,city,note\n1,CDMX,a|b\n2,<x>,ok\n").unwrap();
+    std::fs::write(
+        dir.join("t.csv"),
+        "id,city,amount,note\n1,CDMX,10,a|b\n2,<x>,20,ok\n",
+    )
+    .unwrap();
     std::fs::write(
         dir.join("spec.csv"),
-        "title,Sales report\nsummary,\ncolumns,\nquality,id\ngroups,city:2\nrows,2\n",
+        "title,Sales report\nsummary,\ncolumns,\nquality,id\ngroups,city:2\nchart,city:amount\nrows,2\n",
     )
     .unwrap();
     let md = Command::new(bin())
@@ -7736,13 +7740,14 @@ fn report_renders_a_csv_spec() {
     assert!(md.status.success(), "{:?}", md);
     let text = String::from_utf8_lossy(&md.stdout);
     assert!(text.contains("# Sales report"), "{text}");
-    assert!(text.contains("| id | city | note |"), "{text}");
+    assert!(text.contains("| id | city | amount | note |"), "{text}");
     assert!(text.contains("a\\|b"), "a pipe must be escaped: {text}");
     assert!(text.contains("## Quality"), "{text}");
     assert!(text.contains("unique and non-empty"), "{text}");
     assert!(text.contains("## Groups: city"), "{text}");
     assert!(text.contains("| city | count_id |"), "{text}");
     assert!(text.contains("| CDMX | 1 |"), "{text}");
+    assert!(text.contains("## Chart: city · sum(amount)"), "{text}");
 
     let inline = Command::new(bin())
         .args([
@@ -7773,6 +7778,11 @@ fn report_renders_a_csv_spec() {
     let text = std::fs::read_to_string(dir.join("r.html")).unwrap();
     assert!(text.starts_with("<!doctype html>"), "{text}");
     assert!(text.contains("&lt;x&gt;"), "html must escape input: {text}");
+    assert!(
+        text.contains("<svg"),
+        "html chart must be a static svg: {text}"
+    );
+    assert!(text.contains("Chart: city · sum(amount)"), "{text}");
     assert!(!text.contains("<x>"), "raw input leaked into html: {text}");
 }
 

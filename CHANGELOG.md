@@ -167,7 +167,8 @@
   `core::ops::ViewRequest`, matching the CLI's row window without a second viewer.
 - **CSV report spec**: `report data.csv --spec report.csv` renders deterministic
   Markdown/HTML from summary/columns/quality/groups/rows sections, escaping cells;
-  groups is real groupby (count or sum/mean/min/max on a measure);
+  groups is real groupby (count or sum/mean/min/max on a measure); `chart,<x>:<measure>`
+  adds a deterministic static SVG bar chart in HTML (a table in Markdown);
   `GET /report` and MCP `csvx_report` return the same Markdown/HTML body;
   both also accept an inline spec instead of a file.
 - **Gate on HTTP and MCP**: `GET /gate` returns the JSON gate report with failure

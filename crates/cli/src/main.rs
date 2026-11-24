@@ -5400,7 +5400,7 @@ fn cmd_report(args: &[String]) -> i32 {
             }
             if !matches!(
                 kind.as_str(),
-                "summary" | "columns" | "rows" | "quality" | "groups"
+                "summary" | "columns" | "rows" | "quality" | "groups" | "chart"
             ) {
                 eprintln!("error: unknown report section {kind:?}");
                 return 2;
@@ -5682,6 +5682,90 @@ fn cmd_report(args: &[String]) -> i32 {
                         body.push_str("</tr>\n");
                     }
                     body.push_str("</table>\n");
+                }
+            }
+            "chart" => {
+                let pieces: Vec<&str> = arg.split(':').map(str::trim).collect();
+                if pieces.len() < 2 || pieces.len() > 3 {
+                    eprintln!("error: chart needs <x>:<measure>[:limit]");
+                    return 2;
+                }
+                let x = pieces[0];
+                let measure = pieces[1];
+                let limit: usize = pieces
+                    .get(2)
+                    .and_then(|value| value.parse().ok())
+                    .unwrap_or(10);
+                if limit == 0 {
+                    eprintln!("error: chart limit must be positive");
+                    return 2;
+                }
+                if !columns.iter().any(|name| name == x) {
+                    eprintln!("error: chart names unknown x column {x:?}");
+                    return 2;
+                }
+                if !columns.iter().any(|name| name == measure) {
+                    eprintln!("error: chart names unknown measure column {measure:?}");
+                    return 2;
+                }
+                let (label, header, rows) =
+                    match report_group_table(&input, delimiter, x, measure, AggOp::Sum, limit) {
+                        Ok(value) => value,
+                        Err(e) => return report_failure("report", e),
+                    };
+                if format == "md" {
+                    body.push_str(&format!("## Chart: {label}\n\n"));
+                    body.push('|');
+                    for column in &header {
+                        body.push_str(&format!(" {} |", md_cell(column)));
+                    }
+                    body.push('\n');
+                    body.push('|');
+                    for _ in &header {
+                        body.push_str(" --- |");
+                    }
+                    body.push('\n');
+                    for row in &rows {
+                        body.push('|');
+                        for cell in row {
+                            body.push_str(&format!(" {} |", md_cell(cell)));
+                        }
+                        body.push('\n');
+                    }
+                    body.push('\n');
+                } else {
+                    let max = rows
+                        .iter()
+                        .filter_map(|row| row.last().and_then(|value| value.parse::<f64>().ok()))
+                        .fold(0.0, f64::max);
+                    let height = (rows.len() as u64 * 26).saturating_add(12);
+                    body.push_str(&format!("<h2>Chart: {}</h2>\n", html_escape(&label)));
+                    body.push_str(&format!(
+                        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"640\" height=\"{height}\" viewBox=\"0 0 640 {height}\" role=\"img\" aria-label=\"{}\" style=\"max-width:100%\">\n",
+                        html_escape(&label)
+                    ));
+                    for (index, row) in rows.iter().enumerate() {
+                        let y = 6 + index as u64 * 26;
+                        let value = row
+                            .last()
+                            .and_then(|value| value.parse::<f64>().ok())
+                            .unwrap_or(0.0);
+                        let width = if max > 0.0 {
+                            ((value / max) * 300.0).round() as u64
+                        } else {
+                            0
+                        };
+                        let name = row.first().cloned().unwrap_or_default();
+                        body.push_str(&format!(
+                            "<text x=\"180\" y=\"{}\">{}</text><rect x=\"196\" y=\"{}\" width=\"{width}\" height=\"16\" fill=\"#4a90d9\"></rect><text x=\"{}\">{}</text>\n",
+                            y + 13,
+                            html_escape(&name),
+                            y,
+                            196 + width.saturating_add(6),
+                            html_escape(row.last().map(String::as_str).unwrap_or(""))
+                        ));
+                    }
+                    body.push_str("</svg>\n");
                 }
             }
             _ => {}
