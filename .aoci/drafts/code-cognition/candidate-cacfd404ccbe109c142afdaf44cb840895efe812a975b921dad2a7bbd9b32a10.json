@@ -1,0 +1,109 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "cec85c35cf70502f5f13248f04333ce5d9e9f8b8eabc81f4f3e20e6b25552119",
+  "batch_id": "cacfd404ccbe109c142afdaf44cb840895efe812a975b921dad2a7bbd9b32a10",
+  "composite_identity": "9408654519db310b1e9912fdd698559cdec0eac0bbb62c6f463416abd9c04859",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "3949f69eceb688eb4a6128e0e3930db59fec753e0ee5fba23d5bb6e4c6805376",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "2742b5d3cb6ca3173d19200bc494523bf9a9686a1c8943ec52c0d8bb1fce8665",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 压缩、gate 三端+目录、concat 目录、report 三端、ops 17、typed view HTTP、typed edit apply、pipeline、mcp 21 工具、edit preview | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "19d08d2021eb7fc10ca1e38be743587059e96e54dadc893cb4f342dd241be714",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:HTTP 读写与 job；/ops；/report spec/specText；/gate 文件/目录；/rows ViewRequest；/edit transaction 走 EditApplyRequest；MCP 21 工具 report/gate；stdio JSON-RPC/resources | S:/rows where/order/sql 仍 SQL；apply 与 CLI 共用 typed request；gate 失败 200+passed:false；MCP gate 失败 isError；MCP 21 annotations；缓存 4 GiB/16；错误码稳定"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "7da4a132423ac23e3ec1570e66f12fadbb59379c3a7f123b607edd0aaf6700f6",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter -o 压缩；gate 文件/目录三端；concat 目录；report spec/specText 三端；typed view HTTP；pipeline gate；mcp 21 工具/SDK | S:report 无 GUI；groups 走 groupby；gate 失败 JSON 带原因；HTTP/MCP report 限 root；typed view 仅简单窗口；unique 排序耗时；目录 gate 逐文件"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "update",
+      "source_sha256": "56c14638c40e2cdcf1c470b36b37cf349f18dd9f06766ded8d79ac35ce0fe90d",
+      "existing_entry": "DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 + 官方 SDK | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs | A:一条命令演示版本号、filter/quality、watch JSON、21 个 MCP 工具（21 条 annotations）、edit/preview/report/gate/undo/convert/job；Python 与 SDK 跑通 progress、cache、gzip materialize；release 旧于 src 时 demo 拒绝 | S:演示本地、无 GUI、无网络、无 xlsx；输出必须与脚本一致；npm 依赖只在 scripts/mcp_sdk；CSVX_DEMO_BUILD=1 可重建；gzip 不存在时跳过压缩段"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/PRODUCT_PLAN.md",
+      "path": "docs/PRODUCT_PLAN.md",
+      "change": "update",
+      "source_sha256": "5e59a08d42f10f09460532cd27fc8541b48465bee66cf618505576dc4abc3e17",
+      "existing_entry": "PRODUCT_PLAN.md[SG8T]: F:产品进化计划：定位、三端契约、S0–S7 阶段与验收、硬约束与判断标准 | R:code:docs/OPERATIONS.md,code:docs/ARCHITECTURE.md,code:docs/ROADMAP.md,code:docs/BEYOND_EXCEL.md | A:本地优先 AI 原生 CSV 工作台；CLI/HTTP/MCP 共用 operations 契约；S2 typed view HTTP 简单路径，S3 CLI+HTTP typed apply 与三端 preview，S4 压缩/gate/目录完成，S5 薄前端、S6 report 三端、S7 数据库/xlsx | S:S3 因 MCP 无 transaction apply 未最终验收；S5/S6 前端渲染待；xlsx/数据库需用户决策；typed view 复杂分支仍 SQL"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "6208b3a6e285ea6561e86626d7aa5be5cb17d7d055109a231a15edebccf6fe0c",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，verify_dist 失败删半成品；敏感扫描 0；冒烟 version/pipeline watch/21 annotations；pipeline 15/13 ms；MCP 缓存 gzip 4.545→1.590 s/82 MB；21 工具/cache demo 命中/清空/死进程/复查 0，均不可 job；watch --json/--state nextDelay | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "26e5d9d33d2e2646062fb9a7eba83c2dea3d0e9598ff02757f8970bfef69bfe0",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "2742b5d3cb6ca3173d19200bc494523bf9a9686a1c8943ec52c0d8bb1fce8665",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 压缩、gate 三端+目录、concat 目录、report 三端、ops 17、typed view HTTP、typed edit apply、pipeline、mcp 21 工具、edit preview | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "157f346787df935cd16696aecfa7261780c3f8fae7c0b939877f03aaa3490a24",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "19d08d2021eb7fc10ca1e38be743587059e96e54dadc893cb4f342dd241be714",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:HTTP 读写与 job；/ops；/report spec/specText；/gate 文件/目录；/rows ViewRequest；/edit transaction 走 EditApplyRequest；MCP 21 工具 report/gate；stdio JSON-RPC/resources | S:/rows where/order/sql 仍 SQL；apply 与 CLI 共用 typed request；gate 失败 200+passed:false；MCP gate 失败 isError；MCP 21 annotations；缓存 4 GiB/16；错误码稳定"
+    },
+    {
+      "candidate_id": "e2e591559ad1419cc5d9f782b69ad77d32ad32fdbbe80bb59c175dad2d4b7f4d",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "7da4a132423ac23e3ec1570e66f12fadbb59379c3a7f123b607edd0aaf6700f6",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter -o 压缩；gate 文件/目录三端；concat 目录；report spec/specText 三端；typed view HTTP；pipeline gate；mcp 21 工具/SDK | S:report 无 GUI；groups 走 groupby；gate 失败 JSON 带原因；HTTP/MCP report 限 root；typed view 仅简单窗口；unique 排序耗时；目录 gate 逐文件"
+    },
+    {
+      "candidate_id": "b085c4e54f6011e68384c4fd72db369b4e514ab355dda960a01f27cdbbb6e078",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "update",
+      "source_sha256": "56c14638c40e2cdcf1c470b36b37cf349f18dd9f06766ded8d79ac35ce0fe90d",
+      "existing_entry": "DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 + 官方 SDK | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs | A:一条命令演示版本号、filter/quality、watch JSON、21 个 MCP 工具（21 条 annotations）、edit/preview/report/gate/undo/convert/job；Python 与 SDK 跑通 progress、cache、gzip materialize；release 旧于 src 时 demo 拒绝 | S:演示本地、无 GUI、无网络、无 xlsx；输出必须与脚本一致；npm 依赖只在 scripts/mcp_sdk；CSVX_DEMO_BUILD=1 可重建；gzip 不存在时跳过压缩段"
+    },
+    {
+      "candidate_id": "9ac50495e8236263ac969578ccaf9432ef34d852b916113b8e961daeffc0b1fe",
+      "object_ref": "code:docs/PRODUCT_PLAN.md",
+      "path": "docs/PRODUCT_PLAN.md",
+      "change": "update",
+      "source_sha256": "5e59a08d42f10f09460532cd27fc8541b48465bee66cf618505576dc4abc3e17",
+      "existing_entry": "PRODUCT_PLAN.md[SG8T]: F:产品进化计划：定位、三端契约、S0–S7 阶段与验收、硬约束与判断标准 | R:code:docs/OPERATIONS.md,code:docs/ARCHITECTURE.md,code:docs/ROADMAP.md,code:docs/BEYOND_EXCEL.md | A:本地优先 AI 原生 CSV 工作台；CLI/HTTP/MCP 共用 operations 契约；S2 typed view HTTP 简单路径，S3 CLI+HTTP typed apply 与三端 preview，S4 压缩/gate/目录完成，S5 薄前端、S6 report 三端、S7 数据库/xlsx | S:S3 因 MCP 无 transaction apply 未最终验收；S5/S6 前端渲染待；xlsx/数据库需用户决策；typed view 复杂分支仍 SQL"
+    },
+    {
+      "candidate_id": "329f7860caed57f292170a419a4040dc70a0e7b26155ef123ba5130ea4c619b1",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "6208b3a6e285ea6561e86626d7aa5be5cb17d7d055109a231a15edebccf6fe0c",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，verify_dist 失败删半成品；敏感扫描 0；冒烟 version/pipeline watch/21 annotations；pipeline 15/13 ms；MCP 缓存 gzip 4.545→1.590 s/82 MB；21 工具/cache demo 命中/清空/死进程/复查 0，均不可 job；watch --json/--state nextDelay | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ]
+}
