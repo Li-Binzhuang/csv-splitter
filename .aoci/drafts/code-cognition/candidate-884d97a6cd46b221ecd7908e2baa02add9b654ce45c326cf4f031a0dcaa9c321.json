@@ -1,0 +1,107 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "218d9977fc5f9797eeca50537d5fe5691bc4545303034f463127f2c7fce5624d",
+  "batch_id": "884d97a6cd46b221ecd7908e2baa02add9b654ce45c326cf4f031a0dcaa9c321",
+  "composite_identity": "2aaddec35ad389e8cf19bb2137e8cffff26de63000ebb10ce91e21e8eed834e0",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "16e9193a4d0971b3ba63a0c8109db41e0f8c0264109b60aa197fd8fa1639617b",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "68d4bc93f0f801dc4b6fee7a98d9b1652438318c92d23d42a8a30040e26420d3",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/cli/src/agent.rs,code:crates/core/src/xlsx.rs,code:crates/core/src/contract.rs | A:HTTP 读写/job；/ops；/gate+uniqueGlobal；/rows typed；/edit；/concat；MCP 23 工具；instructions 与 csvx://agent；MCP 执行器供 Agent API 复用 | S:uniqueGlobal 需配 unique；gate 目录聚合；report compare 限 root；MCP instructions 非权限；缓存 4 GiB/16"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/export.rs",
+      "path": "crates/core/src/workbook/export.rs",
+      "change": "update",
+      "source_sha256": "92a081e91a6da6b7f026928134cd19fe8b6854654a3d76188a75a5b59353b75e",
+      "existing_entry": "export.rs[CD9L]: F:逐行组装、导出与分页读取 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/journal.rs | A:一次顺序扫描；被 journal 触及的行走 RowPipeline，未触及的行拷贝原字节；每行相同的公式算一次后只追加一格；预扫结果一次装入 totals/filtered/bounds/squares/sets/blanks；24 组结构编辑逐格比对 window 与导出 | S:插入锚点越界时未知基长会留幽灵基行让导出提前 EOF（双重测试钉住）；join_csv_line 自带换行；会读当前行的公式不得走快路"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/mod.rs",
+      "path": "crates/core/src/workbook/mod.rs",
+      "change": "update",
+      "source_sha256": "9ba77a56f5ba7b7f5fe64faa11eb135fe428adc796383fa07d02a747842d54f0",
+      "existing_entry": "mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序、列布局与 transaction 子模块 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/transaction.rs | A:所有编辑记录为 Op；transaction 子模块导出 parse_ops/append_atomically；并转导出 journal 的 compact/recover_compaction/restore_compacted/CompactSummary；列布局由 Op 序列推导 | S:原位重算从 base 行取值，同列两遍相同公式不叠乘；transaction 语法只维护这一份"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BIG_PLAN.md",
+      "path": "docs/BIG_PLAN.md",
+      "change": "update",
+      "source_sha256": "3627468de33da54f602ee3edf65f94d2575f97cc1fb3e1df7f74478fd15408b1",
+      "existing_entry": "BIG_PLAN.md[SW7S]: F:xlsx + Agent 原生后端的大计划：工作流、接口、里程碑、非目标 | R:code:docs/PRODUCT_PLAN.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/DSH_MODEL_TEST.md | A:M1 xlsx 导出、M2 导入/多 sheet 已落；M4 MCP manifest+HTTP sessions/actions/approvals/audit/SSE 回放已落；M3 公式缓存/M5 runner 待做 | S:不写 GUI/多用户/宏；apply 需审批；SSE 非实时；计划中的 flag 未实现前不可写帮助"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "11929be4f127a68b4b03b5e18bdaa1412ef96353e08512fee92966afeca46d49",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:crates/core/src/engine.rs | A:公式、边界；filter 压缩；gate+unique-global；concat；report spec/chart/compare/root；convert xlsx 单文件/目录/导入；typed view/apply；MCP 23 工具 + instructions + csvx://agent；agent serve HTTP API | S:report 无 GUI；xlsx 日期暂按数值；unique-global 成本高；Agent SSE 只回放"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/FORMULA_CACHE.md",
+      "path": "docs/FORMULA_CACHE.md",
+      "change": "create",
+      "source_sha256": "67d9bb19363b00010f05ec37aeeb7615a3fe121b29fb5078972463d8a8e3ae35"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4c6708235056b60e950198d851163ffce1f72ac768022e59c6595e09facb3f5e",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "68d4bc93f0f801dc4b6fee7a98d9b1652438318c92d23d42a8a30040e26420d3",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/cli/src/agent.rs,code:crates/core/src/xlsx.rs,code:crates/core/src/contract.rs | A:HTTP 读写/job；/ops；/gate+uniqueGlobal；/rows typed；/edit；/concat；MCP 23 工具；instructions 与 csvx://agent；MCP 执行器供 Agent API 复用 | S:uniqueGlobal 需配 unique；gate 目录聚合；report compare 限 root；MCP instructions 非权限；缓存 4 GiB/16"
+    },
+    {
+      "candidate_id": "fad397e3e3a918299e8eee78a04e3de647467221e8f60de6ccaa7da77c6e0743",
+      "object_ref": "code:crates/core/src/workbook/export.rs",
+      "path": "crates/core/src/workbook/export.rs",
+      "change": "update",
+      "source_sha256": "92a081e91a6da6b7f026928134cd19fe8b6854654a3d76188a75a5b59353b75e",
+      "existing_entry": "export.rs[CD9L]: F:逐行组装、导出与分页读取 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/journal.rs | A:一次顺序扫描；被 journal 触及的行走 RowPipeline，未触及的行拷贝原字节；每行相同的公式算一次后只追加一格；预扫结果一次装入 totals/filtered/bounds/squares/sets/blanks；24 组结构编辑逐格比对 window 与导出 | S:插入锚点越界时未知基长会留幽灵基行让导出提前 EOF（双重测试钉住）；join_csv_line 自带换行；会读当前行的公式不得走快路"
+    },
+    {
+      "candidate_id": "49bea2b09cad9eb909d1ee18d0921f4a6c79e12f2eb52a76ea6737b5e22136cd",
+      "object_ref": "code:crates/core/src/workbook/mod.rs",
+      "path": "crates/core/src/workbook/mod.rs",
+      "change": "update",
+      "source_sha256": "9ba77a56f5ba7b7f5fe64faa11eb135fe428adc796383fa07d02a747842d54f0",
+      "existing_entry": "mod.rs[CP9L]: F:编辑模型：Op 枚举、应用顺序、列布局与 transaction 子模块 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/transaction.rs | A:所有编辑记录为 Op；transaction 子模块导出 parse_ops/append_atomically；并转导出 journal 的 compact/recover_compaction/restore_compacted/CompactSummary；列布局由 Op 序列推导 | S:原位重算从 base 行取值，同列两遍相同公式不叠乘；transaction 语法只维护这一份"
+    },
+    {
+      "candidate_id": "55170a190d05f4fdbf4263699ae854435c6ffaf5fc50bde1e716c83bd82c96cc",
+      "object_ref": "code:docs/BIG_PLAN.md",
+      "path": "docs/BIG_PLAN.md",
+      "change": "update",
+      "source_sha256": "3627468de33da54f602ee3edf65f94d2575f97cc1fb3e1df7f74478fd15408b1",
+      "existing_entry": "BIG_PLAN.md[SW7S]: F:xlsx + Agent 原生后端的大计划：工作流、接口、里程碑、非目标 | R:code:docs/PRODUCT_PLAN.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/DSH_MODEL_TEST.md | A:M1 xlsx 导出、M2 导入/多 sheet 已落；M4 MCP manifest+HTTP sessions/actions/approvals/audit/SSE 回放已落；M3 公式缓存/M5 runner 待做 | S:不写 GUI/多用户/宏；apply 需审批；SSE 非实时；计划中的 flag 未实现前不可写帮助"
+    },
+    {
+      "candidate_id": "80a965b4e72593d7d0514670fe2e319b5e2a7abeff022305cc892c8ee9cd1673",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "11929be4f127a68b4b03b5e18bdaa1412ef96353e08512fee92966afeca46d49",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:crates/core/src/engine.rs | A:公式、边界；filter 压缩；gate+unique-global；concat；report spec/chart/compare/root；convert xlsx 单文件/目录/导入；typed view/apply；MCP 23 工具 + instructions + csvx://agent；agent serve HTTP API | S:report 无 GUI；xlsx 日期暂按数值；unique-global 成本高；Agent SSE 只回放"
+    },
+    {
+      "candidate_id": "0eccec7a8d2fc826f6b4d859a7eaec61746bf12029471c11cd21a224be5908c9",
+      "object_ref": "code:docs/FORMULA_CACHE.md",
+      "path": "docs/FORMULA_CACHE.md",
+      "change": "create",
+      "source_sha256": "67d9bb19363b00010f05ec37aeeb7615a3fe121b29fb5078972463d8a8e3ae35"
+    }
+  ]
+}
