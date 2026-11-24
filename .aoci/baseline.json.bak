@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-24T09:15:14Z",
+  "updated_at": "2026-11-24T09:15:15Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -52,9 +52,9 @@
     },
     "CHANGELOG.md": {
       "role": "index",
-      "sha256": "1b84ed04aa34c87f334e0de33d23e039612652d96d712122486130345e608af0",
-      "size": 240435,
-      "normalized_sha256": "1b84ed04aa34c87f334e0de33d23e039612652d96d712122486130345e608af0"
+      "sha256": "b3045e36e90cc5e3d35e58758084c87cdcfc05f88a44b7c123ac0126a3a5d411",
+      "size": 240460,
+      "normalized_sha256": "b3045e36e90cc5e3d35e58758084c87cdcfc05f88a44b7c123ac0126a3a5d411"
     },
     "Cargo.lock": {
       "role": "observe",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "9006bf1199f28afb5f43981a0fbe1d95850854c7137119f9186922fe7cd4555c",
-      "size": 54057,
-      "normalized_sha256": "9006bf1199f28afb5f43981a0fbe1d95850854c7137119f9186922fe7cd4555c"
+      "sha256": "05475be81b8291070887235b779b042fba3f3b0417e244af52dbd006d95cf847",
+      "size": 54170,
+      "normalized_sha256": "05475be81b8291070887235b779b042fba3f3b0417e244af52dbd006d95cf847"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -112,9 +112,9 @@
     },
     "crates/cli/src/serve.rs": {
       "role": "index",
-      "sha256": "f7cc4202ab396f5bbd95db54506ca316d855ce1e0c6b9fd5b6e543182e358f0c",
-      "size": 346136,
-      "normalized_sha256": "f7cc4202ab396f5bbd95db54506ca316d855ce1e0c6b9fd5b6e543182e358f0c"
+      "sha256": "bc2dbc664068f799620011d39607404668443edbeabf590aafca52b2f08490a2",
+      "size": 347070,
+      "normalized_sha256": "bc2dbc664068f799620011d39607404668443edbeabf590aafca52b2f08490a2"
     },
     "crates/cli/src/web/index.html": {
       "role": "index",
@@ -544,9 +544,9 @@
     },
     "docs/API.md": {
       "role": "index",
-      "sha256": "9132cd3164d091afa8399ced731631d67827356f8b4d7090f637abf3732fe2b4",
-      "size": 33998,
-      "normalized_sha256": "9132cd3164d091afa8399ced731631d67827356f8b4d7090f637abf3732fe2b4"
+      "sha256": "47a790203b1abd9d25befc0ece802dc10d1941a31446daf1eb554fb4f618ac20",
+      "size": 34004,
+      "normalized_sha256": "47a790203b1abd9d25befc0ece802dc10d1941a31446daf1eb554fb4f618ac20"
     },
     "docs/ARCHITECTURE.md": {
       "role": "index",
