@@ -1,0 +1,93 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "81377fec2528dbf813671e581f93fcee41966a571d5a1f28e19dec32637c8d71",
+  "batch_id": "7dd21d788473d4febcf2e6af9fe311ff5818718af975479e02e48640609e0b17",
+  "composite_identity": "328bb0ef32148ad143fc4d8010e9dd2d5ea4315a111bc683f4df27aa20e42c49",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b78cbc9aeaaa513a990c52db97eb2c040e905c1e9efca4a6c80743c22fd1d565",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "5c46777b4daf72a3b050ea6d150db434ab9b6c44a57a4134cf4206ed98684c31",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/锁规则/重复输出拒绝/源覆盖拒绝/内容校验(run+status)/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码、步骤 progress/CSVX_STEP 即时、压缩/MCP materialize 残留清理（search 3.51 s、filter 3.62/2.60 s）、job 历史/缓存统计 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16（env），启动清死 PID；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包自验；watch 重启续轮次"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "6b07603e9036fa08ca3951c51884ca80458100eda3b20f6aaa8b366c3e1b6bd6",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 读写与 job；stdio JSON-RPC；16 工具（schema/view/filter/search/quality/pipeline*、edit*、convert、job*）；pipeline_status 支持 verify/contentCheck；pipeline_run 接受 dag/jobs/clean/contentCheck；job_status 支持 0–30s wait，有 token 时发 progress，返回 structuredContent ok/code；job_cancel kill 子进程；job_list 默认摘要，full=true 完整；未知工具先判身份；父目录组件在 canonicalize 前拒绝 | S:strict 参数未登记即 400；MCP stdout 只走协议；search/filter 支持 materialize 且 server 缓存解压结果（4 GiB/16 项 LRU，env 可调，非法警告一次，启动清死 PID）；已完成 job 历史上限 128，淘汰最旧并删 out/err；退出取消运行中 job 并清输出；单测 129→127+插入=128、kill/文件；CSVX_MCP_CACHE_STATS 退出打印 hits/misses；错误码分 unknown_tool/unknown_job/path_escape/cli_error/job_start_error；progress 覆盖 job wait 与 pipeline CSVX_STEP i/n（带 total）；tools/list 必须能被 McpParser 解析"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "ee6b13c74e940e4b9fe7a13e155f9b7eee071c9fef35c8f1b11dcde7aab6b8cd",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 成功写 lineage、status --verify（MCP verify）/--fail-on-stale、run lock（死 PID 即清、活主不按年龄）/--unlock、--dry-run(JSON)、--dag 跨波回滚/崩溃恢复、--step-timeout、--retries、group 并发、--clean、watch 轮询自动重跑（--json 逐轮、state 恢复轮次）；mcp 16 工具、view 游标、SDK；压缩 search/filter --materialize（3.51/3.62/2.60 s），server 内 stat 复用解压 4 GiB/16 LRU；100 GB/81 GB 演练；64 GB 自适应；试点报告；离线发布包 | S:progress 覆盖 job wait 与 pipeline 步骤"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "update",
+      "source_sha256": "9f2b5b5e5a60f3367740ec7eb58aae2ae68d7845187e6b57dea67cdf0d8ceeb5",
+      "existing_entry": "DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 + 官方 SDK | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs | A:一条命令演示版本号、filter/quality、16 个 MCP 工具、edit/undo/convert/job；Python 与官方 SDK 1.32.2 都跑通 pipeline 每步 progress、pipeline_status contentCheck、job wait progress、gzip materialize 搜索与 structuredContent；SDK progress 偶发合并（raw 10/10 为 2，SDK 10 次 1 次为 1）；release 旧于 src 时 demo 拒绝运行 | S:演示全程本地、无 GUI、无网络、无 xlsx；终端输出必须与脚本一致；npm 依赖只在 scripts/mcp_sdk；CSVX_DEMO_BUILD=1 可自动重建；gzip 不存在时跳过压缩段"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/SALES.md",
+      "path": "docs/SALES.md",
+      "change": "update",
+      "source_sha256": "1e99aaab4feb3ca2712db16f57f2890cff6e012b5e0ea1b375feba65d268add7",
+      "existing_entry": "SALES.md[SD7T]: F:销售 one-pager：定位、证据、演示话术、4 周试点清单与异议处理 | R:code:docs/DEMO.md,code:docs/BENCHMARKS.md,code:docs/BUSINESS.md,code:docs/PILOT.md,code:docs/PILOT_CONFIRMATION.md,code:docs/PILOT_SAMPLE.md | A:100 GB 三大可卖点；5 分钟 demo 命令；16 个 MCP 工具；客户样本报告与 2.3 GB 样例；交付/分发；免费/Pilot/团队/企业边界候选；异议回应 | S:不是公开承诺，定价/SLA/合同需用户确认；当前无 License 强制、无遥测"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "401747173e33656cc8946c9fcf4dffb47d6270d4737518a50c98671b8d54401c",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "5c46777b4daf72a3b050ea6d150db434ab9b6c44a57a4134cf4206ed98684c31",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/锁规则/重复输出拒绝/源覆盖拒绝/内容校验(run+status)/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码、步骤 progress/CSVX_STEP 即时、压缩/MCP materialize 残留清理（search 3.51 s、filter 3.62/2.60 s）、job 历史/缓存统计 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16（env），启动清死 PID；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包自验；watch 重启续轮次"
+    },
+    {
+      "candidate_id": "883e8cdfa6bc70cde1cce410b2903616b04a52290c2e90eb47ac35676c7b582a",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "6b07603e9036fa08ca3951c51884ca80458100eda3b20f6aaa8b366c3e1b6bd6",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs | A:HTTP 读写与 job；stdio JSON-RPC；16 工具（schema/view/filter/search/quality/pipeline*、edit*、convert、job*）；pipeline_status 支持 verify/contentCheck；pipeline_run 接受 dag/jobs/clean/contentCheck；job_status 支持 0–30s wait，有 token 时发 progress，返回 structuredContent ok/code；job_cancel kill 子进程；job_list 默认摘要，full=true 完整；未知工具先判身份；父目录组件在 canonicalize 前拒绝 | S:strict 参数未登记即 400；MCP stdout 只走协议；search/filter 支持 materialize 且 server 缓存解压结果（4 GiB/16 项 LRU，env 可调，非法警告一次，启动清死 PID）；已完成 job 历史上限 128，淘汰最旧并删 out/err；退出取消运行中 job 并清输出；单测 129→127+插入=128、kill/文件；CSVX_MCP_CACHE_STATS 退出打印 hits/misses；错误码分 unknown_tool/unknown_job/path_escape/cli_error/job_start_error；progress 覆盖 job wait 与 pipeline CSVX_STEP i/n（带 total）；tools/list 必须能被 McpParser 解析"
+    },
+    {
+      "candidate_id": "836622a4f41470679bd599b73fac81cf1b131c38f44e4cdce263b41bc8c19775",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "ee6b13c74e940e4b9fe7a13e155f9b7eee071c9fef35c8f1b11dcde7aab6b8cd",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs | A:公式、边界、阶段 1–5；compact/book/quality/convert；pipeline 成功写 lineage、status --verify（MCP verify）/--fail-on-stale、run lock（死 PID 即清、活主不按年龄）/--unlock、--dry-run(JSON)、--dag 跨波回滚/崩溃恢复、--step-timeout、--retries、group 并发、--clean、watch 轮询自动重跑（--json 逐轮、state 恢复轮次）；mcp 16 工具、view 游标、SDK；压缩 search/filter --materialize（3.51/3.62/2.60 s），server 内 stat 复用解压 4 GiB/16 LRU；100 GB/81 GB 演练；64 GB 自适应；试点报告；离线发布包 | S:progress 覆盖 job wait 与 pipeline 步骤"
+    },
+    {
+      "candidate_id": "23901f7bb434c6e3d69d98df0ddd88e1b02337bc4a9d50eb1bccc2e426f6d3ba",
+      "object_ref": "code:docs/DEMO.md",
+      "path": "docs/DEMO.md",
+      "change": "update",
+      "source_sha256": "9f2b5b5e5a60f3367740ec7eb58aae2ae68d7845187e6b57dea67cdf0d8ceeb5",
+      "existing_entry": "DEMO.md[SD7T]: F:端到端演示说明：pipeline + MCP 客户端 + 官方 SDK | R:code:scripts/demo_end_to_end.sh,code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs | A:一条命令演示版本号、filter/quality、16 个 MCP 工具、edit/undo/convert/job；Python 与官方 SDK 1.32.2 都跑通 pipeline 每步 progress、pipeline_status contentCheck、job wait progress、gzip materialize 搜索与 structuredContent；SDK progress 偶发合并（raw 10/10 为 2，SDK 10 次 1 次为 1）；release 旧于 src 时 demo 拒绝运行 | S:演示全程本地、无 GUI、无网络、无 xlsx；终端输出必须与脚本一致；npm 依赖只在 scripts/mcp_sdk；CSVX_DEMO_BUILD=1 可自动重建；gzip 不存在时跳过压缩段"
+    },
+    {
+      "candidate_id": "71df7cb518f0d8b06c2d8552964f04684f014717605e8c6c018064f7991d9237",
+      "object_ref": "code:docs/SALES.md",
+      "path": "docs/SALES.md",
+      "change": "update",
+      "source_sha256": "1e99aaab4feb3ca2712db16f57f2890cff6e012b5e0ea1b375feba65d268add7",
+      "existing_entry": "SALES.md[SD7T]: F:销售 one-pager：定位、证据、演示话术、4 周试点清单与异议处理 | R:code:docs/DEMO.md,code:docs/BENCHMARKS.md,code:docs/BUSINESS.md,code:docs/PILOT.md,code:docs/PILOT_CONFIRMATION.md,code:docs/PILOT_SAMPLE.md | A:100 GB 三大可卖点；5 分钟 demo 命令；16 个 MCP 工具；客户样本报告与 2.3 GB 样例；交付/分发；免费/Pilot/团队/企业边界候选；异议回应 | S:不是公开承诺，定价/SLA/合同需用户确认；当前无 License 强制、无遥测"
+    }
+  ]
+}
