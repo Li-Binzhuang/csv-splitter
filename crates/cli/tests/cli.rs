@@ -7801,6 +7801,10 @@ fn pipeline_watch_runs_and_then_reports_fresh() {
     let json_stdout = String::from_utf8_lossy(&json.stdout);
     assert!(json_stdout.contains(r#""watch":true"#), "{json_stdout}");
     assert!(json_stdout.contains(r#""fresh":true"#), "{json_stdout}");
+    assert!(
+        json_stdout.contains(r#""nextDelayMs":5000"#),
+        "{json_stdout}"
+    );
     let state = std::fs::read_to_string(dir.join("watch-state.json")).unwrap();
     assert!(state.contains(r#""round":1"#), "{state}");
     assert!(state.contains(r#""success":true"#), "{state}");
@@ -7849,10 +7853,13 @@ fn pipeline_watch_stops_after_the_failure_cap() {
             "1",
             "--state",
             dir.join("failure-state.json").to_str().unwrap(),
+            "--json",
         ])
         .output()
         .unwrap();
     assert!(!result.status.success());
+    let stdout = String::from_utf8_lossy(&result.stdout);
+    assert!(stdout.contains(r#""nextDelayMs":20"#), "{stdout}");
     let stderr = String::from_utf8_lossy(&result.stderr);
     assert!(
         stderr.contains("stopping after 1 consecutive failure(s)"),

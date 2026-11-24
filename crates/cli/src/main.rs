@@ -9205,10 +9205,11 @@ fn watch_pipeline(
                         .collect::<Vec<_>>()
                         .join(",");
                     println!(
-                        r#"{{"watch":true,"round":{},"ran":{},"total":{},"steps":[{}]}}"#,
+                        r#"{{"watch":true,"round":{},"ran":{},"total":{},"nextDelayMs":{},"steps":[{}]}}"#,
                         round,
                         ran,
                         results.len(),
+                        interval_ms,
                         steps
                     );
                 } else {
@@ -9246,6 +9247,14 @@ fn watch_pipeline(
                 failures += 1;
                 last_failure_ms = now_millis();
                 let next_delay_ms = delay_ms.saturating_mul(2).min(backoff_max_ms);
+                if json {
+                    println!(
+                        r#"{{"watch":true,"round":{},"success":false,"nextDelayMs":{},"error":{}}}"#,
+                        round,
+                        next_delay_ms,
+                        json_quote(&error.to_string())
+                    );
+                }
                 if let Some(path) = state_path {
                     if let Err(write_error) = write_watch_state(
                         path,
