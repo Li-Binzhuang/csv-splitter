@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-24T06:53:35Z",
+  "updated_at": "2026-11-24T06:55:40Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -76,15 +76,15 @@
     },
     "README.md": {
       "role": "index",
-      "sha256": "f87dbdff70d3fb769d37f741229e4653a514e0d046dc2c48143db1e3b3d81a9a",
-      "size": 54826,
-      "normalized_sha256": "f87dbdff70d3fb769d37f741229e4653a514e0d046dc2c48143db1e3b3d81a9a"
+      "sha256": "2a2a2b8ffbd97360c0f95d4d7b4665fd8fcba5fe9bea96c4b7ce6abda9da4b2d",
+      "size": 54905,
+      "normalized_sha256": "2a2a2b8ffbd97360c0f95d4d7b4665fd8fcba5fe9bea96c4b7ce6abda9da4b2d"
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "aa5878e482543aeb34573f120d2082bb43374fb7ef78f2dded0c0af88a8dbcad",
-      "size": 53968,
-      "normalized_sha256": "aa5878e482543aeb34573f120d2082bb43374fb7ef78f2dded0c0af88a8dbcad"
+      "sha256": "2e4a9f6d99d32ee22d8e6a963f12645b59fcd0d3ef6a8c47c8d0b780d0badbc6",
+      "size": 54550,
+      "normalized_sha256": "2e4a9f6d99d32ee22d8e6a963f12645b59fcd0d3ef6a8c47c8d0b780d0badbc6"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -644,6 +644,12 @@
       "size": 982,
       "normalized_sha256": "a6dc5eed7b534ca0fdd5ae944d11c5e2533c31bf683c864b959b3d5a666fbb48"
     },
+    "docs/PRODUCT_PLAN.md": {
+      "role": "index",
+      "sha256": "bb05ce9c69eda19572e47fd3cc6f054fbceb7b42e752590e1f1b6b0b2abb2486",
+      "size": 2671,
+      "normalized_sha256": "bb05ce9c69eda19572e47fd3cc6f054fbceb7b42e752590e1f1b6b0b2abb2486"
+    },
     "docs/RELEASE_CHECKLIST.md": {
       "role": "index",
       "sha256": "7783f035ba216b85cbaaa8f33f5d47b853ba6052419b22c69dbe0a568482ae70",
@@ -652,9 +658,9 @@
     },
     "docs/ROADMAP.md": {
       "role": "index",
-      "sha256": "0641db1e46d3c41fe352ed745eee4beba3da635d30317686fb51beb87afe6499",
-      "size": 6803,
-      "normalized_sha256": "0641db1e46d3c41fe352ed745eee4beba3da635d30317686fb51beb87afe6499"
+      "sha256": "8017b80f017e19d3e4ec8a59cf4c048d3a58bc1e7e2b5ed3f45797bdc039e4d1",
+      "size": 7110,
+      "normalized_sha256": "8017b80f017e19d3e4ec8a59cf4c048d3a58bc1e7e2b5ed3f45797bdc039e4d1"
     },
     "docs/SALES.md": {
       "role": "index",
