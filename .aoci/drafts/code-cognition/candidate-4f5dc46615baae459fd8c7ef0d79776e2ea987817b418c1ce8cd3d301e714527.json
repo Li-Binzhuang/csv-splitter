@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "963329cd64b976545136831dd06f99a07519dc441b1f2651da1a67bcf01934f0",
+  "batch_id": "4f5dc46615baae459fd8c7ef0d79776e2ea987817b418c1ce8cd3d301e714527",
+  "composite_identity": "2f5ae619c7d8f124f4654ef5368ac4cc3ccc213d0d0508f80d6ba2b9ae3e9769",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "2bcf9da24e3fe8cd962f4ad86e4c107cb1ec78e6af301a5ee7022d8a9d747371",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "4520ffa8179995dd26d388eddf39824695ae3a9c84ee33eb21a4a224c6bf8c39",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:CLI 入口；report spec/specText（summary/columns/quality/groups/chart/compare/rows，--root）；gate 文件/目录，--unique-global 跨文件唯一并给短 failure；concat 目录；edit transaction typed apply；typed view/filter；watch/ops | S:unique-global 先 concat 再排序查重，成本高于逐文件；failure 不再嵌子 JSON；report compare 限 root；dry-run 仅 transaction；≤1 MiB 哈希"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "ce28ec63841fe24339369966799102df16b9201b2273770bc201786518d3ab7b",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter -o 压缩；gate 文件/目录三端 + unique-global；concat CLI/HTTP/MCP；report spec/specText + chart SVG + compare 限 root；typed view HTTP；typed edit apply；pipeline；mcp 23 工具/SDK | S:report 无 GUI；chart 静态 SVG；compare 只读限 root；gate 失败 JSON 带原因；unique-global 成本高；typed view 简单窗口"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ba424b4407f4d4011b33f4662a1cb335e5fea39d818a738eb0def2953cc60ad2",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "4520ffa8179995dd26d388eddf39824695ae3a9c84ee33eb21a4a224c6bf8c39",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:CLI 入口；report spec/specText（summary/columns/quality/groups/chart/compare/rows，--root）；gate 文件/目录，--unique-global 跨文件唯一并给短 failure；concat 目录；edit transaction typed apply；typed view/filter；watch/ops | S:unique-global 先 concat 再排序查重，成本高于逐文件；failure 不再嵌子 JSON；report compare 限 root；dry-run 仅 transaction；≤1 MiB 哈希"
+    },
+    {
+      "candidate_id": "4f36ebb0125508c74268d96e112e7839f9a07340f1b310930ed18b768f0ada8e",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "ce28ec63841fe24339369966799102df16b9201b2273770bc201786518d3ab7b",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter -o 压缩；gate 文件/目录三端 + unique-global；concat CLI/HTTP/MCP；report spec/specText + chart SVG + compare 限 root；typed view HTTP；typed edit apply；pipeline；mcp 23 工具/SDK | S:report 无 GUI；chart 静态 SVG；compare 只读限 root；gate 失败 JSON 带原因；unique-global 成本高；typed view 简单窗口"
+    }
+  ]
+}
