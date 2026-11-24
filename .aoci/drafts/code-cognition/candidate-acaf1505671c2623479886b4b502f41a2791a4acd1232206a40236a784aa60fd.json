@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "ad936b4a71ef839ba7c566778e9017c437adf6383373193fe093b9161b10779a",
+  "batch_id": "acaf1505671c2623479886b4b502f41a2791a4acd1232206a40236a784aa60fd",
+  "composite_identity": "912e701460734b54ea4376057ff0848c153cc81743a8d8dd2ed5be4b0f362010",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e762b9577765188c3e81bf2cf2e072039ed2fbb46819fc7f5df501894c2a1f06",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ACCEPTANCE.md",
+      "path": "docs/ACCEPTANCE.md",
+      "change": "update",
+      "source_sha256": "67140ea4391c12b72720451f10826a9bc7d00865cc373a188aa453b397db63dc",
+      "existing_entry": "ACCEPTANCE.md[SD6M]: F:验收证据：两档性能/能力矩阵 + Operations 契约里程碑与发布复现 | R:code:docs/API.md,code:docs/NIGHT_CHECKPOINT.md,code:scripts/smoke_http.py | A:旧篇保留列元数据/行列交前端/写入约束/大文件实测；新增 2026-11-24 Operations 验收：17 操作、typed view/apply、压缩、gate 文件/目录/global、concat 三端、report spec/chart/compare/root、smoke_http（7/7 含 viewer）；薄前端范围仍待裁决 | S:文档输出由测试钉住；不把薄前端写成已完成；opt-in viewer 只证明可达"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "8923483b3e5af6644441e2d331bc93f5d1ea60359a0e837cccb454680e16298d",
+      "object_ref": "code:docs/ACCEPTANCE.md",
+      "path": "docs/ACCEPTANCE.md",
+      "change": "update",
+      "source_sha256": "67140ea4391c12b72720451f10826a9bc7d00865cc373a188aa453b397db63dc",
+      "existing_entry": "ACCEPTANCE.md[SD6M]: F:验收证据：两档性能/能力矩阵 + Operations 契约里程碑与发布复现 | R:code:docs/API.md,code:docs/NIGHT_CHECKPOINT.md,code:scripts/smoke_http.py | A:旧篇保留列元数据/行列交前端/写入约束/大文件实测；新增 2026-11-24 Operations 验收：17 操作、typed view/apply、压缩、gate 文件/目录/global、concat 三端、report spec/chart/compare/root、smoke_http（7/7 含 viewer）；薄前端范围仍待裁决 | S:文档输出由测试钉住；不把薄前端写成已完成；opt-in viewer 只证明可达"
+    }
+  ]
+}
