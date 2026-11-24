@@ -7690,6 +7690,49 @@ fn gate_accepts_a_directory_of_csv_files() {
     assert!(text.contains(r#""uniqueDuplicates":true"#), "{text}");
 }
 
+/// A CSV spec drives a deterministic Markdown/HTML report; values are escaped.
+#[test]
+fn report_renders_a_csv_spec() {
+    let dir = TempDir::new("reportspec");
+    std::fs::write(dir.join("t.csv"), "id,city,note\n1,CDMX,a|b\n2,<x>,ok\n").unwrap();
+    std::fs::write(
+        dir.join("spec.csv"),
+        "title,Sales report\nsummary,\ncolumns,\nrows,2\n",
+    )
+    .unwrap();
+    let md = Command::new(bin())
+        .args([
+            "report",
+            dir.join("t.csv").to_str().unwrap(),
+            "--spec",
+            dir.join("spec.csv").to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(md.status.success(), "{:?}", md);
+    let text = String::from_utf8_lossy(&md.stdout);
+    assert!(text.contains("# Sales report"), "{text}");
+    assert!(text.contains("| id | city | note |"), "{text}");
+    assert!(text.contains("a\\|b"), "a pipe must be escaped: {text}");
+
+    let html = Command::new(bin())
+        .args([
+            "report",
+            dir.join("t.csv").to_str().unwrap(),
+            "--spec",
+            dir.join("spec.csv").to_str().unwrap(),
+            "--out",
+            dir.join("r.html").to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(html.status.success(), "{:?}", html);
+    let text = std::fs::read_to_string(dir.join("r.html")).unwrap();
+    assert!(text.starts_with("<!doctype html>"), "{text}");
+    assert!(text.contains("&lt;x&gt;"), "html must escape input: {text}");
+    assert!(!text.contains("<x>"), "raw input leaked into html: {text}");
+}
+
 /// `merge --chunks` refuses an archive with the wrong number of parts, deleting nothing on
 /// success and leaving no half file on failure.
 #[test]

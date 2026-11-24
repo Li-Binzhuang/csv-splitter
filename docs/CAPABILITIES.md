@@ -85,6 +85,13 @@
 | 目录级门禁 | `gate parts/ --min-rows 100 --unique id --out gate.json` | 对目录内每个 `.csv` 独立执行阈值，汇总 `files/failed/rows/empty/reports`；任一文件失败退出 1 |
 | Pipeline 门禁 | plan 中加 `gate,<input>,gate,--min-rows 100 --out {out},gate.json` | gate 是普通步骤，失败即停；staging 会回滚该步输出 |
 
+## 报表
+
+| 能力 | CLI | 说明 |
+|---|---|---|
+| 确定性 Markdown/HTML 报表 | `report data.csv --spec report.csv -o report.html` | spec 是 CSV：`title,...`、`summary`、`columns`、`rows,<N>`；无 spec 时默认 summary/columns/rows 20 |
+| 无 GUI 的分享产物 | `--format md` / `--format html`（按输出扩展名推断） | 所有单元格 HTML 转义；Markdown 转义 `\|` |
+
 ## 编辑（不重写原文件）
 
 | 能力 | CLI | API |

@@ -203,6 +203,7 @@ csvx extract chunks.tar -o ./out
 | `analyze` | 全列画像：类型、空值、基数、异常 |
 | `validate` | 检查脏数据：非空/数值/日期/唯一/任意比较 |
 | `gate` | 质量门禁：行数/空值/唯一性阈值失败即退出 1；可传目录，逐文件门禁并汇总 JSON |
+| `report` | 用 CSV spec（summary/columns/rows）渲染确定性 Markdown/HTML 报表 |
 | `repair` | 把**损坏的 journal** 重写成可读记录（先备份；`--dry-run` 只看会丢几条） |
 | `dedupe` | 去重 |
 | `schema` | **读**列元数据：列清单、类型、是否存在（`--has COL`）、与另一文件比对列集合（`--diff`，有差异退出码 1）| 前端要的第一件事 |
@@ -257,6 +258,7 @@ csvx extract chunks.tar -o ./out
 | **改数据（不重写原文件）** | `edit set …` / `edit insert …` / `edit export -o fixed.csv` | `POST /edit` |
 | **按某列拆成多个文件** | `partition big.csv --by city` | `POST /partition` |
 | **多个同构文件拼成一张表** | `concat a.csv b.csv c.csv -o all.csv`；或 `concat parts/ -o all.csv` | — |
+| **生成可分享的静态报表** | `report data.csv --spec report.csv -o report.html` | — |
 | **分组汇总** | `groupby big.csv --by city --agg "amount:sum"` | `GET /groupby` |
 | 跑聚合 / 排序 | `sql big.csv "SELECT ..."` | `GET /query?sql=...` |
 | 切分 / 合并 | `split` / `merge` | `POST /split` · `POST /merge` |

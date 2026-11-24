@@ -53,6 +53,7 @@ fn main() -> ExitCode {
         Some("pivot") => cmd_pivot(&args[1..]),
         Some("validate") => cmd_validate(&args[1..]),
         Some("gate") => cmd_gate(&args[1..]),
+        Some("report") => cmd_report(&args[1..]),
         Some("format") => cmd_format(&args[1..]),
         Some("chart") => cmd_chart(&args[1..]),
         Some("layout") => cmd_layout(&args[1..]),
@@ -578,6 +579,17 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--quotes", "Quote style: rfc4180 | backslash | none"),
             ("--sample", "Sample this many rows instead of reading all"),
             ("--top", "How many values to show per column"),
+        ],
+    ),
+    (
+        "report",
+        &[
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--format", "Output format: md | html (default md)"),
+            ("--json", "Emit a small JSON confirmation"),
+            ("--out", "Output path (default: write to stdout)"),
+            ("--spec", "Report spec CSV: section,arg (summary/columns/rows)"),
+            ("--title", "Report title"),
         ],
     ),
     (
@@ -5104,6 +5116,315 @@ fn truncate_for_display(text: &str, width: usize) -> String {
     }
     let kept: String = text.chars().take(width.saturating_sub(1)).collect();
     format!("{kept}…")
+}
+
+/// A small deterministic report renderer: the spec is CSV rows, not a GUI.
+///
+/// The spec is intentionally dull: `section,arg` (summary/columns/rows), plus an
+/// optional `title,...` row. Markdown is the default; `--format html` gives a
+/// standalone file that can be opened locally.
+fn cmd_report(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut input: Option<PathBuf> = None;
+    let mut spec: Option<PathBuf> = None;
+    let mut title = "CSV report".to_string();
+    let mut out: Option<PathBuf> = None;
+    let mut format = "md".to_string();
+    let mut format_explicit = false;
+    let mut json = false;
+    let mut delim = "auto".to_string();
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--spec" => match p.value("--spec") {
+                Ok(v) => spec = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--title" => match p.value("--title") {
+                Ok(v) => title = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-o" | "--out" => match p.value("--out") {
+                Ok(v) => out = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--format" => match p.value("--format") {
+                Ok(v) => {
+                    format = v;
+                    format_explicit = true;
+                }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--json" => json = true,
+            "-d" | "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_command_help("report");
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => input = Some(PathBuf::from(other)),
+        }
+    }
+    let Some(input) = input else {
+        eprintln!("error: report needs <input>");
+        return 2;
+    };
+    if !format_explicit {
+        if let Some(path) = &out {
+            if path
+                .extension()
+                .and_then(|extension| extension.to_str())
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("html"))
+            {
+                format = "html".to_string();
+            }
+        }
+    }
+    if !matches!(format.as_str(), "md" | "html") {
+        eprintln!("error: --format must be md or html");
+        return 2;
+    }
+    let delimiter = match parse_delimiter(&delim, &input) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+
+    let mut sections: Vec<(String, String)> = vec![
+        ("summary".to_string(), String::new()),
+        ("columns".to_string(), String::new()),
+        ("rows".to_string(), "20".to_string()),
+    ];
+    if let Some(path) = &spec {
+        let text = match std::fs::read_to_string(path) {
+            Ok(text) => text,
+            Err(e) => {
+                eprintln!("error: cannot read spec {}: {e}", path.display());
+                return 2;
+            }
+        };
+        let mut parsed = Vec::new();
+        for line in text.lines() {
+            if line.trim().is_empty() {
+                continue;
+            }
+            let cells = parse_csv_record(line, b',');
+            let Some(kind) = cells.first().map(|cell| cell.trim().to_ascii_lowercase()) else {
+                continue;
+            };
+            if kind.is_empty() {
+                continue;
+            }
+            let arg = cells
+                .get(1)
+                .map(|cell| cell.trim().to_string())
+                .unwrap_or_default();
+            if kind == "title" {
+                if !arg.is_empty() {
+                    title = arg;
+                }
+                continue;
+            }
+            if !matches!(kind.as_str(), "summary" | "columns" | "rows") {
+                eprintln!("error: unknown report section {kind:?}");
+                return 2;
+            }
+            parsed.push((kind, arg));
+        }
+        if parsed.is_empty() {
+            eprintln!("error: the report spec has no sections");
+            return 2;
+        }
+        sections = parsed;
+    }
+
+    let sheet =
+        match csvx_core::sheet::Sheet::open(&input, csvx_core::sheet::ReadOptions { delimiter }) {
+            Ok(sheet) => sheet,
+            Err(e) => return report_failure("report", e.to_string()),
+        };
+    let rows = match sheet.rows() {
+        Ok(rows) => rows,
+        Err(e) => return report_failure("report", e.to_string()),
+    };
+    let columns = match sheet.columns() {
+        Ok(columns) => columns,
+        Err(e) => return report_failure("report", e.to_string()),
+    };
+    let schema = match sheet.schema(10) {
+        Ok(schema) => schema,
+        Err(e) => return report_failure("report", e.to_string()),
+    };
+    let mut body = String::new();
+    if format == "md" {
+        body.push_str(&format!("# {title}\n\n"));
+        body.push_str(&format!("source: `{}`\n\n", input.display()));
+    } else {
+        body.push_str("<h1>");
+        body.push_str(&html_escape(&title));
+        body.push_str("</h1>\n");
+        body.push_str(&format!(
+            "<p>source: <code>{}</code></p>\n",
+            html_escape(&input.display().to_string())
+        ));
+    }
+    for (kind, arg) in &sections {
+        match kind.as_str() {
+            "summary" => {
+                if format == "md" {
+                    body.push_str("## Summary\n\n");
+                    body.push_str(&format!("- rows: {rows}\n- columns: {}\n\n", columns.len()));
+                } else {
+                    body.push_str(&format!(
+                        "<h2>Summary</h2><ul><li>rows: {rows}</li><li>columns: {}</li></ul>\n",
+                        columns.len()
+                    ));
+                }
+            }
+            "columns" => {
+                if format == "md" {
+                    body.push_str("## Columns\n\n| # | name | kind | empty | sampled | distinct |\n|---|---|---|---|---|---|\n");
+                    for column in &schema {
+                        body.push_str(&format!(
+                            "| {} | {} | {} | {} | {} | {} |\n",
+                            column.index,
+                            md_cell(&column.name),
+                            column.kind.as_str(),
+                            column.empty,
+                            column.sampled,
+                            column.distinct
+                        ));
+                    }
+                    body.push('\n');
+                } else {
+                    body.push_str("<h2>Columns</h2><table><tr><th>#</th><th>name</th><th>kind</th><th>empty</th><th>sampled</th><th>distinct</th></tr>\n");
+                    for column in &schema {
+                        body.push_str(&format!(
+                            "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>\n",
+                            column.index,
+                            html_escape(&column.name),
+                            column.kind.as_str(),
+                            column.empty,
+                            column.sampled,
+                            column.distinct
+                        ));
+                    }
+                    body.push_str("</table>\n");
+                }
+            }
+            "rows" => {
+                let limit: u64 = arg.parse().unwrap_or(20);
+                let window = match sheet.window(0, limit.min(1_000)) {
+                    Ok(window) => window,
+                    Err(e) => return report_failure("report", e.to_string()),
+                };
+                if format == "md" {
+                    body.push_str(&format!("## Rows (first {})\n\n", window.rows.len()));
+                    body.push('|');
+                    for column in &window.columns {
+                        body.push_str(&format!(" {} |", md_cell(column)));
+                    }
+                    body.push('\n');
+                    body.push('|');
+                    for _ in &window.columns {
+                        body.push_str(" --- |");
+                    }
+                    body.push('\n');
+                    for row in &window.rows {
+                        body.push('|');
+                        for column in window.columns.iter().enumerate() {
+                            let cell = row.get(column.0).cloned().unwrap_or_default();
+                            body.push_str(&format!(" {} |", md_cell(&cell)));
+                        }
+                        body.push('\n');
+                    }
+                    body.push('\n');
+                } else {
+                    body.push_str("<h2>Rows</h2><table><tr>");
+                    for column in &window.columns {
+                        body.push_str(&format!("<th>{}</th>", html_escape(column)));
+                    }
+                    body.push_str("</tr>\n");
+                    for row in &window.rows {
+                        body.push_str("<tr>");
+                        for cell in row {
+                            body.push_str(&format!("<td>{}</td>", html_escape(cell)));
+                        }
+                        body.push_str("</tr>\n");
+                    }
+                    body.push_str("</table>\n");
+                }
+            }
+            _ => {}
+        }
+    }
+    if format == "html" {
+        body = format!(
+            "<!doctype html><html><head><meta charset=\"utf-8\"><title>{}</title><style>body{{font-family:system-ui,sans-serif;margin:2rem}}table{{border-collapse:collapse}}td,th{{border:1px solid #ccc;padding:4px 8px}}code{{background:#f4f4f4}}</style></head><body>{}</body></html>\n",
+            html_escape(&title),
+            body
+        );
+    }
+    if let Some(path) = &out {
+        if let Err(e) = std::fs::write(path, &body) {
+            eprintln!("error: cannot write {}: {e}", path.display());
+            return 2;
+        }
+        if json {
+            let out_json = format!("\"{}\"", json_escape(&path.to_string_lossy()));
+            let format_json = format!("\"{}\"", json_escape(&format));
+            println!(
+                r#"{{"report":true,"out":{},"format":{}}}"#,
+                out_json, format_json
+            );
+        } else {
+            println!(
+                "✓ report written to {} ({} bytes)",
+                path.display(),
+                body.len()
+            );
+        }
+    } else {
+        print!("{body}");
+    }
+    0
+}
+
+fn html_escape(value: &str) -> String {
+    value
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+}
+
+fn md_cell(value: &str) -> String {
+    value
+        .replace('\\', "\\\\")
+        .replace('|', "\\|")
+        .replace(['\n', '\r'], " ")
 }
 
 fn gate_csv_files(dir: &Path, output: Option<&Path>) -> std::io::Result<Vec<PathBuf>> {
