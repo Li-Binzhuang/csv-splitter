@@ -150,6 +150,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--json", "Emit JSON (run, status and watch)"),
             ("--interval-ms", "Watch: milliseconds between runs (default 5000)"),
             ("--backoff-max-ms", "Watch: cap for failure backoff (default 60000)"),
+            ("--max-failures", "Watch: stop after N consecutive failures (0 = never)"),
             ("--iterations", "Watch: run N rounds then exit (0 = forever)"),
             ("--verbose", "Watch: print even when every step is fresh"),
             ("--root", "Directory for relative inputs/outputs"),
@@ -9024,11 +9025,13 @@ fn watch_pipeline(
     interval_ms: u64,
     backoff_max_ms: u64,
     iterations: usize,
+    max_failures: usize,
     verbose: bool,
 ) -> std::io::Result<()> {
     let interval_ms = interval_ms.max(10);
     let backoff_max_ms = backoff_max_ms.max(interval_ms);
     let mut delay_ms = interval_ms;
+    let mut failures = 0usize;
     let mut round = 0usize;
     loop {
         round += 1;
@@ -9080,10 +9083,16 @@ fn watch_pipeline(
                     }
                 }
                 delay_ms = interval_ms;
+                failures = 0;
             }
             Err(error) => {
                 eprintln!("watch: {error}");
+                failures += 1;
                 if iterations > 0 {
+                    return Err(error);
+                }
+                if max_failures > 0 && failures >= max_failures {
+                    eprintln!("watch: stopping after {failures} consecutive failure(s)");
                     return Err(error);
                 }
                 delay_ms = delay_ms.saturating_mul(2).min(backoff_max_ms);
@@ -9614,6 +9623,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
     let mut watch_interval_ms = 5_000u64;
     let mut watch_backoff_max_ms = 60_000u64;
     let mut watch_iterations = 0usize;
+    let mut watch_max_failures = 0usize;
     let mut verbose = false;
     while let Some(arg) = p.next() {
         match arg.as_str() {
@@ -9710,6 +9720,17 @@ fn cmd_pipeline(args: &[String]) -> i32 {
                     return 2;
                 }
             },
+            "--max-failures" => match p.value("--max-failures").and_then(|value| {
+                value
+                    .parse::<usize>()
+                    .map_err(|_| "bad --max-failures".to_string())
+            }) {
+                Ok(value) => watch_max_failures = value,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 2;
+                }
+            },
             "--verbose" => verbose = true,
             "-h" | "--help" => {
                 print_command_help("pipeline");
@@ -9758,6 +9779,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             watch_interval_ms,
             watch_backoff_max_ms,
             watch_iterations,
+            watch_max_failures,
             verbose,
         ) {
             Ok(()) => 0,

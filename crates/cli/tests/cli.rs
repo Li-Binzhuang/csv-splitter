@@ -7800,3 +7800,35 @@ fn pipeline_watch_runs_and_then_reports_fresh() {
     assert!(json_stdout.contains(r#""watch":true"#), "{json_stdout}");
     assert!(json_stdout.contains(r#""fresh":true"#), "{json_stdout}");
 }
+
+/// A permanently failing plan does not retry forever when a failure cap is set.
+#[test]
+fn pipeline_watch_stops_after_the_failure_cap() {
+    let dir = TempDir::new("pipeline-watch-fail");
+    std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n").unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\nbad,orders.csv,convert,--format bogus -o {out},bad.csv\n",
+    )
+    .unwrap();
+    let result = Command::new(bin())
+        .args([
+            "pipeline",
+            "watch",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--interval-ms",
+            "10",
+            "--max-failures",
+            "1",
+        ])
+        .output()
+        .unwrap();
+    assert!(!result.status.success());
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        stderr.contains("stopping after 1 consecutive failure(s)"),
+        "{stderr}"
+    );
+}
