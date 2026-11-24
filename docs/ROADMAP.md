@@ -37,6 +37,17 @@
 - 每个里程碑最多一次 push；gate 绿、AOCI aligned、tree clean。
 - 商业化价格/合同/SLA 由用户确认，不自行承诺。
 
+## Round 175 checkpoint（2026-11-24）
+
+自 Round 159 后新增/关闭：
+- 18 个 MCP 工具全部带 annotations（readOnly/openWorld/destructive）；
+- Python 与官方 SDK demo 都验证 `annotated_tools=18` / `sdk_annotated=18`；
+- `cache_clear` 清扫死进程临时文件并返回 `staleRemoved`；
+- 最新 2 GB+ drill 4.573→1.594 s / 82 MB；
+- 离线包重建并自验（18 工具，SHA `2e8d39d7`）。
+
+技术侧仍无新的高价值缺口；真实客户试点由用户决定。
+
 ## Round 159 checkpoint（2026-11-24）
 
 自 Round 150 后新增/关闭：
