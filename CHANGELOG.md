@@ -161,7 +161,8 @@
 - **Typed read operations**: `core::ops` owns schema/view/filter requests and responses;
   `schema`/`filter` CLI+HTTP and `view` CLI's simple path use typed requests.
 - **Typed edit apply**: CLI and HTTP transaction applies now share
-  `core::ops::EditApplyRequest`; preview already shared `preview_edit`.
+  `core::ops::EditApplyRequest`; MCP `csvx_edit_apply` calls the same CLI path;
+  preview already shared `preview_edit`.
 - **Typed view on HTTP**: the no-edit `/rows` window now runs through
   `core::ops::ViewRequest`, matching the CLI's row window without a second viewer.
 - **CSV report spec**: `report data.csv --spec report.csv` renders deterministic
