@@ -51,13 +51,13 @@ job=done
    - `csvx_edit_set` → `csvx_edit_undo`（journal 锁）
    - `csvx_convert` 输出 TSV
    - `csvx_job_submit` quality → `csvx_job_status` 直到 done
-   - `csvx_cache_stats` / `csvx_cache_clear`（两次 gzip 后命中 1 条并清空）
+   - `csvx_cache_stats` / `csvx_cache_clear`（两次 gzip 后命中 1 条、清空并复查为 0）
 3. 若 `scripts/mcp_sdk/node_modules` 存在，demo 还会跑官方 SDK 客户端：
    - `pipeline_progress_events=2`（pipeline 每步通知；官方 SDK 的 `onprogress` 偶发
      合并最后一条，实测 10 次中 1 次为 1；raw MCP 10/10 稳定 2 条，demo 只要求 ≥1）
    - `status_fresh=2`（MCP `pipeline_status` 带 `contentCheck` 核验）
    - `gzip_matched=3`（MCP `search` 对 `.gz` 输入开启 `materialize`）
-   - `cache_hits` / `cache_entries` / `cache_removed`（第 18 个工具组 cache_stats/clear）
+   - `cache_hits` / `cache_entries` / `cache_removed` / `cache_after=0`（cache_stats/clear）
    - `progress_events=1`（job wait 通知）
    - `structured_ok=true`（structuredContent 成功码）
 4. 全程本地、无 GUI、无网络、无 xlsx，不写遥测。

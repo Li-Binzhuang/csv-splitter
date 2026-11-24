@@ -77,6 +77,7 @@ def main():
             print(f"cache_entries={cache.get('entries', 0)}")
             cleared = client.call("csvx_cache_clear", {})
             print(f"cache_removed={cleared.get('removed', 0)}")
+            print(f"cache_after={client.call('csvx_cache_stats', {}).get('entries', 0)}")
         plan_path = os.path.join(args.root, "plan.csv")
         if os.path.exists(plan_path):
             status = client.call("csvx_pipeline_status", {"path": "plan.csv", "verify": True, "contentCheck": True})
