@@ -2550,6 +2550,39 @@ fn convert_formats_round_trip_to_the_same_csv() {
     assert!(sheet.contains("café"), "{sheet}");
 }
 
+/// A directory of CSVs becomes one workbook with one sheet per file.
+#[test]
+fn convert_directory_to_xlsx_makes_multiple_sheets() {
+    let dir = TempDir::new("xlsxdir");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,city\n1,A\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "id,amount\n1,10\n").unwrap();
+    let out = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let file = std::fs::File::open(&out).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    let mut workbook = String::new();
+    use std::io::Read as _;
+    archive
+        .by_name("xl/workbook.xml")
+        .unwrap()
+        .read_to_string(&mut workbook)
+        .unwrap();
+    assert!(workbook.contains("name=\"a\""), "{workbook}");
+    assert!(workbook.contains("name=\"b\""), "{workbook}");
+}
+
 /// Xlsx import reads shared strings and selects a named worksheet.
 #[test]
 fn convert_imports_xlsx_shared_strings_and_sheets() {

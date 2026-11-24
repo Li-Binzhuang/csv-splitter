@@ -53,7 +53,7 @@
 | UTF-16 LE/BE | 读取；索引拒绝（字节偏移不可靠） |
 | Windows-1252 | 与 GBK 打分竞争，`café` 不乱码 |
 | 转码 | `convert f.csv -o utf8.csv`（流式，恒定内存） |
-| 格式互操作 | `convert f.csv --format tsv\|ndjson\|parquet\|xlsx -o out`；xlsx 流式导出；`convert in.xlsx --format csv [--sheet NAME]` 只读导入；详见 `docs/XLSX.md` |
+| 格式互操作 | `convert f.csv --format tsv\|ndjson\|parquet\|xlsx -o out`；xlsx 流式导出（单文件或目录→多 sheet）；`convert in.xlsx --format csv [--sheet NAME]` 只读导入；详见 `docs/XLSX.md` |
 | 引号风格 | `--quotes rfc4180\|backslash\|none`：`preview` `filter` `view` `groupby` `pivot` `chart` `dedupe` `stats` `analyze` `lookup` `search` `columns` `edit export`。`sort` / `concat` / `sql` **还不接受**（按 RFC 4180 读）。检测到反斜杠转义时会自动提示 |
 
 ## 分析

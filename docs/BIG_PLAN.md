@@ -33,7 +33,7 @@ csvx convert orders.csv --format xlsx -o orders.xlsx
 - 字符串/数字/布尔/日期识别为单元格类型；
 - 单文件单 sheet，sheet 名安全化；
 - 超过 Excel 行上限（1,048,576 数据行）明确报错，不静默截断；
-- 多 sheet 入口先留给 report/agent，不在 `convert` 里猜。
+- 多 sheet：`convert parts/ --format xlsx -o book.xlsx`，每个 CSV 一张 sheet；
 - ZIP/OOXML 由项目自己写，不新增解析依赖（复用已有 `zip`）。
 - MCP：`csvx_convert` 的 `format` enum 增加 `xlsx`。
 - 测试：ZIP 成员齐全、XML 可解析、关键 XML 片段、数值/日期单元格类型、超大行拒绝。

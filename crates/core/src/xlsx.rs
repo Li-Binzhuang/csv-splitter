@@ -185,8 +185,15 @@ pub fn write_sheets(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
     rels.push_str(
         "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">",
     );
+    let mut used_names = std::collections::HashSet::new();
     for (index, sheet) in sheets.iter().enumerate() {
-        let name = workbook_sheet_name(std::path::Path::new(&sheet.name));
+        let mut name = workbook_sheet_name(std::path::Path::new(&sheet.name));
+        let base = name.clone();
+        let mut suffix = 2;
+        while !used_names.insert(name.clone()) {
+            name = format!("{}_{}", base.chars().take(28).collect::<String>(), suffix);
+            suffix += 1;
+        }
         let id = index + 1;
         workbook.push_str(&format!(
             "<sheet name=\"{}\" sheetId=\"{id}\" r:id=\"rId{}\"/>",
@@ -208,7 +215,12 @@ pub fn write_sheets(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
         zip.start_file(format!("xl/worksheets/sheet{id}.xml"), options)
             .map_err(|e| std::io::Error::other(e.to_string()))?;
         let mut xml = String::from(XML_HEADER);
-        xml.push_str("<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData>");
+        xml.push_str(
+            "<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">",
+        );
+        xml.push_str("<sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/></sheetView></sheetViews>");
+        xml.push_str(&sheet_columns_xml(&sheet.headers, &sheet.rows));
+        xml.push_str("<sheetData>");
         xml.push_str("<row r=\"1\">");
         for (column, header) in sheet.headers.iter().enumerate() {
             write_cell_string(&mut xml, column, 1, header, true);
@@ -409,6 +421,69 @@ fn xml_attr(value: &str) -> String {
 
 pub fn output_path_for(input: &Path) -> PathBuf {
     input.with_extension("xlsx")
+}
+
+/// Read one CSV file into an in-memory worksheet, for multi-sheet workbooks.
+pub fn read_csv_sheet(path: &Path, delimiter: Delimiter) -> std::io::Result<Sheet> {
+    let reader = open_decoded(path)?;
+    let mut records = crate::csv_reader::RecordReader::new(
+        BufReader::with_capacity(4 * 1024 * 1024, reader),
+        4 * 1024 * 1024,
+    );
+    let mut record = Vec::new();
+    if !records.next_record(&mut record)? {
+        return Err(invalid("xlsx sheet source has no header"));
+    }
+    let headers = crate::csv_reader::parse_csv_record(
+        String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
+        delimiter.byte(),
+    );
+    if headers.is_empty() {
+        return Err(invalid("xlsx sheet source has an empty header"));
+    }
+    let mut rows = Vec::new();
+    while records.next_record(&mut record)? {
+        let cells = crate::csv_reader::parse_csv_record(
+            String::from_utf8_lossy(&record).trim_end_matches(['\n', '\r']),
+            delimiter.byte(),
+        );
+        if cells.iter().all(|cell| cell.is_empty()) {
+            continue;
+        }
+        rows.push(cells);
+        if rows.len() as u64 > MAX_DATA_ROWS {
+            return Err(invalid(&format!(
+                "xlsx supports at most {MAX_DATA_ROWS} data rows in one sheet"
+            )));
+        }
+    }
+    Ok(Sheet {
+        name: workbook_sheet_name(path),
+        headers,
+        rows,
+    })
+}
+
+fn sheet_columns_xml(headers: &[String], rows: &[Vec<String>]) -> String {
+    let mut xml = String::from("<cols>");
+    for (index, header) in headers.iter().enumerate() {
+        let wider = rows
+            .iter()
+            .take(20)
+            .filter_map(|row| row.get(index))
+            .map(|cell| cell.chars().count())
+            .max()
+            .unwrap_or(0);
+        let width = header.chars().count().max(wider).clamp(8, 60);
+        xml.push_str(&format!(
+            "<col min=\"{}\" max=\"{}\" width=\"{}\" customWidth=\"1\"/>",
+            index + 1,
+            index + 1,
+            width
+        ));
+    }
+    xml.push_str("</cols>");
+    xml
 }
 
 /// Read one worksheet from an `.xlsx`/`.xlsm` workbook into a CSV file.

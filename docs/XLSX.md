@@ -16,6 +16,15 @@ csvx convert orders.csv --format xlsx -o orders.xlsx
 - sheet 名取文件名并清洗非法字符；
 - ZIP/OOXML 由项目自己写；没有新增 xlsx 依赖。
 
+多 sheet（一个目录 → 一个工作簿）：
+
+```bash
+csvx convert parts/ --format xlsx -o book.xlsx
+```
+
+每个 `.csv` 一张 sheet，sheet 名取文件名；目录内输出文件会被排除；sheet 名冲突
+自动加后缀；每张 sheet 都有冻结首行和列宽。
+
 MCP：
 
 ```json
@@ -57,7 +66,7 @@ MCP：
 
 ## 尚未实现
 
-- 导出 xlsx 的多 sheet 报告（`report --format xlsx`）；
+- 导出 xlsx 的多 sheet 报告（`report --format xlsx`；目录→workbook 已可用）；
 - 导出 xlsx 的多 sheet 报告（`report --format xlsx`）；
 - 条件格式/列宽/数字格式；
 - 日期型单元格识别；

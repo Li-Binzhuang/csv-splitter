@@ -3365,6 +3365,81 @@ fn cmd_convert(args: &[String]) -> i32 {
             eprintln!("error: --format needs --out <path>");
             return 2;
         };
+        if input.is_dir() {
+            if !target.eq_ignore_ascii_case("xlsx") {
+                eprintln!("error: directory input is only supported with --format xlsx");
+                return 2;
+            }
+            if sheet.is_some() {
+                eprintln!("error: --sheet cannot be used with directory input");
+                return 2;
+            }
+            if let Err(code) = check_output(Some(&input), &out) {
+                return code;
+            }
+            let output_abs = out.canonicalize().unwrap_or_else(|_| out.clone());
+            let entries = match std::fs::read_dir(&input) {
+                Ok(entries) => entries,
+                Err(e) => {
+                    eprintln!("error: cannot read {}: {e}", input.display());
+                    return 2;
+                }
+            };
+            let mut files = Vec::new();
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file()
+                    && path
+                        .extension()
+                        .and_then(|extension| extension.to_str())
+                        .is_some_and(|extension| extension.eq_ignore_ascii_case("csv"))
+                {
+                    let absolute = path.canonicalize().unwrap_or_else(|_| path.clone());
+                    if absolute != output_abs {
+                        files.push(path);
+                    }
+                }
+            }
+            if files.is_empty() {
+                eprintln!("error: directory has no .csv files");
+                return 2;
+            }
+            files.sort_by(|left, right| left.file_name().cmp(&right.file_name()));
+            let mut sheets = Vec::new();
+            for file in &files {
+                let delimiter = match parse_delimiter(&delim, file) {
+                    Ok(delimiter) => delimiter,
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                };
+                match csvx_core::xlsx::read_csv_sheet(file, delimiter) {
+                    Ok(sheet) => sheets.push(sheet),
+                    Err(e) => {
+                        eprintln!("error: {}: {e}", file.display());
+                        return 1;
+                    }
+                }
+            }
+            return match csvx_core::xlsx::write_sheets(&out, &sheets) {
+                Ok(()) => {
+                    if !quiet {
+                        println!(
+                            "✓ converted {} sheets from {} → {}",
+                            sheets.len(),
+                            input.display(),
+                            out.display()
+                        );
+                    }
+                    0
+                }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    1
+                }
+            };
+        }
         let input_name = input
             .file_name()
             .and_then(|name| name.to_str())
