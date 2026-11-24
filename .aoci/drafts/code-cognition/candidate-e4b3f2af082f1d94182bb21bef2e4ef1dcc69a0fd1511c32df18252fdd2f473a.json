@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "ea1147c4c411ce2e9b68f3b05e366ae700bf723c4c2f780d295d312143b0dc3e",
+  "batch_id": "e4b3f2af082f1d94182bb21bef2e4ef1dcc69a0fd1511c32df18252fdd2f473a",
+  "composite_identity": "21d424fe1010ef9511df22adc7c84b172b5abecfe44f7769469267cfa77cfd5b",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "5b835280b74a789b337814f153fb42c26eec49c7a8ad679e392cdf15d38cadc5",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "de524208a51f4b15631463c67fdb0a4ed259efc22d96c5136dd0428714d9a2bb",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，打包脚本末尾自动 verify_dist，失败时删半成品 tar/sha；冒烟（version/watch/失败/18 annotations）；pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2；MCP 缓存 2 GB+ gzip 4.545→1.590 s/82 MB；18 annotations（demo）；18 工具/cache_stats+clear（stale，demo 命中/清空/死进程/复查 0，均不可 job）、watch --json/--state nextDelay（重启 20→40、封顶 20、JSON 5000/20） | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "639630c60ed5d1889b68b1e11110f14cabf8a5577fe9c3326a7395332af47d96",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "de524208a51f4b15631463c67fdb0a4ed259efc22d96c5136dd0428714d9a2bb",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，打包脚本末尾自动 verify_dist，失败时删半成品 tar/sha；冒烟（version/watch/失败/18 annotations）；pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2；MCP 缓存 2 GB+ gzip 4.545→1.590 s/82 MB；18 annotations（demo）；18 工具/cache_stats+clear（stale，demo 命中/清空/死进程/复查 0，均不可 job）、watch --json/--state nextDelay（重启 20→40、封顶 20、JSON 5000/20） | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ]
+}
