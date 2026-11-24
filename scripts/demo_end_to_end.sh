@@ -37,6 +37,8 @@ quality,filtered,analyze,--quality --json --key id --group city,quality.json
 PLAN
 echo "== pipeline =="
 "$BIN" pipeline run "$DIR/plan.csv" --root "$DIR"
+echo "== pipeline watch =="
+"$BIN" pipeline watch "$DIR/plan.csv" --root "$DIR" --iterations 1 --json --state "$DIR/watch-state.json"
 echo "== MCP client =="
 python3 scripts/mcp_client.py --binary "$BIN" --root "$DIR" --file orders.csv
 if command -v node >/dev/null 2>&1 && [[ -d scripts/mcp_sdk/node_modules ]]; then

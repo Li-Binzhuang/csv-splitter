@@ -44,6 +44,7 @@ job=done
 
 ## 演示覆盖
 1. `pipeline run`：filter → quality，列出每步耗时；`.pipeline.csv` 记录血缘，重跑会跳过。
+   随后 `pipeline watch --iterations 1 --json --state` 跑一轮，验证 JSON 与状态文件。
 2. `scripts/mcp_client.py`：真实 stdio JSON-RPC 客户端，不依赖第三方库：
    - `tools/list`（17 个工具）
    - `csvx_schema` / `csvx_filter` / `csvx_view`
