@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "f1d60c750223b82d79c97abe536d528c551e00cdcff91924f1f387d724505a3f",
+  "batch_id": "18f32d87760a14ddb177205f9e1980401498aa50174bb71d9c15599dc591aa71",
+  "composite_identity": "351c36bc31ddd246fedf83e079a550b4faa0fb7279aeed078181e15066901691",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "d7197354d1172e744107f834c0f7fb3fd0aac06ef35c9fcf92a277f6c33a8b1b",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "e40e5d9d689271babfe976cf627a964d6a74a7e28b0d5fceff05e5d091e9505c",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 压缩、gate 三端+目录、concat CLI/HTTP/MCP、report 三端+chart SVG+compare+root 守卫、ops 17、typed view HTTP、typed edit apply、pipeline、mcp 23 工具 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "9e4aec681d6c9f5f5a3ec88478bd9928ce776f1ca6f288f38b16725e63099e1d",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:HTTP 读写/job；/ops；/report 传 --root 限 compare；/gate；/rows ViewRequest；/edit EditApplyRequest；/concat paths/dir；MCP 23 工具含 concat | S:HTTP/MCP report compare 不可越 root；MCP concat out 限 root；/concat dir 排序排除输出；/rows 复杂分支仍 SQL；gate 失败 200/isError 分开；缓存 4 GiB/16"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ddf9cd2b27c9a5dcf0585a5caf90039eb252e3e0faa6bfbccd4e7f4e45da8185",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "e40e5d9d689271babfe976cf627a964d6a74a7e28b0d5fceff05e5d091e9505c",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 压缩、gate 三端+目录、concat CLI/HTTP/MCP、report 三端+chart SVG+compare+root 守卫、ops 17、typed view HTTP、typed edit apply、pipeline、mcp 23 工具 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "d53de9a6d9e35eb53b23846234a7a93c59ac5a5bc2abab5714d28c48f9554aca",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "9e4aec681d6c9f5f5a3ec88478bd9928ce776f1ca6f288f38b16725e63099e1d",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:HTTP 读写/job；/ops；/report 传 --root 限 compare；/gate；/rows ViewRequest；/edit EditApplyRequest；/concat paths/dir；MCP 23 工具含 concat | S:HTTP/MCP report compare 不可越 root；MCP concat out 限 root；/concat dir 排序排除输出；/rows 复杂分支仍 SQL；gate 失败 200/isError 分开；缓存 4 GiB/16"
+    }
+  ]
+}
