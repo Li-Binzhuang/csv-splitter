@@ -1,0 +1,93 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "11ddb2895b79ccb2d5c3ef137ccfcd055f2173dc447e120c8fd13b2a9df9938e",
+  "batch_id": "565b736a3b5a9843b7c83829287f6fe353cef132df9d8f36994cc4c54745ceac",
+  "composite_identity": "6edfe426e58fef2ad3bb23187b67b8228213513bfce8c3b3de5bd26db3e51398",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "99a10af83d06a90caec7bef3a968ffae1cf864310d8848b6d7004c2ed6947c8f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "053ef2bf2d6b9110e810f83464d252da40e585675bf800adb03defbefc7dbfdd",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 回滚/崩溃恢复/锁规则/重复输出拒绝/源覆盖拒绝/内容校验(run+status)/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码/18 工具（含 cache_stats/clear + annotations）、ops/typed ops、progress 即时、压缩/MCP materialize 残留清理 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16（env），启动清死 PID；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "cb999c8b23faede21c3482136aa638c65bbf330c03319641c4d09c5547dd7380",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:HTTP 读写与 job；GET /ops 返回操作目录；GET /columns 走 ops::SchemaRequest（pristine sample/edited response）；stdio JSON-RPC；initialize 声明 tools+resources，csvx://operations 同目录；18 工具；pipeline/status/job/cache 能力 | S:strict 参数未登记即 400；MCP stdout 只走协议；search/filter materialize + 4 GiB/16 LRU；job 历史上限 128；退出取消运行中 job；18 工具 annotations；cache_stats readOnly、cache_clear destructive/idempotent 扫 staleRemoved；job_submit 白名单；错误码稳定；progress 覆盖 job wait 与 CSVX_STEP；/ops 与 /spec 字段表必须同步"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/ops.rs",
+      "path": "crates/core/src/ops.rs",
+      "change": "update",
+      "source_sha256": "8559e5e49eefa9665f87c13bae0bc2cc436ac3306ace19b0bdb991abb5dff429",
+      "existing_entry": "ops.rs[CG9M]: F:schema/view/filter 的 typed 请求与响应：1-based filter 行号与 delimiter 语义 | R:code:crates/core/src/contract.rs,code:crates/core/src/sheet.rs,code:crates/core/src/filter.rs,code:crates/cli/src/main.rs | A:SchemaRequest 提供 open/sample/response/execute，CLI 与 GET /columns 已接入；FilterRequest 持有已解析 FilterSpec，提供 parse/execute/execute_fast，CLI 已接入；ViewRequest 返回 Window；单测覆盖 execute 与 fast 等价 | S:filter HTTP 与 view adapter 尚未接入；filter 行号 1-based；SchemaRequest sample≥1；ViewResponse 因 Window 无 Eq 只派生 Clone/Debug"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/OPERATIONS.md",
+      "path": "docs/OPERATIONS.md",
+      "change": "update",
+      "source_sha256": "11d760d0eb88f9dd216ed05cf16bc5a8b825e27f7a95a6d420e5ca4ad5773abc",
+      "existing_entry": "OPERATIONS.md[SG8T]: F:操作契约层 ADR：Stage 1 目录、适配器迁移与 preview/apply 规则 | R:code:crates/core/src/contract.rs,code:crates/core/src/ops.rs,code:crates/cli/src/main.rs,code:crates/cli/src/serve.rs,code:docs/ARCHITECTURE.md | A:问题/决定/14 操作；Stage 1 CLI ops；Stage 2 /ops+MCP resource、core::ops typed、schema CLI/HTTP 与 filter CLI 已接入；Stage 3 预览/应用；Stage 4 schema/前端 | S:Stage 1 只有目录；filter HTTP/view adapter 尚未接入；input/output 摘要不冒充 JSON Schema；preview/apply 是 Stage 3 待实现"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/PRODUCT_PLAN.md",
+      "path": "docs/PRODUCT_PLAN.md",
+      "change": "update",
+      "source_sha256": "bfad394d137aece1afb9dd2f5cf122e65bc54499ee74370b6af400f54e6a61e0",
+      "existing_entry": "PRODUCT_PLAN.md[SG8T]: F:产品进化计划：定位、三端契约、S0–S7 阶段与验收、硬约束与判断标准 | R:code:docs/OPERATIONS.md,code:docs/ARCHITECTURE.md,code:docs/ROADMAP.md,code:docs/BEYOND_EXCEL.md | A:本地优先 AI 原生 CSV 工作台；CLI/HTTP/MCP 共用 operations 契约；S0/S1 已完成，S2 typed（schema CLI/HTTP、filter CLI 已接入；filter HTTP/view 待）、S3 preview/apply、S4 压缩/质量/多文件、S5 薄前端、S6 报表、S7 数据库/xlsx | S:S2–S7 未验收；xlsx/数据库/前端需用户决策；验收以测试与实测为准"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "55f8f5cb9e2bfacacb3aa94cf2688e1f29efd7b61e57ba11e0b27f156b42880b",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "053ef2bf2d6b9110e810f83464d252da40e585675bf800adb03defbefc7dbfdd",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 回滚/崩溃恢复/锁规则/重复输出拒绝/源覆盖拒绝/内容校验(run+status)/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码/18 工具（含 cache_stats/clear + annotations）、ops/typed ops、progress 即时、压缩/MCP materialize 残留清理 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16（env），启动清死 PID；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "18d6e4f23fd6f69ec1ab642bca83e135911b685548794d4a5f148f04e0653d07",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "cb999c8b23faede21c3482136aa638c65bbf330c03319641c4d09c5547dd7380",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:HTTP 读写与 job；GET /ops 返回操作目录；GET /columns 走 ops::SchemaRequest（pristine sample/edited response）；stdio JSON-RPC；initialize 声明 tools+resources，csvx://operations 同目录；18 工具；pipeline/status/job/cache 能力 | S:strict 参数未登记即 400；MCP stdout 只走协议；search/filter materialize + 4 GiB/16 LRU；job 历史上限 128；退出取消运行中 job；18 工具 annotations；cache_stats readOnly、cache_clear destructive/idempotent 扫 staleRemoved；job_submit 白名单；错误码稳定；progress 覆盖 job wait 与 CSVX_STEP；/ops 与 /spec 字段表必须同步"
+    },
+    {
+      "candidate_id": "fa8b954cfa89267ce0f2d1c7d273ef9e76605f0627a2e3372181e5bda8f95185",
+      "object_ref": "code:crates/core/src/ops.rs",
+      "path": "crates/core/src/ops.rs",
+      "change": "update",
+      "source_sha256": "8559e5e49eefa9665f87c13bae0bc2cc436ac3306ace19b0bdb991abb5dff429",
+      "existing_entry": "ops.rs[CG9M]: F:schema/view/filter 的 typed 请求与响应：1-based filter 行号与 delimiter 语义 | R:code:crates/core/src/contract.rs,code:crates/core/src/sheet.rs,code:crates/core/src/filter.rs,code:crates/cli/src/main.rs | A:SchemaRequest 提供 open/sample/response/execute，CLI 与 GET /columns 已接入；FilterRequest 持有已解析 FilterSpec，提供 parse/execute/execute_fast，CLI 已接入；ViewRequest 返回 Window；单测覆盖 execute 与 fast 等价 | S:filter HTTP 与 view adapter 尚未接入；filter 行号 1-based；SchemaRequest sample≥1；ViewResponse 因 Window 无 Eq 只派生 Clone/Debug"
+    },
+    {
+      "candidate_id": "6e274d81c1917a02d0640a1d61df1ce22cf934d3c8bc1e74026044eaef082f53",
+      "object_ref": "code:docs/OPERATIONS.md",
+      "path": "docs/OPERATIONS.md",
+      "change": "update",
+      "source_sha256": "11d760d0eb88f9dd216ed05cf16bc5a8b825e27f7a95a6d420e5ca4ad5773abc",
+      "existing_entry": "OPERATIONS.md[SG8T]: F:操作契约层 ADR：Stage 1 目录、适配器迁移与 preview/apply 规则 | R:code:crates/core/src/contract.rs,code:crates/core/src/ops.rs,code:crates/cli/src/main.rs,code:crates/cli/src/serve.rs,code:docs/ARCHITECTURE.md | A:问题/决定/14 操作；Stage 1 CLI ops；Stage 2 /ops+MCP resource、core::ops typed、schema CLI/HTTP 与 filter CLI 已接入；Stage 3 预览/应用；Stage 4 schema/前端 | S:Stage 1 只有目录；filter HTTP/view adapter 尚未接入；input/output 摘要不冒充 JSON Schema；preview/apply 是 Stage 3 待实现"
+    },
+    {
+      "candidate_id": "c3231852bee38dba9541020974c25591364a5a5ff0c25fe6fe9bf2a233e46d70",
+      "object_ref": "code:docs/PRODUCT_PLAN.md",
+      "path": "docs/PRODUCT_PLAN.md",
+      "change": "update",
+      "source_sha256": "bfad394d137aece1afb9dd2f5cf122e65bc54499ee74370b6af400f54e6a61e0",
+      "existing_entry": "PRODUCT_PLAN.md[SG8T]: F:产品进化计划：定位、三端契约、S0–S7 阶段与验收、硬约束与判断标准 | R:code:docs/OPERATIONS.md,code:docs/ARCHITECTURE.md,code:docs/ROADMAP.md,code:docs/BEYOND_EXCEL.md | A:本地优先 AI 原生 CSV 工作台；CLI/HTTP/MCP 共用 operations 契约；S0/S1 已完成，S2 typed（schema CLI/HTTP、filter CLI 已接入；filter HTTP/view 待）、S3 preview/apply、S4 压缩/质量/多文件、S5 薄前端、S6 报表、S7 数据库/xlsx | S:S2–S7 未验收；xlsx/数据库/前端需用户决策；验收以测试与实测为准"
+    }
+  ]
+}
