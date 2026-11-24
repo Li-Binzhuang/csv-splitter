@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "998ba15fe33b82494829b22970c8a47057b82763a23dbb53db2b89bfb91efec6",
+  "batch_id": "477502f6b60a948b68248ca4569a9487575e49522c268a2e1e5503a98c6b6fe8",
+  "composite_identity": "cec6dd96ee54ba55d5f0da34ad2cef25c56866efc25b9351ed0af294f87d67f5",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "23f2d6423de405840934cb812a8974389715eefeaa44fe8e26df5bd7a6aec2db",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "8c9b0971ab04b6d042806d0962e4e4a38a66342d920f3fbaccb0b824f5b384ea",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 压缩、gate 三端+目录、concat 目录、report 三端、ops 17、typed view HTTP、typed edit apply 三端、pipeline、mcp 22 工具 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "3f6dd3dac09556732140de4af9917d81c5311d700d9ce69432853c0443e255c7",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:CLI 入口；report --spec/--spec-text；gate 文件/目录 JSON failures；concat 目录；edit transaction --dry-run 与 typed EditApplyRequest；typed view/filter；pipeline；watch/ops | S:apply 与 HTTP 共用 EditApplyRequest；gate JSON failures 是测试契约；--spec/--spec-text 互斥；gate 目录逐文件；dry-run 仅 transaction；≤1 MiB 哈希"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "90a0fd08f28851d5c026ff6b10936c576fe11f2b5b34c4206fb74e8186e297ca",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter -o 压缩；gate 文件/目录三端；concat 目录；report spec/specText 三端；typed view HTTP；typed edit apply 三端；pipeline gate；mcp 22 工具/SDK | S:report 无 GUI；groups 走 groupby；gate 失败 JSON 带原因；HTTP/MCP report 限 root；typed view 仅简单窗口；MCP apply destructive；目录 gate 逐文件"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "dfb567a21dbea5a0522d03d5f5e7102965bdd6aea28c7b0ea66df2814705f308",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "8c9b0971ab04b6d042806d0962e4e4a38a66342d920f3fbaccb0b824f5b384ea",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 压缩、gate 三端+目录、concat 目录、report 三端、ops 17、typed view HTTP、typed edit apply 三端、pipeline、mcp 22 工具 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "b84838bdc68940502842e410bb5b08e8482a901befd0e532feb1be5e4389f5cf",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "3f6dd3dac09556732140de4af9917d81c5311d700d9ce69432853c0443e255c7",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:CLI 入口；report --spec/--spec-text；gate 文件/目录 JSON failures；concat 目录；edit transaction --dry-run 与 typed EditApplyRequest；typed view/filter；pipeline；watch/ops | S:apply 与 HTTP 共用 EditApplyRequest；gate JSON failures 是测试契约；--spec/--spec-text 互斥；gate 目录逐文件；dry-run 仅 transaction；≤1 MiB 哈希"
+    },
+    {
+      "candidate_id": "9ed73ec78939beb879962969174f0c275a86601bc444faaa31cb67766fdb71b2",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "90a0fd08f28851d5c026ff6b10936c576fe11f2b5b34c4206fb74e8186e297ca",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter -o 压缩；gate 文件/目录三端；concat 目录；report spec/specText 三端；typed view HTTP；typed edit apply 三端；pipeline gate；mcp 22 工具/SDK | S:report 无 GUI；groups 走 groupby；gate 失败 JSON 带原因；HTTP/MCP report 限 root；typed view 仅简单窗口；MCP apply destructive；目录 gate 逐文件"
+    }
+  ]
+}
