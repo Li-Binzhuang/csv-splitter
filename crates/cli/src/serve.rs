@@ -7943,6 +7943,9 @@ mod tests {
 // MCP stdio server (B: agent-facing backend)
 // ---------------------------------------------------------------------------
 
+/// The one-paragraph contract an agent should receive before it starts calling tools.
+pub(crate) const AGENT_INSTRUCTIONS: &str = "csvx is a local, single-user CSV backend. Start with csvx_schema and csvx_view; inspect before editing. Use csvx_edit_preview, then csvx_edit_apply only after the preview is acceptable. All paths must stay inside the MCP root. Long work belongs in csvx_job_submit. Reports use csvx_report (CSV spec or specText); paging uses csvx_view; gates use csvx_gate; xlsx goes through csvx_convert. There is no GUI and no multi-user auth; keep destructive actions explicit and auditable. csvx://agent returns the machine-readable manifest.";
+
 /// Minimal JSON value for the MCP envelope. Arguments are small and the protocol
 /// needs one object per line, so this avoids a new dependency in the hot CLI.
 #[derive(Clone, Debug)]
@@ -9307,6 +9310,15 @@ fn mcp_run_pipeline_streaming(
     Ok(text.trim_end().to_string())
 }
 
+/// Machine-readable manifest served as `csvx://agent` and reused by docs/tests.
+pub(crate) fn agent_manifest_json() -> String {
+    format!(
+        r#"{{"protocol":"csvx-agent/1","transport":["mcp-stdio","http"],"tools":{},"workflow":["schema","view","edit_preview","edit_apply","report","gate"],"safety":{{"preview_before_apply":true,"root_bound":true,"single_user":true,"gui":false}},"instructions":{}}}"#,
+        mcp_tools(),
+        mcp_quote(AGENT_INSTRUCTIONS)
+    )
+}
+
 pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
     cleanup_stale_mcp_materialized();
     use std::io::{BufRead, Write};
@@ -9337,8 +9349,9 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
         let response = match method {
             "initialize" => {
                 let result = format!(
-                    r#"{{"protocolVersion":"2024-11-05","capabilities":{{"tools":{{}},"resources":{{}}}},"serverInfo":{{"name":"csvx","version":{}}}}}"#,
-                    mcp_quote(env!("CARGO_PKG_VERSION"))
+                    r#"{{"protocolVersion":"2024-11-05","capabilities":{{"tools":{{}},"resources":{{}}}},"serverInfo":{{"name":"csvx","version":{}}},"instructions":{}}}"#,
+                    mcp_quote(env!("CARGO_PKG_VERSION")),
+                    mcp_quote(AGENT_INSTRUCTIONS)
                 );
                 mcp_result(id, &result)
             }
@@ -9349,7 +9362,7 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
                 mcp_result(id, &result)
             }
             "resources/list" => {
-                let result = r#"{"resources":[{"uri":"csvx://operations","name":"operations","description":"Shared CLI/HTTP/MCP operation catalog (JSON)","mimeType":"application/json"}]}"#;
+                let result = r#"{"resources":[{"uri":"csvx://operations","name":"operations","description":"Shared CLI/HTTP/MCP operation catalog (JSON)","mimeType":"application/json"},{"uri":"csvx://agent","name":"agent","description":"Agent manifest: workflow, tools, safety and limits (JSON)","mimeType":"application/json"}]}"#;
                 mcp_result(id, result)
             }
             "resources/read" => {
@@ -9362,6 +9375,12 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
                     let result = format!(
                         r#"{{"contents":[{{"uri":"csvx://operations","mimeType":"application/json","text":{}}}]}}"#,
                         mcp_quote(&csvx_core::contract::operations_json())
+                    );
+                    mcp_result(id, &result)
+                } else if uri == "csvx://agent" {
+                    let result = format!(
+                        r#"{{"contents":[{{"uri":"csvx://agent","mimeType":"application/json","text":{}}}]}}"#,
+                        mcp_quote(&agent_manifest_json())
                     );
                     mcp_result(id, &result)
                 } else {

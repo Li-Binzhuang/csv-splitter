@@ -2943,6 +2943,7 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
             r#"{"jsonrpc":"2.0","id":24,"method":"tools/call","params":{"name":"csvx_report","arguments":{"path":"t.csv","specText":"title,Escape\ncompare,../outside-mcp.csv","format":"md"}}}"#,
             r#"{"jsonrpc":"2.0","id":25,"method":"tools/call","params":{"name":"csvx_gate","arguments":{"path":"sub","minRows":1}}}"#,
             r#"{"jsonrpc":"2.0","id":26,"method":"tools/call","params":{"name":"csvx_gate","arguments":{"path":"dup","unique":"id","uniqueGlobal":true}}}"#,
+            r#"{"jsonrpc":"2.0","id":27,"method":"resources/read","params":{"uri":"csvx://agent"}}"#,
             r#"not-json"#,
         ] {
             writeln!(stdin, "{line}").unwrap();
@@ -2963,6 +2964,10 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
     assert!(stdout.contains(r#""resources":{}"#), "{stdout}");
     assert!(stdout.contains(r#""uri":"csvx://operations""#), "{stdout}");
     assert!(stdout.contains("operations"), "{stdout}");
+    assert!(stdout.contains(r#""uri":"csvx://agent""#), "{stdout}");
+    assert!(stdout.contains("csvx-agent/1"), "{stdout}");
+    assert!(stdout.contains("preview_before_apply"), "{stdout}");
+    assert!(stdout.contains("\"instructions\""), "{stdout}");
     assert!(stdout.contains("unknown resource"), "{stdout}");
     assert!(stdout.contains(r#""code":-32002"#), "{stdout}");
     assert!(stdout.contains(r#""name":"csvx_schema""#), "{stdout}");
