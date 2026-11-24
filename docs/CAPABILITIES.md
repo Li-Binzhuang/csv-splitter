@@ -81,7 +81,7 @@
 
 | 能力 | CLI | 说明 |
 |---|---|---|
-| 行数/空值/唯一性门禁 | `gate f.csv --min-rows 100 --max-empty 5 --unique id --out gate.json` | 任一阈值失败退出 1；JSON 报告含 rows/empty/uniqueValues 与 checks |
+| 行数/空值/唯一性门禁 | `gate f.csv --min-rows 100 --max-empty 5 --unique id --out gate.json` | 任一阈值失败退出 1；唯一性用外部排序，不受内存 cap 限制；JSON 报告含 rows/empty/uniqueValues/uniqueDuplicates |
 | Pipeline 门禁 | plan 中加 `gate,<input>,gate,--min-rows 100 --out {out},gate.json` | gate 是普通步骤，失败即停；staging 会回滚该步输出 |
 
 ## 编辑（不重写原文件）

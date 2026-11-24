@@ -5220,14 +5220,76 @@ fn cmd_gate(args: &[String]) -> i32 {
             Err(e) => return report_failure("gate", e.to_string()),
         },
     };
+    // A uniqueness check over 100 GB cannot hold every value in memory. Sort the
+    // edited sheet by that column once, then adjacent duplicates are exact and the
+    // working set is whatever the external sorter budgets. The other metrics reuse
+    // the sorted stream, so the file is read once for the gate.
+    let mut sorted_path: Option<PathBuf> = None;
+    let mut _materialized = None;
+    let metrics_sheet = if let Some(name) = &unique {
+        if total == 0 {
+            sheet
+        } else {
+            let (tx, rx) = mpsc::channel();
+            drop(rx);
+            let materialized = match csvx_core::sheet::materialize(
+                &input,
+                &csvx_core::sheet::ReadOptions { delimiter },
+                &tx,
+            ) {
+                Ok(value) => value,
+                Err(e) => return report_failure("gate", e.to_string()),
+            };
+            let source = materialized.path().to_path_buf();
+            let stamp = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|duration| duration.as_nanos())
+                .unwrap_or(0);
+            let sorted = std::env::temp_dir().join(format!(
+                "csvx-gate-{}-{}-{stamp}.csv",
+                std::process::id(),
+                name
+            ));
+            let result = csvx_core::sort::external_sort_columns(
+                &source,
+                &sorted,
+                &[csvx_core::sort::SortColumn::new(name.clone(), false)],
+                delimiter,
+                256,
+                &tx,
+            );
+            drop(tx);
+            if let Err(e) = result {
+                let _ = std::fs::remove_file(&sorted);
+                return report_failure("gate", format!("cannot sort for uniqueness: {e}"));
+            }
+            let sorted_sheet = match csvx_core::sheet::Sheet::open(
+                &sorted,
+                csvx_core::sheet::ReadOptions { delimiter },
+            ) {
+                Ok(value) => value,
+                Err(e) => {
+                    let _ = std::fs::remove_file(&sorted);
+                    return report_failure("gate", e.to_string());
+                }
+            };
+            sorted_path = Some(sorted);
+            _materialized = Some(materialized);
+            drop(sheet);
+            sorted_sheet
+        }
+    } else {
+        sheet
+    };
     let mut empty: u64 = 0;
     let mut seen: u64 = 0;
-    let mut unique_values: std::collections::HashSet<String> = std::collections::HashSet::new();
-    let mut unique_truncated = false;
+    let mut unique_values: u64 = 0;
+    let mut unique_duplicate = false;
+    let mut previous_unique: Option<String> = None;
     let mut start: u64 = 0;
     let chunk = 5_000u64;
     while start < total {
-        let window = match sheet.window(start, chunk) {
+        let window = match metrics_sheet.window(start, chunk) {
             Ok(window) => window,
             Err(e) => return report_failure("gate", e.to_string()),
         };
@@ -5243,30 +5305,33 @@ fn cmd_gate(args: &[String]) -> i32 {
                 }
             }
             if let Some(index) = unique_index {
-                if !unique_truncated {
-                    if let Some(value) = row.get(index) {
-                        if unique_values.insert(value.clone()) && unique_values.len() > 1_000_000 {
-                            unique_truncated = true;
-                        }
-                    }
+                let value = row.get(index).cloned().unwrap_or_default();
+                if previous_unique.as_deref() == Some(value.as_str()) {
+                    unique_duplicate = true;
+                } else {
+                    unique_values += 1;
+                    previous_unique = Some(value);
                 }
             }
         }
         start += window.rows.len() as u64;
     }
+    if let Some(path) = &sorted_path {
+        let _ = std::fs::remove_file(path);
+    }
     let min_ok = min_rows.is_none_or(|minimum| total >= minimum);
     let empty_ok = max_empty.is_none_or(|maximum| empty <= maximum);
     let unique_ok = unique
         .as_ref()
-        .is_none_or(|_| !unique_truncated && unique_values.len() as u64 == seen);
+        .is_none_or(|_| !unique_duplicate && unique_values == seen);
     let passed = min_ok && empty_ok && unique_ok;
     if let Some(path) = &out {
         let mut text = String::from("{\"passed\":");
         text.push_str(if passed { "true" } else { "false" });
         text.push_str(&format!(
-            ",\"rows\":{total},\"empty\":{empty},\"uniqueValues\":{},\"uniqueTruncated\":{},\"checks\":{{\"minRows\":{:?},\"maxEmpty\":{:?},\"unique\":{:?}}}",
-            unique_values.len(),
-            unique_truncated,
+            ",\"rows\":{total},\"empty\":{empty},\"uniqueValues\":{},\"uniqueDuplicates\":{},\"checks\":{{\"minRows\":{:?},\"maxEmpty\":{:?},\"unique\":{:?}}}",
+            unique_values,
+            unique_duplicate,
             min_rows,
             max_empty,
             unique.as_deref().map(json_escape)
@@ -5278,12 +5343,12 @@ fn cmd_gate(args: &[String]) -> i32 {
     }
     if json {
         println!(
-            "{{\"passed\":{},\"rows\":{},\"empty\":{},\"uniqueValues\":{},\"uniqueTruncated\":{}}}",
+            "{{\"passed\":{},\"rows\":{},\"empty\":{},\"uniqueValues\":{},\"uniqueDuplicates\":{}}}",
             passed,
             total,
             empty,
-            unique_values.len(),
-            unique_truncated
+            unique_values,
+            unique_duplicate
         );
     } else {
         println!(
@@ -5291,8 +5356,8 @@ fn cmd_gate(args: &[String]) -> i32 {
             if unique.is_some() {
                 format!(
                     "{}{}",
-                    unique_values.len(),
-                    if unique_truncated { "+" } else { "" }
+                    unique_values,
+                    if unique_duplicate { "+" } else { "" }
                 )
             } else {
                 "-".to_string()
@@ -5305,11 +5370,7 @@ fn cmd_gate(args: &[String]) -> i32 {
             eprintln!("✗ empty {empty} > maximum {}", max_empty.unwrap_or(0));
         }
         if !unique_ok {
-            if unique_truncated {
-                eprintln!("✗ unique check exceeded its one-million-value cap");
-            } else {
-                eprintln!("✗ unique column has duplicates");
-            }
+            eprintln!("✗ unique column has duplicates");
         }
         if passed {
             println!("✓ gate passed");
