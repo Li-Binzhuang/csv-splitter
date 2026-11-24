@@ -6228,6 +6228,19 @@ fn gate_endpoint_can_require_global_uniqueness() {
     );
 }
 
+/// uniqueGlobal without unique is a client error, not a silent per-file check.
+#[test]
+fn gate_endpoint_rejects_unique_global_without_unique() {
+    let dir = TempDir::new("gate_http_bad_global");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,v\n1,a\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "id,v\n2,b\n").unwrap();
+    let server = start(&dir.0.clone());
+    let (code, body) = get(&server.addr, "/gate?path=parts&uniqueGlobal=1");
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains("at least one of"), "{body}");
+}
+
 /// The HTTP undo honours the same transaction boundary as the CLI.
 #[test]
 fn a_transaction_is_undone_in_one_step_over_http() {
