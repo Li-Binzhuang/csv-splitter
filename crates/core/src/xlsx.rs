@@ -8,7 +8,8 @@
 
 use crate::encoding::open_decoded;
 use crate::types::{Delimiter, ProgressEvent, ProgressSender};
-use std::io::{BufReader, BufWriter, Write};
+use regex::Regex;
+use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
 
 /// Excel's hard limit for data rows in one worksheet (excluding the header).
@@ -410,6 +411,295 @@ pub fn output_path_for(input: &Path) -> PathBuf {
     input.with_extension("xlsx")
 }
 
+/// Read one worksheet from an `.xlsx`/`.xlsm` workbook into a CSV file.
+///
+/// The reader intentionally understands a small, common subset: shared strings,
+/// inline strings, cached formula values, booleans and numbers. Styles, merged
+/// cells, charts and comments are ignored. Dates stay numeric because without
+/// style inspection a serial cannot be distinguished from a number.
+pub fn read_xlsx_to_csv(input: &Path, output: &Path, sheet: Option<&str>) -> std::io::Result<()> {
+    let file = std::fs::File::open(input)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|e| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {e}"),
+        )
+    })?;
+
+    let workbook = read_entry(&mut archive, "xl/workbook.xml")?;
+    let rels = read_entry(&mut archive, "xl/_rels/workbook.xml.rels").unwrap_or_default();
+    let sheets = workbook_sheets(&workbook);
+    if sheets.is_empty() {
+        return Err(invalid("xlsx has no worksheets"));
+    }
+    let selected = match sheet {
+        Some(name) => sheets
+            .iter()
+            .find(|entry| entry.name == name)
+            .ok_or_else(|| invalid(&format!("xlsx has no sheet named {name:?}")))?,
+        None => &sheets[0],
+    };
+    let target = relationship_target(&rels, &selected.rid)
+        .or_else(|| {
+            // Some producers omit the relationship; one-sheet workbooks still work.
+            (sheets.len() == 1).then(|| "xl/worksheets/sheet1.xml".to_string())
+        })
+        .ok_or_else(|| {
+            invalid(&format!(
+                "xlsx sheet {:?} has no relationship target",
+                selected.name
+            ))
+        })?;
+    let normalized = if let Some(stripped) = target.strip_prefix('/') {
+        stripped.to_string()
+    } else if target.starts_with("xl/") {
+        target.clone()
+    } else {
+        format!("xl/{}", target.trim_start_matches("./"))
+    };
+    let sheet_xml = read_entry(&mut archive, &normalized)?;
+    let shared = read_entry(&mut archive, "xl/sharedStrings.xml").unwrap_or_default();
+    let shared = shared_strings(&shared);
+
+    let rows = sheet_rows(&sheet_xml, &shared)?;
+    if rows.is_empty() {
+        return Err(invalid("xlsx worksheet has no rows"));
+    }
+    let mut table: Vec<Vec<String>> = Vec::new();
+    for (row_number, cells) in rows {
+        if row_number == 0 {
+            continue;
+        }
+        if cells.iter().all(|cell| cell.is_empty()) {
+            continue;
+        }
+        table.push(cells);
+    }
+    if table.is_empty() {
+        return Err(invalid("xlsx worksheet has no non-empty rows"));
+    }
+
+    let width = table.iter().map(|row| row.len()).max().unwrap_or(0);
+    if width == 0 {
+        return Err(invalid("xlsx worksheet is empty"));
+    }
+    let mut text = String::new();
+    for row in &table {
+        let mut padded: Vec<&str> = Vec::with_capacity(width);
+        for index in 0..width {
+            padded.push(row.get(index).map(String::as_str).unwrap_or(""));
+        }
+        text.push_str(&crate::csv_reader::join_csv_line(&padded, b','));
+    }
+    std::fs::write(output, text)
+}
+
+struct SheetRef {
+    name: String,
+    rid: String,
+}
+
+fn read_entry<R: std::io::Read + std::io::Seek>(
+    archive: &mut zip::ZipArchive<R>,
+    name: &str,
+) -> std::io::Result<String> {
+    let mut entry = archive.by_name(name).map_err(|e| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("xlsx missing {name}: {e}"),
+        )
+    })?;
+    let mut text = String::new();
+    entry.read_to_string(&mut text)?;
+    Ok(text)
+}
+
+fn workbook_sheets(xml: &str) -> Vec<SheetRef> {
+    let sheet_re = Regex::new(r#"<sheet\b([^>]*?)(?:/>|>)"#).unwrap();
+    let mut out = Vec::new();
+    for captures in sheet_re.captures_iter(xml) {
+        let attrs = &captures[1];
+        let Some(name) = attr(attrs, "name") else {
+            continue;
+        };
+        let Some(rid) = attr(attrs, "r:id") else {
+            continue;
+        };
+        out.push(SheetRef {
+            name: xml_unescape(&name),
+            rid: rid.to_string(),
+        });
+    }
+    out
+}
+
+fn relationship_target(rels: &str, rid: &str) -> Option<String> {
+    let rel_re = Regex::new(r#"<Relationship\b([^>]*?)/?>"#).unwrap();
+    for captures in rel_re.captures_iter(rels) {
+        let attrs = &captures[1];
+        if attr(attrs, "Id").as_deref() != Some(rid) {
+            continue;
+        }
+        if let Some(target) = attr(attrs, "Target") {
+            return Some(target);
+        }
+    }
+    None
+}
+
+fn shared_strings(xml: &str) -> Vec<String> {
+    let si_re = Regex::new(r#"(?s)<si\b[^>]*>(.*?)</si>"#).unwrap();
+    let t_re = Regex::new(r#"(?s)<t\b[^>]*>(.*?)</t>"#).unwrap();
+    si_re
+        .captures_iter(xml)
+        .map(|captures| {
+            let mut text = String::new();
+            for run in t_re.captures_iter(&captures[1]) {
+                text.push_str(&xml_unescape(&run[1]));
+            }
+            text
+        })
+        .collect()
+}
+
+fn sheet_rows(xml: &str, shared: &[String]) -> std::io::Result<Vec<(u64, Vec<String>)>> {
+    let row_re = Regex::new(r#"(?s)<row\b([^>]*?)(?:/>|>(.*?)</row>)"#).unwrap();
+    let cell_re = Regex::new(r#"(?s)<c\b([^>]*?)(?:/>|>(.*?)</c>)"#).unwrap();
+    let mut out = Vec::new();
+    for captures in row_re.captures_iter(xml) {
+        let row_attrs = &captures[1];
+        let row: u64 = attr(row_attrs, "r")
+            .and_then(|value| value.parse().ok())
+            .unwrap_or(out.len() as u64 + 1);
+        let body = captures.get(2).map(|m| m.as_str()).unwrap_or("");
+        let mut cells = Vec::new();
+        for cell in cell_re.captures_iter(body) {
+            let attrs = &cell[1];
+            let body = cell.get(2).map(|m| m.as_str()).unwrap_or("");
+            let reference = attr(attrs, "r").unwrap_or_default();
+            let column = column_from_reference(&reference).unwrap_or(cells.len());
+            while cells.len() <= column {
+                cells.push(String::new());
+            }
+            cells[column] = cell_value(attrs, body, shared)?;
+        }
+        out.push((row, cells));
+    }
+    Ok(out)
+}
+
+fn column_from_reference(reference: &str) -> Option<usize> {
+    let mut column = 0usize;
+    let mut saw = false;
+    for byte in reference.bytes() {
+        if byte.is_ascii_alphabetic() {
+            column = column * 26 + (byte.to_ascii_uppercase() - b'A' + 1) as usize;
+            saw = true;
+        } else if byte.is_ascii_digit() {
+            break;
+        } else {
+            return None;
+        }
+    }
+    saw.then_some(column.saturating_sub(1))
+}
+
+fn cell_value(attrs: &str, body: &str, shared: &[String]) -> std::io::Result<String> {
+    let kind = attr(attrs, "t").unwrap_or_default();
+    match kind.as_str() {
+        "inlineStr" => {
+            let is_re = Regex::new(r#"(?s)<is\b[^>]*>(.*?)</is>"#).unwrap();
+            let t_re = Regex::new(r#"(?s)<t\b[^>]*>(.*?)</t>"#).unwrap();
+            let Some(is) = is_re.captures(body) else {
+                return Ok(String::new());
+            };
+            let mut text = String::new();
+            for run in t_re.captures_iter(&is[1]) {
+                text.push_str(&xml_unescape(&run[1]));
+            }
+            Ok(text)
+        }
+        "s" => {
+            let v_re = Regex::new(r#"(?s)<v>(.*?)</v>"#).unwrap();
+            let index = v_re
+                .captures(body)
+                .and_then(|m| m[1].trim().parse::<usize>().ok())
+                .unwrap_or(usize::MAX);
+            Ok(shared.get(index).cloned().unwrap_or_default())
+        }
+        "str" => {
+            let v_re = Regex::new(r#"(?s)<v>(.*?)</v>"#).unwrap();
+            Ok(v_re
+                .captures(body)
+                .map(|m| xml_unescape(m[1].trim()))
+                .unwrap_or_default())
+        }
+        "b" => {
+            let v_re = Regex::new(r#"(?s)<v>(.*?)</v>"#).unwrap();
+            Ok(v_re
+                .captures(body)
+                .map(|m| if m[1].trim() == "1" { "true" } else { "false" })
+                .unwrap_or_default()
+                .to_string())
+        }
+        _ => {
+            let v_re = Regex::new(r#"(?s)<v>(.*?)</v>"#).unwrap();
+            Ok(v_re
+                .captures(body)
+                .map(|m| xml_unescape(m[1].trim()))
+                .unwrap_or_default())
+        }
+    }
+}
+
+fn attr(attrs: &str, name: &str) -> Option<String> {
+    let pattern = format!(r#"{name}="([^"]*)""#);
+    Regex::new(&pattern)
+        .ok()?
+        .captures(attrs)
+        .map(|captures| xml_unescape(&captures[1]))
+}
+
+fn xml_unescape(value: &str) -> String {
+    let mut out = String::with_capacity(value.len());
+    let mut rest = value;
+    while let Some(index) = rest.find('&') {
+        out.push_str(&rest[..index]);
+        let tail = &rest[index..];
+        let Some(semicolon) = tail.find(';') else {
+            out.push_str(tail);
+            return out;
+        };
+        let entity = &tail[..semicolon + 1];
+        let replacement: String = match entity {
+            "&amp;" => "&".into(),
+            "&lt;" => "<".into(),
+            "&gt;" => ">".into(),
+            "&quot;" => "\"".into(),
+            "&apos;" => "'".into(),
+            other if other.starts_with("&#x") || other.starts_with("&#X") => {
+                char::from_u32(u32::from_str_radix(&other[3..other.len() - 1], 16).unwrap_or(0))
+                    .map(|c| c.to_string())
+                    .unwrap_or_default()
+            }
+            other if other.starts_with("&#") => {
+                char::from_u32(other[2..other.len() - 1].parse().unwrap_or(0))
+                    .map(|c| c.to_string())
+                    .unwrap_or_default()
+            }
+            _ => String::new(),
+        };
+        out.push_str(&replacement);
+        rest = &tail[semicolon + 1..];
+    }
+    out.push_str(rest);
+    out
+}
+
+fn invalid(message: &str) -> std::io::Error {
+    std::io::Error::new(std::io::ErrorKind::InvalidInput, message.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -467,6 +757,56 @@ mod tests {
             "{sheet}"
         );
         assert!(sheet.contains("a&amp;b"), "{sheet}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn reads_back_a_streamed_export() {
+        let dir = std::env::temp_dir().join(format!("csvx_xlsx_read_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("in.csv");
+        let workbook = dir.join("in.xlsx");
+        let back = dir.join("back.csv");
+        std::fs::write(
+            &input,
+            "id,amount,flag,note\n1,12.5,true,a&b\n2,007,false,<x>\n",
+        )
+        .unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        csv_to_xlsx(&input, &workbook, Delimiter::Comma, &tx).unwrap();
+        read_xlsx_to_csv(&workbook, &back, None).unwrap();
+        let text = std::fs::read_to_string(&back).unwrap();
+        assert_eq!(
+            text,
+            "id,amount,flag,note\n1,12.5,true,a&b\n2,007,false,<x>\n"
+        );
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn reads_a_named_sheet() {
+        let dir = std::env::temp_dir().join(format!("csvx_xlsx_sheet_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let workbook = dir.join("book.xlsx");
+        let back = dir.join("data.csv");
+        write_sheets(
+            &workbook,
+            &[
+                Sheet {
+                    name: "Summary".into(),
+                    headers: vec!["city".into(), "n".into()],
+                    rows: vec![vec!["A".into(), "2".into()]],
+                },
+                Sheet {
+                    name: "Data".into(),
+                    headers: vec!["id".into(), "name".into()],
+                    rows: vec![vec!["7".into(), "x&y".into()]],
+                },
+            ],
+        )
+        .unwrap();
+        read_xlsx_to_csv(&workbook, &back, Some("Data")).unwrap();
+        assert_eq!(std::fs::read_to_string(&back).unwrap(), "id,name\n7,x&y\n");
         std::fs::remove_dir_all(dir).ok();
     }
 

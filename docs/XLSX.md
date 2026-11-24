@@ -1,6 +1,6 @@
 # xlsx 互操作 / Excel interop
 
-状态：**导出已实现；导入尚未实现**。用户已解除 xlsx 禁用；仍然不做前端。
+状态：**导出与只读导入均已实现**。用户已解除 xlsx 禁用；仍然不做前端。
 
 ## 导出
 
@@ -35,11 +35,32 @@ MCP：
 freeze A2
 ```
 
+## 只读导入
+
+```bash
+csvx convert input.xlsx --format csv -o out.csv
+csvx convert input.xlsx --format csv --sheet Data -o data.csv
+```
+
+- 读取缓存值，不重算公式；
+- 默认第一个 sheet；`--sheet` 按名称选择，找不到时退出 1；
+- 支持 sharedStrings、inlineStr、布尔、数值、缓存公式值；
+- 换行/引号字段通过 CSV 引号规则保留；
+- 样式、合并单元格、图表、批注忽略；
+- 日期型单元格暂按数值输出（没有检查 number format，避免把金额误判成日期）。
+
+MCP：
+
+```json
+{"name":"csvx_convert","arguments":{"path":"input.xlsx","format":"csv","out":"out.csv","sheet":"Data"}}
+```
+
 ## 尚未实现
 
-- 导入 xlsx（计划：只读缓存值、选 sheet、日期转换、忽略样式/合并）；
+- 导出 xlsx 的多 sheet 报告（`report --format xlsx`）；
 - 导出 xlsx 的多 sheet 报告（`report --format xlsx`）；
 - 条件格式/列宽/数字格式；
+- 日期型单元格识别；
 - 公式写入（只写值，不写公式）。
 
 ## 边界

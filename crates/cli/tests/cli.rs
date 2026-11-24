@@ -2550,6 +2550,64 @@ fn convert_formats_round_trip_to_the_same_csv() {
     assert!(sheet.contains("café"), "{sheet}");
 }
 
+/// Xlsx import reads shared strings and selects a named worksheet.
+#[test]
+fn convert_imports_xlsx_shared_strings_and_sheets() {
+    let fixture =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/xlsx/shared.xlsx");
+    let dir = TempDir::new("xlsximport");
+    let out = dir.join("summary.csv");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            fixture.to_str().unwrap(),
+            "--format",
+            "csv",
+            "--out",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    assert_eq!(std::fs::read_to_string(&out).unwrap(), "city,n\nA,2\nB,3\n");
+
+    let data = dir.join("data.csv");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            fixture.to_str().unwrap(),
+            "--format",
+            "csv",
+            "--sheet",
+            "Data",
+            "--out",
+            data.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    assert_eq!(
+        std::fs::read_to_string(&data).unwrap(),
+        "id,name,amount\n1,x & y,12.5\n2,007,7\n3,\"line\nbreak\",1\n"
+    );
+
+    let missing = Command::new(bin())
+        .args([
+            "convert",
+            fixture.to_str().unwrap(),
+            "--format",
+            "csv",
+            "--sheet",
+            "Missing",
+            "--out",
+            dir.join("missing.csv").to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(missing.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&missing.stderr).contains("no sheet"));
+}
+
 /// The pipeline runner chains commands, skips unchanged steps and reruns downstream
 /// when an input changes; a failed step leaves no partial output.
 #[test]

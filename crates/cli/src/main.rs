@@ -210,6 +210,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         "convert",
         &[
             ("--format", "Data format: csv | tsv | ndjson | parquet | xlsx"),
+            ("--sheet", "Worksheet name for xlsx input (default: first sheet)"),
             ("--delim", "Field delimiter for CSV input"),
             ("--from", "Source encoding"),
             ("--out", "Output path"),
@@ -3293,6 +3294,7 @@ fn cmd_convert(args: &[String]) -> i32 {
     let mut from = "auto".to_string();
     let mut to = "utf-8".to_string();
     let mut convert_format: Option<String> = None;
+    let mut sheet: Option<String> = None;
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -3307,6 +3309,13 @@ fn cmd_convert(args: &[String]) -> i32 {
             },
             "--format" => match p.value("--format") {
                 Ok(v) => convert_format = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--sheet" => match p.value("--sheet") {
+                Ok(v) => sheet = Some(v),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -3356,6 +3365,41 @@ fn cmd_convert(args: &[String]) -> i32 {
             eprintln!("error: --format needs --out <path>");
             return 2;
         };
+        let input_name = input
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        let is_xlsx = input_name.ends_with(".xlsx") || input_name.ends_with(".xlsm");
+        if sheet.is_some() && (!is_xlsx || !target.eq_ignore_ascii_case("csv")) {
+            eprintln!("error: --sheet is only valid for xlsx input converted to csv");
+            return 2;
+        }
+        if is_xlsx {
+            if !target.eq_ignore_ascii_case("csv") {
+                eprintln!("error: xlsx input can only be converted to csv; use --format csv");
+                return 2;
+            }
+            if let Err(code) = check_output(Some(&input), &out) {
+                return code;
+            }
+            return match csvx_core::xlsx::read_xlsx_to_csv(&input, &out, sheet.as_deref()) {
+                Ok(()) => {
+                    if !quiet {
+                        println!(
+                            "✓ converted {} → {} (xlsx → csv)",
+                            input.display(),
+                            out.display()
+                        );
+                    }
+                    0
+                }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    1
+                }
+            };
+        }
         // A TSV/Parquet/NDJSON source has its own delimiter; validating a CSV header
         // with the CSV default would reject a perfectly good TSV before conversion.
         let name = input
