@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "90d64bd75205b749bd682923cfceb3908503f139b02ca9f223e2d765c02f81ea",
+  "batch_id": "8fbcb3bd69e694a989ceb377b1618ea3e9d43dc132915c4528197f00c360d8b1",
+  "composite_identity": "3f1bc200232ec1ff771c9b9d74b3231703ee1bc684d3576c2519627795463a44",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "914129434a259cf6bb5ecc59b413c528a816817434a665c45389fdc33d4ff630",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "c9eb40e6576de113a6c945c2493851385a07f35992e559d70891167d9deb01f2",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，打包脚本末尾自动 verify_dist，失败时删半成品 tar/sha；pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2；macOS gate dispatch 45198239384 12m21s 与 push 45202447374 11m32s 均 success；MCP 缓存 2 GB+ gzip 4.545→1.590 s/82 MB；含 18 工具/cache_stats+clear（demo 命中/清空后复查 0，均不可 job）、watch demo/--state（时间戳/轮次/lastError/失败上限/上次原因） | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "a0eb15ac8e22fda97e1e3ae519307c1c1ea5eb60643447fb7b99406d30ef4a14",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "c9eb40e6576de113a6c945c2493851385a07f35992e559d70891167d9deb01f2",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:docs/DEMO.md | A:发布前 gate/demo/package，打包脚本末尾自动 verify_dist，失败时删半成品 tar/sha；pipeline 15/13 ms、Python 与官方 SDK gzip_matched=3/status_fresh=2；macOS gate dispatch 45198239384 12m21s 与 push 45202447374 11m32s 均 success；MCP 缓存 2 GB+ gzip 4.545→1.590 s/82 MB；含 18 工具/cache_stats+clear（demo 命中/清空后复查 0，均不可 job）、watch demo/--state（时间戳/轮次/lastError/失败上限/上次原因） | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    }
+  ]
+}
