@@ -1,0 +1,93 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "591ff934f6a45cc4f5ef9106aed6c6892d45061a4226d27a0c20364faab72215",
+  "batch_id": "3d025de07134a901e300d05972bb5e1412360b2a081a2a874e8ed9dd79ee86d6",
+  "composite_identity": "75914d4098a101fff64fc5d7b9ecd008ef0cde7c2f05630770bff3d443ace8fd",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "6fcfb9bbcb7de7ffa79eedb3ae6e50cfd1eba32a31c257ceef85b049a6e00407",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "ea005a0aa16b088098ca3c9732327716db2fd98c8ccdde825fdd71bf2a75c8eb",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行/压缩、gate 单文件/目录+外部排序 unique、concat 目录、report CSV spec/MD/HTML（含 quality）、compact/book/quality/convert、pipeline 快跳过/--dry-run/JSON/lineage/verify/锁/group/staging、mcp 19 工具、ops/typed ops、edit preview 三端 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "2f2c73ceea09d864cfd58538b565d5d87af41e9773127dedd7c000a9c07ab5cf",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:CLI 入口；report CSV spec→MD/HTML（summary/columns/quality/rows，转义，扩展名推断格式）；gate 单文件/目录；concat 目录；pipeline gate；edit transaction --dry-run；typed schema/filter/view；watch/ops | S:report quality 用 profile_quotes 且物化编辑；quality 段无 groups；HTML 转义所有单元格；gate 目录逐文件；dry-run 仅 transaction；pipeline 失败不写 state/lineage；≤1 MiB 哈希"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "ab87ab06343acd0a688a222e6881120bafec7cf9d4267ce4d7f9db457e64cb65",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter -o 压缩；gate 单文件/目录（外部排序 unique）；concat 目录；report CSV spec→MD/HTML（summary/columns/quality/rows）；pipeline gate；compact/book/quality/convert；mcp 19 工具 | S:progress 覆盖 job wait 与 pipeline 步骤；report 无 GUI；quality 只做 key/空值/类型；unique 排序耗时；目录 gate 逐文件"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/OPERATIONS.md",
+      "path": "docs/OPERATIONS.md",
+      "change": "update",
+      "source_sha256": "6c385ca0c7f0a32bd5c19c5a2b20a939baee9cb924308071bcd37c5185dc4b6b",
+      "existing_entry": "OPERATIONS.md[SG8T]: F:操作契约层 ADR：Stage 1 目录、适配器迁移与 preview/apply 规则 | R:code:crates/core/src/contract.rs,code:crates/core/src/ops.rs,code:crates/cli/src/main.rs,code:crates/cli/src/serve.rs,code:docs/ARCHITECTURE.md | A:问题/决定/14 操作；Stage 1 CLI ops；Stage 2 typed+schema/filter CLI+HTTP、view CLI 简单路径；Stage 3 preview 三端；Stage 4 filter 压缩、gate 单文件/目录、concat 目录；report summary/columns/quality/rows；前端 | S:view HTTP/复杂路径未接；journal hash 非 SHA；gate 唯一性排序成本；report 仅四节；input/output 摘要不冒充 JSON Schema"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/PRODUCT_PLAN.md",
+      "path": "docs/PRODUCT_PLAN.md",
+      "change": "update",
+      "source_sha256": "576e1130d730a7732803747af93f15bfb670c371a5e3557fcdc2e206c744e291",
+      "existing_entry": "PRODUCT_PLAN.md[SG8T]: F:产品进化计划：定位、三端契约、S0–S7 阶段与验收、硬约束与判断标准 | R:code:docs/OPERATIONS.md,code:docs/ARCHITECTURE.md,code:docs/ROADMAP.md,code:docs/BEYOND_EXCEL.md | A:本地优先 AI 原生 CSV 工作台；CLI/HTTP/MCP 共用 operations 契约；S0/S1 完成，S2 typed、S3 preview 三端、S4 压缩+gate+目录、S5 薄前端、S6 report CSV spec→MD/HTML（summary/columns/quality/rows；前端渲染待）、S7 数据库/xlsx | S:S2–S7 未验收；xlsx/数据库/前端需用户决策；验收以测试与实测为准"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "5d085d6d278455d7559f358a12a229ea53903cd2a8818072f0a69caeced11450",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "ea005a0aa16b088098ca3c9732327716db2fd98c8ccdde825fdd71bf2a75c8eb",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行/压缩、gate 单文件/目录+外部排序 unique、concat 目录、report CSV spec/MD/HTML（含 quality）、compact/book/quality/convert、pipeline 快跳过/--dry-run/JSON/lineage/verify/锁/group/staging、mcp 19 工具、ops/typed ops、edit preview 三端 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "ee883abc68a59de58619af3e9f41da5fba5a76e7bee4217d25022d4d722345c4",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "2f2c73ceea09d864cfd58538b565d5d87af41e9773127dedd7c000a9c07ab5cf",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:CLI 入口；report CSV spec→MD/HTML（summary/columns/quality/rows，转义，扩展名推断格式）；gate 单文件/目录；concat 目录；pipeline gate；edit transaction --dry-run；typed schema/filter/view；watch/ops | S:report quality 用 profile_quotes 且物化编辑；quality 段无 groups；HTML 转义所有单元格；gate 目录逐文件；dry-run 仅 transaction；pipeline 失败不写 state/lineage；≤1 MiB 哈希"
+    },
+    {
+      "candidate_id": "6ffedbfcbf0b80d2fb00516156f04b1b668f1353c7a40f013829cf1a077c3ceb",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "ab87ab06343acd0a688a222e6881120bafec7cf9d4267ce4d7f9db457e64cb65",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter -o 压缩；gate 单文件/目录（外部排序 unique）；concat 目录；report CSV spec→MD/HTML（summary/columns/quality/rows）；pipeline gate；compact/book/quality/convert；mcp 19 工具 | S:progress 覆盖 job wait 与 pipeline 步骤；report 无 GUI；quality 只做 key/空值/类型；unique 排序耗时；目录 gate 逐文件"
+    },
+    {
+      "candidate_id": "0f9ec48d7fe6c97ae5616e1646eb0cacb3ce062fba64d87d79aabc04515dfe20",
+      "object_ref": "code:docs/OPERATIONS.md",
+      "path": "docs/OPERATIONS.md",
+      "change": "update",
+      "source_sha256": "6c385ca0c7f0a32bd5c19c5a2b20a939baee9cb924308071bcd37c5185dc4b6b",
+      "existing_entry": "OPERATIONS.md[SG8T]: F:操作契约层 ADR：Stage 1 目录、适配器迁移与 preview/apply 规则 | R:code:crates/core/src/contract.rs,code:crates/core/src/ops.rs,code:crates/cli/src/main.rs,code:crates/cli/src/serve.rs,code:docs/ARCHITECTURE.md | A:问题/决定/14 操作；Stage 1 CLI ops；Stage 2 typed+schema/filter CLI+HTTP、view CLI 简单路径；Stage 3 preview 三端；Stage 4 filter 压缩、gate 单文件/目录、concat 目录；report summary/columns/quality/rows；前端 | S:view HTTP/复杂路径未接；journal hash 非 SHA；gate 唯一性排序成本；report 仅四节；input/output 摘要不冒充 JSON Schema"
+    },
+    {
+      "candidate_id": "c517e3dae999366169301dec9b34050386c4435c72a4c405bb450c32d0698a68",
+      "object_ref": "code:docs/PRODUCT_PLAN.md",
+      "path": "docs/PRODUCT_PLAN.md",
+      "change": "update",
+      "source_sha256": "576e1130d730a7732803747af93f15bfb670c371a5e3557fcdc2e206c744e291",
+      "existing_entry": "PRODUCT_PLAN.md[SG8T]: F:产品进化计划：定位、三端契约、S0–S7 阶段与验收、硬约束与判断标准 | R:code:docs/OPERATIONS.md,code:docs/ARCHITECTURE.md,code:docs/ROADMAP.md,code:docs/BEYOND_EXCEL.md | A:本地优先 AI 原生 CSV 工作台；CLI/HTTP/MCP 共用 operations 契约；S0/S1 完成，S2 typed、S3 preview 三端、S4 压缩+gate+目录、S5 薄前端、S6 report CSV spec→MD/HTML（summary/columns/quality/rows；前端渲染待）、S7 数据库/xlsx | S:S2–S7 未验收；xlsx/数据库/前端需用户决策；验收以测试与实测为准"
+    }
+  ]
+}
