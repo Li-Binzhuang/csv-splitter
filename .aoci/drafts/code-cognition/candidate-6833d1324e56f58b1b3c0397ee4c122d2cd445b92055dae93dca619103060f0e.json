@@ -1,0 +1,137 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "bacc371f0e80fb62323c95ce0e35abc269dd8e7daa946e206df7ffad77b3c6bb",
+  "batch_id": "6833d1324e56f58b1b3c0397ee4c122d2cd445b92055dae93dca619103060f0e",
+  "composite_identity": "35dafc0b45dd900144b97dc59a8baedab0f2cd4408337220a2a021e0199de409",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "fdb4ed5606cdc90e3c86d8354bf51c9f0f89fd6f79f884e7a33d313ab86ab981",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "61a45379f1448e893000fd200b36706ee8f2c9f374b3ca49ddc9b2f976b30390",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API + OpenAI-compatible runner | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md | A:loopback 服务；sessions/actions/approvals/close/events；events 默认回放、?follow=1 轮询审计最多 60s；runner JSON tool/final 循环；curl stdin key；destructive 需 allow-apply | S:follow 是轮询不是 broker；token 不落审计；root canonical；key 不进 argv/磁盘；max-steps 12"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "431744a425e9a5db4187aaa19f0609725705491a425868e2b01da71da9557b2c",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:crates/core/src/xlsx.rs | A:CLI 入口；convert xlsx；report/gate/concat/edit/view/filter/watch；agent serve/manifest/run 及 endpoint/model/prompt/max-steps/allow-apply | S:unique-global 成本高；report compare 限 root；xlsx 行上限；agent 端口 8788；runner key 仅 env"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "10671c219d9e207090be02ee78ca8f21a84aeee63d88013caca320b6d90ce02b",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入：MCP manifest、HTTP Agent API 与内置 runner | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:docs/DSH_MODEL_TEST.md | A:agent serve/manifest/run；sessions/actions/approvals/events(+follow)/close；428 审批；runner JSON 动作；Ark 6.10s schema→view→final | S:follow 最长 60s；key 不入仓库；destructive 默认拒绝；无 GUI/多用户"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BIG_PLAN.md",
+      "path": "docs/BIG_PLAN.md",
+      "change": "update",
+      "source_sha256": "9fd28672670ac33f9fcfe849379f68792ce701720e9f2f5153e9a5c192abc8c7",
+      "existing_entry": "BIG_PLAN.md[SW7S]: F:xlsx + Agent 原生后端的大计划：工作流、接口、里程碑、非目标 | R:code:docs/PRODUCT_PLAN.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/FORMULA_CACHE.md | A:M1 xlsx、M2 导入/多 sheet、M3 公式缓存、M4 MCP+HTTP Agent API、M5 runner 已落；M6 整理；Ark 6.10s | S:不写 GUI/多用户/宏；apply 需审批；SSE 非实时；flag 未实现前不可写帮助"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DSH_MODEL_TEST.md",
+      "path": "docs/DSH_MODEL_TEST.md",
+      "change": "update",
+      "source_sha256": "4065ff5e2633c25d7f044854d15d2281b1e308fc6a26c5bb266ead21cde3add0",
+      "existing_entry": "DSH_MODEL_TEST.md[SD7T]: F:本地 DSH 的 Ark Economy 模型接入与 runner 实测 | R:code:docs/BIG_PLAN.md,code:docs/AGENT_API.md | A:只测 DeepSeek-V4.1-Flash-1017-Ark-Economy；1.10s 直连；runner schema→view→final 6.10s；key 不落仓库 | S:只允许该模型；不打印/保存 key；max_tokens 小会只有 reasoning；破坏性需 allow-apply"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:examples/agent/README.md",
+      "path": "examples/agent/README.md",
+      "change": "create",
+      "source_sha256": "d30033ac8f8f6682caa57f857a82f3cce39b0b47c608fd7e7f7405a79579844f"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "f8526663e664eb785dadc12267a628ccd627d37f1a225254c126f43c35f68eed",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:docs/SALES.md,code:scripts/verify_dist.sh,code:scripts/smoke_http.py,code:docs/ACCEPTANCE.md | A:binary 缺失先 cargo build --release；版本取 csvx --version；打包二进制、README/CHANGELOG/LICENSE、主要 docs（含 ACCEPTANCE/RELEASE_CHECKLIST/ROADMAP/PILOT_*）、demo/pilot/bench/smoke_http 脚本与 mcp_sdk；写 sha256 后 verify_dist；失败删半成品 | S:不打 tag、不联网、不发布 registry；dist 已 gitignore；仅企业内部分发/试点"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:skills/csvx-data/SKILL.md",
+      "path": "skills/csvx-data/SKILL.md",
+      "change": "create",
+      "source_sha256": "bed6f94204791ff88731b46e9081f7512f63c4103debe5cf2a7a316db364a101"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "111308e7b9f5dba48aa3ff1fe5403b86616dd039fd5ffa56046283a9376bef1b",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "61a45379f1448e893000fd200b36706ee8f2c9f374b3ca49ddc9b2f976b30390",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API + OpenAI-compatible runner | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md | A:loopback 服务；sessions/actions/approvals/close/events；events 默认回放、?follow=1 轮询审计最多 60s；runner JSON tool/final 循环；curl stdin key；destructive 需 allow-apply | S:follow 是轮询不是 broker；token 不落审计；root canonical；key 不进 argv/磁盘；max-steps 12"
+    },
+    {
+      "candidate_id": "d6ea51d0177b3e6c545a06d8a0bf7da923b897ae27e91882b962c2168124b865",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "431744a425e9a5db4187aaa19f0609725705491a425868e2b01da71da9557b2c",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:crates/core/src/xlsx.rs | A:CLI 入口；convert xlsx；report/gate/concat/edit/view/filter/watch；agent serve/manifest/run 及 endpoint/model/prompt/max-steps/allow-apply | S:unique-global 成本高；report compare 限 root；xlsx 行上限；agent 端口 8788；runner key 仅 env"
+    },
+    {
+      "candidate_id": "5ac01228b64cdb0ae2298c85f1f65ea7156d2db4f3ea84d622c9ded26af8b0e1",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "10671c219d9e207090be02ee78ca8f21a84aeee63d88013caca320b6d90ce02b",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入：MCP manifest、HTTP Agent API 与内置 runner | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:docs/DSH_MODEL_TEST.md | A:agent serve/manifest/run；sessions/actions/approvals/events(+follow)/close；428 审批；runner JSON 动作；Ark 6.10s schema→view→final | S:follow 最长 60s；key 不入仓库；destructive 默认拒绝；无 GUI/多用户"
+    },
+    {
+      "candidate_id": "eadea73878c188741f1a4834c955c167765fa609dd6e27d582e3eb84ac9e334f",
+      "object_ref": "code:docs/BIG_PLAN.md",
+      "path": "docs/BIG_PLAN.md",
+      "change": "update",
+      "source_sha256": "9fd28672670ac33f9fcfe849379f68792ce701720e9f2f5153e9a5c192abc8c7",
+      "existing_entry": "BIG_PLAN.md[SW7S]: F:xlsx + Agent 原生后端的大计划：工作流、接口、里程碑、非目标 | R:code:docs/PRODUCT_PLAN.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/FORMULA_CACHE.md | A:M1 xlsx、M2 导入/多 sheet、M3 公式缓存、M4 MCP+HTTP Agent API、M5 runner 已落；M6 整理；Ark 6.10s | S:不写 GUI/多用户/宏；apply 需审批；SSE 非实时；flag 未实现前不可写帮助"
+    },
+    {
+      "candidate_id": "499ad248aa98d256563eca67ac496fb9ebd786c68db46609b642132b15c644b4",
+      "object_ref": "code:docs/DSH_MODEL_TEST.md",
+      "path": "docs/DSH_MODEL_TEST.md",
+      "change": "update",
+      "source_sha256": "4065ff5e2633c25d7f044854d15d2281b1e308fc6a26c5bb266ead21cde3add0",
+      "existing_entry": "DSH_MODEL_TEST.md[SD7T]: F:本地 DSH 的 Ark Economy 模型接入与 runner 实测 | R:code:docs/BIG_PLAN.md,code:docs/AGENT_API.md | A:只测 DeepSeek-V4.1-Flash-1017-Ark-Economy；1.10s 直连；runner schema→view→final 6.10s；key 不落仓库 | S:只允许该模型；不打印/保存 key；max_tokens 小会只有 reasoning；破坏性需 allow-apply"
+    },
+    {
+      "candidate_id": "8812053258d018ea77b37e1386c5c9d5bb4cfdc328b95e7817f7cd7b5924b767",
+      "object_ref": "code:examples/agent/README.md",
+      "path": "examples/agent/README.md",
+      "change": "create",
+      "source_sha256": "d30033ac8f8f6682caa57f857a82f3cce39b0b47c608fd7e7f7405a79579844f"
+    },
+    {
+      "candidate_id": "f3dd37796bdf07fff6a6ce41df3cfe34560995e6704b3d210e501a27a72ee261",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "f8526663e664eb785dadc12267a628ccd627d37f1a225254c126f43c35f68eed",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:docs/SALES.md,code:scripts/verify_dist.sh,code:scripts/smoke_http.py,code:docs/ACCEPTANCE.md | A:binary 缺失先 cargo build --release；版本取 csvx --version；打包二进制、README/CHANGELOG/LICENSE、主要 docs（含 ACCEPTANCE/RELEASE_CHECKLIST/ROADMAP/PILOT_*）、demo/pilot/bench/smoke_http 脚本与 mcp_sdk；写 sha256 后 verify_dist；失败删半成品 | S:不打 tag、不联网、不发布 registry；dist 已 gitignore；仅企业内部分发/试点"
+    },
+    {
+      "candidate_id": "730b88a4bdf41647859f2ff5a116c6037f7bc7da137e286b877f170328aff5c0",
+      "object_ref": "code:skills/csvx-data/SKILL.md",
+      "path": "skills/csvx-data/SKILL.md",
+      "change": "create",
+      "source_sha256": "bed6f94204791ff88731b46e9081f7512f63c4103debe5cf2a7a316db364a101"
+    }
+  ]
+}
