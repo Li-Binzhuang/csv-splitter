@@ -7861,6 +7861,7 @@ fn pipeline_watch_stops_after_the_failure_cap() {
     let state = std::fs::read_to_string(dir.join("failure-state.json")).unwrap();
     assert!(state.contains(r#""lastError":"#), "{state}");
     assert!(state.contains("bogus"), "{state}");
+    assert!(state.contains(r#""nextDelayMs":20"#), "{state}");
     let restarted = Command::new(bin())
         .args([
             "pipeline",
