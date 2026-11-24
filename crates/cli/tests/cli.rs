@@ -7697,7 +7697,7 @@ fn report_renders_a_csv_spec() {
     std::fs::write(dir.join("t.csv"), "id,city,note\n1,CDMX,a|b\n2,<x>,ok\n").unwrap();
     std::fs::write(
         dir.join("spec.csv"),
-        "title,Sales report\nsummary,\ncolumns,\nrows,2\n",
+        "title,Sales report\nsummary,\ncolumns,\nquality,id\nrows,2\n",
     )
     .unwrap();
     let md = Command::new(bin())
@@ -7714,6 +7714,8 @@ fn report_renders_a_csv_spec() {
     assert!(text.contains("# Sales report"), "{text}");
     assert!(text.contains("| id | city | note |"), "{text}");
     assert!(text.contains("a\\|b"), "a pipe must be escaped: {text}");
+    assert!(text.contains("## Quality"), "{text}");
+    assert!(text.contains("unique and non-empty"), "{text}");
 
     let html = Command::new(bin())
         .args([

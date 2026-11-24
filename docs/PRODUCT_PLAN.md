@@ -28,7 +28,7 @@ AI 不直接改文件：先预览，再应用，可撤销。
 | S3 preview/apply | 写操作先预览，应用失败不写半条 | `edit transaction --dry-run` 已落；CLI + HTTP + MCP preview 有 affected rows/hash | 进行中 |
 | S4 数据能力 | 压缩输出、Pipeline 质量门禁、多文件/目录 | filter `-o` 压缩输出、`gate` 阈值门禁已落；多文件/目录待做 | 进行中 |
 | S5 薄前端 | 虚拟网格、编辑/撤销、公式/筛选/透视 | 只消费契约，不解析 help | 待做 |
-| S6 报表 | 声明式 report spec + 确定性渲染 | CSV spec → Markdown/HTML 已落；前端渲染待 | 进行中 |
+| S6 报表 | 声明式 report spec + 确定性渲染 | CSV spec → Markdown/HTML（summary/columns/quality/rows）已落；前端渲染待 | 进行中 |
 | S7 集成 | 数据库只读连接、xlsx（需用户解除） | 凭据/权限/回滚 | 条件待定 |
 
 ## 当前优先 / Now

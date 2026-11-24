@@ -5118,6 +5118,47 @@ fn truncate_for_display(text: &str, width: usize) -> String {
     format!("{kept}…")
 }
 
+fn report_quality(
+    input: &Path,
+    delimiter: csvx_core::types::Delimiter,
+    keys: &[String],
+    columns: &[String],
+) -> Result<Vec<(String, String, String)>, String> {
+    // The quality section must see pending edits, like the rows section does.
+    let mut materialized = None;
+    let target = if csvx_core::sheet::has_edits(input) {
+        let (tx, rx) = mpsc::channel();
+        drop(rx);
+        let value =
+            csvx_core::sheet::materialize(input, &csvx_core::sheet::ReadOptions { delimiter }, &tx)
+                .map_err(|error| error.to_string())?;
+        let path = value.path().to_path_buf();
+        materialized = Some(value);
+        path
+    } else {
+        input.to_path_buf()
+    };
+    let (tx, rx) = mpsc::channel();
+    drop(rx);
+    let profiles = csvx_core::profile::profile_quotes(
+        &target,
+        delimiter,
+        64,
+        None,
+        csvx_core::csv_reader::QuoteStyle::Rfc4180,
+        &tx,
+    )
+    .map_err(|error| error.to_string())?;
+    let keys = keys
+        .iter()
+        .filter(|key| columns.iter().any(|column| column == *key))
+        .cloned()
+        .collect::<Vec<_>>();
+    let (_checks, findings) = quality_checks(&profiles, &keys, &[]);
+    drop(materialized);
+    Ok(findings)
+}
+
 /// A small deterministic report renderer: the spec is CSV rows, not a GUI.
 ///
 /// The spec is intentionally dull: `section,arg` (summary/columns/rows), plus an
@@ -5247,7 +5288,7 @@ fn cmd_report(args: &[String]) -> i32 {
                 }
                 continue;
             }
-            if !matches!(kind.as_str(), "summary" | "columns" | "rows") {
+            if !matches!(kind.as_str(), "summary" | "columns" | "rows" | "quality") {
                 eprintln!("error: unknown report section {kind:?}");
                 return 2;
             }
@@ -5373,6 +5414,47 @@ fn cmd_report(args: &[String]) -> i32 {
                             body.push_str(&format!("<td>{}</td>", html_escape(cell)));
                         }
                         body.push_str("</tr>\n");
+                    }
+                    body.push_str("</table>\n");
+                }
+            }
+            "quality" => {
+                let keys: Vec<String> = arg
+                    .split(',')
+                    .map(|key| key.trim().to_string())
+                    .filter(|key| !key.is_empty())
+                    .collect();
+                for key in &keys {
+                    if !columns.iter().any(|column| column == key) {
+                        eprintln!("error: quality names unknown key column {key:?}");
+                        return 2;
+                    }
+                }
+                let findings = match report_quality(&input, delimiter, &keys, &columns) {
+                    Ok(findings) => findings,
+                    Err(e) => return report_failure("report", e),
+                };
+                if format == "md" {
+                    body.push_str("## Quality\n\n");
+                    body.push_str("| severity | column | finding |\n|---|---|---|\n");
+                    for (severity, column, message) in &findings {
+                        body.push_str(&format!(
+                            "| {} | {} | {} |\n",
+                            severity,
+                            md_cell(column),
+                            md_cell(message)
+                        ));
+                    }
+                    body.push('\n');
+                } else {
+                    body.push_str("<h2>Quality</h2><table><tr><th>severity</th><th>column</th><th>finding</th></tr>\n");
+                    for (severity, column, message) in &findings {
+                        body.push_str(&format!(
+                            "<tr><td>{}</td><td>{}</td><td>{}</td></tr>\n",
+                            html_escape(severity),
+                            html_escape(column),
+                            html_escape(message)
+                        ));
                     }
                     body.push_str("</table>\n");
                 }
