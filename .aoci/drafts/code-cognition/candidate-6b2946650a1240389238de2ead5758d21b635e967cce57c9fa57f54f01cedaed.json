@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "922995e4c22e99c870a3b6dce62218c46047be243f313f30fa8719fa596bdd1c",
+  "batch_id": "6b2946650a1240389238de2ead5758d21b635e967cce57c9fa57f54f01cedaed",
+  "composite_identity": "c65de357456c11c2653a964348db1d0679fbe35b6f15425428ec51eafa2f0239",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e849dd73b00d728b091a26025f3c789cd1704a0f0b9739df2b6acfc0e6b00301",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "e65b2e13c7c53321741cb7a91430a8b270c0e314420a148722be7ba4d78bf63b",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:CLI 入口；report spec/specText（summary/columns/quality/groups/chart/compare/rows，--root）；gate 文件/目录，--unique-global 可选跨文件唯一；concat 目录；edit transaction typed apply；typed view/filter；watch/ops | S:unique-global 先 concat 再排序查重，成本高于逐文件；report compare 限 root；gate failures 测试契约；dry-run 仅 transaction；≤1 MiB 哈希"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "31006eec8536e134cff1bb5c4149fee5e3a4ec89b23c3634e6a21f64cb1dd136",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "e65b2e13c7c53321741cb7a91430a8b270c0e314420a148722be7ba4d78bf63b",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/serve.rs,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:CLI 入口；report spec/specText（summary/columns/quality/groups/chart/compare/rows，--root）；gate 文件/目录，--unique-global 可选跨文件唯一；concat 目录；edit transaction typed apply；typed view/filter；watch/ops | S:unique-global 先 concat 再排序查重，成本高于逐文件；report compare 限 root；gate failures 测试契约；dry-run 仅 transaction；≤1 MiB 哈希"
+    }
+  ]
+}
