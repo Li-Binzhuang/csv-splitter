@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "d1746ba449c1c0f1d87e0897fa9a25b185eed087c9403c6711fa90bf0504d660",
+  "batch_id": "561b82ce12eac7f048ceb692166c3499d215cdb18bfdf899ec78e845efbec1a4",
+  "composite_identity": "8ca0403e3b97e064d99a95fb80a67e04e572ca897fe72992ee0c1331138afb0f",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "1704ebd250fd95810a3f6a19f06c001cf11c42918b3fa226301ca16f440f61bd",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ACCEPTANCE.md",
+      "path": "docs/ACCEPTANCE.md",
+      "change": "update",
+      "source_sha256": "3002a4c9aa2ddbc164251236fe123e3faebd147c27c6461c8b9737dcccd026f7",
+      "existing_entry": "ACCEPTANCE.md[SD6M]: F:验收证据：两档性能/能力矩阵 + Operations 契约里程碑与发布复现 | R:code:docs/API.md,code:docs/NIGHT_CHECKPOINT.md | A:旧篇保留列元数据/行列交前端/写入约束/大文件实测；新增 2026-11-24 Operations 验收：17 操作、typed view/apply、压缩、gate 文件/目录/global、concat 三端、report spec/chart/compare/root、smoke_http；每行给命令与数字 | S:文档里的输出由测试钉住，改实现不同步会让 gate 失败；不把薄前端写成已完成"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/smoke_http.py",
+      "path": "scripts/smoke_http.py",
+      "change": "update",
+      "source_sha256": "81958bb69b0ca929fc54b3da42eac67470a4fddb9e1663a59c5b2795daa8c7b0",
+      "existing_entry": "smoke_http.py[XQ7T]: F:HTTP 发布包冒烟：启动 release server 验证 /ops、/report chart+compare、/gate global、/concat dir | R:code:crates/cli/src/serve.rs,code:docs/RELEASE_CHECKLIST.md,code:scripts/package_release.sh | A:临时 root + 随机端口；生成 t/other/spec/sub/dup 夹具；等待 /health；校验 17 操作、HTML SVG+Compare、gate 文件通过、uniqueGlobal 失败、concat job done；失败收集并退出 1；finally 终止 server | S:依赖 Python 标准库与 release binary；随机端口先 bind 再关闭有极小竞争；只在本机回环；不写用户数据"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "f84c44d92de0676445192e2d3e0a2f9e8a2779ac2b442e90c18ab97b022583cf",
+      "object_ref": "code:docs/ACCEPTANCE.md",
+      "path": "docs/ACCEPTANCE.md",
+      "change": "update",
+      "source_sha256": "3002a4c9aa2ddbc164251236fe123e3faebd147c27c6461c8b9737dcccd026f7",
+      "existing_entry": "ACCEPTANCE.md[SD6M]: F:验收证据：两档性能/能力矩阵 + Operations 契约里程碑与发布复现 | R:code:docs/API.md,code:docs/NIGHT_CHECKPOINT.md | A:旧篇保留列元数据/行列交前端/写入约束/大文件实测；新增 2026-11-24 Operations 验收：17 操作、typed view/apply、压缩、gate 文件/目录/global、concat 三端、report spec/chart/compare/root、smoke_http；每行给命令与数字 | S:文档里的输出由测试钉住，改实现不同步会让 gate 失败；不把薄前端写成已完成"
+    },
+    {
+      "candidate_id": "2add325df9de8481f745b921e15f89c7fd192b74e0662a4b71c15867af58cc92",
+      "object_ref": "code:scripts/smoke_http.py",
+      "path": "scripts/smoke_http.py",
+      "change": "update",
+      "source_sha256": "81958bb69b0ca929fc54b3da42eac67470a4fddb9e1663a59c5b2795daa8c7b0",
+      "existing_entry": "smoke_http.py[XQ7T]: F:HTTP 发布包冒烟：启动 release server 验证 /ops、/report chart+compare、/gate global、/concat dir | R:code:crates/cli/src/serve.rs,code:docs/RELEASE_CHECKLIST.md,code:scripts/package_release.sh | A:临时 root + 随机端口；生成 t/other/spec/sub/dup 夹具；等待 /health；校验 17 操作、HTML SVG+Compare、gate 文件通过、uniqueGlobal 失败、concat job done；失败收集并退出 1；finally 终止 server | S:依赖 Python 标准库与 release binary；随机端口先 bind 再关闭有极小竞争；只在本机回环；不写用户数据"
+    }
+  ]
+}
