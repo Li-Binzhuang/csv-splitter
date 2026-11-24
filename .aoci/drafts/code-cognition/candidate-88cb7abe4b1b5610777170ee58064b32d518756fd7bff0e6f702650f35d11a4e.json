@@ -1,0 +1,43 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "1c25fb7a758a59a80f385862ae03551ad70ed670b2b8b96e858966580cd51394",
+  "batch_id": "88cb7abe4b1b5610777170ee58064b32d518756fd7bff0e6f702650f35d11a4e",
+  "composite_identity": "b1330b02f3561b5150680fa36e9ce9b89f1958cd9a229e22cc491a062ce43cb4",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "46a61321a4b866e86f71c257c3bc41d7e355efff43c309aa27cb3d68a769c534",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NIGHT_QUEUE.md",
+      "path": "docs/NIGHT_QUEUE.md",
+      "change": "update",
+      "source_sha256": "cfe909638cb54c232d431d7cc2fa174a51d6db6ef4fc948e15493e64714458c3",
+      "existing_entry": "NIGHT_QUEUE.md[SG8T]: F:夜间静默窗口不自行决定、留到白天的用户决策队列 | R:code:AGENTS.md,code:docs/NIGHT_CHECKPOINT.md | A:列 xlsx 解禁、商业化定价/license/遥测、删除用户文件/不可逆迁移/force push、界面取舍、目标薄前端与无 GUI 的冲突是否收尾；夜间只记录不执行 | S:不得把队列项当作已获授权；白天由用户决定后才动作"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/THIN_FRONTEND_PLAN.md",
+      "path": "docs/THIN_FRONTEND_PLAN.md",
+      "change": "create",
+      "source_sha256": "151573c1f139a00321f063957e4583b65fb202660270a919b6a901d4ba31546c"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "9aed5abfaebd17e069efcbe2cb165551f900993ea31b59c8a6d5ba8768a8b871",
+      "object_ref": "code:docs/NIGHT_QUEUE.md",
+      "path": "docs/NIGHT_QUEUE.md",
+      "change": "update",
+      "source_sha256": "cfe909638cb54c232d431d7cc2fa174a51d6db6ef4fc948e15493e64714458c3",
+      "existing_entry": "NIGHT_QUEUE.md[SG8T]: F:夜间静默窗口不自行决定、留到白天的用户决策队列 | R:code:AGENTS.md,code:docs/NIGHT_CHECKPOINT.md | A:列 xlsx 解禁、商业化定价/license/遥测、删除用户文件/不可逆迁移/force push、界面取舍、目标薄前端与无 GUI 的冲突是否收尾；夜间只记录不执行 | S:不得把队列项当作已获授权；白天由用户决定后才动作"
+    },
+    {
+      "candidate_id": "fb4ef7a247378047150c7170d1bf2ceb2cdc1f49461e1cdd32bae8e93221e970",
+      "object_ref": "code:docs/THIN_FRONTEND_PLAN.md",
+      "path": "docs/THIN_FRONTEND_PLAN.md",
+      "change": "create",
+      "source_sha256": "151573c1f139a00321f063957e4583b65fb202660270a919b6a901d4ba31546c"
+    }
+  ]
+}
