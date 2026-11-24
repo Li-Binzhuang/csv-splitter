@@ -2794,7 +2794,7 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
     std::fs::write(&file, "city,amount\nCDMX,10\nPuebla,20\nTijuana,30\n").unwrap();
     std::fs::write(
         dir.join("spec.csv"),
-        "title,MCP report\nsummary,\ngroups,city:amount:sum\n",
+        "title,MCP report\nsummary,\ngroups,city:amount:sum\ncompare,other.csv\n",
     )
     .unwrap();
     std::fs::write(dir.join("other.csv"), "city,amount\nMexico,40\n").unwrap();
@@ -2859,6 +2859,7 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
     assert!(stdout.contains(r#""applied\":0"#), "{stdout}");
     assert!(stdout.contains(r#""name":"csvx_report""#), "{stdout}");
     assert!(stdout.contains("# MCP report"), "{stdout}");
+    assert!(stdout.contains("## Compare: other.csv"), "{stdout}");
     assert!(stdout.contains("# Inline MCP"), "{stdout}");
     assert!(stdout.contains(r#""name":"csvx_gate""#), "{stdout}");
     assert!(

@@ -6103,9 +6103,10 @@ fn a_transaction_preview_does_not_write() {
 fn report_endpoint_renders_markdown_and_html() {
     let dir = TempDir::new("http_report");
     std::fs::write(dir.join("t.csv"), "id,city,amount\n1,CDMX,10\n2,<x>,20\n").unwrap();
+    std::fs::write(dir.join("other.csv"), "id,city,amount\n7,CDMX,30\n").unwrap();
     std::fs::write(
         dir.join("spec.csv"),
-        "title,HTTP report\nsummary,\ngroups,city:amount:sum\n",
+        "title,HTTP report\nsummary,\ngroups,city:amount:sum\ncompare,other.csv\n",
     )
     .unwrap();
     let server = start(&dir.0.clone());
@@ -6113,6 +6114,7 @@ fn report_endpoint_renders_markdown_and_html() {
     assert_eq!(code, 200, "{body}");
     assert!(body.starts_with("# HTTP report"), "{body}");
     assert!(body.contains("## Groups: city · sum(amount)"), "{body}");
+    assert!(body.contains("## Compare: other.csv"), "{body}");
 
     let (code, body) = get(&server.addr, "/report?path=t.csv&spec=spec.csv&format=html");
     assert_eq!(code, 200, "{body}");
