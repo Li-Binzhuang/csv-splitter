@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "9ae9bb809c53695e133d50af9f58faa25f7d2a28302735a0dc1054caea1ee700",
+  "batch_id": "281a0cfbf4d9e2acf7afe0833d9f28a071850002c483f68989d2329fbe93a428",
+  "composite_identity": "632a115a24319ddaf90d9e44caaa3ceea8fed431e00d40d6b138ed68e42d3cc0",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "6c698bc558e08444732cf1bc428e9974e4418fdcd388136f9d7264312379f7cd",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "12d19402465c3f6700bb3afc1f5acaa9f554fceb24d4db5b22fd72277d674805",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API + OpenAI-compatible runner | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md | A:loopback 服务；sessions/actions/approvals/close/events；mcp_run_tool 复用；JSON tool/final 动作循环；curl config stdin 传 key；默认禁止 destructive，--allow-apply 放行 | S:SSE 仅回放；token 不落审计；root canonical；key 不进 argv/磁盘；runner 需 curl；max-steps 限 12"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "fbc0f7dc25e919dc2d5b4ebe37a919a41e2f6656591bcfaf92f22a910dce9eda",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入：MCP instructions/manifest、HTTP Agent API 与内置 runner | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:docs/DSH_MODEL_TEST.md | A:agent serve/manifest/run；/agent/v1 sessions/actions/approvals/events；428 审批；runner JSON 动作循环；Ark 6.10s schema→view→final | S:SSE 仅回放；key 不入仓库；默认拒绝 destructive；无 GUI/多用户"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "0bc8a24505dbb6a412cf97fd00eecdfc180b670dd1ab187cd979f6edeadd2d76",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "12d19402465c3f6700bb3afc1f5acaa9f554fceb24d4db5b22fd72277d674805",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API + OpenAI-compatible runner | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md | A:loopback 服务；sessions/actions/approvals/close/events；mcp_run_tool 复用；JSON tool/final 动作循环；curl config stdin 传 key；默认禁止 destructive，--allow-apply 放行 | S:SSE 仅回放；token 不落审计；root canonical；key 不进 argv/磁盘；runner 需 curl；max-steps 限 12"
+    },
+    {
+      "candidate_id": "b9b4f667742dba09d7e17d9383d491207cb37bd28b387f28921c94e0f3c397d1",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "fbc0f7dc25e919dc2d5b4ebe37a919a41e2f6656591bcfaf92f22a910dce9eda",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入：MCP instructions/manifest、HTTP Agent API 与内置 runner | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:docs/DSH_MODEL_TEST.md | A:agent serve/manifest/run；/agent/v1 sessions/actions/approvals/events；428 审批；runner JSON 动作循环；Ark 6.10s schema→view→final | S:SSE 仅回放；key 不入仓库；默认拒绝 destructive；无 GUI/多用户"
+    }
+  ]
+}
