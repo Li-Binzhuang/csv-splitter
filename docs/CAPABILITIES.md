@@ -216,7 +216,7 @@ delimiter 检测也读解压后的内容。压缩流不可 seek，因此自动�
 ### 端到端 demo
 
 `BIN=target/release/csvx bash scripts/demo_end_to_end.sh`：pipeline filter→quality（12/11 ms）
-后，`scripts/mcp_client.py` 走 schema/filter/view/edit/undo/convert/job，17 个工具。
+后，`scripts/mcp_client.py` 走 schema/filter/view/edit/undo/convert/job，18 个工具。
 见 `docs/DEMO.md`。
 
 ### MCP（B agent 后端，只读首版）

@@ -25,7 +25,7 @@ edit_ok=True
 convert_ok=True
 job=done
 == MCP official SDK ==
-sdk_tools=17
+sdk_tools=18
 schema_rows=5
 filter_matched=3
 view_rows=2
@@ -46,18 +46,18 @@ job=done
 1. `pipeline run`：filter → quality，列出每步耗时；`.pipeline.csv` 记录血缘，重跑会跳过。
    随后 `pipeline watch --iterations 1 --json --state` 跑一轮，验证 JSON 与状态文件。
 2. `scripts/mcp_client.py`：真实 stdio JSON-RPC 客户端，不依赖第三方库：
-   - `tools/list`（17 个工具）
+   - `tools/list`（18 个工具）
    - `csvx_schema` / `csvx_filter` / `csvx_view`
    - `csvx_edit_set` → `csvx_edit_undo`（journal 锁）
    - `csvx_convert` 输出 TSV
    - `csvx_job_submit` quality → `csvx_job_status` 直到 done
-   - `csvx_cache_stats`（两次 gzip 搜索后 `cache_hits=1`）
+   - `csvx_cache_stats` / `csvx_cache_clear`（两次 gzip 后命中 1 条并清空）
 3. 若 `scripts/mcp_sdk/node_modules` 存在，demo 还会跑官方 SDK 客户端：
    - `pipeline_progress_events=2`（pipeline 每步通知；官方 SDK 的 `onprogress` 偶发
      合并最后一条，实测 10 次中 1 次为 1；raw MCP 10/10 稳定 2 条，demo 只要求 ≥1）
    - `status_fresh=2`（MCP `pipeline_status` 带 `contentCheck` 核验）
    - `gzip_matched=3`（MCP `search` 对 `.gz` 输入开启 `materialize`）
-   - `cache_hits` / `cache_entries`（第 17 个工具 `csvx_cache_stats`）
+   - `cache_hits` / `cache_entries` / `cache_removed`（第 18 个工具组 cache_stats/clear）
    - `progress_events=1`（job wait 通知）
    - `structured_ok=true`（structuredContent 成功码）
 4. 全程本地、无 GUI、无网络、无 xlsx，不写遥测。
@@ -75,7 +75,7 @@ CSVX_BIN=../../target/release/csvx CSVX_ROOT="$DIR" CSVX_FILE=orders.csv node cl
 实际输出：
 
 ```text
-sdk_tools=17
+sdk_tools=18
 schema_rows=3
 filter_matched=2
 view_rows=2

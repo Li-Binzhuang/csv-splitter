@@ -42,7 +42,7 @@
 自 Round 137 后新增/关闭：
 - watch `--state` 生命周期完整：轮次续接、失败计数持久、`--max-failures` 跨重启生效、
   `lastError` 落盘与重启时打印上次原因；
-- MCP 17 工具与 cache_stats 已在 Python/官方 SDK demo 中命中；
+- MCP 18 工具与 cache_stats 已在 Python/官方 SDK demo 中命中；
 - job_submit 通用 CLI 白名单；
 - 最新 2 GB+ gzip drill 4.914→1.726 s / 82 MB，与 4.545→1.590 同量级；
 - 离线包重建并自验（SHA `c0f3c55f`）。
@@ -54,11 +54,11 @@
 自 Round 113 后新增/关闭：
 - `pipeline watch` 完整化：立即跑、轮询、`--json`、失败 2× 退避、`--max-failures`、
   `--state`（时间戳/轮次恢复）；
-- MCP 第 17 个工具 `csvx_cache_stats`（hits/misses/entries/bytes/上限）；
+- MCP 第 18 个工具 `csvx_cache_stats`（hits/misses/entries/bytes/上限）；
 - `csvx_job_submit` 改为 CLI 工具白名单，server 内部/未知工具直接 `job_start_error`；
 - 解压缓存 LRU 命中重排；
 - 2 GB+ gzip drill 4.545→1.590 s / 82 MB；
-- 离线包重建并自验（17 工具、watch、job 白名单）。
+- 离线包重建并自验（18 工具、watch、job 白名单）。
 
 技术侧没有新的高价值缺口；真实客户试点仍由用户决定，不阻塞继续维护。
 

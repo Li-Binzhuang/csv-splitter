@@ -68,6 +68,8 @@ if (existsSync(join(root, "orders.csv.gz"))) {
   const cache = await call("csvx_cache_stats", {});
   console.log(`cache_hits=${cache.hits}`);
   console.log(`cache_entries=${cache.entries}`);
+  const cleared = await call("csvx_cache_clear", {});
+  console.log(`cache_removed=${cleared.removed}`);
 }
 const job = await call("csvx_job_submit", {
   tool: "csvx_quality",

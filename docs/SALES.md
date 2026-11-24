@@ -31,7 +31,7 @@ CSVX_PILOT_FILE=sample.csv CSVX_PILOT_WHERE=city=CDMX \
 BIN=target/release/csvx bash scripts/demo_end_to_end.sh
 ```
 - 先看 pipeline：两步 12/11 ms、重跑跳过；
-- 再看 MCP：17 个工具、编辑/撤销、格式转换、后台 quality job；
+- 再看 MCP：18 个工具、编辑/撤销、格式转换、后台 quality job；
 - 最后打开 `docs/BENCHMARKS.md` 指 100 GB 数字。
 
 ## 适合先找谁
