@@ -6043,6 +6043,40 @@ fn a_transaction_applies_every_op_or_none() {
     );
 }
 
+/// `preview=1` validates the batch and returns the same description as the CLI
+/// dry-run, without changing the journal or the visible rows.
+#[test]
+fn a_transaction_preview_does_not_write() {
+    let dir = TempDir::new("txnpreview");
+    std::fs::write(dir.join("t.csv"), "city,amount\nA,1\nB,2\nC,3\n").unwrap();
+    let server = start(&dir.0.clone());
+    let ops = "set%3A1%3Acity%3AZ%3Bdelete%3A2%3A1";
+    let (code, body) = post(
+        &server.addr,
+        &format!("/edit?path=t.csv&action=transaction&preview=1&ops={ops}"),
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""op":"transaction-preview""#), "{body}");
+    assert!(body.contains(r#""rowsAfter":2"#), "{body}");
+    assert!(body.contains(r#""affectedRanges":[[1,1],[2,2]]"#), "{body}");
+    assert!(body.contains(r#""applied":0"#), "{body}");
+    let (_, rows) = get(&server.addr, "/rows?path=t.csv&count=10");
+    assert!(rows.contains("\"A\""), "preview changed the rows: {rows}");
+
+    let (code, body) = post(
+        &server.addr,
+        &format!("/edit?path=t.csv&action=transaction&preview=1&ops={ops}"),
+    );
+    assert_eq!(code, 200, "preview must stay repeatable: {body}");
+    let (code, body) = post(
+        &server.addr,
+        "/edit?path=t.csv&action=set&row=1&col=city&value=Q&preview=1",
+    );
+    assert_eq!(code, 400, "{body}");
+    let (_, rows) = get(&server.addr, "/rows?path=t.csv&count=10");
+    assert!(!rows.contains('Q'), "a rejected preview wrote: {rows}");
+}
+
 /// The HTTP undo honours the same transaction boundary as the CLI.
 #[test]
 fn a_transaction_is_undone_in_one_step_over_http() {

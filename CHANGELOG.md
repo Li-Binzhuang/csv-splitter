@@ -160,7 +160,7 @@
   `schema`/`filter` CLI+HTTP and `view` CLI's simple path use typed requests.
 - **Transaction preview**: `edit transaction --dry-run` validates against real rows/columns
   and reports row delta, affected ranges, rule/structural counts and the journal hash,
-  without creating the journal.
+  without creating the journal; `POST /edit?...&preview=1` returns the same preview.
 
 - **Pipeline watch**: `csvx pipeline watch <plan>` reruns stale steps on an interval;
   supports failure backoff, `--max-failures`, JSON rounds, and an atomic `--state` file

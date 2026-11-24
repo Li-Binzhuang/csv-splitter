@@ -575,9 +575,9 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     (
         "/edit",
         &[
-            "path", "action", "row", "col", "value", "cells", "ops", "formula", "expect", "stamp",
-            "after", "name", "into", "from", "to", "where", "by", "delim", "count", "cols", "key",
-            "out", "columns", "format", "from-row", "to-row",
+            "path", "action", "row", "col", "value", "cells", "ops", "preview", "formula",
+            "expect", "stamp", "after", "name", "into", "from", "to", "where", "by", "delim",
+            "count", "cols", "key", "out", "columns", "format", "from-row", "to-row",
         ],
     ),
     ("/download", &["path", "delim"]),
@@ -2340,6 +2340,29 @@ const EDIT_ACTIONS: &[&str] = &[
     "export",
 ];
 
+fn edit_preview_json(preview: &csvx_core::ops::EditPreview) -> String {
+    let ranges: Vec<String> = preview
+        .affected_ranges
+        .iter()
+        .map(|(start, end)| format!("[{start},{end}]"))
+        .collect();
+    format!(
+        r#"{{"op":"transaction-preview","operations":{},"rows":{},"rowsAfter":{},"rowDelta":{},"affectedRows":{},"affectedRanges":[{}],"ruleOperations":{},"structuralOperations":{},"columns":{},"journalBytes":{},"journalHash":{},"atomic":true,"wouldApply":{},"applied":0}}"#,
+        preview.operations,
+        preview.rows_before,
+        preview.rows_after,
+        preview.row_delta,
+        preview.affected_rows(),
+        ranges.join(","),
+        preview.rule_operations,
+        preview.structural_operations,
+        preview.columns,
+        preview.journal_bytes,
+        json_str(&preview.journal_hash),
+        preview.operations
+    )
+}
+
 fn edit_apply(
     stream: &mut TcpStream,
     root: &Path,
@@ -2358,6 +2381,14 @@ fn edit_apply(
             &EDIT_ACTIONS.join("|"),
         );
     };
+    if params.contains_key("preview") && action != "transaction" {
+        return bad_request(
+            stream,
+            "preview is only supported by action=transaction",
+            "preview",
+            "POST /edit?action=transaction&ops=...&preview=1",
+        );
+    }
     let sidecar = Journal::sidecar(&path);
     let journal = match Journal::load(&sidecar) {
         Ok(j) => j,
@@ -2564,6 +2595,19 @@ fn edit_apply(
                 };
             }
         };
+        if params.contains_key("preview") {
+            let preview = match csvx_core::ops::preview_edit(&path, &ops, total, &columns) {
+                Ok(preview) => preview,
+                Err(e) => {
+                    return respond_json(
+                        stream,
+                        422,
+                        &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+                    )
+                }
+            };
+            return respond_json(stream, 200, &edit_preview_json(&preview));
+        }
         let applied = match csvx_core::workbook::append_atomically(&sidecar, &ops) {
             Ok(applied) => applied,
             Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
