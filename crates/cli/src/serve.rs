@@ -8820,13 +8820,14 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
                         .unwrap_or(McpJson::Object(Vec::new()));
                     let job_id = format!("job-{next_job}");
                     next_job += 1;
-                    let started = if tool == "csvx_cache_stats" {
-                        Err("csvx_cache_stats is a server tool, not a CLI job".to_string())
-                    } else if !mcp_job_tool_allowed(&tool) {
-                        Err(format!("{tool} cannot be submitted as a job"))
-                    } else {
-                        mcp_start_job(root, &tool, &job_arguments, &job_id)
-                    };
+                    let started =
+                        if matches!(tool.as_str(), "csvx_cache_stats" | "csvx_cache_clear") {
+                            Err(format!("{tool} is a server tool, not a CLI job"))
+                        } else if !mcp_job_tool_allowed(&tool) {
+                            Err(format!("{tool} cannot be submitted as a job"))
+                        } else {
+                            mcp_start_job(root, &tool, &job_arguments, &job_id)
+                        };
                     match started {
                         Ok(job) => {
                             prune_mcp_jobs(&mut jobs);
