@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "990701da6ee56604d02bc0ce43c7b5bb7c4b39351b63806ff988a621830e8881",
+  "batch_id": "4968e3eda3141344e29497e45fc1e5eb0e0b9c05b85493f27e706d7cc9afe189",
+  "composite_identity": "c349cf4ce9ff9feed1e330449df8d1a0b93abb8b6158fe8af5e3ed0ba761d4fe",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "57b063b271fe02acc098cda9d2eec63d500be5e1cb92c554ac06a2a72d1a3386",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "84df32d66d28424a5fc72f800181717b6860b953774def59a4c3ea3bfab13fb8",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md,code:docs/PILOT_SAMPLE.md | A:100 GB search 20 s/filter 25.75 s/全量导出 79.62 s；81 GB 7 列 search 39.42/filter 46.70/导出 62.03；2.3 GB zst filter 4.16 s、search 12.13 s、quality 21.73 s；zst materialize search 11.87→3.51/89 MB、filter 6.94→3.62/4.06→2.60；release 冒烟 2.3 GB filter 2.78/88 MB、导出 0.71/60 MB、search 1.57/86 MB、quality 20.79/18.3 MB；DAG 扇出 7.60 s、增量 0.02 s、父 peak 187 MB（含子进程）；zstd 单帧 -T1 0.94/-T4 0.92（1 GB/60M） | S:未 drop cache；100/81 GB 为重复块；同文件 pilot 0.69/0.43 s 属缓存方差；压缩读 CPU 受限；materialize 需磁盘；DAG 父 RSS 含并发子进程；MCP 缓存 2 GB+ gzip 4.545→1.590 s/82 MB、zst 0.279→0.101、bz2 0.693→0.100；复现用 bench_mcp_cache.py"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "aab5f32c16e7110a9d2f60b05bc4d0c0ca5b6b7f0538cd915c74d8cad31d99bf",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "84df32d66d28424a5fc72f800181717b6860b953774def59a4c3ea3bfab13fb8",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md,code:docs/PILOT_SAMPLE.md | A:100 GB search 20 s/filter 25.75 s/全量导出 79.62 s；81 GB 7 列 search 39.42/filter 46.70/导出 62.03；2.3 GB zst filter 4.16 s、search 12.13 s、quality 21.73 s；zst materialize search 11.87→3.51/89 MB、filter 6.94→3.62/4.06→2.60；release 冒烟 2.3 GB filter 2.78/88 MB、导出 0.71/60 MB、search 1.57/86 MB、quality 20.79/18.3 MB；DAG 扇出 7.60 s、增量 0.02 s、父 peak 187 MB（含子进程）；zstd 单帧 -T1 0.94/-T4 0.92（1 GB/60M） | S:未 drop cache；100/81 GB 为重复块；同文件 pilot 0.69/0.43 s 属缓存方差；压缩读 CPU 受限；materialize 需磁盘；DAG 父 RSS 含并发子进程；MCP 缓存 2 GB+ gzip 4.545→1.590 s/82 MB、zst 0.279→0.101、bz2 0.693→0.100；复现用 bench_mcp_cache.py"
+    }
+  ]
+}
