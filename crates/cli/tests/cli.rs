@@ -7834,6 +7834,20 @@ fn report_renders_a_csv_spec() {
     assert!(text.contains("# Inline report"), "{text}");
     assert!(text.contains("## Summary"), "{text}");
 
+    let count_chart = Command::new(bin())
+        .args([
+            "report",
+            dir.join("t.csv").to_str().unwrap(),
+            "--spec-text",
+            "title,Count chart\nchart,city",
+        ])
+        .output()
+        .unwrap();
+    assert!(count_chart.status.success(), "{:?}", count_chart);
+    let text = String::from_utf8_lossy(&count_chart.stdout);
+    assert!(text.contains("## Chart: city"), "{text}");
+    assert!(text.contains("count_id"), "{text}");
+
     // --root is the same guard the HTTP/MCP adapters rely on.
     std::fs::write(dir.join("../outside-cli.csv"), "id\n9\n").unwrap();
     let escaped = Command::new(bin())

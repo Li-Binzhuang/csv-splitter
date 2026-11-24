@@ -5697,30 +5697,37 @@ fn cmd_report(args: &[String]) -> i32 {
             }
             "chart" => {
                 let pieces: Vec<&str> = arg.split(':').map(str::trim).collect();
-                if pieces.len() < 2 || pieces.len() > 3 {
-                    eprintln!("error: chart needs <x>:<measure>[:limit]");
+                if pieces.is_empty() || pieces.len() > 3 {
+                    eprintln!("error: chart needs <x>[:<measure>[:limit]]");
                     return 2;
                 }
                 let x = pieces[0];
-                let measure = pieces[1];
+                let (measure, op) = match pieces.as_slice() {
+                    [_] => (columns.first().cloned().unwrap_or_default(), AggOp::Count),
+                    [_, measure] => ((*measure).to_string(), AggOp::Sum),
+                    [_, measure, limit] => {
+                        if limit.parse::<usize>().ok().is_none_or(|value| value == 0) {
+                            eprintln!("error: chart limit must be positive");
+                            return 2;
+                        }
+                        ((*measure).to_string(), AggOp::Sum)
+                    }
+                    _ => unreachable!(),
+                };
                 let limit: usize = pieces
                     .get(2)
                     .and_then(|value| value.parse().ok())
                     .unwrap_or(10);
-                if limit == 0 {
-                    eprintln!("error: chart limit must be positive");
-                    return 2;
-                }
                 if !columns.iter().any(|name| name == x) {
                     eprintln!("error: chart names unknown x column {x:?}");
                     return 2;
                 }
-                if !columns.iter().any(|name| name == measure) {
+                if op != AggOp::Count && !columns.iter().any(|name| name == &measure) {
                     eprintln!("error: chart names unknown measure column {measure:?}");
                     return 2;
                 }
                 let (label, header, rows) =
-                    match report_group_table(&input, delimiter, x, measure, AggOp::Sum, limit) {
+                    match report_group_table(&input, delimiter, x, &measure, op, limit) {
                         Ok(value) => value,
                         Err(e) => return report_failure("report", e),
                     };
