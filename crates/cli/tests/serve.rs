@@ -6204,6 +6204,26 @@ fn gate_endpoint_reports_200_even_when_the_gate_fails() {
     assert!(body.contains(r#""passed":false"#), "{body}");
 }
 
+/// Global uniqueness is opt-in: the same directory passes per-file and fails
+/// only when uniqueGlobal is requested.
+#[test]
+fn gate_endpoint_can_require_global_uniqueness() {
+    let dir = TempDir::new("gate_http_global");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,v\n1,a\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "id,v\n1,b\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (code, body) = get(&server.addr, "/gate?path=parts&unique=id");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""passed":true"#), "{body}");
+
+    let (code, body) = get(&server.addr, "/gate?path=parts&unique=id&uniqueGlobal=1");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""passed":false"#), "{body}");
+    assert!(body.contains(r#""uniqueGlobal":{"passed":false"#), "{body}");
+}
+
 /// The HTTP undo honours the same transaction boundary as the CLI.
 #[test]
 fn a_transaction_is_undone_in_one_step_over_http() {

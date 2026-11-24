@@ -10,7 +10,7 @@
 - **Stage 2.5 typed**：schema/filter 的 CLI+HTTP typed 路径；view 的 core `ViewRequest` + HTTP `/rows` 简单无编辑窗口。
 - **Stage 3 preview/apply**：CLI/HTTP/MCP 三端 preview；CLI/HTTP 共用 `EditApplyRequest`，MCP `csvx_edit_apply` 走同一 CLI 路径。
 - **压缩输出**：filter 支持 gzip/zstd/bz2/xz；实测 56 MB → 7.3 MB gzip。
-- **质量门禁**：gate 单文件/目录，CLI/HTTP/MCP 三端；失败 JSON 带 `failures`，HTTP 保持 200 + `passed:false`，MCP 转 `isError`；目录按文件独立套阈值（`unique` 不是跨文件全局唯一）。
+- **质量门禁**：gate 单文件/目录，CLI/HTTP/MCP 三端；失败 JSON 带 `failures`，HTTP 保持 200 + `passed:false`，MCP 转 `isError`；目录按文件独立套阈值；`--unique-global` / HTTP `uniqueGlobal` 可额外要求跨文件唯一。
 - **多文件/目录**：concat CLI/HTTP/MCP，均支持目录；HTTP 目录按文件名排序并排除输出。
 - **报表 spec**：CLI/HTTP/MCP；sections `summary/columns/quality/groups/chart SVG/compare/rows`；内联 `specText`；HTTP/MCP 下 `compare` 目标受 root 守卫。
 - **安全**：report compare 的第二文件路径不能越 root；MCP concat 的 paths/dir/out 也受限。

@@ -2801,6 +2801,9 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
     std::fs::create_dir(dir.join("sub")).unwrap();
     std::fs::write(dir.join("sub/a.csv"), "city,amount\nA,1\n").unwrap();
     std::fs::write(dir.join("sub/b.csv"), "city,amount\nB,2\n").unwrap();
+    std::fs::create_dir(dir.join("dup")).unwrap();
+    std::fs::write(dir.join("dup/a.csv"), "id,v\n1,a\n").unwrap();
+    std::fs::write(dir.join("dup/b.csv"), "id,v\n1,b\n").unwrap();
     std::fs::write(dir.join("../outside-mcp.csv"), "id\n9\n").unwrap();
     let mut child = Command::new(bin())
         .args(["mcp", "--root", dir.0.to_str().unwrap()])
@@ -2838,6 +2841,7 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
             r#"{"jsonrpc":"2.0","id":23,"method":"tools/call","params":{"name":"csvx_concat","arguments":{"paths":"../escape.csv","out":"escape.csv"}}}"#,
             r#"{"jsonrpc":"2.0","id":24,"method":"tools/call","params":{"name":"csvx_report","arguments":{"path":"t.csv","specText":"title,Escape\ncompare,../outside-mcp.csv","format":"md"}}}"#,
             r#"{"jsonrpc":"2.0","id":25,"method":"tools/call","params":{"name":"csvx_gate","arguments":{"path":"sub","minRows":1}}}"#,
+            r#"{"jsonrpc":"2.0","id":26,"method":"tools/call","params":{"name":"csvx_gate","arguments":{"path":"dup","unique":"id","uniqueGlobal":true}}}"#,
             r#"not-json"#,
         ] {
             writeln!(stdin, "{line}").unwrap();
@@ -2884,6 +2888,7 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
     assert!(stdout.contains("outside the MCP root"), "{stdout}");
     assert!(stdout.contains("outside --root"), "{stdout}");
     assert!(stdout.contains(r#""files\":2"#), "{stdout}");
+    assert!(stdout.contains("uniqueGlobal"), "{stdout}");
     assert!(stdout.contains(r#""isError":false"#), "{stdout}");
     assert!(stdout.contains("Puebla"), "{stdout}");
     assert!(stdout.contains("20"), "{stdout}");
@@ -7727,6 +7732,45 @@ fn gate_accepts_a_directory_of_csv_files() {
     let text = String::from_utf8_lossy(&fail.stdout);
     assert!(text.contains(r#""failed":1"#), "{text}");
     assert!(text.contains(r#""uniqueDuplicates":true"#), "{text}");
+}
+
+/// Per-file uniqueness is not global uniqueness; the opt-in flag adds the latter.
+#[test]
+fn gate_directory_can_require_global_uniqueness() {
+    let dir = TempDir::new("gateglobal");
+    std::fs::create_dir_all(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,v\n1,a\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "id,v\n1,b\n").unwrap();
+
+    let local = Command::new(bin())
+        .args([
+            "gate",
+            dir.join("parts").to_str().unwrap(),
+            "--unique",
+            "id",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(local.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&local.stdout);
+    assert!(text.contains(r#""passed":true"#), "{text}");
+
+    let global = Command::new(bin())
+        .args([
+            "gate",
+            dir.join("parts").to_str().unwrap(),
+            "--unique",
+            "id",
+            "--unique-global",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(global.status.code(), Some(1));
+    let text = String::from_utf8_lossy(&global.stdout);
+    assert!(text.contains(r#""uniqueGlobal":{"passed":false"#), "{text}");
+    assert!(text.contains("uniqueDuplicates"), "{text}");
 }
 
 /// A CSV spec drives a deterministic Markdown/HTML report; values are escaped.

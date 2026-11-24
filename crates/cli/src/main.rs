@@ -604,6 +604,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--max-empty", "Maximum number of empty cells"),
             ("--min-rows", "Minimum number of data rows"),
             ("--unique", "Column whose values must be unique"),
+            ("--unique-global", "Require uniqueness across the whole directory"),
             ("--out", "Write a JSON gate report to this path"),
         ],
     ),
@@ -6006,6 +6007,7 @@ fn gate_directory(
     min_rows: Option<u64>,
     max_empty: Option<u64>,
     unique: Option<&str>,
+    unique_global: bool,
     out: Option<&Path>,
     json: bool,
 ) -> i32 {
@@ -6064,15 +6066,78 @@ fn gate_directory(
         }
         reports.push(text);
     }
-    let passed = failed == 0;
+    let mut global_failure = String::new();
+    let mut global_passed = true;
+    if unique_global && files.len() > 1 {
+        let stamp = format!(
+            "{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|duration| duration.as_nanos())
+                .unwrap_or(0)
+        );
+        let temp = std::env::temp_dir().join(format!("csvx-gate-global-{stamp}.csv"));
+        let mut concat = std::process::Command::new(&bin);
+        concat.arg("concat");
+        for file in &files {
+            concat.arg(file);
+        }
+        concat.args(["-o", temp.to_str().unwrap_or(""), "--json"]);
+        let concatenated = concat.output();
+        match concatenated {
+            Ok(result) if result.status.success() => {
+                let mut check = std::process::Command::new(&bin);
+                check.args([
+                    "gate",
+                    temp.to_str().unwrap_or(""),
+                    "--unique",
+                    unique.unwrap_or(""),
+                    "--json",
+                ]);
+                let checked = check.output();
+                match checked {
+                    Ok(result) if result.status.success() => {}
+                    Ok(result) => {
+                        global_passed = false;
+                        global_failure = String::from_utf8_lossy(&result.stdout).trim().to_string();
+                    }
+                    Err(error) => {
+                        global_passed = false;
+                        global_failure = error.to_string();
+                    }
+                }
+            }
+            Ok(result) => {
+                global_passed = false;
+                global_failure = String::from_utf8_lossy(&result.stderr).trim().to_string();
+            }
+            Err(error) => {
+                global_passed = false;
+                global_failure = error.to_string();
+            }
+        }
+        let _ = std::fs::remove_file(&temp);
+    }
+    let passed = failed == 0 && global_passed;
+    let global = if unique_global {
+        format!(
+            ",\"uniqueGlobal\":{{\"passed\":{},\"failure\":\"{}\"}}",
+            global_passed,
+            json_escape(&global_failure)
+        )
+    } else {
+        String::new()
+    };
     let aggregate = format!(
-        r#"{{"passed":{},"files":{},"failed":{},"rows":{},"empty":{},"reports":[{}]}}"#,
+        r#"{{"passed":{},"files":{},"failed":{},"rows":{},"empty":{},"reports":[{}]{}}}"#,
         passed,
         files.len(),
         failed,
         total_rows,
         total_empty,
-        reports.join(",")
+        reports.join(","),
+        global
     );
     if let Some(path) = out {
         if let Err(error) = std::fs::write(path, format!("{aggregate}\n")) {
@@ -6109,6 +6174,7 @@ fn cmd_gate(args: &[String]) -> i32 {
     let mut min_rows: Option<u64> = None;
     let mut max_empty: Option<u64> = None;
     let mut unique: Option<String> = None;
+    let mut unique_global = false;
     let mut out: Option<PathBuf> = None;
     let mut json = false;
     let mut delim = "auto".to_string();
@@ -6141,6 +6207,7 @@ fn cmd_gate(args: &[String]) -> i32 {
                     return 2;
                 }
             },
+            "--unique-global" => unique_global = true,
             "-o" | "--out" => match p.value("--out") {
                 Ok(v) => out = Some(PathBuf::from(v)),
                 Err(e) => {
@@ -6181,12 +6248,17 @@ fn cmd_gate(args: &[String]) -> i32 {
             return 2;
         }
     }
+    if unique_global && unique.is_none() {
+        eprintln!("error: --unique-global needs --unique <column>");
+        return 2;
+    }
     if input.is_dir() {
         return gate_directory(
             &input,
             min_rows,
             max_empty,
             unique.as_deref(),
+            unique_global,
             out.as_deref(),
             json,
         );

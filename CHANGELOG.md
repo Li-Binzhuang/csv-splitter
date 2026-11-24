@@ -160,6 +160,9 @@
   contract (17 operations), published by CLI `/ops` and MCP resource.
 - **Typed read operations**: `core::ops` owns schema/view/filter requests and responses;
   `schema`/`filter` CLI+HTTP and `view` CLI's simple path use typed requests.
+- **Global uniqueness gate**: directory gate keeps per-file `unique` semantics and
+  adds opt-in `--unique-global` / `uniqueGlobal` for cross-file uniqueness
+  (concatenates through the normal header check, then sorts for duplicates).
 - **HTTP out normalisation**: write endpoints now canonicalise `out`'s parent,
   so `/concat?dir=sub&out=./sub/out.csv` excludes the output from its own inputs.
 - **MCP concat**: `csvx_concat` concatenates files or a directory into `out`, with
