@@ -151,8 +151,8 @@
 - **View cursor**: `view --json` (and the MCP `csvx_view` tool) now returns
   `start`, `nextStart` and `hasMore`; clients can page without guessing counts.
 - **MCP cache stats**: `csvx_cache_stats` (readOnlyHint) exposes hits/misses,
-  entries and bytes; `csvx_cache_clear` (destructiveHint/idempotentHint) deletes temp files
-  and returns removed count/bytes.
+  entries and bytes; `csvx_cache_clear` (destructiveHint/idempotentHint) deletes cache and dead-process
+  temp files, returning removed/stale counts and bytes.
   Neither is a CLI job command.
 - **Pipeline watch**: `csvx pipeline watch <plan>` reruns stale steps on an interval;
   supports failure backoff, `--max-failures`, JSON rounds, and an atomic `--state` file
