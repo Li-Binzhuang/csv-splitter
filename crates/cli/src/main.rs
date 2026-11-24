@@ -52,6 +52,7 @@ fn main() -> ExitCode {
         Some("groupby") => cmd_groupby(&args[1..]),
         Some("pivot") => cmd_pivot(&args[1..]),
         Some("validate") => cmd_validate(&args[1..]),
+        Some("gate") => cmd_gate(&args[1..]),
         Some("format") => cmd_format(&args[1..]),
         Some("chart") => cmd_chart(&args[1..]),
         Some("layout") => cmd_layout(&args[1..]),
@@ -577,6 +578,17 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--quotes", "Quote style: rfc4180 | backslash | none"),
             ("--sample", "Sample this many rows instead of reading all"),
             ("--top", "How many values to show per column"),
+        ],
+    ),
+    (
+        "gate",
+        &[
+            ("--delim", "Field delimiter (default: auto)"),
+            ("--json", "Emit JSON"),
+            ("--max-empty", "Maximum number of empty cells"),
+            ("--min-rows", "Minimum number of data rows"),
+            ("--unique", "Column whose values must be unique"),
+            ("--out", "Write a JSON gate report to this path"),
         ],
     ),
     (
@@ -5092,6 +5104,222 @@ fn truncate_for_display(text: &str, width: usize) -> String {
     }
     let kept: String = text.chars().take(width.saturating_sub(1)).collect();
     format!("{kept}…")
+}
+
+/// A quality gate for scripts and pipelines: exit 1 when a threshold fails.
+///
+/// Thresholds are counts, not ratios: "at least 100 rows, at most 5 empty cells,
+/// column id unique". The gate writes its own JSON report when `--out` is used, so
+/// a pipeline step can keep the evidence while a failing exit stops the run.
+fn cmd_gate(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut input: Option<PathBuf> = None;
+    let mut min_rows: Option<u64> = None;
+    let mut max_empty: Option<u64> = None;
+    let mut unique: Option<String> = None;
+    let mut out: Option<PathBuf> = None;
+    let mut json = false;
+    let mut delim = "auto".to_string();
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "--min-rows" => match p
+                .value("--min-rows")
+                .and_then(|v| v.parse().map_err(|_| "bad --min-rows".to_string()))
+            {
+                Ok(v) => min_rows = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--max-empty" => match p
+                .value("--max-empty")
+                .and_then(|v| v.parse().map_err(|_| "bad --max-empty".to_string()))
+            {
+                Ok(v) => max_empty = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--unique" => match p.value("--unique") {
+                Ok(v) => unique = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-o" | "--out" => match p.value("--out") {
+                Ok(v) => out = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--json" => json = true,
+            "-d" | "--delim" => match p.value("--delim") {
+                Ok(v) => delim = v,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_command_help("gate");
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => input = Some(PathBuf::from(other)),
+        }
+    }
+    let Some(input) = input else {
+        eprintln!("error: gate needs <input>");
+        return 2;
+    };
+    if min_rows.is_none() && max_empty.is_none() && unique.is_none() {
+        eprintln!("error: gate needs at least one of --min-rows, --max-empty, --unique");
+        return 2;
+    }
+    if let Some(out) = &out {
+        if out == &input {
+            eprintln!("error: --out must not be the input file");
+            return 2;
+        }
+    }
+    let delimiter = match parse_delimiter(&delim, &input) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return 2;
+        }
+    };
+    let sheet =
+        match csvx_core::sheet::Sheet::open(&input, csvx_core::sheet::ReadOptions { delimiter }) {
+            Ok(sheet) => sheet,
+            Err(e) => return report_failure("gate", e.to_string()),
+        };
+    let total = match sheet.rows() {
+        Ok(rows) => rows,
+        Err(e) => return report_failure("gate", e.to_string()),
+    };
+    let columns = match sheet.columns() {
+        Ok(columns) => columns,
+        Err(e) => return report_failure("gate", e.to_string()),
+    };
+    let unique_index = match &unique {
+        None => None,
+        Some(name) => match sheet.column_index(name) {
+            Ok(Some(index)) => Some(index - 1),
+            Ok(None) => {
+                eprintln!("error: --unique names unknown column {name:?}");
+                return 2;
+            }
+            Err(e) => return report_failure("gate", e.to_string()),
+        },
+    };
+    let mut empty: u64 = 0;
+    let mut seen: u64 = 0;
+    let mut unique_values: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut unique_truncated = false;
+    let mut start: u64 = 0;
+    let chunk = 5_000u64;
+    while start < total {
+        let window = match sheet.window(start, chunk) {
+            Ok(window) => window,
+            Err(e) => return report_failure("gate", e.to_string()),
+        };
+        if window.rows.is_empty() {
+            break;
+        }
+        for row in &window.rows {
+            seen += 1;
+            empty += (columns.len().saturating_sub(row.len())) as u64;
+            for cell in row.iter().take(columns.len()) {
+                if cell.is_empty() {
+                    empty += 1;
+                }
+            }
+            if let Some(index) = unique_index {
+                if !unique_truncated {
+                    if let Some(value) = row.get(index) {
+                        if unique_values.insert(value.clone()) && unique_values.len() > 1_000_000 {
+                            unique_truncated = true;
+                        }
+                    }
+                }
+            }
+        }
+        start += window.rows.len() as u64;
+    }
+    let min_ok = min_rows.is_none_or(|minimum| total >= minimum);
+    let empty_ok = max_empty.is_none_or(|maximum| empty <= maximum);
+    let unique_ok = unique
+        .as_ref()
+        .is_none_or(|_| !unique_truncated && unique_values.len() as u64 == seen);
+    let passed = min_ok && empty_ok && unique_ok;
+    if let Some(path) = &out {
+        let mut text = String::from("{\"passed\":");
+        text.push_str(if passed { "true" } else { "false" });
+        text.push_str(&format!(
+            ",\"rows\":{total},\"empty\":{empty},\"uniqueValues\":{},\"uniqueTruncated\":{},\"checks\":{{\"minRows\":{:?},\"maxEmpty\":{:?},\"unique\":{:?}}}",
+            unique_values.len(),
+            unique_truncated,
+            min_rows,
+            max_empty,
+            unique.as_deref().map(json_escape)
+        ));
+        if let Err(e) = std::fs::write(path, format!("{text}\n")) {
+            eprintln!("error: cannot write {}: {e}", path.display());
+            return 2;
+        }
+    }
+    if json {
+        println!(
+            "{{\"passed\":{},\"rows\":{},\"empty\":{},\"uniqueValues\":{},\"uniqueTruncated\":{}}}",
+            passed,
+            total,
+            empty,
+            unique_values.len(),
+            unique_truncated
+        );
+    } else {
+        println!(
+            "gate: rows {total}, empty {empty}, unique {}",
+            if unique.is_some() {
+                format!(
+                    "{}{}",
+                    unique_values.len(),
+                    if unique_truncated { "+" } else { "" }
+                )
+            } else {
+                "-".to_string()
+            }
+        );
+        if !min_ok {
+            eprintln!("✗ rows {total} < minimum {}", min_rows.unwrap_or(0));
+        }
+        if !empty_ok {
+            eprintln!("✗ empty {empty} > maximum {}", max_empty.unwrap_or(0));
+        }
+        if !unique_ok {
+            if unique_truncated {
+                eprintln!("✗ unique check exceeded its one-million-value cap");
+            } else {
+                eprintln!("✗ unique column has duplicates");
+            }
+        }
+        if passed {
+            println!("✓ gate passed");
+        }
+    }
+    if passed {
+        0
+    } else {
+        1
+    }
 }
 
 fn cmd_validate(args: &[String]) -> i32 {

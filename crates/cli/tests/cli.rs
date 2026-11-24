@@ -2553,7 +2553,8 @@ fn pipeline_runs_incrementally_and_fails_atomically() {
         concat!(
             "step,input,command,args,output\n",
             "filtered,orders.csv,filter,--where city=CDMX -o {out},filtered.csv\n",
-            "quality,filtered,analyze,--quality --json,quality.json\n"
+            "quality,filtered,analyze,--quality --json,quality.json\n",
+            "gate,filtered,gate,--min-rows 2 --unique order --out {out},gate.json\n"
         ),
     )
     .unwrap();
@@ -2619,6 +2620,8 @@ fn pipeline_runs_incrementally_and_fails_atomically() {
     );
     let quality: String = std::fs::read_to_string(dir.join("quality.json")).unwrap();
     assert!(quality.contains(r#""columns""#), "{quality}");
+    let gate: String = std::fs::read_to_string(dir.join("gate.json")).unwrap();
+    assert!(gate.contains(r#""passed":true"#), "{gate}");
 
     let second = run();
     assert!(second.status.success());
@@ -2680,6 +2683,35 @@ fn pipeline_runs_incrementally_and_fails_atomically() {
     assert_eq!(failed.status.code(), Some(1));
     assert!(!dir.join("bad-joined.csv").exists());
     assert!(!dir.join("bad-plan.csv.pipeline.csv").exists());
+
+    // A quality gate is an ordinary step: a failed threshold exits the pipeline
+    // before it can report success.
+    let gate_plan = dir.join("gate-plan.csv");
+    std::fs::write(
+        &gate_plan,
+        concat!(
+            "step,input,command,args,output\n",
+            "filtered,orders.csv,filter,--where city=CDMX -o {out},gate-filtered.csv\n",
+            "gate,filtered,gate,--min-rows 99 --out {out},gate-bad.json\n"
+        ),
+    )
+    .unwrap();
+    let gate_failed = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            gate_plan.to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(gate_failed.status.code(), Some(1));
+    let gate_error = String::from_utf8_lossy(&gate_failed.stderr);
+    assert!(
+        gate_error.contains("minimum 99"),
+        "the gate threshold must be named: {gate_error}"
+    );
 
     let forward = dir.join("forward.csv");
     std::fs::write(
