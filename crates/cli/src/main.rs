@@ -209,7 +209,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
     (
         "convert",
         &[
-            ("--format", "Data format: csv | tsv | ndjson | parquet (xlsx disabled)"),
+            ("--format", "Data format: csv | tsv | ndjson | parquet | xlsx"),
             ("--delim", "Field delimiter for CSV input"),
             ("--from", "Source encoding"),
             ("--out", "Output path"),
@@ -3380,6 +3380,9 @@ fn cmd_convert(args: &[String]) -> i32 {
                 }
             }
         };
+        if let Err(code) = check_output(Some(&input), &out) {
+            return code;
+        }
         let (tx, rx) = mpsc::channel();
         let reporter = spawn_reporter("convert", rx, true);
         let result = csvx_core::engine::convert_format(&input, &out, &target, delimiter, &tx);

@@ -909,12 +909,13 @@ pub fn convert_format(
     tx: &crate::types::ProgressSender,
 ) -> std::io::Result<()> {
     let target = target.trim().to_ascii_lowercase();
+    if target == "xlsx" {
+        return crate::xlsx::csv_to_xlsx(input, output, delimiter, tx);
+    }
     if !matches!(target.as_str(), "csv" | "tsv" | "ndjson" | "parquet") {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
-            format!(
-                "unsupported --format {target:?}; use csv/tsv/ndjson/parquet (xlsx is disabled)"
-            ),
+            format!("unsupported --format {target:?}; use csv/tsv/ndjson/parquet/xlsx"),
         ));
     }
     if !sql_available() {
@@ -952,12 +953,15 @@ pub fn convert_format(
 /// compiling a call to a module that does not exist.
 #[cfg(not(feature = "sql"))]
 pub fn convert_format(
-    _input: &Path,
-    _output: &Path,
-    _target: &str,
-    _delimiter: crate::types::Delimiter,
-    _tx: &crate::types::ProgressSender,
+    input: &Path,
+    output: &Path,
+    target: &str,
+    delimiter: crate::types::Delimiter,
+    tx: &crate::types::ProgressSender,
 ) -> std::io::Result<()> {
+    if target.trim().eq_ignore_ascii_case("xlsx") {
+        return crate::xlsx::csv_to_xlsx(input, output, delimiter, tx);
+    }
     Err(std::io::Error::new(
         std::io::ErrorKind::Unsupported,
         "this build cannot convert formats (no DuckDB feature)",

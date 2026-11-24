@@ -46,6 +46,7 @@ pub mod types;
 pub mod validate;
 pub mod viewer;
 pub mod workbook;
+pub mod xlsx;
 
 pub use types::*;
 

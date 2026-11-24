@@ -53,7 +53,7 @@
 | UTF-16 LE/BE | 读取；索引拒绝（字节偏移不可靠） |
 | Windows-1252 | 与 GBK 打分竞争，`café` 不乱码 |
 | 转码 | `convert f.csv -o utf8.csv`（流式，恒定内存） |
-| 格式互操作（xlsx 除外） | `convert f.csv --format tsv\|ndjson\|parquet -o out`；反向 `--format csv`；DuckDB 解析/写出，round-trip 测试覆盖引号字段与 Unicode；**xlsx 仍禁用** |
+| 格式互操作 | `convert f.csv --format tsv\|ndjson\|parquet\|xlsx -o out`；xlsx 为流式导出（表头/数值/布尔/文本，Excel 行上限内）；详见 `docs/XLSX.md`；其余格式走 DuckDB round-trip |
 | 引号风格 | `--quotes rfc4180\|backslash\|none`：`preview` `filter` `view` `groupby` `pivot` `chart` `dedupe` `stats` `analyze` `lookup` `search` `columns` `edit export`。`sort` / `concat` / `sql` **还不接受**（按 RFC 4180 读）。检测到反斜杠转义时会自动提示 |
 
 ## 分析

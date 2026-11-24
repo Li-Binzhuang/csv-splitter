@@ -2523,21 +2523,31 @@ fn convert_formats_round_trip_to_the_same_csv() {
         );
     }
 
-    let bad = Command::new(bin())
+    let xlsx = dir.join("out.xlsx");
+    let converted = Command::new(bin())
         .args([
             "convert",
             base.to_str().unwrap(),
             "--format",
             "xlsx",
             "--out",
-            dir.join("out.xlsx").to_str().unwrap(),
+            xlsx.to_str().unwrap(),
         ])
         .output()
         .unwrap();
-    assert_eq!(bad.status.code(), Some(1));
-    let stderr = String::from_utf8_lossy(&bad.stderr);
-    assert!(stderr.contains("xlsx"), "{stderr}");
-    assert!(!dir.join("out.xlsx").exists(), "xlsx must remain disabled");
+    assert_eq!(converted.status.code(), Some(0), "{converted:?}");
+    assert!(xlsx.exists());
+    let file = std::fs::File::open(&xlsx).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    let mut sheet = String::new();
+    use std::io::Read as _;
+    archive
+        .by_name("xl/worksheets/sheet1.xml")
+        .unwrap()
+        .read_to_string(&mut sheet)
+        .unwrap();
+    assert!(sheet.contains("id"), "{sheet}");
+    assert!(sheet.contains("café"), "{sheet}");
 }
 
 /// The pipeline runner chains commands, skips unchanged steps and reruns downstream

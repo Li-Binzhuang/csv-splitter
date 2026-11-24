@@ -641,6 +641,7 @@ dependencies = [
  "encoding_rs",
  "flate2",
  "libc",
+ "zip",
 ]
 
 [[package]]
