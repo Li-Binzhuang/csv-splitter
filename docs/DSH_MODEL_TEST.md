@@ -41,6 +41,20 @@ real 6.10 s
 带 `--skill skills/csvx-data/SKILL.md` 再跑一次：
 `step 1: csvx_schema` → `2`，5.49 s。
 
+再把 skill + `--allow-apply` 用于 read→preview→apply：
+
+```text
+step 1: csvx_schema
+step 2: csvx_view
+step 3: csvx_view
+step 4: csvx_edit_preview
+step 5: csvx_edit_apply
+done
+real 11.75 s
+```
+
+结果：基础 CSV 未改写；journal 1 条 `set row 1 city = C`；`view` 显示 `C`。
+
 这验证了模型 → JSON 动作 → csvx 工具 → 观察回灌 → final 的闭环，
 以及 skill 文本能改变 Agent 的读取路径。
 

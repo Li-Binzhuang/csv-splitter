@@ -59,7 +59,8 @@ csvx agent run --root /path/to/data \
 - 执行复用 `mcp_run_tool`；
 - 默认不允许破坏性工具；`--allow-apply` 才放行；
 - `--max-steps` 限制循环；
-- `--skill` 把一份 Markdown skill 注入 system prompt。
+- `--skill` 把一份 Markdown skill 注入 system prompt；
+- `--allow-apply` 才放行破坏性工具；实测 read→preview→apply 5 步 11.75 s，CSV 不动、journal 1 条。
 
 实测 Ark Economy：
 
