@@ -53,7 +53,7 @@ job=done
    - `csvx_job_submit` quality → `csvx_job_status` 直到 done
    - `csvx_cache_stats` / `csvx_cache_clear`（两次 gzip 后命中 1 条、清空并复查为 0、死进程清扫数）
 3. 若 `scripts/mcp_sdk/node_modules` 存在，demo 还会跑官方 SDK 客户端：
-   - `sdk_annotated=17`（SDK 看到 annotations）
+   - `sdk_annotated=18`（SDK 看到 annotations）
    - `pipeline_progress_events=2`（pipeline 每步通知；官方 SDK 的 `onprogress` 偶发
      合并最后一条，实测 10 次中 1 次为 1；raw MCP 10/10 稳定 2 条，demo 只要求 ≥1）
    - `status_fresh=2`（MCP `pipeline_status` 带 `contentCheck` 核验）
