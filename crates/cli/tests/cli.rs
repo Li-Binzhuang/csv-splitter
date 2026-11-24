@@ -2797,6 +2797,7 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
         "title,MCP report\nsummary,\ngroups,city:amount:sum\n",
     )
     .unwrap();
+    std::fs::write(dir.join("other.csv"), "city,amount\nMexico,40\n").unwrap();
     let mut child = Command::new(bin())
         .args(["mcp", "--root", dir.0.to_str().unwrap()])
         .stdin(Stdio::piped())
@@ -2829,6 +2830,7 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
             r#"{"jsonrpc":"2.0","id":19,"method":"tools/call","params":{"name":"csvx_gate","arguments":{"path":"t.csv","minRows":2,"unique":"city"}}}"#,
             r#"{"jsonrpc":"2.0","id":20,"method":"tools/call","params":{"name":"csvx_gate","arguments":{"path":"t.csv","minRows":99}}}"#,
             r#"{"jsonrpc":"2.0","id":21,"method":"tools/call","params":{"name":"csvx_edit_apply","arguments":{"path":"t.csv","ops":"set:1:city:Z"}}}"#,
+            r#"{"jsonrpc":"2.0","id":22,"method":"tools/call","params":{"name":"csvx_concat","arguments":{"paths":"t.csv,other.csv","out":"all.csv"}}}"#,
             r#"not-json"#,
         ] {
             writeln!(stdin, "{line}").unwrap();
@@ -2869,6 +2871,8 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
     );
     assert!(stdout.contains(r#""name":"csvx_edit_apply""#), "{stdout}");
     assert!(stdout.contains(r#""applied\":1"#), "{stdout}");
+    assert!(stdout.contains(r#""name":"csvx_concat""#), "{stdout}");
+    assert!(stdout.contains(r#""rows\":4"#), "{stdout}");
     assert!(stdout.contains(r#""isError":false"#), "{stdout}");
     assert!(stdout.contains("Puebla"), "{stdout}");
     assert!(stdout.contains("20"), "{stdout}");

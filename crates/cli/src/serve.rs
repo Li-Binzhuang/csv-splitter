@@ -7910,7 +7910,7 @@ mod tests {
         let McpJson::Array(tools) = value else {
             panic!("tools/list must be an array");
         };
-        assert_eq!(tools.len(), 22);
+        assert_eq!(tools.len(), 23);
         for tool in &tools {
             let McpJson::Object(pairs) = tool else {
                 panic!("tool must be an object");
@@ -8248,7 +8248,7 @@ fn mcp_result(id: Option<&McpJson>, result: &str) -> String {
 }
 
 fn mcp_tools() -> &'static str {
-    r#"[{"name":"csvx_schema","description":"Columns, types and row count for a CSV; read-only.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_view","description":"A page of rows; start/count cursor paging; optional where.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"start":{"type":"integer","minimum":0},"count":{"type":"integer","minimum":1,"maximum":1000},"where":{"type":"string"}},"required":["path"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_filter","description":"Evaluate a row predicate and return matching rows or row numbers.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"where":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":1000},"show":{"type":"boolean"},"materialize":{"type":"boolean"}},"required":["path","where"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_search","description":"Search text across columns or a chosen column set.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"query":{"type":"string"},"columns":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":1000},"materialize":{"type":"boolean"}},"required":["path","query"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_quality","description":"Quality report: candidate keys, duplicates, mixed types, outliers, groups.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"key":{"type":"string"},"group":{"type":"string"}},"required":["path"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_pipeline_status","description":"Read .pipeline.csv; verify=true re-checks current stamps/hashes.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"verify":{"type":"boolean"},"contentCheck":{"type":"boolean"}},"required":["path"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_edit_preview","description":"Preview a transaction batch; returns row delta, affected ranges and journal hash; never writes.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"ops":{"type":"string"}},"required":["path","ops"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_edit_apply","description":"Apply a validated transaction batch in one journal write; preview first.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"ops":{"type":"string"}},"required":["path","ops"],"additionalProperties":false},"annotations":{"destructiveHint":true}},{"name":"csvx_edit_set","description":"Set one cell (1-based row, column name); uses the journal and write lock.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"row":{"type":"integer","minimum":1},"col":{"type":"string"},"value":{"type":"string"},"expect":{"type":"string"}},"required":["path","row","col","value"],"additionalProperties":false},"annotations":{"destructiveHint":true}},{"name":"csvx_edit_delete","description":"Delete one row by number or every row matching a predicate.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"row":{"type":"integer","minimum":1},"where":{"type":"string"}},"required":["path"],"additionalProperties":false},"annotations":{"destructiveHint":true}},{"name":"csvx_edit_undo","description":"Undo the last journal batch.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false},"annotations":{"destructiveHint":true}},{"name":"csvx_edit_redo","description":"Redo the last undone batch.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false},"annotations":{"destructiveHint":true}},{"name":"csvx_convert","description":"Convert to tsv/ndjson/parquet/csv; writes a new file (xlsx is disabled).","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"format":{"type":"string","enum":["csv","tsv","ndjson","parquet"]},"out":{"type":"string"}},"required":["path","format","out"],"additionalProperties":false},"annotations":{"destructiveHint":true}},{"name":"csvx_job_submit","description":"Run a tool asynchronously; returns a job id for polling.","inputSchema":{"type":"object","properties":{"tool":{"type":"string"},"arguments":{"type":"object"}},"required":["tool","arguments"],"additionalProperties":false},"annotations":{"openWorldHint":true}},{"name":"csvx_job_status","description":"Poll a submitted job; wait>0 long-polls up to N seconds.","inputSchema":{"type":"object","properties":{"id":{"type":"string"},"wait":{"type":"integer","minimum":0,"maximum":30}},"required":["id"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_pipeline_run","description":"Run a declarative CSV pipeline; long runs can be wrapped in a job.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"force":{"type":"boolean"},"dryRun":{"type":"boolean"},"dag":{"type":"boolean"},"jobs":{"type":"integer","minimum":1,"maximum":64},"clean":{"type":"boolean"},"contentCheck":{"type":"boolean"}},"required":["path"],"additionalProperties":false},"annotations":{"destructiveHint":true}},{"name":"csvx_job_cancel","description":"Cancel a running job; returns cancelled, done or failed.","inputSchema":{"type":"object","properties":{"id":{"type":"string"}},"required":["id"],"additionalProperties":false},"annotations":{"destructiveHint":true}},{"name":"csvx_report","description":"Render a CSV-spec report; spec may be a file or inline text; returns Markdown or HTML; read-only.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"spec":{"type":"string"},"specText":{"type":"string"},"format":{"type":"string","enum":["md","html"]},"title":{"type":"string"}},"required":["path"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_gate","description":"Quality gate: rows/empty/uniqueness thresholds; returns a JSON report; read-only.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"minRows":{"type":"integer","minimum":0},"maxEmpty":{"type":"integer","minimum":0},"unique":{"type":"string"}},"required":["path"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_cache_clear","description":"Delete cached materialized temp files, clear the cache and sweep dead-process temp files; returns removed/stale counts and bytes.","annotations":{"destructiveHint":true,"idempotentHint":true},"inputSchema":{"type":"object","properties":{},"additionalProperties":false}},{"name":"csvx_cache_stats","description":"Materialize-cache hits/misses, entries and byte usage in this server process.","annotations":{"readOnlyHint":true},"inputSchema":{"type":"object","properties":{},"additionalProperties":false}},{"name":"csvx_job_list","description":"List jobs; full=true includes job output.","inputSchema":{"type":"object","properties":{"full":{"type":"boolean"}},"additionalProperties":false},"annotations":{"readOnlyHint":true}}]"#
+    r#"[{"name":"csvx_schema","description":"Columns, types and row count for a CSV; read-only.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_view","description":"A page of rows; start/count cursor paging; optional where.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"start":{"type":"integer","minimum":0},"count":{"type":"integer","minimum":1,"maximum":1000},"where":{"type":"string"}},"required":["path"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_filter","description":"Evaluate a row predicate and return matching rows or row numbers.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"where":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":1000},"show":{"type":"boolean"},"materialize":{"type":"boolean"}},"required":["path","where"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_search","description":"Search text across columns or a chosen column set.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"query":{"type":"string"},"columns":{"type":"string"},"limit":{"type":"integer","minimum":1,"maximum":1000},"materialize":{"type":"boolean"}},"required":["path","query"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_quality","description":"Quality report: candidate keys, duplicates, mixed types, outliers, groups.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"key":{"type":"string"},"group":{"type":"string"}},"required":["path"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_pipeline_status","description":"Read .pipeline.csv; verify=true re-checks current stamps/hashes.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"verify":{"type":"boolean"},"contentCheck":{"type":"boolean"}},"required":["path"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_edit_preview","description":"Preview a transaction batch; returns row delta, affected ranges and journal hash; never writes.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"ops":{"type":"string"}},"required":["path","ops"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_edit_apply","description":"Apply a validated transaction batch in one journal write; preview first.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"ops":{"type":"string"}},"required":["path","ops"],"additionalProperties":false},"annotations":{"destructiveHint":true}},{"name":"csvx_edit_set","description":"Set one cell (1-based row, column name); uses the journal and write lock.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"row":{"type":"integer","minimum":1},"col":{"type":"string"},"value":{"type":"string"},"expect":{"type":"string"}},"required":["path","row","col","value"],"additionalProperties":false},"annotations":{"destructiveHint":true}},{"name":"csvx_edit_delete","description":"Delete one row by number or every row matching a predicate.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"row":{"type":"integer","minimum":1},"where":{"type":"string"}},"required":["path"],"additionalProperties":false},"annotations":{"destructiveHint":true}},{"name":"csvx_edit_undo","description":"Undo the last journal batch.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false},"annotations":{"destructiveHint":true}},{"name":"csvx_edit_redo","description":"Redo the last undone batch.","inputSchema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false},"annotations":{"destructiveHint":true}},{"name":"csvx_concat","description":"Concatenate CSV files or a directory into a new file; destructive write.","inputSchema":{"type":"object","properties":{"paths":{"type":"string"},"dir":{"type":"string"},"out":{"type":"string"},"byName":{"type":"boolean"},"ignoreHeader":{"type":"boolean"}},"required":["out"],"additionalProperties":false},"annotations":{"destructiveHint":true}},{"name":"csvx_convert","description":"Convert to tsv/ndjson/parquet/csv; writes a new file (xlsx is disabled).","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"format":{"type":"string","enum":["csv","tsv","ndjson","parquet"]},"out":{"type":"string"}},"required":["path","format","out"],"additionalProperties":false},"annotations":{"destructiveHint":true}},{"name":"csvx_job_submit","description":"Run a tool asynchronously; returns a job id for polling.","inputSchema":{"type":"object","properties":{"tool":{"type":"string"},"arguments":{"type":"object"}},"required":["tool","arguments"],"additionalProperties":false},"annotations":{"openWorldHint":true}},{"name":"csvx_job_status","description":"Poll a submitted job; wait>0 long-polls up to N seconds.","inputSchema":{"type":"object","properties":{"id":{"type":"string"},"wait":{"type":"integer","minimum":0,"maximum":30}},"required":["id"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_pipeline_run","description":"Run a declarative CSV pipeline; long runs can be wrapped in a job.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"force":{"type":"boolean"},"dryRun":{"type":"boolean"},"dag":{"type":"boolean"},"jobs":{"type":"integer","minimum":1,"maximum":64},"clean":{"type":"boolean"},"contentCheck":{"type":"boolean"}},"required":["path"],"additionalProperties":false},"annotations":{"destructiveHint":true}},{"name":"csvx_job_cancel","description":"Cancel a running job; returns cancelled, done or failed.","inputSchema":{"type":"object","properties":{"id":{"type":"string"}},"required":["id"],"additionalProperties":false},"annotations":{"destructiveHint":true}},{"name":"csvx_report","description":"Render a CSV-spec report; spec may be a file or inline text; returns Markdown or HTML; read-only.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"spec":{"type":"string"},"specText":{"type":"string"},"format":{"type":"string","enum":["md","html"]},"title":{"type":"string"}},"required":["path"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_gate","description":"Quality gate: rows/empty/uniqueness thresholds; returns a JSON report; read-only.","inputSchema":{"type":"object","properties":{"path":{"type":"string"},"minRows":{"type":"integer","minimum":0},"maxEmpty":{"type":"integer","minimum":0},"unique":{"type":"string"}},"required":["path"],"additionalProperties":false},"annotations":{"readOnlyHint":true}},{"name":"csvx_cache_clear","description":"Delete cached materialized temp files, clear the cache and sweep dead-process temp files; returns removed/stale counts and bytes.","annotations":{"destructiveHint":true,"idempotentHint":true},"inputSchema":{"type":"object","properties":{},"additionalProperties":false}},{"name":"csvx_cache_stats","description":"Materialize-cache hits/misses, entries and byte usage in this server process.","annotations":{"readOnlyHint":true},"inputSchema":{"type":"object","properties":{},"additionalProperties":false}},{"name":"csvx_job_list","description":"List jobs; full=true includes job output.","inputSchema":{"type":"object","properties":{"full":{"type":"boolean"}},"additionalProperties":false},"annotations":{"readOnlyHint":true}}]"#
 }
 
 fn mcp_path(root: &Path, args: &McpJson) -> Result<std::path::PathBuf, String> {
@@ -8326,6 +8326,87 @@ fn mcp_output_path(root: &Path, args: &McpJson) -> Result<PathBuf, String> {
         return Err("output is outside the MCP root".to_string());
     }
     Ok(candidate)
+}
+
+fn mcp_concat_command(root: &Path, args: &McpJson) -> Result<std::process::Command, String> {
+    let bin = std::env::current_exe().map_err(|e| e.to_string())?;
+    let paths = args
+        .get("paths")
+        .and_then(McpJson::as_str)
+        .filter(|v| !v.trim().is_empty());
+    let dir = args
+        .get("dir")
+        .and_then(McpJson::as_str)
+        .filter(|v| !v.trim().is_empty());
+    if paths.is_some() && dir.is_some() {
+        return Err("use paths or dir, not both".to_string());
+    }
+    let Some(out) = mcp_output_path(root, args).ok() else {
+        return Err("out must stay inside the MCP root".to_string());
+    };
+    let mut command = std::process::Command::new(bin);
+    command.arg("concat");
+    if let Some(list) = paths {
+        let mut count = 0usize;
+        for raw in list.split(',').map(str::trim).filter(|v| !v.is_empty()) {
+            let candidate = if Path::new(raw).is_absolute() {
+                PathBuf::from(raw)
+            } else {
+                root.join(raw)
+            };
+            let canonical = std::fs::canonicalize(&candidate)
+                .map_err(|_| format!("{raw} is not a readable file inside the MCP root"))?;
+            let root = std::fs::canonicalize(root).map_err(|e| e.to_string())?;
+            if !canonical.starts_with(&root) || !canonical.is_file() {
+                return Err(format!("{raw} is outside the MCP root or not a file"));
+            }
+            command.arg(canonical);
+            count += 1;
+        }
+        if count < 2 {
+            return Err("concat needs at least two files".to_string());
+        }
+    } else if let Some(directory) = dir {
+        let candidate = if Path::new(directory).is_absolute() {
+            PathBuf::from(directory)
+        } else {
+            root.join(directory)
+        };
+        let canonical = std::fs::canonicalize(&candidate)
+            .map_err(|_| format!("{directory} is not a readable directory inside the MCP root"))?;
+        let root = std::fs::canonicalize(root).map_err(|e| e.to_string())?;
+        if !canonical.starts_with(&root) || !canonical.is_dir() {
+            return Err(format!(
+                "{directory} is outside the MCP root or not a directory"
+            ));
+        }
+        command.arg(canonical);
+    } else {
+        return Err("paths or dir is required".to_string());
+    }
+    command.args(["-o", out.to_str().unwrap_or("")]);
+    if args
+        .get("byName")
+        .and_then(|value| match value {
+            McpJson::Bool(flag) => Some(*flag),
+            _ => None,
+        })
+        .unwrap_or(false)
+    {
+        command.arg("--by-name");
+    }
+    if args
+        .get("ignoreHeader")
+        .and_then(|value| match value {
+            McpJson::Bool(flag) => Some(*flag),
+            _ => None,
+        })
+        .unwrap_or(false)
+    {
+        command.arg("--ignore-header");
+    }
+    command.arg("--json");
+    Ok(command)
 }
 
 struct CachedMaterialized {
@@ -8550,11 +8631,15 @@ fn mcp_command(root: &Path, name: &str, args: &McpJson) -> Result<std::process::
             | "csvx_edit_apply"
             | "csvx_report"
             | "csvx_gate"
+            | "csvx_concat"
             | "csvx_convert"
             | "csvx_pipeline_run"
     );
     if !known {
         return Err(format!("unknown tool {name}"));
+    }
+    if name == "csvx_concat" {
+        return mcp_concat_command(root, args);
     }
     let path = mcp_path(root, args)?;
     let wants_materialize = matches!(name, "csvx_filter" | "csvx_search")
@@ -8899,6 +8984,7 @@ fn mcp_job_tool_allowed(tool: &str) -> bool {
             | "csvx_edit_apply"
             | "csvx_report"
             | "csvx_gate"
+            | "csvx_concat"
             | "csvx_convert"
     )
 }
