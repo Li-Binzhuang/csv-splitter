@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "3e2dbc730075bf08d1f83fc0f0bdf9b108af8b1f20b0ac0c96ccf5053df7e6eb",
+  "batch_id": "170e2baccd1d8514b911547ed017542498b2eb8353edd07101bcfd926f5c150b",
+  "composite_identity": "ec0d843e06208b0b2c69648e2dcde4a107c5b3f5b52268862fe7e2081de5b64c",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "42fed9a305979f005cacb977db48a8bab1d024cf79faf6a1c2626319d7f410ca",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "d70c39bab5c729dd0346a517771bd817a37f7a0abc6bac65e4a95603d8db404a",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter -o 压缩；gate 文件/目录三端；concat CLI/HTTP/MCP；report spec/specText 三端 + chart SVG + compare（HTTP/MCP 限 root）；typed view HTTP；typed edit apply；pipeline；mcp 23 工具/SDK | S:report 无 GUI；chart 静态 SVG；compare 只读且限 root；gate 失败 JSON 带原因；typed view 简单窗口"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4cb3601a6153d5004bc831e74eeabfc5e5cb063abca1dd573d049de73423b859",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "d70c39bab5c729dd0346a517771bd817a37f7a0abc6bac65e4a95603d8db404a",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:公式、边界；filter -o 压缩；gate 文件/目录三端；concat CLI/HTTP/MCP；report spec/specText 三端 + chart SVG + compare（HTTP/MCP 限 root）；typed view HTTP；typed edit apply；pipeline；mcp 23 工具/SDK | S:report 无 GUI；chart 静态 SVG；compare 只读且限 root；gate 失败 JSON 带原因；typed view 简单窗口"
+    }
+  ]
+}
