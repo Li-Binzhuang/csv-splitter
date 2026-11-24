@@ -9031,6 +9031,22 @@ fn read_watch_previous_failure(path: &std::path::Path) -> bool {
         .unwrap_or(false)
 }
 
+fn json_escape(value: &str) -> String {
+    let mut escaped = String::with_capacity(value.len());
+    for ch in value.chars().take(240) {
+        match ch {
+            '"' => escaped.push_str("\\\""),
+            '\\' => escaped.push_str("\\\\"),
+            '\n' => escaped.push_str("\\n"),
+            '\r' => escaped.push_str("\\r"),
+            '\t' => escaped.push_str("\\t"),
+            c if c.is_control() => escaped.push_str(&format!("\\u{:04x}", c as u32)),
+            c => escaped.push(c),
+        }
+    }
+    escaped
+}
+
 #[allow(clippy::too_many_arguments)]
 fn write_watch_state(
     path: &std::path::Path,
@@ -9041,9 +9057,10 @@ fn write_watch_state(
     failures: usize,
     last_success_ms: u128,
     last_failure_ms: u128,
+    last_error: &str,
 ) -> std::io::Result<()> {
     let body = format!(
-        r#"{{"round":{},"ran":{},"total":{},"success":{},"consecutiveFailures":{},"lastSuccessAtMs":{},"lastFailureAtMs":{},"updatedAtMs":{}}}"#,
+        r#"{{"round":{},"ran":{},"total":{},"success":{},"consecutiveFailures":{},"lastSuccessAtMs":{},"lastFailureAtMs":{},"lastError":"{}","updatedAtMs":{}}}"#,
         round,
         ran,
         total,
@@ -9051,6 +9068,7 @@ fn write_watch_state(
         failures,
         last_success_ms,
         last_failure_ms,
+        json_escape(last_error),
         now_millis()
     );
     let temp = path.with_extension(format!("tmp-{}", std::process::id()));
@@ -9155,6 +9173,7 @@ fn watch_pipeline(
                         0,
                         last_success_ms,
                         last_failure_ms,
+                        "",
                     ) {
                         eprintln!("watch: state write failed: {error}");
                     }
@@ -9174,6 +9193,7 @@ fn watch_pipeline(
                         failures,
                         last_success_ms,
                         last_failure_ms,
+                        &error.to_string(),
                     ) {
                         eprintln!("watch: state write failed: {write_error}");
                     }

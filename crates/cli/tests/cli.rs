@@ -7846,6 +7846,8 @@ fn pipeline_watch_stops_after_the_failure_cap() {
             "10",
             "--max-failures",
             "1",
+            "--state",
+            dir.join("failure-state.json").to_str().unwrap(),
         ])
         .output()
         .unwrap();
@@ -7855,6 +7857,9 @@ fn pipeline_watch_stops_after_the_failure_cap() {
         stderr.contains("stopping after 1 consecutive failure(s)"),
         "{stderr}"
     );
+    let state = std::fs::read_to_string(dir.join("failure-state.json")).unwrap();
+    assert!(state.contains(r#""lastError":"#), "{state}");
+    assert!(state.contains("bogus"), "{state}");
 }
 
 /// Server-only tools cannot be submitted to the CLI job runner.
