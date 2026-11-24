@@ -140,7 +140,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--unlock", "Remove the plan lock before running (use with care)"),
             ("--verify", "Status: re-check current stamps/hashes"),
             ("--progress-markers", "Run: emit stable CSVX_STEP lines"),
-            ("--content-check", "Run: hash content even when stamps match"),
+            ("--content-check", "Run/status/watch: hash content even when stamps match"),
             ("--fail-on-stale", "Status: exit 3 when verify finds stale steps"),
             ("--dag", "Run ready steps by dependency order (requires --jobs > 1)"),
             ("--jobs", "Concurrency for groups/DAG (default 1)"),
