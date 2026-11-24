@@ -2825,6 +2825,7 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
             r#"{"jsonrpc":"2.0","id":15,"method":"resources/read","params":{"uri":"csvx://missing"}}"#,
             r#"{"jsonrpc":"2.0","id":16,"method":"tools/call","params":{"name":"csvx_edit_preview","arguments":{"path":"t.csv","ops":"set:1:city:Y;delete:2:1"}}}"#,
             r#"{"jsonrpc":"2.0","id":17,"method":"tools/call","params":{"name":"csvx_report","arguments":{"path":"t.csv","spec":"spec.csv","format":"md"}}}"#,
+            r#"{"jsonrpc":"2.0","id":18,"method":"tools/call","params":{"name":"csvx_report","arguments":{"path":"t.csv","specText":"title,Inline MCP\nsummary,","format":"md"}}}"#,
             r#"not-json"#,
         ] {
             writeln!(stdin, "{line}").unwrap();
@@ -2853,6 +2854,7 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
     assert!(stdout.contains(r#""applied\":0"#), "{stdout}");
     assert!(stdout.contains(r#""name":"csvx_report""#), "{stdout}");
     assert!(stdout.contains("# MCP report"), "{stdout}");
+    assert!(stdout.contains("# Inline MCP"), "{stdout}");
     assert!(stdout.contains(r#""isError":false"#), "{stdout}");
     assert!(stdout.contains("Puebla"), "{stdout}");
     assert!(stdout.contains("20"), "{stdout}");
@@ -7727,6 +7729,20 @@ fn report_renders_a_csv_spec() {
     assert!(text.contains("## Groups: city"), "{text}");
     assert!(text.contains("| city | count_id |"), "{text}");
     assert!(text.contains("| CDMX | 1 |"), "{text}");
+
+    let inline = Command::new(bin())
+        .args([
+            "report",
+            dir.join("t.csv").to_str().unwrap(),
+            "--spec-text",
+            "title,Inline report\nsummary,\nrows,1",
+        ])
+        .output()
+        .unwrap();
+    assert!(inline.status.success(), "{:?}", inline);
+    let text = String::from_utf8_lossy(&inline.stdout);
+    assert!(text.contains("# Inline report"), "{text}");
+    assert!(text.contains("## Summary"), "{text}");
 
     let html = Command::new(bin())
         .args([

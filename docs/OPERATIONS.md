@@ -86,7 +86,7 @@ MCP adapter ─┘        │
 - `gate --min-rows/--max-empty/--unique` 质量门禁；唯一性按列外部排序后相邻比较，不受内存 cap；在 plan 中作为普通步骤即可失败即停；
 - `concat <dir>` 目录输入：只取目录内 `.csv`，按文件名排序，输出默认在目录旁；
 - `gate <dir>` 目录级门禁：每个文件独立执行阈值，汇总 JSON；任一失败退出 1；
-- `report --spec` 用 CSV spec 渲染确定性 Markdown/HTML；支持 summary/columns/quality/groups/rows；HTTP `GET /report` 与 MCP `csvx_report` 返回同一份正文；
+- `report --spec/--spec-text` 用 CSV spec 渲染确定性 Markdown/HTML；支持 summary/columns/quality/groups/rows；HTTP `GET /report`（spec 或 specText）与 MCP `csvx_report` 返回同一份正文；
 - JSON Schema 由 Rust 类型生成，接入 MCP `inputSchema` 与 `docs/API.md`；
 - 前端只消费契约，不解析 `--help`。
 

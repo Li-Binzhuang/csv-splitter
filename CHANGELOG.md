@@ -163,7 +163,8 @@
 - **CSV report spec**: `report data.csv --spec report.csv` renders deterministic
   Markdown/HTML from summary/columns/quality/groups/rows sections, escaping cells;
   groups is real groupby (count or sum/mean/min/max on a measure);
-  `GET /report` and MCP `csvx_report` return the same Markdown/HTML body.
+  `GET /report` and MCP `csvx_report` return the same Markdown/HTML body;
+  both also accept an inline spec instead of a file.
 - **Directory gate**: `gate <dir>` applies the same thresholds to each `.csv`
   independently and returns one aggregate report; any failing file exits 1.
 - **Directory concat**: `concat <dir>` reads every `.csv` in name order and defaults

@@ -6099,6 +6099,13 @@ fn report_endpoint_renders_markdown_and_html() {
     assert!(body.starts_with("<!doctype html>"), "{body}");
     assert!(body.contains("&lt;"), "html escaping: {body}");
 
+    let (code, body) = get(
+        &server.addr,
+        "/report?path=t.csv&specText=title,Inline%20HTTP%0Asummary,",
+    );
+    assert_eq!(code, 200, "{body}");
+    assert!(body.starts_with("# Inline HTTP"), "{body}");
+
     let (code, _) = get(&server.addr, "/report?path=t.csv&spec=missing.csv");
     assert_eq!(code, 400);
     let (code, _) = get(&server.addr, "/report?path=t.csv&spec=../escape.csv");

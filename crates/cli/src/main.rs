@@ -590,6 +590,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--json", "Emit a small JSON confirmation"),
             ("--out", "Output path (default: write to stdout)"),
             ("--spec", "Report spec CSV: section,arg (summary/columns/rows)"),
+            ("--spec-text", "Inline report spec instead of a file"),
             ("--title", "Report title"),
         ],
     ),
@@ -5259,6 +5260,7 @@ fn cmd_report(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
     let mut input: Option<PathBuf> = None;
     let mut spec: Option<PathBuf> = None;
+    let mut spec_text: Option<String> = None;
     let mut title = "CSV report".to_string();
     let mut out: Option<PathBuf> = None;
     let mut format = "md".to_string();
@@ -5269,6 +5271,13 @@ fn cmd_report(args: &[String]) -> i32 {
         match arg.as_str() {
             "--spec" => match p.value("--spec") {
                 Ok(v) => spec = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--spec-text" => match p.value("--spec-text") {
+                Ok(v) => spec_text = Some(v),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -5349,14 +5358,24 @@ fn cmd_report(args: &[String]) -> i32 {
         ("columns".to_string(), String::new()),
         ("rows".to_string(), "20".to_string()),
     ];
-    if let Some(path) = &spec {
-        let text = match std::fs::read_to_string(path) {
-            Ok(text) => text,
+    if spec.is_some() && spec_text.is_some() {
+        eprintln!("error: use either --spec or --spec-text, not both");
+        return 2;
+    }
+    let spec_source = if let Some(text) = spec_text {
+        Some(text)
+    } else if let Some(path) = &spec {
+        match std::fs::read_to_string(path) {
+            Ok(text) => Some(text),
             Err(e) => {
                 eprintln!("error: cannot read spec {}: {e}", path.display());
                 return 2;
             }
-        };
+        }
+    } else {
+        None
+    };
+    if let Some(text) = spec_source {
         let mut parsed = Vec::new();
         for line in text.lines() {
             if line.trim().is_empty() {
