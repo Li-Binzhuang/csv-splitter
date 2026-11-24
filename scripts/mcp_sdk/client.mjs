@@ -33,6 +33,7 @@ const call = async (name, params) => {
 
 const tools = await client.listTools();
 console.log(`sdk_tools=${tools.tools.length}`);
+console.log(`sdk_annotated=${tools.tools.filter((tool) => tool.annotations).length}`);
 console.log(`schema_rows=${(await call("csvx_schema", { path: file })).rows}`);
 console.log(`filter_matched=${(await call("csvx_filter", { path: file, where: "city=CDMX", limit: 10 })).matched}`);
 const view = await call("csvx_view", { path: file, start: 0, count: 2 });

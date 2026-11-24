@@ -63,6 +63,7 @@ def main():
     try:
         tools = client.request("tools/list")["tools"]
         print(f"tools={len(tools)}")
+        print(f"annotated_tools={sum(1 for tool in tools if tool.get('annotations'))}")
         schema = client.call("csvx_schema", {"path": args.file})
         print(f"schema_rows={schema['rows']}")
         filtered = client.call("csvx_filter", {"path": args.file, "where": "city=CDMX", "limit": 10})
