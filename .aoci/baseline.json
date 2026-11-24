@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-24T12:57:54Z",
+  "updated_at": "2026-11-24T13:02:19Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "055c7e348a3ebd585647edb7bea392b19f4f2e7152582dd29b2790afb4293cba",
-      "size": 58510,
-      "normalized_sha256": "055c7e348a3ebd585647edb7bea392b19f4f2e7152582dd29b2790afb4293cba"
+      "sha256": "5a2b298754c4f980c666343b4bb591034c9ce11afa6e360e2d376f3ee5ec92ea",
+      "size": 58505,
+      "normalized_sha256": "5a2b298754c4f980c666343b4bb591034c9ce11afa6e360e2d376f3ee5ec92ea"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -562,9 +562,9 @@
     },
     "docs/AGENT_API.md": {
       "role": "index",
-      "sha256": "10671c219d9e207090be02ee78ca8f21a84aeee63d88013caca320b6d90ce02b",
-      "size": 3931,
-      "normalized_sha256": "10671c219d9e207090be02ee78ca8f21a84aeee63d88013caca320b6d90ce02b"
+      "sha256": "18350d48597caa0a9740bab5081521a6ce29ca56cefbeb1a29d35658e86f386b",
+      "size": 4052,
+      "normalized_sha256": "18350d48597caa0a9740bab5081521a6ce29ca56cefbeb1a29d35658e86f386b"
     },
     "docs/API.md": {
       "role": "index",
@@ -592,9 +592,9 @@
     },
     "docs/BIG_PLAN.md": {
       "role": "index",
-      "sha256": "9fd28672670ac33f9fcfe849379f68792ce701720e9f2f5153e9a5c192abc8c7",
-      "size": 6577,
-      "normalized_sha256": "9fd28672670ac33f9fcfe849379f68792ce701720e9f2f5153e9a5c192abc8c7"
+      "sha256": "87149a595013cf69ad701b0809debfa55b56c71fb972acad8d4e17c1a1a763da",
+      "size": 6581,
+      "normalized_sha256": "87149a595013cf69ad701b0809debfa55b56c71fb972acad8d4e17c1a1a763da"
     },
     "docs/BUSINESS.md": {
       "role": "index",
@@ -628,9 +628,9 @@
     },
     "docs/DSH_MODEL_TEST.md": {
       "role": "index",
-      "sha256": "4065ff5e2633c25d7f044854d15d2281b1e308fc6a26c5bb266ead21cde3add0",
-      "size": 1526,
-      "normalized_sha256": "4065ff5e2633c25d7f044854d15d2281b1e308fc6a26c5bb266ead21cde3add0"
+      "sha256": "3d175cd341fa9a1eda3c1f7dc5ef99fa14fcc339744be41d317aac07ce704bb3",
+      "size": 1819,
+      "normalized_sha256": "3d175cd341fa9a1eda3c1f7dc5ef99fa14fcc339744be41d317aac07ce704bb3"
     },
     "docs/FORMULA_CACHE.md": {
       "role": "index",

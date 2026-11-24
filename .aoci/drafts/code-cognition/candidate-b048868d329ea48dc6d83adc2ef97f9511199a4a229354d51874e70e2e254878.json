@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "fe41e798f46d7272f4463cb2e8828f0158712797545e996f56fd26dbdfccc0fb",
+  "batch_id": "b048868d329ea48dc6d83adc2ef97f9511199a4a229354d51874e70e2e254878",
+  "composite_identity": "3dbed2fe391a3d28c88a8c92806586c283d6fbf95df8000746014b92e3adc415",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "055c7e348a3ebd585647edb7bea392b19f4f2e7152582dd29b2790afb4293cba",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "18350d48597caa0a9740bab5081521a6ce29ca56cefbeb1a29d35658e86f386b",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入：MCP manifest、HTTP Agent API、runner 与 skill | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:skills/csvx-data/SKILL.md | A:agent serve/manifest/run；sessions/actions/approvals/events(+follow)/close；428 审批；skill 注入；Ark 6.10s 无 skill / 5.49s 带 skill | S:follow 60s；key 不入仓库；destructive 默认拒绝；无 GUI/多用户"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BIG_PLAN.md",
+      "path": "docs/BIG_PLAN.md",
+      "change": "update",
+      "source_sha256": "87149a595013cf69ad701b0809debfa55b56c71fb972acad8d4e17c1a1a763da",
+      "existing_entry": "BIG_PLAN.md[SW7S]: F:xlsx + Agent 原生后端的大计划：工作流、接口、里程碑、非目标 | R:code:docs/PRODUCT_PLAN.md,code:docs/AGENT_API.md,code:docs/XLSX.md,code:skills/csvx-data/SKILL.md | A:M1 xlsx、M2 导入/多 sheet、M3 公式缓存、M4 MCP+HTTP Agent API、M5 runner+skill 已落；M6 整理；Ark 5.49/6.10s | S:不写 GUI/多用户/宏；apply 需审批；SSE 轮询非实时；flag 未实现前不可写帮助"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DSH_MODEL_TEST.md",
+      "path": "docs/DSH_MODEL_TEST.md",
+      "change": "update",
+      "source_sha256": "3d175cd341fa9a1eda3c1f7dc5ef99fa14fcc339744be41d317aac07ce704bb3",
+      "existing_entry": "DSH_MODEL_TEST.md[SD7T]: F:本地 DSH Ark Economy 直连、runner 与 skill 实测 | R:code:docs/BIG_PLAN.md,code:docs/AGENT_API.md,code:skills/csvx-data/SKILL.md | A:只测 Ark Economy；直连 1.10s；runner schema→view→final 6.10s；带 skill schema→final 5.49s；key 不落盘 | S:仅该模型；不打印/保存 key；小 max_tokens 只有 reasoning；破坏性需 allow-apply"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "c66c392c197248f5f9352cb38bc22b4c973579e8d4fd0f3591685e856365db60",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "18350d48597caa0a9740bab5081521a6ce29ca56cefbeb1a29d35658e86f386b",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入：MCP manifest、HTTP Agent API、runner 与 skill | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:skills/csvx-data/SKILL.md | A:agent serve/manifest/run；sessions/actions/approvals/events(+follow)/close；428 审批；skill 注入；Ark 6.10s 无 skill / 5.49s 带 skill | S:follow 60s；key 不入仓库；destructive 默认拒绝；无 GUI/多用户"
+    },
+    {
+      "candidate_id": "7864b5dbcea89f3575f6844735259b9a87b789a26287aaa77537bf37a71e3004",
+      "object_ref": "code:docs/BIG_PLAN.md",
+      "path": "docs/BIG_PLAN.md",
+      "change": "update",
+      "source_sha256": "87149a595013cf69ad701b0809debfa55b56c71fb972acad8d4e17c1a1a763da",
+      "existing_entry": "BIG_PLAN.md[SW7S]: F:xlsx + Agent 原生后端的大计划：工作流、接口、里程碑、非目标 | R:code:docs/PRODUCT_PLAN.md,code:docs/AGENT_API.md,code:docs/XLSX.md,code:skills/csvx-data/SKILL.md | A:M1 xlsx、M2 导入/多 sheet、M3 公式缓存、M4 MCP+HTTP Agent API、M5 runner+skill 已落；M6 整理；Ark 5.49/6.10s | S:不写 GUI/多用户/宏；apply 需审批；SSE 轮询非实时；flag 未实现前不可写帮助"
+    },
+    {
+      "candidate_id": "47f18edf3f28d697f1c592351e124a6f1de157558ab58e7f3f3bfbf6329e31b6",
+      "object_ref": "code:docs/DSH_MODEL_TEST.md",
+      "path": "docs/DSH_MODEL_TEST.md",
+      "change": "update",
+      "source_sha256": "3d175cd341fa9a1eda3c1f7dc5ef99fa14fcc339744be41d317aac07ce704bb3",
+      "existing_entry": "DSH_MODEL_TEST.md[SD7T]: F:本地 DSH Ark Economy 直连、runner 与 skill 实测 | R:code:docs/BIG_PLAN.md,code:docs/AGENT_API.md,code:skills/csvx-data/SKILL.md | A:只测 Ark Economy；直连 1.10s；runner schema→view→final 6.10s；带 skill schema→final 5.49s；key 不落盘 | S:仅该模型；不打印/保存 key；小 max_tokens 只有 reasoning；破坏性需 allow-apply"
+    }
+  ]
+}
