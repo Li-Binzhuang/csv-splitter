@@ -8194,7 +8194,16 @@ fn ops_catalog_lists_effects_and_error_codes() {
     assert!(output.status.success());
     let body = String::from_utf8_lossy(&output.stdout);
     assert!(body.contains(r#""version":"4.2.0""#), "{body}");
-    for operation in ["schema", "view", "filter", "edit_apply", "pipeline_run"] {
+    for operation in [
+        "schema",
+        "view",
+        "filter",
+        "edit_apply",
+        "pipeline_run",
+        "gate",
+        "report",
+        "concat",
+    ] {
         assert!(body.contains(&format!(r#""name":"{operation}""#)), "{body}");
     }
     for effect in ["read", "preview", "apply", "job"] {

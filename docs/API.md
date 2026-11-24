@@ -317,7 +317,7 @@ written on refusal, and `actual` says what the value is now.
 | GET | `/sheet` | 概况：操作数、最后一条、capabilities、layout、indexed |
 | GET | `/capabilities` | 能力发现（reads/writes/actions/limits/engines/duckdb/strictParams）|
 | GET | `/spec` | **机器可读契约**：端点、参数、响应字段、错误码；代码生成，有测试对齐真实响应 |
-| GET | `/ops` | **操作契约目录**：14 个操作的 `name`/`effect`（read/preview/apply/job）/`input`/`output` 与 10 个稳定错误码；与 `csvx ops --json`、MCP `csvx://operations` 同一份 `core::contract` |
+| GET | `/ops` | **操作契约目录**：17 个操作的 `name`/`effect`（read/preview/apply/job）/`input`/`output` 与 10 个稳定错误码；与 `csvx ops --json`、MCP `csvx://operations` 同一份 `core::contract` |
 | GET | `/metrics` | 请求数、p50/p95、慢请求、状态码分布、按路由的 `count` `avgMs` `p50Ms` `p95Ms` `maxMs` `errors` `status`（该路由的状态码分布）、job 数、`engines`（各引擎执行次数）、`journalDamaged`（累计读不出的 journal 记录数）、`lastDamagedFile`（最近一次出问题的文件）|
 | GET | `/health` | 存活 + 就绪（`ready` = 根目录可读），带版本 |
 | GET | `/edit` | **只读**：journal 状态 |

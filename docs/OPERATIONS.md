@@ -54,7 +54,7 @@ MCP adapter ─┘        │
 }
 ```
 
-已登记 14 个操作：`schema/view/filter/search/quality/pivot/chart/edit_preview/edit_apply/convert/pipeline_run/pipeline_watch/job_status/cache_stats`。
+已登记 17 个操作：`schema/view/filter/search/quality/pivot/chart/edit_preview/edit_apply/convert/pipeline_run/pipeline_watch/job_status/cache_stats/gate/report/concat`。
 
 这还不是完整的命令清单；先覆盖前端与 AI 最常用的读/预览/应用/任务四类，后续按适配器迁移逐个补齐。
 

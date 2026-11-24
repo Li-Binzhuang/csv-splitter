@@ -156,6 +156,8 @@
   Neither is a CLI job command.
 - **Operations contract**: `csvx ops --json`, `GET /ops` and MCP `csvx://operations` publish
   the same 14 operations, four effects and 10 error codes; ADR in `docs/OPERATIONS.md`.
+- **Catalog growth**: `gate`, `report` and `concat` are now in the same shared
+  contract (17 operations), published by CLI `/ops` and MCP resource.
 - **Typed read operations**: `core::ops` owns schema/view/filter requests and responses;
   `schema`/`filter` CLI+HTTP and `view` CLI's simple path use typed requests.
 - **CSV report spec**: `report data.csv --spec report.csv` renders deterministic

@@ -171,6 +171,27 @@ pub const OPERATIONS: &[OperationSpec] = &[
         input: "none",
         output: "hits, misses, entries, bytes",
     },
+    OperationSpec {
+        name: "gate",
+        effect: Effect::Read,
+        summary: "Enforce row/empty/uniqueness thresholds and fail closed.",
+        input: "path or directory, minRows/maxEmpty/unique optional",
+        output: "passed, rows, empty, uniqueDuplicates, report optional",
+    },
+    OperationSpec {
+        name: "report",
+        effect: Effect::Read,
+        summary: "Render a deterministic CSV-spec Markdown or HTML report.",
+        input: "path, spec optional, format/title optional",
+        output: "markdown/html body",
+    },
+    OperationSpec {
+        name: "concat",
+        effect: Effect::Apply,
+        summary: "Concatenate same-shaped files or a directory's CSV files.",
+        input: "paths or directory, out, byName/engine optional",
+        output: "out, rows, columns",
+    },
 ];
 
 pub const ERROR_CODES: &[ErrorCode] = &[
