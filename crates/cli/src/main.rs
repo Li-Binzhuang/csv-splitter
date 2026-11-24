@@ -9014,6 +9014,23 @@ fn now_millis() -> u128 {
         .unwrap_or(0)
 }
 
+fn read_watch_round(path: &std::path::Path) -> usize {
+    let Ok(text) = std::fs::read_to_string(path) else {
+        return 0;
+    };
+    let Some(rest) = text.split(r#""round":"#).nth(1) else {
+        return 0;
+    };
+    let digits: String = rest.chars().take_while(char::is_ascii_digit).collect();
+    digits.parse::<usize>().unwrap_or(0)
+}
+
+fn read_watch_previous_failure(path: &std::path::Path) -> bool {
+    std::fs::read_to_string(path)
+        .map(|text| text.contains(r#""success":false"#))
+        .unwrap_or(false)
+}
+
 #[allow(clippy::too_many_arguments)]
 fn write_watch_state(
     path: &std::path::Path,
@@ -9070,7 +9087,12 @@ fn watch_pipeline(
     let mut failures = 0usize;
     let mut last_success_ms = 0u128;
     let mut last_failure_ms = 0u128;
-    let mut round = 0usize;
+    let mut round = state_path.map(read_watch_round).unwrap_or(0);
+    if let Some(path) = state_path {
+        if read_watch_previous_failure(path) {
+            eprintln!("watch: previous state ended in failure");
+        }
+    }
     loop {
         round += 1;
         match run_pipeline_plan(

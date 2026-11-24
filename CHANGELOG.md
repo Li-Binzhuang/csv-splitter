@@ -150,6 +150,9 @@
   `verify_dist.sh`, and deletes the tarball/sha if verification fails; PILOT_CONFIRMATION.md is a fill-in 4-week pilot agreement template.
 - **View cursor**: `view --json` (and the MCP `csvx_view` tool) now returns
   `start`, `nextStart` and `hasMore`; clients can page without guessing counts.
+- **Pipeline watch**: `csvx pipeline watch <plan>` reruns stale steps on an interval;
+  supports failure backoff, `--max-failures`, JSON rounds, and an atomic `--state` file
+  with last success/failure timestamps and round resume across restarts.
 - **MCP pipeline DAG options**: `csvx_pipeline_run` accepts dag/jobs/clean and forwards
   them to the CLI, so agents can run topological waves and bound concurrency.
 - **MCP structured results**: every tool response carries

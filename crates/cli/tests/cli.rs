@@ -7805,6 +7805,24 @@ fn pipeline_watch_runs_and_then_reports_fresh() {
     assert!(state.contains(r#""round":1"#), "{state}");
     assert!(state.contains(r#""success":true"#), "{state}");
     assert!(state.contains(r#""lastSuccessAtMs":"#), "{state}");
+    let resumed = Command::new(bin())
+        .args([
+            "pipeline",
+            "watch",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--iterations",
+            "1",
+            "--state",
+            dir.join("watch-state.json").to_str().unwrap(),
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(resumed.status.success());
+    let resumed_stdout = String::from_utf8_lossy(&resumed.stdout);
+    assert!(resumed_stdout.contains(r#""round":2"#), "{resumed_stdout}");
 }
 
 /// A permanently failing plan does not retry forever when a failure cap is set.
