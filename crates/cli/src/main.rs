@@ -4,6 +4,7 @@
 //! binary that can be piped into cron/Makefile/CI. Every subcommand here shares
 //! the exact same core pipeline as the GUI, so behaviour cannot drift.
 
+use csvx_core::aggregate::{AggOp, AggSpec};
 use csvx_core::csv_reader::{detect_delimiter, parse_csv_record, read_headers};
 use csvx_core::decompress::decompress_file;
 use csvx_core::encoding::{self, parse_name, TextEncoding};
@@ -5118,6 +5119,88 @@ fn truncate_for_display(text: &str, width: usize) -> String {
     format!("{kept}…")
 }
 
+type ReportGroupTable = (String, Vec<String>, Vec<Vec<String>>);
+
+fn report_group_table(
+    input: &Path,
+    delimiter: csvx_core::types::Delimiter,
+    key: &str,
+    measure: &str,
+    op: AggOp,
+    limit: usize,
+) -> Result<ReportGroupTable, String> {
+    let mut materialized = None;
+    let target = if csvx_core::sheet::has_edits(input) {
+        let (tx, rx) = mpsc::channel();
+        drop(rx);
+        let value =
+            csvx_core::sheet::materialize(input, &csvx_core::sheet::ReadOptions { delimiter }, &tx)
+                .map_err(|error| error.to_string())?;
+        let path = value.path().to_path_buf();
+        materialized = Some(value);
+        path
+    } else {
+        input.to_path_buf()
+    };
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_nanos())
+        .unwrap_or(0);
+    let out = std::env::temp_dir().join(format!(
+        "csvx-report-groups-{}-{stamp}.csv",
+        std::process::id()
+    ));
+    let agg = AggSpec {
+        column: measure.to_string(),
+        op,
+    };
+    let order_name = agg.output_name();
+    let options = csvx_core::groupby::GroupOptions {
+        keys: vec![key.to_string()],
+        aggregates: vec![agg],
+        order_by: Some(order_name),
+        descending: true,
+        max_groups: 100_000,
+    };
+    let (tx, rx) = mpsc::channel();
+    drop(rx);
+    let result = csvx_core::groupby::groupby_quotes(
+        &target,
+        delimiter,
+        &out,
+        &options,
+        csvx_core::csv_reader::QuoteStyle::Rfc4180,
+        &tx,
+    );
+    drop(tx);
+    if let Err(error) = result {
+        let _ = std::fs::remove_file(&out);
+        return Err(error.to_string());
+    }
+    let sheet =
+        match csvx_core::sheet::Sheet::open(&out, csvx_core::sheet::ReadOptions { delimiter }) {
+            Ok(sheet) => sheet,
+            Err(error) => {
+                let _ = std::fs::remove_file(&out);
+                return Err(error.to_string());
+            }
+        };
+    let columns = sheet.columns().map_err(|error| error.to_string())?;
+    let window = sheet
+        .window(0, limit.min(1_000) as u64)
+        .map_err(|error| error.to_string())?;
+    let rows = window.rows;
+    drop(sheet);
+    let _ = std::fs::remove_file(&out);
+    drop(materialized);
+    let label = if op == AggOp::Count {
+        key.to_string()
+    } else {
+        format!("{key} · {}({measure})", op.name())
+    };
+    Ok((label, columns, rows))
+}
+
 fn report_profiles(
     input: &Path,
     delimiter: csvx_core::types::Delimiter,
@@ -5471,59 +5554,113 @@ fn cmd_report(args: &[String]) -> i32 {
                 }
             }
             "groups" => {
-                let mut pieces = arg.splitn(2, ':');
-                let column = pieces.next().unwrap_or_default().trim();
-                let limit: usize = pieces
-                    .next()
-                    .and_then(|value| value.trim().parse().ok())
-                    .unwrap_or(10);
-                if !columns.iter().any(|name| name == column) {
-                    eprintln!("error: groups names unknown column {column:?}");
+                let pieces: Vec<&str> = arg.split(':').map(str::trim).collect();
+                let key = pieces.first().copied().unwrap_or_default();
+                let (measure, op, limit) = match pieces.as_slice() {
+                    [_key] => (
+                        columns.first().cloned().unwrap_or_default(),
+                        AggOp::Count,
+                        10usize,
+                    ),
+                    [key, second] => {
+                        if let Ok(limit) = second.parse::<usize>() {
+                            (
+                                columns.first().cloned().unwrap_or_default(),
+                                AggOp::Count,
+                                limit,
+                            )
+                        } else {
+                            let _ = key;
+                            eprintln!(
+                                "error: groups needs <key>[:limit] or <key>:<measure>:<op>[:limit]"
+                            );
+                            return 2;
+                        }
+                    }
+                    [key, measure, op] => {
+                        let _ = key;
+                        let op = match AggOp::parse(op) {
+                            Ok(op) => op,
+                            Err(e) => {
+                                eprintln!("error: {e}");
+                                return 2;
+                            }
+                        };
+                        ((*measure).to_string(), op, 10)
+                    }
+                    [key, measure, op, fourth] => {
+                        let _ = key;
+                        let op = match AggOp::parse(op) {
+                            Ok(op) => op,
+                            Err(e) => {
+                                eprintln!("error: {e}");
+                                return 2;
+                            }
+                        };
+                        let limit = match fourth.parse::<usize>() {
+                            Ok(limit) if limit > 0 => limit,
+                            _ => {
+                                eprintln!("error: groups limit must be a positive integer");
+                                return 2;
+                            }
+                        };
+                        ((*measure).to_string(), op, limit)
+                    }
+                    _ => {
+                        eprintln!(
+                            "error: groups needs <key>[:limit] or <key>:<measure>:<op>[:limit]"
+                        );
+                        return 2;
+                    }
+                };
+                if !columns.iter().any(|name| name == key) {
+                    eprintln!("error: groups names unknown key column {key:?}");
                     return 2;
                 }
-                let profiles = match report_profiles(&input, delimiter) {
-                    Ok(profiles) => profiles,
-                    Err(e) => return report_failure("report", e),
-                };
-                let Some(profile) = profiles.iter().find(|profile| profile.name == column) else {
+                if !columns.iter().any(|name| name == &measure) {
+                    eprintln!("error: groups names unknown measure column {measure:?}");
                     return 2;
-                };
-                let total = profile.empty + profile.non_empty;
-                let top: Vec<&(String, u64)> = profile.top.iter().take(limit).collect();
+                }
+                let (label, header, rows) =
+                    match report_group_table(&input, delimiter, key, &measure, op, limit) {
+                        Ok(value) => value,
+                        Err(e) => return report_failure("report", e),
+                    };
                 if format == "md" {
-                    body.push_str(&format!("## Groups: {column}\n\n"));
-                    body.push_str("| value | rows | share |\n|---|---|---|\n");
-                    for (value, count) in &top {
-                        let share = if total == 0 {
-                            0.0
-                        } else {
-                            *count as f64 / total as f64 * 100.0
-                        };
-                        body.push_str(&format!(
-                            "| {} | {} | {:.1}% |\n",
-                            md_cell(value),
-                            count,
-                            share
-                        ));
+                    body.push_str(&format!("## Groups: {label}\n\n"));
+                    body.push('|');
+                    for column in &header {
+                        body.push_str(&format!(" {} |", md_cell(column)));
+                    }
+                    body.push('\n');
+                    body.push('|');
+                    for _ in &header {
+                        body.push_str(" --- |");
+                    }
+                    body.push('\n');
+                    for row in &rows {
+                        body.push('|');
+                        for cell in row {
+                            body.push_str(&format!(" {} |", md_cell(cell)));
+                        }
+                        body.push('\n');
                     }
                     body.push('\n');
                 } else {
                     body.push_str(&format!(
-                        "<h2>Groups: {}</h2><table><tr><th>value</th><th>rows</th><th>share</th></tr>\n",
-                        html_escape(column)
+                        "<h2>Groups: {}</h2><table><tr>",
+                        html_escape(&label)
                     ));
-                    for (value, count) in &top {
-                        let share = if total == 0 {
-                            0.0
-                        } else {
-                            *count as f64 / total as f64 * 100.0
-                        };
-                        body.push_str(&format!(
-                            "<tr><td>{}</td><td>{}</td><td>{:.1}%</td></tr>\n",
-                            html_escape(value),
-                            count,
-                            share
-                        ));
+                    for column in &header {
+                        body.push_str(&format!("<th>{}</th>", html_escape(column)));
+                    }
+                    body.push_str("</tr>\n");
+                    for row in &rows {
+                        body.push_str("<tr>");
+                        for cell in row {
+                            body.push_str(&format!("<td>{}</td>", html_escape(cell)));
+                        }
+                        body.push_str("</tr>\n");
                     }
                     body.push_str("</table>\n");
                 }

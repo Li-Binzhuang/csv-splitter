@@ -160,7 +160,7 @@
   `schema`/`filter` CLI+HTTP and `view` CLI's simple path use typed requests.
 - **CSV report spec**: `report data.csv --spec report.csv` renders deterministic
   Markdown/HTML from summary/columns/quality/groups/rows sections, escaping cells;
-  quality/groups profile the edited sheet.
+  groups is real groupby (count or sum/mean/min/max on a measure).
 - **Directory gate**: `gate <dir>` applies the same thresholds to each `.csv`
   independently and returns one aggregate report; any failing file exits 1.
 - **Directory concat**: `concat <dir>` reads every `.csv` in name order and defaults

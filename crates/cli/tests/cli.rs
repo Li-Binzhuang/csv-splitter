@@ -7717,7 +7717,8 @@ fn report_renders_a_csv_spec() {
     assert!(text.contains("## Quality"), "{text}");
     assert!(text.contains("unique and non-empty"), "{text}");
     assert!(text.contains("## Groups: city"), "{text}");
-    assert!(text.contains("| CDMX | 1 | 50.0% |"), "{text}");
+    assert!(text.contains("| city | count_id |"), "{text}");
+    assert!(text.contains("| CDMX | 1 |"), "{text}");
 
     let html = Command::new(bin())
         .args([
