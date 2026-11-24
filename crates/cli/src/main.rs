@@ -5620,17 +5620,19 @@ fn cmd_report(args: &[String]) -> i32 {
     };
     if !format_explicit {
         if let Some(path) = &out {
-            if path
+            let extension = path
                 .extension()
                 .and_then(|extension| extension.to_str())
-                .is_some_and(|extension| extension.eq_ignore_ascii_case("html"))
-            {
+                .unwrap_or("");
+            if extension.eq_ignore_ascii_case("html") {
                 format = "html".to_string();
+            } else if extension.eq_ignore_ascii_case("xlsx") {
+                format = "xlsx".to_string();
             }
         }
     }
-    if !matches!(format.as_str(), "md" | "html") {
-        eprintln!("error: --format must be md or html");
+    if !matches!(format.as_str(), "md" | "html" | "xlsx") {
+        eprintln!("error: --format must be md, html or xlsx");
         return 2;
     }
     let delimiter = match parse_delimiter(&delim, &input) {
@@ -5719,6 +5721,86 @@ fn cmd_report(args: &[String]) -> i32 {
         Ok(schema) => schema,
         Err(e) => return report_failure("report", e.to_string()),
     };
+    if format == "xlsx" {
+        let Some(out) = out.as_ref() else {
+            eprintln!("error: report --format xlsx needs -o/--out");
+            return 2;
+        };
+        if sections
+            .iter()
+            .any(|(kind, _)| !matches!(kind.as_str(), "summary" | "columns" | "rows"))
+        {
+            eprintln!("error: xlsx report supports summary, columns and rows sections");
+            return 2;
+        }
+        let mut sheets = Vec::new();
+        for (kind, arg) in &sections {
+            match kind.as_str() {
+                "summary" => sheets.push(csvx_core::xlsx::Sheet {
+                    name: "Summary".to_string(),
+                    headers: vec!["metric".to_string(), "value".to_string()],
+                    rows: vec![
+                        vec!["title".to_string(), title.clone()],
+                        vec!["source".to_string(), input.display().to_string()],
+                        vec!["rows".to_string(), rows.to_string()],
+                        vec!["columns".to_string(), columns.len().to_string()],
+                    ],
+                }),
+                "columns" => sheets.push(csvx_core::xlsx::Sheet {
+                    name: "Columns".to_string(),
+                    headers: vec![
+                        "#".to_string(),
+                        "name".to_string(),
+                        "kind".to_string(),
+                        "empty".to_string(),
+                        "sampled".to_string(),
+                        "distinct".to_string(),
+                    ],
+                    rows: schema
+                        .iter()
+                        .map(|column| {
+                            vec![
+                                column.index.to_string(),
+                                column.name.clone(),
+                                column.kind.as_str().to_string(),
+                                column.empty.to_string(),
+                                column.sampled.to_string(),
+                                column.distinct.to_string(),
+                            ]
+                        })
+                        .collect(),
+                }),
+                "rows" => {
+                    let limit: u64 = arg.parse().unwrap_or(20);
+                    let window = match sheet.window(0, limit.min(1_000)) {
+                        Ok(window) => window,
+                        Err(e) => return report_failure("report", e.to_string()),
+                    };
+                    sheets.push(csvx_core::xlsx::Sheet {
+                        name: "Rows".to_string(),
+                        headers: window.columns.clone(),
+                        rows: window.rows,
+                    });
+                }
+                _ => unreachable!(),
+            }
+        }
+        return match csvx_core::xlsx::write_sheets(out, &sheets) {
+            Ok(()) => {
+                if json {
+                    println!(
+                        r#"{{"ok":true,"out":"{}","sheets":{}}}"#,
+                        serve::json_str(&out.display().to_string()),
+                        sheets.len()
+                    );
+                } else {
+                    println!("✓ {} sheet(s) → {}", sheets.len(), out.display());
+                }
+                0
+            }
+            Err(e) => report_failure("report", e.to_string()),
+        };
+    }
     let mut body = String::new();
     if format == "md" {
         body.push_str(&format!("# {title}\n\n"));

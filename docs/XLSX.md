@@ -72,6 +72,13 @@ MCP：
 - 日期型单元格识别；
 - 公式写入（只写值，不写公式）。
 
+## 报表 xlsx
+
+`csvx report data.csv --spec spec.csv --format xlsx -o report.xlsx` 支持
+`summary`、`columns`、`rows` 三类 section，各写一张 sheet；`quality`、`groups`、
+`chart`、`compare` 仍走 Markdown/HTML。`--out` 必须以 `.xlsx` 结尾（或用
+`--format xlsx` 显式指定）。
+
 ## 边界
 
 - 不做宏/VBA；

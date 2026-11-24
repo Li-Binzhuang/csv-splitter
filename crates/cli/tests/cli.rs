@@ -2550,6 +2550,46 @@ fn convert_formats_round_trip_to_the_same_csv() {
     assert!(sheet.contains("café"), "{sheet}");
 }
 
+/// A report spec rendered as xlsx gets one sheet per supported section.
+#[test]
+fn report_format_xlsx_writes_summary_columns_and_rows_sheets() {
+    let dir = TempDir::new("reportxlsx");
+    std::fs::write(dir.join("t.csv"), "id,city,amount\n1,A,10\n2,B,20\n").unwrap();
+    std::fs::write(
+        dir.join("spec.csv"),
+        "title,Demo\nsummary\ncolumns\nrows,10\n",
+    )
+    .unwrap();
+    let out = dir.join("report.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "report",
+            dir.join("t.csv").to_str().unwrap(),
+            "--spec",
+            dir.join("spec.csv").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    assert!(out.exists());
+    let file = std::fs::File::open(&out).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    let mut workbook = String::new();
+    use std::io::Read as _;
+    archive
+        .by_name("xl/workbook.xml")
+        .unwrap()
+        .read_to_string(&mut workbook)
+        .unwrap();
+    for sheet in ["Summary", "Columns", "Rows"] {
+        assert!(workbook.contains(sheet), "{workbook}");
+    }
+}
+
 /// A directory of CSVs becomes one workbook with one sheet per file.
 #[test]
 fn convert_directory_to_xlsx_makes_multiple_sheets() {
