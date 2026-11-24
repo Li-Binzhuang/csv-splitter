@@ -7780,4 +7780,21 @@ fn pipeline_watch_runs_and_then_reports_fresh() {
     assert!(second.status.success());
     let stdout = String::from_utf8_lossy(&second.stdout);
     assert!(stdout.contains("ran 0/1 step(s)"), "{stdout}");
+    let json = Command::new(bin())
+        .args([
+            "pipeline",
+            "watch",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--iterations",
+            "1",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(json.status.success());
+    let json_stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(json_stdout.contains(r#""watch":true"#), "{json_stdout}");
+    assert!(json_stdout.contains(r#""fresh":true"#), "{json_stdout}");
 }

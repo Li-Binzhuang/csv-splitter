@@ -147,7 +147,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--retries", "Retry a failed step N times (default 0)"),
             ("--retry-delay", "Milliseconds between retries (default 250)"),
             ("--step-timeout", "Kill a step after N milliseconds (0 = none)"),
-            ("--json", "Emit JSON (run and status)"),
+            ("--json", "Emit JSON (run, status and watch)"),
             ("--interval-ms", "Watch: milliseconds between runs (default 5000)"),
             ("--iterations", "Watch: run N rounds then exit (0 = forever)"),
             ("--verbose", "Watch: print even when every step is fresh"),
@@ -9019,6 +9019,7 @@ fn watch_pipeline(
     unlock: bool,
     progress_markers: bool,
     content_check: bool,
+    json: bool,
     interval_ms: u64,
     iterations: usize,
     verbose: bool,
@@ -9044,12 +9045,34 @@ fn watch_pipeline(
         ) {
             Ok((results, _)) => {
                 let ran = results.iter().filter(|(_, fresh, _, _)| !*fresh).count();
-                if ran > 0 || verbose {
-                    println!("watch: round {round} ran {ran}/{} step(s)", results.len());
-                }
-                for (name, fresh, _, detail) in &results {
-                    if !*fresh {
-                        println!("→ {name} ({detail})");
+                if json {
+                    let steps = results
+                        .iter()
+                        .map(|(name, fresh, _, detail)| {
+                            format!(
+                                r#"{{"step":{},"fresh":{},"detail":{}}}"#,
+                                json_quote(name),
+                                fresh,
+                                json_quote(detail)
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join(",");
+                    println!(
+                        r#"{{"watch":true,"round":{},"ran":{},"total":{},"steps":[{}]}}"#,
+                        round,
+                        ran,
+                        results.len(),
+                        steps
+                    );
+                } else {
+                    if ran > 0 || verbose {
+                        println!("watch: round {round} ran {ran}/{} step(s)", results.len());
+                    }
+                    for (name, fresh, _, detail) in &results {
+                        if !*fresh {
+                            println!("→ {name} ({detail})");
+                        }
                     }
                 }
             }
@@ -9713,6 +9736,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             unlock,
             progress_markers,
             content_check,
+            json,
             watch_interval_ms,
             watch_iterations,
             verbose,

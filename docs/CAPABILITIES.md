@@ -249,7 +249,7 @@ warm schema 0.03 s，`view start=45,000,000` 0.02 s，`filter` 0.77 s，`search`
 ### Pipeline（A 工作台，进行中）
 
 `pipeline run plan.csv --root .` 按 CSV 清单顺序执行步骤；`pipeline watch plan.csv
---interval-ms 5000` 持续轮询并按新鲜度自动重跑（`--iterations` 可限定轮数，便于测试）。
+--interval-ms 5000` 持续轮询并按新鲜度自动重跑（`--iterations` 限轮数，`--json` 逐轮输出）。
 复用现有命令：
 
 ```text
