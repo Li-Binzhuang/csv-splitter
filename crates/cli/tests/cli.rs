@@ -2889,6 +2889,10 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
     assert!(stdout.contains("outside --root"), "{stdout}");
     assert!(stdout.contains(r#""files\":2"#), "{stdout}");
     assert!(stdout.contains("uniqueGlobal"), "{stdout}");
+    assert!(
+        stdout.contains("unique column has duplicates across files"),
+        "{stdout}"
+    );
     assert!(stdout.contains(r#""isError":false"#), "{stdout}");
     assert!(stdout.contains("Puebla"), "{stdout}");
     assert!(stdout.contains("20"), "{stdout}");
