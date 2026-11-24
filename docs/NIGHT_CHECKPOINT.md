@@ -12,7 +12,7 @@
 - **压缩输出**：filter 支持 gzip/zstd/bz2/xz；实测 56 MB → 7.3 MB gzip。
 - **质量门禁**：gate 单文件/目录，CLI/HTTP/MCP 三端；失败 JSON 带 `failures`，HTTP 保持 200 + `passed:false`，MCP 转 `isError`；目录按文件独立套阈值；`--unique-global` / HTTP `uniqueGlobal` 可额外要求跨文件唯一。
 - **多文件/目录**：concat CLI/HTTP/MCP，均支持目录；HTTP 目录按文件名排序并排除输出。
-- **报表 spec**：CLI/HTTP/MCP；sections `summary/columns/quality/groups/chart SVG/compare/rows`；内联 `specText`；HTTP/MCP 下 `compare` 目标受 root 守卫。
+- **报表 spec**：CLI/HTTP/MCP；sections `summary/columns/quality/groups/chart（count/sum）SVG/compare/rows`；内联 `specText`；HTTP/MCP 下 `compare` 目标受 root 守卫。
 - **安全**：report compare 的第二文件路径不能越 root；MCP concat 的 paths/dir/out 也受限。
 - **发布验收**：`scripts/smoke_http.py` 用发布包自动验证 /ops、/report chart+compare、gate 文件/global、concat 目录；本次 errors=[]。
 
@@ -21,8 +21,8 @@
 - MCP 工具 **23**（23 annotations；demo 验证 23/23）。
 - AOCI **123** entries，治理 aligned。
 - 包：`dist/csvx-4.2.0-darwin-arm64.tar.gz`
-  - SHA256 `928295ff6175b0a0be7bcad93a2bdc235093367d45811740dd16cf7699dbde33`
-- 最新代码：`742c14d`（已 push）；夜间轮次继续在本地累积，下一轮 push。
+  - SHA256 `81e55eeda7383aaf9bc5a166242dd93162b3f46edb71db71bd986dc4fc0aaae8`
+- 最新代码：`c985f5f`（已 push）；夜间轮次继续在本地累积，下一轮 push。
 
 ### 待白天决策
 
