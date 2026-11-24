@@ -7756,6 +7756,7 @@ fn gate_directory_can_require_global_uniqueness() {
     let text = String::from_utf8_lossy(&local.stdout);
     assert!(text.contains(r#""passed":true"#), "{text}");
 
+    let report = dir.join("global.json");
     let global = Command::new(bin())
         .args([
             "gate",
@@ -7764,6 +7765,8 @@ fn gate_directory_can_require_global_uniqueness() {
             "id",
             "--unique-global",
             "--json",
+            "--out",
+            report.to_str().unwrap(),
         ])
         .output()
         .unwrap();
@@ -7774,6 +7777,11 @@ fn gate_directory_can_require_global_uniqueness() {
     assert!(
         text.contains("unique column has duplicates across files"),
         "{text}"
+    );
+    let saved = std::fs::read_to_string(&report).unwrap();
+    assert!(
+        saved.contains(r#""uniqueGlobal":{"passed":false"#),
+        "{saved}"
     );
 }
 
