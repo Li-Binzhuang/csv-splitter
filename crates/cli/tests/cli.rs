@@ -7791,6 +7791,8 @@ fn pipeline_watch_runs_and_then_reports_fresh() {
             "1",
             "--backoff-max-ms",
             "10",
+            "--state",
+            dir.join("watch-state.json").to_str().unwrap(),
             "--json",
         ])
         .output()
@@ -7799,6 +7801,9 @@ fn pipeline_watch_runs_and_then_reports_fresh() {
     let json_stdout = String::from_utf8_lossy(&json.stdout);
     assert!(json_stdout.contains(r#""watch":true"#), "{json_stdout}");
     assert!(json_stdout.contains(r#""fresh":true"#), "{json_stdout}");
+    let state = std::fs::read_to_string(dir.join("watch-state.json")).unwrap();
+    assert!(state.contains(r#""round":1"#), "{state}");
+    assert!(state.contains(r#""success":true"#), "{state}");
 }
 
 /// A permanently failing plan does not retry forever when a failure cap is set.

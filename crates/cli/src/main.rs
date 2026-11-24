@@ -151,6 +151,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--interval-ms", "Watch: milliseconds between runs (default 5000)"),
             ("--backoff-max-ms", "Watch: cap for failure backoff (default 60000)"),
             ("--max-failures", "Watch: stop after N consecutive failures (0 = never)"),
+            ("--state", "Watch: write round/success state JSON to this file"),
             ("--iterations", "Watch: run N rounds then exit (0 = forever)"),
             ("--verbose", "Watch: print even when every step is fresh"),
             ("--root", "Directory for relative inputs/outputs"),
@@ -9006,6 +9007,27 @@ fn normalize_plan_path(path: &std::path::Path) -> std::path::PathBuf {
         .unwrap_or_else(|_| normalize_lexical_path(path))
 }
 
+fn write_watch_state(
+    path: &std::path::Path,
+    round: usize,
+    ran: usize,
+    total: usize,
+    success: bool,
+    failures: usize,
+) -> std::io::Result<()> {
+    let updated = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_millis())
+        .unwrap_or(0);
+    let body = format!(
+        r#"{{"round":{},"ran":{},"total":{},"success":{},"consecutiveFailures":{},"updatedAtMs":{}}}"#,
+        round, ran, total, success, failures, updated
+    );
+    let temp = path.with_extension(format!("tmp-{}", std::process::id()));
+    std::fs::write(&temp, body)?;
+    std::fs::rename(temp, path)
+}
+
 #[allow(clippy::too_many_arguments)]
 fn watch_pipeline(
     plan: &std::path::Path,
@@ -9026,6 +9048,7 @@ fn watch_pipeline(
     backoff_max_ms: u64,
     iterations: usize,
     max_failures: usize,
+    state_path: Option<&std::path::Path>,
     verbose: bool,
 ) -> std::io::Result<()> {
     let interval_ms = interval_ms.max(10);
@@ -9084,10 +9107,22 @@ fn watch_pipeline(
                 }
                 delay_ms = interval_ms;
                 failures = 0;
+                if let Some(path) = state_path {
+                    if let Err(error) = write_watch_state(path, round, ran, results.len(), true, 0)
+                    {
+                        eprintln!("watch: state write failed: {error}");
+                    }
+                }
             }
             Err(error) => {
                 eprintln!("watch: {error}");
                 failures += 1;
+                if let Some(path) = state_path {
+                    if let Err(write_error) = write_watch_state(path, round, 0, 0, false, failures)
+                    {
+                        eprintln!("watch: state write failed: {write_error}");
+                    }
+                }
                 if iterations > 0 {
                     return Err(error);
                 }
@@ -9624,6 +9659,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
     let mut watch_backoff_max_ms = 60_000u64;
     let mut watch_iterations = 0usize;
     let mut watch_max_failures = 0usize;
+    let mut watch_state: Option<std::path::PathBuf> = None;
     let mut verbose = false;
     while let Some(arg) = p.next() {
         match arg.as_str() {
@@ -9731,6 +9767,13 @@ fn cmd_pipeline(args: &[String]) -> i32 {
                     return 2;
                 }
             },
+            "--state" => match p.value("--state") {
+                Ok(value) => watch_state = Some(std::path::PathBuf::from(value)),
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 2;
+                }
+            },
             "--verbose" => verbose = true,
             "-h" | "--help" => {
                 print_command_help("pipeline");
@@ -9780,6 +9823,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
             watch_backoff_max_ms,
             watch_iterations,
             watch_max_failures,
+            watch_state.as_deref(),
             verbose,
         ) {
             Ok(()) => 0,
