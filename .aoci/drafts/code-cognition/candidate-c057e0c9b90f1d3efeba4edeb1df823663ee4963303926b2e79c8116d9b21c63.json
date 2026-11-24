@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "3f6439a76694c9ba520d655bf9450fc155a3dfe58643189e963b89979987e4df",
+  "batch_id": "c057e0c9b90f1d3efeba4edeb1df823663ee4963303926b2e79c8116d9b21c63",
+  "composite_identity": "b042a45277fecd87174d76590bbe70f36ec82e2999d86284116b53bde6e0f33d",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "19cc41e4558b709679d1436f339641c17d66bbc66c6adb985cffd30603230d75",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "42f8ad50b94a5334f12b1a2caac97adcae659549416b6a0d7e1b6756de7715f7",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:夜间静默工作的交接摘要：完成/未完成/数字/待决策，供用户次日 10:00 查看 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-24 记录 17 操作、23 工具、typed view/apply、压缩/gate 三端含 unique-global、concat 三端、report spec/chart(count/sum)/compare/root、smoke_http viewer 7/7、AOCI 123 与包 SHA 300d；待决策 xlsx/数据库/薄前端范围 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "3015cfe8fdf60472c3d2bb6b37649173ed07bc4084b60c43f52663c8b0d8882c",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "42f8ad50b94a5334f12b1a2caac97adcae659549416b6a0d7e1b6756de7715f7",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:夜间静默工作的交接摘要：完成/未完成/数字/待决策，供用户次日 10:00 查看 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-24 记录 17 操作、23 工具、typed view/apply、压缩/gate 三端含 unique-global、concat 三端、report spec/chart(count/sum)/compare/root、smoke_http viewer 7/7、AOCI 123 与包 SHA 300d；待决策 xlsx/数据库/薄前端范围 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    }
+  ]
+}
