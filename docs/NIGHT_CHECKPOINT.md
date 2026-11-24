@@ -10,7 +10,7 @@
 - **Stage 2.5 typed**：schema/filter 的 CLI+HTTP typed 路径；view 的 core `ViewRequest` + HTTP `/rows` 简单无编辑窗口。
 - **Stage 3 preview/apply**：CLI/HTTP/MCP 三端 preview；CLI/HTTP 共用 `EditApplyRequest`，MCP `csvx_edit_apply` 走同一 CLI 路径。
 - **压缩输出**：filter 支持 gzip/zstd/bz2/xz；实测 56 MB → 7.3 MB gzip。
-- **质量门禁**：gate 单文件/目录，CLI/HTTP/MCP 三端；失败 JSON 带 `failures`，HTTP 保持 200 + `passed:false`，MCP 转 `isError`。
+- **质量门禁**：gate 单文件/目录，CLI/HTTP/MCP 三端；失败 JSON 带 `failures`，HTTP 保持 200 + `passed:false`，MCP 转 `isError`；目录按文件独立套阈值（`unique` 不是跨文件全局唯一）。
 - **多文件/目录**：concat CLI/HTTP/MCP，均支持目录；HTTP 目录按文件名排序并排除输出。
 - **报表 spec**：CLI/HTTP/MCP；sections `summary/columns/quality/groups/chart SVG/compare/rows`；内联 `specText`；HTTP/MCP 下 `compare` 目标受 root 守卫。
 - **安全**：report compare 的第二文件路径不能越 root；MCP concat 的 paths/dir/out 也受限。
@@ -20,8 +20,8 @@
 - MCP 工具 **23**（23 annotations；demo 验证 23/23）。
 - AOCI **122** entries，治理 aligned。
 - 包：`dist/csvx-4.2.0-darwin-arm64.tar.gz`
-  - SHA256 `247fd97d0a830d29faeb4f4a65314d1fa0932c8b7ec65c73623b4ed1459abb60`
-- 最新代码：`c8487ca`（已 push）；夜间轮次继续在本地累积，下一轮 push。
+  - SHA256 `c9798d55068ff683379c0a8f8d042255111251bdbb772f519f9642cd53fb85c5`
+- 最新代码：`fe5cd3b`（已 push）；夜间轮次继续在本地累积，下一轮 push。
 
 ### 待白天决策
 
