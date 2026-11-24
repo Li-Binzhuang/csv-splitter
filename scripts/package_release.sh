@@ -14,7 +14,7 @@ rm -rf "$STAGE"
 mkdir -p "$STAGE/docs"
 cp "$BIN" "$STAGE/csvx"
 cp README.md CHANGELOG.md LICENSE "$STAGE/"
-for doc in CAPABILITIES HANDOVER BENCHMARKS BUSINESS DEMO PILOT PILOT_SAMPLE PILOT_CONFIRMATION SALES OUTREACH RELEASE_CHECKLIST ROADMAP PILOT_INTAKE; do
+for doc in ACCEPTANCE CAPABILITIES HANDOVER BENCHMARKS BUSINESS DEMO PILOT PILOT_SAMPLE PILOT_CONFIRMATION SALES OUTREACH RELEASE_CHECKLIST ROADMAP PILOT_INTAKE; do
   [[ -f "docs/$doc.md" ]] && cp "docs/$doc.md" "$STAGE/docs/"
 done
 cp scripts/demo_end_to_end.sh scripts/mcp_client.py scripts/pilot_report.py scripts/bench_mcp_cache.py scripts/smoke_http.py "$STAGE/"
