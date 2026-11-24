@@ -7860,6 +7860,28 @@ fn pipeline_watch_stops_after_the_failure_cap() {
     let state = std::fs::read_to_string(dir.join("failure-state.json")).unwrap();
     assert!(state.contains(r#""lastError":"#), "{state}");
     assert!(state.contains("bogus"), "{state}");
+    let restarted = Command::new(bin())
+        .args([
+            "pipeline",
+            "watch",
+            dir.join("plan.csv").to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+            "--interval-ms",
+            "10",
+            "--max-failures",
+            "1",
+            "--state",
+            dir.join("failure-state.json").to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(!restarted.status.success());
+    let restarted_stderr = String::from_utf8_lossy(&restarted.stderr);
+    assert!(
+        restarted_stderr.contains("previous state already reached the failure cap"),
+        "{restarted_stderr}"
+    );
 }
 
 /// Server-only tools cannot be submitted to the CLI job runner.

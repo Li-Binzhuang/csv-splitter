@@ -9025,6 +9025,17 @@ fn read_watch_round(path: &std::path::Path) -> usize {
     digits.parse::<usize>().unwrap_or(0)
 }
 
+fn read_watch_failures(path: &std::path::Path) -> usize {
+    let Ok(text) = std::fs::read_to_string(path) else {
+        return 0;
+    };
+    let Some(rest) = text.split(r#""consecutiveFailures":"#).nth(1) else {
+        return 0;
+    };
+    let digits: String = rest.chars().take_while(char::is_ascii_digit).collect();
+    digits.parse::<usize>().unwrap_or(0)
+}
+
 fn read_watch_previous_failure(path: &std::path::Path) -> bool {
     std::fs::read_to_string(path)
         .map(|text| text.contains(r#""success":false"#))
@@ -9102,12 +9113,20 @@ fn watch_pipeline(
     let interval_ms = interval_ms.max(10);
     let backoff_max_ms = backoff_max_ms.max(interval_ms);
     let mut delay_ms = interval_ms;
-    let mut failures = 0usize;
+    let mut failures = state_path.map(read_watch_failures).unwrap_or(0);
     let mut last_success_ms = 0u128;
     let mut last_failure_ms = 0u128;
     let mut round = state_path.map(read_watch_round).unwrap_or(0);
     if let Some(path) = state_path {
-        if read_watch_previous_failure(path) {
+        if failures > 0 {
+            eprintln!("watch: previous state has {failures} consecutive failure(s)");
+            if max_failures > 0 && failures >= max_failures {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!("watch: previous state already reached the failure cap ({failures}); remove {} to restart", path.display()),
+                ));
+            }
+        } else if read_watch_previous_failure(path) {
             eprintln!("watch: previous state ended in failure");
         }
     }
