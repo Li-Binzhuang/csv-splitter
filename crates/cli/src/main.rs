@@ -9063,6 +9063,13 @@ fn read_watch_last_error(path: &std::path::Path) -> Option<String> {
     (!out.is_empty()).then_some(out)
 }
 
+fn read_watch_next_delay(path: &std::path::Path) -> Option<u64> {
+    let text = std::fs::read_to_string(path).ok()?;
+    let rest = text.split(r#""nextDelayMs":"#).nth(1)?;
+    let digits: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
+    digits.parse().ok()
+}
+
 fn read_watch_previous_failure(path: &std::path::Path) -> bool {
     std::fs::read_to_string(path)
         .map(|text| text.contains(r#""success":false"#))
@@ -9157,6 +9164,9 @@ fn watch_pipeline(
                     std::io::ErrorKind::InvalidInput,
                     format!("watch: previous state already reached the failure cap ({failures}); remove {} to restart", path.display()),
                 ));
+            }
+            if let Some(saved) = read_watch_next_delay(path) {
+                delay_ms = saved.clamp(interval_ms, backoff_max_ms);
             }
         } else if read_watch_previous_failure(path) {
             eprintln!("watch: previous state ended in failure");
