@@ -6112,6 +6112,28 @@ fn report_endpoint_renders_markdown_and_html() {
     assert_eq!(code, 400);
 }
 
+/// A failed gate is a successful HTTP answer with `passed:false`; the JSON is
+/// the product, so 200 must not be confused with a passing gate.
+#[test]
+fn gate_endpoint_reports_200_even_when_the_gate_fails() {
+    let dir = TempDir::new("gate_http");
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n2,B\n3,C\n").unwrap();
+    let server = start(&dir.0.clone());
+
+    let (code, body) = get(&server.addr, "/gate?path=t.csv&minRows=2&unique=id");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""passed":true"#), "{body}");
+    assert!(body.contains(r#""uniqueValues":3"#), "{body}");
+
+    let (code, body) = get(&server.addr, "/gate?path=t.csv&minRows=99");
+    assert_eq!(code, 200, "{body}");
+    assert!(body.contains(r#""passed":false"#), "{body}");
+    assert!(body.contains("minimum 99"), "{body}");
+
+    let (code, body) = get(&server.addr, "/gate?path=t.csv&minRows=oops");
+    assert_eq!(code, 400, "{body}");
+}
+
 /// The HTTP undo honours the same transaction boundary as the CLI.
 #[test]
 fn a_transaction_is_undone_in_one_step_over_http() {

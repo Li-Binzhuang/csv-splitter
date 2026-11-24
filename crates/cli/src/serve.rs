@@ -487,6 +487,7 @@ fn handle(
         "/spec" => spec_endpoint(&mut stream),
         "/ops" => respond_json(&mut stream, 200, &csvx_core::contract::operations_json()),
         "/report" => report_endpoint(&mut stream, root, &params),
+        "/gate" => gate_endpoint(&mut stream, root, &params),
         "/schema" => {
             if params.contains_key("diff") {
                 schema_diff_endpoint(&mut stream, root, &params)
@@ -583,6 +584,7 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
     ),
     ("/download", &["path", "delim"]),
     ("/report", &["path", "spec", "specText", "format", "title"]),
+    ("/gate", &["path", "minRows", "maxEmpty", "unique"]),
     ("/analyze", &["path", "distinctCap", "apply-edits", "delim"]),
     ("/", &[]),
     ("/validate", &["path", "checks", "delim", "limit"]),
@@ -766,6 +768,17 @@ const SPEC_PARAMS: &[(&str, &[&str])] = &[
 const SPEC_FIELDS: &[(&str, &[&str])] = &[
     ("/report", &[]),
     (
+        "/gate",
+        &[
+            "passed",
+            "rows",
+            "empty",
+            "uniqueValues",
+            "uniqueDuplicates",
+            "failures",
+        ],
+    ),
+    (
         "/rows",
         &[
             "start",
@@ -882,6 +895,8 @@ const READ_ROUTES: &[&str] = &[
     "/download",
     "/export",
     "/query",
+    "/report",
+    "/gate",
     "/job",
     "/jobs",
 ];
@@ -909,6 +924,7 @@ const PATH_REQUIRED: &[&str] = &[
     "/export",
     "/query",
     "/report",
+    "/gate",
 ];
 
 /// Every POST route, same rule.
@@ -4748,6 +4764,88 @@ fn respond_window_as_csv(
         "text/csv; charset=utf-8",
         "inline",
         body.as_bytes(),
+    )
+}
+
+/// `GET /gate?path=data.csv&minRows=10&unique=id` runs the same quality gate as
+/// the CLI and returns its JSON report; a failed gate is 200 with `passed:false`
+/// because the answer is the report, not the HTTP status.
+fn gate_endpoint(
+    stream: &mut TcpStream,
+    root: &Path,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let (path, _rel) = match resolve_reason(root, params) {
+        Ok(v) => v,
+        Err(reason) => return bad_path_reason(stream, reason),
+    };
+    let binary = match std::env::current_exe() {
+        Ok(path) => path,
+        Err(error) => {
+            return respond_json(
+                stream,
+                500,
+                &format!(r#"{{"error":{}}}"#, json_str(&error.to_string())),
+            )
+        }
+    };
+    let mut command = std::process::Command::new(binary);
+    command.args(["gate", path.to_str().unwrap_or(""), "--json"]);
+    for (param, flag) in [("minRows", "--min-rows"), ("maxEmpty", "--max-empty")] {
+        if let Some(raw) = params.get(param).filter(|value| !value.trim().is_empty()) {
+            let value = match raw.trim().parse::<u64>() {
+                Ok(value) => value,
+                Err(_) => {
+                    return bad_request(
+                        stream,
+                        &format!("{param} must be a non-negative integer"),
+                        param,
+                        &format!("{param}=0"),
+                    )
+                }
+            };
+            command.args([flag, &value.to_string()]);
+        }
+    }
+    if let Some(name) = params
+        .get("unique")
+        .filter(|value| !value.trim().is_empty())
+    {
+        command.args(["--unique", name]);
+    }
+    let output = match command.output() {
+        Ok(output) => output,
+        Err(error) => {
+            return respond_json(
+                stream,
+                500,
+                &format!(r#"{{"error":{}}}"#, json_str(&error.to_string())),
+            )
+        }
+    };
+    if output.status.code() == Some(2) {
+        let message = String::from_utf8_lossy(&output.stderr);
+        return bad_request(
+            stream,
+            message.trim(),
+            "path",
+            "check path/minRows/maxEmpty/unique",
+        );
+    }
+    if !output.status.success() && output.status.code() != Some(1) {
+        let message = String::from_utf8_lossy(&output.stderr);
+        return respond_json(
+            stream,
+            422,
+            &format!(r#"{{"error":{}}}"#, json_str(message.trim())),
+        );
+    }
+    respond_bytes(
+        stream,
+        200,
+        "application/json; charset=utf-8",
+        "inline",
+        &output.stdout,
     )
 }
 
