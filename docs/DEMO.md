@@ -50,6 +50,7 @@ job=done
    - `csvx_edit_set` → `csvx_edit_undo`（journal 锁）
    - `csvx_convert` 输出 TSV
    - `csvx_job_submit` quality → `csvx_job_status` 直到 done
+   - `csvx_cache_stats`（两次 gzip 搜索后 `cache_hits=1`）
 3. 若 `scripts/mcp_sdk/node_modules` 存在，demo 还会跑官方 SDK 客户端：
    - `pipeline_progress_events=2`（pipeline 每步通知；官方 SDK 的 `onprogress` 偶发
      合并最后一条，实测 10 次中 1 次为 1；raw MCP 10/10 稳定 2 条，demo 只要求 ≥1）

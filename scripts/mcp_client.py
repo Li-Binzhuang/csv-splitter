@@ -71,6 +71,10 @@ def main():
         if os.path.exists(gzip_path):
             gzip = client.call("csvx_search", {"path": "orders.csv.gz", "query": "CDMX", "materialize": True})
             print(f"gzip_matched={gzip.get('matched', 0)}")
+            client.call("csvx_search", {"path": "orders.csv.gz", "query": "CDMX", "materialize": True})
+            cache = client.call("csvx_cache_stats", {})
+            print(f"cache_hits={cache.get('hits', 0)}")
+            print(f"cache_entries={cache.get('entries', 0)}")
         plan_path = os.path.join(args.root, "plan.csv")
         if os.path.exists(plan_path):
             status = client.call("csvx_pipeline_status", {"path": "plan.csv", "verify": True, "contentCheck": True})
