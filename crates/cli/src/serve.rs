@@ -7949,7 +7949,7 @@ pub(crate) const AGENT_INSTRUCTIONS: &str = "csvx is a local, single-user CSV ba
 /// Minimal JSON value for the MCP envelope. Arguments are small and the protocol
 /// needs one object per line, so this avoids a new dependency in the hot CLI.
 #[derive(Clone, Debug)]
-enum McpJson {
+pub(crate) enum McpJson {
     Null,
     Bool(bool),
     Number(f64),
@@ -7960,7 +7960,7 @@ enum McpJson {
 }
 
 impl McpJson {
-    fn get(&self, key: &str) -> Option<&McpJson> {
+    pub(crate) fn get(&self, key: &str) -> Option<&McpJson> {
         match self {
             Self::Object(pairs) => pairs
                 .iter()
@@ -7969,7 +7969,7 @@ impl McpJson {
             _ => None,
         }
     }
-    fn as_str(&self) -> Option<&str> {
+    pub(crate) fn as_str(&self) -> Option<&str> {
         match self {
             Self::String(value) => Some(value),
             _ => None,
@@ -8024,13 +8024,13 @@ fn prune_mcp_jobs(jobs: &mut std::collections::HashMap<String, McpJob>) {
     }
 }
 
-struct McpParser<'a> {
+pub(crate) struct McpParser<'a> {
     bytes: &'a [u8],
     pos: usize,
 }
 
 impl<'a> McpParser<'a> {
-    fn parse(text: &'a str) -> Result<McpJson, String> {
+    pub(crate) fn parse(text: &'a str) -> Result<McpJson, String> {
         let mut parser = Self {
             bytes: text.as_bytes(),
             pos: 0,
@@ -8983,7 +8983,7 @@ fn mcp_command(root: &Path, name: &str, args: &McpJson) -> Result<std::process::
     Ok(command)
 }
 
-fn mcp_run_tool(root: &Path, name: &str, args: &McpJson) -> Result<String, String> {
+pub(crate) fn mcp_run_tool(root: &Path, name: &str, args: &McpJson) -> Result<String, String> {
     let mut command = mcp_command(root, name, args)?;
     command.stdin(std::process::Stdio::null());
     let output = command

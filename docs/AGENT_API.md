@@ -1,6 +1,6 @@
 # Agent API / 原生 Agent 接入
 
-状态：**MCP 原生接入已可用；HTTP Agent API 尚未实现**。仍无前端、无多用户鉴权。
+状态：**MCP 原生接入与 HTTP Agent API 最小可用；SSE 目前是事件回放，不是长连接实时推送**。仍无前端、无多用户鉴权。
 
 ## 已经可用：MCP
 
@@ -41,28 +41,45 @@ csvx://agent
 - safety：preview_before_apply、root_bound、single_user、gui=false
 - instructions 同一段话
 
-## 计划中的 HTTP Agent API（未实现）
+## HTTP Agent API（最小实现）
+
+```bash
+csvx agent serve --root /path/to/data --addr 127.0.0.1:8788
+csvx agent manifest
+```
 
 基础路径 `/agent/v1`，JSON body：
 
 | 方法 | 路径 | 作用 |
 |---|---|---|
-| GET | `/agent/v1/manifest` | 协议、工具、限制 |
-| POST | `/agent/v1/sessions` | 创建会话（root、agent 名、允许的动作） |
+| GET | `/agent/v1/manifest` | 协议、工具、workflow、safety |
+| POST | `/agent/v1/sessions` | 创建会话（root、agent 名） |
 | GET | `/agent/v1/sessions/{id}` | 状态/摘要 |
-| POST | `/agent/v1/sessions/{id}/actions` | 执行一个工具/操作 |
-| GET | `/agent/v1/sessions/{id}/events` | SSE 事件 |
-| POST | `/agent/v1/sessions/{id}/approvals` | 批准/拒绝破坏性动作 |
+| POST | `/agent/v1/sessions/{id}/actions` | 执行一个 MCP 工具 |
+| GET | `/agent/v1/sessions/{id}/events` | 审计事件回放（SSE 格式，读完即关） |
+| POST | `/agent/v1/sessions/{id}/approvals` | 批准/拒绝破坏性工具 |
 | POST | `/agent/v1/sessions/{id}/close` | 关闭并落审计 |
-| GET | `/agent/v1/audit?session=` | 审计记录 |
+
+动作：
+
+```json
+{
+  "tool": "csvx_edit_apply",
+  "arguments": {"path": "t.csv", "ops": "set:1:qty:9"},
+  "approvalId": "appr-..."
+}
+```
+
+破坏性工具（edit apply/set/delete/undo/redo、concat、convert、job submit、
+pipeline run、job cancel、cache clear）没有 `approvalId` 时返回 **428**。
 
 约束：
 
-- 会话 token 只在创建响应返回一次；
-- token 绑定 root、允许的 tools、过期时间；
-- 审计写 `.csvx-agent/audit.jsonl`，不含 token/key；
-- apply 必须带审批；
-- 所有路径 canonical + root 内。
+- 会话 token 只在创建响应返回一次，绑定 root 和 8 小时 TTL；
+- 审计写 `<root>/.csvx-agent/audit.jsonl`，不含 token/key；
+- 所有路径 canonical + root 内；
+- SSE 当前只回放审计事件，不是实时长连接；
+- 没有多用户角色，token 只是单用户本地能力边界。
 
 ## 和 DSH 的关系
 
@@ -74,4 +91,5 @@ csvx://agent
 ## 验证
 
 - MCP initialize `instructions`、`csvx://agent` 已由 stdio 测试钉住；
-- HTTP Agent API 尚未进入测试，计划单列，避免把“计划”写成“已完成”。
+- HTTP Agent API 已有端到端测试：创建会话 → schema → 428 审批 →
+  approval → apply → 事件回放 → 审计 → close。

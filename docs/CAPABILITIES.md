@@ -231,7 +231,7 @@ delimiter 检测也读解压后的内容。压缩流不可 seek，因此自动�
 ### 端到端 demo
 
 `BIN=target/release/csvx bash scripts/demo_end_to_end.sh`：pipeline filter→quality（12/11 ms）
-后，`scripts/mcp_client.py` 走 schema/filter/view/edit/preview/apply/concat/report/gate/undo/convert/job，23 个工具；其中 `/rows` 的简单窗口与 `csvx_view` 共用 core `ViewRequest`。MCP 的 initialize 带 Agent instructions，并暴露 `csvx://agent` manifest。
+后，`scripts/mcp_client.py` 走 schema/filter/view/edit/preview/apply/concat/report/gate/undo/convert/job，23 个工具；其中 `/rows` 的简单窗口与 `csvx_view` 共用 core `ViewRequest`。MCP 的 initialize 带 Agent instructions，并暴露 `csvx://agent` manifest；`csvx agent serve` 提供 HTTP 会话/动作/审批/审计。
 见 `docs/DEMO.md`。
 
 ### MCP（B agent 后端，只读首版）

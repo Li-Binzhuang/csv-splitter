@@ -145,7 +145,7 @@ csvx agent run   # 通过环境变量或命令参数提供 endpoint/model/prompt
 | M1 | xlsx 导出 | CLI/MCP 输出可被 ZIP/XML 校验；测试 + 包 smoke |
 | M2 | xlsx 导入（已落） | 固定夹具 + sheet 选择 + 日期/空行 |
 | M3 | 公式缓存 | 命中/失效测试 + 实测重复读 |
-| M4 | Agent API | MCP instructions + `csvx://agent` 已落；HTTP session/action/approval/audit/SSE 待做 |
+| M4 | Agent API | MCP instructions + `csvx://agent` 已落；HTTP session/action/approval/audit + SSE 回放已落；实时 SSE 待做 |
 | M5 | 内置 runner | 本地 DSH Ark Economy 跑通一次 read→preview→apply 流程 |
 | M6 | 整理与发布 | docs、examples、包、gate、AOCI |
 

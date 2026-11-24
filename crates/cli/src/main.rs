@@ -26,6 +26,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
 
+mod agent;
 mod serve;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -40,6 +41,7 @@ fn main() -> ExitCode {
         Some("index") => cmd_index(&args[1..]),
         Some("cache") => cmd_cache(&args[1..]),
         Some("serve") => cmd_serve(&args[1..]),
+        Some("agent") => cmd_agent(&args[1..]),
         Some("mcp") => cmd_mcp(&args[1..]),
         Some("convert") => cmd_convert(&args[1..]),
         Some("filter") => cmd_filter(&args[1..]),
@@ -514,6 +516,14 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         ],
     ),
     (
+        "agent",
+        &[
+            ("--root", "Directory the agent API may operate in"),
+            ("--addr", "Listen address (default 127.0.0.1:8788)"),
+            ("--port", "Listen port shorthand"),
+        ],
+    ),
+    (
         "serve",
         &[
             ("--addr", "Bind address (127.0.0.1:0 picks a free port)"),
@@ -716,6 +726,7 @@ COMMANDS
   cache    <input>              Columnar cache for fast filtered/ordered pages
   serve    --root <dir>          Local HTTP API (JSON) for a web front-end
   mcp      --root <dir>          MCP stdio server (read-only tools) for agents
+  agent    serve --root <dir>     HTTP Agent API (sessions, actions, audit)
   convert  <input>               Transcode a CSV to UTF-8 (GBK / UTF-16 input)
   filter   <input> --where EXPR  Row numbers matching a column predicate
   sort     <input> --by COLS -o F Sort the whole file (a,b or a:desc,b:asc)
@@ -3575,6 +3586,71 @@ fn cmd_convert(args: &[String]) -> i32 {
         }
         // `transcode` returns the error itself; nothing else printed it.
         Err(e) => report_failure("convert", e),
+    }
+}
+
+fn cmd_agent(args: &[String]) -> i32 {
+    let mut p = Parser::new(args);
+    let mut root: Option<PathBuf> = None;
+    let mut addr = "127.0.0.1:8788".to_string();
+    let mut action = "serve".to_string();
+    if let Some(first) = args.first().filter(|arg| !arg.starts_with('-')) {
+        action = first.clone();
+    }
+    while let Some(arg) = p.next() {
+        match arg.as_str() {
+            "serve" | "manifest" => action = arg,
+            "--root" => match p.value("--root") {
+                Ok(value) => root = Some(PathBuf::from(value)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--addr" => match p.value("--addr") {
+                Ok(value) => addr = value,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--port" => match p.value("--port").and_then(|value| {
+                value
+                    .parse::<u16>()
+                    .map(|port| format!("127.0.0.1:{port}"))
+                    .map_err(|_| format!("--port takes a number, not {value:?}"))
+            }) {
+                Ok(value) => addr = value,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "-h" | "--help" => {
+                print_command_help("agent");
+                return 0;
+            }
+            other if other.starts_with('-') => {
+                eprintln!("error: unknown option: {other}");
+                return 2;
+            }
+            other => root = Some(PathBuf::from(other)),
+        }
+    }
+    if action == "manifest" {
+        println!("{}", agent::manifest());
+        return 0;
+    }
+    let Some(root) = root else {
+        eprintln!("error: agent serve needs --root <dir>");
+        return 2;
+    };
+    match agent::serve(&root, &addr) {
+        Ok(()) => 0,
+        Err(e) => {
+            eprintln!("error: {e}");
+            1
+        }
     }
 }
 
