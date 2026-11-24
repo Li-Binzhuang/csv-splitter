@@ -7602,6 +7602,47 @@ fn concat_by_name_aligns_reordered_columns() {
     assert!(err.contains("columns differ"), "{err}");
 }
 
+/// A directory input concatenates its .csv files in name order; the default output
+/// lands next to the directory, so a rerun cannot pull its own previous result back in.
+#[test]
+fn concat_accepts_a_directory_of_csv_files() {
+    let dir = TempDir::new("concatdir");
+    std::fs::create_dir_all(dir.join("inputs")).unwrap();
+    std::fs::write(dir.join("inputs/a.csv"), "a,b\n1,x\n").unwrap();
+    std::fs::write(dir.join("inputs/b.csv"), "a,b\n2,y\n").unwrap();
+    std::fs::write(dir.join("inputs/notes.txt"), "not csv\n").unwrap();
+    let first = Command::new(bin())
+        .args(["concat", dir.join("inputs").to_str().unwrap(), "--json"])
+        .output()
+        .unwrap();
+    assert!(first.status.success(), "{:?}", first);
+    let default_out = dir.join("inputs-combined.csv");
+    let text = std::fs::read_to_string(&default_out).unwrap();
+    assert_eq!(text, "a,b\n1,x\n2,y\n");
+    assert_eq!(
+        std::fs::read_dir(dir.join("inputs")).unwrap().count(),
+        3,
+        "the default output must stay outside the input directory"
+    );
+
+    // A rerun with an explicit output still sees only the original two sources.
+    let second = Command::new(bin())
+        .args([
+            "concat",
+            dir.join("inputs").to_str().unwrap(),
+            "--out",
+            dir.join("out.csv").to_str().unwrap(),
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(second.status.success(), "{:?}", second);
+    assert_eq!(
+        std::fs::read_to_string(dir.join("out.csv")).unwrap(),
+        "a,b\n1,x\n2,y\n"
+    );
+}
+
 /// `merge --chunks` refuses an archive with the wrong number of parts, deleting nothing on
 /// success and leaving no half file on failure.
 #[test]

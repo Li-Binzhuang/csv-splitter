@@ -5875,11 +5875,64 @@ fn cmd_concat(args: &[String]) -> i32 {
         }
     }
 
+    // A directory is a convenient shorthand for "every .csv directly inside it".
+    // The output is excluded: re-running into the same directory must not append the
+    // previous result to the next one.
+    let single_dir = inputs.len() == 1 && inputs[0].is_dir();
+    let output = out.unwrap_or_else(|| {
+        if single_dir {
+            let name = inputs[0]
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or("combined");
+            inputs[0].with_file_name(format!("{name}-combined.csv"))
+        } else {
+            inputs[0].with_file_name("combined.csv")
+        }
+    });
+    if single_dir {
+        let dir = &inputs[0];
+        let output_abs = output.canonicalize().unwrap_or_else(|_| output.clone());
+        let mut found = Vec::new();
+        let entries = match std::fs::read_dir(dir) {
+            Ok(entries) => entries,
+            Err(e) => {
+                eprintln!("error: cannot read {}: {e}", dir.display());
+                return 2;
+            }
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if !path.is_file() {
+                continue;
+            }
+            if !path
+                .extension()
+                .and_then(|extension| extension.to_str())
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("csv"))
+            {
+                continue;
+            }
+            let absolute = path.canonicalize().unwrap_or_else(|_| path.clone());
+            if absolute == output_abs {
+                continue;
+            }
+            found.push(path);
+        }
+        found.sort_by(|left, right| left.file_name().cmp(&right.file_name()));
+        if found.len() < 2 {
+            eprintln!(
+                "error: {} has fewer than two .csv files to concatenate",
+                dir.display()
+            );
+            return 2;
+        }
+        inputs = found;
+    }
     if inputs.len() < 2 {
         eprintln!("error: concat needs at least two <input> files");
         return 2;
     }
-    let output = out.unwrap_or_else(|| inputs[0].with_file_name("combined.csv"));
     let delimiter = match parse_delimiter(&delim, &inputs[0]) {
         Ok(d) => d,
         Err(e) => {

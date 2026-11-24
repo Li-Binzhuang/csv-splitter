@@ -207,7 +207,7 @@ csvx extract chunks.tar -o ./out
 | `dedupe` | 去重 |
 | `schema` | **读**列元数据：列清单、类型、是否存在（`--has COL`）、与另一文件比对列集合（`--diff`，有差异退出码 1）| 前端要的第一件事 |
 | `columns` | ⚠️ 是**改**列（保留/丢弃/重命名，写文件），不是查列——查列用 `schema` | 保留/删除/改名/重排 |
-| `concat` | 多个同构 CSV 拼成一个 |
+| `concat` | 多个同构 CSV 拼成一个；也可直接传目录（按文件名顺序） |
 | `partition` | 按列值拆成多个文件 |
 | `sort` | 外部排序（恒定内存） |
 | `groupby` | 分组聚合 |
@@ -256,7 +256,7 @@ csvx extract chunks.tar -o ./out
 | **多列排序** | `sort big.csv --by "city,amount:desc"` | `POST /sort` |
 | **改数据（不重写原文件）** | `edit set …` / `edit insert …` / `edit export -o fixed.csv` | `POST /edit` |
 | **按某列拆成多个文件** | `partition big.csv --by city` | `POST /partition` |
-| **多个同构文件拼成一张表** | `concat a.csv b.csv c.csv -o all.csv` | — |
+| **多个同构文件拼成一张表** | `concat a.csv b.csv c.csv -o all.csv`；或 `concat parts/ -o all.csv` | — |
 | **分组汇总** | `groupby big.csv --by city --agg "amount:sum"` | `GET /groupby` |
 | 跑聚合 / 排序 | `sql big.csv "SELECT ..."` | `GET /query?sql=...` |
 | 切分 / 合并 | `split` / `merge` | `POST /split` · `POST /merge` |

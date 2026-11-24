@@ -84,6 +84,7 @@ MCP adapter ─┘        │
 **Stage 4（已开始）**
 - `filter -o out.csv.gz/.zst/.bz2/.xz` 压缩输出：先流式写 plain，再压缩并删除中间文件；`.zip` 明确拒绝；
 - `gate --min-rows/--max-empty/--unique` 质量门禁；唯一性按列外部排序后相邻比较，不受内存 cap；在 plan 中作为普通步骤即可失败即停；
+- `concat <dir>` 目录输入：只取目录内 `.csv`，按文件名排序，输出默认在目录旁；
 - JSON Schema 由 Rust 类型生成，接入 MCP `inputSchema` 与 `docs/API.md`；
 - 前端只消费契约，不解析 `--help`。
 

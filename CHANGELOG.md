@@ -158,6 +158,8 @@
   the same 14 operations, four effects and 10 error codes; ADR in `docs/OPERATIONS.md`.
 - **Typed read operations**: `core::ops` owns schema/view/filter requests and responses;
   `schema`/`filter` CLI+HTTP and `view` CLI's simple path use typed requests.
+- **Directory concat**: `concat <dir>` reads every `.csv` in name order and defaults
+  its output next to the directory; a rerun cannot re-concatenate its own result.
 - **Quality gate**: `gate --min-rows/--max-empty/--unique` exits 1 on a failed
   threshold and writes an optional JSON report; uniqueness sorts the column
   externally and compares neighbours, so it is not bounded by memory.
