@@ -73,8 +73,9 @@ MCP adapter ─┘        │
 - 剩余：`view` 的 HTTP `/rows` 与复杂 CLI 路径；
 - CLI 只做字符串到类型的适配。
 
-**Stage 3**
-- 写操作统一 `Preview → Apply`：preview 返回 affected rows/columns、内容哈希、预计输出；
+**Stage 3（已开始）**
+- `edit transaction --ops ... --dry-run`：完整解析并对照真实行/列校验，打印 `operations/rows/applied:0`，**不创建 journal**；
+- 下一步：preview 返回 affected rows/columns、内容哈希、预计输出；
 - MCP `edit_*`、HTTP `POST /edit` 共用同一事务路径；
 - 所有错误从 `ErrorCode` 映射，禁止新增平行字符串。
 

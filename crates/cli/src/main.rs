@@ -238,6 +238,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--col", "Target column"),
             ("--count", "How many rows"),
             ("--delim", "Field delimiter (default: auto)"),
+            ("--dry-run", "Validate transaction without writing the journal"),
             ("--formula", "Formula for the new column, e.g. \"qty*2\""),
             ("--from", "Old column name / text to replace"),
             ("--into", "New column names for split-column"),
@@ -6538,11 +6539,13 @@ fn cmd_edit(args: &[String]) -> i32 {
     let mut after_col: Option<String> = None;
     let mut to_block: Option<String> = None;
     let mut json = false;
+    let mut dry_run = false;
     let mut delim = "auto".to_string();
     let mut ops_text: Option<String> = None;
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
+            "--dry-run" => dry_run = true,
             "--ops" => match p.value("--ops") {
                 Ok(v) => ops_text = Some(v),
                 Err(e) => {
@@ -7265,6 +7268,10 @@ fn cmd_edit(args: &[String]) -> i32 {
         _ => None,
     };
 
+    if dry_run && action != "transaction" {
+        eprintln!("error: --dry-run is only supported by edit transaction");
+        return 2;
+    }
     if action == "transaction" {
         let Some(raw) = ops_text else {
             eprintln!("error: transaction needs --ops");
@@ -7292,6 +7299,23 @@ fn cmd_edit(args: &[String]) -> i32 {
                 };
             }
         };
+        if dry_run {
+            if json {
+                println!(
+                    r#"{{"op":"transaction-preview","operations":{},"rows":{},"atomic":true,"wouldApply":{},"applied":0}}"#,
+                    ops.len(),
+                    total,
+                    ops.len()
+                );
+            } else {
+                println!(
+                    "preview: {} operation(s) valid against {} row(s); nothing written",
+                    ops.len(),
+                    total
+                );
+            }
+            return 0;
+        }
         let applied = match csvx_core::workbook::append_atomically(&sidecar, &ops) {
             Ok(applied) => applied,
             Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {

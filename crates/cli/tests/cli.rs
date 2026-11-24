@@ -7656,6 +7656,75 @@ fn a_cli_transaction_applies_every_op_or_none() {
     );
 }
 
+/// `--dry-run` validates the full batch but must not create the journal.
+#[test]
+fn a_transaction_dry_run_validates_without_writing() {
+    let dir = TempDir::new("clitxndry");
+    let base = dir.join("t.csv");
+    std::fs::write(&base, "a,b\n1,x\n2,y\n").unwrap();
+    let out = Command::new(bin())
+        .args([
+            "edit",
+            "transaction",
+            base.to_str().unwrap(),
+            "--ops",
+            "set:1:a:9;delete:2:1",
+            "--dry-run",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("transaction-preview"), "{text}");
+    assert!(text.contains("\"applied\":0"), "{text}");
+    assert!(
+        !dir.join("t.csv.journal").exists(),
+        "dry-run wrote a journal"
+    );
+
+    let bad = Command::new(bin())
+        .args([
+            "edit",
+            "transaction",
+            base.to_str().unwrap(),
+            "--ops",
+            "set:1:a:9;delete:99:1",
+            "--dry-run",
+        ])
+        .output()
+        .unwrap();
+    assert_ne!(bad.status.code(), Some(0), "a bad batch must fail");
+    assert!(
+        !dir.join("t.csv.journal").exists(),
+        "a rejected dry-run wrote a journal"
+    );
+
+    let wrong = Command::new(bin())
+        .args([
+            "edit",
+            "set",
+            base.to_str().unwrap(),
+            "--row",
+            "1",
+            "--col",
+            "a",
+            "--value",
+            "9",
+            "--dry-run",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(wrong.status.code(), Some(2));
+    let err = String::from_utf8_lossy(&wrong.stderr);
+    assert!(err.contains("only supported by edit transaction"), "{err}");
+}
+
 /// One undo takes a whole transaction back; a second undo finds nothing left.
 #[test]
 fn undo_takes_a_transaction_back_in_one_step() {

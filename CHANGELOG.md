@@ -158,6 +158,8 @@
   the same 14 operations, four effects and 10 error codes; ADR in `docs/OPERATIONS.md`.
 - **Typed read operations**: `core::ops` owns schema/view/filter requests and responses;
   `schema`/`filter` CLI+HTTP and `view` CLI's simple path use typed requests.
+- **Transaction preview**: `edit transaction --dry-run` validates against real rows/columns
+  and reports `operations/rows/applied:0` without creating the journal.
 
 - **Pipeline watch**: `csvx pipeline watch <plan>` reruns stale steps on an interval;
   supports failure backoff, `--max-failures`, JSON rounds, and an atomic `--state` file
