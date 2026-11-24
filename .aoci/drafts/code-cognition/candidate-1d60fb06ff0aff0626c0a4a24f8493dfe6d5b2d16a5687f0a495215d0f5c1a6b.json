@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "ff5175decae3f091d1a338a89ddf21beb680b47e4d833f79168dcd44a11fa419",
+  "batch_id": "1d60fb06ff0aff0626c0a4a24f8493dfe6d5b2d16a5687f0a495215d0f5c1a6b",
+  "composite_identity": "597abb4331128b3ccfd02adb403efae82d7d8870aaf84eb371b96c3a9609fbad",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "0f96baccef533a7b9d50375ef85cbad150a1c218a1970412f6b0be4414b50363",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ACCEPTANCE.md",
+      "path": "docs/ACCEPTANCE.md",
+      "change": "update",
+      "source_sha256": "006f0416cff23429312a533ea2b5b7593ecba3db6b3d86080011c06ff19197aa",
+      "existing_entry": "ACCEPTANCE.md[SD6M]: F:验收证据：两档性能表、能力矩阵与平台构建矩阵 | R:code:docs/API.md | A:每行写实测数字与对应测试名；未达标项标注而不是四舍五入 | S:文档里引用的输出由测试钉住，改实现不同步更新这里会让 gate 失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/PRODUCT_PLAN.md",
+      "path": "docs/PRODUCT_PLAN.md",
+      "change": "update",
+      "source_sha256": "c4bc418944d75c3f5bf47692837481252b57b965c29304ac564008b1fc9c6d7a",
+      "existing_entry": "PRODUCT_PLAN.md[SG8T]: F:产品进化计划：定位、三端契约、S0–S7 阶段与验收、硬约束与判断标准 | R:code:docs/OPERATIONS.md,code:docs/ARCHITECTURE.md,code:docs/ROADMAP.md,code:docs/BEYOND_EXCEL.md | A:本地优先 AI 原生 CSV 工作台；CLI/HTTP/MCP 共用 operations 契约；S2 typed view HTTP 简单路径，S3 三端 preview/apply 完成，S4 压缩/gate/目录完成，S5 薄前端、S6 report 三端、S7 数据库/xlsx | S:S5/S6 前端渲染待；xlsx/数据库需用户决策；typed view 复杂分支仍 SQL；验收以测试与实测为准"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "c5cfc1bd3c9c6f004b0d6307207d830dc8f6da297f9eae3b93ce61143254df69",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:docs/SALES.md,code:scripts/verify_dist.sh,code:scripts/smoke_http.py | A:binary 缺失先 cargo build --release；版本取 csvx --version；平台 uname；打包二进制、README/CHANGELOG/LICENSE、主要 docs（含 RELEASE_CHECKLIST/ROADMAP/PILOT_INTAKE/PILOT_SAMPLE/PILOT_CONFIRMATION）、demo/pilot/bench/smoke_http 脚本与 mcp_sdk client/package.json；写 sha256 后运行 verify_dist；失败删 tar/sha 并非零退出 | S:不打 tag、不联网、不发布 registry；dist 已 gitignore；只用于企业内部分发/试点"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "3623555faf73aff9d6227ddfd291c0ba6131de3374c8fc2b9a1d390fa6151e3b",
+      "object_ref": "code:docs/ACCEPTANCE.md",
+      "path": "docs/ACCEPTANCE.md",
+      "change": "update",
+      "source_sha256": "006f0416cff23429312a533ea2b5b7593ecba3db6b3d86080011c06ff19197aa",
+      "existing_entry": "ACCEPTANCE.md[SD6M]: F:验收证据：两档性能表、能力矩阵与平台构建矩阵 | R:code:docs/API.md | A:每行写实测数字与对应测试名；未达标项标注而不是四舍五入 | S:文档里引用的输出由测试钉住，改实现不同步更新这里会让 gate 失败"
+    },
+    {
+      "candidate_id": "8401738ffb27de413f53a592a8c0947c786ea99b48c0ed9a1fc6da3e4257821e",
+      "object_ref": "code:docs/PRODUCT_PLAN.md",
+      "path": "docs/PRODUCT_PLAN.md",
+      "change": "update",
+      "source_sha256": "c4bc418944d75c3f5bf47692837481252b57b965c29304ac564008b1fc9c6d7a",
+      "existing_entry": "PRODUCT_PLAN.md[SG8T]: F:产品进化计划：定位、三端契约、S0–S7 阶段与验收、硬约束与判断标准 | R:code:docs/OPERATIONS.md,code:docs/ARCHITECTURE.md,code:docs/ROADMAP.md,code:docs/BEYOND_EXCEL.md | A:本地优先 AI 原生 CSV 工作台；CLI/HTTP/MCP 共用 operations 契约；S2 typed view HTTP 简单路径，S3 三端 preview/apply 完成，S4 压缩/gate/目录完成，S5 薄前端、S6 report 三端、S7 数据库/xlsx | S:S5/S6 前端渲染待；xlsx/数据库需用户决策；typed view 复杂分支仍 SQL；验收以测试与实测为准"
+    },
+    {
+      "candidate_id": "2030e8a3a40ebe12920c79a4d6d2404a35a055cfa3ad8688a8f5add308aa04c2",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "c5cfc1bd3c9c6f004b0d6307207d830dc8f6da297f9eae3b93ce61143254df69",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:docs/SALES.md,code:scripts/verify_dist.sh,code:scripts/smoke_http.py | A:binary 缺失先 cargo build --release；版本取 csvx --version；平台 uname；打包二进制、README/CHANGELOG/LICENSE、主要 docs（含 RELEASE_CHECKLIST/ROADMAP/PILOT_INTAKE/PILOT_SAMPLE/PILOT_CONFIRMATION）、demo/pilot/bench/smoke_http 脚本与 mcp_sdk client/package.json；写 sha256 后运行 verify_dist；失败删 tar/sha 并非零退出 | S:不打 tag、不联网、不发布 registry；dist 已 gitignore；只用于企业内部分发/试点"
+    }
+  ]
+}
