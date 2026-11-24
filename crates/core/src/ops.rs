@@ -139,6 +139,47 @@ impl FilterRequest {
         })
     }
 
+    /// Resumable page: returns the next checkpoint when the scan stopped at its
+    /// page budget, or `None` when the result is complete.
+    pub fn execute_page(&self, cursor: usize) -> io::Result<(FilterResponse, Option<usize>)> {
+        let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
+        drop(rx);
+        let page = filter::scan_page(
+            &self.path,
+            self.delimiter,
+            &self.spec,
+            self.limit.max(1),
+            self.budget,
+            cursor,
+            &tx,
+        )
+        .or_else(|error| {
+            if error.kind() == io::ErrorKind::InvalidInput {
+                filter::scan_fast(
+                    &self.path,
+                    self.delimiter,
+                    &self.spec,
+                    self.limit.max(1),
+                    self.budget,
+                    &tx,
+                )
+                .map(|result| (result, None))
+            } else {
+                Err(error)
+            }
+        })?;
+        let (result, next) = page;
+        Ok((
+            FilterResponse {
+                rows: result.row_numbers(),
+                scanned: result.scanned,
+                matched: result.matched,
+                truncated: result.truncated,
+            },
+            next,
+        ))
+    }
+
     /// The CLI's optimized path: same predicate, no page budget.
     pub fn execute_fast(&self) -> io::Result<FilterResponse> {
         let (tx, rx) = std::sync::mpsc::channel::<ProgressEvent>();
@@ -238,6 +279,16 @@ mod tests {
         assert_eq!(fast.rows, slow.rows);
         assert_eq!(fast.scanned, slow.scanned);
         assert_eq!(fast.matched, slow.matched);
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn filter_page_returns_rows_and_optional_cursor() {
+        let (dir, path) = fixture("filter_page_returns_rows_and_optional_cursor");
+        let request = FilterRequest::parse(path.clone(), Delimiter::Comma, "a>1", 10).unwrap();
+        let (response, next) = request.execute_page(0).unwrap();
+        assert_eq!(response.rows, vec![2, 3]);
+        assert!(next.is_none(), "small fixture must finish in one page");
         std::fs::remove_dir_all(dir).ok();
     }
 

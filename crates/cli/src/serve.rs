@@ -6505,26 +6505,17 @@ fn filter(stream: &mut TcpStream, root: &Path, params: &HashMap<String, String>)
             }
         },
     };
-    let page = filter::scan_page(
-        &source,
-        delimiter(params),
-        &spec,
+    drop(tx);
+    let request = csvx_core::ops::FilterRequest {
+        path: source.clone(),
+        delimiter: delimiter(params),
+        spec,
         limit,
-        Some(budget),
-        cursor,
-        &tx,
-    )
-    .or_else(|e| {
-        if e.kind() == io::ErrorKind::InvalidInput {
-            filter::scan_fast(&source, delimiter(params), &spec, limit, Some(budget), &tx)
-                .map(|result| (result, None))
-        } else {
-            Err(e)
-        }
-    });
-    match page {
+        budget: Some(budget),
+    };
+    match request.execute_page(cursor) {
         Ok((result, next)) => {
-            let rows: Vec<String> = result.row_numbers().iter().map(|n| n.to_string()).collect();
+            let rows: Vec<String> = result.rows.iter().map(|n| n.to_string()).collect();
             respond_json(
                 stream,
                 200,
