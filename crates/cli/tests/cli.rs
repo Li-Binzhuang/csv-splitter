@@ -7643,6 +7643,53 @@ fn concat_accepts_a_directory_of_csv_files() {
     );
 }
 
+/// A directory gate applies the same thresholds to each file independently and
+/// reports one aggregate JSON object with the per-file reports attached.
+#[test]
+fn gate_accepts_a_directory_of_csv_files() {
+    let dir = TempDir::new("gatedir");
+    std::fs::create_dir_all(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,v\n1,a\n2,b\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "id,v\n3,c\n4,d\n").unwrap();
+    let report = dir.join("report.json");
+    let pass = Command::new(bin())
+        .args([
+            "gate",
+            dir.join("parts").to_str().unwrap(),
+            "--min-rows",
+            "2",
+            "--unique",
+            "id",
+            "--out",
+            report.to_str().unwrap(),
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(pass.status.success(), "{:?}", pass);
+    let text = String::from_utf8_lossy(&pass.stdout);
+    assert!(text.contains(r#""files":2"#), "{text}");
+    assert!(text.contains(r#""rows":4"#), "{text}");
+    let report_text = std::fs::read_to_string(&report).unwrap();
+    assert!(report_text.contains(r#""passed":true"#), "{report_text}");
+
+    std::fs::write(dir.join("parts/c.csv"), "id,v\n1,a\n1,b\n").unwrap();
+    let fail = Command::new(bin())
+        .args([
+            "gate",
+            dir.join("parts").to_str().unwrap(),
+            "--unique",
+            "id",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(fail.status.code(), Some(1));
+    let text = String::from_utf8_lossy(&fail.stdout);
+    assert!(text.contains(r#""failed":1"#), "{text}");
+    assert!(text.contains(r#""uniqueDuplicates":true"#), "{text}");
+}
+
 /// `merge --chunks` refuses an archive with the wrong number of parts, deleting nothing on
 /// success and leaving no half file on failure.
 #[test]

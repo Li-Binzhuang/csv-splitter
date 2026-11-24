@@ -5106,6 +5106,137 @@ fn truncate_for_display(text: &str, width: usize) -> String {
     format!("{kept}…")
 }
 
+fn gate_csv_files(dir: &Path, output: Option<&Path>) -> std::io::Result<Vec<PathBuf>> {
+    let output_abs = output.map(|path| path.canonicalize().unwrap_or_else(|_| path.to_path_buf()));
+    let mut files = Vec::new();
+    for entry in std::fs::read_dir(dir)?.flatten() {
+        let path = entry.path();
+        if !path.is_file()
+            || !path
+                .extension()
+                .and_then(|extension| extension.to_str())
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("csv"))
+        {
+            continue;
+        }
+        let absolute = path.canonicalize().unwrap_or_else(|_| path.clone());
+        if output_abs.as_ref() == Some(&absolute) {
+            continue;
+        }
+        files.push(path);
+    }
+    files.sort_by(|left, right| left.file_name().cmp(&right.file_name()));
+    Ok(files)
+}
+
+fn json_number(text: &str, key: &str) -> Option<u64> {
+    let needle = format!("\"{key}\":");
+    let rest = text.split(&needle).nth(1)?;
+    let digits: String = rest.chars().take_while(char::is_ascii_digit).collect();
+    digits.parse().ok()
+}
+
+/// Apply the same thresholds to every `.csv` directly inside a directory.
+///
+/// Files are independent gates: a duplicate id in one file cannot be excused by a
+/// unique one in another. The aggregate report keeps each child report verbatim.
+fn gate_directory(
+    dir: &Path,
+    min_rows: Option<u64>,
+    max_empty: Option<u64>,
+    unique: Option<&str>,
+    out: Option<&Path>,
+    json: bool,
+) -> i32 {
+    let files = match gate_csv_files(dir, out) {
+        Ok(files) => files,
+        Err(error) => {
+            eprintln!("error: cannot read {}: {error}", dir.display());
+            return 2;
+        }
+    };
+    if files.is_empty() {
+        eprintln!("error: {} has no .csv files", dir.display());
+        return 2;
+    }
+    let bin = match std::env::current_exe() {
+        Ok(path) => path,
+        Err(error) => {
+            eprintln!("error: cannot locate csvx: {error}");
+            return 2;
+        }
+    };
+    let mut reports = Vec::with_capacity(files.len());
+    let mut failed = 0usize;
+    let mut total_rows = 0u64;
+    let mut total_empty = 0u64;
+    for file in &files {
+        let mut command = std::process::Command::new(&bin);
+        command.args(["gate", file.to_str().unwrap_or(""), "--json"]);
+        if let Some(minimum) = min_rows {
+            command.args(["--min-rows", &minimum.to_string()]);
+        }
+        if let Some(maximum) = max_empty {
+            command.args(["--max-empty", &maximum.to_string()]);
+        }
+        if let Some(name) = unique {
+            command.args(["--unique", name]);
+        }
+        let output = match command.output() {
+            Ok(output) => output,
+            Err(error) => {
+                eprintln!("error: cannot gate {}: {error}", file.display());
+                return 2;
+            }
+        };
+        let text = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        if !output.status.success() {
+            failed += 1;
+        }
+        total_rows += json_number(&text, "rows").unwrap_or(0);
+        total_empty += json_number(&text, "empty").unwrap_or(0);
+        if !json && !output.status.success() {
+            eprintln!("✗ {}: {}", file.display(), stderr.trim());
+        } else if !json {
+            println!("✓ {}: {text}", file.display());
+        }
+        reports.push(text);
+    }
+    let passed = failed == 0;
+    let aggregate = format!(
+        r#"{{"passed":{},"files":{},"failed":{},"rows":{},"empty":{},"reports":[{}]}}"#,
+        passed,
+        files.len(),
+        failed,
+        total_rows,
+        total_empty,
+        reports.join(",")
+    );
+    if let Some(path) = out {
+        if let Err(error) = std::fs::write(path, format!("{aggregate}\n")) {
+            eprintln!("error: cannot write {}: {error}", path.display());
+            return 2;
+        }
+    }
+    if json {
+        println!("{aggregate}");
+    } else {
+        println!(
+            "gate: {} file(s), {} failed; rows {}, empty {}",
+            files.len(),
+            failed,
+            total_rows,
+            total_empty
+        );
+    }
+    if passed {
+        0
+    } else {
+        1
+    }
+}
+
 /// A quality gate for scripts and pipelines: exit 1 when a threshold fails.
 ///
 /// Thresholds are counts, not ratios: "at least 100 rows, at most 5 empty cells,
@@ -5188,6 +5319,16 @@ fn cmd_gate(args: &[String]) -> i32 {
             eprintln!("error: --out must not be the input file");
             return 2;
         }
+    }
+    if input.is_dir() {
+        return gate_directory(
+            &input,
+            min_rows,
+            max_empty,
+            unique.as_deref(),
+            out.as_deref(),
+            json,
+        );
     }
     let delimiter = match parse_delimiter(&delim, &input) {
         Ok(d) => d,
