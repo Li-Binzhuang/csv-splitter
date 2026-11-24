@@ -1,0 +1,91 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "10de29c5a9a79e3b1cb1a2c915ff9ab691f7c4fe213c1b9b8423cd5951dbb901",
+  "batch_id": "337d36411bf5b607e13514e9246223438040875f233d844b877dd19233cf836c",
+  "composite_identity": "bff9d68d8cef7234e0af1102451cc79dbfbf9821253ae305d13cce61bda81d1a",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "2e4a9f6d99d32ee22d8e6a963f12645b59fcd0d3ef6a8c47c8d0b780d0badbc6",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "e82b4d73e12764d76429904d2ef86ce042796db93520d50fb6481b0f284a3eae",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/锁规则/重复输出拒绝/源覆盖拒绝/内容校验(run+status)/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码/18 工具（含 cache_stats/clear + annotations）、ops 三端目录、progress 即时、压缩/MCP materialize 残留清理 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16（env），启动清死 PID；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/lib.rs",
+      "path": "crates/core/src/lib.rs",
+      "change": "update",
+      "source_sha256": "6c499e88099be1fb4ec77058f6f38a7fd7695e9897eb1c5d309fb01c2477cc1e",
+      "existing_entry": "lib.rs[CG6T]: F:core crate 的模块清单与基础类型再导出 | R:code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:读取、编辑、分析、查询、SQL 与引擎选择各自成模块；scan_parallel 承载 filter/search 共用的分段扫描；contract 提供适配器共用操作目录；pub use types 统一暴露基础类型 | S:新增模块必须同时写进 ARCHITECTURE.md，模块地图测试会逐个比对；contract 的 name/error code 是公开身份"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/ops.rs",
+      "path": "crates/core/src/ops.rs",
+      "change": "create",
+      "source_sha256": "04983f330acf8e2798633322503995c487e73faa02bca60f7c79456080ea1145"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "9ee5449864077ab710c08ba5ab000b309cfa77d41ce2acbe55c7a2721b988d47",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径、操作契约与模块地图 | R:code:crates/core/src/lib.rs,code:docs/OPERATIONS.md | A:模块地图按九组列模块（公式引擎含 totals，编辑模型含 transaction）；磁盘格式表列全部侧车：journal/redo/blocks/redo-blocks/idx/view/agg/parquet，并给失效规则；新增操作契约段，CLI/HTTP/MCP 共用 contract 目录 | S:模块地图测试逐个比对 core 模块；侧车可删，但删 journal 等于丢编辑；redo 边界与撤销边界是两份文件；契约 Stage 1 只有目录"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/OPERATIONS.md",
+      "path": "docs/OPERATIONS.md",
+      "change": "update",
+      "source_sha256": "64da4cb69a64f60252f976e55323691be9ddf4a750f49e2c14e4419fb3f2beef",
+      "existing_entry": "OPERATIONS.md[SG8T]: F:操作契约层 ADR：Stage 1 目录、适配器迁移与 preview/apply 规则 | R:code:crates/core/src/contract.rs,code:crates/cli/src/main.rs,code:docs/ARCHITECTURE.md | A:问题（CLI/HTTP/MCP 各自取名与错误码）、决定（core 目录+效果+稳定错误码）、当前 14 操作、Stage 1 CLI ops；Stage 2 HTTP /ops+MCP resource 已接、typed 待做；Stage 3 预览/应用；Stage 4 schema/前端；非目标不重写 handler、不引 serde | S:Stage 1 只有目录，绝非所有 handler 已统一；input/output 摘要不冒充 JSON Schema；preview/apply 规则是 Stage 3 待实现"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "c531b354aa8f4280dc013e2aeb2bac52425af9077a5a700b5e55f33e88f7e781",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "e82b4d73e12764d76429904d2ef86ce042796db93520d50fb6481b0f284a3eae",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行、compact、book、quality、convert、pipeline 快跳过/--dry-run/JSON/lineage 持久化/status verify/MCP verify/--dag 跨波回滚与崩溃恢复/锁规则/重复输出拒绝/源覆盖拒绝/内容校验(run+status)/--unlock/fail-on-stale/--step-timeout/--retries/group 并发与 staging 清理、mcp 读写+job wait/progress/cancel/list 摘要+structuredContent 细分错误码/18 工具（含 cache_stats/clear + annotations）、ops 三端目录、progress 即时、压缩/MCP materialize 残留清理 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16（env），启动清死 PID；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "431c7d21763f8ece333d7ec65bbdfb1471c290752c733f0c07dc028da8c620da",
+      "object_ref": "code:crates/core/src/lib.rs",
+      "path": "crates/core/src/lib.rs",
+      "change": "update",
+      "source_sha256": "6c499e88099be1fb4ec77058f6f38a7fd7695e9897eb1c5d309fb01c2477cc1e",
+      "existing_entry": "lib.rs[CG6T]: F:core crate 的模块清单与基础类型再导出 | R:code:crates/core/src/engine.rs,code:crates/core/src/contract.rs | A:读取、编辑、分析、查询、SQL 与引擎选择各自成模块；scan_parallel 承载 filter/search 共用的分段扫描；contract 提供适配器共用操作目录；pub use types 统一暴露基础类型 | S:新增模块必须同时写进 ARCHITECTURE.md，模块地图测试会逐个比对；contract 的 name/error code 是公开身份"
+    },
+    {
+      "candidate_id": "ce0f0d2f1eeae06b279076e63f2ea6ba1f1b4b6382c9d00fbf6f03a705e35a2e",
+      "object_ref": "code:crates/core/src/ops.rs",
+      "path": "crates/core/src/ops.rs",
+      "change": "create",
+      "source_sha256": "04983f330acf8e2798633322503995c487e73faa02bca60f7c79456080ea1145"
+    },
+    {
+      "candidate_id": "b9bd854a5688a8fa5761e489315f89fb6dda7c586a6a9f83c9f67fa8d3001f6c",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "9ee5449864077ab710c08ba5ab000b309cfa77d41ce2acbe55c7a2721b988d47",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径、操作契约与模块地图 | R:code:crates/core/src/lib.rs,code:docs/OPERATIONS.md | A:模块地图按九组列模块（公式引擎含 totals，编辑模型含 transaction）；磁盘格式表列全部侧车：journal/redo/blocks/redo-blocks/idx/view/agg/parquet，并给失效规则；新增操作契约段，CLI/HTTP/MCP 共用 contract 目录 | S:模块地图测试逐个比对 core 模块；侧车可删，但删 journal 等于丢编辑；redo 边界与撤销边界是两份文件；契约 Stage 1 只有目录"
+    },
+    {
+      "candidate_id": "5b9b750fc7b6904d2378d944072c5108a6ee818eebcfb339eba76a67f81c000a",
+      "object_ref": "code:docs/OPERATIONS.md",
+      "path": "docs/OPERATIONS.md",
+      "change": "update",
+      "source_sha256": "64da4cb69a64f60252f976e55323691be9ddf4a750f49e2c14e4419fb3f2beef",
+      "existing_entry": "OPERATIONS.md[SG8T]: F:操作契约层 ADR：Stage 1 目录、适配器迁移与 preview/apply 规则 | R:code:crates/core/src/contract.rs,code:crates/cli/src/main.rs,code:docs/ARCHITECTURE.md | A:问题（CLI/HTTP/MCP 各自取名与错误码）、决定（core 目录+效果+稳定错误码）、当前 14 操作、Stage 1 CLI ops；Stage 2 HTTP /ops+MCP resource 已接、typed 待做；Stage 3 预览/应用；Stage 4 schema/前端；非目标不重写 handler、不引 serde | S:Stage 1 只有目录，绝非所有 handler 已统一；input/output 摘要不冒充 JSON Schema；preview/apply 规则是 Stage 3 待实现"
+    }
+  ]
+}
