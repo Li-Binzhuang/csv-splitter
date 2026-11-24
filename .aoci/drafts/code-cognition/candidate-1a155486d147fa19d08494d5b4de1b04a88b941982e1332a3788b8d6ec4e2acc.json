@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a01ba8c4a55a64e176385fd1d1cf0ca5e78d6248c1534a2c73e8b427cbc4f708",
+  "batch_id": "1a155486d147fa19d08494d5b4de1b04a88b941982e1332a3788b8d6ec4e2acc",
+  "composite_identity": "06298209ed33f231276e0c59cd428a9f85f37b3ea6905098b5fde870f620cf79",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "5a2b298754c4f980c666343b4bb591034c9ce11afa6e360e2d376f3ee5ec92ea",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "59a913a8498b8eb0adf3a691dbdac7f803f02fa2fd9252e2aa169189869a0784",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:crates/core/src/xlsx.rs | A:CLI 入口；convert xlsx；report/gate/concat/edit/view/filter/watch；agent serve/manifest/run 及 endpoint/model/prompt/max-steps/allow-apply/skill | S:unique-global 成本高；report compare 限 root；xlsx 行上限；agent 端口 8788；runner key 仅 env"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "baa2dc90f7cc525888a93954870e1d229acda9851def55078f2798b5506b0ba0",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/FORMULA_CACHE.md | A:公式/窗口缓存；filter 压缩；gate+unique-global；concat；report spec/chart/compare/root；convert xlsx 单文件/目录/导入；typed view/apply；MCP 23 工具 + instructions + csvx://agent；agent serve | S:report 无 GUI；xlsx 日期暂按数值；unique-global 成本高；Agent SSE 只回放；公式缓存进程内 64 页"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/XLSX.md",
+      "path": "docs/XLSX.md",
+      "change": "update",
+      "source_sha256": "fda9ad7b1e7784a4e73c94764b4294a07c71a7791227684ca164f11364853a3d",
+      "existing_entry": "XLSX.md[SD7T]: F:xlsx 互操作现状与边界：导出、目录多 sheet、只读导入已实现 | R:code:crates/core/src/xlsx.rs,code:crates/cli/src/main.rs,code:docs/CAPABILITIES.md | A:convert --format xlsx 流式导出；目录→多 sheet 冻结/列宽；convert in.xlsx --format csv [--sheet]；换行保留；MCP sheet；openpyxl 实读 | S:只写值不写公式；日期按数值；不做宏/VBA；xlsx 不是内部存储格式；样式/合并忽略"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "99ac30c461780ab9ea2f67396713a36eb8b32d4cade1175527bfea3a7c3bda1f",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "59a913a8498b8eb0adf3a691dbdac7f803f02fa2fd9252e2aa169189869a0784",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:crates/core/src/xlsx.rs | A:CLI 入口；convert xlsx；report/gate/concat/edit/view/filter/watch；agent serve/manifest/run 及 endpoint/model/prompt/max-steps/allow-apply/skill | S:unique-global 成本高；report compare 限 root；xlsx 行上限；agent 端口 8788；runner key 仅 env"
+    },
+    {
+      "candidate_id": "8f68b63ae865d605e81176347e6e7f1bb6c04e8ffac45f875ede8140d8fd8d05",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "baa2dc90f7cc525888a93954870e1d229acda9851def55078f2798b5506b0ba0",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/FORMULA_CACHE.md | A:公式/窗口缓存；filter 压缩；gate+unique-global；concat；report spec/chart/compare/root；convert xlsx 单文件/目录/导入；typed view/apply；MCP 23 工具 + instructions + csvx://agent；agent serve | S:report 无 GUI；xlsx 日期暂按数值；unique-global 成本高；Agent SSE 只回放；公式缓存进程内 64 页"
+    },
+    {
+      "candidate_id": "26c1fd269ff431918aa3837018489a9f267440ebf4599d2ea26eb23efbc1787a",
+      "object_ref": "code:docs/XLSX.md",
+      "path": "docs/XLSX.md",
+      "change": "update",
+      "source_sha256": "fda9ad7b1e7784a4e73c94764b4294a07c71a7791227684ca164f11364853a3d",
+      "existing_entry": "XLSX.md[SD7T]: F:xlsx 互操作现状与边界：导出、目录多 sheet、只读导入已实现 | R:code:crates/core/src/xlsx.rs,code:crates/cli/src/main.rs,code:docs/CAPABILITIES.md | A:convert --format xlsx 流式导出；目录→多 sheet 冻结/列宽；convert in.xlsx --format csv [--sheet]；换行保留；MCP sheet；openpyxl 实读 | S:只写值不写公式；日期按数值；不做宏/VBA；xlsx 不是内部存储格式；样式/合并忽略"
+    }
+  ]
+}
