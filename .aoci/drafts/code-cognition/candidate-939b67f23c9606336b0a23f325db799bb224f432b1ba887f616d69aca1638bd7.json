@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "064c8132b7483536cbd058933acd09e3cf8a85547be105f50e54a33f662c9646",
+  "batch_id": "939b67f23c9606336b0a23f325db799bb224f432b1ba887f616d69aca1638bd7",
+  "composite_identity": "4bcf4d7514a2b78d7cb85780dd935f57502d9ef992beab982b2a848ac258b9ff",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "ef4dbbdad404d9ddfd24a1cdd0114ce19dd2f40df8b6ce7c8b00ab8a8e61e868",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/contract.rs",
+      "path": "crates/core/src/contract.rs",
+      "change": "update",
+      "source_sha256": "bca361653733dee7a324a21b11b67dcf2f9985ef2a5dae3b490d4ec6e28b57b0",
+      "existing_entry": "contract.rs[CG9M]: F:CLI/HTTP/MCP 共用的操作契约：效果、稳定错误码与 17 个操作目录 | R:code:crates/core/src/lib.rs,code:crates/cli/src/main.rs,code:docs/OPERATIONS.md | A:Effect read/preview/apply/job、ErrorCode 10 与 17 OperationSpec；operations_json 手工拼 JSON；新增 gate/report/concat；每条 name/effect/summary/input/output；CLI ops、HTTP /ops、MCP resource 共用 | S:名称/错误码是公开契约；input/output 只是摘要不是 JSON Schema；gate/report 归 read、concat 归 apply；typed adapter 仍在迁移"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "60a2edc39350158c61c16d346483207c47dee3a3cec773863ce728e4b6cdc825",
+      "object_ref": "code:crates/core/src/contract.rs",
+      "path": "crates/core/src/contract.rs",
+      "change": "update",
+      "source_sha256": "bca361653733dee7a324a21b11b67dcf2f9985ef2a5dae3b490d4ec6e28b57b0",
+      "existing_entry": "contract.rs[CG9M]: F:CLI/HTTP/MCP 共用的操作契约：效果、稳定错误码与 17 个操作目录 | R:code:crates/core/src/lib.rs,code:crates/cli/src/main.rs,code:docs/OPERATIONS.md | A:Effect read/preview/apply/job、ErrorCode 10 与 17 OperationSpec；operations_json 手工拼 JSON；新增 gate/report/concat；每条 name/effect/summary/input/output；CLI ops、HTTP /ops、MCP resource 共用 | S:名称/错误码是公开契约；input/output 只是摘要不是 JSON Schema；gate/report 归 read、concat 归 apply；typed adapter 仍在迁移"
+    }
+  ]
+}
