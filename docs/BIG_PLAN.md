@@ -128,6 +128,8 @@ csvx agent run   # 通过环境变量或命令参数提供 endpoint/model/prompt
 - 提供 `.mcp.json` 样例 + skill 说明，让 DSH 直接发现 csvx MCP；
 - 不修改用户的 DSH profile，除非用户明确要求；
 - 用本地 DSH 的 OpenAI-compatible 网关验证一次模型调用（只允许 Ark Economy）。
+  已实测：`DeepSeek-V4.1-Flash-1017-Ark-Economy` 在线，1.10 s 返回 `OK`；
+  记录见 `docs/DSH_MODEL_TEST.md`。
 
 ## Workstream D：项目整理
 
