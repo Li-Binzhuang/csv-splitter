@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "62a3b2774d7e76c9339bf8e2c19b69745b1e752b908e63ea36771c916930a69a",
+  "batch_id": "e04ecc6f74523add9e8d7449db8fc6b7f873a68004b53fe991a75bff90142c6c",
+  "composite_identity": "39117d43968de28fac7cec6d94f3f63dd54b31e4b96dca9b431bf86f35b7b37a",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "c0d513b0b3aaea2e98f6b3c69a700496c134bdffb91dc9f964d319609a3931db",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "cef7e3ce51868bcecf87db52c66081ccb6da4295a779e3d200efc3659e27db50",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-24 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 18 工具（cache_stats/clear）与 SDK；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程已实测 -T4 仅 2%，不引入外部 CLI；job 历史/LRU/缓存监控/白名单/watch 状态生命周期已落地；Ubuntu/Windows CI 与 macOS 均绿；含 Round 100/113/137/150 checkpoint | S:未测数字不写；价格/SLA 需用户确认；随离线包分发；MCP 缓存 gzip/zst/bz2 已验证"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "f297fce28930241b3480a7940695212ad089c704629b6d6c486f1c9f677c2b93",
+      "object_ref": "code:docs/ROADMAP.md",
+      "path": "docs/ROADMAP.md",
+      "change": "update",
+      "source_sha256": "cef7e3ce51868bcecf87db52c66081ccb6da4295a779e3d200efc3659e27db50",
+      "existing_entry": "ROADMAP.md[SU5T]: F:里程碑路线图复核：已验证能力、边界、缺口与 30/60/90 优先级 | R:code:docs/CAPABILITIES.md,code:docs/BUSINESS.md,code:docs/BENCHMARKS.md,code:docs/PILOT_INTAKE.md | A:2026-11-24 复核；记录 100 GB search 20.18 s、filter 25.75 s、export 79.62 s，MCP 18 工具（cache_stats/clear）与 SDK；真实客户试点是最大缺口，30 天按 PILOT_INTAKE 执行；压缩多线程已实测 -T4 仅 2%，不引入外部 CLI；job 历史/LRU/缓存监控/白名单/watch 状态生命周期已落地；Ubuntu/Windows CI 与 macOS 均绿；含 Round 100/113/137/150 checkpoint | S:未测数字不写；价格/SLA 需用户确认；随离线包分发；MCP 缓存 gzip/zst/bz2 已验证"
+    }
+  ]
+}
