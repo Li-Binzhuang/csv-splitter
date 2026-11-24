@@ -25,7 +25,7 @@ edit_ok=True
 convert_ok=True
 job=done
 == MCP official SDK ==
-sdk_tools=16
+sdk_tools=17
 schema_rows=5
 filter_matched=3
 view_rows=2
@@ -45,7 +45,7 @@ job=done
 ## 演示覆盖
 1. `pipeline run`：filter → quality，列出每步耗时；`.pipeline.csv` 记录血缘，重跑会跳过。
 2. `scripts/mcp_client.py`：真实 stdio JSON-RPC 客户端，不依赖第三方库：
-   - `tools/list`（16 个工具）
+   - `tools/list`（17 个工具）
    - `csvx_schema` / `csvx_filter` / `csvx_view`
    - `csvx_edit_set` → `csvx_edit_undo`（journal 锁）
    - `csvx_convert` 输出 TSV
@@ -72,7 +72,7 @@ CSVX_BIN=../../target/release/csvx CSVX_ROOT="$DIR" CSVX_FILE=orders.csv node cl
 实际输出：
 
 ```text
-sdk_tools=16
+sdk_tools=17
 schema_rows=3
 filter_matched=2
 view_rows=2

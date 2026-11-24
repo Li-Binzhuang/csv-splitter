@@ -150,6 +150,8 @@
   `verify_dist.sh`, and deletes the tarball/sha if verification fails; PILOT_CONFIRMATION.md is a fill-in 4-week pilot agreement template.
 - **View cursor**: `view --json` (and the MCP `csvx_view` tool) now returns
   `start`, `nextStart` and `hasMore`; clients can page without guessing counts.
+- **MCP cache stats**: `csvx_cache_stats` exposes materialize-cache hits/misses,
+  entries and bytes for the current server process.
 - **Pipeline watch**: `csvx pipeline watch <plan>` reruns stale steps on an interval;
   supports failure backoff, `--max-failures`, JSON rounds, and an atomic `--state` file
   with last success/failure timestamps and round resume across restarts.
@@ -176,7 +178,7 @@
   child instead of returning running immediately; test asks for a 2 s wait on a
   quick schema job and gets done.
 - **MCP job list**: `csvx_job_list` returns every job's state; running jobs also
-  report `elapsedMs`. 16 tools; the schema unit test guards tools/list JSON.
+  report `elapsedMs`. 17 tools (including cache stats); the schema unit test guards tools/list JSON.
 - **MCP job cancel**: `csvx_job_cancel` kills a running child and returns
   `{"state":"cancelled"}`; finished jobs return done/failed. Reader threads and
   cached results are cleaned up.
