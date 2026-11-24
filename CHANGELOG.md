@@ -150,8 +150,9 @@
   `verify_dist.sh`, and deletes the tarball/sha if verification fails; PILOT_CONFIRMATION.md is a fill-in 4-week pilot agreement template.
 - **View cursor**: `view --json` (and the MCP `csvx_view` tool) now returns
   `start`, `nextStart` and `hasMore`; clients can page without guessing counts.
-- **MCP cache stats**: `csvx_cache_stats` exposes materialize-cache hits/misses,
-  entries and bytes; `csvx_cache_clear` deletes cached temp files and returns removed count/bytes.
+- **MCP cache stats**: `csvx_cache_stats` (readOnlyHint) exposes hits/misses,
+  entries and bytes; `csvx_cache_clear` (destructiveHint/idempotentHint) deletes temp files
+  and returns removed count/bytes.
   Neither is a CLI job command.
 - **Pipeline watch**: `csvx pipeline watch <plan>` reruns stale steps on an interval;
   supports failure backoff, `--max-failures`, JSON rounds, and an atomic `--state` file
