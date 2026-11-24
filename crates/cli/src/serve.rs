@@ -41,7 +41,7 @@ use csvx_core::groupby;
 use csvx_core::jobs::JobRegistry;
 use csvx_core::listing;
 use csvx_core::merge::merge_archive_expecting;
-use csvx_core::ops::ViewRequest;
+use csvx_core::ops::{EditApplyRequest, ViewRequest};
 use csvx_core::partition;
 use csvx_core::preview::compute_column_stats;
 use csvx_core::profile;
@@ -2630,7 +2630,13 @@ fn edit_apply(
             };
             return respond_json(stream, 200, &edit_preview_json(&preview));
         }
-        let applied = match csvx_core::workbook::append_atomically(&sidecar, &ops) {
+        let applied = match (EditApplyRequest {
+            path: path.clone(),
+            delimiter: delimiter(params),
+            ops,
+        })
+        .execute()
+        {
             Ok(applied) => applied,
             Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                 return respond_json(
@@ -2656,8 +2662,9 @@ fn edit_apply(
             stream,
             200,
             &format!(
-                r#"{{"op":"transaction","operations":{},"applied":{applied},"stamp":{},"atomic":true,"undo":"one op per undo"}}"#,
-                ops.len(),
+                r#"{{"op":"transaction","operations":{},"applied":{},"stamp":{},"atomic":true,"undo":"one op per undo"}}"#,
+                applied.operations,
+                applied.applied,
                 json_str(&journal_stamp(&path))
             ),
         );

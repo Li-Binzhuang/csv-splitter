@@ -8476,7 +8476,13 @@ fn cmd_edit(args: &[String]) -> i32 {
             }
             return 0;
         }
-        let applied = match csvx_core::workbook::append_atomically(&sidecar, &ops) {
+        let applied = match (csvx_core::ops::EditApplyRequest {
+            path: input.clone(),
+            delimiter,
+            ops,
+        })
+        .execute()
+        {
             Ok(applied) => applied,
             Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                 eprintln!("error: another writer holds the journal; retry in a moment");
@@ -8486,13 +8492,13 @@ fn cmd_edit(args: &[String]) -> i32 {
         };
         if json {
             println!(
-                r#"{{"op":"transaction","operations":{},"applied":{applied},"atomic":true}}"#,
-                ops.len()
+                r#"{{"op":"transaction","operations":{},"applied":{},"atomic":true}}"#,
+                applied.operations, applied.applied
             );
         } else {
             println!(
-                "✓ transaction: {} operation(s), {applied} pending total (atomic)",
-                ops.len()
+                "✓ transaction: {} operation(s), {} pending total (atomic)",
+                applied.operations, applied.applied
             );
         }
         return 0;

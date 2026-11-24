@@ -9,7 +9,7 @@ use crate::filter::{self, FilterSpec};
 use crate::sheet::{ColumnInfo, ReadOptions, Sheet};
 use crate::types::{Delimiter, ProgressEvent};
 use crate::viewer::WindowViewer;
-use crate::workbook::{RowId, Window};
+use crate::workbook::{Journal, Op, RowId, Window};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -117,6 +117,34 @@ impl ViewRequest {
         )?;
         let window = sheet.window(self.start, self.count)?;
         Ok(ViewResponse { window })
+    }
+}
+
+/// Apply a validated transaction batch. Parsing and preview stay in the adapters'
+/// hands because their error spellings differ; the write itself is this one type.
+#[derive(Clone, Debug)]
+pub struct EditApplyRequest {
+    pub path: PathBuf,
+    pub delimiter: Delimiter,
+    pub ops: Vec<Op>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EditApplyResponse {
+    /// Journal operations after the append, as the response reports them.
+    pub applied: usize,
+    pub operations: usize,
+}
+
+impl EditApplyRequest {
+    pub fn execute(&self) -> io::Result<EditApplyResponse> {
+        let _ = self.delimiter;
+        let sidecar = Journal::sidecar(&self.path);
+        let applied = crate::workbook::append_atomically(&sidecar, &self.ops)?;
+        Ok(EditApplyResponse {
+            applied,
+            operations: self.ops.len(),
+        })
     }
 }
 
@@ -286,6 +314,24 @@ mod tests {
         assert_eq!(response.window.total, 3);
         assert_eq!(response.window.rows.len(), 1);
         assert_eq!(response.window.rows[0][0], "2");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn edit_apply_writes_one_journal_batch() {
+        let (dir, path) = fixture("edit_apply_writes_one_journal_batch");
+        let columns = vec!["a".to_string(), "b".to_string()];
+        let ops = crate::workbook::parse_ops("set:1:a:9", 3, &columns).unwrap();
+        let response = EditApplyRequest {
+            path: path.clone(),
+            delimiter: Delimiter::Comma,
+            ops,
+        }
+        .execute()
+        .unwrap();
+        assert_eq!(response.operations, 1);
+        assert_eq!(response.applied, 1);
+        assert!(crate::workbook::Journal::sidecar(&path).exists());
         std::fs::remove_dir_all(dir).ok();
     }
 
