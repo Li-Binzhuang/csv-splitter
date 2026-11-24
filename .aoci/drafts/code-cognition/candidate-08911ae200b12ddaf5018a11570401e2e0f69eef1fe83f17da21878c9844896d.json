@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "700937fe3ea96bfea7c30f86e7bf0849de5f6ade49369579e31e7afd0c56deb9",
+  "batch_id": "08911ae200b12ddaf5018a11570401e2e0f69eef1fe83f17da21878c9844896d",
+  "composite_identity": "0779017566527a6b4f62744ae31327d6bcec4614a93172657d11d6362436e4c4",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "221406bc1f8e00c2a406d720d3fc65fe775142f261c504f392ed97adf560fb6f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "664d88a6bbc858fe47018d65b1e75e0025e499bda415b2ed59e3b34b8a2150d1",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行/压缩、gate 单文件/目录+外部排序 unique、concat 目录、report CSV spec→MD/HTML+HTTP+MCP、compact/book/quality/convert、pipeline 快跳过/--dry-run/JSON/lineage/verify/锁/group/staging、mcp 20 工具、ops/typed ops、edit preview 三端 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/contract.rs",
+      "path": "crates/core/src/contract.rs",
+      "change": "update",
+      "source_sha256": "7ca9e3d711f446969f1dcd6c754147973ebbaf9b95410606fc1f320d29dcf435",
+      "existing_entry": "contract.rs[CG9M]: F:CLI/HTTP/MCP 共用的操作契约：效果、稳定错误码与 14 个操作目录 | R:code:crates/core/src/lib.rs,code:crates/cli/src/main.rs,code:docs/OPERATIONS.md | A:定义 Effect(read/preview/apply/job)、ErrorCode(10) 与 14 OperationSpec；operations_json 手工拼 JSON、无 serde；每条含 name/effect/summary/input/output；CLI ops --json 暴露；HTTP/MCP/typed schema 留 Stage 2 | S:名称与错误码是公开契约，改名会破坏适配器；input/output 只是摘要不是 JSON Schema；Stage 1 未迁移任何 handler，不承诺 preview/apply 已统一"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/API.md",
+      "path": "docs/API.md",
+      "change": "update",
+      "source_sha256": "50c56f1e576349b3059ec055bd965d675b8e0bab87c039e4501c2e11a5aa145e",
+      "existing_entry": "API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；/ops 与 CLI/MCP 同一目录；/report 返回 MD/HTML 正文；filter/search cursor；/edit preview=1；聚合端点 engine 选择 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然；文档字段必须真的出现在响应里"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/OPERATIONS.md",
+      "path": "docs/OPERATIONS.md",
+      "change": "update",
+      "source_sha256": "be2bb32719b6125439bcf84a176d9e97efce5b7b4b6d82fa1b69169196955005",
+      "existing_entry": "OPERATIONS.md[SG8T]: F:操作契约层 ADR：Stage 1 目录、适配器迁移与 preview/apply 规则 | R:code:crates/core/src/contract.rs,code:crates/core/src/ops.rs,code:crates/cli/src/main.rs,code:crates/cli/src/serve.rs,code:docs/ARCHITECTURE.md | A:问题/决定/14 操作；Stage 1 CLI ops；Stage 2 typed+schema/filter CLI+HTTP、view CLI 简单路径；Stage 3 preview 三端；Stage 4 filter 压缩、gate 单文件/目录、concat 目录、report CLI+HTTP+MCP；前端 | S:view HTTP/复杂路径未接；journal hash 非 SHA；gate 唯一性排序成本；report 三端都调同一渲染；input/output 摘要不冒充 JSON Schema"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "437769230f3a0240179151e1872280d397bc09e01c6068234871c604725f892d",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "664d88a6bbc858fe47018d65b1e75e0025e499bda415b2ed59e3b34b8a2150d1",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行/压缩、gate 单文件/目录+外部排序 unique、concat 目录、report CSV spec→MD/HTML+HTTP+MCP、compact/book/quality/convert、pipeline 快跳过/--dry-run/JSON/lineage/verify/锁/group/staging、mcp 20 工具、ops/typed ops、edit preview 三端 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "a2ba1c7ef0d5879b52ff5ff3b996679ba83e2f00b038559a7ca1ceb6492fa48e",
+      "object_ref": "code:crates/core/src/contract.rs",
+      "path": "crates/core/src/contract.rs",
+      "change": "update",
+      "source_sha256": "7ca9e3d711f446969f1dcd6c754147973ebbaf9b95410606fc1f320d29dcf435",
+      "existing_entry": "contract.rs[CG9M]: F:CLI/HTTP/MCP 共用的操作契约：效果、稳定错误码与 14 个操作目录 | R:code:crates/core/src/lib.rs,code:crates/cli/src/main.rs,code:docs/OPERATIONS.md | A:定义 Effect(read/preview/apply/job)、ErrorCode(10) 与 14 OperationSpec；operations_json 手工拼 JSON、无 serde；每条含 name/effect/summary/input/output；CLI ops --json 暴露；HTTP/MCP/typed schema 留 Stage 2 | S:名称与错误码是公开契约，改名会破坏适配器；input/output 只是摘要不是 JSON Schema；Stage 1 未迁移任何 handler，不承诺 preview/apply 已统一"
+    },
+    {
+      "candidate_id": "c7dbae39a7c7f8d54a43ecc873e6a301fe1f970ba13a473589cd6cde8a81c430",
+      "object_ref": "code:docs/API.md",
+      "path": "docs/API.md",
+      "change": "update",
+      "source_sha256": "50c56f1e576349b3059ec055bd965d675b8e0bab87c039e4501c2e11a5aa145e",
+      "existing_entry": "API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；/ops 与 CLI/MCP 同一目录；/report 返回 MD/HTML 正文；filter/search cursor；/edit preview=1；聚合端点 engine 选择 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然；文档字段必须真的出现在响应里"
+    },
+    {
+      "candidate_id": "100c79ba2443b269255d08ac70edec46a616b66413091bebbba20e9798259792",
+      "object_ref": "code:docs/OPERATIONS.md",
+      "path": "docs/OPERATIONS.md",
+      "change": "update",
+      "source_sha256": "be2bb32719b6125439bcf84a176d9e97efce5b7b4b6d82fa1b69169196955005",
+      "existing_entry": "OPERATIONS.md[SG8T]: F:操作契约层 ADR：Stage 1 目录、适配器迁移与 preview/apply 规则 | R:code:crates/core/src/contract.rs,code:crates/core/src/ops.rs,code:crates/cli/src/main.rs,code:crates/cli/src/serve.rs,code:docs/ARCHITECTURE.md | A:问题/决定/14 操作；Stage 1 CLI ops；Stage 2 typed+schema/filter CLI+HTTP、view CLI 简单路径；Stage 3 preview 三端；Stage 4 filter 压缩、gate 单文件/目录、concat 目录、report CLI+HTTP+MCP；前端 | S:view HTTP/复杂路径未接；journal hash 非 SHA；gate 唯一性排序成本；report 三端都调同一渲染；input/output 摘要不冒充 JSON Schema"
+    }
+  ]
+}
