@@ -150,6 +150,28 @@ fn agent_api_creates_session_actions_approves_and_audits() {
         "{audit}"
     );
 
+    // follow=1 keeps the connection open and pushes the first audit frame.
+    let mut follow = TcpStream::connect(&addr).unwrap();
+    follow
+        .set_read_timeout(Some(Duration::from_secs(2)))
+        .unwrap();
+    let follow_request = format!(
+        "GET /agent/v1/sessions/{session}/events?follow=1 HTTP/1.1\r\nHost: localhost\r\nAuthorization: Bearer {token}\r\nConnection: close\r\n\r\n"
+    );
+    follow.write_all(follow_request.as_bytes()).unwrap();
+    let mut prefix = String::new();
+    for _ in 0..20 {
+        let mut chunk = vec![0u8; 4096];
+        let read = follow.read(&mut chunk).unwrap_or(0);
+        prefix.push_str(&String::from_utf8_lossy(&chunk[..read]));
+        if prefix.contains("event: audit") {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(100));
+    }
+    assert!(prefix.contains("event: audit"), "{prefix}");
+    drop(follow);
+
     let (status, body) = request(
         &addr,
         "POST",

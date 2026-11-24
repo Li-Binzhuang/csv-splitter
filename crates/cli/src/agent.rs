@@ -75,13 +75,11 @@ fn handle(mut stream: TcpStream, root: &Path, state: &State) -> io::Result<()> {
     }
     let mut parts = line.split_whitespace();
     let method = parts.next().unwrap_or("").to_string();
-    let path = parts
-        .next()
-        .unwrap_or("/")
-        .split('?')
-        .next()
-        .unwrap_or("/")
-        .to_string();
+    let target = parts.next().unwrap_or("/");
+    let (path, query) = match target.split_once('?') {
+        Some((path, query)) => (path.to_string(), query.to_string()),
+        None => (target.to_string(), String::new()),
+    };
     let mut authorization: Option<String> = None;
     let mut content_length = 0usize;
     loop {
@@ -140,7 +138,8 @@ fn handle(mut stream: TcpStream, root: &Path, state: &State) -> io::Result<()> {
         return close(&mut stream, state, session_id, token);
     }
     if method == "GET" && action == "events" {
-        return events(&mut stream, state, session_id, token);
+        let follow = query.split('&').any(|pair| pair == "follow=1");
+        return events(&mut stream, state, session_id, token, follow);
     }
     respond_json(&mut stream, 404, r#"{"error":"not found"}"#)
 }
@@ -385,7 +384,13 @@ fn close(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Re
     respond_json(stream, 200, r#"{"closed":true}"#)
 }
 
-fn events(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
+fn events(
+    stream: &mut TcpStream,
+    state: &State,
+    id: &str,
+    token: &str,
+    follow: bool,
+) -> io::Result<()> {
     let sessions = match state.sessions.lock() {
         Ok(sessions) => sessions,
         Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
@@ -398,16 +403,28 @@ fn events(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::R
     }
     let audit = session.audit.clone();
     drop(sessions);
-    let mut response = String::from("HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n");
-    if let Ok(text) = std::fs::read_to_string(&audit) {
-        for line in text.lines() {
-            response.push_str("event: audit\ndata: ");
-            response.push_str(line);
-            response.push_str("\n\n");
+    stream.write_all(
+        b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n",
+    )?;
+    let mut sent = 0usize;
+    let deadline = std::time::Instant::now() + Duration::from_secs(60);
+    loop {
+        let text = std::fs::read_to_string(&audit).unwrap_or_default();
+        if text.len() > sent {
+            let fresh = &text[sent..];
+            for line in fresh.lines().filter(|line| !line.is_empty()) {
+                stream.write_all(b"event: audit\ndata: ")?;
+                stream.write_all(line.as_bytes())?;
+                stream.write_all(b"\n\n")?;
+            }
+            sent = text.len();
         }
+        if !follow || std::time::Instant::now() >= deadline {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(200));
     }
-    response.push_str("event: end\ndata: {}\n\n");
-    stream.write_all(response.as_bytes())
+    stream.write_all(b"event: end\ndata: {}\n\n")
 }
 
 fn is_destructive(tool: &str) -> bool {
