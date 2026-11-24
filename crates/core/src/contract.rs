@@ -182,14 +182,14 @@ pub const OPERATIONS: &[OperationSpec] = &[
         name: "report",
         effect: Effect::Read,
         summary: "Render a deterministic CSV-spec Markdown or HTML report.",
-        input: "path, spec optional, format/title optional",
+        input: "path, spec or specText optional, format/title optional",
         output: "markdown/html body",
     },
     OperationSpec {
         name: "concat",
         effect: Effect::Apply,
         summary: "Concatenate same-shaped files or a directory's CSV files.",
-        input: "paths or directory, out, byName/engine optional",
+        input: "paths or dir, out, byName/engine/ignoreHeader optional",
         output: "out, rows, columns",
     },
 ];
