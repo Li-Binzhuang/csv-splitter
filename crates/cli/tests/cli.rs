@@ -2831,6 +2831,7 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
             r#"{"jsonrpc":"2.0","id":20,"method":"tools/call","params":{"name":"csvx_gate","arguments":{"path":"t.csv","minRows":99}}}"#,
             r#"{"jsonrpc":"2.0","id":21,"method":"tools/call","params":{"name":"csvx_edit_apply","arguments":{"path":"t.csv","ops":"set:1:city:Z"}}}"#,
             r#"{"jsonrpc":"2.0","id":22,"method":"tools/call","params":{"name":"csvx_concat","arguments":{"paths":"t.csv,other.csv","out":"all.csv"}}}"#,
+            r#"{"jsonrpc":"2.0","id":23,"method":"tools/call","params":{"name":"csvx_concat","arguments":{"paths":"../escape.csv","out":"escape.csv"}}}"#,
             r#"not-json"#,
         ] {
             writeln!(stdin, "{line}").unwrap();
@@ -2874,6 +2875,7 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
     assert!(stdout.contains(r#""applied\":1"#), "{stdout}");
     assert!(stdout.contains(r#""name":"csvx_concat""#), "{stdout}");
     assert!(stdout.contains(r#""rows\":4"#), "{stdout}");
+    assert!(stdout.contains("outside the MCP root"), "{stdout}");
     assert!(stdout.contains(r#""isError":false"#), "{stdout}");
     assert!(stdout.contains("Puebla"), "{stdout}");
     assert!(stdout.contains("20"), "{stdout}");

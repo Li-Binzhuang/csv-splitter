@@ -3592,6 +3592,19 @@ fn concat_stacks_files_over_http() {
         std::fs::read_to_string(dir.join("sub-all.csv")).unwrap(),
         "id,city\n1,Puebla\n2,Monterrey\n"
     );
+
+    // The directory input has the same guards as the explicit list.
+    std::fs::create_dir(dir.join("solo")).unwrap();
+    std::fs::write(dir.join("solo/only.csv"), "id\n1\n").unwrap();
+    let (code, body) = post(&server.addr, "/concat?dir=solo&out=x.csv");
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains(r#""parameter":"dir""#), "{body}");
+    let (code, body) = post(&server.addr, "/concat?dir=sub&paths=a.csv&out=x.csv");
+    assert_eq!(code, 400, "{body}");
+    assert!(body.contains("not both"), "{body}");
+    let (code, body) = post(&server.addr, "/concat?dir=../outside&out=x.csv");
+    assert_eq!(code, 404, "{body}");
+    assert!(body.contains("served directory"), "{body}");
 }
 
 /// `POST /columns` writes a reshaped copy; the source is untouched.
