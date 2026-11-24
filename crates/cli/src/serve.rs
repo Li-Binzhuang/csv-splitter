@@ -41,6 +41,7 @@ use csvx_core::groupby;
 use csvx_core::jobs::JobRegistry;
 use csvx_core::listing;
 use csvx_core::merge::merge_archive_expecting;
+use csvx_core::ops::ViewRequest;
 use csvx_core::partition;
 use csvx_core::preview::compute_column_stats;
 use csvx_core::profile;
@@ -5671,16 +5672,6 @@ fn rows(
         return respond_sheet_window(stream, &path, start, count, requested, params);
     }
 
-    let mut viewer = match WindowViewer::open(&path, delimiter(params)) {
-        Ok(v) => v,
-        Err(e) => {
-            return respond_json(
-                stream,
-                422,
-                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
-            )
-        }
-    };
     // With `sql=`, the window is taken from the query result instead of the
     // raw file: a table can page a filtered/sorted view directly. The result is
     // materialised once (up to a cap) and later pages are slices, so scrolling
@@ -5700,23 +5691,28 @@ fn rows(
         );
     }
 
-    if let Err(e) = viewer.ensure_range(start, count) {
-        return respond_json(
-            stream,
-            500,
-            &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
-        );
-    }
-
-    let offset = start.saturating_sub(viewer.window_start()) as usize;
-    let headers = viewer.headers().unwrap_or_default();
-    let windowed: Vec<Vec<String>> = viewer
-        .rows()
-        .iter()
-        .skip(offset)
-        .take(count as usize)
-        .cloned()
-        .collect();
+    // The simple no-edit window is the typed ViewRequest, so HTTP and CLI share the
+    // same row-numbering and window semantics instead of two viewer call sites.
+    let view = match (ViewRequest {
+        path: path.clone(),
+        delimiter: delimiter(params),
+        start,
+        count,
+    })
+    .execute()
+    {
+        Ok(view) => view.window,
+        Err(e) => {
+            return respond_json(
+                stream,
+                422,
+                &format!(r#"{{"error":{}}}"#, json_str(&e.to_string())),
+            )
+        }
+    };
+    let total = view.total;
+    let headers = view.columns;
+    let windowed = view.rows;
     let projected = match requested_columns(params) {
         None => (headers.clone(), windowed),
         Some(wanted) => match project_window(&headers, &windowed, &wanted) {
@@ -5750,7 +5746,7 @@ fn rows(
     if params.get("format").map(String::as_str) == Some("csv") {
         return respond_window_as_csv(stream, &display_columns, &display_rows);
     }
-    let total = viewer.total_rows();
+    // total comes from the typed window above.
     // Every page answers these, whether it was filtered or not: a client that has to
     // branch on the shape of a response is a client that will get it wrong.
     let past_end = total > 0 && start >= start.saturating_add(rows.len() as u64);

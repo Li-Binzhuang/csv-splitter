@@ -8,7 +8,8 @@
 use crate::filter::{self, FilterSpec};
 use crate::sheet::{ColumnInfo, ReadOptions, Sheet};
 use crate::types::{Delimiter, ProgressEvent};
-use crate::workbook::Window;
+use crate::viewer::WindowViewer;
+use crate::workbook::{RowId, Window};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -72,6 +73,42 @@ pub struct ViewResponse {
 
 impl ViewRequest {
     pub fn execute(&self) -> io::Result<ViewResponse> {
+        // No journal means the base bytes already are the sheet. The sparse viewer
+        // reads only the requested window, matching the HTTP no-edit path instead of
+        // paying for a Sheet index on every page.
+        if !crate::sheet::has_edits(&self.path) {
+            let mut viewer = WindowViewer::open(&self.path, self.delimiter)?;
+            let columns = viewer.headers()?;
+            let total = viewer.total_rows();
+            if self.count == 0 || self.start >= total {
+                return Ok(ViewResponse {
+                    window: Window {
+                        columns,
+                        rows: Vec::new(),
+                        keys: Vec::new(),
+                        total,
+                    },
+                });
+            }
+            viewer.jump_to(self.start)?;
+            let rows: Vec<Vec<String>> = viewer
+                .rows()
+                .iter()
+                .take(self.count as usize)
+                .cloned()
+                .collect();
+            let keys = (0..rows.len())
+                .map(|i| RowId::Base(self.start + i as u64))
+                .collect();
+            return Ok(ViewResponse {
+                window: Window {
+                    columns,
+                    rows,
+                    keys,
+                    total,
+                },
+            });
+        }
         let sheet = Sheet::open(
             &self.path,
             ReadOptions {
@@ -249,6 +286,49 @@ mod tests {
         assert_eq!(response.window.total, 3);
         assert_eq!(response.window.rows.len(), 1);
         assert_eq!(response.window.rows[0][0], "2");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn typed_view_matches_the_sheet_window_without_edits() {
+        let (dir, path) = fixture("typed_view_matches_the_sheet_window_without_edits");
+        let sheet = Sheet::open(
+            &path,
+            ReadOptions {
+                delimiter: Delimiter::Comma,
+            },
+        )
+        .unwrap();
+        let expected = sheet.window(1, 2).unwrap();
+        let typed = ViewRequest {
+            path: path.clone(),
+            delimiter: Delimiter::Comma,
+            start: 1,
+            count: 2,
+        }
+        .execute()
+        .unwrap();
+        assert_eq!(typed.window.columns, expected.columns);
+        assert_eq!(typed.window.rows, expected.rows);
+        assert_eq!(typed.window.keys, expected.keys);
+        assert_eq!(typed.window.total, expected.total);
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn typed_view_returns_an_empty_window_past_the_end() {
+        let (dir, path) = fixture("typed_view_returns_an_empty_window_past_the_end");
+        let response = ViewRequest {
+            path: path.clone(),
+            delimiter: Delimiter::Comma,
+            start: 99,
+            count: 10,
+        }
+        .execute()
+        .unwrap();
+        assert_eq!(response.window.total, 3);
+        assert!(response.window.rows.is_empty());
+        assert!(response.window.keys.is_empty());
         std::fs::remove_dir_all(dir).ok();
     }
 

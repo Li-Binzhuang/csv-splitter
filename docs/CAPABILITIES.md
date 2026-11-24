@@ -231,7 +231,7 @@ delimiter 检测也读解压后的内容。压缩流不可 seek，因此自动�
 ### 端到端 demo
 
 `BIN=target/release/csvx bash scripts/demo_end_to_end.sh`：pipeline filter→quality（12/11 ms）
-后，`scripts/mcp_client.py` 走 schema/filter/view/edit/preview/report/gate/undo/convert/job，21 个工具。
+后，`scripts/mcp_client.py` 走 schema/filter/view/edit/preview/report/gate/undo/convert/job，21 个工具；其中 `/rows` 的简单窗口与 `csvx_view` 共用 core `ViewRequest`。
 见 `docs/DEMO.md`。
 
 ### MCP（B agent 后端，只读首版）
@@ -257,8 +257,8 @@ delimiter 检测也读解压后的内容。压缩流不可 seek，因此自动�
 running/done（带 output）/failed（带 exitCode/error）；结果会缓存，重复轮询不丢输出。
 `initialize` / `tools/list` / `tools/call` 已实现；UTF-8 参数按字节保留，JSON-RPC 一行一条。
 
-官方 `@modelcontextprotocol/sdk` 1.32.2 客户端联调通过：13 工具、schema/filter/view、
-edit/undo/convert、异步 job 均完成（见 `docs/DEMO.md`）。
+官方 `@modelcontextprotocol/sdk` 1.32.2 客户端联调通过：21 工具、schema/filter/view、
+report/gate/edit/undo/convert、异步 job 均完成（见 `docs/DEMO.md`）。
 2.3 GB/9500 万行 MCP drill（2026-11-23）：cold `schema` 3.11 s（建 760 KB 稀疏索引），
 warm schema 0.03 s，`view start=45,000,000` 0.02 s，`filter` 0.77 s，`search` 0.56 s，
 `quality` 22.25 s（9500 万行全量）；响应 0.4–4 KB。

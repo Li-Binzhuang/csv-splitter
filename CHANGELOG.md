@@ -160,6 +160,8 @@
   contract (17 operations), published by CLI `/ops` and MCP resource.
 - **Typed read operations**: `core::ops` owns schema/view/filter requests and responses;
   `schema`/`filter` CLI+HTTP and `view` CLI's simple path use typed requests.
+- **Typed view on HTTP**: the no-edit `/rows` window now runs through
+  `core::ops::ViewRequest`, matching the CLI's row window without a second viewer.
 - **CSV report spec**: `report data.csv --spec report.csv` renders deterministic
   Markdown/HTML from summary/columns/quality/groups/rows sections, escaping cells;
   groups is real groupby (count or sum/mean/min/max on a measure);
