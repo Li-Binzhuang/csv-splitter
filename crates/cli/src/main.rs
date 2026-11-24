@@ -148,6 +148,9 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--retry-delay", "Milliseconds between retries (default 250)"),
             ("--step-timeout", "Kill a step after N milliseconds (0 = none)"),
             ("--json", "Emit JSON (run and status)"),
+            ("--interval-ms", "Watch: milliseconds between runs (default 5000)"),
+            ("--iterations", "Watch: run N rounds then exit (0 = forever)"),
+            ("--verbose", "Watch: print even when every step is fresh"),
             ("--root", "Directory for relative inputs/outputs"),
         ],
     ),
@@ -692,6 +695,7 @@ COMMANDS
   book     <dir>                  List every CSV in a directory as one workbook
   book     --plan <file>          Apply a declarative sheet/lookup/output manifest
   pipeline run <plan>             Run a declarative, incremental CSV pipeline
+  pipeline watch <plan>           Poll and rerun the pipeline when steps go stale
   demo     [-o <dir>]           Write a sample file to try the commands on
   search   <input> <text>        Find text anywhere (or in chosen columns)
   files    --root <dir>          List readable files under a directory
@@ -9001,6 +9005,69 @@ fn normalize_plan_path(path: &std::path::Path) -> std::path::PathBuf {
 }
 
 #[allow(clippy::too_many_arguments)]
+fn watch_pipeline(
+    plan: &std::path::Path,
+    root: Option<&std::path::Path>,
+    force: bool,
+    dry_run: bool,
+    step_timeout_ms: u64,
+    retries: usize,
+    retry_delay_ms: u64,
+    jobs: usize,
+    dag: bool,
+    clean: bool,
+    unlock: bool,
+    progress_markers: bool,
+    content_check: bool,
+    interval_ms: u64,
+    iterations: usize,
+    verbose: bool,
+) -> std::io::Result<()> {
+    let interval = std::time::Duration::from_millis(interval_ms.max(10));
+    let mut round = 0usize;
+    loop {
+        round += 1;
+        match run_pipeline_plan(
+            plan,
+            root,
+            force,
+            dry_run,
+            step_timeout_ms,
+            retries,
+            retry_delay_ms,
+            jobs,
+            dag,
+            clean,
+            unlock,
+            progress_markers,
+            content_check,
+        ) {
+            Ok((results, _)) => {
+                let ran = results.iter().filter(|(_, fresh, _, _)| !*fresh).count();
+                if ran > 0 || verbose {
+                    println!("watch: round {round} ran {ran}/{} step(s)", results.len());
+                }
+                for (name, fresh, _, detail) in &results {
+                    if !*fresh {
+                        println!("→ {name} ({detail})");
+                    }
+                }
+            }
+            Err(error) => {
+                eprintln!("watch: {error}");
+                if iterations > 0 {
+                    return Err(error);
+                }
+            }
+        }
+        if iterations > 0 && round >= iterations {
+            return Ok(());
+        }
+        std::thread::sleep(interval);
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
 fn run_pipeline_plan(
     plan: &std::path::Path,
     root: Option<&std::path::Path>,
@@ -9515,6 +9582,9 @@ fn cmd_pipeline(args: &[String]) -> i32 {
     let mut progress_markers = false;
     let mut content_check = false;
     let mut json = false;
+    let mut watch_interval_ms = 5_000u64;
+    let mut watch_iterations = 0usize;
+    let mut verbose = false;
     while let Some(arg) = p.next() {
         match arg.as_str() {
             "--root" => match p.value("--root") {
@@ -9577,6 +9647,29 @@ fn cmd_pipeline(args: &[String]) -> i32 {
                 }
             },
             "--json" => json = true,
+            "--interval-ms" => match p.value("--interval-ms").and_then(|value| {
+                value
+                    .parse::<u64>()
+                    .map_err(|_| "bad --interval-ms".to_string())
+            }) {
+                Ok(value) => watch_interval_ms = value,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 2;
+                }
+            },
+            "--iterations" => match p.value("--iterations").and_then(|value| {
+                value
+                    .parse::<usize>()
+                    .map_err(|_| "bad --iterations".to_string())
+            }) {
+                Ok(value) => watch_iterations = value,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 2;
+                }
+            },
+            "--verbose" => verbose = true,
             "-h" | "--help" => {
                 print_command_help("pipeline");
                 return 0;
@@ -9598,7 +9691,7 @@ fn cmd_pipeline(args: &[String]) -> i32 {
         }
     }
     let Some(action) = action else {
-        eprintln!("error: pipeline needs run|status <plan>");
+        eprintln!("error: pipeline needs run|status|watch <plan>");
         return 2;
     };
     let Some(plan) = plan else {
@@ -9606,6 +9699,30 @@ fn cmd_pipeline(args: &[String]) -> i32 {
         return 2;
     };
     match action.as_str() {
+        "watch" => match watch_pipeline(
+            &plan,
+            root.as_deref(),
+            force,
+            dry_run,
+            step_timeout_ms,
+            retries,
+            retry_delay_ms,
+            jobs,
+            dag,
+            clean,
+            unlock,
+            progress_markers,
+            content_check,
+            watch_interval_ms,
+            watch_iterations,
+            verbose,
+        ) {
+            Ok(()) => 0,
+            Err(error) => {
+                eprintln!("error: {error}");
+                1
+            }
+        },
         "run" => match run_pipeline_plan(
             &plan,
             root.as_deref(),

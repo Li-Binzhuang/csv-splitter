@@ -7736,3 +7736,48 @@ fn undo_takes_a_transaction_back_in_one_step() {
         "city,amount\nZ,1\nC,3\nd,4\n"
     );
 }
+
+/// Watch runs immediately, then exits after the requested number of rounds.
+#[test]
+fn pipeline_watch_runs_and_then_reports_fresh() {
+    let dir = TempDir::new("pipeline-watch");
+    std::fs::write(
+        dir.join("orders.csv"),
+        "order,city\nA,CDMX\nB,Puebla\nC,CDMX\n",
+    )
+    .unwrap();
+    std::fs::write(
+        dir.join("plan.csv"),
+        "step,input,command,args,output\nfiltered,orders.csv,filter,--where city=CDMX -o {out},filtered.csv\n",
+    )
+    .unwrap();
+    let watch = || {
+        Command::new(bin())
+            .args([
+                "pipeline",
+                "watch",
+                dir.join("plan.csv").to_str().unwrap(),
+                "--root",
+                dir.0.to_str().unwrap(),
+                "--iterations",
+                "1",
+                "--interval-ms",
+                "10",
+                "--verbose",
+            ])
+            .output()
+            .unwrap()
+    };
+    let first = watch();
+    assert!(
+        first.status.success(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    assert!(String::from_utf8_lossy(&first.stdout).contains("ran 1/1 step(s)"));
+    assert!(dir.join("filtered.csv").exists());
+    let second = watch();
+    assert!(second.status.success());
+    let stdout = String::from_utf8_lossy(&second.stdout);
+    assert!(stdout.contains("ran 0/1 step(s)"), "{stdout}");
+}
