@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-24T11:14:22Z",
+  "updated_at": "2026-11-24T11:16:18Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -124,9 +124,9 @@
     },
     "crates/cli/tests/cli.rs": {
       "role": "observe",
-      "sha256": "69b90bcf02ccfb951a7ebf7211c87ea90c6a7113d96cb97a0d532741503c927f",
-      "size": 274411,
-      "normalized_sha256": "69b90bcf02ccfb951a7ebf7211c87ea90c6a7113d96cb97a0d532741503c927f"
+      "sha256": "760727cc28dbc507d1570dbd8efef736edf182bed39f226b5318d214fe130140",
+      "size": 275338,
+      "normalized_sha256": "760727cc28dbc507d1570dbd8efef736edf182bed39f226b5318d214fe130140"
     },
     "crates/cli/tests/contract.rs": {
       "role": "observe",
