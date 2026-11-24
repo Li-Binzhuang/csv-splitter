@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "218b7dd0bd2e2431cfb2ce7933cf2a68337fa4a510a08dd9eff45c9070cd53f8",
+  "batch_id": "eeb3718627dfc14f80776c72daf935e4d68eb0cabd9cbdfcd187dfba2462aa16",
+  "composite_identity": "563cd557d8cfbc4199f07eb296f2d1eb2dd8c05821d915a9efa2dd2e6468e731",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "9006bf1199f28afb5f43981a0fbe1d95850854c7137119f9186922fe7cd4555c",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "b3045e36e90cc5e3d35e58758084c87cdcfc05f88a44b7c123ac0126a3a5d411",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行/压缩、gate CLI+HTTP+MCP+外部排序 unique/failures、concat 目录、report spec 或内联→MD/HTML+HTTP+MCP、ops 17 操作、pipeline、mcp 21 工具、typed ops、edit preview 三端 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "bc2dbc664068f799620011d39607404668443edbeabf590aafca52b2f08490a2",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:HTTP 读写与 job；/ops；/report spec/specText；/gate 调 CLI 返回 JSON，失败仍 200+passed:false；MCP 21 工具含 csvx_report/csvx_gate（失败 isError）；stdio JSON-RPC/resources | S:gate 失败 200 且 failures 必在；MCP gate 失败必须 isError；spec/specText 二选一；MCP 21 annotations；缓存 4 GiB/16；错误码稳定"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/API.md",
+      "path": "docs/API.md",
+      "change": "update",
+      "source_sha256": "47a790203b1abd9d25befc0ece802dc10d1941a31446daf1eb554fb4f618ac20",
+      "existing_entry": "API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；/ops 17 操作；/report spec/specText；/gate 失败保持 200+passed:false+failures；filter/search cursor；/edit preview=1 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然；文档字段必须真的出现在响应里；gate 的 200 不等于通过"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "c5535ae4d277733a6edb61cfb028462a6250e198ebd80821532f9cec1447124d",
+      "object_ref": "code:CHANGELOG.md",
+      "path": "CHANGELOG.md",
+      "change": "update",
+      "source_sha256": "b3045e36e90cc5e3d35e58758084c87cdcfc05f88a44b7c123ac0126a3a5d411",
+      "existing_entry": "CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 并行/压缩、gate CLI+HTTP+MCP+外部排序 unique/failures、concat 目录、report spec 或内联→MD/HTML+HTTP+MCP、ops 17 操作、pipeline、mcp 21 工具、typed ops、edit preview 三端 | S:文档测试要求最新条目标题版本等于 Cargo.toml 版本，条目顺序写错会让 gate 失败；≤1 MiB 默认内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调阈值/设 0 关闭；MCP 缓存 LRU/4 GiB/16；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay"
+    },
+    {
+      "candidate_id": "6c57bebc5d2c2ce09cd09977f717da9506eccef04905f5bd1cd0cd43650af206",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "bc2dbc664068f799620011d39607404668443edbeabf590aafca52b2f08490a2",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/core/src/engine.rs,code:crates/core/src/workbook/mod.rs,code:crates/core/src/contract.rs,code:crates/core/src/ops.rs | A:HTTP 读写与 job；/ops；/report spec/specText；/gate 调 CLI 返回 JSON，失败仍 200+passed:false；MCP 21 工具含 csvx_report/csvx_gate（失败 isError）；stdio JSON-RPC/resources | S:gate 失败 200 且 failures 必在；MCP gate 失败必须 isError；spec/specText 二选一；MCP 21 annotations；缓存 4 GiB/16；错误码稳定"
+    },
+    {
+      "candidate_id": "657e8485b5f0f3595afc1c271aa12a0ecf7846290c0086346e747ba0a9ad172e",
+      "object_ref": "code:docs/API.md",
+      "path": "docs/API.md",
+      "change": "update",
+      "source_sha256": "47a790203b1abd9d25befc0ece802dc10d1941a31446daf1eb554fb4f618ac20",
+      "existing_entry": "API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；/ops 17 操作；/report spec/specText；/gate 失败保持 200+passed:false+failures；filter/search cursor；/edit preview=1 | S:文档测试要求本文列出的每个路由都真实存在，反之亦然；文档字段必须真的出现在响应里；gate 的 200 不等于通过"
+    }
+  ]
+}
