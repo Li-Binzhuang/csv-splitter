@@ -7882,11 +7882,17 @@ fn mcp_job_submit_rejects_the_cache_stats_tool() {
             r#"{{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{{"name":"csvx_job_submit","arguments":{{"tool":"csvx_cache_stats","arguments":{{}}}}}}}}"#
         )
         .unwrap();
+        writeln!(
+            stdin,
+            r#"{{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{{"name":"csvx_job_submit","arguments":{{"tool":"csvx_nope","arguments":{{}}}}}}}}"#
+        )
+        .unwrap();
     }
     drop(child.stdin.take());
     let output = child.wait_with_output().unwrap();
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("server tool"), "{stdout}");
+    assert!(stdout.contains("cannot be submitted as a job"), "{stdout}");
     assert!(stdout.contains(r#""code":"job_start_error""#), "{stdout}");
 }

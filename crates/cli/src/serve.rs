@@ -8443,6 +8443,24 @@ fn mcp_run_tool(root: &Path, name: &str, args: &McpJson) -> Result<String, Strin
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
+fn mcp_job_tool_allowed(tool: &str) -> bool {
+    matches!(
+        tool,
+        "csvx_schema"
+            | "csvx_view"
+            | "csvx_filter"
+            | "csvx_search"
+            | "csvx_quality"
+            | "csvx_pipeline_status"
+            | "csvx_pipeline_run"
+            | "csvx_edit_set"
+            | "csvx_edit_delete"
+            | "csvx_edit_undo"
+            | "csvx_edit_redo"
+            | "csvx_convert"
+    )
+}
+
 fn mcp_start_job(
     root: &Path,
     tool: &str,
@@ -8789,6 +8807,8 @@ pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
                     next_job += 1;
                     let started = if tool == "csvx_cache_stats" {
                         Err("csvx_cache_stats is a server tool, not a CLI job".to_string())
+                    } else if !mcp_job_tool_allowed(&tool) {
+                        Err(format!("{tool} cannot be submitted as a job"))
                     } else {
                         mcp_start_job(root, &tool, &job_arguments, &job_id)
                     };
