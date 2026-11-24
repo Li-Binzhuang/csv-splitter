@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-24T04:48:55Z",
+  "updated_at": "2026-11-24T04:49:52Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "dfa5a70e9d4bab9b753276d92b8754e9a53877a3c7e63d6a6a609b6b483ec79a",
-      "size": 52834,
-      "normalized_sha256": "dfa5a70e9d4bab9b753276d92b8754e9a53877a3c7e63d6a6a609b6b483ec79a"
+      "sha256": "80c3a99422587c2d529245b5df42575761767deed3fad556d38dbc91d0e064f3",
+      "size": 52920,
+      "normalized_sha256": "80c3a99422587c2d529245b5df42575761767deed3fad556d38dbc91d0e064f3"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -574,9 +574,9 @@
     },
     "docs/DEMO.md": {
       "role": "index",
-      "sha256": "b0d717fb845e2b6c104ab52d50e54a78a5dec286cdd48ed3c73d5faa467d702b",
-      "size": 3283,
-      "normalized_sha256": "b0d717fb845e2b6c104ab52d50e54a78a5dec286cdd48ed3c73d5faa467d702b"
+      "sha256": "bff930765956574267929f0871e0870d807ddbe6aa49f9efd720e37f81e408a3",
+      "size": 3356,
+      "normalized_sha256": "bff930765956574267929f0871e0870d807ddbe6aa49f9efd720e37f81e408a3"
     },
     "docs/DEPLOY.md": {
       "role": "index",
@@ -744,15 +744,15 @@
     },
     "scripts/mcp_client.py": {
       "role": "index",
-      "sha256": "76c005559f393f42f394265dca4ef51a571f3821bdd18dd9a9a8bd40abb89042",
-      "size": 4811,
-      "normalized_sha256": "76c005559f393f42f394265dca4ef51a571f3821bdd18dd9a9a8bd40abb89042"
+      "sha256": "13771271857981ffe4e759b5de389bd88c4159a6424b727d966eade7dea5e98d",
+      "size": 4899,
+      "normalized_sha256": "13771271857981ffe4e759b5de389bd88c4159a6424b727d966eade7dea5e98d"
     },
     "scripts/mcp_sdk/client.mjs": {
       "role": "index",
-      "sha256": "cf0c6ea0815853b95bb99d1b66fde709adf17ac3cae16a0a28d9f5a971c6e7d6",
-      "size": 4269,
-      "normalized_sha256": "cf0c6ea0815853b95bb99d1b66fde709adf17ac3cae16a0a28d9f5a971c6e7d6"
+      "sha256": "9beae3e02cf87f7e9cbcadc38117d93d8a0b9579ec6d18007eef3ef166fe3184",
+      "size": 4356,
+      "normalized_sha256": "9beae3e02cf87f7e9cbcadc38117d93d8a0b9579ec6d18007eef3ef166fe3184"
     },
     "scripts/mcp_sdk/package-lock.json": {
       "role": "observe",
