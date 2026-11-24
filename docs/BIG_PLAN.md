@@ -146,7 +146,7 @@ csvx agent run   # 通过环境变量或命令参数提供 endpoint/model/prompt
 | M2 | xlsx 导入（已落） | 固定夹具 + sheet 选择 + 日期/空行 |
 | M3 | 公式缓存（已落） | key=文件+journal+窗口；命中/失效测试；2k 行 0.040→0.007 s |
 | M4 | Agent API | MCP instructions + `csvx://agent` 已落；HTTP session/action/approval/audit + SSE 回放已落；实时 SSE 待做 |
-| M5 | 内置 runner（已落） | Ark Economy 跑通 schema→view→final，6.10 s；preview→apply 仍需演练 |
+| M5 | 内置 runner（已落） | Ark Economy schema→view→final 6.10 s；带 skill 5.49 s；preview→apply 仍需演练 |
 | M6 | 整理与发布 | docs、examples、包、gate、AOCI |
 
 ## 不做什么

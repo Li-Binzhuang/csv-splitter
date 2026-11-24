@@ -526,6 +526,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--prompt", "Prompt for agent run"),
             ("--max-steps", "Maximum tool steps (default 4)"),
             ("--allow-apply", "Allow destructive tools during agent run"),
+            ("--skill", "Markdown skill file injected into the agent system prompt"),
         ],
     ),
     (
@@ -3605,6 +3606,7 @@ fn cmd_agent(args: &[String]) -> i32 {
     let mut prompt: Option<String> = None;
     let mut max_steps = 4usize;
     let mut allow_apply = false;
+    let mut skill: Option<PathBuf> = None;
     if let Some(first) = args.first().filter(|arg| !arg.starts_with('-')) {
         action = first.clone();
     }
@@ -3644,6 +3646,13 @@ fn cmd_agent(args: &[String]) -> i32 {
                 }
             },
             "--allow-apply" => allow_apply = true,
+            "--skill" => match p.value("--skill") {
+                Ok(value) => skill = Some(PathBuf::from(value)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--root" => match p.value("--root") {
                 Ok(value) => root = Some(PathBuf::from(value)),
                 Err(e) => {
@@ -3697,6 +3706,7 @@ fn cmd_agent(args: &[String]) -> i32 {
             &endpoint,
             &model,
             &prompt,
+            skill.as_deref(),
             max_steps.clamp(1, 12),
             allow_apply,
         ) {

@@ -38,7 +38,11 @@ step 2: csvx_view
 real 6.10 s
 ```
 
-这验证了模型 → JSON 动作 → csvx 工具 → 观察回灌 → final 的闭环。
+带 `--skill skills/csvx-data/SKILL.md` 再跑一次：
+`step 1: csvx_schema` → `2`，5.49 s。
+
+这验证了模型 → JSON 动作 → csvx 工具 → 观察回灌 → final 的闭环，
+以及 skill 文本能改变 Agent 的读取路径。
 
 ## 尚未做
 

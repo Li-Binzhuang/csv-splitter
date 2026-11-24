@@ -48,6 +48,7 @@ export CSVX_AGENT_API_KEY=...   # 不写入仓库
 csvx agent run --root /path/to/data \
   --endpoint https://.../chat/completions \
   --model DeepSeek-V4.1-Flash-1017-Ark-Economy \
+  --skill skills/csvx-data/SKILL.md \
   --prompt 'Use csvx_schema on t.csv, then reply with the row count.'
 ```
 
@@ -57,15 +58,14 @@ csvx agent run --root /path/to/data \
   - `{"final":"..."}`
 - 执行复用 `mcp_run_tool`；
 - 默认不允许破坏性工具；`--allow-apply` 才放行；
-- `--max-steps` 限制循环。
+- `--max-steps` 限制循环；
+- `--skill` 把一份 Markdown skill 注入 system prompt。
 
 实测 Ark Economy：
 
 ```text
-step 1: csvx_schema
-step 2: csvx_view
-2
-real 6.10 s
+无 skill：step 1 csvx_schema → step 2 csvx_view → 2，6.10 s
+带 skill：step 1 csvx_schema → final 2，5.49 s
 ```
 
 ## HTTP Agent API（最小实现）

@@ -561,6 +561,7 @@ pub fn run(
     endpoint: &str,
     model: &str,
     prompt: &str,
+    skill: Option<&Path>,
     max_steps: usize,
     allow_apply: bool,
 ) -> Result<String, String> {
@@ -570,8 +571,16 @@ pub fn run(
             "set CSVX_AGENT_API_KEY (or OPENAI_API_KEY); the key is never written to disk"
                 .to_string()
         })?;
+    let system_prompt = match skill {
+        Some(path) => {
+            let text = std::fs::read_to_string(path)
+                .map_err(|e| format!("cannot read skill {}: {e}", path.display()))?;
+            format!("{SYSTEM_PROMPT}\n\nFollow this skill:\n{text}")
+        }
+        None => SYSTEM_PROMPT.to_string(),
+    };
     let mut messages: Vec<(String, String)> = vec![
-        ("system".to_string(), SYSTEM_PROMPT.to_string()),
+        ("system".to_string(), system_prompt),
         ("user".to_string(), prompt.to_string()),
     ];
     let mut last = String::new();
