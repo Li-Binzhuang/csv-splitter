@@ -7805,6 +7805,7 @@ fn pipeline_watch_runs_and_then_reports_fresh() {
     assert!(state.contains(r#""round":1"#), "{state}");
     assert!(state.contains(r#""success":true"#), "{state}");
     assert!(state.contains(r#""lastSuccessAtMs":"#), "{state}");
+    assert!(state.contains(r#""nextDelayMs":5000"#), "{state}");
     let resumed = Command::new(bin())
         .args([
             "pipeline",

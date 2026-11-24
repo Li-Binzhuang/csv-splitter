@@ -9095,10 +9095,11 @@ fn write_watch_state(
     failures: usize,
     last_success_ms: u128,
     last_failure_ms: u128,
+    next_delay_ms: u64,
     last_error: &str,
 ) -> std::io::Result<()> {
     let body = format!(
-        r#"{{"round":{},"ran":{},"total":{},"success":{},"consecutiveFailures":{},"lastSuccessAtMs":{},"lastFailureAtMs":{},"lastError":"{}","updatedAtMs":{}}}"#,
+        r#"{{"round":{},"ran":{},"total":{},"success":{},"consecutiveFailures":{},"lastSuccessAtMs":{},"lastFailureAtMs":{},"nextDelayMs":{},"lastError":"{}","updatedAtMs":{}}}"#,
         round,
         ran,
         total,
@@ -9106,6 +9107,7 @@ fn write_watch_state(
         failures,
         last_success_ms,
         last_failure_ms,
+        next_delay_ms,
         json_escape(last_error),
         now_millis()
     );
@@ -9222,6 +9224,7 @@ fn watch_pipeline(
                         0,
                         last_success_ms,
                         last_failure_ms,
+                        interval_ms,
                         "",
                     ) {
                         eprintln!("watch: state write failed: {error}");
@@ -9232,6 +9235,7 @@ fn watch_pipeline(
                 eprintln!("watch: {error}");
                 failures += 1;
                 last_failure_ms = now_millis();
+                let next_delay_ms = delay_ms.saturating_mul(2).min(backoff_max_ms);
                 if let Some(path) = state_path {
                     if let Err(write_error) = write_watch_state(
                         path,
@@ -9242,6 +9246,7 @@ fn watch_pipeline(
                         failures,
                         last_success_ms,
                         last_failure_ms,
+                        next_delay_ms,
                         &error.to_string(),
                     ) {
                         eprintln!("watch: state write failed: {write_error}");
@@ -9254,7 +9259,7 @@ fn watch_pipeline(
                     eprintln!("watch: stopping after {failures} consecutive failure(s)");
                     return Err(error);
                 }
-                delay_ms = delay_ms.saturating_mul(2).min(backoff_max_ms);
+                delay_ms = next_delay_ms;
             }
         }
         if iterations > 0 && round >= iterations {

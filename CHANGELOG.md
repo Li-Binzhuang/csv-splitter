@@ -156,8 +156,8 @@
   Neither is a CLI job command.
 - **Pipeline watch**: `csvx pipeline watch <plan>` reruns stale steps on an interval;
   supports failure backoff, `--max-failures`, JSON rounds, and an atomic `--state` file
-  with last success/failure timestamps, the last error text, and round resume across
-  restarts.
+  with last success/failure timestamps, next retry delay, the last error text, and
+  round resume across restarts.
 - **MCP pipeline DAG options**: `csvx_pipeline_run` accepts dag/jobs/clean and forwards
   them to the CLI, so agents can run topological waves and bound concurrency.
 - **MCP structured results**: every tool response carries
