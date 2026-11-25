@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-25T08:52:54Z",
+  "updated_at": "2026-11-25T09:19:08Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -58,9 +58,9 @@
     },
     "Cargo.lock": {
       "role": "observe",
-      "sha256": "e7e8aebebdfe4367f687defbc97d7e2fdbf7af0c3839be50a6dbcda8fc718aa0",
-      "size": 65874,
-      "normalized_sha256": "e7e8aebebdfe4367f687defbc97d7e2fdbf7af0c3839be50a6dbcda8fc718aa0"
+      "sha256": "ef2bf42bd6b1cb296b9e229e5f96eb5622053cce014372bc781e80b65bbdeeb8",
+      "size": 72655,
+      "normalized_sha256": "ef2bf42bd6b1cb296b9e229e5f96eb5622053cce014372bc781e80b65bbdeeb8"
     },
     "Cargo.toml": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "b14e94b39abdec1ee6e48a5918b29bfabc6e969bd9db898435ae083c078c24bc",
-      "size": 64908,
-      "normalized_sha256": "b14e94b39abdec1ee6e48a5918b29bfabc6e969bd9db898435ae083c078c24bc"
+      "sha256": "0b6fb5d62b3d196eaed4b0fa44358872fbda7d8f8b4537ecabcc6581386ead62",
+      "size": 64831,
+      "normalized_sha256": "0b6fb5d62b3d196eaed4b0fa44358872fbda7d8f8b4537ecabcc6581386ead62"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -106,15 +106,15 @@
     },
     "crates/agent/src/axum_http.rs": {
       "role": "index",
-      "sha256": "38f1f41f1dd8404b9ebd6fe23748d12997fd9d3bef71c5cdab4ab863709e73a7",
-      "size": 12044,
-      "normalized_sha256": "38f1f41f1dd8404b9ebd6fe23748d12997fd9d3bef71c5cdab4ab863709e73a7"
+      "sha256": "e3457fb2dfc44f1e08288b67b1e463133364dc38c9b10b7dce23d37b67c867a8",
+      "size": 12714,
+      "normalized_sha256": "e3457fb2dfc44f1e08288b67b1e463133364dc38c9b10b7dce23d37b67c867a8"
     },
     "crates/agent/src/lib.rs": {
       "role": "index",
-      "sha256": "51ac11e41bd6fcbf0c2a5d0436a6163be5299758381317dc9c82ff86bd3c7e24",
-      "size": 50674,
-      "normalized_sha256": "51ac11e41bd6fcbf0c2a5d0436a6163be5299758381317dc9c82ff86bd3c7e24"
+      "sha256": "ccbdef823c730127900a40160571dd7069c542e2796d5a11b941c149b68a31bd",
+      "size": 50959,
+      "normalized_sha256": "ccbdef823c730127900a40160571dd7069c542e2796d5a11b941c149b68a31bd"
     },
     "crates/cli/Cargo.toml": {
       "role": "index",

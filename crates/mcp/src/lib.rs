@@ -7,6 +7,19 @@ use std::collections::HashMap;
 use std::io;
 use std::path::{Path, PathBuf};
 
+mod rmcp_server;
+pub use rmcp_server::run_stdio as run_rmcp_stdio;
+
+/// Select the legacy hand-written transport by default; the official rmcp
+/// adapter is opt-in until its lifecycle parity is fully tested.
+pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
+    if std::env::var("CSVX_MCP_RMCP").ok().as_deref() == Some("1") {
+        run_rmcp_stdio(root)
+    } else {
+        run_legacy_mcp_stdio(root)
+    }
+}
+
 /// The one-paragraph contract an agent should receive before it starts calling tools.
 pub const AGENT_INSTRUCTIONS: &str = "csvx is a local, single-user CSV backend. Start with csvx_schema and csvx_view; inspect before editing. Use csvx_edit_preview, then csvx_edit_apply only after the preview is acceptable. All paths must stay inside the MCP root. Long work belongs in csvx_job_submit. Reports use csvx_report (CSV spec or specText); paging uses csvx_view; gates use csvx_gate; xlsx goes through csvx_convert. There is no GUI and no multi-user auth; keep destructive actions explicit and auditable. csvx://agent returns the machine-readable manifest.";
 
@@ -1387,7 +1400,7 @@ pub fn agent_manifest_json() -> String {
     )
 }
 
-pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
+pub fn run_legacy_mcp_stdio(root: &Path) -> io::Result<()> {
     cleanup_stale_mcp_materialized();
     use std::io::{BufRead, Write};
     let stdin = io::stdin();

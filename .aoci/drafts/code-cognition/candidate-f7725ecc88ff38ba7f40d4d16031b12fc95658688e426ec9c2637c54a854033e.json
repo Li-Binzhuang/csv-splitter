@@ -1,0 +1,59 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "8e4b0cbe62b73fb82b24260d31a8bbdcf7f1a383f0e7b547222d5334a586cc4d",
+  "batch_id": "f7725ecc88ff38ba7f40d4d16031b12fc95658688e426ec9c2637c54a854033e",
+  "composite_identity": "346f9da2d99491f6ffe5c2cc547713235043fe54bbda78e171f230e660f37c29",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "0b6fb5d62b3d196eaed4b0fa44358872fbda7d8f8b4537ecabcc6581386ead62",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/Cargo.toml",
+      "path": "crates/mcp/Cargo.toml",
+      "change": "update",
+      "source_sha256": "e277a6b90953580a8f7ca7abc2ee557fde5efd7c2802ec95ad7df80f304c6755",
+      "existing_entry": "Cargo.toml[FV7T]: F:csvx-mcp crate 清单 | R:code:crates/core/Cargo.toml | A:包名 csvx-mcp；只依赖 csvx-core；MCP 协议/执行器独立于 CLI | S:不引入 HTTP 依赖；不依赖 csvx-cli"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/lib.rs",
+      "path": "crates/mcp/src/lib.rs",
+      "change": "update",
+      "source_sha256": "15ab5191309f166d7ecff70177a562000f7e59371fb1fc1fdfcbbfaff14dc38f",
+      "existing_entry": "lib.rs[EN9L]: F:MCP stdio 薄适配：JSON 信封、23 工具 schema、执行器、job 与 materialize 缓存 | R:code:crates/mcp/Cargo.toml,code:crates/core/src/contract.rs,code:crates/cli/src/main.rs,code:crates/cli/src/agent.rs | A:McpJson/McpParser；tools/list；resources csvx://operations/agent；tools/call 子进程执行 csvx；job submit/status/cancel/list；cache clear/stats；AGENT_INSTRUCTIONS | S:路径限制 root；工具名冻结 23；stdin/stdout 仅 JSON-RPC；执行走当前 exe"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/rmcp_server.rs",
+      "path": "crates/mcp/src/rmcp_server.rs",
+      "change": "create",
+      "source_sha256": "c023644953062c6e618ae9f3628dc4436f16de9606da9ad8384cb195f8d6b4d5"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "03f0e6fae40879693e532d05d6ef3e03b2edd9a0296982f2433dd8c8e8ff977b",
+      "object_ref": "code:crates/mcp/Cargo.toml",
+      "path": "crates/mcp/Cargo.toml",
+      "change": "update",
+      "source_sha256": "e277a6b90953580a8f7ca7abc2ee557fde5efd7c2802ec95ad7df80f304c6755",
+      "existing_entry": "Cargo.toml[FV7T]: F:csvx-mcp crate 清单 | R:code:crates/core/Cargo.toml | A:包名 csvx-mcp；只依赖 csvx-core；MCP 协议/执行器独立于 CLI | S:不引入 HTTP 依赖；不依赖 csvx-cli"
+    },
+    {
+      "candidate_id": "46de84cf99cce6d3d2ac7c32dfc47cb77eb90c1b35337055ca0a0cd63d050236",
+      "object_ref": "code:crates/mcp/src/lib.rs",
+      "path": "crates/mcp/src/lib.rs",
+      "change": "update",
+      "source_sha256": "15ab5191309f166d7ecff70177a562000f7e59371fb1fc1fdfcbbfaff14dc38f",
+      "existing_entry": "lib.rs[EN9L]: F:MCP stdio 薄适配：JSON 信封、23 工具 schema、执行器、job 与 materialize 缓存 | R:code:crates/mcp/Cargo.toml,code:crates/core/src/contract.rs,code:crates/cli/src/main.rs,code:crates/cli/src/agent.rs | A:McpJson/McpParser；tools/list；resources csvx://operations/agent；tools/call 子进程执行 csvx；job submit/status/cancel/list；cache clear/stats；AGENT_INSTRUCTIONS | S:路径限制 root；工具名冻结 23；stdin/stdout 仅 JSON-RPC；执行走当前 exe"
+    },
+    {
+      "candidate_id": "7fe1cd19bf81496b72ca5e22bc51af975b95faddc9ecafbdb4b743e4d447146f",
+      "object_ref": "code:crates/mcp/src/rmcp_server.rs",
+      "path": "crates/mcp/src/rmcp_server.rs",
+      "change": "create",
+      "source_sha256": "c023644953062c6e618ae9f3628dc4436f16de9606da9ad8384cb195f8d6b4d5"
+    }
+  ]
+}

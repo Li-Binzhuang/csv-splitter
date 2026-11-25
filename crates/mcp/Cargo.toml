@@ -8,3 +8,6 @@ license.workspace = true
 
 [dependencies]
 csvx-core = { workspace = true }
+rmcp = { version = "3.11", features = ["transport-io"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "io-util", "io-std"] }
