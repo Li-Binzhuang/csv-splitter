@@ -226,6 +226,11 @@ fn agent_api_creates_session_actions_approves_and_audits() {
     assert!(body.contains("csvx_edit_apply"), "{body}");
     assert!(body.contains("running"), "{body}");
     assert!(body.contains("ok"), "{body}");
+    assert!(body.contains("\"arguments\""), "{body}");
+    assert!(
+        body.contains("csvx_report") || body.contains("t.csv"),
+        "{body}"
+    );
 
     // follow=1 keeps the connection open and pushes the first audit frame.
     let mut follow = TcpStream::connect(&addr).unwrap();

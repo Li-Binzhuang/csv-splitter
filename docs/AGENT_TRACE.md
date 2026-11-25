@@ -35,6 +35,13 @@ It runs only the `tool` events, in order, using the same `mcp_run_tool` executor
 It does not call a model and does not require a key. `model` and `final` events
 are ignored for execution; the final answer stays in the trace for inspection.
 
+## HTTP Agent API
+
+The HTTP side has the same idea: `GET /agent/v1/sessions/{id}/audit` (alias
+`/trace`) returns the raw JSONL with `tool`, `arguments`, `status`, `elapsedMs`
+and an output preview. It is written on `running` and again on `ok/error`, so a
+failed action is still visible. Tokens are never written.
+
 ## Why
 
 - You can diff the model's chosen tools and arguments against a hand-written

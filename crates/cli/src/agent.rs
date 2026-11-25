@@ -142,7 +142,7 @@ fn handle(mut stream: TcpStream, root: &Path, state: &State) -> io::Result<()> {
         let follow = query.split('&').any(|pair| pair == "follow=1");
         return events(&mut stream, state, session_id, token, follow);
     }
-    if method == "GET" && action == "audit" {
+    if method == "GET" && (action == "audit" || action == "trace") {
         return audit_log(&mut stream, state, session_id, token);
     }
     respond_json(&mut stream, 404, r#"{"error":"not found"}"#)
@@ -344,14 +344,15 @@ fn run_action(
         (session.root.clone(), session.audit.clone())
     };
     let started = SystemTime::now();
-    append_audit(&audit, id, &tool, "running", 0, "");
+    let args_json = json_render(&args);
+    append_audit(&audit, id, &tool, "running", 0, "", &args_json);
     let result = mcp_run_tool(&root, &tool, &args);
     let elapsed_ms = started.elapsed().map(|e| e.as_millis()).unwrap_or(0);
     let (status, output) = match result {
         Ok(output) => ("ok", output),
         Err(error) => ("error", error),
     };
-    append_audit(&audit, id, &tool, status, elapsed_ms, &output);
+    append_audit(&audit, id, &tool, status, elapsed_ms, &output, &args_json);
     let response = format!(
         r#"{{"status":{},"tool":{},"elapsedMs":{},"output":{}}}"#,
         json_str(status),
@@ -394,7 +395,15 @@ fn approval(
         return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
     }
     if decision != "approve" {
-        append_audit(&session.audit, id, tool, "denied", 0, "approval denied");
+        append_audit(
+            &session.audit,
+            id,
+            tool,
+            "denied",
+            0,
+            "approval denied",
+            "null",
+        );
         return respond_json(stream, 200, r#"{"approved":false}"#);
     }
     let approval_id = random_id("appr");
@@ -420,7 +429,7 @@ fn close(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Re
         return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
     }
     let audit = session.audit.clone();
-    append_audit(&audit, id, "session.close", "ok", 0, "closed");
+    append_audit(&audit, id, "session.close", "ok", 0, "closed", "null");
     sessions.remove(id);
     respond_json(stream, 200, r#"{"closed":true}"#)
 }
@@ -520,6 +529,7 @@ fn append_audit(
     status: &str,
     elapsed_ms: u128,
     output: &str,
+    arguments: &str,
 ) {
     let timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -527,13 +537,14 @@ fn append_audit(
         .unwrap_or(0);
     let preview: String = output.chars().take(240).collect();
     let line = format!(
-        r#"{{"ts":{},"session":{},"tool":{},"status":{},"elapsedMs":{},"output":{}}}"#,
+        r#"{{"ts":{},"session":{},"tool":{},"status":{},"elapsedMs":{},"output":{},"arguments":{}}}"#,
         timestamp,
         json_str(session),
         json_str(tool),
         json_str(status),
         elapsed_ms,
-        json_str(&preview)
+        json_str(&preview),
+        arguments
     );
     if let Some(parent) = audit.parent() {
         let _ = std::fs::create_dir_all(parent);
