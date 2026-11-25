@@ -32,6 +32,7 @@ writing, and keep every path inside the configured root.
 - Strict ISO `YYYY-MM-DD` values are exported as Excel date cells and read back
   as `YYYY-MM-DD`; other text stays text.
 - `--highlight "amount>1000:red"` writes Excel cellIs conditional formatting.
+- For timestamp columns, `csvx report --spec-text "datecounts,base_time[:group]"` counts requests per date, optionally per second column.
 
 ## Agent API
 

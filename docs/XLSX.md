@@ -87,7 +87,8 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 ## 报表 xlsx
 
 `csvx report data.csv --spec spec.csv --format xlsx -o report.xlsx` 支持
-`summary`、`columns`、`rows`、`datecounts` 四类 section，各写一张 sheet；`quality`、`groups`、
+`summary`、`columns`、`rows`、`datecounts` 四类 section，各写一张 sheet；
+`datecounts,base_time:status` 生成日期 + 第二维，例如每个日期各状态的请求数；`quality`、`groups`、
 `chart`、`compare` 仍走 Markdown/HTML。`--out` 必须以 `.xlsx` 结尾（或用
 `--format xlsx` 显式指定）。
 

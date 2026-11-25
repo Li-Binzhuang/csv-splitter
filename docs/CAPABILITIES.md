@@ -92,7 +92,7 @@
 | xlsx 条件格式 | `convert --highlight "amount>1000:red"` → cellIs + dxf | 见 `docs/XLSX.md` |
 | xlsx 日期 | 严格 `YYYY-MM-DD` 导出为日期单元格，导入还原；非 ISO 保持文本 | 内置 numFmtId=14 |
 | 报表 xlsx | `report data.csv --spec spec.csv --format xlsx -o report.xlsx`（summary/columns/rows 各一张 sheet） | CLI；HTTP/MCP report 仍返回 md/html |
-| 日期计数报表 | `report --spec-text "datecounts,base_time"`；按时间戳前 10 字符分组 | 见 `docs/XLSX.md` |
+| 日期计数报表 | `report --spec-text "datecounts,base_time[:status]"`；按日期前缀分组，可加第二维 | 见 `docs/XLSX.md` |
 | 确定性 Markdown/HTML 报表 | `report data.csv --spec report.csv -o report.html`；HTTP `GET /report?path=&spec=&format=` | spec 是 CSV（文件或 `--spec-text` 内联）：`title,...`、`summary`、`columns`、`quality[,key]`、`groups,<key>[:N]`（count）或 `groups,<key>:<measure>:<op>[:N]`（sum/mean/min/max）、`chart,<x>[:<measure>[:N]]`（无 measure 时按 count；HTML 静态 SVG）、`compare,<other.csv>`（行/列/新增/移除/移动/字节；HTTP/MCP 下 compare 目标必须在 root 内）、`rows,<N>`；无 spec 时默认 summary/columns/rows 20；quality/groups 看编辑后的值 |
 | 无 GUI 的分享产物 | `--format md` / `--format html`（按输出扩展名推断） | 所有单元格 HTML 转义；Markdown 转义 `\|` |
 

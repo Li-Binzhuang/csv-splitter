@@ -610,7 +610,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--format", "Output format: md | html | xlsx (default md)"),
             ("--json", "Emit a small JSON confirmation"),
             ("--out", "Output path (default: write to stdout)"),
-            ("--spec", "Report spec CSV: summary/columns/rows/quality/groups/chart/compare/datecounts"),
+            ("--spec", "Report spec CSV: summary/columns/rows/quality/groups/chart/compare/datecounts[,date[:group]]"),
             ("--spec-text", "Inline report spec instead of a file"),
             ("--root", "Require compare inputs to stay inside this directory"),
             ("--title", "Report title"),
@@ -3311,33 +3311,60 @@ fn cmd_files(args: &[String]) -> i32 {
 fn date_counts(
     sheet: &csvx_core::sheet::Sheet,
     columns: &[String],
-    column: &str,
+    spec: &str,
 ) -> Result<(Vec<String>, Vec<Vec<String>>), String> {
-    let column = column.trim();
-    if column.is_empty() {
+    let spec = spec.trim();
+    if spec.is_empty() {
         return Err("datecounts needs a column name".to_string());
     }
-    let index = columns
+    let (date_column, group_column) = match spec.split_once(':') {
+        Some((date, group)) => (date.trim(), Some(group.trim())),
+        None => (spec, None),
+    };
+    let date_index = columns
         .iter()
-        .position(|name| name == column)
-        .ok_or_else(|| format!("datecounts: unknown column {column:?}"))?;
+        .position(|name| name == date_column)
+        .ok_or_else(|| format!("datecounts: unknown column {date_column:?}"))?;
+    let group_index = group_column
+        .map(|group| {
+            columns
+                .iter()
+                .position(|name| name == group)
+                .ok_or_else(|| format!("datecounts: unknown group column {group:?}"))
+        })
+        .transpose()?;
     let window = sheet
         .window(0, 1_000_000)
         .map_err(|e| format!("datecounts: {e}"))?;
-    let mut counts = std::collections::BTreeMap::<String, u64>::new();
+    let mut counts = std::collections::BTreeMap::<(String, String), u64>::new();
     for row in window.rows {
-        let value = row.get(index).map(String::as_str).unwrap_or("");
+        let value = row.get(date_index).map(String::as_str).unwrap_or("");
         let date: String = value.chars().take(10).collect();
         if date.is_empty() {
             continue;
         }
-        *counts.entry(date).or_insert(0) += 1;
+        let group = group_index
+            .and_then(|index| row.get(index).cloned())
+            .unwrap_or_default();
+        *counts.entry((date, group)).or_insert(0) += 1;
     }
+    let mut headers = vec![date_column.to_string()];
+    if let Some(group) = group_column {
+        headers.push(group.to_string());
+    }
+    headers.push("requests".to_string());
     let rows = counts
         .into_iter()
-        .map(|(date, count)| vec![date, count.to_string()])
+        .map(|((date, group), count)| {
+            let mut row = vec![date];
+            if group_column.is_some() {
+                row.push(group);
+            }
+            row.push(count.to_string());
+            row
+        })
         .collect();
-    Ok((vec![column.to_string(), "requests".to_string()], rows))
+    Ok((headers, rows))
 }
 
 fn parse_highlight_rules(text: &str) -> Result<Vec<csvx_core::xlsx::ConditionalRule>, String> {

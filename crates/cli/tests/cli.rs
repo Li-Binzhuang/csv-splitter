@@ -2611,6 +2611,32 @@ fn report_datecounts_groups_timestamps_by_date() {
     assert!(text.contains('1'), "{text}");
 }
 
+#[test]
+fn report_datecounts_can_group_by_a_second_column() {
+    let dir = TempDir::new("datecountsgroup");
+    std::fs::write(
+        dir.join("t.csv"),
+        "id,base_time,status\n1,2026-10-20 10:00:00,ok\n2,2026-10-20 11:00:00,bad\n3,2026-10-21 09:00:00,ok\n",
+    )
+    .unwrap();
+    let output = Command::new(bin())
+        .args([
+            "report",
+            dir.join("t.csv").to_str().unwrap(),
+            "--spec-text",
+            "datecounts,base_time:status",
+            "--format",
+            "md",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("status"), "{text}");
+    assert!(text.contains("2026-10-20"), "{text}");
+    assert!(text.contains("bad"), "{text}");
+}
+
 /// A report spec rendered as xlsx gets one sheet per supported section.
 #[test]
 fn report_format_xlsx_writes_summary_columns_and_rows_sheets() {
