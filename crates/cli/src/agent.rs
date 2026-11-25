@@ -528,7 +528,11 @@ fn approval(
             "approval denied",
             "null",
         );
-        return respond_json(stream, 200, r#"{"approved":false}"#);
+        return respond_json(
+            stream,
+            403,
+            &format!(r#"{{"error":"approval denied","tool":{}}}"#, json_str(tool)),
+        );
     }
     let approval_id = random_id("appr");
     session

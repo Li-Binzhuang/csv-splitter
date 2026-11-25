@@ -113,6 +113,13 @@ csvx agent manifest
 破坏性工具（edit apply/set/delete/undo/redo、concat、convert、job submit、
 pipeline run、job cancel、cache clear）没有 `approvalId` 时返回 **428**。
 
+审批错误：
+
+| 状态 | 场景 |
+|---|---|
+| 403 `approval denied` | `POST /approvals` 的 `decision` 不是 `approve`；不生成 approvalId |
+| 428 `approval required` | 没带 approvalId、approvalId 已消费或工具不匹配 |
+
 约束：
 
 - 会话 token 只在创建响应返回一次，绑定 root 和 8 小时 TTL；

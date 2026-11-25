@@ -503,3 +503,44 @@ fn agent_approved_action_failure_is_audited() {
     assert!(audit.contains(r#""status":"error""#), "{audit}");
     std::fs::remove_dir_all(dir).ok();
 }
+
+#[test]
+fn agent_rejected_approval_is_explicit() {
+    let dir = std::env::temp_dir().join(format!("csvx_agent_deny_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("t.csv"), "city,amount\nA,10\n").unwrap();
+    let addr = free_addr();
+    let _server = start(&dir, &addr);
+
+    let (status, body) = request(
+        &addr,
+        "POST",
+        "/agent/v1/sessions",
+        None,
+        r#"{"agent":"deny"}"#,
+    );
+    assert_eq!(status, 201, "{body}");
+    let token = extract(&body, "token");
+    let session = extract(&body, "sessionId");
+    let action = format!("/agent/v1/sessions/{session}/actions");
+
+    let (status, body) = request(
+        &addr,
+        "POST",
+        &format!("/agent/v1/sessions/{session}/approvals"),
+        Some(&token),
+        r#"{"tool":"csvx_edit_apply","decision":"deny"}"#,
+    );
+    assert_eq!(status, 403, "{body}");
+    assert!(body.contains(r#""error":"approval denied""#), "{body}");
+
+    let (status, body) = request(
+        &addr,
+        "POST",
+        &action,
+        Some(&token),
+        r#"{"tool":"csvx_edit_apply","arguments":{"path":"t.csv","ops":"set:1:city:Z"}}"#,
+    );
+    assert_eq!(status, 428, "{body}");
+    std::fs::remove_dir_all(dir).ok();
+}
