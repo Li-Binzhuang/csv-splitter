@@ -88,6 +88,7 @@ csvx agent manifest
 | GET | `/agent/v1/sessions/{id}/events` | 审计事件回放；`?follow=1` 持续推送最多 60s |
 | GET | `/agent/v1/sessions/{id}/audit` | 原始审计 JSONL；含 `tool`、`arguments`、`running/ok/error`、耗时 |
 | GET | `/agent/v1/sessions/{id}/trace` | `audit` 的别名，便于和 runner 的 trace 概念对齐 |
+| GET | `/agent/v1/sessions/{id}/replay` | 只导出最终 `ok/error` 动作，可直接喂给 `csvx agent replay` |
 | POST | `/agent/v1/sessions/{id}/approvals` | 批准/拒绝破坏性工具 |
 | POST | `/agent/v1/sessions/{id}/close` | 关闭并落审计 |
 

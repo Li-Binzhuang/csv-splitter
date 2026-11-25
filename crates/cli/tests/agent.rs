@@ -286,6 +286,13 @@ fn agent_api_creates_session_actions_approves_and_audits() {
         "{body}"
     );
 
+    let replay_endpoint = format!("/agent/v1/sessions/{session}/replay");
+    let (status, body) = request(&addr, "GET", &replay_endpoint, Some(&token), "");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("csvx_edit_apply"), "{body}");
+    assert!(!body.contains("running"), "{body}");
+    assert!(!body.contains("approved"), "{body}");
+
     // follow=1 keeps the connection open and pushes the first audit frame.
     let mut follow = TcpStream::connect(&addr).unwrap();
     follow

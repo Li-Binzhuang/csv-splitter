@@ -47,14 +47,14 @@ Replay HTTP audit lines too:
 
 ```bash
 curl -sS -H "Authorization: Bearer $TOKEN" \
-  http://127.0.0.1:8788/agent/v1/sessions/$SESSION/audit \
+  http://127.0.0.1:8788/agent/v1/sessions/$SESSION/replay \
   > session.jsonl
 
 csvx agent replay --root /path/to/data --replay session.jsonl
 ```
 
-`replay` executes only final `ok`/`error` action lines; `running` and `approved`
-lines are skipped.
+`/replay` already removes `running`/`approved` lines; `/audit` keeps the full
+history. `replay` executes only final `ok`/`error` lines either way.
 
 ## Why
 

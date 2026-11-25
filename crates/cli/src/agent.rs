@@ -145,6 +145,9 @@ fn handle(mut stream: TcpStream, root: &Path, state: &State) -> io::Result<()> {
     if method == "GET" && (action == "audit" || action == "trace") {
         return audit_log(&mut stream, state, session_id, token);
     }
+    if method == "GET" && action == "replay" {
+        return replay_log(&mut stream, state, session_id, token);
+    }
     respond_json(&mut stream, 404, r#"{"error":"not found"}"#)
 }
 
@@ -473,6 +476,43 @@ fn audit_log(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io
         .collect();
     let body = format!(r#"{{"session":{},"lines":{}}}"#, json_str(id), lines.len());
     let body = format!("{body}\n{}", lines.join("\n"));
+    stream.write_all(
+        format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: application/x-ndjson\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        )
+        .as_bytes(),
+    )
+}
+
+fn replay_log(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
+    let sessions = match state.sessions.lock() {
+        Ok(sessions) => sessions,
+        Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
+    };
+    let Some(session) = sessions.get(id) else {
+        return respond_json(stream, 404, r#"{"error":"unknown session"}"#);
+    };
+    if !constant_eq(&session.token, token) {
+        return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
+    }
+    let text = std::fs::read_to_string(&session.audit).unwrap_or_default();
+    let lines: Vec<&str> = text
+        .lines()
+        .filter(|line| line_belongs_to_session(line, id))
+        .filter(|line| {
+            McpParser::parse(line)
+                .ok()
+                .and_then(|value| {
+                    value
+                        .get("status")
+                        .and_then(McpJson::as_str)
+                        .map(|status| status == "ok" || status == "error")
+                })
+                .unwrap_or(false)
+        })
+        .collect();
+    let body = lines.join("\n");
     stream.write_all(
         format!(
             "HTTP/1.1 200 OK\r\nContent-Type: application/x-ndjson\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
