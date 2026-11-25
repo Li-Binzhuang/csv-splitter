@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a9cb4970c50f7ad2a5ff35429b29be67963583ffd1b6ed597256eef8f6ce3054",
+  "batch_id": "9ec3918b48d8463c94bb884458cd5bdfea4ee8cea5bf9a888b4dfd2d055a6e96",
+  "composite_identity": "cb1557efb72cd7caabec7907bd1c5c0c7fe10307c01f536c44acf58c922b4118",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "659f2d67a29293cb4894f6e34961527ca270f77e6097391477bf8e8915925c87",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "1963c034e59c04f759e106887cdf7eae16dbc45b742cd86da83026ba2811e698",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API + runner + trace/replay | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md | A:loopback 服务；GET /sessions 汇总；sessions/actions/approvals/close/events/audit+trace/replay+curl+actions.md/html+runbook.md+JSON；未审批阻断 | S:audit 含 arguments 不含 token；汇总不含 token/内容；runbook 附件；trace 含数据"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "bee22da488e2362ca3330c079e6f67e4ccd37fe0cdf4b1086567b1def1c4bac7",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由 + 审批 + 重放效果冒烟 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:urllib 建会话；检查 endpoints；GET 12 路由；428/approve/edit_apply；通过 view overlay 断言 X；重放到纯净副本再断言；输出 replay=ok | S:需 server 与 binary；不打印 token；临时副本清理"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "cf19783c9e7d2022c60584732b443ead2b64cc18ae91080a7abd27f5388a569a",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "1963c034e59c04f759e106887cdf7eae16dbc45b742cd86da83026ba2811e698",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API + runner + trace/replay | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md | A:loopback 服务；GET /sessions 汇总；sessions/actions/approvals/close/events/audit+trace/replay+curl+actions.md/html+runbook.md+JSON；未审批阻断 | S:audit 含 arguments 不含 token；汇总不含 token/内容；runbook 附件；trace 含数据"
+    },
+    {
+      "candidate_id": "885bda84e308b5c665a1b6da9069f26df51fadf9a7c902915b82b759302c012f",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "bee22da488e2362ca3330c079e6f67e4ccd37fe0cdf4b1086567b1def1c4bac7",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由 + 审批 + 重放效果冒烟 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:urllib 建会话；检查 endpoints；GET 12 路由；428/approve/edit_apply；通过 view overlay 断言 X；重放到纯净副本再断言；输出 replay=ok | S:需 server 与 binary；不打印 token；临时副本清理"
+    }
+  ]
+}
