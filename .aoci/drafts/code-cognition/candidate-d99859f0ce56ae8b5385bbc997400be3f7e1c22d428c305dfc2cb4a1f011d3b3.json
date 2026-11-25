@@ -1,0 +1,43 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "1694915a3391825dd51b3ac66caebc8223168733b5bd42a6dc0976115d809ffc",
+  "batch_id": "d99859f0ce56ae8b5385bbc997400be3f7e1c22d428c305dfc2cb4a1f011d3b3",
+  "composite_identity": "864d38365b8d7337c0db15c531849d2170af63726aaf6b894a0b09121d52b21e",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "946f9a5814fde631a95fa9783ad0aaf8778ffa91385ddaccd33d5d399ecb531f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "3bde59ba1fc6296ce70e9490fefe5f31ba3163791e3f346e84085740a7b8eb54",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 带时间戳自验日志 | R:code:README.md,code:scripts/verify_dist.sh,code:scripts/check_agent_stats.py,code:docs/QUICKSTART_AGENT.md | A:打包 docs/AGENT_QUICKSTART/TRY_CSVX/examples/scripts（含 stats checker）/mcp_sdk；sha256 后 verify_dist tee log | S:不打 tag/不联网/不发 registry；dist gitignore"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/release_manifest.py",
+      "path": "scripts/release_manifest.py",
+      "change": "create",
+      "source_sha256": "7bf48c28908048d6c74acd5bfff2505e699aa6e7f1358cbcad7222cfe2101016"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ff76f00958daed0336861e47cb5e29ac4d044a49109c248aba7f1e1f3019b9f7",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "3bde59ba1fc6296ce70e9490fefe5f31ba3163791e3f346e84085740a7b8eb54",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 带时间戳自验日志 | R:code:README.md,code:scripts/verify_dist.sh,code:scripts/check_agent_stats.py,code:docs/QUICKSTART_AGENT.md | A:打包 docs/AGENT_QUICKSTART/TRY_CSVX/examples/scripts（含 stats checker）/mcp_sdk；sha256 后 verify_dist tee log | S:不打 tag/不联网/不发 registry；dist gitignore"
+    },
+    {
+      "candidate_id": "3427edd221a4018b4c0a5fc5a47245de1204a34331fee1b4f0b0fca5a9953d54",
+      "object_ref": "code:scripts/release_manifest.py",
+      "path": "scripts/release_manifest.py",
+      "change": "create",
+      "source_sha256": "7bf48c28908048d6c74acd5bfff2505e699aa6e7f1358cbcad7222cfe2101016"
+    }
+  ]
+}
