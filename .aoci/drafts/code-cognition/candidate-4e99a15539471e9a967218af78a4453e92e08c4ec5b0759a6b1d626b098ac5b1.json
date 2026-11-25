@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "7cb46147539a098ae5c1aba770567845a097bf92d119af4a5449b535e561e108",
+  "batch_id": "4e99a15539471e9a967218af78a4453e92e08c4ec5b0759a6b1d626b098ac5b1",
+  "composite_identity": "6daf01353eedc6f64a82184e8646a8aa65dd58510c2540a50f08c2e5dca25ebc",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "c7fe7c6cb00b154c279fe0f845666109515fa43a4da88f0de3e5cc8acf7e5e89",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_agent_stats.py",
+      "path": "scripts/check_agent_stats.py",
+      "change": "update",
+      "source_sha256": "4810a926c15741ca3aaf9b66ec2386765dbb2e48855b47dd544323642de09658",
+      "existing_entry": "check_agent_stats.py[SD7T]: F:Agent 冒烟 stats 阈值检查，失败命名字段 | R:code:scripts/agent_routes_smoke.py,code:scripts/verify_dist.sh | A:解析 routes/replay/actions/sse_ms；输出 thresholds=ok；失败打印 threshold mismatch + 字段 | S:routes=12；replay=actions；sse_ms\u003c250；退出码 1"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/release_manifest.py",
+      "path": "scripts/release_manifest.py",
+      "change": "update",
+      "source_sha256": "8100c26a7ab440260f9e3a8c6824a40ffbd9daa2339b0b4817346c815468d799",
+      "existing_entry": "release_manifest.py[SD7T]: F:从已验证包写出 release manifest（checks/失败/耗时/阶段预算） | R:code:scripts/package_release.sh | A:sha/bytes/UTC；stats；gate/aoci；verifyJson sha；FailedAt/Duration/PhaseMs/Limits；checks | S:仅打包后；不联网；不改 tar；缺文件时 null"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "9f6461e4c71a3f61cef225f79e06704989fc79407c5d7fd4ad05d9e0d563a7fa",
+      "object_ref": "code:scripts/check_agent_stats.py",
+      "path": "scripts/check_agent_stats.py",
+      "change": "update",
+      "source_sha256": "4810a926c15741ca3aaf9b66ec2386765dbb2e48855b47dd544323642de09658",
+      "existing_entry": "check_agent_stats.py[SD7T]: F:Agent 冒烟 stats 阈值检查，失败命名字段 | R:code:scripts/agent_routes_smoke.py,code:scripts/verify_dist.sh | A:解析 routes/replay/actions/sse_ms；输出 thresholds=ok；失败打印 threshold mismatch + 字段 | S:routes=12；replay=actions；sse_ms\u003c250；退出码 1"
+    },
+    {
+      "candidate_id": "88854753c0bab9f1d216d3f4b2c3c01fba0732af9349a2b0fa2c9411c0c36b00",
+      "object_ref": "code:scripts/release_manifest.py",
+      "path": "scripts/release_manifest.py",
+      "change": "update",
+      "source_sha256": "8100c26a7ab440260f9e3a8c6824a40ffbd9daa2339b0b4817346c815468d799",
+      "existing_entry": "release_manifest.py[SD7T]: F:从已验证包写出 release manifest（checks/失败/耗时/阶段预算） | R:code:scripts/package_release.sh | A:sha/bytes/UTC；stats；gate/aoci；verifyJson sha；FailedAt/Duration/PhaseMs/Limits；checks | S:仅打包后；不联网；不改 tar；缺文件时 null"
+    }
+  ]
+}
