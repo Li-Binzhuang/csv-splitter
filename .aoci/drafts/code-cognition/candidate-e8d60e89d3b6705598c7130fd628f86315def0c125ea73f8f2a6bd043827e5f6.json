@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "8eac1982fe637d9f7a729c77ae3883e92d8cd0acdf040f0db950c8d5ba313d3f",
+  "batch_id": "e8d60e89d3b6705598c7130fd628f86315def0c125ea73f8f2a6bd043827e5f6",
+  "composite_identity": "ae6b39e3de3667a6baa4779691062391c0bc0497fb2bb5a987869c21b66b9827",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "eda581d48c19fbb0d84f4a59c2290fc52a5ce3187413f0d9204d33bb4c931c00",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "07b68af4e96425f5ea3c268db9e9b88e41f2a9832691ba6b2e8bea8b150c4c65",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:阶段性可验证状态摘要，供白天复盘 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-25 记录 23 工具、10 Agent 测试、170 CLI、174 serve、SSE 1-3ms、AOCI 145、TRY_CSVX+包 trace replay；包哈希见 dist/*.sha256 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_release.py",
+      "path": "scripts/check_release.py",
+      "change": "update",
+      "source_sha256": "e0491bc587a35cad0fe21c3e4267d80f634b6b9ce93b3cc81fd4886f538631e5",
+      "existing_entry": "check_release.py[SD7T]: F:重新哈希 release manifest 的 tar 与 verify.json | R:code:scripts/release_manifest.py,code:scripts/package_release.sh | A:读 release.json；tar sha；verifyJson sha；checks.verified/skillInstall；输出 manifest=ok | S:仅发布方；不联网；失败命名字段并退出 1"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/release_manifest.py",
+      "path": "scripts/release_manifest.py",
+      "change": "update",
+      "source_sha256": "7b91d2fa612de296503a204c5e52bd0c23e8cb7dc04019e596dd33257dcca63b",
+      "existing_entry": "release_manifest.py[SD7T]: F:从已验证包写出 release manifest（含 verifyJson 身份与 checks） | R:code:scripts/package_release.sh | A:sha256/bytes/UTC；解析 stats；gate/aociEntries 环境；verifyJson 名称+sha256；checks | S:仅打包后；不联网；不改 tar；缺 verify.json 时 null"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "eec110851a342350d7ac224b305f9677b45ca477856e0a954c7862d0be0421a0",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "07b68af4e96425f5ea3c268db9e9b88e41f2a9832691ba6b2e8bea8b150c4c65",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:阶段性可验证状态摘要，供白天复盘 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-25 记录 23 工具、10 Agent 测试、170 CLI、174 serve、SSE 1-3ms、AOCI 145、TRY_CSVX+包 trace replay；包哈希见 dist/*.sha256 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "f9c35a7cc9add154a8dc2b902bcdbba44cb6da9f77960ed9f20fefd54e0a020e",
+      "object_ref": "code:scripts/check_release.py",
+      "path": "scripts/check_release.py",
+      "change": "update",
+      "source_sha256": "e0491bc587a35cad0fe21c3e4267d80f634b6b9ce93b3cc81fd4886f538631e5",
+      "existing_entry": "check_release.py[SD7T]: F:重新哈希 release manifest 的 tar 与 verify.json | R:code:scripts/release_manifest.py,code:scripts/package_release.sh | A:读 release.json；tar sha；verifyJson sha；checks.verified/skillInstall；输出 manifest=ok | S:仅发布方；不联网；失败命名字段并退出 1"
+    },
+    {
+      "candidate_id": "b7ae2ccf525cfca2389a5c5d11cb8fd644c889473e0abfe41d20ec610198d456",
+      "object_ref": "code:scripts/release_manifest.py",
+      "path": "scripts/release_manifest.py",
+      "change": "update",
+      "source_sha256": "7b91d2fa612de296503a204c5e52bd0c23e8cb7dc04019e596dd33257dcca63b",
+      "existing_entry": "release_manifest.py[SD7T]: F:从已验证包写出 release manifest（含 verifyJson 身份与 checks） | R:code:scripts/package_release.sh | A:sha256/bytes/UTC；解析 stats；gate/aociEntries 环境；verifyJson 名称+sha256；checks | S:仅打包后；不联网；不改 tar；缺 verify.json 时 null"
+    }
+  ]
+}
