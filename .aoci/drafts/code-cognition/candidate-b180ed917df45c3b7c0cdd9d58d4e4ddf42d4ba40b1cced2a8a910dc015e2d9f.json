@@ -1,0 +1,75 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "3dde8cdbc8e1dd2868f3195d3f3b45e5faa51f159d28fe006ac488e0982aa8d5",
+  "batch_id": "b180ed917df45c3b7c0cdd9d58d4e4ddf42d4ba40b1cced2a8a910dc015e2d9f",
+  "composite_identity": "c3378c62880f47d9d7a02960efc106cd8363cfb575d618bd62f9b0585e6247a4",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "021bad6f990f26f16f163c9f7c93ae8a4d6ae783447153f594bc9a5b9c4ee2aa",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "e86b0facad2f9aaa1ab36d73bf42d3cc4e9e11283c21900269480b38a083b7ea",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:阶段性可验证状态摘要，供白天复盘 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-25 记录 23 工具、9 Agent 测试、170 CLI、174 serve、SSE 1-3ms、AOCI 140、包 SHA；待决策 xlsx/商业化/多用户 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/QUICKSTART_AGENT.md",
+      "path": "docs/QUICKSTART_AGENT.md",
+      "change": "update",
+      "source_sha256": "27574945cdc1ca85576f9d5f497060881f71da1e4930ef9b21ce820f2e972853",
+      "existing_entry": "QUICKSTART_AGENT.md[SD7T]: F:Agent 一页快速上手：MCP、HTTP、runner、skill、Excel 与安全 | R:code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md,code:docs/DSH_SKILL.md | A:MCP 配置；HTTP session/actions/audit/replay/curl/runbook；runner --trace/--replay；install_skill.sh；xlsx 示例；审批 403/428 | S:不写 key；审批单次；root 边界；trace/audit 含数据按敏感"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:examples/try_csvx.sh",
+      "path": "examples/try_csvx.sh",
+      "change": "create",
+      "source_sha256": "1621ab6e8809f069c31ad4a3e86cabbe0ef762ff6f881dbc3a132ac99fd7057d"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "4812e64f50428258356089aae7aedd7d1b72b5f0f3ca1e1b72ab04623cda02b0",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:scripts/verify_dist.sh,code:docs/ACCEPTANCE.md,code:docs/QUICKSTART_AGENT.md | A:打包二进制/docs（AGENT_API/AGENT_TRACE/QUICKSTART_AGENT/NIGHT_CHECKPOINT/DSH_SKILL/FORMULA_CACHE/XLSX）、根目录 AGENT_QUICKSTART.md、demo/pilot/bench/smoke、mcp_sdk、skills、examples、install_skill.sh；sha256 后 verify_dist | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "eb48ba69a5f11df5a7a843f2540c8869560f0d81275643f7e0ec5aebe6f1f2e1",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "e86b0facad2f9aaa1ab36d73bf42d3cc4e9e11283c21900269480b38a083b7ea",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:阶段性可验证状态摘要，供白天复盘 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-25 记录 23 工具、9 Agent 测试、170 CLI、174 serve、SSE 1-3ms、AOCI 140、包 SHA；待决策 xlsx/商业化/多用户 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "788e840e4e72b74b321bd10fda06210ab74c85c721cc5c638e0703309ebc26f8",
+      "object_ref": "code:docs/QUICKSTART_AGENT.md",
+      "path": "docs/QUICKSTART_AGENT.md",
+      "change": "update",
+      "source_sha256": "27574945cdc1ca85576f9d5f497060881f71da1e4930ef9b21ce820f2e972853",
+      "existing_entry": "QUICKSTART_AGENT.md[SD7T]: F:Agent 一页快速上手：MCP、HTTP、runner、skill、Excel 与安全 | R:code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md,code:docs/DSH_SKILL.md | A:MCP 配置；HTTP session/actions/audit/replay/curl/runbook；runner --trace/--replay；install_skill.sh；xlsx 示例；审批 403/428 | S:不写 key；审批单次；root 边界；trace/audit 含数据按敏感"
+    },
+    {
+      "candidate_id": "a44091ad23229ed8ad795060bbadd234364bf3d1b5b24d27f565b9173f7c75d7",
+      "object_ref": "code:examples/try_csvx.sh",
+      "path": "examples/try_csvx.sh",
+      "change": "create",
+      "source_sha256": "1621ab6e8809f069c31ad4a3e86cabbe0ef762ff6f881dbc3a132ac99fd7057d"
+    },
+    {
+      "candidate_id": "e33ced9cd79b211d6627cd57ee055e6335aa101d9e9b415524a896bdb046ede3",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "4812e64f50428258356089aae7aedd7d1b72b5f0f3ca1e1b72ab04623cda02b0",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:scripts/verify_dist.sh,code:docs/ACCEPTANCE.md,code:docs/QUICKSTART_AGENT.md | A:打包二进制/docs（AGENT_API/AGENT_TRACE/QUICKSTART_AGENT/NIGHT_CHECKPOINT/DSH_SKILL/FORMULA_CACHE/XLSX）、根目录 AGENT_QUICKSTART.md、demo/pilot/bench/smoke、mcp_sdk、skills、examples、install_skill.sh；sha256 后 verify_dist | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    }
+  ]
+}
