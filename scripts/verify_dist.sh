@@ -83,4 +83,8 @@ test "$TRACE_LINES" -eq 2
 printf 'trace_replay=tools:%s\n' "$TRACE_LINES"
 rm -rf "$TRACE_DIR"
 
+VERIFY_RESULT="${TAR%.tar.gz}.verify.json"
+cat > "$VERIFY_RESULT" <<EOF
+{"verified":true,"checksum":"ok","members":"ok","skill":"ok","xlsx":"ok","traceReplay":$TRACE_LINES,"stats":$STATS_JSON}
+EOF
 echo "verified: $TAR"
