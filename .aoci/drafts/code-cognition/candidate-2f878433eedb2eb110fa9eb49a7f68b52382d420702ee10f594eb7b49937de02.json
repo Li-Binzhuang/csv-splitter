@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "533fd58c7b0d987bc82216a27ffe9bf80ff3481e1faf5acc2d0750f137a7ec8f",
+  "batch_id": "2f878433eedb2eb110fa9eb49a7f68b52382d420702ee10f594eb7b49937de02",
+  "composite_identity": "7ff7f61d9f55b1bde758b898e097474324fa7213a27f3928a6d4ab17f0ab4fb6",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "dc502c47cb07df4e33cb2ec30d43b118b57ae203d40062ebb5759dabde08a8fd",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "f964fb602ba8d6eb51301495083087e88939c9b0fda407a7403c86a794ef3379",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:阶段性可验证状态摘要，供白天复盘 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-25 记录 23 工具、10 Agent 测试、170 CLI、174 serve、SSE 1-3ms、AOCI 142、TRY_CSVX 自校验；待决策 xlsx/商业化/多用户 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "5b2d1ae6f53f35c6cb1d2450ab80f260245c05cf8074cdeadd8e7f6e57aad00f",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:scripts/verify_dist_negative.sh,code:scripts/agent_routes_smoke.py | A:发布前 gate/demo/smoke_http/package；verify-negative；verify.log UTC+SHA+stats/stats_json；包内 12 路由/审批/多动作 replay/SSE | S:macOS arm64 已验证；xlsx 渐进；计时非 SLA；其他平台需重跑；清单随包分发"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "5eea68a357be1d4b8ffd2a36c22b0045542bad90ade87b78cbd46f6aeb780cbc",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:离线发布包验收：SHA256、成员、试用、Agent 路由与 stats | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py | A:检查成员；csvx --version；TRY_CSVX；包内 agent serve 12 路由/审批/重放/SSE；打印 stats 行；trap 清理 | S:仅发布方；不联网；缺文件/校验失败非零退出"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "11b568cd466e93184a65af0733152e3e93b38313cebdd37c337e177008f7076d",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "f964fb602ba8d6eb51301495083087e88939c9b0fda407a7403c86a794ef3379",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:阶段性可验证状态摘要，供白天复盘 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-25 记录 23 工具、10 Agent 测试、170 CLI、174 serve、SSE 1-3ms、AOCI 142、TRY_CSVX 自校验；待决策 xlsx/商业化/多用户 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "782566dff82710a11cf1642ac549424d8b4a89230c336eff532f260b98b1bced",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "5b2d1ae6f53f35c6cb1d2450ab80f260245c05cf8074cdeadd8e7f6e57aad00f",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:scripts/verify_dist_negative.sh,code:scripts/agent_routes_smoke.py | A:发布前 gate/demo/smoke_http/package；verify-negative；verify.log UTC+SHA+stats/stats_json；包内 12 路由/审批/多动作 replay/SSE | S:macOS arm64 已验证；xlsx 渐进；计时非 SLA；其他平台需重跑；清单随包分发"
+    },
+    {
+      "candidate_id": "b4484f8d42451a76a7fa9652d0b49a67769ee2f085783ef84c9ef8be3fc90207",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "5eea68a357be1d4b8ffd2a36c22b0045542bad90ade87b78cbd46f6aeb780cbc",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:离线发布包验收：SHA256、成员、试用、Agent 路由与 stats | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py | A:检查成员；csvx --version；TRY_CSVX；包内 agent serve 12 路由/审批/重放/SSE；打印 stats 行；trap 清理 | S:仅发布方；不联网；缺文件/校验失败非零退出"
+    }
+  ]
+}
