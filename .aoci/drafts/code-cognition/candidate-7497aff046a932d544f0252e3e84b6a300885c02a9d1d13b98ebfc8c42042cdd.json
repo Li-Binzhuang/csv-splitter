@@ -1,0 +1,89 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "073a59c9873a56d682d9bf8457560b7ed639937fe9620617353b4bb7af54ef1f",
+  "batch_id": "7497aff046a932d544f0252e3e84b6a300885c02a9d1d13b98ebfc8c42042cdd",
+  "composite_identity": "7e6b2d2da5f4cfb4241331239f831aa566be0f7e661043b0e2349c33f5ab14d5",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "7384e34e1066d547bf576f9e2ca519cea6d236a36bc7bbdc502fb7ac7f5f8042",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/jobs.rs",
+      "path": "crates/mcp/src/jobs.rs",
+      "change": "create",
+      "source_sha256": "3ed2d844cff875b0b70ce8063d2c1d5f60c27fd5035f9989ce5a603d467cd769"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/lib.rs",
+      "path": "crates/mcp/src/lib.rs",
+      "change": "update",
+      "source_sha256": "c746560bf292e43ad140289f99f00d3f7df2dd7ab0bb815c9d627f2c2ca9dffa",
+      "existing_entry": "lib.rs[EN9L]: F:MCP stdio 适配：23 工具、job/cache、官方 rmcp | R:code:crates/mcp/Cargo.toml,code:crates/mcp/src/rmcp_server.rs | A:run_mcp_stdio 只走 rmcp；McpJson/McpParser；McpJobRegistry；schema/执行器 | S:手写协议循环已删；冻结 23 工具；路径限 root"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/tools.rs",
+      "path": "crates/mcp/src/tools.rs",
+      "change": "create",
+      "source_sha256": "dfdd4f1b37ab7794c7af83677a0ed25ade8a002274257cdb57f03c8e287b8673"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "2e41a3e8e462b35286a4f5c088fa35106a5e2dfc229a5e7e5a7e552514c4d703",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；crate core/mcp/agent/cli；CLI main/serve/cli_support+commands；mcp/main 迁移完成 | S:rmcp 默认；手写循环已删；gate 强制"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "d080fe21ebceb44bed6322ee5b027c41b71c03abf1b1cb7078f003465f5c725a",
+      "existing_entry": "check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；CLI main/serve/cli_support+commands 白名单；core 不依赖 cli | S:未知模块退出；先改文档再加模块"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "820b6e9edd87485bd2ca7ace788fabe3cea9aefcabe596bcea0ee308c5ba2d65",
+      "object_ref": "code:crates/mcp/src/jobs.rs",
+      "path": "crates/mcp/src/jobs.rs",
+      "change": "create",
+      "source_sha256": "3ed2d844cff875b0b70ce8063d2c1d5f60c27fd5035f9989ce5a603d467cd769"
+    },
+    {
+      "candidate_id": "d4feaac5f222736b0e383009d6e3d6e6824e07172837ce92043f7913ac1d3cb2",
+      "object_ref": "code:crates/mcp/src/lib.rs",
+      "path": "crates/mcp/src/lib.rs",
+      "change": "update",
+      "source_sha256": "c746560bf292e43ad140289f99f00d3f7df2dd7ab0bb815c9d627f2c2ca9dffa",
+      "existing_entry": "lib.rs[EN9L]: F:MCP stdio 适配：23 工具、job/cache、官方 rmcp | R:code:crates/mcp/Cargo.toml,code:crates/mcp/src/rmcp_server.rs | A:run_mcp_stdio 只走 rmcp；McpJson/McpParser；McpJobRegistry；schema/执行器 | S:手写协议循环已删；冻结 23 工具；路径限 root"
+    },
+    {
+      "candidate_id": "f360966f31b30df7f1605c95c9025d9eafb6da76ca7cf8fb7d6cfca645f76f37",
+      "object_ref": "code:crates/mcp/src/tools.rs",
+      "path": "crates/mcp/src/tools.rs",
+      "change": "create",
+      "source_sha256": "dfdd4f1b37ab7794c7af83677a0ed25ade8a002274257cdb57f03c8e287b8673"
+    },
+    {
+      "candidate_id": "833c9f5f55f3638df833ba756cd5cbd870dc1f6ee1b5ac193cd9e198a8e108d7",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "2e41a3e8e462b35286a4f5c088fa35106a5e2dfc229a5e7e5a7e552514c4d703",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；crate core/mcp/agent/cli；CLI main/serve/cli_support+commands；mcp/main 迁移完成 | S:rmcp 默认；手写循环已删；gate 强制"
+    },
+    {
+      "candidate_id": "4281b3ea6a1501a03955f2265af0f93839e24cb3acef106e748d0a4b0f430788",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "d080fe21ebceb44bed6322ee5b027c41b71c03abf1b1cb7078f003465f5c725a",
+      "existing_entry": "check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；CLI main/serve/cli_support+commands 白名单；core 不依赖 cli | S:未知模块退出；先改文档再加模块"
+    }
+  ]
+}

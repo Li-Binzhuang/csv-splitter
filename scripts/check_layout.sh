@@ -52,6 +52,16 @@ while IFS= read -r entry; do
   [[ "$allowed" == 1 ]] || fail "unexpected CLI entry file: crates/cli/src/$name (update docs/ENTRYPOINTS.md first)"
 done < <(find crates/cli/src -maxdepth 1 -name '*.rs' -print | sort)
 
+MCP_SRC_ALLOWED=(lib.rs rmcp_server.rs tools.rs jobs.rs)
+while IFS= read -r entry; do
+  name=${entry#crates/mcp/src/}
+  allowed=0
+  for candidate in "${MCP_SRC_ALLOWED[@]}"; do
+    [[ "$name" == "$candidate" ]] && allowed=1 && break
+  done
+  [[ "$allowed" == 1 ]] || fail "unexpected MCP module: crates/mcp/src/$name (update docs/ENTRYPOINTS.md first)"
+done < <(find crates/mcp/src -maxdepth 1 -name '*.rs' -print | sort)
+
 while IFS= read -r entry; do
   name=${entry#crates/cli/src/commands/}
   allowed=0
