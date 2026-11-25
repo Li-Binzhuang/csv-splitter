@@ -1,0 +1,43 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "2fefe0632d49f720d8af602c63e843a37045b2dd81583ba9751bcaccd1ac1c62",
+  "batch_id": "4a656777a00b99bf72d4b6c77e3b25dc392b089307ddc9910a7339f6a4d7a0ce",
+  "composite_identity": "cd45edb00209433fcd39b5e75d38623af4c7e907e3e9fc8be24e4abbb66c4634",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "38570887a44776cc3515cec3e5d4c6a0790fd0348f9ba467208e5e1c4d3ef368",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/QUICKSTART_AGENT.md",
+      "path": "docs/QUICKSTART_AGENT.md",
+      "change": "create",
+      "source_sha256": "254e5f22aa8a74c8a2753fab4aaaac04d14ed9e1f67f5fd3ea98386ed5844e43"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "78598a1491bc9b39ba8933ae946d012ba0ca37789f0c27dc38040b832fcd2c5f",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:scripts/verify_dist.sh,code:scripts/smoke_http.py,code:docs/ACCEPTANCE.md | A:打包二进制/docs（AGENT_API/AGENT_TRACE/DSH_SKILL/FORMULA_CACHE/XLSX）、demo/pilot/bench/smoke、mcp_sdk、skills、examples（含脚本）、install_skill.sh；sha256 后 verify_dist | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "2324388a39ea8225ea496c9eec3d525e39da70049491708fdbcba219a98869b4",
+      "object_ref": "code:docs/QUICKSTART_AGENT.md",
+      "path": "docs/QUICKSTART_AGENT.md",
+      "change": "create",
+      "source_sha256": "254e5f22aa8a74c8a2753fab4aaaac04d14ed9e1f67f5fd3ea98386ed5844e43"
+    },
+    {
+      "candidate_id": "087cd45b4d710bb66d1f550be119b89da60183ba4e81c49dcbe1540046994881",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "78598a1491bc9b39ba8933ae946d012ba0ca37789f0c27dc38040b832fcd2c5f",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:scripts/verify_dist.sh,code:scripts/smoke_http.py,code:docs/ACCEPTANCE.md | A:打包二进制/docs（AGENT_API/AGENT_TRACE/DSH_SKILL/FORMULA_CACHE/XLSX）、demo/pilot/bench/smoke、mcp_sdk、skills、examples（含脚本）、install_skill.sh；sha256 后 verify_dist | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    }
+  ]
+}
