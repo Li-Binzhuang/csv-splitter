@@ -1,0 +1,89 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "6da54d18010164856566d6cbec36740a2aa262b35c31e7ca97ceada9da10ae24",
+  "batch_id": "0414a75762689717a0f0a153501d495a740ec12b700304c33dcb1e3cce24588b",
+  "composite_identity": "6e74176b7a4004bb1dd3f0b959711642ecf7ffbaa7dbe17ad3adb16157d52a5c",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "6f0ff7b6ab2ca6b799b039882d777d1c6f88b567390501da62049d4cbff8203e",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/agent.rs",
+      "path": "crates/cli/src/commands/agent.rs",
+      "change": "create",
+      "source_sha256": "e31902838ec0f243b12a62dd0f31805c2d738821b2134ffcafdd8d7036424307"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/mod.rs",
+      "path": "crates/cli/src/commands/mod.rs",
+      "change": "update",
+      "source_sha256": "03f3bf91f6fccf4bfce91647d2edbfbd3f58ead724a9ea59079c458a0c8f6272",
+      "existing_entry": "mod.rs[SD7T]: F:CLI 命令模块清单 | R:code:crates/cli/src/commands/mcp.rs | A:当前仅 mcp 子模块 | S:新增命令前更新 ENTRYPOINTS 与 check_layout"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/serve.rs",
+      "path": "crates/cli/src/commands/serve.rs",
+      "change": "create",
+      "source_sha256": "90d2aae49c85f5544039e0c832b11bf74370d99ff291ed5dcd751b69db073dbb"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "50455d927a321db5652f6572ed3e6a680c8d68411fc49f22835f366a9e739e19",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助与输出 | R:code:crates/cli/src/serve.rs,code:crates/cli/src/commands/mcp.rs,code:crates/mcp/src/lib.rs,code:crates/agent/src/lib.rs | A:CLI；convert/report/gate/edit/view/filter/watch；mcp 转 commands::mcp；agent 转 csvx_agent | S:report 四类 section；runner key 仅 env；入口模块不互引；命令逐个迁移"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "97fcb7758c13f227b897db5c97b361202e373d839519af55a0550c0491fe50fd",
+      "existing_entry": "check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；无根 .rs；crate 白名单；CLI main/serve+commands 白名单；core 不依赖 cli；main 行数警告 | S:未知模块退出；先改文档再加模块；不重排文件"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "665b9855bd91b09552af7c5aa2f2ea4c668137030ec62d386e69bc64151319bf",
+      "object_ref": "code:crates/cli/src/commands/agent.rs",
+      "path": "crates/cli/src/commands/agent.rs",
+      "change": "create",
+      "source_sha256": "e31902838ec0f243b12a62dd0f31805c2d738821b2134ffcafdd8d7036424307"
+    },
+    {
+      "candidate_id": "926cae08da37d13a776977b7382cbc8ff270d13d5a994bb882ba77ad13d6d2b1",
+      "object_ref": "code:crates/cli/src/commands/mod.rs",
+      "path": "crates/cli/src/commands/mod.rs",
+      "change": "update",
+      "source_sha256": "03f3bf91f6fccf4bfce91647d2edbfbd3f58ead724a9ea59079c458a0c8f6272",
+      "existing_entry": "mod.rs[SD7T]: F:CLI 命令模块清单 | R:code:crates/cli/src/commands/mcp.rs | A:当前仅 mcp 子模块 | S:新增命令前更新 ENTRYPOINTS 与 check_layout"
+    },
+    {
+      "candidate_id": "8102d59dbc4106059e029f576be595684b51c454a3e26e59bbaef94a4f209159",
+      "object_ref": "code:crates/cli/src/commands/serve.rs",
+      "path": "crates/cli/src/commands/serve.rs",
+      "change": "create",
+      "source_sha256": "90d2aae49c85f5544039e0c832b11bf74370d99ff291ed5dcd751b69db073dbb"
+    },
+    {
+      "candidate_id": "c686fd9f2e7bf38b4130c0238daa7b348aa0598a5f3462046214ff5f8a8cc00c",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "50455d927a321db5652f6572ed3e6a680c8d68411fc49f22835f366a9e739e19",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助与输出 | R:code:crates/cli/src/serve.rs,code:crates/cli/src/commands/mcp.rs,code:crates/mcp/src/lib.rs,code:crates/agent/src/lib.rs | A:CLI；convert/report/gate/edit/view/filter/watch；mcp 转 commands::mcp；agent 转 csvx_agent | S:report 四类 section；runner key 仅 env；入口模块不互引；命令逐个迁移"
+    },
+    {
+      "candidate_id": "1eedeec034d24eb6519fe85efc5f8e2a35dff8ddb32e20c19474213b86fdf082",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "97fcb7758c13f227b897db5c97b361202e373d839519af55a0550c0491fe50fd",
+      "existing_entry": "check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；无根 .rs；crate 白名单；CLI main/serve+commands 白名单；core 不依赖 cli；main 行数警告 | S:未知模块退出；先改文档再加模块；不重排文件"
+    }
+  ]
+}
