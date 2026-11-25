@@ -169,6 +169,9 @@ fn handle(mut stream: TcpStream, root: &Path, state: &State) -> io::Result<()> {
     if method == "GET" && action == "runbook.md" {
         return runbook(&mut stream, state, session_id, token);
     }
+    if method == "GET" && action == "runbook" {
+        return runbook_json(&mut stream, state, session_id, token);
+    }
     respond_json(&mut stream, 404, r#"{"error":"not found"}"#)
 }
 
@@ -741,6 +744,81 @@ fn audit_log(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io
     )
 }
 
+fn runbook_json(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
+    let sessions = match state.sessions.lock() {
+        Ok(sessions) => sessions,
+        Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
+    };
+    let Some(session) = sessions.get(id) else {
+        return respond_json(stream, 404, r#"{"error":"unknown session"}"#);
+    };
+    if !constant_eq(&session.token, token) {
+        return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
+    }
+    let text = std::fs::read_to_string(&session.audit).unwrap_or_default();
+    let approved = approved_tools(&text, id);
+    let mut actions = Vec::new();
+    let mut unapproved = 0usize;
+    for line in text
+        .lines()
+        .filter(|line| line_belongs_to_session(line, id))
+    {
+        let Ok(value) = McpParser::parse(line) else {
+            continue;
+        };
+        if !matches!(
+            value.get("status").and_then(McpJson::as_str),
+            Some("ok" | "error")
+        ) {
+            continue;
+        }
+        let Some(tool) = value.get("tool").and_then(McpJson::as_str) else {
+            continue;
+        };
+        let approval = action_approval(tool, &approved);
+        if approval == "unapproved" {
+            unapproved += 1;
+        }
+        let arguments = value.get("arguments").cloned().unwrap_or(McpJson::Null);
+        let status = value
+            .get("status")
+            .and_then(McpJson::as_str)
+            .unwrap_or("ok");
+        let elapsed = value
+            .get("elapsedMs")
+            .and_then(|value| match value {
+                McpJson::Number(number) => Some(*number as u64),
+                _ => None,
+            })
+            .unwrap_or(0);
+        actions.push(format!(
+            r#"{{"step":{},"tool":{},"arguments":{},"status":{},"approval":{},"elapsedMs":{elapsed}}}"#,
+            actions.len() + 1,
+            json_str(tool),
+            json_render(&arguments),
+            json_str(status),
+            json_str(approval)
+        ));
+    }
+    let mut pending = Vec::new();
+    for (approval_id, tool) in &session.approvals {
+        pending.push(format!(
+            r#"{{"approvalId":{},"tool":{}}}"#,
+            json_str(approval_id),
+            json_str(tool)
+        ));
+    }
+    let body = format!(
+        r#"{{"session":{},"root":{},"agent":{},"unapproved":{unapproved},"pendingApprovals":[{}],"actions":[{}]}}"#,
+        json_str(id),
+        json_str(&session.root.display().to_string()),
+        json_str(&session.agent),
+        pending.join(","),
+        actions.join(",")
+    );
+    respond_json(stream, 200, &body)
+}
+
 fn runbook(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
     let sessions = match state.sessions.lock() {
         Ok(sessions) => sessions,
@@ -810,6 +888,11 @@ fn runbook(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::
         "\n## Replay\n\n```bash\ncurl -sS -H \"Authorization: Bearer $CSVX_TOKEN\" \\\n  \"$CSVX_API/agent/v1/sessions/{id}/replay\" > session.jsonl\ncsvx agent replay --root \"{}\" --replay session.jsonl\n```\n",
         session.root.display()
     ));
+    // This is a visible warning, not a replacement for the HTTP 428 gate.
+    let unapproved = body.matches("| unapproved |").count();
+    if unapproved > 0 {
+        body = format!("> **BLOCKED**: {unapproved} unapproved destructive action(s) are listed below; issue /approvals before replay.\n\n{body}");
+    }
     stream.write_all(
         format!(
             "HTTP/1.1 200 OK\r\nContent-Type: text/markdown\r\nContent-Disposition: attachment; filename=\"agent-runbook-{id}.md\"\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",

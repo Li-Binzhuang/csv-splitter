@@ -74,7 +74,8 @@ approval. Replace the placeholder with the returned id before running. `GET /act
 `/actions.html` render them as a table (step, approval state, status) plus an
 `unapproved destructive actions` count; the Markdown response is an attachment.
 `/runbook.md` combines pending approvals, the action table and a ready-to-copy
-replay command in one downloadable page.
+replay command in one downloadable page; `/runbook` is the JSON form. A visible
+blocker is prepended when any action is unapproved.
 
 ## Why
 

@@ -318,6 +318,13 @@ fn agent_api_creates_session_actions_approves_and_audits() {
     assert!(body.contains("<table>"), "{body}");
     assert!(body.contains("<td>csvx_schema</td>"), "{body}");
 
+    let runbook_json = format!("/agent/v1/sessions/{session}/runbook");
+    let (status, body) = request(&addr, "GET", &runbook_json, Some(&token), "");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("\"unapproved\":0"), "{body}");
+    assert!(body.contains("\"pendingApprovals\""), "{body}");
+    assert!(body.contains("csvx_edit_apply"), "{body}");
+
     let runbook_endpoint = format!("/agent/v1/sessions/{session}/runbook.md");
     let (status, body) = request(&addr, "GET", &runbook_endpoint, Some(&token), "");
     assert_eq!(status, 200, "{body}");
