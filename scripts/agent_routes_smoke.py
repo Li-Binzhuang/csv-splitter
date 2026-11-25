@@ -2,8 +2,12 @@
 """Smoke the Agent API routes against a running server."""
 import argparse
 import json
+import socket
 import subprocess
 import tempfile
+from urllib.parse import urlparse
+import threading
+import time
 from pathlib import Path
 import urllib.error
 import urllib.request
@@ -19,6 +23,47 @@ def request(api, path, token=None, method="GET", body=None):
             return response.status, response.read().decode()
     except urllib.error.HTTPError as error:
         return error.code, error.read().decode()
+
+def sse_latency(api, sid, token):
+    result = {}
+
+    def reader():
+        parsed = urlparse(api)
+        try:
+            with socket.create_connection((parsed.hostname, parsed.port), timeout=10) as sock:
+                sock.sendall(
+                    (
+                        f"GET /agent/v1/sessions/{sid}/events?follow=1 HTTP/1.1\r\n"
+                        f"Host: {parsed.hostname}\r\n"
+                        f"Authorization: Bearer {token}\r\n"
+                        "Connection: close\r\n\r\n"
+                    ).encode()
+                )
+                while True:
+                    chunk = sock.recv(1024)
+                    if not chunk:
+                        return
+                    text = chunk.decode(errors="replace")
+                    result["data"] = result.get("data", "") + text
+                    if '"tool":"csvx_schema"' in text:
+                        result["seen"] = time.monotonic()
+                        return
+        except Exception as error:  # noqa: BLE001
+            result["error"] = str(error)
+
+    thread = threading.Thread(target=reader, daemon=True)
+    thread.start()
+    time.sleep(0.2)
+    started = time.monotonic()
+    status, body = request(
+        api, f"/agent/v1/sessions/{sid}/actions", token, "POST",
+        {"tool": "csvx_schema", "arguments": {"path": "orders.csv"}},
+    )
+    assert status == 200, body
+    thread.join(timeout=5)
+    if "seen" not in result:
+        raise AssertionError(f"SSE did not deliver: {result}")
+    return (result["seen"] - started) * 1000
 
 def has_x(binary, path):
     run = subprocess.run(
@@ -64,6 +109,8 @@ def main():
         status, body = request(api, route, token)
         assert status == 200, f"{route}: {status} {body}"
 
+    sse_ms = sse_latency(api, sid, token)
+    assert sse_ms < 2000, f"SSE first frame took {sse_ms:.0f}ms"
     action = f"/agent/v1/sessions/{sid}/actions"
     source = Path(args.root, args.file)
     original = source.read_text()
@@ -117,7 +164,10 @@ def main():
     after_count = len(json.loads(body)["actions"])
     assert after_count == actions_count, f"replay changed HTTP actions: {actions_count} -> {after_count}"
 
-    print(f"routes={len(routes)} session={sid} actions={actions_count} deny=403 approval=ok replay=ok")
+    print(
+        f"routes={len(routes)} session={sid} actions={actions_count} "
+        f"sse_ms={sse_ms:.0f} deny=403 approval=ok replay=ok"
+    )
 
 if __name__ == "__main__":
     main()
