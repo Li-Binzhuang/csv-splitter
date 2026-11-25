@@ -12,11 +12,14 @@ if [[ ! -f "$TAR.sha256" ]]; then
   exit 2
 fi
 VERIFY_RESULT="${TAR%.tar.gz}.verify.json"
+START_MS=$(python3 -c 'import time; print(int(time.time()*1000))')
 CHECK=startup
 write_failure() {
   code=$?
   set +e
-  printf '{"verified":false,"failedAt":"%s","error":"exit %s"}\n' "$CHECK" "$code" > "$VERIFY_RESULT"
+  END_MS=$(python3 -c 'import time; print(int(time.time()*1000))')
+  DURATION_MS=$((END_MS - START_MS))
+  printf '{"verified":false,"failedAt":"%s","error":"exit %s","durationMs":%s}\n' "$CHECK" "$code" "$DURATION_MS" > "$VERIFY_RESULT"
   echo "verification failed at $CHECK" >&2
   exit "$code"
 }
@@ -25,7 +28,9 @@ on_exit() {
   code=$?
   if [[ $code -ne 0 && ! -f "$VERIFY_RESULT" ]]; then
     set +e
-    printf '{"verified":false,"failedAt":"%s","error":"exit %s"}\n' "$CHECK" "$code" > "$VERIFY_RESULT"
+    END_MS=$(python3 -c 'import time; print(int(time.time()*1000))')
+    DURATION_MS=$((END_MS - START_MS))
+    printf '{"verified":false,"failedAt":"%s","error":"exit %s","durationMs":%s}\n' "$CHECK" "$code" "$DURATION_MS" > "$VERIFY_RESULT"
     echo "verification failed at $CHECK" >&2
   fi
   [[ -n "${AGENT_PID:-}" ]] && kill "$AGENT_PID" 2>/dev/null || true
@@ -120,7 +125,9 @@ test "$TRACE_LINES" -eq 2
 printf 'trace_replay=tools:%s\n' "$TRACE_LINES"
 rm -rf "$TRACE_DIR"
 
+END_MS=$(python3 -c 'import time; print(int(time.time()*1000))')
+DURATION_MS=$((END_MS - START_MS))
 cat > "$VERIFY_RESULT" <<EOF
-{"verified":true,"failedAt":null,"checksum":"ok","members":"ok","skill":"ok","skillInstall":"ok","xlsx":"ok","traceReplay":$TRACE_LINES,"stats":$STATS_JSON}
+{"verified":true,"failedAt":null,"durationMs":$DURATION_MS,"checksum":"ok","members":"ok","skill":"ok","skillInstall":"ok","xlsx":"ok","traceReplay":$TRACE_LINES,"stats":$STATS_JSON}
 EOF
 echo "verified: $TAR"
