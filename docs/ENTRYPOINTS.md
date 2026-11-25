@@ -44,8 +44,8 @@ core  →  不允许依赖任何入口
 - 根目录只放项目元数据、`crates/`、`docs/`、`examples/`、`scripts/`、`skills/`；
   不新增根目录 `.rs` 或临时脚本。
 - 源码只在 `crates/<crate>/src`；测试在 `crates/<crate>/tests`。
-- `crates/cli/src` 当前只允许 `main.rs`、`serve.rs`；新增模块必须先更新本文件和
-  `check_layout.sh`，不允许随手加一个 `foo.rs`。
+- `crates/cli/src` 当前只允许 `main.rs`、`serve.rs` 和 `commands/`；命令模块逐条
+  登记在 `check_layout.sh`，新增前先更新本文件，不允许随手加一个 `foo.rs`。
 - 入口文件目标 ≤300 行。当前超标文件是迁移对象，只降不升；`main.rs` 不得继续增长。
 - 一个命令一个模块：`commands/split.rs`、`commands/report.rs`、`commands/xlsx.rs`。
 - MCP 工具定义与执行器独立；CLI 不得直接调用内部 HTTP 函数。
@@ -90,6 +90,7 @@ bash scripts/package_release.sh
    并删除手写协议层。
 3. **抽 `crates/agent`（已完成传输替换）**：控制面在 `crates/agent`；HTTP/SSE
    由 axum 承载，session/审批/审计/trace/replay 语义保持不变。
-4. **拆 `main.rs`**：按命令拆模块，CLI 只保留 dispatch；最后抽 `serve` 剩余 HTTP。
+4. **拆 `main.rs`（进行中）**：`mcp` 命令已迁到 `commands/mcp.rs`；其余命令按组迁移，
+   CLI 只保留 dispatch；最后抽 `serve` 剩余 HTTP。
 
 每一步只做一层，不同时重写 core 行为。

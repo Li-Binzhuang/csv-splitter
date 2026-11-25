@@ -1,0 +1,89 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "41f72a755389db5ca3d9f895adf9d39cb7fef44aeb4822a6895716eb3b4f687e",
+  "batch_id": "186e7ff02b3f8641098fa9f0e6646995f79505b6b1d23b3a2194f2f99ede6050",
+  "composite_identity": "11b3fd18e0445089aaae9485886978ac70de6419f3004080d5dac5b9356de649",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "8c2ccfdff1a41df16289a34660b5bd8c632631b647c1cef233d15fa7aaf7be9f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/mcp.rs",
+      "path": "crates/cli/src/commands/mcp.rs",
+      "change": "create",
+      "source_sha256": "bff9c1740906cdbc1a8386ef41e4ba9a3bc197b0aad607503b6925a6f70f763b"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/mod.rs",
+      "path": "crates/cli/src/commands/mod.rs",
+      "change": "create",
+      "source_sha256": "eba1ef5e30ab411f3b35bd1a142e0a8e23072409533ac58102035293f2781560"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "c764c6edb0c595f077579ca632a55691b6c730d0faac9730a30565c8882fbb5e",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助与输出 | R:code:crates/cli/src/serve.rs,code:crates/mcp/src/lib.rs,code:crates/agent/src/lib.rs,code:crates/core/src/xlsx.rs | A:CLI；convert xlsx；report；gate/edit/view/filter/watch；agent 调用 csvx_agent；mcp 调用 csvx_mcp | S:report 四类 section；runner key 仅 env；入口模块不互引"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "29da868e1d66bee3a4440cc35f5bc733c7d7b0b2cf52083a8e555aaecd7a2802",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:crates/mcp/src/lib.rs,code:crates/agent/src/lib.rs,code:crates/agent/src/axum_http.rs | A:根白名单；crate core/mcp/agent/cli；CLI 仅 main/serve；冻结 23 工具/12 路由/阈值；mcp/agent 已抽出；axum 已接入 | S:DSH 走 MCP；runner 不扩张；gate 强制；传输层独立"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "958c1ed82268246a9503fe8617aa323925ca804b46c8926e37d34642750c05e7",
+      "existing_entry": "check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；无根 .rs；crate core/cli/mcp/agent/api；CLI 仅 main/serve；core 不依赖 cli；main 行数警告 | S:未知条目退出；先改文档再加模块；不重排文件"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "02e35bb08ed0e30e98ee9185faf2f0a7b9ff3b540d8e17aec95b93001b3b7e6d",
+      "object_ref": "code:crates/cli/src/commands/mcp.rs",
+      "path": "crates/cli/src/commands/mcp.rs",
+      "change": "create",
+      "source_sha256": "bff9c1740906cdbc1a8386ef41e4ba9a3bc197b0aad607503b6925a6f70f763b"
+    },
+    {
+      "candidate_id": "af6c0a27292120f1eaf2cdd16d4301f4fc189885b0fd4abca81c98a565127084",
+      "object_ref": "code:crates/cli/src/commands/mod.rs",
+      "path": "crates/cli/src/commands/mod.rs",
+      "change": "create",
+      "source_sha256": "eba1ef5e30ab411f3b35bd1a142e0a8e23072409533ac58102035293f2781560"
+    },
+    {
+      "candidate_id": "7010c149ec7b6a868400a3aaf86de6adfc430f9f6161de6d5f96258d6d8c85ea",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "c764c6edb0c595f077579ca632a55691b6c730d0faac9730a30565c8882fbb5e",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助与输出 | R:code:crates/cli/src/serve.rs,code:crates/mcp/src/lib.rs,code:crates/agent/src/lib.rs,code:crates/core/src/xlsx.rs | A:CLI；convert xlsx；report；gate/edit/view/filter/watch；agent 调用 csvx_agent；mcp 调用 csvx_mcp | S:report 四类 section；runner key 仅 env；入口模块不互引"
+    },
+    {
+      "candidate_id": "078b82d582d0454bb4a3b4a1dfe576196a7c15aa4399eaa1994d2f36010dc2fa",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "29da868e1d66bee3a4440cc35f5bc733c7d7b0b2cf52083a8e555aaecd7a2802",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:crates/mcp/src/lib.rs,code:crates/agent/src/lib.rs,code:crates/agent/src/axum_http.rs | A:根白名单；crate core/mcp/agent/cli；CLI 仅 main/serve；冻结 23 工具/12 路由/阈值；mcp/agent 已抽出；axum 已接入 | S:DSH 走 MCP；runner 不扩张；gate 强制；传输层独立"
+    },
+    {
+      "candidate_id": "f4e8b9d860756be7363f60c95d1e7396b15244b548bb1780a9fbdae830b61105",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "958c1ed82268246a9503fe8617aa323925ca804b46c8926e37d34642750c05e7",
+      "existing_entry": "check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；无根 .rs；crate core/cli/mcp/agent/api；CLI 仅 main/serve；core 不依赖 cli；main 行数警告 | S:未知条目退出；先改文档再加模块；不重排文件"
+    }
+  ]
+}

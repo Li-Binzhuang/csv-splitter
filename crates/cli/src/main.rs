@@ -27,7 +27,9 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use csvx_agent as agent;
+mod commands;
 mod serve;
+use commands::mcp::cmd_mcp;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -688,7 +690,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
     ),
 ];
 
-fn print_command_help(command: &str) {
+pub(crate) fn print_command_help(command: &str) {
     let Some(options) = COMMAND_OPTIONS
         .iter()
         .find(|(name, _)| *name == command)
@@ -914,20 +916,20 @@ EXAMPLES
 
 // ---------------------------------------------------------------- arg helpers
 
-struct Parser {
+pub(crate) struct Parser {
     args: Vec<String>,
     idx: usize,
 }
 
 impl Parser {
-    fn new(args: &[String]) -> Self {
+    pub(crate) fn new(args: &[String]) -> Self {
         Self {
             args: args.to_vec(),
             idx: 0,
         }
     }
 
-    fn next(&mut self) -> Option<String> {
+    pub(crate) fn next(&mut self) -> Option<String> {
         let v = self.args.get(self.idx).cloned();
         if v.is_some() {
             self.idx += 1;
@@ -935,7 +937,7 @@ impl Parser {
         v
     }
 
-    fn value(&mut self, flag: &str) -> Result<String, String> {
+    pub(crate) fn value(&mut self, flag: &str) -> Result<String, String> {
         self.next().ok_or_else(|| format!("{flag} needs a value"))
     }
 }
@@ -10110,38 +10112,6 @@ fn print_quality_markdown(
         println!("## Findings");
         for (severity, column, message) in findings {
             println!("- **{severity}** `{column}`: {message}");
-        }
-    }
-}
-
-fn cmd_mcp(args: &[String]) -> i32 {
-    let mut p = Parser::new(args);
-    let mut root: Option<PathBuf> = None;
-    while let Some(arg) = p.next() {
-        match arg.as_str() {
-            "--root" => match p.value("--root") {
-                Ok(value) => root = Some(PathBuf::from(value)),
-                Err(e) => {
-                    eprintln!("error: {e}");
-                    return 2;
-                }
-            },
-            "-h" | "--help" => {
-                print_command_help("mcp");
-                return 0;
-            }
-            other => {
-                eprintln!("error: unknown option: {other}");
-                return 2;
-            }
-        }
-    }
-    let root = root.unwrap_or_else(|| std::path::PathBuf::from("."));
-    match csvx_mcp::run_mcp_stdio(&root) {
-        Ok(()) => 0,
-        Err(e) => {
-            eprintln!("error: {e}");
-            1
         }
     }
 }

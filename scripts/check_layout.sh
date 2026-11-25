@@ -42,6 +42,7 @@ for dir in crates/*/; do
 done
 
 CLI_SRC_ALLOWED=(main.rs serve.rs)
+CLI_COMMANDS_ALLOWED=(mod.rs mcp.rs)
 while IFS= read -r entry; do
   name=${entry#crates/cli/src/}
   allowed=0
@@ -50,6 +51,15 @@ while IFS= read -r entry; do
   done
   [[ "$allowed" == 1 ]] || fail "unexpected CLI entry file: crates/cli/src/$name (update docs/ENTRYPOINTS.md first)"
 done < <(find crates/cli/src -maxdepth 1 -name '*.rs' -print | sort)
+
+while IFS= read -r entry; do
+  name=${entry#crates/cli/src/commands/}
+  allowed=0
+  for candidate in "${CLI_COMMANDS_ALLOWED[@]}"; do
+    [[ "$name" == "$candidate" ]] && allowed=1 && break
+  done
+  [[ "$allowed" == 1 ]] || fail "unexpected command module: crates/cli/src/commands/$name (update docs/ENTRYPOINTS.md first)"
+done < <(find crates/cli/src/commands -maxdepth 1 -name '*.rs' -print | sort)
 
 if grep -q 'csvx-cli' crates/core/Cargo.toml; then
   fail "core must not depend on the CLI"
