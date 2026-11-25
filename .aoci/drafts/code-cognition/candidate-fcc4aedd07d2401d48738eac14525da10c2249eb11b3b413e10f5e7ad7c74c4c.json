@@ -1,0 +1,89 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "08c1fff6bf2d2fb28e85d044c4a712cad3ef25b5d5cd0a69fe760e9666a224ea",
+  "batch_id": "fcc4aedd07d2401d48738eac14525da10c2249eb11b3b413e10f5e7ad7c74c4c",
+  "composite_identity": "34f216ff6b0f50735447c3b713082a7d324bd97fdc68675aa926b7c790e75c31",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "967b2df77a00067bbe7b12f07835d21a9b0945f6ea038848fd1713cf3f49ce6f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "d8d8f9845ecee7742b084d3d304f272986f95015b77762a98388a4c575f92463",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API + runner + trace/replay | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md | A:loopback 服务；sessions/actions/approvals/close/events/audit+trace+replay+curl+actions.md/html；动作 step/approval；curl 注释审计审批状态 | S:audit 含 arguments 不含 token；同 root 不串 session；approval 按 approved 行；trace 含数据"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:examples/agent/README.md",
+      "path": "examples/agent/README.md",
+      "change": "update",
+      "source_sha256": "55c2a40f72313ad0f394babd4715fc118669673b4f4cdce5d97132c3eb790988",
+      "existing_entry": "README.md[SD7T]: F:Agent API 示例：启动 server、创建会话、工具调用、审批与审计 | R:code:docs/AGENT_API.md,code:crates/cli/src/agent.rs,code:skills/csvx-data/SKILL.md | A:curl 示例；一次性 token；428 审批；审计路径 | S:不保存 key；示例仅本机；审批后才能 destructive"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:examples/agent/http_session.sh",
+      "path": "examples/agent/http_session.sh",
+      "change": "create",
+      "source_sha256": "53f51d52aa7256309ef96320b915a1979873e25e83149c10147a6a566be15c31"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:examples/agent/trace_replay.sh",
+      "path": "examples/agent/trace_replay.sh",
+      "change": "create",
+      "source_sha256": "bffada88728f30572acc58bf0447259bf9a9dc73126bd34e7ed5e24b998ade99"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "193b772393048189e0d4323b9bfa747af2cb2f482a9e7e237ee5894a8dc7760d",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:scripts/verify_dist.sh,code:scripts/smoke_http.py,code:docs/ACCEPTANCE.md | A:打包二进制/docs（含 AGENT_API/AGENT_TRACE/DSH_SKILL/FORMULA_CACHE/XLSX）、demo/pilot/bench/smoke、mcp_sdk、skills、examples、install_skill.sh；sha256 后 verify_dist | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "a94d5270073b445405f8e14a973e29b7303a5ae55089902d47a70517d899c7b1",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "d8d8f9845ecee7742b084d3d304f272986f95015b77762a98388a4c575f92463",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API + runner + trace/replay | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md | A:loopback 服务；sessions/actions/approvals/close/events/audit+trace+replay+curl+actions.md/html；动作 step/approval；curl 注释审计审批状态 | S:audit 含 arguments 不含 token；同 root 不串 session；approval 按 approved 行；trace 含数据"
+    },
+    {
+      "candidate_id": "7ef760ebc008d207b2660b26319946bbea7aba5d0d8e54102bcc7747b4057fda",
+      "object_ref": "code:examples/agent/README.md",
+      "path": "examples/agent/README.md",
+      "change": "update",
+      "source_sha256": "55c2a40f72313ad0f394babd4715fc118669673b4f4cdce5d97132c3eb790988",
+      "existing_entry": "README.md[SD7T]: F:Agent API 示例：启动 server、创建会话、工具调用、审批与审计 | R:code:docs/AGENT_API.md,code:crates/cli/src/agent.rs,code:skills/csvx-data/SKILL.md | A:curl 示例；一次性 token；428 审批；审计路径 | S:不保存 key；示例仅本机；审批后才能 destructive"
+    },
+    {
+      "candidate_id": "4ea2d00a68df5de2c51b3da73c49902afc07552820c726219246f27f4831e5c8",
+      "object_ref": "code:examples/agent/http_session.sh",
+      "path": "examples/agent/http_session.sh",
+      "change": "create",
+      "source_sha256": "53f51d52aa7256309ef96320b915a1979873e25e83149c10147a6a566be15c31"
+    },
+    {
+      "candidate_id": "5df58c8bd89aa7a7212caa2bec6efc84dbcde0d12f3ddd4f0cbd8ae9fae7a380",
+      "object_ref": "code:examples/agent/trace_replay.sh",
+      "path": "examples/agent/trace_replay.sh",
+      "change": "create",
+      "source_sha256": "bffada88728f30572acc58bf0447259bf9a9dc73126bd34e7ed5e24b998ade99"
+    },
+    {
+      "candidate_id": "c61fc7655832c71cb9899a356f5c6e5152111e6f6f667415b2a40a5aa8decc00",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "193b772393048189e0d4323b9bfa747af2cb2f482a9e7e237ee5894a8dc7760d",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:scripts/verify_dist.sh,code:scripts/smoke_http.py,code:docs/ACCEPTANCE.md | A:打包二进制/docs（含 AGENT_API/AGENT_TRACE/DSH_SKILL/FORMULA_CACHE/XLSX）、demo/pilot/bench/smoke、mcp_sdk、skills、examples、install_skill.sh；sha256 后 verify_dist | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    }
+  ]
+}
