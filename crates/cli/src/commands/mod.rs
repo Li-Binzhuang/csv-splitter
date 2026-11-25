@@ -22,6 +22,7 @@ pub(crate) mod mcp;
 pub(crate) mod merge;
 pub(crate) mod ops;
 pub(crate) mod partition;
+pub(crate) mod pipeline;
 pub(crate) mod pivot;
 pub(crate) mod preview;
 pub(crate) mod repair;

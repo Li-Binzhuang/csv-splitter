@@ -1,6 +1,5 @@
-use crate::{
-    fit_to_terminal, note_hidden_columns, print_command_help, process_alive, report_failure, Parser,
-};
+use crate::commands::pipeline::process_alive;
+use crate::{fit_to_terminal, note_hidden_columns, print_command_help, report_failure, Parser};
 use csvx_core::sql::{self, DEFAULT_LIMIT};
 use std::path::PathBuf;
 use std::time::Instant;

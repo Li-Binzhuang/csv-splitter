@@ -1,9 +1,10 @@
 use crate::commands::lookup::layout_columns;
+use crate::commands::shared::json_escape;
 use crate::commands::sort::parse_sort_columns;
 use crate::{
-    check_expect, check_formula, check_output, human_bytes, journal_push, json_escape,
-    parse_delimiter, parse_quotes, print_command_help, report_failure, spawn_reporter,
-    warn_journal_damage, Parser, MAX_DELETE_RUNS,
+    check_expect, check_formula, check_output, human_bytes, journal_push, parse_delimiter,
+    parse_quotes, print_command_help, report_failure, spawn_reporter, warn_journal_damage, Parser,
+    MAX_DELETE_RUNS,
 };
 use std::path::PathBuf;
 use std::sync::mpsc;

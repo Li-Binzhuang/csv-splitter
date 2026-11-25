@@ -1,6 +1,5 @@
-use crate::{
-    json_escape, parse_delimiter, print_command_help, quality_checks, report_failure, serve, Parser,
-};
+use crate::commands::shared::json_escape;
+use crate::{parse_delimiter, print_command_help, quality_checks, report_failure, serve, Parser};
 use csvx_core::csv_reader::parse_csv_record;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;

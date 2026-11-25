@@ -1,4 +1,5 @@
-use crate::{json_escape, parse_delimiter, print_command_help, report_failure, Parser};
+use crate::commands::shared::json_escape;
+use crate::{parse_delimiter, print_command_help, report_failure, Parser};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 
