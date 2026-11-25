@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-25T06:06:29Z",
+  "updated_at": "2026-11-25T06:09:15Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "97fc062e3ac84509cf2b0799ea77df565da154740462d5c3147140a0b2ca4e5f",
-      "size": 61499,
-      "normalized_sha256": "97fc062e3ac84509cf2b0799ea77df565da154740462d5c3147140a0b2ca4e5f"
+      "sha256": "22bfcc1d9bdcdfb9fee07022a9d21cb98fb54c6f72c54e1d3a3ad8979316c382",
+      "size": 61405,
+      "normalized_sha256": "22bfcc1d9bdcdfb9fee07022a9d21cb98fb54c6f72c54e1d3a3ad8979316c382"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -670,9 +670,9 @@
     },
     "docs/NIGHT_CHECKPOINT.md": {
       "role": "index",
-      "sha256": "e86b0facad2f9aaa1ab36d73bf42d3cc4e9e11283c21900269480b38a083b7ea",
+      "sha256": "3f760749592db3ae0843a340162aa379aac0dd087641507c756257c21240a23a",
       "size": 1719,
-      "normalized_sha256": "e86b0facad2f9aaa1ab36d73bf42d3cc4e9e11283c21900269480b38a083b7ea"
+      "normalized_sha256": "3f760749592db3ae0843a340162aa379aac0dd087641507c756257c21240a23a"
     },
     "docs/NIGHT_QUEUE.md": {
       "role": "index",
@@ -730,9 +730,9 @@
     },
     "docs/RELEASE_CHECKLIST.md": {
       "role": "index",
-      "sha256": "52a4659b820580eb6a2acf11209bf7f3f7d8589e9d23d3a3ed85d48ccf5bf7b9",
-      "size": 2796,
-      "normalized_sha256": "52a4659b820580eb6a2acf11209bf7f3f7d8589e9d23d3a3ed85d48ccf5bf7b9"
+      "sha256": "ffd7beccf65090ddf0f6983f5354b1de27ded611348709e2ed4acb623ac3f8a2",
+      "size": 2993,
+      "normalized_sha256": "ffd7beccf65090ddf0f6983f5354b1de27ded611348709e2ed4acb623ac3f8a2"
     },
     "docs/ROADMAP.md": {
       "role": "index",
@@ -810,9 +810,9 @@
     },
     "scripts/agent_routes_smoke.py": {
       "role": "index",
-      "sha256": "ca4a53acd4fe2fa4895afc3d9f01f1d5e2bcd8ee2cd1994154f0ac86903142f6",
-      "size": 6838,
-      "normalized_sha256": "ca4a53acd4fe2fa4895afc3d9f01f1d5e2bcd8ee2cd1994154f0ac86903142f6"
+      "sha256": "5da5afa7d4d8b2dd91f156a7eb344768fe24bb0c429eb077d0a921e2cdab1561",
+      "size": 7013,
+      "normalized_sha256": "5da5afa7d4d8b2dd91f156a7eb344768fe24bb0c429eb077d0a921e2cdab1561"
     },
     "scripts/backend-smoke.sh": {
       "role": "index",

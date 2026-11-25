@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "536e0838b87a97c2acf6f78f1a7445e6a2c578259b97733107ea1a7aeb2f155e",
+  "batch_id": "00a88940961d6f6405e898f8df7044ad6ce401f154446b6198b61adc26ceba44",
+  "composite_identity": "4f3b5f81e979579c4ef40070003c2f3d4cc7c4d321bb5182e829a1ad68e590e6",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "22bfcc1d9bdcdfb9fee07022a9d21cb98fb54c6f72c54e1d3a3ad8979316c382",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "959a46d05273e5e029cda7bd31b8c27e724ef9b32045330275a1a807002666ca",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:scripts/verify_dist_negative.sh,code:scripts/smoke_http.py | A:发布前 gate/demo/smoke_http/package；verify_dist 失败删半成品；verify-negative 拒绝坏包；verify.log 带 UTC+SHA；23 annotations | S:macOS arm64 已验证；xlsx 渐进；计时非 SLA；其他平台需重跑；清单随包分发"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "f22c6faedf1798d936d84f1402d214304ec0a7f1e3075187c9c6f611a4e0145c",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由 + 审批 + 多动作重放 + SSE 延迟冒烟 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:urllib 建会话；12 路由；428/deny=403/approve/edit_apply；raw socket SSE；view overlay；干净副本重放；输出 replay=N/actions | S:需 server/binary；不打印 token；临时副本清理；SSE 首帧 \u003c 250ms"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4cf753ada664b89a3c15280dbbae7af014cebd5b356bce9811088977de84f566",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "959a46d05273e5e029cda7bd31b8c27e724ef9b32045330275a1a807002666ca",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:scripts/verify_dist_negative.sh,code:scripts/smoke_http.py | A:发布前 gate/demo/smoke_http/package；verify_dist 失败删半成品；verify-negative 拒绝坏包；verify.log 带 UTC+SHA；23 annotations | S:macOS arm64 已验证；xlsx 渐进；计时非 SLA；其他平台需重跑；清单随包分发"
+    },
+    {
+      "candidate_id": "34726a792ac7805fd5a4938a8b4c5daed527116081409fc656047fe1643862e6",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "f22c6faedf1798d936d84f1402d214304ec0a7f1e3075187c9c6f611a4e0145c",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由 + 审批 + 多动作重放 + SSE 延迟冒烟 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:urllib 建会话；12 路由；428/deny=403/approve/edit_apply；raw socket SSE；view overlay；干净副本重放；输出 replay=N/actions | S:需 server/binary；不打印 token；临时副本清理；SSE 首帧 \u003c 250ms"
+    }
+  ]
+}
