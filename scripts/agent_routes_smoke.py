@@ -142,6 +142,8 @@ def main():
 
     status, replay = request(api, f"/agent/v1/sessions/{sid}/replay", token)
     assert status == 200, replay
+    replay_count = sum(1 for line in replay.splitlines() if line.strip())
+    assert replay_count >= 2, f"expected multiple actions, got {replay_count}: {replay}"
     with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as handle:
         handle.write(replay)
         replay_path = handle.name
@@ -166,7 +168,7 @@ def main():
 
     print(
         f"routes={len(routes)} session={sid} actions={actions_count} "
-        f"sse_ms={sse_ms:.0f} deny=403 approval=ok replay=ok"
+        f"sse_ms={sse_ms:.0f} deny=403 approval=ok replay={replay_count}"
     )
 
 if __name__ == "__main__":

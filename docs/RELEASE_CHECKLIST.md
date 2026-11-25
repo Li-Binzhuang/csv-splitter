@@ -15,6 +15,8 @@ bash scripts/demo_end_to_end.sh
 python3 scripts/smoke_http.py   # 发布包 HTTP：/ops、/report chart+compare、/gate global、/concat dir
 bash scripts/package_release.sh   # dist tar.gz + .sha256，末尾自动 verify_dist（失败会删半成品）
 bash scripts/verify_dist.sh dist/csvx-4.2.0-<platform>.tar.gz   # 可选手工复验
+bash scripts/verify_dist_negative.sh                            # 坏包必须被拒绝
+# 构建日志：dist/csvx-4.2.0-<platform>.verify.log（UTC 时间 + tarball SHA256 + 全部验收输出）
 ```
 
 ## 3. 2026-11-23 本机验证
