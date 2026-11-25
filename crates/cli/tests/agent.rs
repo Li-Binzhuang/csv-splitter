@@ -298,13 +298,16 @@ fn agent_api_creates_session_actions_approves_and_audits() {
     assert_eq!(status, 200, "{body}");
     assert!(body.contains("# Agent actions"), "{body}");
     assert!(body.contains("| # | tool | status | approval |"), "{body}");
-    assert!(body.contains("| 1 |"), "{body}");
+    assert!(
+        body.contains("| 1 | csvx_schema | ok | not_required |"),
+        "{body}"
+    );
     assert!(body.contains("csvx_edit_apply"), "{body}");
     let actions_html = format!("/agent/v1/sessions/{session}/actions.html");
     let (status, body) = request(&addr, "GET", &actions_html, Some(&token), "");
     assert_eq!(status, 200, "{body}");
     assert!(body.contains("<table>"), "{body}");
-    assert!(body.contains("csvx_schema"), "{body}");
+    assert!(body.contains("<td>csvx_schema</td>"), "{body}");
 
     let actions_endpoint = format!("/agent/v1/sessions/{session}/actions");
     let (status, body) = request(&addr, "GET", &actions_endpoint, Some(&token), "");

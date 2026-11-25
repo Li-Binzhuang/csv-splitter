@@ -20,7 +20,7 @@ done
 cp scripts/demo_end_to_end.sh scripts/mcp_client.py scripts/pilot_report.py scripts/bench_mcp_cache.py scripts/smoke_http.py scripts/install_skill.sh "$STAGE/"
 mkdir -p "$STAGE/mcp_sdk" "$STAGE/skills/csvx-data" "$STAGE/examples/agent"
 cp skills/csvx-data/SKILL.md "$STAGE/skills/csvx-data/"
-cp examples/agent/README.md "$STAGE/examples/agent/"
+cp examples/agent/README.md examples/agent/*.sh "$STAGE/examples/agent/"
 cp scripts/mcp_sdk/client.mjs scripts/mcp_sdk/package.json "$STAGE/mcp_sdk/"
 tar -czf "dist/$NAME.tar.gz" -C dist "$NAME"
 shasum -a 256 "dist/$NAME.tar.gz" > "dist/$NAME.tar.gz.sha256"

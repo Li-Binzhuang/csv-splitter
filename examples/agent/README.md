@@ -6,7 +6,17 @@ No model key is stored here. Start the service first:
 csvx agent serve --root /path/to/data --addr 127.0.0.1:8788
 ```
 
-Then create a session:
+There are two runnable examples:
+
+```bash
+# HTTP session: schema -> actions.md -> replay payload -> close
+CSVX_ROOT=/path/to/data CSVX_FILE=t.csv bash examples/agent/http_session.sh
+
+# CLI trace replay (no model/key)
+bash examples/agent/trace_replay.sh /tmp/run.jsonl /path/to/data
+```
+
+Then create a session manually:
 
 ```bash
 curl -sS -X POST http://127.0.0.1:8788/agent/v1/sessions \

@@ -551,9 +551,9 @@ fn actions_report(
             body.push_str(&format!(
                 "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td><code>{}</code></td></tr>\n",
                 step + 1,
-                html_text(approval),
                 html_text(tool),
                 html_text(status),
+                html_text(approval),
                 elapsed,
                 html_text(arguments)
             ));
@@ -567,9 +567,9 @@ fn actions_report(
             body.push_str(&format!(
                 "| {} | {} | {} | {} | {} | `{}` |\n",
                 step + 1,
-                approval,
                 tool.replace('|', "\\|"),
                 status.replace('|', "\\|"),
+                approval,
                 elapsed,
                 arguments.replace('|', "\\|").replace('\n', " ")
             ));
