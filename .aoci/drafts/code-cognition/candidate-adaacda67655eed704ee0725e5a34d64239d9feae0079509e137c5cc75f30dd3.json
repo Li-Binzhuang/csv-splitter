@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "e1f02b6575baa495a263f11e222170d803527211ed1a80c8bece81502e29909e",
+  "batch_id": "adaacda67655eed704ee0725e5a34d64239d9feae0079509e137c5cc75f30dd3",
+  "composite_identity": "1cce50179d04e01f6641f5aeb6d7ad2cb95bb4e2c3f39d23c4ed0b36671c77c3",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "c611e8ee2a0742fa05c02c05883b7902ba4c300859f49f88ce65c769083dcbcc",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/release_manifest.py",
+      "path": "scripts/release_manifest.py",
+      "change": "update",
+      "source_sha256": "589f2371ed455209feb7895cdcb1ecb789f4a1a7d6e4fd6037f3ec6ede0a4bb6",
+      "existing_entry": "release_manifest.py[SD7T]: F:从已验证包写出机器可读 release manifest | R:code:scripts/package_release.sh | A:sha256/bytes/UTC；解析 stats_json；gate 与 aociEntries 取自环境；写 .release.json | S:仅打包后；不联网；不改 tar；log 缺 stats 时 null"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "75e4afaa2739d27ed96446a7fbb4be46c50a351ca1f6bd4cf38c702cab2f88ef",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:离线发布包验收：SHA256、成员、试用、Agent 阈值、xlsx、trace 与 skill 内容 | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py,code:scripts/check_agent_stats.py | A:成员；version；skill 名称+tool/approval/audit 词；TRY_CSVX；12 路由/审批/重放/SSE；stats；xlsx conditionalFormatting；trace tools:2；trap | S:仅发布方；不联网；缺文件/校验失败非零退出"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "6744eed1c0c51cf99f06281e81ed3e6a99e0b267b19017350b1d57a0742e4308",
+      "object_ref": "code:scripts/release_manifest.py",
+      "path": "scripts/release_manifest.py",
+      "change": "update",
+      "source_sha256": "589f2371ed455209feb7895cdcb1ecb789f4a1a7d6e4fd6037f3ec6ede0a4bb6",
+      "existing_entry": "release_manifest.py[SD7T]: F:从已验证包写出机器可读 release manifest | R:code:scripts/package_release.sh | A:sha256/bytes/UTC；解析 stats_json；gate 与 aociEntries 取自环境；写 .release.json | S:仅打包后；不联网；不改 tar；log 缺 stats 时 null"
+    },
+    {
+      "candidate_id": "775f133b8f27ed8e09bae5c0a02726879412420cb1b263e40f556fc332fe946d",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "75e4afaa2739d27ed96446a7fbb4be46c50a351ca1f6bd4cf38c702cab2f88ef",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:离线发布包验收：SHA256、成员、试用、Agent 阈值、xlsx、trace 与 skill 内容 | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py,code:scripts/check_agent_stats.py | A:成员；version；skill 名称+tool/approval/audit 词；TRY_CSVX；12 路由/审批/重放/SSE；stats；xlsx conditionalFormatting；trace tools:2；trap | S:仅发布方；不联网；缺文件/校验失败非零退出"
+    }
+  ]
+}
