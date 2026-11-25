@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "fa8c7ec2cfd321178b0716b6e18e72ff59c7d591bf81614ddab4833b7adcf50e",
+  "batch_id": "0b44dbd88ecb9a35c614fc2e6f63cc706812164b7277124b876a623d0aa9a9ff",
+  "composite_identity": "755c526d5f526164fd91bf81bec7c537dbcc965e58b9ecb77b0e69f20c187baa",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "633397b5e4a396457d2f66a0daff5462a9a6f9c2ca4eebebb6d0dc6779a3eb15",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "b6cd3aae08ce4e5f9b6d91d3496a1ed3de3fba17f67fe7be51d7f3ca49c5a4b4",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:阶段性可验证状态摘要，供白天复盘 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-25 记录 23 工具、10 Agent 测试、170 CLI、174 serve、SSE 1-3ms、AOCI 142、TRY_CSVX 自校验；包哈希见 dist/*.sha256；待决策 xlsx/商业化/多用户 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "2a15fb6a57a3f54316a3abc83ff930af873451bd386cb954e193e10231531f0b",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:离线发布包验收：SHA256、成员、试用、Agent 阈值与 xlsx 条件格式 | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py,code:scripts/check_agent_stats.py | A:成员检查；csvx --version；TRY_CSVX；包内 12 路由/审批/重放/SSE；stats checker；xlsx 断言 sheet1+conditionalFormatting/cellIs；trap 清理 | S:仅发布方；不联网；缺文件/校验失败非零退出"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "98840b7f41aa6aaebfa36b2ac15f44f87b0c8d54fd4e507c1700a22897042376",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "b6cd3aae08ce4e5f9b6d91d3496a1ed3de3fba17f67fe7be51d7f3ca49c5a4b4",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:阶段性可验证状态摘要，供白天复盘 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-25 记录 23 工具、10 Agent 测试、170 CLI、174 serve、SSE 1-3ms、AOCI 142、TRY_CSVX 自校验；包哈希见 dist/*.sha256；待决策 xlsx/商业化/多用户 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "5a2d10acca2fef6d60fc0a291a4bed3bb667dfcf339a96b8b0617125730bae46",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "2a15fb6a57a3f54316a3abc83ff930af873451bd386cb954e193e10231531f0b",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:离线发布包验收：SHA256、成员、试用、Agent 阈值与 xlsx 条件格式 | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py,code:scripts/check_agent_stats.py | A:成员检查；csvx --version；TRY_CSVX；包内 12 路由/审批/重放/SSE；stats checker；xlsx 断言 sheet1+conditionalFormatting/cellIs；trap 清理 | S:仅发布方；不联网；缺文件/校验失败非零退出"
+    }
+  ]
+}
