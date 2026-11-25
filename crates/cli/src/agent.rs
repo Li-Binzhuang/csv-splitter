@@ -751,9 +751,14 @@ fn curl_script(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> 
                 );
             } else {
                 script.push_str(
-                    "# destructive: NO approval found in this audit; POST /approvals and replace __APPROVAL_ID__\n",
+                    "# destructive: NO approval found in this audit; request one below and replace __APPROVAL_ID__\n",
                 );
             }
+            let approval_body = format!(r#"{{"tool":{},"decision":"approve"}}"#, json_str(tool));
+            script.push_str(&format!(
+                "# request approval: curl -sS -X POST \"$CSVX_API/agent/v1/sessions/$CSVX_SESSION/approvals\" -H \"Authorization: Bearer $CSVX_TOKEN\" -H 'Content-Type: application/json' --data {}\n",
+                shell_quote(&approval_body)
+            ));
         }
         script.push_str(&format!(
             "curl -sS -X POST \"$CSVX_API/agent/v1/sessions/$CSVX_SESSION/actions\" -H \"Authorization: Bearer $CSVX_TOKEN\" -H 'Content-Type: application/json' --data {}\n",
