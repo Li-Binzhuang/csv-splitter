@@ -75,6 +75,21 @@ if grep -q 'csvx-cli' crates/core/Cargo.toml; then
   fail "core must not depend on the CLI"
 fi
 
+mcp_limit() {
+  local file=$1 limit=$2 count
+  count=$(wc -l < "crates/mcp/src/$file")
+  if (( count > limit )); then
+    fail "crates/mcp/src/$file is $count lines (limit $limit); split it instead of growing it"
+  fi
+}
+mcp_limit lib.rs 450
+mcp_limit executor.rs 700
+mcp_limit rmcp_server.rs 500
+mcp_limit jobs.rs 400
+mcp_limit cache.rs 350
+mcp_limit json.rs 350
+mcp_limit tools.rs 50
+
 line_count=$(wc -l < crates/cli/src/main.rs)
 if (( line_count > 2000 )); then
   echo "layout warning: crates/cli/src/main.rs is ${line_count} lines; split it instead of growing it" >&2

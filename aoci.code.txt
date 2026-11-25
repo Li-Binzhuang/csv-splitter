@@ -130,7 +130,7 @@ FORMULA_CACHE.md[SD7T]: F:公式/读窗口缓存做法、实测与边界 | R:cod
 DSH_SKILL.md[SD7T]: F:把 csvx skill 安装到本地 DSH profile 的说明 | R:code:scripts/install_skill.sh,code:skills/csvx-data/SKILL.md,code:docs/DSH_MODEL_TEST.md | A:install_skill.sh 复制单文件；DSH_HOME 默认 ~/.dsh；skill 目录出现 csvx-data-workbench；与 runner --skill 共用一份 | S:不改 key/模型配置；只覆盖 SKILL.md；需重进/扫描后生效
 AGENT_TRACE.md[SD7T]: F:Agent JSONL trace 与 HTTP audit/replay/actions/curl/runbook 的可复刻流程 | R:code:crates/cli/src/agent.rs,code:docs/AGENT_API.md,code:skills/csvx-data/SKILL.md | A:run/model/tool/final；--trace/--replay；HTTP audit、replay、actions.md/html、curl、runbook、sessions 汇总；阻断提示 | S:不写 key/token；observation 截 20k；trace 含数据；重放编辑用副本
 QUICKSTART_AGENT.md[SD7T]: F:Agent 一页快速上手：MCP、HTTP、runner、skill、Excel、TRY_CSVX 与安全 | R:code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md,code:docs/DSH_SKILL.md,code:examples/try_csvx.sh | A:MCP 配置；HTTP session/actions/audit/replay/curl/runbook；runner --trace/--replay；install_skill.sh；xlsx 示例；TRY_CSVX 自校验 | S:不写 key；审批单次；root 边界；trace/audit 含数据按敏感
-ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；crate core/mcp/agent/cli；MCP 模块 tools/jobs/cache/executor/json/rmcp/lib；CLI main/serve/cli_support+commands | S:rmcp 默认；mcp 模块白名单；gate 强制
+ENTRYPOINTS.md[SG7S]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；MCP 模块白名单与行数上限；CLI main/serve/cli_support+commands | S:rmcp 默认；单文件上限 gate 强制
 
 ===/<repository>/scripts/===
 backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换、自引用拒绝与请求上限；BIN 默认取 ./target/debug/csvx | S:脚本默认跑 target/debug 的二进制，改了代码只重建 release 会在这里看到旧行为；裸 wait 会连自己起的 server 一起等，必须收集 PID 逐个等待
@@ -163,7 +163,7 @@ release_manifest.py[SD7T]: F:从已验证包写出 release manifest（checks/失
 check_release.py[SD7T]: F:重新哈希 manifest 并拒绝失败验证/非 ok 阶段阈值 | R:code:scripts/release_manifest.py,code:scripts/package_release.sh | A:tar/verify sha；verified/skillInstall/phaseThresholds；verifyFailedAt；manifest=ok | S:仅发布方；不联网；失败命名字段并退出 1
 check_phase_times.py[SD7T]: F:拒绝超出预算的包验收阶段 | R:code:scripts/verify_dist.sh,code:scripts/dev.sh | A:读 verify.json phaseMs；extract<2s skill<3s try<3s agent<5s xlsx<2s trace<2s；输出 phase_thresholds=ok | S:失败命名字段；退出 1；不联网
 check_phase_times_negative.sh[SD7T]: F:测试阶段预算拒绝慢值 | R:code:scripts/check_phase_times.py,code:scripts/dev.sh | A:构造 agent=9999ms；断言非零；grep mismatch/agent；输出 phase negative=ok | S:仅测试；临时日志；不联网
-check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；CLI commands 白名单；MCP src lib/rmcp/tools/jobs/cache/executor/json；core 不依赖 cli | S:未知模块退出；先改文档再加模块
+check_layout.sh[XQ7T]: F:入口层目录与行数规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；CLI commands 白名单；MCP 模块白名单；MCP 行数阈值 450/700/500/400/350 | S:未知模块退出；超行数失败；先改文档再加模块
 
 ===/<repository>/csvx-demo/===
 orders.csv[AZ4L]: F:demo 命令生成的示例数据：6 列 20 120 行，含刻意保留的脏数据 | R:code:crates/core/src/demo.rs | A:列为 id,cust_no,city,amount,note,ts；20 行多一个逗号、100 行重复、900 个空备注，用来演示预览与统计对错位行的容忍 | S:脏数据是故意的，不要清理——GETTING_STARTED 与契约测试都引用这份输入

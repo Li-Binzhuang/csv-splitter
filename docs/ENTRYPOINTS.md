@@ -89,6 +89,8 @@ bash scripts/package_release.sh
    模块拆分：`tools.rs`（23 工具 schema）、`jobs.rs`（job 状态）、`cache.rs`（材料化缓存）、
    `executor.rs`（工具执行/命令构建）、`json.rs`（McpJson/McpParser）、
    `rmcp_server.rs`（传输）、`lib.rs`（入口/manifest）。HTTP 端点仍在 `serve.rs`。
+   单文件上限由 `check_layout.sh` 强制：`lib.rs` 450、`executor.rs` 700、
+   `rmcp_server.rs` 500、`jobs.rs` 400、`cache.rs`/`json.rs` 350。
 3. **抽 `crates/agent`（已完成传输替换）**：控制面在 `crates/agent`；HTTP/SSE
    由 axum 承载，session/审批/审计/trace/replay 语义保持不变。
 4. **拆 `main.rs`（已完成）**：`agent`/`analyze`/`book`/`columns`/`dedupe`/`ops`/`schema`/`verify`/`cache`/`chart`/`concat`/`convert`/`demo`/`edit`/`extract`/`files`/`filter`/`format`/`gate`/`groupby`/`index`/`layout`/`lookup`/`mcp`/`merge`/`partition`/`pipeline`/`pivot`/`preview`/`repair`/`report`/`search`/`serve`/`shared`/`sort`/`split`/`sql`/`stats`/`validate`/`view` 已迁到 `commands/`；
