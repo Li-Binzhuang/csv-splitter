@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "6bd099cae0a0ddd943a877904bbe1d6645a10a47831890074c0a34110970ec1f",
+  "batch_id": "95b73feef4470a05d81d6d6a20c81d180331b7b71cbddea59e9d8f85fb10611c",
+  "composite_identity": "4417564aa0304dedf6c919d3ffa58e4155112ccca1a949e3a2ca09051626c12f",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "97fc062e3ac84509cf2b0799ea77df565da154740462d5c3147140a0b2ca4e5f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "3f760749592db3ae0843a340162aa379aac0dd087641507c756257c21240a23a",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:阶段性可验证状态摘要，供白天复盘 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-25 记录 23 工具、10 Agent 测试、170 CLI、174 serve、SSE 1-3ms、AOCI 140、TRY_CSVX 试用；待决策 xlsx/商业化/多用户 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "ffd7beccf65090ddf0f6983f5354b1de27ded611348709e2ed4acb623ac3f8a2",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:scripts/smoke_http.py,code:docs/DEMO.md | A:发布前 gate/demo/smoke_http/package，verify_dist 失败删半成品；敏感扫描 0；冒烟 version/pipeline watch/23 annotations；smoke_http 覆盖 /ops/report chart+compare/gate global/concat dir；23 工具/cache demo；watch --json/--state nextDelay | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "5da5afa7d4d8b2dd91f156a7eb344768fe24bb0c429eb077d0a921e2cdab1561",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由 + 审批 + 重放 + SSE 延迟冒烟 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:urllib 建会话；12 路由；428/deny=403/approve/edit_apply；raw socket SSE；view overlay；干净副本重放；输出 sse_ms/actions=N | S:需 server/binary；不打印 token；临时副本清理；SSE 首帧 \u003c 250ms"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "c3940608b787c2582e2fdfeb24e7f9482bd5d74896d4f2f2bafa582b1f075720",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "3f760749592db3ae0843a340162aa379aac0dd087641507c756257c21240a23a",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:阶段性可验证状态摘要，供白天复盘 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-25 记录 23 工具、10 Agent 测试、170 CLI、174 serve、SSE 1-3ms、AOCI 140、TRY_CSVX 试用；待决策 xlsx/商业化/多用户 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "8aa721c0f49bd8ec782c69036f657072c8202d75118a744e94944e6a2240efc9",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "ffd7beccf65090ddf0f6983f5354b1de27ded611348709e2ed4acb623ac3f8a2",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:scripts/smoke_http.py,code:docs/DEMO.md | A:发布前 gate/demo/smoke_http/package，verify_dist 失败删半成品；敏感扫描 0；冒烟 version/pipeline watch/23 annotations；smoke_http 覆盖 /ops/report chart+compare/gate global/concat dir；23 工具/cache demo；watch --json/--state nextDelay | S:macOS arm64 已验证；xlsx 禁用；计时非 SLA；其他平台需重跑；本清单随离线包分发"
+    },
+    {
+      "candidate_id": "6417f7546893f39660eb619d4bed6883a89a99a672027ed8b7d6ae8f547e737a",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "5da5afa7d4d8b2dd91f156a7eb344768fe24bb0c429eb077d0a921e2cdab1561",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由 + 审批 + 重放 + SSE 延迟冒烟 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:urllib 建会话；12 路由；428/deny=403/approve/edit_apply；raw socket SSE；view overlay；干净副本重放；输出 sse_ms/actions=N | S:需 server/binary；不打印 token；临时副本清理；SSE 首帧 \u003c 250ms"
+    }
+  ]
+}
