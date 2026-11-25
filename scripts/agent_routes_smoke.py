@@ -4,6 +4,7 @@ import argparse
 import json
 import subprocess
 import tempfile
+from pathlib import Path
 import urllib.error
 import urllib.request
 
@@ -18,6 +19,14 @@ def request(api, path, token=None, method="GET", body=None):
             return response.status, response.read().decode()
     except urllib.error.HTTPError as error:
         return error.code, error.read().decode()
+
+def has_x(binary, path):
+    run = subprocess.run(
+        [binary, "view", path, "--json"], capture_output=True, text=True
+    )
+    assert run.returncode == 0, f"{run.stdout}\n{run.stderr}"
+    rows = json.loads(run.stdout)["rows"]
+    return any("X" in row for row in rows)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -56,15 +65,17 @@ def main():
         assert status == 200, f"{route}: {status} {body}"
 
     action = f"/agent/v1/sessions/{sid}/actions"
+    source = Path(args.root, args.file)
+    original = source.read_text()
     destructive = {
-        "tool": "csvx_edit_set",
-        "arguments": {"path": args.file, "row": 1, "col": "city", "value": "X"},
+        "tool": "csvx_edit_apply",
+        "arguments": {"path": args.file, "ops": "set:1:city:X"},
     }
     status, body = request(api, action, token, "POST", destructive)
     assert status == 428, f"expected 428 without approval, got {status}: {body}"
     status, body = request(
         api, f"/agent/v1/sessions/{sid}/approvals", token, "POST",
-        {"tool": "csvx_edit_set", "decision": "approve"},
+        {"tool": "csvx_edit_apply", "decision": "approve"},
     )
     assert status == 200, body
     approval = json.loads(body)["approvalId"]
@@ -74,6 +85,7 @@ def main():
     status, body = request(api, action, token)
     assert status == 200, body
     assert '"approval":"approved"' in body, body
+    assert has_x(args.binary, str(source)), "approved action did not apply"
 
     status, replay = request(api, f"/agent/v1/sessions/{sid}/replay", token)
     assert status == 200, replay
@@ -81,11 +93,15 @@ def main():
         handle.write(replay)
         replay_path = handle.name
     try:
-        run = subprocess.run(
-            [args.binary, "agent", "replay", "--root", args.root, "--replay", replay_path],
-            capture_output=True, text=True,
-        )
-        assert run.returncode == 0, f"{run.stdout}\n{run.stderr}"
+        with tempfile.TemporaryDirectory() as replay_root:
+            copy = Path(replay_root, args.file)
+            copy.write_text(original)
+            run = subprocess.run(
+                [args.binary, "agent", "replay", "--root", replay_root, "--replay", replay_path],
+                capture_output=True, text=True,
+            )
+            assert run.returncode == 0, f"{run.stdout}\n{run.stderr}"
+            assert has_x(args.binary, str(copy)), "replay did not change the copy"
     finally:
         import os
         os.unlink(replay_path)
