@@ -1,0 +1,89 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "e0fa99c08f942171cfe198412cc5543bf8842928dbe00b5e1a7794951d657105",
+  "batch_id": "6a24ceee657c40b7f187124105c4bcbbda04a22c7b9a0073609b08a6d4b74375",
+  "composite_identity": "089e9c9117f240a06699dd3ba10be9457a0b42f882a3c66ee7fb126dded19301",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b55ad8fbccc12b2254476fc766c976128325c4491369a06ca2aeca2e18fe5a9d",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_agent_stats.py",
+      "path": "scripts/check_agent_stats.py",
+      "change": "create",
+      "source_sha256": "20ee4930b8a2d0f44e2da9ae58401f9cb253688c67b7c5e0f0b77e92179490f8"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_agent_stats_negative.sh",
+      "path": "scripts/check_agent_stats_negative.sh",
+      "change": "create",
+      "source_sha256": "bac00ab021ff573eead0884daf325af3f202de94fc68450f7d56f56218c39752"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "a47966c2b6856f38990558676f1e184f3e1174e45c8c44cee5669f7c088a0a7b",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate 的统一入口 | R:code:scripts/smoke.sh,code:scripts/verify_dist_negative.sh | A:check 默认 csvx-core --all-targets；test 直传；gate fmt、clippy、workspace 测试（失败可见重试）、sql feature、verify-negative（有 binary 时）；阶段自报 | S:gate 必须带 sql；重试只针对负载 flake；负向包检查不可静默跳过"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "0d95a9faaccd84ac11859a6eba3be920e5ee628979f3dd74ded2713ff89a2371",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 带时间戳自验日志 | R:code:README.md,code:scripts/verify_dist.sh,code:docs/ACCEPTANCE.md,code:docs/QUICKSTART_AGENT.md | A:打包二进制/docs（AGENT_API/AGENT_TRACE/QUICKSTART_AGENT/NIGHT_CHECKPOINT）、AGENT_QUICKSTART/TRY_CSVX、examples、scripts/agent_routes_smoke.py、mcp_sdk、skills；sha256 后 verify_dist 并 tee verify.log（日期+hash） | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "cb87fef625a83d1f3df6455d6fac5a02b755277fc010467ec0282c1dfb78fc73",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:离线发布包验收：SHA256、成员、试用、Agent 统计阈值与 xlsx | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py | A:成员检查；csvx --version；TRY_CSVX；包内 12 路由/审批/重放/SSE；stats_json 失败打印字段；xlsx 检查 sheet1；trap 清理 | S:仅发布方；不联网；缺文件/校验失败非零退出"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "8e607a2e9926f949db7e6884b838cf575b5991206ab140d9fc9b7be21afe52e9",
+      "object_ref": "code:scripts/check_agent_stats.py",
+      "path": "scripts/check_agent_stats.py",
+      "change": "create",
+      "source_sha256": "20ee4930b8a2d0f44e2da9ae58401f9cb253688c67b7c5e0f0b77e92179490f8"
+    },
+    {
+      "candidate_id": "0c1a55477783743c35e2d9ac74f113467b099795b380483e8a231b309996d464",
+      "object_ref": "code:scripts/check_agent_stats_negative.sh",
+      "path": "scripts/check_agent_stats_negative.sh",
+      "change": "create",
+      "source_sha256": "bac00ab021ff573eead0884daf325af3f202de94fc68450f7d56f56218c39752"
+    },
+    {
+      "candidate_id": "baeaf283def9bbdb4f62fc1d759dca392cee09949cd68724347a5d912181b723",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "a47966c2b6856f38990558676f1e184f3e1174e45c8c44cee5669f7c088a0a7b",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate 的统一入口 | R:code:scripts/smoke.sh,code:scripts/verify_dist_negative.sh | A:check 默认 csvx-core --all-targets；test 直传；gate fmt、clippy、workspace 测试（失败可见重试）、sql feature、verify-negative（有 binary 时）；阶段自报 | S:gate 必须带 sql；重试只针对负载 flake；负向包检查不可静默跳过"
+    },
+    {
+      "candidate_id": "16cebc2ba5a9288e63f8d87d4a801f3ae967b52f8aa4f3b6bc821befbbdc512c",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "0d95a9faaccd84ac11859a6eba3be920e5ee628979f3dd74ded2713ff89a2371",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 带时间戳自验日志 | R:code:README.md,code:scripts/verify_dist.sh,code:docs/ACCEPTANCE.md,code:docs/QUICKSTART_AGENT.md | A:打包二进制/docs（AGENT_API/AGENT_TRACE/QUICKSTART_AGENT/NIGHT_CHECKPOINT）、AGENT_QUICKSTART/TRY_CSVX、examples、scripts/agent_routes_smoke.py、mcp_sdk、skills；sha256 后 verify_dist 并 tee verify.log（日期+hash） | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    },
+    {
+      "candidate_id": "9d892061779063f67952cca9fa0eb1a46c4f580178ace235d820767cfef53515",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "cb87fef625a83d1f3df6455d6fac5a02b755277fc010467ec0282c1dfb78fc73",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:离线发布包验收：SHA256、成员、试用、Agent 统计阈值与 xlsx | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py | A:成员检查；csvx --version；TRY_CSVX；包内 12 路由/审批/重放/SSE；stats_json 失败打印字段；xlsx 检查 sheet1；trap 清理 | S:仅发布方；不联网；缺文件/校验失败非零退出"
+    }
+  ]
+}
