@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "8f4e36a32598c1fb0da265b37e854a6269a5e6b01663f80c178336042ad6729e",
+  "batch_id": "b97eb8e9afa13b310d3c6dee4eed41104233d5ac5f0811d302c3d3a3688daeaf",
+  "composite_identity": "023c0c8da0e83ec295f479882c2752f9bddea908a3f3b509d864994977a1622c",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "9df56c42e77f35bab05fdd2831f4709bdd9e7d333885313c5f3f1ecf7346752d",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "6c4c5318c6c0e036ff5aa518238de7c231ecb23c163f0c13afa7a19dd016e4c4",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由冒烟：manifest 端点 + 会话路由 + 汇总 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:urllib 建会话；检查 endpoints；GET 12 条路由；输出 routes=N | S:需 server 已启动；断言 200；不打印 token；仅本机"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/demo_end_to_end.sh",
+      "path": "scripts/demo_end_to_end.sh",
+      "change": "update",
+      "source_sha256": "db073d7fab20d72a1bd6a1b276133f46959b15a5c8f6c9b44c9f5df424f947fb",
+      "existing_entry": "demo_end_to_end.sh[XQ7T]: F:一键产品演示：pipeline + watch + MCP + Agent 路由 | R:code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs,code:scripts/agent_routes_smoke.py | A:release 检查；orders/plan；pipeline/watch；mcp_client；SDK；启动 agent serve 并跑路由冒烟；trap 清理 | S:无网络/无 GUI/无 xlsx；BIN 可覆盖；SDK 缺 node_modules 只提示；临时目录不残留"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "9ad5d8bf246a49694280be3e5c2c660314d08e431f1ff66169649856efdcd7c8",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "6c4c5318c6c0e036ff5aa518238de7c231ecb23c163f0c13afa7a19dd016e4c4",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由冒烟：manifest 端点 + 会话路由 + 汇总 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:urllib 建会话；检查 endpoints；GET 12 条路由；输出 routes=N | S:需 server 已启动；断言 200；不打印 token；仅本机"
+    },
+    {
+      "candidate_id": "ccbcf3c034bd708180ddc52b52c64f9231045f89b642b6176596718b2afcfc9f",
+      "object_ref": "code:scripts/demo_end_to_end.sh",
+      "path": "scripts/demo_end_to_end.sh",
+      "change": "update",
+      "source_sha256": "db073d7fab20d72a1bd6a1b276133f46959b15a5c8f6c9b44c9f5df424f947fb",
+      "existing_entry": "demo_end_to_end.sh[XQ7T]: F:一键产品演示：pipeline + watch + MCP + Agent 路由 | R:code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs,code:scripts/agent_routes_smoke.py | A:release 检查；orders/plan；pipeline/watch；mcp_client；SDK；启动 agent serve 并跑路由冒烟；trap 清理 | S:无网络/无 GUI/无 xlsx；BIN 可覆盖；SDK 缺 node_modules 只提示；临时目录不残留"
+    }
+  ]
+}
