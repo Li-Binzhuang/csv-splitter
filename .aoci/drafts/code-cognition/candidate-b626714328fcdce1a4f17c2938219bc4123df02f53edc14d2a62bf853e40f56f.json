@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "b9bdbcd3a4ba29f9425768a27eb6d91cdf23994119110c87b2309b23d1a2a346",
+  "batch_id": "b626714328fcdce1a4f17c2938219bc4123df02f53edc14d2a62bf853e40f56f",
+  "composite_identity": "2ad9917cdf1f28efbff1cca150743490ac4ed74e5ccf1fba46a8e7411b4b3d35",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "46c1442d96e02d522c889e4b39e817e1e084258870dd616d0a7015f6f0d91997",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "a8f987223db4357137be55aba27646b940c632202fdd4cca3dfb9a2c7b7298a7",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API + runner + trace/replay | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md | A:loopback 服务；sessions/actions/approvals(GET)/close/events/audit+trace/replay+curl+actions.md/html；unapproved 计数；curl 内嵌审批命令 | S:audit 含 arguments 不含 token；同 root 不串 session；approval 按 approved 行；trace 含数据"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "eab1e21520a023b88bb8d0d310135ef87e8063ed2bf50e358ff7ccacfed39be8",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入：MCP manifest、HTTP Agent API、runner、skill 与 trace | R:code:crates/cli/src/agent.rs,code:docs/AGENT_TRACE.md,code:skills/csvx-data/SKILL.md | A:serve/manifest/run；sessions/actions/approvals/events/audit+trace/replay/actions.md/html/curl/close；GET approvals；unapproved 计数 | S:follow 60s；audit 仅 session；approval 反映审计；key/token 不入脚本；trace 含数据"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/AGENT_TRACE.md",
+      "path": "docs/AGENT_TRACE.md",
+      "change": "update",
+      "source_sha256": "3071796dc81adc0aafdcde591ef643aa9c0a4b0b9293714b7b9ecde0a6d11bdd",
+      "existing_entry": "AGENT_TRACE.md[SD7T]: F:Agent JSONL trace 与 HTTP audit/replay/actions/curl 的可复刻流程 | R:code:crates/cli/src/agent.rs,code:docs/AGENT_API.md,code:skills/csvx-data/SKILL.md | A:run/model/tool/final；--trace/--replay；HTTP audit、replay、actions.md/html、curl；未审批计数 | S:不写 key/token；observation 截 20k；trace 含数据；重放编辑用副本"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "94adc4eb190c27a1a9eef586c050d996896f3ac2d9c6ef9cbcb08db4d139f071",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "a8f987223db4357137be55aba27646b940c632202fdd4cca3dfb9a2c7b7298a7",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API + runner + trace/replay | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md | A:loopback 服务；sessions/actions/approvals(GET)/close/events/audit+trace/replay+curl+actions.md/html；unapproved 计数；curl 内嵌审批命令 | S:audit 含 arguments 不含 token；同 root 不串 session；approval 按 approved 行；trace 含数据"
+    },
+    {
+      "candidate_id": "b923a05c02d54f8b7b4a6f6951597095e325b487e4b789e105b3a27df82fc7e5",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "eab1e21520a023b88bb8d0d310135ef87e8063ed2bf50e358ff7ccacfed39be8",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入：MCP manifest、HTTP Agent API、runner、skill 与 trace | R:code:crates/cli/src/agent.rs,code:docs/AGENT_TRACE.md,code:skills/csvx-data/SKILL.md | A:serve/manifest/run；sessions/actions/approvals/events/audit+trace/replay/actions.md/html/curl/close；GET approvals；unapproved 计数 | S:follow 60s；audit 仅 session；approval 反映审计；key/token 不入脚本；trace 含数据"
+    },
+    {
+      "candidate_id": "ec94a95dd3fc6651752f0af2099ab31af8305dfa2cf262179d568304b4544d1c",
+      "object_ref": "code:docs/AGENT_TRACE.md",
+      "path": "docs/AGENT_TRACE.md",
+      "change": "update",
+      "source_sha256": "3071796dc81adc0aafdcde591ef643aa9c0a4b0b9293714b7b9ecde0a6d11bdd",
+      "existing_entry": "AGENT_TRACE.md[SD7T]: F:Agent JSONL trace 与 HTTP audit/replay/actions/curl 的可复刻流程 | R:code:crates/cli/src/agent.rs,code:docs/AGENT_API.md,code:skills/csvx-data/SKILL.md | A:run/model/tool/final；--trace/--replay；HTTP audit、replay、actions.md/html、curl；未审批计数 | S:不写 key/token；observation 截 20k；trace 含数据；重放编辑用副本"
+    }
+  ]
+}
