@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "7fc231fe6eb09489657351d34f12dd0832f817db1779aed5775daa775c864d25",
+  "batch_id": "4a8972e648b75cdad3f22f6f5eda68d9dc9d62207924064337f3924c0ac08216",
+  "composite_identity": "c47896654156202ff19ca3844e3be85e9d22102c6ac0bbe9a098c136ba630d51",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e00e638ec11926604ec8dbba1f020ed4df7baacf2f0d7b3747275a1b42e48f67",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/lib.rs",
+      "path": "crates/mcp/src/lib.rs",
+      "change": "update",
+      "source_sha256": "1832a768c9342c4a1e92b5ef2de8fb345735c77ceaa8b8f9c705ecf48d65728b",
+      "existing_entry": "lib.rs[EN9L]: F:MCP stdio 适配：23 工具、job/cache 与 rmcp 默认 | R:code:crates/mcp/Cargo.toml,code:crates/mcp/src/rmcp_server.rs | A:默认 rmcp；CSVX_MCP_LEGACY=1 回滚；McpJobRegistry 共享 job/cache | S:冻结 23 工具；路径限 root；stdout 仅 JSON-RPC"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "ad5cf4f777c74d39dfb3da67590b5e5f5bf54c256ff36ee2bdb0f2f42a079084",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；crate core/mcp/agent/cli；CLI main/serve/cli_support+commands；main 仅 dispatch | S:rmcp 需串行语义；gate 强制；helper 归 cli_support"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "1e478ac2dcce3ab367478e3939b5cb2413603aeefe48a42f1a7643edd1b93de5",
+      "object_ref": "code:crates/mcp/src/lib.rs",
+      "path": "crates/mcp/src/lib.rs",
+      "change": "update",
+      "source_sha256": "1832a768c9342c4a1e92b5ef2de8fb345735c77ceaa8b8f9c705ecf48d65728b",
+      "existing_entry": "lib.rs[EN9L]: F:MCP stdio 适配：23 工具、job/cache 与 rmcp 默认 | R:code:crates/mcp/Cargo.toml,code:crates/mcp/src/rmcp_server.rs | A:默认 rmcp；CSVX_MCP_LEGACY=1 回滚；McpJobRegistry 共享 job/cache | S:冻结 23 工具；路径限 root；stdout 仅 JSON-RPC"
+    },
+    {
+      "candidate_id": "7d1ed15f688508cae605b39132de9f449ee54f88d3091ccaaa077529ac2b2e4f",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "ad5cf4f777c74d39dfb3da67590b5e5f5bf54c256ff36ee2bdb0f2f42a079084",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；crate core/mcp/agent/cli；CLI main/serve/cli_support+commands；main 仅 dispatch | S:rmcp 需串行语义；gate 强制；helper 归 cli_support"
+    }
+  ]
+}

@@ -130,7 +130,7 @@ FORMULA_CACHE.md[SD7T]: F:公式/读窗口缓存做法、实测与边界 | R:cod
 DSH_SKILL.md[SD7T]: F:把 csvx skill 安装到本地 DSH profile 的说明 | R:code:scripts/install_skill.sh,code:skills/csvx-data/SKILL.md,code:docs/DSH_MODEL_TEST.md | A:install_skill.sh 复制单文件；DSH_HOME 默认 ~/.dsh；skill 目录出现 csvx-data-workbench；与 runner --skill 共用一份 | S:不改 key/模型配置；只覆盖 SKILL.md；需重进/扫描后生效
 AGENT_TRACE.md[SD7T]: F:Agent JSONL trace 与 HTTP audit/replay/actions/curl/runbook 的可复刻流程 | R:code:crates/cli/src/agent.rs,code:docs/AGENT_API.md,code:skills/csvx-data/SKILL.md | A:run/model/tool/final；--trace/--replay；HTTP audit、replay、actions.md/html、curl、runbook、sessions 汇总；阻断提示 | S:不写 key/token；observation 截 20k；trace 含数据；重放编辑用副本
 QUICKSTART_AGENT.md[SD7T]: F:Agent 一页快速上手：MCP、HTTP、runner、skill、Excel、TRY_CSVX 与安全 | R:code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md,code:docs/DSH_SKILL.md,code:examples/try_csvx.sh | A:MCP 配置；HTTP session/actions/audit/replay/curl/runbook；runner --trace/--replay；install_skill.sh；xlsx 示例；TRY_CSVX 自校验 | S:不写 key；审批单次；root 边界；trace/audit 含数据按敏感
-ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；crate core/mcp/agent/cli；CLI main/serve/cli_support+commands；main 仅 dispatch | S:rmcp 需串行语义；gate 强制；helper 归 cli_support
+ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；crate core/mcp/agent/cli；CLI main/serve/cli_support+commands；mcp/main 迁移完成 | S:rmcp 默认；手写循环已删；gate 强制
 
 ===/<repository>/scripts/===
 backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换、自引用拒绝与请求上限；BIN 默认取 ./target/debug/csvx | S:脚本默认跑 target/debug 的二进制，改了代码只重建 release 会在这里看到旧行为；裸 wait 会连自己起的 server 一起等，必须收集 PID 逐个等待
@@ -190,7 +190,7 @@ try_csvx.sh[SD7T]: F:五分钟自校验本地试用：schema/view/journal/export
 Cargo.toml[FV7T]: F:csvx-mcp crate 清单 | R:code:crates/core/Cargo.toml | A:csvx-mcp；依赖 core/rmcp 3.11/serde_json/tokio；旧协议与官方适配并存 | S:默认走 legacy；CSVX_MCP_RMCP=1 才用 rmcp；不依赖 CLI
 
 ===/<repository>/crates/mcp/src/===
-lib.rs[EN9L]: F:MCP stdio 适配：23 工具、job/cache 与 rmcp 默认 | R:code:crates/mcp/Cargo.toml,code:crates/mcp/src/rmcp_server.rs | A:默认 rmcp；CSVX_MCP_LEGACY=1 回滚；McpJobRegistry 共享 job/cache | S:冻结 23 工具；路径限 root；stdout 仅 JSON-RPC
+lib.rs[EN9L]: F:MCP stdio 适配：23 工具、job/cache、官方 rmcp | R:code:crates/mcp/Cargo.toml,code:crates/mcp/src/rmcp_server.rs | A:run_mcp_stdio 只走 rmcp；McpJson/McpParser；McpJobRegistry；schema/执行器 | S:手写协议循环已删；冻结 23 工具；路径限 root
 rmcp_server.rs[EN7M]: F:官方 rmcp 适配器：串行泵、job/cache、progress | R:code:crates/mcp/src/lib.rs,code:crates/mcp/Cargo.toml | A:ServerHandler；23 schema；请求等响应；McpJobRegistry；structuredContent；progress 通知 | S:默认传输；串行保序；旧 initialize 兼容
 
 ===/<repository>/crates/agent/===
