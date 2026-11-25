@@ -87,7 +87,8 @@ bash scripts/package_release.sh
 1. **冻结 + 目录制度**（本文件、`check_layout.sh`、gate）。
 2. **抽 `crates/mcp`（已完成）**：官方 `rmcp` 是默认 stdio 传输；手写协议循环已删除。
    模块拆分：`tools.rs`（23 工具 schema）、`jobs.rs`（job 状态）、`cache.rs`（材料化缓存）、
-   `executor.rs`（工具执行/命令构建）、`rmcp_server.rs`（传输）、`lib.rs`（入口/解析）。HTTP 端点仍在 `serve.rs`。
+   `executor.rs`（工具执行/命令构建）、`json.rs`（McpJson/McpParser）、
+   `rmcp_server.rs`（传输）、`lib.rs`（入口/manifest）。HTTP 端点仍在 `serve.rs`。
 3. **抽 `crates/agent`（已完成传输替换）**：控制面在 `crates/agent`；HTTP/SSE
    由 axum 承载，session/审批/审计/trace/replay 语义保持不变。
 4. **拆 `main.rs`（已完成）**：`agent`/`analyze`/`book`/`columns`/`dedupe`/`ops`/`schema`/`verify`/`cache`/`chart`/`concat`/`convert`/`demo`/`edit`/`extract`/`files`/`filter`/`format`/`gate`/`groupby`/`index`/`layout`/`lookup`/`mcp`/`merge`/`partition`/`pipeline`/`pivot`/`preview`/`repair`/`report`/`search`/`serve`/`shared`/`sort`/`split`/`sql`/`stats`/`validate`/`view` 已迁到 `commands/`；
