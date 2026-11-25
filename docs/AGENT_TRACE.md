@@ -73,6 +73,8 @@ Destructive calls carry `"approvalId":"__APPROVAL_ID__"` plus a ready-to-run
 approval. Replace the placeholder with the returned id before running. `GET /actions` gives the same final actions as JSON; `/actions.md` and
 `/actions.html` render them as a table (step, approval state, status) plus an
 `unapproved destructive actions` count; the Markdown response is an attachment.
+`/runbook.md` combines pending approvals, the action table and a ready-to-copy
+replay command in one downloadable page.
 
 ## Why
 

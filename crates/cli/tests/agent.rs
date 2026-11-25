@@ -318,6 +318,14 @@ fn agent_api_creates_session_actions_approves_and_audits() {
     assert!(body.contains("<table>"), "{body}");
     assert!(body.contains("<td>csvx_schema</td>"), "{body}");
 
+    let runbook_endpoint = format!("/agent/v1/sessions/{session}/runbook.md");
+    let (status, body) = request(&addr, "GET", &runbook_endpoint, Some(&token), "");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("# Session runbook"), "{body}");
+    assert!(body.contains("## Actions"), "{body}");
+    assert!(body.contains("csvx_edit_apply"), "{body}");
+    assert!(body.contains("agent replay"), "{body}");
+
     let actions_endpoint = format!("/agent/v1/sessions/{session}/actions");
     let (status, body) = request(&addr, "GET", &actions_endpoint, Some(&token), "");
     assert_eq!(status, 200, "{body}");

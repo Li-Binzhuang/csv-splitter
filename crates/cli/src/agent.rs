@@ -166,6 +166,9 @@ fn handle(mut stream: TcpStream, root: &Path, state: &State) -> io::Result<()> {
     if method == "GET" && action == "curl" {
         return curl_script(&mut stream, state, session_id, token);
     }
+    if method == "GET" && action == "runbook.md" {
+        return runbook(&mut stream, state, session_id, token);
+    }
     respond_json(&mut stream, 404, r#"{"error":"not found"}"#)
 }
 
@@ -732,6 +735,84 @@ fn audit_log(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io
     stream.write_all(
         format!(
             "HTTP/1.1 200 OK\r\nContent-Type: application/x-ndjson\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        )
+        .as_bytes(),
+    )
+}
+
+fn runbook(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
+    let sessions = match state.sessions.lock() {
+        Ok(sessions) => sessions,
+        Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
+    };
+    let Some(session) = sessions.get(id) else {
+        return respond_json(stream, 404, r#"{"error":"unknown session"}"#);
+    };
+    if !constant_eq(&session.token, token) {
+        return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
+    }
+    let text = std::fs::read_to_string(&session.audit).unwrap_or_default();
+    let approved = approved_tools(&text, id);
+    let mut body = format!(
+        "# Session runbook\n\n- session: `{id}`\n- root: `{}`\n- agent: `{}`\n\n## Pending approvals\n\n",
+        session.root.display(),
+        session.agent
+    );
+    if session.approvals.is_empty() {
+        body.push_str("none\n\n");
+    } else {
+        body.push_str("| approvalId | tool |\n|---|---|\n");
+        for (approval_id, tool) in &session.approvals {
+            body.push_str(&format!("| `{approval_id}` | `{tool}` |\n"));
+        }
+        body.push('\n');
+    }
+    body.push_str(
+        "## Actions\n\n| # | tool | status | approval | elapsedMs |\n|---|---|---|---|---|\n",
+    );
+    let mut step = 0usize;
+    for line in text
+        .lines()
+        .filter(|line| line_belongs_to_session(line, id))
+    {
+        let Ok(value) = McpParser::parse(line) else {
+            continue;
+        };
+        if !matches!(
+            value.get("status").and_then(McpJson::as_str),
+            Some("ok" | "error")
+        ) {
+            continue;
+        }
+        let Some(tool) = value.get("tool").and_then(McpJson::as_str) else {
+            continue;
+        };
+        step += 1;
+        let elapsed = value
+            .get("elapsedMs")
+            .and_then(|value| match value {
+                McpJson::Number(number) => Some(*number as u64),
+                _ => None,
+            })
+            .unwrap_or(0);
+        body.push_str(&format!(
+            "| {step} | `{}` | {} | {} | {elapsed} |\n",
+            tool.replace('|', "\\|"),
+            value
+                .get("status")
+                .and_then(McpJson::as_str)
+                .unwrap_or("ok"),
+            action_approval(tool, &approved)
+        ));
+    }
+    body.push_str(&format!(
+        "\n## Replay\n\n```bash\ncurl -sS -H \"Authorization: Bearer $CSVX_TOKEN\" \\\n  \"$CSVX_API/agent/v1/sessions/{id}/replay\" > session.jsonl\ncsvx agent replay --root \"{}\" --replay session.jsonl\n```\n",
+        session.root.display()
+    ));
+    stream.write_all(
+        format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: text/markdown\r\nContent-Disposition: attachment; filename=\"agent-runbook-{id}.md\"\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
             body.len()
         )
         .as_bytes(),
