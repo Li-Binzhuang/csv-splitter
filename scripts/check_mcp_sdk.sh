@@ -19,6 +19,8 @@ fi
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 printf 'id,city,amount\n1,CDMX,10\n2,Puebla,20\n' > "$tmp/orders.csv"
+printf 'step,input,command,args,output\nfiltered,orders.csv,filter,--where city=CDMX -o {out},filtered.csv\n' > "$tmp/plan.csv"
+gzip -c "$tmp/orders.csv" > "$tmp/orders.csv.gz"
 
 out=$(node scripts/mcp_sdk/client.mjs --binary "$binary" --root "$tmp" --file orders.csv)
 echo "$out"
@@ -29,6 +31,13 @@ grep -q '^sdk_annotated=23$' <<<"$out" || { echo "mcp_sdk=fail annotations"; exi
 grep -q '^progress_events=[1-9]' <<<"$out" || { echo "mcp_sdk=fail progress"; exit 1; }
 grep -q '^structured_ok=true$' <<<"$out" || { echo "mcp_sdk=fail structured"; exit 1; }
 grep -q '^job=done$' <<<"$out" || { echo "mcp_sdk=fail job"; exit 1; }
+grep -q '^pipeline_progress_events=[1-9]' <<<"$out" || { echo "mcp_sdk=fail pipeline progress"; exit 1; }
+grep -q '^status_fresh=[1-9]' <<<"$out" || { echo "mcp_sdk=fail pipeline status"; exit 1; }
+grep -q '^gzip_matched=1$' <<<"$out" || { echo "mcp_sdk=fail gzip"; exit 1; }
+grep -q '^cache_hits=[1-9]' <<<"$out" || { echo "mcp_sdk=fail cache hits"; exit 1; }
+grep -q '^cache_entries=[1-9]' <<<"$out" || { echo "mcp_sdk=fail cache entries"; exit 1; }
+grep -q '^cache_after=0$' <<<"$out" || { echo "mcp_sdk=fail cache clear"; exit 1; }
+grep -q '^cancel_state=done$' <<<"$out" || { echo "mcp_sdk=fail cancel"; exit 1; }
 grep -q '^job_listed=true$' <<<"$out" || { echo "mcp_sdk=fail job list"; exit 1; }
 grep -q '^job_reject_cache=true$' <<<"$out" || { echo "mcp_sdk=fail cache reject"; exit 1; }
 grep -q '^job_reject_code=job_start_error$' <<<"$out" || { echo "mcp_sdk=fail reject code"; exit 1; }

@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "80a0a394664952d2ca5d13676b2b2d06fe3e71a6a52d6d67b02f4154614ba1b5",
+  "batch_id": "7fc155571155812b981575e35d9ff727138642b8bad5ec0dc61d3d8faf6ce74d",
+  "composite_identity": "b206c5afc2c172b08b037e6e9c179c9f8abd65135f30deb28baca3428cbf0b35",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "3cf38676a0c7077e2ec17a4f774156cf0e0feaa18e49f3573df22050fc9a339b",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_mcp_sdk.sh",
+      "path": "scripts/check_mcp_sdk.sh",
+      "change": "update",
+      "source_sha256": "92cfb463b3261cd6e722ab440ffb0eb8469152ec04c196195d7f967e0fbb4b8c",
+      "existing_entry": "check_mcp_sdk.sh[SD7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:临时 CSV；23 工具/名称；progress/structured/job/job_list/cache reject/unknown tool | S:node/SDK 缺失跳过；失败非零"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "75df84534de9eacc88524d7b3be8f90a85f2e00449d80350486b541e570da184",
+      "existing_entry": "client.mjs[XQ7T]: F:官方 MCP SDK 兼容性客户端（Node） | R:code:scripts/mcp_sdk/package.json,code:scripts/check_mcp_sdk.sh | A:Client+StdioTransport；23 工具名；schema/filter/view/edit/convert/pipeline/cache/job；断言 job_listed/cache reject/unknown code | S:仅演示；npm 不进 Rust；job 失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "74b44fb88e61e7441ce6f2ca3956ec2923496716360e74992c8e6dd25cf589cf",
+      "object_ref": "code:scripts/check_mcp_sdk.sh",
+      "path": "scripts/check_mcp_sdk.sh",
+      "change": "update",
+      "source_sha256": "92cfb463b3261cd6e722ab440ffb0eb8469152ec04c196195d7f967e0fbb4b8c",
+      "existing_entry": "check_mcp_sdk.sh[SD7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:临时 CSV；23 工具/名称；progress/structured/job/job_list/cache reject/unknown tool | S:node/SDK 缺失跳过；失败非零"
+    },
+    {
+      "candidate_id": "4a25ca1b25019673fff76bda44462bf57d1e076af8a3056a3e465fc997d88203",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "75df84534de9eacc88524d7b3be8f90a85f2e00449d80350486b541e570da184",
+      "existing_entry": "client.mjs[XQ7T]: F:官方 MCP SDK 兼容性客户端（Node） | R:code:scripts/mcp_sdk/package.json,code:scripts/check_mcp_sdk.sh | A:Client+StdioTransport；23 工具名；schema/filter/view/edit/convert/pipeline/cache/job；断言 job_listed/cache reject/unknown code | S:仅演示；npm 不进 Rust；job 失败非零"
+    }
+  ]
+}

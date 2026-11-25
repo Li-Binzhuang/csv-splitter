@@ -113,6 +113,8 @@ for (let i = 0; i < 100 && status.state === "running"; i += 1) {
 console.log(`job=${status.state}`);
 const listed = await call("csvx_job_list", {});
 console.log(`job_listed=${listed.jobs.some((entry) => entry.job === job.job)}`);
+const cancelled = await call("csvx_job_cancel", { id: job.job });
+console.log(`cancel_state=${cancelled.state}`);
 const unknown = await client.callTool({ name: "csvx_nope", arguments: {} });
 console.log(`unknown_tool_error=${unknown.isError === true}`);
 console.log(`unknown_code=${unknown.structuredContent?.code ?? ""}`);
