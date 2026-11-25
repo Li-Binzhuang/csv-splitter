@@ -461,6 +461,33 @@ fn close(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Re
     respond_json(stream, 200, r#"{"closed":true}"#)
 }
 
+fn approved_tools(audit: &str, id: &str) -> Vec<String> {
+    audit
+        .lines()
+        .filter(|line| line_belongs_to_session(line, id))
+        .filter_map(|line| McpParser::parse(line).ok())
+        .filter(|value| value.get("status").and_then(McpJson::as_str) == Some("approved"))
+        .filter_map(|value| {
+            value
+                .get("tool")
+                .and_then(McpJson::as_str)
+                .map(str::to_string)
+        })
+        .collect()
+}
+
+fn action_approval(tool: &str, approved: &[String]) -> &'static str {
+    if is_destructive(tool) {
+        if approved.iter().any(|approved| approved == tool) {
+            "approved"
+        } else {
+            "unapproved"
+        }
+    } else {
+        "not_required"
+    }
+}
+
 fn actions_report(
     stream: &mut TcpStream,
     state: &State,
@@ -479,6 +506,7 @@ fn actions_report(
         return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
     }
     let text = std::fs::read_to_string(&session.audit).unwrap_or_default();
+    let approved = approved_tools(&text, id);
     let mut entries = Vec::new();
     for line in text
         .lines()
@@ -513,15 +541,17 @@ fn actions_report(
             status.to_string(),
             elapsed,
             json_render(&arguments),
+            action_approval(tool, &approved).to_string(),
         ));
     }
     let mut body = String::new();
     if html {
-        body.push_str("<h1>Agent actions</h1><table><tr><th>#</th><th>tool</th><th>status</th><th>elapsedMs</th><th>arguments</th></tr>\n");
-        for (step, (tool, status, elapsed, arguments)) in entries.iter().enumerate() {
+        body.push_str("<h1>Agent actions</h1><table><tr><th>#</th><th>tool</th><th>status</th><th>approval</th><th>elapsedMs</th><th>arguments</th></tr>\n");
+        for (step, (tool, status, elapsed, arguments, approval)) in entries.iter().enumerate() {
             body.push_str(&format!(
-                "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td><code>{}</code></td></tr>\n",
+                "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td><code>{}</code></td></tr>\n",
                 step + 1,
+                html_text(approval),
                 html_text(tool),
                 html_text(status),
                 elapsed,
@@ -531,12 +561,13 @@ fn actions_report(
         body.push_str("</table>\n");
     } else {
         body.push_str(
-            "# Agent actions\n\n| # | tool | status | elapsedMs | arguments |\n|---|---|---|---|---|\n",
+            "# Agent actions\n\n| # | tool | status | approval | elapsedMs | arguments |\n|---|---|---|---|---|---|\n",
         );
-        for (step, (tool, status, elapsed, arguments)) in entries.iter().enumerate() {
+        for (step, (tool, status, elapsed, arguments, approval)) in entries.iter().enumerate() {
             body.push_str(&format!(
-                "| {} | {} | {} | {} | `{}` |\n",
+                "| {} | {} | {} | {} | {} | `{}` |\n",
                 step + 1,
+                approval,
                 tool.replace('|', "\\|"),
                 status.replace('|', "\\|"),
                 elapsed,
@@ -579,6 +610,7 @@ fn actions_list(stream: &mut TcpStream, state: &State, id: &str, token: &str) ->
         return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
     }
     let text = std::fs::read_to_string(&session.audit).unwrap_or_default();
+    let approved = approved_tools(&text, id);
     let mut actions = Vec::new();
     for line in text
         .lines()
@@ -610,10 +642,11 @@ fn actions_list(stream: &mut TcpStream, state: &State, id: &str, token: &str) ->
             .unwrap_or(0);
         let step = actions.len() + 1;
         actions.push(format!(
-            r#"{{"step":{step},"tool":{},"arguments":{},"status":{},"elapsedMs":{elapsed}}}"#,
+            r#"{{"step":{step},"tool":{},"arguments":{},"status":{},"approval":{},"elapsedMs":{elapsed}}}"#,
             json_str(tool),
             json_render(&arguments),
-            json_str(status)
+            json_str(status),
+            json_str(action_approval(tool, &approved))
         ));
     }
     let body = format!(

@@ -70,8 +70,8 @@ curl -sS -H "Authorization: Bearer $CSVX_TOKEN" \
 The script contains tool arguments and uses `$CSVX_TOKEN`/`$CSVX_SESSION` placeholders.
 Destructive calls carry `"approvalId":"__APPROVAL_ID__"`; issue `/approvals` and replace
 the placeholder before running. `GET /actions` gives the same final actions as JSON; `/actions.md` and
-`/actions.html` render them as a table (with step numbers) for a run log or
-issue comment; the Markdown response is marked as an attachment.
+`/actions.html` render them as a table (step, approval state, status) for a run
+log or issue comment; the Markdown response is marked as an attachment.
 
 ## Why
 

@@ -89,7 +89,7 @@ csvx agent manifest
 | GET | `/agent/v1/sessions/{id}/audit` | 原始审计 JSONL；含 `tool`、`arguments`、`running/ok/error`、耗时 |
 | GET | `/agent/v1/sessions/{id}/trace` | `audit` 的别名，便于和 runner 的 trace 概念对齐 |
 | GET | `/agent/v1/sessions/{id}/replay` | 只导出最终 `ok/error` 动作，可直接喂给 `csvx agent replay` |
-| GET | `/agent/v1/sessions/{id}/actions` | 最终动作清单 JSON（tool/arguments/status/elapsedMs） |
+| GET | `/agent/v1/sessions/{id}/actions` | 最终动作清单 JSON（step/tool/arguments/status/approval/elapsedMs） |
 | GET | `/agent/v1/sessions/{id}/actions.md` | 同一清单的 Markdown 表格，带步骤号并作为附件下载 |
 | GET | `/agent/v1/sessions/{id}/actions.html` | 同一清单的 HTML 表格 |
 | GET | `/agent/v1/sessions/{id}/curl` | 生成可复制的 curl 脚本；破坏性动作带 `__APPROVAL_ID__` 占位 |

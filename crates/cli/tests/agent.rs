@@ -297,7 +297,7 @@ fn agent_api_creates_session_actions_approves_and_audits() {
     let (status, body) = request(&addr, "GET", &actions_md, Some(&token), "");
     assert_eq!(status, 200, "{body}");
     assert!(body.contains("# Agent actions"), "{body}");
-    assert!(body.contains("| # | tool |"), "{body}");
+    assert!(body.contains("| # | tool | status | approval |"), "{body}");
     assert!(body.contains("| 1 |"), "{body}");
     assert!(body.contains("csvx_edit_apply"), "{body}");
     let actions_html = format!("/agent/v1/sessions/{session}/actions.html");
@@ -311,6 +311,7 @@ fn agent_api_creates_session_actions_approves_and_audits() {
     assert_eq!(status, 200, "{body}");
     assert!(body.contains("csvx_edit_apply"), "{body}");
     assert!(body.contains("\"step\":1"), "{body}");
+    assert!(body.contains("\"approval\":\"approved\""), "{body}");
     assert!(body.contains("\"arguments\""), "{body}");
 
     let curl_endpoint = format!("/agent/v1/sessions/{session}/curl");
