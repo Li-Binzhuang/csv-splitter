@@ -613,3 +613,73 @@ fn agent_expired_approval_is_rejected() {
     assert!(body.contains(r#""error":"approval expired""#), "{body}");
     std::fs::remove_dir_all(dir).ok();
 }
+
+#[test]
+fn agent_sse_delivers_actions_without_polling() {
+    let dir = std::env::temp_dir().join(format!("csvx_agent_sse_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("t.csv"), "city,amount\nA,10\n").unwrap();
+    let addr = free_addr();
+    let _server = start(&dir, &addr);
+
+    let (status, body) = request(
+        &addr,
+        "POST",
+        "/agent/v1/sessions",
+        None,
+        r#"{"agent":"sse"}"#,
+    );
+    assert_eq!(status, 201, "{body}");
+    let token = extract(&body, "token");
+    let session = extract(&body, "sessionId");
+
+    let addr2 = addr.clone();
+    let token2 = token.clone();
+    let session2 = session.clone();
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let mut stream = TcpStream::connect(&addr2).unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(5)))
+            .unwrap();
+        stream
+            .write_all(
+                format!(
+                    "GET /agent/v1/sessions/{session2}/events?follow=1 HTTP/1.1\r\nHost: localhost\r\nAuthorization: Bearer {token2}\r\nConnection: close\r\n\r\n"
+                )
+                .as_bytes(),
+            )
+            .unwrap();
+        let mut buffer = String::new();
+        loop {
+            let mut chunk = [0u8; 1024];
+            let read = match stream.read(&mut chunk) {
+                Ok(read) => read,
+                Err(_) => break,
+            };
+            if read == 0 {
+                break;
+            }
+            buffer.push_str(&String::from_utf8_lossy(&chunk[..read]));
+            if buffer.contains(r#""tool":"csvx_schema""#) {
+                let _ = tx.send(true);
+                break;
+            }
+        }
+    });
+
+    std::thread::sleep(Duration::from_millis(150));
+    let (status, body) = request(
+        &addr,
+        "POST",
+        &format!("/agent/v1/sessions/{session}/actions"),
+        Some(&token),
+        r#"{"tool":"csvx_schema","arguments":{"path":"t.csv"}}"#,
+    );
+    assert_eq!(status, 200, "{body}");
+    assert!(
+        rx.recv_timeout(Duration::from_secs(5)).unwrap_or(false),
+        "SSE did not deliver the action"
+    );
+    std::fs::remove_dir_all(dir).ok();
+}

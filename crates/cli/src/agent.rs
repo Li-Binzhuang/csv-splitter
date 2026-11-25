@@ -1159,7 +1159,8 @@ fn events(
         b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n",
     )?;
     let mut sent = 0usize;
-    let deadline = std::time::Instant::now() + Duration::from_secs(60);
+    let mut last_ping = Instant::now();
+    let deadline = Instant::now() + Duration::from_secs(60);
     loop {
         let text = std::fs::read_to_string(&audit).unwrap_or_default();
         if text.len() > sent {
@@ -1185,6 +1186,10 @@ fn events(
             .1
             .wait_timeout(guard, Duration::from_millis(1000))
             .unwrap_or_else(|error| error.into_inner());
+        if last_ping.elapsed() >= Duration::from_secs(15) {
+            stream.write_all(b": ping\n\n")?;
+            last_ping = Instant::now();
+        }
     }
     stream.write_all(b"event: end\ndata: {}\n\n")
 }

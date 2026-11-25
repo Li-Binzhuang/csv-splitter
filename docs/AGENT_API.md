@@ -130,7 +130,7 @@ pipeline run、job cancel、cache clear）没有 `approvalId` 时返回 **428**�
   当前 session 的行，不泄露同 root 的其他 session；每个动作有
   `running`、`approved`（审批时）和最终 `ok/error`，且包含工具参数（不含 token）；
 - 所有路径 canonical + root 内；
-- SSE 默认回放后关闭；`?follow=1` 在审计变更时立即唤醒推送，连接最多保持 60s；
+- SSE 默认回放后关闭；`?follow=1` 在审计变更时立即唤醒推送，连接最多保持 60s，空闲每 15s 发 `: ping` 心跳；
 - 没有多用户角色，token 只是单用户本地能力边界。
 
 ## 和 DSH 的关系
@@ -145,4 +145,4 @@ pipeline run、job cancel、cache clear）没有 `approvalId` 时返回 **428**�
 - MCP initialize `instructions`、`csvx://agent` 已由 stdio 测试钉住；
 - HTTP Agent API 已有端到端测试：创建会话 → schema → 428 审批 →
   approval → apply → 事件回放 → 审计 → close；
-- `follow=1` 的持续推送由端到端连接读取首块验证；审计写入通过进程内唤醒立即送达。
+- `follow=1` 的持续推送由端到端连接读取首块验证；另有测试在动作提交后从已打开的 SSE 流收到该动作，验证不是轮询。
