@@ -1,0 +1,75 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "18b57a2f42e6f751f8c7fba11b8a1f5c3b09062d268c5015d0adab3a64c40d56",
+  "batch_id": "bf4b72e5f66a2b194417244bcc23086bb3f963d1a7a818afd7f51a9fad098497",
+  "composite_identity": "cf484682550b7ff074f279e0276bc7547d7292b11ef5c9e41f41f8546ebc2cdd",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "d7b9a9b3e1727729c86eb26448aac99fbc029039eace1f789e29e46f3bcce3f1",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/cli_support.rs",
+      "path": "crates/cli/src/cli_support.rs",
+      "change": "create",
+      "source_sha256": "1cf49957b39db42be0be272de08924d4f0377ed5c6631ed07df16b8449aa224e"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "dde12a44d4d1cb698d1cf46b948084a1af1600e06ce61ea7a5a647f1303c491e",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助与输出 | R:code:crates/cli/src/serve.rs,code:crates/cli/src/commands/*,code:crates/mcp/src/lib.rs | A:CLI；dispatch/help/通用 helper；pipeline 已迁 | S:report 四类 section；runner key 仅 env；入口模块不互引"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "678af11c9dd4dba970ffbb81a187edfdaf33f51cea2454f7cbd2c02ecc74b311",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；crate core/mcp/agent/cli；CLI main/serve+commands；pipeline 已迁 | S:rmcp 需串行语义；gate 强制"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "a5a099879326355cef2d1b0e9ed1224d63ab5f6e0d1842d2d2eb27899a53266e",
+      "existing_entry": "check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；CLI commands 三十八模块白名单；core 不依赖 cli | S:未知模块退出；先改文档再加模块"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ddc1ffc8069d680fc71c53d9237ff796a3309b0ed42287db123277f5a89f83d2",
+      "object_ref": "code:crates/cli/src/cli_support.rs",
+      "path": "crates/cli/src/cli_support.rs",
+      "change": "create",
+      "source_sha256": "1cf49957b39db42be0be272de08924d4f0377ed5c6631ed07df16b8449aa224e"
+    },
+    {
+      "candidate_id": "59f3a8a7ab61e06110bdf2d928e2518e1ecebe6ac51459a48dac48e2f57a8450",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "dde12a44d4d1cb698d1cf46b948084a1af1600e06ce61ea7a5a647f1303c491e",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助与输出 | R:code:crates/cli/src/serve.rs,code:crates/cli/src/commands/*,code:crates/mcp/src/lib.rs | A:CLI；dispatch/help/通用 helper；pipeline 已迁 | S:report 四类 section；runner key 仅 env；入口模块不互引"
+    },
+    {
+      "candidate_id": "52e0023461e678267d48e882b967bc0f3a3027624c5ff38b750a85c71609d81e",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "678af11c9dd4dba970ffbb81a187edfdaf33f51cea2454f7cbd2c02ecc74b311",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；crate core/mcp/agent/cli；CLI main/serve+commands；pipeline 已迁 | S:rmcp 需串行语义；gate 强制"
+    },
+    {
+      "candidate_id": "3cfa6ad0839b79e52ab0c5f50f53f52fcae09b0cb863aaf185805ffd94860334",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "a5a099879326355cef2d1b0e9ed1224d63ab5f6e0d1842d2d2eb27899a53266e",
+      "existing_entry": "check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；CLI commands 三十八模块白名单；core 不依赖 cli | S:未知模块退出；先改文档再加模块"
+    }
+  ]
+}

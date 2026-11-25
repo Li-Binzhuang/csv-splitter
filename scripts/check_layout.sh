@@ -41,7 +41,7 @@ for dir in crates/*/; do
   [[ -f "crates/$name/Cargo.toml" ]] || fail "crates/$name has no Cargo.toml"
 done
 
-CLI_SRC_ALLOWED=(main.rs serve.rs)
+CLI_SRC_ALLOWED=(main.rs serve.rs cli_support.rs)
 CLI_COMMANDS_ALLOWED=(mod.rs agent.rs analyze.rs book.rs cache.rs chart.rs columns.rs concat.rs convert.rs dedupe.rs demo.rs edit.rs extract.rs files.rs filter.rs format.rs gate.rs groupby.rs index.rs layout.rs lookup.rs mcp.rs merge.rs ops.rs partition.rs pipeline.rs pivot.rs preview.rs repair.rs report.rs schema.rs search.rs serve.rs shared.rs sort.rs split.rs sql.rs stats.rs validate.rs verify.rs view.rs)
 while IFS= read -r entry; do
   name=${entry#crates/cli/src/}

@@ -375,12 +375,27 @@ fn the_quote_style_claim_names_commands_that_accept_it() {
 /// The source is parsed rather than a list of flags being maintained by hand: a flag
 /// that is added to a command and forgotten here fails the test, which is exactly how
 /// sixty-one options ended up undocumented before this existed.
+fn cli_source() -> String {
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let mut source = std::fs::read_to_string(manifest.join("main.rs")).unwrap();
+    source.push_str(&std::fs::read_to_string(manifest.join("cli_support.rs")).unwrap());
+    source.push_str(&std::fs::read_to_string(manifest.join("serve.rs")).unwrap());
+    let mut files: Vec<_> = std::fs::read_dir(manifest.join("commands"))
+        .unwrap()
+        .flatten()
+        .map(|entry| entry.path())
+        .filter(|path| path.extension().is_some_and(|ext| ext == "rs"))
+        .collect();
+    files.sort();
+    for file in files {
+        source.push_str(&std::fs::read_to_string(file).unwrap());
+    }
+    source
+}
+
 #[test]
 fn every_command_documents_the_flags_it_parses() {
-    let source = std::fs::read_to_string(
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/main.rs"),
-    )
-    .expect("main.rs should be readable");
+    let source = cli_source();
 
     let mut problems = Vec::new();
     for (name, _, body) in command_bodies(&source) {
@@ -1125,7 +1140,7 @@ fn path_requiring_reads_are_real_routes() {
 fn every_documented_flag_exists() {
     let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let root = manifest.join("../..");
-    let source = std::fs::read_to_string(manifest.join("src/main.rs")).unwrap();
+    let source = cli_source();
     let accepted: Vec<String> = source
         .split('"')
         .filter(|s| s.starts_with("--") && s.len() > 2 && !s.contains(' '))

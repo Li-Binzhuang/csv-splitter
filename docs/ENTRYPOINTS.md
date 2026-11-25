@@ -44,7 +44,7 @@ core  →  不允许依赖任何入口
 - 根目录只放项目元数据、`crates/`、`docs/`、`examples/`、`scripts/`、`skills/`；
   不新增根目录 `.rs` 或临时脚本。
 - 源码只在 `crates/<crate>/src`；测试在 `crates/<crate>/tests`。
-- `crates/cli/src` 当前只允许 `main.rs`、`serve.rs` 和 `commands/`；命令模块逐条
+- `crates/cli/src` 当前只允许 `main.rs`、`serve.rs`、`cli_support.rs` 和 `commands/`；命令模块逐条
   登记在 `check_layout.sh`，新增前先更新本文件，不允许随手加一个 `foo.rs`。
 - 入口文件目标 ≤300 行。当前超标文件是迁移对象，只降不升；`main.rs` 不得继续增长。
 - 一个命令一个模块：`commands/split.rs`、`commands/report.rs`、`commands/xlsx.rs`。
