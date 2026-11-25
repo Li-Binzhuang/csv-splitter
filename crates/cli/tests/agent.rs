@@ -449,3 +449,57 @@ fn agent_api_creates_session_actions_approves_and_audits() {
     assert_eq!(status, 200, "{body}");
     std::fs::remove_dir_all(dir).ok();
 }
+
+#[test]
+fn agent_approved_action_failure_is_audited() {
+    let dir = std::env::temp_dir().join(format!("csvx_agent_fail_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("t.csv"), "city,amount\nA,10\n").unwrap();
+    let addr = free_addr();
+    let _server = start(&dir, &addr);
+
+    let (status, body) = request(
+        &addr,
+        "POST",
+        "/agent/v1/sessions",
+        None,
+        r#"{"agent":"fail"}"#,
+    );
+    assert_eq!(status, 201, "{body}");
+    let token = extract(&body, "token");
+    let session = extract(&body, "sessionId");
+    let action = format!("/agent/v1/sessions/{session}/actions");
+
+    let payload = r#"{"tool":"csvx_edit_apply","arguments":{"path":"t.csv","ops":"set:1:city:Z"}}"#;
+    let (status, body) = request(&addr, "POST", &action, Some(&token), payload);
+    assert_eq!(status, 428, "{body}");
+
+    let (status, body) = request(
+        &addr,
+        "POST",
+        &format!("/agent/v1/sessions/{session}/approvals"),
+        Some(&token),
+        r#"{"tool":"csvx_edit_apply","decision":"approve"}"#,
+    );
+    assert_eq!(status, 200, "{body}");
+    let approval = extract(&body, "approvalId");
+
+    let bad = format!(
+        r#"{{"tool":"csvx_edit_apply","arguments":{{"path":"t.csv","ops":"not-an-op"}},"approvalId":"{approval}"}}"#
+    );
+    let (status, body) = request(&addr, "POST", &action, Some(&token), &bad);
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("\"status\":\"error\""), "{body}");
+
+    let (status, audit) = request(
+        &addr,
+        "GET",
+        &format!("/agent/v1/sessions/{session}/audit"),
+        Some(&token),
+        "",
+    );
+    assert_eq!(status, 200, "{audit}");
+    assert!(audit.contains(r#""tool":"csvx_edit_apply""#), "{audit}");
+    assert!(audit.contains(r#""status":"error""#), "{audit}");
+    std::fs::remove_dir_all(dir).ok();
+}
