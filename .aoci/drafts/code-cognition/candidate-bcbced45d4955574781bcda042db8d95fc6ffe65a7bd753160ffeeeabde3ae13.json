@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "c2bbed3886b97f943948bdd60c3b1b361fe26575aa12de3fe24ad67ae6749857",
+  "batch_id": "bcbced45d4955574781bcda042db8d95fc6ffe65a7bd753160ffeeeabde3ae13",
+  "composite_identity": "f08640266a7f7bed486d3464c66b832c946f4fb6de418b039ae4c60595983da4",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "bb48f5a49a81f4148671c082446a32586e9bd2e070f8f0b10da63ee701c795f9",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "0fddc99e32209c5f6bc1c936ec718a9c737359b01b79f1d6f20e0fdfbd840a75",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API + runner + trace/replay | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md | A:loopback；GET /sessions；actions/approvals/close/events/audit+trace/replay+curl+actions.md/html+runbook.md/JSON；runbook 动作计数与未审批阻断 | S:audit 含 arguments 不含 token；汇总不含 token/内容；runbook 附件；trace 含数据"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "e3d1e31a0f3c9c8c761d520194bb52284be9f0a5c76d14370064d07f0e9217e4",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入：MCP manifest、HTTP Agent API、runner、skill 与 trace | R:code:crates/cli/src/agent.rs,code:docs/AGENT_TRACE.md,code:skills/csvx-data/SKILL.md | A:serve/manifest/run；GET /sessions 汇总；sessions/actions/approvals/events/audit+trace/replay/actions.md/html/curl/runbook/close；未审批阻断 | S:follow 60s；audit 仅 session；汇总不含 token/内容；key/token 不入脚本；trace 含数据"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "2adb390c3e5563746d114df62855f3470a820975293e885b389062e3b73149a9",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "0fddc99e32209c5f6bc1c936ec718a9c737359b01b79f1d6f20e0fdfbd840a75",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API + runner + trace/replay | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md | A:loopback；GET /sessions；actions/approvals/close/events/audit+trace/replay+curl+actions.md/html+runbook.md/JSON；runbook 动作计数与未审批阻断 | S:audit 含 arguments 不含 token；汇总不含 token/内容；runbook 附件；trace 含数据"
+    },
+    {
+      "candidate_id": "67686cdb72d3608c54d444e827bded892830fe06d2e44831f23ac6cf9655b31d",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "e3d1e31a0f3c9c8c761d520194bb52284be9f0a5c76d14370064d07f0e9217e4",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入：MCP manifest、HTTP Agent API、runner、skill 与 trace | R:code:crates/cli/src/agent.rs,code:docs/AGENT_TRACE.md,code:skills/csvx-data/SKILL.md | A:serve/manifest/run；GET /sessions 汇总；sessions/actions/approvals/events/audit+trace/replay/actions.md/html/curl/runbook/close；未审批阻断 | S:follow 60s；audit 仅 session；汇总不含 token/内容；key/token 不入脚本；trace 含数据"
+    }
+  ]
+}
