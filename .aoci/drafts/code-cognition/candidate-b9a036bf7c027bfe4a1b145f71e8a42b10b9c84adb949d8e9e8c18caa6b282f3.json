@@ -1,0 +1,105 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "c3564a3c41e9cb31b245c33caeff0caca4f47dcf85c0631f99306f585cdbb020",
+  "batch_id": "b9a036bf7c027bfe4a1b145f71e8a42b10b9c84adb949d8e9e8c18caa6b282f3",
+  "composite_identity": "0b34ee537465772680c25030951f566dac93bdfd4641818f4d13abfe1ab25aef",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "acee16b98f35207027c90c063d0465a5b69460a2daff8555ec0e6d7819de385e",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "36261e646539fa5878faeeea3831cf77778756f07fb35c2bcb7844719d8dc296",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API + OpenAI-compatible runner + skill | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md,code:skills/csvx-data/SKILL.md | A:loopback 服务、sessions/actions/approvals/close/events(follow)；runner JSON tool/final；--skill 注入 system prompt；curl stdin key；destructive 需 allow-apply | S:follow 轮询 60s；token 不落审计；key 不进 argv/磁盘；skill 仅读文件；max-steps 12"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "39f698692d6021ac10d8f20544c0350d8cfc97e3e0ccde702b7b1a2191c19a34",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入：MCP manifest、HTTP Agent API、runner 与 skill | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:skills/csvx-data/SKILL.md | A:agent serve/manifest/run；sessions/actions/approvals/events(+follow)/close；428 审批；skill 注入；Ark 6.10/5.49s；apply 5 步 11.75s | S:follow 60s；key 不入仓库；destructive 默认拒绝；无 GUI/多用户"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DSH_MODEL_TEST.md",
+      "path": "docs/DSH_MODEL_TEST.md",
+      "change": "update",
+      "source_sha256": "67d70e64ac79aa2c9f3342704734f20f4e5284a08a3435312d4fd9eaaa600def",
+      "existing_entry": "DSH_MODEL_TEST.md[SD7T]: F:本地 DSH Ark Economy 直连、runner 与 skill/apply 实测 | R:code:docs/BIG_PLAN.md,code:docs/AGENT_API.md,code:skills/csvx-data/SKILL.md | A:仅 Ark Economy；直连 1.10s；runner 6.10s；带 skill 5.49s；read→preview→apply 5 步 11.75s，journal 1 条 | S:仅该模型；key 不落盘；小 max_tokens 只有 reasoning；破坏性需 allow-apply"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DSH_SKILL.md",
+      "path": "docs/DSH_SKILL.md",
+      "change": "create",
+      "source_sha256": "01202db3be9aa4db0f5ea91ab8d3ac6d19e40e6f707c2af7e31616154c0600fb"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/install_skill.sh",
+      "path": "scripts/install_skill.sh",
+      "change": "create",
+      "source_sha256": "d01314efa253da1e534e30019203b6993e6fbe8e1967ff006fbe550ca2d6bf9c"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "0ad3f2669e911669c4c2c6b8ce43ce47e7ee2d9ba2438e8fd182dc989e4dec43",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:scripts/verify_dist.sh,code:scripts/smoke_http.py,code:docs/ACCEPTANCE.md | A:打包二进制/docs（ACCEPTANCE/AGENT_API/FORMULA_CACHE/XLSX 等）、demo/pilot/bench/smoke、mcp_sdk、skills/csvx-data、examples/agent；sha256 后 verify_dist；失败删半成品 | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "e1eed3e33c287075f532e9752be2576f2f85b6918475d430cf8a0640e94d4853",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "36261e646539fa5878faeeea3831cf77778756f07fb35c2bcb7844719d8dc296",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API + OpenAI-compatible runner + skill | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md,code:skills/csvx-data/SKILL.md | A:loopback 服务、sessions/actions/approvals/close/events(follow)；runner JSON tool/final；--skill 注入 system prompt；curl stdin key；destructive 需 allow-apply | S:follow 轮询 60s；token 不落审计；key 不进 argv/磁盘；skill 仅读文件；max-steps 12"
+    },
+    {
+      "candidate_id": "9f9649d1d31f1edfbba1ed6638fe2af80aa31d08222a2b601361ae24f7f58d63",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "39f698692d6021ac10d8f20544c0350d8cfc97e3e0ccde702b7b1a2191c19a34",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入：MCP manifest、HTTP Agent API、runner 与 skill | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:skills/csvx-data/SKILL.md | A:agent serve/manifest/run；sessions/actions/approvals/events(+follow)/close；428 审批；skill 注入；Ark 6.10/5.49s；apply 5 步 11.75s | S:follow 60s；key 不入仓库；destructive 默认拒绝；无 GUI/多用户"
+    },
+    {
+      "candidate_id": "1b3efb68fd3e27f610e69206c08c4eb3e9759f1456fda28891153c173113d4cb",
+      "object_ref": "code:docs/DSH_MODEL_TEST.md",
+      "path": "docs/DSH_MODEL_TEST.md",
+      "change": "update",
+      "source_sha256": "67d70e64ac79aa2c9f3342704734f20f4e5284a08a3435312d4fd9eaaa600def",
+      "existing_entry": "DSH_MODEL_TEST.md[SD7T]: F:本地 DSH Ark Economy 直连、runner 与 skill/apply 实测 | R:code:docs/BIG_PLAN.md,code:docs/AGENT_API.md,code:skills/csvx-data/SKILL.md | A:仅 Ark Economy；直连 1.10s；runner 6.10s；带 skill 5.49s；read→preview→apply 5 步 11.75s，journal 1 条 | S:仅该模型；key 不落盘；小 max_tokens 只有 reasoning；破坏性需 allow-apply"
+    },
+    {
+      "candidate_id": "9388ccfbb285930a39ec9b5919317268ca69d95a2de1ad5d346548e1d2d4a288",
+      "object_ref": "code:docs/DSH_SKILL.md",
+      "path": "docs/DSH_SKILL.md",
+      "change": "create",
+      "source_sha256": "01202db3be9aa4db0f5ea91ab8d3ac6d19e40e6f707c2af7e31616154c0600fb"
+    },
+    {
+      "candidate_id": "258165541ecd04254007ea241f6019bd95d1b1364aa06ef9357a0bda85846d58",
+      "object_ref": "code:scripts/install_skill.sh",
+      "path": "scripts/install_skill.sh",
+      "change": "create",
+      "source_sha256": "d01314efa253da1e534e30019203b6993e6fbe8e1967ff006fbe550ca2d6bf9c"
+    },
+    {
+      "candidate_id": "36625424c66d504fbf32ec2876d7cfcbb497043943451bb434fbc48e2c675a09",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "0ad3f2669e911669c4c2c6b8ce43ce47e7ee2d9ba2438e8fd182dc989e4dec43",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:scripts/verify_dist.sh,code:scripts/smoke_http.py,code:docs/ACCEPTANCE.md | A:打包二进制/docs（ACCEPTANCE/AGENT_API/FORMULA_CACHE/XLSX 等）、demo/pilot/bench/smoke、mcp_sdk、skills/csvx-data、examples/agent；sha256 后 verify_dist；失败删半成品 | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    }
+  ]
+}
