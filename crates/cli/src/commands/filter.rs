@@ -1,7 +1,8 @@
+use crate::commands::shared::materialize_compressed;
 use crate::commands::sort::parse_sort_columns;
 use crate::{
-    check_output, materialize_compressed, parse_delimiter, print_command_help, report_failure,
-    self_check, spawn_reporter, warn_pending_edits, Parser,
+    check_output, parse_delimiter, print_command_help, report_failure, self_check, spawn_reporter,
+    warn_pending_edits, Parser,
 };
 use csvx_core::filter::{self, FilterSpec};
 use std::path::PathBuf;

@@ -1,6 +1,7 @@
+use crate::commands::shared::print_table;
 use crate::{
-    parse_delimiter, print_command_help, print_table, project_columns, report_failure,
-    warn_pending_edits, warn_quote_style, Parser,
+    parse_delimiter, print_command_help, project_columns, report_failure, warn_pending_edits,
+    warn_quote_style, Parser,
 };
 use csvx_core::csv_reader::{detect_delimiter, parse_csv_record};
 use csvx_core::index::{SparseIndex, DEFAULT_INTERVAL};

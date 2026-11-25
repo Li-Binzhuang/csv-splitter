@@ -1,7 +1,5 @@
-use crate::{
-    materialize_compressed, parse_delimiter, parse_quotes, print_command_help, report_failure,
-    Parser,
-};
+use crate::commands::shared::materialize_compressed;
+use crate::{parse_delimiter, parse_quotes, print_command_help, report_failure, Parser};
 use csvx_core::search::SearchSpec;
 use std::path::PathBuf;
 use std::sync::mpsc;

@@ -1,0 +1,199 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a179752e187aa8608189fe4411bd31f1e1ea805308a76798933e2dafad4694a6",
+  "batch_id": "3e327cb33c7d83050612d63b85815c774f1e73efa57ccc1ff901b089bccf5b21",
+  "composite_identity": "295e6d28f9f56ad17537c1d8a8c3f50f29ae0675697ff825c109747327496ce2",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "520e247a388815db9314efd61c241558a6cf9b42cc6d5fdb05bf5e97ab938ad9",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/filter.rs",
+      "path": "crates/cli/src/commands/filter.rs",
+      "change": "update",
+      "source_sha256": "9d31001c5c395bc366956e083290f8604b040fb3c52cc2032abed222131b09ee",
+      "existing_entry": "filter.rs[EN7M]: F:CLI filter 命令：where 组合、排序、输出/任务 | R:code:crates/cli/src/commands/mod.rs,code:crates/cli/src/commands/sort.rs,code:crates/core/src/filter.rs | A:Parser；--where/--any/--sort/--out/--json/--limit；FilterSpec；materialize；extract_style | S:不覆盖输入；多 where 组合；进度非静默"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/index.rs",
+      "path": "crates/cli/src/commands/index.rs",
+      "change": "create",
+      "source_sha256": "6654acc99cc81f970e095aa96ead95ccd104a661c5a8a3f42cadd112bb2191a9"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/mod.rs",
+      "path": "crates/cli/src/commands/mod.rs",
+      "change": "update",
+      "source_sha256": "47c4a85f886134a223ac5297842f2e48e90f5460d0e11e44ac505ed601014367",
+      "existing_entry": "mod.rs[SD7T]: F:CLI 命令模块清单 | R:code:crates/cli/src/commands/cache.rs,code:crates/cli/src/commands/split.rs | A:二十九个命令子模块 | S:新增命令前更新 ENTRYPOINTS 与 check_layout"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/pivot.rs",
+      "path": "crates/cli/src/commands/pivot.rs",
+      "change": "update",
+      "source_sha256": "03cb328f3510721c98205bcbb9e553c7ef573f8882d9d7f5ee625bc54703cacd",
+      "existing_entry": "pivot.rs[EN7M]: F:CLI pivot 命令：透视表行/列/度量与 SQL 执行 | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/pivot.rs | A:Parser；--rows/--columns/--measure/--agg/--out；pivot_sql；print_table；sheet_path | S:不覆盖输入；度量校验；错误非零"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/preview.rs",
+      "path": "crates/cli/src/commands/preview.rs",
+      "change": "update",
+      "source_sha256": "46039d80ccb0c5e0bafcaf9e60fc24ddfbc4170297764c15279d5bd8be2814e8",
+      "existing_entry": "preview.rs[SD7S]: F:CLI preview 命令：分页预览与索引/缓存读取 | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/preview.rs | A:Parser；rows/delimiter/quotes；print_table；preview_from_index；SparseIndex；Instant | S:不加载全表；不覆盖输入；错误非零"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/search.rs",
+      "path": "crates/cli/src/commands/search.rs",
+      "change": "update",
+      "source_sha256": "295ed0f4bdb4621fc46d089d549594208741d1c55e585ce26903747b7fbe1b71",
+      "existing_entry": "search.rs[SG7S]: F:CLI search 命令：全文/列内搜索并输出命中片段 | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/search.rs | A:Parser；--columns/--limit/--json/--quotes；SearchSpec；search_fast；materialize_compressed | S:不覆盖输入；limit 上限；压缩输入先材料化"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/shared.rs",
+      "path": "crates/cli/src/commands/shared.rs",
+      "change": "create",
+      "source_sha256": "ca452abb8f4a0a3d1a88de8fc98d250945508d7bd1d15aa6d93784e1e4a79b8d"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/sql.rs",
+      "path": "crates/cli/src/commands/sql.rs",
+      "change": "create",
+      "source_sha256": "9df114d8e896095de3cf8e3f9d3db267f3cf87f6504fc1f649bb08f27568b4b5"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/view.rs",
+      "path": "crates/cli/src/commands/view.rs",
+      "change": "update",
+      "source_sha256": "3253da00f5309338dd90ba2927877c1c19209d913452d59924ff7e5258ae2e63",
+      "existing_entry": "view.rs[EN9L]: F:CLI view 命令：分页窗口、排序、列投影、样式与 JSON | R:code:crates/cli/src/commands/mod.rs,code:crates/cli/src/commands/sort.rs,code:crates/core/src/viewer.rs | A:Parser；start/count/where/sort/columns/json/color；print_table；spawn_reporter | S:分页不加载全表；未知列报错；输出不覆盖输入"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "80ad28f1e5db500443cdfdf2d93f157efdbcc5052661cb985b31955e9ef87cc1",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助与输出 | R:code:crates/cli/src/serve.rs,code:crates/cli/src/commands/*,code:crates/mcp/src/lib.rs | A:CLI；cache/merge/preview/split 已迁；欢迎页与 dispatch 保留 | S:report 四类 section；runner key 仅 env；入口模块不互引"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "106f931255da0fcd2d5f4d06c4fff92db016f970ca4d7854c4522499655f1ea6",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；crate core/mcp/agent/cli；CLI main/serve+commands；cache/merge/preview/split 已迁 | S:rmcp 需串行语义；gate 强制"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "856266079c9a61ef46c7b6543c6d640356d3faa23f8f87058c6bc04e15e71963",
+      "existing_entry": "check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；CLI commands 二十九模块白名单；core 不依赖 cli | S:未知模块退出；先改文档再加模块"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4868c6e7b73adc02a3ff9b7be34953cd77660859f45114c033d9d046bcc78292",
+      "object_ref": "code:crates/cli/src/commands/filter.rs",
+      "path": "crates/cli/src/commands/filter.rs",
+      "change": "update",
+      "source_sha256": "9d31001c5c395bc366956e083290f8604b040fb3c52cc2032abed222131b09ee",
+      "existing_entry": "filter.rs[EN7M]: F:CLI filter 命令：where 组合、排序、输出/任务 | R:code:crates/cli/src/commands/mod.rs,code:crates/cli/src/commands/sort.rs,code:crates/core/src/filter.rs | A:Parser；--where/--any/--sort/--out/--json/--limit；FilterSpec；materialize；extract_style | S:不覆盖输入；多 where 组合；进度非静默"
+    },
+    {
+      "candidate_id": "730de76a4b219fe918d380c0b2b09f4aa41d24bc1e8b22d5d1144e125b159221",
+      "object_ref": "code:crates/cli/src/commands/index.rs",
+      "path": "crates/cli/src/commands/index.rs",
+      "change": "create",
+      "source_sha256": "6654acc99cc81f970e095aa96ead95ccd104a661c5a8a3f42cadd112bb2191a9"
+    },
+    {
+      "candidate_id": "5dca7dd843b21eb009c360d1c9e6e47c214b27660d942c2db3dcb009a88a6d39",
+      "object_ref": "code:crates/cli/src/commands/mod.rs",
+      "path": "crates/cli/src/commands/mod.rs",
+      "change": "update",
+      "source_sha256": "47c4a85f886134a223ac5297842f2e48e90f5460d0e11e44ac505ed601014367",
+      "existing_entry": "mod.rs[SD7T]: F:CLI 命令模块清单 | R:code:crates/cli/src/commands/cache.rs,code:crates/cli/src/commands/split.rs | A:二十九个命令子模块 | S:新增命令前更新 ENTRYPOINTS 与 check_layout"
+    },
+    {
+      "candidate_id": "ac9086ed2f7099f3f01b62a4d63f2b5647fd293a94b045be0377926f9593bf50",
+      "object_ref": "code:crates/cli/src/commands/pivot.rs",
+      "path": "crates/cli/src/commands/pivot.rs",
+      "change": "update",
+      "source_sha256": "03cb328f3510721c98205bcbb9e553c7ef573f8882d9d7f5ee625bc54703cacd",
+      "existing_entry": "pivot.rs[EN7M]: F:CLI pivot 命令：透视表行/列/度量与 SQL 执行 | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/pivot.rs | A:Parser；--rows/--columns/--measure/--agg/--out；pivot_sql；print_table；sheet_path | S:不覆盖输入；度量校验；错误非零"
+    },
+    {
+      "candidate_id": "32bec9a50090c3b5ad804e368e5efe227cec516ebd9b210328f5d9f31654a7b6",
+      "object_ref": "code:crates/cli/src/commands/preview.rs",
+      "path": "crates/cli/src/commands/preview.rs",
+      "change": "update",
+      "source_sha256": "46039d80ccb0c5e0bafcaf9e60fc24ddfbc4170297764c15279d5bd8be2814e8",
+      "existing_entry": "preview.rs[SD7S]: F:CLI preview 命令：分页预览与索引/缓存读取 | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/preview.rs | A:Parser；rows/delimiter/quotes；print_table；preview_from_index；SparseIndex；Instant | S:不加载全表；不覆盖输入；错误非零"
+    },
+    {
+      "candidate_id": "1026a88812e2d34b38af5f098387ab56ed67c6e3deb566a5d89e48130eef40b6",
+      "object_ref": "code:crates/cli/src/commands/search.rs",
+      "path": "crates/cli/src/commands/search.rs",
+      "change": "update",
+      "source_sha256": "295ed0f4bdb4621fc46d089d549594208741d1c55e585ce26903747b7fbe1b71",
+      "existing_entry": "search.rs[SG7S]: F:CLI search 命令：全文/列内搜索并输出命中片段 | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/search.rs | A:Parser；--columns/--limit/--json/--quotes；SearchSpec；search_fast；materialize_compressed | S:不覆盖输入；limit 上限；压缩输入先材料化"
+    },
+    {
+      "candidate_id": "d9f9ea87ab0517d2323d91c065b622621df8033f7018954310c6a23b842417d9",
+      "object_ref": "code:crates/cli/src/commands/shared.rs",
+      "path": "crates/cli/src/commands/shared.rs",
+      "change": "create",
+      "source_sha256": "ca452abb8f4a0a3d1a88de8fc98d250945508d7bd1d15aa6d93784e1e4a79b8d"
+    },
+    {
+      "candidate_id": "d957ef97837b9fd0c77db6d5ba1eb493dca97a2a7309ef4b50cb4cee6257dfcf",
+      "object_ref": "code:crates/cli/src/commands/sql.rs",
+      "path": "crates/cli/src/commands/sql.rs",
+      "change": "create",
+      "source_sha256": "9df114d8e896095de3cf8e3f9d3db267f3cf87f6504fc1f649bb08f27568b4b5"
+    },
+    {
+      "candidate_id": "249a69875ea874369459c6f03d08c2d81650cbbfba4170447a2fa191fe4d68ac",
+      "object_ref": "code:crates/cli/src/commands/view.rs",
+      "path": "crates/cli/src/commands/view.rs",
+      "change": "update",
+      "source_sha256": "3253da00f5309338dd90ba2927877c1c19209d913452d59924ff7e5258ae2e63",
+      "existing_entry": "view.rs[EN9L]: F:CLI view 命令：分页窗口、排序、列投影、样式与 JSON | R:code:crates/cli/src/commands/mod.rs,code:crates/cli/src/commands/sort.rs,code:crates/core/src/viewer.rs | A:Parser；start/count/where/sort/columns/json/color；print_table；spawn_reporter | S:分页不加载全表；未知列报错；输出不覆盖输入"
+    },
+    {
+      "candidate_id": "767a14a5e0d6b6a0331af8cc097565ba0c8294f3e7c56cd19fe6b8a6dc101347",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "80ad28f1e5db500443cdfdf2d93f157efdbcc5052661cb985b31955e9ef87cc1",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助与输出 | R:code:crates/cli/src/serve.rs,code:crates/cli/src/commands/*,code:crates/mcp/src/lib.rs | A:CLI；cache/merge/preview/split 已迁；欢迎页与 dispatch 保留 | S:report 四类 section；runner key 仅 env；入口模块不互引"
+    },
+    {
+      "candidate_id": "f4203c6694c5ac9605367249b10f188dc8cd622fcf1de0c563f49fd895ad1241",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "106f931255da0fcd2d5f4d06c4fff92db016f970ca4d7854c4522499655f1ea6",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；crate core/mcp/agent/cli；CLI main/serve+commands；cache/merge/preview/split 已迁 | S:rmcp 需串行语义；gate 强制"
+    },
+    {
+      "candidate_id": "bb4e91589d8270b451d8de6f47e645bf9a23137106ca05f0b45f01056b1a8694",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "856266079c9a61ef46c7b6543c6d640356d3faa23f8f87058c6bc04e15e71963",
+      "existing_entry": "check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；CLI commands 二十九模块白名单；core 不依赖 cli | S:未知模块退出；先改文档再加模块"
+    }
+  ]
+}

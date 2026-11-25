@@ -1,6 +1,7 @@
+use crate::commands::shared::print_table;
 use crate::{
-    check_output, human_bytes, parse_delimiter, parse_quotes, print_command_help, print_table,
-    report_failure, sheet_path, spawn_reporter, warn_pending_edits_unless, Parser,
+    check_output, human_bytes, parse_delimiter, parse_quotes, print_command_help, report_failure,
+    sheet_path, spawn_reporter, warn_pending_edits_unless, Parser,
 };
 use std::path::PathBuf;
 use std::sync::mpsc;
