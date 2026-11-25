@@ -11,8 +11,8 @@ fi
 if [[ -n "${CSVX_BIN:-}" ]]; then
   binary=$CSVX_BIN
 else
-  binary=target/release/csvx
-  [[ -x "$binary" ]] || binary=target/debug/csvx
+  binary=target/debug/csvx
+  [[ -x "$binary" ]] || binary=target/release/csvx
 fi
 [[ -x "$binary" ]] || { echo "mcp_sdk=skip (binary missing)"; exit 0; }
 
@@ -43,4 +43,6 @@ grep -q '^job_reject_cache=true$' <<<"$out" || { echo "mcp_sdk=fail cache reject
 grep -q '^job_reject_code=job_start_error$' <<<"$out" || { echo "mcp_sdk=fail reject code"; exit 1; }
 grep -q '^unknown_tool_error=true$' <<<"$out" || { echo "mcp_sdk=fail unknown tool"; exit 1; }
 grep -q '^unknown_code=unknown_tool$' <<<"$out" || { echo "mcp_sdk=fail unknown code"; exit 1; }
+grep -q '^sdk_calls=23$' <<<"$out" || { echo "mcp_sdk=fail tool coverage"; exit 1; }
+grep -q '^sdk_missing=$' <<<"$out" || { echo "mcp_sdk=fail missing tools"; exit 1; }
 echo "mcp_sdk=ok"

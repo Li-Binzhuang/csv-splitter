@@ -24,7 +24,9 @@ await client.connect(transport);
 const json = (text) => {
   try { return JSON.parse(text); } catch { return text; }
 };
+const called = new Set();
 const call = async (name, params) => {
+  called.add(name);
   const result = await client.callTool({ name, arguments: params });
   const text = result.content?.[0]?.text ?? "";
   if (result.isError) throw new Error(text);
@@ -51,10 +53,15 @@ const view = await call("csvx_view", { path: file, start: 0, count: 2 });
 console.log(`view_rows=${view.rows.length}`);
 await call("csvx_edit_set", { path: file, row: 1, col: "city", value: "SDK" });
 await call("csvx_edit_undo", { path: file });
+await call("csvx_edit_redo", { path: file });
+await call("csvx_edit_preview", { path: file, ops: "set:1:city:SDK2" });
+await call("csvx_edit_apply", { path: file, ops: "set:1:city:SDK2" });
+await call("csvx_edit_delete", { path: file, row: 2, count: 1 });
 await call("csvx_convert", { path: file, format: "tsv", out: "sdk.tsv" });
 console.log("convert_ok=true");
 if (existsSync(join(root, "plan.csv"))) {
   let pipelineProgress = 0;
+  called.add("csvx_pipeline_run");
   const pipeline = await client.callTool(
     { name: "csvx_pipeline_run", arguments: { path: "plan.csv", contentCheck: true } },
     undefined,
@@ -86,6 +93,13 @@ if (existsSync(join(root, "orders.csv.gz"))) {
   const after = await call("csvx_cache_stats", {});
   console.log(`cache_after=${after.entries}`);
 }
+await call("csvx_concat", { paths: "orders.csv,filtered.csv", out: "joined.csv" });
+const gate = await call("csvx_gate", { path: file, minRows: 1, unique: "id" });
+console.log(`gate_rows=${gate.rows}`);
+const quality = await call("csvx_quality", { path: file, key: "id", group: "city" });
+console.log(`quality_keys=${(quality.candidateKeys ?? []).length}`);
+const report = await call("csvx_report", { path: file, specText: "title,SDK report\nsummary,", format: "md" });
+console.log(`report_has_title=${String(report).includes("# SDK report")}`);
 const rejected = await client.callTool({
   name: "csvx_job_submit",
   arguments: { tool: "csvx_cache_stats", arguments: {} },
@@ -97,6 +111,7 @@ const job = await call("csvx_job_submit", {
   arguments: { path: file, key: "id", group: "city" },
 });
 let progressEvents = 0;
+called.add("csvx_job_status");
 const waited = await client.callTool(
   { name: "csvx_job_status", arguments: { id: job.job, wait: 2 } },
   undefined,
@@ -118,5 +133,8 @@ console.log(`cancel_state=${cancelled.state}`);
 const unknown = await client.callTool({ name: "csvx_nope", arguments: {} });
 console.log(`unknown_tool_error=${unknown.isError === true}`);
 console.log(`unknown_code=${unknown.structuredContent?.code ?? ""}`);
+const missingTools = expectedTools.filter((name) => !called.has(name));
+console.log(`sdk_calls=${expectedTools.length - missingTools.length}`);
+console.log(`sdk_missing=${missingTools.join(",")}`);
 await client.close();
 process.exit(status.state === "done" ? 0 : 1);

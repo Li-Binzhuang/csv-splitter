@@ -435,6 +435,8 @@ pub(crate) fn mcp_command(
             command.args(["edit", "delete", path.to_str().unwrap_or(""), "--json"]);
             if let Some(row) = args.get("row").and_then(McpJson::as_u64) {
                 command.args(["--row", &row.to_string()]);
+                let count = args.get("count").and_then(McpJson::as_u64).unwrap_or(1);
+                command.args(["--count", &count.to_string()]);
             } else if let Some(where_clause) = args.get("where").and_then(McpJson::as_str) {
                 command.args(["--where", where_clause]);
             } else {

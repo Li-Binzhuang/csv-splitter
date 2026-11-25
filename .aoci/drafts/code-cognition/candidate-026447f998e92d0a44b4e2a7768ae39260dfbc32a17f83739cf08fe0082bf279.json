@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "ca096543a76f3c3683cacf90b6188d3f75003e6bfc590db8ff7c28a80c5fd4ab",
+  "batch_id": "026447f998e92d0a44b4e2a7768ae39260dfbc32a17f83739cf08fe0082bf279",
+  "composite_identity": "862034f00b0391a11c693b251365c3f9d1f842f72e88c0577bd877bd4723252c",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "f6627f411e4c8b8c070be4269f5802779e1fb9fd0f3973aa3f357b0588f20856",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/executor.rs",
+      "path": "crates/mcp/src/executor.rs",
+      "change": "update",
+      "source_sha256": "5ac1d303411e9e0231d8954fc9224997680ac3328c9992b5a673bb8bd30971c3",
+      "existing_entry": "executor.rs[EN9L]: F:MCP 工具执行器：路径校验、命令构建、子进程调用 | R:code:crates/mcp/src/lib.rs,code:crates/mcp/src/cache.rs,code:crates/mcp/src/tools.rs | A:mcp_path；mcp_output_path；mcp_concat_command；mcp_command；mcp_run_tool | S:路径限 root；未知工具先报；stdin null"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/tools.rs",
+      "path": "crates/mcp/src/tools.rs",
+      "change": "update",
+      "source_sha256": "a68b4429067037e5288bd8ab1d0fb01c5ee57f2234be4f7852a6385c32c34119",
+      "existing_entry": "tools.rs[SD7T]: F:23 个 MCP 工具 schema 单一来源 | R:code:crates/mcp/src/lib.rs,code:crates/mcp/src/rmcp_server.rs | A:mcp_tools JSON；名称/描述/inputSchema/annotations | S:冻结 23 工具；JSON 必须可解析"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_mcp_sdk.sh",
+      "path": "scripts/check_mcp_sdk.sh",
+      "change": "update",
+      "source_sha256": "ad622ba65dbba8e46a4ed61caa2d5e2b410fb71db0511fb33f426d712c292995",
+      "existing_entry": "check_mcp_sdk.sh[SD7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:临时 CSV/plan/gzip；23 工具名；pipeline/progress/cache/job/list/cancel/error 断言 | S:node/SDK 缺失跳过；失败非零"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "4abf1331d544121f2e13a02942c4a537138ceb01e326054c0d9a94a910ff1a02",
+      "existing_entry": "client.mjs[SG7S]: F:官方 MCP SDK 兼容性客户端（Node） | R:code:scripts/mcp_sdk/package.json,code:scripts/check_mcp_sdk.sh | A:Client+StdioTransport；23 工具；pipeline/cache/job/cancel；structured/error 断言 | S:仅演示；npm 不进 Rust；job 失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "7c072a15a4dd3b8c3e6723462cbc8f19fa1480897b5a95863a07cd2d41ce063c",
+      "object_ref": "code:crates/mcp/src/executor.rs",
+      "path": "crates/mcp/src/executor.rs",
+      "change": "update",
+      "source_sha256": "5ac1d303411e9e0231d8954fc9224997680ac3328c9992b5a673bb8bd30971c3",
+      "existing_entry": "executor.rs[EN9L]: F:MCP 工具执行器：路径校验、命令构建、子进程调用 | R:code:crates/mcp/src/lib.rs,code:crates/mcp/src/cache.rs,code:crates/mcp/src/tools.rs | A:mcp_path；mcp_output_path；mcp_concat_command；mcp_command；mcp_run_tool | S:路径限 root；未知工具先报；stdin null"
+    },
+    {
+      "candidate_id": "648fad01c46ada8289ac1b9a4863bfd1ea2afc4ee4ab1116c6c7c2874374fe39",
+      "object_ref": "code:crates/mcp/src/tools.rs",
+      "path": "crates/mcp/src/tools.rs",
+      "change": "update",
+      "source_sha256": "a68b4429067037e5288bd8ab1d0fb01c5ee57f2234be4f7852a6385c32c34119",
+      "existing_entry": "tools.rs[SD7T]: F:23 个 MCP 工具 schema 单一来源 | R:code:crates/mcp/src/lib.rs,code:crates/mcp/src/rmcp_server.rs | A:mcp_tools JSON；名称/描述/inputSchema/annotations | S:冻结 23 工具；JSON 必须可解析"
+    },
+    {
+      "candidate_id": "2e9802894c69e89b0a1afaefbf7400ba0e8fbe248d992c84a6f099cae1f68891",
+      "object_ref": "code:scripts/check_mcp_sdk.sh",
+      "path": "scripts/check_mcp_sdk.sh",
+      "change": "update",
+      "source_sha256": "ad622ba65dbba8e46a4ed61caa2d5e2b410fb71db0511fb33f426d712c292995",
+      "existing_entry": "check_mcp_sdk.sh[SD7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:临时 CSV/plan/gzip；23 工具名；pipeline/progress/cache/job/list/cancel/error 断言 | S:node/SDK 缺失跳过；失败非零"
+    },
+    {
+      "candidate_id": "d344150357e54bb2f5ecefd083473621b21feb10c9dc3e7d3a797097f8f4dee2",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "4abf1331d544121f2e13a02942c4a537138ceb01e326054c0d9a94a910ff1a02",
+      "existing_entry": "client.mjs[SG7S]: F:官方 MCP SDK 兼容性客户端（Node） | R:code:scripts/mcp_sdk/package.json,code:scripts/check_mcp_sdk.sh | A:Client+StdioTransport；23 工具；pipeline/cache/job/cancel；structured/error 断言 | S:仅演示；npm 不进 Rust；job 失败非零"
+    }
+  ]
+}
