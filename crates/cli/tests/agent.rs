@@ -198,6 +198,13 @@ fn agent_audit_is_scoped_to_the_session() {
     );
     assert_eq!(status, 200, "{body}");
 
+    let (status, body) = request(&addr, "GET", "/agent/v1/sessions", Some(&sessions[0].0), "");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("\"count\":2"), "{body}");
+    assert!(body.contains(&sessions[0].1), "{body}");
+    assert!(body.contains(&sessions[1].1), "{body}");
+    assert!(!body.contains(&sessions[1].0), "token leaked");
+
     let (status, body) = request(
         &addr,
         "GET",

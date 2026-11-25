@@ -37,6 +37,9 @@ are ignored for execution; the final answer stays in the trace for inspection.
 
 ## HTTP Agent API
 
+`GET /agent/v1/sessions` (with any valid token) returns counts per session and
+never returns tokens or action content.
+
 The HTTP side has the same idea: `GET /agent/v1/sessions/{id}/audit` (alias
 `/trace`) returns the raw JSONL for **that session only** (the shared file is
 filtered by session id), with `tool`, `arguments`, `status`, `elapsedMs` and an

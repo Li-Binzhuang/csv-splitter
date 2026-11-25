@@ -109,6 +109,9 @@ fn handle(mut stream: TcpStream, root: &Path, state: &State) -> io::Result<()> {
     if method == "GET" && path == "/agent/v1/manifest" {
         return respond_json(&mut stream, 200, &manifest());
     }
+    if method == "GET" && path == "/agent/v1/sessions" {
+        return sessions_summary(&mut stream, state, authorization.as_deref());
+    }
     if method == "POST" && path == "/agent/v1/sessions" {
         return create_session(&mut stream, root, state, &body);
     }
@@ -256,6 +259,72 @@ fn create_session(
         SESSION_TTL.as_secs()
     );
     respond_json(stream, 201, &response)
+}
+
+fn sessions_summary(
+    stream: &mut TcpStream,
+    state: &State,
+    authorization: Option<&str>,
+) -> io::Result<()> {
+    let Some(token) = bearer(authorization) else {
+        return respond_json(stream, 401, r#"{"error":"missing bearer token"}"#);
+    };
+    let sessions = match state.sessions.lock() {
+        Ok(sessions) => sessions,
+        Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
+    };
+    let current = sessions
+        .iter()
+        .find(|(_, session)| constant_eq(&session.token, token))
+        .map(|(id, _)| id.clone());
+    let Some(current) = current else {
+        return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
+    };
+    let mut rows = Vec::new();
+    for (id, session) in sessions.iter() {
+        let text = std::fs::read_to_string(&session.audit).unwrap_or_default();
+        let approved = approved_tools(&text, id);
+        let mut actions = 0usize;
+        let mut unapproved = 0usize;
+        for line in text
+            .lines()
+            .filter(|line| line_belongs_to_session(line, id))
+        {
+            let Ok(value) = McpParser::parse(line) else {
+                continue;
+            };
+            if !matches!(
+                value.get("status").and_then(McpJson::as_str),
+                Some("ok" | "error")
+            ) {
+                continue;
+            }
+            actions += 1;
+            if let Some(tool) = value.get("tool").and_then(McpJson::as_str) {
+                if action_approval(tool, &approved) == "unapproved" {
+                    unapproved += 1;
+                }
+            }
+        }
+        let age = SystemTime::now()
+            .duration_since(session.created)
+            .unwrap_or_default()
+            .as_secs();
+        rows.push(format!(
+            r#"{{"sessionId":{},"agent":{},"root":{},"ageSeconds":{age},"actions":{actions},"unapproved":{unapproved},"pendingApprovals":{}}}"#,
+            json_str(id),
+            json_str(&session.agent),
+            json_str(&session.root.display().to_string()),
+            session.approvals.len()
+        ));
+    }
+    let body = format!(
+        r#"{{"current":{},"count":{},"sessions":[{}]}}"#,
+        json_str(&current),
+        rows.len(),
+        rows.join(",")
+    );
+    respond_json(stream, 200, &body)
 }
 
 fn session_status(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {

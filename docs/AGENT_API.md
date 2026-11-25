@@ -82,6 +82,7 @@ csvx agent manifest
 | 方法 | 路径 | 作用 |
 |---|---|---|
 | GET | `/agent/v1/manifest` | 协议、工具、workflow、safety |
+| GET | `/agent/v1/sessions` | 只读汇总当前进程的会话：id/agent/root/age/动作数/未审批数；不返回 token 或内容 |
 | POST | `/agent/v1/sessions` | 创建会话（root、agent 名、可选 allowedTools） |
 | GET | `/agent/v1/sessions/{id}` | 状态/摘要 |
 | POST | `/agent/v1/sessions/{id}/actions` | 执行一个 MCP 工具 |
