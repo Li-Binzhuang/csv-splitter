@@ -683,3 +683,52 @@ fn agent_sse_delivers_actions_without_polling() {
     );
     std::fs::remove_dir_all(dir).ok();
 }
+
+#[test]
+fn agent_sse_sends_heartbeats() {
+    let dir = std::env::temp_dir().join(format!("csvx_agent_ping_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("t.csv"), "city,amount\nA,10\n").unwrap();
+    let addr = free_addr();
+    let _server = start(&dir, &addr);
+    let (status, body) = request(
+        &addr,
+        "POST",
+        "/agent/v1/sessions",
+        None,
+        r#"{"agent":"ping"}"#,
+    );
+    assert_eq!(status, 201, "{body}");
+    let token = extract(&body, "token");
+    let session = extract(&body, "sessionId");
+
+    let mut stream = TcpStream::connect(&addr).unwrap();
+    stream
+        .set_read_timeout(Some(Duration::from_secs(20)))
+        .unwrap();
+    stream
+        .write_all(
+            format!(
+                "GET /agent/v1/sessions/{session}/events?follow=1 HTTP/1.1\r\nHost: localhost\r\nAuthorization: Bearer {token}\r\nConnection: close\r\n\r\n"
+            )
+            .as_bytes(),
+        )
+        .unwrap();
+    let started = Instant::now();
+    let mut buffer = String::new();
+    loop {
+        let mut chunk = [0u8; 1024];
+        let read = stream.read(&mut chunk).unwrap();
+        assert!(read > 0, "stream closed before heartbeat: {buffer}");
+        buffer.push_str(&String::from_utf8_lossy(&chunk[..read]));
+        if buffer.contains(": ping") {
+            break;
+        }
+    }
+    assert!(
+        started.elapsed() >= Duration::from_secs(14),
+        "ping arrived too early: {:?}",
+        started.elapsed()
+    );
+    std::fs::remove_dir_all(dir).ok();
+}

@@ -145,4 +145,4 @@ pipeline run、job cancel、cache clear）没有 `approvalId` 时返回 **428**�
 - MCP initialize `instructions`、`csvx://agent` 已由 stdio 测试钉住；
 - HTTP Agent API 已有端到端测试：创建会话 → schema → 428 审批 →
   approval → apply → 事件回放 → 审计 → close；
-- `follow=1` 的持续推送由端到端连接读取首块验证；另有测试在动作提交后从已打开的 SSE 流收到该动作，验证不是轮询。
+- `follow=1` 的持续推送由端到端连接读取首块验证；另有测试在动作提交后从已打开的 SSE 流收到该动作，验证不是轮询；心跳测试保持 17s 确认收到 `: ping`。
