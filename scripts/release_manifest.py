@@ -33,6 +33,10 @@ def main():
     }
     checks_path = tarball.with_name(tarball.name.replace(".tar.gz", ".verify.json"))
     checks = json.loads(checks_path.read_text()) if checks_path.exists() else None
+    manifest["verifyJson"] = checks_path.name if checks_path.exists() else None
+    manifest["verifyJsonSha256"] = (
+        hashlib.sha256(checks_path.read_bytes()).hexdigest() if checks_path.exists() else None
+    )
     manifest["checks"] = checks
     out = tarball.with_name(tarball.name.replace(".tar.gz", ".release.json"))
     out.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")

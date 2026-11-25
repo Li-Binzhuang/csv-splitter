@@ -30,6 +30,12 @@ for term in 'csvx-data-workbench' 'csvx_schema' 'approval' 'audit'; do
   }
 done
 printf 'skill=ok (surface/approval/audit)\n'
+DSH_TMP=$(mktemp -d)
+DSH_HOME="$DSH_TMP" bash "$ROOT/install_skill.sh" >/dev/null
+test -f "$DSH_TMP/skills/csvx-data/SKILL.md"
+grep -q 'name: csvx-data-workbench' "$DSH_TMP/skills/csvx-data/SKILL.md"
+printf 'skill_install=ok\n'
+rm -rf "$DSH_TMP"
 CSVX_BIN="$ROOT/csvx" bash "$ROOT/TRY_CSVX.sh" >/dev/null
 
 AGENT_DIR=$(mktemp -d)
@@ -85,6 +91,6 @@ rm -rf "$TRACE_DIR"
 
 VERIFY_RESULT="${TAR%.tar.gz}.verify.json"
 cat > "$VERIFY_RESULT" <<EOF
-{"verified":true,"checksum":"ok","members":"ok","skill":"ok","xlsx":"ok","traceReplay":$TRACE_LINES,"stats":$STATS_JSON}
+{"verified":true,"checksum":"ok","members":"ok","skill":"ok","skillInstall":"ok","xlsx":"ok","traceReplay":$TRACE_LINES,"stats":$STATS_JSON}
 EOF
 echo "verified: $TAR"

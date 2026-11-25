@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
-# Install the csvx skill into the local DSH profile.
+# Install the csvx skill into the local DSH profile (repo or packaged layout).
 set -euo pipefail
-cd "$(dirname "$0")/.."
-home=${DSH_HOME:-"$HOME/.dsh"}
-dest="$home/skills/csvx-data"
-if [[ ! -f skills/csvx-data/SKILL.md ]]; then
-  echo "missing skills/csvx-data/SKILL.md" >&2
+here=$(cd "$(dirname "$0")" && pwd)
+if [[ -f "$here/skills/csvx-data/SKILL.md" ]]; then
+  src="$here/skills/csvx-data/SKILL.md"
+elif [[ -f "$here/../skills/csvx-data/SKILL.md" ]]; then
+  src="$here/../skills/csvx-data/SKILL.md"
+else
+  echo "missing skills/csvx-data/SKILL.md (looked in $here and $here/..)" >&2
   exit 2
 fi
+home=${DSH_HOME:-"$HOME/.dsh"}
+dest="$home/skills/csvx-data"
 mkdir -p "$dest"
-cp skills/csvx-data/SKILL.md "$dest/SKILL.md"
+cp "$src" "$dest/SKILL.md"
 echo "installed: $dest/SKILL.md"
