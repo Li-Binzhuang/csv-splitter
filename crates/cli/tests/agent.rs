@@ -89,6 +89,35 @@ fn start(root: &std::path::Path, addr: &str) -> Server {
 }
 
 #[test]
+fn agent_replay_runs_recorded_tool_calls_without_a_model() {
+    let dir = std::env::temp_dir().join(format!("csvx_agent_replay_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n").unwrap();
+    let trace = dir.join("trace.jsonl");
+    std::fs::write(
+        &trace,
+        "{\"event\":\"tool\",\"tool\":\"csvx_schema\",\"arguments\":{\"path\":\"t.csv\"}}\n",
+    )
+    .unwrap();
+    let output = Command::new(bin())
+        .args([
+            "agent",
+            "replay",
+            "--root",
+            dir.to_str().unwrap(),
+            "--replay",
+            trace.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(0));
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("columns"), "{stdout}");
+    assert!(stdout.contains("city"), "{stdout}");
+    std::fs::remove_dir_all(dir).ok();
+}
+
+#[test]
 fn agent_api_honors_the_tool_allowlist() {
     let dir = std::env::temp_dir().join(format!("csvx_agent_allow_{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();

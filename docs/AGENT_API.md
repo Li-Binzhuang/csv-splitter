@@ -60,6 +60,7 @@ csvx agent run --root /path/to/data \
 - 默认不允许破坏性工具；`--allow-apply` 才放行；
 - `--max-steps` 限制循环；
 - `--skill` 把一份 Markdown skill 注入 system prompt；
+- `--trace PATH` 记录模型回复、工具参数、观察值和 final；`--replay PATH` 不调模型，按 trace 重放工具调用（见 `docs/AGENT_TRACE.md`）；
 - `--allow-apply` 才放行破坏性工具；实测 read→preview→apply 5 步 11.75 s，CSV 不动、journal 1 条。
 
 实测 Ark Economy：

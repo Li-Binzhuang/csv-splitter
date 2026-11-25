@@ -43,6 +43,9 @@ writing, and keep every path inside the configured root.
 - Runner: `csvx agent run --root DIR --endpoint ... --model ... --prompt ...`;
   set `CSVX_AGENT_API_KEY` in the environment. Destructive tools need
   `--allow-apply`.
+- Trace/replay: add `--trace run.jsonl` to record model replies and tool calls;
+  `csvx agent replay --root DIR --replay run.jsonl` re-runs the tools without a
+  model.
 
 ## Safety
 

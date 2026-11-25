@@ -625,6 +625,7 @@ enum Action {
 /// The API key is read from `CSVX_AGENT_API_KEY` (or `OPENAI_API_KEY`) and is
 /// passed to curl on stdin, never in argv or on disk. curl is used instead of
 /// adding a TLS client dependency to the whole CLI.
+#[allow(clippy::too_many_arguments)]
 pub fn run(
     root: &Path,
     endpoint: &str,
@@ -633,6 +634,7 @@ pub fn run(
     skill: Option<&Path>,
     max_steps: usize,
     allow_apply: bool,
+    trace_path: Option<&Path>,
 ) -> Result<String, String> {
     let key = std::env::var("CSVX_AGENT_API_KEY")
         .or_else(|_| std::env::var("OPENAI_API_KEY"))
@@ -652,12 +654,51 @@ pub fn run(
         ("system".to_string(), system_prompt),
         ("user".to_string(), prompt.to_string()),
     ];
+    let mut trace = match trace_path {
+        Some(path) => Some(
+            std::fs::File::create(path)
+                .map_err(|e| format!("cannot create trace {}: {e}", path.display()))?,
+        ),
+        None => None,
+    };
+    trace_line(
+        &mut trace,
+        &format!(
+            r#"{{"event":"run","endpoint":{},"model":{},"root":{},"prompt":{},"skill":{},"maxSteps":{max_steps}}}"#,
+            json_str(endpoint),
+            json_str(model),
+            json_str(&root.display().to_string()),
+            json_str(prompt),
+            json_str(
+                skill
+                    .map(|path| path.display().to_string())
+                    .unwrap_or_default()
+                    .as_str()
+            )
+        ),
+    );
     let mut last = String::new();
     for step in 1..=max_steps {
         let content = call_model(endpoint, &key, model, &messages)?;
+        trace_line(
+            &mut trace,
+            &format!(
+                r#"{{"event":"model","step":{step},"content":{}}}"#,
+                json_str(&content)
+            ),
+        );
         let action = parse_action(&content)?;
         match action {
-            Action::Final(answer) => return Ok(answer),
+            Action::Final(answer) => {
+                trace_line(
+                    &mut trace,
+                    &format!(
+                        r#"{{"event":"final","step":{step},"answer":{}}}"#,
+                        json_str(&answer)
+                    ),
+                );
+                return Ok(answer);
+            }
             Action::Tool { tool, arguments } => {
                 if is_destructive(&tool) && !allow_apply {
                     messages.push(("assistant".into(), content));
@@ -667,11 +708,28 @@ pub fn run(
                     ));
                     continue;
                 }
-                eprintln!("step {step}: {tool}");
-                let observation = match mcp_run_tool(root, &tool, &arguments) {
+                let started = std::time::Instant::now();
+                let result = mcp_run_tool(root, &tool, &arguments);
+                let elapsed_ms = started.elapsed().as_millis();
+                let observation = match result {
                     Ok(text) => text,
                     Err(error) => format!("{{\"error\":{}}}", json_str(&error)),
                 };
+                let preview: String = observation.chars().take(500).collect();
+                eprintln!(
+                    "step {step}: {tool} {} -> {}",
+                    json_render(&arguments),
+                    preview.replace('\n', " ")
+                );
+                trace_line(
+                    &mut trace,
+                    &format!(
+                        r#"{{"event":"tool","step":{step},"tool":{},"arguments":{},"observation":{},"elapsedMs":{elapsed_ms}}}"#,
+                        json_str(&tool),
+                        json_render(&arguments),
+                        json_str(&observation.chars().take(20_000).collect::<String>())
+                    ),
+                );
                 // Keep the transcript bounded; a tool result can be huge.
                 let observation: String = observation.chars().take(20_000).collect();
                 last = observation.clone();
@@ -766,6 +824,65 @@ fn call_model(
         return Err("model returned empty content (check max_tokens / endpoint)".to_string());
     }
     Ok(content.to_string())
+}
+
+fn trace_line(trace: &mut Option<std::fs::File>, line: &str) {
+    use std::io::Write as _;
+    if let Some(file) = trace {
+        let _ = writeln!(file, "{line}");
+    }
+}
+
+fn json_render(value: &McpJson) -> String {
+    match value {
+        McpJson::Null => "null".to_string(),
+        McpJson::Bool(value) => value.to_string(),
+        McpJson::Number(value) => value.to_string(),
+        McpJson::String(value) => json_str(value),
+        McpJson::Array(items) => format!(
+            "[{}]",
+            items.iter().map(json_render).collect::<Vec<_>>().join(",")
+        ),
+        McpJson::Object(fields) => format!(
+            "{{{}}}",
+            fields
+                .iter()
+                .map(|(key, value)| format!("{}:{}", json_str(key), json_render(value)))
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+    }
+}
+
+/// Replay recorded tool actions without calling a model.
+pub fn replay(trace_path: &Path, root: &Path) -> Result<(), String> {
+    let text = std::fs::read_to_string(trace_path)
+        .map_err(|e| format!("cannot read trace {}: {e}", trace_path.display()))?;
+    for (line_no, line) in text.lines().enumerate() {
+        if line.trim().is_empty() {
+            continue;
+        }
+        let value =
+            McpParser::parse(line).map_err(|e| format!("trace line {}: {e}", line_no + 1))?;
+        let event = value.get("event").and_then(McpJson::as_str).unwrap_or("");
+        if event != "tool" {
+            continue;
+        }
+        let tool = value
+            .get("tool")
+            .and_then(McpJson::as_str)
+            .ok_or_else(|| format!("trace line {} has no tool", line_no + 1))?;
+        let arguments = value.get("arguments").cloned().unwrap_or(McpJson::Null);
+        eprintln!(
+            "replay {}: {} {}",
+            line_no + 1,
+            tool,
+            json_render(&arguments)
+        );
+        let output = mcp_run_tool(root, tool, &arguments)?;
+        println!("{output}");
+    }
+    Ok(())
 }
 
 fn parse_action(content: &str) -> Result<Action, String> {

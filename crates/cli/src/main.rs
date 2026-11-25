@@ -528,6 +528,8 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--max-steps", "Maximum tool steps (default 4)"),
             ("--allow-apply", "Allow destructive tools during agent run"),
             ("--skill", "Markdown skill file injected into the agent system prompt"),
+            ("--trace", "Write a JSONL trace of model responses and tool calls"),
+            ("--replay", "Replay tool calls from a trace without a model"),
         ],
     ),
     (
@@ -3711,12 +3713,28 @@ fn cmd_agent(args: &[String]) -> i32 {
     let mut max_steps = 4usize;
     let mut allow_apply = false;
     let mut skill: Option<PathBuf> = None;
+    let mut trace: Option<PathBuf> = None;
+    let mut replay_trace: Option<PathBuf> = None;
     if let Some(first) = args.first().filter(|arg| !arg.starts_with('-')) {
         action = first.clone();
     }
     while let Some(arg) = p.next() {
         match arg.as_str() {
-            "serve" | "manifest" | "run" => action = arg,
+            "serve" | "manifest" | "run" | "replay" => action = arg,
+            "--trace" => match p.value("--trace") {
+                Ok(value) => trace = Some(PathBuf::from(value)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--replay" => match p.value("--replay") {
+                Ok(value) => replay_trace = Some(PathBuf::from(value)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--endpoint" => match p.value("--endpoint") {
                 Ok(value) => endpoint = Some(value),
                 Err(e) => {
@@ -3798,6 +3816,19 @@ fn cmd_agent(args: &[String]) -> i32 {
         println!("{}", agent::manifest());
         return 0;
     }
+    if action == "replay" {
+        let (Some(root), Some(trace)) = (root, replay_trace) else {
+            eprintln!("error: agent replay needs --root and --replay");
+            return 2;
+        };
+        return match agent::replay(&trace, &root) {
+            Ok(()) => 0,
+            Err(error) => {
+                eprintln!("error: {error}");
+                1
+            }
+        };
+    }
     if action == "run" {
         let (Some(endpoint), Some(model), Some(prompt), Some(root)) =
             (endpoint, model, prompt, root)
@@ -3813,6 +3844,7 @@ fn cmd_agent(args: &[String]) -> i32 {
             skill.as_deref(),
             max_steps.clamp(1, 12),
             allow_apply,
+            trace.as_deref(),
         ) {
             Ok(answer) => {
                 println!("{answer}");
