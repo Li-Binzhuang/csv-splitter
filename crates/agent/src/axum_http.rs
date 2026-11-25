@@ -165,7 +165,22 @@ async fn h_action(
     body: String,
 ) -> Response {
     match token(&headers) {
-        Ok(token) => call(|out| run_action(out, &app.state, &app.root, &id, &token, &body)),
+        Ok(token) => {
+            let state = app.state;
+            let root = app.root;
+            let result = tokio::task::spawn_blocking(move || {
+                let mut raw = Vec::new();
+                run_action(&mut raw, &state, &root, &id, &token, &body).map(|()| raw)
+            })
+            .await;
+            match result {
+                Ok(Ok(raw)) => raw_response(raw),
+                _ => json_response(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    r#"{"error":"action failed"}"#,
+                ),
+            }
+        }
         Err(response) => *response,
     }
 }
@@ -269,7 +284,7 @@ async fn h_events(
         Ok(token) => token,
         Err(response) => return *response,
     };
-    let (audit, follow) = {
+    let (audit, follow, async_notify) = {
         let sessions = match app.state.sessions.lock() {
             Ok(sessions) => sessions,
             Err(_) => {
@@ -291,6 +306,7 @@ async fn h_events(
                 .get("follow")
                 .map(|value| value == "1")
                 .unwrap_or(false),
+            session.async_notify.clone(),
         )
     };
     let (tx, rx) = mpsc::channel::<Result<Event, Infallible>>(8);
@@ -318,7 +334,10 @@ async fn h_events(
             if !follow || Instant::now() >= deadline {
                 break;
             }
-            tokio::time::sleep(Duration::from_millis(250)).await;
+            tokio::select! {
+                _ = async_notify.notified() => {}
+                _ = tokio::time::sleep(Duration::from_millis(250)) => {}
+            }
             if last_ping.elapsed() >= Duration::from_secs(15) {
                 if tx.send(Ok(Event::default().comment("ping"))).await.is_err() {
                     return;
@@ -377,6 +396,7 @@ pub fn serve(root: &FsPath, addr: &str) -> io::Result<()> {
         )
     })?;
     let runtime = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(4)
         .enable_all()
         .build()?;
     runtime.block_on(async move {

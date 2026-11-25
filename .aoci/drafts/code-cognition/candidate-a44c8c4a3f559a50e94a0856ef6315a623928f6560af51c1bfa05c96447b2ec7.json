@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "0cfb812ecdac2cd1ba6e13167bb57eeea9dd769f3df3b5668539961766ea8d02",
+  "batch_id": "a44c8c4a3f559a50e94a0856ef6315a623928f6560af51c1bfa05c96447b2ec7",
+  "composite_identity": "7b1ac5bda1165edad68c49a2804f3afe5220e71e2ed38d285ff946c53ec9adce",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b14e94b39abdec1ee6e48a5918b29bfabc6e969bd9db898435ae083c078c24bc",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/agent/src/axum_http.rs",
+      "path": "crates/agent/src/axum_http.rs",
+      "change": "update",
+      "source_sha256": "e3457fb2dfc44f1e08288b67b1e463133364dc38c9b10b7dce23d37b67c867a8",
+      "existing_entry": "axum_http.rs[MN7T]: F:Agent API 的 axum HTTP/SSE 传输层 | R:code:crates/agent/src/lib.rs,code:crates/agent/Cargo.toml | A:Router 覆盖 manifest/sessions/actions/approvals/close/events/audit/trace/replay/curl/runbook；捕获旧响应转 axum；SSE 轮询 audit 并 15s ping；body limit；loopback | S:会话/审批语义留在 lib；SSE 60s；不加 TLS/多用户；auth 仍 Bearer"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/agent/src/lib.rs",
+      "path": "crates/agent/src/lib.rs",
+      "change": "update",
+      "source_sha256": "ccbdef823c730127900a40160571dd7069c542e2796d5a11b941c149b68a31bd",
+      "existing_entry": "lib.rs[EN9L]: F:Agent 控制面：session、审批、审计、trace/replay 与 runner | R:code:crates/agent/Cargo.toml,code:crates/mcp/src/lib.rs,code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md | A:loopback；sessions/actions/approvals/close；audit/trace/replay/curl/runbook；审批 TTL；MCP 工具来自 csvx-mcp；传输由 axum_http 提供 | S:audit 无 token；SSE 60s；trace 含数据；runner 仅兼容；token 仅 header"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "11045e67d8cf72065e9e7f57473d09203a3facd1bc46b1512e321645ef47f60b",
+      "object_ref": "code:crates/agent/src/axum_http.rs",
+      "path": "crates/agent/src/axum_http.rs",
+      "change": "update",
+      "source_sha256": "e3457fb2dfc44f1e08288b67b1e463133364dc38c9b10b7dce23d37b67c867a8",
+      "existing_entry": "axum_http.rs[MN7T]: F:Agent API 的 axum HTTP/SSE 传输层 | R:code:crates/agent/src/lib.rs,code:crates/agent/Cargo.toml | A:Router 覆盖 manifest/sessions/actions/approvals/close/events/audit/trace/replay/curl/runbook；捕获旧响应转 axum；SSE 轮询 audit 并 15s ping；body limit；loopback | S:会话/审批语义留在 lib；SSE 60s；不加 TLS/多用户；auth 仍 Bearer"
+    },
+    {
+      "candidate_id": "641bfab6f761947f27904507ccf24ffa974c17976e0a64c7ab27ff9d937a5018",
+      "object_ref": "code:crates/agent/src/lib.rs",
+      "path": "crates/agent/src/lib.rs",
+      "change": "update",
+      "source_sha256": "ccbdef823c730127900a40160571dd7069c542e2796d5a11b941c149b68a31bd",
+      "existing_entry": "lib.rs[EN9L]: F:Agent 控制面：session、审批、审计、trace/replay 与 runner | R:code:crates/agent/Cargo.toml,code:crates/mcp/src/lib.rs,code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md | A:loopback；sessions/actions/approvals/close；audit/trace/replay/curl/runbook；审批 TTL；MCP 工具来自 csvx-mcp；传输由 axum_http 提供 | S:audit 无 token；SSE 60s；trace 含数据；runner 仅兼容；token 仅 header"
+    }
+  ]
+}

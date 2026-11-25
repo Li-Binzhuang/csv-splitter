@@ -37,6 +37,7 @@ struct Session {
     created: SystemTime,
     approvals: HashMap<String, (String, Instant)>,
     notify: Arc<(Mutex<u64>, Condvar)>,
+    async_notify: Arc<tokio::sync::Notify>,
     allowed: Option<Vec<String>>,
     audit: PathBuf,
 }
@@ -118,6 +119,7 @@ fn create_session(
         created: SystemTime::now(),
         approvals: HashMap::new(),
         notify: Arc::new((Mutex::new(0), Condvar::new())),
+        async_notify: Arc::new(tokio::sync::Notify::new()),
         allowed,
         audit,
     };
@@ -262,7 +264,7 @@ fn run_action(
         .and_then(McpJson::as_str)
         .map(str::to_string);
     let destructive = is_destructive(&tool);
-    let (root, audit, notify) = {
+    let (root, audit, notify, async_notify) = {
         let mut sessions = match state.sessions.lock() {
             Ok(sessions) => sessions,
             Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
@@ -331,12 +333,13 @@ fn run_action(
             session.root.clone(),
             session.audit.clone(),
             session.notify.clone(),
+            session.async_notify.clone(),
         )
     };
     let started = SystemTime::now();
     let args_json = json_render(&args);
     append_audit(&audit, id, &tool, "running", 0, "", &args_json);
-    signal(&notify);
+    signal(&notify, &async_notify);
     let result = mcp_run_tool(&root, &tool, &args);
     let elapsed_ms = started.elapsed().map(|e| e.as_millis()).unwrap_or(0);
     let (status, output) = match result {
@@ -344,7 +347,7 @@ fn run_action(
         Err(error) => ("error", error),
     };
     append_audit(&audit, id, &tool, status, elapsed_ms, &output, &args_json);
-    signal(&notify);
+    signal(&notify, &async_notify);
     let response = format!(
         r#"{{"status":{},"tool":{},"elapsedMs":{},"output":{}}}"#,
         json_str(status),
@@ -444,7 +447,7 @@ fn approval(
         &approval_id,
         "null",
     );
-    signal(&session.notify);
+    signal(&session.notify, &session.async_notify);
     let response = format!(
         r#"{{"approved":true,"approvalId":{}}}"#,
         json_str(&approval_id)
@@ -1015,11 +1018,12 @@ fn is_destructive(tool: &str) -> bool {
     )
 }
 
-fn signal(notify: &Arc<(Mutex<u64>, Condvar)>) {
+fn signal(notify: &Arc<(Mutex<u64>, Condvar)>, async_notify: &Arc<tokio::sync::Notify>) {
     if let Ok(mut generation) = notify.0.lock() {
         *generation += 1;
     }
     notify.1.notify_all();
+    async_notify.notify_one();
 }
 
 fn append_audit(
