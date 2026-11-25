@@ -41,9 +41,39 @@ AGENT_OUT=$(python3 "$ROOT/scripts/agent_routes_smoke.py" --api "http://127.0.0.
 printf '%s\n' "$AGENT_OUT"
 printf 'stats: %s\n' "$AGENT_OUT"
 STATS_JSON=$(printf '%s\n' "$AGENT_OUT" | sed -n 's/^stats_json=//p' | tail -1)
-python3 -c 'import json,sys; d=json.loads(sys.argv[1]); assert d["routes"] == 12, d; assert d["replay"] == d["actions"], d; assert d["sse_ms"] < 250, d' "$STATS_JSON"
-printf 'thresholds=ok\n'
+python3 - "$STATS_JSON" <<'PY'
+import json
+import sys
+
+stats = json.loads(sys.argv[1])
+failures = []
+if stats.get("routes") != 12:
+    failures.append(f"routes={stats.get('routes')} (want 12)")
+if stats.get("replay") != stats.get("actions"):
+    failures.append(f"replay={stats.get('replay')} actions={stats.get('actions')}")
+if not stats.get("sse_ms", 10**9) < 250:
+    failures.append(f"sse_ms={stats.get('sse_ms')} (want <250)")
+if failures:
+    print("threshold mismatch: " + "; ".join(failures), file=sys.stderr)
+    sys.exit(1)
+print("thresholds=ok")
+PY
 kill "$AGENT_PID" 2>/dev/null || true
 wait "$AGENT_PID" 2>/dev/null || true
+
+XLSX_DIR=$(mktemp -d)
+printf 'date,city,amount\n2026-10-20,CDMX,1200\n2026-10-21,Puebla,20\n' > "$XLSX_DIR/x.csv"
+"$ROOT/csvx" convert "$XLSX_DIR/x.csv" --format xlsx -o "$XLSX_DIR/x.xlsx" --highlight "amount>1000:red"
+python3 - "$XLSX_DIR/x.xlsx" <<'PY'
+import sys
+import zipfile
+
+with zipfile.ZipFile(sys.argv[1]) as archive:
+    names = archive.namelist()
+if "xl/worksheets/sheet1.xml" not in names:
+    raise SystemExit(f"xlsx missing sheet1: {names}")
+print("xlsx=ok")
+PY
+rm -rf "$XLSX_DIR"
 
 echo "verified: $TAR"
