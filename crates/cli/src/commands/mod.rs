@@ -1,5 +1,6 @@
 pub(crate) mod agent;
 pub(crate) mod convert;
+pub(crate) mod edit;
 pub(crate) mod filter;
 pub(crate) mod gate;
 pub(crate) mod mcp;
