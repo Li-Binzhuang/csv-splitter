@@ -142,6 +142,9 @@ fn handle(mut stream: TcpStream, root: &Path, state: &State) -> io::Result<()> {
         let follow = query.split('&').any(|pair| pair == "follow=1");
         return events(&mut stream, state, session_id, token, follow);
     }
+    if method == "GET" && action == "audit" {
+        return audit_log(&mut stream, state, session_id, token);
+    }
     respond_json(&mut stream, 404, r#"{"error":"not found"}"#)
 }
 
@@ -341,6 +344,7 @@ fn run_action(
         (session.root.clone(), session.audit.clone())
     };
     let started = SystemTime::now();
+    append_audit(&audit, id, &tool, "running", 0, "");
     let result = mcp_run_tool(&root, &tool, &args);
     let elapsed_ms = started.elapsed().map(|e| e.as_millis()).unwrap_or(0);
     let (status, output) = match result {
@@ -419,6 +423,34 @@ fn close(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Re
     append_audit(&audit, id, "session.close", "ok", 0, "closed");
     sessions.remove(id);
     respond_json(stream, 200, r#"{"closed":true}"#)
+}
+
+fn audit_log(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
+    let sessions = match state.sessions.lock() {
+        Ok(sessions) => sessions,
+        Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
+    };
+    let Some(session) = sessions.get(id) else {
+        return respond_json(stream, 404, r#"{"error":"unknown session"}"#);
+    };
+    if !constant_eq(&session.token, token) {
+        return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
+    }
+    let text = std::fs::read_to_string(&session.audit).unwrap_or_default();
+    let body = format!(
+        r#"{{"session":{},"lines":{}}}"#,
+        json_str(id),
+        text.lines().count()
+    );
+    // Keep raw JSONL after a marker; callers that need structure can parse each line.
+    let body = format!("{body}\n{}", text);
+    stream.write_all(
+        format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: application/x-ndjson\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        )
+        .as_bytes(),
+    )
 }
 
 fn events(

@@ -85,6 +85,7 @@ csvx agent manifest
 | GET | `/agent/v1/sessions/{id}` | 状态/摘要 |
 | POST | `/agent/v1/sessions/{id}/actions` | 执行一个 MCP 工具 |
 | GET | `/agent/v1/sessions/{id}/events` | 审计事件回放；`?follow=1` 持续推送最多 60s |
+| GET | `/agent/v1/sessions/{id}/audit` | 原始审计 JSONL；动作前写 `running`，结束后写 `ok/error` |
 | POST | `/agent/v1/sessions/{id}/approvals` | 批准/拒绝破坏性工具 |
 | POST | `/agent/v1/sessions/{id}/close` | 关闭并落审计 |
 
@@ -106,7 +107,8 @@ pipeline run、job cancel、cache clear）没有 `approvalId` 时返回 **428**�
 - 会话 token 只在创建响应返回一次，绑定 root 和 8 小时 TTL；
 - 创建时传 `allowedTools:["csvx_schema"]` 会把该会话限制在列出的工具，
   其他动作返回 **403**；不传则沿用默认全工具 + 破坏性审批；
-- 审计写 `<root>/.csvx-agent/audit.jsonl`，不含 token/key；
+- 审计写 `<root>/.csvx-agent/audit.jsonl`，不含 token/key；每个动作有
+  `running` 和最终 `ok/error` 两行；
 - 所有路径 canonical + root 内；
 - SSE 默认回放后关闭；`?follow=1` 轮询审计文件并持续推送最多 60s；
 - 没有多用户角色，token 只是单用户本地能力边界。
