@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "4dafd39858a6a6e5fc1ff73c1f2263199eb168913b759f788a59d3fa2e733e3b",
+  "batch_id": "8c1cb49c74c7585b1c80c09bb5ad2690f90caf67bcf2e0e513faa8a1be7883ec",
+  "composite_identity": "c84b69ee7a9fa156b1b8714c91bff9bc55eb109dab2b0c12b29d49df164a1aa2",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "aacee779aac2c08284cdc5114cf78b8748b60c03c8c82a3e02ae85e555e99658",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "78998513e7d8f7e97395f4afbb928cd8e698920a100e8b7d0ed2c3aa080220aa",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:crates/core/src/xlsx.rs | A:CLI 入口；convert xlsx + --highlight；report md/html/xlsx（含 datecounts）；gate/concat/edit/view/filter/watch；agent serve/manifest/run(--trace)/replay+skill | S:report xlsx 四类 section；compare 限 root；xlsx 行上限；agent 端口 8788；runner key 仅 env"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "e91711c07cc25ccd9bf5aea1f07df95fb800d2ac2b1be49ffcaebafb2fadd996",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/FORMULA_CACHE.md | A:公式缓存；filter 压缩；gate+unique-global；concat；report md/html/xlsx；datecounts 日期计数；convert xlsx 日期/条件格式；typed view/apply；MCP 23 工具；agent serve | S:report xlsx 仅四类 section；无 GUI；日期仅 ISO；highlight 只 cellIs；Agent SSE 轮询；缓存 64 页"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/XLSX.md",
+      "path": "docs/XLSX.md",
+      "change": "update",
+      "source_sha256": "6f0f145d69e465130a3c9ce4968e13d0c9e9dd010f8a426ec0623fe3e48ed42d",
+      "existing_entry": "XLSX.md[SD7T]: F:xlsx 互操作现状与边界：导出、目录多 sheet、导入、report xlsx、日期/条件格式 | R:code:crates/core/src/xlsx.rs,code:crates/cli/src/main.rs,code:docs/CAPABILITIES.md | A:convert 流式导出；目录多 sheet 冻结/列宽；导入；MCP sheet；report xlsx + datecounts；严格 ISO 日期 numFmtId=14 往返；--highlight cellIs+dxf | S:只写值不写公式；日期仅 ISO；highlight 仅 cellIs；不做宏/VBA；样式/合并忽略"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:skills/csvx-data/SKILL.md",
+      "path": "skills/csvx-data/SKILL.md",
+      "change": "update",
+      "source_sha256": "4ad1b303479fe9495ee42a5c11f0a46fcbaee7ee26d0abee77b49912ffa38252",
+      "existing_entry": "SKILL.md[SD7T]: F:csvx-data-workbench skill：引导 Agent 用 csvx 读写、报表、xlsx 与 Agent API | R:code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md,code:docs/XLSX.md | A:先 schema/view；edit preview→apply；undo；xlsx 日期/条件格式/datecounts；Agent API/runner；--trace/--replay | S:skill 不授权破坏性；日期仅 ISO；highlight 仅 cellIs；trace 含数据；key 不落盘"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "b382799744a0eec3be1f1e4c7cd42fc7739702e162e3b2ee905abe63c0a426f4",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "78998513e7d8f7e97395f4afbb928cd8e698920a100e8b7d0ed2c3aa080220aa",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:crates/core/src/xlsx.rs | A:CLI 入口；convert xlsx + --highlight；report md/html/xlsx（含 datecounts）；gate/concat/edit/view/filter/watch；agent serve/manifest/run(--trace)/replay+skill | S:report xlsx 四类 section；compare 限 root；xlsx 行上限；agent 端口 8788；runner key 仅 env"
+    },
+    {
+      "candidate_id": "0c215a45f3050486e1b923631c681f33f088c33d762dbc89095f3b97902528dc",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "e91711c07cc25ccd9bf5aea1f07df95fb800d2ac2b1be49ffcaebafb2fadd996",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/FORMULA_CACHE.md | A:公式缓存；filter 压缩；gate+unique-global；concat；report md/html/xlsx；datecounts 日期计数；convert xlsx 日期/条件格式；typed view/apply；MCP 23 工具；agent serve | S:report xlsx 仅四类 section；无 GUI；日期仅 ISO；highlight 只 cellIs；Agent SSE 轮询；缓存 64 页"
+    },
+    {
+      "candidate_id": "8fd42b6e99217b5d27690c9e00107544b3dc5335e740c7a5ecbf756ddd63cb88",
+      "object_ref": "code:docs/XLSX.md",
+      "path": "docs/XLSX.md",
+      "change": "update",
+      "source_sha256": "6f0f145d69e465130a3c9ce4968e13d0c9e9dd010f8a426ec0623fe3e48ed42d",
+      "existing_entry": "XLSX.md[SD7T]: F:xlsx 互操作现状与边界：导出、目录多 sheet、导入、report xlsx、日期/条件格式 | R:code:crates/core/src/xlsx.rs,code:crates/cli/src/main.rs,code:docs/CAPABILITIES.md | A:convert 流式导出；目录多 sheet 冻结/列宽；导入；MCP sheet；report xlsx + datecounts；严格 ISO 日期 numFmtId=14 往返；--highlight cellIs+dxf | S:只写值不写公式；日期仅 ISO；highlight 仅 cellIs；不做宏/VBA；样式/合并忽略"
+    },
+    {
+      "candidate_id": "f8b664715d402f04ddce763878c0833d7eadf22eb6f436efe953c2bbc85b86ee",
+      "object_ref": "code:skills/csvx-data/SKILL.md",
+      "path": "skills/csvx-data/SKILL.md",
+      "change": "update",
+      "source_sha256": "4ad1b303479fe9495ee42a5c11f0a46fcbaee7ee26d0abee77b49912ffa38252",
+      "existing_entry": "SKILL.md[SD7T]: F:csvx-data-workbench skill：引导 Agent 用 csvx 读写、报表、xlsx 与 Agent API | R:code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md,code:docs/XLSX.md | A:先 schema/view；edit preview→apply；undo；xlsx 日期/条件格式/datecounts；Agent API/runner；--trace/--replay | S:skill 不授权破坏性；日期仅 ISO；highlight 仅 cellIs；trace 含数据；key 不落盘"
+    }
+  ]
+}
