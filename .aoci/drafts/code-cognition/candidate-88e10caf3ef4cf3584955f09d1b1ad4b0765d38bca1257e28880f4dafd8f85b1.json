@@ -1,0 +1,43 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "4e92eebdaeeabe7daf381a5173271c9a2365a6b7b4c92c3d90c859feea16ab8f",
+  "batch_id": "88e10caf3ef4cf3584955f09d1b1ad4b0765d38bca1257e28880f4dafd8f85b1",
+  "composite_identity": "f2e0658fdbd5fe8f2ae8ab204bb77b65c2144b7202f8d7f1212947f48f0c046c",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "65f982a98b0ef653642d4344d58108ef09b137b79081b03142d581bf8397e680",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "b7326a253075b67fdbffffb10a398b2c09c7273d896f96514591cb26c2c38503",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:scripts/verify_dist.sh,code:docs/ACCEPTANCE.md,code:docs/QUICKSTART_AGENT.md | A:打包二进制/docs（AGENT_API/AGENT_TRACE/QUICKSTART_AGENT/NIGHT_CHECKPOINT/DSH_SKILL/FORMULA_CACHE/XLSX）、AGENT_QUICKSTART/TRY_CSVX、examples、scripts/agent_routes_smoke.py、mcp_sdk、skills；sha256 后 verify_dist | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist_negative.sh",
+      "path": "scripts/verify_dist_negative.sh",
+      "change": "create",
+      "source_sha256": "a6a750295f76d66643932919943faf684e39bf8614deb66263065ef78604a123"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "c92a6dc56209d624e68b464cd85ed92ac1a454dfe72dd4a66894fc8f528f1af5",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "b7326a253075b67fdbffffb10a398b2c09c7273d896f96514591cb26c2c38503",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:scripts/verify_dist.sh,code:docs/ACCEPTANCE.md,code:docs/QUICKSTART_AGENT.md | A:打包二进制/docs（AGENT_API/AGENT_TRACE/QUICKSTART_AGENT/NIGHT_CHECKPOINT/DSH_SKILL/FORMULA_CACHE/XLSX）、AGENT_QUICKSTART/TRY_CSVX、examples、scripts/agent_routes_smoke.py、mcp_sdk、skills；sha256 后 verify_dist | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    },
+    {
+      "candidate_id": "6705666b75b858ef2d4d2dc5fc2fba19f924ab08bce04df9ff6c69b762a7f139",
+      "object_ref": "code:scripts/verify_dist_negative.sh",
+      "path": "scripts/verify_dist_negative.sh",
+      "change": "create",
+      "source_sha256": "a6a750295f76d66643932919943faf684e39bf8614deb66263065ef78604a123"
+    }
+  ]
+}
