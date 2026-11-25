@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "4d11aff9502eb9140c89e7b0b10ab8ffb113abf179771fdadf35298fff44c9f4",
+  "batch_id": "4c1838ffcd8c9e813962bdee2a192ab18305ba2f3b53ee7fcdc3c9557c978424",
+  "composite_identity": "3ee03e65dfb63bd81a2a3294f7bc530920336ca8b1703c62c1f0d2ef83e17b8b",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b852a4661c5b65d4e6d465c37773f3273e0a184e77a962454f83018e0c2eeb33",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "b6ddcc3c3bab0cc3c844f541827e46a07b5b3969e7ce6c38bdecebb276c66735",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate 的统一入口 | R:code:scripts/smoke.sh | A:check 默认检查 csvx-core 的 --all-targets；test 参数直传 cargo test；gate 依次跑 fmt、两个 crate 的 clippy -D warnings、workspace 测试（失败可见重试一次并标 tests-retry）、csvx-core --features sql 测试；每阶段自报开始与结束 | S:gate 必须带 sql feature 跑 core 测试；重试只为负载 flake，断言不得放松，两次都红即失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "5ec11db139d7244143d1d84389350d929a263ee80f90a9007e09bb6c0dc22647",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验日志 | R:code:README.md,code:scripts/verify_dist.sh,code:docs/ACCEPTANCE.md,code:docs/QUICKSTART_AGENT.md | A:打包二进制/docs（AGENT_API/AGENT_TRACE/QUICKSTART_AGENT/NIGHT_CHECKPOINT）、AGENT_QUICKSTART/TRY_CSVX、examples、scripts/agent_routes_smoke.py、mcp_sdk、skills；sha256 后 verify_dist 并 tee verify.log | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "288d97712775713461a1cbf15b226d9e250c201b9a42553f3fac680ad142796b",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "b6ddcc3c3bab0cc3c844f541827e46a07b5b3969e7ce6c38bdecebb276c66735",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate 的统一入口 | R:code:scripts/smoke.sh | A:check 默认检查 csvx-core 的 --all-targets；test 参数直传 cargo test；gate 依次跑 fmt、两个 crate 的 clippy -D warnings、workspace 测试（失败可见重试一次并标 tests-retry）、csvx-core --features sql 测试；每阶段自报开始与结束 | S:gate 必须带 sql feature 跑 core 测试；重试只为负载 flake，断言不得放松，两次都红即失败"
+    },
+    {
+      "candidate_id": "613c13270e0ddbe87afb0244786449d91cc069fee55936324447e5104df81651",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "5ec11db139d7244143d1d84389350d929a263ee80f90a9007e09bb6c0dc22647",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验日志 | R:code:README.md,code:scripts/verify_dist.sh,code:docs/ACCEPTANCE.md,code:docs/QUICKSTART_AGENT.md | A:打包二进制/docs（AGENT_API/AGENT_TRACE/QUICKSTART_AGENT/NIGHT_CHECKPOINT）、AGENT_QUICKSTART/TRY_CSVX、examples、scripts/agent_routes_smoke.py、mcp_sdk、skills；sha256 后 verify_dist 并 tee verify.log | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    }
+  ]
+}
