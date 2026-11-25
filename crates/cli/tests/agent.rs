@@ -89,6 +89,63 @@ fn start(root: &std::path::Path, addr: &str) -> Server {
 }
 
 #[test]
+fn agent_manifest_endpoints_are_live() {
+    let dir = std::env::temp_dir().join(format!("csvx_agent_routes_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n").unwrap();
+    let addr = free_addr();
+    let _server = start(&dir, &addr);
+
+    let (status, manifest) = request(&addr, "GET", "/agent/v1/manifest", None, "");
+    assert_eq!(status, 200, "{manifest}");
+    for path in [
+        "/agent/v1/sessions",
+        "/agent/v1/sessions/{id}/actions",
+        "/agent/v1/sessions/{id}/audit",
+        "/agent/v1/sessions/{id}/replay",
+        "/agent/v1/sessions/{id}/curl",
+        "/agent/v1/sessions/{id}/runbook.md",
+        "/agent/v1/sessions/{id}/approvals",
+    ] {
+        assert!(
+            manifest.contains(path),
+            "manifest missing {path}: {manifest}"
+        );
+    }
+
+    let (status, body) = request(
+        &addr,
+        "POST",
+        "/agent/v1/sessions",
+        None,
+        r#"{"agent":"routes"}"#,
+    );
+    assert_eq!(status, 201, "{body}");
+    let token = extract(&body, "token");
+    let session = extract(&body, "sessionId");
+    let endpoints = [
+        format!("/agent/v1/sessions/{session}"),
+        format!("/agent/v1/sessions/{session}/actions"),
+        format!("/agent/v1/sessions/{session}/actions.md"),
+        format!("/agent/v1/sessions/{session}/actions.html"),
+        format!("/agent/v1/sessions/{session}/audit"),
+        format!("/agent/v1/sessions/{session}/trace"),
+        format!("/agent/v1/sessions/{session}/replay"),
+        format!("/agent/v1/sessions/{session}/curl"),
+        format!("/agent/v1/sessions/{session}/runbook"),
+        format!("/agent/v1/sessions/{session}/runbook.md"),
+        format!("/agent/v1/sessions/{session}/approvals"),
+    ];
+    for endpoint in &endpoints {
+        let (status, body) = request(&addr, "GET", endpoint, Some(&token), "");
+        assert_eq!(status, 200, "{endpoint}: {body}");
+    }
+    let (status, body) = request(&addr, "GET", "/agent/v1/sessions", Some(&token), "");
+    assert_eq!(status, 200, "{body}");
+    std::fs::remove_dir_all(dir).ok();
+}
+
+#[test]
 fn agent_replay_runs_recorded_tool_calls_without_a_model() {
     let dir = std::env::temp_dir().join(format!("csvx_agent_replay_{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
