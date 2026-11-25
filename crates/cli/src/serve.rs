@@ -9317,7 +9317,7 @@ fn mcp_run_pipeline_streaming(
 /// Machine-readable manifest served as `csvx://agent` and reused by docs/tests.
 pub(crate) fn agent_manifest_json() -> String {
     format!(
-        r#"{{"protocol":"csvx-agent/1","transport":["mcp-stdio","http"],"tools":{},"workflow":["schema","view","edit_preview","edit_apply","report","gate"],"safety":{{"preview_before_apply":true,"root_bound":true,"single_user":true,"gui":false}},"instructions":{}}}"#,
+        r#"{{"protocol":"csvx-agent/1","transport":["mcp-stdio","http"],"tools":{},"workflow":["schema","view","edit_preview","edit_apply","report","gate"],"safety":{{"preview_before_apply":true,"root_bound":true,"single_user":true,"gui":false}},"endpoints":{{"manifest":"/agent/v1/manifest","sessions":"/agent/v1/sessions","actions":"/agent/v1/sessions/{{id}}/actions","audit":"/agent/v1/sessions/{{id}}/audit","replay":"/agent/v1/sessions/{{id}}/replay","curl":"/agent/v1/sessions/{{id}}/curl","runbook":"/agent/v1/sessions/{{id}}/runbook.md","approvals":"/agent/v1/sessions/{{id}}/approvals"}},"instructions":{}}}"#,
         mcp_tools(),
         mcp_quote(AGENT_INSTRUCTIONS)
     )

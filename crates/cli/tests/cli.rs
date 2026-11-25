@@ -3094,6 +3094,8 @@ fn mcp_stdio_lists_and_calls_read_only_tools() {
     assert!(stdout.contains(r#""uri":"csvx://agent""#), "{stdout}");
     assert!(stdout.contains("csvx-agent/1"), "{stdout}");
     assert!(stdout.contains("preview_before_apply"), "{stdout}");
+    assert!(stdout.contains("endpoints"), "{stdout}");
+    assert!(stdout.contains("/agent/v1/sessions"), "{stdout}");
     assert!(stdout.contains("\"instructions\""), "{stdout}");
     assert!(stdout.contains("unknown resource"), "{stdout}");
     assert!(stdout.contains(r#""code":-32002"#), "{stdout}");
