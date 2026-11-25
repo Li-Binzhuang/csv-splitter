@@ -41,6 +41,7 @@ def main():
     manifest["verifyFailedAt"] = checks.get("failedAt") if checks else None
     manifest["verifyDurationMs"] = checks.get("durationMs") if checks else None
     manifest["verifyPhaseMs"] = checks.get("phaseMs") if checks else None
+    manifest["agentSseLimitMs"] = 100
     manifest["verifyPhaseLimitsMs"] = {
         "extract": 2000,
         "skill": 3000,

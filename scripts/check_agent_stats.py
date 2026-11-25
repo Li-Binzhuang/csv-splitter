@@ -3,6 +3,8 @@
 import json
 import sys
 
+SSE_LIMIT_MS = 100
+
 
 def check(stats):
     failures = []
@@ -10,8 +12,8 @@ def check(stats):
         failures.append(f"routes={stats.get('routes')} (want 12)")
     if stats.get("replay") != stats.get("actions"):
         failures.append(f"replay={stats.get('replay')} actions={stats.get('actions')}")
-    if not stats.get("sse_ms", 10**9) < 250:
-        failures.append(f"sse_ms={stats.get('sse_ms')} (want <250)")
+    if not stats.get("sse_ms", 10**9) < SSE_LIMIT_MS:
+        failures.append(f"sse_ms={stats.get('sse_ms')} (want <{SSE_LIMIT_MS})")
     return failures
 
 
