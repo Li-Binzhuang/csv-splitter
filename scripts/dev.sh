@@ -69,6 +69,13 @@ case "${1:-check}" in
     # workspace alone builds core *without* it, so core's own SQL tests — the read-only
     # guard, the query wrapper — used to be skipped by the gate entirely.
     run_stage tests-sql cargo test -p csvx-core --features sql --quiet
+    VERIFY_BIN=target/release/csvx
+    [ -x "$VERIFY_BIN" ] || VERIFY_BIN=target/debug/csvx
+    if [ -x "$VERIFY_BIN" ]; then
+      run_stage verify-negative env BIN="$VERIFY_BIN" bash scripts/verify_dist_negative.sh
+    else
+      printf '== verify-negative skipped: no release/debug binary ==\n'
+    fi
     echo "== gate passed =="
     ;;
   *)
