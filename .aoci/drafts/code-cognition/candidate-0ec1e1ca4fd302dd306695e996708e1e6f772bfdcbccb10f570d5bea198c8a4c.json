@@ -1,0 +1,161 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "fbb284bd2eaf958607d3b89b38f39cbcc258a8993d1b448afd8d417a23c5dbc1",
+  "batch_id": "0ec1e1ca4fd302dd306695e996708e1e6f772bfdcbccb10f570d5bea198c8a4c",
+  "composite_identity": "0c1c23b4a52d1a6ff8b43be16484fa2899d5ddbf977b271e0fd6fd37ea12fd37",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "826b3d6757efe3ebc31a30a9f57025ac7af828d870c24fd26d6248adc38ea70b",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/analyze.rs",
+      "path": "crates/cli/src/commands/analyze.rs",
+      "change": "create",
+      "source_sha256": "6ac10cd395ef4d3b90242cc7d82239e12530ff08ea590985b2e08b4215b84b47"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/columns.rs",
+      "path": "crates/cli/src/commands/columns.rs",
+      "change": "create",
+      "source_sha256": "4e4257a8057085df1d9d1d11364b599eb8f53ebe6cb904d889869bbe0565cd7a"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/dedupe.rs",
+      "path": "crates/cli/src/commands/dedupe.rs",
+      "change": "create",
+      "source_sha256": "4f10154e48ce7c2e0632468cb06d27806228b031d24128a8985642b4f6c53a76"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/mod.rs",
+      "path": "crates/cli/src/commands/mod.rs",
+      "change": "update",
+      "source_sha256": "186e72930fe7e2f09b66513c6a558b07b3a7c4bbbf4618a18fe8f2c4314d5402",
+      "existing_entry": "mod.rs[SD7T]: F:CLI 命令模块清单 | R:code:crates/cli/src/commands/partition.rs,code:crates/cli/src/commands/sql.rs | A:三十一个命令子模块（含 shared） | S:新增命令前更新 ENTRYPOINTS 与 check_layout"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/ops.rs",
+      "path": "crates/cli/src/commands/ops.rs",
+      "change": "create",
+      "source_sha256": "165facdbd97f8a3752a79b452ee99efd909138b3a0d0c2171bc2426126f7990d"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/schema.rs",
+      "path": "crates/cli/src/commands/schema.rs",
+      "change": "create",
+      "source_sha256": "55faa35b9273da81cec080ff01cbc6eb315e79796b555659d593a61fb6a577c2"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/verify.rs",
+      "path": "crates/cli/src/commands/verify.rs",
+      "change": "create",
+      "source_sha256": "c7db911cc82fca3cb97a4a485b4f2e5a4059c99897bde4b98e646c0fb303a22d"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "ea2dc0a5d311876eaad9d260096a47615c6b609f96f186748b2839e6be765b2e",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助与输出 | R:code:crates/cli/src/serve.rs,code:crates/cli/src/commands/*,code:crates/mcp/src/lib.rs | A:CLI；partition 已迁；欢迎页与 dispatch 保留 | S:report 四类 section；runner key 仅 env；入口模块不互引"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "07aa319b8fa5e56fc95955f2529d8b4c1e2fcbc847ac191e026d8f182ed8618d",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；crate core/mcp/agent/cli；CLI main/serve+commands；partition 已迁 | S:rmcp 需串行语义；gate 强制"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "ce8e7395e90e2a31126fe220573b9cccddb3ab9bbb9daeb4afe2927cfa9e63d3",
+      "existing_entry": "check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；CLI commands 三十一模块白名单；core 不依赖 cli | S:未知模块退出；先改文档再加模块"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "b19a0c9be82d643ed39c7c5fcff81530e750a60977153b5ee1c023ee046c0f6d",
+      "object_ref": "code:crates/cli/src/commands/analyze.rs",
+      "path": "crates/cli/src/commands/analyze.rs",
+      "change": "create",
+      "source_sha256": "6ac10cd395ef4d3b90242cc7d82239e12530ff08ea590985b2e08b4215b84b47"
+    },
+    {
+      "candidate_id": "443159bf8277d59492cc77c2fb2abeee17c4e1b7aec59b7357a9c4dad56b8236",
+      "object_ref": "code:crates/cli/src/commands/columns.rs",
+      "path": "crates/cli/src/commands/columns.rs",
+      "change": "create",
+      "source_sha256": "4e4257a8057085df1d9d1d11364b599eb8f53ebe6cb904d889869bbe0565cd7a"
+    },
+    {
+      "candidate_id": "9d179ab977c6f47d7ebb465937203e9d949af258d9125395263a190052c9a6b5",
+      "object_ref": "code:crates/cli/src/commands/dedupe.rs",
+      "path": "crates/cli/src/commands/dedupe.rs",
+      "change": "create",
+      "source_sha256": "4f10154e48ce7c2e0632468cb06d27806228b031d24128a8985642b4f6c53a76"
+    },
+    {
+      "candidate_id": "a03769dcb5d54b3d0d77dddea265cba2d763dabd226e86deba71ff278f0a76cf",
+      "object_ref": "code:crates/cli/src/commands/mod.rs",
+      "path": "crates/cli/src/commands/mod.rs",
+      "change": "update",
+      "source_sha256": "186e72930fe7e2f09b66513c6a558b07b3a7c4bbbf4618a18fe8f2c4314d5402",
+      "existing_entry": "mod.rs[SD7T]: F:CLI 命令模块清单 | R:code:crates/cli/src/commands/partition.rs,code:crates/cli/src/commands/sql.rs | A:三十一个命令子模块（含 shared） | S:新增命令前更新 ENTRYPOINTS 与 check_layout"
+    },
+    {
+      "candidate_id": "646600f7ab22e460e64da0789c8b4da7a26a513432d47208ddfd3de631149665",
+      "object_ref": "code:crates/cli/src/commands/ops.rs",
+      "path": "crates/cli/src/commands/ops.rs",
+      "change": "create",
+      "source_sha256": "165facdbd97f8a3752a79b452ee99efd909138b3a0d0c2171bc2426126f7990d"
+    },
+    {
+      "candidate_id": "08ccbb4679f46b43362d11b121756aa0f97ccd557ac6f873273634e13cc11bf4",
+      "object_ref": "code:crates/cli/src/commands/schema.rs",
+      "path": "crates/cli/src/commands/schema.rs",
+      "change": "create",
+      "source_sha256": "55faa35b9273da81cec080ff01cbc6eb315e79796b555659d593a61fb6a577c2"
+    },
+    {
+      "candidate_id": "3af20d1aa3bb8592cd7c2f01ddbbf3d4d61fbcbe18ea3b9d7db3b4056790e697",
+      "object_ref": "code:crates/cli/src/commands/verify.rs",
+      "path": "crates/cli/src/commands/verify.rs",
+      "change": "create",
+      "source_sha256": "c7db911cc82fca3cb97a4a485b4f2e5a4059c99897bde4b98e646c0fb303a22d"
+    },
+    {
+      "candidate_id": "3886fa5b6a049bd1cf263aba4fe9a33cb02c5cef4539fc10206a43304d943ee2",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "ea2dc0a5d311876eaad9d260096a47615c6b609f96f186748b2839e6be765b2e",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助与输出 | R:code:crates/cli/src/serve.rs,code:crates/cli/src/commands/*,code:crates/mcp/src/lib.rs | A:CLI；partition 已迁；欢迎页与 dispatch 保留 | S:report 四类 section；runner key 仅 env；入口模块不互引"
+    },
+    {
+      "candidate_id": "69aca0a54a5c7602a9f58cbdd2aecf132a494b2e254a18efa8abb1b93ac46436",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "07aa319b8fa5e56fc95955f2529d8b4c1e2fcbc847ac191e026d8f182ed8618d",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；crate core/mcp/agent/cli；CLI main/serve+commands；partition 已迁 | S:rmcp 需串行语义；gate 强制"
+    },
+    {
+      "candidate_id": "7e0234a272388373a2708f923a1f5785220377f36b88c197891ffd24441614b1",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "ce8e7395e90e2a31126fe220573b9cccddb3ab9bbb9daeb4afe2927cfa9e63d3",
+      "existing_entry": "check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；CLI commands 三十一模块白名单；core 不依赖 cli | S:未知模块退出；先改文档再加模块"
+    }
+  ]
+}
