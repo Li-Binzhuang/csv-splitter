@@ -13,6 +13,8 @@ if [[ ! -f "$TAR.sha256" ]]; then
 fi
 VERIFY_RESULT="${TAR%.tar.gz}.verify.json"
 START_MS=$(python3 -c 'import time; print(int(time.time()*1000))')
+now_ms() { python3 -c 'import time; print(int(time.time()*1000))'; }
+phase_start=$START_MS
 CHECK=startup
 write_failure() {
   code=$?
@@ -43,6 +45,8 @@ shasum -a 256 -c "$TAR.sha256"
 STAGE=$(mktemp -d)
 tar -xzf "$TAR" -C "$STAGE"
 ROOT=$(find "$STAGE" -maxdepth 1 -mindepth 1 -type d | head -1)
+EXTRACT_MS=$(( $(now_ms) - phase_start ))
+phase_start=$(now_ms)
 CHECK=members
 for required in csvx README.md AGENT_QUICKSTART.md TRY_CSVX.sh docs/RELEASE_CHECKLIST.md docs/ROADMAP.md docs/NIGHT_CHECKPOINT.md mcp_sdk/client.mjs examples/agent/http_session.sh examples/try_csvx.sh scripts/agent_routes_smoke.py skills/csvx-data/SKILL.md; do
   if [[ ! -f "$ROOT/$required" ]]; then
@@ -67,10 +71,15 @@ test -f "$DSH_TMP/skills/csvx-data/SKILL.md"
 grep -q 'name: csvx-data-workbench' "$DSH_TMP/skills/csvx-data/SKILL.md"
 printf 'skill_install=ok\n'
 rm -rf "$DSH_TMP"
+SKILL_MS=$(( $(now_ms) - phase_start ))
+phase_start=$(now_ms)
 CHECK=try
+phase_start=$(now_ms)
 CSVX_BIN="$ROOT/csvx" bash "$ROOT/TRY_CSVX.sh" >/dev/null
+TRY_MS=$(( $(now_ms) - phase_start ))
 
 CHECK=agent
+phase_start=$(now_ms)
 AGENT_DIR=$(mktemp -d)
 printf 'id,city,amount\n1,CDMX,10\n2,Puebla,20\n' > "$AGENT_DIR/orders.csv"
 PORT=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()')
@@ -92,7 +101,9 @@ python3 "$ROOT/scripts/check_agent_stats.py" "$STATS_JSON"
 kill "$AGENT_PID" 2>/dev/null || true
 wait "$AGENT_PID" 2>/dev/null || true
 
+AGENT_MS=$(( $(now_ms) - phase_start ))
 CHECK=xlsx
+phase_start=$(now_ms)
 XLSX_DIR=$(mktemp -d)
 printf 'date,city,amount\n2026-10-20,CDMX,1200\n2026-10-21,Puebla,20\n' > "$XLSX_DIR/x.csv"
 "$ROOT/csvx" convert "$XLSX_DIR/x.csv" --format xlsx -o "$XLSX_DIR/x.xlsx" --highlight "amount>1000:red"
@@ -111,7 +122,9 @@ print("xlsx=ok")
 PY
 rm -rf "$XLSX_DIR"
 
+XLSX_MS=$(( $(now_ms) - phase_start ))
 CHECK=trace
+phase_start=$(now_ms)
 TRACE_DIR=$(mktemp -d)
 printf 'id,city,amount\n1,A,10\n2,B,20\n' > "$TRACE_DIR/t.csv"
 cat > "$TRACE_DIR/trace.jsonl" <<'JSONL'
@@ -124,10 +137,11 @@ test "$TRACE_LINES" -eq 2
 "$ROOT/csvx" view "$TRACE_DIR/t.csv" --json | grep -q '"X"'
 printf 'trace_replay=tools:%s\n' "$TRACE_LINES"
 rm -rf "$TRACE_DIR"
+TRACE_MS=$(( $(now_ms) - phase_start ))
 
 END_MS=$(python3 -c 'import time; print(int(time.time()*1000))')
 DURATION_MS=$((END_MS - START_MS))
 cat > "$VERIFY_RESULT" <<EOF
-{"verified":true,"failedAt":null,"durationMs":$DURATION_MS,"checksum":"ok","members":"ok","skill":"ok","skillInstall":"ok","xlsx":"ok","traceReplay":$TRACE_LINES,"stats":$STATS_JSON}
+{"verified":true,"failedAt":null,"durationMs":$DURATION_MS,"phaseMs":{"extract":$EXTRACT_MS,"skill":$SKILL_MS,"try":$TRY_MS,"agent":$AGENT_MS,"xlsx":$XLSX_MS,"trace":$TRACE_MS},"checksum":"ok","members":"ok","skill":"ok","skillInstall":"ok","xlsx":"ok","traceReplay":$TRACE_LINES,"stats":$STATS_JSON}
 EOF
 echo "verified: $TAR"
