@@ -33,6 +33,8 @@ def main():
         failures.append("verify.json is not verified")
     if checks.get("skillInstall") != "ok":
         failures.append("skillInstall is not ok")
+    if manifest.get("verifyFailedAt") is not None:
+        failures.append(f"verify failed at {manifest['verifyFailedAt']}")
     if failures:
         print("release check failed: " + "; ".join(failures), file=sys.stderr)
         return 1

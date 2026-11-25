@@ -38,6 +38,7 @@ def main():
         hashlib.sha256(checks_path.read_bytes()).hexdigest() if checks_path.exists() else None
     )
     manifest["checks"] = checks
+    manifest["verifyFailedAt"] = checks.get("failedAt") if checks else None
     out = tarball.with_name(tarball.name.replace(".tar.gz", ".release.json"))
     out.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
     print(f"manifest: {out}")
