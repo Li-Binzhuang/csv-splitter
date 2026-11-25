@@ -496,9 +496,10 @@ fn approvals_list(stream: &mut TcpStream, state: &State, id: &str, token: &str) 
         return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
     }
     let mut approvals = Vec::new();
-    for (approval_id, (tool, _)) in &session.approvals {
+    for (approval_id, (tool, issued)) in &session.approvals {
+        let remaining = approval_ttl().saturating_sub(issued.elapsed()).as_secs();
         approvals.push(format!(
-            r#"{{"approvalId":{},"tool":{}}}"#,
+            r#"{{"approvalId":{},"tool":{},"expiresInSeconds":{remaining}}}"#,
             json_str(approval_id),
             json_str(tool)
         ));

@@ -94,7 +94,7 @@ csvx agent manifest
 | GET | `/agent/v1/sessions/{id}/actions.md` | 同一清单的 Markdown 表格，带步骤号并作为附件下载 |
 | GET | `/agent/v1/sessions/{id}/actions.html` | 同一清单的 HTML 表格 |
 | GET | `/agent/v1/sessions/{id}/curl` | 生成可复制的 curl 脚本；破坏性动作带 `__APPROVAL_ID__` 占位 |
-| GET | `/agent/v1/sessions/{id}/approvals` | 当前未消费的 approvalId/tool 列表 |
+| GET | `/agent/v1/sessions/{id}/approvals` | 当前未消费的 approvalId/tool/剩余有效期 |
 | GET | `/agent/v1/sessions/{id}/runbook.md` | 一页式运行手册：待审批、动作、replay 命令；附件下载 |
 | GET | `/agent/v1/sessions/{id}/runbook` | 同一内容的 JSON 版本 |
 | POST | `/agent/v1/sessions/{id}/approvals` | 批准/拒绝破坏性工具 |

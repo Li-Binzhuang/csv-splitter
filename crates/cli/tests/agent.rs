@@ -324,6 +324,7 @@ fn agent_api_creates_session_actions_approves_and_audits() {
     assert!(body.contains(&approval), "{body}");
     assert!(body.contains("csvx_edit_apply"), "{body}");
     assert!(body.contains("\"count\":1"), "{body}");
+    assert!(body.contains("\"expiresInSeconds\""), "{body}");
 
     let apply = format!(
         r#"{{"tool":"csvx_edit_apply","arguments":{{"path":"t.csv","ops":"set:1:city:Z"}},"approvalId":"{approval}"}}"#

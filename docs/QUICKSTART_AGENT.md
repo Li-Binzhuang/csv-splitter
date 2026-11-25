@@ -48,6 +48,7 @@ GET /sessions                multi-session counts (token required, no tokens ret
 ```
 
 Destructive tools need `POST /approvals` first; without it the action returns 428.
+A denied approval is 403, and an expired approval is 428 `approval expired`.
 
 ## 3. Built-in runner (OpenAI-compatible)
 

@@ -75,6 +75,11 @@ def main():
     assert status == 428, f"expected 428 without approval, got {status}: {body}"
     status, body = request(
         api, f"/agent/v1/sessions/{sid}/approvals", token, "POST",
+        {"tool": "csvx_edit_apply", "decision": "deny"},
+    )
+    assert status == 403, f"expected 403 on deny, got {status}: {body}"
+    status, body = request(
+        api, f"/agent/v1/sessions/{sid}/approvals", token, "POST",
         {"tool": "csvx_edit_apply", "decision": "approve"},
     )
     assert status == 200, body
@@ -112,7 +117,7 @@ def main():
     after_count = len(json.loads(body)["actions"])
     assert after_count == actions_count, f"replay changed HTTP actions: {actions_count} -> {after_count}"
 
-    print(f"routes={len(routes)} session={sid} actions={actions_count} approval=ok replay=ok")
+    print(f"routes={len(routes)} session={sid} actions={actions_count} deny=403 approval=ok replay=ok")
 
 if __name__ == "__main__":
     main()
