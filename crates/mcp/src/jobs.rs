@@ -1,7 +1,8 @@
-use crate::{
-    cleanup_stale_mcp_materialized, materialize_cache_limits, mcp_command, mcp_quote, McpJson,
-    MATERIALIZE_CACHE, MATERIALIZE_HITS, MATERIALIZE_MISSES,
+use crate::cache::{
+    cleanup_stale_mcp_materialized, materialize_cache_limits, MATERIALIZE_CACHE, MATERIALIZE_HITS,
+    MATERIALIZE_MISSES,
 };
+use crate::{mcp_command, mcp_quote, McpJson};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 

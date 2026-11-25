@@ -52,7 +52,7 @@ while IFS= read -r entry; do
   [[ "$allowed" == 1 ]] || fail "unexpected CLI entry file: crates/cli/src/$name (update docs/ENTRYPOINTS.md first)"
 done < <(find crates/cli/src -maxdepth 1 -name '*.rs' -print | sort)
 
-MCP_SRC_ALLOWED=(lib.rs rmcp_server.rs tools.rs jobs.rs)
+MCP_SRC_ALLOWED=(lib.rs rmcp_server.rs tools.rs jobs.rs cache.rs executor.rs)
 while IFS= read -r entry; do
   name=${entry#crates/mcp/src/}
   allowed=0
