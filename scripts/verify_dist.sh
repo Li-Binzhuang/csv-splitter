@@ -41,23 +41,7 @@ AGENT_OUT=$(python3 "$ROOT/scripts/agent_routes_smoke.py" --api "http://127.0.0.
 printf '%s\n' "$AGENT_OUT"
 printf 'stats: %s\n' "$AGENT_OUT"
 STATS_JSON=$(printf '%s\n' "$AGENT_OUT" | sed -n 's/^stats_json=//p' | tail -1)
-python3 - "$STATS_JSON" <<'PY'
-import json
-import sys
-
-stats = json.loads(sys.argv[1])
-failures = []
-if stats.get("routes") != 12:
-    failures.append(f"routes={stats.get('routes')} (want 12)")
-if stats.get("replay") != stats.get("actions"):
-    failures.append(f"replay={stats.get('replay')} actions={stats.get('actions')}")
-if not stats.get("sse_ms", 10**9) < 250:
-    failures.append(f"sse_ms={stats.get('sse_ms')} (want <250)")
-if failures:
-    print("threshold mismatch: " + "; ".join(failures), file=sys.stderr)
-    sys.exit(1)
-print("thresholds=ok")
-PY
+python3 "$ROOT/scripts/check_agent_stats.py" "$STATS_JSON"
 kill "$AGENT_PID" 2>/dev/null || true
 wait "$AGENT_PID" 2>/dev/null || true
 
@@ -70,8 +54,11 @@ import zipfile
 
 with zipfile.ZipFile(sys.argv[1]) as archive:
     names = archive.namelist()
+    sheet = archive.read("xl/worksheets/sheet1.xml").decode()
 if "xl/worksheets/sheet1.xml" not in names:
     raise SystemExit(f"xlsx missing sheet1: {names}")
+if "conditionalFormatting" not in sheet or "cellIs" not in sheet:
+    raise SystemExit("xlsx conditional formatting missing")
 print("xlsx=ok")
 PY
 rm -rf "$XLSX_DIR"
