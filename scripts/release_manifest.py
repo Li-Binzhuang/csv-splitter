@@ -41,6 +41,14 @@ def main():
     manifest["verifyFailedAt"] = checks.get("failedAt") if checks else None
     manifest["verifyDurationMs"] = checks.get("durationMs") if checks else None
     manifest["verifyPhaseMs"] = checks.get("phaseMs") if checks else None
+    manifest["verifyPhaseLimitsMs"] = {
+        "extract": 2000,
+        "skill": 3000,
+        "try": 3000,
+        "agent": 5000,
+        "xlsx": 2000,
+        "trace": 2000,
+    }
     out = tarball.with_name(tarball.name.replace(".tar.gz", ".release.json"))
     out.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
     print(f"manifest: {out}")

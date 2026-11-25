@@ -143,7 +143,7 @@ END_MS=$(python3 -c 'import time; print(int(time.time()*1000))')
 DURATION_MS=$((END_MS - START_MS))
 TMP_RESULT="${VERIFY_RESULT}.tmp"
 cat > "$TMP_RESULT" <<EOF
-{"verified":true,"failedAt":null,"durationMs":$DURATION_MS,"phaseMs":{"extract":$EXTRACT_MS,"skill":$SKILL_MS,"try":$TRY_MS,"agent":$AGENT_MS,"xlsx":$XLSX_MS,"trace":$TRACE_MS},"checksum":"ok","members":"ok","skill":"ok","skillInstall":"ok","xlsx":"ok","traceReplay":$TRACE_LINES,"stats":$STATS_JSON}
+{"verified":true,"failedAt":null,"durationMs":$DURATION_MS,"phaseMs":{"extract":$EXTRACT_MS,"skill":$SKILL_MS,"try":$TRY_MS,"agent":$AGENT_MS,"xlsx":$XLSX_MS,"trace":$TRACE_MS},"phaseThresholds":"ok","checksum":"ok","members":"ok","skill":"ok","skillInstall":"ok","xlsx":"ok","traceReplay":$TRACE_LINES,"stats":$STATS_JSON}
 EOF
 CHECK=phases
 python3 "$ROOT/scripts/check_phase_times.py" "$TMP_RESULT"

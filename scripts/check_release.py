@@ -35,6 +35,8 @@ def main():
         failures.append("skillInstall is not ok")
     if manifest.get("verifyFailedAt") is not None:
         failures.append(f"verify failed at {manifest['verifyFailedAt']}")
+    if checks.get("phaseThresholds") != "ok":
+        failures.append("phase thresholds not ok")
     if failures:
         print("release check failed: " + "; ".join(failures), file=sys.stderr)
         return 1
