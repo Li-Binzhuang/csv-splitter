@@ -22,7 +22,7 @@
 crates/
   core/       数据引擎；唯一业务真相
   mcp/        已存在：MCP stdio 协议、工具 schema、执行器（薄适配层）
-  agent/      已存在：HTTP Agent API、session、审批、审计、trace/replay
+  agent/      已存在：Agent API；axum 传输 + session/审批/审计/trace/replay
   api/        axum HTTP API（可选，待抽）
   cli/        参数解析与命令分发；HTTP 端点暂留 serve.rs
 docs/
@@ -88,8 +88,8 @@ bash scripts/package_release.sh
 2. **抽 `crates/mcp`（进行中）**：MCP 工具 schema、`McpJson`/`McpParser`、stdio 服务、
    执行器与任务/缓存已迁到 `crates/mcp`；HTTP 端点仍在 `serve.rs`。下一步换官方 `rmcp`
    并删除手写协议层。
-3. **抽 `crates/agent`（进行中）**：`agent.rs` 已整体迁入 `crates/agent`，当前保留
-   原 std HTTP 传输；后续单独把传输层换 `axum`，不动 session/审批/审计语义。
+3. **抽 `crates/agent`（已完成传输替换）**：控制面在 `crates/agent`；HTTP/SSE
+   由 axum 承载，session/审批/审计/trace/replay 语义保持不变。
 4. **拆 `main.rs`**：按命令拆模块，CLI 只保留 dispatch；最后抽 `serve` 剩余 HTTP。
 
 每一步只做一层，不同时重写 core 行为。

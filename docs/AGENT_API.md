@@ -70,7 +70,7 @@ csvx agent run --root /path/to/data \
 带 skill：step 1 csvx_schema → final 2，5.49 s
 ```
 
-## HTTP Agent API（最小实现）
+## HTTP Agent API（axum 传输）
 
 ```bash
 csvx agent serve --root /path/to/data --addr 127.0.0.1:8788

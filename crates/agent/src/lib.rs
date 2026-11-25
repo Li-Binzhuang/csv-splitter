@@ -5,11 +5,14 @@
 //! destructive tools. It reuses the MCP tool executor, so there is one action
 //! implementation instead of a second command surface.
 
+mod axum_http;
+pub use axum_http::serve;
+
 use csvx_core::json::quote as json_str;
 use csvx_mcp::{agent_manifest_json, mcp_run_tool, McpJson, McpParser};
 use std::collections::HashMap;
-use std::io::{self, BufRead, BufReader, Read, Write};
-use std::net::{TcpListener, TcpStream};
+use std::io::{self, Write};
+
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
@@ -43,154 +46,13 @@ struct State {
     sessions: Mutex<HashMap<String, Session>>,
 }
 
-/// Run the Agent API until the process is stopped.
-pub fn serve(root: &Path, addr: &str) -> io::Result<()> {
-    let root = root.canonicalize()?;
-    if !root.is_dir() {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "root is not a directory",
-        ));
-    }
-    let listener = TcpListener::bind(addr)?;
-    eprintln!(
-        "csvx agent API on http://{addr}  (root: {})",
-        root.display()
-    );
-    let state = Arc::new(State::default());
-    for stream in listener.incoming() {
-        let stream = match stream {
-            Ok(stream) => stream,
-            Err(_) => continue,
-        };
-        let root = root.clone();
-        let state = Arc::clone(&state);
-        std::thread::spawn(move || {
-            let _ = handle(stream, &root, &state);
-        });
-    }
-    Ok(())
-}
-
 /// Print the manifest without starting a server.
 pub fn manifest() -> String {
     agent_manifest_json()
 }
 
-fn handle(mut stream: TcpStream, root: &Path, state: &State) -> io::Result<()> {
-    stream.set_read_timeout(Some(Duration::from_secs(30)))?;
-    stream.set_write_timeout(Some(Duration::from_secs(30)))?;
-    let mut reader = BufReader::new(stream.try_clone()?);
-    let mut line = String::new();
-    if reader.read_line(&mut line)? == 0 {
-        return Ok(());
-    }
-    let mut parts = line.split_whitespace();
-    let method = parts.next().unwrap_or("").to_string();
-    let target = parts.next().unwrap_or("/");
-    let (path, query) = match target.split_once('?') {
-        Some((path, query)) => (path.to_string(), query.to_string()),
-        None => (target.to_string(), String::new()),
-    };
-    let mut authorization: Option<String> = None;
-    let mut content_length = 0usize;
-    loop {
-        let mut header = String::new();
-        if reader.read_line(&mut header)? == 0 || header == "\r\n" || header == "\n" {
-            break;
-        }
-        let lower = header.to_ascii_lowercase();
-        if let Some(rest) = lower.strip_prefix("content-length:") {
-            content_length = header[header.len() - rest.len()..]
-                .trim()
-                .parse()
-                .unwrap_or(0);
-        }
-        if let Some(rest) = lower.strip_prefix("authorization:") {
-            authorization = Some(header[header.len() - rest.len()..].trim().to_string());
-        }
-    }
-    if content_length > MAX_BODY {
-        return respond_json(&mut stream, 413, r#"{"error":"body too large"}"#);
-    }
-    let mut body = vec![0u8; content_length];
-    reader.read_exact(&mut body)?;
-    let body = String::from_utf8_lossy(&body).into_owned();
-
-    if method == "GET" && path == "/agent/v1/manifest" {
-        return respond_json(&mut stream, 200, &manifest());
-    }
-    if method == "GET" && path == "/agent/v1/sessions" {
-        return sessions_summary(&mut stream, state, authorization.as_deref());
-    }
-    if method == "POST" && path == "/agent/v1/sessions" {
-        return create_session(&mut stream, root, state, &body);
-    }
-    let Some(rest) = path.strip_prefix("/agent/v1/sessions/") else {
-        return respond_json(&mut stream, 404, r#"{"error":"not found"}"#);
-    };
-    let (session_id, action) = match rest.split_once('/') {
-        Some(pair) => pair,
-        None => (rest, ""),
-    };
-    if session_id.is_empty() {
-        return respond_json(&mut stream, 404, r#"{"error":"not found"}"#);
-    }
-    let token = match bearer(authorization.as_deref()) {
-        Some(token) => token,
-        None => return respond_json(&mut stream, 401, r#"{"error":"missing bearer token"}"#),
-    };
-    if method == "GET" && action.is_empty() {
-        return session_status(&mut stream, state, session_id, token);
-    }
-    if method == "GET" && action == "actions" {
-        return actions_list(&mut stream, state, session_id, token);
-    }
-    if method == "GET" && (action == "actions.md" || action == "actions.html") {
-        return actions_report(
-            &mut stream,
-            state,
-            session_id,
-            token,
-            action.ends_with(".html"),
-        );
-    }
-    if method == "POST" && action == "actions" {
-        return run_action(&mut stream, state, root, session_id, token, &body);
-    }
-    if method == "GET" && action == "approvals" {
-        return approvals_list(&mut stream, state, session_id, token);
-    }
-    if method == "POST" && action == "approvals" {
-        return approval(&mut stream, state, session_id, token, &body);
-    }
-    if method == "POST" && action == "close" {
-        return close(&mut stream, state, session_id, token);
-    }
-    if method == "GET" && action == "events" {
-        let follow = query.split('&').any(|pair| pair == "follow=1");
-        return events(&mut stream, state, session_id, token, follow);
-    }
-    if method == "GET" && (action == "audit" || action == "trace") {
-        return audit_log(&mut stream, state, session_id, token);
-    }
-    if method == "GET" && action == "replay" {
-        return replay_log(&mut stream, state, session_id, token);
-    }
-    if method == "GET" && action == "curl" {
-        return curl_script(&mut stream, state, session_id, token);
-    }
-    if method == "GET" && action == "runbook.md" {
-        return runbook(&mut stream, state, session_id, token);
-    }
-    if method == "GET" && action == "runbook" {
-        return runbook_json(&mut stream, state, session_id, token);
-    }
-    respond_json(&mut stream, 404, r#"{"error":"not found"}"#)
-}
-
 fn create_session(
-    stream: &mut TcpStream,
+    stream: &mut impl Write,
     root: &Path,
     state: &State,
     body: &str,
@@ -274,7 +136,7 @@ fn create_session(
 }
 
 fn sessions_summary(
-    stream: &mut TcpStream,
+    stream: &mut impl Write,
     state: &State,
     authorization: Option<&str>,
 ) -> io::Result<()> {
@@ -339,7 +201,7 @@ fn sessions_summary(
     respond_json(stream, 200, &body)
 }
 
-fn session_status(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
+fn session_status(stream: &mut impl Write, state: &State, id: &str, token: &str) -> io::Result<()> {
     let sessions = match state.sessions.lock() {
         Ok(sessions) => sessions,
         Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
@@ -377,7 +239,7 @@ fn session_status(stream: &mut TcpStream, state: &State, id: &str, token: &str) 
 }
 
 fn run_action(
-    stream: &mut TcpStream,
+    stream: &mut impl Write,
     state: &State,
     served_root: &Path,
     id: &str,
@@ -493,7 +355,7 @@ fn run_action(
     respond_json(stream, 200, &response)
 }
 
-fn approvals_list(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
+fn approvals_list(stream: &mut impl Write, state: &State, id: &str, token: &str) -> io::Result<()> {
     let sessions = match state.sessions.lock() {
         Ok(sessions) => sessions,
         Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
@@ -523,7 +385,7 @@ fn approvals_list(stream: &mut TcpStream, state: &State, id: &str, token: &str) 
 }
 
 fn approval(
-    stream: &mut TcpStream,
+    stream: &mut impl Write,
     state: &State,
     id: &str,
     token: &str,
@@ -590,7 +452,7 @@ fn approval(
     respond_json(stream, 200, &response)
 }
 
-fn close(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
+fn close(stream: &mut impl Write, state: &State, id: &str, token: &str) -> io::Result<()> {
     let mut sessions = match state.sessions.lock() {
         Ok(sessions) => sessions,
         Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
@@ -635,7 +497,7 @@ fn action_approval(tool: &str, approved: &[String]) -> &'static str {
 }
 
 fn actions_report(
-    stream: &mut TcpStream,
+    stream: &mut impl Write,
     state: &State,
     id: &str,
     token: &str,
@@ -751,7 +613,7 @@ fn html_text(value: &str) -> String {
         .replace('"', "&quot;")
 }
 
-fn actions_list(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
+fn actions_list(stream: &mut impl Write, state: &State, id: &str, token: &str) -> io::Result<()> {
     let sessions = match state.sessions.lock() {
         Ok(sessions) => sessions,
         Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
@@ -826,7 +688,7 @@ fn line_belongs_to_session(line: &str, id: &str) -> bool {
         .is_some_and(|session| session == id)
 }
 
-fn audit_log(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
+fn audit_log(stream: &mut impl Write, state: &State, id: &str, token: &str) -> io::Result<()> {
     let sessions = match state.sessions.lock() {
         Ok(sessions) => sessions,
         Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
@@ -853,7 +715,7 @@ fn audit_log(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io
     )
 }
 
-fn runbook_json(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
+fn runbook_json(stream: &mut impl Write, state: &State, id: &str, token: &str) -> io::Result<()> {
     let sessions = match state.sessions.lock() {
         Ok(sessions) => sessions,
         Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
@@ -928,7 +790,7 @@ fn runbook_json(stream: &mut TcpStream, state: &State, id: &str, token: &str) ->
     respond_json(stream, 200, &body)
 }
 
-fn runbook(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
+fn runbook(stream: &mut impl Write, state: &State, id: &str, token: &str) -> io::Result<()> {
     let sessions = match state.sessions.lock() {
         Ok(sessions) => sessions,
         Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
@@ -1021,7 +883,7 @@ fn shell_quote(value: &str) -> String {
     format!("'{}'", value.replace('\'', "'\\''"))
 }
 
-fn curl_script(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
+fn curl_script(stream: &mut impl Write, state: &State, id: &str, token: &str) -> io::Result<()> {
     let sessions = match state.sessions.lock() {
         Ok(sessions) => sessions,
         Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
@@ -1099,7 +961,7 @@ fn curl_script(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> 
     )
 }
 
-fn replay_log(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
+fn replay_log(stream: &mut impl Write, state: &State, id: &str, token: &str) -> io::Result<()> {
     let sessions = match state.sessions.lock() {
         Ok(sessions) => sessions,
         Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
@@ -1134,65 +996,6 @@ fn replay_log(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> i
         )
         .as_bytes(),
     )
-}
-
-fn events(
-    stream: &mut TcpStream,
-    state: &State,
-    id: &str,
-    token: &str,
-    follow: bool,
-) -> io::Result<()> {
-    let sessions = match state.sessions.lock() {
-        Ok(sessions) => sessions,
-        Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
-    };
-    let Some(session) = sessions.get(id) else {
-        return respond_json(stream, 404, r#"{"error":"unknown session"}"#);
-    };
-    if !constant_eq(&session.token, token) {
-        return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
-    }
-    let audit = session.audit.clone();
-    let notify = session.notify.clone();
-    drop(sessions);
-    stream.write_all(
-        b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n",
-    )?;
-    let mut sent = 0usize;
-    let mut last_ping = Instant::now();
-    let deadline = Instant::now() + Duration::from_secs(60);
-    loop {
-        let text = std::fs::read_to_string(&audit).unwrap_or_default();
-        if text.len() > sent {
-            let fresh = &text[sent..];
-            for line in fresh
-                .lines()
-                .filter(|line| !line.is_empty() && line_belongs_to_session(line, id))
-            {
-                stream.write_all(b"event: audit\ndata: ")?;
-                stream.write_all(line.as_bytes())?;
-                stream.write_all(b"\n\n")?;
-            }
-            sent = text.len();
-        }
-        if !follow || std::time::Instant::now() >= deadline {
-            break;
-        }
-        let guard = match notify.0.lock() {
-            Ok(guard) => guard,
-            Err(_) => break,
-        };
-        let _ = notify
-            .1
-            .wait_timeout(guard, Duration::from_millis(1000))
-            .unwrap_or_else(|error| error.into_inner());
-        if last_ping.elapsed() >= Duration::from_secs(15) {
-            stream.write_all(b": ping\n\n")?;
-            last_ping = Instant::now();
-        }
-    }
-    stream.write_all(b"event: end\ndata: {}\n\n")
 }
 
 fn is_destructive(tool: &str) -> bool {
@@ -1279,7 +1082,7 @@ fn constant_eq(left: &str, right: &str) -> bool {
             == 0
 }
 
-fn respond_json(stream: &mut TcpStream, status: u16, body: &str) -> io::Result<()> {
+fn respond_json(stream: &mut impl Write, status: u16, body: &str) -> io::Result<()> {
     let reason = match status {
         200 => "OK",
         201 => "Created",

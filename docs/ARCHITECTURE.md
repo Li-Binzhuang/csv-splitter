@@ -101,7 +101,7 @@ core 里 41 个模块，按职责分组（文件名即模块名）：
 | **切分与压缩** | `splitter` `split_parallel` `merge` `compress` `pack` `decompress` `partition` `check` |
 | **面向客户端** | `sheet` `book` `listing` `jobs` `cache` `demo` |
 | **共用工具** | `json`（唯一的 JSON 字符串转义）、`types`、`engine`（native 与 DuckDB 的选择器）、`contract`（CLI/HTTP/MCP 共用的操作与错误码目录）、`ops`（schema/view/filter 的 typed 请求/响应）|
-| **入口** | `crates/cli/src/main.rs`（命令行）· `serve.rs`（HTTP 后端，前端由别人接）· `crates/mcp`（MCP stdio 薄适配）· `crates/agent`（Agent API/审批/审计）|
+| **入口** | `crates/cli/src/main.rs`（命令行）· `serve.rs`（HTTP 后端，前端由别人接）· `crates/mcp`（MCP stdio 薄适配）· `crates/agent`（Agent API：axum + 审批/审计）|
 
 ## 不变式在哪守 / Where the invariants live
 

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-25T08:16:32Z",
+  "updated_at": "2026-11-25T08:52:54Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -58,9 +58,9 @@
     },
     "Cargo.lock": {
       "role": "observe",
-      "sha256": "d786c90dacf4344f113e172319f8d49dd3fbf6d6937099ad8116aaab3ec10458",
-      "size": 57075,
-      "normalized_sha256": "d786c90dacf4344f113e172319f8d49dd3fbf6d6937099ad8116aaab3ec10458"
+      "sha256": "e7e8aebebdfe4367f687defbc97d7e2fdbf7af0c3839be50a6dbcda8fc718aa0",
+      "size": 65874,
+      "normalized_sha256": "e7e8aebebdfe4367f687defbc97d7e2fdbf7af0c3839be50a6dbcda8fc718aa0"
     },
     "Cargo.toml": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "94bc5d83a6e485e8ee8beb130bb48aacd0b110e8058145c7efd402a5cdcaf97a",
-      "size": 64473,
-      "normalized_sha256": "94bc5d83a6e485e8ee8beb130bb48aacd0b110e8058145c7efd402a5cdcaf97a"
+      "sha256": "b14e94b39abdec1ee6e48a5918b29bfabc6e969bd9db898435ae083c078c24bc",
+      "size": 64908,
+      "normalized_sha256": "b14e94b39abdec1ee6e48a5918b29bfabc6e969bd9db898435ae083c078c24bc"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -100,15 +100,21 @@
     },
     "crates/agent/Cargo.toml": {
       "role": "index",
-      "sha256": "d65f1c2160920a6766c22b90ac1ffb1165104391de05c1c7f6a921dd24eba03f",
-      "size": 283,
-      "normalized_sha256": "d65f1c2160920a6766c22b90ac1ffb1165104391de05c1c7f6a921dd24eba03f"
+      "sha256": "ffacb6b676c85ef2cd7a18fda347612d26110eb472988b41983b94f01536d2f9",
+      "size": 433,
+      "normalized_sha256": "ffacb6b676c85ef2cd7a18fda347612d26110eb472988b41983b94f01536d2f9"
+    },
+    "crates/agent/src/axum_http.rs": {
+      "role": "index",
+      "sha256": "38f1f41f1dd8404b9ebd6fe23748d12997fd9d3bef71c5cdab4ab863709e73a7",
+      "size": 12044,
+      "normalized_sha256": "38f1f41f1dd8404b9ebd6fe23748d12997fd9d3bef71c5cdab4ab863709e73a7"
     },
     "crates/agent/src/lib.rs": {
       "role": "index",
-      "sha256": "2836e23f8feffc72df72c6c4ec5336834f3d944e9b96f977eaa72641c68cd98a",
-      "size": 58065,
-      "normalized_sha256": "2836e23f8feffc72df72c6c4ec5336834f3d944e9b96f977eaa72641c68cd98a"
+      "sha256": "51ac11e41bd6fcbf0c2a5d0436a6163be5299758381317dc9c82ff86bd3c7e24",
+      "size": 50674,
+      "normalized_sha256": "51ac11e41bd6fcbf0c2a5d0436a6163be5299758381317dc9c82ff86bd3c7e24"
     },
     "crates/cli/Cargo.toml": {
       "role": "index",
@@ -586,9 +592,9 @@
     },
     "docs/AGENT_API.md": {
       "role": "index",
-      "sha256": "905ed639a254d425b4a4c098171b99bc7a8b753dda602008493f2da655f36d97",
-      "size": 6393,
-      "normalized_sha256": "905ed639a254d425b4a4c098171b99bc7a8b753dda602008493f2da655f36d97"
+      "sha256": "4f1ba8ec214a060e423b13f84cd829ce8311d9c94fc3df9440b29669779ffda1",
+      "size": 6392,
+      "normalized_sha256": "4f1ba8ec214a060e423b13f84cd829ce8311d9c94fc3df9440b29669779ffda1"
     },
     "docs/AGENT_TRACE.md": {
       "role": "index",
@@ -604,9 +610,9 @@
     },
     "docs/ARCHITECTURE.md": {
       "role": "index",
-      "sha256": "ffabd50a86a2f55f7f3e7b05fa9fffb56c37e2c26c3c90d9340c82bcf848517e",
-      "size": 7853,
-      "normalized_sha256": "ffabd50a86a2f55f7f3e7b05fa9fffb56c37e2c26c3c90d9340c82bcf848517e"
+      "sha256": "48416deba1f1eea47b86aa804eea4d61e99cd4e9d868bdbd5766f58b7b179a68",
+      "size": 7862,
+      "normalized_sha256": "48416deba1f1eea47b86aa804eea4d61e99cd4e9d868bdbd5766f58b7b179a68"
     },
     "docs/BENCHMARKS.md": {
       "role": "index",
@@ -670,9 +676,9 @@
     },
     "docs/ENTRYPOINTS.md": {
       "role": "index",
-      "sha256": "b896e3eb6f5bbf3b1e26d1c956daecf6b62f181a9591d92cae0db282422653b2",
-      "size": 3673,
-      "normalized_sha256": "b896e3eb6f5bbf3b1e26d1c956daecf6b62f181a9591d92cae0db282422653b2"
+      "sha256": "abec7bc1690b551261c64863696a2233e4b6b99d8a150e2d7280f0cd54aed3e0",
+      "size": 3648,
+      "normalized_sha256": "abec7bc1690b551261c64863696a2233e4b6b99d8a150e2d7280f0cd54aed3e0"
     },
     "docs/FORMULA_CACHE.md": {
       "role": "index",

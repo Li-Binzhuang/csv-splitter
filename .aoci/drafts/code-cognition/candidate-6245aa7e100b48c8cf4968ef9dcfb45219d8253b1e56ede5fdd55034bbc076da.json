@@ -1,0 +1,107 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "7dd078bd2b3f2edff59933a1c43b1541198cefc5a3dea0199086ed8453ddffd4",
+  "batch_id": "6245aa7e100b48c8cf4968ef9dcfb45219d8253b1e56ede5fdd55034bbc076da",
+  "composite_identity": "f1e64ef89f46a7079c294ad3af0bea47d2182295de9aa0606ec45bf0c013956f",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "94bc5d83a6e485e8ee8beb130bb48aacd0b110e8058145c7efd402a5cdcaf97a",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/agent/Cargo.toml",
+      "path": "crates/agent/Cargo.toml",
+      "change": "update",
+      "source_sha256": "ffacb6b676c85ef2cd7a18fda347612d26110eb472988b41983b94f01536d2f9",
+      "existing_entry": "Cargo.toml[FV7T]: F:csvx-agent crate 清单 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml | A:包名 csvx-agent；依赖 core 与 csvx-mcp；只承载 Agent 控制面 | S:不依赖 csvx-cli；传输层可独立替换为 axum"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/agent/src/axum_http.rs",
+      "path": "crates/agent/src/axum_http.rs",
+      "change": "create",
+      "source_sha256": "38f1f41f1dd8404b9ebd6fe23748d12997fd9d3bef71c5cdab4ab863709e73a7"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/agent/src/lib.rs",
+      "path": "crates/agent/src/lib.rs",
+      "change": "update",
+      "source_sha256": "51ac11e41bd6fcbf0c2a5d0436a6163be5299758381317dc9c82ff86bd3c7e24",
+      "existing_entry": "lib.rs[EN9L]: F:HTTP Agent API、session、审批、审计、trace/replay 与 runner | R:code:crates/agent/Cargo.toml,code:crates/mcp/src/lib.rs,code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md | A:loopback；sessions/actions/approvals/close/events；audit/trace/replay/curl/runbook；审批 TTL；MCP 工具来自 csvx-mcp | S:audit 无 token；SSE 60s；trace 含数据；runner 仅兼容；传输暂 std"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "4f1ba8ec214a060e423b13f84cd829ce8311d9c94fc3df9440b29669779ffda1",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入：MCP manifest、HTTP Agent API、runner、skill 与 trace | R:code:crates/cli/src/agent.rs,code:docs/AGENT_TRACE.md,code:skills/csvx-data/SKILL.md | A:serve/manifest/run；GET /sessions；sessions/actions/approvals（TTL）/events（condvar+ping）/audit+trace/replay/actions.md/html/curl/runbook/close；403/428 | S:follow 60s；audit 仅 session；汇总不含 token/内容；key/token 不入脚本；trace 含数据；心跳测试 17s"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "48416deba1f1eea47b86aa804eea4d61e99cd4e9d868bdbd5766f58b7b179a68",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs,code:docs/OPERATIONS.md,code:crates/mcp/src/lib.rs,code:crates/agent/src/lib.rs | A:core 41 模块；磁盘格式/操作契约；入口 CLI/HTTP/MCP/Agent | S:模块地图测试比对；侧车可删；journal 丢编辑；入口 crate 独立"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "abec7bc1690b551261c64863696a2233e4b6b99d8a150e2d7280f0cd54aed3e0",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:crates/mcp/src/lib.rs,code:crates/agent/src/lib.rs | A:根白名单；crate core/mcp/agent/cli；CLI 仅 main/serve；冻结 23 工具/12 路由/阈值；mcp/agent 已抽出 | S:DSH 走 MCP；runner 不扩张；入口≤300 行；gate 强制；axum 独立后续"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4cbcbd7fa93957f2d89aae7b563d5f8acb18d7fad66c0b5ace72fa1ad2d8db0d",
+      "object_ref": "code:crates/agent/Cargo.toml",
+      "path": "crates/agent/Cargo.toml",
+      "change": "update",
+      "source_sha256": "ffacb6b676c85ef2cd7a18fda347612d26110eb472988b41983b94f01536d2f9",
+      "existing_entry": "Cargo.toml[FV7T]: F:csvx-agent crate 清单 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml | A:包名 csvx-agent；依赖 core 与 csvx-mcp；只承载 Agent 控制面 | S:不依赖 csvx-cli；传输层可独立替换为 axum"
+    },
+    {
+      "candidate_id": "1b880b4a34329d21145915fada4a64168b734beb15a7b983ffc62c5ea033810a",
+      "object_ref": "code:crates/agent/src/axum_http.rs",
+      "path": "crates/agent/src/axum_http.rs",
+      "change": "create",
+      "source_sha256": "38f1f41f1dd8404b9ebd6fe23748d12997fd9d3bef71c5cdab4ab863709e73a7"
+    },
+    {
+      "candidate_id": "0f2e2663f82b51353e56e06cf66eb3fca7146ca77116140ef7b1a3c7fbe136a2",
+      "object_ref": "code:crates/agent/src/lib.rs",
+      "path": "crates/agent/src/lib.rs",
+      "change": "update",
+      "source_sha256": "51ac11e41bd6fcbf0c2a5d0436a6163be5299758381317dc9c82ff86bd3c7e24",
+      "existing_entry": "lib.rs[EN9L]: F:HTTP Agent API、session、审批、审计、trace/replay 与 runner | R:code:crates/agent/Cargo.toml,code:crates/mcp/src/lib.rs,code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md | A:loopback；sessions/actions/approvals/close/events；audit/trace/replay/curl/runbook；审批 TTL；MCP 工具来自 csvx-mcp | S:audit 无 token；SSE 60s；trace 含数据；runner 仅兼容；传输暂 std"
+    },
+    {
+      "candidate_id": "b728284d290c0deb9f6110ee5c5eeaf39b5752c7fe8212419f6a04af4ffc62c8",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "4f1ba8ec214a060e423b13f84cd829ce8311d9c94fc3df9440b29669779ffda1",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入：MCP manifest、HTTP Agent API、runner、skill 与 trace | R:code:crates/cli/src/agent.rs,code:docs/AGENT_TRACE.md,code:skills/csvx-data/SKILL.md | A:serve/manifest/run；GET /sessions；sessions/actions/approvals（TTL）/events（condvar+ping）/audit+trace/replay/actions.md/html/curl/runbook/close；403/428 | S:follow 60s；audit 仅 session；汇总不含 token/内容；key/token 不入脚本；trace 含数据；心跳测试 17s"
+    },
+    {
+      "candidate_id": "6d45058ad321669f90b3fb7063a04e3323b08055b2063872ea29c1717a1dd79a",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "48416deba1f1eea47b86aa804eea4d61e99cd4e9d868bdbd5766f58b7b179a68",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs,code:docs/OPERATIONS.md,code:crates/mcp/src/lib.rs,code:crates/agent/src/lib.rs | A:core 41 模块；磁盘格式/操作契约；入口 CLI/HTTP/MCP/Agent | S:模块地图测试比对；侧车可删；journal 丢编辑；入口 crate 独立"
+    },
+    {
+      "candidate_id": "727e132bfdbf024d46ae247dbf09baacf3fd096c7b4a6ae2568c6ecf09de9bff",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "abec7bc1690b551261c64863696a2233e4b6b99d8a150e2d7280f0cd54aed3e0",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:crates/mcp/src/lib.rs,code:crates/agent/src/lib.rs | A:根白名单；crate core/mcp/agent/cli；CLI 仅 main/serve；冻结 23 工具/12 路由/阈值；mcp/agent 已抽出 | S:DSH 走 MCP；runner 不扩张；入口≤300 行；gate 强制；axum 独立后续"
+    }
+  ]
+}

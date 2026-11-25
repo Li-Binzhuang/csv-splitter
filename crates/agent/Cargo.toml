@@ -7,5 +7,8 @@ repository.workspace = true
 license.workspace = true
 
 [dependencies]
+axum = "0.7"
 csvx-core = { workspace = true }
 csvx-mcp = { path = "../mcp" }
+tokio = { version = "1", features = ["rt-multi-thread", "net", "time", "sync"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
