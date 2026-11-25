@@ -1,0 +1,89 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "73123802dd7823be98af53d215f393c77d627cd1b026ed371f584100637a440d",
+  "batch_id": "6dce44bc8a9056d27e8c9eb8973125664c295c3f3a544044ce34e8b0d7db6e69",
+  "composite_identity": "79f3ffa19f63924084b4f7a1165b39f614e72a77bb45a675012e8b1fe971359d",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "2d69f86ff095f5d8d92337445fb9a8aac45bc57991be152b3892232bef8f695b",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "create",
+      "source_sha256": "fe047f2c82b895b26f1960c4d98e41758bd50791ece1ca2f9200f062189c8534"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "create",
+      "source_sha256": "d47ed1b4a120c22a0d4469f85acb93c149d7a404b9cbd41641f55ba7401cce34"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "02c78f68a3205cb3bd88c19983000af6dc8166d253ee22ff8f4c6fccbadc0a73",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/verify_dist_negative.sh,code:scripts/check_agent_stats_negative.sh,code:scripts/check_phase_times_negative.sh | A:gate fmt/clippy/测试/sql/verify-negative/stats-negative/phase-negative | S:gate 必须带 sql；重试只负载 flake；负向检查不可静默跳过"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "766734d4c082c6cf9a456e0f1acdde563ccac42ffa573c84241e4c98d40ebc12",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布（自验日志、manifest、哈希复核） | R:code:scripts/verify_dist.sh,code:scripts/check_agent_stats.py,code:scripts/release_manifest.py,code:scripts/check_release.py,code:scripts/check_phase_times.py | A:打包 docs/examples/scripts/mcp_sdk；verify_dist tee log；release.json；check_release | S:不打 tag/不联网/不发 registry；dist gitignore"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "9a0ac747c4c009107eaf07ae50b388841b23c3c228a98ccfe28960691e003608",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:发布包验收并写 verify.json（失败阶段/耗时/阶段预算） | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py,code:scripts/check_agent_stats.py,code:scripts/check_phase_times.py | A:成员/version/skill/安装；TRY；12 路由/审批/重放/SSE；stats；xlsx；trace；phaseThresholds；trap | S:仅发布方；不联网；失败写 failedAt；阶段预算不可跳过"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "89980b08e7f1f039026115013f664addb530468e70dc60489030ba2c5bf56b5a",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "create",
+      "source_sha256": "fe047f2c82b895b26f1960c4d98e41758bd50791ece1ca2f9200f062189c8534"
+    },
+    {
+      "candidate_id": "bf0b72aba23d6563a20808f9877050b81969077370c187436d71652382a5248e",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "create",
+      "source_sha256": "d47ed1b4a120c22a0d4469f85acb93c149d7a404b9cbd41641f55ba7401cce34"
+    },
+    {
+      "candidate_id": "e9bab9d1af44d351a92c08f3a9f12f1bf7b6513dc34df135c30d1e6a4bb798e0",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "02c78f68a3205cb3bd88c19983000af6dc8166d253ee22ff8f4c6fccbadc0a73",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/verify_dist_negative.sh,code:scripts/check_agent_stats_negative.sh,code:scripts/check_phase_times_negative.sh | A:gate fmt/clippy/测试/sql/verify-negative/stats-negative/phase-negative | S:gate 必须带 sql；重试只负载 flake；负向检查不可静默跳过"
+    },
+    {
+      "candidate_id": "8692994a36bae3714fda2193731a1176a44c97de9e29decc14007ea753b5bb19",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "766734d4c082c6cf9a456e0f1acdde563ccac42ffa573c84241e4c98d40ebc12",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布（自验日志、manifest、哈希复核） | R:code:scripts/verify_dist.sh,code:scripts/check_agent_stats.py,code:scripts/release_manifest.py,code:scripts/check_release.py,code:scripts/check_phase_times.py | A:打包 docs/examples/scripts/mcp_sdk；verify_dist tee log；release.json；check_release | S:不打 tag/不联网/不发 registry；dist gitignore"
+    },
+    {
+      "candidate_id": "58573febb75820992bbf5ec41498d0e5cefe84fae2d5b903bed70327beb38dc5",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "9a0ac747c4c009107eaf07ae50b388841b23c3c228a98ccfe28960691e003608",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:发布包验收并写 verify.json（失败阶段/耗时/阶段预算） | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py,code:scripts/check_agent_stats.py,code:scripts/check_phase_times.py | A:成员/version/skill/安装；TRY；12 路由/审批/重放/SSE；stats；xlsx；trace；phaseThresholds；trap | S:仅发布方；不联网；失败写 failedAt；阶段预算不可跳过"
+    }
+  ]
+}

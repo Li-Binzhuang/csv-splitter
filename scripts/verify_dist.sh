@@ -48,7 +48,7 @@ ROOT=$(find "$STAGE" -maxdepth 1 -mindepth 1 -type d | head -1)
 EXTRACT_MS=$(( $(now_ms) - phase_start ))
 phase_start=$(now_ms)
 CHECK=members
-for required in csvx README.md AGENT_QUICKSTART.md TRY_CSVX.sh docs/RELEASE_CHECKLIST.md docs/ROADMAP.md docs/NIGHT_CHECKPOINT.md mcp_sdk/client.mjs examples/agent/http_session.sh examples/try_csvx.sh scripts/agent_routes_smoke.py skills/csvx-data/SKILL.md; do
+for required in csvx README.md AGENT_QUICKSTART.md TRY_CSVX.sh docs/RELEASE_CHECKLIST.md docs/ROADMAP.md docs/NIGHT_CHECKPOINT.md docs/ENTRYPOINTS.md mcp_sdk/client.mjs examples/agent/http_session.sh examples/try_csvx.sh scripts/agent_routes_smoke.py skills/csvx-data/SKILL.md; do
   if [[ ! -f "$ROOT/$required" ]]; then
     echo "missing member: $required" >&2
     exit 1

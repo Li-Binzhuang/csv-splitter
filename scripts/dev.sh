@@ -50,6 +50,7 @@ case "${1:-check}" in
       fi
       printf '== %s ok ==\n' "$name"
     }
+    run_stage layout bash scripts/check_layout.sh
     run_stage fmt cargo fmt --all -- --check
     # A deliberately failing stage, so the naming can be tested without breaking a build.
     if [ "${GATE_FAIL_TEST:-0}" = "1" ]; then
