@@ -3,6 +3,7 @@
 import datetime
 import hashlib
 import json
+import os
 import pathlib
 import re
 import sys
@@ -17,12 +18,17 @@ def main():
     verify = log.read_text() if log.exists() else ""
     match = re.search(r"^stats_json=(.+)$", verify, re.MULTILINE)
     stats = json.loads(match.group(1)) if match else None
+    gate = os.environ.get("CSVX_GATE_STATUS", "not_recorded")
+    aoci_raw = os.environ.get("CSVX_AOCI_ENTRIES", "")
+    aoci = int(aoci_raw) if aoci_raw.isdigit() else None
     manifest = {
         "name": name,
         "sha256": hashlib.sha256(data).hexdigest(),
         "bytes": len(data),
         "builtAt": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "verifyLog": str(log),
+        "gate": gate,
+        "aociEntries": aoci,
         "agentStats": stats,
     }
     out = tarball.with_name(tarball.name.replace(".tar.gz", ".release.json"))
