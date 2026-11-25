@@ -638,6 +638,7 @@ name = "csvx-cli"
 version = "4.2.0"
 dependencies = [
  "csvx-core",
+ "csvx-mcp",
  "encoding_rs",
  "flate2",
  "libc",
@@ -662,6 +663,13 @@ dependencies = [
  "xz2",
  "zip",
  "zstd",
+]
+
+[[package]]
+name = "csvx-mcp"
+version = "4.2.0"
+dependencies = [
+ "csvx-core",
 ]
 
 [[package]]

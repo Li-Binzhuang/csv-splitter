@@ -21,10 +21,10 @@
 ```text
 crates/
   core/       数据引擎；唯一业务真相
-  mcp/        MCP server（官方 rmcp 的薄适配层）
-  agent/      session / approval / audit / trace 控制面（可选）
-  api/        axum HTTP API（如果保留 HTTP）
-  cli/        参数解析与命令分发
+  mcp/        已存在：MCP stdio 协议、工具 schema、执行器（薄适配层）
+  agent/      session / approval / audit / trace 控制面（可选，待抽）
+  api/        axum HTTP API（可选，待抽）
+  cli/        参数解析与命令分发；HTTP 端点暂留 serve.rs
 docs/
   ARCHITECTURE.md
   ENTRYPOINTS.md
@@ -85,8 +85,9 @@ bash scripts/package_release.sh
 ## 迁移顺序
 
 1. **冻结 + 目录制度**（本文件、`check_layout.sh`、gate）。
-2. **抽 `crates/mcp`**：把 `serve.rs` 的 MCP 工具注册/执行器搬走，换官方 `rmcp`；
-   HTTP 端点先不动。
+2. **抽 `crates/mcp`（进行中）**：MCP 工具 schema、`McpJson`/`McpParser`、stdio 服务、
+   执行器与任务/缓存已迁到 `crates/mcp`；HTTP 端点仍在 `serve.rs`。下一步换官方 `rmcp`
+   并删除手写协议层。
 3. **抽 `crates/agent`**：session/审批/审计/SSE 用 `axum` 重写；runner 降级为可选。
 4. **拆 `main.rs`**：按命令拆模块，CLI 只保留 dispatch；最后抽 `serve` 剩余 HTTP。
 

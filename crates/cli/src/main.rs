@@ -10137,7 +10137,7 @@ fn cmd_mcp(args: &[String]) -> i32 {
         }
     }
     let root = root.unwrap_or_else(|| std::path::PathBuf::from("."));
-    match serve::run_mcp_stdio(&root) {
+    match csvx_mcp::run_mcp_stdio(&root) {
         Ok(()) => 0,
         Err(e) => {
             eprintln!("error: {e}");

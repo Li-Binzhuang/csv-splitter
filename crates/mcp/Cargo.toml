@@ -1,0 +1,10 @@
+[package]
+name = "csvx-mcp"
+version.workspace = true
+edition.workspace = true
+description = "MCP stdio server for csvx: tool schemas and execution."
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+csvx-core = { workspace = true }

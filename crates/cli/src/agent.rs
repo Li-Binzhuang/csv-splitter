@@ -5,7 +5,8 @@
 //! destructive tools. It reuses the MCP tool executor, so there is one action
 //! implementation instead of a second command surface.
 
-use crate::serve::{agent_manifest_json, json_str, mcp_run_tool, McpJson, McpParser};
+use crate::serve::json_str;
+use csvx_mcp::{agent_manifest_json, mcp_run_tool, McpJson, McpParser};
 use std::collections::HashMap;
 use std::io::{self, BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
