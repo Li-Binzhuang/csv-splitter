@@ -58,9 +58,14 @@ real 11.75 s
 这验证了模型 → JSON 动作 → csvx 工具 → 观察回灌 → final 的闭环，
 以及 skill 文本能改变 Agent 的读取路径。
 
+## DSH 原生 skill 已装入
+
+`bash scripts/install_skill.sh` 把仓库 skill 复制到
+`$DSH_HOME/skills/csvx-data/SKILL.md`（默认 `~/.dsh`）。本机安装后，
+DSH 的 skill 目录已出现 `csvx-data-workbench`，并成功通过 `skill` 工具加载。
+
 ## 尚未做
 
-- 用该模型跑 read→preview→apply（破坏性工具需要 --allow-apply）；
 - 通过 DSH skill 调 csvx MCP；
 - 更长的多轮任务与错误恢复。
 

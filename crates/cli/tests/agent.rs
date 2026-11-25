@@ -89,6 +89,47 @@ fn start(root: &std::path::Path, addr: &str) -> Server {
 }
 
 #[test]
+fn agent_api_honors_the_tool_allowlist() {
+    let dir = std::env::temp_dir().join(format!("csvx_agent_allow_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n").unwrap();
+    let addr = free_addr();
+    let _server = start(&dir, &addr);
+
+    let (status, body) = request(
+        &addr,
+        "POST",
+        "/agent/v1/sessions",
+        None,
+        r#"{"agent":"allow","allowedTools":["csvx_schema"]}"#,
+    );
+    assert_eq!(status, 201, "{body}");
+    let token = extract(&body, "token");
+    let session = extract(&body, "sessionId");
+    let path = format!("/agent/v1/sessions/{session}/actions");
+
+    let (status, body) = request(
+        &addr,
+        "POST",
+        &path,
+        Some(&token),
+        r#"{"tool":"csvx_schema","arguments":{"path":"t.csv"}}"#,
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let (status, body) = request(
+        &addr,
+        "POST",
+        &path,
+        Some(&token),
+        r#"{"tool":"csvx_view","arguments":{"path":"t.csv"}}"#,
+    );
+    assert_eq!(status, 403, "{body}");
+    assert!(body.contains("not allowed"), "{body}");
+    std::fs::remove_dir_all(dir).ok();
+}
+
+#[test]
 fn agent_api_creates_session_actions_approves_and_audits() {
     let dir = std::env::temp_dir().join(format!("csvx_agent_test_{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();

@@ -23,6 +23,7 @@ struct Session {
     token: String,
     created: SystemTime,
     approvals: HashMap<String, String>,
+    allowed: Option<Vec<String>>,
     audit: PathBuf,
 }
 
@@ -188,6 +189,16 @@ fn create_session(
         .and_then(McpJson::as_str)
         .unwrap_or("anonymous")
         .to_string();
+    let allowed = request.get("allowedTools").and_then(|value| match value {
+        McpJson::Array(items) => Some(
+            items
+                .iter()
+                .filter_map(McpJson::as_str)
+                .map(str::to_string)
+                .collect::<Vec<_>>(),
+        ),
+        _ => None,
+    });
     let id = random_id("sess");
     let token = random_id("tok");
     let audit = selected_root.join(".csvx-agent").join("audit.jsonl");
@@ -200,6 +211,7 @@ fn create_session(
         token: token.clone(),
         created: SystemTime::now(),
         approvals: HashMap::new(),
+        allowed,
         audit,
     };
     if let Ok(mut sessions) = state.sessions.lock() {
@@ -231,13 +243,24 @@ fn session_status(stream: &mut TcpStream, state: &State, id: &str, token: &str) 
         .duration_since(session.created)
         .unwrap_or_default();
     let response = format!(
-        r#"{{"sessionId":{},"agent":{},"root":{},"ageSeconds":{},"expiresInSeconds":{},"approvals":{}}}"#,
+        r#"{{"sessionId":{},"agent":{},"root":{},"ageSeconds":{},"expiresInSeconds":{},"approvals":{},"allowedTools":{}}}"#,
         json_str(id),
         json_str(&session.agent),
         json_str(&session.root.display().to_string()),
         age.as_secs(),
         SESSION_TTL.as_secs(),
-        session.approvals.len()
+        session.approvals.len(),
+        session
+            .allowed
+            .as_ref()
+            .map_or("null".to_string(), |tools| format!(
+                "[{}]",
+                tools
+                    .iter()
+                    .map(|tool| json_str(tool))
+                    .collect::<Vec<_>>()
+                    .join(",")
+            ))
     );
     respond_json(stream, 200, &response)
 }
@@ -276,6 +299,20 @@ fn run_action(
         };
         if !constant_eq(&session.token, token) {
             return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
+        }
+        if session
+            .allowed
+            .as_ref()
+            .is_some_and(|allowed| !allowed.iter().any(|item| item == &tool))
+        {
+            return respond_json(
+                stream,
+                403,
+                &format!(
+                    r#"{{"error":"tool not allowed","tool":{}}}"#,
+                    json_str(&tool)
+                ),
+            );
         }
         if destructive {
             let approved = approval_id
