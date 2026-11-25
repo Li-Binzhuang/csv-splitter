@@ -156,6 +156,13 @@ def main():
                 capture_output=True, text=True,
             )
             assert run.returncode == 0, f"{run.stdout}\n{run.stderr}"
+            replay_lines = [
+                line for line in (run.stdout + run.stderr).splitlines()
+                if line.startswith("replay ")
+            ]
+            assert replay_count == len(replay_lines), f"expected {replay_count} replay lines: {replay_lines}"
+            assert any("csvx_schema" in line for line in replay_lines), replay_lines
+            assert any("csvx_edit_apply" in line for line in replay_lines), replay_lines
             assert has_x(args.binary, str(copy)), "replay did not change the copy"
     finally:
         import os

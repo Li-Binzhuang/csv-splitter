@@ -16,6 +16,7 @@ python3 scripts/smoke_http.py   # 发布包 HTTP：/ops、/report chart+compare�
 bash scripts/package_release.sh   # dist tar.gz + .sha256，末尾自动 verify_dist（失败会删半成品）
 bash scripts/verify_dist.sh dist/csvx-4.2.0-<platform>.tar.gz   # 可选手工复验
 bash scripts/verify_dist_negative.sh                            # 坏包必须被拒绝
+# 包内 Agent：解包后启动 agent serve，跑 12 路由 + 428/deny/approve + 多动作 replay + SSE
 # 构建日志：dist/csvx-4.2.0-<platform>.verify.log（UTC 时间 + tarball SHA256 + 全部验收输出）
 ```
 
