@@ -35,5 +35,6 @@ if ! { printf '# date: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; printf '# sha256:
   rm -f "dist/$NAME.tar.gz" "dist/$NAME.tar.gz.sha256"
   exit 1
 fi
+python3 scripts/release_manifest.py "$NAME" "dist/$NAME.tar.gz" "dist/$NAME.verify.log"
 du -h "dist/$NAME.tar.gz"
 cat "dist/$NAME.tar.gz.sha256"
