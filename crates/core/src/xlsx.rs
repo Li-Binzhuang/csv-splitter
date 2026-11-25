@@ -22,6 +22,15 @@ pub struct Sheet {
     pub rows: Vec<Vec<String>>,
 }
 
+/// One cell-highlighting rule, rendered as Excel conditional formatting.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConditionalRule {
+    pub column: String,
+    pub operator: String,
+    pub value: String,
+    pub color: String,
+}
+
 /// Export a CSV file as a single-sheet workbook, streaming rows.
 pub fn csv_to_xlsx(
     input: &Path,
@@ -29,7 +38,18 @@ pub fn csv_to_xlsx(
     delimiter: Delimiter,
     tx: &ProgressSender,
 ) -> std::io::Result<()> {
-    let result = csv_to_xlsx_inner(input, output, delimiter, tx);
+    csv_to_xlsx_with_rules(input, output, delimiter, tx, &[])
+}
+
+/// Export a CSV and add Excel conditional-formatting rules for some columns.
+pub fn csv_to_xlsx_with_rules(
+    input: &Path,
+    output: &Path,
+    delimiter: Delimiter,
+    tx: &ProgressSender,
+    rules: &[ConditionalRule],
+) -> std::io::Result<()> {
+    let result = csv_to_xlsx_inner(input, output, delimiter, tx, rules);
     if result.is_err() {
         let _ = std::fs::remove_file(output);
     }
@@ -41,6 +61,7 @@ fn csv_to_xlsx_inner(
     output: &Path,
     delimiter: Delimiter,
     tx: &ProgressSender,
+    rules: &[ConditionalRule],
 ) -> std::io::Result<()> {
     let sheet_name = workbook_sheet_name(input);
     let total_bytes = std::fs::metadata(input).map(|m| m.len()).unwrap_or(0);
@@ -93,7 +114,12 @@ fn csv_to_xlsx_inner(
         workbook_rels(),
         options,
     )?;
-    write_part(&mut zip, "xl/styles.xml", styles_xml(), options)?;
+    write_part(
+        &mut zip,
+        "xl/styles.xml",
+        &styles_xml_with_rules(rules),
+        options,
+    )?;
 
     zip.start_file("xl/worksheets/sheet1.xml", options)
         .map_err(|e| std::io::Error::other(e.to_string()))?;
@@ -143,7 +169,12 @@ fn csv_to_xlsx_inner(
                 .ok();
         }
     }
-    write!(zip, "</sheetData></worksheet>")?;
+    write!(zip, "</sheetData>")?;
+    if !rules.is_empty() && data_rows > 0 {
+        let xml = conditional_formatting_xml(rules, &headers, data_rows + 1)?;
+        write!(zip, "{}", xml)?;
+    }
+    write!(zip, "</worksheet>")?;
     zip.finish()
         .map_err(|e| std::io::Error::other(e.to_string()))?;
     tx.send(ProgressEvent::PhaseDone {
@@ -372,6 +403,78 @@ fn write_cell<W: Write>(
 
 fn write_cell_string(out: &mut String, column: usize, row: u64, value: &str, header: bool) {
     out.push_str(&cell_xml(column, row, value, header));
+}
+
+fn dxf_color(name: &str) -> Option<(&'static str, &'static str)> {
+    match name.to_ascii_lowercase().as_str() {
+        "red" => Some(("FFFFC7CE", "FFFFC7CE")),
+        "amber" | "yellow" => Some(("FFFFEB9C", "FFFFEB9C")),
+        "green" => Some(("FFC6EFCE", "FFC6EFCE")),
+        "blue" => Some(("FFBDD7EE", "FFBDD7EE")),
+        _ => None,
+    }
+}
+
+fn styles_xml_with_rules(rules: &[ConditionalRule]) -> String {
+    let mut out = styles_xml().to_string();
+    if rules.is_empty() {
+        return out;
+    }
+    let mut dxfs = String::from("<dxfs count=\"");
+    dxfs.push_str(&rules.len().to_string());
+    dxfs.push_str("\">");
+    for rule in rules {
+        let (fg, bg) = dxf_color(&rule.color).unwrap_or(("FFFFC7CE", "FFFFC7CE"));
+        dxfs.push_str(&format!(
+            "<dxf><fill><patternFill patternType=\"solid\"><fgColor rgb=\"{fg}\"/><bgColor rgb=\"{bg}\"/></patternFill></fill></dxf>"
+        ));
+    }
+    dxfs.push_str("</dxfs>");
+    out = out.replace("</styleSheet>", &format!("{dxfs}</styleSheet>"));
+    out
+}
+
+fn conditional_formatting_xml(
+    rules: &[ConditionalRule],
+    headers: &[String],
+    last_row: u64,
+) -> std::io::Result<String> {
+    let mut out = String::new();
+    for (index, rule) in rules.iter().enumerate() {
+        let column = headers
+            .iter()
+            .position(|header| header == &rule.column)
+            .ok_or_else(|| {
+                invalid(&format!(
+                    "highlight column {:?} is not a header",
+                    rule.column
+                ))
+            })?;
+        let operator = match rule.operator.as_str() {
+            ">" => "greaterThan",
+            "<" => "lessThan",
+            ">=" => "greaterThanOrEqual",
+            "<=" => "lessThanOrEqual",
+            "=" => "equal",
+            "!=" => "notEqual",
+            other => {
+                return Err(invalid(&format!(
+                    "unsupported highlight operator {other:?}"
+                )))
+            }
+        };
+        let formula = if rule.value.parse::<f64>().is_ok() {
+            rule.value.clone()
+        } else {
+            format!("\"{}\"", xml_attr(&rule.value))
+        };
+        out.push_str(&format!(
+            "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"cellIs\" dxfId=\"{index}\" priority=\"{priority}\" operator=\"{operator}\"><formula>{formula}</formula></cfRule></conditionalFormatting>",
+            col = column_name(column),
+            priority = index + 1,
+        ));
+    }
+    Ok(out)
 }
 
 /// Built-in Excel number formats that represent dates.
@@ -966,6 +1069,33 @@ mod tests {
             std::fs::read_to_string(&back).unwrap(),
             "day,value\n2024-01-01,7\n"
         );
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn conditional_rules_write_excel_cell_is_rules() {
+        let dir = std::env::temp_dir().join(format!("csvx_xlsx_cf_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("cf.csv");
+        let output = dir.join("cf.xlsx");
+        std::fs::write(&input, "id,amount\n1,1200\n2,10\n").unwrap();
+        let rules = vec![ConditionalRule {
+            column: "amount".into(),
+            operator: ">".into(),
+            value: "1000".into(),
+            color: "red".into(),
+        }];
+        let (tx, _rx) = std::sync::mpsc::channel();
+        csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
+        let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
+        assert!(sheet.contains("<conditionalFormatting"), "{sheet}");
+        assert!(sheet.contains("dxfId=\"0\""), "{sheet}");
+        assert!(
+            sheet.contains("amount") || sheet.contains("B2:B3"),
+            "{sheet}"
+        );
+        let styles = read_zip(&output, "xl/styles.xml");
+        assert!(styles.contains("<dxfs count=\"1\">"), "{styles}");
         std::fs::remove_dir_all(dir).ok();
     }
 

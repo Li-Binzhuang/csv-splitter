@@ -212,6 +212,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         "convert",
         &[
             ("--format", "Data format: csv | tsv | ndjson | parquet | xlsx"),
+            ("--highlight", "XLSX cellIs rules: amount>1000:red;status=bad:amber"),
             ("--sheet", "Worksheet name for xlsx input (default: first sheet)"),
             ("--delim", "Field delimiter for CSV input"),
             ("--from", "Source encoding"),
@@ -604,7 +605,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         "report",
         &[
             ("--delim", "Field delimiter (default: auto)"),
-            ("--format", "Output format: md | html (default md)"),
+            ("--format", "Output format: md | html | xlsx (default md)"),
             ("--json", "Emit a small JSON confirmation"),
             ("--out", "Output path (default: write to stdout)"),
             ("--spec", "Report spec CSV: section,arg (summary/columns/rows)"),
@@ -3305,6 +3306,47 @@ fn cmd_files(args: &[String]) -> i32 {
     0
 }
 
+fn parse_highlight_rules(text: &str) -> Result<Vec<csvx_core::xlsx::ConditionalRule>, String> {
+    let mut rules = Vec::new();
+    for raw in text.split(';').filter(|raw| !raw.trim().is_empty()) {
+        let (expression, color) = raw
+            .split_once(':')
+            .ok_or_else(|| format!("highlight rule {raw:?} needs column>value:color"))?;
+        let (operator, (column, value)) = ["!=", ">=", "<=", ">", "<", "="]
+            .iter()
+            .find_map(|operator| {
+                expression
+                    .split_once(*operator)
+                    .filter(|(_, value)| !value.trim().is_empty())
+                    .map(|(column, value)| (*operator, (column, value)))
+            })
+            .ok_or_else(|| format!("highlight rule {expression:?} needs an operator"))?;
+        let column = column.trim().to_string();
+        if column.is_empty() {
+            return Err(format!("highlight rule {expression:?} needs a column"));
+        }
+        let color = color.trim().to_ascii_lowercase();
+        if !matches!(
+            color.as_str(),
+            "red" | "amber" | "yellow" | "green" | "blue"
+        ) {
+            return Err(format!(
+                "unsupported highlight color {color:?}; use red/amber/green/blue"
+            ));
+        }
+        rules.push(csvx_core::xlsx::ConditionalRule {
+            column,
+            operator: operator.to_string(),
+            value: value.trim().to_string(),
+            color,
+        });
+    }
+    if rules.is_empty() {
+        return Err("--highlight needs at least one rule".to_string());
+    }
+    Ok(rules)
+}
+
 fn cmd_convert(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
     let mut input: Option<PathBuf> = None;
@@ -3313,6 +3355,7 @@ fn cmd_convert(args: &[String]) -> i32 {
     let mut to = "utf-8".to_string();
     let mut convert_format: Option<String> = None;
     let mut sheet: Option<String> = None;
+    let mut highlight: Option<String> = None;
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -3327,6 +3370,13 @@ fn cmd_convert(args: &[String]) -> i32 {
             },
             "--format" => match p.value("--format") {
                 Ok(v) => convert_format = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--highlight" => match p.value("--highlight") {
+                Ok(v) => highlight = Some(v),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -3390,6 +3440,10 @@ fn cmd_convert(args: &[String]) -> i32 {
             }
             if sheet.is_some() {
                 eprintln!("error: --sheet cannot be used with directory input");
+                return 2;
+            }
+            if highlight.is_some() {
+                eprintln!("error: --highlight needs a single xlsx output, not a directory");
                 return 2;
             }
             if let Err(code) = check_output(Some(&input), &out) {
@@ -3458,6 +3512,20 @@ fn cmd_convert(args: &[String]) -> i32 {
                 }
             };
         }
+        let rules = match highlight.as_deref() {
+            Some(_text) if !target.eq_ignore_ascii_case("xlsx") => {
+                eprintln!("error: --highlight is only valid with --format xlsx");
+                return 2;
+            }
+            Some(text) => match parse_highlight_rules(text) {
+                Ok(rules) => rules,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            None => Vec::new(),
+        };
         let input_name = input
             .file_name()
             .and_then(|name| name.to_str())
@@ -3522,7 +3590,11 @@ fn cmd_convert(args: &[String]) -> i32 {
         }
         let (tx, rx) = mpsc::channel();
         let reporter = spawn_reporter("convert", rx, true);
-        let result = csvx_core::engine::convert_format(&input, &out, &target, delimiter, &tx);
+        let result = if rules.is_empty() {
+            csvx_core::engine::convert_format(&input, &out, &target, delimiter, &tx)
+        } else {
+            csvx_core::xlsx::csv_to_xlsx_with_rules(&input, &out, delimiter, &tx, &rules)
+        };
         drop(tx);
         let _ = reporter.join();
         return match result {

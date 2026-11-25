@@ -31,6 +31,7 @@ writing, and keep every path inside the configured root.
 - Read: `csvx convert input.xlsx --format csv --sheet Data -o data.csv`.
 - Strict ISO `YYYY-MM-DD` values are exported as Excel date cells and read back
   as `YYYY-MM-DD`; other text stays text.
+- `--highlight "amount>1000:red"` writes Excel cellIs conditional formatting.
 
 ## Agent API
 

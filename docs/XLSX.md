@@ -64,9 +64,23 @@ MCP：
 {"name":"csvx_convert","arguments":{"path":"input.xlsx","format":"csv","out":"out.csv","sheet":"Data"}}
 ```
 
+## 条件格式
+
+```bash
+csvx convert data.csv --format xlsx -o data.xlsx \
+  --highlight "amount>1000:red;status=bad:amber"
+```
+
+- 规则用 `;` 分隔，每条 `列 操作符 值 : 颜色`；
+- 操作符 `>` `<` `>=` `<=` `=` `!=`；
+- 颜色 `red/amber/green/blue`；
+- 写成 Excel `cellIs` 条件格式（`dxf` + `conditionalFormatting`），
+  不是静态涂色；
+- 目录→workbook 不支持 `--highlight`。
+
 ## 尚未实现
 
-- 条件格式、合并单元格、样式复制；
+- 合并单元格、样式复制；
 - 自定义数字格式；
 - 公式写入（只写值，不写公式）。
 
