@@ -1,8 +1,9 @@
+use crate::commands::sort::parse_sort_columns;
 use crate::serve;
 use crate::{
-    note_index_build, parse_delimiter, parse_quotes, parse_sort_columns, print_command_help,
-    print_table, print_table_styled, project_columns, report_failure, spawn_reporter,
-    warn_journal_damage, warn_quote_style, Parser,
+    note_index_build, parse_delimiter, parse_quotes, print_command_help, print_table,
+    print_table_styled, project_columns, report_failure, spawn_reporter, warn_journal_damage,
+    warn_quote_style, Parser,
 };
 use std::path::PathBuf;
 use std::sync::mpsc;

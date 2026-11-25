@@ -1,13 +1,17 @@
 pub(crate) mod agent;
+pub(crate) mod book;
 pub(crate) mod convert;
 pub(crate) mod edit;
+pub(crate) mod extract;
 pub(crate) mod files;
 pub(crate) mod filter;
 pub(crate) mod gate;
+pub(crate) mod lookup;
 pub(crate) mod mcp;
 pub(crate) mod repair;
 pub(crate) mod report;
 pub(crate) mod search;
 pub(crate) mod serve;
+pub(crate) mod sort;
 pub(crate) mod stats;
 pub(crate) mod view;
