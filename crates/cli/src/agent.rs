@@ -11,7 +11,7 @@ use std::io::{self, BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 const MAX_BODY: usize = 256 * 1024;
@@ -32,6 +32,7 @@ struct Session {
     token: String,
     created: SystemTime,
     approvals: HashMap<String, (String, Instant)>,
+    notify: Arc<(Mutex<u64>, Condvar)>,
     allowed: Option<Vec<String>>,
     audit: PathBuf,
 }
@@ -253,6 +254,7 @@ fn create_session(
         token: token.clone(),
         created: SystemTime::now(),
         approvals: HashMap::new(),
+        notify: Arc::new((Mutex::new(0), Condvar::new())),
         allowed,
         audit,
     };
@@ -397,7 +399,7 @@ fn run_action(
         .and_then(McpJson::as_str)
         .map(str::to_string);
     let destructive = is_destructive(&tool);
-    let (root, audit) = {
+    let (root, audit, notify) = {
         let mut sessions = match state.sessions.lock() {
             Ok(sessions) => sessions,
             Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
@@ -462,11 +464,16 @@ fn run_action(
                 r#"{"error":"session root escaped the served root"}"#,
             );
         }
-        (session.root.clone(), session.audit.clone())
+        (
+            session.root.clone(),
+            session.audit.clone(),
+            session.notify.clone(),
+        )
     };
     let started = SystemTime::now();
     let args_json = json_render(&args);
     append_audit(&audit, id, &tool, "running", 0, "", &args_json);
+    signal(&notify);
     let result = mcp_run_tool(&root, &tool, &args);
     let elapsed_ms = started.elapsed().map(|e| e.as_millis()).unwrap_or(0);
     let (status, output) = match result {
@@ -474,6 +481,7 @@ fn run_action(
         Err(error) => ("error", error),
     };
     append_audit(&audit, id, &tool, status, elapsed_ms, &output, &args_json);
+    signal(&notify);
     let response = format!(
         r#"{{"status":{},"tool":{},"elapsedMs":{},"output":{}}}"#,
         json_str(status),
@@ -573,6 +581,7 @@ fn approval(
         &approval_id,
         "null",
     );
+    signal(&session.notify);
     let response = format!(
         r#"{{"approved":true,"approvalId":{}}}"#,
         json_str(&approval_id)
@@ -1144,6 +1153,7 @@ fn events(
         return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
     }
     let audit = session.audit.clone();
+    let notify = session.notify.clone();
     drop(sessions);
     stream.write_all(
         b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n",
@@ -1167,7 +1177,14 @@ fn events(
         if !follow || std::time::Instant::now() >= deadline {
             break;
         }
-        std::thread::sleep(Duration::from_millis(200));
+        let guard = match notify.0.lock() {
+            Ok(guard) => guard,
+            Err(_) => break,
+        };
+        let _ = notify
+            .1
+            .wait_timeout(guard, Duration::from_millis(1000))
+            .unwrap_or_else(|error| error.into_inner());
     }
     stream.write_all(b"event: end\ndata: {}\n\n")
 }
@@ -1187,6 +1204,13 @@ fn is_destructive(tool: &str) -> bool {
             | "csvx_job_cancel"
             | "csvx_cache_clear"
     )
+}
+
+fn signal(notify: &Arc<(Mutex<u64>, Condvar)>) {
+    if let Ok(mut generation) = notify.0.lock() {
+        *generation += 1;
+    }
+    notify.1.notify_all();
 }
 
 fn append_audit(
