@@ -56,6 +56,20 @@ csvx agent replay --root /path/to/data --replay session.jsonl
 `/replay` already removes `running`/`approved` lines; `/audit` keeps the full
 history. `replay` executes only final `ok`/`error` lines either way.
 
+For a human-readable command sequence, `GET /sessions/{id}/curl` returns a
+shell script:
+
+```bash
+export CSVX_TOKEN=...
+export CSVX_SESSION=...
+export CSVX_API=http://127.0.0.1:8788
+curl -sS -H "Authorization: Bearer $CSVX_TOKEN" \
+  "$CSVX_API/agent/v1/sessions/$CSVX_SESSION/curl" | bash
+```
+
+The script contains tool arguments and uses `$CSVX_TOKEN`/`$CSVX_SESSION` placeholders.
+Destructive calls are marked with an approval comment; issue `/approvals` first.
+
 ## Why
 
 - You can diff the model's chosen tools and arguments against a hand-written

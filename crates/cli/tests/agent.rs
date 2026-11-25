@@ -293,6 +293,13 @@ fn agent_api_creates_session_actions_approves_and_audits() {
     assert!(!body.contains("running"), "{body}");
     assert!(!body.contains("approved"), "{body}");
 
+    let curl_endpoint = format!("/agent/v1/sessions/{session}/curl");
+    let (status, body) = request(&addr, "GET", &curl_endpoint, Some(&token), "");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("curl -sS"), "{body}");
+    assert!(body.contains("csvx_edit_apply"), "{body}");
+    assert!(!body.contains(&token), "token leaked into script");
+
     // follow=1 keeps the connection open and pushes the first audit frame.
     let mut follow = TcpStream::connect(&addr).unwrap();
     follow

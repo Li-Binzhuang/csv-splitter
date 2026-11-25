@@ -148,6 +148,9 @@ fn handle(mut stream: TcpStream, root: &Path, state: &State) -> io::Result<()> {
     if method == "GET" && action == "replay" {
         return replay_log(&mut stream, state, session_id, token);
     }
+    if method == "GET" && action == "curl" {
+        return curl_script(&mut stream, state, session_id, token);
+    }
     respond_json(&mut stream, 404, r#"{"error":"not found"}"#)
 }
 
@@ -480,6 +483,69 @@ fn audit_log(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io
         format!(
             "HTTP/1.1 200 OK\r\nContent-Type: application/x-ndjson\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
             body.len()
+        )
+        .as_bytes(),
+    )
+}
+
+fn shell_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "'\\''"))
+}
+
+fn curl_script(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
+    let sessions = match state.sessions.lock() {
+        Ok(sessions) => sessions,
+        Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
+    };
+    let Some(session) = sessions.get(id) else {
+        return respond_json(stream, 404, r#"{"error":"unknown session"}"#);
+    };
+    if !constant_eq(&session.token, token) {
+        return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
+    }
+    let text = std::fs::read_to_string(&session.audit).unwrap_or_default();
+    let mut script = String::from(
+        "#!/usr/bin/env bash\nset -euo pipefail\n: \"${CSVX_API:=http://127.0.0.1:8788}\"\n: \"${CSVX_TOKEN:?set CSVX_TOKEN}\"\n: \"${CSVX_SESSION:?set CSVX_SESSION}\"\n",
+    );
+    let mut actions = 0usize;
+    for line in text
+        .lines()
+        .filter(|line| line_belongs_to_session(line, id))
+    {
+        let Ok(value) = McpParser::parse(line) else {
+            continue;
+        };
+        if !matches!(
+            value.get("status").and_then(McpJson::as_str),
+            Some("ok" | "error")
+        ) {
+            continue;
+        }
+        let Some(tool) = value.get("tool").and_then(McpJson::as_str) else {
+            continue;
+        };
+        let arguments = value.get("arguments").cloned().unwrap_or(McpJson::Null);
+        let payload = format!(
+            r#"{{"tool":{},"arguments":{}}}"#,
+            json_str(tool),
+            json_render(&arguments)
+        );
+        if is_destructive(tool) {
+            script.push_str("# destructive: POST /approvals, then add approvalId to this body\n");
+        }
+        script.push_str(&format!(
+            "curl -sS -X POST \"$CSVX_API/agent/v1/sessions/$CSVX_SESSION/actions\" -H \"Authorization: Bearer $CSVX_TOKEN\" -H 'Content-Type: application/json' --data {}\n",
+            shell_quote(&payload)
+        ));
+        actions += 1;
+    }
+    if actions == 0 {
+        script.push_str("# no final actions recorded\n");
+    }
+    stream.write_all(
+        format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: text/x-shellscript\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{script}",
+            script.len()
         )
         .as_bytes(),
     )
