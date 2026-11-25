@@ -68,7 +68,8 @@ curl -sS -H "Authorization: Bearer $CSVX_TOKEN" \
 ```
 
 The script contains tool arguments and uses `$CSVX_TOKEN`/`$CSVX_SESSION` placeholders.
-Destructive calls are marked with an approval comment; issue `/approvals` first.
+Destructive calls carry `"approvalId":"__APPROVAL_ID__"`; issue `/approvals` and replace
+the placeholder before running. `GET /actions` gives the same final actions as JSON.
 
 ## Why
 

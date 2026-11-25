@@ -129,6 +129,9 @@ fn handle(mut stream: TcpStream, root: &Path, state: &State) -> io::Result<()> {
     if method == "GET" && action.is_empty() {
         return session_status(&mut stream, state, session_id, token);
     }
+    if method == "GET" && action == "actions" {
+        return actions_list(&mut stream, state, session_id, token);
+    }
     if method == "POST" && action == "actions" {
         return run_action(&mut stream, state, root, session_id, token, &body);
     }
@@ -449,6 +452,62 @@ fn close(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Re
     respond_json(stream, 200, r#"{"closed":true}"#)
 }
 
+fn actions_list(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
+    let sessions = match state.sessions.lock() {
+        Ok(sessions) => sessions,
+        Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
+    };
+    let Some(session) = sessions.get(id) else {
+        return respond_json(stream, 404, r#"{"error":"unknown session"}"#);
+    };
+    if !constant_eq(&session.token, token) {
+        return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
+    }
+    let text = std::fs::read_to_string(&session.audit).unwrap_or_default();
+    let mut actions = Vec::new();
+    for line in text
+        .lines()
+        .filter(|line| line_belongs_to_session(line, id))
+    {
+        let Ok(value) = McpParser::parse(line) else {
+            continue;
+        };
+        if !matches!(
+            value.get("status").and_then(McpJson::as_str),
+            Some("ok" | "error")
+        ) {
+            continue;
+        }
+        let Some(tool) = value.get("tool").and_then(McpJson::as_str) else {
+            continue;
+        };
+        let arguments = value.get("arguments").cloned().unwrap_or(McpJson::Null);
+        let status = value
+            .get("status")
+            .and_then(McpJson::as_str)
+            .unwrap_or("ok");
+        let elapsed = value
+            .get("elapsedMs")
+            .and_then(|value| match value {
+                McpJson::Number(number) => Some(*number as u64),
+                _ => None,
+            })
+            .unwrap_or(0);
+        actions.push(format!(
+            r#"{{"tool":{},"arguments":{},"status":{},"elapsedMs":{elapsed}}}"#,
+            json_str(tool),
+            json_render(&arguments),
+            json_str(status)
+        ));
+    }
+    let body = format!(
+        r#"{{"session":{},"actions":[{}]}}"#,
+        json_str(id),
+        actions.join(",")
+    );
+    respond_json(stream, 200, &body)
+}
+
 fn line_belongs_to_session(line: &str, id: &str) -> bool {
     McpParser::parse(line)
         .ok()
@@ -525,13 +584,20 @@ fn curl_script(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> 
             continue;
         };
         let arguments = value.get("arguments").cloned().unwrap_or(McpJson::Null);
-        let payload = format!(
+        let mut payload = format!(
             r#"{{"tool":{},"arguments":{}}}"#,
             json_str(tool),
             json_render(&arguments)
         );
         if is_destructive(tool) {
-            script.push_str("# destructive: POST /approvals, then add approvalId to this body\n");
+            payload = format!(
+                r#"{{"tool":{},"arguments":{},"approvalId":"__APPROVAL_ID__"}}"#,
+                json_str(tool),
+                json_render(&arguments)
+            );
+            script.push_str(
+                "# destructive: POST /approvals, replace __APPROVAL_ID__ before running\n",
+            );
         }
         script.push_str(&format!(
             "curl -sS -X POST \"$CSVX_API/agent/v1/sessions/$CSVX_SESSION/actions\" -H \"Authorization: Bearer $CSVX_TOKEN\" -H 'Content-Type: application/json' --data {}\n",
