@@ -634,9 +634,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "csvx-agent"
+version = "4.2.0"
+dependencies = [
+ "csvx-core",
+ "csvx-mcp",
+]
+
+[[package]]
 name = "csvx-cli"
 version = "4.2.0"
 dependencies = [
+ "csvx-agent",
  "csvx-core",
  "csvx-mcp",
  "encoding_rs",

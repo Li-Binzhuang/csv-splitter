@@ -41,7 +41,7 @@ for dir in crates/*/; do
   [[ -f "crates/$name/Cargo.toml" ]] || fail "crates/$name has no Cargo.toml"
 done
 
-CLI_SRC_ALLOWED=(main.rs agent.rs serve.rs)
+CLI_SRC_ALLOWED=(main.rs serve.rs)
 while IFS= read -r entry; do
   name=${entry#crates/cli/src/}
   allowed=0

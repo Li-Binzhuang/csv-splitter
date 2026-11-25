@@ -26,7 +26,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-mod agent;
+use csvx_agent as agent;
 mod serve;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");

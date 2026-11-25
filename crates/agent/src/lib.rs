@@ -5,7 +5,7 @@
 //! destructive tools. It reuses the MCP tool executor, so there is one action
 //! implementation instead of a second command surface.
 
-use crate::serve::json_str;
+use csvx_core::json::quote as json_str;
 use csvx_mcp::{agent_manifest_json, mcp_run_tool, McpJson, McpParser};
 use std::collections::HashMap;
 use std::io::{self, BufRead, BufReader, Read, Write};

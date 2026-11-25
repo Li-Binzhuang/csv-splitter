@@ -1,0 +1,11 @@
+[package]
+name = "csvx-agent"
+version.workspace = true
+edition.workspace = true
+description = "Local Agent API, approvals, audit and trace for csvx."
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+csvx-core = { workspace = true }
+csvx-mcp = { path = "../mcp" }

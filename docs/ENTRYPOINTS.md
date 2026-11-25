@@ -22,7 +22,7 @@
 crates/
   core/       数据引擎；唯一业务真相
   mcp/        已存在：MCP stdio 协议、工具 schema、执行器（薄适配层）
-  agent/      session / approval / audit / trace 控制面（可选，待抽）
+  agent/      已存在：HTTP Agent API、session、审批、审计、trace/replay
   api/        axum HTTP API（可选，待抽）
   cli/        参数解析与命令分发；HTTP 端点暂留 serve.rs
 docs/
@@ -44,8 +44,8 @@ core  →  不允许依赖任何入口
 - 根目录只放项目元数据、`crates/`、`docs/`、`examples/`、`scripts/`、`skills/`；
   不新增根目录 `.rs` 或临时脚本。
 - 源码只在 `crates/<crate>/src`；测试在 `crates/<crate>/tests`。
-- `crates/cli/src` 当前只允许 `main.rs`、`agent.rs`、`serve.rs`；新增模块必须先
-  更新本文件和 `check_layout.sh`，不允许随手加一个 `foo.rs`。
+- `crates/cli/src` 当前只允许 `main.rs`、`serve.rs`；新增模块必须先更新本文件和
+  `check_layout.sh`，不允许随手加一个 `foo.rs`。
 - 入口文件目标 ≤300 行。当前超标文件是迁移对象，只降不升；`main.rs` 不得继续增长。
 - 一个命令一个模块：`commands/split.rs`、`commands/report.rs`、`commands/xlsx.rs`。
 - MCP 工具定义与执行器独立；CLI 不得直接调用内部 HTTP 函数。
@@ -88,7 +88,8 @@ bash scripts/package_release.sh
 2. **抽 `crates/mcp`（进行中）**：MCP 工具 schema、`McpJson`/`McpParser`、stdio 服务、
    执行器与任务/缓存已迁到 `crates/mcp`；HTTP 端点仍在 `serve.rs`。下一步换官方 `rmcp`
    并删除手写协议层。
-3. **抽 `crates/agent`**：session/审批/审计/SSE 用 `axum` 重写；runner 降级为可选。
+3. **抽 `crates/agent`（进行中）**：`agent.rs` 已整体迁入 `crates/agent`，当前保留
+   原 std HTTP 传输；后续单独把传输层换 `axum`，不动 session/审批/审计语义。
 4. **拆 `main.rs`**：按命令拆模块，CLI 只保留 dispatch；最后抽 `serve` 剩余 HTTP。
 
 每一步只做一层，不同时重写 core 行为。
