@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "2e804620a977aa43f093ebf7f6eb27b6e0321c5434e38173be4f94d04129d929",
+  "batch_id": "b3f5a48f01d08d0c278f3f9eb5104556be9a70cc8a1d1015e455d04581ad5911",
+  "composite_identity": "5a9e923d87d214318e4be9a6e72adb6cdc536e3a14b6be7dc3c94000efe90ef4",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "45b48a4c2bb374d9ae28a40698108653c16d349fe664e7294c3d8a357d348fe3",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "6fc9493c6113d0a202f7e7748c8990f13d8ac494cc8bb0fe64e9bab4240c7430",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由 + 审批冒烟 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:urllib 建会话；检查 endpoints；GET 12 路由；未审批 428；approve 后 apply；输出 approval=ok | S:需 server；断言状态；不打印 token；临时文件由 demo 提供"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/demo_end_to_end.sh",
+      "path": "scripts/demo_end_to_end.sh",
+      "change": "update",
+      "source_sha256": "afbe386046ad28e7085891bea8cfa1e8f227e99459e7cf3e5c86ddfb8d24a8c5",
+      "existing_entry": "demo_end_to_end.sh[XQ7T]: F:一键产品演示：pipeline + watch + MCP + Agent 路由/审批 | R:code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs,code:scripts/agent_routes_smoke.py | A:release 检查；orders/plan；pipeline/watch；mcp_client；SDK；agent serve + 路由 + 428/审批；trap 清理 | S:无网络/无 GUI/无 xlsx；BIN 可覆盖；SDK 缺 node_modules 只提示；临时目录不残留"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "5f899c38f0330d120a0bb3e46257006dd1534e7c0ae6bdafc9d9914a1711276c",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "6fc9493c6113d0a202f7e7748c8990f13d8ac494cc8bb0fe64e9bab4240c7430",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由 + 审批冒烟 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:urllib 建会话；检查 endpoints；GET 12 路由；未审批 428；approve 后 apply；输出 approval=ok | S:需 server；断言状态；不打印 token；临时文件由 demo 提供"
+    },
+    {
+      "candidate_id": "333f6e2f7eacbace75c9fc32dbb62698e5deba1cb2f9eef822f558750ec336c0",
+      "object_ref": "code:scripts/demo_end_to_end.sh",
+      "path": "scripts/demo_end_to_end.sh",
+      "change": "update",
+      "source_sha256": "afbe386046ad28e7085891bea8cfa1e8f227e99459e7cf3e5c86ddfb8d24a8c5",
+      "existing_entry": "demo_end_to_end.sh[XQ7T]: F:一键产品演示：pipeline + watch + MCP + Agent 路由/审批 | R:code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs,code:scripts/agent_routes_smoke.py | A:release 检查；orders/plan；pipeline/watch；mcp_client；SDK；agent serve + 路由 + 428/审批；trap 清理 | S:无网络/无 GUI/无 xlsx；BIN 可覆盖；SDK 缺 node_modules 只提示；临时目录不残留"
+    }
+  ]
+}
