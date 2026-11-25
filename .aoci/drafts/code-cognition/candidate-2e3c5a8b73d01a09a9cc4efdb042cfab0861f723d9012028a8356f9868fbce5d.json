@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "d3c5bf1e92c690271241556a2fabcee8589abd249304c208f271af95945dee5e",
+  "batch_id": "2e3c5a8b73d01a09a9cc4efdb042cfab0861f723d9012028a8356f9868fbce5d",
+  "composite_identity": "887629ab371a671e625bf650a222142c9a1037267de71717c0a53d9d4a7e6567",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "a66653af944ba531ff394d43cdb805b734d9a49a74322d3275c2194684ab9242",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "4028abb8b322db11a1dd0ee1cc84906f2e352f24757cee79fc588df2bba6f13a",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由 + 审批 + 重放冒烟 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:urllib 建会话；检查 endpoints；GET 12 路由；428/approve/apply；导出 replay 并跑 csvx agent replay；输出 replay=ok | S:需 server 与 binary；断言状态；不打印 token；临时文件清理"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ae213ea803b0f50104c1b511e92cc81d2df05ad1c058325b2bfa1e51f4e65906",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "4028abb8b322db11a1dd0ee1cc84906f2e352f24757cee79fc588df2bba6f13a",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由 + 审批 + 重放冒烟 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:urllib 建会话；检查 endpoints；GET 12 路由；428/approve/apply；导出 replay 并跑 csvx agent replay；输出 replay=ok | S:需 server 与 binary；断言状态；不打印 token；临时文件清理"
+    }
+  ]
+}
