@@ -144,6 +144,9 @@ fn handle(mut stream: TcpStream, root: &Path, state: &State) -> io::Result<()> {
     if method == "POST" && action == "actions" {
         return run_action(&mut stream, state, root, session_id, token, &body);
     }
+    if method == "GET" && action == "approvals" {
+        return approvals_list(&mut stream, state, session_id, token);
+    }
     if method == "POST" && action == "approvals" {
         return approval(&mut stream, state, session_id, token, &body);
     }
@@ -381,6 +384,34 @@ fn run_action(
     respond_json(stream, 200, &response)
 }
 
+fn approvals_list(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
+    let sessions = match state.sessions.lock() {
+        Ok(sessions) => sessions,
+        Err(_) => return respond_json(stream, 500, r#"{"error":"state poisoned"}"#),
+    };
+    let Some(session) = sessions.get(id) else {
+        return respond_json(stream, 404, r#"{"error":"unknown session"}"#);
+    };
+    if !constant_eq(&session.token, token) {
+        return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
+    }
+    let mut approvals = Vec::new();
+    for (approval_id, tool) in &session.approvals {
+        approvals.push(format!(
+            r#"{{"approvalId":{},"tool":{}}}"#,
+            json_str(approval_id),
+            json_str(tool)
+        ));
+    }
+    let body = format!(
+        r#"{{"session":{},"count":{},"approvals":[{}]}}"#,
+        json_str(id),
+        approvals.len(),
+        approvals.join(",")
+    );
+    respond_json(stream, 200, &body)
+}
+
 fn approval(
     stream: &mut TcpStream,
     state: &State,
@@ -544,8 +575,15 @@ fn actions_report(
             action_approval(tool, &approved).to_string(),
         ));
     }
+    let unapproved = entries
+        .iter()
+        .filter(|(_, _, _, _, approval)| approval == "unapproved")
+        .count();
     let mut body = String::new();
     if html {
+        body.push_str(&format!(
+            "<p>unapproved destructive actions: {unapproved}</p>\n"
+        ));
         body.push_str("<h1>Agent actions</h1><table><tr><th>#</th><th>tool</th><th>status</th><th>approval</th><th>elapsedMs</th><th>arguments</th></tr>\n");
         for (step, (tool, status, elapsed, arguments, approval)) in entries.iter().enumerate() {
             body.push_str(&format!(
@@ -560,9 +598,9 @@ fn actions_report(
         }
         body.push_str("</table>\n");
     } else {
-        body.push_str(
-            "# Agent actions\n\n| # | tool | status | approval | elapsedMs | arguments |\n|---|---|---|---|---|---|\n",
-        );
+        body.push_str(&format!(
+            "# Agent actions\n\nunapproved destructive actions: {unapproved}\n\n| # | tool | status | approval | elapsedMs | arguments |\n|---|---|---|---|---|---|\n"
+        ));
         for (step, (tool, status, elapsed, arguments, approval)) in entries.iter().enumerate() {
             body.push_str(&format!(
                 "| {} | {} | {} | {} | {} | `{}` |\n",
@@ -649,8 +687,12 @@ fn actions_list(stream: &mut TcpStream, state: &State, id: &str, token: &str) ->
             json_str(action_approval(tool, &approved))
         ));
     }
+    let unapproved = actions
+        .iter()
+        .filter(|action| action.contains(r#""approval":"unapproved""#))
+        .count();
     let body = format!(
-        r#"{{"session":{},"actions":[{}]}}"#,
+        r#"{{"session":{},"unapproved":{unapproved},"actions":[{}]}}"#,
         json_str(id),
         actions.join(",")
     );

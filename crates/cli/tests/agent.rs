@@ -253,6 +253,14 @@ fn agent_api_creates_session_actions_approves_and_audits() {
     );
     assert_eq!(status, 200, "{body}");
     let approval = extract(&body, "approvalId");
+
+    let approvals_endpoint = format!("/agent/v1/sessions/{session}/approvals");
+    let (status, body) = request(&addr, "GET", &approvals_endpoint, Some(&token), "");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains(&approval), "{body}");
+    assert!(body.contains("csvx_edit_apply"), "{body}");
+    assert!(body.contains("\"count\":1"), "{body}");
+
     let apply = format!(
         r#"{{"tool":"csvx_edit_apply","arguments":{{"path":"t.csv","ops":"set:1:city:Z"}},"approvalId":"{approval}"}}"#
     );
@@ -297,6 +305,7 @@ fn agent_api_creates_session_actions_approves_and_audits() {
     let (status, body) = request(&addr, "GET", &actions_md, Some(&token), "");
     assert_eq!(status, 200, "{body}");
     assert!(body.contains("# Agent actions"), "{body}");
+    assert!(body.contains("unapproved destructive actions: 0"), "{body}");
     assert!(body.contains("| # | tool | status | approval |"), "{body}");
     assert!(
         body.contains("| 1 | csvx_schema | ok | not_required |"),
@@ -315,6 +324,7 @@ fn agent_api_creates_session_actions_approves_and_audits() {
     assert!(body.contains("csvx_edit_apply"), "{body}");
     assert!(body.contains("\"step\":1"), "{body}");
     assert!(body.contains("\"approval\":\"approved\""), "{body}");
+    assert!(body.contains("\"unapproved\":0"), "{body}");
     assert!(body.contains("\"arguments\""), "{body}");
 
     let curl_endpoint = format!("/agent/v1/sessions/{session}/curl");
