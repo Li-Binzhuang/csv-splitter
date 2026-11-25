@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "34a44330a9f96a1796e71339bf439dc5b26e993942542ca163d36cbf25a770aa",
+  "batch_id": "6c1694d70482e592070f0f1a67e97946ea5543ddfb72afdaee918749be128c21",
+  "composite_identity": "0918b5d25fcf47263fbd7d9616389cbfbbb094f8c90b77aa0e8f6f3b2dea3cd0",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "8f6b431d49831bb4eca09123eb2256ec835e1daa859e9e85b857c6d5682d73ad",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "195a7b61995fd1ebef2357d6feaff6ed7e1d309bed1ced015fab3a4e6e26ee25",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:阶段性可验证状态摘要，供白天复盘 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-25 记录 23 工具、10 Agent 测试、170 CLI、174 serve、SSE 1-3ms、AOCI 146、TRY_CSVX+包 trace replay；包哈希见 dist/*.sha256 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_release.py",
+      "path": "scripts/check_release.py",
+      "change": "update",
+      "source_sha256": "9c5bfdda2a9600d5d2bc83bbf7835e49ff8c7ede0dd942e8793eb60a54983b75",
+      "existing_entry": "check_release.py[SD7T]: F:重新哈希 release manifest 并拒绝失败验证 | R:code:scripts/release_manifest.py,code:scripts/package_release.sh | A:tar/verify sha；checks.verified/skillInstall；verifyFailedAt 非 null 即失败；输出 manifest=ok | S:仅发布方；不联网；失败命名字段并退出 1"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/release_manifest.py",
+      "path": "scripts/release_manifest.py",
+      "change": "update",
+      "source_sha256": "eff3daac868d95b0c070539432d61b5914a9354401cb780028dc101673a4d5c5",
+      "existing_entry": "release_manifest.py[SD7T]: F:从已验证包写出 release manifest（checks、失败阶段、耗时与阶段耗时） | R:code:scripts/package_release.sh | A:sha/bytes/UTC；stats；gate/aoci；verifyJson sha；verifyFailedAt/DurationMs/PhaseMs；checks | S:仅打包后；不联网；不改 tar；缺文件时 null"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "6b49eeebb17cc7e610d496bb2c2ddfa5e30d700430bc0052dfa1deb338dbba91",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:发布包验收并写 verify.json（失败阶段+stage budget） | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py,code:scripts/check_agent_stats.py,code:scripts/check_phase_times.py | A:成员/version/skill/安装；TRY；12 路由/审批/重放/SSE；stats；xlsx；trace；phase budget；trap | S:仅发布方；不联网；失败写 failedAt；阶段预算不可跳过"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "bf376581bfede61747907305654f7b4245dc31ddbcf4f623550d720b86804693",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "195a7b61995fd1ebef2357d6feaff6ed7e1d309bed1ced015fab3a4e6e26ee25",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:阶段性可验证状态摘要，供白天复盘 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-25 记录 23 工具、10 Agent 测试、170 CLI、174 serve、SSE 1-3ms、AOCI 146、TRY_CSVX+包 trace replay；包哈希见 dist/*.sha256 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "5b443c25dc240ad21fb56e07419e99529989750d455bc426ec6aca9f6fd0b757",
+      "object_ref": "code:scripts/check_release.py",
+      "path": "scripts/check_release.py",
+      "change": "update",
+      "source_sha256": "9c5bfdda2a9600d5d2bc83bbf7835e49ff8c7ede0dd942e8793eb60a54983b75",
+      "existing_entry": "check_release.py[SD7T]: F:重新哈希 release manifest 并拒绝失败验证 | R:code:scripts/release_manifest.py,code:scripts/package_release.sh | A:tar/verify sha；checks.verified/skillInstall；verifyFailedAt 非 null 即失败；输出 manifest=ok | S:仅发布方；不联网；失败命名字段并退出 1"
+    },
+    {
+      "candidate_id": "e4707371ae6fd239fec2bd42175c3b9272930cdbe3a756d7510e0679f5f23cc3",
+      "object_ref": "code:scripts/release_manifest.py",
+      "path": "scripts/release_manifest.py",
+      "change": "update",
+      "source_sha256": "eff3daac868d95b0c070539432d61b5914a9354401cb780028dc101673a4d5c5",
+      "existing_entry": "release_manifest.py[SD7T]: F:从已验证包写出 release manifest（checks、失败阶段、耗时与阶段耗时） | R:code:scripts/package_release.sh | A:sha/bytes/UTC；stats；gate/aoci；verifyJson sha；verifyFailedAt/DurationMs/PhaseMs；checks | S:仅打包后；不联网；不改 tar；缺文件时 null"
+    },
+    {
+      "candidate_id": "6c96cb97e3b7f9bf9eb81274267b17e7b47f8cea5330ad03d9fd305681557486",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "6b49eeebb17cc7e610d496bb2c2ddfa5e30d700430bc0052dfa1deb338dbba91",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:发布包验收并写 verify.json（失败阶段+stage budget） | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py,code:scripts/check_agent_stats.py,code:scripts/check_phase_times.py | A:成员/version/skill/安装；TRY；12 路由/审批/重放/SSE；stats；xlsx；trace；phase budget；trap | S:仅发布方；不联网；失败写 failedAt；阶段预算不可跳过"
+    }
+  ]
+}
