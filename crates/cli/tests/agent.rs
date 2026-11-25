@@ -293,6 +293,17 @@ fn agent_api_creates_session_actions_approves_and_audits() {
     assert!(!body.contains("running"), "{body}");
     assert!(!body.contains("approved"), "{body}");
 
+    let actions_md = format!("/agent/v1/sessions/{session}/actions.md");
+    let (status, body) = request(&addr, "GET", &actions_md, Some(&token), "");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("# Agent actions"), "{body}");
+    assert!(body.contains("csvx_edit_apply"), "{body}");
+    let actions_html = format!("/agent/v1/sessions/{session}/actions.html");
+    let (status, body) = request(&addr, "GET", &actions_html, Some(&token), "");
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("<table>"), "{body}");
+    assert!(body.contains("csvx_schema"), "{body}");
+
     let actions_endpoint = format!("/agent/v1/sessions/{session}/actions");
     let (status, body) = request(&addr, "GET", &actions_endpoint, Some(&token), "");
     assert_eq!(status, 200, "{body}");
