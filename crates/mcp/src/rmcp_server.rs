@@ -9,23 +9,33 @@ use rmcp::handler::server::ServerHandler;
 use rmcp::model::{
     CallToolRequestParams, CallToolResponse, CallToolResult, ContentBlock, Implementation,
     InitializeRequestParams, InitializeResult, ListResourcesResult, ListToolsResult,
-    PaginatedRequestParams, ProtocolVersion, ReadResourceRequestParams, ReadResourceResponse,
-    ReadResourceResult, Resource, ResourceContents, ServerCapabilities, ServerConfig, Tool,
+    PaginatedRequestParams, ProgressNotification, ProgressNotificationParam, ProgressToken,
+    ProtocolVersion, ReadResourceRequestParams, ReadResourceResponse, ReadResourceResult, Resource,
+    ResourceContents, ServerCapabilities, ServerConfig, ServerNotification, Tool,
 };
 use rmcp::service::{RequestContext, RoleServer};
 use rmcp::ServiceExt;
 use serde_json::{json, Value};
 use std::io;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt};
 
 #[derive(Clone)]
 struct CsvxServer {
     root: Arc<PathBuf>,
+    jobs: Arc<Mutex<super::McpJobRegistry>>,
 }
 
-static TOOL_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+fn tool_result(text: String, is_error: bool, code: &str) -> CallToolResponse {
+    let mut result = if is_error {
+        CallToolResult::error(vec![ContentBlock::text(text)])
+    } else {
+        CallToolResult::success(vec![ContentBlock::text(text)])
+    };
+    result.structured_content = Some(json!({"ok": !is_error, "code": code}));
+    result.into()
+}
 
 fn tools() -> Vec<Tool> {
     serde_json::from_str(super::mcp_tools()).unwrap_or_default()
@@ -55,6 +65,84 @@ fn value_to_mcp(value: &Value) -> super::McpJson {
                 .map(|(key, value)| (key.clone(), value_to_mcp(value)))
                 .collect(),
         ),
+    }
+}
+
+impl CsvxServer {
+    async fn job_tool(&self, name: &str, value: &Value) -> Option<CallToolResponse> {
+        match name {
+            "csvx_job_submit" => {
+                let tool = value.get("tool").and_then(Value::as_str)?.to_string();
+                if matches!(tool.as_str(), "csvx_cache_stats" | "csvx_cache_clear") {
+                    return Some(tool_result(
+                        format!("{tool} is a server tool, not a CLI job"),
+                        true,
+                        "job_start_error",
+                    ));
+                }
+                let args = value.get("arguments").cloned().unwrap_or_else(|| json!({}));
+                let args = value_to_mcp(&args);
+                let mut jobs = self.jobs.lock().unwrap_or_else(|e| e.into_inner());
+                Some(match jobs.submit(&self.root, &tool, &args) {
+                    Ok(id) => tool_result(
+                        format!(r#"{{"job":{},"state":"running"}}"#, json!(id)),
+                        false,
+                        "ok",
+                    ),
+                    Err(error) => tool_result(error, true, "job_start_error"),
+                })
+            }
+            "csvx_job_status" => {
+                let id = value.get("id").and_then(Value::as_str)?.to_string();
+                let wait = value
+                    .get("wait")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(0)
+                    .min(30);
+                let jobs = Arc::clone(&self.jobs);
+                let result = tokio::task::spawn_blocking(move || {
+                    jobs.lock()
+                        .unwrap_or_else(|e| e.into_inner())
+                        .status_text(&id, wait)
+                })
+                .await
+                .ok()
+                .flatten();
+                Some(match result {
+                    Some(text) => tool_result(text, false, "ok"),
+                    None => tool_result(
+                        format!(
+                            "unknown job {}",
+                            value.get("id").and_then(Value::as_str).unwrap_or("")
+                        ),
+                        true,
+                        "unknown_job",
+                    ),
+                })
+            }
+            "csvx_job_cancel" => {
+                let id = value.get("id").and_then(Value::as_str)?.to_string();
+                let mut jobs = self.jobs.lock().unwrap_or_else(|e| e.into_inner());
+                Some(match jobs.cancel_text(&id) {
+                    Some(text) => tool_result(text, false, "ok"),
+                    None => tool_result(format!("unknown job {id}"), true, "unknown_job"),
+                })
+            }
+            "csvx_job_list" => {
+                let full = value.get("full").and_then(Value::as_bool).unwrap_or(false);
+                let mut jobs = self.jobs.lock().unwrap_or_else(|e| e.into_inner());
+                Some(tool_result(jobs.list_text(full), false, "ok"))
+            }
+            "csvx_cache_clear" => {
+                let jobs = self.jobs.lock().unwrap_or_else(|e| e.into_inner());
+                Some(tool_result(jobs.cache_clear_text(), false, "ok"))
+            }
+            "csvx_cache_stats" => {
+                let jobs = self.jobs.lock().unwrap_or_else(|e| e.into_inner());
+                Some(tool_result(jobs.cache_stats_text(), false, "ok"))
+            }
+            _ => None,
+        }
     }
 }
 
@@ -94,8 +182,24 @@ impl ServerHandler for CsvxServer {
     async fn call_tool(
         &self,
         request: CallToolRequestParams,
-        _context: RequestContext<RoleServer>,
+        context: RequestContext<RoleServer>,
     ) -> Result<CallToolResponse, rmcp::ErrorData> {
+        let progress = context.meta.0.get("progressToken").cloned();
+        if let Some(token) = progress {
+            if request.name == "csvx_job_status" || request.name == "csvx_pipeline_run" {
+                if let Ok(token) = serde_json::from_value::<ProgressToken>(token) {
+                    let param = ProgressNotificationParam::new(token, 0.0);
+                    let notification = ProgressNotification::new(param);
+                    if let Err(error) = context
+                        .peer
+                        .send_notification(ServerNotification::ProgressNotification(notification))
+                        .await
+                    {
+                        eprintln!("progress send failed: {error}");
+                    }
+                }
+            }
+        }
         let arguments = request.arguments.unwrap_or_default();
         let value = Value::Object(
             arguments
@@ -103,14 +207,19 @@ impl ServerHandler for CsvxServer {
                 .map(|(key, value)| (key.clone(), value.clone()))
                 .collect(),
         );
-        let _guard = TOOL_LOCK
-            .get_or_init(|| Mutex::new(()))
-            .lock()
-            .unwrap_or_else(|error| error.into_inner());
+        if let Some(result) = self.job_tool(&request.name, &value).await {
+            return Ok(result);
+        }
         let args = value_to_mcp(&value);
         match super::mcp_run_tool(&self.root, &request.name, &args) {
-            Ok(text) => Ok(CallToolResult::success(vec![ContentBlock::text(text)]).into()),
-            Err(error) => Ok(CallToolResult::error(vec![ContentBlock::text(error)]).into()),
+            Ok(text) => Ok(tool_result(text, false, "ok")),
+            Err(error) if error.starts_with("unknown tool") => {
+                Ok(tool_result(error, true, "unknown_tool"))
+            }
+            Err(error) if error.contains("outside the MCP root") => {
+                Ok(tool_result(error, true, "path_escape"))
+            }
+            Err(error) => Ok(tool_result(error, true, "cli_error")),
         }
     }
 
@@ -274,6 +383,7 @@ pub fn run_stdio(root: &Path) -> io::Result<()> {
         });
         let server = CsvxServer {
             root: Arc::new(root),
+            jobs: Arc::new(Mutex::new(super::McpJobRegistry::new())),
         };
         let service = server
             .serve((input_rx, output_tx))

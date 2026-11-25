@@ -10,13 +10,13 @@ use std::path::{Path, PathBuf};
 mod rmcp_server;
 pub use rmcp_server::run_stdio as run_rmcp_stdio;
 
-/// Legacy remains the default until the rmcp adapter also carries job tools;
-/// `CSVX_MCP_RMCP=1` opts into the official transport.
+/// The official rmcp transport is the default; the legacy path remains behind
+/// `CSVX_MCP_LEGACY=1` for one release of rollback coverage.
 pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
-    if std::env::var("CSVX_MCP_RMCP").ok().as_deref() == Some("1") {
-        run_rmcp_stdio(root)
-    } else {
+    if std::env::var("CSVX_MCP_LEGACY").ok().as_deref() == Some("1") {
         run_legacy_mcp_stdio(root)
+    } else {
+        run_rmcp_stdio(root)
     }
 }
 
@@ -1398,6 +1398,80 @@ pub fn agent_manifest_json() -> String {
         mcp_tools(),
         mcp_quote(AGENT_INSTRUCTIONS)
     )
+}
+
+/// Shared job and cache state used by the official rmcp adapter.
+pub struct McpJobRegistry {
+    jobs: HashMap<String, McpJob>,
+    next: u64,
+}
+
+impl Default for McpJobRegistry {
+    fn default() -> Self {
+        Self {
+            jobs: HashMap::new(),
+            next: 1,
+        }
+    }
+}
+
+impl McpJobRegistry {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn submit(
+        &mut self,
+        root: &Path,
+        tool: &str,
+        arguments: &McpJson,
+    ) -> Result<String, String> {
+        if !mcp_job_tool_allowed(tool) {
+            return Err(format!("{tool} cannot be submitted as a job"));
+        }
+        let job_id = format!("job-{}", self.next);
+        self.next += 1;
+        let job = mcp_start_job(root, tool, arguments, &job_id)?;
+        prune_mcp_jobs(&mut self.jobs);
+        self.jobs.insert(job_id.clone(), job);
+        Ok(job_id)
+    }
+
+    pub fn status_text(&mut self, job_id: &str, wait: u64) -> Option<String> {
+        let job = self.jobs.get_mut(job_id)?;
+        let started = std::time::Instant::now();
+        loop {
+            let text = mcp_job_text(job_id, job);
+            if !text.contains(r#""state":"running""#)
+                || started.elapsed() >= std::time::Duration::from_secs(wait)
+            {
+                return Some(text);
+            }
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+    }
+
+    pub fn cancel_text(&mut self, job_id: &str) -> Option<String> {
+        self.jobs
+            .get_mut(job_id)
+            .map(|job| mcp_cancel_job(job_id, job))
+    }
+
+    pub fn list_text(&mut self, full: bool) -> String {
+        mcp_job_list(&mut self.jobs, full)
+    }
+
+    pub fn cache_clear_text(&self) -> String {
+        mcp_cache_clear()
+    }
+
+    pub fn cache_stats_text(&self) -> String {
+        mcp_cache_stats()
+    }
+
+    pub fn shutdown(&mut self) {
+        shutdown_mcp_jobs(&mut self.jobs);
+    }
 }
 
 pub fn run_legacy_mcp_stdio(root: &Path) -> io::Result<()> {

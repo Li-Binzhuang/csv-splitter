@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "5f0b1fa8d8a933fac58c287b5cb463c30b3e029357d44a363f3eaa10b3c83b9a",
+  "batch_id": "1e7b1e871194e53b1f5e9f864c93926a91dede505d700cdbac104ec8297769a7",
+  "composite_identity": "fd05a1b7aa8b559c1f3bf799be64e1c3e50c5388a3e4eba7d68b81803915f512",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "f672e7d2e7bc564de90dcf0f67d611d09613d00d261ac051c6978d70617368d5",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/lib.rs",
+      "path": "crates/mcp/src/lib.rs",
+      "change": "update",
+      "source_sha256": "dabe07265cf07c1b6b5b59fa0ad5f698b396f96cbac8e636196d36c2461baf1a",
+      "existing_entry": "lib.rs[EN9L]: F:MCP stdio 适配：23 工具、执行器、job/cache 与 rmcp 切换 | R:code:crates/mcp/Cargo.toml,code:crates/mcp/src/rmcp_server.rs | A:默认 legacy；CSVX_MCP_RMCP=1 走 rmcp；job/cache 仍在 legacy | S:冻结 23 工具；路径限 root；stdout 仅 JSON-RPC"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/rmcp_server.rs",
+      "path": "crates/mcp/src/rmcp_server.rs",
+      "change": "update",
+      "source_sha256": "7635e654ff0c3a3cb971bdb53815e0dbdc327cc3d55821ee2cdcb30677a7e64b",
+      "existing_entry": "rmcp_server.rs[EN7M]: F:官方 rmcp 适配器 + 请求级串行泵 | R:code:crates/mcp/src/lib.rs,code:crates/mcp/Cargo.toml | A:ServerHandler；23 schema；stdin 等响应再读下一条；stdout 按行回写 ack；旧 initialize 兼容 | S:opt-in；串行保证工具顺序；job/cache 工具尚未接"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "58c857029674e44846d67c460b7b00645bb0e2099aacc24206f7ea1f54122e77",
+      "object_ref": "code:crates/mcp/src/lib.rs",
+      "path": "crates/mcp/src/lib.rs",
+      "change": "update",
+      "source_sha256": "dabe07265cf07c1b6b5b59fa0ad5f698b396f96cbac8e636196d36c2461baf1a",
+      "existing_entry": "lib.rs[EN9L]: F:MCP stdio 适配：23 工具、执行器、job/cache 与 rmcp 切换 | R:code:crates/mcp/Cargo.toml,code:crates/mcp/src/rmcp_server.rs | A:默认 legacy；CSVX_MCP_RMCP=1 走 rmcp；job/cache 仍在 legacy | S:冻结 23 工具；路径限 root；stdout 仅 JSON-RPC"
+    },
+    {
+      "candidate_id": "642b66b6a175a19c48759c0eb8b3365fd4877919f16aa9a951810a141de1cad3",
+      "object_ref": "code:crates/mcp/src/rmcp_server.rs",
+      "path": "crates/mcp/src/rmcp_server.rs",
+      "change": "update",
+      "source_sha256": "7635e654ff0c3a3cb971bdb53815e0dbdc327cc3d55821ee2cdcb30677a7e64b",
+      "existing_entry": "rmcp_server.rs[EN7M]: F:官方 rmcp 适配器 + 请求级串行泵 | R:code:crates/mcp/src/lib.rs,code:crates/mcp/Cargo.toml | A:ServerHandler；23 schema；stdin 等响应再读下一条；stdout 按行回写 ack；旧 initialize 兼容 | S:opt-in；串行保证工具顺序；job/cache 工具尚未接"
+    }
+  ]
+}
