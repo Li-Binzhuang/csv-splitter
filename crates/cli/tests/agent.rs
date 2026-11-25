@@ -544,3 +544,71 @@ fn agent_rejected_approval_is_explicit() {
     assert_eq!(status, 428, "{body}");
     std::fs::remove_dir_all(dir).ok();
 }
+
+fn start_with_env(root: &std::path::Path, addr: &str, key: &str, value: &str) -> Server {
+    let child = Command::new(bin())
+        .args([
+            "agent",
+            "serve",
+            "--root",
+            root.to_str().unwrap(),
+            "--addr",
+            addr,
+        ])
+        .env(key, value)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .unwrap();
+    let deadline = Instant::now() + Duration::from_secs(10);
+    let mut child = child;
+    while Instant::now() < deadline {
+        if TcpStream::connect(addr).is_ok() {
+            return Server { child };
+        }
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    let _ = child.kill();
+    let _ = child.wait();
+    panic!("agent server did not start on {addr}");
+}
+
+#[test]
+fn agent_expired_approval_is_rejected() {
+    let dir = std::env::temp_dir().join(format!("csvx_agent_expire_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("t.csv"), "city,amount\nA,10\n").unwrap();
+    let addr = free_addr();
+    let _server = start_with_env(&dir, &addr, "CSVX_APPROVAL_TTL_SECONDS", "1");
+
+    let (status, body) = request(
+        &addr,
+        "POST",
+        "/agent/v1/sessions",
+        None,
+        r#"{"agent":"expire"}"#,
+    );
+    assert_eq!(status, 201, "{body}");
+    let token = extract(&body, "token");
+    let session = extract(&body, "sessionId");
+    let action = format!("/agent/v1/sessions/{session}/actions");
+
+    let (status, body) = request(
+        &addr,
+        "POST",
+        &format!("/agent/v1/sessions/{session}/approvals"),
+        Some(&token),
+        r#"{"tool":"csvx_edit_apply","decision":"approve"}"#,
+    );
+    assert_eq!(status, 200, "{body}");
+    let approval = extract(&body, "approvalId");
+    std::thread::sleep(Duration::from_secs(2));
+
+    let payload = format!(
+        r#"{{"tool":"csvx_edit_apply","arguments":{{"path":"t.csv","ops":"set:1:city:Z"}},"approvalId":"{approval}"}}"#
+    );
+    let (status, body) = request(&addr, "POST", &action, Some(&token), &payload);
+    assert_eq!(status, 428, "{body}");
+    assert!(body.contains(r#""error":"approval expired""#), "{body}");
+    std::fs::remove_dir_all(dir).ok();
+}

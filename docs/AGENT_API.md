@@ -119,6 +119,7 @@ pipeline run、job cancel、cache clear）没有 `approvalId` 时返回 **428**�
 |---|---|
 | 403 `approval denied` | `POST /approvals` 的 `decision` 不是 `approve`；不生成 approvalId |
 | 428 `approval required` | 没带 approvalId、approvalId 已消费或工具不匹配 |
+| 428 `approval expired` | approvalId 超过 TTL（默认 5 分钟；`CSVX_APPROVAL_TTL_SECONDS` 可覆盖） |
 
 约束：
 

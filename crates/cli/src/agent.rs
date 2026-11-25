@@ -12,17 +12,26 @@ use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 const MAX_BODY: usize = 256 * 1024;
 const SESSION_TTL: Duration = Duration::from_secs(8 * 60 * 60);
+
+fn approval_ttl() -> Duration {
+    std::env::var("CSVX_APPROVAL_TTL_SECONDS")
+        .ok()
+        .and_then(|seconds| seconds.parse::<u64>().ok())
+        .filter(|seconds| *seconds > 0)
+        .map(Duration::from_secs)
+        .unwrap_or(Duration::from_secs(5 * 60))
+}
 
 struct Session {
     root: PathBuf,
     agent: String,
     token: String,
     created: SystemTime,
-    approvals: HashMap<String, String>,
+    approvals: HashMap<String, (String, Instant)>,
     allowed: Option<Vec<String>>,
     audit: PathBuf,
 }
@@ -414,16 +423,32 @@ fn run_action(
             );
         }
         if destructive {
-            let approved = approval_id
+            let mut error = "approval required";
+            let approved = match approval_id
                 .as_deref()
                 .and_then(|approval| session.approvals.remove(approval))
-                .is_some_and(|approved_tool| approved_tool == tool);
+            {
+                Some((approved_tool, issued)) if approved_tool == tool => {
+                    if issued.elapsed() > approval_ttl() {
+                        error = "approval expired";
+                        false
+                    } else {
+                        true
+                    }
+                }
+                Some(_) => {
+                    error = "approval tool does not match";
+                    false
+                }
+                None => false,
+            };
             if !approved {
                 return respond_json(
                     stream,
                     428,
                     &format!(
-                        r#"{{"error":"approval required","tool":{}}}"#,
+                        r#"{{"error":{},"tool":{}}}"#,
+                        json_str(error),
                         json_str(&tool)
                     ),
                 );
@@ -471,7 +496,7 @@ fn approvals_list(stream: &mut TcpStream, state: &State, id: &str, token: &str) 
         return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
     }
     let mut approvals = Vec::new();
-    for (approval_id, tool) in &session.approvals {
+    for (approval_id, (tool, _)) in &session.approvals {
         approvals.push(format!(
             r#"{{"approvalId":{},"tool":{}}}"#,
             json_str(approval_id),
@@ -537,7 +562,7 @@ fn approval(
     let approval_id = random_id("appr");
     session
         .approvals
-        .insert(approval_id.clone(), tool.to_string());
+        .insert(approval_id.clone(), (tool.to_string(), Instant::now()));
     append_audit(
         &session.audit,
         id,
@@ -874,7 +899,7 @@ fn runbook_json(stream: &mut TcpStream, state: &State, id: &str, token: &str) ->
         ));
     }
     let mut pending = Vec::new();
-    for (approval_id, tool) in &session.approvals {
+    for (approval_id, (tool, _)) in &session.approvals {
         pending.push(format!(
             r#"{{"approvalId":{},"tool":{}}}"#,
             json_str(approval_id),
@@ -914,7 +939,7 @@ fn runbook(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::
         body.push_str("none\n\n");
     } else {
         body.push_str("| approvalId | tool |\n|---|---|\n");
-        for (approval_id, tool) in &session.approvals {
+        for (approval_id, (tool, _)) in &session.approvals {
             body.push_str(&format!("| `{approval_id}` | `{tool}` |\n"));
         }
         body.push('\n');
