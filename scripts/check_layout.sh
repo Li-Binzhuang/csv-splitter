@@ -42,7 +42,7 @@ for dir in crates/*/; do
 done
 
 CLI_SRC_ALLOWED=(main.rs serve.rs)
-CLI_COMMANDS_ALLOWED=(mod.rs agent.rs convert.rs mcp.rs serve.rs)
+CLI_COMMANDS_ALLOWED=(mod.rs agent.rs convert.rs mcp.rs report.rs serve.rs)
 while IFS= read -r entry; do
   name=${entry#crates/cli/src/}
   allowed=0

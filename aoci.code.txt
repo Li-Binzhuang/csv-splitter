@@ -19,7 +19,7 @@ macos.yml[OV7T]: F:macOS 专用 gate CI（与 Ubuntu/Windows 分开） | R:code:
 Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml,code:crates/agent/Cargo.toml | A:csvx-cli，二进制 csvx，入口 main.rs；依赖 libc/flate2/core(sql)/csvx-mcp/csvx-agent；dev-deps encoding_rs/zip | S:MCP 与 Agent 在独立 crate，CLI 只分发
 
 ===/<repository>/crates/cli/src/===
-main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助与输出 | R:code:crates/cli/src/serve.rs,code:crates/cli/src/commands/*,code:crates/mcp/src/lib.rs,code:crates/agent/src/lib.rs | A:CLI；convert/report/gate/edit/view/filter/watch；agent/mcp/serve/convert 已转 commands | S:report 四类 section；runner key 仅 env；入口模块不互引；命令逐个迁移
+main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助与输出 | R:code:crates/cli/src/serve.rs,code:crates/cli/src/commands/*,code:crates/mcp/src/lib.rs,code:crates/agent/src/lib.rs | A:CLI；convert/report/gate/edit/view/filter/watch；agent/convert/mcp/report/serve 已转 commands | S:report 四类 section；runner key 仅 env；入口模块不互引；命令逐个迁移
 serve.rs[EN8L]: F:本地 HTTP 后端：路由、job、指标与编辑端点 | R:code:crates/cli/src/main.rs,code:crates/cli/src/agent.rs,code:crates/core/src/workbook/export.rs,code:crates/core/src/xlsx.rs | A:HTTP 读写/job；/ops；/gate；/rows typed；/edit；/concat；MCP 已移出到 csvx-mcp | S:uniqueGlobal 需 unique；gate 目录聚合；report compare 限 root；缓存 4GiB/16
 
 ===/<repository>/crates/cli/src/web/===
@@ -129,7 +129,7 @@ FORMULA_CACHE.md[SD7T]: F:公式/读窗口缓存做法、实测与边界 | R:cod
 DSH_SKILL.md[SD7T]: F:把 csvx skill 安装到本地 DSH profile 的说明 | R:code:scripts/install_skill.sh,code:skills/csvx-data/SKILL.md,code:docs/DSH_MODEL_TEST.md | A:install_skill.sh 复制单文件；DSH_HOME 默认 ~/.dsh；skill 目录出现 csvx-data-workbench；与 runner --skill 共用一份 | S:不改 key/模型配置；只覆盖 SKILL.md；需重进/扫描后生效
 AGENT_TRACE.md[SD7T]: F:Agent JSONL trace 与 HTTP audit/replay/actions/curl/runbook 的可复刻流程 | R:code:crates/cli/src/agent.rs,code:docs/AGENT_API.md,code:skills/csvx-data/SKILL.md | A:run/model/tool/final；--trace/--replay；HTTP audit、replay、actions.md/html、curl、runbook、sessions 汇总；阻断提示 | S:不写 key/token；observation 截 20k；trace 含数据；重放编辑用副本
 QUICKSTART_AGENT.md[SD7T]: F:Agent 一页快速上手：MCP、HTTP、runner、skill、Excel、TRY_CSVX 与安全 | R:code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md,code:docs/DSH_SKILL.md,code:examples/try_csvx.sh | A:MCP 配置；HTTP session/actions/audit/replay/curl/runbook；runner --trace/--replay；install_skill.sh；xlsx 示例；TRY_CSVX 自校验 | S:不写 key；审批单次；root 边界；trace/audit 含数据按敏感
-ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:crates/mcp/src/rmcp_server.rs,code:crates/agent/src/axum_http.rs | A:根白名单；crate core/mcp/agent/cli；CLI main/serve+commands；agent/mcp/serve/convert 已迁；axum 已接入 | S:DSH 走 MCP；rmcp 需串行语义；gate 强制；命令逐迁移
+ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:crates/mcp/src/rmcp_server.rs,code:crates/agent/src/axum_http.rs | A:根白名单；crate core/mcp/agent/cli；CLI main/serve+commands；agent/convert/mcp/report/serve 已迁；axum 已接入 | S:DSH 走 MCP；rmcp 需串行语义；gate 强制；命令逐迁移
 
 ===/<repository>/scripts/===
 backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换、自引用拒绝与请求上限；BIN 默认取 ./target/debug/csvx | S:脚本默认跑 target/debug 的二进制，改了代码只重建 release 会在这里看到旧行为；裸 wait 会连自己起的 server 一起等，必须收集 PID 逐个等待
@@ -162,7 +162,7 @@ release_manifest.py[SD7T]: F:从已验证包写出 release manifest（checks/失
 check_release.py[SD7T]: F:重新哈希 manifest 并拒绝失败验证/非 ok 阶段阈值 | R:code:scripts/release_manifest.py,code:scripts/package_release.sh | A:tar/verify sha；verified/skillInstall/phaseThresholds；verifyFailedAt；manifest=ok | S:仅发布方；不联网；失败命名字段并退出 1
 check_phase_times.py[SD7T]: F:拒绝超出预算的包验收阶段 | R:code:scripts/verify_dist.sh,code:scripts/dev.sh | A:读 verify.json phaseMs；extract<2s skill<3s try<3s agent<5s xlsx<2s trace<2s；输出 phase_thresholds=ok | S:失败命名字段；退出 1；不联网
 check_phase_times_negative.sh[SD7T]: F:测试阶段预算拒绝慢值 | R:code:scripts/check_phase_times.py,code:scripts/dev.sh | A:构造 agent=9999ms；断言非零；grep mismatch/agent；输出 phase negative=ok | S:仅测试；临时日志；不联网
-check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；无根 .rs；crate 白名单；CLI main/serve+commands(agent/convert/mcp/serve) 白名单；core 不依赖 cli | S:未知模块退出；先改文档再加模块
+check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；无根 .rs；crate 白名单；CLI main/serve+commands(agent/convert/mcp/report/serve) 白名单；core 不依赖 cli | S:未知模块退出；先改文档再加模块
 
 ===/<repository>/csvx-demo/===
 orders.csv[AZ4L]: F:demo 命令生成的示例数据：6 列 20 120 行，含刻意保留的脏数据 | R:code:crates/core/src/demo.rs | A:列为 id,cust_no,city,amount,note,ts；20 行多一个逗号、100 行重复、900 个空备注，用来演示预览与统计对错位行的容忍 | S:脏数据是故意的，不要清理——GETTING_STARTED 与契约测试都引用这份输入
@@ -201,7 +201,8 @@ axum_http.rs[MN7L]: F:Agent API 的 axum HTTP/SSE 传输层 | R:code:crates/agen
 
 ===/<repository>/crates/cli/src/commands/===
 mcp.rs[SD7T]: F:CLI mcp 命令：解析 --root 并启动 MCP | R:code:crates/mcp/src/lib.rs,code:crates/cli/src/commands/mod.rs | A:Parser；--root；help；csvx_mcp::run_mcp_stdio | S:默认 legacy；错误打 stderr；不打印 token
-mod.rs[SD7T]: F:CLI 命令模块清单 | R:code:crates/cli/src/commands/agent.rs,code:crates/cli/src/commands/convert.rs,code:crates/cli/src/commands/mcp.rs,code:crates/cli/src/commands/serve.rs | A:agent/convert/mcp/serve 四个子模块 | S:新增命令前更新 ENTRYPOINTS 与 check_layout
+mod.rs[SD7T]: F:CLI 命令模块清单 | R:code:crates/cli/src/commands/agent.rs,code:crates/cli/src/commands/convert.rs,code:crates/cli/src/commands/mcp.rs,code:crates/cli/src/commands/report.rs,code:crates/cli/src/commands/serve.rs | A:agent/convert/mcp/report/serve 五个子模块 | S:新增命令前更新 ENTRYPOINTS 与 check_layout
 agent.rs[SD7S]: F:CLI agent 命令：serve/manifest/run/replay 参数解析 | R:code:crates/agent/src/lib.rs,code:crates/cli/src/commands/mod.rs | A:Parser；--root/--addr/--port/--endpoint/--model/--prompt/--max-steps/--allow-apply/--skill/--trace/--replay；转 csvx_agent | S:runner key 仅 env；不打印 token；参数错误退出 2
 serve.rs[SD7T]: F:CLI serve 命令：本地 HTTP API 参数解析 | R:code:crates/cli/src/serve.rs,code:crates/cli/src/commands/mod.rs | A:--root/--addr/--port/--check；转 serve::run/check | S:缺 root 退出 2；check 非零即失败
 convert.rs[SD7M]: F:CLI convert 命令：编码转码、xlsx/csv/tsv/ndjson/parquet、highlight | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；-o/--format/--from/--to/--highlight/--sheet/--delim/--quiet；parse_delimiter；read/write sheets；spawn_reporter | S:不覆盖输入；xlsx 规则解析；错误非零
+report.rs[EN9L]: F:CLI report 命令：CSV spec 报表、日期计数、质量/分组表、md/html | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/sheet.rs | A:Parser；spec/specText；summary/quality/groups/compare/datecounts；md/html；date_counts；truncate_for_display；parse_csv_record | S:compare 限 root；report 四类 section；错误非零
