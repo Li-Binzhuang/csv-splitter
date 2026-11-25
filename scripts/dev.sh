@@ -74,6 +74,7 @@ case "${1:-check}" in
     if [ -x "$VERIFY_BIN" ]; then
       run_stage verify-negative env BIN="$VERIFY_BIN" bash scripts/verify_dist_negative.sh
       run_stage stats-negative bash scripts/check_agent_stats_negative.sh
+      run_stage phase-negative bash scripts/check_phase_times_negative.sh
     else
       printf '== verify-negative skipped: no release/debug binary ==\n'
     fi

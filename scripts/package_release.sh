@@ -19,7 +19,7 @@ for doc in ACCEPTANCE AGENT_API AGENT_TRACE QUICKSTART_AGENT CAPABILITIES FORMUL
 done
 mkdir -p "$STAGE/scripts"
 cp scripts/demo_end_to_end.sh scripts/mcp_client.py scripts/pilot_report.py scripts/bench_mcp_cache.py scripts/smoke_http.py scripts/install_skill.sh "$STAGE/"
-cp scripts/agent_routes_smoke.py scripts/check_agent_stats.py "$STAGE/scripts/"
+cp scripts/agent_routes_smoke.py scripts/check_agent_stats.py scripts/check_phase_times.py "$STAGE/scripts/"
 cp docs/QUICKSTART_AGENT.md "$STAGE/AGENT_QUICKSTART.md"
 mkdir -p "$STAGE/mcp_sdk" "$STAGE/skills/csvx-data" "$STAGE/examples/agent"
 cp skills/csvx-data/SKILL.md "$STAGE/skills/csvx-data/"
