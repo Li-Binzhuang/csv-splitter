@@ -396,6 +396,7 @@ fn agent_api_creates_session_actions_approves_and_audits() {
     assert!(body.contains("## Actions"), "{body}");
     assert!(body.contains("csvx_edit_apply"), "{body}");
     assert!(body.contains("agent replay"), "{body}");
+    assert!(body.contains("action count: 2"), "{body}");
 
     let actions_endpoint = format!("/agent/v1/sessions/{session}/actions");
     let (status, body) = request(&addr, "GET", &actions_endpoint, Some(&token), "");

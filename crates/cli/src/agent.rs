@@ -959,6 +959,12 @@ fn runbook(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::
     ));
     // This is a visible warning, not a replacement for the HTTP 428 gate.
     let unapproved = body.matches("| unapproved |").count();
+    body.push_str(&format!(
+        "
+- action count: {step}
+- unapproved: {unapproved}
+"
+    ));
     if unapproved > 0 {
         body = format!("> **BLOCKED**: {unapproved} unapproved destructive action(s) are listed below; issue /approvals before replay.\n\n{body}");
     }

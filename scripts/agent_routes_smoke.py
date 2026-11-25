@@ -86,6 +86,7 @@ def main():
     assert status == 200, body
     assert '"approval":"approved"' in body, body
     assert has_x(args.binary, str(source)), "approved action did not apply"
+    actions_count = len(json.loads(body)["actions"])
 
     status, replay = request(api, f"/agent/v1/sessions/{sid}/replay", token)
     assert status == 200, replay
@@ -106,7 +107,12 @@ def main():
         import os
         os.unlink(replay_path)
 
-    print(f"routes={len(routes)} session={sid} approval=ok replay=ok")
+    status, body = request(api, action, token)
+    assert status == 200, body
+    after_count = len(json.loads(body)["actions"])
+    assert after_count == actions_count, f"replay changed HTTP actions: {actions_count} -> {after_count}"
+
+    print(f"routes={len(routes)} session={sid} actions={actions_count} approval=ok replay=ok")
 
 if __name__ == "__main__":
     main()
