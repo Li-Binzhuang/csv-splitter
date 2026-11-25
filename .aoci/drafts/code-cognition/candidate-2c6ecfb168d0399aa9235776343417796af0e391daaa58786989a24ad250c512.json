@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a932e281021c9977529169033d6942d60640e1e0d1c28638be608c8c7783be5e",
+  "batch_id": "2c6ecfb168d0399aa9235776343417796af0e391daaa58786989a24ad250c512",
+  "composite_identity": "9c8e90afebbde021fbbb77d890d0cc8a352035a199dcecfe3b37d9b48ec9e547",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "39c77c71cd547655315d18149d3090994537b9e9cb5597488866bd4090fae886",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "e85bf3a604e2806519faf6c9725dc6ed080db93615e5822a5869d178d9c1ea16",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:scripts/verify_dist_negative.sh,code:scripts/agent_routes_smoke.py | A:发布前 gate/demo/smoke_http/package；verify-negative 拒绝坏包；verify.log UTC+SHA；包内 12 路由/审批/多动作 replay/SSE | S:macOS arm64 已验证；xlsx 渐进；计时非 SLA；其他平台需重跑；清单随包分发"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "52bc5c6d8d4ecb8763df07b0d1701fd2c8f5ca32be99ce54132e731789365168",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:离线发布包验收：SHA256、成员、试用与 Agent 路由 | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py | A:检查必需成员；csvx --version；TRY_CSVX 自校验；启动包内 agent serve 并跑 12 路由/审批/重放/SSE；trap 清理 | S:仅发布方；不联网/不打 tag；缺文件或校验失败非零退出"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "bb9f5f38aab2401d113714ff6af55754f0040cd0f97148dd59559a9748d7d83d",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "e85bf3a604e2806519faf6c9725dc6ed080db93615e5822a5869d178d9c1ea16",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:scripts/verify_dist_negative.sh,code:scripts/agent_routes_smoke.py | A:发布前 gate/demo/smoke_http/package；verify-negative 拒绝坏包；verify.log UTC+SHA；包内 12 路由/审批/多动作 replay/SSE | S:macOS arm64 已验证；xlsx 渐进；计时非 SLA；其他平台需重跑；清单随包分发"
+    },
+    {
+      "candidate_id": "90b9d0c366a3c2010462aa69ef27989d0a533861967434c00e14b3ac64aa3c3e",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "52bc5c6d8d4ecb8763df07b0d1701fd2c8f5ca32be99ce54132e731789365168",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:离线发布包验收：SHA256、成员、试用与 Agent 路由 | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py | A:检查必需成员；csvx --version；TRY_CSVX 自校验；启动包内 agent serve 并跑 12 路由/审批/重放/SSE；trap 清理 | S:仅发布方；不联网/不打 tag；缺文件或校验失败非零退出"
+    }
+  ]
+}
