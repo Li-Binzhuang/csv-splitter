@@ -18,7 +18,7 @@ use serde_json::{json, Value};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};
-use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt};
 
 #[derive(Clone)]
 struct CsvxServer {
@@ -178,14 +178,34 @@ fn rewrite_legacy_initialize(line: &str) -> Option<String> {
 async fn stdin_pump(
     mut tx: tokio::io::DuplexStream,
     synth: tokio::sync::mpsc::Sender<String>,
+    mut acks: tokio::sync::mpsc::Receiver<Value>,
 ) -> io::Result<()> {
     let stdin = tokio::io::stdin();
     let mut lines = tokio::io::BufReader::new(stdin).lines();
     while let Some(line) = lines.next_line().await? {
         match rewrite_legacy_initialize(&line) {
             Some(rewritten) => {
+                let parsed = serde_json::from_str::<Value>(&rewritten).ok();
+                let request_id = parsed.as_ref().and_then(|value| {
+                    value
+                        .get("method")
+                        .and_then(Value::as_str)
+                        .filter(|method| !method.starts_with("notifications/"))
+                        .and_then(|_| value.get("id"))
+                        .filter(|id| !id.is_null())
+                        .cloned()
+                });
                 tx.write_all(rewritten.as_bytes()).await?;
                 tx.write_all(b"\n").await?;
+                if let Some(expected) = request_id {
+                    loop {
+                        match acks.recv().await {
+                            Some(id) if id == expected => break,
+                            Some(_) => continue,
+                            None => return Ok(()),
+                        }
+                    }
+                }
             }
             None => {
                 let error = json!({
@@ -201,20 +221,28 @@ async fn stdin_pump(
 }
 
 async fn stdout_pump(
-    mut rx: tokio::io::DuplexStream,
+    rx: tokio::io::DuplexStream,
     mut synth: tokio::sync::mpsc::Receiver<String>,
+    acks: tokio::sync::mpsc::Sender<Value>,
 ) -> io::Result<()> {
     let mut stdout = tokio::io::stdout();
-    let mut buffer = vec![0u8; 8192];
+    let mut lines = tokio::io::BufReader::new(rx).lines();
     loop {
         tokio::select! {
-            read = rx.read(&mut buffer) => {
-                let read = read?;
-                if read == 0 {
+            line = lines.next_line() => {
+                let Some(line) = line? else {
                     break;
-                }
-                stdout.write_all(&buffer[..read]).await?;
+                };
+                stdout.write_all(line.as_bytes()).await?;
+                stdout.write_all(b"\n").await?;
                 stdout.flush().await?;
+                if let Ok(value) = serde_json::from_str::<Value>(&line) {
+                    if (value.get("result").is_some() || value.get("error").is_some())
+                        && value.get("id").is_some()
+                    {
+                        let _ = acks.send(value["id"].clone()).await;
+                    }
+                }
             }
             message = synth.recv() => {
                 if let Some(message) = message {
@@ -237,11 +265,12 @@ pub fn run_stdio(root: &Path) -> io::Result<()> {
         let (input_tx, input_rx) = tokio::io::duplex(64 * 1024);
         let (output_tx, output_rx) = tokio::io::duplex(64 * 1024);
         let (synth_tx, synth_rx) = tokio::sync::mpsc::channel(8);
+        let (ack_tx, ack_rx) = tokio::sync::mpsc::channel(8);
         tokio::spawn(async move {
-            let _ = stdin_pump(input_tx, synth_tx).await;
+            let _ = stdin_pump(input_tx, synth_tx, ack_rx).await;
         });
         tokio::spawn(async move {
-            let _ = stdout_pump(output_rx, synth_rx).await;
+            let _ = stdout_pump(output_rx, synth_rx, ack_tx).await;
         });
         let server = CsvxServer {
             root: Arc::new(root),

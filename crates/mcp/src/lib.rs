@@ -10,8 +10,8 @@ use std::path::{Path, PathBuf};
 mod rmcp_server;
 pub use rmcp_server::run_stdio as run_rmcp_stdio;
 
-/// Select the legacy hand-written transport by default; the official rmcp
-/// adapter is opt-in until its lifecycle parity is fully tested.
+/// Legacy remains the default until the rmcp adapter also carries job tools;
+/// `CSVX_MCP_RMCP=1` opts into the official transport.
 pub fn run_mcp_stdio(root: &Path) -> io::Result<()> {
     if std::env::var("CSVX_MCP_RMCP").ok().as_deref() == Some("1") {
         run_rmcp_stdio(root)

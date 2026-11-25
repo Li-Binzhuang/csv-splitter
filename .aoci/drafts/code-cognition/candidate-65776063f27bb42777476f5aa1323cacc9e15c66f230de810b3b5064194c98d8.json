@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "5d232ed173286ec6d92feb51fe9c046121858490a86cf158707974dd899855ab",
+  "batch_id": "65776063f27bb42777476f5aa1323cacc9e15c66f230de810b3b5064194c98d8",
+  "composite_identity": "1657b43a8c06ff2c8134431248467be59148be19f66e9e0ef6e6ac6caf4838cb",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "53c9f8fea2a54e668bcc424e4bbb6a12cfc90f31baf2d36c497baa90e71f4331",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/lib.rs",
+      "path": "crates/mcp/src/lib.rs",
+      "change": "update",
+      "source_sha256": "964c6cd9b5f2563948326fe6bea398e48c9d1cc5f81e32a69153b2b20c872c1d",
+      "existing_entry": "lib.rs[EN9L]: F:MCP stdio 薄适配：JSON 信封、23 工具、执行器、job 与 cache | R:code:crates/mcp/Cargo.toml,code:crates/mcp/src/rmcp_server.rs,code:crates/cli/src/main.rs,code:crates/core/src/contract.rs | A:默认 legacy；CSVX_MCP_RMCP=1 时 run_rmcp_stdio；tools/job/cache/resources | S:路径限制 root；工具名冻结 23；stdout 仅 JSON-RPC；rmcp 为 opt-in"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/rmcp_server.rs",
+      "path": "crates/mcp/src/rmcp_server.rs",
+      "change": "update",
+      "source_sha256": "82c681ecc03b02659616943ce669872bb1aad724ff5cd4595171ffb0a6c965f5",
+      "existing_entry": "rmcp_server.rs[EN7M]: F:官方 rmcp 3.11 适配器（含旧版 initialize 兼容） | R:code:crates/mcp/src/lib.rs,code:crates/mcp/Cargo.toml | A:ServerHandler；23 Tool schema；tools/call 串行子进程；resources；旧 initialize 补 protocolVersion/capabilities/_meta；parse error 合成 -32700 | S:默认关闭；仅 CSVX_MCP_RMCP=1；协议固定 2024-11-05；工具调用串行"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "fce578d92b267f86779c4dc3b14017d307197909befd727230d9e4362d0f130d",
+      "object_ref": "code:crates/mcp/src/lib.rs",
+      "path": "crates/mcp/src/lib.rs",
+      "change": "update",
+      "source_sha256": "964c6cd9b5f2563948326fe6bea398e48c9d1cc5f81e32a69153b2b20c872c1d",
+      "existing_entry": "lib.rs[EN9L]: F:MCP stdio 薄适配：JSON 信封、23 工具、执行器、job 与 cache | R:code:crates/mcp/Cargo.toml,code:crates/mcp/src/rmcp_server.rs,code:crates/cli/src/main.rs,code:crates/core/src/contract.rs | A:默认 legacy；CSVX_MCP_RMCP=1 时 run_rmcp_stdio；tools/job/cache/resources | S:路径限制 root；工具名冻结 23；stdout 仅 JSON-RPC；rmcp 为 opt-in"
+    },
+    {
+      "candidate_id": "643c95c7a9d28e2d3241c46da324daed329ba92d0a788165cc713f1cbc6adff6",
+      "object_ref": "code:crates/mcp/src/rmcp_server.rs",
+      "path": "crates/mcp/src/rmcp_server.rs",
+      "change": "update",
+      "source_sha256": "82c681ecc03b02659616943ce669872bb1aad724ff5cd4595171ffb0a6c965f5",
+      "existing_entry": "rmcp_server.rs[EN7M]: F:官方 rmcp 3.11 适配器（含旧版 initialize 兼容） | R:code:crates/mcp/src/lib.rs,code:crates/mcp/Cargo.toml | A:ServerHandler；23 Tool schema；tools/call 串行子进程；resources；旧 initialize 补 protocolVersion/capabilities/_meta；parse error 合成 -32700 | S:默认关闭；仅 CSVX_MCP_RMCP=1；协议固定 2024-11-05；工具调用串行"
+    }
+  ]
+}

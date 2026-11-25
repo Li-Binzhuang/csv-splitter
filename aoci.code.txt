@@ -190,8 +190,8 @@ try_csvx.sh[SD7T]: F:五分钟自校验本地试用：schema/view/journal/export
 Cargo.toml[FV7T]: F:csvx-mcp crate 清单 | R:code:crates/core/Cargo.toml | A:csvx-mcp；依赖 core/rmcp 3.11/serde_json/tokio；旧协议与官方适配并存 | S:默认走 legacy；CSVX_MCP_RMCP=1 才用 rmcp；不依赖 CLI
 
 ===/<repository>/crates/mcp/src/===
-lib.rs[EN9L]: F:MCP stdio 薄适配：JSON 信封、23 工具、执行器、job 与 cache | R:code:crates/mcp/Cargo.toml,code:crates/mcp/src/rmcp_server.rs,code:crates/cli/src/main.rs,code:crates/core/src/contract.rs | A:默认 legacy；CSVX_MCP_RMCP=1 时 run_rmcp_stdio；tools/job/cache/resources | S:路径限制 root；工具名冻结 23；stdout 仅 JSON-RPC；rmcp 为 opt-in
-rmcp_server.rs[EN7M]: F:官方 rmcp 3.11 适配器（含旧版 initialize 兼容） | R:code:crates/mcp/src/lib.rs,code:crates/mcp/Cargo.toml | A:ServerHandler；23 Tool schema；tools/call 串行子进程；resources；旧 initialize 补 protocolVersion/capabilities/_meta；parse error 合成 -32700 | S:默认关闭；仅 CSVX_MCP_RMCP=1；协议固定 2024-11-05；工具调用串行
+lib.rs[EN9L]: F:MCP stdio 适配：23 工具、执行器、job/cache 与 rmcp 切换 | R:code:crates/mcp/Cargo.toml,code:crates/mcp/src/rmcp_server.rs | A:默认 legacy；CSVX_MCP_RMCP=1 走 rmcp；job/cache 仍在 legacy | S:冻结 23 工具；路径限 root；stdout 仅 JSON-RPC
+rmcp_server.rs[EN7M]: F:官方 rmcp 适配器 + 请求级串行泵 | R:code:crates/mcp/src/lib.rs,code:crates/mcp/Cargo.toml | A:ServerHandler；23 schema；stdin 等响应再读下一条；stdout 按行回写 ack；旧 initialize 兼容 | S:opt-in；串行保证工具顺序；job/cache 工具尚未接
 
 ===/<repository>/crates/agent/===
 Cargo.toml[FV7T]: F:csvx-agent crate 清单 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml | A:csvx-agent；依赖 axum/tokio/tokio-stream/core/mcp；承载 Agent 控制面与 axum 传输 | S:不依赖 csvx-cli；tokio 仅在此 crate；路由契约不变
