@@ -23,8 +23,13 @@ for required in csvx README.md AGENT_QUICKSTART.md TRY_CSVX.sh docs/RELEASE_CHEC
   fi
 done
 "$ROOT/csvx" --version
-grep -q 'name: csvx-data-workbench' "$ROOT/skills/csvx-data/SKILL.md"
-printf 'skill=ok\n'
+for term in 'csvx-data-workbench' 'csvx_schema' 'approval' 'audit'; do
+  grep -q "$term" "$ROOT/skills/csvx-data/SKILL.md" || {
+    echo "skill missing: $term" >&2
+    exit 1
+  }
+done
+printf 'skill=ok (surface/approval/audit)\n'
 CSVX_BIN="$ROOT/csvx" bash "$ROOT/TRY_CSVX.sh" >/dev/null
 
 AGENT_DIR=$(mktemp -d)
