@@ -1,0 +1,137 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "abb12a96f077186b95a92403d20fea05100bf82b455396e02dca52e7b6c3ce70",
+  "batch_id": "f13ba647e8ecd50675b86a2690a381d05d3ed728fe3e3259db9973c5f0133ea9",
+  "composite_identity": "a633ad4cd76a03c13b75856d5d08a507f45e77afea611a2148570fe8b446873a",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "9aa8edc5399227fced6ebd73d4603a29e68005f4d9acd2d9b82be8fff05e2ec6",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:Cargo.toml",
+      "path": "Cargo.toml",
+      "change": "update",
+      "source_sha256": "08f56589b8e38dab7b5580fb53e67e9213093be9855aebd8b04d7210d13f42b3",
+      "existing_entry": "Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml,code:crates/mcp/Cargo.toml | A:members core/mcp/cli；workspace.dependencies csvx-core；version 4.2.0 是发布真相 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/agent/Cargo.toml",
+      "path": "crates/agent/Cargo.toml",
+      "change": "create",
+      "source_sha256": "d65f1c2160920a6766c22b90ac1ffb1165104391de05c1c7f6a921dd24eba03f"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/agent/src/lib.rs",
+      "path": "crates/agent/src/lib.rs",
+      "change": "create",
+      "source_sha256": "2836e23f8feffc72df72c6c4ec5336834f3d944e9b96f977eaa72641c68cd98a"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/Cargo.toml",
+      "path": "crates/cli/Cargo.toml",
+      "change": "update",
+      "source_sha256": "f1c11574ed4e3743de06f80ecf65e68725c932cea61f4616881069c302af87f3",
+      "existing_entry": "Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml | A:包名 csvx-cli，二进制 csvx，入口 main.rs；依赖 libc/flate2/core(sql)/csvx-mcp；dev-deps encoding_rs/zip | S:MCP 执行器在 csvx-mcp，CLI 只做分发"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "6c16136d3e80ae6b75e07609f0cbe1512ad09311d9d9e1faa2f6cf7291d33ad5",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助与输出 | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:crates/mcp/src/lib.rs,code:crates/core/src/xlsx.rs | A:CLI 入口；convert xlsx；report；gate/concat/edit/view/filter/watch；agent；mcp 调用 csvx_mcp::run_mcp_stdio | S:report 四类 section；runner key 仅 env；mcp 协议在独立 crate"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "ffabd50a86a2f55f7f3e7b05fa9fffb56c37e2c26c3c90d9340c82bcf848517e",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs,code:docs/OPERATIONS.md,code:crates/mcp/src/lib.rs | A:core 41 模块；磁盘格式/操作契约/ops typed；入口 CLI/HTTP/MCP | S:模块地图测试比对；侧车可删；journal 丢编辑；MCP 薄适配独立"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "b896e3eb6f5bbf3b1e26d1c956daecf6b62f181a9591d92cae0db282422653b2",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:crates/mcp/src/lib.rs | A:根目录白名单；crate core/mcp/cli；CLI 文件白名单；冻结 23 工具/12 路由/阈值；mcp 已抽出 | S:DSH 走 MCP；runner 不扩张；入口≤300 行目标；gate 强制"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "160498b79ab621e079a7cd4d6c54aee10ff6b3632db0bf5d0e3bda196ddc4984",
+      "existing_entry": "check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根目录白名单；无根 .rs；crate 白名单；CLI 文件白名单；core 不依赖 cli；main 行数警告 | S:未知根条目/模块则非零退出；不重排文件；先改文档再加模块"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "2722c383e4e254e16b2a6ad72ad2131b80dec62a1cd034d72eebb162b5d86319",
+      "object_ref": "code:Cargo.toml",
+      "path": "Cargo.toml",
+      "change": "update",
+      "source_sha256": "08f56589b8e38dab7b5580fb53e67e9213093be9855aebd8b04d7210d13f42b3",
+      "existing_entry": "Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml,code:crates/mcp/Cargo.toml | A:members core/mcp/cli；workspace.dependencies csvx-core；version 4.2.0 是发布真相 | S:-"
+    },
+    {
+      "candidate_id": "594f6445519f55763fc89abac21c56d754d508a17cefc78c8d06d38b52fdd846",
+      "object_ref": "code:crates/agent/Cargo.toml",
+      "path": "crates/agent/Cargo.toml",
+      "change": "create",
+      "source_sha256": "d65f1c2160920a6766c22b90ac1ffb1165104391de05c1c7f6a921dd24eba03f"
+    },
+    {
+      "candidate_id": "77fa63443c27a7c770784dc2f5ab66466e65066b25e06921f90b1efdfa906fbc",
+      "object_ref": "code:crates/agent/src/lib.rs",
+      "path": "crates/agent/src/lib.rs",
+      "change": "create",
+      "source_sha256": "2836e23f8feffc72df72c6c4ec5336834f3d944e9b96f977eaa72641c68cd98a"
+    },
+    {
+      "candidate_id": "8ab59b90734e8068b5e6e214cae3f4c2e1d6b3e584e366db3a64a9c23702b285",
+      "object_ref": "code:crates/cli/Cargo.toml",
+      "path": "crates/cli/Cargo.toml",
+      "change": "update",
+      "source_sha256": "f1c11574ed4e3743de06f80ecf65e68725c932cea61f4616881069c302af87f3",
+      "existing_entry": "Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml | A:包名 csvx-cli，二进制 csvx，入口 main.rs；依赖 libc/flate2/core(sql)/csvx-mcp；dev-deps encoding_rs/zip | S:MCP 执行器在 csvx-mcp，CLI 只做分发"
+    },
+    {
+      "candidate_id": "eeb98f3a676f0379e704e92248367aaa57478148e62c056fc49f44cbf3a918dd",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "6c16136d3e80ae6b75e07609f0cbe1512ad09311d9d9e1faa2f6cf7291d33ad5",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助与输出 | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:crates/mcp/src/lib.rs,code:crates/core/src/xlsx.rs | A:CLI 入口；convert xlsx；report；gate/concat/edit/view/filter/watch；agent；mcp 调用 csvx_mcp::run_mcp_stdio | S:report 四类 section；runner key 仅 env；mcp 协议在独立 crate"
+    },
+    {
+      "candidate_id": "ba222ad8a10ebd0afd7eb8ce8a557bd9bf468ff8619a43557888ba439af5d928",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "ffabd50a86a2f55f7f3e7b05fa9fffb56c37e2c26c3c90d9340c82bcf848517e",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs,code:docs/OPERATIONS.md,code:crates/mcp/src/lib.rs | A:core 41 模块；磁盘格式/操作契约/ops typed；入口 CLI/HTTP/MCP | S:模块地图测试比对；侧车可删；journal 丢编辑；MCP 薄适配独立"
+    },
+    {
+      "candidate_id": "3f1be970dee484b7b8dcfb090fbfd9bc8c9ac93fe1fbdd0e911de3808ae5108c",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "b896e3eb6f5bbf3b1e26d1c956daecf6b62f181a9591d92cae0db282422653b2",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:crates/mcp/src/lib.rs | A:根目录白名单；crate core/mcp/cli；CLI 文件白名单；冻结 23 工具/12 路由/阈值；mcp 已抽出 | S:DSH 走 MCP；runner 不扩张；入口≤300 行目标；gate 强制"
+    },
+    {
+      "candidate_id": "e9fd47c9bf7cbde821c3005dcce97a730074c17d5795f33289cf84c9954efa5b",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "160498b79ab621e079a7cd4d6c54aee10ff6b3632db0bf5d0e3bda196ddc4984",
+      "existing_entry": "check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根目录白名单；无根 .rs；crate 白名单；CLI 文件白名单；core 不依赖 cli；main 行数警告 | S:未知根条目/模块则非零退出；不重排文件；先改文档再加模块"
+    }
+  ]
+}

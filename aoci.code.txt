@@ -5,7 +5,7 @@
 .gitignore[FV4T]: F:忽略构建产物、生成侧车与本地杂物 | R:- | A:忽略 `/target`、编辑器 swap、`.DS_Store`、发布包/`dist/`、数据侧车（*.idx/*.journal/*.parquet/*.agg）以及 `scripts/mcp_sdk/node_modules/`；刻意不忽略 `.codegraph/` 与 `.aoci/` | S:发布 tar 与 npm 依赖只用于本地演示，不应进版本库；侧车属生成物
 AGENTS.md[SV6S]: F:仓库级 Agent 指令：AOCI 接入原则与 22:00–08:00 夜间静默工作准则 | R:code:aoci.txt,code:aoci.meta.txt,code:aoci.code.txt,code:docs/NIGHT_QUEUE.md | A:规定“模型生成、模型读取”闭环与 rules/overview/maintain 收尾纪律；新增夜间静默：不提问不等待，自主推进可验证切片；用户决策项进 NIGHT_QUEUE，次日 10:00 看 NIGHT_CHECKPOINT；不重复 CLI 手册 | S:机器事实以 Guide/Schema/Validator 为准，本文件不得覆盖；上下文压缩后必须重新完整读取并认证；夜间不执行 xlsx/商业化/删除/不可逆迁移
 CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:每条写清背景与权衡；4.2.0 记录 filter 压缩、gate 三端+目录+unique-global、concat CLI/HTTP/MCP、report 三端+chart SVG+compare+root 守卫、HTTP out 规范化、ops 17、typed view/apply、pipeline、mcp 23 工具 | S:文档测试要求最新条目版本等于 Cargo.toml；≤1 MiB 内容哈希；CSVX_CONTENT_CHECK_LIMIT 可调；MCP 缓存 4 GiB/16；重查 gzip 4.61→1.63、zst 0.279→0.101、bz2 0.693→0.100；打包；nextDelay
-Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml,code:crates/mcp/Cargo.toml | A:members core/mcp/cli；workspace.dependencies csvx-core；version 4.2.0 是发布真相 | S:-
+Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml,code:crates/agent/Cargo.toml,code:crates/cli/Cargo.toml | A:members core/mcp/agent/cli；workspace.dependencies csvx-core；version 4.2.0 是发布真相 | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
 README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md,code:docs/OPERATIONS.md | A:顶部定位与 Rust 徽章；快速开始；公式节；性能实测；命令表含 serve/mcp/ops/gate/report；concat/gate 目录；report CSV spec；PRODUCT_PLAN/销售入口 | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；性能数字必须来自实测
 
@@ -16,12 +16,11 @@ windows.yml[OV6T]: F:Windows 编译检查，只在 Rust 代码或依赖清单变
 macos.yml[OV7T]: F:macOS 专用 gate CI（与 Ubuntu/Windows 分开） | R:code:scripts/gate.sh,code:.github/workflows/ci.yml | A:workflow_dispatch/push main/PR 且 crates/Cargo/gate.sh 变更触发；macos-latest 跑 bash scripts/gate.sh；无 cargo 缓存（仓库缓存配额曾超限）；不改现有 Ubuntu/Windows/release workflow | S:workflow_dispatch run 45198239384 已成功（12m21s）；另有 Node20 弃用提示；不联网发布、不打 tag
 
 ===/<repository>/crates/cli/===
-Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml | A:包名 csvx-cli，二进制 csvx，入口 main.rs；依赖 libc/flate2/core(sql)/csvx-mcp；dev-deps encoding_rs/zip | S:MCP 执行器在 csvx-mcp，CLI 只做分发
+Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml,code:crates/agent/Cargo.toml | A:csvx-cli，二进制 csvx，入口 main.rs；依赖 libc/flate2/core(sql)/csvx-mcp/csvx-agent；dev-deps encoding_rs/zip | S:MCP 与 Agent 在独立 crate，CLI 只分发
 
 ===/<repository>/crates/cli/src/===
-main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助与输出 | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:crates/mcp/src/lib.rs,code:crates/core/src/xlsx.rs | A:CLI 入口；convert xlsx；report；gate/concat/edit/view/filter/watch；agent；mcp 调用 csvx_mcp::run_mcp_stdio | S:report 四类 section；runner key 仅 env；mcp 协议在独立 crate
+main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助与输出 | R:code:crates/cli/src/serve.rs,code:crates/mcp/src/lib.rs,code:crates/agent/src/lib.rs,code:crates/core/src/xlsx.rs | A:CLI；convert xlsx；report；gate/edit/view/filter/watch；agent 调用 csvx_agent；mcp 调用 csvx_mcp | S:report 四类 section；runner key 仅 env；入口模块不互引
 serve.rs[EN8L]: F:本地 HTTP 后端：路由、job、指标与编辑端点 | R:code:crates/cli/src/main.rs,code:crates/cli/src/agent.rs,code:crates/core/src/workbook/export.rs,code:crates/core/src/xlsx.rs | A:HTTP 读写/job；/ops；/gate；/rows typed；/edit；/concat；MCP 已移出到 csvx-mcp | S:uniqueGlobal 需 unique；gate 目录聚合；report compare 限 root；缓存 4GiB/16
-agent.rs[EN8L]: F:HTTP Agent API + runner + trace/replay | R:code:crates/cli/src/serve.rs,code:crates/mcp/src/lib.rs,code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md | A:loopback；sessions/actions/approvals/close/events/audit/trace/replay/curl/runbook；审批 TTL；MCP 工具来自 csvx-mcp | S:audit 无 token；SSE 60s；trace 含数据；runner 为兼容选项
 
 ===/<repository>/crates/cli/src/web/===
 index.html[EU7M]: F:内置只读浏览页：用 /rows 拉窗口并把结果渲染成表格 | R:code:crates/cli/src/serve.rs | A:单文件 HTML 与内联 JS，无外部依赖；title 与页头的 h1 都是 csvx；实际调用 /files、/meta、/rows、/search、/analyze、/groupby 六个端点 | S:-
@@ -97,7 +96,7 @@ transaction.rs[CP8M]: F:CLI 与 HTTP 共用的 transaction 解析、原子写入
 ===/<repository>/docs/===
 ACCEPTANCE.md[SD6M]: F:验收证据：两档性能/能力矩阵 + Operations 契约里程碑与发布复现 | R:code:docs/API.md,code:docs/NIGHT_CHECKPOINT.md,code:scripts/smoke_http.py | A:旧篇保留列元数据/行列交前端/写入约束/大文件实测；新增 2026-11-24 Operations 验收：17 操作、typed view/apply、压缩、gate 文件/目录/global、concat 三端、report spec/chart/compare/root、count chart 2M 0.44s/0.48s、smoke_http 7/7；薄前端仍待裁决 | S:文档输出由测试钉住；不把薄前端写成已完成；opt-in viewer 只证明可达
 API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:crates/cli/src/serve.rs | A:端点索引与每路由参数；/ops 17 操作；/gate 文件/目录 + uniqueGlobal；/report spec/specText 限 root；/concat paths/dir；/edit preview=1 | S:文档测试要求本文列出的每个路由都真实存在；文档字段必须真的出现在响应里；gate 的 200 不等于通过
-ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs,code:docs/OPERATIONS.md,code:crates/mcp/src/lib.rs | A:core 41 模块；磁盘格式/操作契约/ops typed；入口 CLI/HTTP/MCP | S:模块地图测试比对；侧车可删；journal 丢编辑；MCP 薄适配独立
+ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs,code:docs/OPERATIONS.md,code:crates/mcp/src/lib.rs,code:crates/agent/src/lib.rs | A:core 41 模块；磁盘格式/操作契约；入口 CLI/HTTP/MCP/Agent | S:模块地图测试比对；侧车可删；journal 丢编辑；入口 crate 独立
 CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/FORMULA_CACHE.md | A:公式缓存；filter 压缩；gate+unique-global；concat；report md/html/xlsx；datecounts 可选第二维；convert xlsx 日期/条件格式；typed view/apply；MCP 23 工具；agent serve | S:report xlsx 四类；datecounts 仅前缀；无 GUI；日期仅 ISO；highlight 只 cellIs；SSE 轮询；缓存 64 页
 CI.md[SO6S]: F:CI 结构说明：单 job 流水线、滚动缓存、重试策略与失败注解机制 | R:code:.github/workflows/ci.yml | A:解释为何合并单 job、缓存 key 滚动；新增“偶发失败与一次重试”节：具体案例 reads_stay_consistent_while_edits_land、本地 30 次与两线程全绿、断言未改、两次都红就修测试；本地 gate 的 tests 阶段也重试一次（tests-retry） | S:重试不得用来掩盖真 bug；annotation 保留两次日志；两次都红才是真失败
 DEPLOY.md[SO7M]: F:部署材料：三种安装、配置项、systemd、升级回滚与安全边界 | R:code:deploy/csvx.service | A:明确单机单用户、无鉴权、默认 loopback；配置表含 CSVX_SCAN_THREADS（filter/search 的并行线程数，1 退回顺序）；给出 release-check 与 install-check 两条自检 | S:安全表必须写明没有鉴权与没有多用户隔离，只列防护不列边界会让人误判风险
@@ -130,7 +129,7 @@ FORMULA_CACHE.md[SD7T]: F:公式/读窗口缓存做法、实测与边界 | R:cod
 DSH_SKILL.md[SD7T]: F:把 csvx skill 安装到本地 DSH profile 的说明 | R:code:scripts/install_skill.sh,code:skills/csvx-data/SKILL.md,code:docs/DSH_MODEL_TEST.md | A:install_skill.sh 复制单文件；DSH_HOME 默认 ~/.dsh；skill 目录出现 csvx-data-workbench；与 runner --skill 共用一份 | S:不改 key/模型配置；只覆盖 SKILL.md；需重进/扫描后生效
 AGENT_TRACE.md[SD7T]: F:Agent JSONL trace 与 HTTP audit/replay/actions/curl/runbook 的可复刻流程 | R:code:crates/cli/src/agent.rs,code:docs/AGENT_API.md,code:skills/csvx-data/SKILL.md | A:run/model/tool/final；--trace/--replay；HTTP audit、replay、actions.md/html、curl、runbook、sessions 汇总；阻断提示 | S:不写 key/token；observation 截 20k；trace 含数据；重放编辑用副本
 QUICKSTART_AGENT.md[SD7T]: F:Agent 一页快速上手：MCP、HTTP、runner、skill、Excel、TRY_CSVX 与安全 | R:code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md,code:docs/DSH_SKILL.md,code:examples/try_csvx.sh | A:MCP 配置；HTTP session/actions/audit/replay/curl/runbook；runner --trace/--replay；install_skill.sh；xlsx 示例；TRY_CSVX 自校验 | S:不写 key；审批单次；root 边界；trace/audit 含数据按敏感
-ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:crates/mcp/src/lib.rs | A:根目录白名单；crate core/mcp/cli；CLI 文件白名单；冻结 23 工具/12 路由/阈值；mcp 已抽出 | S:DSH 走 MCP；runner 不扩张；入口≤300 行目标；gate 强制
+ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:crates/mcp/src/lib.rs,code:crates/agent/src/lib.rs | A:根白名单；crate core/mcp/agent/cli；CLI 仅 main/serve；冻结 23 工具/12 路由/阈值；mcp/agent 已抽出 | S:DSH 走 MCP；runner 不扩张；入口≤300 行；gate 强制；axum 独立后续
 
 ===/<repository>/scripts/===
 backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换、自引用拒绝与请求上限；BIN 默认取 ./target/debug/csvx | S:脚本默认跑 target/debug 的二进制，改了代码只重建 release 会在这里看到旧行为；裸 wait 会连自己起的 server 一起等，必须收集 PID 逐个等待
@@ -163,7 +162,7 @@ release_manifest.py[SD7T]: F:从已验证包写出 release manifest（checks/失
 check_release.py[SD7T]: F:重新哈希 manifest 并拒绝失败验证/非 ok 阶段阈值 | R:code:scripts/release_manifest.py,code:scripts/package_release.sh | A:tar/verify sha；verified/skillInstall/phaseThresholds；verifyFailedAt；manifest=ok | S:仅发布方；不联网；失败命名字段并退出 1
 check_phase_times.py[SD7T]: F:拒绝超出预算的包验收阶段 | R:code:scripts/verify_dist.sh,code:scripts/dev.sh | A:读 verify.json phaseMs；extract<2s skill<3s try<3s agent<5s xlsx<2s trace<2s；输出 phase_thresholds=ok | S:失败命名字段；退出 1；不联网
 check_phase_times_negative.sh[SD7T]: F:测试阶段预算拒绝慢值 | R:code:scripts/check_phase_times.py,code:scripts/dev.sh | A:构造 agent=9999ms；断言非零；grep mismatch/agent；输出 phase negative=ok | S:仅测试；临时日志；不联网
-check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根目录白名单；无根 .rs；crate 白名单；CLI 文件白名单；core 不依赖 cli；main 行数警告 | S:未知根条目/模块则非零退出；不重排文件；先改文档再加模块
+check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；无根 .rs；crate core/cli/mcp/agent/api；CLI 仅 main/serve；core 不依赖 cli；main 行数警告 | S:未知条目退出；先改文档再加模块；不重排文件
 
 ===/<repository>/csvx-demo/===
 orders.csv[AZ4L]: F:demo 命令生成的示例数据：6 列 20 120 行，含刻意保留的脏数据 | R:code:crates/core/src/demo.rs | A:列为 id,cust_no,city,amount,note,ts；20 行多一个逗号、100 行重复、900 个空备注，用来演示预览与统计对错位行的容忍 | S:脏数据是故意的，不要清理——GETTING_STARTED 与契约测试都引用这份输入
@@ -191,3 +190,9 @@ Cargo.toml[FV7T]: F:csvx-mcp crate 清单 | R:code:crates/core/Cargo.toml | A:�
 
 ===/<repository>/crates/mcp/src/===
 lib.rs[EN9L]: F:MCP stdio 薄适配：JSON 信封、23 工具 schema、执行器、job 与 materialize 缓存 | R:code:crates/mcp/Cargo.toml,code:crates/core/src/contract.rs,code:crates/cli/src/main.rs,code:crates/cli/src/agent.rs | A:McpJson/McpParser；tools/list；resources csvx://operations/agent；tools/call 子进程执行 csvx；job submit/status/cancel/list；cache clear/stats；AGENT_INSTRUCTIONS | S:路径限制 root；工具名冻结 23；stdin/stdout 仅 JSON-RPC；执行走当前 exe
+
+===/<repository>/crates/agent/===
+Cargo.toml[FV7T]: F:csvx-agent crate 清单 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml | A:包名 csvx-agent；依赖 core 与 csvx-mcp；只承载 Agent 控制面 | S:不依赖 csvx-cli；传输层可独立替换为 axum
+
+===/<repository>/crates/agent/src/===
+lib.rs[EN9L]: F:HTTP Agent API、session、审批、审计、trace/replay 与 runner | R:code:crates/agent/Cargo.toml,code:crates/mcp/src/lib.rs,code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md | A:loopback；sessions/actions/approvals/close/events；audit/trace/replay/curl/runbook；审批 TTL；MCP 工具来自 csvx-mcp | S:audit 无 token；SSE 60s；trace 含数据；runner 仅兼容；传输暂 std
