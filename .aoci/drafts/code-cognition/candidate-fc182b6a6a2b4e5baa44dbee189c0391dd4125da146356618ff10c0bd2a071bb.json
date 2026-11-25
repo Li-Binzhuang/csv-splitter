@@ -1,0 +1,43 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "4b89ad74072f610f8a8151b8018ac4f44c21a98528b6ba5ab36f11393b8dbb83",
+  "batch_id": "fc182b6a6a2b4e5baa44dbee189c0391dd4125da146356618ff10c0bd2a071bb",
+  "composite_identity": "d099abbb7de04f4cb9539f232188dc4c2d3a68d6fa8544c3cf2d32f01bb69e7f",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b2c32b7ca0212929b811147d74a541ea3fb73d7070e905571fff87803cff42b8",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "create",
+      "source_sha256": "0f487d18de050dd561cad70a4655b54ec62adec4afef9ea67cbe9352d306fa88"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/demo_end_to_end.sh",
+      "path": "scripts/demo_end_to_end.sh",
+      "change": "update",
+      "source_sha256": "f4aa633f826745adae6bd105425feaffa1d101f5c5cabdca59837fbb82117502",
+      "existing_entry": "demo_end_to_end.sh[XQ7T]: F:一键产品演示：pipeline + watch + MCP 客户端（可选官方 SDK） | R:code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs,code:docs/DEMO.md | A:启动时打印 csvx 版本并检查 release binary 存在且不比 crates/*/src/**/*.rs 旧，旧则报错除非 CSVX_DEMO_BUILD=1 自动重建；临时目录生成 orders.csv/plan.csv，gzip 可用时生成 orders.csv.gz；pipeline 后跑一轮 watch JSON/state，再调 mcp_client.py；node+node_modules 时跑 SDK；trap 清理 | S:无网络/无 GUI/无 xlsx；BIN 可覆盖；SDK 缺 node_modules 只提示；临时目录不得残留"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "3b1a0a1109e363bc23ee5de20775c2dd61881e8fe3fdd9177dabe0077a8bc0d5",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "create",
+      "source_sha256": "0f487d18de050dd561cad70a4655b54ec62adec4afef9ea67cbe9352d306fa88"
+    },
+    {
+      "candidate_id": "7bb021eee066f93d2350eacc2e5494df8d2f56d18a26a9db37e5e5255d71c151",
+      "object_ref": "code:scripts/demo_end_to_end.sh",
+      "path": "scripts/demo_end_to_end.sh",
+      "change": "update",
+      "source_sha256": "f4aa633f826745adae6bd105425feaffa1d101f5c5cabdca59837fbb82117502",
+      "existing_entry": "demo_end_to_end.sh[XQ7T]: F:一键产品演示：pipeline + watch + MCP 客户端（可选官方 SDK） | R:code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs,code:docs/DEMO.md | A:启动时打印 csvx 版本并检查 release binary 存在且不比 crates/*/src/**/*.rs 旧，旧则报错除非 CSVX_DEMO_BUILD=1 自动重建；临时目录生成 orders.csv/plan.csv，gzip 可用时生成 orders.csv.gz；pipeline 后跑一轮 watch JSON/state，再调 mcp_client.py；node+node_modules 时跑 SDK；trap 清理 | S:无网络/无 GUI/无 xlsx；BIN 可覆盖；SDK 缺 node_modules 只提示；临时目录不得残留"
+    }
+  ]
+}
