@@ -320,6 +320,7 @@ fn agent_api_creates_session_actions_approves_and_audits() {
     assert!(body.contains("curl -sS"), "{body}");
     assert!(body.contains("csvx_edit_apply"), "{body}");
     assert!(body.contains("__APPROVAL_ID__"), "{body}");
+    assert!(body.contains("approval was recorded"), "{body}");
     assert!(!body.contains(&token), "token leaked into script");
 
     // follow=1 keeps the connection open and pushes the first audit frame.

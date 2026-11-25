@@ -712,6 +712,7 @@ fn curl_script(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> 
         return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
     }
     let text = std::fs::read_to_string(&session.audit).unwrap_or_default();
+    let approved = approved_tools(&text, id);
     let mut script = String::from(
         "#!/usr/bin/env bash\nset -euo pipefail\n: \"${CSVX_API:=http://127.0.0.1:8788}\"\n: \"${CSVX_TOKEN:?set CSVX_TOKEN}\"\n: \"${CSVX_SESSION:?set CSVX_SESSION}\"\n",
     );
@@ -744,9 +745,15 @@ fn curl_script(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> 
                 json_str(tool),
                 json_render(&arguments)
             );
-            script.push_str(
-                "# destructive: POST /approvals, replace __APPROVAL_ID__ before running\n",
-            );
+            if action_approval(tool, &approved) == "approved" {
+                script.push_str(
+                    "# destructive: approval was recorded in this audit; replay still needs a fresh approval; replace __APPROVAL_ID__\n",
+                );
+            } else {
+                script.push_str(
+                    "# destructive: NO approval found in this audit; POST /approvals and replace __APPROVAL_ID__\n",
+                );
+            }
         }
         script.push_str(&format!(
             "curl -sS -X POST \"$CSVX_API/agent/v1/sessions/$CSVX_SESSION/actions\" -H \"Authorization: Bearer $CSVX_TOKEN\" -H 'Content-Type: application/json' --data {}\n",
