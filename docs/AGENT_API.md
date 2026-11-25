@@ -109,7 +109,8 @@ pipeline run、job cancel、cache clear）没有 `approvalId` 时返回 **428**�
 - 会话 token 只在创建响应返回一次，绑定 root 和 8 小时 TTL；
 - 创建时传 `allowedTools:["csvx_schema"]` 会把该会话限制在列出的工具，
   其他动作返回 **403**；不传则沿用默认全工具 + 破坏性审批；
-- 审计写 `<root>/.csvx-agent/audit.jsonl`，不含 token/key；每个动作有
+- 审计写 `<root>/.csvx-agent/audit.jsonl`，不含 token/key；`/audit` 只返回
+  当前 session 的行，不泄露同 root 的其他 session；每个动作有
   `running`、`approved`（审批时）和最终 `ok/error`，且包含工具参数（不含 token）；
 - 所有路径 canonical + root 内；
 - SSE 默认回放后关闭；`?follow=1` 轮询审计文件并持续推送最多 60s；

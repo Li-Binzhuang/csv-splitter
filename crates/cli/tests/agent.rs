@@ -160,6 +160,58 @@ fn agent_api_honors_the_tool_allowlist() {
 }
 
 #[test]
+fn agent_audit_is_scoped_to_the_session() {
+    let dir = std::env::temp_dir().join(format!("csvx_agent_scope_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("t.csv"), "id,city\n1,A\n").unwrap();
+    let addr = free_addr();
+    let _server = start(&dir, &addr);
+
+    let mut sessions = Vec::new();
+    for agent in ["a", "b"] {
+        let (status, body) = request(
+            &addr,
+            "POST",
+            "/agent/v1/sessions",
+            None,
+            &format!(r#"{{"agent":"{agent}"}}"#),
+        );
+        assert_eq!(status, 201, "{body}");
+        sessions.push((extract(&body, "token"), extract(&body, "sessionId")));
+    }
+    let path_a = format!("/agent/v1/sessions/{}/actions", sessions[0].1);
+    let path_b = format!("/agent/v1/sessions/{}/actions", sessions[1].1);
+    let (status, body) = request(
+        &addr,
+        "POST",
+        &path_a,
+        Some(&sessions[0].0),
+        r#"{"tool":"csvx_schema","arguments":{"path":"t.csv"}}"#,
+    );
+    assert_eq!(status, 200, "{body}");
+    let (status, body) = request(
+        &addr,
+        "POST",
+        &path_b,
+        Some(&sessions[1].0),
+        r#"{"tool":"csvx_view","arguments":{"path":"t.csv"}}"#,
+    );
+    assert_eq!(status, 200, "{body}");
+
+    let (status, body) = request(
+        &addr,
+        "GET",
+        &format!("/agent/v1/sessions/{}/audit", sessions[0].1),
+        Some(&sessions[0].0),
+        "",
+    );
+    assert_eq!(status, 200, "{body}");
+    assert!(body.contains("csvx_schema"), "{body}");
+    assert!(!body.contains("csvx_view"), "{body}");
+    std::fs::remove_dir_all(dir).ok();
+}
+
+#[test]
 fn agent_api_creates_session_actions_approves_and_audits() {
     let dir = std::env::temp_dir().join(format!("csvx_agent_test_{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();

@@ -38,8 +38,9 @@ are ignored for execution; the final answer stays in the trace for inspection.
 ## HTTP Agent API
 
 The HTTP side has the same idea: `GET /agent/v1/sessions/{id}/audit` (alias
-`/trace`) returns the raw JSONL with `tool`, `arguments`, `status`, `elapsedMs`
-and an output preview. It is written on `running`, `approved`, and again on
+`/trace`) returns the raw JSONL for **that session only** (the shared file is
+filtered by session id), with `tool`, `arguments`, `status`, `elapsedMs` and an
+output preview. It is written on `running`, `approved`, and again on
 `ok/error`, so a failed action is still visible. Tokens are never written.
 
 Replay HTTP audit lines too:

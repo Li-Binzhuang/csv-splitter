@@ -443,6 +443,18 @@ fn close(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Re
     respond_json(stream, 200, r#"{"closed":true}"#)
 }
 
+fn line_belongs_to_session(line: &str, id: &str) -> bool {
+    McpParser::parse(line)
+        .ok()
+        .and_then(|value| {
+            value
+                .get("session")
+                .and_then(McpJson::as_str)
+                .map(str::to_string)
+        })
+        .is_some_and(|session| session == id)
+}
+
 fn audit_log(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io::Result<()> {
     let sessions = match state.sessions.lock() {
         Ok(sessions) => sessions,
@@ -455,13 +467,12 @@ fn audit_log(stream: &mut TcpStream, state: &State, id: &str, token: &str) -> io
         return respond_json(stream, 401, r#"{"error":"invalid token"}"#);
     }
     let text = std::fs::read_to_string(&session.audit).unwrap_or_default();
-    let body = format!(
-        r#"{{"session":{},"lines":{}}}"#,
-        json_str(id),
-        text.lines().count()
-    );
-    // Keep raw JSONL after a marker; callers that need structure can parse each line.
-    let body = format!("{body}\n{}", text);
+    let lines: Vec<&str> = text
+        .lines()
+        .filter(|line| line_belongs_to_session(line, id))
+        .collect();
+    let body = format!(r#"{{"session":{},"lines":{}}}"#, json_str(id), lines.len());
+    let body = format!("{body}\n{}", lines.join("\n"));
     stream.write_all(
         format!(
             "HTTP/1.1 200 OK\r\nContent-Type: application/x-ndjson\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
@@ -499,7 +510,10 @@ fn events(
         let text = std::fs::read_to_string(&audit).unwrap_or_default();
         if text.len() > sent {
             let fresh = &text[sent..];
-            for line in fresh.lines().filter(|line| !line.is_empty()) {
+            for line in fresh
+                .lines()
+                .filter(|line| !line.is_empty() && line_belongs_to_session(line, id))
+            {
                 stream.write_all(b"event: audit\ndata: ")?;
                 stream.write_all(line.as_bytes())?;
                 stream.write_all(b"\n\n")?;
