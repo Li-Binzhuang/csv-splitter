@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "50ce8802545d31a60eabbcbae5ae8b1f10babe3cf18b5f7a9267b3517fc8d1c9",
+  "batch_id": "f6baa557865586460945a1eda1093cbcb166e810dc296bf9856ef019c7f67524",
+  "composite_identity": "e6a67d0e8b600965c20ede72de52770caf37c22ee99a924e7041af4398a847e7",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "6df2d1793617daa52efa9777c2358795337d75118d9b1d0b9b9e1fd8e751e47c",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/install_skill.sh",
+      "path": "scripts/install_skill.sh",
+      "change": "update",
+      "source_sha256": "7dfcad7234720683092c1e20ddb764336c4bdec8d6a3b2f5c8c7b48f89446d40",
+      "existing_entry": "install_skill.sh[XQ7T]: F:把仓库 csvx skill 复制到本地 DSH skills 目录 | R:code:skills/csvx-data/SKILL.md,code:docs/DSH_SKILL.md | A:DSH_HOME 可覆盖；mkdir -p；cp SKILL.md；缺源文件退出 2 | S:只写目标 skill 目录；不碰 key/配置；覆盖同名 SKILL.md"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/release_manifest.py",
+      "path": "scripts/release_manifest.py",
+      "change": "update",
+      "source_sha256": "4bba5440d8b88d8cd1e5af5c6686a37bef6f284c27b5cbee4f046b2017c259eb",
+      "existing_entry": "release_manifest.py[SD7T]: F:从已验证包写出机器可读 release manifest（含 checks） | R:code:scripts/package_release.sh | A:sha256/bytes/UTC；解析 stats_json；gate/aociEntries 环境；读取 verify.json 写 checks | S:仅打包后；不联网；不改 tar；缺文件时 checks=null"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "9cee070db6906bb1562b88a79b472957e7912e43bf5262803be2215daf92fd87",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:离线发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py,code:scripts/check_agent_stats.py | A:成员；version；skill 词；TRY_CSVX；12 路由/审批/重放/SSE；stats；xlsx conditionalFormatting；trace tools:2；写 verified/checksum/members/skill/xlsx/traceReplay/stats；trap | S:仅发布方；不联网；缺文件校验失败非零退出"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "33d22c1f6cd16f2197eec7c26a44def362ddf76b211cc0de82f0045cc46a75d0",
+      "object_ref": "code:scripts/install_skill.sh",
+      "path": "scripts/install_skill.sh",
+      "change": "update",
+      "source_sha256": "7dfcad7234720683092c1e20ddb764336c4bdec8d6a3b2f5c8c7b48f89446d40",
+      "existing_entry": "install_skill.sh[XQ7T]: F:把仓库 csvx skill 复制到本地 DSH skills 目录 | R:code:skills/csvx-data/SKILL.md,code:docs/DSH_SKILL.md | A:DSH_HOME 可覆盖；mkdir -p；cp SKILL.md；缺源文件退出 2 | S:只写目标 skill 目录；不碰 key/配置；覆盖同名 SKILL.md"
+    },
+    {
+      "candidate_id": "100f9e99c5cf3d848ada1f7559dc029cac025e32511e7f40831efdc020e1a337",
+      "object_ref": "code:scripts/release_manifest.py",
+      "path": "scripts/release_manifest.py",
+      "change": "update",
+      "source_sha256": "4bba5440d8b88d8cd1e5af5c6686a37bef6f284c27b5cbee4f046b2017c259eb",
+      "existing_entry": "release_manifest.py[SD7T]: F:从已验证包写出机器可读 release manifest（含 checks） | R:code:scripts/package_release.sh | A:sha256/bytes/UTC；解析 stats_json；gate/aociEntries 环境；读取 verify.json 写 checks | S:仅打包后；不联网；不改 tar；缺文件时 checks=null"
+    },
+    {
+      "candidate_id": "f77a992990aa8295b23825c8cd54eca060e4306cdb3ba43c7a1d23efc0642dd3",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "9cee070db6906bb1562b88a79b472957e7912e43bf5262803be2215daf92fd87",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:离线发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py,code:scripts/check_agent_stats.py | A:成员；version；skill 词；TRY_CSVX；12 路由/审批/重放/SSE；stats；xlsx conditionalFormatting；trace tools:2；写 verified/checksum/members/skill/xlsx/traceReplay/stats；trap | S:仅发布方；不联网；缺文件校验失败非零退出"
+    }
+  ]
+}
