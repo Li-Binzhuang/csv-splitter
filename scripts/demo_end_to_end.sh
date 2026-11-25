@@ -47,4 +47,19 @@ if command -v node >/dev/null 2>&1 && [[ -d scripts/mcp_sdk/node_modules ]]; the
 else
   echo "(official SDK check skipped: run npm install in scripts/mcp_sdk first)"
 fi
+echo "== agent http routes =="
+PORT=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()')
+"$BIN" agent serve --root "$DIR" --addr "127.0.0.1:$PORT" >"$DIR/agent.log" 2>&1 &
+AGENT_PID=$!
+trap 'kill "$AGENT_PID" 2>/dev/null; rm -rf "$DIR"' EXIT
+for _ in $(seq 1 50); do
+  if python3 -c "import urllib.request,sys; urllib.request.urlopen('http://127.0.0.1:$PORT/agent/v1/manifest', timeout=1)" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 0.1
+done
+python3 scripts/agent_routes_smoke.py --api "http://127.0.0.1:$PORT"
+kill "$AGENT_PID" 2>/dev/null || true
+wait "$AGENT_PID" 2>/dev/null || true
+trap 'rm -rf "$DIR"' EXIT
 echo "== accepted =="
