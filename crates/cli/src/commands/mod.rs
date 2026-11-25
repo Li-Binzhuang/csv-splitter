@@ -5,3 +5,4 @@ pub(crate) mod gate;
 pub(crate) mod mcp;
 pub(crate) mod report;
 pub(crate) mod serve;
+pub(crate) mod view;
