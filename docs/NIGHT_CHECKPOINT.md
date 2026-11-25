@@ -13,7 +13,7 @@
 | HTTP serve 测试 | 174 个 |
 | SSE 首帧 | 1–3ms（demo 断言 < 250ms） |
 | AOCI | 142 entries，aligned |
-| 发布包 | `csvx-4.2.0-darwin-arm64.tar.gz` |
+| 发布包 | `csvx-4.2.0-darwin-arm64.tar.gz`，哈希见 `dist/*.sha256` |
 
 ## 本轮已落地
 

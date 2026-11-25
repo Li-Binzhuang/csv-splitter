@@ -17,7 +17,7 @@ bash scripts/package_release.sh   # dist tar.gz + .sha256，末尾自动 verify_
 bash scripts/verify_dist.sh dist/csvx-4.2.0-<platform>.tar.gz   # 可选手工复验
 bash scripts/verify_dist_negative.sh                            # 坏包必须被拒绝
 # 包内 Agent：解包后启动 agent serve，跑 12 路由 + 428/deny/approve + 多动作 replay + SSE
-# 验收日志末尾含 stats: ... 与 stats_json: {"routes":12,"actions":N,...}
+# 验收日志末尾含 stats: ... 与 stats_json: {...}；verify_dist 断言 routes=12、replay=actions、sse_ms<250
 # 构建日志：dist/csvx-4.2.0-<platform>.verify.log（UTC 时间 + tarball SHA256 + 全部验收输出）
 ```
 

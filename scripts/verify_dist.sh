@@ -40,6 +40,9 @@ done
 AGENT_OUT=$(python3 "$ROOT/scripts/agent_routes_smoke.py" --api "http://127.0.0.1:$PORT" --file orders.csv --binary "$ROOT/csvx" --root "$AGENT_DIR")
 printf '%s\n' "$AGENT_OUT"
 printf 'stats: %s\n' "$AGENT_OUT"
+STATS_JSON=$(printf '%s\n' "$AGENT_OUT" | sed -n 's/^stats_json=//p' | tail -1)
+python3 -c 'import json,sys; d=json.loads(sys.argv[1]); assert d["routes"] == 12, d; assert d["replay"] == d["actions"], d; assert d["sse_ms"] < 250, d' "$STATS_JSON"
+printf 'thresholds=ok\n'
 kill "$AGENT_PID" 2>/dev/null || true
 wait "$AGENT_PID" 2>/dev/null || true
 
