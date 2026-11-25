@@ -180,6 +180,14 @@ def main():
         f"routes={len(routes)} session={sid} actions={actions_count} "
         f"sse_ms={sse_ms:.0f} deny=403 approval=ok replay={replay_count}"
     )
+    print("stats_json=" + json.dumps({
+        "routes": len(routes),
+        "session": sid,
+        "actions": actions_count,
+        "sse_ms": round(sse_ms, 3),
+        "deny": 403,
+        "replay": replay_count,
+    }, separators=(",", ":")) + "")
 
 if __name__ == "__main__":
     main()
