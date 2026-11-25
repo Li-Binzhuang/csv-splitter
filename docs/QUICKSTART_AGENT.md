@@ -85,6 +85,11 @@ csvx report data.csv --spec-text 'datecounts,base_time:status' --format xlsx \
   -o dates.xlsx
 ```
 
+## Five-minute tour
+
+The tarball root has `TRY_CSVX.sh`; it creates temporary data and walks schema,
+view, staged edit, materialise, report, xlsx and gate without network or keys.
+
 ## Safety
 
 - single user, local only; no GUI;

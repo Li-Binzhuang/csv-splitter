@@ -8,7 +8,7 @@
 |---|---|
 | MCP 工具 | 23 个，23 条 annotations，23 个 SDK 工具 |
 | Agent HTTP 路由 | 12 条，manifest 与实际路由一致 |
-| Agent 集成测试 | 9 个 |
+| Agent 集成测试 | 10 个 |
 | CLI 集成测试 | 170 个 |
 | HTTP serve 测试 | 174 个 |
 | SSE 首帧 | 1–3ms（demo 断言 < 250ms） |
@@ -25,7 +25,8 @@
 - 审批：403 deny、428 missing、428 expired（默认 5 分钟）、剩余 TTL；
 - SSE：审计写入 condvar 唤醒、15s ping、实测首帧毫秒数；
 - 多 session 汇总（不返回 token/内容）；
-- demo 覆盖 CLI、MCP、SDK（可选）、Agent 路由、审批、重放、SSE。
+- demo 覆盖 CLI、MCP、SDK（可选）、Agent 路由、审批、重放、SSE；
+- 发布包提供 `TRY_CSVX.sh` 五分钟本地试用。
 
 ## 已知边界
 
