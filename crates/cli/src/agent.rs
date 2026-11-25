@@ -410,6 +410,15 @@ fn approval(
     session
         .approvals
         .insert(approval_id.clone(), tool.to_string());
+    append_audit(
+        &session.audit,
+        id,
+        tool,
+        "approved",
+        0,
+        &approval_id,
+        "null",
+    );
     let response = format!(
         r#"{{"approved":true,"approvalId":{}}}"#,
         json_str(&approval_id)
@@ -876,7 +885,17 @@ pub fn replay(trace_path: &Path, root: &Path) -> Result<(), String> {
         let value =
             McpParser::parse(line).map_err(|e| format!("trace line {}: {e}", line_no + 1))?;
         let event = value.get("event").and_then(McpJson::as_str).unwrap_or("");
-        if event != "tool" {
+        // Runner traces use event:"tool"; HTTP audit lines have no event but do
+        // have a tool and arguments, so both formats replay through this path.
+        let audit_final = event.is_empty()
+            && value.get("tool").is_some()
+            && matches!(
+                value.get("status").and_then(McpJson::as_str),
+                Some("ok" | "error")
+            );
+        if event == "tool" || audit_final {
+            // replay below
+        } else {
             continue;
         }
         let tool = value

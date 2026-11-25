@@ -94,9 +94,10 @@ fn agent_replay_runs_recorded_tool_calls_without_a_model() {
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("t.csv"), "id,city\n1,A\n").unwrap();
     let trace = dir.join("trace.jsonl");
+    // HTTP audit format: no event field, final status is what gets replayed.
     std::fs::write(
         &trace,
-        "{\"event\":\"tool\",\"tool\":\"csvx_schema\",\"arguments\":{\"path\":\"t.csv\"}}\n",
+        "{\"tool\":\"csvx_schema\",\"arguments\":{\"path\":\"t.csv\"},\"status\":\"ok\"}\n",
     )
     .unwrap();
     let output = Command::new(bin())
@@ -225,6 +226,7 @@ fn agent_api_creates_session_actions_approves_and_audits() {
     assert_eq!(status, 200, "{body}");
     assert!(body.contains("csvx_edit_apply"), "{body}");
     assert!(body.contains("running"), "{body}");
+    assert!(body.contains("approved"), "{body}");
     assert!(body.contains("ok"), "{body}");
     assert!(body.contains("\"arguments\""), "{body}");
     assert!(

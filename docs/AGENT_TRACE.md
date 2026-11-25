@@ -39,8 +39,21 @@ are ignored for execution; the final answer stays in the trace for inspection.
 
 The HTTP side has the same idea: `GET /agent/v1/sessions/{id}/audit` (alias
 `/trace`) returns the raw JSONL with `tool`, `arguments`, `status`, `elapsedMs`
-and an output preview. It is written on `running` and again on `ok/error`, so a
-failed action is still visible. Tokens are never written.
+and an output preview. It is written on `running`, `approved`, and again on
+`ok/error`, so a failed action is still visible. Tokens are never written.
+
+Replay HTTP audit lines too:
+
+```bash
+curl -sS -H "Authorization: Bearer $TOKEN" \
+  http://127.0.0.1:8788/agent/v1/sessions/$SESSION/audit \
+  > session.jsonl
+
+csvx agent replay --root /path/to/data --replay session.jsonl
+```
+
+`replay` executes only final `ok`/`error` action lines; `running` and `approved`
+lines are skipped.
 
 ## Why
 
