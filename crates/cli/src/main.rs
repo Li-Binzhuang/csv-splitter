@@ -608,7 +608,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--format", "Output format: md | html | xlsx (default md)"),
             ("--json", "Emit a small JSON confirmation"),
             ("--out", "Output path (default: write to stdout)"),
-            ("--spec", "Report spec CSV: section,arg (summary/columns/rows)"),
+            ("--spec", "Report spec CSV: summary/columns/rows/quality/groups/chart/compare/datecounts"),
             ("--spec-text", "Inline report spec instead of a file"),
             ("--root", "Require compare inputs to stay inside this directory"),
             ("--title", "Report title"),
@@ -3306,6 +3306,38 @@ fn cmd_files(args: &[String]) -> i32 {
     0
 }
 
+fn date_counts(
+    sheet: &csvx_core::sheet::Sheet,
+    columns: &[String],
+    column: &str,
+) -> Result<(Vec<String>, Vec<Vec<String>>), String> {
+    let column = column.trim();
+    if column.is_empty() {
+        return Err("datecounts needs a column name".to_string());
+    }
+    let index = columns
+        .iter()
+        .position(|name| name == column)
+        .ok_or_else(|| format!("datecounts: unknown column {column:?}"))?;
+    let window = sheet
+        .window(0, 1_000_000)
+        .map_err(|e| format!("datecounts: {e}"))?;
+    let mut counts = std::collections::BTreeMap::<String, u64>::new();
+    for row in window.rows {
+        let value = row.get(index).map(String::as_str).unwrap_or("");
+        let date: String = value.chars().take(10).collect();
+        if date.is_empty() {
+            continue;
+        }
+        *counts.entry(date).or_insert(0) += 1;
+    }
+    let rows = counts
+        .into_iter()
+        .map(|(date, count)| vec![date, count.to_string()])
+        .collect();
+    Ok((vec![column.to_string(), "requests".to_string()], rows))
+}
+
 fn parse_highlight_rules(text: &str) -> Result<Vec<csvx_core::xlsx::ConditionalRule>, String> {
     let mut rules = Vec::new();
     for raw in text.split(';').filter(|raw| !raw.trim().is_empty()) {
@@ -5762,7 +5794,14 @@ fn cmd_report(args: &[String]) -> i32 {
             }
             if !matches!(
                 kind.as_str(),
-                "summary" | "columns" | "rows" | "quality" | "groups" | "chart" | "compare"
+                "summary"
+                    | "columns"
+                    | "rows"
+                    | "quality"
+                    | "groups"
+                    | "chart"
+                    | "compare"
+                    | "datecounts"
             ) {
                 eprintln!("error: unknown report section {kind:?}");
                 return 2;
@@ -5852,6 +5891,20 @@ fn cmd_report(args: &[String]) -> i32 {
                         name: "Rows".to_string(),
                         headers: window.columns.clone(),
                         rows: window.rows,
+                    });
+                }
+                "datecounts" => {
+                    let (headers, rows) = match date_counts(&sheet, &columns, arg) {
+                        Ok(value) => value,
+                        Err(e) => {
+                            eprintln!("error: {e}");
+                            return 2;
+                        }
+                    };
+                    sheets.push(csvx_core::xlsx::Sheet {
+                        name: "DateCounts".to_string(),
+                        headers,
+                        rows,
                     });
                 }
                 _ => unreachable!(),
@@ -5964,6 +6017,49 @@ fn cmd_report(args: &[String]) -> i32 {
                     }
                     body.push_str("</tr>\n");
                     for row in &window.rows {
+                        body.push_str("<tr>");
+                        for cell in row {
+                            body.push_str(&format!("<td>{}</td>", html_escape(cell)));
+                        }
+                        body.push_str("</tr>\n");
+                    }
+                    body.push_str("</table>\n");
+                }
+            }
+            "datecounts" => {
+                let (headers, rows) = match date_counts(&sheet, &columns, arg) {
+                    Ok(value) => value,
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                };
+                if format == "md" {
+                    body.push_str("## Date counts\n\n|");
+                    for header in &headers {
+                        body.push_str(&format!(" {} |", md_cell(header)));
+                    }
+                    body.push('\n');
+                    body.push('|');
+                    for _ in &headers {
+                        body.push_str(" --- |");
+                    }
+                    body.push('\n');
+                    for row in &rows {
+                        body.push('|');
+                        for cell in row {
+                            body.push_str(&format!(" {} |", md_cell(cell)));
+                        }
+                        body.push('\n');
+                    }
+                    body.push('\n');
+                } else {
+                    body.push_str("<h2>Date counts</h2><table><tr>");
+                    for header in &headers {
+                        body.push_str(&format!("<th>{}</th>", html_escape(header)));
+                    }
+                    body.push_str("</tr>\n");
+                    for row in &rows {
                         body.push_str("<tr>");
                         for cell in row {
                             body.push_str(&format!("<td>{}</td>", html_escape(cell)));
