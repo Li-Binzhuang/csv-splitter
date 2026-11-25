@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "62d8c5a37b4c10f53780cb13aae1f5b52a0acf3cb901d060b4e8f66472973a76",
+  "batch_id": "8cba075d804ff37ff62c4522b78f4cccec5e2dbf40328ee92d151b0288528437",
+  "composite_identity": "44e4a110fc0d8b1bb1c6d7ee319e85a0ee914e3734d40355531d5e0e806c619d",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "c495815a6d527be9c4faade9b31982a3611465184267058c763464f708978acc",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "353b86a72258035be2c7ec36e387168fd3ba9e73c734aa1ac9aab6dd7cb75137",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由 + 审批 + 逐动作重放 + SSE 冒烟 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:12 路由；428/deny=403/approve/edit_apply；raw socket SSE；view overlay；干净副本 replay；逐 replay 行对照 schema/edit_apply；输出 replay=N | S:需 server/binary；不打印 token；SSE \u003c 250ms"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "5eb45930161d7a2db9f294704b753a21961b1c69b521e8b4878fb4e5f545e882",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "353b86a72258035be2c7ec36e387168fd3ba9e73c734aa1ac9aab6dd7cb75137",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由 + 审批 + 逐动作重放 + SSE 冒烟 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:12 路由；428/deny=403/approve/edit_apply；raw socket SSE；view overlay；干净副本 replay；逐 replay 行对照 schema/edit_apply；输出 replay=N | S:需 server/binary；不打印 token；SSE \u003c 250ms"
+    }
+  ]
+}
