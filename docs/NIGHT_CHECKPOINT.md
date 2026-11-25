@@ -12,7 +12,7 @@
 | CLI 集成测试 | 170 个 |
 | HTTP serve 测试 | 174 个 |
 | SSE 首帧 | 1–3ms（demo 断言 < 250ms） |
-| AOCI | 142 entries，aligned |
+| AOCI | 144 entries，aligned |
 | 发布包 | `csvx-4.2.0-darwin-arm64.tar.gz`，哈希见 `dist/*.sha256` |
 
 ## 本轮已落地
@@ -26,6 +26,7 @@
 - SSE：审计写入 condvar 唤醒、15s ping、实测首帧毫秒数；
 - 多 session 汇总（不返回 token/内容）；
 - demo 覆盖 CLI、MCP、SDK（可选）、Agent 路由、审批、重放、SSE；
+- 包验收额外回放 runner trace 并检查可见 X；
 - 发布包提供 `TRY_CSVX.sh` 五分钟本地试用。
 
 ## 已知边界

@@ -63,4 +63,15 @@ print("xlsx=ok")
 PY
 rm -rf "$XLSX_DIR"
 
+TRACE_DIR=$(mktemp -d)
+printf 'id,city,amount\n1,A,10\n2,B,20\n' > "$TRACE_DIR/t.csv"
+cat > "$TRACE_DIR/trace.jsonl" <<'JSONL'
+{"event":"tool","tool":"csvx_schema","arguments":{"path":"t.csv"}}
+{"event":"tool","tool":"csvx_edit_apply","arguments":{"path":"t.csv","ops":"set:1:city:X"}}
+JSONL
+"$ROOT/csvx" agent replay --root "$TRACE_DIR" --replay "$TRACE_DIR/trace.jsonl" >/dev/null 2>&1
+"$ROOT/csvx" view "$TRACE_DIR/t.csv" --json | grep -q '"X"'
+printf 'trace_replay=ok\n'
+rm -rf "$TRACE_DIR"
+
 echo "verified: $TAR"
