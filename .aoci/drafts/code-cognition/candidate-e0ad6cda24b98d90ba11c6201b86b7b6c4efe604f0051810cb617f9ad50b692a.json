@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "d36eebc6fce2e3288c973d1eff945c8d6c95d3e24beef08b152896a1c8b90f2b",
+  "batch_id": "e0ad6cda24b98d90ba11c6201b86b7b6c4efe604f0051810cb617f9ad50b692a",
+  "composite_identity": "c255e860b16e908656e0a695c37e11ef1c4fb1f599d689fee19bb21325e461e3",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "aa9897540aee2e4fcdc9e09cd8c59b01a0dc09b9a46740314aa3a8f359791d6f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/release_manifest.py",
+      "path": "scripts/release_manifest.py",
+      "change": "update",
+      "source_sha256": "dc3799f75b28cfbc60f85858e95aeb9a09d5b06fa6a3ffd5d28d27408cb29c61",
+      "existing_entry": "release_manifest.py[SD7T]: F:从已验证包写出 release manifest（check/失败阶段） | R:code:scripts/package_release.sh | A:sha/bytes/UTC；stats；gate/aoci；verifyJson 名称+sha；verifyFailedAt；checks | S:仅打包后；不联网；不改 tar；缺文件时 null"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "b012b882e74722d577a17dda8c02e18f488e6c5af56cb39749006a8f829e7649",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:离线发布包验收并写 verify.json（成功/失败均写） | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py,code:scripts/check_agent_stats.py | A:成员/version/skill/安装；TRY_CSVX；12 路由/审批/重放/SSE；stats；xlsx 条件格式；trace；成功 verified:true，失败 verified:false+failedAt；trap 清理 | S:仅发布方；不联网；缺文件/校验失败非零退出"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "5c97b71786bfa0d341bce9c4b2ec47ab477022f31fe3ba36f7cba3d658955875",
+      "object_ref": "code:scripts/release_manifest.py",
+      "path": "scripts/release_manifest.py",
+      "change": "update",
+      "source_sha256": "dc3799f75b28cfbc60f85858e95aeb9a09d5b06fa6a3ffd5d28d27408cb29c61",
+      "existing_entry": "release_manifest.py[SD7T]: F:从已验证包写出 release manifest（check/失败阶段） | R:code:scripts/package_release.sh | A:sha/bytes/UTC；stats；gate/aoci；verifyJson 名称+sha；verifyFailedAt；checks | S:仅打包后；不联网；不改 tar；缺文件时 null"
+    },
+    {
+      "candidate_id": "e2d4e6276f506c67c682961731b30278e6308db8144a0f7c40841e0b7da11814",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "b012b882e74722d577a17dda8c02e18f488e6c5af56cb39749006a8f829e7649",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:离线发布包验收并写 verify.json（成功/失败均写） | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py,code:scripts/check_agent_stats.py | A:成员/version/skill/安装；TRY_CSVX；12 路由/审批/重放/SSE；stats；xlsx 条件格式；trace；成功 verified:true，失败 verified:false+failedAt；trap 清理 | S:仅发布方；不联网；缺文件/校验失败非零退出"
+    }
+  ]
+}
