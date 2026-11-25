@@ -29,7 +29,7 @@ cp examples/try_csvx.sh "$STAGE/TRY_CSVX.sh"
 cp scripts/mcp_sdk/client.mjs scripts/mcp_sdk/package.json "$STAGE/mcp_sdk/"
 tar -czf "dist/$NAME.tar.gz" -C dist "$NAME"
 shasum -a 256 "dist/$NAME.tar.gz" > "dist/$NAME.tar.gz.sha256"
-if ! bash scripts/verify_dist.sh "dist/$NAME.tar.gz"; then
+if ! bash scripts/verify_dist.sh "dist/$NAME.tar.gz" 2>&1 | tee "dist/$NAME.verify.log"; then
   echo "package verification failed; removing incomplete artifacts" >&2
   rm -f "dist/$NAME.tar.gz" "dist/$NAME.tar.gz.sha256"
   exit 1
