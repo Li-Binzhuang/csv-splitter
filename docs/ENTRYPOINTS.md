@@ -77,7 +77,8 @@ DSH ──MCP stdio──► csvx mcp ──► csvx-core
 ```text
 cargo test --workspace
 cargo test -p csvx-core --features sql
-bash scripts/gate.sh
+bash scripts/gate.sh          # 含官方 MCP SDK 端到端检查
+bash scripts/check_mcp_sdk.sh # 单独复跑 23 工具/progress/job
 AOCI maintain
 bash scripts/package_release.sh
 ```

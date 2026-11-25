@@ -1,0 +1,59 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "ceb80f30a340666d8265c588e4b7d6a1b5ee5188ef3b3e61ac099fa1f8683f7d",
+  "batch_id": "2ba9b36ccce4a2fca90da5b105e5ec4df4c2e4f4bf721f69f22fbc4ca87ff37c",
+  "composite_identity": "a1341e2f4aee402e528afef2e9c214e10c4db9fc67fb49ca71c5e20860c0698e",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "38ee418ed8bc989e6116a417924e78bd5f2a81c2bda70332e873b8bb80f830d6",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "dab85a6bf95aac74eeaf4f51022240a631b8bdd3d2e5999a65ee7277df1a67f8",
+      "existing_entry": "ENTRYPOINTS.md[SG7S]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；MCP 模块白名单与行数上限；CLI main/serve/cli_support+commands | S:rmcp 默认；单文件上限 gate 强制"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_mcp_sdk.sh",
+      "path": "scripts/check_mcp_sdk.sh",
+      "change": "create",
+      "source_sha256": "801e6a773c11acbcc2350642b92d563b53506e00e752e704e3a5c473dbed6a18"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "801650a9e8c3a56eb3c6be3aba38d12f03381ba86a16945b8f1f13c2b4dbb354",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/verify_dist_negative.sh,code:scripts/check_agent_stats_negative.sh,code:scripts/check_phase_times_negative.sh | A:gate layout/fmt/clippy/测试/sql/verify-negative/stats-negative/phase-negative | S:gate 必须带 sql；重试只负载 flake；负向检查不可静默跳过"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "03d47a0c665d4c71a373197c25ab507d59a1dad97e5b330a2af3000c32a3e809",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "dab85a6bf95aac74eeaf4f51022240a631b8bdd3d2e5999a65ee7277df1a67f8",
+      "existing_entry": "ENTRYPOINTS.md[SG7S]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；MCP 模块白名单与行数上限；CLI main/serve/cli_support+commands | S:rmcp 默认；单文件上限 gate 强制"
+    },
+    {
+      "candidate_id": "b21ccaf7c95a255037903e3d28959cde94aa2e3bbe3e322451fef196fc5032ba",
+      "object_ref": "code:scripts/check_mcp_sdk.sh",
+      "path": "scripts/check_mcp_sdk.sh",
+      "change": "create",
+      "source_sha256": "801e6a773c11acbcc2350642b92d563b53506e00e752e704e3a5c473dbed6a18"
+    },
+    {
+      "candidate_id": "f334de47c699a900fe1b94d6a2f53fe5d2830d6f208fc30dd998e9122821fb7d",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "801650a9e8c3a56eb3c6be3aba38d12f03381ba86a16945b8f1f13c2b4dbb354",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/verify_dist_negative.sh,code:scripts/check_agent_stats_negative.sh,code:scripts/check_phase_times_negative.sh | A:gate layout/fmt/clippy/测试/sql/verify-negative/stats-negative/phase-negative | S:gate 必须带 sql；重试只负载 flake；负向检查不可静默跳过"
+    }
+  ]
+}
