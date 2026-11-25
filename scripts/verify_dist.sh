@@ -11,18 +11,43 @@ if [[ ! -f "$TAR.sha256" ]]; then
   echo "missing checksum: $TAR.sha256" >&2
   exit 2
 fi
+VERIFY_RESULT="${TAR%.tar.gz}.verify.json"
+CHECK=startup
+write_failure() {
+  code=$?
+  set +e
+  printf '{"verified":false,"failedAt":"%s","error":"exit %s"}\n' "$CHECK" "$code" > "$VERIFY_RESULT"
+  echo "verification failed at $CHECK" >&2
+  exit "$code"
+}
+trap write_failure ERR
+on_exit() {
+  code=$?
+  if [[ $code -ne 0 && ! -f "$VERIFY_RESULT" ]]; then
+    set +e
+    printf '{"verified":false,"failedAt":"%s","error":"exit %s"}\n' "$CHECK" "$code" > "$VERIFY_RESULT"
+    echo "verification failed at $CHECK" >&2
+  fi
+  [[ -n "${AGENT_PID:-}" ]] && kill "$AGENT_PID" 2>/dev/null || true
+  [[ -n "${STAGE:-}" ]] && rm -rf "$STAGE"
+  [[ -n "${AGENT_DIR:-}" ]] && rm -rf "$AGENT_DIR"
+}
+trap on_exit EXIT
+CHECK=checksum
 shasum -a 256 -c "$TAR.sha256"
 STAGE=$(mktemp -d)
-trap 'rm -rf "$STAGE"' EXIT
 tar -xzf "$TAR" -C "$STAGE"
 ROOT=$(find "$STAGE" -maxdepth 1 -mindepth 1 -type d | head -1)
+CHECK=members
 for required in csvx README.md AGENT_QUICKSTART.md TRY_CSVX.sh docs/RELEASE_CHECKLIST.md docs/ROADMAP.md docs/NIGHT_CHECKPOINT.md mcp_sdk/client.mjs examples/agent/http_session.sh examples/try_csvx.sh scripts/agent_routes_smoke.py skills/csvx-data/SKILL.md; do
   if [[ ! -f "$ROOT/$required" ]]; then
     echo "missing member: $required" >&2
     exit 1
   fi
 done
+CHECK=version
 "$ROOT/csvx" --version
+CHECK=skill
 for term in 'csvx-data-workbench' 'csvx_schema' 'approval' 'audit'; do
   grep -q "$term" "$ROOT/skills/csvx-data/SKILL.md" || {
     echo "skill missing: $term" >&2
@@ -30,20 +55,23 @@ for term in 'csvx-data-workbench' 'csvx_schema' 'approval' 'audit'; do
   }
 done
 printf 'skill=ok (surface/approval/audit)\n'
+CHECK=skill_install
 DSH_TMP=$(mktemp -d)
 DSH_HOME="$DSH_TMP" bash "$ROOT/install_skill.sh" >/dev/null
 test -f "$DSH_TMP/skills/csvx-data/SKILL.md"
 grep -q 'name: csvx-data-workbench' "$DSH_TMP/skills/csvx-data/SKILL.md"
 printf 'skill_install=ok\n'
 rm -rf "$DSH_TMP"
+CHECK=try
 CSVX_BIN="$ROOT/csvx" bash "$ROOT/TRY_CSVX.sh" >/dev/null
 
+CHECK=agent
 AGENT_DIR=$(mktemp -d)
 printf 'id,city,amount\n1,CDMX,10\n2,Puebla,20\n' > "$AGENT_DIR/orders.csv"
 PORT=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()')
 "$ROOT/csvx" agent serve --root "$AGENT_DIR" --addr "127.0.0.1:$PORT" >"$AGENT_DIR/server.log" 2>&1 &
 AGENT_PID=$!
-trap 'kill "$AGENT_PID" 2>/dev/null || true; rm -rf "$STAGE" "$AGENT_DIR"' EXIT
+
 for _ in $(seq 1 50); do
   if python3 -c "import urllib.request,sys; urllib.request.urlopen('http://127.0.0.1:$PORT/agent/v1/manifest', timeout=1)" >/dev/null 2>&1; then
     break
@@ -54,10 +82,12 @@ AGENT_OUT=$(python3 "$ROOT/scripts/agent_routes_smoke.py" --api "http://127.0.0.
 printf '%s\n' "$AGENT_OUT"
 printf 'stats: %s\n' "$AGENT_OUT"
 STATS_JSON=$(printf '%s\n' "$AGENT_OUT" | sed -n 's/^stats_json=//p' | tail -1)
+CHECK=stats
 python3 "$ROOT/scripts/check_agent_stats.py" "$STATS_JSON"
 kill "$AGENT_PID" 2>/dev/null || true
 wait "$AGENT_PID" 2>/dev/null || true
 
+CHECK=xlsx
 XLSX_DIR=$(mktemp -d)
 printf 'date,city,amount\n2026-10-20,CDMX,1200\n2026-10-21,Puebla,20\n' > "$XLSX_DIR/x.csv"
 "$ROOT/csvx" convert "$XLSX_DIR/x.csv" --format xlsx -o "$XLSX_DIR/x.xlsx" --highlight "amount>1000:red"
@@ -76,6 +106,7 @@ print("xlsx=ok")
 PY
 rm -rf "$XLSX_DIR"
 
+CHECK=trace
 TRACE_DIR=$(mktemp -d)
 printf 'id,city,amount\n1,A,10\n2,B,20\n' > "$TRACE_DIR/t.csv"
 cat > "$TRACE_DIR/trace.jsonl" <<'JSONL'
@@ -89,8 +120,7 @@ test "$TRACE_LINES" -eq 2
 printf 'trace_replay=tools:%s\n' "$TRACE_LINES"
 rm -rf "$TRACE_DIR"
 
-VERIFY_RESULT="${TAR%.tar.gz}.verify.json"
 cat > "$VERIFY_RESULT" <<EOF
-{"verified":true,"checksum":"ok","members":"ok","skill":"ok","skillInstall":"ok","xlsx":"ok","traceReplay":$TRACE_LINES,"stats":$STATS_JSON}
+{"verified":true,"failedAt":null,"checksum":"ok","members":"ok","skill":"ok","skillInstall":"ok","xlsx":"ok","traceReplay":$TRACE_LINES,"stats":$STATS_JSON}
 EOF
 echo "verified: $TAR"

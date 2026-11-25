@@ -26,4 +26,6 @@ grep -q 'missing member' "$WORK/log" || {
   cat "$WORK/log" >&2
   exit 1
 }
+test -f "$WORK/bad.verify.json"
+grep -q '"verified":false' "$WORK/bad.verify.json"
 echo "negative verification=ok"
