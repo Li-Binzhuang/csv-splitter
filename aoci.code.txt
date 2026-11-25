@@ -20,7 +20,7 @@ Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Carg
 
 ===/<repository>/crates/cli/src/===
 main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:crates/core/src/xlsx.rs | A:CLI 入口；convert xlsx + --highlight；report md/html/xlsx（datecounts 支持 date:group）；gate/concat/edit/view/filter/watch；agent run/replay | S:report xlsx 四类 section；datecounts 第二维可选；compare 限 root；runner key 仅 env
-serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/cli/src/agent.rs,code:crates/core/src/workbook/export.rs,code:crates/core/src/xlsx.rs | A:HTTP 读写/job；/ops；/gate+uniqueGlobal；/rows typed；/edit；/concat；MCP 23 工具；instructions 与 csvx://agent；cache_stats 含 windowHits/windowMisses；cache_clear 清窗口缓存 | S:uniqueGlobal 需配 unique；gate 目录聚合；report compare 限 root；MCP instructions 非权限；缓存 4 GiB/16
+serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/cli/src/agent.rs,code:crates/core/src/workbook/export.rs,code:crates/core/src/xlsx.rs | A:HTTP 读写/job；/ops；/gate+uniqueGlobal；/rows typed；/edit；/concat；MCP 23 工具；instructions 与 csvx://agent；manifest endpoints 链接；cache_stats/window | S:uniqueGlobal 需配 unique；gate 目录聚合；report compare 限 root；MCP instructions 非权限；缓存 4 GiB/16
 agent.rs[EN8L]: F:HTTP Agent API + runner + trace/replay | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md | A:loopback 服务；sessions/actions/approvals/close/events/audit+trace/replay+curl+actions.md/html+runbook.md+runbook JSON；未审批阻断块 | S:audit 含 arguments 不含 token；同 root 不串 session；runbook 附件；trace 含数据
 
 ===/<repository>/crates/cli/src/web/===

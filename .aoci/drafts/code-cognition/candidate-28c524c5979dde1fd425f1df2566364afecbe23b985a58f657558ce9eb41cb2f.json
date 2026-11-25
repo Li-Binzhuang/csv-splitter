@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "02c31184af7238654822011e8636b63c311cacfb37316c636b4b1b942c42d4c0",
+  "batch_id": "28c524c5979dde1fd425f1df2566364afecbe23b985a58f657558ce9eb41cb2f",
+  "composite_identity": "d5e4f43d271a812b925c51e6f8d031c25d672299aecd134c3e26687b9ab4ceae",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e1fb0dd0d5c5fbb548da7eb0ae1ee473a7235f0cafdc2e690c6c28969175b171",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "a93517a3212b60ec8243c056d8af52bc8df2c6c6b3e1f12a8567f54e1eeb15c8",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/cli/src/agent.rs,code:crates/core/src/workbook/export.rs,code:crates/core/src/xlsx.rs | A:HTTP 读写/job；/ops；/gate+uniqueGlobal；/rows typed；/edit；/concat；MCP 23 工具；instructions 与 csvx://agent；cache_stats 含 windowHits/windowMisses；cache_clear 清窗口缓存 | S:uniqueGlobal 需配 unique；gate 目录聚合；report compare 限 root；MCP instructions 非权限；缓存 4 GiB/16"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "5bd4bd76c2a2cdb88a666c56161e4874773aeb324d4f9d42ad3004f6515a3067",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "a93517a3212b60ec8243c056d8af52bc8df2c6c6b3e1f12a8567f54e1eeb15c8",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/cli/src/agent.rs,code:crates/core/src/workbook/export.rs,code:crates/core/src/xlsx.rs | A:HTTP 读写/job；/ops；/gate+uniqueGlobal；/rows typed；/edit；/concat；MCP 23 工具；instructions 与 csvx://agent；cache_stats 含 windowHits/windowMisses；cache_clear 清窗口缓存 | S:uniqueGlobal 需配 unique；gate 目录聚合；report compare 限 root；MCP instructions 非权限；缓存 4 GiB/16"
+    }
+  ]
+}
