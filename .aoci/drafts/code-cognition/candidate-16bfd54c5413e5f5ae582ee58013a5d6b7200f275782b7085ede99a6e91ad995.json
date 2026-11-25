@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "09f325a3d16622ad62db6b03558db7fd1b87c0966c66f61aa40957738dce5fe2",
+  "batch_id": "16bfd54c5413e5f5ae582ee58013a5d6b7200f275782b7085ede99a6e91ad995",
+  "composite_identity": "962bd6c37f0fe623f5de3930423bb09fcd374645e94a8dbce3e84a3ecbd93482",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b1ac286ecf5960188ad2cf65accae1bd19c4d956fe3c71662d69533e8330256f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/QUICKSTART_AGENT.md",
+      "path": "docs/QUICKSTART_AGENT.md",
+      "change": "update",
+      "source_sha256": "1a59ec8bf599e9b14291a0e5845f866a30457a9de501336ac20cf664957a3a2a",
+      "existing_entry": "QUICKSTART_AGENT.md[SD7T]: F:Agent 一页快速上手：MCP、HTTP、runner、skill、Excel、TRY_CSVX 与安全 | R:code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md,code:docs/DSH_SKILL.md,code:examples/try_csvx.sh | A:MCP 配置；HTTP session/actions/audit/replay/curl/runbook；runner --trace/--replay；install_skill.sh；xlsx 示例；TRY_CSVX 五分钟 | S:不写 key；审批单次；root 边界；trace/audit 含数据按敏感"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:examples/try_csvx.sh",
+      "path": "examples/try_csvx.sh",
+      "change": "update",
+      "source_sha256": "8f4837764d5c7cc1f7aa1c5ac83d1149ee646f627c749ad179e8fb7abc519ed9",
+      "existing_entry": "try_csvx.sh[SD7T]: F:五分钟本地试用：schema/view/journal/export/report/xlsx/gate | R:code:scripts/package_release.sh,code:docs/QUICKSTART_AGENT.md | A:临时 orders.csv；BIN 可覆盖；view 看 journal overlay；export 物化；report datecounts；convert highlight；gate | S:无网络/无 key/无 GUI；临时目录清理；xlsx 仅 cellIs 高亮"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "fe3935d2311f47e36aaf0d685b3457daf872fc5b00b134df6ed68ea0e30d0147",
+      "object_ref": "code:docs/QUICKSTART_AGENT.md",
+      "path": "docs/QUICKSTART_AGENT.md",
+      "change": "update",
+      "source_sha256": "1a59ec8bf599e9b14291a0e5845f866a30457a9de501336ac20cf664957a3a2a",
+      "existing_entry": "QUICKSTART_AGENT.md[SD7T]: F:Agent 一页快速上手：MCP、HTTP、runner、skill、Excel、TRY_CSVX 与安全 | R:code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md,code:docs/DSH_SKILL.md,code:examples/try_csvx.sh | A:MCP 配置；HTTP session/actions/audit/replay/curl/runbook；runner --trace/--replay；install_skill.sh；xlsx 示例；TRY_CSVX 五分钟 | S:不写 key；审批单次；root 边界；trace/audit 含数据按敏感"
+    },
+    {
+      "candidate_id": "4b0c4a980586750e33f81faba95e72001e79998c65fdbce201536260c2601a51",
+      "object_ref": "code:examples/try_csvx.sh",
+      "path": "examples/try_csvx.sh",
+      "change": "update",
+      "source_sha256": "8f4837764d5c7cc1f7aa1c5ac83d1149ee646f627c749ad179e8fb7abc519ed9",
+      "existing_entry": "try_csvx.sh[SD7T]: F:五分钟本地试用：schema/view/journal/export/report/xlsx/gate | R:code:scripts/package_release.sh,code:docs/QUICKSTART_AGENT.md | A:临时 orders.csv；BIN 可覆盖；view 看 journal overlay；export 物化；report datecounts；convert highlight；gate | S:无网络/无 key/无 GUI；临时目录清理；xlsx 仅 cellIs 高亮"
+    }
+  ]
+}

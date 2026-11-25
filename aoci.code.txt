@@ -129,7 +129,7 @@ AGENT_API.md[SD7T]: F:Agent 原生接入：MCP manifest、HTTP Agent API、runne
 FORMULA_CACHE.md[SD7T]: F:公式/读窗口缓存做法、实测与边界 | R:code:crates/core/src/workbook/export.rs,code:docs/BEYOND_EXCEL.md,code:docs/CAPABILITIES.md | A:key=路径+大小+mtime+ops+delimiter+start/count；64 项；cache_clear/stats；2k 行 0.040→0.007 s | S:进程内缓存，重启清空；只缓存窗口；不改文件/journal；64 页非 SLA
 DSH_SKILL.md[SD7T]: F:把 csvx skill 安装到本地 DSH profile 的说明 | R:code:scripts/install_skill.sh,code:skills/csvx-data/SKILL.md,code:docs/DSH_MODEL_TEST.md | A:install_skill.sh 复制单文件；DSH_HOME 默认 ~/.dsh；skill 目录出现 csvx-data-workbench；与 runner --skill 共用一份 | S:不改 key/模型配置；只覆盖 SKILL.md；需重进/扫描后生效
 AGENT_TRACE.md[SD7T]: F:Agent JSONL trace 与 HTTP audit/replay/actions/curl/runbook 的可复刻流程 | R:code:crates/cli/src/agent.rs,code:docs/AGENT_API.md,code:skills/csvx-data/SKILL.md | A:run/model/tool/final；--trace/--replay；HTTP audit、replay、actions.md/html、curl、runbook、sessions 汇总；阻断提示 | S:不写 key/token；observation 截 20k；trace 含数据；重放编辑用副本
-QUICKSTART_AGENT.md[SD7T]: F:Agent 一页快速上手：MCP、HTTP、runner、skill、Excel、TRY_CSVX 与安全 | R:code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md,code:docs/DSH_SKILL.md,code:examples/try_csvx.sh | A:MCP 配置；HTTP session/actions/audit/replay/curl/runbook；runner --trace/--replay；install_skill.sh；xlsx 示例；TRY_CSVX 五分钟 | S:不写 key；审批单次；root 边界；trace/audit 含数据按敏感
+QUICKSTART_AGENT.md[SD7T]: F:Agent 一页快速上手：MCP、HTTP、runner、skill、Excel、TRY_CSVX 与安全 | R:code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md,code:docs/DSH_SKILL.md,code:examples/try_csvx.sh | A:MCP 配置；HTTP session/actions/audit/replay/curl/runbook；runner --trace/--replay；install_skill.sh；xlsx 示例；TRY_CSVX 自校验 | S:不写 key；审批单次；root 边界；trace/audit 含数据按敏感
 
 ===/<repository>/scripts/===
 backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换、自引用拒绝与请求上限；BIN 默认取 ./target/debug/csvx | S:脚本默认跑 target/debug 的二进制，改了代码只重建 release 会在这里看到旧行为；裸 wait 会连自己起的 server 一起等，必须收集 PID 逐个等待
@@ -175,4 +175,4 @@ trace_replay.sh[SD7T]: F:不调模型的 trace 重放示例 | R:code:examples/ag
 SKILL.md[SD7T]: F:csvx-data-workbench skill：引导 Agent 用 csvx 读写、报表、xlsx 与 Agent API | R:code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md,code:docs/XLSX.md | A:先 schema/view；edit preview→apply；undo；xlsx 日期/条件格式；datecounts 可选第二维；Agent API/runner/trace | S:skill 不授权破坏性；日期仅 ISO；highlight 仅 cellIs；trace 含数据；key 不落盘
 
 ===/<repository>/examples/===
-try_csvx.sh[SD7T]: F:五分钟本地试用：schema/view/journal/export/report/xlsx/gate | R:code:scripts/package_release.sh,code:docs/QUICKSTART_AGENT.md | A:临时 orders.csv；BIN 可覆盖；view 看 journal overlay；export 物化；report datecounts；convert highlight；gate | S:无网络/无 key/无 GUI；临时目录清理；xlsx 仅 cellIs 高亮
+try_csvx.sh[SD7T]: F:五分钟自校验本地试用：schema/view/journal/export/report/xlsx/gate | R:code:scripts/package_release.sh,code:docs/QUICKSTART_AGENT.md | A:临时 orders.csv；BIN 可覆盖；view overlay；export 物化；report datecounts；convert highlight；gate；断言 rows=3/date/xlsx/gate | S:无网络/无 key/无 GUI；临时目录清理；xlsx 仅 cellIs 高亮
