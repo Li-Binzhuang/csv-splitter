@@ -56,7 +56,7 @@ csvx convert input.xlsx --format csv --sheet Data -o data.csv
 - 支持 sharedStrings、inlineStr、布尔、数值、缓存公式值；
 - 换行/引号字段通过 CSV 引号规则保留；
 - 样式、合并单元格、图表、批注忽略；
-- 日期型单元格暂按数值输出（没有检查 number format，避免把金额误判成日期）。
+- 内置日期格式（numFmtId 14–22、45–47）的数值会按样式还原为 `YYYY-MM-DD`；非日期数值不猜。
 
 MCP：
 
@@ -66,10 +66,8 @@ MCP：
 
 ## 尚未实现
 
-- 导出 xlsx 的多 sheet 报告（`report --format xlsx`；目录→workbook 已可用）；
-- 导出 xlsx 的多 sheet 报告（`report --format xlsx`）；
-- 条件格式/列宽/数字格式；
-- 日期型单元格识别；
+- 条件格式、合并单元格、样式复制；
+- 自定义数字格式；
 - 公式写入（只写值，不写公式）。
 
 ## 报表 xlsx
@@ -78,6 +76,11 @@ MCP：
 `summary`、`columns`、`rows` 三类 section，各写一张 sheet；`quality`、`groups`、
 `chart`、`compare` 仍走 Markdown/HTML。`--out` 必须以 `.xlsx` 结尾（或用
 `--format xlsx` 显式指定）。
+
+## 日期
+
+严格 `YYYY-MM-DD` 自动写成 Excel 日期单元格（内置格式 14），导入时按
+`cellXfs` 的日期格式还原为 `YYYY-MM-DD`；非 ISO 文本保持原样。
 
 ## 边界
 

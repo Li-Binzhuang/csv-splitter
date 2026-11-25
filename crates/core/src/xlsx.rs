@@ -317,7 +317,8 @@ fn styles_xml() -> &'static str {
         "<fills count=\"2\"><fill><patternFill patternType=\"none\"/></fill><fill><patternFill patternType=\"gray125\"/></fill></fills>",
         "<borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders>",
         "<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>",
-        "<cellXfs count=\"2\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/><xf numFmtId=\"0\" fontId=\"1\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyFont=\"1\"/></cellXfs>",
+        "<numFmts count=\"1\"><numFmt numFmtId=\"14\" formatCode=\"yyyy-mm-dd\"/></numFmts>",
+        "<cellXfs count=\"3\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/><xf numFmtId=\"0\" fontId=\"1\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyFont=\"1\"/><xf numFmtId=\"14\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/></cellXfs>",
         "<cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\"/></cellStyles>",
         "</styleSheet>"
     )
@@ -330,6 +331,11 @@ fn cell_xml(column: usize, row: u64, value: &str, header: bool) -> String {
         return String::new();
     }
     let trimmed = value.trim();
+    if !header && !value.is_empty() {
+        if let Some(serial) = date_serial(trimmed) {
+            return format!("<c r=\"{reference}\" s=\"2\"><v>{serial}</v></c>");
+        }
+    }
     let numeric =
         !header && !value.is_empty() && !value.starts_with('0') && trimmed.parse::<f64>().is_ok();
     if numeric {
@@ -366,6 +372,88 @@ fn write_cell<W: Write>(
 
 fn write_cell_string(out: &mut String, column: usize, row: u64, value: &str, header: bool) {
     out.push_str(&cell_xml(column, row, value, header));
+}
+
+/// Built-in Excel number formats that represent dates.
+fn date_style_map(styles: &str) -> Vec<bool> {
+    let block_re = Regex::new(r#"(?s)<cellXfs\b[^>]*>(.*?)</cellXfs>"#).unwrap();
+    let Some(block) = block_re.captures(styles) else {
+        return Vec::new();
+    };
+    let xf_re = Regex::new(r#"(?s)<xf\b([^>]*?)(?:/>|>)"#).unwrap();
+    xf_re
+        .captures_iter(&block[1])
+        .map(|captures| {
+            attr(&captures[1], "numFmtId")
+                .and_then(|value| value.parse::<u32>().ok())
+                .is_some_and(|id| matches!(id, 14..=22 | 45..=47))
+        })
+        .collect()
+}
+
+fn serial_to_date(serial: f64) -> Option<String> {
+    if !serial.is_finite() || serial.fract() != 0.0 {
+        return None;
+    }
+    let serial = serial as i64;
+    if !(1..=2_958_465).contains(&serial) {
+        return None;
+    }
+    let days = serial + days_from_civil(1899, 12, 30);
+    let (year, month, day) = civil_from_days(days);
+    if year < 1900 {
+        return None;
+    }
+    Some(format!("{year:04}-{month:02}-{day:02}"))
+}
+
+fn civil_from_days(days: i64) -> (i64, i64, i64) {
+    let days = days + 719_468;
+    let era = if days >= 0 { days } else { days - 146_096 } / 146_097;
+    let doe = days - era * 146_097;
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let year = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    (year + i64::from(month <= 2), month, day)
+}
+
+/// Strict ISO calendar date (`YYYY-MM-DD`) to an Excel 1900-date serial.
+fn date_serial(value: &str) -> Option<i64> {
+    let bytes = value.as_bytes();
+    if bytes.len() != 10 || bytes[4] != b'-' || bytes[7] != b'-' {
+        return None;
+    }
+    let year: i64 = value.get(0..4)?.parse().ok()?;
+    let month: i64 = value.get(5..7)?.parse().ok()?;
+    let day: i64 = value.get(8..10)?.parse().ok()?;
+    if year < 1900 || !(1..=12).contains(&month) || day < 1 {
+        return None;
+    }
+    let leap = (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
+    let days_in_month = match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if leap => 29,
+        2 => 28,
+        _ => return None,
+    };
+    if day > days_in_month {
+        return None;
+    }
+    // 1899-12-30 is serial 0; the formula works for dates after 1900-03-01.
+    Some(days_from_civil(year, month, day) - days_from_civil(1899, 12, 30))
+}
+
+fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
+    let year = if month <= 2 { year - 1 } else { year };
+    let era = if year >= 0 { year } else { year - 399 } / 400;
+    let yoe = year - era * 400;
+    let adjustment = (153 * (if month > 2 { month - 3 } else { month + 9 }) + 2) / 5;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + adjustment + day - 1;
+    era * 146_097 + doe - 719_468
 }
 
 fn column_name(mut index: usize) -> String {
@@ -488,10 +576,10 @@ fn sheet_columns_xml(headers: &[String], rows: &[Vec<String>]) -> String {
 
 /// Read one worksheet from an `.xlsx`/`.xlsm` workbook into a CSV file.
 ///
-/// The reader intentionally understands a small, common subset: shared strings,
-/// inline strings, cached formula values, booleans and numbers. Styles, merged
-/// cells, charts and comments are ignored. Dates stay numeric because without
-/// style inspection a serial cannot be distinguished from a number.
+/// The reader understands a small, common subset: shared strings, inline
+/// strings, cached formula values, booleans, numbers and built-in date styles
+/// (serials are rendered as `YYYY-MM-DD`). Merged cells, charts and comments
+/// are ignored.
 pub fn read_xlsx_to_csv(input: &Path, output: &Path, sheet: Option<&str>) -> std::io::Result<()> {
     let file = std::fs::File::open(input)?;
     let mut archive = zip::ZipArchive::new(file).map_err(|e| {
@@ -535,8 +623,10 @@ pub fn read_xlsx_to_csv(input: &Path, output: &Path, sheet: Option<&str>) -> std
     let sheet_xml = read_entry(&mut archive, &normalized)?;
     let shared = read_entry(&mut archive, "xl/sharedStrings.xml").unwrap_or_default();
     let shared = shared_strings(&shared);
+    let styles = read_entry(&mut archive, "xl/styles.xml").unwrap_or_default();
+    let date_styles = date_style_map(&styles);
 
-    let rows = sheet_rows(&sheet_xml, &shared)?;
+    let rows = sheet_rows(&sheet_xml, &shared, &date_styles)?;
     if rows.is_empty() {
         return Err(invalid("xlsx worksheet has no rows"));
     }
@@ -637,7 +727,11 @@ fn shared_strings(xml: &str) -> Vec<String> {
         .collect()
 }
 
-fn sheet_rows(xml: &str, shared: &[String]) -> std::io::Result<Vec<(u64, Vec<String>)>> {
+fn sheet_rows(
+    xml: &str,
+    shared: &[String],
+    date_styles: &[bool],
+) -> std::io::Result<Vec<(u64, Vec<String>)>> {
     let row_re = Regex::new(r#"(?s)<row\b([^>]*?)(?:/>|>(.*?)</row>)"#).unwrap();
     let cell_re = Regex::new(r#"(?s)<c\b([^>]*?)(?:/>|>(.*?)</c>)"#).unwrap();
     let mut out = Vec::new();
@@ -656,7 +750,7 @@ fn sheet_rows(xml: &str, shared: &[String]) -> std::io::Result<Vec<(u64, Vec<Str
             while cells.len() <= column {
                 cells.push(String::new());
             }
-            cells[column] = cell_value(attrs, body, shared)?;
+            cells[column] = cell_value(attrs, body, shared, date_styles)?;
         }
         out.push((row, cells));
     }
@@ -679,7 +773,12 @@ fn column_from_reference(reference: &str) -> Option<usize> {
     saw.then_some(column.saturating_sub(1))
 }
 
-fn cell_value(attrs: &str, body: &str, shared: &[String]) -> std::io::Result<String> {
+fn cell_value(
+    attrs: &str,
+    body: &str,
+    shared: &[String],
+    date_styles: &[bool],
+) -> std::io::Result<String> {
     let kind = attr(attrs, "t").unwrap_or_default();
     match kind.as_str() {
         "inlineStr" => {
@@ -719,10 +818,21 @@ fn cell_value(attrs: &str, body: &str, shared: &[String]) -> std::io::Result<Str
         }
         _ => {
             let v_re = Regex::new(r#"(?s)<v>(.*?)</v>"#).unwrap();
-            Ok(v_re
+            let raw = v_re
                 .captures(body)
                 .map(|m| xml_unescape(m[1].trim()))
-                .unwrap_or_default())
+                .unwrap_or_default();
+            let style = attr(attrs, "s")
+                .and_then(|value| value.parse::<usize>().ok())
+                .unwrap_or(0);
+            if date_styles.get(style).copied().unwrap_or(false) {
+                if let Ok(serial) = raw.parse::<f64>() {
+                    if let Some(date) = serial_to_date(serial) {
+                        return Ok(date);
+                    }
+                }
+            }
+            Ok(raw)
         }
     }
 }
@@ -832,6 +942,30 @@ mod tests {
             "{sheet}"
         );
         assert!(sheet.contains("a&amp;b"), "{sheet}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn iso_dates_are_written_as_excel_date_cells() {
+        assert_eq!(date_serial("2024-01-01"), Some(45_292));
+        assert_eq!(date_serial("2024-02-30"), None);
+        assert_eq!(date_serial("not-a-date"), None);
+        let dir = std::env::temp_dir().join(format!("csvx_xlsx_date_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("dates.csv");
+        let output = dir.join("dates.xlsx");
+        std::fs::write(&input, "day,value\n2024-01-01,7\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        csv_to_xlsx(&input, &output, Delimiter::Comma, &tx).unwrap();
+        let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
+        assert!(sheet.contains("s=\"2\""), "{sheet}");
+        assert!(sheet.contains("<v>45292</v>"), "{sheet}");
+        let back = dir.join("dates-back.csv");
+        read_xlsx_to_csv(&output, &back, None).unwrap();
+        assert_eq!(
+            std::fs::read_to_string(&back).unwrap(),
+            "day,value\n2024-01-01,7\n"
+        );
         std::fs::remove_dir_all(dir).ok();
     }
 

@@ -29,7 +29,8 @@ writing, and keep every path inside the configured root.
 - Export: `csvx convert data.csv --format xlsx -o data.xlsx`.
 - Directory → workbook: `csvx convert parts/ --format xlsx -o book.xlsx`.
 - Read: `csvx convert input.xlsx --format csv --sheet Data -o data.csv`.
-- Dates stay numeric until number-format support lands.
+- Strict ISO `YYYY-MM-DD` values are exported as Excel date cells and read back
+  as `YYYY-MM-DD`; other text stays text.
 
 ## Agent API
 
