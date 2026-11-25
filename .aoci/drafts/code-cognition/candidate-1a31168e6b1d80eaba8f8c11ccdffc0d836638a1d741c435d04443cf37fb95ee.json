@@ -1,0 +1,133 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "2bc409a3ae81437cd8003e9af20c843b4068b24c08d76fcdac3690b42de10aeb",
+  "batch_id": "1a31168e6b1d80eaba8f8c11ccdffc0d836638a1d741c435d04443cf37fb95ee",
+  "composite_identity": "c34c8e08f0eb9af541dd6ec9e1f22f3ab74d69820d5aba42dd8dfe3ecbab3dda",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "71f9a7fc903179cc65d8a98b765190734af98dabe6c8570ad52b1927c9d0ed25",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/chart.rs",
+      "path": "crates/cli/src/commands/chart.rs",
+      "change": "create",
+      "source_sha256": "ea12a4ca46a5d622c0c95093617865a81d28e3fc57821dcfc7df5270f9882f6d"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/format.rs",
+      "path": "crates/cli/src/commands/format.rs",
+      "change": "create",
+      "source_sha256": "60424a97edcd1530f7a39a539851de3221517b3f53c9359896f4ad51cc3f5fd6"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/layout.rs",
+      "path": "crates/cli/src/commands/layout.rs",
+      "change": "create",
+      "source_sha256": "23f1427806a18cd2b33a1d14b6298516679d7579f6e3601909ba0ca5e5c7e0f3"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/mod.rs",
+      "path": "crates/cli/src/commands/mod.rs",
+      "change": "update",
+      "source_sha256": "7417b66df3d7e9deae557a7abd6a4005e736a74ea48ffcf2584172a13b08b934",
+      "existing_entry": "mod.rs[SD7T]: F:CLI 命令模块清单 | R:code:crates/cli/src/commands/book.rs,code:crates/cli/src/commands/sort.rs | A:十七个命令子模块 | S:新增命令前更新 ENTRYPOINTS 与 check_layout"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/pivot.rs",
+      "path": "crates/cli/src/commands/pivot.rs",
+      "change": "create",
+      "source_sha256": "14ba5aa1ad8fa002b87dae2fc6c8507ec5c72b150efe2db04c6954c777ad30ce"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "5084024dce4ae58bdd26384ac06add9baeb05137c66126e26dc17713e1e61197",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助与输出 | R:code:crates/cli/src/serve.rs,code:crates/cli/src/commands/*,code:crates/mcp/src/lib.rs | A:CLI；book/extract/lookup/sort 已迁；欢迎页与 dispatch 保留 | S:report 四类 section；runner key 仅 env；入口模块不互引"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "3af31e92bd51c709d311bc27cdc4d57231e6f682321a8c1ff1e531b0ef19e674",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；crate core/mcp/agent/cli；CLI main/serve+commands；book/extract/lookup/sort 已迁 | S:rmcp 需串行语义；gate 强制"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "7dbe2f4d3f87d845a6115493b0c1c031e982db94b4288be1f0bfaa3ed79b1a94",
+      "existing_entry": "check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；CLI commands 十七模块白名单；core 不依赖 cli | S:未知模块退出；先改文档再加模块"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "0cc29d370f97bf3f7e3623e96278125745616bfaae996ca61599e4f7180f9eaa",
+      "object_ref": "code:crates/cli/src/commands/chart.rs",
+      "path": "crates/cli/src/commands/chart.rs",
+      "change": "create",
+      "source_sha256": "ea12a4ca46a5d622c0c95093617865a81d28e3fc57821dcfc7df5270f9882f6d"
+    },
+    {
+      "candidate_id": "bbfae217ddc87611d447f42b4440d14c9bc43d3e3d00e174817f9b017823aaf3",
+      "object_ref": "code:crates/cli/src/commands/format.rs",
+      "path": "crates/cli/src/commands/format.rs",
+      "change": "create",
+      "source_sha256": "60424a97edcd1530f7a39a539851de3221517b3f53c9359896f4ad51cc3f5fd6"
+    },
+    {
+      "candidate_id": "aeaca01e99893c2edc33985f67dbcb59b4dd67e2d4962f2c2344c7ed072eb355",
+      "object_ref": "code:crates/cli/src/commands/layout.rs",
+      "path": "crates/cli/src/commands/layout.rs",
+      "change": "create",
+      "source_sha256": "23f1427806a18cd2b33a1d14b6298516679d7579f6e3601909ba0ca5e5c7e0f3"
+    },
+    {
+      "candidate_id": "91b9217c5189c0ee52877ae5322230d5b545a30669e1880e7881915f0140f6ae",
+      "object_ref": "code:crates/cli/src/commands/mod.rs",
+      "path": "crates/cli/src/commands/mod.rs",
+      "change": "update",
+      "source_sha256": "7417b66df3d7e9deae557a7abd6a4005e736a74ea48ffcf2584172a13b08b934",
+      "existing_entry": "mod.rs[SD7T]: F:CLI 命令模块清单 | R:code:crates/cli/src/commands/book.rs,code:crates/cli/src/commands/sort.rs | A:十七个命令子模块 | S:新增命令前更新 ENTRYPOINTS 与 check_layout"
+    },
+    {
+      "candidate_id": "54c0f57e0edba5e840a605b497d89816f19ff6bc5ca2cdeb23b91a8f55e448d6",
+      "object_ref": "code:crates/cli/src/commands/pivot.rs",
+      "path": "crates/cli/src/commands/pivot.rs",
+      "change": "create",
+      "source_sha256": "14ba5aa1ad8fa002b87dae2fc6c8507ec5c72b150efe2db04c6954c777ad30ce"
+    },
+    {
+      "candidate_id": "6e6a0c082a3b81acd21138fcab33ba2a781627957d8d74a234e78448cd0b2faa",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "5084024dce4ae58bdd26384ac06add9baeb05137c66126e26dc17713e1e61197",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助与输出 | R:code:crates/cli/src/serve.rs,code:crates/cli/src/commands/*,code:crates/mcp/src/lib.rs | A:CLI；book/extract/lookup/sort 已迁；欢迎页与 dispatch 保留 | S:report 四类 section；runner key 仅 env；入口模块不互引"
+    },
+    {
+      "candidate_id": "c0081503d1de3a3f71615be515bf3b9b7454535dacb105d3305ceb49e683d31b",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "3af31e92bd51c709d311bc27cdc4d57231e6f682321a8c1ff1e531b0ef19e674",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；crate core/mcp/agent/cli；CLI main/serve+commands；book/extract/lookup/sort 已迁 | S:rmcp 需串行语义；gate 强制"
+    },
+    {
+      "candidate_id": "32adb7827402ffdfcc2bdd2649e738bdabd0a444978bea4f8623b9c54f044a10",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "7dbe2f4d3f87d845a6115493b0c1c031e982db94b4288be1f0bfaa3ed79b1a94",
+      "existing_entry": "check_layout.sh[XQ7T]: F:入口层目录规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根白名单；CLI commands 十七模块白名单；core 不依赖 cli | S:未知模块退出；先改文档再加模块"
+    }
+  ]
+}
