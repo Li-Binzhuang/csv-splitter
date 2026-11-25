@@ -161,6 +161,9 @@ def main():
                 if line.startswith("replay ")
             ]
             assert replay_count == len(replay_lines), f"expected {replay_count} replay lines: {replay_lines}"
+            assert replay_count == actions_count, f"audit actions {actions_count} != replay {replay_count}"
+            assert '"rows":' in run.stdout, f"replay schema output mismatch: {run.stdout}"
+            assert '"applied":1' in run.stdout, f"replay edit output mismatch: {run.stdout}"
             assert any("csvx_schema" in line for line in replay_lines), replay_lines
             assert any("csvx_edit_apply" in line for line in replay_lines), replay_lines
             assert has_x(args.binary, str(copy)), "replay did not change the copy"
