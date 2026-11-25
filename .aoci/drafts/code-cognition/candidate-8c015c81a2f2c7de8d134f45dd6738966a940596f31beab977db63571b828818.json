@@ -1,0 +1,43 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "fd4ed767423a67a65108eb50350bd1151f98f5a9ac7cded56c4ad4fc849de1ef",
+  "batch_id": "8c015c81a2f2c7de8d134f45dd6738966a940596f31beab977db63571b828818",
+  "composite_identity": "d64520d0e0b6c2c5b34e1806eb96584ee80cdd9d8acda6cee3315b397828f81d",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "64150110289293ca9eb213671bb815a1edda3053f8d4d9b7ec89f24cf3de3ab9",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_release.py",
+      "path": "scripts/check_release.py",
+      "change": "create",
+      "source_sha256": "52ab9497515c8f6b8b58a8bceae12684aaa6b273d9d8e40aeef8b219399bc95b"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "900d2a4a675e24d28d64c6026257c68a9ed338f4a04636000c9f6d405a3c3121",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 带时间戳自验日志 + release manifest | R:code:README.md,code:scripts/verify_dist.sh,code:scripts/check_agent_stats.py,code:scripts/release_manifest.py | A:打包 docs/AGENT_QUICKSTART/TRY_CSVX/examples/scripts（含 stats checker）/mcp_sdk；sha256 后 verify_dist tee log；成功后写 release.json | S:不打 tag/不联网/不发 registry；dist gitignore"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "654a54795f3089ff5cd03ffdb618cfcdc15da64b11f83072d7529f8243266a28",
+      "object_ref": "code:scripts/check_release.py",
+      "path": "scripts/check_release.py",
+      "change": "create",
+      "source_sha256": "52ab9497515c8f6b8b58a8bceae12684aaa6b273d9d8e40aeef8b219399bc95b"
+    },
+    {
+      "candidate_id": "ebdb35736ca52ef8c56a824407670898f0a3775558bb4d779e4b4e9717b62bd8",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "900d2a4a675e24d28d64c6026257c68a9ed338f4a04636000c9f6d405a3c3121",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 带时间戳自验日志 + release manifest | R:code:README.md,code:scripts/verify_dist.sh,code:scripts/check_agent_stats.py,code:scripts/release_manifest.py | A:打包 docs/AGENT_QUICKSTART/TRY_CSVX/examples/scripts（含 stats checker）/mcp_sdk；sha256 后 verify_dist tee log；成功后写 release.json | S:不打 tag/不联网/不发 registry；dist gitignore"
+    }
+  ]
+}
