@@ -2,6 +2,8 @@
 """Smoke the Agent API routes against a running server."""
 import argparse
 import json
+import subprocess
+import tempfile
 import urllib.error
 import urllib.request
 
@@ -21,6 +23,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--api", default="http://127.0.0.1:8788")
     parser.add_argument("--file", default="orders.csv")
+    parser.add_argument("--binary", default="target/release/csvx")
+    parser.add_argument("--root", default=".")
     args = parser.parse_args()
     api = args.api.rstrip("/")
     status, body = request(api, "/agent/v1/manifest")
@@ -71,7 +75,22 @@ def main():
     assert status == 200, body
     assert '"approval":"approved"' in body, body
 
-    print(f"routes={len(routes)} session={sid} approval=ok")
+    status, replay = request(api, f"/agent/v1/sessions/{sid}/replay", token)
+    assert status == 200, replay
+    with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as handle:
+        handle.write(replay)
+        replay_path = handle.name
+    try:
+        run = subprocess.run(
+            [args.binary, "agent", "replay", "--root", args.root, "--replay", replay_path],
+            capture_output=True, text=True,
+        )
+        assert run.returncode == 0, f"{run.stdout}\n{run.stderr}"
+    finally:
+        import os
+        os.unlink(replay_path)
+
+    print(f"routes={len(routes)} session={sid} approval=ok replay=ok")
 
 if __name__ == "__main__":
     main()
