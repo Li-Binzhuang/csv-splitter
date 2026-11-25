@@ -37,7 +37,9 @@ for _ in $(seq 1 50); do
   fi
   sleep 0.1
 done
-python3 "$ROOT/scripts/agent_routes_smoke.py" --api "http://127.0.0.1:$PORT" --file orders.csv --binary "$ROOT/csvx" --root "$AGENT_DIR"
+AGENT_OUT=$(python3 "$ROOT/scripts/agent_routes_smoke.py" --api "http://127.0.0.1:$PORT" --file orders.csv --binary "$ROOT/csvx" --root "$AGENT_DIR")
+printf '%s\n' "$AGENT_OUT"
+printf 'stats: %s\n' "$AGENT_OUT"
 kill "$AGENT_PID" 2>/dev/null || true
 wait "$AGENT_PID" 2>/dev/null || true
 
