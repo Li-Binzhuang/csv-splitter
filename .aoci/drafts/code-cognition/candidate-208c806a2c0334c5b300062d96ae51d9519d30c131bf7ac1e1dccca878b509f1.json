@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "f629c27ebe511dd65d3c6202e00f44fda51b807ad8b1890a8e8068c5e0c4a390",
+  "batch_id": "208c806a2c0334c5b300062d96ae51d9519d30c131bf7ac1e1dccca878b509f1",
+  "composite_identity": "048cf17474b871b9082400a5007771d2aeda97030f7e405aa28f2565c2f65841",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "aa9b01ec3829d14dfc98feac79bc98f0d3ed41edc5519b0b3cd67b7ae5921845",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "221cf28553e87410b080115780989f1b96cfce76005c3ecdcb6d73425905627c",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由 + 审批 + 重放效果冒烟 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:urllib 建会话；endpoints；12 路由；428/deny=403/approve/edit_apply；view overlay；干净副本重放；输出 actions=N deny=403 | S:需 server/binary；不打印 token；临时副本清理"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "918a286faaa78372449421b5bb2e7a54c31ed4629d573a9236ac8c4cbdb209f0",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "221cf28553e87410b080115780989f1b96cfce76005c3ecdcb6d73425905627c",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由 + 审批 + 重放效果冒烟 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:urllib 建会话；endpoints；12 路由；428/deny=403/approve/edit_apply；view overlay；干净副本重放；输出 actions=N deny=403 | S:需 server/binary；不打印 token；临时副本清理"
+    }
+  ]
+}
