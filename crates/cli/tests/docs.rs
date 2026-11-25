@@ -1159,6 +1159,8 @@ fn every_documented_flag_exists() {
         "--release",
         "--test",
         "--workspace",
+        "--patch",
+        "--permission-mode",
         "--help",
         "--version",
         "--quiet",

@@ -1,0 +1,59 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "bf465a022fdd4b3bbcafe86cdb9e914036c05ff7ee2f22cd01f2ae7b49c50d84",
+  "batch_id": "beadeb65f04040589b11b07d098b7fae2b4161fb85e0ff6b396befd25042b631",
+  "composite_identity": "48f0465d4b83d9907883bd0cacda1872fff63a9afeb3d1ea9b18df77a0fcebbc",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "0b6227a1d9559a6ae190474b72527b9792f166ec4f6094c9931336edb68702b0",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "fc8143a39cada5e20dd7342618a4c16333f039de499d701fbfee606806c50567",
+      "existing_entry": "ENTRYPOINTS.md[SG7S]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；MCP 模块白名单与行数上限；CLI main/serve/cli_support+commands | S:rmcp 默认；SDK 检查进 gate；单文件上限强制"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "create",
+      "source_sha256": "7883a0d27cc79f0e20da8348ce12d5e0445812e41ba0c9aa12c82695fddb19f3"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "91153ace129b6e8cec9907f14ce7588cc4b6fe9331c70460c169b6e936259f94",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布（自验日志、manifest、哈希复核） | R:code:scripts/verify_dist.sh,code:scripts/check_agent_stats.py,code:scripts/release_manifest.py,code:scripts/check_release.py,code:scripts/check_phase_times.py | A:打包 docs（含 ENTRYPOINTS）/examples/scripts/mcp_sdk；verify_dist tee log；release.json；check_release | S:不打 tag/不联网/不发 registry；dist gitignore"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "641955b4da96f805d6183485a47dd4dc8391668ded68a5f44a452d9cd36dd870",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "fc8143a39cada5e20dd7342618a4c16333f039de499d701fbfee606806c50567",
+      "existing_entry": "ENTRYPOINTS.md[SG7S]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根白名单；MCP 模块白名单与行数上限；CLI main/serve/cli_support+commands | S:rmcp 默认；SDK 检查进 gate；单文件上限强制"
+    },
+    {
+      "candidate_id": "8f763598d91847b2efa6a33316f0b4208012ec4f32bd8ae90a7f26a558d1bca2",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "create",
+      "source_sha256": "7883a0d27cc79f0e20da8348ce12d5e0445812e41ba0c9aa12c82695fddb19f3"
+    },
+    {
+      "candidate_id": "661520cb9a68bf44b4d630bea653c4460527678b99e956c085efc82276c7224a",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "91153ace129b6e8cec9907f14ce7588cc4b6fe9331c70460c169b6e936259f94",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布（自验日志、manifest、哈希复核） | R:code:scripts/verify_dist.sh,code:scripts/check_agent_stats.py,code:scripts/release_manifest.py,code:scripts/check_release.py,code:scripts/check_phase_times.py | A:打包 docs（含 ENTRYPOINTS）/examples/scripts/mcp_sdk；verify_dist tee log；release.json；check_release | S:不打 tag/不联网/不发 registry；dist gitignore"
+    }
+  ]
+}

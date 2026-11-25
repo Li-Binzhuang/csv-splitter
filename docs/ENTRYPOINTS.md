@@ -100,3 +100,7 @@ bash scripts/package_release.sh
 每一步只做一层，不同时重写 core 行为。
 
 > 注：`main.rs` 已完成拆分，命令在 `commands/`，helper 在 `cli_support.rs`。
+
+## 客户端兼容
+
+官方 SDK 与 DSH 真实客户端验证记录见 `docs/MCP_COMPAT.md`；SDK 检查已进 gate。
