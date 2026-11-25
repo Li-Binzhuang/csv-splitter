@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "b8e3c6c419a99a6e7ddd481783bea72e65f85c2270617550ba7b1eb757c1f6e3",
+  "batch_id": "916fe7b3bb41a2aeace08e7fef2d9ec6fda503f4e9bb98ed5a16eb5a5611ae96",
+  "composite_identity": "70e0446e9ed489ceb3d814cf40b49c94f0a67be6c2ea43229a9f8938ae8b6093",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b9225c7aa509f7906b738082c3b4cb3143a5cc5c410c4d36e6bd123ff1c2888c",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "63101a42e647c064cf17c59642e9865e0c59c290b6b21c95e84a5d0bfdd24c89",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:夜间静默工作的交接摘要：完成/未完成/数字/待决策，供用户次日 10:00 查看 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-24 记录 17 操作、23 工具、typed view/apply、压缩/gate 三端含 unique-global、concat 三端、report spec/chart(count/sum)/compare/root、smoke_http viewer 7/7、AOCI 124 与包 SHA 4965；待决策 xlsx/数据库/薄前端范围 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "ca4a53acd4fe2fa4895afc3d9f01f1d5e2bcd8ee2cd1994154f0ac86903142f6",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由 + 审批 + 重放 + SSE 延迟冒烟 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:urllib 建会话；12 路由；428/deny=403/approve/edit_apply；raw socket SSE；view overlay；干净副本重放；输出 sse_ms/actions=N | S:需 server/binary；不打印 token；临时副本清理；SSE 首帧 \u003c 2s"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "3805a2e6b35268cd8111ebc36a4bfb9c1e0c6441e3671e1d0cb62dfda5806113",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:scripts/verify_dist.sh,code:docs/ACCEPTANCE.md,code:docs/QUICKSTART_AGENT.md | A:打包二进制/docs（AGENT_API/AGENT_TRACE/QUICKSTART_AGENT/DSH_SKILL/FORMULA_CACHE/XLSX）、根目录 AGENT_QUICKSTART.md、demo/pilot/bench/smoke、mcp_sdk、skills、examples、install_skill.sh；sha256 后 verify_dist | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "acf91f20ec529d680764f028b058ce0a9cc92ce304f671c32dcc7a35951c5f1f",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "63101a42e647c064cf17c59642e9865e0c59c290b6b21c95e84a5d0bfdd24c89",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:夜间静默工作的交接摘要：完成/未完成/数字/待决策，供用户次日 10:00 查看 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-24 记录 17 操作、23 工具、typed view/apply、压缩/gate 三端含 unique-global、concat 三端、report spec/chart(count/sum)/compare/root、smoke_http viewer 7/7、AOCI 124 与包 SHA 4965；待决策 xlsx/数据库/薄前端范围 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "b59a1b7904f5ac66c042ea7bd9169f37c06fd04895db4fa323937451be9e9d56",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "ca4a53acd4fe2fa4895afc3d9f01f1d5e2bcd8ee2cd1994154f0ac86903142f6",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由 + 审批 + 重放 + SSE 延迟冒烟 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:urllib 建会话；12 路由；428/deny=403/approve/edit_apply；raw socket SSE；view overlay；干净副本重放；输出 sse_ms/actions=N | S:需 server/binary；不打印 token；临时副本清理；SSE 首帧 \u003c 2s"
+    },
+    {
+      "candidate_id": "83ba4867f281deba3b7cef14ca47cca1134e22dfaa08500a8f31b35dfba21d6e",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "3805a2e6b35268cd8111ebc36a4bfb9c1e0c6441e3671e1d0cb62dfda5806113",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:scripts/verify_dist.sh,code:docs/ACCEPTANCE.md,code:docs/QUICKSTART_AGENT.md | A:打包二进制/docs（AGENT_API/AGENT_TRACE/QUICKSTART_AGENT/DSH_SKILL/FORMULA_CACHE/XLSX）、根目录 AGENT_QUICKSTART.md、demo/pilot/bench/smoke、mcp_sdk、skills、examples、install_skill.sh；sha256 后 verify_dist | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    }
+  ]
+}
