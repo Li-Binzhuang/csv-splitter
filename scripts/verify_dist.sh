@@ -16,11 +16,12 @@ STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
 tar -xzf "$TAR" -C "$STAGE"
 ROOT=$(find "$STAGE" -maxdepth 1 -mindepth 1 -type d | head -1)
-for required in csvx README.md docs/RELEASE_CHECKLIST.md docs/ROADMAP.md mcp_sdk/client.mjs; do
+for required in csvx README.md AGENT_QUICKSTART.md TRY_CSVX.sh docs/RELEASE_CHECKLIST.md docs/ROADMAP.md docs/NIGHT_CHECKPOINT.md mcp_sdk/client.mjs examples/agent/http_session.sh examples/try_csvx.sh; do
   if [[ ! -f "$ROOT/$required" ]]; then
     echo "missing member: $required" >&2
     exit 1
   fi
 done
 "$ROOT/csvx" --version
+CSVX_BIN="$ROOT/csvx" bash "$ROOT/TRY_CSVX.sh" >/dev/null
 echo "verified: $TAR"
