@@ -1,0 +1,93 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "c48f8acfe75a3e957952c82f74fa0eae59feb54e2514df2c6343dd69b64e8a0d",
+  "batch_id": "7c02e19a76a930c6a5b7bc807ac28250e8db8780bce273a358fdcd253d9edad8",
+  "composite_identity": "0376755179e31625238f82fdfa44a8630a4e51cade4d66736f80bd411f87dcd2",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "6089ae68876bd52b8e75f9a95bbf1a97535cd35c0694f822e9a2062ee26d47d8",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "3deb366d9b15336507793d450a4a1d549751376de8e6561638abf0dc8416b467",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:crates/core/src/xlsx.rs | A:CLI 入口；convert xlsx；report md/html/xlsx（summary/columns/rows 多 sheet）；gate/concat/edit/view/filter/watch；agent serve/manifest/run+skill | S:report xlsx 仅三类 section；compare 限 root；xlsx 行上限；agent 端口 8788；runner key 仅 env"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "6ebe83988f234bc2f624efa07c0a45dfef49625b9c8281f8ae86602d7b246ea1",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs,code:crates/core/src/types.rs,code:crates/core/src/engine.rs | A:ZIP 写 ContentTypes/rels/workbook/styles/worksheet；流式单 sheet + 内存多 sheet；表头冻结/列宽；严格 ISO 日期写 numFmtId=14；读 sharedStrings/inlineStr/缓存值/布尔/数值/日期样式 | S:不写公式/图表/条件格式；前导零保持文本；日期仅内置样式 14-22/45-47；多 sheet rels 必须匹配；openpyxl 实读验证"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "5d0f174f662ffd595e89ab0d9cd44f811e4af7f77ece980c77a4aaeb63595259",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/FORMULA_CACHE.md | A:公式缓存；filter 压缩；gate+unique-global；concat；report md/html/xlsx；convert xlsx 含日期往返；typed view/apply；MCP 23 工具 + instructions + csvx://agent；agent serve | S:report xlsx 仅 summary/columns/rows；无 GUI；日期仅 ISO；Agent SSE 轮询；缓存进程内 64 页"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/XLSX.md",
+      "path": "docs/XLSX.md",
+      "change": "update",
+      "source_sha256": "12276a6cea4d6c8bb427e05e49b83a320bb3e3fc668733ab110fe22b19a9991e",
+      "existing_entry": "XLSX.md[SD7T]: F:xlsx 互操作现状与边界：导出、目录多 sheet、导入、report xlsx、日期 | R:code:crates/core/src/xlsx.rs,code:crates/cli/src/main.rs,code:docs/CAPABILITIES.md | A:convert 流式导出；目录多 sheet 冻结/列宽；导入；MCP sheet；report xlsx；严格 ISO 日期 numFmtId=14 往返；openpyxl 实读 | S:只写值不写公式；日期仅 ISO；不做宏/VBA；xlsx 非内部存储；样式/合并忽略"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:skills/csvx-data/SKILL.md",
+      "path": "skills/csvx-data/SKILL.md",
+      "change": "update",
+      "source_sha256": "bf0a640375dfc49872f59b096b11fee8f915e371396aed10a87923fc819b3527",
+      "existing_entry": "SKILL.md[SD7T]: F:csvx-data-workbench skill：引导 Agent 用 csvx 读写、报表、xlsx 与 Agent API | R:code:docs/AGENT_API.md,code:docs/XLSX.md,code:crates/cli/src/agent.rs | A:先 schema/view；edit preview→apply；undo；xlsx 日期 ISO 往返；Agent API/runner；安全红线 | S:skill 不授权破坏性；日期仅 ISO；无 GUI/多用户；key 不落盘"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "134a39c5a2712e921ca64c871e0f381d89bc3e24a2090721cd2904bbf5a9ced0",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "3deb366d9b15336507793d450a4a1d549751376de8e6561638abf0dc8416b467",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:crates/core/src/xlsx.rs | A:CLI 入口；convert xlsx；report md/html/xlsx（summary/columns/rows 多 sheet）；gate/concat/edit/view/filter/watch；agent serve/manifest/run+skill | S:report xlsx 仅三类 section；compare 限 root；xlsx 行上限；agent 端口 8788；runner key 仅 env"
+    },
+    {
+      "candidate_id": "53b7328df16369051540daec4af313168acbf215c807610f3e0c9f26d348a681",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "6ebe83988f234bc2f624efa07c0a45dfef49625b9c8281f8ae86602d7b246ea1",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs,code:crates/core/src/types.rs,code:crates/core/src/engine.rs | A:ZIP 写 ContentTypes/rels/workbook/styles/worksheet；流式单 sheet + 内存多 sheet；表头冻结/列宽；严格 ISO 日期写 numFmtId=14；读 sharedStrings/inlineStr/缓存值/布尔/数值/日期样式 | S:不写公式/图表/条件格式；前导零保持文本；日期仅内置样式 14-22/45-47；多 sheet rels 必须匹配；openpyxl 实读验证"
+    },
+    {
+      "candidate_id": "ed3aa802e52c910948520380f48864676d42549f75d6b0af0288b2263239292d",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "5d0f174f662ffd595e89ab0d9cd44f811e4af7f77ece980c77a4aaeb63595259",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI 与 HTTP 一一对应，并说明引擎选择与边界 | R:code:docs/API.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/FORMULA_CACHE.md | A:公式缓存；filter 压缩；gate+unique-global；concat；report md/html/xlsx；convert xlsx 含日期往返；typed view/apply；MCP 23 工具 + instructions + csvx://agent；agent serve | S:report xlsx 仅 summary/columns/rows；无 GUI；日期仅 ISO；Agent SSE 轮询；缓存进程内 64 页"
+    },
+    {
+      "candidate_id": "aec6ecbdba73705cadaf4c4b566be8322c52139ed61991a6b09804cec8bebd9f",
+      "object_ref": "code:docs/XLSX.md",
+      "path": "docs/XLSX.md",
+      "change": "update",
+      "source_sha256": "12276a6cea4d6c8bb427e05e49b83a320bb3e3fc668733ab110fe22b19a9991e",
+      "existing_entry": "XLSX.md[SD7T]: F:xlsx 互操作现状与边界：导出、目录多 sheet、导入、report xlsx、日期 | R:code:crates/core/src/xlsx.rs,code:crates/cli/src/main.rs,code:docs/CAPABILITIES.md | A:convert 流式导出；目录多 sheet 冻结/列宽；导入；MCP sheet；report xlsx；严格 ISO 日期 numFmtId=14 往返；openpyxl 实读 | S:只写值不写公式；日期仅 ISO；不做宏/VBA；xlsx 非内部存储；样式/合并忽略"
+    },
+    {
+      "candidate_id": "b21d9744e48af8943f08a8b8341c1f02e0b888191870900e63a2520e5c6bf341",
+      "object_ref": "code:skills/csvx-data/SKILL.md",
+      "path": "skills/csvx-data/SKILL.md",
+      "change": "update",
+      "source_sha256": "bf0a640375dfc49872f59b096b11fee8f915e371396aed10a87923fc819b3527",
+      "existing_entry": "SKILL.md[SD7T]: F:csvx-data-workbench skill：引导 Agent 用 csvx 读写、报表、xlsx 与 Agent API | R:code:docs/AGENT_API.md,code:docs/XLSX.md,code:crates/cli/src/agent.rs | A:先 schema/view；edit preview→apply；undo；xlsx 日期 ISO 往返；Agent API/runner；安全红线 | S:skill 不授权破坏性；日期仅 ISO；无 GUI/多用户；key 不落盘"
+    }
+  ]
+}
