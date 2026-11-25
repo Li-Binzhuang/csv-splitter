@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-25T02:38:54Z",
+  "updated_at": "2026-11-25T02:44:39Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "59641a4b19fc3d7f679cbf69d4a9851142232fc46af7e61236a23b3a8e406705",
-      "size": 59340,
-      "normalized_sha256": "59641a4b19fc3d7f679cbf69d4a9851142232fc46af7e61236a23b3a8e406705"
+      "sha256": "a50faaa85e184d360a9a70854d535d6fe91f679535a1d15bcf5abd588d178513",
+      "size": 59671,
+      "normalized_sha256": "a50faaa85e184d360a9a70854d535d6fe91f679535a1d15bcf5abd588d178513"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -106,15 +106,15 @@
     },
     "crates/cli/src/agent.rs": {
       "role": "index",
-      "sha256": "880d8e97fd6664017b7bee5d4a60fc8194f0f6b803c77e17c9dde9abb60976dc",
-      "size": 28477,
-      "normalized_sha256": "880d8e97fd6664017b7bee5d4a60fc8194f0f6b803c77e17c9dde9abb60976dc"
+      "sha256": "d4ddcac89ce5c63cce8d7ef2124daf469977f54a0b095c88d920b3c8e4227f07",
+      "size": 32598,
+      "normalized_sha256": "d4ddcac89ce5c63cce8d7ef2124daf469977f54a0b095c88d920b3c8e4227f07"
     },
     "crates/cli/src/main.rs": {
       "role": "index",
-      "sha256": "3deb366d9b15336507793d450a4a1d549751376de8e6561638abf0dc8416b467",
-      "size": 471905,
-      "normalized_sha256": "3deb366d9b15336507793d450a4a1d549751376de8e6561638abf0dc8416b467"
+      "sha256": "0489d001e7cda12a380c727b454147af5c19180cbb36eae00a194f494a5f34b5",
+      "size": 473112,
+      "normalized_sha256": "0489d001e7cda12a380c727b454147af5c19180cbb36eae00a194f494a5f34b5"
     },
     "crates/cli/src/serve.rs": {
       "role": "index",
@@ -130,9 +130,9 @@
     },
     "crates/cli/tests/agent.rs": {
       "role": "observe",
-      "sha256": "818649f3fdd355e7238fa4bfb0cefb750cecdb62e8a0cc4fc7503578b7a3b155",
-      "size": 7853,
-      "normalized_sha256": "818649f3fdd355e7238fa4bfb0cefb750cecdb62e8a0cc4fc7503578b7a3b155"
+      "sha256": "ea516ce2ffb6ae2832d74723eb51d700752ed640bad2189664f7343dc48baab9",
+      "size": 8830,
+      "normalized_sha256": "ea516ce2ffb6ae2832d74723eb51d700752ed640bad2189664f7343dc48baab9"
     },
     "crates/cli/tests/cli.rs": {
       "role": "observe",
@@ -562,9 +562,15 @@
     },
     "docs/AGENT_API.md": {
       "role": "index",
-      "sha256": "1d61f83527aad6e734f28896c64183bd42ce7552db38457dc9992b49d62b6f44",
-      "size": 4418,
-      "normalized_sha256": "1d61f83527aad6e734f28896c64183bd42ce7552db38457dc9992b49d62b6f44"
+      "sha256": "c9cbc9f7d631150174c8fb9a758d7695104266c65dcf505ed3a3eeb9dac7838b",
+      "size": 4586,
+      "normalized_sha256": "c9cbc9f7d631150174c8fb9a758d7695104266c65dcf505ed3a3eeb9dac7838b"
+    },
+    "docs/AGENT_TRACE.md": {
+      "role": "index",
+      "sha256": "6c4631fb3199aa4314f63ea03a44286d813aec700e76f4cb2953a386ee149858",
+      "size": 1924,
+      "normalized_sha256": "6c4631fb3199aa4314f63ea03a44286d813aec700e76f4cb2953a386ee149858"
     },
     "docs/API.md": {
       "role": "index",
@@ -882,9 +888,9 @@
     },
     "scripts/package_release.sh": {
       "role": "index",
-      "sha256": "0ad3f2669e911669c4c2c6b8ce43ce47e7ee2d9ba2438e8fd182dc989e4dec43",
-      "size": 1565,
-      "normalized_sha256": "0ad3f2669e911669c4c2c6b8ce43ce47e7ee2d9ba2438e8fd182dc989e4dec43"
+      "sha256": "77c44679b0c6a4b8e3311df5250a606c11895cdbaf68ebc5c3f45d1a1bab2561",
+      "size": 1577,
+      "normalized_sha256": "77c44679b0c6a4b8e3311df5250a606c11895cdbaf68ebc5c3f45d1a1bab2561"
     },
     "scripts/pilot_report.py": {
       "role": "index",
@@ -930,9 +936,9 @@
     },
     "skills/csvx-data/SKILL.md": {
       "role": "index",
-      "sha256": "bf0a640375dfc49872f59b096b11fee8f915e371396aed10a87923fc819b3527",
-      "size": 2037,
-      "normalized_sha256": "bf0a640375dfc49872f59b096b11fee8f915e371396aed10a87923fc819b3527"
+      "sha256": "f30bc088a6dbb5f856df2f2407278b505d7e117fd1468c7ff7de04be2dcb46e1",
+      "size": 2206,
+      "normalized_sha256": "f30bc088a6dbb5f856df2f2407278b505d7e117fd1468c7ff7de04be2dcb46e1"
     }
   },
   "managed_scope": {

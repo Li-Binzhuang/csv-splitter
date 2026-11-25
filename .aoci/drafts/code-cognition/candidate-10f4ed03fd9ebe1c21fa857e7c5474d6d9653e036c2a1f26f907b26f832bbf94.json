@@ -1,0 +1,107 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "ef0b1686e3a545502008fbea974e22c2f7db87460b2377b43b961ff51bae937d",
+  "batch_id": "10f4ed03fd9ebe1c21fa857e7c5474d6d9653e036c2a1f26f907b26f832bbf94",
+  "composite_identity": "9275f13d0689a0b9e5b5eb15fe6a4506d2992d9f7a05b652c0629ab5c28aeb35",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "59641a4b19fc3d7f679cbf69d4a9851142232fc46af7e61236a23b3a8e406705",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "d4ddcac89ce5c63cce8d7ef2124daf469977f54a0b095c88d920b3c8e4227f07",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API + OpenAI-compatible runner + skill | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md,code:skills/csvx-data/SKILL.md | A:loopback 服务、sessions/actions/approvals/close/events(follow)/audit；allowedTools 403；action 前 running、后 ok/error；runner JSON tool/final；--skill；curl stdin key | S:audit 只读原始 JSONL；follow 轮询 60s；token 不落审计；白名单不绕审批；max-steps 12"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "0489d001e7cda12a380c727b454147af5c19180cbb36eae00a194f494a5f34b5",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:crates/core/src/xlsx.rs | A:CLI 入口；convert xlsx + --highlight；report md/html/xlsx（summary/columns/rows/datecounts）；gate/concat/edit/view/filter/watch；agent serve/manifest/run+skill | S:report xlsx 仅四类 section；compare 限 root；xlsx 行上限；agent 端口 8788；runner key 仅 env"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "c9cbc9f7d631150174c8fb9a758d7695104266c65dcf505ed3a3eeb9dac7838b",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入：MCP manifest、HTTP Agent API、runner 与 skill | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:skills/csvx-data/SKILL.md | A:agent serve/manifest/run；sessions/actions/approvals/events(+follow)/audit/close；allowedTools 403；428 审批；running+final 审计；Ark 6.10/5.49s；apply 11.75s | S:follow 60s；audit 原始 JSONL；key 不入仓库；白名单不绕审批；无 GUI/多用户"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/AGENT_TRACE.md",
+      "path": "docs/AGENT_TRACE.md",
+      "change": "create",
+      "source_sha256": "6c4631fb3199aa4314f63ea03a44286d813aec700e76f4cb2953a386ee149858"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "77c44679b0c6a4b8e3311df5250a606c11895cdbaf68ebc5c3f45d1a1bab2561",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:scripts/verify_dist.sh,code:scripts/smoke_http.py,code:docs/ACCEPTANCE.md | A:打包二进制/docs（含 AGENT_API/DSH_SKILL/FORMULA_CACHE/XLSX）、demo/pilot/bench/smoke、mcp_sdk、skills/csvx-data、examples/agent、install_skill.sh；sha256 后 verify_dist；失败删半成品 | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:skills/csvx-data/SKILL.md",
+      "path": "skills/csvx-data/SKILL.md",
+      "change": "update",
+      "source_sha256": "f30bc088a6dbb5f856df2f2407278b505d7e117fd1468c7ff7de04be2dcb46e1",
+      "existing_entry": "SKILL.md[SD7T]: F:csvx-data-workbench skill：引导 Agent 用 csvx 读写、报表、xlsx 与 Agent API | R:code:docs/AGENT_API.md,code:docs/XLSX.md,code:crates/cli/src/agent.rs | A:先 schema/view；edit preview→apply；undo；xlsx 日期 ISO、条件格式、datecounts 报表；Agent API/runner；安全红线 | S:skill 不授权破坏性；日期仅 ISO；highlight 仅 cellIs；无 GUI/多用户；key 不落盘"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "89ef08339cf82b70cdd4772254efe2423571cd8051cb2041feb1d39f2b64380e",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "d4ddcac89ce5c63cce8d7ef2124daf469977f54a0b095c88d920b3c8e4227f07",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API + OpenAI-compatible runner + skill | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md,code:skills/csvx-data/SKILL.md | A:loopback 服务、sessions/actions/approvals/close/events(follow)/audit；allowedTools 403；action 前 running、后 ok/error；runner JSON tool/final；--skill；curl stdin key | S:audit 只读原始 JSONL；follow 轮询 60s；token 不落审计；白名单不绕审批；max-steps 12"
+    },
+    {
+      "candidate_id": "18c7fc225c5d98751d855c768b84e2e4b56678fa608703d8658f3e3e56ca2d31",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "0489d001e7cda12a380c727b454147af5c19180cbb36eae00a194f494a5f34b5",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:crates/core/src/xlsx.rs | A:CLI 入口；convert xlsx + --highlight；report md/html/xlsx（summary/columns/rows/datecounts）；gate/concat/edit/view/filter/watch；agent serve/manifest/run+skill | S:report xlsx 仅四类 section；compare 限 root；xlsx 行上限；agent 端口 8788；runner key 仅 env"
+    },
+    {
+      "candidate_id": "b0de1acc273bbda87213b690f4393ae59d79e35cf123abfc5102ad26f942ee8c",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "c9cbc9f7d631150174c8fb9a758d7695104266c65dcf505ed3a3eeb9dac7838b",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 原生接入：MCP manifest、HTTP Agent API、runner 与 skill | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:skills/csvx-data/SKILL.md | A:agent serve/manifest/run；sessions/actions/approvals/events(+follow)/audit/close；allowedTools 403；428 审批；running+final 审计；Ark 6.10/5.49s；apply 11.75s | S:follow 60s；audit 原始 JSONL；key 不入仓库；白名单不绕审批；无 GUI/多用户"
+    },
+    {
+      "candidate_id": "7bd533c72be32edfd3f6beb55c44374c7572d6d23f63a35760fd77ba703c491b",
+      "object_ref": "code:docs/AGENT_TRACE.md",
+      "path": "docs/AGENT_TRACE.md",
+      "change": "create",
+      "source_sha256": "6c4631fb3199aa4314f63ea03a44286d813aec700e76f4cb2953a386ee149858"
+    },
+    {
+      "candidate_id": "5ff99f2602c11da5df791e1f0ea5052e0e758b0934201d1681d97d156f16e160",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "77c44679b0c6a4b8e3311df5250a606c11895cdbaf68ebc5c3f45d1a1bab2561",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:scripts/verify_dist.sh,code:scripts/smoke_http.py,code:docs/ACCEPTANCE.md | A:打包二进制/docs（含 AGENT_API/DSH_SKILL/FORMULA_CACHE/XLSX）、demo/pilot/bench/smoke、mcp_sdk、skills/csvx-data、examples/agent、install_skill.sh；sha256 后 verify_dist；失败删半成品 | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    },
+    {
+      "candidate_id": "cae75accb3f55ea17e1aeb7e424ad2841c3aeb503f11b73c94d796cbb9a0dcf0",
+      "object_ref": "code:skills/csvx-data/SKILL.md",
+      "path": "skills/csvx-data/SKILL.md",
+      "change": "update",
+      "source_sha256": "f30bc088a6dbb5f856df2f2407278b505d7e117fd1468c7ff7de04be2dcb46e1",
+      "existing_entry": "SKILL.md[SD7T]: F:csvx-data-workbench skill：引导 Agent 用 csvx 读写、报表、xlsx 与 Agent API | R:code:docs/AGENT_API.md,code:docs/XLSX.md,code:crates/cli/src/agent.rs | A:先 schema/view；edit preview→apply；undo；xlsx 日期 ISO、条件格式、datecounts 报表；Agent API/runner；安全红线 | S:skill 不授权破坏性；日期仅 ISO；highlight 仅 cellIs；无 GUI/多用户；key 不落盘"
+    }
+  ]
+}
