@@ -90,7 +90,7 @@ bash scripts/package_release.sh
    并删除手写协议层。
 3. **抽 `crates/agent`（已完成传输替换）**：控制面在 `crates/agent`；HTTP/SSE
    由 axum 承载，session/审批/审计/trace/replay 语义保持不变。
-4. **拆 `main.rs`（进行中）**：`agent`/`book`/`chart`/`concat`/`convert`/`demo`/`edit`/`extract`/`files`/`filter`/`format`/`gate`/`groupby`/`layout`/`lookup`/`mcp`/`pivot`/`repair`/`report`/`search`/`serve`/`sort`/`stats`/`validate`/`view` 已迁到 `commands/`；
+4. **拆 `main.rs`（进行中）**：`agent`/`book`/`cache`/`chart`/`concat`/`convert`/`demo`/`edit`/`extract`/`files`/`filter`/`format`/`gate`/`groupby`/`layout`/`lookup`/`mcp`/`merge`/`pivot`/`preview`/`repair`/`report`/`search`/`serve`/`sort`/`split`/`stats`/`validate`/`view` 已迁到 `commands/`；
    其余命令按组迁移，CLI 只保留 dispatch；最后抽 `serve` 剩余 HTTP。
 
 每一步只做一层，不同时重写 core 行为。
