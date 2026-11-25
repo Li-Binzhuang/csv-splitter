@@ -16,13 +16,15 @@ STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
 tar -xzf "$TAR" -C "$STAGE"
 ROOT=$(find "$STAGE" -maxdepth 1 -mindepth 1 -type d | head -1)
-for required in csvx README.md AGENT_QUICKSTART.md TRY_CSVX.sh docs/RELEASE_CHECKLIST.md docs/ROADMAP.md docs/NIGHT_CHECKPOINT.md mcp_sdk/client.mjs examples/agent/http_session.sh examples/try_csvx.sh scripts/agent_routes_smoke.py; do
+for required in csvx README.md AGENT_QUICKSTART.md TRY_CSVX.sh docs/RELEASE_CHECKLIST.md docs/ROADMAP.md docs/NIGHT_CHECKPOINT.md mcp_sdk/client.mjs examples/agent/http_session.sh examples/try_csvx.sh scripts/agent_routes_smoke.py skills/csvx-data/SKILL.md; do
   if [[ ! -f "$ROOT/$required" ]]; then
     echo "missing member: $required" >&2
     exit 1
   fi
 done
 "$ROOT/csvx" --version
+grep -q 'name: csvx-data-workbench' "$ROOT/skills/csvx-data/SKILL.md"
+printf 'skill=ok\n'
 CSVX_BIN="$ROOT/csvx" bash "$ROOT/TRY_CSVX.sh" >/dev/null
 
 AGENT_DIR=$(mktemp -d)
@@ -69,9 +71,11 @@ cat > "$TRACE_DIR/trace.jsonl" <<'JSONL'
 {"event":"tool","tool":"csvx_schema","arguments":{"path":"t.csv"}}
 {"event":"tool","tool":"csvx_edit_apply","arguments":{"path":"t.csv","ops":"set:1:city:X"}}
 JSONL
-"$ROOT/csvx" agent replay --root "$TRACE_DIR" --replay "$TRACE_DIR/trace.jsonl" >/dev/null 2>&1
+TRACE_OUT=$("$ROOT/csvx" agent replay --root "$TRACE_DIR" --replay "$TRACE_DIR/trace.jsonl" 2>&1)
+TRACE_LINES=$(printf '%s\n' "$TRACE_OUT" | grep -c '^replay ' || true)
+test "$TRACE_LINES" -eq 2
 "$ROOT/csvx" view "$TRACE_DIR/t.csv" --json | grep -q '"X"'
-printf 'trace_replay=ok\n'
+printf 'trace_replay=tools:%s\n' "$TRACE_LINES"
 rm -rf "$TRACE_DIR"
 
 echo "verified: $TAR"
