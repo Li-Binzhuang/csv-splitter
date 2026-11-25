@@ -1,0 +1,153 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "d5fa7ded586bf1c18fdfcb243d895f36976dc9820e87c9de2e02f192e4489377",
+  "batch_id": "4377df3f28c678ac88b87e12e269b8f98e28541b0c80730c67987bcb8d198803",
+  "composite_identity": "a97087c136a04e27741ea4b24ffac8911c98268921e891218c12fd96d5dabd36",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "07ba37770a406143b45f1bf5d7be6d54e73713fd70fb883118cdcbdf987c42ba",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:Cargo.toml",
+      "path": "Cargo.toml",
+      "change": "update",
+      "source_sha256": "40a8eb384087d276fb6302f55019be774281b0a4c193946a491b88080419b409",
+      "existing_entry": "Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本与 crate 元数据、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 crates/core 与 crates/cli；workspace.dependencies 以 csvx-core 为本地 crate 键；workspace.package 持有版本 4.2.0、一句话定位、仓库地址与 MIT 许可，是发布真相源；二进制的 --version 与 tag 校验都以它为准 | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/Cargo.toml",
+      "path": "crates/cli/Cargo.toml",
+      "change": "update",
+      "source_sha256": "cac7bbaf98512e66fe6970cf2db0dcd0d99dfc368a6dff4901daea4b4414c452",
+      "existing_entry": "Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Cargo.toml | A:包名 csvx-cli，二进制 csvx，入口 src/main.rs；依赖 libc/flate2；启用 core sql；dev-deps encoding_rs 与 zip 供 xlsx 导出测试读取 ZIP | S:-"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "a5d74e8f3cd67219fda8ae61ab534b492349f3eb26303cb937af48e9b249f3de",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API + runner + trace/replay | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md | A:loopback；GET /sessions；actions/approvals/close/events（condvar 唤醒 + ping 心跳）/audit+trace/replay+curl+actions.md/html+runbook.md/JSON；审批 TTL | S:audit 含 arguments 不含 token；汇总不含 token/内容；SSE 60s；trace 含数据"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "cc3e04614279296c03fb9818152b2ae9382ef5c6ef7316992a35c4b35261d6f4",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:crates/core/src/xlsx.rs | A:CLI 入口；convert xlsx + --highlight；report md/html/xlsx（datecounts 支持 date:group）；gate/concat/edit/view/filter/watch；agent run/replay | S:report xlsx 四类 section；datecounts 第二维可选；compare 限 root；runner key 仅 env"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "f1da9069591a19b16efc05a54a228beed5ad9c2dc76bb3637748d6fb3ce60261",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/cli/src/agent.rs,code:crates/core/src/workbook/export.rs,code:crates/core/src/xlsx.rs | A:HTTP 读写/job；/ops；/gate+uniqueGlobal；/rows typed；/edit；/concat；MCP 23 工具；instructions 与 csvx://agent；manifest endpoints 链接；cache_stats/window | S:uniqueGlobal 需配 unique；gate 目录聚合；report compare 限 root；MCP instructions 非权限；缓存 4 GiB/16"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/Cargo.toml",
+      "path": "crates/mcp/Cargo.toml",
+      "change": "create",
+      "source_sha256": "a571586c52d8649cfb38796e5d72281555f5ed0381fee43e35c4e738eb781eca"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/lib.rs",
+      "path": "crates/mcp/src/lib.rs",
+      "change": "create",
+      "source_sha256": "1b6adcd4fb64c4ef9d55e9ef771677c9fc0310ee5c26d88a23690f32be43b951"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "effb4f4a3825095ce6641ba054999cb671b33239d0ce1c94e4d56d7d44df4fe4",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径、操作契约与模块地图 | R:code:crates/core/src/lib.rs,code:docs/OPERATIONS.md,code:crates/core/src/xlsx.rs | A:模块地图 41 个模块（读写文件含 xlsx）；磁盘格式/操作契约/ops typed 段 | S:模块地图测试逐个比对 core 模块；侧车可删但 journal 丢编辑；redo 边界两份文件；typed ops 未全接 adapter"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "18ece31db025db2a506e2447ae3985f6cb466a804c43c0b4818885dd27240160",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根目录允许项；crate 分层 core/mcp/agent/api/cli；CLI 文件白名单；冻结 23 MCP/12 路由/统计阈值；迁移 4 步 | S:DSH 用 MCP 而非嵌入；runner 不扩张；入口≤300 行目标；规则由 gate 强制"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "36f57c209d2e4d8393340ce90a96acfbbd02be62541eb07d8833aa0c2038411b",
+      "object_ref": "code:Cargo.toml",
+      "path": "Cargo.toml",
+      "change": "update",
+      "source_sha256": "40a8eb384087d276fb6302f55019be774281b0a4c193946a491b88080419b409",
+      "existing_entry": "Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本与 crate 元数据、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/cli/Cargo.toml | A:members 为 crates/core 与 crates/cli；workspace.dependencies 以 csvx-core 为本地 crate 键；workspace.package 持有版本 4.2.0、一句话定位、仓库地址与 MIT 许可，是发布真相源；二进制的 --version 与 tag 校验都以它为准 | S:-"
+    },
+    {
+      "candidate_id": "1136a268b167550141b7ed0282b92a7b7f56cb295b388ad1da3fc8ac11c655f2",
+      "object_ref": "code:crates/cli/Cargo.toml",
+      "path": "crates/cli/Cargo.toml",
+      "change": "update",
+      "source_sha256": "cac7bbaf98512e66fe6970cf2db0dcd0d99dfc368a6dff4901daea4b4414c452",
+      "existing_entry": "Cargo.toml[FV7T]: F:CLI crate 清单与二进制定义 | R:code:crates/core/Cargo.toml | A:包名 csvx-cli，二进制 csvx，入口 src/main.rs；依赖 libc/flate2；启用 core sql；dev-deps encoding_rs 与 zip 供 xlsx 导出测试读取 ZIP | S:-"
+    },
+    {
+      "candidate_id": "b40d0720bfcad0468dba68277e0480f105bab2ea2a6f6e049f459a8cc78545cd",
+      "object_ref": "code:crates/cli/src/agent.rs",
+      "path": "crates/cli/src/agent.rs",
+      "change": "update",
+      "source_sha256": "a5d74e8f3cd67219fda8ae61ab534b492349f3eb26303cb937af48e9b249f3de",
+      "existing_entry": "agent.rs[EN8L]: F:HTTP Agent API + runner + trace/replay | R:code:crates/cli/src/serve.rs,code:crates/cli/src/main.rs,code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md | A:loopback；GET /sessions；actions/approvals/close/events（condvar 唤醒 + ping 心跳）/audit+trace/replay+curl+actions.md/html+runbook.md/JSON；审批 TTL | S:audit 含 arguments 不含 token；汇总不含 token/内容；SSE 60s；trace 含数据"
+    },
+    {
+      "candidate_id": "cfa31a95f5d2ec334fa3b4c3d528a85910f1dce4437cac7666f76ee6eaf015e6",
+      "object_ref": "code:crates/cli/src/main.rs",
+      "path": "crates/cli/src/main.rs",
+      "change": "update",
+      "source_sha256": "cc3e04614279296c03fb9818152b2ae9382ef5c6ef7316992a35c4b35261d6f4",
+      "existing_entry": "main.rs[EU9L]: F:CLI 入口：命令分发、参数解析、帮助表与人类可读输出 | R:code:crates/cli/src/agent.rs,code:crates/cli/src/serve.rs,code:crates/core/src/xlsx.rs | A:CLI 入口；convert xlsx + --highlight；report md/html/xlsx（datecounts 支持 date:group）；gate/concat/edit/view/filter/watch；agent run/replay | S:report xlsx 四类 section；datecounts 第二维可选；compare 限 root；runner key 仅 env"
+    },
+    {
+      "candidate_id": "50f0bd4f64d21d17e8f643cf476aeb2f3733d18277af804daf917275d5baf54e",
+      "object_ref": "code:crates/cli/src/serve.rs",
+      "path": "crates/cli/src/serve.rs",
+      "change": "update",
+      "source_sha256": "f1da9069591a19b16efc05a54a228beed5ad9c2dc76bb3637748d6fb3ce60261",
+      "existing_entry": "serve.rs[EN9L]: F:HTTP 后端 + MCP stdio 服务：路由、job、指标与 agent 工具 | R:code:crates/cli/src/main.rs,code:crates/cli/src/agent.rs,code:crates/core/src/workbook/export.rs,code:crates/core/src/xlsx.rs | A:HTTP 读写/job；/ops；/gate+uniqueGlobal；/rows typed；/edit；/concat；MCP 23 工具；instructions 与 csvx://agent；manifest endpoints 链接；cache_stats/window | S:uniqueGlobal 需配 unique；gate 目录聚合；report compare 限 root；MCP instructions 非权限；缓存 4 GiB/16"
+    },
+    {
+      "candidate_id": "5687c79a7bf972a3844879f05b2146f6e1d0af72b953aaa0718c4464ad66e87b",
+      "object_ref": "code:crates/mcp/Cargo.toml",
+      "path": "crates/mcp/Cargo.toml",
+      "change": "create",
+      "source_sha256": "a571586c52d8649cfb38796e5d72281555f5ed0381fee43e35c4e738eb781eca"
+    },
+    {
+      "candidate_id": "476c1ae96c86ed4aa807025f1594d16732a3a2134f6169b12233d422c2d56622",
+      "object_ref": "code:crates/mcp/src/lib.rs",
+      "path": "crates/mcp/src/lib.rs",
+      "change": "create",
+      "source_sha256": "1b6adcd4fb64c4ef9d55e9ef771677c9fc0310ee5c26d88a23690f32be43b951"
+    },
+    {
+      "candidate_id": "7044dfd85c768f5d585d362ff9be8fd591148297589da24cf86a56cc0245a894",
+      "object_ref": "code:docs/ARCHITECTURE.md",
+      "path": "docs/ARCHITECTURE.md",
+      "change": "update",
+      "source_sha256": "effb4f4a3825095ce6641ba054999cb671b33239d0ce1c94e4d56d7d44df4fe4",
+      "existing_entry": "ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径、操作契约与模块地图 | R:code:crates/core/src/lib.rs,code:docs/OPERATIONS.md,code:crates/core/src/xlsx.rs | A:模块地图 41 个模块（读写文件含 xlsx）；磁盘格式/操作契约/ops typed 段 | S:模块地图测试逐个比对 core 模块；侧车可删但 journal 丢编辑；redo 边界两份文件；typed ops 未全接 adapter"
+    },
+    {
+      "candidate_id": "0656c9bc0cf8bc0fe57b4445d1e1896eb3d94f0bda0490c621d6d705d0b9ee45",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "18ece31db025db2a506e2447ae3985f6cb466a804c43c0b4818885dd27240160",
+      "existing_entry": "ENTRYPOINTS.md[SG7T]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh | A:根目录允许项；crate 分层 core/mcp/agent/api/cli；CLI 文件白名单；冻结 23 MCP/12 路由/统计阈值；迁移 4 步 | S:DSH 用 MCP 而非嵌入；runner 不扩张；入口≤300 行目标；规则由 gate 强制"
+    }
+  ]
+}
