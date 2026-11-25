@@ -517,10 +517,11 @@ fn actions_report(
     }
     let mut body = String::new();
     if html {
-        body.push_str("<h1>Agent actions</h1><table><tr><th>tool</th><th>status</th><th>elapsedMs</th><th>arguments</th></tr>\n");
-        for (tool, status, elapsed, arguments) in &entries {
+        body.push_str("<h1>Agent actions</h1><table><tr><th>#</th><th>tool</th><th>status</th><th>elapsedMs</th><th>arguments</th></tr>\n");
+        for (step, (tool, status, elapsed, arguments)) in entries.iter().enumerate() {
             body.push_str(&format!(
-                "<tr><td>{}</td><td>{}</td><td>{}</td><td><code>{}</code></td></tr>\n",
+                "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td><code>{}</code></td></tr>\n",
+                step + 1,
                 html_text(tool),
                 html_text(status),
                 elapsed,
@@ -530,11 +531,12 @@ fn actions_report(
         body.push_str("</table>\n");
     } else {
         body.push_str(
-            "# Agent actions\n\n| tool | status | elapsedMs | arguments |\n|---|---|---|---|\n",
+            "# Agent actions\n\n| # | tool | status | elapsedMs | arguments |\n|---|---|---|---|---|\n",
         );
-        for (tool, status, elapsed, arguments) in &entries {
+        for (step, (tool, status, elapsed, arguments)) in entries.iter().enumerate() {
             body.push_str(&format!(
-                "| {} | {} | {} | `{}` |\n",
+                "| {} | {} | {} | {} | `{}` |\n",
+                step + 1,
                 tool.replace('|', "\\|"),
                 status.replace('|', "\\|"),
                 elapsed,
@@ -543,9 +545,14 @@ fn actions_report(
         }
     }
     let content_type = if html { "text/html" } else { "text/markdown" };
+    let disposition = if html {
+        String::new()
+    } else {
+        format!("Content-Disposition: attachment; filename=\"agent-actions-{id}.md\"\r\n")
+    };
     stream.write_all(
         format!(
-            "HTTP/1.1 200 OK\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            "HTTP/1.1 200 OK\r\nContent-Type: {content_type}\r\n{disposition}Content-Length: {}\r\nConnection: close\r\n\r\n{body}",
             body.len()
         )
         .as_bytes(),
@@ -601,8 +608,9 @@ fn actions_list(stream: &mut TcpStream, state: &State, id: &str, token: &str) ->
                 _ => None,
             })
             .unwrap_or(0);
+        let step = actions.len() + 1;
         actions.push(format!(
-            r#"{{"tool":{},"arguments":{},"status":{},"elapsedMs":{elapsed}}}"#,
+            r#"{{"step":{step},"tool":{},"arguments":{},"status":{},"elapsedMs":{elapsed}}}"#,
             json_str(tool),
             json_render(&arguments),
             json_str(status)
