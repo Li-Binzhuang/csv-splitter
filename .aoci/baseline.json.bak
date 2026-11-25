@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-25T04:40:14Z",
+  "updated_at": "2026-11-25T04:44:12Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "220f6a340d9ddaa4a6e1ea14982b01c636790486ff585aa5f7abf98b3d1d6675",
-      "size": 60813,
-      "normalized_sha256": "220f6a340d9ddaa4a6e1ea14982b01c636790486ff585aa5f7abf98b3d1d6675"
+      "sha256": "abcaaeaf98842fd8c3367a54934a9fc0ca545583d473dc992aaa2b9fd4281e89",
+      "size": 60854,
+      "normalized_sha256": "abcaaeaf98842fd8c3367a54934a9fc0ca545583d473dc992aaa2b9fd4281e89"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -106,9 +106,9 @@
     },
     "crates/cli/src/agent.rs": {
       "role": "index",
-      "sha256": "0fddc99e32209c5f6bc1c936ec718a9c737359b01b79f1d6f20e0fdfbd840a75",
-      "size": 56212,
-      "normalized_sha256": "0fddc99e32209c5f6bc1c936ec718a9c737359b01b79f1d6f20e0fdfbd840a75"
+      "sha256": "d1ff3e1784f2dc1c2f9110666ff4f9cdacd67a5f0a7ad56a4d22452292700081",
+      "size": 57058,
+      "normalized_sha256": "d1ff3e1784f2dc1c2f9110666ff4f9cdacd67a5f0a7ad56a4d22452292700081"
     },
     "crates/cli/src/main.rs": {
       "role": "index",
@@ -130,9 +130,9 @@
     },
     "crates/cli/tests/agent.rs": {
       "role": "observe",
-      "sha256": "135115644295bdad6de5fd803d5457f05ad308370372002dadf015d5cc7aef04",
-      "size": 22187,
-      "normalized_sha256": "135115644295bdad6de5fd803d5457f05ad308370372002dadf015d5cc7aef04"
+      "sha256": "eb35141c24627dac4cd197eb3cc4ef1d2037daf16d6613350f08ad72d6b4e4c0",
+      "size": 22249,
+      "normalized_sha256": "eb35141c24627dac4cd197eb3cc4ef1d2037daf16d6613350f08ad72d6b4e4c0"
     },
     "crates/cli/tests/cli.rs": {
       "role": "observe",
@@ -562,9 +562,9 @@
     },
     "docs/AGENT_API.md": {
       "role": "index",
-      "sha256": "e3d1e31a0f3c9c8c761d520194bb52284be9f0a5c76d14370064d07f0e9217e4",
-      "size": 6082,
-      "normalized_sha256": "e3d1e31a0f3c9c8c761d520194bb52284be9f0a5c76d14370064d07f0e9217e4"
+      "sha256": "5c46c0505b5249e8f46f62807ffcfe4ec515ff6d5042bb1d94c3188d07ecd72d",
+      "size": 6194,
+      "normalized_sha256": "5c46c0505b5249e8f46f62807ffcfe4ec515ff6d5042bb1d94c3188d07ecd72d"
     },
     "docs/AGENT_TRACE.md": {
       "role": "index",
