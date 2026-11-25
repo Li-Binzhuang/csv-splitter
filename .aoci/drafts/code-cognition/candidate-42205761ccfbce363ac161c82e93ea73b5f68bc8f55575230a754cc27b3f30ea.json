@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "ee0ce1d89aba13d8ff05c30682eb6646a265402413c026f003c1fb86f0a43016",
+  "batch_id": "42205761ccfbce363ac161c82e93ea73b5f68bc8f55575230a754cc27b3f30ea",
+  "composite_identity": "fb2dda8bf1616ff64ad482f384e3fe7c71505ca91a0fef04d12946aca5d55ee9",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e4a40c544631569d6f9d26747c7f1f801e023c5f235c246f978e7e147a03175f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "ca19224e873d480e63a456d9ccf1e02b7fc590276e07a7273a25848078929f98",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:scripts/verify_dist.sh,code:docs/ACCEPTANCE.md,code:docs/QUICKSTART_AGENT.md | A:打包二进制/docs（AGENT_API/AGENT_TRACE/QUICKSTART_AGENT/NIGHT_CHECKPOINT/DSH_SKILL/FORMULA_CACHE/XLSX）、根目录 AGENT_QUICKSTART.md 与 TRY_CSVX.sh、demo/pilot/bench/smoke、mcp_sdk、skills、examples、install_skill.sh；sha256 后 verify_dist | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "8e7a3668651032344fa94f894bf975d980c59924f9810acbe3f0bcc9d0bbde2c",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:离线发布包验收：SHA256、必需成员、包内二进制与五分钟试用 | R:code:scripts/package_release.sh | A:参数 tar.gz；shasum -c；解包检查 csvx/README/AGENT_QUICKSTART/TRY_CSVX/docs/examples/mcp_sdk，运行 csvx --version 与 TRY_CSVX.sh；trap 清理 | S:仅发布方；不联网/不打 tag；缺文件或校验失败非零退出"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "030e4a6ac6685566d21eb44161dc3a597d76444bfabd3d121901c5b6b8ef15d1",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "ca19224e873d480e63a456d9ccf1e02b7fc590276e07a7273a25848078929f98",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布 tar.gz + SHA256 + 自验 | R:code:README.md,code:scripts/verify_dist.sh,code:docs/ACCEPTANCE.md,code:docs/QUICKSTART_AGENT.md | A:打包二进制/docs（AGENT_API/AGENT_TRACE/QUICKSTART_AGENT/NIGHT_CHECKPOINT/DSH_SKILL/FORMULA_CACHE/XLSX）、根目录 AGENT_QUICKSTART.md 与 TRY_CSVX.sh、demo/pilot/bench/smoke、mcp_sdk、skills、examples、install_skill.sh；sha256 后 verify_dist | S:不打 tag/不联网/不发 registry；dist gitignore；仅内部分发"
+    },
+    {
+      "candidate_id": "22bfe444e29dba2315dca47627487b18c6f7ae6d29674a2208c2c2d7fc33ae45",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "8e7a3668651032344fa94f894bf975d980c59924f9810acbe3f0bcc9d0bbde2c",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:离线发布包验收：SHA256、必需成员、包内二进制与五分钟试用 | R:code:scripts/package_release.sh | A:参数 tar.gz；shasum -c；解包检查 csvx/README/AGENT_QUICKSTART/TRY_CSVX/docs/examples/mcp_sdk，运行 csvx --version 与 TRY_CSVX.sh；trap 清理 | S:仅发布方；不联网/不打 tag；缺文件或校验失败非零退出"
+    }
+  ]
+}
