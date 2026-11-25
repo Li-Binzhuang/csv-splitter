@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "8904dd921422d44ba264a8ec866f97ea700da9811b69b204fa68bbd35fd2e9a5",
+  "batch_id": "2853e44cb1fb09d61224f0a07120c5d587fccbffa1644802e2834036a0393859",
+  "composite_identity": "3aea71adebd7d48f3c8625cce500e80f90935de037c2dd3b6656b5950489502d",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e2a64bae3cf2c9ea9862dd9b36fe7298234a98c1f85b06629f41d283e27696c7",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "9f2a20cb83b3784e7e068f6dfb9e49778df75c6db3e9226fcce3d73f52b6b5f7",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:离线发布包验收：SHA256、成员、试用、Agent 阈值、xlsx、trace 与 skill | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py,code:scripts/check_agent_stats.py | A:成员检查；csvx --version；skill 名称；TRY_CSVX；12 路由/审批/重放/SSE；stats checker；xlsx sheet1+conditionalFormatting；trace replay tools:2；trap 清理 | S:仅发布方；不联网；缺文件/校验失败非零退出"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "1ae73da735587951d844811ce19c7e5db84672c3e4de4ade7460f5bedc7cce83",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "9f2a20cb83b3784e7e068f6dfb9e49778df75c6db3e9226fcce3d73f52b6b5f7",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:离线发布包验收：SHA256、成员、试用、Agent 阈值、xlsx、trace 与 skill | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py,code:scripts/check_agent_stats.py | A:成员检查；csvx --version；skill 名称；TRY_CSVX；12 路由/审批/重放/SSE；stats checker；xlsx sheet1+conditionalFormatting；trace replay tools:2；trap 清理 | S:仅发布方；不联网；缺文件/校验失败非零退出"
+    }
+  ]
+}
