@@ -110,7 +110,7 @@ def main():
         assert status == 200, f"{route}: {status} {body}"
 
     sse_ms = sse_latency(api, sid, token)
-    assert sse_ms < 2000, f"SSE first frame took {sse_ms:.0f}ms"
+    assert sse_ms < 250, f"SSE first frame took {sse_ms:.0f}ms"
     action = f"/agent/v1/sessions/{sid}/actions"
     source = Path(args.root, args.file)
     original = source.read_text()
