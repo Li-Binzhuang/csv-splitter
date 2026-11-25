@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-25T12:37:58Z",
+  "updated_at": "2026-11-25T12:41:13Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "38ee418ed8bc989e6116a417924e78bd5f2a81c2bda70332e873b8bb80f830d6",
-      "size": 78167,
-      "normalized_sha256": "38ee418ed8bc989e6116a417924e78bd5f2a81c2bda70332e873b8bb80f830d6"
+      "sha256": "1b7d91749cf26b11b7804fcff8e26a14fcd3991fc6fa6d7488e48b7dd580aa4d",
+      "size": 78341,
+      "normalized_sha256": "1b7d91749cf26b11b7804fcff8e26a14fcd3991fc6fa6d7488e48b7dd580aa4d"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -964,9 +964,9 @@
     },
     "docs/ENTRYPOINTS.md": {
       "role": "index",
-      "sha256": "a588250a34f235c01f86743680f8ac595f08fcaf36d6761e236fecbcaaba7e3a",
-      "size": 4509,
-      "normalized_sha256": "a588250a34f235c01f86743680f8ac595f08fcaf36d6761e236fecbcaaba7e3a"
+      "sha256": "dab85a6bf95aac74eeaf4f51022240a631b8bdd3d2e5999a65ee7277df1a67f8",
+      "size": 4622,
+      "normalized_sha256": "dab85a6bf95aac74eeaf4f51022240a631b8bdd3d2e5999a65ee7277df1a67f8"
     },
     "docs/FORMULA_CACHE.md": {
       "role": "index",
@@ -1180,6 +1180,12 @@
       "size": 1870,
       "normalized_sha256": "c9bf0724d8e241e44661784263f2e039993d31fecc63a713b38129fd9c605fc0"
     },
+    "scripts/check_mcp_sdk.sh": {
+      "role": "index",
+      "sha256": "801e6a773c11acbcc2350642b92d563b53506e00e752e704e3a5c473dbed6a18",
+      "size": 1172,
+      "normalized_sha256": "801e6a773c11acbcc2350642b92d563b53506e00e752e704e3a5c473dbed6a18"
+    },
     "scripts/check_phase_times.py": {
       "role": "index",
       "sha256": "0cd556fc785f534e8c520c90792ef405d40732fe014bb28483aa7b14a1160b1a",
@@ -1218,9 +1224,9 @@
     },
     "scripts/dev.sh": {
       "role": "index",
-      "sha256": "02c78f68a3205cb3bd88c19983000af6dc8166d253ee22ff8f4c6fccbadc0a73",
-      "size": 3415,
-      "normalized_sha256": "02c78f68a3205cb3bd88c19983000af6dc8166d253ee22ff8f4c6fccbadc0a73"
+      "sha256": "801650a9e8c3a56eb3c6be3aba38d12f03381ba86a16945b8f1f13c2b4dbb354",
+      "size": 3467,
+      "normalized_sha256": "801650a9e8c3a56eb3c6be3aba38d12f03381ba86a16945b8f1f13c2b4dbb354"
     },
     "scripts/drill.sh": {
       "role": "index",

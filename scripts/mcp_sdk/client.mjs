@@ -34,6 +34,17 @@ const call = async (name, params) => {
 const tools = await client.listTools();
 console.log(`sdk_tools=${tools.tools.length}`);
 console.log(`sdk_annotated=${tools.tools.filter((tool) => tool.annotations).length}`);
+const expectedTools = [
+  "csvx_cache_clear", "csvx_cache_stats", "csvx_concat", "csvx_convert",
+  "csvx_edit_apply", "csvx_edit_delete", "csvx_edit_preview", "csvx_edit_redo",
+  "csvx_edit_set", "csvx_edit_undo", "csvx_filter", "csvx_gate", "csvx_job_cancel",
+  "csvx_job_list", "csvx_job_status", "csvx_job_submit", "csvx_pipeline_run",
+  "csvx_pipeline_status", "csvx_quality", "csvx_report", "csvx_schema", "csvx_search",
+  "csvx_view",
+];
+const actualTools = tools.tools.map((tool) => tool.name).sort();
+console.log(`sdk_names=${actualTools.length === expectedTools.length && actualTools.every((name, index) => name === expectedTools[index]) ? expectedTools.length : -1}`);
+
 console.log(`schema_rows=${(await call("csvx_schema", { path: file })).rows}`);
 console.log(`filter_matched=${(await call("csvx_filter", { path: file, where: "city=CDMX", limit: 10 })).matched}`);
 const view = await call("csvx_view", { path: file, start: 0, count: 2 });
@@ -75,6 +86,12 @@ if (existsSync(join(root, "orders.csv.gz"))) {
   const after = await call("csvx_cache_stats", {});
   console.log(`cache_after=${after.entries}`);
 }
+const rejected = await client.callTool({
+  name: "csvx_job_submit",
+  arguments: { tool: "csvx_cache_stats", arguments: {} },
+});
+console.log(`job_reject_cache=${rejected.isError === true}`);
+console.log(`job_reject_code=${rejected.structuredContent?.code ?? ""}`);
 const job = await call("csvx_job_submit", {
   tool: "csvx_quality",
   arguments: { path: file, key: "id", group: "city" },
@@ -86,21 +103,18 @@ const waited = await client.callTool(
   { onprogress: () => { progressEvents += 1; } },
 );
 const waitedText = waited.content?.[0]?.text ?? "";
-const status = json(waitedText);
+let status = json(waitedText);
 console.log(`progress_events=${progressEvents}`);
 console.log(`structured_ok=${waited.structuredContent?.ok === true}`);
 for (let i = 0; i < 100 && status.state === "running"; i += 1) {
   await new Promise((resolve) => setTimeout(resolve, 100));
-  const polled = await call("csvx_job_status", { id: job.job });
-  if (polled.state !== "running") {
-    console.log(`job=${polled.state}`);
-    await client.close();
-    process.exit(polled.state === "done" ? 0 : 1);
-  }
+  status = await call("csvx_job_status", { id: job.job });
 }
-if (status.state !== "running") {
-  console.log(`job=${status.state}`);
-  await client.close();
-  process.exit(status.state === "done" ? 0 : 1);
-}
-throw new Error("job did not finish");
+console.log(`job=${status.state}`);
+const listed = await call("csvx_job_list", {});
+console.log(`job_listed=${listed.jobs.some((entry) => entry.job === job.job)}`);
+const unknown = await client.callTool({ name: "csvx_nope", arguments: {} });
+console.log(`unknown_tool_error=${unknown.isError === true}`);
+console.log(`unknown_code=${unknown.structuredContent?.code ?? ""}`);
+await client.close();
+process.exit(status.state === "done" ? 0 : 1);

@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "c7747d156cfa3c3f94d8ccaf2a2788ac93e564334c594a30e5904fe8dedf0e38",
+  "batch_id": "04a1a69be7604c2e351e47883346b06f8363e8a9eeb739504f7dfcc3b308e892",
+  "composite_identity": "307dc144bf7c57f40f732d754967642f034b196b9ce477903606dec4a9467815",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "1b7d91749cf26b11b7804fcff8e26a14fcd3991fc6fa6d7488e48b7dd580aa4d",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_mcp_sdk.sh",
+      "path": "scripts/check_mcp_sdk.sh",
+      "change": "update",
+      "source_sha256": "83d129dbe18075e1c9d42ee295c055770e5ff679b870554602c359f22ee41b1c",
+      "existing_entry": "check_mcp_sdk.sh[SD7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:临时 CSV；23 工具/annotations；progress/structured/job 断言 | S:node/SDK 缺失时跳过；失败非零"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "3624866298e90133eb844b94282ef74ff5912dd437309223d05ebc36df8d29e2",
+      "existing_entry": "client.mjs[XQ7T]: F:官方 MCP SDK 兼容性客户端（Node） | R:code:scripts/mcp_sdk/package.json,code:docs/DEMO.md | A:用 @modelcontextprotocol/sdk Client + StdioClientTransport；env CSVX_BIN/ROOT/FILE；覆盖 tools/list（打印 sdk_annotated）、schema/filter/view、edit_set/undo、convert、job_submit；plan.csv 存在时 pipeline_run 带 contentCheck 并用 onprogress 收每步通知，pipeline_status 也带 contentCheck；orders.csv.gz 存在时两次 search materialize，cache_stats/clear 打印命中/清空/死进程数并复查 entries=0；job_status wait 也带 onprogress 并检查 structuredContent.ok | S:仅演示；npm 依赖不进 Rust 构建；job 超时非零退出；路径在 root 内"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "e80cb3f765f20120b5e28b6de3b5c3acef8958f8564ac9aa81f51442ddd9110e",
+      "object_ref": "code:scripts/check_mcp_sdk.sh",
+      "path": "scripts/check_mcp_sdk.sh",
+      "change": "update",
+      "source_sha256": "83d129dbe18075e1c9d42ee295c055770e5ff679b870554602c359f22ee41b1c",
+      "existing_entry": "check_mcp_sdk.sh[SD7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:临时 CSV；23 工具/annotations；progress/structured/job 断言 | S:node/SDK 缺失时跳过；失败非零"
+    },
+    {
+      "candidate_id": "65f4a395083a9721fcacfb4ab2c4499248fbf30cc48a9cc59faaa35b5585797a",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "3624866298e90133eb844b94282ef74ff5912dd437309223d05ebc36df8d29e2",
+      "existing_entry": "client.mjs[XQ7T]: F:官方 MCP SDK 兼容性客户端（Node） | R:code:scripts/mcp_sdk/package.json,code:docs/DEMO.md | A:用 @modelcontextprotocol/sdk Client + StdioClientTransport；env CSVX_BIN/ROOT/FILE；覆盖 tools/list（打印 sdk_annotated）、schema/filter/view、edit_set/undo、convert、job_submit；plan.csv 存在时 pipeline_run 带 contentCheck 并用 onprogress 收每步通知，pipeline_status 也带 contentCheck；orders.csv.gz 存在时两次 search materialize，cache_stats/clear 打印命中/清空/死进程数并复查 entries=0；job_status wait 也带 onprogress 并检查 structuredContent.ok | S:仅演示；npm 依赖不进 Rust 构建；job 超时非零退出；路径在 root 内"
+    }
+  ]
+}
