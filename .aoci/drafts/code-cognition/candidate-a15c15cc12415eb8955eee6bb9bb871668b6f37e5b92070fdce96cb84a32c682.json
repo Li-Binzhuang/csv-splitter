@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "cac662ff28a575701e8f041e63efaeee668e43c5b0ad9c1a8107f9a31e36c9f4",
+  "batch_id": "a15c15cc12415eb8955eee6bb9bb871668b6f37e5b92070fdce96cb84a32c682",
+  "composite_identity": "a7db28bfe205a98cf46209a3f9a9520f7fbad3b96115de29eda14fbfc7732d95",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "40fd67dcd5261d3ab14a26400dd2dcbd61ba2fc6ca0c85f8103a8b815d7748e7",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "cfb0af90768d199eefeed7c424ce97d35a79fe029cff7cb4fd4ae363a1dc3864",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round80 1M 内存实测与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "00a740df458e7061218f09a4ba4b30e401c05aed3715f273aa1a1db417c70f6a",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "cfb0af90768d199eefeed7c424ce97d35a79fe029cff7cb4fd4ae363a1dc3864",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round80 1M 内存实测与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

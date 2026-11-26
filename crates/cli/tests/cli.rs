@@ -2872,6 +2872,40 @@ fn convert_skips_hidden_sheets_by_default() {
 }
 
 #[test]
+fn converting_xlsx_over_itself_is_refused() {
+    let dir = TempDir::new("xlsxoverwrite");
+    let book = dir.join("book.xlsx");
+    std::fs::copy(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/xlsx/shared.xlsx"),
+        &book,
+    )
+    .unwrap();
+    let before = std::fs::read(&book).unwrap();
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--format",
+            "csv",
+            "--out",
+            book.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(1));
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("refusing"),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        std::fs::read(&book).unwrap(),
+        before,
+        "xlsx input was modified"
+    );
+}
+
+#[test]
 fn convert_honors_the_1904_date_system() {
     let dir = TempDir::new("xlsx1904");
     let book = dir.join("book.xlsx");
