@@ -150,5 +150,7 @@ pipeline run、job cancel、cache clear）没有 `approvalId` 时返回 **428**�
 ## Route smoke 契约
 
 `scripts/agent_routes_smoke.py` 固定检查 12 条路由，并校验每种响应体：
-JSON、Markdown、HTML、JSONL replay、bash curl 脚本。输出 `routes=12 route_bodies=12`，
+JSON、Markdown、HTML、JSONL replay、bash curl 脚本。每条路由同时做无 token
+检查（必须 401），并验证错误方法返回 405。输出
+`routes=12 route_bodies=12 unauth=12 method_guards=2`，
 `check_agent_stats.py` 继续要求 `routes == 12`。

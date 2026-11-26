@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 4：12 路由 smoke 增加无 token 检查（必须 401）与错误方法检查（必须 405）。
+实测 `routes=12 route_bodies=12 unauth=12 method_guards=2`；发布包 SHA `5e3a52b4…67395`。
+
 Round 3：12 路由 smoke 增加响应体契约：JSON / Markdown / HTML / JSONL replay / bash curl 脚本。
 实测 `routes=12 route_bodies=12`；gate 通过；发布包 SHA `642a46fd…a9747c`。
 
@@ -26,16 +29,16 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 - 23 工具 schema 语义级参数一致性（当前是字段到 flag 的映射检查）。
 - `executor.rs` 仍可继续拆命令分派。
-- 12 路由已有响应体契约，但方法矩阵（GET/POST）与鉴权矩阵仍未单列。
+- 12 路由已有响应体、401、405 契约。
 - 商业化/产品化未开始。
 
 ## 遇到的问题
 
-- 上一轮 push 已成功：`fcea0df3..17e03d5c`。
-- 本轮 route smoke 先因空 replay/空 curl 脚本误判，已修正为允许空集合。
+- 上一轮 route smoke 曾把空 replay/curl 误判，已修正。
+- 本轮 401/405 断言一次通过。
 
 ## 下一轮具体行动
 
-1. 跑 AOCI 收尾并提交。
+1. 全量 gate、AOCI 收尾并提交。
 2. push 本轮提交一次。
-3. 下一轮继续补 12 路由方法矩阵（GET/POST）与守卫测试。
+3. 下一轮转向 `crates/mcp` 命令分派拆分或 schema 语义校验。

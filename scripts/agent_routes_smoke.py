@@ -117,6 +117,9 @@ def main():
         "/agent/v1/sessions",
     ]
     for route in routes:
+        status, _ = request(api, route)
+        assert status == 401, f"{route} without token: {status}"
+    for route in routes:
         status, body = request(api, route, token)
         assert status == 200, f"{route}: {status} {body}"
         # The 12 routes are not all JSON: runbook/actions have markdown/HTML forms.
@@ -132,6 +135,11 @@ def main():
                 assert "curl" in body, f"{route}: no curl examples"
         else:
             json.loads(body)
+
+    status, _ = request(api, f"/agent/v1/sessions/{sid}", token, "POST", {})
+    assert status == 405, f"POST session detail: {status}"
+    status, _ = request(api, f"/agent/v1/sessions/{sid}/close", token)
+    assert status == 405, f"GET close: {status}"
 
     sse_ms = sse_latency(api, sid, token)
     assert sse_ms < 250, f"SSE first frame took {sse_ms:.0f}ms"
@@ -201,12 +209,14 @@ def main():
     assert after_count == actions_count, f"replay changed HTTP actions: {actions_count} -> {after_count}"
 
     print(
-        f"routes={len(routes)} route_bodies={len(routes)} session={sid} actions={actions_count} "
+        f"routes={len(routes)} route_bodies={len(routes)} unauth={len(routes)} method_guards=2 session={sid} actions={actions_count} "
         f"sse_ms={sse_ms:.0f} deny=403 approval=ok replay={replay_count}"
     )
     print("stats_json=" + json.dumps({
         "routes": len(routes),
         "route_bodies": len(routes),
+        "unauth_checks": len(routes),
+        "method_guards": 2,
         "session": sid,
         "actions": actions_count,
         "sse_ms": round(sse_ms, 3),

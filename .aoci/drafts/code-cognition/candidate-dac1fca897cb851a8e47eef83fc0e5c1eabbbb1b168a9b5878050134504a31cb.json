@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "27b01592227626c667f8a1820a7e45e60a2e272f9658a9965042314214b2ae65",
+  "batch_id": "dac1fca897cb851a8e47eef83fc0e5c1eabbbb1b168a9b5878050134504a31cb",
+  "composite_identity": "27c94499bc01d1ed4d34758a0285ac35596ff07acace93773775443ac28bc5c7",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "bec08802c86b0f57a70be45292ac30a166ec974510916be4994cff46d7df486d",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "d762d997dfbc91d5c124c3c0f213528775433e2c5b43a7f425ff4f7a8c899f77",
+      "existing_entry": "AGENT_API.md[SD7S]: F:Agent 接入：MCP manifest、HTTP API、runner、skill 与 trace | R:code:crates/agent/src/lib.rs,code:crates/agent/src/axum_http.rs,code:scripts/agent_routes_smoke.py | A:serve/manifest/run；sessions/actions/approvals/events/audit/replay/curl/runbook；403/428；12 路由响应体契约 | S:SSE 60s；audit 仅 session；token 不入脚本；心跳 17s；axum 传输"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "3cbe6f1b5ca87fbdeee08298372920374851d31fd807b8ffae952897ac473a71",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；实测数字；route_bodies=12 | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "c3178d6d567eb5fb9c884d5ac6ec676055249b14100f23cf1b020f7d59b16c1c",
+      "existing_entry": "agent_routes_smoke.py[TQ7M]: F:Agent API 路由体契约、审批、replay、SSE 与统计 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:12 路由；JSON/Markdown/HTML/JSONL/bash 校验；428/deny=403；replay 对照；stats_json route_bodies | S:需 server/binary；不打印 token；SSE\u003c250ms；临时副本清理"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "418a6da8ffdbef44f1f12f8f5acb83d789165e8dacc3a08876820a30fa34d777",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "d762d997dfbc91d5c124c3c0f213528775433e2c5b43a7f425ff4f7a8c899f77",
+      "existing_entry": "AGENT_API.md[SD7S]: F:Agent 接入：MCP manifest、HTTP API、runner、skill 与 trace | R:code:crates/agent/src/lib.rs,code:crates/agent/src/axum_http.rs,code:scripts/agent_routes_smoke.py | A:serve/manifest/run；sessions/actions/approvals/events/audit/replay/curl/runbook；403/428；12 路由响应体契约 | S:SSE 60s；audit 仅 session；token 不入脚本；心跳 17s；axum 传输"
+    },
+    {
+      "candidate_id": "c7271102ee3e1b37daa64291c2c2de3e44fc227c2f6256fdb67d583e87a105f9",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "3cbe6f1b5ca87fbdeee08298372920374851d31fd807b8ffae952897ac473a71",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；实测数字；route_bodies=12 | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "7e690421897011a4c998f30540f955f7e98d1f28974e3b4f59769cc50e0eb4dc",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "c3178d6d567eb5fb9c884d5ac6ec676055249b14100f23cf1b020f7d59b16c1c",
+      "existing_entry": "agent_routes_smoke.py[TQ7M]: F:Agent API 路由体契约、审批、replay、SSE 与统计 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:12 路由；JSON/Markdown/HTML/JSONL/bash 校验；428/deny=403；replay 对照；stats_json route_bodies | S:需 server/binary；不打印 token；SSE\u003c250ms；临时副本清理"
+    }
+  ]
+}
