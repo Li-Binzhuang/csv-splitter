@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "78a51040f557132ce4fdfe42b276f60f27ad064eda0f4ad53eb0210c4d13e96d",
+  "batch_id": "3b58db1775e3ab14d3532b2ed368d7223283b7bba10eba15a6f326a518245d97",
+  "composite_identity": "76f249f82772d0941408e5ef3803a83209bc3c370620df2f7f259cf7868ee260",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e9eb9c1a1175a0385f9080a93450341d017be7400755d6a480e266b5972ccd96",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "c2eae56f32256d4be233ee3727d5889af2ef9cde6fd7a952ffc0707555f05c4b",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round111 格式第二批与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "91d35517f5448a39caa76d8926d2a9246e7f558cdf89f3d51371e0c1bc6e8b29",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "c2eae56f32256d4be233ee3727d5889af2ef9cde6fd7a952ffc0707555f05c4b",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round111 格式第二批与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

@@ -36,10 +36,16 @@
 - [x] 项8 convert 导出接线数字格式：`--number-format "amount:#,##0.00;rate:0.0%"`；
   CLI 测试 `convert_xlsx_can_apply_per_column_number_formats`。
 - [ ] 项9 xlsx 导入 numFmt → ColumnMeta 格式保真（日期之外的小数/百分比/货币）。
-- [ ] 项10 `--number-format` 与 `--highlight` 同用、重复列/非法码错误诊断测试。
+- [x] 项10 数字格式诊断：重复列/非法码报错，`--number-format` 与 `--highlight`
+  同用；CLI 测试 `number_format_rejects_repeated_columns_and_bad_codes`、
+  `number_format_and_highlight_can_be_combined`。
 - [ ] 项11 公式第三批：TIMEVALUE/NOW/TODAY/DATEDIF。
+- [ ] 项12 `TEXT()` 覆盖 Scientific/Accounting/@ 并补公式测试。
 
 ## 当前进度
+
+Round 112（项10 诊断）：新增重复列/非法码/与 highlight 同用的 CLI 测试；
+无代码改动；全量 gate/package 通过；发布包 SHA `cae72e60…e52b2`。
 
 Round 111（项6 格式第二批）：`NumberFormat` 新增 Scientific/Accounting/Text，
 布局测试、全量 gate/package 通过；发布包 SHA `6c900b13…0eee8`。

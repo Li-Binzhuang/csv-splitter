@@ -2650,6 +2650,94 @@ fn convert_xlsx_can_apply_per_column_number_formats() {
     assert!(styles.contains("formatCode=\"0.0%\""), "{styles}");
 }
 
+#[test]
+fn number_format_rejects_repeated_columns_and_bad_codes() {
+    let dir = TempDir::new("xlsxfmterr");
+    let input = dir.join("t.csv");
+    let output = dir.join("t.xlsx");
+    std::fs::write(&input, "amount\n1\n").unwrap();
+    let repeated = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            output.to_str().unwrap(),
+            "--number-format",
+            "amount:#,##0.00;amount:0.0%",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(repeated.status.code(), Some(2));
+    assert!(
+        String::from_utf8_lossy(&repeated.stderr).contains("repeated"),
+        "{}",
+        String::from_utf8_lossy(&repeated.stderr)
+    );
+    let bad = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            output.to_str().unwrap(),
+            "--number-format",
+            "amount:banana",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(bad.status.code(), Some(2));
+    assert!(
+        String::from_utf8_lossy(&bad.stderr).contains("not a number format"),
+        "{}",
+        String::from_utf8_lossy(&bad.stderr)
+    );
+}
+
+#[test]
+fn number_format_and_highlight_can_be_combined() {
+    let dir = TempDir::new("xlsxfmthl");
+    let input = dir.join("t.csv");
+    let output = dir.join("t.xlsx");
+    std::fs::write(&input, "amount,rate\n1234.5,0.123\n10,0.5\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            output.to_str().unwrap(),
+            "--number-format",
+            "amount:#,##0.00",
+            "--highlight",
+            "amount>1000:red",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let file = std::fs::File::open(&output).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    use std::io::Read as _;
+    let mut styles = String::new();
+    archive
+        .by_name("xl/styles.xml")
+        .unwrap()
+        .read_to_string(&mut styles)
+        .unwrap();
+    assert!(styles.contains("formatCode=\"#,##0.00\""), "{styles}");
+    assert!(styles.contains("<dxfs count=\"1\">"), "{styles}");
+    let mut sheet = String::new();
+    archive
+        .by_name("xl/worksheets/sheet1.xml")
+        .unwrap()
+        .read_to_string(&mut sheet)
+        .unwrap();
+    assert!(sheet.contains("conditionalFormatting"), "{sheet}");
+}
+
 /// `datecounts` groups a timestamp column by its first ten characters.
 #[test]
 fn report_datecounts_groups_timestamps_by_date() {
