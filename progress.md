@@ -81,6 +81,9 @@
 
 ## 当前进度
 
+Round 146（项88/89/90 WORKDAY 区间与 Feb29）：重复区间、周末起点、
+Feb29 结束日；测试、全量 gate/package 通过；发布包 SHA `7c72b42c…6f9ca`。
+
 Round 145（项85/86/87 重复区间与 Feb29）：区间去重、周末+周一节假日、
 Feb29→Mar31；测试、全量 gate/package 通过；发布包 SHA `9fc85aa8…5f369`。
 

@@ -1508,6 +1508,41 @@ mod tests {
     }
 
     #[test]
+    fn workday_range_duplicates_and_weekend_starts_work() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [
+            ("a", "2024-01-01"),
+            ("b", "2024-01-03"),
+            ("c", "2024-01-03"),
+            ("d", "2024-01-05"),
+        ] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        let formula = Formula::parse("workday(A2, 2, B2:C2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "2024-01-04"
+        );
+        assert_eq!(
+            eval_str(r#"networkdays("2024-01-06", "2024-01-08")"#, &[]),
+            "1",
+            "Saturday to Monday counts only Monday"
+        );
+        assert_eq!(
+            eval_str(r#"days360("2024-02-01", "2024-02-29")"#, &[]),
+            "28"
+        );
+    }
+
+    #[test]
     fn duplicate_range_holidays_and_feb29_work() {
         let columns = vec![
             "a".to_string(),
