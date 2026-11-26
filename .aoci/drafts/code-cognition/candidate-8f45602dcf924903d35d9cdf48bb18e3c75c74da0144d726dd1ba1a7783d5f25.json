@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "577a698189f02927231455c97c6b35960affd46bf0e961cd286b236f48c5e70b",
+  "batch_id": "8f45602dcf924903d35d9cdf48bb18e3c75c74da0144d726dd1ba1a7783d5f25",
+  "composite_identity": "7aeeb415be73595b262cfa2907049cf1c52cfddf2ebeb9051fa979dbcecf9eff",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "fd9091dbb92a74c73a43f9cbb81eb522a790885d7ef2125f7c64f4e84ba4baa8",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "ea7787e84eb0e574271ef3dad95df2b35bf69286c15ac248059978578f4dc7d3",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:scripts/install_offline.sh,code:docs/SECURITY.md | A:成员契约加 SECURITY/DESIGN/100GB JSON/install/bench/pilot；version/skill/TRY/12 路由 | S:仅发布方；不联网；缺成员失败"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "135b1a09ed062ad4fc79d3695092102205bca602351de5242d9ea0d8e32d996b",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "ea7787e84eb0e574271ef3dad95df2b35bf69286c15ac248059978578f4dc7d3",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:scripts/install_offline.sh,code:docs/SECURITY.md | A:成员契约加 SECURITY/DESIGN/100GB JSON/install/bench/pilot；version/skill/TRY/12 路由 | S:仅发布方；不联网；缺成员失败"
+    }
+  ]
+}
