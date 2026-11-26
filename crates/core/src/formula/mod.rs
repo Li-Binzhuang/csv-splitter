@@ -1508,6 +1508,18 @@ mod tests {
     }
 
     #[test]
+    fn weekend_and_31_day_boundaries_work() {
+        assert_eq!(eval_str(r#"workday("2024-01-06", 0)"#, &[]), "2024-01-06");
+        assert_eq!(
+            eval_str(r#"days360("2024-01-31", "2024-03-31", 1)"#, &[]),
+            "60"
+        );
+        assert_eq!(eval_str(r#"weeknum("2025-12-29", 21)"#, &[]), "1");
+        assert_eq!(eval_str(r#"weeknum("2026-01-01", 21)"#, &[]), "1");
+        assert_eq!(eval_str(r#"weeknum("2025-12-28", 21)"#, &[]), "52");
+    }
+
+    #[test]
     fn date_range_boundaries_work() {
         assert_eq!(
             eval_str(r#"networkdays("2024-02-28", "2024-03-01")"#, &[]),
