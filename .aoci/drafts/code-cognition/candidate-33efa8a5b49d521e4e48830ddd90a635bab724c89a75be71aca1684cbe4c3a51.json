@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "e7bf91c945ebb3577e3e1e1479ff75e1c2c0940f6ec54ac2741e1f0555cb5580",
+  "batch_id": "33efa8a5b49d521e4e48830ddd90a635bab724c89a75be71aca1684cbe4c3a51",
+  "composite_identity": "9ac842048b7dc617e23c47ac7bd5e336dfb39f6bdb078854efd9977bf06390fe",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "8f861536496c37e77c0e22d2271901b2ae65ca7c44e214e48b7b1bf70b5543d7",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "c73da712c2a605c1968ff4c35ac3bb97cf597c21b7577e61bc6d407eae85abe8",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round56 CLI 小写 sheet 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "96fbcd028c783a0bd6e3eeedab3927dd02c977e5a475ea2820204c8c1618fc69",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "c73da712c2a605c1968ff4c35ac3bb97cf597c21b7577e61bc6d407eae85abe8",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round56 CLI 小写 sheet 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

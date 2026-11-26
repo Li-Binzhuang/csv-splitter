@@ -2789,6 +2789,46 @@ fn convert_imports_xlsx_shared_strings_and_sheets() {
 }
 
 #[test]
+fn convert_reports_a_formula_without_a_cached_value() {
+    let dir = TempDir::new("xlsxformula");
+    let book = dir.join("book.xlsx");
+    {
+        use std::io::Write as _;
+        let file = std::fs::File::create(&book).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        let options = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+        zip.start_file("xl/workbook.xml", options).unwrap();
+        zip.write_all(br#"<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>"#).unwrap();
+        zip.start_file("xl/_rels/workbook.xml.rels", options)
+            .unwrap();
+        zip.write_all(br#"<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>"#).unwrap();
+        zip.start_file("xl/worksheets/sheet1.xml", options).unwrap();
+        zip.write_all(br#"<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1"><f>SUM(B1:B2)</f></c></row></sheetData></worksheet>"#).unwrap();
+        zip.finish().unwrap();
+    }
+    let out = dir.join("out.csv");
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--format",
+            "csv",
+            "--out",
+            out.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(1));
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("no cached value"),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(!out.exists(), "a failed conversion must not write output");
+}
+
+#[test]
 fn pipeline_history_records_runs_and_failures() {
     let dir = TempDir::new("pipeline-history");
     std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n2,Puebla\n").unwrap();

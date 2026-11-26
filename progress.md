@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 57（CLI 公式错误）：构造最小 xlsx，无缓存公式值转换返回 1、stderr 含
+no cached value，且不写输出文件；用户面错误路径被测试钉住；
+发布包 SHA `3cba2efe…27fa9`。
+
 Round 56（CLI 小写 sheet）：`convert --sheet data` 在真实 xlsx fixture 上成功，
 覆盖用户面大小写选择；发布包 SHA `4c66dbe9…dcbfb`。
 
