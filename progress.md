@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 15：12 路由全部做错误方法检查（POST 到 GET-only、DELETE 到 POST 路由），
+`method_guards=12`；发布包 SHA `5b207658…84be3`。
+
 Round 14：push 重试成功；`executor/commands.rs` 430 → 360 行（11 处 Bool 解析收进 `flag_or`）；
 行数上限收紧到 450；发布包 SHA `74ebe5d8…4161e`。
 
@@ -67,6 +70,6 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 ## 下一轮具体行动
 
-1. 跑 MCP SDK 与全量 gate。
-2. AOCI 收尾并提交。
-3. push 本轮提交一次。
+1. 全量 gate、AOCI 收尾并提交。
+2. push 本轮提交一次。
+3. 下一轮转向产品化或 mcp 模块瘦身。

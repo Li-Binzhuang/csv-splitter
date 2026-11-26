@@ -136,10 +136,15 @@ def main():
         else:
             json.loads(body)
 
-    status, _ = request(api, f"/agent/v1/sessions/{sid}", token, "POST", {})
-    assert status == 405, f"POST session detail: {status}"
-    status, _ = request(api, f"/agent/v1/sessions/{sid}/close", token)
-    assert status == 405, f"GET close: {status}"
+    post_routes = {
+        "/agent/v1/sessions",
+        f"/agent/v1/sessions/{sid}/actions",
+        f"/agent/v1/sessions/{sid}/approvals",
+    }
+    for route in routes:
+        method = "DELETE" if route in post_routes else "POST"
+        status, _ = request(api, route, token, method, {})
+        assert status == 405, f"{method} {route}: {status}"
 
     sse_ms = sse_latency(api, sid, token)
     assert sse_ms < 250, f"SSE first frame took {sse_ms:.0f}ms"
@@ -217,7 +222,7 @@ def main():
     assert status == 404, f"after close: {status} {body}"
 
     print(
-        f"routes={len(routes)} route_bodies={len(routes)} unauth={len(routes)} method_guards=2 "
+        f"routes={len(routes)} route_bodies={len(routes)} unauth={len(routes)} method_guards=12 "
         f"events=200 close=200 after_close=404 session={sid} actions={actions_count} "
         f"sse_ms={sse_ms:.0f} deny=403 approval=ok replay={replay_count}"
     )
@@ -225,7 +230,7 @@ def main():
         "routes": len(routes),
         "route_bodies": len(routes),
         "unauth_checks": len(routes),
-        "method_guards": 2,
+        "method_guards": len(routes),
         "events": 200,
         "close": 200,
         "after_close": 404,
