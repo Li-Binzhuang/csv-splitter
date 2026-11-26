@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "052f0db7bced6be639773d437af0d95edb86b80ae59610d72491399f2a7918f7",
+  "batch_id": "3de981865c6b460c10f512c808b58e73efba10d51442106558f457ed34f27479",
+  "composite_identity": "6320f4d2b5375a570cc2b7b37db0b1fa7668ab0a1f1039c615328d96b1ee6824",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "546b48b9492ef62bc00a431e717c0f75f68c6985c75209592d65aac61cf3572c",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "7ab28e557670fa7525393cfdd27b083a22b28ab7a720c3910e01d12b6eed655a",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round24 schema 结构与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_mcp_sdk.sh",
+      "path": "scripts/check_mcp_sdk.sh",
+      "change": "update",
+      "source_sha256": "d68e4c722b2f50c1d6d8fe29a4dc75c641601aa5cdfcecfae60a77cc1fa87233",
+      "existing_entry": "check_mcp_sdk.sh[TQ7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:debug 优先；23 工具；必填/root escape/bool/range；xlsx/HTML | S:node/SDK 缺失跳过；失败非零"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "e02745d8e6329d83aacb74beda41ebe07eba268f74361efa8061dab5e3ce347d",
+      "existing_entry": "client.mjs[XQ7M]: F:官方 MCP SDK 工具、安全与参数类型回归 | R:code:scripts/mcp_sdk/package.json,code:scripts/check_mcp_sdk.sh | A:23 工具；bool/range/root escape；xlsx/HTML；resources | S:仅回归；npm 不进 Rust；job 失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "681ced6d7afeb4100e551a25ca9acbae85d01fee3295a5cb9f348dad18370cad",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "7ab28e557670fa7525393cfdd27b083a22b28ab7a720c3910e01d12b6eed655a",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round24 schema 结构与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "caeb44761d8eecc9684b429750f72769b6c84e508b31a456b877d4a1b72018e4",
+      "object_ref": "code:scripts/check_mcp_sdk.sh",
+      "path": "scripts/check_mcp_sdk.sh",
+      "change": "update",
+      "source_sha256": "d68e4c722b2f50c1d6d8fe29a4dc75c641601aa5cdfcecfae60a77cc1fa87233",
+      "existing_entry": "check_mcp_sdk.sh[TQ7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:debug 优先；23 工具；必填/root escape/bool/range；xlsx/HTML | S:node/SDK 缺失跳过；失败非零"
+    },
+    {
+      "candidate_id": "25888e93b6d60666d14b925f7800fe47ce7f5e2fa6287cf650566eb64d2a182a",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "e02745d8e6329d83aacb74beda41ebe07eba268f74361efa8061dab5e3ce347d",
+      "existing_entry": "client.mjs[XQ7M]: F:官方 MCP SDK 工具、安全与参数类型回归 | R:code:scripts/mcp_sdk/package.json,code:scripts/check_mcp_sdk.sh | A:23 工具；bool/range/root escape；xlsx/HTML；resources | S:仅回归；npm 不进 Rust；job 失败非零"
+    }
+  ]
+}

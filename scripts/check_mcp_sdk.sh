@@ -40,6 +40,9 @@ grep -q '^unknown_resource_error=true$' <<<"$out" || { echo "mcp_sdk=fail unknow
 grep -q '^sdk_tools=23$' <<<"$out" || { echo "mcp_sdk=fail tools"; exit 1; }
 grep -q '^sdk_names=23$' <<<"$out" || { echo "mcp_sdk=fail names"; exit 1; }
 grep -q '^sdk_annotated=23$' <<<"$out" || { echo "mcp_sdk=fail annotations"; exit 1; }
+grep -q '^sdk_readonly=12$' <<<"$out" || { echo "mcp_sdk=fail readonly hints"; exit 1; }
+grep -q '^sdk_destructive=10$' <<<"$out" || { echo "mcp_sdk=fail destructive hints"; exit 1; }
+grep -q '^sdk_openworld=1$' <<<"$out" || { echo "mcp_sdk=fail openworld hints"; exit 1; }
 grep -q '^progress_events=[1-9]' <<<"$out" || { echo "mcp_sdk=fail progress"; exit 1; }
 grep -q '^structured_ok=true$' <<<"$out" || { echo "mcp_sdk=fail structured"; exit 1; }
 grep -q '^xlsx_ok=true$' <<<"$out" || { echo "mcp_sdk=fail xlsx"; exit 1; }

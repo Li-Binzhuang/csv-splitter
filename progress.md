@@ -17,6 +17,8 @@
 
 ## 当前进度
 
+Round 25：SDK 校验 annotations 语义：只读 12、破坏性 10、openWorld 1；发布包 SHA `b09025d8…82298d`。
+
 Round 24：schema 结构校验：23 个 tool 全部 object/additionalProperties=false/
 required 子集/字段类型/annotations；`mcp_schema_shape_errors=0`；发布包 SHA `5d476709…9767d`。
 
@@ -97,5 +99,5 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 ## 下一轮具体行动
 
 1. 全量 gate、打包、AOCI 收尾。
-2. 提交并 push 本轮（含上一轮 bool 提交）。
+2. 提交并 push 本轮。
 3. 下一轮继续产品化或 mcp 瘦身。

@@ -62,6 +62,9 @@ console.log(`unknown_resource_error=${unknownResource}`);
 const tools = await client.listTools();
 console.log(`sdk_tools=${tools.tools.length}`);
 console.log(`sdk_annotated=${tools.tools.filter((tool) => tool.annotations).length}`);
+console.log(`sdk_readonly=${tools.tools.filter((tool) => tool.annotations?.readOnlyHint === true).length}`);
+console.log(`sdk_destructive=${tools.tools.filter((tool) => tool.annotations?.destructiveHint === true).length}`);
+console.log(`sdk_openworld=${tools.tools.filter((tool) => tool.annotations?.openWorldHint === true).length}`);
 const expectedTools = [
   "csvx_cache_clear", "csvx_cache_stats", "csvx_concat", "csvx_convert",
   "csvx_edit_apply", "csvx_edit_delete", "csvx_edit_preview", "csvx_edit_redo",
