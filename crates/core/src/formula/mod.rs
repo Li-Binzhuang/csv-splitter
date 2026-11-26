@@ -2988,6 +2988,64 @@ mod tests {
     }
 
     #[test]
+    fn hlookup_and_lookup_read_single_row_tables() {
+        let columns = vec![
+            "id".to_string(),
+            "amount".to_string(),
+            "qty".to_string(),
+            "note".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [
+            ("id", "7"),
+            ("amount", "10"),
+            ("qty", "3"),
+            ("note", "plain"),
+        ] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        for (source, expected) in [
+            ("hlookup(10, B2:D2, 1, false())", "10"),
+            ("hlookup(\"plain\", B2:D2, 1, false())", "plain"),
+            ("hlookup(5, B2:D2, 1)", "3"),
+            ("lookup(10, B2:B2, D2:D2)", "plain"),
+            ("lookup(3, C2:C2, D2:D2)", "plain"),
+            ("lookup(5, C2:C2, D2:D2)", "plain"),
+            ("lookup(10, B2:B2)", "10"),
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        for source in [
+            "hlookup(1, B2:D2, 1)",
+            "hlookup(10, B2:D2, 2, false())",
+            "lookup(1, B2:B2, D2:D2)",
+            "lookup(3, B2:C2, D2:D2)",
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            let expected =
+                if source.starts_with("hlookup(10") || source == "lookup(3, B2:C2, D2:D2)" {
+                    "#VALUE!"
+                } else {
+                    "#N/A"
+                };
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
     fn index_match_and_xmatch_read_a_same_row_range() {
         let columns = vec![
             "id".to_string(),

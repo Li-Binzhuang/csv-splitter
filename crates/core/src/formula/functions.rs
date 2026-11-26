@@ -1688,6 +1688,77 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         // ---- row position ---------------------------------------------------
         "row" => Value::Number((ctx.row + 1) as f64),
 
+        // HLOOKUP/LOOKUP on a single-row table. HLOOKUP's row_index must be 1;
+        // LOOKUP is the vector form with an optional equal-width result range.
+        "hlookup" => {
+            if args.len() < 3 || args.len() > 4 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.get(1) else {
+                return Value::Error;
+            };
+            let Some(cells) = range_cells(from, to, ctx) else {
+                return Value::Error;
+            };
+            let Some(row_index) = args.get(2).and_then(|arg| eval(arg, ctx).number()) else {
+                return Value::Error;
+            };
+            if !row_index.is_finite() || row_index.trunc() != 1.0 {
+                return Value::Error;
+            }
+            let exact = args
+                .get(3)
+                .map(|arg| !truthy(&eval(arg, ctx)))
+                .unwrap_or(false);
+            let lookup = eval(&args[0], ctx);
+            let position = if exact {
+                exact_position(&lookup, &cells)
+            } else {
+                approximate_position(&lookup, &cells, 1.0)
+            };
+            position
+                .and_then(|index| cells.get(index).copied())
+                .map(cell_as_value)
+                .unwrap_or(Value::Text("#N/A".to_string()))
+        }
+        "lookup" => {
+            if args.len() < 2 || args.len() > 3 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.get(1) else {
+                return Value::Error;
+            };
+            let Some(cells) = range_cells(from, to, ctx) else {
+                return Value::Error;
+            };
+            let result_cells = match args.get(2) {
+                Some(Expr::Range { from, to }) => {
+                    let Some(cells) = range_cells(from, to, ctx) else {
+                        return Value::Error;
+                    };
+                    Some(cells)
+                }
+                Some(_) => return Value::Error,
+                None => None,
+            };
+            if let Some(result) = &result_cells {
+                if result.len() != cells.len() {
+                    return Value::Error;
+                }
+            }
+            let lookup = eval(&args[0], ctx);
+            let position = exact_position(&lookup, &cells)
+                .or_else(|| approximate_position(&lookup, &cells, 1.0));
+            position
+                .and_then(|index| {
+                    result_cells
+                        .as_ref()
+                        .and_then(|result| result.get(index).copied())
+                        .or_else(|| cells.get(index).copied())
+                })
+                .map(cell_as_value)
+                .unwrap_or(Value::Text("#N/A".to_string()))
+        }
         // ---- row-local lookup ------------------------------------------------
         // INDEX(range, n) and INDEX(range, 1, n): pick the n-th cell of a
         // same-row range. A second row is not materialised, so row_num must be 1.
