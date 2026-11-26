@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 26（升级/回滚演练）：新增 `test_upgrade_rollback.sh`，双 prefix 演练
+4.1→4.2 切换/回滚与缺失 prefix 拒绝；smoke 进 gate；发布包 SHA `9233849d…2ff0e`。
+
 Round 25（安装自检）：新增 `install_selfcheck.sh` 校验 manifest/version/platform/
 docs/审计目录并输出 JSON；正负例 smoke 进 gate；DEPLOY 增加升级/回滚/排障；
 发布包 SHA `9e8f3929…cccd1`。

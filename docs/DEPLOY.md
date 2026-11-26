@@ -271,6 +271,17 @@ win32 线程模型，它的 libstdc++ **没有 `std::mutex` / `std::shared_mutex
 3. 运行旧 prefix 的自检；
 4. 确认审计与 journal 仍在预期位置。
 
+### 升级/回滚演练
+
+仓库内脚本 `scripts/test_upgrade_rollback.sh` 会用两个本地 prefix 模拟旧/新版本：
+
+1. 两边分别自检；
+2. 把 `current` 指向新版并自检；
+3. 回滚 `current` 到旧版并自检；
+4. 删除旧 prefix 后确认自检拒绝。
+
+它不下载、不联网，输出一行结果；用于发布前验证切换路径。
+
 ### 排障顺序
 
 1. `install-manifest.json` 是否存在且可解析；

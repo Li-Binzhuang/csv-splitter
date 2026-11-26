@@ -1,0 +1,107 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "8659855691c870336d102d8ff40fc6304f9f301d73a6060db5714da14d4367ec",
+  "batch_id": "c72abdad3dc578c643cd571ebaca85f7c82f45994324556b1904187124b08d53",
+  "composite_identity": "d80a73a620ac30861ad78000a9c78ceb8b363e029e51bc8081899f9a211f5f29",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "a5bec415ef5b964e39b787fae35d9e9076d222cb63e2d4d2e412e3c3f1817523",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DEPLOY.md",
+      "path": "docs/DEPLOY.md",
+      "change": "update",
+      "source_sha256": "3af32f0e2bd0ccc2e925316e9d9d9f5353fc6d0716dd1ee5cb53e8d14f36ee77",
+      "existing_entry": "DEPLOY.md[SO7M]: F:部署材料：安装、配置、systemd、升级回滚与自检 | R:code:deploy/csvx.service,code:scripts/install_selfcheck.sh | A:三种安装；升级/回滚；自检字段；排障顺序；无鉴权边界 | S:必须写明无鉴权/无多用户；自检默认审计目录；缺一失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "b051fefbbd317defa56a234b9c742de845f388e887449b262ff041ee864135c5",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round25 安装自检与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "c9a195482a927b79c7bf903e3a792e6bb81e6b0903f8b541209149048d5f40af",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/test_install_selfcheck.sh | A:gate layout/fmt/clippy/tests/sql/mcp/install-offline/install-selfcheck/bench/pilot | S:gate 必带 sql；安装自检负例必须在 gate"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "a22742e85105a2cf26ebfa759ad6b68780de8f1a3f448f75541c00aec18929cc",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装与证据 | R:code:scripts/install_selfcheck.sh,code:scripts/verify_dist.sh,code:docs/MIGRATION.md | A:脚本归档 scripts/；真实 install；自检脚本/文档进包 | S:不联网/不打 tag；成员校验失败整包失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_upgrade_rollback.sh",
+      "path": "scripts/test_upgrade_rollback.sh",
+      "change": "create",
+      "source_sha256": "435ff61b601ddecaedcd93b1321c9a229453b19134a6abbfdcb1265d9ef97f80"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "52f1c265587ada551b669fb7c4f6bfe8cd51f7503281aabeaf8bfffc36278984",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:scripts/install_selfcheck.sh,code:docs/MIGRATION.md | A:成员契约含自检/安装/bench/pilot/访谈/迁移/100GB JSON | S:仅发布方；不联网；缺成员失败"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "b65569c7688b4b7b9eb5291a82be7ec2ca74895c78a3120b405209dab2668577",
+      "object_ref": "code:docs/DEPLOY.md",
+      "path": "docs/DEPLOY.md",
+      "change": "update",
+      "source_sha256": "3af32f0e2bd0ccc2e925316e9d9d9f5353fc6d0716dd1ee5cb53e8d14f36ee77",
+      "existing_entry": "DEPLOY.md[SO7M]: F:部署材料：安装、配置、systemd、升级回滚与自检 | R:code:deploy/csvx.service,code:scripts/install_selfcheck.sh | A:三种安装；升级/回滚；自检字段；排障顺序；无鉴权边界 | S:必须写明无鉴权/无多用户；自检默认审计目录；缺一失败"
+    },
+    {
+      "candidate_id": "650af06ba9893d8ebac9bb571f378a98bed4bc5dc51db1e021fc228e1196e61b",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "b051fefbbd317defa56a234b9c742de845f388e887449b262ff041ee864135c5",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round25 安装自检与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "4964e207fa42f988143a067178582b78d80bff4c2211de6dca44a2f1cba3a494",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "c9a195482a927b79c7bf903e3a792e6bb81e6b0903f8b541209149048d5f40af",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/test_install_selfcheck.sh | A:gate layout/fmt/clippy/tests/sql/mcp/install-offline/install-selfcheck/bench/pilot | S:gate 必带 sql；安装自检负例必须在 gate"
+    },
+    {
+      "candidate_id": "e62dbda751399654d5e334db2806fc3d712a9632f42edaaefc27548325fec3dc",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "a22742e85105a2cf26ebfa759ad6b68780de8f1a3f448f75541c00aec18929cc",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装与证据 | R:code:scripts/install_selfcheck.sh,code:scripts/verify_dist.sh,code:docs/MIGRATION.md | A:脚本归档 scripts/；真实 install；自检脚本/文档进包 | S:不联网/不打 tag；成员校验失败整包失败"
+    },
+    {
+      "candidate_id": "5bf97a667df75f2235886546b032275d282bc5a306979b30831f8541ccc514ad",
+      "object_ref": "code:scripts/test_upgrade_rollback.sh",
+      "path": "scripts/test_upgrade_rollback.sh",
+      "change": "create",
+      "source_sha256": "435ff61b601ddecaedcd93b1321c9a229453b19134a6abbfdcb1265d9ef97f80"
+    },
+    {
+      "candidate_id": "6d1e113fff793f9d783f9bf115e7f48d9fd584631735151c9e9a70020b09abad",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "52f1c265587ada551b669fb7c4f6bfe8cd51f7503281aabeaf8bfffc36278984",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:scripts/install_selfcheck.sh,code:docs/MIGRATION.md | A:成员契约含自检/安装/bench/pilot/访谈/迁移/100GB JSON | S:仅发布方；不联网；缺成员失败"
+    }
+  ]
+}
