@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "cf651bd3a91488036b62b1c01d9efe462196ad0034d7b994b75ebb7e7bde43e1",
+  "batch_id": "9a93bc391f3f0ba56eea823c4a17b376f250dbc2650ae6b1857bbef464e76937",
+  "composite_identity": "52ea63d974433e700112b7bc2f426b2bc3383a9f045672023f5f55f093edf2a1",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "2078669e62de1df68f7a89bb0acf15180ced8a19ad396452af511b38cf98c906",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "0af1f63baa1e9af0d7ec1803d5a78d4ee8c4a82aaa2bb2e5d62470961d968656",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round55 空 inlineStr 契约与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "add2e0a1da2d8e26508d2dd334395f68d45ef5c23a49ef13aff601a2a259c37f",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "0af1f63baa1e9af0d7ec1803d5a78d4ee8c4a82aaa2bb2e5d62470961d968656",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round55 空 inlineStr 契约与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

@@ -2751,6 +2751,26 @@ fn convert_imports_xlsx_shared_strings_and_sheets() {
         "id,name,amount\n1,x & y,12.5\n2,007,7\n3,\"line\nbreak\",1\n"
     );
 
+    let lower = dir.join("data-lower.csv");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            fixture.to_str().unwrap(),
+            "--format",
+            "csv",
+            "--sheet",
+            "data",
+            "--out",
+            lower.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    assert_eq!(
+        std::fs::read_to_string(&lower).unwrap(),
+        "id,name,amount\n1,x & y,12.5\n2,007,7\n3,\"line\nbreak\",1\n"
+    );
+
     let missing = Command::new(bin())
         .args([
             "convert",

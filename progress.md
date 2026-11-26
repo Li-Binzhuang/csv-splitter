@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 56（CLI 小写 sheet）：`convert --sheet data` 在真实 xlsx fixture 上成功，
+覆盖用户面大小写选择；发布包 SHA `4c66dbe9…dcbfb`。
+
 Round 55（内联字符串回滚）：Gate 发现既有 xlsx fixture 用空 inlineStr 表示空单元格；
 按既有契约恢复为空值，未把合法空单元格当错误；发布包 SHA `eb01183f…2e291`。
 
