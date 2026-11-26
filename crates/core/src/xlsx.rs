@@ -747,7 +747,7 @@ pub fn read_xlsx_to_csv(input: &Path, output: &Path, sheet: Option<&str>) -> std
     let selected = match sheet {
         Some(name) => sheets
             .iter()
-            .find(|entry| entry.name == name)
+            .find(|entry| entry.name.eq_ignore_ascii_case(name))
             .ok_or_else(|| invalid(&format!("xlsx has no sheet named {name:?}")))?,
         None => &sheets[0],
     };
@@ -1201,7 +1201,7 @@ mod tests {
             ],
         )
         .unwrap();
-        read_xlsx_to_csv(&workbook, &back, Some("Data")).unwrap();
+        read_xlsx_to_csv(&workbook, &back, Some("data")).unwrap();
         assert_eq!(std::fs::read_to_string(&back).unwrap(), "id,name\n7,x&y\n");
         std::fs::remove_dir_all(dir).ok();
     }
