@@ -94,6 +94,7 @@
 | COUNTBLANK | 支持 | 同行区间 |
 | MEDIAN / MODE / LARGE / SMALL / PERCENTILE | 支持（受限） | 只读同行区间；MEDIAN 不做整列 |
 | STDEV / VAR / STDEVP / VARP | 支持 | 整列 |
+| SKEW / KURT | 缺失 | 偏度/峰度；需同行样本或整列 |
 | ROUND / ROUNDUP / ROUNDDOWN | 支持 | 十进制位数 |
 | ABS / SIGN / POWER / EXP / LN / LOG | 支持 | LOG 支持底数 |
 | FLOOR / CEIL / CEILING / INT / TRUNC / SQRT / MOD | 支持 | 标量 |
@@ -115,6 +116,7 @@
 | IRR | 支持（功能级新增） | 周期现金流 Newton 迭代；需正负现金流；不收敛 `#VALUE!` |
 | EFFECT / NOMINAL | 支持（功能级新增） | npery 正整数；负利率/非整数周期 `#VALUE!` |
 | IPMT / PPMT | 支持（功能级新增） | 期数/type/nper 边界；付款拆分为利息/本金 |
+| CUMIPMT / CUMPRINC | 支持（功能级新增） | 区间累计利息/本金；start/end/type 越界 `#VALUE!` |
 | SLN / SYD | 支持（功能级新增） | 直线/年数总和折旧；life≤0、period 越界/非整数 `#VALUE!` |
 | DB / DDB | 支持（功能级新增） | 固定/双倍余额递减；period 越界、月数/因子非法 `#VALUE!` |
 | FVSCHEDULE | 支持（功能级新增） | 复利 schedule 区间；空区间/rate≤-1 `#VALUE!` |

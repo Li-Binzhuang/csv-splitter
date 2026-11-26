@@ -1945,6 +1945,55 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number(value)
         }
+        // CUMIPMT/CUMPRINC: sum interest or principal over a period range.
+        "cumipmt" | "cumprinc" => {
+            if args.len() != 6 {
+                return Value::Error;
+            }
+            let (Some(rate), Some(nper), Some(pv), Some(start), Some(end), Some(payment_type)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+                eval(&args[3], ctx).number(),
+                eval(&args[4], ctx).number(),
+                eval(&args[5], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !rate.is_finite()
+                || !nper.is_finite()
+                || !pv.is_finite()
+                || !start.is_finite()
+                || !end.is_finite()
+                || !payment_type.is_finite()
+                || rate <= -1.0
+                || nper <= 0.0
+                || start < 1.0
+                || end < start
+                || end > nper
+                || start.trunc() != start
+                || end.trunc() != end
+                || ![0.0, 1.0].contains(&payment_type)
+            {
+                return Value::Error;
+            }
+            let mut interest_total = 0.0;
+            let mut principal_total = 0.0;
+            for period in start as i32..=end as i32 {
+                let Some((interest, principal)) =
+                    payment_parts(rate, period as f64, nper, pv, 0.0, payment_type)
+                else {
+                    return Value::Error;
+                };
+                interest_total += interest;
+                principal_total += principal;
+            }
+            Value::Number(if lower == "cumipmt" {
+                interest_total
+            } else {
+                principal_total
+            })
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
@@ -3714,6 +3763,40 @@ fn find_in(args: &[Expr], ctx: &Ctx<'_>, case_sensitive: bool) -> Value {
             Value::Number((char_index + start) as f64)
         }
         None => Value::Number(0.0),
+    }
+}
+
+fn payment_parts(
+    rate: f64,
+    period: f64,
+    nper: f64,
+    pv: f64,
+    fv: f64,
+    payment_type: f64,
+) -> Option<(f64, f64)> {
+    let payment = if rate == 0.0 {
+        -(pv + fv) / nper
+    } else {
+        let growth = (1.0 + rate).powf(nper);
+        -(fv + pv * growth) * rate / ((1.0 + rate * payment_type) * (growth - 1.0))
+    };
+    let interest = if rate == 0.0 || (payment_type == 1.0 && period == 1.0) {
+        0.0
+    } else if payment_type == 1.0 {
+        let months = period - 2.0;
+        let balance = pv * (1.0 + rate).powf(months)
+            + payment * ((1.0 + rate).powf(months + 1.0) - 1.0) / rate;
+        -balance * rate
+    } else {
+        let months = period - 1.0;
+        let balance =
+            pv * (1.0 + rate).powf(months) + payment * ((1.0 + rate).powf(months) - 1.0) / rate;
+        -balance * rate
+    };
+    if payment.is_finite() && interest.is_finite() {
+        Some((interest, payment - interest))
+    } else {
+        None
     }
 }
 

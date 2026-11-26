@@ -1442,6 +1442,30 @@ mod tests {
     }
 
     #[test]
+    fn cumulative_interest_and_principal_work() {
+        assert_eq!(
+            eval_str("cumipmt(0.1, 2, 1000, 1, 2, 0)", &[]),
+            "-152.380952"
+        );
+        assert_eq!(eval_str("cumprinc(0.1, 2, 1000, 1, 2, 0)", &[]), "-1000");
+        assert_eq!(eval_str("cumipmt(0, 10, 1000, 1, 10, 0)", &[]), "0");
+        assert_eq!(eval_str("cumprinc(0, 10, 1000, 1, 10, 0)", &[]), "-1000");
+        assert_eq!(
+            eval_str("cumipmt(0.1, 2, 1000, 1, 2, 1)", &[]),
+            "-47.619048"
+        );
+        assert_eq!(eval_str("cumprinc(0.1, 2, 1000, 1, 2, 1)", &[]), "-1000");
+        for source in [
+            "cumipmt(0.1, 2, 1000, 0, 2, 0)",
+            "cumipmt(0.1, 2, 1000, 1, 3, 0)",
+            "cumipmt(0.1, 2, 1000, 2, 1, 0)",
+            "cumprinc(0.1, 2, 1000, 1, 2, 2)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn fvschedule_compounds_a_rate_schedule() {
         let columns = vec!["r1".to_string(), "r2".to_string()];
         let mut cells = HashMap::new();

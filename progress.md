@@ -102,12 +102,15 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项162 偏度/峰度（功能级）：`SKEW(values)`/`KURT(values)`；同行样本、
+  样本量不足 `#VALUE!`；验收：单测 + gate。
 - [ ] 项161 投资期数（功能级）：`PDURATION(rate, pv, fv)`；rate≤-1/
   非正 pv/fv `#VALUE!`；验收：单测 + gate。
 - [ ] 项160 变动余额折旧（功能级）：`VDB(cost, salvage, life, start,
   end[, factor[, no_switch]])`；区间/因子非法 `#VALUE!`；验收：单测 + gate。
-- [ ] 项159 累计利息/本金（功能级）：`CUMIPMT(rate, nper, pv, start,
-  end[, type])`/`CUMPRINC(...)`；区间越界/type 非法 `#VALUE!`；验收：单测 + gate。
+- [x] 项159 累计利息/本金（功能级）：`CUMIPMT(rate, nper, pv, start,
+  end, type)`/`CUMPRINC(...)`；区间/type 越界 `#VALUE!`；测试
+  `cumulative_interest_and_principal_work`。
 - [x] 项158 多期复利（功能级）：`FVSCHEDULE(principal, schedule)`；
   schedule 同行区间/空区间、rate≤-1 `#VALUE!`；测试
   `fvschedule_compounds_a_rate_schedule`。
@@ -179,6 +182,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 188（项159 CUMIPMT/CUMPRINC，功能级）：区间累计利息/本金、type/区间
+边界；定向与全量 gate/package 通过；发布包 SHA `491e7958…f989b2`。
 
 Round 187（项158 FVSCHEDULE，功能级）：多期复利、空区间/非法利率；
 定向与全量 gate/package 通过；发布包 SHA `af912064…31206`。
