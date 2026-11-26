@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 71（夜间检查点）：刷新 NIGHT_CHECKPOINT 到 2026-11-26（CLI 177、xlsx 18、
+AOCI 243、包 87ee），NIGHT_QUEUE 记录 calamine 依赖与 goal edit 待拍板。
+
 Round 70（xlsx 审计验收）：objective 四项已满足——共享字符串/日期/公式缓存、
 可诊断错误、CSV 原生路径不变、定向测试 + 全量 gate + package。证据：
 xlsx 18 passed、CLI 177 passed、gate 复跑 passed、AOCI 243 aligned。

@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a967626f300eed438d898b86e3b607d6e68e4050b7c11ac9fb64e763ffa79d45",
+  "batch_id": "76c1ca8cd89585ff139f654c1d5030669ca1732795b6a411b3e99c08fedd1514",
+  "composite_identity": "d2b844a4fdce0df63d3babfb881c83d7eb56279c2372f7b613ea8c150edc6416",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "c161a87be7f8dfb3ead3c2962450678e25d444d7553c918d2937a9a9b4d93c8f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "80da777b56a7b05a35b769e0bfd2f1f351dcdfaf65500d30da015fe6dbf779fb",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:阶段性可验证状态摘要，供白天复盘 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-25 记录 23 工具、10 Agent 测试、170 CLI、174 serve、SSE 1-3ms、AOCI 148、TRY_CSVX+包 trace replay；包哈希见 dist/*.sha256 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NIGHT_QUEUE.md",
+      "path": "docs/NIGHT_QUEUE.md",
+      "change": "update",
+      "source_sha256": "21a0ab84d5072aa8f037b6eff9db9d59bba36d52993f137d3ab181de69879994",
+      "existing_entry": "NIGHT_QUEUE.md[SG8T]: F:夜间静默窗口不自行决定、留到白天的用户决策队列 | R:code:AGENTS.md,code:docs/NIGHT_CHECKPOINT.md,code:docs/THIN_FRONTEND_PLAN.md | A:列 xlsx 解禁、商业化定价/license/遥测、删除用户文件/不可逆迁移/force push、界面取舍、目标薄前端与无 GUI 的冲突是否收尾；两条路见 THIN_FRONTEND_PLAN；夜间只记录不执行 | S:不得把队列项当作已获授权；白天由用户决定后才动作"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "4f542348befb8c9d6fc3613be67fb658a734b50e87d556950dd37597d68e31d5",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round70 xlsx 审计验收与证据 | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "a25af65a1b8a3ca81730c7ed91a4591e2cde1a87040a04d1756cd9980cabcdbe",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "80da777b56a7b05a35b769e0bfd2f1f351dcdfaf65500d30da015fe6dbf779fb",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:阶段性可验证状态摘要，供白天复盘 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-11-25 记录 23 工具、10 Agent 测试、170 CLI、174 serve、SSE 1-3ms、AOCI 148、TRY_CSVX+包 trace replay；包哈希见 dist/*.sha256 | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "0fd02b7866958b66d975eab82651c759221d16fa7ad34f2ab53da0c9216cd133",
+      "object_ref": "code:docs/NIGHT_QUEUE.md",
+      "path": "docs/NIGHT_QUEUE.md",
+      "change": "update",
+      "source_sha256": "21a0ab84d5072aa8f037b6eff9db9d59bba36d52993f137d3ab181de69879994",
+      "existing_entry": "NIGHT_QUEUE.md[SG8T]: F:夜间静默窗口不自行决定、留到白天的用户决策队列 | R:code:AGENTS.md,code:docs/NIGHT_CHECKPOINT.md,code:docs/THIN_FRONTEND_PLAN.md | A:列 xlsx 解禁、商业化定价/license/遥测、删除用户文件/不可逆迁移/force push、界面取舍、目标薄前端与无 GUI 的冲突是否收尾；两条路见 THIN_FRONTEND_PLAN；夜间只记录不执行 | S:不得把队列项当作已获授权；白天由用户决定后才动作"
+    },
+    {
+      "candidate_id": "617a5e43a24d8fae3aec19d075925c0c5ded2beaafb9e905f6eb9f71c183994c",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "4f542348befb8c9d6fc3613be67fb658a734b50e87d556950dd37597d68e31d5",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round70 xlsx 审计验收与证据 | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
