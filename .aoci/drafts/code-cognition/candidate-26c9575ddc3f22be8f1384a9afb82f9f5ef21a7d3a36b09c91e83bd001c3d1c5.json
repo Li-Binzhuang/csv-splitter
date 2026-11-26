@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "d00c27ff7f14b8141e407ac0efd7a6b1b1d0d703b8a0cf8facaa6781cdc983ea",
+  "batch_id": "26c9575ddc3f22be8f1384a9afb82f9f5ef21a7d3a36b09c91e83bd001c3d1c5",
+  "composite_identity": "b32ac599b33734f233e6e914cee8068c0e747a0b799c6cac4bdb40691c334bbe",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "c31f9fcb0821d5965a9b0b1e448a0dc502f7e1aaae8770e758089f8417883657",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "d3e5e172a8c9b15535ebe3105fab44236a5f2fd4803636f12f43290d92ee278d",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 接入：MCP manifest、HTTP Agent API、runner、skill 与 trace | R:code:crates/agent/src/lib.rs,code:crates/agent/src/axum_http.rs,code:docs/AGENT_TRACE.md,code:skills/csvx-data/SKILL.md | A:serve/manifest/run；sessions/actions/approvals（TTL）/events/audit/trace/replay/curl/runbook；403/428 | S:SSE 60s；audit 仅 session；汇总不含 token/内容；token 不入脚本；心跳 17s；axum 传输"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "523a4b80c7491c824c2d55db75fc53adaf47e76bd595d9276b4f34ce468db200",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md | A:目标/已完成/当前进度/未完成/问题/行动；实测数字 | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "26a9b69c8c120eb6b932b612ceb7cfa10d35de87d9ecde1f7250eb57c82c0ec9",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由 + 审批 + 回放对照 + SSE + 结构化统计 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:12 路由；428/deny=403/approve/edit_apply；SSE；view overlay；干净副本 replay；replay=审计；stats_json 输出 routes/actions/sse_ms/replay | S:需 server/binary；不打印 token；SSE \u003c 250ms；临时副本清理"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "8fca9e6183f270d1f0441b47e75b42ef333f6d12d00dedf1aba021410ac06ce4",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "d3e5e172a8c9b15535ebe3105fab44236a5f2fd4803636f12f43290d92ee278d",
+      "existing_entry": "AGENT_API.md[SD7T]: F:Agent 接入：MCP manifest、HTTP Agent API、runner、skill 与 trace | R:code:crates/agent/src/lib.rs,code:crates/agent/src/axum_http.rs,code:docs/AGENT_TRACE.md,code:skills/csvx-data/SKILL.md | A:serve/manifest/run；sessions/actions/approvals（TTL）/events/audit/trace/replay/curl/runbook；403/428 | S:SSE 60s；audit 仅 session；汇总不含 token/内容；token 不入脚本；心跳 17s；axum 传输"
+    },
+    {
+      "candidate_id": "b204b20bc60f6cc6acba761793901c02305de1d89b1bd426c54beafb7d7026b6",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "523a4b80c7491c824c2d55db75fc53adaf47e76bd595d9276b4f34ce468db200",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md | A:目标/已完成/当前进度/未完成/问题/行动；实测数字 | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "1acb554dcd63fed93a94034f02f0b9543cd0a56688a3e1e39a417d0061eab4c4",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "26a9b69c8c120eb6b932b612ceb7cfa10d35de87d9ecde1f7250eb57c82c0ec9",
+      "existing_entry": "agent_routes_smoke.py[SD7T]: F:Agent API 路由 + 审批 + 回放对照 + SSE + 结构化统计 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:12 路由；428/deny=403/approve/edit_apply；SSE；view overlay；干净副本 replay；replay=审计；stats_json 输出 routes/actions/sse_ms/replay | S:需 server/binary；不打印 token；SSE \u003c 250ms；临时副本清理"
+    }
+  ]
+}

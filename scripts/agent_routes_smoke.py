@@ -65,6 +65,17 @@ def sse_latency(api, sid, token):
         raise AssertionError(f"SSE did not deliver: {result}")
     return (result["seen"] - started) * 1000
 
+def replay_lines_ok(body):
+    lines = [line for line in body.splitlines() if line.strip()]
+    if not lines:
+        return True  # an empty replay before any action is valid
+    try:
+        for line in lines:
+            json.loads(line)
+    except json.JSONDecodeError:
+        return False
+    return True
+
 def has_x(binary, path):
     run = subprocess.run(
         [binary, "view", path, "--json"], capture_output=True, text=True
@@ -108,6 +119,19 @@ def main():
     for route in routes:
         status, body = request(api, route, token)
         assert status == 200, f"{route}: {status} {body}"
+        # The 12 routes are not all JSON: runbook/actions have markdown/HTML forms.
+        if route.endswith("actions.md") or route.endswith("runbook.md"):
+            assert body.lstrip().startswith("#"), f"{route}: not markdown"
+        elif route.endswith("actions.html"):
+            assert body.lstrip().startswith("<"), f"{route}: not html"
+        elif route.endswith("replay"):
+            assert replay_lines_ok(body), f"{route}: not jsonl"
+        elif route.endswith("curl"):
+            assert body.lstrip().startswith("#!/usr/bin/env bash"), f"{route}: not a script"
+            if "/actions" in body:
+                assert "curl" in body, f"{route}: no curl examples"
+        else:
+            json.loads(body)
 
     sse_ms = sse_latency(api, sid, token)
     assert sse_ms < 250, f"SSE first frame took {sse_ms:.0f}ms"
@@ -177,11 +201,12 @@ def main():
     assert after_count == actions_count, f"replay changed HTTP actions: {actions_count} -> {after_count}"
 
     print(
-        f"routes={len(routes)} session={sid} actions={actions_count} "
+        f"routes={len(routes)} route_bodies={len(routes)} session={sid} actions={actions_count} "
         f"sse_ms={sse_ms:.0f} deny=403 approval=ok replay={replay_count}"
     )
     print("stats_json=" + json.dumps({
         "routes": len(routes),
+        "route_bodies": len(routes),
         "session": sid,
         "actions": actions_count,
         "sse_ms": round(sse_ms, 3),

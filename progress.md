@@ -17,23 +17,25 @@
 
 ## 当前进度
 
-Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor/paths.rs`（80 行）；layout 覆盖子模块。MCP 单测 7、集成 7、全量 gate 通过；发布包已验证。
+Round 3：12 路由 smoke 增加响应体契约：JSON / Markdown / HTML / JSONL replay / bash curl 脚本。
+实测 `routes=12 route_bodies=12`；gate 通过；发布包 SHA `642a46fd…a9747c`。
+
+Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor/paths.rs`（80 行）；layout 覆盖子模块。
 
 ## 未完成
 
 - 23 工具 schema 语义级参数一致性（当前是字段到 flag 的映射检查）。
 - `executor.rs` 仍可继续拆命令分派。
-- 12 路由只有 smoke，没有逐路由契约矩阵。
+- 12 路由已有响应体契约，但方法矩阵（GET/POST）与鉴权矩阵仍未单列。
 - 商业化/产品化未开始。
 
 ## 遇到的问题
 
-- 上一轮 push 一次失败：`Please make sure you have the correct access rights`。按规则未重试，`df2c10d8` 仍在本地领先。
-- 本轮 gate/package 已通过，AOCI 收尾后尝试 push 一次。
+- 上一轮 push 已成功：`fcea0df3..17e03d5c`。
+- 本轮 route smoke 先因空 replay/空 curl 脚本误判，已修正为允许空集合。
 
 ## 下一轮具体行动
 
-1. 跑 MCP 测试、全量 gate、打包、AOCI。
+1. 跑 AOCI 收尾并提交。
 2. push 本轮提交一次。
-3. 若 push 仍失败，继续本地提交并记录，不阻塞代码工作。
-4. 继续拆 `executor.rs` 的命令分派或补 12 路由契约矩阵。
+3. 下一轮继续补 12 路由方法矩阵（GET/POST）与守卫测试。
