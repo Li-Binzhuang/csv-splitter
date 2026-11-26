@@ -1442,6 +1442,56 @@ mod tests {
     }
 
     #[test]
+    fn xnpv_discounts_by_calendar_dates() {
+        let columns = vec![
+            "cash1".to_string(),
+            "cash2".to_string(),
+            "date1".to_string(),
+            "date2".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [
+            ("cash1", "-100"),
+            ("cash2", "110"),
+            ("date1", "2023-01-01"),
+            ("date2", "2024-01-01"),
+        ] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        for (source, expected) in [
+            ("xnvp(0, A2:B2, C2:D2)", "10"),
+            ("xnvp(0.1, A2:B2, C2:D2)", "0"),
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        for source in ["xnvp(-1, A2:B2, D2:E2)", "xnvp(0.1, A2:B2, D2:D2)"] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "#VALUE!",
+                "{source}"
+            );
+        }
+        cells.insert("date1".to_string(), "not-a-date".to_string());
+        let formula = Formula::parse("xnvp(0.1, A2:B2, C2:D2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+    }
+
+    #[test]
     fn declining_balance_depreciation_works() {
         assert_eq!(eval_str("db(1000, 100, 5, 1)", &[]), "369");
         assert_eq!(eval_str("db(1000, 100, 5, 2)", &[]), "232.839");

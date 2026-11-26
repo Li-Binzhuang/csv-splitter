@@ -1674,6 +1674,60 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number(depreciation)
         }
+        // XNPV: discount cash flows by actual days from the first date (365-day basis).
+        "xnvp" => {
+            if args.len() != 3 {
+                return Value::Error;
+            }
+            let Some(rate) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            if !rate.is_finite() || rate <= -1.0 {
+                return Value::Error;
+            }
+            let (
+                Some(Expr::Range { from, to }),
+                Some(Expr::Range {
+                    from: date_from,
+                    to: date_to,
+                }),
+            ) = (args.get(1), args.get(2))
+            else {
+                return Value::Error;
+            };
+            let Some(values) = range_cells(from, to, ctx) else {
+                return Value::Error;
+            };
+            let Some(dates) = range_cells(date_from, date_to, ctx) else {
+                return Value::Error;
+            };
+            if values.is_empty() || values.len() != dates.len() {
+                return Value::Error;
+            }
+            let mut cash = Vec::with_capacity(values.len());
+            let mut days = Vec::with_capacity(dates.len());
+            for (value, date) in values.iter().zip(dates.iter()) {
+                let Some(amount) = value.trim().parse::<f64>().ok().filter(|n| n.is_finite())
+                else {
+                    return Value::Error;
+                };
+                let Some(parsed) = parse_date(date) else {
+                    return Value::Error;
+                };
+                cash.push(amount);
+                days.push(days_from_civil(parsed.0, parsed.1, parsed.2));
+            }
+            let base = days[0];
+            let mut total = 0.0;
+            for (amount, day) in cash.iter().zip(days.iter()) {
+                total += amount / (1.0 + rate).powf((day - base) as f64 / 365.0);
+            }
+            if total.is_finite() {
+                Value::Number(total)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
