@@ -63,4 +63,5 @@ grep -q '^root_escape_rejections=2$' <<<"$out" || { echo "mcp_sdk=fail root esca
 grep -q '^required_rejections=20$' <<<"$out" || { echo "mcp_sdk=fail required args"; exit 1; }
 grep -q '^enum_rejections=2$' <<<"$out" || { echo "mcp_sdk=fail enum args"; exit 1; }
 grep -q '^range_rejections=8$' <<<"$out" || { echo "mcp_sdk=fail range args"; exit 1; }
+grep -q '^bool_rejections=2$' <<<"$out" || { echo "mcp_sdk=fail bool args"; exit 1; }
 echo "mcp_sdk=ok"

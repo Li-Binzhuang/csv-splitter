@@ -45,7 +45,7 @@ pub(super) fn build(
                 "--limit",
                 &limit.to_string(),
             ]);
-            if flag_or(args, "show", true) {
+            if flag_or(args, "show", true)? {
                 command.args(["--show", &limit.to_string()]);
             }
         }
@@ -83,10 +83,10 @@ pub(super) fn build(
         }
         "csvx_pipeline_status" => {
             command.args(["pipeline", "status", path.to_str().unwrap_or(""), "--json"]);
-            if flag_or(args, "verify", false) {
+            if flag_or(args, "verify", false)? {
                 command.arg("--verify");
             }
-            if flag_or(args, "contentCheck", false) {
+            if flag_or(args, "contentCheck", false)? {
                 command.arg("--content-check");
             }
         }
@@ -125,22 +125,22 @@ pub(super) fn build(
                 root.to_str().unwrap_or(""),
                 "--json",
             ]);
-            if flag_or(args, "force", false) {
+            if flag_or(args, "force", false)? {
                 command.arg("--force");
             }
-            if flag_or(args, "dryRun", false) {
+            if flag_or(args, "dryRun", false)? {
                 command.arg("--dry-run");
             }
-            if flag_or(args, "dag", false) {
+            if flag_or(args, "dag", false)? {
                 command.arg("--dag");
             }
             if let Some(jobs) = optional_bounded(args, "jobs", 1, 64)? {
                 command.args(["--jobs", &jobs.to_string()]);
             }
-            if flag_or(args, "clean", false) {
+            if flag_or(args, "clean", false)? {
                 command.arg("--clean");
             }
-            if flag_or(args, "contentCheck", false) {
+            if flag_or(args, "contentCheck", false)? {
                 command.arg("--content-check");
             }
         }
@@ -231,7 +231,7 @@ pub(super) fn build(
             if let Some(name) = args.get("unique").and_then(McpJson::as_str) {
                 command.args(["--unique", name]);
             }
-            if flag_or(args, "uniqueGlobal", false) {
+            if flag_or(args, "uniqueGlobal", false)? {
                 command.arg("--unique-global");
             }
         }

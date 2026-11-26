@@ -1,9 +1,10 @@
 use crate::McpJson;
 
-pub(super) fn flag_or(args: &McpJson, key: &str, default: bool) -> bool {
+pub(super) fn flag_or(args: &McpJson, key: &str, default: bool) -> Result<bool, String> {
     match args.get(key) {
-        Some(McpJson::Bool(value)) => *value,
-        _ => default,
+        None => Ok(default),
+        Some(McpJson::Bool(value)) => Ok(*value),
+        Some(_) => Err(format!("{key} must be a boolean")),
     }
 }
 

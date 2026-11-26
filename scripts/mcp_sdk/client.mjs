@@ -216,6 +216,15 @@ const badGate = await client.callTool({
   name: "csvx_gate",
   arguments: { path: file, minRows: -1 },
 });
+const badForce = await client.callTool({
+  name: "csvx_pipeline_run",
+  arguments: { path: "plan.csv", force: "yes" },
+});
+const badDryRun = await client.callTool({
+  name: "csvx_pipeline_run",
+  arguments: { path: "plan.csv", dryRun: "yes" },
+});
+console.log(`bool_rejections=${(badForce.isError === true ? 1 : 0) + (badDryRun.isError === true ? 1 : 0)}`);
 const rangeResults = [badCount, badRow, badCountHigh, badFilterLimit, badSearchLimit, badJobs, badWait, badGate];
 console.log(`range_rejections=${rangeResults.filter((result) => result.isError === true).length}`);
 const escapeRelative = await client.callTool({

@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 23：布尔参数类型严格化，`force`/`dryRun` 传字符串被拒绝：
+`bool_rejections=2`；发布包 SHA `c7042030…587dfc`。
+
 Round 22：SDK 增加 root escape 拒绝 `root_escape_rejections=2`；HTTP smoke 增加
 错误 token 401 与未知路由 404；发布包 SHA `77460652…d5d3`。
 
@@ -91,5 +94,5 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 ## 下一轮具体行动
 
 1. 全量 gate、打包、AOCI 收尾。
-2. 提交并 push 本轮（含上一轮未推的 xlsx 提交）。
+2. 提交并 push 本轮。
 3. 下一轮继续产品化或 mcp 瘦身。

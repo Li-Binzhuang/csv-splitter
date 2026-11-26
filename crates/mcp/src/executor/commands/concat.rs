@@ -64,10 +64,10 @@ pub(crate) fn build(
         return Err("paths or dir is required".to_string());
     }
     command.args(["-o", out.to_str().unwrap_or("")]);
-    if flag_or(args, "byName", false) {
+    if flag_or(args, "byName", false)? {
         command.arg("--by-name");
     }
-    if flag_or(args, "ignoreHeader", false) {
+    if flag_or(args, "ignoreHeader", false)? {
         command.arg("--ignore-header");
     }
     command.arg("--json");
