@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 84（CSV 行缓冲复用）：逐行输出复用同一个 `padded` Vec，去掉每行一次
+分配；输出不变；1M 导回 4.83 s（与 4.76 s 同量级），发布包 SHA `dfc6dc6b…68c7dd`。
+
 Round 83（导出 dimension）：去掉流式导出中固定的 `<dimension ref="A1"/>`，
 避免向 Excel 谎报已用区域；让 Excel 自行计算；测试确认输出无 dimension，发布包 SHA `d26dec89…bfb43`。
 

@@ -841,8 +841,9 @@ pub fn read_xlsx_to_csv(input: &Path, output: &Path, sheet: Option<&str>) -> std
     }
     let file = std::fs::File::create(output)?;
     let mut writer = std::io::BufWriter::new(file);
+    let mut padded: Vec<&str> = Vec::with_capacity(width);
     for row in &table {
-        let mut padded: Vec<&str> = Vec::with_capacity(width);
+        padded.clear();
         for index in 0..width {
             padded.push(row.get(index).map(String::as_str).unwrap_or(""));
         }
