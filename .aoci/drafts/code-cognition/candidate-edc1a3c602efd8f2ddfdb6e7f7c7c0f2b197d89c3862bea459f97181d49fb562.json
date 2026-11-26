@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "c6aed441baf3f59ea3c8f28a273a44e7b0245f956837ef186baf37b12d4c5f7c",
+  "batch_id": "edc1a3c602efd8f2ddfdb6e7f7c7c0f2b197d89c3862bea459f97181d49fb562",
+  "composite_identity": "735e4e7d73795ca4f5e1a212dca091a110bab00a4bbda6e6a3e19b2071a18f94",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "a078003cb200963eb9b5fb2a0abecd0b16b113b0b8daa638567c651a5b4d59b5",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/csv_reader.rs",
+      "path": "crates/core/src/csv_reader.rs",
+      "change": "update",
+      "source_sha256": "38f090438a49fcb32d4b3b1cf3eee3e8314b11bbee7012f82b9d11ebdf229d3c",
+      "existing_entry": "csv_reader.rs[CG9L]: F:CSV 记录读取：引号、嵌入换行、BOM、引号风格与字段切片 | R:code:crates/core/src/encoding.rs,code:crates/core/src/formula/totals.rs | A:RecordReader 按记录流式返回；QuoteStyle 支持 rfc4180/backslash/none；visit_fields 为零分配逐字段回调，field_slices 用同一实现收集切片；遇转义引号、backslash、未闭合引号或引号后多余字符返回 false/None 让调用者回退全解析；表头剔 BOM | S:按物理行切分会把带换行字段劈成两半并让后续列错位；快路必须与全解析逐字段一致，不等就不许用"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "7ee3f8d955928cde3d00b61c5b88bfeac341998c59424208d542a75c85350f08",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；ISO 日期/日期时间/纯时间；1900/1904；hidden sheet；cellIs；线性扫描+手工属性；行迭代器宽度预扫+流式 CSV；原子输出 | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式/坏索引/坏引用/错行/超限报错；流式仅按 XML 行序，乱序回退缓冲"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "d2e614b060f68ec251c7e3f72f9d75760655fe447ead5b5306338470f43d6d00",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round96 流式解析 WIP 408MB 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "0aed0cb92b51252aef63456163079b99ac5a1183f8ab03d88c60dfb83c99e6a0",
+      "object_ref": "code:crates/core/src/csv_reader.rs",
+      "path": "crates/core/src/csv_reader.rs",
+      "change": "update",
+      "source_sha256": "38f090438a49fcb32d4b3b1cf3eee3e8314b11bbee7012f82b9d11ebdf229d3c",
+      "existing_entry": "csv_reader.rs[CG9L]: F:CSV 记录读取：引号、嵌入换行、BOM、引号风格与字段切片 | R:code:crates/core/src/encoding.rs,code:crates/core/src/formula/totals.rs | A:RecordReader 按记录流式返回；QuoteStyle 支持 rfc4180/backslash/none；visit_fields 为零分配逐字段回调，field_slices 用同一实现收集切片；遇转义引号、backslash、未闭合引号或引号后多余字符返回 false/None 让调用者回退全解析；表头剔 BOM | S:按物理行切分会把带换行字段劈成两半并让后续列错位；快路必须与全解析逐字段一致，不等就不许用"
+    },
+    {
+      "candidate_id": "52ead47f0b72d56a424c341f5803d8679c3ca066a029a4a2cbf271e2aaacd8f7",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "7ee3f8d955928cde3d00b61c5b88bfeac341998c59424208d542a75c85350f08",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；ISO 日期/日期时间/纯时间；1900/1904；hidden sheet；cellIs；线性扫描+手工属性；行迭代器宽度预扫+流式 CSV；原子输出 | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式/坏索引/坏引用/错行/超限报错；流式仅按 XML 行序，乱序回退缓冲"
+    },
+    {
+      "candidate_id": "b51f3ea40f353b01a452452ffbb77d22a0d6b5e2298c424f8b72396f8643f5cc",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "d2e614b060f68ec251c7e3f72f9d75760655fe447ead5b5306338470f43d6d00",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round96 流式解析 WIP 408MB 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

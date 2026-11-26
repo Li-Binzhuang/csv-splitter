@@ -206,6 +206,23 @@ pub fn parse_csv_record_with(record: &str, delim: u8, style: QuoteStyle) -> Vec<
     fields
 }
 
+/// Append one CSV field, quoting it when needed.
+pub fn push_csv_field(out: &mut String, field: &str, delim: u8) {
+    let d = delim as char;
+    if field.contains(d) || field.contains('"') || field.contains('\n') || field.contains('\r') {
+        out.push('"');
+        for character in field.chars() {
+            if character == '"' {
+                out.push('"');
+            }
+            out.push(character);
+        }
+        out.push('"');
+    } else {
+        out.push_str(field);
+    }
+}
+
 /// Reconstruct a CSV line from fields.
 pub fn join_csv_line(fields: &[&str], delim: u8) -> String {
     let d = delim as char;
@@ -214,13 +231,7 @@ pub fn join_csv_line(fields: &[&str], delim: u8) -> String {
         if i > 0 {
             out.push(d);
         }
-        if f.contains(d) || f.contains('"') || f.contains('\n') || f.contains('\r') {
-            out.push('"');
-            out.push_str(&f.replace('"', "\"\""));
-            out.push('"');
-        } else {
-            out.push_str(f);
-        }
+        push_csv_field(&mut out, f, delim);
     }
     out.push('\n');
     out

@@ -1033,10 +1033,11 @@ fn for_each_sheet_row<F>(
     mut callback: F,
 ) -> std::io::Result<()>
 where
-    F: FnMut(u64, Vec<String>) -> std::io::Result<()>,
+    F: FnMut(u64, &[String]) -> std::io::Result<()>,
 {
     let mut cursor = 0;
     let mut rows = 0u64;
+    let mut cells: Vec<String> = Vec::new();
     while let Some(row_start) = find_tag(xml, cursor, "<row") {
         let Some(open_end) = xml[row_start..].find('>').map(|i| row_start + i) else {
             break;
@@ -1053,7 +1054,7 @@ where
                 None => (&xml[body_start..], xml.len()),
             }
         };
-        let row: u64 = match attr(row_attrs, "r") {
+        let row: u64 = match attr_ref(row_attrs, "r") {
             Some(value) => value
                 .parse()
                 .map_err(|_| invalid(&format!("row reference {value:?} is invalid")))?,
@@ -1067,7 +1068,10 @@ where
                 "row {row} is beyond Excel's {MAX_SHEET_ROWS} row limit"
             )));
         }
-        let mut cells = Vec::new();
+        for cell in &mut cells {
+            cell.clear();
+        }
+        let mut row_width = 0usize;
         let mut cell_cursor = 0;
         while let Some(cell_start) = find_tag(body, cell_cursor, "<c") {
             let Some(cell_open_end) = body[cell_start..].find('>').map(|i| cell_start + i) else {
@@ -1088,11 +1092,11 @@ where
                     None => (&body[cell_body_start..], body.len()),
                 }
             };
-            let reference = attr(attrs, "r").unwrap_or_default();
+            let reference = attr_ref(attrs, "r").unwrap_or_default();
             let (column, reference_row) = if reference.is_empty() {
-                (cells.len(), row)
+                (row_width, row)
             } else {
-                let (column, row_number) = cell_reference_parts(&reference)
+                let (column, row_number) = cell_reference_parts(reference)
                     .ok_or_else(|| invalid(&format!("cell reference {reference:?} is invalid")))?;
                 (column, row_number)
             };
@@ -1109,10 +1113,18 @@ where
             while cells.len() <= column {
                 cells.push(String::new());
             }
-            cells[column] = cell_value(attrs, cell_body, shared, date_styles, date1904)?;
+            cell_value_into(
+                attrs,
+                cell_body,
+                shared,
+                date_styles,
+                date1904,
+                &mut cells[column],
+            )?;
+            row_width = row_width.max(column + 1);
             cell_cursor = next;
         }
-        callback(row, cells)?;
+        callback(row, &cells[..row_width])?;
         rows += 1;
         if rows > max_sheet_rows {
             return Err(invalid(&format!(
@@ -1140,7 +1152,7 @@ fn sheet_rows_with_limit_system(
         date1904,
         max_sheet_rows,
         |row, cells| {
-            out.push((row, cells));
+            out.push((row, cells.to_vec()));
             Ok(())
         },
     )?;
@@ -1187,6 +1199,7 @@ fn write_streamed_sheet(
 ) -> std::io::Result<()> {
     write_atomically(output, |writer| {
         let mut wrote = false;
+        let mut line = String::new();
         for_each_sheet_row(
             xml,
             shared,
@@ -1197,11 +1210,19 @@ fn write_streamed_sheet(
                 if row == 0 || cells.iter().all(|cell| cell.is_empty()) {
                     return Ok(());
                 }
-                let mut padded: Vec<&str> = Vec::with_capacity(width);
+                line.clear();
                 for index in 0..width {
-                    padded.push(cells.get(index).map(String::as_str).unwrap_or(""));
+                    if index > 0 {
+                        line.push(',');
+                    }
+                    crate::csv_reader::push_csv_field(
+                        &mut line,
+                        cells.get(index).map(String::as_str).unwrap_or(""),
+                        b',',
+                    );
                 }
-                writer.write_all(crate::csv_reader::join_csv_line(&padded, b',').as_bytes())?;
+                line.push('\n');
+                writer.write_all(line.as_bytes())?;
                 wrote = true;
                 Ok(())
             },
@@ -1233,56 +1254,76 @@ fn cell_reference_parts(reference: &str) -> Option<(usize, u64)> {
     (row > 0).then_some((column.saturating_sub(1), row))
 }
 
-fn cell_value(
+fn cell_value_into(
     attrs: &str,
     body: &str,
     shared: &[String],
     date_styles: &[bool],
     date1904: bool,
-) -> std::io::Result<String> {
-    let reference = attr(attrs, "r").unwrap_or_default();
+    out: &mut String,
+) -> std::io::Result<()> {
+    out.clear();
+    let reference = attr_ref(attrs, "r").unwrap_or_default();
     if body.contains("<f") && !body.contains("<v") {
         return Err(invalid(&format!(
             "formula cell {reference} has no cached value; open it in Excel once or export values first"
         )));
     }
-    let kind = attr(attrs, "t").unwrap_or_default();
-    match kind.as_str() {
-        "inlineStr" => Ok(inline_string_text(body).unwrap_or_default()),
+    let kind = attr_ref(attrs, "t").unwrap_or_default();
+    match kind {
+        "inlineStr" => {
+            inline_string_into(body, out);
+            Ok(())
+        }
         "s" => {
-            let index = v_text(body)
+            let index = v_text_ref(body)
                 .and_then(|value| value.trim().parse::<usize>().ok())
                 .ok_or_else(|| invalid(&format!("shared string cell {reference} has no index")))?;
             match shared.get(index) {
-                Some(value) => Ok(value.clone()),
+                Some(value) => {
+                    out.push_str(value);
+                    Ok(())
+                }
                 None => Err(invalid(&format!(
                     "shared string cell {reference} points at missing index {index}"
                 ))),
             }
         }
-        "str" => Ok(v_text(body).unwrap_or_default()),
-        "b" => Ok(v_text(body)
-            .map(|value| if value.trim() == "1" { "true" } else { "false" })
-            .unwrap_or_default()
-            .to_string()),
+        "str" => {
+            if let Some(value) = v_text_ref(body) {
+                xml_unescape_into(out, value.trim());
+            }
+            Ok(())
+        }
+        "b" => {
+            out.push_str(if v_text_ref(body).map(|value| value.trim()) == Some("1") {
+                "true"
+            } else {
+                "false"
+            });
+            Ok(())
+        }
         _ => {
-            let raw = v_text(body).unwrap_or_default();
-            let style = attr(attrs, "s")
+            if let Some(value) = v_text_ref(body) {
+                xml_unescape_into(out, value.trim());
+            }
+            let style = attr_ref(attrs, "s")
                 .and_then(|value| value.parse::<usize>().ok())
                 .unwrap_or(0);
             if date_styles.get(style).copied().unwrap_or(false) {
-                if let Ok(serial) = raw.parse::<f64>() {
+                if let Ok(serial) = out.parse::<f64>() {
                     if let Some(date) = serial_to_date_with_system(serial, date1904) {
-                        return Ok(date);
+                        out.clear();
+                        out.push_str(&date);
                     }
                 }
             }
-            Ok(raw)
+            Ok(())
         }
     }
 }
 
-fn attr(attrs: &str, name: &str) -> Option<String> {
+fn attr_ref<'a>(attrs: &'a str, name: &str) -> Option<&'a str> {
     let mut search = 0;
     while let Some(offset) = attrs[search..].find(name) {
         let start = search + offset;
@@ -1313,66 +1354,75 @@ fn attr(attrs: &str, name: &str) -> Option<String> {
             continue;
         }
         let value = &value[1..];
-        return value.find(quote).map(|end| xml_unescape(&value[..end]));
+        return value.find(quote).map(|end| &value[..end]);
     }
     None
 }
 
-fn inline_string_text(body: &str) -> Option<String> {
+fn attr(attrs: &str, name: &str) -> Option<String> {
+    attr_ref(attrs, name).map(xml_unescape)
+}
+
+fn inline_string_into(body: &str, out: &mut String) {
     static IS_RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     static T_RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
     let is_re = IS_RE.get_or_init(|| Regex::new(r#"(?s)<is\b[^>]*>(.*?)</is>"#).unwrap());
     let t_re = T_RE.get_or_init(|| Regex::new(r#"(?s)<t\b[^>]*>(.*?)</t>"#).unwrap());
     let Some(is) = is_re.captures(body) else {
-        return Some(String::new());
+        return;
     };
-    let mut text = String::new();
     for run in t_re.captures_iter(&is[1]) {
-        text.push_str(&xml_unescape(&run[1]));
+        xml_unescape_into(out, &run[1]);
     }
-    Some(text)
 }
 
-fn v_text(body: &str) -> Option<String> {
-    static V_RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
-    let re = V_RE.get_or_init(|| Regex::new(r#"(?s)<v>(.*?)</v>"#).unwrap());
-    re.captures(body).map(|m| xml_unescape(m[1].trim()))
+fn v_text_ref(body: &str) -> Option<&str> {
+    let start = body.find("<v>")? + 3;
+    let end = body[start..].find("</v>")?;
+    Some(body[start..start + end].trim())
 }
 
 fn xml_unescape(value: &str) -> String {
     let mut out = String::with_capacity(value.len());
+    xml_unescape_into(&mut out, value);
+    out
+}
+
+fn xml_unescape_into(out: &mut String, value: &str) {
     let mut rest = value;
     while let Some(index) = rest.find('&') {
         out.push_str(&rest[..index]);
         let tail = &rest[index..];
         let Some(semicolon) = tail.find(';') else {
             out.push_str(tail);
-            return out;
+            return;
         };
         let entity = &tail[..semicolon + 1];
-        let replacement: String = match entity {
-            "&amp;" => "&".into(),
-            "&lt;" => "<".into(),
-            "&gt;" => ">".into(),
-            "&quot;" => "\"".into(),
-            "&apos;" => "'".into(),
+        match entity {
+            "&amp;" => out.push('&'),
+            "&lt;" => out.push('<'),
+            "&gt;" => out.push('>'),
+            "&quot;" => out.push('"'),
+            "&apos;" => out.push('\''),
             other if other.starts_with("&#x") || other.starts_with("&#X") => {
-                char::from_u32(u32::from_str_radix(&other[3..other.len() - 1], 16).unwrap_or(0))
-                    .map(|c| c.to_string())
-                    .unwrap_or_default()
+                if let Some(character) =
+                    char::from_u32(u32::from_str_radix(&other[3..other.len() - 1], 16).unwrap_or(0))
+                {
+                    out.push(character);
+                }
             }
             other if other.starts_with("&#") => {
-                char::from_u32(other[2..other.len() - 1].parse().unwrap_or(0))
-                    .map(|c| c.to_string())
-                    .unwrap_or_default()
+                if let Some(character) =
+                    char::from_u32(other[2..other.len() - 1].parse().unwrap_or(0))
+                {
+                    out.push(character);
+                }
             }
-            _ => String::new(),
-        };
-        out.push_str(&replacement);
+            _ => {}
+        }
         rest = &tail[semicolon + 1..];
     }
     out.push_str(rest);
-    out
 }
 
 fn invalid(message: &str) -> std::io::Error {
