@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a67db662f46b960962b1a9afc1e2ca913c432a5867ef7025f3a0c6256a383eae",
+  "batch_id": "718096e155541fd3f09bbf43fc6d6963379e6092e2c7559ffef1c9e116ddaaba",
+  "composite_identity": "ad5b1a4e6fdb7f2012eff92f1cc10b8ab8c9678b1a222d5ea25d0a7e40fe8deb",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "611111429525b378674f67df163b59c0ef60b872cf25ffd8d4a367c99066aaf3",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "400e2dcd2d7785cb3ae3a5c396bfdaeb3a7c494c811accd2fb4d62b6f9726808",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:阶段性可验证状态摘要，供白天复盘 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-12 记录 180 CLI、28 xlsx、174 serve、SSE 1-3ms、AOCI 244、包 b395；1M 4.76s/1.02GB | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "13eade836d599857effb64a72c4ede6cab5abadf944d75b5961d96453bd29712",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round100 路线图收口与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "917521561de2f8c93b7011a536dc9adc6eb650235af54270cc9a10fa8ae3bcaa",
+      "object_ref": "code:docs/NIGHT_CHECKPOINT.md",
+      "path": "docs/NIGHT_CHECKPOINT.md",
+      "change": "update",
+      "source_sha256": "400e2dcd2d7785cb3ae3a5c396bfdaeb3a7c494c811accd2fb4d62b6f9726808",
+      "existing_entry": "NIGHT_CHECKPOINT.md[SG8T]: F:阶段性可验证状态摘要，供白天复盘 | R:code:AGENTS.md,code:docs/NIGHT_QUEUE.md | A:2026-12 记录 180 CLI、28 xlsx、174 serve、SSE 1-3ms、AOCI 244、包 b395；1M 4.76s/1.02GB | S:只写已验证结果与真实数字；不把未完成写成完成；不在这里叫醒用户"
+    },
+    {
+      "candidate_id": "4444b5be07fda1a0f8e055d9f01a6b17ec773e15e371ebdba240ede2d5400e17",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "13eade836d599857effb64a72c4ede6cab5abadf944d75b5961d96453bd29712",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round100 路线图收口与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

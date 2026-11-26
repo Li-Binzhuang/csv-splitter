@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 101（夜间收口）：检查点更新 53MB/1M 与 --all-sheets；路线图两项完成，
+main 同步，等待人类下一目标；发布包 SHA `455ced06…ffe2a`。
+
 Round 100（路线图收口）：项 1（流式解析 53MB）与项 2（--all-sheets）均完成；
 xlsx 28 定向、convert 13 CLI、全量 gate、package 通过；路线图无剩余项，
 等待人类轮次给下一目标（保持 active）；发布包 SHA `21364d20…922e6`。
