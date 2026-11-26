@@ -68,3 +68,23 @@
 
 A（Pipeline）是付费自动化的基础；B（MCP）是 agent 集成的入口；C（100 GB）是对外性能证据。
 每个里程碑至少产出一个可演示资产：benchmark、demo、集成截图/终端记录。
+
+## 8. 已落地地基（2026-11-26，未收费门控）
+
+以下功能已经存在，但**没有**收费门控、License 强制或遥测；它们只是付费候选的技术地基。
+
+| 候选包 | 已落地 | 证据 |
+|---|---|---|
+| MCP 团队集成 | 审计 JSONL 落盘/脱敏/轮转；`csvx://audit`；`csvx mcp audit` 查询；`csvx mcp config` 四客户端配置 | `docs/MCP_COMPAT.md` §3/§6/§7；SDK 实测 `audit_redacted=true`、`resources=3` |
+| Pipeline 自动化 | 运行历史、每次 attempt 记录、stale 原因 | `docs/CAPABILITIES.md` pipeline 段；100GB benchmark 同机实测 |
+| 企业部署 | 离线安装器校验 SHA/manifest、版本锁、安全评审材料 | `scripts/install_offline.sh`；`docs/SECURITY.md`；package 内 `install_manifest=ok` |
+| 性能证据 | 100GB 实际生成与扫描 | `docs/BENCHMARKS.md`：filter 23.55 s、search 18.72 s、quality 456.00 s |
+
+边界：
+
+- 定价、合同、SLA 仍需人工确认；
+- 设计伙伴 kit 与 intake 已可运行，但试点客户数据必须脱敏；
+- 100GB 数字是本机单次实测，不是 SLA；其他机器需重跑。
+
+下一步商业动作仍是：选 3–5 个设计伙伴、跑 4 周试点、用报告决定是否收费；
+技术侧不再把“功能地基”当作收费承诺。

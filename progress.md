@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 15（商业材料）：BUSINESS.md 增加“已落地地基”表，明确审计/配置/Pipeline/
+离线安装/100GB 证据，并重申无收费门控、无 License、无遥测；发布包 SHA `a625af15…ad2c6`。
+
 Round 14（发布安装 smoke）：`package_release.sh` 在真实 tar.gz + release.json 上
 执行离线安装并验证安装后二进制；失败则整包失败；发布包 SHA `d5800167…9ebe8`。
 
