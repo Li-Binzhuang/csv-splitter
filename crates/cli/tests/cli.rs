@@ -2846,6 +2846,8 @@ fn formats_prints_the_xlsx_header_format_codes() {
     let json = String::from_utf8_lossy(&json.stdout);
     assert!(json.contains("\"name\":\"amount\""), "{json}");
     assert!(json.contains("\"format\":\"#,##0.00\""), "{json}");
+    assert!(json.contains("\"column_index\":1"), "{json}");
+    assert!(json.contains("\"sheet\":\"\""), "{json}");
 }
 
 #[test]
@@ -2878,6 +2880,89 @@ fn number_format_exports_a_short_date_code() {
         .read_to_string(&mut styles)
         .unwrap();
     assert!(styles.contains("formatCode=\"m/d/yyyy\""), "{styles}");
+}
+
+#[test]
+fn formats_can_target_a_hidden_sheet() {
+    let dir = TempDir::new("xlsffmt_hidden");
+    let book = dir.join("book.xlsx");
+    write_hidden_sheet_xlsx(&book);
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--formats",
+            "--sheet",
+            "Hidden",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(0));
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("hidden\tplain"), "{stdout}");
+    let data = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--formats",
+            "--sheet",
+            "Data",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(data.status.code(), Some(0));
+    assert!(
+        String::from_utf8_lossy(&data.stdout).contains("city\tplain"),
+        "{}",
+        String::from_utf8_lossy(&data.stdout)
+    );
+}
+
+#[test]
+fn formats_rejects_non_xlsx_and_conflicting_flags() {
+    let dir = TempDir::new("xlsffmt_err");
+    let csv = dir.join("t.csv");
+    std::fs::write(&csv, "id\n1\n").unwrap();
+    let output = Command::new(bin())
+        .args(["convert", csv.to_str().unwrap(), "--formats"])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(2));
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("needs an .xlsx"),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let book = dir.join("book.xlsx");
+    write_hidden_sheet_xlsx(&book);
+    let combined = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--formats",
+            "--format",
+            "csv",
+            "--out",
+            dir.join("out.csv").to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(combined.status.code(), Some(2));
+    assert!(
+        String::from_utf8_lossy(&combined.stderr).contains("cannot be combined"),
+        "{}",
+        String::from_utf8_lossy(&combined.stderr)
+    );
+    let json_only = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--json"])
+        .output()
+        .unwrap();
+    assert_eq!(json_only.status.code(), Some(2));
+    assert!(
+        String::from_utf8_lossy(&json_only.stderr).contains("needs --formats"),
+        "{}",
+        String::from_utf8_lossy(&json_only.stderr)
+    );
 }
 
 /// `datecounts` groups a timestamp column by its first ten characters.

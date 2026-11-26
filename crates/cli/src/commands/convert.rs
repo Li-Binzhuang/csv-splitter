@@ -274,6 +274,11 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         return 2;
     };
 
+    if formats_json && !show_formats {
+        eprintln!("error: --json needs --formats");
+        return 2;
+    }
+
     if show_formats {
         let name = input
             .file_name()
@@ -292,14 +297,13 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             eprintln!("error: --formats cannot be combined with output/conversion flags");
             return 2;
         }
-        if formats_json && !show_formats {
-            eprintln!("error: --json needs --formats");
-            return 2;
-        }
         return match csvx_core::xlsx::xlsx_column_formats(&input, sheet.as_deref()) {
             Ok(columns) => {
                 if formats_json {
-                    print!("[");
+                    print!(
+                        "{{\"sheet\":{},\"columns\":[",
+                        json_string(sheet.as_deref().unwrap_or(""))
+                    );
                     for (index, (column, format)) in columns.iter().enumerate() {
                         if index > 0 {
                             print!(", ");
@@ -309,12 +313,13 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                             .map(|format| format.name())
                             .unwrap_or_else(|| "plain".into());
                         print!(
-                            "{{\"name\":{},\"format\":{}}}",
+                            "{{\"name\":{},\"format\":{},\"column_index\":{}}}",
                             json_string(column),
-                            json_string(&code)
+                            json_string(&code),
+                            index
                         );
                     }
-                    println!("]");
+                    println!("]}}");
                 } else {
                     for (column, format) in columns {
                         let code = format

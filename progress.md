@@ -44,8 +44,12 @@
   `column<TAB>format`；CLI 测试 `formats_prints_the_xlsx_header_format_codes`。
 - [ ] 项20 公式第五批：RANK/QUARTILE/TRIMMEAN。
 - [x] 项21 日期时间格式白名单扩展：`m/d/yyyy`、`yyyy/m/d`；布局与 CLI 测试。
-- [ ] 项23 `--formats --json` 增加 sheet/column_index 元数据。
-- [ ] 项25 `--formats` 对 hidden sheet 的 `--sheet` 测试。
+- [x] 项23 `--formats --json` 增加 sheet/column_index 元数据；CLI 测试扩展。
+- [x] 项25 `--formats --sheet Hidden` 测试；`formats_can_target_a_hidden_sheet`。
+- [x] 项26 `--formats` 非 xlsx/组合标志/`--json` 缺 formats 错误诊断；
+  `formats_rejects_non_xlsx_and_conflicting_flags`。
+- [ ] 项27 `--formats --sheet missing` 错误诊断测试。
+- [ ] 项28 `--formats --json` schema 稳定测试（sheet/columns/column_index）。
 - [x] 项22 `--formats --json` 机器可读输出；CLI 测试扩展。
 - [x] 项17 DATEDIF 扩展单位 MD/YM/YD；测试 `datedif_supports_ym_md_and_yd`。
 - [x] 项16 公式第四批：YEARFRAC/ISOWEEKNUM/TIME；测试
@@ -63,6 +67,9 @@
   `positive;(negative)` 被误拆列的问题。
 
 ## 当前进度
+
+Round 122（项23/25/26 格式入口收口）：JSON 增加 sheet/column_index；hidden
+sheet 与错误诊断测试；全量 gate/package 通过；发布包 SHA `ff2e2491…52b91`。
 
 Round 121（项21 日期白名单）：`m/d/yyyy`、`yyyy/m/d` 布局与 CLI 导出测试；全量 gate/package 通过；发布包
 SHA `d9ca6b7a…aad7`。

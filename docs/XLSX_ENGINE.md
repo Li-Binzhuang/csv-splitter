@@ -63,7 +63,7 @@
 | 合并单元格 | 只输出存储的左上值，不展开 | `merged_cells_keep_the_stored_top_left_value_without_inventing_others`、CLI `convert_keeps_a_merged_cell_top_left_only` |
 | 空行 | 跳过 | `table_from_rows_skips_empty_rows_and_enforces_the_limit`、CLI `convert_skips_empty_xlsx_rows` |
 | 条件格式 Top/Bottom | `--highlight` 支持 `amount:top2:green` 与 `bottom1:red`，导出 `top10`/`bottom10` | `conditional_rules_support_top_and_bottom_ranks` |
-| 导入格式元数据 | `xlsx_column_formats` 读 header + 首数据行样式；`convert book.xlsx --formats [--json]` 打印列格式 | `column_formats_are_read_back_from_export_styles`、`formats_prints_the_xlsx_header_format_codes` |
+| 导入格式元数据 | `xlsx_column_formats` 读 header + 首数据行样式；`convert book.xlsx --formats [--json]` 打印列格式（JSON 含 sheet/column_index） | `column_formats_are_read_back_from_export_styles`、`formats_prints_the_xlsx_header_format_codes` |
 | CLI 数字格式 | `--number-format "amount:#,##0.00;rate:0.0%"` 接线到导出样式 | `convert_xlsx_can_apply_per_column_number_formats` |
 | 数字格式导出 | `write_sheets_with_formats` 把 Decimal/Percent/Currency/DateTime 映射为 numFmt + 单元格样式 | `formats_are_mapped_into_export_styles_and_round_trip` |
 | 全 sheet 导出 | `--all-sheets` 每张 sheet 一个 CSV，含 hidden | `convert_extracts_every_xlsx_sheet_to_a_directory`、`convert_all_sheets_includes_hidden_ones` |
