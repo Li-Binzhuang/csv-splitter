@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "600d2d4a2ef1a5dd1671332c12de6a4fd170e94e2c59c8adafc7b259593ecae9",
+  "batch_id": "9ffba487403f1732fa1bae8e357fca06d990f7a415f7ce080257446b2d6a67bc",
+  "composite_identity": "02200e89765afa792b68cd52c8cf5e8b85b41bc6a1d9a60b51a8e17923778d4c",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "138f69e794825b0340d705edd2ade1e2569c77d819a28d81ab67428dd04f5793",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "1deb1dec15dace120cfc67f46424c5a441e7a9ef73465ee00844d363a4e9eb89",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/区间；TEXT；日期时间族；WEEKDAY 1/2/3；WEEKNUM 1/2；DAYS360；NETWORKDAYS/WORKDAY 显式节假日；排名/分位族 | S:单列按整列；跨行区间/整列 median 不支持；节假日区间参数未支持；PERCENTILE.EXC 边界外报错"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "c147676f3f1fb902e7c9ad28e302766830fa8d60fbf93c8c05582021815ac8b2",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族；WEEKDAY/WEEKNUM 类型；NETWORKDAYS 节假日；点号函数名 | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "2eb10570f0b07feb2b49eb3beb2499cfb13b860286708bacab5d8b731d8978aa",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/日期时间族；WEEKDAY/WEEKNUM 类型；DAYS360；节假日显式参数；排名/分位族 | S:矩阵只记当前实现；节假日区间未支持；查找受限 sheet/key/value"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "f38e958c399ceb38310a935cefefdc21542ebd9afabc2e38be37047694a0f936",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round135 周参数/节假日与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "3132bdce3000fd33f3d118d0bcf036e2e346e3245db32f13ff2a094658494af4",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "1deb1dec15dace120cfc67f46424c5a441e7a9ef73465ee00844d363a4e9eb89",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/区间；TEXT；日期时间族；WEEKDAY 1/2/3；WEEKNUM 1/2；DAYS360；NETWORKDAYS/WORKDAY 显式节假日；排名/分位族 | S:单列按整列；跨行区间/整列 median 不支持；节假日区间参数未支持；PERCENTILE.EXC 边界外报错"
+    },
+    {
+      "candidate_id": "8140b06369d5e0a74f5f11895967b2ae167588497a140a2182ebab8cd2c92801",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "c147676f3f1fb902e7c9ad28e302766830fa8d60fbf93c8c05582021815ac8b2",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族；WEEKDAY/WEEKNUM 类型；NETWORKDAYS 节假日；点号函数名 | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "15746f1f95d552ee5829aad43b49ebd2f4da3faf8cae87f4b733ff007e40d4f6",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "2eb10570f0b07feb2b49eb3beb2499cfb13b860286708bacab5d8b731d8978aa",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/日期时间族；WEEKDAY/WEEKNUM 类型；DAYS360；节假日显式参数；排名/分位族 | S:矩阵只记当前实现；节假日区间未支持；查找受限 sheet/key/value"
+    },
+    {
+      "candidate_id": "166c49107af016a851a82e6801a2397d1b50f349f40d0b5bf73b9ada696ff3f7",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "f38e958c399ceb38310a935cefefdc21542ebd9afabc2e38be37047694a0f936",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round135 周参数/节假日与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

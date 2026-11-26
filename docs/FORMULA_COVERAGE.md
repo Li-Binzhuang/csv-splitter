@@ -37,7 +37,7 @@
 | DATE / YEAR / MONTH / DAY | 支持 | DATE 生成 ISO 日期文本 |
 | EDATE / EOMONTH | 支持 | 月末按日历计算；1900-02 为 28 日（Excel 假闰日只影响序列号） |
 | WEEKDAY / WEEKNUM | 支持 | 默认周日为 1；WEEKNUM 用 return_type 1 |
-| DAYS / NETWORKDAYS / WORKDAY | 支持 | 工作日跳过周末；节假日用额外日期参数显式传入，区间参数未支持 |
+| DAYS / NETWORKDAYS / WORKDAY | 支持 | 工作日跳过周末；节假日支持单值或同行区间 |
 | DAYS360 | 支持（新增） | US/EU 30/360；反向报错 |
 | DATESTRING / DATEKEY | 支持 | 截取 ISO 前缀 |
 | DATEVALUE | 支持（新增） | ISO 日期 → Excel 1900 序列号；1900-01-01=1、假闰日=60 |

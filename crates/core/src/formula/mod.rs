@@ -2175,6 +2175,39 @@ mod tests {
     }
 
     #[test]
+    fn networkdays_and_workday_accept_a_holiday_range() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [
+            ("a", "2024-01-01"),
+            ("b", "2024-01-02"),
+            ("c", "2024-01-03"),
+            ("d", "2024-01-05"),
+        ] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        let formula = Formula::parse("networkdays(A2, D2, B2:C2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "3"
+        );
+        let formula = Formula::parse("workday(A2, 3, B2:C2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "2024-01-08"
+        );
+    }
+
+    #[test]
     fn networkdays_and_workday_skip_explicit_holidays() {
         assert_eq!(
             eval_str(
@@ -2190,6 +2223,10 @@ mod tests {
         assert_eq!(
             eval_str(r#"networkdays("2024-01-01", "2024-01-05", "bad")"#, &[]),
             "#VALUE!"
+        );
+        assert_eq!(
+            eval_str(r#"workday("2024-01-05", -2, "2024-01-03")"#, &[]),
+            "2024-01-02"
         );
     }
 
@@ -2223,6 +2260,7 @@ mod tests {
         assert_eq!(eval_str(r#"weekday("2024-01-01", 3)"#, &[]), "0");
         assert_eq!(eval_str(r#"weeknum("2024-01-01")"#, &[]), "1");
         assert_eq!(eval_str(r#"weeknum("2024-01-01", 2)"#, &[]), "1");
+        assert_eq!(eval_str(r#"weeknum("2024-01-01", 21)"#, &[]), "1");
         assert_eq!(eval_str(r#"weekday("2024-01-01", 9)"#, &[]), "#VALUE!");
         assert_eq!(eval_str(r#"weeknum("2024-01-01", 9)"#, &[]), "#VALUE!");
     }

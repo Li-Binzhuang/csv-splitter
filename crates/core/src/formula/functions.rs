@@ -974,6 +974,9 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                         .get(1)
                         .and_then(|arg| eval(arg, ctx).number())
                         .unwrap_or(1.0);
+                    if return_type as u32 == 21 {
+                        return Value::Number(iso_week_number(year, month, day) as f64);
+                    }
                     // return_type 1 starts on Sunday, 2 starts on Monday.
                     let offset = match return_type as u32 {
                         1 => weekday(year, 1, 1) - 1,
@@ -1894,12 +1897,29 @@ fn parse_clock(text: &str) -> Option<(u32, u32, u32)> {
 fn holiday_days(args: &[Expr], ctx: &Ctx<'_>) -> Result<Vec<i64>, Value> {
     let mut days = Vec::new();
     for arg in args {
-        let text = eval(arg, ctx).text();
-        match parse_date(&text) {
-            Some((year, month, day)) => days.push(days_from_civil(year, month, day)),
-            // A range of cells is not resolvable while streaming; say so instead
-            // of silently counting zero holidays.
-            None => return Err(Value::Error),
+        match arg {
+            Expr::Range { from, to } => {
+                let Some(cells) = range_cells(from, to, ctx) else {
+                    return Err(Value::Error);
+                };
+                for cell in cells {
+                    let trimmed = cell.trim();
+                    if trimmed.is_empty() {
+                        continue;
+                    }
+                    match parse_date(trimmed) {
+                        Some((year, month, day)) => days.push(days_from_civil(year, month, day)),
+                        None => return Err(Value::Error),
+                    }
+                }
+            }
+            _ => {
+                let text = eval(arg, ctx).text();
+                match parse_date(&text) {
+                    Some((year, month, day)) => days.push(days_from_civil(year, month, day)),
+                    None => return Err(Value::Error),
+                }
+            }
         }
     }
     Ok(days)
