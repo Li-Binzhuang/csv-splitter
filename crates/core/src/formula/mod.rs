@@ -1442,6 +1442,19 @@ mod tests {
     }
 
     #[test]
+    fn fv_projects_future_value() {
+        assert_eq!(eval_str("fv(0, 10, -100, 1000)", &[]), "0");
+        assert_eq!(eval_str("fv(0, 10, -100)", &[]), "1000");
+        assert_eq!(eval_str("fv(0.1, 1, 0, 1000)", &[]), "-1100");
+        assert_eq!(eval_str("fv(0.1, 2, 0, 1000)", &[]), "-1210");
+        assert_eq!(eval_str("fv(0.1, 1, -100, 1000)", &[]), "-1000");
+        assert_eq!(eval_str("fv(0.1, 1, -100, 1000, 1)", &[]), "-990");
+        for source in ["fv(-1, 1, 0, 1000)", "fv(0.1, 1, 0, 1000, 2)", "fv(0.1, 1)"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn pmt_calculates_loan_payments() {
         assert_eq!(eval_str("pmt(0, 10, 1000)", &[]), "-100");
         assert_eq!(eval_str("pmt(0, 10, 1000, 500)", &[]), "-150");

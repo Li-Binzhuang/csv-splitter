@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项148 净现值（功能级）：`NPV(rate, value...)`；现金流折现、
+  rate≤-1/空值/非数值 `#VALUE!`；验收：单测 + gate。
 - [ ] 项147 财务期数（功能级）：`NPER(rate, pmt, pv[, fv[, type]])`；
   rate=0/type 0/1/非法参数语义；验收：单测 + gate。
 - [ ] 项146 财务现值（功能级）：`PV(rate, nper, pmt[, fv[, type]])`；
   rate=0/type 0/1/非法参数语义；验收：单测 + gate。
-- [ ] 项145 财务终值（功能级）：`FV(rate, nper, pmt[, pv[, type]])`；
-  rate=0/type 0/1/非法参数语义；验收：单测 + gate。
+- [x] 项145 财务终值（功能级）：`FV(rate, nper, pmt[, pv[, type]])`；
+  rate=0/type 0/1/rate≤-1 语义；测试 `fv_projects_future_value`。
 - [x] 项144 财务付款（功能级）：`PMT(rate, nper, pv[, fv[, type]])`；
   rate=0/type 0/1/rate≤-1/nper=0 语义；测试 `pmt_calculates_loan_payments`。
 - [x] 项143 错误类型（功能级）：`ERROR.TYPE` 对 `#NULL!`/`#DIV/0!`/
@@ -142,6 +144,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 174（项145 FV，功能级）：rate=0/type 0/1、终值与非法参数；
+定向与全量 gate/package 通过；发布包 SHA `b95b5365…158ae`。
 
 Round 173（项144 PMT，功能级）：rate=0/type 0/1、rate≤-1/nper=0；
 定向与全量 gate/package 通过；发布包 SHA `071322d0…fc15`。
