@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 43（发布艺术品复核）：对 `85312532…afb70` 包复验
+`phase_thresholds=ok`、`verified=true`、`check_release manifest=ok`、
+`criticalDocs=4`；复验写 `.reverify.json`，不覆盖 manifest 绑定的 `.verify.json`。
+
 Round 42（诊断包收录清单）：`test_ops_bundle.sh` 在 fake prefix 内放
 release-manifest，断言诊断包解包后包含该文件；发布包 SHA `85312532…afb70`。
 
