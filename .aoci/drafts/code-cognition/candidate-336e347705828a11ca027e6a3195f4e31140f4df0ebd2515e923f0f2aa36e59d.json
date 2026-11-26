@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a8befa5cd0578a2717905cf396b54b2f7fce9144b28e438c7614f5014fffbd53",
+  "batch_id": "336e347705828a11ca027e6a3195f4e31140f4df0ebd2515e923f0f2aa36e59d",
+  "composite_identity": "7e73e6f8d7090904a9556bf43a1710ffdd22db30c9d9dad3a2714dcd99bba074",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "bacd15ba19a4ad2e128f21f945397a9bc9e584c2801d5bbebd036cb82b2295ac",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "575884f459a1de88e06e9c35ce6f1ef91d780b00d85d596413520cbf425e6f1c",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round31 支持矩阵与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "3212e63dea1481c0827f4ce344bf6b3479639ae38a202f7f10323aa8895ba466",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装、自检/运维与证据 | R:code:scripts/ops_bundle.sh,code:scripts/ops_status.sh,code:docs/SUPPORT_MATRIX.md | A:真实 install；selfcheck/ops；支持矩阵进包 | S:不联网/不打 tag；成员校验失败整包失败"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ef5e0bca6072d7392f917199dafbd0005831d25baea97a236d475e3972428002",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "575884f459a1de88e06e9c35ce6f1ef91d780b00d85d596413520cbf425e6f1c",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round31 支持矩阵与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "744cc7b9037b978a08c555d19812997261ca1d9bf05bb5625796056c1c759a37",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "3212e63dea1481c0827f4ce344bf6b3479639ae38a202f7f10323aa8895ba466",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装、自检/运维与证据 | R:code:scripts/ops_bundle.sh,code:scripts/ops_status.sh,code:docs/SUPPORT_MATRIX.md | A:真实 install；selfcheck/ops；支持矩阵进包 | S:不联网/不打 tag；成员校验失败整包失败"
+    }
+  ]
+}

@@ -72,7 +72,15 @@ data = json.load(open(sys.argv[1]))
 if not data.get("installOk"):
     raise SystemExit(data)
 PYOPS
+if ! bash scripts/ops_bundle.sh --prefix "$INSTALL_DIR" --root "$INSTALL_DIR" --out "$INSTALL_DIR/ops-bundle.tar.gz" > "$INSTALL_DIR/bundle.log"; then
+  cat "$INSTALL_DIR/bundle.log" >&2 || true
+  rm -rf "$INSTALL_DIR"
+  echo "ops bundle smoke failed" >&2
+  exit 1
+fi
+tar -tzf "$INSTALL_DIR/ops-bundle.tar.gz" | grep -q './selfcheck.json'
+tar -tzf "$INSTALL_DIR/ops-bundle.tar.gz" | grep -q './ops-status.json'
 rm -rf "$INSTALL_DIR"
-printf 'install_manifest=ok selfcheck=ok ops_status=ok\n'
+printf 'install_manifest=ok selfcheck=ok ops_status=ok ops_bundle=ok\n'
 du -h "dist/$NAME.tar.gz"
 cat "dist/$NAME.tar.gz.sha256"

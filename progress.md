@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 32（发布后诊断包）：`package_release.sh` 在真实安装上运行
+`ops_bundle.sh` 并检查 tar 内含 selfcheck/ops-status，失败整包失败；发布包 SHA `98143e14…ec3a6`。
+
 Round 31（支持矩阵）：新增 SUPPORT_MATRIX.md（平台/功能矩阵、数据边界、
 工单最小信息、响应边界），并入发布包与成员校验；发布包 SHA `571754d2…dbc06`。
 
