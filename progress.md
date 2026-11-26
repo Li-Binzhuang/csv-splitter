@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 7：SDK 增加枚举/范围语义：`convert`/`report` 非法 format、`view count=0`、`edit_set row=0` 均拒绝。
+实测 `enum_rejections=2 range_rejections=2`；发布包 SHA `84f231e8…779ac`；`csvx_report` 不再把未知 format 静默成 md。
+
 Round 6：SDK 对 20 个有必填参数的工具传空参数，全部返回错误；`required_rejections=20`；发布包 SHA `abcfc0f5…71cbc`。
 
 Round 5：`executor.rs` 468 → 78 行；23 工具命令分派拆到 `executor/commands.rs`（406 行）。
@@ -32,7 +35,7 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 ## 未完成
 
-- 23 工具 schema 字段映射与空参数必填拒绝已覆盖；参数范围/枚举语义仍可加强。
+- 23 工具 schema 字段映射、必填拒绝、format 枚举与 row/count 下界已覆盖。
 - `executor/commands.rs` 406 行，后续可再按工具族拆分。
 - 12 路由已有响应体、401、405 契约。
 - 商业化/产品化未开始。
@@ -46,4 +49,4 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 1. 全量 gate、AOCI 收尾并提交。
 2. push 本轮提交一次。
-3. 下一轮补参数枚举/范围语义校验。
+3. 下一轮补 count/limit 上界与 pipeline jobs 语义。

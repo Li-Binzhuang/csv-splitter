@@ -141,6 +141,24 @@ for (const name of expectedTools) {
   if (result.isError) requiredRejections += 1;
 }
 console.log(`required_rejections=${requiredRejections}`);
+const badConvert = await client.callTool({
+  name: "csvx_convert",
+  arguments: { path: file, format: "bogus", out: "bad.csv" },
+});
+const badReport = await client.callTool({
+  name: "csvx_report",
+  arguments: { path: file, format: "bogus", specText: "title,SDK\nsummary,rows" },
+});
+console.log(`enum_rejections=${(badConvert.isError === true ? 1 : 0) + (badReport.isError === true ? 1 : 0)}`);
+const badCount = await client.callTool({
+  name: "csvx_view",
+  arguments: { path: file, count: 0 },
+});
+const badRow = await client.callTool({
+  name: "csvx_edit_set",
+  arguments: { path: file, row: 0, col: "city", value: "X" },
+});
+console.log(`range_rejections=${(badCount.isError === true ? 1 : 0) + (badRow.isError === true ? 1 : 0)}`);
 const missingTools = expectedTools.filter((name) => !called.has(name));
 console.log(`sdk_calls=${expectedTools.length - missingTools.length}`);
 console.log(`sdk_missing=${missingTools.join(",")}`);

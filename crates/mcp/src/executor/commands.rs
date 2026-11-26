@@ -202,11 +202,13 @@ pub(super) fn build(
             }
         }
         "csvx_report" => {
-            let format = args.get("format").and_then(McpJson::as_str).unwrap_or("md");
-            let format = if format.eq_ignore_ascii_case("html") {
-                "html"
-            } else {
-                "md"
+            let format = match args.get("format").and_then(McpJson::as_str) {
+                None => "md",
+                Some(value) if value.eq_ignore_ascii_case("md") => "md",
+                Some(value) if value.eq_ignore_ascii_case("html") => "html",
+                Some(value) => {
+                    return Err(format!("format must be md or html, got {value}"));
+                }
             };
             command.args([
                 "report",

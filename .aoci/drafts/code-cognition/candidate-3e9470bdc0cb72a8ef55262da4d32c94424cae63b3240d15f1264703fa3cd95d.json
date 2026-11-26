@@ -1,0 +1,93 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "ff58575762ee9a986810658b46a7486b3e264b25664963ebd505e7d88b11c867",
+  "batch_id": "3e9470bdc0cb72a8ef55262da4d32c94424cae63b3240d15f1264703fa3cd95d",
+  "composite_identity": "c702cbd7f65c566c4df05ed7ca4fa80d9eddde1d3a94f3a6060ef0d54f127b7a",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "637da269aff898f94df09e182481dddc696fdf32ad270765ca06674c8d0b6e83",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/executor/commands.rs",
+      "path": "crates/mcp/src/executor/commands.rs",
+      "change": "update",
+      "source_sha256": "34034c690441b89d4e6b9f2948b5af2825d8ff1449ebe5d27bafb74cf084e3a3",
+      "existing_entry": "commands.rs[EN8L]: F:23 个 MCP 工具到 csvx CLI 的参数映射 | R:code:crates/mcp/src/executor.rs,code:crates/mcp/src/tools.rs,code:crates/mcp/src/executor/paths.rs | A:build(name,path,args)；concat；schema/view/filter/search/edit/report/gate/convert/pipeline | S:路径已 canonicalize；edit_delete 带 --count；输出限 root；只拼 argv"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "update",
+      "source_sha256": "b805fb4b6d59b2b45bdcea23e557d9a39afd0578b290ec9b2339ea9b43bc4b80",
+      "existing_entry": "MCP_COMPAT.md[SD7S]: F:官方 SDK、schema 与 DSH 客户端验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:docs/ENTRYPOINTS.md | A:23 工具全调用；20 个必填拒绝；schema 43 字段；DSH 2 行；命令与期望 | S:不改 DSH profile；DSH 需 CSVX_DSH_TEST=1；结果本机实测"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "001b97d48ab18cd6c3b1ba8a0d150fed222df65402dd4a699bd2e20dc11020f3",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round6 必填拒绝与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_mcp_sdk.sh",
+      "path": "scripts/check_mcp_sdk.sh",
+      "change": "update",
+      "source_sha256": "4f1b5f5b535e3e0a551b29354c16fbd5e4f7f9fc76e01d6042e3fdf13480c0f1",
+      "existing_entry": "check_mcp_sdk.sh[TQ7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:debug 优先；临时 CSV/plan/gzip；23 工具、20 必填拒绝、progress/job/error | S:node/SDK 缺失跳过；失败非零"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "3f5f595d338e22121e63e69908632ea9f288eb87b63d54362bedb588c9d4e71f",
+      "existing_entry": "client.mjs[XQ7S]: F:官方 MCP SDK 全 23 工具与必填拒绝回归 | R:code:scripts/mcp_sdk/package.json,code:scripts/check_mcp_sdk.sh | A:called 集合；23 工具；空参数 20 拒绝；pipeline/gzip/job/cancel/error | S:仅回归；npm 不进 Rust；job 失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "fb7402db62e24c18da6be1a69da97e4d1550e39f14c714635b182f34dd415719",
+      "object_ref": "code:crates/mcp/src/executor/commands.rs",
+      "path": "crates/mcp/src/executor/commands.rs",
+      "change": "update",
+      "source_sha256": "34034c690441b89d4e6b9f2948b5af2825d8ff1449ebe5d27bafb74cf084e3a3",
+      "existing_entry": "commands.rs[EN8L]: F:23 个 MCP 工具到 csvx CLI 的参数映射 | R:code:crates/mcp/src/executor.rs,code:crates/mcp/src/tools.rs,code:crates/mcp/src/executor/paths.rs | A:build(name,path,args)；concat；schema/view/filter/search/edit/report/gate/convert/pipeline | S:路径已 canonicalize；edit_delete 带 --count；输出限 root；只拼 argv"
+    },
+    {
+      "candidate_id": "a6dd429b7b146ce3265ddcac861ad1b668e46ffe9b618d510b810462d12243c0",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "update",
+      "source_sha256": "b805fb4b6d59b2b45bdcea23e557d9a39afd0578b290ec9b2339ea9b43bc4b80",
+      "existing_entry": "MCP_COMPAT.md[SD7S]: F:官方 SDK、schema 与 DSH 客户端验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:docs/ENTRYPOINTS.md | A:23 工具全调用；20 个必填拒绝；schema 43 字段；DSH 2 行；命令与期望 | S:不改 DSH profile；DSH 需 CSVX_DSH_TEST=1；结果本机实测"
+    },
+    {
+      "candidate_id": "2d36b61c2c6e39704c3493fb55eb8b54acd1d529e4c71705284829f03b93adb0",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "001b97d48ab18cd6c3b1ba8a0d150fed222df65402dd4a699bd2e20dc11020f3",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round6 必填拒绝与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "d45b10c778774df2a11eacfc28ba5e639c251a7706c922a4c63b3d16da072f8d",
+      "object_ref": "code:scripts/check_mcp_sdk.sh",
+      "path": "scripts/check_mcp_sdk.sh",
+      "change": "update",
+      "source_sha256": "4f1b5f5b535e3e0a551b29354c16fbd5e4f7f9fc76e01d6042e3fdf13480c0f1",
+      "existing_entry": "check_mcp_sdk.sh[TQ7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:debug 优先；临时 CSV/plan/gzip；23 工具、20 必填拒绝、progress/job/error | S:node/SDK 缺失跳过；失败非零"
+    },
+    {
+      "candidate_id": "56ba028e737645528e01eab87e2b78c695550f5386a35c93ecb6269192450d82",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "3f5f595d338e22121e63e69908632ea9f288eb87b63d54362bedb588c9d4e71f",
+      "existing_entry": "client.mjs[XQ7S]: F:官方 MCP SDK 全 23 工具与必填拒绝回归 | R:code:scripts/mcp_sdk/package.json,code:scripts/check_mcp_sdk.sh | A:called 集合；23 工具；空参数 20 拒绝；pipeline/gzip/job/cancel/error | S:仅回归；npm 不进 Rust；job 失败非零"
+    }
+  ]
+}
