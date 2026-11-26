@@ -1442,6 +1442,24 @@ mod tests {
     }
 
     #[test]
+    fn pmt_calculates_loan_payments() {
+        assert_eq!(eval_str("pmt(0, 10, 1000)", &[]), "-100");
+        assert_eq!(eval_str("pmt(0, 10, 1000, 500)", &[]), "-150");
+        assert_eq!(eval_str("pmt(0, 10, 1000, 0, 1)", &[]), "-100");
+        assert_eq!(eval_str("pmt(0.1, 1, 1000)", &[]), "-1100");
+        assert_eq!(eval_str("pmt(0.1, 2, 1000)", &[]), "-576.190476");
+        assert_eq!(eval_str("pmt(0.1, 1, 1000, 0, 1)", &[]), "-1000");
+        for source in [
+            "pmt(0.1, 0, 1000)",
+            "pmt(-1, 1, 1000)",
+            "pmt(0.1, 1, 1000, 0, 2)",
+            "pmt(0.1, 1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn decimal_and_base_convert_radices() {
         assert_eq!(eval_str(r#"decimal("FF", 16)"#, &[]), "255");
         assert_eq!(eval_str(r#"decimal("ff", 16)"#, &[]), "255");

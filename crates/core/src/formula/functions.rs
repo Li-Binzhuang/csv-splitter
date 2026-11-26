@@ -1130,6 +1130,51 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number(result.round())
         }
+        // PMT: loan payment with optional future value and payment timing.
+        "pmt" => {
+            if args.len() < 3 || args.len() > 5 {
+                return Value::Error;
+            }
+            let (Some(rate), Some(nper), Some(pv)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            let fv = args
+                .get(3)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(0.0))
+                .unwrap_or(f64::NAN);
+            let payment_type = args
+                .get(4)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(0.0))
+                .unwrap_or(f64::NAN);
+            if !rate.is_finite()
+                || !nper.is_finite()
+                || !pv.is_finite()
+                || !fv.is_finite()
+                || !payment_type.is_finite()
+                || nper == 0.0
+                || rate <= -1.0
+                || ![0.0, 1.0].contains(&payment_type)
+            {
+                return Value::Error;
+            }
+            let payment = if rate == 0.0 {
+                -(pv + fv) / nper
+            } else {
+                let growth = (1.0 + rate).powf(nper);
+                -(fv + pv * growth) * rate / ((1.0 + rate * payment_type) * (growth - 1.0))
+            };
+            if payment.is_finite() {
+                Value::Number(payment)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
