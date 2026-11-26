@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "36ef724c83a7fa704e9a0dc7c5ced32401b49bc0ae7d283af4f176e3d2919386",
+  "batch_id": "7052d43b9a5223ccf6d3325fb78fceaf5fade27944212274424a95e8819bc588",
+  "composite_identity": "e62a7a501b61ca0a0da4a24b37ce35bcbbf26f8acac3e2d64e2f86dfd4fe645b",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e2a3e97e9c87aa06f7312ac760fba2711c090334ecf390ecd335333d2b44a7ff",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "3903103746fd15d0293c72ea87cb5f6f7626042f028cdf9e247e667cf8196aa3",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；ISO 日期/日期时间/纯时间；1904；hidden sheet；cellIs；线性扫描+手工属性；按 row r 排序；CSV BufWriter | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式/坏索引/超限报错"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "ab7618e60829ae625bed4658339b06a3a69f5a96af279440f29524c57a243310",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round82 流式输出与内存与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "bbdcbf6205a93f2d93de6f72e56a89cd5c7ee20be83108739892b6b3380feab8",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "3903103746fd15d0293c72ea87cb5f6f7626042f028cdf9e247e667cf8196aa3",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；ISO 日期/日期时间/纯时间；1904；hidden sheet；cellIs；线性扫描+手工属性；按 row r 排序；CSV BufWriter | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式/坏索引/超限报错"
+    },
+    {
+      "candidate_id": "17abbc73c1e60bbcbcb559d53646e8d97ddc7a070be8907c17d5f1f27294ce8a",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "ab7618e60829ae625bed4658339b06a3a69f5a96af279440f29524c57a243310",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round82 流式输出与内存与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

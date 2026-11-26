@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 83（导出 dimension）：去掉流式导出中固定的 `<dimension ref="A1"/>`，
+避免向 Excel 谎报已用区域；让 Excel 自行计算；测试确认输出无 dimension，发布包 SHA `d26dec89…bfb43`。
+
 Round 82（xlsx 输出流式写）：CSV 逐行写入 BufWriter，不再把整份 CSV 文本
 留在内存；输出字节不变；1M 峰值 1.05 → 1.02 GB；发布包 SHA `5d232694…aa1340`。
 

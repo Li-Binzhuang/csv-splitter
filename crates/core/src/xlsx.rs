@@ -131,7 +131,8 @@ fn csv_to_xlsx_inner(
     sheet.push_str(
         "<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">",
     );
-    sheet.push_str("<dimension ref=\"A1\"/>");
+    // No dimension hint: the streamed row count is unknown until the sheet is
+    // complete, and a false A1 hint is worse than letting Excel calculate it.
     sheet.push_str("<sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/></sheetView></sheetViews>");
     sheet.push_str("<sheetFormatPr defaultRowHeight=\"15\"/><sheetData>");
     write!(zip, "{}", sheet)?;
@@ -1336,6 +1337,27 @@ mod tests {
             text,
             "id,amount,flag,note\n1,12.5,true,a&b\n2,007,false,<x>\n"
         );
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn streamed_export_omits_the_dimension_hint() {
+        let dir = std::env::temp_dir().join(format!("csvx_xlsx_dim_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("in.csv");
+        let workbook = dir.join("in.xlsx");
+        std::fs::write(&input, "id,amount\n1,2\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        csv_to_xlsx(&input, &workbook, Delimiter::Comma, &tx).unwrap();
+        let file = std::fs::File::open(&workbook).unwrap();
+        let mut zip = zip::ZipArchive::new(file).unwrap();
+        let mut sheet = String::new();
+        use std::io::Read as _;
+        zip.by_name("xl/worksheets/sheet1.xml")
+            .unwrap()
+            .read_to_string(&mut sheet)
+            .unwrap();
+        assert!(!sheet.contains("<dimension"), "{sheet}");
         std::fs::remove_dir_all(dir).ok();
     }
 
