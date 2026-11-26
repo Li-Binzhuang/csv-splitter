@@ -39,6 +39,15 @@ for key in ("version", "sha256", "installedAt", "binary", "platform"):
         raise SystemExit(f"missing {key}")
 print("install_manifest=ok")
 PY
+python3 - "$PREFIX/install-manifest.json" "$PREFIX/release-manifest.json" <<'PY'
+import json
+import sys
+install = json.load(open(sys.argv[1]))
+release = json.load(open(sys.argv[2]))
+assert release["sha256"] == install["sha256"], (release, install)
+assert release["name"] == "csvx-test", release
+print("release_manifest=ok")
+PY
 
 bad_prefix="$WORK/bad-prefix"
 if bash scripts/install_offline.sh --archive "$WORK/csvx-test.tar.gz" --prefix "$bad_prefix" \

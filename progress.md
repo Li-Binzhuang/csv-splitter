@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 48（安装清单内容断言）：install smoke 除检查 release-manifest 存在外，
+还断言其 sha256/name 与安装清单/原始 release 一致；发布包 SHA `65ecdec0…ec6a0`。
+
 Round 47（支持矩阵补行）：SUPPORT_MATRIX 增加“安装 prefix 保留/复核 release
 manifest”能力行，和自检实现对齐；发布包 SHA `5ae3efa8…4077b`。
 

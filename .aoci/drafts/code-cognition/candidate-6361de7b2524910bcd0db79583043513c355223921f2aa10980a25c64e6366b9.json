@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "0065ce5f98164efbab276b89ff2377ce6050bf5a6f4113147c1a202e03b53e77",
+  "batch_id": "6361de7b2524910bcd0db79583043513c355223921f2aa10980a25c64e6366b9",
+  "composite_identity": "148f90b2b490ec65b36d8ee0cdc62f6044ee57837f4a94f7c81b1de1c7b05da9",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "c4b872d257eb46b4cde842ea3131583299cb91db78bbe8856f46d7090143ac71",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "933cab6782e7ac85f3c9dad0ada45f37882ea741a27e7762a8913cb291c9b1c7",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round47 支持矩阵与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_install_offline.sh",
+      "path": "scripts/test_install_offline.sh",
+      "change": "update",
+      "source_sha256": "95d5364c2f955b18e56cb1698f09918903384862fb037e6fea8e14302d4739ea",
+      "existing_entry": "test_install_offline.sh[TQ7T]: F:离线安装器正负例脚本 | R:code:scripts/install_offline.sh,code:scripts/dev.sh | A:真实 tar；install/release manifest；坏 SHA/manifest；版本锁 | S:不联网；gate 必跑；失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "0aa74842a0ef6b8f088431432a52d57af5775aa55aa7489efe95c6fbc1354b96",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "933cab6782e7ac85f3c9dad0ada45f37882ea741a27e7762a8913cb291c9b1c7",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round47 支持矩阵与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "05f8b08f6f01918c618dbfaa059777842eeccc6aaaaf3805dc75167152097696",
+      "object_ref": "code:scripts/test_install_offline.sh",
+      "path": "scripts/test_install_offline.sh",
+      "change": "update",
+      "source_sha256": "95d5364c2f955b18e56cb1698f09918903384862fb037e6fea8e14302d4739ea",
+      "existing_entry": "test_install_offline.sh[TQ7T]: F:离线安装器正负例脚本 | R:code:scripts/install_offline.sh,code:scripts/dev.sh | A:真实 tar；install/release manifest；坏 SHA/manifest；版本锁 | S:不联网；gate 必跑；失败非零"
+    }
+  ]
+}
