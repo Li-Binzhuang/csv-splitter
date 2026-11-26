@@ -118,7 +118,7 @@
 | IPMT / PPMT | 支持（功能级新增） | 期数/type/nper 边界；付款拆分为利息/本金 |
 | CUMIPMT / CUMPRINC | 支持（功能级新增） | 区间累计利息/本金；start/end/type 越界 `#VALUE!` |
 | SLN / SYD | 支持（功能级新增） | 直线/年数总和折旧；life≤0、period 越界/非整数 `#VALUE!` |
-| DB / DDB | 支持（功能级新增） | 固定/双倍余额递减；period 越界、月数/因子非法 `#VALUE!` |
+| DB / DDB / VDB | 支持（功能级新增） | 固定/双倍/变动余额递减；区间、月数、因子非法 `#VALUE!` |
 | FVSCHEDULE | 支持（功能级新增） | 复利 schedule 区间；空区间/rate≤-1 `#VALUE!` |
 | RRI | 支持（功能级新增） | nper≤0、pv=0、异号现金流 `#VALUE!` |
 | XNPV | 支持（功能级新增） | 按实际天数/365 折现；values/dates 等长；非法日期/利率 `#VALUE!` |

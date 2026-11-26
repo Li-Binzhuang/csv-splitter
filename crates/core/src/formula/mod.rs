@@ -1442,6 +1442,22 @@ mod tests {
     }
 
     #[test]
+    fn vdb_varies_declining_balance_depreciation() {
+        assert_eq!(eval_str("vdb(2400, 300, 10, 0, 1)", &[]), "480");
+        assert_eq!(eval_str("vdb(2400, 300, 10, 1, 2)", &[]), "384");
+        assert_eq!(eval_str("vdb(2400, 300, 10, 0, 2)", &[]), "864");
+        assert_eq!(eval_str("vdb(2400, 300, 10, 0, 1, 2, true())", &[]), "480");
+        for source in [
+            "vdb(2400, 300, 10, 1, 1)",
+            "vdb(2400, 300, 10, 0, 11)",
+            "vdb(2400, 300, 10, 0, 1, 0)",
+            "vdb(2400, 300, 10, 0.5, 1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn cumulative_interest_and_principal_work() {
         assert_eq!(
             eval_str("cumipmt(0.1, 2, 1000, 1, 2, 0)", &[]),

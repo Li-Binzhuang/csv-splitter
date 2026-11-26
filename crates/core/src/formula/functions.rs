@@ -1994,6 +1994,67 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 principal_total
             })
         }
+        // VDB: variable declining-balance depreciation over a period interval.
+        "vdb" => {
+            if args.len() < 5 || args.len() > 7 {
+                return Value::Error;
+            }
+            let (Some(cost), Some(salvage), Some(life), Some(start), Some(end)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+                eval(&args[3], ctx).number(),
+                eval(&args[4], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            let factor = args
+                .get(5)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(2.0))
+                .unwrap_or(f64::NAN);
+            let no_switch = args
+                .get(6)
+                .map(|arg| truthy(&eval(arg, ctx)))
+                .unwrap_or(false);
+            if !cost.is_finite()
+                || !salvage.is_finite()
+                || !life.is_finite()
+                || !start.is_finite()
+                || !end.is_finite()
+                || !factor.is_finite()
+                || cost <= 0.0
+                || salvage < 0.0
+                || life <= 0.0
+                || life.trunc() != life
+                || start < 0.0
+                || end <= start
+                || end > life
+                || start.trunc() != start
+                || end.trunc() != end
+                || factor <= 0.0
+            {
+                return Value::Error;
+            }
+            let rate = factor / life;
+            let mut accumulated = 0.0;
+            let mut total = 0.0;
+            for period in 1..=end as i32 {
+                let remaining = (cost - salvage - accumulated).max(0.0);
+                let declining = ((cost - accumulated) * rate).min(remaining);
+                let straight = remaining / (life - (period - 1) as f64);
+                let depreciation = if !no_switch && straight > declining {
+                    straight
+                } else {
+                    declining
+                };
+                if period as f64 > start {
+                    total += depreciation;
+                }
+                accumulated += depreciation;
+            }
+            Value::Number(total)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
