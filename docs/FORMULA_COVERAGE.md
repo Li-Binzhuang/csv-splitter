@@ -67,6 +67,7 @@
 | IFNA | 首批补齐 | 只捕获 `#N/A`，不吞 `#VALUE!` |
 | NA | 首批补齐 | 显式 `#N/A` 常量 |
 | ISBLANK / ISNUMBER / ISTEXT | 支持 | 空文本按空白处理 |
+| TYPE | 支持（功能级新增） | 数字=1、文本=2、布尔=4、错误=16；空单元格按数字 |
 | ISERROR / ISNA | 支持 | 分别覆盖全部错误与 `#N/A` |
 | LET / LAMBDA / MAP / BYROW | 不做 | 需要名字绑定与数组求值，超出逐行标量模型 |
 
@@ -103,6 +104,7 @@
 | SUBTOTAL | 支持（功能级新增） | 1–11/101–111；同行区间；CSV 无隐藏行，100 系列同值 |
 | AGGREGATE | 支持（功能级新增） | 1–11/14–19，options 0/4/6；k 用于排名/分位；无隐藏行/错误单元格 |
 | RAND / RANDBETWEEN | 缺失 | 非确定性，暂不进入可复现导出 |
+| PMT / FV / PV / RATE / NPER | 缺失 | 财务函数；PMT 优先 |
 | GCD / LCM / FACT / COMBIN / PERMUT | 支持（功能级新增） | 非负整数；FACT≤170；非法/非整数 `#VALUE!` |
 | MROUND / CEILING.PRECISE / FLOOR.PRECISE | 支持（功能级新增） | MROUND 同号倍数；PRECISE 忽略 significance 符号；零倍数/非法参数 `#VALUE!` |
 | BITAND / BITOR / BITXOR | 支持（功能级新增） | 48 位非负整数；非法/非整数/超范围 `#VALUE!` |

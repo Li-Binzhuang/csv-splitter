@@ -871,6 +871,18 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             Some(arg) => Value::Bool(!truthy(&eval(arg, ctx))),
             None => Value::Error,
         },
+        // TYPE: 1 number, 2 text, 4 logical, 16 error; empty cells read as 0.
+        "type" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            Value::Number(match eval(&args[0], ctx) {
+                Value::Number(_) | Value::Empty => 1.0,
+                Value::Text(_) => 2.0,
+                Value::Bool(_) => 4.0,
+                Value::Error => 16.0,
+            })
+        }
         "isblank" | "isempty" => match args.first() {
             Some(arg) => match eval(arg, ctx) {
                 Value::Empty => Value::Bool(true),

@@ -1442,6 +1442,17 @@ mod tests {
     }
 
     #[test]
+    fn type_reports_values_and_errors() {
+        assert_eq!(eval_str("type(1)", &[]), "1");
+        assert_eq!(eval_str("type(\"x\")", &[]), "2");
+        assert_eq!(eval_str("type(\"\")", &[]), "2");
+        assert_eq!(eval_str("type(true())", &[]), "4");
+        assert_eq!(eval_str("type(1/0)", &[]), "16");
+        assert_eq!(eval_str("type()", &[]), "#VALUE!");
+        assert_eq!(eval_str("type(1, 2)", &[]), "#VALUE!");
+    }
+
+    #[test]
     fn engineering_rounding_works() {
         assert_eq!(eval_str("mround(10, 3)", &[]), "9");
         assert_eq!(eval_str("mround(11, 3)", &[]), "12");

@@ -100,8 +100,10 @@
   1–11 与 101–111；同行区间；空区间/非法编号 `#VALUE!`。测试
   `subtotal_supports_the_excel_function_numbers`、
   `subtotal_rejects_an_all_empty_range`。
-- [ ] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
-  错误=16；空值按 1；验收：单测 + gate。
+- [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
+  错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项144 财务付款（功能级）：`PMT(rate, nper, pv[, fv[, type]])`；
+  rate=0/type 0/1/非法参数语义；验收：单测 + gate。
 - [ ] 项143 错误类型（功能级）：`ERROR.TYPE` 对 `#NULL!`/`#DIV/0!`/
   `#VALUE!`/`#REF!`/`#NAME?`/`#NUM!`/`#N/A` 返回 1–7；非错误 `#N/A`；
   验收：单测 + gate。
@@ -133,6 +135,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 170（项141 TYPE，功能级）：数字/文本/布尔/错误类型码；定向与全量 gate/package 通过；发布包
+SHA `d23c9f44…70fb5`。
 
 Round 169（项140 国际工作日，功能级）：weekend 代码/字符串、节假日；
 定向与全量 gate/package 通过；发布包 SHA `ded77353…a9848`。
