@@ -155,3 +155,6 @@ JSON、Markdown、HTML、JSONL replay、bash curl 脚本。每条路由同时做
 `routes=12 route_bodies=12 unauth=12 method_guards=12`，并验证
 `events=200 close=200 after_close=404` 的生命周期；`check_agent_stats.py`
 继续要求 `routes == 12`。
+
+manifest 契约：protocol=`csvx-agent/1`、8 个 endpoints、`safety.root_bound=true`；
+HTTP manifest 与 MCP `csvx://agent` 内容一致。

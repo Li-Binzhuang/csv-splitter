@@ -95,6 +95,9 @@ def main():
     status, body = request(api, "/agent/v1/manifest")
     assert status == 200, body
     manifest = json.loads(body)
+    assert manifest.get("protocol") == "csvx-agent/1", manifest
+    assert len(manifest.get("endpoints", {})) == 8, manifest
+    assert manifest.get("safety", {}).get("root_bound") is True, manifest
     endpoint_names = ["actions", "audit", "replay", "curl", "runbook", "approvals"]
     for name in endpoint_names:
         assert name in manifest["endpoints"], f"manifest lacks {name}"
@@ -222,6 +225,7 @@ def main():
     assert status == 404, f"after close: {status} {body}"
 
     print(
+        f"manifest_endpoints=8 manifest_safety=true "
         f"routes={len(routes)} route_bodies={len(routes)} unauth={len(routes)} method_guards=12 "
         f"events=200 close=200 after_close=404 session={sid} actions={actions_count} "
         f"sse_ms={sse_ms:.0f} deny=403 approval=ok replay={replay_count}"
@@ -231,6 +235,8 @@ def main():
         "route_bodies": len(routes),
         "unauth_checks": len(routes),
         "method_guards": len(routes),
+        "manifest_endpoints": 8,
+        "manifest_safety": True,
         "events": 200,
         "close": 200,
         "after_close": 404,

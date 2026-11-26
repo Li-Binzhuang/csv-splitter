@@ -31,6 +31,9 @@ grep -q '^instructions_chars=[1-9]' <<<"$out" || { echo "mcp_sdk=fail instructio
 grep -q '^resources=2$' <<<"$out" || { echo "mcp_sdk=fail resources"; exit 1; }
 grep -q '^resource_protocol=csvx-agent/1$' <<<"$out" || { echo "mcp_sdk=fail resource protocol"; exit 1; }
 grep -q '^resource_tools=23$' <<<"$out" || { echo "mcp_sdk=fail resource tools"; exit 1; }
+grep -q '^resource_endpoints=8$' <<<"$out" || { echo "mcp_sdk=fail resource endpoints"; exit 1; }
+grep -q '^resource_workflow=6$' <<<"$out" || { echo "mcp_sdk=fail resource workflow"; exit 1; }
+grep -q '^resource_root_bound=true$' <<<"$out" || { echo "mcp_sdk=fail resource safety"; exit 1; }
 grep -q '^resource_operations=[1-9]' <<<"$out" || { echo "mcp_sdk=fail operations"; exit 1; }
 grep -q '^resource_error_codes=[1-9]' <<<"$out" || { echo "mcp_sdk=fail error codes"; exit 1; }
 grep -q '^unknown_resource_error=true$' <<<"$out" || { echo "mcp_sdk=fail unknown resource"; exit 1; }

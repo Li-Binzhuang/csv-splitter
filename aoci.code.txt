@@ -8,7 +8,7 @@ CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:�
 Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml,code:crates/agent/Cargo.toml,code:crates/cli/Cargo.toml | A:members core/mcp/agent/cli；workspace.dependencies csvx-core；version 4.2.0 是发布真相 | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
 README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md,code:docs/OPERATIONS.md | A:顶部定位与 Rust 徽章；快速开始；公式节；性能实测；命令表含 serve/mcp/ops/gate/report；concat/gate 目录；report CSV spec；PRODUCT_PLAN/销售入口 | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；性能数字必须来自实测
-progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round15 逐路由 405 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成
+progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round16 manifest 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成
 
 ===/<repository>/.github/workflows/===
 ci.yml[OV7S]: F:主 CI：格式化、引擎与 CLI 测试、性能守卫、clippy 工作区、失败注解 | R:code:scripts/smoke.sh,code:scripts/regress.sh,code:scripts/backend-smoke.sh,code:scripts/release-decision.sh | A:单 job 串联；engine 与 CLI 两个测试步骤失败时各重试一次并留 warning annotation（本地单跑/两线程均绿的负载型 flake）；每步 tee 日志，失败时把测试名转成公开 annotation 并上传 artifact | S:曾因双 job + 缓存配额出现“跳过一半、红叉无信息”，故单 job；重试只限一次且日志保留，真 bug 仍会两次失败
@@ -126,13 +126,13 @@ THIN_FRONTEND_PLAN.md[SG8T]: F:薄前端两选项与验收，未实现，待用�
 BIG_PLAN.md[SW7S]: F:xlsx + Agent 原生后端的大计划：工作流、接口、里程碑、非目标 | R:code:docs/PRODUCT_PLAN.md,code:docs/AGENT_API.md,code:docs/XLSX.md,code:docs/FORMULA_CACHE.md | A:M1 xlsx、M2 导入/多 sheet、M3 公式缓存、M4 MCP+HTTP Agent API、M5 runner+skill 已落；apply 5 步 11.75s；M6 整理 | S:不写 GUI/多用户/宏；apply 需审批；SSE 轮询非实时；flag 未实现前不可写帮助
 XLSX.md[SD7T]: F:xlsx 互操作现状与边界：导出、多 sheet、导入、report xlsx、日期/条件格式 | R:code:crates/core/src/xlsx.rs,code:crates/cli/src/main.rs,code:docs/CAPABILITIES.md | A:convert 流式导出；目录多 sheet；导入；MCP sheet；report xlsx + datecounts(date:group)；ISO 日期 numFmtId=14；--highlight cellIs+dxf | S:只写值不写公式；日期仅 ISO；highlight 仅 cellIs；不做宏/VBA；样式/合并忽略
 DSH_MODEL_TEST.md[SD7T]: F:本地 DSH Ark Economy 直连、runner、skill/apply 与 DSH skill 安装实测 | R:code:docs/BIG_PLAN.md,code:docs/AGENT_API.md,code:docs/DSH_SKILL.md | A:仅 Ark Economy；直连 1.10s；runner 6.10s；带 skill 5.49s；apply 5 步 11.75s；skill 已装入 DSH 并加载 | S:仅该模型；key 不落盘；小 max_tokens 只有 reasoning；破坏性需 allow-apply
-AGENT_API.md[SD7S]: F:Agent 接入：MCP manifest、HTTP API、runner 与 trace | R:code:crates/agent/src/lib.rs,code:crates/agent/src/axum_http.rs,code:scripts/agent_routes_smoke.py | A:serve/manifest/run；sessions/actions/approvals/events/audit/replay/curl/runbook；12 路由 401/405；close 后 404 | S:SSE 60s；audit 仅 session；token 不入脚本；心跳 17s；axum 传输
+AGENT_API.md[SD7S]: F:Agent 接入：MCP manifest、HTTP API、runner 与 trace | R:code:crates/agent/src/lib.rs,code:crates/agent/src/axum_http.rs,code:scripts/agent_routes_smoke.py | A:serve/manifest/run；12 路由 401/405；close 后 404；manifest 8 endpoints/root_bound | S:SSE 60s；audit 仅 session；token 不入脚本；心跳 17s；axum 传输
 FORMULA_CACHE.md[SD7T]: F:公式/读窗口缓存做法、实测与边界 | R:code:crates/core/src/workbook/export.rs,code:docs/BEYOND_EXCEL.md,code:docs/CAPABILITIES.md | A:key=路径+大小+mtime+ops+delimiter+start/count；64 项；cache_clear/stats；2k 行 0.040→0.007 s | S:进程内缓存，重启清空；只缓存窗口；不改文件/journal；64 页非 SLA
 DSH_SKILL.md[SD7T]: F:把 csvx skill 安装到本地 DSH profile 的说明 | R:code:scripts/install_skill.sh,code:skills/csvx-data/SKILL.md,code:docs/DSH_MODEL_TEST.md | A:install_skill.sh 复制单文件；DSH_HOME 默认 ~/.dsh；skill 目录出现 csvx-data-workbench；与 runner --skill 共用一份 | S:不改 key/模型配置；只覆盖 SKILL.md；需重进/扫描后生效
 AGENT_TRACE.md[SD7T]: F:Agent JSONL trace 与 HTTP audit/replay/actions/curl/runbook 的可复刻流程 | R:code:crates/cli/src/agent.rs,code:docs/AGENT_API.md,code:skills/csvx-data/SKILL.md | A:run/model/tool/final；--trace/--replay；HTTP audit、replay、actions.md/html、curl、runbook、sessions 汇总；阻断提示 | S:不写 key/token；observation 截 20k；trace 含数据；重放编辑用副本
 QUICKSTART_AGENT.md[SD7T]: F:Agent 一页快速上手：MCP、HTTP、runner、skill、Excel、TRY_CSVX 与安全 | R:code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md,code:docs/DSH_SKILL.md,code:examples/try_csvx.sh | A:MCP 配置；HTTP session/actions/audit/replay/curl/runbook；runner --trace/--replay；install_skill.sh；xlsx 示例；TRY_CSVX 自校验 | S:不写 key；审批单次；root 边界；trace/audit 含数据按敏感
 ENTRYPOINTS.md[SG7S]: F:入口层目录、行数与客户端验证规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:docs/MCP_COMPAT.md | A:根与MCP白名单；executor/commands 与 paths；行数上限；SDK/schema 进 gate | S:rmcp 唯一传输；schema 默认跑；DSH 默认跳过；超限失败
-MCP_COMPAT.md[SD7S]: F:官方 SDK、schema 与 DSH 客户端验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:scripts/check_mcp_dsh.sh | A:23 工具；20 必填；enum2/range8；resources；initialize；DSH 实跑 2 行 | S:DSH 需 CSVX_DSH_TEST=1；不改 profile；结果本机实测
+MCP_COMPAT.md[SD7S]: F:官方 SDK、schema 与 DSH 客户端验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:scripts/check_mcp_dsh.sh | A:23 工具；20 必填；enum2/range8；resources；manifest 8 endpoints/6 workflow；DSH | S:DSH 需 CSVX_DSH_TEST=1；不改 profile；结果本机实测
 
 ===/<repository>/scripts/===
 backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换、自引用拒绝与请求上限；BIN 默认取 ./target/debug/csvx | S:脚本默认跑 target/debug 的二进制，改了代码只重建 release 会在这里看到旧行为；裸 wait 会连自己起的 server 一起等，必须收集 PID 逐个等待
@@ -157,7 +157,7 @@ verify_dist.sh[XQ7T]: F:发布包验收并写 verify.json（失败阶段/耗时/
 bench_mcp_cache.py[XQ7T]: F:可复现 MCP 解压缓存 benchmark | R:code:scripts/mcp_client.py,code:docs/BENCHMARKS.md | A:参数 binary/root/file/query；同一 server 连续两次 search materialize，打印 run1/run2 秒 + scanned/matched；CSVX_MCP_CACHE_BYTES 设 8 GiB；结束打印 maxrss（mac 与 Linux 单位换算） | S:仅本地基准；不联网；file 相对 root；不是 SLA
 smoke_http.py[XQ7T]: F:HTTP 发布包冒烟：viewer、/ops、/report chart+compare、/gate global、/concat dir | R:code:crates/cli/src/serve.rs,code:docs/RELEASE_CHECKLIST.md,code:scripts/package_release.sh,code:docs/ACCEPTANCE.md | A:临时 root + 随机端口；生成 t/other/spec/sub/dup 夹具；等待 /health；校验 GET / viewer HTML、17 操作、HTML SVG+Compare、gate 文件通过、uniqueGlobal 失败、concat job done；失败退出 1；finally 终止 server | S:依赖 Python 标准库与 release binary；随机端口先 bind 再关闭有极小竞争；只在本机回环；不写用户数据
 install_skill.sh[XQ7T]: F:把 csvx skill 复制到本地 DSH skills 目录（仓库/包内布局） | R:code:skills/csvx-data/SKILL.md,code:docs/DSH_SKILL.md | A:定位 here/skills 或 here/../skills；DSH_HOME 覆盖；mkdir/cp；缺源退出 2 | S:只写目标 skill 目录；不碰 key/配置；覆盖同名 SKILL.md
-agent_routes_smoke.py[TQ7M]: F:Agent 路由体、鉴权、方法、审批、replay、SSE 与生命周期 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:12 路由；401；每条错误方法 405；428/403；events/close；stats | S:需 server/binary；不打印 token；SSE<250ms；临时副本清理
+agent_routes_smoke.py[TQ7M]: F:Agent 路由/manifest 契约与生命周期 smoke | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:12 路由；protocol/8 endpoints/root_bound；401；逐路由 405；close/events；stats | S:需 server/binary；不打印 token；SSE<250ms；临时副本清理
 verify_dist_negative.sh[SD7T]: F:证明不完整发布包被拒绝且写失败 verify.json | R:code:scripts/verify_dist.sh | A:构造缺成员 tar；调用断言非零；grep missing member；断言 verified:false；输出 negative verification=ok | S:仅测试；不联网；临时目录清理；缺 binary 退出 2
 check_agent_stats.py[SD7T]: F:Agent 冒烟 stats 阈值检查，失败命名字段 | R:code:scripts/agent_routes_smoke.py,code:scripts/verify_dist.sh | A:routes/replay/actions/sse；thresholds=ok；失败 threshold mismatch | S:routes=12；replay=actions；sse_ms<100；退出码 1
 check_agent_stats_negative.sh[SD7T]: F:测试 stats 阈值拒绝坏值 | R:code:scripts/check_agent_stats.py,code:scripts/dev.sh | A:构造 routes=11/sse=900；断言非零；grep routes/sse 字段；输出 stats negative=ok | S:仅测试；临时日志；不联网
@@ -166,7 +166,7 @@ check_release.py[SD7T]: F:重新哈希 manifest 并拒绝失败验证/非 ok 阶
 check_phase_times.py[SD7T]: F:拒绝超出预算的包验收阶段 | R:code:scripts/verify_dist.sh,code:scripts/dev.sh | A:读 verify.json phaseMs；extract<2s skill<3s try<3s agent<5s xlsx<2s trace<2s；输出 phase_thresholds=ok | S:失败命名字段；退出 1；不联网
 check_phase_times_negative.sh[SD7T]: F:测试阶段预算拒绝慢值 | R:code:scripts/check_phase_times.py,code:scripts/dev.sh | A:构造 agent=9999ms；断言非零；grep mismatch/agent；输出 phase negative=ok | S:仅测试；临时日志；不联网
 check_layout.sh[XQ7S]: F:入口层目录与行数规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根/CLI/MCP 白名单；executor/commands 上限 450；MCP 单文件阈值 | S:未知模块退出；超行数失败；先改文档再加模块
-check_mcp_sdk.sh[TQ7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:debug 优先；23 工具；20 必填；enum 2/range 8；resources/初始化/未知 URI | S:node/SDK 缺失跳过；失败非零
+check_mcp_sdk.sh[TQ7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:debug 优先；23 工具；20 必填；边界；resources/manifest；DSH 可选 | S:node/SDK 缺失跳过；失败非零
 check_mcp_dsh.sh[TQ7T]: F:可选的真实 DSH MCP 回归脚本 | R:code:scripts/check_mcp_sdk.sh,code:docs/MCP_COMPAT.md,code:scripts/package_release.sh | A:CSVX_DSH_TEST=1 才启动 headless；临时 patch/CSV；断言 2 rows 与 city | S:默认 skip 不耗模型；dsh 缺失 skip；不改 profile
 check_mcp_schema.py[TQ7T]: F:校验 23 工具 schema 字段都能落到 CLI flag | R:code:crates/mcp/src/tools.rs,code:scripts/dev.sh,code:docs/MCP_COMPAT.md | A:initialize/tools-list；命令映射；camel→kebab；跳过 positional/meta | S:43 字段；6 个 server 工具跳过；缺 flag 非零
 
@@ -177,7 +177,7 @@ orders.csv[AZ4L]: F:demo 命令生成的示例数据：6 列 20 120 行，含刻
 csvx.service[OV6T]: F:csvx 后端的 systemd unit：回环绑定、最小权限与只写 sidecar | R:- | A:ExecStart 为 /usr/local/bin/csvx serve --root /srv/csvx --port 8787，ExecStartPre 先跑 --check 自检；User 与 Group 都是 csvx；ReadWritePaths 只放 /srv/csvx；Restart=on-failure | S:服务刻意只绑回环且没有任何鉴权，暴露到非本机必须由反向代理做认证；进程不得改写被服务的 CSV，只写 .idx/.parquet/.journal 旁文件
 
 ===/<repository>/scripts/mcp_sdk/===
-client.mjs[XQ7M]: F:官方 MCP SDK 工具、资源与初始化回归 | R:code:scripts/mcp_sdk/package.json,code:scripts/check_mcp_sdk.sh | A:23 工具；20 必填；边界；resources 2；能力/指令；未知资源 | S:仅回归；npm 不进 Rust；job 失败非零
+client.mjs[XQ7M]: F:官方 MCP SDK 工具、资源与 manifest 回归 | R:code:scripts/mcp_sdk/package.json,code:scripts/check_mcp_sdk.sh | A:23 工具；必填/边界；resources 2；manifest 8 endpoints/6 workflow；未知 URI | S:仅回归；npm 不进 Rust；job 失败非零
 package.json[FV7T]: F:MCP SDK 演示的 npm 依赖清单 | R:code:scripts/mcp_sdk/client.mjs | A:private、type module；固定 @modelcontextprotocol/sdk 1.32.2 | S:仅演示目录使用；node_modules 已在 .gitignore；升级 SDK 需重跑兼容性验证
 
 ===/<repository>/examples/agent/===

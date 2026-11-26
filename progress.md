@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 16：HTTP/MCP manifest 契约：protocol、8 endpoints、6 workflow、root_bound；
+发布包 SHA `c007988d…193d3c`。
+
 Round 15：12 路由全部做错误方法检查（POST 到 GET-only、DELETE 到 POST 路由），
 `method_guards=12`；发布包 SHA `5b207658…84be3`。
 
