@@ -9,12 +9,12 @@
 | MCP 工具 | 23 个，23 条 annotations，23 个 SDK 工具 |
 | Agent HTTP 路由 | 12 条，manifest 与实际路由一致 |
 | Agent 集成测试 | 10 个 |
-| CLI 集成测试 | 177 个 |
-| xlsx 定向测试 | 18 个 |
+| CLI 集成测试 | 180 个 |
+| xlsx 定向测试 | 28 个 |
 | HTTP serve 测试 | 174 个 |
 | SSE 首帧 | 1–3ms（demo 断言 < 250ms） |
-| AOCI | 243 entries，aligned |
-| 发布包 | `csvx-4.2.0-darwin-arm64.tar.gz`，SHA256 `87ee0ae1…81adc` |
+| AOCI | 244 entries，aligned |
+| 发布包 | `csvx-4.2.0-darwin-arm64.tar.gz`，SHA256 `b3950cc2…afa314` |
 
 ## 本轮已落地
 
@@ -22,6 +22,8 @@
   坏共享索引报错、内置/自定义日期时间、1904 日期系统、合并左上值、空行跳过、
   sheet 大小写、16384 列/1,048,576 数据行上限；
 - xlsx 覆盖矩阵与引擎决策见 `docs/XLSX_ENGINE.md`；
+- xlsx 导入性能：200k×10 导回 0.93–0.96 s，1M×10 4.76 s / 峰值 1.02 GB；
+- 旧版 `.xls/.xlsb` 输入明确拒绝，提示另存 `.xlsx`；
 - xlsx 严格 ISO 日期单元格 + 内置日期样式导入；
 - xlsx 条件格式 `--highlight "amount>1000:red"`；
 - report `xlsx` / `datecounts[,date[:group]]`；
