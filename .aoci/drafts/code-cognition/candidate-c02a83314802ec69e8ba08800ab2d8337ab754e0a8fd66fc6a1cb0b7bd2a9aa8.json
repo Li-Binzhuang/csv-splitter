@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "b8deec3ae33b998ff2d5c0938bb2069a0caee462cb0395caa93e0ffa7e40d7f8",
+  "batch_id": "c02a83314802ec69e8ba08800ab2d8337ab754e0a8fd66fc6a1cb0b7bd2a9aa8",
+  "composite_identity": "db9b802163df4a39b27242eaf73de7b3c023eccf36a0dbc242a583cbcad53752",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "04008de0a4c229388f86217ec9a680902f33d68f03e20c5e8cd459220d157a4f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DESIGN_PARTNER.md",
+      "path": "docs/DESIGN_PARTNER.md",
+      "change": "update",
+      "source_sha256": "1c7080a7a6278e6929d2cca5aabf25cfc648103d94f6dd91f1ffce18f5290650",
+      "existing_entry": "DESIGN_PARTNER.md[SG7T]: F:设计伙伴四周试点与 intake 支持 | R:code:scripts/pilot_kit.sh,code:scripts/pilot_intake.py,code:scripts/pilot_report.py | A:四周表；指标；kickoff+intake；CSVX_PILOT_FILE 真实样本；非目标 | S:定价人工确认；不落原始行；本地单用户"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "b0a8b86fff8f4da549e7acd96f92e6d6e7fdc083a6a5579b446dbf53a0acfa61",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round12 真实样本与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/pilot_kit.sh",
+      "path": "scripts/pilot_kit.sh",
+      "change": "update",
+      "source_sha256": "c646152c17032012bee35906997129d37ce1bc8b844ac7bff859e74b28640273",
+      "existing_entry": "pilot_kit.sh[OG7T]: F:生成 demo/真实样本 report、intake 与 kickoff | R:code:scripts/pilot_report.py,code:scripts/pilot_intake.py,code:docs/DESIGN_PARTNER.md | A:CSVX_PILOT_FILE；CSVX_PILOT_MAX_GB；report；intake；kickoff | S:无网络；拒绝覆盖；默认合成 demo；不落原始行"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_pilot_kit.sh",
+      "path": "scripts/test_pilot_kit.sh",
+      "change": "update",
+      "source_sha256": "4a421a524c63f6bd0c40b4eb4dedf8ca80c7b455a0d9e9de730b0fcf53d0c07b",
+      "existing_entry": "test_pilot_kit.sh[TQ7T]: F:设计伙伴 kit smoke 与拒绝路径 | R:code:scripts/pilot_kit.sh,code:scripts/dev.sh | A:六件产物；客户样本/email 警告；JSON 字段；重复目录拒绝 | S:gate 必跑；不联网；失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "1d541ae177662923a65ef144fdb86961dc38ecab8c1fdb0c1bc56b03bb8029af",
+      "object_ref": "code:docs/DESIGN_PARTNER.md",
+      "path": "docs/DESIGN_PARTNER.md",
+      "change": "update",
+      "source_sha256": "1c7080a7a6278e6929d2cca5aabf25cfc648103d94f6dd91f1ffce18f5290650",
+      "existing_entry": "DESIGN_PARTNER.md[SG7T]: F:设计伙伴四周试点与 intake 支持 | R:code:scripts/pilot_kit.sh,code:scripts/pilot_intake.py,code:scripts/pilot_report.py | A:四周表；指标；kickoff+intake；CSVX_PILOT_FILE 真实样本；非目标 | S:定价人工确认；不落原始行；本地单用户"
+    },
+    {
+      "candidate_id": "00eb9c0c7619c56e6c1a4750a83a08f9c409dff9b04f1df77992e9319d85c3b2",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "b0a8b86fff8f4da549e7acd96f92e6d6e7fdc083a6a5579b446dbf53a0acfa61",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round12 真实样本与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "0cce39eacf9f174910fd24d4f25d67aa2d47f90afa74ca0b69f0f8deb60feb43",
+      "object_ref": "code:scripts/pilot_kit.sh",
+      "path": "scripts/pilot_kit.sh",
+      "change": "update",
+      "source_sha256": "c646152c17032012bee35906997129d37ce1bc8b844ac7bff859e74b28640273",
+      "existing_entry": "pilot_kit.sh[OG7T]: F:生成 demo/真实样本 report、intake 与 kickoff | R:code:scripts/pilot_report.py,code:scripts/pilot_intake.py,code:docs/DESIGN_PARTNER.md | A:CSVX_PILOT_FILE；CSVX_PILOT_MAX_GB；report；intake；kickoff | S:无网络；拒绝覆盖；默认合成 demo；不落原始行"
+    },
+    {
+      "candidate_id": "9e775860b3aa3f19f41c7505960e8bcafcecef9b24870772fb442ae59ea5cc2b",
+      "object_ref": "code:scripts/test_pilot_kit.sh",
+      "path": "scripts/test_pilot_kit.sh",
+      "change": "update",
+      "source_sha256": "4a421a524c63f6bd0c40b4eb4dedf8ca80c7b455a0d9e9de730b0fcf53d0c07b",
+      "existing_entry": "test_pilot_kit.sh[TQ7T]: F:设计伙伴 kit smoke 与拒绝路径 | R:code:scripts/pilot_kit.sh,code:scripts/dev.sh | A:六件产物；客户样本/email 警告；JSON 字段；重复目录拒绝 | S:gate 必跑；不联网；失败非零"
+    }
+  ]
+}

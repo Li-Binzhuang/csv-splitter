@@ -12,13 +12,19 @@ OUT="${CSVX_PILOT_OUT:-pilot-kit}"
 "$BIN" demo -o "$OUT/demo" >/dev/null
 SAMPLE="${CSVX_PILOT_FILE:-$OUT/demo/orders.csv}"
 [[ -s "$SAMPLE" ]] || { echo "pilot_kit=fail sample missing: $SAMPLE" >&2; exit 1; }
-python3 scripts/pilot_report.py \
-  --binary "$BIN" \
-  --file "$SAMPLE" \
-  --where city=CDMX \
-  --key id \
-  --group city \
-  --out "$OUT/pilot-report.md" >/dev/null
+REPORT_ARGS=(--binary "$BIN" --file "$SAMPLE")
+WHERE="${CSVX_PILOT_WHERE:-}"
+KEY="${CSVX_PILOT_KEY:-}"
+GROUP="${CSVX_PILOT_GROUP:-}"
+if [[ -z "${CSVX_PILOT_FILE:-}" ]]; then
+  WHERE="city=CDMX"
+  KEY="id"
+  GROUP="city"
+fi
+[[ -n "$WHERE" ]] && REPORT_ARGS+=(--where "$WHERE")
+[[ -n "$KEY" ]] && REPORT_ARGS+=(--key "$KEY")
+[[ -n "$GROUP" ]] && REPORT_ARGS+=(--group "$GROUP")
+python3 scripts/pilot_report.py "${REPORT_ARGS[@]}" --out "$OUT/pilot-report.md" >/dev/null
 python3 scripts/pilot_intake.py --sample "$SAMPLE" --out "$OUT/intake" --max-gb "${CSVX_PILOT_MAX_GB:-20}" >/dev/null
 VERSION="$("$BIN" --version)"
 python3 - "$OUT" "$VERSION" "$SAMPLE" <<'PY'

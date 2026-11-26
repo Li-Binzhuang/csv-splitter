@@ -48,7 +48,7 @@ CSVX_PILOT_FILE=pilot-kit/demo/orders.csv \
 bash scripts/pilot_kit.sh   # 一键生成 demo + report + kickoff
 ```
 
-`pilot_kit.sh` 默认只用合成 demo；设置 `CSVX_PILOT_FILE` 可对已脱敏伙伴样本生成报告与 intake（`CSVX_PILOT_MAX_GB` 默认 20）。不发网络请求；产物在 `pilot-kit/`：
+`pilot_kit.sh` 默认只用合成 demo；设置 `CSVX_PILOT_FILE` 可对已脱敏伙伴样本生成报告与 intake；`CSVX_PILOT_MAX_GB` 默认 20；可用 `CSVX_PILOT_WHERE/KEY/GROUP` 指定列条件（默认仅对 demo 使用 city/id）。不发网络请求；产物在 `pilot-kit/`：
 
 - `demo/orders.csv`
 - `pilot-report.md`

@@ -33,6 +33,8 @@ assert "customer.csv" in kickoff["sample"], kickoff
 intake = json.load(open(sys.argv[2]))
 assert intake["withinLimit"] is True, intake
 assert any(item["kind"] == "email" for item in intake["sensitiveWarnings"]), intake
+report = open(sys.argv[2].replace("intake/intake.json", "pilot-report.md")).read()
+assert "(未指定)" in report, report[:500]
 PY
 
 if CSVX_PILOT_BINARY="$BIN" CSVX_PILOT_OUT="$OUT" bash scripts/pilot_kit.sh >/dev/null 2>&1; then
