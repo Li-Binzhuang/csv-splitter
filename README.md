@@ -93,6 +93,10 @@ $ csvx serve --root .  # 本地 JSON API，打开 http://127.0.0.1:8787/ 就能�
 
 销售/试点材料：`docs/SALES.md`、`docs/DEMO.md`、`docs/BENCHMARKS.md`。
 
+100 GB 本机实测（Apple M5 / 16 GiB / macOS 27.2.1）：filter 23.55 s、
+search 18.72 s、quality 456.00 s；这是单次实测，不是 SLA。机器可读摘要见
+[`docs/bench-100gb-2026-11-26.json`](docs/bench-100gb-2026-11-26.json)。
+
 `docs/DEPLOY.md`：三种安装方式、`serve` 的配置项、systemd unit（仓库里有
 [`deploy/csvx.service`](deploy/csvx.service)）、升级与回滚、安全边界
 （**没有鉴权**，默认只监听 loopback）。

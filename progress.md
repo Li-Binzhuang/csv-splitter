@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 20（README 对外证据）：README 增加 100GB 本机实测三项数字与机器可读
+摘要链接，明确非 SLA；发布包 SHA `ba0bafed…53a86`。
+
 Round 19（发布成员契约）：verify_dist 要求 SECURITY、DESIGN_PARTNER、100GB JSON、
 离线安装/bench/pilot 脚本都在包内，缺一即失败；修正脚本归档到 scripts/ 后
 发布包 SHA `d6c52122…5d437`。

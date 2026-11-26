@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-26T08:43:28Z",
+  "updated_at": "2026-11-26T08:48:10Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "cb129cbf6cf3f230d9ceab1fa22e498a518d78acc905a0ad4d14f0d67c879143",
-      "size": 83995,
-      "normalized_sha256": "cb129cbf6cf3f230d9ceab1fa22e498a518d78acc905a0ad4d14f0d67c879143"
+      "sha256": "211ef900f629943fa25415aab7fd2ca7e31979cde53b4443bc2f1a20ae2544b5",
+      "size": 83855,
+      "normalized_sha256": "211ef900f629943fa25415aab7fd2ca7e31979cde53b4443bc2f1a20ae2544b5"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -1224,9 +1224,9 @@
     },
     "progress.md": {
       "role": "index",
-      "sha256": "944aa55478c8987d9519177549fbf14d333d148fe350d1a19326b3a5154af360",
-      "size": 10655,
-      "normalized_sha256": "944aa55478c8987d9519177549fbf14d333d148fe350d1a19326b3a5154af360"
+      "sha256": "174ec8fa73766f03ed294f13a0691496c30f29ae5de4f48d6865e09395a41112",
+      "size": 10887,
+      "normalized_sha256": "174ec8fa73766f03ed294f13a0691496c30f29ae5de4f48d6865e09395a41112"
     },
     "scripts/agent_routes_smoke.py": {
       "role": "index",
@@ -1404,9 +1404,9 @@
     },
     "scripts/package_release.sh": {
       "role": "index",
-      "sha256": "5b6b3bae64689624ce70243ed074407c6c4924aa458fb304114f32a0244586d0",
-      "size": 2997,
-      "normalized_sha256": "5b6b3bae64689624ce70243ed074407c6c4924aa458fb304114f32a0244586d0"
+      "sha256": "80ea83e1a6fe31dfd7ca67dd841b5c563b80585ab623eb6af3fd9030024dccb4",
+      "size": 3018,
+      "normalized_sha256": "80ea83e1a6fe31dfd7ca67dd841b5c563b80585ab623eb6af3fd9030024dccb4"
     },
     "scripts/pilot_intake.py": {
       "role": "index",
@@ -1488,9 +1488,9 @@
     },
     "scripts/verify_dist.sh": {
       "role": "index",
-      "sha256": "9a0ac747c4c009107eaf07ae50b388841b23c3c228a98ccfe28960691e003608",
-      "size": 5946,
-      "normalized_sha256": "9a0ac747c4c009107eaf07ae50b388841b23c3c228a98ccfe28960691e003608"
+      "sha256": "ea7787e84eb0e574271ef3dad95df2b35bf69286c15ac248059978578f4dc7d3",
+      "size": 6114,
+      "normalized_sha256": "ea7787e84eb0e574271ef3dad95df2b35bf69286c15ac248059978578f4dc7d3"
     },
     "scripts/verify_dist_negative.sh": {
       "role": "index",
