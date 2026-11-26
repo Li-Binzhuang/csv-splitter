@@ -1442,6 +1442,57 @@ mod tests {
     }
 
     #[test]
+    fn xirr_solves_date_based_cash_flows() {
+        let columns = vec![
+            "cash1".to_string(),
+            "cash2".to_string(),
+            "date1".to_string(),
+            "date2".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [
+            ("cash1", "-100"),
+            ("cash2", "110"),
+            ("date1", "2023-01-01"),
+            ("date2", "2024-01-01"),
+        ] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        for (source, expected) in [
+            ("xirr(A2:B2, C2:D2)", "0.1"),
+            ("xirr(A2:B2, C2:D2, 0.2)", "0.1"),
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        for source in ["xirr(A2:B2, C2:D2, -1)", "xirr(A2:B2, C2:C2)"] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "#VALUE!",
+                "{source}"
+            );
+        }
+        cells.insert("cash2".to_string(), "20".to_string());
+        let formula = Formula::parse("xirr(A2:B2, C2:D2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!",
+            "all-positive"
+        );
+    }
+
+    #[test]
     fn ipmt_and_ppmt_split_payments() {
         assert_eq!(eval_str("ipmt(0, 1, 10, 1000)", &[]), "0");
         assert_eq!(eval_str("ppmt(0, 1, 10, 1000)", &[]), "-100");

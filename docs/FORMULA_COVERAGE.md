@@ -111,6 +111,7 @@
 | NPER | 支持（功能级新增） | rate=0/type 0/1；rate≤-1/pmt=0（rate=0）`#VALUE!` |
 | NPV | 支持（功能级新增） | rate≤-1/非数值/空区间 `#VALUE!`；现金流从第 1 期折现 |
 | RATE | 支持（功能级新增） | Newton 迭代；nper≤0/guess≤-1/不收敛 `#VALUE!` |
+| XIRR | 支持（功能级新增） | values/dates 等长、按天 Newton 求解；需正负现金流 |
 | IRR | 支持（功能级新增） | 周期现金流 Newton 迭代；需正负现金流；不收敛 `#VALUE!` |
 | EFFECT / NOMINAL | 支持（功能级新增） | npery 正整数；负利率/非整数周期 `#VALUE!` |
 | IPMT / PPMT | 支持（功能级新增） | 期数/type/nper 边界；付款拆分为利息/本金 |

@@ -1819,6 +1819,100 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 payment - interest
             })
         }
+        // XIRR: date-based internal rate of return, solved by Newton iteration.
+        "xirr" => {
+            if args.len() < 2 || args.len() > 3 {
+                return Value::Error;
+            }
+            let (
+                Some(Expr::Range { from, to }),
+                Some(Expr::Range {
+                    from: date_from,
+                    to: date_to,
+                }),
+            ) = (args.first(), args.get(1))
+            else {
+                return Value::Error;
+            };
+            let Some(values) = range_cells(from, to, ctx) else {
+                return Value::Error;
+            };
+            let Some(dates) = range_cells(date_from, date_to, ctx) else {
+                return Value::Error;
+            };
+            if values.len() < 2 || values.len() != dates.len() {
+                return Value::Error;
+            }
+            let mut cash = Vec::with_capacity(values.len());
+            let mut days = Vec::with_capacity(dates.len());
+            for (value, date) in values.iter().zip(dates.iter()) {
+                let Some(amount) = value.trim().parse::<f64>().ok().filter(|n| n.is_finite())
+                else {
+                    return Value::Error;
+                };
+                let Some(parsed) = parse_date(date) else {
+                    return Value::Error;
+                };
+                cash.push(amount);
+                days.push(days_from_civil(parsed.0, parsed.1, parsed.2));
+            }
+            if !cash.iter().any(|value| *value > 0.0) || !cash.iter().any(|value| *value < 0.0) {
+                return Value::Error;
+            }
+            let guess = args
+                .get(2)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(0.1))
+                .unwrap_or(f64::NAN);
+            if !guess.is_finite() || guess <= -1.0 {
+                return Value::Error;
+            }
+            let base = days[0];
+            let npv = |rate: f64| {
+                cash.iter()
+                    .zip(days.iter())
+                    .map(|(amount, day)| amount / (1.0 + rate).powf((day - base) as f64 / 365.0))
+                    .sum::<f64>()
+            };
+            let derivative = |rate: f64| {
+                cash.iter()
+                    .zip(days.iter())
+                    .map(|(amount, day)| {
+                        let years = (day - base) as f64 / 365.0;
+                        if years == 0.0 {
+                            0.0
+                        } else {
+                            -years * amount / (1.0 + rate).powf(years + 1.0)
+                        }
+                    })
+                    .sum::<f64>()
+            };
+            if npv(guess).abs() < 1e-10 {
+                return Value::Number(guess);
+            }
+            let mut rate = guess;
+            for _ in 0..100 {
+                let value = npv(rate);
+                let slope = derivative(rate);
+                if !slope.is_finite() || slope.abs() < 1e-12 {
+                    break;
+                }
+                let next = rate - value / slope;
+                if !next.is_finite() || next <= -1.0 {
+                    break;
+                }
+                if (next - rate).abs() < 1e-10 {
+                    rate = next;
+                    break;
+                }
+                rate = next;
+            }
+            if rate.is_finite() && rate > -1.0 && npv(rate).abs() < 1e-7 {
+                Value::Number(rate)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

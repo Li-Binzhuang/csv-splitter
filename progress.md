@@ -102,12 +102,15 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项160 变动余额折旧（功能级）：`VDB(cost, salvage, life, start,
+  end[, factor[, no_switch]])`；区间/因子非法 `#VALUE!`；验收：单测 + gate。
 - [ ] 项159 累计利息/本金（功能级）：`CUMIPMT(rate, nper, pv, start,
   end[, type])`/`CUMPRINC(...)`；区间越界/type 非法 `#VALUE!`；验收：单测 + gate。
 - [ ] 项158 多期复利（功能级）：`FVSCHEDULE(principal, schedule)`；
   schedule 同行区间/空区间 `#VALUE!`；验收：单测 + gate。
-- [ ] 项157 日期内部收益率（功能级）：`XIRR(values, dates[, guess])`；
-  迭代求根/正负现金流/非法日期 `#VALUE!`；验收：单测 + gate。
+- [x] 项157 日期内部收益率（功能级）：`XIRR(values, dates[, guess])`；
+  按天 Newton 求根；需正负现金流；非法日期/长度不等 `#VALUE!`；测试
+  `xirr_solves_date_based_cash_flows`。
 - [x] 项156 分期利息/本金（功能级）：`IPMT(rate, per, nper, pv[, fv[, type]])`/
   `PPMT(...)`；per 越界/type 非法 `#VALUE!`；测试
   `ipmt_and_ppmt_split_payments`。
@@ -173,6 +176,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 186（项157 XIRR，功能级）：按天现金流 Newton 求根、正负/日期校验；
+定向与全量 gate/package 通过；发布包 SHA `9c423e7d…c0107`。
 
 Round 185（项156 IPMT/PPMT，功能级）：利息/本金拆分、type/期数边界；
 定向与全量 gate/package 通过；发布包 SHA `3bb66345…f51b9`。
