@@ -2175,6 +2175,25 @@ mod tests {
     }
 
     #[test]
+    fn networkdays_and_workday_skip_explicit_holidays() {
+        assert_eq!(
+            eval_str(
+                r#"networkdays("2024-01-01", "2024-01-05", "2024-01-03")"#,
+                &[]
+            ),
+            "4"
+        );
+        assert_eq!(
+            eval_str(r#"workday("2024-01-01", 3, "2024-01-03")"#, &[]),
+            "2024-01-05"
+        );
+        assert_eq!(
+            eval_str(r#"networkdays("2024-01-01", "2024-01-05", "bad")"#, &[]),
+            "#VALUE!"
+        );
+    }
+
+    #[test]
     fn networkdays_counts_weekdays_both_ends_included() {
         assert_eq!(
             eval_str(r#"networkdays("2026-01-01", "2026-01-04")"#, &[]),
@@ -2195,6 +2214,17 @@ mod tests {
             "#VALUE!",
             "an end before the start has no business-day count"
         );
+    }
+
+    #[test]
+    fn weekday_and_weeknum_return_types_work() {
+        assert_eq!(eval_str(r#"weekday("2024-01-01")"#, &[]), "2");
+        assert_eq!(eval_str(r#"weekday("2024-01-01", 2)"#, &[]), "1");
+        assert_eq!(eval_str(r#"weekday("2024-01-01", 3)"#, &[]), "0");
+        assert_eq!(eval_str(r#"weeknum("2024-01-01")"#, &[]), "1");
+        assert_eq!(eval_str(r#"weeknum("2024-01-01", 2)"#, &[]), "1");
+        assert_eq!(eval_str(r#"weekday("2024-01-01", 9)"#, &[]), "#VALUE!");
+        assert_eq!(eval_str(r#"weeknum("2024-01-01", 9)"#, &[]), "#VALUE!");
     }
 
     #[test]

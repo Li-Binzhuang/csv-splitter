@@ -81,6 +81,10 @@
 
 ## 当前进度
 
+Round 135（项54/55/56 周参数与节假日）：WEEKDAY 2/3、WEEKNUM 2、
+NETWORKDAYS/WORKDAY 显式节假日；测试、全量 gate/package 通过；发布包
+SHA `310127b6…e3987`。
+
 Round 134（项52/53 1900 边界）：EOMONTH 1900-02=28、WEEKDAY 1900 序列；
 测试、全量 gate/package 通过；发布包 SHA `889e13c6…dadc8`。
 

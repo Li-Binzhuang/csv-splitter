@@ -970,7 +970,16 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Some((year, month, day)) => {
                     let day_of_year =
                         days_from_civil(year, month, day) - days_from_civil(year, 1, 1) + 1;
-                    let offset = weekday(year, 1, 1) - 1;
+                    let return_type = args
+                        .get(1)
+                        .and_then(|arg| eval(arg, ctx).number())
+                        .unwrap_or(1.0);
+                    // return_type 1 starts on Sunday, 2 starts on Monday.
+                    let offset = match return_type as u32 {
+                        1 => weekday(year, 1, 1) - 1,
+                        2 => (weekday(year, 1, 1) + 5) % 7,
+                        _ => return Value::Error,
+                    };
                     Value::Number((((day_of_year + offset as i64 - 1) / 7) + 1) as f64)
                 }
                 None => Value::Error,
@@ -1363,7 +1372,20 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         // WEEKDAY follows the spreadsheet default: Sunday = 1 … Saturday = 7.
         "weekday" => match args.first().map(|a| eval(a, ctx).text()) {
             Some(date) => match parse_date(&date) {
-                Some((year, month, day)) => Value::Number(weekday(year, month, day) as f64),
+                Some((year, month, day)) => {
+                    let base = weekday(year, month, day);
+                    let return_type = args
+                        .get(1)
+                        .and_then(|arg| eval(arg, ctx).number())
+                        .unwrap_or(1.0);
+                    let value = match return_type as u32 {
+                        1 => base,
+                        2 => ((base + 5) % 7) + 1,
+                        3 => (base + 5) % 7,
+                        _ => return Value::Error,
+                    };
+                    Value::Number(value as f64)
+                }
                 None => Value::Error,
             },
             None => Value::Error,
@@ -1406,7 +1428,22 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                             extra += 1;
                         }
                     }
-                    Value::Number((full_weeks + extra) as f64)
+                    let holidays = match holiday_days(&args[2..], ctx) {
+                        Ok(holidays) => holidays,
+                        Err(_) => return Value::Error,
+                    };
+                    let mut count = full_weeks + extra;
+                    let mut unique = std::collections::HashSet::new();
+                    for holiday in holidays {
+                        if holiday >= start_day
+                            && holiday <= end_day
+                            && (2..=6).contains(&(((holiday + 4).rem_euclid(7) + 1) as i32))
+                            && unique.insert(holiday)
+                        {
+                            count -= 1;
+                        }
+                    }
+                    Value::Number(count as f64)
                 }
                 _ => Value::Error,
             },
@@ -1424,10 +1461,14 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                     let mut civil = days_from_civil(year, month, day);
                     let step = delta.signum();
                     let mut left = delta.abs();
+                    let holidays = match holiday_days(&args[2..], ctx) {
+                        Ok(holidays) => holidays,
+                        Err(_) => return Value::Error,
+                    };
                     while left > 0 {
                         civil += step;
                         let weekday = (civil + 4).rem_euclid(7) + 1;
-                        if (2..=6).contains(&weekday) {
+                        if (2..=6).contains(&weekday) && !holidays.contains(&civil) {
                             left -= 1;
                         }
                     }
@@ -1848,6 +1889,20 @@ fn parse_clock(text: &str) -> Option<(u32, u32, u32)> {
         return None;
     }
     Some((hour, minute, second))
+}
+
+fn holiday_days(args: &[Expr], ctx: &Ctx<'_>) -> Result<Vec<i64>, Value> {
+    let mut days = Vec::new();
+    for arg in args {
+        let text = eval(arg, ctx).text();
+        match parse_date(&text) {
+            Some((year, month, day)) => days.push(days_from_civil(year, month, day)),
+            // A range of cells is not resolvable while streaming; say so instead
+            // of silently counting zero holidays.
+            None => return Err(Value::Error),
+        }
+    }
+    Ok(days)
 }
 
 /// Pull `year`, `month` or `day` out of a leading ISO date.
