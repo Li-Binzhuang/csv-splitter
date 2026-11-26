@@ -5,7 +5,6 @@
 - xlsx 格式是否解禁；
 - xlsx 读路径是否迁移到 calamine：涉及新增 crate、离线 vendor、License/供应链审查；方案见 `docs/XLSX_ENGINE.md`；
 - 目标演进：`update_goal edit` 需要直接人类轮次，当前 goal 仍停在 xlsx 导入审计（revision 8）；
-- xlsx 是否做流式解析：1M×10 峰值 1.02 GB，当前整表读入；改造需拆分解析迭代器/宽度预扫，属较大重构；
 
 - 商业化定价 / license / 遥测；
 - 删除用户文件、不可逆迁移、force push；

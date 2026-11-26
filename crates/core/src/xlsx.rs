@@ -864,7 +864,6 @@ pub fn read_xlsx_to_csv(input: &Path, output: &Path, sheet: Option<&str>) -> std
     } else {
         format!("xl/{}", target.trim_start_matches("./"))
     };
-    let sheet_xml = read_entry(&mut archive, &normalized)?;
     let shared = read_entry(&mut archive, "xl/sharedStrings.xml").unwrap_or_default();
     let shared = shared_strings(&shared);
     let styles = read_entry(&mut archive, "xl/styles.xml").unwrap_or_default();
@@ -872,17 +871,19 @@ pub fn read_xlsx_to_csv(input: &Path, output: &Path, sheet: Option<&str>) -> std
 
     let date1904 = workbook.contains("date1904=\"1\"") || workbook.contains("date1904=\"true\"");
     let (stream_width, ordered) =
-        stream_width_and_order(&sheet_xml, &shared, &date_styles, date1904)?;
+        stream_zip_width(&mut archive, &normalized, &shared, &date_styles, date1904)?;
     if ordered && stream_width > 0 {
-        return write_streamed_sheet(
+        return write_zip_stream(
+            &mut archive,
+            &normalized,
             output,
-            &sheet_xml,
             &shared,
             &date_styles,
             date1904,
             stream_width,
         );
     }
+    let sheet_xml = read_entry(&mut archive, &normalized)?;
     let rows = sheet_rows_with_date_system(&sheet_xml, &shared, &date_styles, date1904)?;
     if rows.is_empty() {
         return Err(invalid("xlsx worksheet has no rows"));
@@ -994,6 +995,183 @@ fn find_tag(xml: &str, from: usize, tag: &str) -> Option<usize> {
         cursor = after;
     }
     None
+}
+
+fn stream_zip_width<R: Read + std::io::Seek>(
+    archive: &mut zip::ZipArchive<R>,
+    entry_name: &str,
+    shared: &[String],
+    date_styles: &[bool],
+    date1904: bool,
+) -> std::io::Result<(usize, bool)> {
+    let mut entry = archive
+        .by_name(entry_name)
+        .map_err(|error| invalid(&format!("xlsx missing {entry_name}: {error}")))?;
+    let mut width = 0usize;
+    let mut previous = 0u64;
+    let mut ordered = true;
+    let mut rows = 0u64;
+    for_each_zip_row(&mut entry, |fragment| {
+        let (row, cells) = row_from_fragment(fragment, shared, date_styles, date1904)?;
+        rows += 1;
+        if rows > MAX_SHEET_ROWS {
+            return Err(invalid(&format!(
+                "xlsx supports at most {MAX_SHEET_ROWS} sheet rows including the header"
+            )));
+        }
+        if row < previous {
+            ordered = false;
+        }
+        previous = row;
+        if row != 0 && !cells.iter().all(|cell| cell.is_empty()) {
+            width = width.max(cells.len());
+        }
+        Ok(())
+    })?;
+    Ok((width, ordered))
+}
+
+fn write_zip_stream<R: Read + std::io::Seek>(
+    archive: &mut zip::ZipArchive<R>,
+    entry_name: &str,
+    output: &Path,
+    shared: &[String],
+    date_styles: &[bool],
+    date1904: bool,
+    width: usize,
+) -> std::io::Result<()> {
+    let mut entry = archive
+        .by_name(entry_name)
+        .map_err(|error| invalid(&format!("xlsx missing {entry_name}: {error}")))?;
+    write_atomically(output, |writer| {
+        let mut line = String::new();
+        let mut wrote = false;
+        let mut rows = 0u64;
+        for_each_zip_row(&mut entry, |fragment| {
+            let (row, cells) = row_from_fragment(fragment, shared, date_styles, date1904)?;
+            rows += 1;
+            if rows > MAX_SHEET_ROWS {
+                return Err(invalid(&format!(
+                    "xlsx supports at most {MAX_SHEET_ROWS} sheet rows including the header"
+                )));
+            }
+            if row == 0 || cells.iter().all(|cell| cell.is_empty()) {
+                return Ok(());
+            }
+            line.clear();
+            for index in 0..width {
+                if index > 0 {
+                    line.push(',');
+                }
+                crate::csv_reader::push_csv_field(
+                    &mut line,
+                    cells.get(index).map(String::as_str).unwrap_or(""),
+                    b',',
+                );
+            }
+            line.push('\n');
+            writer.write_all(line.as_bytes())?;
+            wrote = true;
+            Ok(())
+        })?;
+        if !wrote {
+            return Err(invalid("xlsx worksheet has no non-empty rows"));
+        }
+        Ok(())
+    })
+}
+
+fn find_bytes(haystack: &[u8], needle: &[u8], from: usize) -> Option<usize> {
+    if needle.is_empty() || from >= haystack.len() {
+        return None;
+    }
+    haystack[from..]
+        .windows(needle.len())
+        .position(|window| window == needle)
+        .map(|offset| from + offset)
+}
+
+fn find_row_tag_start(buf: &[u8], from: usize) -> Option<usize> {
+    let mut cursor = from;
+    while cursor + 4 <= buf.len() {
+        if &buf[cursor..cursor + 4] == b"<row" {
+            let next = buf.get(cursor + 4).copied();
+            if next
+                .map(|byte| byte == b'>' || byte == b'/' || byte.is_ascii_whitespace())
+                .unwrap_or(false)
+            {
+                return Some(cursor);
+            }
+        }
+        cursor += 1;
+    }
+    None
+}
+
+fn for_each_zip_row<R: Read, F>(mut reader: R, mut callback: F) -> std::io::Result<()>
+where
+    F: FnMut(&str) -> std::io::Result<()>,
+{
+    let mut buffer: Vec<u8> = Vec::new();
+    let mut search = 0usize;
+    loop {
+        if let Some(start) = find_row_tag_start(&buffer, search) {
+            let Some(open_offset) = buffer[start..].iter().position(|byte| *byte == b'>') else {
+                // Read more; the opening tag is split across a chunk.
+                buffer.extend_from_slice(&read_chunk(&mut reader)?);
+                continue;
+            };
+            let open_end = start + open_offset;
+            let self_closing = buffer[start + 4..open_end]
+                .iter()
+                .rev()
+                .find(|byte| !byte.is_ascii_whitespace())
+                .is_some_and(|byte| *byte == b'/');
+            let end = if self_closing {
+                open_end + 1
+            } else {
+                let Some(close_offset) = find_bytes(&buffer, b"</row>", open_end + 1) else {
+                    buffer.extend_from_slice(&read_chunk(&mut reader)?);
+                    continue;
+                };
+                close_offset + 6
+            };
+            let fragment = std::str::from_utf8(&buffer[start..end])
+                .map_err(|_| invalid("xlsx worksheet is not valid UTF-8"))?;
+            callback(fragment)?;
+            search = end;
+            continue;
+        }
+        if search > 0 {
+            buffer.drain(..search);
+            search = 0;
+        }
+        let chunk = read_chunk(&mut reader)?;
+        if chunk.is_empty() {
+            break;
+        }
+        buffer.extend_from_slice(&chunk);
+    }
+    Ok(())
+}
+
+fn read_chunk<R: Read>(reader: &mut R) -> std::io::Result<Vec<u8>> {
+    let mut chunk = vec![0u8; 64 * 1024];
+    let read = reader.read(&mut chunk)?;
+    chunk.truncate(read);
+    Ok(chunk)
+}
+
+fn row_from_fragment(
+    fragment: &str,
+    shared: &[String],
+    date_styles: &[bool],
+    date1904: bool,
+) -> std::io::Result<(u64, Vec<String>)> {
+    let rows = sheet_rows_with_date_system(fragment, shared, date_styles, date1904)?;
+    rows.into_iter()
+        .next()
+        .ok_or_else(|| invalid("xlsx worksheet row is empty"))
 }
 
 #[cfg(test)]
@@ -1158,80 +1336,6 @@ fn sheet_rows_with_limit_system(
     )?;
     out.sort_by_key(|(row, _)| *row);
     Ok(out)
-}
-
-fn stream_width_and_order(
-    xml: &str,
-    shared: &[String],
-    date_styles: &[bool],
-    date1904: bool,
-) -> std::io::Result<(usize, bool)> {
-    let mut width = 0usize;
-    let mut previous = 0u64;
-    let mut ordered = true;
-    for_each_sheet_row(
-        xml,
-        shared,
-        date_styles,
-        date1904,
-        MAX_SHEET_ROWS,
-        |row, cells| {
-            if row < previous {
-                ordered = false;
-            }
-            previous = row;
-            if row != 0 && !cells.iter().all(|cell| cell.is_empty()) {
-                width = width.max(cells.len());
-            }
-            Ok(())
-        },
-    )?;
-    Ok((width, ordered))
-}
-
-fn write_streamed_sheet(
-    output: &Path,
-    xml: &str,
-    shared: &[String],
-    date_styles: &[bool],
-    date1904: bool,
-    width: usize,
-) -> std::io::Result<()> {
-    write_atomically(output, |writer| {
-        let mut wrote = false;
-        let mut line = String::new();
-        for_each_sheet_row(
-            xml,
-            shared,
-            date_styles,
-            date1904,
-            MAX_SHEET_ROWS,
-            |row, cells| {
-                if row == 0 || cells.iter().all(|cell| cell.is_empty()) {
-                    return Ok(());
-                }
-                line.clear();
-                for index in 0..width {
-                    if index > 0 {
-                        line.push(',');
-                    }
-                    crate::csv_reader::push_csv_field(
-                        &mut line,
-                        cells.get(index).map(String::as_str).unwrap_or(""),
-                        b',',
-                    );
-                }
-                line.push('\n');
-                writer.write_all(line.as_bytes())?;
-                wrote = true;
-                Ok(())
-            },
-        )?;
-        if !wrote {
-            return Err(invalid("xlsx worksheet has no non-empty rows"));
-        }
-        Ok(())
-    })
 }
 
 fn cell_reference_parts(reference: &str) -> Option<(usize, u64)> {

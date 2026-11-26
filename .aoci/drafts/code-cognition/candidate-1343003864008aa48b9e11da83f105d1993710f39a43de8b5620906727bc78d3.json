@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "f2b0013374763f2925073cc089d98b53ded8d05a9eda54f8925e623d2d82d157",
+  "batch_id": "1343003864008aa48b9e11da83f105d1993710f39a43de8b5620906727bc78d3",
+  "composite_identity": "00020e42380c7be3ebf3d00e8e531bd4682f42632f9c41a1b6b129874eae8499",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "985284b0fa18e01633e1f23f0ff97eaec3a19efe458fd9881164738fc297f5cd",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "4f673aaf7e141deda5b14f8a124d06c1dffd8a9123c7e420c9ad758fae9e7899",
+      "existing_entry": "XLSX_ENGINE.md[SZ7T]: F:XLSX 引擎决策、迁移方案、覆盖矩阵与实测 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；自写子集；15 项边界；1900 假闰日/1904/hidden；200k 0.93–0.96s；1M 4.76s/1.02GB | S:迁移未执行待批准；不新增依赖；性能仅 release；内存流式写后实测"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "d3ca2dd4bbe6e2f24e96a10013a7202197ac6eb054c3fe7c7d6e15cceb84e4c0",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round98 项1 验收 53MB 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "a1658e06bee38aa8619cf5e63b12db3f373c65305a5c4453f101f30dcac4b9e3",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "4f673aaf7e141deda5b14f8a124d06c1dffd8a9123c7e420c9ad758fae9e7899",
+      "existing_entry": "XLSX_ENGINE.md[SZ7T]: F:XLSX 引擎决策、迁移方案、覆盖矩阵与实测 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；自写子集；15 项边界；1900 假闰日/1904/hidden；200k 0.93–0.96s；1M 4.76s/1.02GB | S:迁移未执行待批准；不新增依赖；性能仅 release；内存流式写后实测"
+    },
+    {
+      "candidate_id": "23810cf5b701271e40e63567d31b904ab01166d94ef120cccca3eacfc9aa71e7",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "d3ca2dd4bbe6e2f24e96a10013a7202197ac6eb054c3fe7c7d6e15cceb84e4c0",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round98 项1 验收 53MB 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

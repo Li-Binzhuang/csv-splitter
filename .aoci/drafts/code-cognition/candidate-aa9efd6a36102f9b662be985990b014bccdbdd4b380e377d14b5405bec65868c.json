@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "9a593c0a30991164061d7a07a6b8b74481f66747cbb45850d3e35885e4a115e9",
+  "batch_id": "aa9efd6a36102f9b662be985990b014bccdbdd4b380e377d14b5405bec65868c",
+  "composite_identity": "44ed75a7bd517678fd2d0649108a1944407fbdf10f2aecd888d74985f6158197",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "eddfebcb6950918b22665a6ba9b6aaef6448dca530c895b4588ab5af7fe77d83",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "17f346cb9046d93b7506c8533afeb89c067a9b1483c054065b72130c0598633a",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；ISO 日期/日期时间/纯时间；1900/1904；hidden sheet；cellIs；行迭代器宽度预扫+复用 cells/CSV line；原子输出 | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式/坏索引/坏引用/错行/超限报错；流式仅按 XML 行序，乱序回退缓冲"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NIGHT_QUEUE.md",
+      "path": "docs/NIGHT_QUEUE.md",
+      "change": "update",
+      "source_sha256": "21a0ab84d5072aa8f037b6eff9db9d59bba36d52993f137d3ab181de69879994",
+      "existing_entry": "NIGHT_QUEUE.md[SG8T]: F:夜间静默窗口不自行决定、留到白天的用户决策队列 | R:code:AGENTS.md,code:docs/NIGHT_CHECKPOINT.md,code:docs/XLSX_ENGINE.md | A:列 xlsx 解禁、calamine 迁移依赖/离线、xlsx 流式解析（1M 1.02GB）、商业化、删除/迁移、界面、goal edit 需人类轮次；夜间只记录不执行 | S:不得把队列项当作已获授权；白天由用户决定后才动作"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "38fe3801912af4e5bfc9df0358def0263f46dc2d1a397d82b10136e49422ed30",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round97 缓冲复用仍 408MB 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "3f15854e134395b7a1c6f56f845c89dea5d8204f1f352b431b809dd4412e17e3",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "17f346cb9046d93b7506c8533afeb89c067a9b1483c054065b72130c0598633a",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；ISO 日期/日期时间/纯时间；1900/1904；hidden sheet；cellIs；行迭代器宽度预扫+复用 cells/CSV line；原子输出 | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式/坏索引/坏引用/错行/超限报错；流式仅按 XML 行序，乱序回退缓冲"
+    },
+    {
+      "candidate_id": "734ef709fca001c6edb7607f8d227b8df2531b74f69dbdd284fd478887319a15",
+      "object_ref": "code:docs/NIGHT_QUEUE.md",
+      "path": "docs/NIGHT_QUEUE.md",
+      "change": "update",
+      "source_sha256": "21a0ab84d5072aa8f037b6eff9db9d59bba36d52993f137d3ab181de69879994",
+      "existing_entry": "NIGHT_QUEUE.md[SG8T]: F:夜间静默窗口不自行决定、留到白天的用户决策队列 | R:code:AGENTS.md,code:docs/NIGHT_CHECKPOINT.md,code:docs/XLSX_ENGINE.md | A:列 xlsx 解禁、calamine 迁移依赖/离线、xlsx 流式解析（1M 1.02GB）、商业化、删除/迁移、界面、goal edit 需人类轮次；夜间只记录不执行 | S:不得把队列项当作已获授权；白天由用户决定后才动作"
+    },
+    {
+      "candidate_id": "3aa09d4b03786daa4565719ca936e35a38ec061b3a12f7c67f7070c115e61233",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "38fe3801912af4e5bfc9df0358def0263f46dc2d1a397d82b10136e49422ed30",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round97 缓冲复用仍 408MB 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

@@ -17,6 +17,11 @@
 
 ## 当前进度
 
+Round 98（项1 验收）：xlsx 读取改为 zip entry 逐块解压 + 行级解析 + 流式 CSV；
+1M×10 峰值 408 MB → 53 MB（目标 <200 MB），导回 8.04 s，输出逐字节一致；
+28 定向测试、全量 gate、package_release 通过；发布包 SHA `5c705de0…4cf4f6`。
+本地提交待下轮补推（本轮 push 已用于 54e2adcf）。
+
 Round 97（流式缓冲复用）：行迭代器复用 cells/CSV line，导回降至 6.96 s；峰值仍
 408 MB——因为 1M×10 的 worksheet XML 未压缩就有 402 MB，下一步需流式解压 zip entry。
 发布包 SHA `a8c1e620…0f737d`（本地提交，待下轮补推）。
