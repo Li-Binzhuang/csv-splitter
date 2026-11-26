@@ -30,6 +30,19 @@ PY
 OUT="$(bash scripts/install_selfcheck.sh --prefix "$PREFIX")"
 printf '%s\n' "$OUT" | python3 -c 'import json,sys; data=json.load(sys.stdin); assert data["ok"] is True, data; assert all(item["ok"] for item in data["checks"]), data; print("install_selfcheck=ok")'
 
+printf '{"sha256":"%s"}\n' "$(python3 -c 'import json;print(json.load(open("'$PREFIX'/install-manifest.json"))["sha256"])')" > "$PREFIX/release-manifest.json"
+OUT="$(bash scripts/install_selfcheck.sh --prefix "$PREFIX")"
+printf '%s\n' "$OUT" | python3 -c 'import json,sys; data=json.load(sys.stdin); assert data["ok"] is True, data; assert any(item["name"]=="release_manifest" and item["ok"] for item in data["checks"]), data; print("install_selfcheck=release_manifest_ok")'
+
+BAD_REL="$WORK/bad-release"
+cp -R "$PREFIX" "$BAD_REL"
+printf '{"sha256":"%s"}\n' "1111111111111111111111111111111111111111111111111111111111111111" > "$BAD_REL/release-manifest.json"
+if bash scripts/install_selfcheck.sh --prefix "$BAD_REL" >/dev/null 2>&1; then
+  echo "install_selfcheck=fail bad release manifest accepted" >&2
+  exit 1
+fi
+echo "install_selfcheck=bad_release_manifest_rejected"
+
 BAD="$WORK/bad-prefix"
 cp -R "$PREFIX" "$BAD"
 python3 - "$BAD/install-manifest.json" <<'PY'

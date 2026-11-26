@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 41（自检复核发布清单）：install_selfcheck 若发现 prefix 内有
+`release-manifest.json`，会比对 sha256；不一致拒绝，缺失则记录 not provided；
+发布包 SHA `ec663055…52825`。
+
 Round 40（安装保留发布清单）：install_offline 在 prefix 内保留
 `release-manifest.json`，ops_bundle 会一并收集；安装 smoke 断言存在。
 本轮另把 skill 安装阶段阈值从 3s 调到 5s（实测 3.47/3.53s 偶发超 3s）；

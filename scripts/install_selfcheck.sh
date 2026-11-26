@@ -22,6 +22,7 @@ PREFIX="$(cd "$PREFIX" && pwd)"
 MANIFEST="$PREFIX/install-manifest.json"
 BIN="$PREFIX/bin/csvx"
 DOCS="$PREFIX/share/csvx/docs"
+RELEASE_MANIFEST="$PREFIX/release-manifest.json"
 AUDIT_DIR="${AUDIT_DIR:-$PREFIX/var/csvx/audit}"
 PLATFORM="$(uname -s)-$(uname -m)"
 FAIL=0
@@ -75,6 +76,21 @@ if [[ -d "$DOCS" && -f "$DOCS/SECURITY.md" && -f "$DOCS/MIGRATION.md" ]]; then
   check docs true "$DOCS"
 else
   check docs false "missing docs under $DOCS"
+fi
+if [[ -f "$RELEASE_MANIFEST" ]]; then
+  if python3 - "$RELEASE_MANIFEST" "$MANIFEST_SHA" <<'PYREL'
+import json
+import sys
+data = json.load(open(sys.argv[1]))
+raise SystemExit(0 if data.get("sha256") == sys.argv[2] else 1)
+PYREL
+  then
+    check release_manifest true "$RELEASE_MANIFEST"
+  else
+    check release_manifest false "release manifest sha256 mismatch"
+  fi
+else
+  check release_manifest true "not provided"
 fi
 if mkdir -p "$AUDIT_DIR" 2>/dev/null && touch "$AUDIT_DIR/.write-test" 2>/dev/null; then
   rm -f "$AUDIT_DIR/.write-test"

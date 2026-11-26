@@ -249,7 +249,7 @@ win32 线程模型，它的 libstdc++ **没有 `std::mutex` / `std::shared_mutex
 `CSVX_INSTALL_PREFIX` 指定，或由脚本参数给出。输出一个 JSON 对象，包含：
 
 - `install-manifest.json` 是否存在；若安装时提供了 release manifest，
-  prefix 内还会保留 `release-manifest.json`；
+  prefix 内还会保留 `release-manifest.json`，自检会比对它的 sha256；
 - `bin/csvx` 是否可执行、版本是否与 manifest 一致；
 - 当前平台是否与 manifest 的 platform 一致；
 - `share/csvx/docs` 下 SECURITY/MIGRATION 是否存在；

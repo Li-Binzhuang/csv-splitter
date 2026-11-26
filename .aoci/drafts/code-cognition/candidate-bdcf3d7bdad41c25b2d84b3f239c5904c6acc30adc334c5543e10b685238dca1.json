@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "f7ee26ecc4c8bb9e5e856c74737e167dfe0ae25a20212057c6f4f7a99edef764",
+  "batch_id": "bdcf3d7bdad41c25b2d84b3f239c5904c6acc30adc334c5543e10b685238dca1",
+  "composite_identity": "a5379efdf0a2f198c9af7266a49697139d136b531f712242dc87be49951b4fa3",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b02e9ae6641ff8cf483c5358be1fbf1361e6e2eeed000a16fcedbe4b27759a22",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DEPLOY.md",
+      "path": "docs/DEPLOY.md",
+      "change": "update",
+      "source_sha256": "2b5b6d53bb81f85260cec0fca3b54c039d6aeda6e7a2e255e9d199c8c975e2d0",
+      "existing_entry": "DEPLOY.md[SO7M]: F:部署材料：安装、配置、systemd、升级回滚与自检 | R:code:scripts/install_selfcheck.sh,code:scripts/install_offline.sh | A:安装保留 release-manifest；自检/演练；排障；无鉴权 | S:必须写明无鉴权/多用户；自检默认审计目录；演练不联网"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "635948d50c1fa2791b0df8133dc3dcbf3924be8f71bde80d54f61f33002e7510",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round40 发布清单与阈值 | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/install_selfcheck.sh",
+      "path": "scripts/install_selfcheck.sh",
+      "change": "update",
+      "source_sha256": "9635952de74208efaa3fa6da65d5099a9d411ba7d5443229ae80e40c74b0c387",
+      "existing_entry": "install_selfcheck.sh[OV7S]: F:已安装 prefix 自检并输出 JSON | R:code:scripts/install_offline.sh,code:docs/DEPLOY.md | A:manifest/version/platform/docs/审计目录；checks；ok | S:不联网；缺项非零；审计目录可写测试"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_install_selfcheck.sh",
+      "path": "scripts/test_install_selfcheck.sh",
+      "change": "update",
+      "source_sha256": "fe72a8d9d81bc9685e6c7394afe03c38992c806380bcaada26d6f9bc70edb0fc",
+      "existing_entry": "test_install_selfcheck.sh[TQ7T]: F:安装自检正负例 | R:code:scripts/install_selfcheck.sh,code:scripts/dev.sh | A:假 prefix；manifest/version/docs；坏版本/缺文档拒绝 | S:gate 必跑；不联网；失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "855f7ab05cee501523197b46b7e035eaa029589eba9c71d17f0e4dd8404b62f2",
+      "object_ref": "code:docs/DEPLOY.md",
+      "path": "docs/DEPLOY.md",
+      "change": "update",
+      "source_sha256": "2b5b6d53bb81f85260cec0fca3b54c039d6aeda6e7a2e255e9d199c8c975e2d0",
+      "existing_entry": "DEPLOY.md[SO7M]: F:部署材料：安装、配置、systemd、升级回滚与自检 | R:code:scripts/install_selfcheck.sh,code:scripts/install_offline.sh | A:安装保留 release-manifest；自检/演练；排障；无鉴权 | S:必须写明无鉴权/多用户；自检默认审计目录；演练不联网"
+    },
+    {
+      "candidate_id": "34aa6c0aefa1a3211df339fb75b7f47c26f9faa6ad92be64b4fec5d93ef342f3",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "635948d50c1fa2791b0df8133dc3dcbf3924be8f71bde80d54f61f33002e7510",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round40 发布清单与阈值 | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "82c313e58623403072fc023c1c0ca4b7c39acf9cdc3e29a7c57cc2d9b37197ff",
+      "object_ref": "code:scripts/install_selfcheck.sh",
+      "path": "scripts/install_selfcheck.sh",
+      "change": "update",
+      "source_sha256": "9635952de74208efaa3fa6da65d5099a9d411ba7d5443229ae80e40c74b0c387",
+      "existing_entry": "install_selfcheck.sh[OV7S]: F:已安装 prefix 自检并输出 JSON | R:code:scripts/install_offline.sh,code:docs/DEPLOY.md | A:manifest/version/platform/docs/审计目录；checks；ok | S:不联网；缺项非零；审计目录可写测试"
+    },
+    {
+      "candidate_id": "904dffc7a7ad7c10d7b6b31143e5bc7e99d781091c79a4c82c8a6f1b962c0a2c",
+      "object_ref": "code:scripts/test_install_selfcheck.sh",
+      "path": "scripts/test_install_selfcheck.sh",
+      "change": "update",
+      "source_sha256": "fe72a8d9d81bc9685e6c7394afe03c38992c806380bcaada26d6f9bc70edb0fc",
+      "existing_entry": "test_install_selfcheck.sh[TQ7T]: F:安装自检正负例 | R:code:scripts/install_selfcheck.sh,code:scripts/dev.sh | A:假 prefix；manifest/version/docs；坏版本/缺文档拒绝 | S:gate 必跑；不联网；失败非零"
+    }
+  ]
+}
