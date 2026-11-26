@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 19（发布成员契约）：verify_dist 要求 SECURITY、DESIGN_PARTNER、100GB JSON、
+离线安装/bench/pilot 脚本都在包内，缺一即失败；修正脚本归档到 scripts/ 后
+发布包 SHA `d6c52122…5d437`。
+
 Round 18（benchmark 可读摘要）：新增 `docs/bench-100gb-2026-11-26.json`，
 只含机器/数据量/四命令 elapsed/RSS，不含原始行；随发布包分发；发布包 SHA `3cb1887a…07677`。
 

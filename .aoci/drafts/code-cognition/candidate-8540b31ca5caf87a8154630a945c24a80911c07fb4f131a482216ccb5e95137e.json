@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "34ec5130213869f044ac15a400510f7e5d32b7aced620730fa642817bcc952cc",
+  "batch_id": "8540b31ca5caf87a8154630a945c24a80911c07fb4f131a482216ccb5e95137e",
+  "composite_identity": "fe4018260d497f386d5f4ced69644008b8b30b7ea1a6a3a6519910d46ac3e1a2",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "cb129cbf6cf3f230d9ceab1fa22e498a518d78acc905a0ad4d14f0d67c879143",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "174ec8fa73766f03ed294f13a0691496c30f29ae5de4f48d6865e09395a41112",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round18 benchmark 摘要与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "80ea83e1a6fe31dfd7ca67dd841b5c563b80585ab623eb6af3fd9030024dccb4",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、真实安装与 benchmark 证据 | R:code:scripts/install_offline.sh,code:scripts/check_release.py,code:docs/bench-100gb-2026-11-26.json | A:tar+verify+release.json；真实 install；benchmark 摘要进包 | S:不联网/不打 tag；dist gitignore；DSH 可选"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "ea7787e84eb0e574271ef3dad95df2b35bf69286c15ac248059978578f4dc7d3",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:发布包验收并写 verify.json（失败阶段/耗时/阶段预算） | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py,code:scripts/check_agent_stats.py,code:scripts/check_phase_times.py | A:成员（含 ENTRYPOINTS）/version/skill/安装；TRY；12 路由/审批/重放/SSE；stats；xlsx；trace；phaseThresholds；trap | S:仅发布方；不联网；失败写 failedAt"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "8452144e5e482664ccfb28ad7ba12c5936b63b2d922129c0564e9a3273f85a37",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "174ec8fa73766f03ed294f13a0691496c30f29ae5de4f48d6865e09395a41112",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round18 benchmark 摘要与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "844c65a78712c1a2700f39174c546a64a70b8783f9892b065e981fd65561b25b",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "80ea83e1a6fe31dfd7ca67dd841b5c563b80585ab623eb6af3fd9030024dccb4",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、真实安装与 benchmark 证据 | R:code:scripts/install_offline.sh,code:scripts/check_release.py,code:docs/bench-100gb-2026-11-26.json | A:tar+verify+release.json；真实 install；benchmark 摘要进包 | S:不联网/不打 tag；dist gitignore；DSH 可选"
+    },
+    {
+      "candidate_id": "e267888b9907ba89f0c830aa3caabbdc1b51704156fbb52c258c01b3ea48f813",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "ea7787e84eb0e574271ef3dad95df2b35bf69286c15ac248059978578f4dc7d3",
+      "existing_entry": "verify_dist.sh[XQ7T]: F:发布包验收并写 verify.json（失败阶段/耗时/阶段预算） | R:code:scripts/package_release.sh,code:scripts/agent_routes_smoke.py,code:scripts/check_agent_stats.py,code:scripts/check_phase_times.py | A:成员（含 ENTRYPOINTS）/version/skill/安装；TRY；12 路由/审批/重放/SSE；stats；xlsx；trace；phaseThresholds；trap | S:仅发布方；不联网；失败写 failedAt"
+    }
+  ]
+}
