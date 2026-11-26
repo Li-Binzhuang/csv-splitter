@@ -40,9 +40,16 @@
   同用；CLI 测试 `number_format_rejects_repeated_columns_and_bad_codes`、
   `number_format_and_highlight_can_be_combined`。
 - [ ] 项11 公式第三批：TIMEVALUE/NOW/TODAY/DATEDIF。
-- [ ] 项12 `TEXT()` 覆盖 Scientific/Accounting/@ 并补公式测试。
+- [ ] 项14 `--number-format` 日期时间格式导出测试（yyyy-mm-dd hh:mm）。
+- [x] 项12 `TEXT()` 覆盖 Scientific/Accounting/@；公式测试扩展通过。
+- [x] 项13 `--number-format` 导出 Scientific/Accounting/@ 样式；CLI 测试
+  `number_format_exports_scientific_accounting_and_text_codes`；修复会计码
+  `positive;(negative)` 被误拆列的问题。
 
 ## 当前进度
+
+Round 113（项12/13 格式收口）：TEXT 覆盖 Scientific/Accounting/@；CLI 导出三类
+样式并修复会计码分号拆分；全量 gate/package 通过；发布包 SHA `d7f99810…7e639`。
 
 Round 112（项10 诊断）：新增重复列/非法码/与 highlight 同用的 CLI 测试；
 无代码改动；全量 gate/package 通过；发布包 SHA `cae72e60…e52b2`。

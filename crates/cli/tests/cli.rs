@@ -2738,6 +2738,43 @@ fn number_format_and_highlight_can_be_combined() {
     assert!(sheet.contains("conditionalFormatting"), "{sheet}");
 }
 
+#[test]
+fn number_format_exports_scientific_accounting_and_text_codes() {
+    let dir = TempDir::new("xlsxfmtsci");
+    let input = dir.join("t.csv");
+    let output = dir.join("t.xlsx");
+    std::fs::write(&input, "sci,money,text\n1234.5,-1234.5,007\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            output.to_str().unwrap(),
+            "--number-format",
+            "sci:0.00E+00;money:$#,##0.00;($#,##0.00);text:@",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let file = std::fs::File::open(&output).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    let mut styles = String::new();
+    use std::io::Read as _;
+    archive
+        .by_name("xl/styles.xml")
+        .unwrap()
+        .read_to_string(&mut styles)
+        .unwrap();
+    assert!(styles.contains("formatCode=\"0.00E+00\""), "{styles}");
+    assert!(
+        styles.contains("formatCode=\"$#,##0.00;($#,##0.00)\""),
+        "{styles}"
+    );
+    assert!(styles.contains("formatCode=\"@\""), "{styles}");
+}
+
 /// `datecounts` groups a timestamp column by its first ten characters.
 #[test]
 fn report_datecounts_groups_timestamps_by_date() {

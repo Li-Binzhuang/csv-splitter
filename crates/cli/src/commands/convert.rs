@@ -13,7 +13,7 @@ fn parse_column_formats(
     text: &str,
 ) -> Result<Vec<(String, csvx_core::layout::NumberFormat)>, String> {
     let mut formats = Vec::new();
-    for raw in text.split(';').filter(|raw| !raw.trim().is_empty()) {
+    for raw in split_format_specs(text) {
         let (column, code) = raw
             .rsplit_once(':')
             .ok_or_else(|| format!("number format {raw:?} needs column:format-code"))?;
@@ -32,6 +32,36 @@ fn parse_column_formats(
         return Err("--number-format needs at least one column:format-code".to_string());
     }
     Ok(formats)
+}
+
+/// Split `a:fmt;b:fmt` on semicolons that are not inside an accounting `(...)`.
+fn split_format_specs(text: &str) -> Vec<&str> {
+    let mut specs = Vec::new();
+    let mut start = 0usize;
+    let mut depth = 0usize;
+    for (index, character) in text.char_indices() {
+        match character {
+            '(' => depth += 1,
+            ')' => depth = depth.saturating_sub(1),
+            ';' if depth == 0 => {
+                // The `;` in `positive;(negative)` belongs to the accounting code,
+                // not to the separator between columns.
+                let next = text[index + 1..].trim_start().chars().next();
+                if next == Some('(') {
+                    continue;
+                }
+                if !text[start..index].trim().is_empty() {
+                    specs.push(&text[start..index]);
+                }
+                start = index + 1;
+            }
+            _ => {}
+        }
+    }
+    if !text[start..].trim().is_empty() {
+        specs.push(&text[start..]);
+    }
+    specs
 }
 
 fn safe_sheet_file_name(name: &str) -> String {

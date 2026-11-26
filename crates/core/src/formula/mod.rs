@@ -1440,6 +1440,12 @@ mod tests {
             "2024-01-01"
         );
         assert_eq!(eval_str(r#"text(1, "banana")"#, &[]), "#VALUE!");
+        assert_eq!(eval_str(r#"text(1234.5, "0.00E+00")"#, &[]), "1.23E+03");
+        assert_eq!(
+            eval_str(r#"text("-1234.5", "$#,##0.00;($#,##0.00)")"#, &[]),
+            "($1,234.50)"
+        );
+        assert_eq!(eval_str(r#"text("007", "@")"#, &[]), "007");
         assert_eq!(eval_str(r#"textbefore("a-b-c", "-", 2)"#, &[]), "a-b");
         assert_eq!(eval_str(r#"textafter("a-b-c", "-", 2)"#, &[]), "c");
         assert_eq!(eval_str(r#"textbefore("a-b", "-", 2)"#, &[]), "#N/A");

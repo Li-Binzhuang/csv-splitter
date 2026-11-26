@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "832ef3df8d1e2bf1a906ff7323579f95af70cefba4f6ed370055271cb3333162",
+  "batch_id": "b84042e7f54e05f6fd53f9876389eb70fd7f88804db5793c5baf83a606352520",
+  "composite_identity": "c25feb6a1c43c30f3e63246281d1bfc1ab4fe05e10a1b7e1cc8ba7436001e3e8",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "99ce1c78cd575caf8e538a2f06f6a641829a5310e6fa4699188a0ae1d0b2add2",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "677cf176c70adb699a61f293d89f3a53823e9de255e4c864f77c8bdce4342670",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert 命令：编码转码、xlsx/csv/tsv/ndjson/parquet、highlight、number-format | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；-o/--format/--from/--to/--highlight/--number-format/--all-sheets；highlight topN/bottomN；列格式安全化 | S:不覆盖输入；--all-sheets 仅 xlsx→csv；rank=0/重复列/非法格式报错"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "6162841b80b18ae5580f3d93b0cb72b6c6ac9d54315edbe6b1bbf81ad4c87070",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间、iserror/isna/istext、date/text、TEXT/TEXTBEFORE/AFTER/DATEVALUE；collect_sheet_refs 预加载 ref/vlookup/xlookup | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；别名不喂加载器会在打开时失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "eabf77c12c9b8070e28fecbecb8e8e2e58f63a6cce4fdb8ed37d4ec62432c5c8",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round112 格式诊断与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "079f092dfa2fd4a1e85faad55fe07df529481d4f48e15d96e545c9451edf14e2",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "677cf176c70adb699a61f293d89f3a53823e9de255e4c864f77c8bdce4342670",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert 命令：编码转码、xlsx/csv/tsv/ndjson/parquet、highlight、number-format | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；-o/--format/--from/--to/--highlight/--number-format/--all-sheets；highlight topN/bottomN；列格式安全化 | S:不覆盖输入；--all-sheets 仅 xlsx→csv；rank=0/重复列/非法格式报错"
+    },
+    {
+      "candidate_id": "ddd32cd5be2777db0827b7f4116fe193bbdff753f778230ed427969af955b277",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "6162841b80b18ae5580f3d93b0cb72b6c6ac9d54315edbe6b1bbf81ad4c87070",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间、iserror/isna/istext、date/text、TEXT/TEXTBEFORE/AFTER/DATEVALUE；collect_sheet_refs 预加载 ref/vlookup/xlookup | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；别名不喂加载器会在打开时失败"
+    },
+    {
+      "candidate_id": "6a4c4bb011e34a8cf74228fbc27762b339de92832cefcb9d9876a13a2b29ec60",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "eabf77c12c9b8070e28fecbecb8e8e2e58f63a6cce4fdb8ed37d4ec62432c5c8",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round112 格式诊断与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
