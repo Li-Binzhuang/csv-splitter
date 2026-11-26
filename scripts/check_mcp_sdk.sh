@@ -59,6 +59,7 @@ grep -q '^unknown_tool_error=true$' <<<"$out" || { echo "mcp_sdk=fail unknown to
 grep -q '^unknown_code=unknown_tool$' <<<"$out" || { echo "mcp_sdk=fail unknown code"; exit 1; }
 grep -q '^sdk_calls=23$' <<<"$out" || { echo "mcp_sdk=fail tool coverage"; exit 1; }
 grep -q '^sdk_missing=$' <<<"$out" || { echo "mcp_sdk=fail missing tools"; exit 1; }
+grep -q '^root_escape_rejections=2$' <<<"$out" || { echo "mcp_sdk=fail root escape"; exit 1; }
 grep -q '^required_rejections=20$' <<<"$out" || { echo "mcp_sdk=fail required args"; exit 1; }
 grep -q '^enum_rejections=2$' <<<"$out" || { echo "mcp_sdk=fail enum args"; exit 1; }
 grep -q '^range_rejections=8$' <<<"$out" || { echo "mcp_sdk=fail range args"; exit 1; }

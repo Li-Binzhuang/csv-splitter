@@ -218,6 +218,15 @@ const badGate = await client.callTool({
 });
 const rangeResults = [badCount, badRow, badCountHigh, badFilterLimit, badSearchLimit, badJobs, badWait, badGate];
 console.log(`range_rejections=${rangeResults.filter((result) => result.isError === true).length}`);
+const escapeRelative = await client.callTool({
+  name: "csvx_view",
+  arguments: { path: "../outside.csv" },
+});
+const escapeAbsolute = await client.callTool({
+  name: "csvx_view",
+  arguments: { path: "/etc/passwd" },
+});
+console.log(`root_escape_rejections=${(escapeRelative.isError === true ? 1 : 0) + (escapeAbsolute.isError === true ? 1 : 0)}`);
 const missingTools = expectedTools.filter((name) => !called.has(name));
 console.log(`sdk_calls=${expectedTools.length - missingTools.length}`);
 console.log(`sdk_missing=${missingTools.join(",")}`);

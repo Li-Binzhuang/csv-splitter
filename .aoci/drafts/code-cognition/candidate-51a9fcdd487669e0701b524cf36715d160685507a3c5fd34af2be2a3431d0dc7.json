@@ -1,0 +1,93 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "6f02816290445190a19a5aaaca7a7c5b0a015a9930ac4edb64683d48d29a718a",
+  "batch_id": "51a9fcdd487669e0701b524cf36715d160685507a3c5fd34af2be2a3431d0dc7",
+  "composite_identity": "a4615dac30761bd855c3377058abf55b05f275a69cc233217b16348623c4ee86",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "3996de40ca32ca8b5e8178dd0d4a50d0643e301f1ffa77455783d379053d023f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "update",
+      "source_sha256": "ebf468e077a3412ff14acf26364663157756f7ae8e4c5dc8c078d8a1672224bd",
+      "existing_entry": "MCP_COMPAT.md[SD7S]: F:官方 SDK、schema 与 DSH 客户端验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:scripts/check_mcp_dsh.sh | A:23 工具；必填/枚举/范围；xlsx/HTML report；resources/manifest；DSH | S:DSH 需 CSVX_DSH_TEST=1；不改 profile；结果本机实测"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "a26443fa4f1ec8c7b00f71651ec5c4cd99a96cfb0870801a98bc321ba4893e16",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round21 xlsx/report 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "190ca265a3564118d35c2c7fa0ca39bb09555395dc901b1228ac94f14b10f27b",
+      "existing_entry": "agent_routes_smoke.py[TQ7M]: F:Agent 路由/manifest 契约与生命周期 smoke | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:12 路由；protocol/8 endpoints/root_bound；401；逐路由 405；close/events；stats | S:需 server/binary；不打印 token；SSE\u003c250ms；临时副本清理"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_mcp_sdk.sh",
+      "path": "scripts/check_mcp_sdk.sh",
+      "change": "update",
+      "source_sha256": "c9f517c7027bf6146b60b8bc6495bb92508bfa86615c1ce4f1bac75c8b74cf7e",
+      "existing_entry": "check_mcp_sdk.sh[TQ7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:debug 优先；23 工具；必填/边界；xlsx/HTML；resources/manifest；DSH | S:node/SDK 缺失跳过；失败非零"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "dc674421ec7d46f4a1852ae6fa7708669a874e1e146b43d86b621f21d480e9a5",
+      "existing_entry": "client.mjs[XQ7M]: F:官方 MCP SDK 工具、格式与 manifest 回归 | R:code:scripts/mcp_sdk/package.json,code:scripts/check_mcp_sdk.sh | A:23 工具；xlsx/HTML report；resources 2；manifest；未知 URI | S:仅回归；npm 不进 Rust；job 失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "29369f9caf8c3cef77f6bee87ac4c9a47db9823d6f28b1544e84b11407ad82d9",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "update",
+      "source_sha256": "ebf468e077a3412ff14acf26364663157756f7ae8e4c5dc8c078d8a1672224bd",
+      "existing_entry": "MCP_COMPAT.md[SD7S]: F:官方 SDK、schema 与 DSH 客户端验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:scripts/check_mcp_dsh.sh | A:23 工具；必填/枚举/范围；xlsx/HTML report；resources/manifest；DSH | S:DSH 需 CSVX_DSH_TEST=1；不改 profile；结果本机实测"
+    },
+    {
+      "candidate_id": "af7c52ff1085cbf0280431de535fdb36c48f8d2667190d81b0ada018ee147fb4",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "a26443fa4f1ec8c7b00f71651ec5c4cd99a96cfb0870801a98bc321ba4893e16",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round21 xlsx/report 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "67d58dd298110a92b78670e2a451185ec41d29231c448a4d9a1727370912984a",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "190ca265a3564118d35c2c7fa0ca39bb09555395dc901b1228ac94f14b10f27b",
+      "existing_entry": "agent_routes_smoke.py[TQ7M]: F:Agent 路由/manifest 契约与生命周期 smoke | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:12 路由；protocol/8 endpoints/root_bound；401；逐路由 405；close/events；stats | S:需 server/binary；不打印 token；SSE\u003c250ms；临时副本清理"
+    },
+    {
+      "candidate_id": "656cc36013885847fa133670604b0de8f13e551c16f4473c371f85a8cb52dfe5",
+      "object_ref": "code:scripts/check_mcp_sdk.sh",
+      "path": "scripts/check_mcp_sdk.sh",
+      "change": "update",
+      "source_sha256": "c9f517c7027bf6146b60b8bc6495bb92508bfa86615c1ce4f1bac75c8b74cf7e",
+      "existing_entry": "check_mcp_sdk.sh[TQ7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:debug 优先；23 工具；必填/边界；xlsx/HTML；resources/manifest；DSH | S:node/SDK 缺失跳过；失败非零"
+    },
+    {
+      "candidate_id": "49f12a0c1bfa115176ffb6992a65c995d8b6f60166ca2579da192dba51e1a47a",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "dc674421ec7d46f4a1852ae6fa7708669a874e1e146b43d86b621f21d480e9a5",
+      "existing_entry": "client.mjs[XQ7M]: F:官方 MCP SDK 工具、格式与 manifest 回归 | R:code:scripts/mcp_sdk/package.json,code:scripts/check_mcp_sdk.sh | A:23 工具；xlsx/HTML report；resources 2；manifest；未知 URI | S:仅回归；npm 不进 Rust；job 失败非零"
+    }
+  ]
+}

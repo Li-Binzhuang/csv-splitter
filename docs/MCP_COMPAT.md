@@ -31,6 +31,7 @@ cancel_state=done
 job_reject_code=job_start_error
 unknown_code=unknown_tool
 required_rejections=20
+root_escape_rejections=2
 enum_rejections=2
 range_rejections=8
 capabilities_tools=true

@@ -92,6 +92,10 @@ def main():
     parser.add_argument("--root", default=".")
     args = parser.parse_args()
     api = args.api.rstrip("/")
+    status, body = request(api, "/agent/v1/sessions", "wrong-token")
+    assert status == 401, body
+    status, body = request(api, "/agent/v1/nope")
+    assert status == 404, body
     status, body = request(api, "/agent/v1/manifest")
     assert status == 200, body
     manifest = json.loads(body)
@@ -225,7 +229,7 @@ def main():
     assert status == 404, f"after close: {status} {body}"
 
     print(
-        f"manifest_endpoints=8 manifest_safety=true "
+        f"auth_guard=401 unknown_route=404 manifest_endpoints=8 manifest_safety=true "
         f"routes={len(routes)} route_bodies={len(routes)} unauth={len(routes)} method_guards=12 "
         f"events=200 close=200 after_close=404 session={sid} actions={actions_count} "
         f"sse_ms={sse_ms:.0f} deny=403 approval=ok replay={replay_count}"
@@ -235,6 +239,8 @@ def main():
         "route_bodies": len(routes),
         "unauth_checks": len(routes),
         "method_guards": len(routes),
+        "auth_guard": 401,
+        "unknown_route": 404,
         "manifest_endpoints": 8,
         "manifest_safety": True,
         "events": 200,

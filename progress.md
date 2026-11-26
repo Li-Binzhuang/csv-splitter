@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 22：SDK 增加 root escape 拒绝 `root_escape_rejections=2`；HTTP smoke 增加
+错误 token 401 与未知路由 404；发布包 SHA `77460652…d5d3`。
+
 Round 21：push 重试成功；SDK 增加 xlsx 转换与 HTML report 覆盖：
 `xlsx_ok=true report_html=true`；发布包 SHA `7d922c57…2fc67`。
 
@@ -87,6 +90,6 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 ## 下一轮具体行动
 
-1. 全量 gate、打包、AOCI 收尾并提交。
-2. push 本轮提交一次。
+1. 全量 gate、打包、AOCI 收尾。
+2. 提交并 push 本轮（含上一轮未推的 xlsx 提交）。
 3. 下一轮继续产品化或 mcp 瘦身。
