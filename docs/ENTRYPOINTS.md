@@ -92,7 +92,8 @@ bash scripts/package_release.sh
    模块拆分：`tools.rs`（23 工具 schema）、`jobs.rs`（job 状态）、`cache.rs`（材料化缓存）、
    `executor.rs`（工具执行/命令构建）、`executor/paths.rs`（路径校验）、`executor/commands.rs`（工具分派）、`executor/commands/{args,concat}.rs`、`json.rs`（McpJson/McpParser）、
    `rmcp_server.rs`（传输）、`rmcp_server/jobs.rs`（job/cache 工具）、`rmcp_server/transport.rs`（stdin/stdout 泵与 legacy shim）、`rmcp_server/audit.rs`（调用审计）、`tests.rs`（单元测试）、`lib.rs`（入口/manifest）。HTTP 端点仍在 `serve.rs`。
-   单文件上限由 `check_layout.sh` 强制：`lib.rs` 450、`executor.rs` 700、
+   单文件上限由 `check_layout.sh` 强制：`pipeline.rs` 2250、`pipeline_history.rs` 250；
+   MCP：`lib.rs` 450、`executor.rs` 700、
    `rmcp_server.rs` 500、`jobs.rs` 400、`cache.rs`/`json.rs` 350。
 3. **抽 `crates/agent`（已完成传输替换）**：控制面在 `crates/agent`；HTTP/SSE
    由 axum 承载，session/审批/审计/trace/replay 语义保持不变。
@@ -101,7 +102,7 @@ bash scripts/package_release.sh
 
 每一步只做一层，不同时重写 core 行为。
 
-> 注：`main.rs` 已完成拆分，命令在 `commands/`，helper 在 `cli_support.rs`。
+> 注：`main.rs` 已完成拆分，命令在 `commands/`（含 `pipeline_history.rs`），helper 在 `cli_support.rs`。
 
 ## 客户端兼容
 

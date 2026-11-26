@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 1（Pipeline 历史目标）：每轮 `pipeline run` 追加 `.csvx/pipeline-history.jsonl`；
+CLI `pipeline history` 可读；3 个历史单测 + 1 个 CLI 集成测试；默认 4 MiB 轮转。
+失败记录 `pipeline_error`，fresh 步骤记 `skipped`；发布包 SHA `8170577b…64abb`。
+
 Round 1（审计目标）：MCP `call_tool` 落盘审计已实现，默认 `.csvx/mcp-audit.jsonl`；
 参数仅记录 key/type/长度，4 MiB 轮转；`csvx://audit` 可读（NDJSON，文档见 MCP_COMPAT §3）；新增 3 个单测，
 MCP 单测 11；SDK `resources=3 audit_entries=63 audit_redacted=true`；发布包 SHA `6fd23f65…9f9a9`。
@@ -106,4 +110,4 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 1. 全量 gate、打包、AOCI 收尾。
 2. 提交并 push 本轮。
-3. 下一轮补审计 CLI 读取或 Pipeline 自动化候选。
+3. 下一轮实现失败重试记录与过期告警。

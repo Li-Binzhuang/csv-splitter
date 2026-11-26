@@ -1,3 +1,4 @@
+use crate::commands::pipeline_history::{self, HistoryStep};
 use crate::commands::shared::{json_escape, json_quote};
 use crate::{print_command_help, Parser};
 use std::io::{Read, Write};
@@ -941,6 +942,15 @@ fn run_pipeline_plan(
     Ok((results, lineage))
 }
 
+fn pipeline_history_root(
+    plan: &std::path::Path,
+    root: Option<&std::path::Path>,
+) -> std::path::PathBuf {
+    root.map(std::path::Path::to_path_buf)
+        .or_else(|| plan.parent().map(std::path::Path::to_path_buf))
+        .unwrap_or_else(|| std::path::PathBuf::from("."))
+}
+
 pub(crate) fn cmd_pipeline(args: &[String]) -> i32 {
     let mut p = Parser::new(args);
     let mut action: Option<String> = None;
@@ -1104,6 +1114,19 @@ pub(crate) fn cmd_pipeline(args: &[String]) -> i32 {
         eprintln!("error: pipeline needs run|status|watch <plan>");
         return 2;
     };
+    if action == "history" {
+        let plan = plan.unwrap_or_else(|| std::path::PathBuf::from("."));
+        let root = pipeline_history_root(&plan, root.as_deref());
+        match pipeline_history::read(&root) {
+            Ok(text) if text.trim().is_empty() => println!("(no pipeline history yet)"),
+            Ok(text) => print!("{text}"),
+            Err(error) => {
+                eprintln!("error: {error}");
+                return 1;
+            }
+        }
+        return 0;
+    }
     let Some(plan) = plan else {
         eprintln!("error: pipeline needs a plan file");
         return 2;
@@ -1137,102 +1160,145 @@ pub(crate) fn cmd_pipeline(args: &[String]) -> i32 {
                 1
             }
         },
-        "run" => match run_pipeline_plan(
-            &plan,
-            root.as_deref(),
-            force,
-            dry_run,
-            step_timeout_ms,
-            retries,
-            retry_delay_ms,
-            jobs,
-            dag,
-            clean,
-            unlock,
-            progress_markers,
-            content_check,
-        ) {
-            Ok((results, lineage)) => {
-                if dry_run {
-                    if json {
-                        let items = results
+        "run" => {
+            let started_at = now_millis();
+            let history_root = pipeline_history_root(&plan, root.as_deref());
+            let plan_hash = pipeline_hash_file(&plan).unwrap_or_default();
+            match run_pipeline_plan(
+                &plan,
+                root.as_deref(),
+                force,
+                dry_run,
+                step_timeout_ms,
+                retries,
+                retry_delay_ms,
+                jobs,
+                dag,
+                clean,
+                unlock,
+                progress_markers,
+                content_check,
+            ) {
+                Ok((results, lineage)) => {
+                    if !dry_run {
+                        let steps: Vec<HistoryStep> = results
                             .iter()
-                            .enumerate()
-                            .map(|(index, (name, fresh, _, detail))| {
+                            .map(|(name, fresh, ms, _)| HistoryStep {
+                                name: name.clone(),
+                                fresh: *fresh,
+                                ms: *ms,
+                            })
+                            .collect();
+                        if let Err(error) = pipeline_history::append_run(
+                            &history_root,
+                            &plan,
+                            &plan_hash,
+                            started_at,
+                            now_millis(),
+                            true,
+                            None,
+                            None,
+                            &steps,
+                        ) {
+                            eprintln!("warning: pipeline history write failed: {error}");
+                        }
+                    }
+                    if dry_run {
+                        if json {
+                            let items = results
+                                .iter()
+                                .enumerate()
+                                .map(|(index, (name, fresh, _, detail))| {
+                                    let deps = lineage
+                                        .get(index)
+                                        .map(|(_, deps)| deps)
+                                        .unwrap_or(&Vec::new())
+                                        .iter()
+                                        .map(|dep| json_quote(dep))
+                                        .collect::<Vec<_>>()
+                                        .join(",");
+                                    format!(
+                                        r#"{{"step":{},"fresh":{},"detail":{},"deps":[{}]}}"#,
+                                        json_quote(name),
+                                        fresh,
+                                        json_quote(detail),
+                                        deps
+                                    )
+                                })
+                                .collect::<Vec<_>>()
+                                .join(",");
+                            println!(r#"{{"dryRun":true,"steps":[{items}]}}"#);
+                        } else {
+                            for (index, (name, fresh, _, detail)) in results.iter().enumerate() {
                                 let deps = lineage
                                     .get(index)
-                                    .map(|(_, deps)| deps)
-                                    .unwrap_or(&Vec::new())
-                                    .iter()
-                                    .map(|dep| json_quote(dep))
-                                    .collect::<Vec<_>>()
-                                    .join(",");
+                                    .map(|(_, deps)| deps.clone())
+                                    .unwrap_or_default();
+                                if progress_markers {
+                                    println!(
+                                        "CSVX_STEP {} {name} {}/{}",
+                                        if *fresh { "skip" } else { "done" },
+                                        index + 1,
+                                        results.len()
+                                    );
+                                }
+                                if *fresh {
+                                    println!("↷ {name}");
+                                } else if deps.is_empty() {
+                                    println!("→ {name} ({detail})");
+                                } else {
+                                    println!("→ {name} ({detail}; deps: {})", deps.join(","));
+                                }
+                            }
+                        }
+                        return 0;
+                    }
+                    if json {
+                        let items: Vec<String> = results
+                            .iter()
+                            .map(|(name, fresh, ms, output)| {
                                 format!(
-                                    r#"{{"step":{},"fresh":{},"detail":{},"deps":[{}]}}"#,
-                                    json_quote(name),
+                                    r#"{{"step":"{}","fresh":{},"ms":{},"output":"{}"}}"#,
+                                    name,
                                     fresh,
-                                    json_quote(detail),
-                                    deps
+                                    ms,
+                                    output.replace('\\', "\\\\")
                                 )
                             })
-                            .collect::<Vec<_>>()
-                            .join(",");
-                        println!(r#"{{"dryRun":true,"steps":[{items}]}}"#);
+                            .collect();
+                        println!(r#"{{"steps":[{}]}}"#, items.join(","));
                     } else {
-                        for (index, (name, fresh, _, detail)) in results.iter().enumerate() {
-                            let deps = lineage
-                                .get(index)
-                                .map(|(_, deps)| deps.clone())
-                                .unwrap_or_default();
-                            if progress_markers {
-                                println!(
-                                    "CSVX_STEP {} {name} {}/{}",
-                                    if *fresh { "skip" } else { "done" },
-                                    index + 1,
-                                    results.len()
-                                );
-                            }
+                        for (name, fresh, ms, _) in results.iter() {
                             if *fresh {
                                 println!("↷ {name}");
-                            } else if deps.is_empty() {
-                                println!("→ {name} ({detail})");
                             } else {
-                                println!("→ {name} ({detail}; deps: {})", deps.join(","));
+                                println!("✓ {name} ({ms} ms)");
                             }
                         }
                     }
-                    return 0;
+                    0
                 }
-                if json {
-                    let items: Vec<String> = results
-                        .iter()
-                        .map(|(name, fresh, ms, output)| {
-                            format!(
-                                r#"{{"step":"{}","fresh":{},"ms":{},"output":"{}"}}"#,
-                                name,
-                                fresh,
-                                ms,
-                                output.replace('\\', "\\\\")
-                            )
-                        })
-                        .collect();
-                    println!(r#"{{"steps":[{}]}}"#, items.join(","));
-                } else {
-                    for (name, fresh, ms, _) in results.iter() {
-                        if *fresh {
-                            println!("↷ {name}");
-                        } else {
-                            println!("✓ {name} ({ms} ms)");
+                Err(e) => {
+                    if !dry_run {
+                        if let Err(error) = pipeline_history::append_run(
+                            &history_root,
+                            &plan,
+                            &plan_hash,
+                            started_at,
+                            now_millis(),
+                            false,
+                            Some("pipeline_error"),
+                            Some(&e.to_string()),
+                            &[],
+                        ) {
+                            eprintln!("warning: pipeline history write failed: {error}");
                         }
                     }
+                    eprintln!("error: {e}");
+                    1
                 }
-                0
             }
-            Err(e) => {
-                eprintln!("error: {e}");
-                1
-            }
-        },
+        }
         "status" => {
             let rows = load_pipeline_state(&pipeline_state_path(&plan));
             if rows.is_empty() {

@@ -2768,6 +2768,69 @@ fn convert_imports_xlsx_shared_strings_and_sheets() {
     assert!(String::from_utf8_lossy(&missing.stderr).contains("no sheet"));
 }
 
+#[test]
+fn pipeline_history_records_runs_and_failures() {
+    let dir = TempDir::new("pipeline-history");
+    std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n2,Puebla\n").unwrap();
+    let plan = dir.join("plan.csv");
+    std::fs::write(
+        &plan,
+        "step,input,command,args,output\nfiltered,orders.csv,filter,--where city=CDMX -o {out},filtered.csv\n",
+    )
+    .unwrap();
+    let run = || {
+        Command::new(bin())
+            .args([
+                "pipeline",
+                "run",
+                plan.to_str().unwrap(),
+                "--root",
+                dir.0.to_str().unwrap(),
+            ])
+            .output()
+            .unwrap()
+    };
+    let first = run();
+    assert!(first.status.success(), "{:?}", first.stderr);
+    let second = run();
+    assert!(second.status.success(), "{:?}", second.stderr);
+
+    let history = dir.join(".csvx/pipeline-history.jsonl");
+    let text = std::fs::read_to_string(&history).unwrap();
+    assert_eq!(text.lines().count(), 2, "{text}");
+    assert!(text.contains(r#""planHash":"#), "{text}");
+    assert!(text.contains(r#""status":"ok""#), "{text}");
+    assert!(text.contains(r#""status":"skipped""#), "{text}");
+
+    let bad = dir.join("bad.csv");
+    std::fs::write(
+        &bad,
+        "step,input,command,args,output\nfail,orders.csv,no-such-command,,bad.csv\n",
+    )
+    .unwrap();
+    let failed = Command::new(bin())
+        .args([
+            "pipeline",
+            "run",
+            bad.to_str().unwrap(),
+            "--root",
+            dir.0.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(!failed.status.success());
+    let text = std::fs::read_to_string(&history).unwrap();
+    assert!(text.contains(r#""ok":false"#), "{text}");
+    assert!(text.contains(r#"pipeline_error"#), "{text}");
+
+    let listed = Command::new(bin())
+        .args(["pipeline", "history", "--root", dir.0.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(listed.status.success(), "{:?}", listed.stderr);
+    assert!(String::from_utf8_lossy(&listed.stdout).contains("filtered"));
+}
+
 /// The pipeline runner chains commands, skips unchanged steps and reruns downstream
 /// when an input changes; a failed step leaves no partial output.
 #[test]

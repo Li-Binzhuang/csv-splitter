@@ -42,7 +42,7 @@ for dir in crates/*/; do
 done
 
 CLI_SRC_ALLOWED=(main.rs serve.rs cli_support.rs)
-CLI_COMMANDS_ALLOWED=(mod.rs agent.rs analyze.rs book.rs cache.rs chart.rs columns.rs concat.rs convert.rs dedupe.rs demo.rs edit.rs extract.rs files.rs filter.rs format.rs gate.rs groupby.rs index.rs layout.rs lookup.rs mcp.rs merge.rs ops.rs partition.rs pipeline.rs pivot.rs preview.rs repair.rs report.rs schema.rs search.rs serve.rs shared.rs sort.rs split.rs sql.rs stats.rs validate.rs verify.rs view.rs)
+CLI_COMMANDS_ALLOWED=(mod.rs agent.rs analyze.rs book.rs cache.rs chart.rs columns.rs concat.rs convert.rs dedupe.rs demo.rs edit.rs extract.rs files.rs filter.rs format.rs gate.rs groupby.rs index.rs layout.rs lookup.rs mcp.rs merge.rs ops.rs partition.rs pipeline.rs pipeline_history.rs pivot.rs preview.rs repair.rs report.rs schema.rs search.rs serve.rs shared.rs sort.rs split.rs sql.rs stats.rs validate.rs verify.rs view.rs)
 while IFS= read -r entry; do
   name=${entry#crates/cli/src/}
   allowed=0
@@ -82,6 +82,16 @@ mcp_limit() {
     fail "crates/mcp/src/$file is $count lines (limit $limit); split it instead of growing it"
   fi
 }
+cli_limit() {
+  local file=$1 limit=$2 count
+  count=$(wc -l < "crates/cli/src/commands/$file")
+  if (( count > limit )); then
+    fail "crates/cli/src/commands/$file is $count lines (limit $limit); split it instead of growing it"
+  fi
+}
+cli_limit pipeline.rs 2250
+cli_limit pipeline_history.rs 250
+
 mcp_limit lib.rs 450
 mcp_limit executor.rs 700
 mcp_limit rmcp_server.rs 500
