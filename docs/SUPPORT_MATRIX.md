@@ -22,6 +22,7 @@
 | MCP 23 工具 + 3 资源 | 可用 | `scripts/check_mcp_sdk.sh` |
 | HTTP Agent API 12 路由 | 可用 | `scripts/agent_routes_smoke.py` |
 | 离线安装/自检/升级回滚/诊断包 | 可用 | `scripts/install_selfcheck.sh`、`scripts/ops_bundle.sh` |
+| 安装 prefix 保留/复核 release manifest | 可用 | `scripts/install_offline.sh`、`scripts/install_selfcheck.sh` |
 | xlsx 转换 | 可用 | release 验证与 gate |
 | 压缩 CSV（gz/zst/bz2） | 可用 | 压缩 intake 与 MCP 缓存 smoke |
 | 多用户/权限/租户 | 不支持 | 单机单用户 |

@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 47（支持矩阵补行）：SUPPORT_MATRIX 增加“安装 prefix 保留/复核 release
+manifest”能力行，和自检实现对齐；发布包 SHA `5ae3efa8…4077b`。
+
 Round 46（失败命令门）：bench_compare 拒绝 exit 非 0 的命令，smoke 增加
 failed_command 负例；发布包 SHA `176fe361…fd236`。
 

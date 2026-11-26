@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "226f73b7087a5e6dbcbfa8ca24e8d3105b74d341fe4286683d4b5a92a95d7591",
+  "batch_id": "aad074ce1888a4eb749f99567a9d7934b78190b38ef6d9ab67342544a63aa743",
+  "composite_identity": "5b1b0fc88d1cd0e0bdf062372d305c590177c4b42ea6a43a9729f4ea38d10bad",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "571fa1acf52ab2b5584bbde6f797516ae779ff021ed8a4ec51049c27d3e334ce",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/SUPPORT_MATRIX.md",
+      "path": "docs/SUPPORT_MATRIX.md",
+      "change": "update",
+      "source_sha256": "e55ba7415feefd64461a582f854df3d5678c173c2ea4193503192fe0fc7a53e8",
+      "existing_entry": "SUPPORT_MATRIX.md[SG7T]: F:平台/功能支持矩阵与工单模板 | R:code:docs/DEPLOY.md,code:docs/OPERATIONS.md,code:docs/SECURITY.md | A:macOS arm64 实测；Linux 未验证；Windows 不支持；诊断包边界 | S:非 SLA；跨平台包不通用；工单不含凭据/原始行"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "4ef6909581d6ba0dbdbc074a7955d1f1eba58aad247c074cd47595b7101a2137",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round46 失败命令门与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4f36f4909eecb0a441a46c95be14bef7a1c7b0cdc7cdd79509cb6439335e53bd",
+      "object_ref": "code:docs/SUPPORT_MATRIX.md",
+      "path": "docs/SUPPORT_MATRIX.md",
+      "change": "update",
+      "source_sha256": "e55ba7415feefd64461a582f854df3d5678c173c2ea4193503192fe0fc7a53e8",
+      "existing_entry": "SUPPORT_MATRIX.md[SG7T]: F:平台/功能支持矩阵与工单模板 | R:code:docs/DEPLOY.md,code:docs/OPERATIONS.md,code:docs/SECURITY.md | A:macOS arm64 实测；Linux 未验证；Windows 不支持；诊断包边界 | S:非 SLA；跨平台包不通用；工单不含凭据/原始行"
+    },
+    {
+      "candidate_id": "c77181fdbc1336ea2faef34574f0cc09bb7c35b7a1d5fff6a0211422f88103fa",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "4ef6909581d6ba0dbdbc074a7955d1f1eba58aad247c074cd47595b7101a2137",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round46 失败命令门与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    }
+  ]
+}
