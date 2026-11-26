@@ -1432,6 +1432,26 @@ mod tests {
     }
 
     #[test]
+    fn logical_fallbacks_and_switch_are_lazy() {
+        assert_eq!(eval_str(r#"ifs(1>2, "a", 2>1, "b")"#, &[]), "b");
+        assert_eq!(eval_str(r#"ifs(1>2, "a")"#, &[]), "#N/A");
+        assert_eq!(eval_str(r#"switch("b", "a", 1, "b", 2)"#, &[]), "2");
+        assert_eq!(eval_str(r#"switch("c", "a", 1, "b", 2, 99)"#, &[]), "99");
+        assert_eq!(eval_str(r#"switch("c", "a", 1, "b", 2)"#, &[]), "#N/A");
+        assert_eq!(eval_str(r#"choose(2, "a", "b", "c")"#, &[]), "b");
+        assert_eq!(eval_str(r#"choose(0, "a")"#, &[]), "#VALUE!");
+        assert_eq!(eval_str(r#"choose(4, "a", "b", "c")"#, &[]), "#VALUE!");
+        assert_eq!(eval_str("na()", &[]), "#N/A");
+        assert_eq!(eval_str(r#"ifna(na(), "fallback")"#, &[]), "fallback");
+        assert_eq!(eval_str(r#"ifna(1/0, "fallback")"#, &[]), "#VALUE!");
+        assert_eq!(eval_str(r#"iferror(na(), "fallback")"#, &[]), "fallback");
+        assert_eq!(eval_str("isna(na())", &[]), "TRUE");
+        assert_eq!(eval_str("iserror(na())", &[]), "TRUE");
+        assert_eq!(eval_str("xor(true(), false(), true())", &[]), "FALSE");
+        assert_eq!(eval_str("xor(true(), false())", &[]), "TRUE");
+    }
+
+    #[test]
     fn mode_picks_the_most_frequent_value_of_a_same_row_range() {
         let columns = vec![
             "a".to_string(),

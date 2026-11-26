@@ -463,6 +463,55 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Bool(false)
             }
         }
+        // IFS(cond1, value1, cond2, value2, ...): first true pair wins; no match is #N/A.
+        "ifs" => {
+            if args.len() < 2 || !args.len().is_multiple_of(2) {
+                return Value::Error;
+            }
+            for pair in args.chunks(2) {
+                if truthy(&eval(&pair[0], ctx)) {
+                    return eval(&pair[1], ctx);
+                }
+            }
+            Value::Text("#N/A".to_string())
+        }
+        // SWITCH(expr, case1, value1, ..., [default]): first text-equal case wins.
+        "switch" => {
+            if args.len() < 3 {
+                return Value::Error;
+            }
+            let subject = eval(&args[0], ctx).text();
+            let pairs_end = if (args.len() - 1) % 2 == 1 {
+                args.len() - 1
+            } else {
+                args.len()
+            };
+            let mut index = 1;
+            while index + 1 < pairs_end + 1 && index + 1 < args.len() {
+                if subject == eval(&args[index], ctx).text() {
+                    return eval(&args[index + 1], ctx);
+                }
+                index += 2;
+            }
+            if pairs_end < args.len() {
+                eval(&args[pairs_end], ctx)
+            } else {
+                Value::Text("#N/A".to_string())
+            }
+        }
+        "choose" => {
+            let Some(index) = args.first().and_then(|arg| eval(arg, ctx).number()) else {
+                return Value::Error;
+            };
+            let index = index.trunc();
+            if index < 1.0 || index as usize >= args.len() {
+                return Value::Error;
+            }
+            eval(&args[index as usize], ctx)
+        }
+        // NA() is the deliberate #N/A constant, so IFNA/IFERROR can be tested and
+        // composed without inventing a lookup miss.
+        "na" => Value::Text("#N/A".to_string()),
         "and" => {
             if args.is_empty() {
                 return Value::Error;
@@ -485,6 +534,20 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Bool(false)
         }
+        "xor" => {
+            if args.is_empty() {
+                return Value::Error;
+            }
+            let mut true_count = 0usize;
+            for arg in args {
+                if truthy(&eval(arg, ctx)) {
+                    true_count += 1;
+                }
+            }
+            Value::Bool(true_count % 2 == 1)
+        }
+        "true" => Value::Bool(true),
+        "false" => Value::Bool(false),
         "not" => match args.first() {
             Some(arg) => Value::Bool(!truthy(&eval(arg, ctx))),
             None => Value::Error,
@@ -529,7 +592,11 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         "iferror" => match args.first() {
             Some(arg) => {
                 let value = eval(arg, ctx);
-                if matches!(value, Value::Error) {
+                // Excel's IFERROR also catches the "#N/A" text used by ref/lookup
+                // misses, not just #VALUE!.
+                let is_error = matches!(value, Value::Error)
+                    || matches!(&value, Value::Text(text) if text == "#N/A");
+                if is_error {
                     match args.get(1) {
                         Some(fallback) => eval(fallback, ctx),
                         None => Value::Bool(false),
@@ -539,6 +606,14 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 }
             }
             None => Value::Error,
+        },
+        // IFNA is the narrow fallback: only #N/A, not #VALUE!.
+        "ifna" => match (args.first(), args.get(1)) {
+            (Some(arg), Some(fallback)) => match eval(arg, ctx) {
+                Value::Text(text) if text == "#N/A" => eval(fallback, ctx),
+                value => value,
+            },
+            _ => Value::Error,
         },
 
         // ---- numeric -------------------------------------------------------

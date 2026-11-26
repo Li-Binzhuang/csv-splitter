@@ -15,7 +15,20 @@
 - `scripts/check_mcp_schema.py` 校验 23 工具、43 字段，`mcp_schema=ok`。
 - `scripts/check_mcp_dsh.sh` 可选 DSH 回归，默认 `skip`。
 
+## Excel 对齐滚动路线图（≥3 个未完成项）
+
+- [x] 项1 公式函数覆盖审计与首批补齐：`docs/FORMULA_COVERAGE.md`；IFS/SWITCH/
+  IFNA/CHOOSE/NA/XOR/TRUE/FALSE，IFERROR 捕获 #N/A；测试
+  `logical_fallbacks_and_switch_are_lazy`。
+- [ ] 项2 数字格式/显示对齐：千分位/小数位/百分比/日期时间显示。
+- [ ] 项3 xlsx 导出数字格式保真：格式映射进导出样式，round-trip。
+- [ ] 项4 条件显示规则增强：Excel 式单元格值/前 N 项规则。
+
 ## 当前进度
+
+Round 104（项1 公式覆盖）：矩阵落盘并补齐 IFS/SWITCH/IFNA/CHOOSE/NA/XOR/
+TRUE/FALSE；IFERROR 修正为也捕获 #N/A；全量 gate/package 通过；发布包
+SHA `67c8e270…7dd78`。
 
 Round 101（夜间收口）：检查点更新 53MB/1M 与 --all-sheets；路线图两项完成，
 main 同步，等待人类下一目标；发布包 SHA `455ced06…ffe2a`。
