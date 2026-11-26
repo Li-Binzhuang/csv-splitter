@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 93（待决策记录）：NIGHT_QUEUE 增加 xlsx 流式解析选项（1M 峰值 1.02 GB）
+与 calamine/goal edit 一并留白天决定；发布包 SHA `7ca5eda4…bc5bc29`。
+
 Round 92（失败不碰既有输出）：xlsx 解析失败时既有目标 CSV 内容保持不变；
 测试覆盖；发布包 SHA `cb6f1ca0…d45913`。
 

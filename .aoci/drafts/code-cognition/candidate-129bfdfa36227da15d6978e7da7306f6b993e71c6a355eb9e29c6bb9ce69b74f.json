@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "be7b0b15cc4efca51554e30caf8d0c157c47ce6339d154e44c6125f77a8ad339",
+  "batch_id": "129bfdfa36227da15d6978e7da7306f6b993e71c6a355eb9e29c6bb9ce69b74f",
+  "composite_identity": "40f798527b6160d9080b803f92b4f7f45d55ae1a7f84c23dd49089d40e8c1bfb",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "de540cae7fa39bded2bef566885e30da4e098e08933fc889d8f3078bb4e71f81",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NIGHT_QUEUE.md",
+      "path": "docs/NIGHT_QUEUE.md",
+      "change": "update",
+      "source_sha256": "5c5fcb22fec13ff0ce3efbe370ab0e30f09e7bc0f26e3d98d950f1521dbe3209",
+      "existing_entry": "NIGHT_QUEUE.md[SG8T]: F:夜间静默窗口不自行决定、留到白天的用户决策队列 | R:code:AGENTS.md,code:docs/NIGHT_CHECKPOINT.md,code:docs/XLSX_ENGINE.md | A:列 xlsx 解禁、calamine 迁移依赖/离线、商业化、删除/迁移、界面取舍、goal edit 需人类轮次；夜间只记录不执行 | S:不得把队列项当作已获授权；白天由用户决定后才动作"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "0cfe1955960ed869295c3d74e53a4424f3d50c38fbf29595e16369d90d11aa24",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round92 失败不碰既有输出与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "38cf0d868b34f0536dc84316bd2e7c530a46dbca2166cc233db225ba4e7fa718",
+      "object_ref": "code:docs/NIGHT_QUEUE.md",
+      "path": "docs/NIGHT_QUEUE.md",
+      "change": "update",
+      "source_sha256": "5c5fcb22fec13ff0ce3efbe370ab0e30f09e7bc0f26e3d98d950f1521dbe3209",
+      "existing_entry": "NIGHT_QUEUE.md[SG8T]: F:夜间静默窗口不自行决定、留到白天的用户决策队列 | R:code:AGENTS.md,code:docs/NIGHT_CHECKPOINT.md,code:docs/XLSX_ENGINE.md | A:列 xlsx 解禁、calamine 迁移依赖/离线、商业化、删除/迁移、界面取舍、goal edit 需人类轮次；夜间只记录不执行 | S:不得把队列项当作已获授权；白天由用户决定后才动作"
+    },
+    {
+      "candidate_id": "a004e94519feeaef7a3a55f1a16c4f17ff50b40965c16f68176d4b1e2e4b910d",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "0cfe1955960ed869295c3d74e53a4424f3d50c38fbf29595e16369d90d11aa24",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round92 失败不碰既有输出与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
