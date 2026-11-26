@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 100（路线图收口）：项 1（流式解析 53MB）与项 2（--all-sheets）均完成；
+xlsx 28 定向、convert 13 CLI、全量 gate、package 通过；路线图无剩余项，
+等待人类轮次给下一目标（保持 active）；发布包 SHA `21364d20…922e6`。
+
 Round 99（项2 完成）：`convert xlsx --format csv --all-sheets --out DIR` 已实现；
 每张 sheet 一个 CSV（含 hidden），文件名安全化与去重，冲突参数报错；两项 CLI
 fixture 测试通过；全量 gate/package 通过；发布包 SHA `afb18b00…00f1f3`。

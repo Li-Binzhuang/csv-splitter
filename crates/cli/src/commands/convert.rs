@@ -1,3 +1,5 @@
+//! Transcoding and workbook extraction. `--all-sheets` writes one CSV per
+//! worksheet; the single-sheet path stays the default.
 use crate::{
     check_output, parse_delimiter, print_command_help, report_failure, spawn_reporter, Parser,
 };

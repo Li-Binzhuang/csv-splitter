@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "685716265460c8f4f1f70fc2e3dc392ef78ba8cf42b7d01e468b65e20cad1d07",
+  "batch_id": "6fdbd1cba3a83ee0fdfa85d651168ace1f5472da15e090129c09c809bde13059",
+  "composite_identity": "3db1f305e62c8609c44586e0a9d60faf531e36d55fea9419d5105b6b21e4f187",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "c9b311f323b52226fb9d656b17c5861a3d5b1ca9b70d355b002b373e1c6361b3",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "cecba99b905091856d0ea10cf6cd1a1b423c4a2e63e0c360ec491568f58cbb20",
+      "existing_entry": "convert.rs[SD7M]: F:CLI convert 命令：编码转码、xlsx/csv/tsv/ndjson/parquet、highlight | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；-o/--format/--from/--to/--highlight/--sheet/--all-sheets/--delim；文件名安全化/去重；拒绝 .xls/.xlsb | S:不覆盖输入；--all-sheets 仅 xlsx→csv 且与 sheet/highlight 冲突；旧格式明确报错"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "efa2616ffb4611e9d972de606519a40a6adaa2aef4477c3630b98f754a6bdd28",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round99 项2 全 sheet 导出与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "83bf4234e3147df91c7c655f6252ac774e269f8b339a7832278299162a5e97b7",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "cecba99b905091856d0ea10cf6cd1a1b423c4a2e63e0c360ec491568f58cbb20",
+      "existing_entry": "convert.rs[SD7M]: F:CLI convert 命令：编码转码、xlsx/csv/tsv/ndjson/parquet、highlight | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；-o/--format/--from/--to/--highlight/--sheet/--all-sheets/--delim；文件名安全化/去重；拒绝 .xls/.xlsb | S:不覆盖输入；--all-sheets 仅 xlsx→csv 且与 sheet/highlight 冲突；旧格式明确报错"
+    },
+    {
+      "candidate_id": "9f0603bee3d327d1de1d30ef88b0819bcde9061b7f3fd811832e200cbc49cffd",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "efa2616ffb4611e9d972de606519a40a6adaa2aef4477c3630b98f754a6bdd28",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round99 项2 全 sheet 导出与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
