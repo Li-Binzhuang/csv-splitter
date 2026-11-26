@@ -23,10 +23,15 @@
 - [x] 项2 数字格式/显示对齐：`docs/NUMBER_FORMAT_COVERAGE.md`；新增
   `yyyy-mm-dd`/`dd/mm/yyyy`/`hh:mm:ss` 等 8 种日期时间格式，测试
   `date_time_formats_render_iso_values`。
-- [ ] 项3 xlsx 导出数字格式保真：格式映射进导出样式，round-trip。
+- [x] 项3 xlsx 导出数字格式保真：`write_sheets_with_formats`；Decimal/Percent/
+  Currency/DateTime → numFmt + 样式；round-trip 测试。
 - [ ] 项4 条件显示规则增强：Excel 式单元格值/前 N 项规则。
 
 ## 当前进度
+
+Round 106（项3 导出保真）：新增 `write_sheets_with_formats`，把布局格式映射为
+xlsx numFmt 与单元格样式；测试 `formats_are_mapped_into_export_styles_and_round_trip`；
+全量 gate/package 通过；发布包 SHA `a1434c83…1ea42`。
 
 Round 105（项2 数字格式）：审计 layout `NumberFormat`；千分位/小数/百分比/
 货币已支持，补日期时间 8 种格式；测试、全量 gate、package 通过；发布包

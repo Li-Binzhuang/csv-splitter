@@ -197,12 +197,37 @@ fn csv_to_xlsx_inner(
 
 /// Write multiple in-memory sheets (used by report/agent exports later).
 pub fn write_sheets(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
+    write_sheets_with_formats(output, sheets, &[])
+}
+
+/// Write sheets and map each column's display format into an Excel cell style.
+///
+/// Formats are per sheet and per column: `formats[sheet][column]`. A missing
+/// entry means plain text/number. The mapping is intentionally the same
+/// `NumberFormat` used by the viewer, so `#,##0.00`, `0.0%`, `$#,##0.00`
+/// and date/time codes do not get invented twice.
+pub fn write_sheets_with_formats(
+    output: &Path,
+    sheets: &[Sheet],
+    formats: &[Vec<crate::layout::NumberFormat>],
+) -> std::io::Result<()> {
     if sheets.is_empty() {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
             "xlsx needs at least one sheet",
         ));
     }
+    if !formats.is_empty() && formats.len() != sheets.len() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "xlsx formats need one entry per sheet",
+        ));
+    }
+    let flat_formats: Vec<crate::layout::NumberFormat> = formats
+        .iter()
+        .flat_map(|columns| columns.iter().cloned())
+        .collect();
+    let (styles, style_map) = styles_xml_for(&flat_formats);
     let file = std::fs::File::create(output)?;
     let mut zip = zip::ZipWriter::new(BufWriter::with_capacity(4 * 1024 * 1024, file));
     let options = zip::write::SimpleFileOptions::default()
@@ -215,7 +240,7 @@ pub fn write_sheets(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
         options,
     )?;
     write_part(&mut zip, "_rels/.rels", root_rels(), options)?;
-    write_part(&mut zip, "xl/styles.xml", styles_xml(), options)?;
+    write_part(&mut zip, "xl/styles.xml", &styles, options)?;
 
     let mut workbook = String::from(XML_HEADER);
     workbook.push_str("<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><bookViews><workbookView/></bookViews><sheets>");
@@ -273,8 +298,16 @@ pub fn write_sheets(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
                 ));
             }
             xml.push_str(&format!("<row r=\"{number}\">"));
+            let sheet_formats = formats.get(index).map(Vec::as_slice).unwrap_or(&[]);
             for (column, cell) in cells.iter().enumerate() {
-                write_cell_string(&mut xml, column, number, cell, false);
+                match sheet_formats.get(column) {
+                    Some(format) => {
+                        let code = format.name();
+                        let style = style_map.get(&code).copied();
+                        write_formatted_cell(&mut xml, column, number, cell, format, style);
+                    }
+                    None => write_cell_string(&mut xml, column, number, cell, false),
+                }
             }
             xml.push_str("</row>");
         }
@@ -360,6 +393,110 @@ fn styles_xml() -> &'static str {
         "<cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\"/></cellStyles>",
         "</styleSheet>"
     )
+}
+
+fn styles_xml_for(
+    formats: &[crate::layout::NumberFormat],
+) -> (String, std::collections::HashMap<String, usize>) {
+    let mut codes: Vec<String> = Vec::new();
+    for format in formats {
+        let code = format.name();
+        if code != "plain" && code != "yyyy-mm-dd" && !codes.contains(&code) {
+            codes.push(code);
+        }
+    }
+    let mut map = std::collections::HashMap::new();
+    for (index, code) in codes.iter().enumerate() {
+        map.insert(code.clone(), 3 + index);
+    }
+    let mut num_fmts = String::from(
+        "<numFmts count=\"1\"><numFmt numFmtId=\"14\" formatCode=\"yyyy-mm-dd\"/></numFmts>",
+    );
+    if !codes.is_empty() {
+        num_fmts = format!("<numFmts count=\"{}\">", codes.len() + 1);
+        num_fmts.push_str("<numFmt numFmtId=\"14\" formatCode=\"yyyy-mm-dd\"/>");
+        for (index, code) in codes.iter().enumerate() {
+            num_fmts.push_str(&format!(
+                "<numFmt numFmtId=\"{}\" formatCode=\"{}\"/>",
+                164 + index,
+                xml_attr(code)
+            ));
+        }
+        num_fmts.push_str("</numFmts>");
+    }
+    let mut cell_xfs = String::from(concat!(
+        "<cellXfs count=\"3\">",
+        "<xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/>",
+        "<xf numFmtId=\"0\" fontId=\"1\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyFont=\"1\"/>",
+        "<xf numFmtId=\"14\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/>"
+    ));
+    for (index, _) in codes.iter().enumerate() {
+        cell_xfs.push_str(&format!(
+            "<xf numFmtId=\"{}\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/>",
+            164 + index
+        ));
+    }
+    cell_xfs.push_str("</cellXfs>");
+    let styles = format!(
+        concat!(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>",
+            "<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">",
+            "<fonts count=\"2\"><font><sz val=\"11\"/><name val=\"Calibri\"/><family val=\"2\"/></font><font><b/><sz val=\"11\"/><name val=\"Calibri\"/><family val=\"2\"/></font></fonts>",
+            "<fills count=\"2\"><fill><patternFill patternType=\"none\"/></fill><fill><patternFill patternType=\"gray125\"/></fill></fills>",
+            "<borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders>",
+            "<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>",
+            "{}",
+            "{}",
+            "<cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\"/></cellStyles>",
+            "</styleSheet>"
+        ),
+        num_fmts, cell_xfs
+    );
+    (styles, map)
+}
+
+fn write_formatted_cell(
+    out: &mut String,
+    column: usize,
+    row: u64,
+    value: &str,
+    format: &crate::layout::NumberFormat,
+    style: Option<usize>,
+) {
+    use crate::layout::NumberFormat;
+    let reference = format!("{}{}", column_name(column), row);
+    let trimmed = value.trim();
+    match format {
+        NumberFormat::Plain => {
+            out.push_str(&cell_xml(column, row, value, false));
+            return;
+        }
+        NumberFormat::DateTime { .. } => {
+            if let Some(serial) = date_serial(trimmed) {
+                out.push_str(&format!(
+                    "<c r=\"{reference}\" s=\"{}\"><v>{serial}</v></c>",
+                    style.unwrap_or(2)
+                ));
+                return;
+            }
+        }
+        NumberFormat::Decimal { .. }
+        | NumberFormat::Percent { .. }
+        | NumberFormat::Currency { .. } => {
+            let numeric = !trimmed.is_empty()
+                && !(trimmed.starts_with('0') && !trimmed.starts_with("0.") && trimmed != "0")
+                && trimmed.parse::<f64>().is_ok();
+            if numeric {
+                out.push_str(&format!(
+                    "<c r=\"{reference}\" s=\"{}\"><v>{}</v></c>",
+                    style.unwrap_or(0),
+                    xml_text(trimmed)
+                ));
+                return;
+            }
+        }
+    }
+    out.push_str(&cell_xml(column, row, value, false));
 }
 
 fn cell_xml(column: usize, row: u64, value: &str, header: bool) -> String {
@@ -1987,6 +2124,50 @@ mod tests {
         )
         .unwrap();
         assert_eq!(rows[0].1, vec!["2024-01-01", "0.5"]);
+    }
+
+    #[test]
+    fn formats_are_mapped_into_export_styles_and_round_trip() {
+        use crate::layout::NumberFormat;
+        let path = temp_path("formatted.xlsx");
+        let output = temp_path("formatted.csv");
+        let sheet = Sheet {
+            name: "formatted".to_string(),
+            headers: vec![
+                "amount".into(),
+                "rate".into(),
+                "when".into(),
+                "label".into(),
+            ],
+            rows: vec![vec![
+                "1234.5".into(),
+                "0.123".into(),
+                "2024-01-02".into(),
+                "x".into(),
+            ]],
+        };
+        write_sheets_with_formats(
+            &path,
+            &[sheet],
+            &[vec![
+                NumberFormat::parse("#,##0.00").unwrap(),
+                NumberFormat::parse("0.0%").unwrap(),
+                NumberFormat::parse("yyyy-mm-dd").unwrap(),
+                NumberFormat::parse("plain").unwrap(),
+            ]],
+        )
+        .unwrap();
+        let styles = read_zip(&path, "xl/styles.xml");
+        assert!(styles.contains("formatCode=\"#,##0.00\""), "{styles}");
+        assert!(styles.contains("formatCode=\"0.0%\""), "{styles}");
+        assert!(styles.contains("formatCode=\"yyyy-mm-dd\""), "{styles}");
+        read_xlsx_to_csv(&path, &output, None).unwrap();
+        assert_eq!(
+            std::fs::read_to_string(&output).unwrap(),
+            "amount,rate,when,label\n1234.5,0.123,2024-01-02,x\n"
+        );
+        let _ = std::fs::remove_file(path);
+        let _ = std::fs::remove_file(output);
     }
 
     #[test]
