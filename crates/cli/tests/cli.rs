@@ -2826,6 +2826,41 @@ fn write_minimal_xlsx_full(
 }
 
 #[test]
+fn a_successful_xlsx_conversion_leaves_no_temporary_file() {
+    let dir = TempDir::new("xlsxtmpclean");
+    let book = dir.join("book.xlsx");
+    write_minimal_xlsx(
+        &book,
+        r#"<row r="1"><c r="A1" t="inlineStr"><is><t>id</t></is></c></row><row r="2"><c r="A2"><v>1</v></c></row>"#,
+    );
+    let out = dir.join("out.csv");
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--format",
+            "csv",
+            "--out",
+            out.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    for entry in std::fs::read_dir(&dir.0).unwrap().flatten() {
+        let name = entry.file_name();
+        assert!(
+            !name.to_string_lossy().ends_with(".tmp"),
+            "temporary file left behind: {name:?}"
+        );
+    }
+    assert_eq!(std::fs::read_to_string(&out).unwrap(), "id\n1\n");
+}
+
+#[test]
 fn a_failed_xlsx_conversion_leaves_an_existing_output_untouched() {
     let dir = TempDir::new("xlsxkeepout");
     let book = dir.join("book.xlsx");
