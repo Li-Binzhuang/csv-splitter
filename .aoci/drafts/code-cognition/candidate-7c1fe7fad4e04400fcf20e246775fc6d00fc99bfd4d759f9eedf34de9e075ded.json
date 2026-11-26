@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "c32032c5773ad8509f172e2245e21c489c41056f0fa80d79761af26e1bd97396",
+  "batch_id": "7c1fe7fad4e04400fcf20e246775fc6d00fc99bfd4d759f9eedf34de9e075ded",
+  "composite_identity": "56de6cab4f5bb6bb75285244c588f4f593c645da31b96a2216dc98a0eafd75ad",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "391a7e450fa882ba71a7ae40200fb528c90ba6ac4600eda0811ab44ab2af8fe5",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "c1ccc5f9ccf7b5f15df61cfba564bb4dd49c1fd0ed2d8152ea89e791cd60ac9f",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round58 空行/夹具与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "9bf279f7bc42a7dc0d840d1d375e708876fb5b23327150f224fc13d862e86888",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "c1ccc5f9ccf7b5f15df61cfba564bb4dd49c1fd0ed2d8152ea89e791cd60ac9f",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round58 空行/夹具与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

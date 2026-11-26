@@ -2864,6 +2864,35 @@ fn convert_skips_empty_xlsx_rows() {
 }
 
 #[test]
+fn convert_keeps_a_merged_cell_top_left_only() {
+    let dir = TempDir::new("xlsxmerge");
+    let book = dir.join("book.xlsx");
+    write_minimal_xlsx(
+        &book,
+        r#"<row r="1"><c r="A1" t="inlineStr"><is><t>merged</t></is></c></row>
+        <mergeCells count="1"><mergeCell ref="A1:B1"/></mergeCells>"#,
+    );
+    let out = dir.join("out.csv");
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--format",
+            "csv",
+            "--out",
+            out.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(std::fs::read_to_string(&out).unwrap(), "merged\n");
+}
+
+#[test]
 fn pipeline_history_records_runs_and_failures() {
     let dir = TempDir::new("pipeline-history");
     std::fs::write(dir.join("orders.csv"), "id,city\n1,CDMX\n2,Puebla\n").unwrap();
