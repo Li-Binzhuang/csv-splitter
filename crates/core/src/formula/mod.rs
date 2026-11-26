@@ -1484,6 +1484,18 @@ mod tests {
     }
 
     #[test]
+    fn date_helpers_handle_the_1900_system_boundary() {
+        assert_eq!(eval_str(r#"eomonth("1900-02-01", 0)"#, &[]), "1900-02-28");
+        assert_eq!(
+            eval_str(r#"weekday("1900-01-01")"#, &[]),
+            "2",
+            "Excel's serial 1 is a Monday"
+        );
+        assert_eq!(eval_str(r#"weekday("1900-03-01")"#, &[]), "5");
+        assert_eq!(eval_str(r#"datevalue("1900-02-29")"#, &[]), "60");
+    }
+
+    #[test]
     fn days360_supports_us_and_european_methods() {
         assert_eq!(
             eval_str(r#"days360("2024-01-01", "2024-02-01")"#, &[]),

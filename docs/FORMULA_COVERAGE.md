@@ -35,7 +35,7 @@
 | 函数 | 状态 | 说明 |
 |---|---|---|
 | DATE / YEAR / MONTH / DAY | 支持 | DATE 生成 ISO 日期文本 |
-| EDATE / EOMONTH | 支持 | 月末按日历计算 |
+| EDATE / EOMONTH | 支持 | 月末按日历计算；1900-02 为 28 日（Excel 假闰日只影响序列号） |
 | WEEKDAY / WEEKNUM | 支持 | 默认周日为 1；WEEKNUM 用 return_type 1 |
 | DAYS / NETWORKDAYS / WORKDAY | 支持 | 工作日跳过周末；不含自定义节假日 |
 | DAYS360 | 支持（新增） | US/EU 30/360；反向报错 |
