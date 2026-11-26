@@ -48,3 +48,21 @@
 - 迁移**未执行**：新增 crate 属于离线依赖/供应链决策，等用户明确批准；
 - 自写路径继续维护，新增边界测试先钉住行为；
 - 不新增前端，商业化（定价/License/企业包）暂缓。
+
+## 7. 当前覆盖矩阵（2026-11-26）
+
+| 输入/边界 | 当前行为 | 测试 |
+|---|---|---|
+| 共享字符串 | 索引解析，越界报错 | `reads_shared_strings_and_cached_formula_values`、`a_missing_shared_string_index_is_an_error_not_an_empty_cell` |
+| 缓存公式值 | number/string/boolean 读缓存值 | `reads_shared_strings_and_cached_formula_values`、`cached_string_and_boolean_formula_values_are_read` |
+| 无缓存公式值 | 明确报错，不写空值 | `formula_without_a_cached_value_is_an_error`、CLI `convert_reports_a_formula_without_a_cached_value` |
+| 内置日期样式 | serial → `YYYY-MM-DD` | `iso_dates_are_written_as_excel_date_cells` |
+| 自定义日期/时间 | 常见 token；日期时间/纯时间 | `custom_date_number_formats_are_recognized`、`date_serials_carry_time_fractions_and_time_only_cells`、`custom_time_formats_are_recognized_and_render_as_clock` |
+| 合并单元格 | 只输出存储的左上值，不展开 | `merged_cells_keep_the_stored_top_left_value_without_inventing_others`、CLI `convert_keeps_a_merged_cell_top_left_only` |
+| 空行 | 跳过 | `table_from_rows_skips_empty_rows_and_enforces_the_limit`、CLI `convert_skips_empty_xlsx_rows` |
+| sheet 名 | 大小写不敏感 | `reads_a_named_sheet`、CLI `convert_imports_xlsx_shared_strings_and_sheets` |
+| 列上限 | >16384 拒绝 | `a_cell_beyond_excels_column_limit_is_an_error` |
+| 行上限 | 解析中限制，表头单独计 | `sheet_rows_stops_before_an_unbounded_worksheet`、`table_from_rows_skips_empty_rows_and_enforces_the_limit` |
+| inlineStr | 有 `<is>` 解析；空 body 视为空单元格 | xlsx fixture 与 `convert_imports_xlsx_shared_strings_and_sheets` |
+
+`convert` 是用户可跑的入口；`read_xlsx_to_csv` 的错误会保留为 stderr，失败不写输出文件。

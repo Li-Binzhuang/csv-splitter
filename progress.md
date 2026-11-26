@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 67（XLSX 覆盖矩阵）：XLSX_ENGINE.md 增加 11 项边界/测试矩阵，作为
+xlsx 导入审计的对外验收证据；随包分发；发布包 SHA `c1c3c07d…69ba3e`。
+
 Round 66（自定义时间格式）：`is_date_format` 识别 hh:mm:ss，纯时间单元格
 0.5 输出 12:00:00；测试覆盖；发布包 SHA `960e7f21…ffb68`。
 

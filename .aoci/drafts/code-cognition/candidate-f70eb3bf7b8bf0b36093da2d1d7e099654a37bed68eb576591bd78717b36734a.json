@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "09890ff072952d35ba2152497204d33767fa45e1d2a656c1557c1f80c5a6d95b",
+  "batch_id": "f70eb3bf7b8bf0b36093da2d1d7e099654a37bed68eb576591bd78717b36734a",
+  "composite_identity": "c4a3489f94ea3c312b8a60b1af40b4ac172a2d19c7d24559603c07d5f179e764",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b6ba0e360ac309f6d6ce462c9abbff4900cd722489c453ef2f161d90a157aaa7",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "692a32a2912fb37add75605591a0974259b309993e2124eb3aeb3b79ecabe6de",
+      "existing_entry": "XLSX_ENGINE.md[SZ7T]: F:XLSX 读写引擎决策与迁移方案 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；自写子集现状；读迁/写留；离线 vendor | S:迁移未执行待批准；不新增依赖；商业化暂缓"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "c80ab868ff7b84b92fc8a1f693f04944008ff35ea441edd763863a74f8a1a313",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round66 时间格式与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "dcee31e5272391f093afe5f3b436709e63b2e097bd928bb94f4ea18feff46212",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "692a32a2912fb37add75605591a0974259b309993e2124eb3aeb3b79ecabe6de",
+      "existing_entry": "XLSX_ENGINE.md[SZ7T]: F:XLSX 读写引擎决策与迁移方案 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；自写子集现状；读迁/写留；离线 vendor | S:迁移未执行待批准；不新增依赖；商业化暂缓"
+    },
+    {
+      "candidate_id": "b2f0cfcdad513d44f3601cab537e52c7749d5694ef63c0285c54e82aa7f1246f",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "c80ab868ff7b84b92fc8a1f693f04944008ff35ea441edd763863a74f8a1a313",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round66 时间格式与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
