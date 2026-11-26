@@ -1582,6 +1582,98 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             let sum = life * (life + 1.0) / 2.0;
             Value::Number((cost - salvage) * factor / sum)
         }
+        // DB/DDB: declining-balance depreciation.
+        "db" => {
+            if args.len() < 4 || args.len() > 5 {
+                return Value::Error;
+            }
+            let (Some(cost), Some(salvage), Some(life), Some(period)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+                eval(&args[3], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            let month = args
+                .get(4)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(12.0))
+                .unwrap_or(f64::NAN);
+            if !cost.is_finite()
+                || !salvage.is_finite()
+                || !life.is_finite()
+                || !period.is_finite()
+                || !month.is_finite()
+                || cost <= 0.0
+                || salvage < 0.0
+                || life <= 0.0
+                || period < 1.0
+                || period > life
+                || life.trunc() != life
+                || period.trunc() != period
+                || month < 1.0
+                || month > 12.0
+                || month.trunc() != month
+            {
+                return Value::Error;
+            }
+            let rate = ((1.0 - (salvage / cost).powf(1.0 / life)) * 1000.0).round() / 1000.0;
+            let mut total = 0.0;
+            let mut depreciation = 0.0;
+            for step in 1..=period as i32 {
+                depreciation = if step == 1 {
+                    cost * rate * month / 12.0
+                } else if step == life as i32 {
+                    (cost - total) * rate * (12.0 - month) / 12.0
+                } else {
+                    (cost - total) * rate
+                };
+                total += depreciation;
+            }
+            Value::Number(depreciation)
+        }
+        "ddb" => {
+            if args.len() < 4 || args.len() > 5 {
+                return Value::Error;
+            }
+            let (Some(cost), Some(salvage), Some(life), Some(period)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+                eval(&args[3], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            let factor = args
+                .get(4)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(2.0))
+                .unwrap_or(f64::NAN);
+            if !cost.is_finite()
+                || !salvage.is_finite()
+                || !life.is_finite()
+                || !period.is_finite()
+                || !factor.is_finite()
+                || cost <= 0.0
+                || salvage < 0.0
+                || life <= 0.0
+                || period < 1.0
+                || period > life
+                || period.trunc() != period
+                || factor <= 0.0
+            {
+                return Value::Error;
+            }
+            let rate = factor / life;
+            let mut total = 0.0;
+            let mut depreciation = 0.0;
+            for _ in 1..=period as i32 {
+                depreciation = ((cost - total) * rate).min((cost - salvage - total).max(0.0));
+                total += depreciation;
+            }
+            Value::Number(depreciation)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

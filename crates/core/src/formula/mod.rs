@@ -1442,6 +1442,33 @@ mod tests {
     }
 
     #[test]
+    fn declining_balance_depreciation_works() {
+        assert_eq!(eval_str("db(1000, 100, 5, 1)", &[]), "369");
+        assert_eq!(eval_str("db(1000, 100, 5, 2)", &[]), "232.839");
+        assert_eq!(
+            eval_str("db(1000000, 100000, 6, 1, 7)", &[]),
+            "186083.333333"
+        );
+        assert_eq!(
+            eval_str("db(1000000, 100000, 6, 2, 7)", &[]),
+            "259639.416667"
+        );
+        assert_eq!(eval_str("ddb(2400, 300, 10, 1)", &[]), "480");
+        assert_eq!(eval_str("ddb(2400, 300, 10, 2)", &[]), "384");
+        assert_eq!(eval_str("ddb(2400, 300, 10, 3)", &[]), "307.2");
+        for source in [
+            "db(1000, 100, 5, 0)",
+            "db(1000, 100, 5, 6)",
+            "db(1000, 100, 5, 1, 13)",
+            "ddb(1000, 100, 5, 0)",
+            "ddb(1000, 100, 5, 6)",
+            "ddb(1000, 100, 5, 1, 0)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn straight_line_and_sum_of_years_depreciation() {
         assert_eq!(eval_str("sln(10000, 1000, 5)", &[]), "1800");
         assert_eq!(eval_str("sln(1000, 0, 4)", &[]), "250");
