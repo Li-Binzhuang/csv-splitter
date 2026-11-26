@@ -1152,6 +1152,96 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             _ => Value::Error,
         },
+        // FIXED/DOLLAR are text formatting, not number formatting; they return
+        // strings a downstream concatenation can use.
+        "fixed" | "dollar" => {
+            if args.is_empty() || args.len() > if lower == "dollar" { 2 } else { 3 } {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            let decimals = args
+                .get(1)
+                .and_then(|arg| eval(arg, ctx).number())
+                .unwrap_or(2.0);
+            if !number.is_finite() || !decimals.is_finite() {
+                return Value::Error;
+            }
+            let decimals = decimals.trunc() as i32;
+            if !(-15..=15).contains(&decimals) {
+                return Value::Error;
+            }
+            let no_commas = args
+                .get(2)
+                .map(|arg| truthy(&eval(arg, ctx)))
+                .unwrap_or(false);
+            let body = fixed_body(
+                if lower == "dollar" {
+                    number.abs()
+                } else {
+                    number
+                },
+                decimals,
+                no_commas,
+            );
+            if lower == "dollar" {
+                let currency = format!("${body}");
+                return Value::Text(if number < 0.0 {
+                    format!("({currency})")
+                } else {
+                    currency
+                });
+            }
+            Value::Text(body)
+        }
+        "numbervalue" => {
+            if args.is_empty() || args.len() > 3 {
+                return Value::Error;
+            }
+            let text = eval(&args[0], ctx).text();
+            let decimal = args
+                .get(1)
+                .map(|arg| eval(arg, ctx).text())
+                .unwrap_or_else(|| ".".to_string());
+            let group = args
+                .get(2)
+                .map(|arg| eval(arg, ctx).text())
+                .unwrap_or_else(|| ",".to_string());
+            let Some(decimal) = single_separator(&decimal) else {
+                return Value::Error;
+            };
+            let Some(group) = single_separator(&group) else {
+                return Value::Error;
+            };
+            if decimal == group {
+                return Value::Error;
+            }
+            let mut text = text.trim().to_string();
+            let mut negative = false;
+            if text.starts_with('(') && text.ends_with(')') {
+                negative = true;
+                text = text[1..text.len() - 1].to_string();
+            }
+            let mut percent = false;
+            if text.ends_with('%') {
+                percent = true;
+                text.pop();
+            }
+            if text.matches(decimal).count() > 1 {
+                return Value::Error;
+            }
+            let normalized = text.replace(group, "").replace(decimal, ".");
+            if normalized.is_empty() {
+                return Value::Number(0.0);
+            }
+            match normalized.parse::<f64>() {
+                Ok(value) if value.is_finite() => Value::Number(
+                    value * if negative { -1.0 } else { 1.0 } * if percent { 0.01 } else { 1.0 },
+                ),
+                _ => Value::Error,
+            }
+        }
         "textbefore" => text_around(args, ctx, true),
         "textafter" => text_around(args, ctx, false),
         "left" => text_slice(args, ctx, |s, n| s.chars().take(n).collect()),
@@ -2208,6 +2298,45 @@ fn approximate_position(lookup: &Value, cells: &[&str], mode: f64) -> Option<usi
         }
         None
     }
+}
+
+fn single_separator(text: &str) -> Option<char> {
+    if text.chars().count() == 1 {
+        text.chars().next()
+    } else {
+        None
+    }
+}
+
+fn fixed_body(number: f64, decimals: i32, no_commas: bool) -> String {
+    let negative = number < 0.0;
+    let mut text = if decimals >= 0 {
+        format!("{:.*}", decimals as usize, number.abs())
+    } else {
+        let factor = 10f64.powi(-decimals);
+        format!("{:.0}", (number.abs() / factor).round() * factor)
+    };
+    if !no_commas {
+        let integer_end = text.find('.').unwrap_or(text.len());
+        let (integer, fraction) = text.split_at(integer_end);
+        text = format!("{}{}", group_digits(integer), fraction);
+    }
+    if negative {
+        format!("-{text}")
+    } else {
+        text
+    }
+}
+
+fn group_digits(digits: &str) -> String {
+    let mut out = String::with_capacity(digits.len() + digits.len() / 3);
+    for (index, ch) in digits.chars().rev().enumerate() {
+        if index > 0 && index % 3 == 0 {
+            out.push(',');
+        }
+        out.push(ch);
+    }
+    out.chars().rev().collect()
 }
 
 /// 1-based position of `needle` in `text`; 0 when absent, like Excel's FIND/SEARCH.

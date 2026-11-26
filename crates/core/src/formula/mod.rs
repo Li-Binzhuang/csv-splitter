@@ -1278,6 +1278,27 @@ mod tests {
     }
 
     #[test]
+    fn fixed_dollar_and_numbervalue_work() {
+        assert_eq!(eval_str("fixed(1234.5678)", &[]), "1,234.57");
+        assert_eq!(eval_str("fixed(1234.5678, 0)", &[]), "1,235");
+        assert_eq!(eval_str("fixed(1234.5678, 2, true())", &[]), "1234.57");
+        assert_eq!(eval_str("fixed(-1234.5, 2)", &[]), "-1,234.50");
+        assert_eq!(eval_str("fixed(1234.5678, -2)", &[]), "1,200");
+        assert_eq!(eval_str("dollar(1234.5678)", &[]), "$1,234.57");
+        assert_eq!(eval_str("dollar(-1234.5678)", &[]), "($1,234.57)");
+        assert_eq!(eval_str("dollar(1234.5678, 0)", &[]), "$1,235");
+        assert_eq!(
+            eval_str(r#"numbervalue("1.234,56", ",", ".")"#, &[]),
+            "1234.56"
+        );
+        assert_eq!(eval_str(r#"numbervalue("1,234.56")"#, &[]), "1234.56");
+        assert_eq!(eval_str(r#"numbervalue("12%")"#, &[]), "0.12");
+        assert_eq!(eval_str(r#"numbervalue("(123)")"#, &[]), "-123");
+        assert_eq!(eval_str(r#"numbervalue("1.23.4")"#, &[]), "#VALUE!");
+        assert_eq!(eval_str(r#"numbervalue("1,23", ",", ",")"#, &[]), "#VALUE!");
+    }
+
+    #[test]
     fn textjoin_char_and_code_work_like_a_spreadsheet() {
         let columns = vec!["city".to_string(), "note".to_string()];
         let mut cells = HashMap::new();

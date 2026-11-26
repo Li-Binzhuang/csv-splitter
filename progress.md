@@ -93,11 +93,14 @@
 - [x] 项132 非 ASCII 码点（功能级）：`UNICHAR`/`UNICODE` 支持 Unicode 码点
   与字符互转；非法码点/空文本 `#VALUE!`；测试 `char_and_code` 覆盖中文、emoji、
   0/代理区/越界。
-- [ ] 项133 固定小数/货币文本（功能级）：`FIXED`/`DOLLAR` 生成带千分位/小数位
-  的文本，`NUMBERVALUE` 解析区域小数点；验收：格式与错误单测 + gate。
+- [x] 项133 固定小数/货币文本（功能级）：`FIXED` 固定小数/千分位/
+  `no_commas`；`DOLLAR` 货币与负数括号；`NUMBERVALUE` 区域分隔符、百分号、
+  括号负数与非法分隔符报错。测试 `fixed_dollar_and_numbervalue_work`。
 - [ ] 项134 小计函数（功能级）：`SUBTOTAL(function_num, range)` 支持
   1/2/3/4/5/6/7/8/9/10/11 与 101–111；同行区间；编号/空区间 `#VALUE!`。
   验收：各编号、空区间、非法编号单测 + gate。
+- [ ] 项136 数论/组合函数（功能级）：`GCD`/`LCM`/`FACT`/`COMBIN`/`PERMUT`
+  支持非负整数，非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项135 单行 HLOOKUP/LOOKUP（功能级）：`HLOOKUP(value, range, 1[, FALSE])`
   与 `LOOKUP(value, lookup_range, result_range)` 支持同行单行表；精确/近似；
   越界/不等宽/未命中按 `#VALUE!`/`#N/A`。验收：单测 + gate。
@@ -110,6 +113,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 162（项133 FIXED/DOLLAR/NUMBERVALUE，功能级）：固定小数、货币文本、
+区域数字解析；定向与全量 gate/package 通过；发布包 SHA `b359981b…c0545`。
 
 Round 161（项132 UNICHAR/UNICODE，功能级）：Unicode 码点互转；中文/emoji/
 代理区边界测试、全量 gate/package 通过；发布包 SHA `9c64eaaf…96e4`。
