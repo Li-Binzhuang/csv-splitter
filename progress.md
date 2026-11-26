@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 14：push 重试成功；`executor/commands.rs` 430 → 360 行（11 处 Bool 解析收进 `flag_or`）；
+行数上限收紧到 450；发布包 SHA `74ebe5d8…4161e`。
+
 Round 13：实跑可选 DSH 回归 `CSVX_DSH_TEST=1 bash scripts/check_mcp_dsh.sh`，
 DSH headless 经 MCP 调用 `csvx_schema` 返回 2 行；`mcp_dsh=ok`；发布包 SHA `26bb5463…f3daf`。
 
@@ -53,7 +56,7 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 ## 未完成
 
 - 23 工具字段映射、必填、format 枚举、count/limit/jobs/wait/gate 边界已覆盖。
-- `executor/commands.rs` 406 行，后续可再按工具族拆分。
+- `executor/commands.rs` 360 行，仍在 450 上限内。
 - DSH 可选回归脚本已实跑通过；MCP resources/initialize 已验证。
 - 商业化/产品化未开始。
 
@@ -64,6 +67,6 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 ## 下一轮具体行动
 
-1. 全量 gate、AOCI 收尾并提交。
-2. push 本轮提交一次。
-3. 下一轮转向产品化切片或 mcp 模块瘦身。
+1. 跑 MCP SDK 与全量 gate。
+2. AOCI 收尾并提交。
+3. push 本轮提交一次。

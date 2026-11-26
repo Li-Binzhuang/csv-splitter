@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a397754d52ddee714cfae140f32340506623729f25d674c3da99d0494bce3b15",
+  "batch_id": "a6b5eb6745ff30a1f840a1a01c1ac0222f65f7ba4783a3a351b15a664d0414c5",
+  "composite_identity": "9be2133b1150e79632a079bad467d15054c352e16c3056d9983cd8d3b4498f1b",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b2102ec80458f244baf06004862a0b8ed063756d430d10319bcbb67628638f8f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/executor/commands.rs",
+      "path": "crates/mcp/src/executor/commands.rs",
+      "change": "update",
+      "source_sha256": "593ee78247ec4ee8e8545e3af51feac17bc9e292f31e0fcd0af32b23928da07f",
+      "existing_entry": "commands.rs[EN8L]: F:23 个 MCP 工具到 csvx CLI 的参数映射 | R:code:crates/mcp/src/executor.rs,code:crates/mcp/src/tools.rs,code:crates/mcp/src/executor/paths.rs | A:build；report format 只收 md/html；count/limit 1..1000；pipeline jobs 1..64；gate 非负 | S:越界报错；路径限 root；edit_delete 带 count；只拼 argv"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "d94ed2821e29a56883149bad3ce803c7c6bf2eea7e5591c6fb1970d7f8b9dbd5",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round13 DSH 实跑与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "825b76064fb69b44936a1813cef7bd77c86e30999acdca55b683e2d1e630a0a4",
+      "existing_entry": "check_layout.sh[XQ7S]: F:入口层目录与行数规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根/CLI/MCP 白名单；executor/paths 250；executor/commands 550；MCP 单文件阈值 | S:未知模块退出；超行数失败；先改文档再加模块"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "d2f0a064f1b968315ccbc75e3815b870971bd2f309a318120f064df02ff0db41",
+      "object_ref": "code:crates/mcp/src/executor/commands.rs",
+      "path": "crates/mcp/src/executor/commands.rs",
+      "change": "update",
+      "source_sha256": "593ee78247ec4ee8e8545e3af51feac17bc9e292f31e0fcd0af32b23928da07f",
+      "existing_entry": "commands.rs[EN8L]: F:23 个 MCP 工具到 csvx CLI 的参数映射 | R:code:crates/mcp/src/executor.rs,code:crates/mcp/src/tools.rs,code:crates/mcp/src/executor/paths.rs | A:build；report format 只收 md/html；count/limit 1..1000；pipeline jobs 1..64；gate 非负 | S:越界报错；路径限 root；edit_delete 带 count；只拼 argv"
+    },
+    {
+      "candidate_id": "436830909a0ff0919d85b0db134449751d7d9a2977c11c488a7cd050ff7d6cdd",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "d94ed2821e29a56883149bad3ce803c7c6bf2eea7e5591c6fb1970d7f8b9dbd5",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round13 DSH 实跑与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "bcfe5e327ae21726faf56dd408dc117d00442b63528b0c41d0d70f0efc9f26c0",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "825b76064fb69b44936a1813cef7bd77c86e30999acdca55b683e2d1e630a0a4",
+      "existing_entry": "check_layout.sh[XQ7S]: F:入口层目录与行数规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根/CLI/MCP 白名单；executor/paths 250；executor/commands 550；MCP 单文件阈值 | S:未知模块退出；超行数失败；先改文档再加模块"
+    }
+  ]
+}

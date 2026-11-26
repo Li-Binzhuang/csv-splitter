@@ -3,6 +3,13 @@ use std::path::{Path, PathBuf};
 
 use super::paths::{mcp_named_file, mcp_output_path};
 
+fn flag_or(args: &McpJson, key: &str, default: bool) -> bool {
+    match args.get(key) {
+        Some(McpJson::Bool(value)) => *value,
+        _ => default,
+    }
+}
+
 fn bounded(args: &McpJson, key: &str, min: u64, max: u64, default: u64) -> Result<u64, String> {
     match args.get(key) {
         None => Ok(default),
@@ -93,24 +100,10 @@ pub(super) fn concat(
         return Err("paths or dir is required".to_string());
     }
     command.args(["-o", out.to_str().unwrap_or("")]);
-    if args
-        .get("byName")
-        .and_then(|value| match value {
-            McpJson::Bool(flag) => Some(*flag),
-            _ => None,
-        })
-        .unwrap_or(false)
-    {
+    if flag_or(args, "byName", false) {
         command.arg("--by-name");
     }
-    if args
-        .get("ignoreHeader")
-        .and_then(|value| match value {
-            McpJson::Bool(flag) => Some(*flag),
-            _ => None,
-        })
-        .unwrap_or(false)
-    {
+    if flag_or(args, "ignoreHeader", false) {
         command.arg("--ignore-header");
     }
     command.arg("--json");
@@ -153,14 +146,7 @@ pub(super) fn build(
                 "--limit",
                 &limit.to_string(),
             ]);
-            if args
-                .get("show")
-                .and_then(|value| match value {
-                    McpJson::Bool(flag) => Some(*flag),
-                    _ => None,
-                })
-                .unwrap_or(true)
-            {
+            if flag_or(args, "show", true) {
                 command.args(["--show", &limit.to_string()]);
             }
         }
@@ -198,24 +184,10 @@ pub(super) fn build(
         }
         "csvx_pipeline_status" => {
             command.args(["pipeline", "status", path.to_str().unwrap_or(""), "--json"]);
-            if args
-                .get("verify")
-                .and_then(|value| match value {
-                    McpJson::Bool(flag) => Some(*flag),
-                    _ => None,
-                })
-                .unwrap_or(false)
-            {
+            if flag_or(args, "verify", false) {
                 command.arg("--verify");
             }
-            if args
-                .get("contentCheck")
-                .and_then(|value| match value {
-                    McpJson::Bool(flag) => Some(*flag),
-                    _ => None,
-                })
-                .unwrap_or(false)
-            {
+            if flag_or(args, "contentCheck", false) {
                 command.arg("--content-check");
             }
         }
@@ -254,57 +226,22 @@ pub(super) fn build(
                 root.to_str().unwrap_or(""),
                 "--json",
             ]);
-            if args
-                .get("force")
-                .and_then(|value| match value {
-                    McpJson::Bool(flag) => Some(*flag),
-                    _ => None,
-                })
-                .unwrap_or(false)
-            {
+            if flag_or(args, "force", false) {
                 command.arg("--force");
             }
-            if args
-                .get("dryRun")
-                .and_then(|value| match value {
-                    McpJson::Bool(flag) => Some(*flag),
-                    _ => None,
-                })
-                .unwrap_or(false)
-            {
+            if flag_or(args, "dryRun", false) {
                 command.arg("--dry-run");
             }
-            if args
-                .get("dag")
-                .and_then(|value| match value {
-                    McpJson::Bool(flag) => Some(*flag),
-                    _ => None,
-                })
-                .unwrap_or(false)
-            {
+            if flag_or(args, "dag", false) {
                 command.arg("--dag");
             }
             if let Some(jobs) = optional_bounded(args, "jobs", 1, 64)? {
                 command.args(["--jobs", &jobs.to_string()]);
             }
-            if args
-                .get("clean")
-                .and_then(|value| match value {
-                    McpJson::Bool(flag) => Some(*flag),
-                    _ => None,
-                })
-                .unwrap_or(false)
-            {
+            if flag_or(args, "clean", false) {
                 command.arg("--clean");
             }
-            if args
-                .get("contentCheck")
-                .and_then(|value| match value {
-                    McpJson::Bool(flag) => Some(*flag),
-                    _ => None,
-                })
-                .unwrap_or(false)
-            {
+            if flag_or(args, "contentCheck", false) {
                 command.arg("--content-check");
             }
         }
@@ -395,14 +332,7 @@ pub(super) fn build(
             if let Some(name) = args.get("unique").and_then(McpJson::as_str) {
                 command.args(["--unique", name]);
             }
-            if args
-                .get("uniqueGlobal")
-                .and_then(|value| match value {
-                    McpJson::Bool(flag) => Some(*flag),
-                    _ => None,
-                })
-                .unwrap_or(false)
-            {
+            if flag_or(args, "uniqueGlobal", false) {
                 command.arg("--unique-global");
             }
         }

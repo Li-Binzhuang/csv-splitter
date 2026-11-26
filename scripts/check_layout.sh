@@ -89,7 +89,7 @@ mcp_limit jobs.rs 400
 mcp_limit cache.rs 350
 mcp_limit json.rs 350
 mcp_limit executor/paths.rs 250
-mcp_limit executor/commands.rs 550
+mcp_limit executor/commands.rs 450
 mcp_limit tools.rs 50
 
 line_count=$(wc -l < crates/cli/src/main.rs)
