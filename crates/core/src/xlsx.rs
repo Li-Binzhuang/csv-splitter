@@ -479,6 +479,16 @@ fn conditional_formatting_xml(
 
 /// Built-in Excel number formats that represent dates.
 fn date_style_map(styles: &str) -> Vec<bool> {
+    let mut date_ids: Vec<u32> = (14..=22).chain(45..=47).collect();
+    let num_fmt_re = Regex::new(r#"(?s)<numFmt\b([^>]*?)(?:/>|>)"#).unwrap();
+    for captures in num_fmt_re.captures_iter(styles) {
+        let attrs = &captures[1];
+        if let Some(id) = attr(attrs, "numFmtId").and_then(|value| value.parse::<u32>().ok()) {
+            if attr(attrs, "formatCode").is_some_and(|code| is_date_format(&code)) {
+                date_ids.push(id);
+            }
+        }
+    }
     let block_re = Regex::new(r#"(?s)<cellXfs\b[^>]*>(.*?)</cellXfs>"#).unwrap();
     let Some(block) = block_re.captures(styles) else {
         return Vec::new();
@@ -489,9 +499,20 @@ fn date_style_map(styles: &str) -> Vec<bool> {
         .map(|captures| {
             attr(&captures[1], "numFmtId")
                 .and_then(|value| value.parse::<u32>().ok())
-                .is_some_and(|id| matches!(id, 14..=22 | 45..=47))
+                .is_some_and(|id| date_ids.contains(&id))
         })
         .collect()
+}
+
+fn is_date_format(code: &str) -> bool {
+    let lower = code.to_ascii_lowercase();
+    lower.contains("yyyy")
+        || lower.contains("yy")
+        || lower.contains("mmm")
+        || lower.contains("mm/dd")
+        || lower.contains("dd/mm")
+        || lower.contains("m/d")
+        || lower.contains("d/m")
 }
 
 fn serial_to_date(serial: f64) -> Option<String> {
@@ -680,8 +701,8 @@ fn sheet_columns_xml(headers: &[String], rows: &[Vec<String>]) -> String {
 /// Read one worksheet from an `.xlsx`/`.xlsm` workbook into a CSV file.
 ///
 /// The reader understands a small, common subset: shared strings, inline
-/// strings, cached formula values, booleans, numbers and built-in date styles
-/// (serials are rendered as `YYYY-MM-DD`). Merged cells are not expanded: only
+/// strings, cached formula values, booleans, numbers and date styles (built-in
+/// IDs plus custom `numFmt` codes; serials are rendered as `YYYY-MM-DD`). Merged cells are not expanded: only
 /// the stored top-left value is emitted. A formula cell with no cached value is
 /// an error rather than an invented empty cell, and shared-string indices are
 /// validated. Charts and comments are ignored.
@@ -1227,6 +1248,23 @@ mod tests {
         <mergeCells count="1"><mergeCell ref="A1:B1"/></mergeCells>"#;
         let rows = sheet_rows(xml, &[], &[]).unwrap();
         assert_eq!(rows[0].1, vec!["merged"], "only A1 has a stored value");
+    }
+
+    #[test]
+    fn custom_date_number_formats_are_recognized() {
+        let styles = r#"<numFmts count="2">
+            <numFmt numFmtId="164" formatCode="yyyy/mm/dd"/>
+            <numFmt numFmtId="165" formatCode="0.00%"/>
+        </numFmts>
+        <cellXfs count="3"><xf numFmtId="0"/><xf numFmtId="164"/><xf numFmtId="165"/></cellXfs>"#;
+        assert_eq!(date_style_map(styles), vec![false, true, false]);
+        let rows = sheet_rows(
+            r#"<sheetData><row r="1"><c r="A1" s="1"><v>45292</v></c><c r="B1" s="2"><v>0.5</v></c></row></sheetData>"#,
+            &[],
+            &date_style_map(styles),
+        )
+        .unwrap();
+        assert_eq!(rows[0].1, vec!["2024-01-01", "0.5"]);
     }
 
     #[test]

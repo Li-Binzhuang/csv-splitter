@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 51（xlsx 自定义日期格式）：`styles.xml` 的 numFmt formatCode 能识别
+yyyy/m/d 等日期格式，序列号转 ISO；百分比格式保持原值；测试覆盖；
+发布包 SHA `e4e0a7eb…7eb95`。
+
 Round 50（xlsx 导入保真审计）：补共享字符串/cached formula/合并单元格测试；
 无缓存公式值、越界共享字符串改为可诊断错误；文档写明不展开合并单元格；
 发布包 SHA `fb7bdcc5…97e482`。
