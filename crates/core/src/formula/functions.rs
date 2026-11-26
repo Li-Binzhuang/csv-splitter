@@ -1315,6 +1315,52 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // NPV(rate, value...): cash flows discounted from period 1 onward.
+        "npv" => {
+            if args.len() < 2 {
+                return Value::Error;
+            }
+            let Some(rate) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            if !rate.is_finite() || rate <= -1.0 {
+                return Value::Error;
+            }
+            let mut values = Vec::new();
+            for arg in &args[1..] {
+                match arg {
+                    Expr::Range { from, to } => {
+                        let Some(range) = range_values(from, to, ctx) else {
+                            return Value::Error;
+                        };
+                        if range.is_empty() {
+                            return Value::Error;
+                        }
+                        values.extend(range);
+                    }
+                    _ => {
+                        let Some(value) = eval(arg, ctx).number() else {
+                            return Value::Error;
+                        };
+                        values.push(value);
+                    }
+                }
+            }
+            if values.is_empty() {
+                return Value::Error;
+            }
+            let mut growth = 1.0 + rate;
+            let mut total = 0.0;
+            for value in values {
+                total += value / growth;
+                growth *= 1.0 + rate;
+            }
+            if total.is_finite() {
+                Value::Number(total)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

@@ -1442,6 +1442,29 @@ mod tests {
     }
 
     #[test]
+    fn npv_discounts_a_cash_flow_series() {
+        assert_eq!(eval_str("npv(0, -100, 200)", &[]), "100");
+        assert_eq!(eval_str("npv(0, 100)", &[]), "100");
+        assert_eq!(eval_str("npv(0.1, 110, -121)", &[]), "0");
+        assert_eq!(eval_str("npv(0.1, 0, 121)", &[]), "100");
+        assert_eq!(eval_str("npv(0.1, 100)", &[]), "90.909091");
+        let columns = vec!["amount".to_string(), "qty".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("amount".to_string(), "10".to_string());
+        cells.insert("qty".to_string(), "3".to_string());
+        let formula = Formula::parse("npv(0, A2:B2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "13"
+        );
+        for source in ["npv(-1, 100)", "npv(0, \"x\")"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn nper_reports_the_number_of_periods() {
         assert_eq!(eval_str("nper(0, -100, 1000)", &[]), "10");
         assert_eq!(eval_str("nper(0, -150, 1000, 500)", &[]), "10");
