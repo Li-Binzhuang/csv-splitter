@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "07f599401170e8c9fc8354f4efb4ecd4d32d31cbee227dc9cc7c4ba9e55fa228",
+  "batch_id": "12153f7d08c444ead42adb2f5f6b8dff3ef4e245f790008843280f9083b221cf",
+  "composite_identity": "70289feaac5aa64649d2469064346eb4aa20f82f68f274f78e96c04b88469f3f",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "910164322674d5531c5a008851f9672594e874edd9e8b79d7db1cd2dbf869e80",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "3a201842125444b85bc6099014601964f48a5be4da80eb35f66677e62a49c298",
+      "existing_entry": "AGENT_API.md[SD7S]: F:Agent 接入：MCP manifest、HTTP API、runner 与 trace | R:code:crates/agent/src/lib.rs,code:crates/agent/src/axum_http.rs,code:scripts/agent_routes_smoke.py | A:serve/manifest/run；sessions/actions/approvals/events/audit/replay/curl/runbook；403/428；12 路由 401/405 | S:SSE 60s；audit 仅 session；token 不入脚本；心跳 17s；axum 传输"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "95d369d48f508fd2484a8e5434abb600f59a379bffcaf83e8cfc18fdf8169fc2",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round9 wait/gate 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "cb356025de49645eb84bbc4ef9fe6ac3842e674c478b0e7a492af120c49e023a",
+      "existing_entry": "agent_routes_smoke.py[TQ7M]: F:Agent 路由体、鉴权、方法、审批、replay、SSE 与统计 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:12 路由；JSON/Markdown/HTML/JSONL/bash；每条无 token 401；错误方法 405；428/403；stats route_bodies/unauth/method | S:需 server/binary；不打印 token；SSE\u003c250ms；临时副本清理"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "9b0d80daf5f4853aa4bd11e3877186fbc1a0d239d53251369887e9490ef90b9a",
+      "object_ref": "code:docs/AGENT_API.md",
+      "path": "docs/AGENT_API.md",
+      "change": "update",
+      "source_sha256": "3a201842125444b85bc6099014601964f48a5be4da80eb35f66677e62a49c298",
+      "existing_entry": "AGENT_API.md[SD7S]: F:Agent 接入：MCP manifest、HTTP API、runner 与 trace | R:code:crates/agent/src/lib.rs,code:crates/agent/src/axum_http.rs,code:scripts/agent_routes_smoke.py | A:serve/manifest/run；sessions/actions/approvals/events/audit/replay/curl/runbook；403/428；12 路由 401/405 | S:SSE 60s；audit 仅 session；token 不入脚本；心跳 17s；axum 传输"
+    },
+    {
+      "candidate_id": "11ab4938ba93a51f7e2588b24f27f3e052524f6b0986d19ec9c6c1903b510998",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "95d369d48f508fd2484a8e5434abb600f59a379bffcaf83e8cfc18fdf8169fc2",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round9 wait/gate 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "d02775f858cf9bab8467e03f65b421e8145a832c8e049e3f232f370298f60e48",
+      "object_ref": "code:scripts/agent_routes_smoke.py",
+      "path": "scripts/agent_routes_smoke.py",
+      "change": "update",
+      "source_sha256": "cb356025de49645eb84bbc4ef9fe6ac3842e674c478b0e7a492af120c49e023a",
+      "existing_entry": "agent_routes_smoke.py[TQ7M]: F:Agent 路由体、鉴权、方法、审批、replay、SSE 与统计 | R:code:scripts/demo_end_to_end.sh,code:crates/cli/src/agent.rs,code:docs/AGENT_API.md | A:12 路由；JSON/Markdown/HTML/JSONL/bash；每条无 token 401；错误方法 405；428/403；stats route_bodies/unauth/method | S:需 server/binary；不打印 token；SSE\u003c250ms；临时副本清理"
+    }
+  ]
+}

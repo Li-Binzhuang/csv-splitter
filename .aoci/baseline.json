@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-26T02:56:33Z",
+  "updated_at": "2026-11-26T02:59:38Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "910164322674d5531c5a008851f9672594e874edd9e8b79d7db1cd2dbf869e80",
-      "size": 79616,
-      "normalized_sha256": "910164322674d5531c5a008851f9672594e874edd9e8b79d7db1cd2dbf869e80"
+      "sha256": "a08c1ae3db7efdcbf3e84730b15005a48bc61fb84db473ee65596f7f926d8f10",
+      "size": 79601,
+      "normalized_sha256": "a08c1ae3db7efdcbf3e84730b15005a48bc61fb84db473ee65596f7f926d8f10"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -892,9 +892,9 @@
     },
     "docs/AGENT_API.md": {
       "role": "index",
-      "sha256": "d762d997dfbc91d5c124c3c0f213528775433e2c5b43a7f425ff4f7a8c899f77",
-      "size": 6771,
-      "normalized_sha256": "d762d997dfbc91d5c124c3c0f213528775433e2c5b43a7f425ff4f7a8c899f77"
+      "sha256": "3a201842125444b85bc6099014601964f48a5be4da80eb35f66677e62a49c298",
+      "size": 6837,
+      "normalized_sha256": "3a201842125444b85bc6099014601964f48a5be4da80eb35f66677e62a49c298"
     },
     "docs/AGENT_TRACE.md": {
       "role": "index",
@@ -1152,15 +1152,15 @@
     },
     "progress.md": {
       "role": "index",
-      "sha256": "38171c1c494c7ff3cb3d6dda6e4eeb0c3904b2bc94c91c028dea5a7cebf2791b",
-      "size": 2908,
-      "normalized_sha256": "38171c1c494c7ff3cb3d6dda6e4eeb0c3904b2bc94c91c028dea5a7cebf2791b"
+      "sha256": "95d369d48f508fd2484a8e5434abb600f59a379bffcaf83e8cfc18fdf8169fc2",
+      "size": 3101,
+      "normalized_sha256": "95d369d48f508fd2484a8e5434abb600f59a379bffcaf83e8cfc18fdf8169fc2"
     },
     "scripts/agent_routes_smoke.py": {
       "role": "index",
-      "sha256": "c3178d6d567eb5fb9c884d5ac6ec676055249b14100f23cf1b020f7d59b16c1c",
-      "size": 9596,
-      "normalized_sha256": "c3178d6d567eb5fb9c884d5ac6ec676055249b14100f23cf1b020f7d59b16c1c"
+      "sha256": "cb356025de49645eb84bbc4ef9fe6ac3842e674c478b0e7a492af120c49e023a",
+      "size": 10152,
+      "normalized_sha256": "cb356025de49645eb84bbc4ef9fe6ac3842e674c478b0e7a492af120c49e023a"
     },
     "scripts/backend-smoke.sh": {
       "role": "index",

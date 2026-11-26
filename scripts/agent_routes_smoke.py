@@ -208,8 +208,17 @@ def main():
     after_count = len(json.loads(body)["actions"])
     assert after_count == actions_count, f"replay changed HTTP actions: {actions_count} -> {after_count}"
 
+    status, body = request(api, f"/agent/v1/sessions/{sid}/events", token)
+    assert status == 200, f"events: {status} {body}"
+    status, body = request(api, f"/agent/v1/sessions/{sid}/close", token, "POST", {})
+    assert status == 200, f"close: {status} {body}"
+    assert '"closed":true' in body, body
+    status, body = request(api, f"/agent/v1/sessions/{sid}", token)
+    assert status == 404, f"after close: {status} {body}"
+
     print(
-        f"routes={len(routes)} route_bodies={len(routes)} unauth={len(routes)} method_guards=2 session={sid} actions={actions_count} "
+        f"routes={len(routes)} route_bodies={len(routes)} unauth={len(routes)} method_guards=2 "
+        f"events=200 close=200 after_close=404 session={sid} actions={actions_count} "
         f"sse_ms={sse_ms:.0f} deny=403 approval=ok replay={replay_count}"
     )
     print("stats_json=" + json.dumps({
@@ -217,6 +226,9 @@ def main():
         "route_bodies": len(routes),
         "unauth_checks": len(routes),
         "method_guards": 2,
+        "events": 200,
+        "close": 200,
+        "after_close": 404,
         "session": sid,
         "actions": actions_count,
         "sse_ms": round(sse_ms, 3),

@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 10：12 路由 smoke 增加 `events`、`close`、关闭后 404 生命周期；
+实测 `events=200 close=200 after_close=404`，发布包 SHA `93a19f85…8aee9`。
+
 Round 9：`csvx_job_status wait=31` 拒绝（wait_range）；`csvx_gate minRows=-1` 拒绝；`range_rejections=8`；发布包 SHA `d3a0c69f…782d1`。
 
 Round 8：MCP 层按 schema 上界拒绝 `view count=1001`、`filter/search limit=1001`、`pipeline jobs=65`；
@@ -42,7 +45,7 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 - 23 工具字段映射、必填、format 枚举、count/limit/jobs/wait/gate 边界已覆盖。
 - `executor/commands.rs` 406 行，后续可再按工具族拆分。
-- 12 路由已有响应体、401、405 契约。
+- 12 路由已有响应体、401、405、close/events 生命周期契约。
 - 商业化/产品化未开始。
 
 ## 遇到的问题
@@ -54,4 +57,4 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 1. 全量 gate、AOCI 收尾并提交。
 2. push 本轮提交一次。
-3. 下一轮做 12 路由的 close/events 生命周期契约。
+3. 下一轮转向 mcp 模块进一步瘦身或产品化。

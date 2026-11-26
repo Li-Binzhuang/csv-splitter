@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-26T02:46:55Z",
+  "updated_at": "2026-11-26T02:56:33Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "6a265ff5811e256764e8970e010c4e4eb368f27528e01c86b45986f3bdcda679",
-      "size": 79667,
-      "normalized_sha256": "6a265ff5811e256764e8970e010c4e4eb368f27528e01c86b45986f3bdcda679"
+      "sha256": "910164322674d5531c5a008851f9672594e874edd9e8b79d7db1cd2dbf869e80",
+      "size": 79616,
+      "normalized_sha256": "910164322674d5531c5a008851f9672594e874edd9e8b79d7db1cd2dbf869e80"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -820,9 +820,9 @@
     },
     "crates/mcp/src/executor/commands.rs": {
       "role": "index",
-      "sha256": "34034c690441b89d4e6b9f2948b5af2825d8ff1449ebe5d27bafb74cf084e3a3",
-      "size": 14229,
-      "normalized_sha256": "34034c690441b89d4e6b9f2948b5af2825d8ff1449ebe5d27bafb74cf084e3a3"
+      "sha256": "75b4ef91d2d18f9d0dff2577b361e62015ddb2efff054f8e41f04a67d2a452af",
+      "size": 14921,
+      "normalized_sha256": "75b4ef91d2d18f9d0dff2577b361e62015ddb2efff054f8e41f04a67d2a452af"
     },
     "crates/mcp/src/executor/paths.rs": {
       "role": "index",
@@ -850,9 +850,9 @@
     },
     "crates/mcp/src/rmcp_server.rs": {
       "role": "index",
-      "sha256": "7635e654ff0c3a3cb971bdb53815e0dbdc327cc3d55821ee2cdcb30677a7e64b",
-      "size": 15201,
-      "normalized_sha256": "7635e654ff0c3a3cb971bdb53815e0dbdc327cc3d55821ee2cdcb30677a7e64b"
+      "sha256": "a9f10d5afe41eef9a5407df99e936232e741c24cfd34005a9e561adb7d160674",
+      "size": 15894,
+      "normalized_sha256": "a9f10d5afe41eef9a5407df99e936232e741c24cfd34005a9e561adb7d160674"
     },
     "crates/mcp/src/tools.rs": {
       "role": "index",
@@ -1006,9 +1006,9 @@
     },
     "docs/MCP_COMPAT.md": {
       "role": "index",
-      "sha256": "b805fb4b6d59b2b45bdcea23e557d9a39afd0578b290ec9b2339ea9b43bc4b80",
+      "sha256": "d7a01da1b6fbc7bcb15c695cb5348af9f533fdd5596067abe71930cf6f4dacc1",
       "size": 2622,
-      "normalized_sha256": "b805fb4b6d59b2b45bdcea23e557d9a39afd0578b290ec9b2339ea9b43bc4b80"
+      "normalized_sha256": "d7a01da1b6fbc7bcb15c695cb5348af9f533fdd5596067abe71930cf6f4dacc1"
     },
     "docs/NIGHT_CHECKPOINT.md": {
       "role": "index",
@@ -1152,9 +1152,9 @@
     },
     "progress.md": {
       "role": "index",
-      "sha256": "001b97d48ab18cd6c3b1ba8a0d150fed222df65402dd4a699bd2e20dc11020f3",
-      "size": 2614,
-      "normalized_sha256": "001b97d48ab18cd6c3b1ba8a0d150fed222df65402dd4a699bd2e20dc11020f3"
+      "sha256": "38171c1c494c7ff3cb3d6dda6e4eeb0c3904b2bc94c91c028dea5a7cebf2791b",
+      "size": 2908,
+      "normalized_sha256": "38171c1c494c7ff3cb3d6dda6e4eeb0c3904b2bc94c91c028dea5a7cebf2791b"
     },
     "scripts/agent_routes_smoke.py": {
       "role": "index",
@@ -1218,9 +1218,9 @@
     },
     "scripts/check_mcp_sdk.sh": {
       "role": "index",
-      "sha256": "4f1b5f5b535e3e0a551b29354c16fbd5e4f7f9fc76e01d6042e3fdf13480c0f1",
+      "sha256": "f33b538e1e24a6f67f579536c6e0d6a5ff0a11b31e5d020a3b734a07313a196e",
       "size": 2954,
-      "normalized_sha256": "4f1b5f5b535e3e0a551b29354c16fbd5e4f7f9fc76e01d6042e3fdf13480c0f1"
+      "normalized_sha256": "f33b538e1e24a6f67f579536c6e0d6a5ff0a11b31e5d020a3b734a07313a196e"
     },
     "scripts/check_phase_times.py": {
       "role": "index",
@@ -1296,9 +1296,9 @@
     },
     "scripts/mcp_sdk/client.mjs": {
       "role": "index",
-      "sha256": "3f5f595d338e22121e63e69908632ea9f288eb87b63d54362bedb588c9d4e71f",
-      "size": 7722,
-      "normalized_sha256": "3f5f595d338e22121e63e69908632ea9f288eb87b63d54362bedb588c9d4e71f"
+      "sha256": "147f9a190cb84d4f67139c46f4f505db7e67da3b747bb6a2b4c2acab8e738c57",
+      "size": 8543,
+      "normalized_sha256": "147f9a190cb84d4f67139c46f4f505db7e67da3b747bb6a2b4c2acab8e738c57"
     },
     "scripts/mcp_sdk/package-lock.json": {
       "role": "observe",
