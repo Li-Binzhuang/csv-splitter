@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 54（日期时间单元格路径）：新增 sheet_rows/cell_value 集成断言，
+45292.5 走日期样式后输出 2024-01-01T12:00:00；发布包 SHA `6ab7ea31…32bb27`。
+
 Round 53（sheet 选择大小写）：xlsx sheet 名按 Excel 语义大小写不敏感匹配，
 `data` 可选 `Data`；测试改为小写选择；发布包 SHA `58229d6c…41c7f`。
 

@@ -1279,6 +1279,13 @@ mod tests {
         assert_eq!(serial_to_date(45292.5), Some("2024-01-01T12:00:00".into()));
         assert_eq!(serial_to_date(0.25), Some("06:00:00".into()));
         assert_eq!(serial_to_date(-1.0), None);
+        let rows = sheet_rows(
+            r#"<sheetData><row r="1"><c r="A1" s="1"><v>45292.5</v></c></row></sheetData>"#,
+            &[],
+            &[false, true],
+        )
+        .unwrap();
+        assert_eq!(rows[0].1, vec!["2024-01-01T12:00:00"]);
     }
 
     #[test]
