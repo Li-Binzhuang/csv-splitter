@@ -31,6 +31,11 @@ unknown_code=unknown_tool
 required_rejections=20
 enum_rejections=2
 range_rejections=8
+resources=2
+resource_protocol=csvx-agent/1
+resource_tools=23
+resource_operations=17
+resource_error_codes=10
 ```
 
 gate 的 `mcp-sdk` 阶段默认使用 `target/debug/csvx`，避免测到旧的 release 产物；

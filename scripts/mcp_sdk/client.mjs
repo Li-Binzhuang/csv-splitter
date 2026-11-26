@@ -33,6 +33,17 @@ const call = async (name, params) => {
   return json(text);
 };
 
+const resources = await client.listResources();
+console.log(`resources=${resources.resources.length}`);
+const resource = await client.readResource({ uri: "csvx://agent" });
+const manifestText = resource.contents?.[0]?.text ?? "";
+const manifest = json(manifestText);
+console.log(`resource_protocol=${manifest.protocol ?? ""}`);
+console.log(`resource_tools=${(manifest.tools ?? []).length}`);
+const operationsResource = await client.readResource({ uri: "csvx://operations" });
+const operations = json(operationsResource.contents?.[0]?.text ?? "{}");
+console.log(`resource_operations=${(operations.operations ?? []).length}`);
+console.log(`resource_error_codes=${(operations.errorCodes ?? []).length}`);
 const tools = await client.listTools();
 console.log(`sdk_tools=${tools.tools.length}`);
 console.log(`sdk_annotated=${tools.tools.filter((tool) => tool.annotations).length}`);

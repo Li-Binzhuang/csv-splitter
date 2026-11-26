@@ -25,6 +25,11 @@ gzip -c "$tmp/orders.csv" > "$tmp/orders.csv.gz"
 out=$(node scripts/mcp_sdk/client.mjs --binary "$binary" --root "$tmp" --file orders.csv)
 echo "$out"
 
+grep -q '^resources=2$' <<<"$out" || { echo "mcp_sdk=fail resources"; exit 1; }
+grep -q '^resource_protocol=csvx-agent/1$' <<<"$out" || { echo "mcp_sdk=fail resource protocol"; exit 1; }
+grep -q '^resource_tools=23$' <<<"$out" || { echo "mcp_sdk=fail resource tools"; exit 1; }
+grep -q '^resource_operations=[1-9]' <<<"$out" || { echo "mcp_sdk=fail operations"; exit 1; }
+grep -q '^resource_error_codes=[1-9]' <<<"$out" || { echo "mcp_sdk=fail error codes"; exit 1; }
 grep -q '^sdk_tools=23$' <<<"$out" || { echo "mcp_sdk=fail tools"; exit 1; }
 grep -q '^sdk_names=23$' <<<"$out" || { echo "mcp_sdk=fail names"; exit 1; }
 grep -q '^sdk_annotated=23$' <<<"$out" || { echo "mcp_sdk=fail annotations"; exit 1; }
