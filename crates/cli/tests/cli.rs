@@ -2840,6 +2840,64 @@ fn pipeline_history_records_runs_and_failures() {
 }
 
 #[test]
+fn mcp_audit_filters_and_reports_missing_log() {
+    let dir = TempDir::new("mcp-audit");
+    std::fs::create_dir_all(dir.join(".csvx")).unwrap();
+    std::fs::write(
+        dir.join(".csvx/mcp-audit.jsonl"),
+        concat!(
+            "{\"ts\":1,\"tool\":\"csvx_schema\",\"ok\":true,\"code\":\"ok\",\"ms\":2,\"args\":{}}\n",
+            "{\"ts\":2,\"tool\":\"csvx_view\",\"ok\":false,\"code\":\"cli_error\",\"ms\":3,\"args\":{}}\n",
+            "{\"ts\":3,\"tool\":\"csvx_schema\",\"ok\":false,\"code\":\"path_escape\",\"ms\":4,\"args\":{}}\n"
+        ),
+    )
+    .unwrap();
+    let audit = |args: &[&str]| {
+        Command::new(bin())
+            .args(["mcp", "audit", "--root", dir.0.to_str().unwrap()])
+            .args(args)
+            .output()
+            .unwrap()
+    };
+    let all = audit(&[]);
+    assert!(all.status.success(), "{:?}", all.stderr);
+    let stdout = String::from_utf8_lossy(&all.stdout);
+    assert_eq!(stdout.lines().count(), 3, "{stdout}");
+    assert!(stdout.contains("csvx_schema"), "{stdout}");
+    assert!(String::from_utf8_lossy(&all.stderr).contains("total=3"));
+
+    let errors = audit(&["--errors"]);
+    assert!(errors.status.success());
+    let stdout = String::from_utf8_lossy(&errors.stdout);
+    assert_eq!(stdout.lines().count(), 2, "{stdout}");
+    assert!(stdout.contains("ok=false"), "{stdout}");
+
+    let tool = audit(&["--tool", "csvx_schema", "--limit", "1"]);
+    assert!(tool.status.success());
+    let stdout = String::from_utf8_lossy(&tool.stdout);
+    assert_eq!(stdout.lines().count(), 1, "{stdout}");
+    assert!(stdout.contains("csvx_schema"), "{stdout}");
+
+    let json = audit(&["--json"]);
+    assert!(json.status.success());
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert_eq!(stdout.lines().count(), 3, "{stdout}");
+    assert!(stdout.lines().all(|line| line.starts_with('{')), "{stdout}");
+
+    let bad = audit(&["--limit", "0"]);
+    assert!(!bad.status.success());
+    assert!(String::from_utf8_lossy(&bad.stderr).contains("--limit"));
+
+    let missing = TempDir::new("mcp-audit-missing");
+    let empty = Command::new(bin())
+        .args(["mcp", "audit", "--root", missing.0.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(empty.status.success(), "{:?}", empty.stderr);
+    assert!(String::from_utf8_lossy(&empty.stdout).contains("(no MCP audit log)"));
+}
+
+#[test]
 fn mcp_config_generates_paste_ready_client_json() {
     let dir = TempDir::new("mcp-config");
     for client in ["dsh", "claude", "cursor", "generic"] {

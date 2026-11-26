@@ -421,6 +421,11 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         &[
             ("config", "Generate paste-ready client config: --client dsh|claude|cursor|generic"),
             ("--client", "Client to generate for: dsh, claude, cursor or generic"),
+            ("audit", "Read <root>/.csvx/mcp-audit.jsonl with optional filters"),
+            ("--tool", "Only audit entries for this tool"),
+            ("--errors", "Only failed audit entries"),
+            ("--limit", "Newest entries to print (1-10000, default 50)"),
+            ("--json", "Print matching raw JSONL lines"),
             ("--root", "Directory the tools may read (default: cwd)"),
             ("--binary", "Binary path (default: the running csvx executable)"),
         ],
@@ -644,6 +649,7 @@ COMMANDS
   serve    --root <dir>          Local HTTP API (JSON) for a web front-end
   mcp      --root <dir>          MCP stdio server (read-only tools) for agents
   mcp      config --client C     Paste-ready client config (dsh/claude/cursor/generic)
+  mcp      audit [--tool T]       Read local MCP audit log
   agent    serve --root <dir>     HTTP Agent API (sessions, actions, audit)
   agent    run --root <dir>       OpenAI-compatible model loop over csvx tools
   convert  <input>               Transcode a CSV to UTF-8 (GBK / UTF-16 input)

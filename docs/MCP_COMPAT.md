@@ -165,6 +165,23 @@ csvx mcp config --client generic --root /data
 - DSH：DSH profile 的 MCP 客户端配置中 `mcpServers` 段（profile 路径随 DSH 版本）。
 - generic：任意接受 stdio `command`/`args`/`env` 的客户端。
 
+## 7. 审计查询 CLI
+
+```bash
+csvx mcp audit --root /data
+csvx mcp audit --root /data --tool csvx_schema --limit 10
+csvx mcp audit --root /data --errors
+csvx mcp audit --root /data --json
+```
+
+- 默认读取 `<root>/.csvx/mcp-audit.jsonl`，打印最新 50 条摘要；
+- `--tool` 精确过滤工具名；
+- `--errors` 只保留 `ok:false`；
+- `--limit` 为 1–10000；
+- `--json` 输出匹配的原始 JSONL 行（元数据写 stderr，保持 stdout 是纯 JSONL）；
+- 文件缺失时输出 `(no MCP audit log)` 并成功退出；
+- stderr 元数据包含 `bytes`、`rotatedBytes`、`maxBytes`、`total`、`shown`。
+
 ## 契约
 
 - 23 个工具名与 schema 由 `crates/mcp/src/tools.rs` 冻结；

@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 4（MCP 审计查询目标）：`csvx mcp audit` 支持 tool/errors/limit/json；
+缺文件成功退出；元数据含 bytes/rotated/max/total/shown；3 个单测 + 1 个 CLI
+集成测试；文档 §7；发布包 SHA `7640beaa…c52e9`。
+
 Round 3（MCP 配置目标）：`csvx mcp config --client dsh|claude|cursor|generic`
 输出可粘贴 JSON；默认当前 exe 绝对路径；未知 client 列出合法值；3 个单测 + 1 个
 CLI 集成测试；文档写明粘贴位置；发布包 SHA `4cff7664…55ac0`。
