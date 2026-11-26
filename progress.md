@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 82（xlsx 输出流式写）：CSV 逐行写入 BufWriter，不再把整份 CSV 文本
+留在内存；输出字节不变；1M 峰值 1.05 → 1.02 GB；发布包 SHA `5d232694…aa1340`。
+
 Round 81（xlsx 原文件不可变）：CLI 测试 `convert xlsx --out 同一路径` 被拒绝，
 输入字节不变；覆盖原始文件不可变约束；发布包 SHA `7140f0d8…8d773`。
 

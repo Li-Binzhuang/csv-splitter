@@ -838,15 +838,16 @@ pub fn read_xlsx_to_csv(input: &Path, output: &Path, sheet: Option<&str>) -> std
     if width == 0 {
         return Err(invalid("xlsx worksheet is empty"));
     }
-    let mut text = String::new();
+    let file = std::fs::File::create(output)?;
+    let mut writer = std::io::BufWriter::new(file);
     for row in &table {
         let mut padded: Vec<&str> = Vec::with_capacity(width);
         for index in 0..width {
             padded.push(row.get(index).map(String::as_str).unwrap_or(""));
         }
-        text.push_str(&crate::csv_reader::join_csv_line(&padded, b','));
+        writer.write_all(crate::csv_reader::join_csv_line(&padded, b',').as_bytes())?;
     }
-    std::fs::write(output, text)
+    writer.flush()
 }
 
 struct SheetRef {
