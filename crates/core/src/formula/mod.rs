@@ -1508,6 +1508,25 @@ mod tests {
     }
 
     #[test]
+    fn all_holiday_and_cross_year_edges_work() {
+        assert_eq!(
+            eval_str(
+                r#"networkdays("2024-01-01", "2024-01-05", "2024-01-01", "2024-01-02", "2024-01-03", "2024-01-04", "2024-01-05")"#,
+                &[]
+            ),
+            "0"
+        );
+        assert_eq!(
+            eval_str(r#"workday("2024-01-03", 1, "2024-01-03")"#, &[]),
+            "2024-01-04"
+        );
+        assert_eq!(
+            eval_str(r#"days360("2023-12-31", "2024-01-31")"#, &[]),
+            "30"
+        );
+    }
+
+    #[test]
     fn fractional_days_and_european_edge_cases_work() {
         assert_eq!(eval_str(r#"workday("2024-01-02", 1.9)"#, &[]), "2024-01-03");
         assert_eq!(
