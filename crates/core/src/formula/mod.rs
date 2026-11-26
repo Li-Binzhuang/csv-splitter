@@ -1308,6 +1308,13 @@ mod tests {
         assert_eq!(eval_str("char(65)", &[]), "A");
         assert_eq!(eval_str("code(\"A\")", &[]), "65");
         assert_eq!(eval_str("code(\"\")", &[]), "#VALUE!");
+        assert_eq!(eval_str("unichar(20013)", &[]), "中");
+        assert_eq!(eval_str("unicode(\"中\")", &[]), "20013");
+        assert_eq!(eval_str("unichar(128512)", &[]), "😀");
+        assert_eq!(eval_str("unicode(\"😀\")", &[]), "128512");
+        assert_eq!(eval_str("unichar(0)", &[]), "#VALUE!");
+        assert_eq!(eval_str("unichar(55296)", &[]), "#VALUE!");
+        assert_eq!(eval_str("unicode(\"\")", &[]), "#VALUE!");
     }
 
     #[test]

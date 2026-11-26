@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "1c717e93a187b79f01269d27e58a2a2e9b76b4ed3a00d1da3ac8e4f4af2a46f4",
+  "batch_id": "8ff548d720d15422e727ea975b18361e77e8f97d445a611613907ae095b0698a",
+  "composite_identity": "86fb7824746bf8b7ac75685c0970a5a668e967ef55ebedae61263082c2c320dc",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b992343a089c7c7b2b1b797117026b7b9be16839bae51fcd1784cf2c30627161",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "7b1c98645c31cbd4360193e26466255423cb4480234c35e1f632e113703f49c8",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/区间；TEXT；日期时间族；REPLACE/SUBSTITUTE；INDEX/MATCH/XMATCH 同行区间；排名/分位族 | S:单列按整列；跨行区间/整列 median 不支持；节假日只支持同行区间；REPLACE 越界原样"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "70b8a90d78ad95f0193268073d4be2de36046c6791c9f89edc1cea5499b33aa7",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族；REPLACE/SUBSTITUTE；INDEX/MATCH/XMATCH；日期边界测试 | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "293f6a7f40bba8591b4f1a98b36945698ad0c1bd022f238cc372b09f6307572c",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/日期时间族；REPLACE/SUBSTITUTE；INDEX/MATCH/XMATCH 同行；SUBTOTAL 仍缺 | S:矩阵只记当前实现；跨行查找不支持"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "c01de96df2df22777a22973cb15526d17018757051264db8d120f00fcfd86edc",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 个功能级项；Round160 INDEX/MATCH 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "9bbce2bd74b16dc87705a0ca23d5997159ff8f90200916d7628d47ac280d98d6",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "7b1c98645c31cbd4360193e26466255423cb4480234c35e1f632e113703f49c8",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/区间；TEXT；日期时间族；REPLACE/SUBSTITUTE；INDEX/MATCH/XMATCH 同行区间；排名/分位族 | S:单列按整列；跨行区间/整列 median 不支持；节假日只支持同行区间；REPLACE 越界原样"
+    },
+    {
+      "candidate_id": "58b1aea7d8ec955dd764d67e2f992e4756c792905bd3a7147c27c36c5c41e9bf",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "70b8a90d78ad95f0193268073d4be2de36046c6791c9f89edc1cea5499b33aa7",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族；REPLACE/SUBSTITUTE；INDEX/MATCH/XMATCH；日期边界测试 | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "f31897de76487dd2be0f8e96923cbd11bacc7d1d2e3a9d1d30f9b7301bcc0e6a",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "293f6a7f40bba8591b4f1a98b36945698ad0c1bd022f238cc372b09f6307572c",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/日期时间族；REPLACE/SUBSTITUTE；INDEX/MATCH/XMATCH 同行；SUBTOTAL 仍缺 | S:矩阵只记当前实现；跨行查找不支持"
+    },
+    {
+      "candidate_id": "2dcd203e42796af51cf0aa7e1cc28f73eea2c203be7de9caf46333a1a83064bf",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "c01de96df2df22777a22973cb15526d17018757051264db8d120f00fcfd86edc",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 个功能级项；Round160 INDEX/MATCH 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

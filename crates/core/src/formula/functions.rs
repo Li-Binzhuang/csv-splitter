@@ -1302,6 +1302,31 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             },
             None => Value::Error,
         },
+        // UNICHAR/UNICODE cover the non-ASCII code points CHAR/CODE cannot.
+        "unichar" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(code) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            if !code.is_finite() || code < 1.0 || code > 0x10FFFF as f64 {
+                return Value::Error;
+            }
+            match char::from_u32(code.trunc() as u32) {
+                Some(ch) => Value::Text(ch.to_string()),
+                None => Value::Error,
+            }
+        }
+        "unicode" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            match eval(&args[0], ctx).text().chars().next() {
+                Some(ch) => Value::Number(ch as u32 as f64),
+                None => Value::Error,
+            }
+        }
 
         // Alias for `mid`, which is the name people reach for first.
         "substr" => call("mid", args, ctx),

@@ -22,12 +22,12 @@
 | SUBSTITUTE | 支持（功能级修正） | 默认全替换；第 N 个 `instance_num`；越界原样，<1 `#VALUE!` |
 | CONCAT / CONCATENATE | 支持 | CONCATENATE 是别名 |
 | TEXTJOIN | 支持 | 分隔符 + ignore_empty + 多段 |
-| CHAR / CODE | 支持 | ASCII 码点 |
+| CHAR / CODE / UNICHAR / UNICODE | 支持（UNICHAR/UNICODE 新增） | ASCII 与 Unicode 码点互转；非法码点/空文本报错 |
 | FIND / SEARCH | 支持 | SEARCH 不区分大小写；均支持起始位置 |
 | PROPER / REPT / EXACT / VALUE | 支持 | VALUE 只解析数字文本 |
 | TEXT | 支持（基础） | 复用 `NumberFormat`：0.00/#,##0/0%/日期时间；科学计数/会计格式仍缺 |
 | TEXTBEFORE / TEXTAFTER | 支持（受限） | 支持 instance_num；match_mode/match_end/if_not_found 未实现 |
-| UNICHAR / UNICODE | 缺失 | 非 ASCII 码点 |
+
 | NUMBERVALUE / FIXED / DOLLAR | 缺失 | 区域小数点/货币格式 |
 | TEXTSPLIT / ARRAYTOTEXT | 缺失 | 动态数组，非目标 |
 
