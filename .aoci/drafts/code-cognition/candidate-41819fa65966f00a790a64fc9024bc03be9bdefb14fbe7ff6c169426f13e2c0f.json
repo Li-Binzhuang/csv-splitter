@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "af78bbcddaf682eb56ae01cdfb15ac4c5d7450ae8f50e94bc2905b5c79ed9120",
+  "batch_id": "41819fa65966f00a790a64fc9024bc03be9bdefb14fbe7ff6c169426f13e2c0f",
+  "composite_identity": "66ca392e4afbfaaa159d132f67549aed5dcc9bef7a30e5d48a285a8510f8d811",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "816b0a39f4d93cfe6fa79f65e2cba324b289e76e5a0a11e782db6a9d71a5b48a",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "48298416f9e94265d3d2956d9133b943b4fcd1bd7f7a91225e09e911c87a6427",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round21 benchmark summary 与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/bench_100gb.py",
+      "path": "scripts/bench_100gb.py",
+      "change": "update",
+      "source_sha256": "498e5579cbd93e86e85bfad727afb23af3df998376843cdc42362245ad82fa16",
+      "existing_entry": "bench_100gb.py[TP7M]: F:流式生成 CSV 并测 schema/filter/search/quality | R:code:scripts/test_bench_100gb.sh,code:docs/BENCHMARKS.md | A:--gb/--rows/--out/--binary；JSON/MD/summary；RSS | S:不默认真跑 100GB；RSS 依赖 time(1)；summary 脱敏；本机实测"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_bench_100gb.sh",
+      "path": "scripts/test_bench_100gb.sh",
+      "change": "update",
+      "source_sha256": "00f4d51a58cc6bcdf90640aa1d779417e2bfe219a47998f8f785c78feeb1da5b",
+      "existing_entry": "test_bench_100gb.sh[TP7T]: F:benchmark harness smoke 脚本 | R:code:scripts/bench_100gb.py,code:scripts/dev.sh | A:1000 行；JSON/MD/summary；四命令；坏 binary 拒绝 | S:gate 必跑；不生成大文件；失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "0b32d71c0a51a436522563dc1bfbb035f6ab4afa453581def3102dee5132ba18",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "48298416f9e94265d3d2956d9133b943b4fcd1bd7f7a91225e09e911c87a6427",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round21 benchmark summary 与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "4f492f4a36d82ad0169e810c26deb52cd610d91a462ddadecf36295d866a9377",
+      "object_ref": "code:scripts/bench_100gb.py",
+      "path": "scripts/bench_100gb.py",
+      "change": "update",
+      "source_sha256": "498e5579cbd93e86e85bfad727afb23af3df998376843cdc42362245ad82fa16",
+      "existing_entry": "bench_100gb.py[TP7M]: F:流式生成 CSV 并测 schema/filter/search/quality | R:code:scripts/test_bench_100gb.sh,code:docs/BENCHMARKS.md | A:--gb/--rows/--out/--binary；JSON/MD/summary；RSS | S:不默认真跑 100GB；RSS 依赖 time(1)；summary 脱敏；本机实测"
+    },
+    {
+      "candidate_id": "e8d4f9650b6503a6c8282b21b58b4995aa7d5a1a4fd45b9e34b461f808d63af3",
+      "object_ref": "code:scripts/test_bench_100gb.sh",
+      "path": "scripts/test_bench_100gb.sh",
+      "change": "update",
+      "source_sha256": "00f4d51a58cc6bcdf90640aa1d779417e2bfe219a47998f8f785c78feeb1da5b",
+      "existing_entry": "test_bench_100gb.sh[TP7T]: F:benchmark harness smoke 脚本 | R:code:scripts/bench_100gb.py,code:scripts/dev.sh | A:1000 行；JSON/MD/summary；四命令；坏 binary 拒绝 | S:gate 必跑；不生成大文件；失败非零"
+    }
+  ]
+}

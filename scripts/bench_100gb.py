@@ -185,7 +185,11 @@ def main():
         "measuredAt": time.strftime("%Y-%m-%d"),
         "machine": f"{platform.system()}-{platform.machine()}",
         "binary": str(binary),
-        "dataset": payload["generated"],
+        "dataset": {
+            "bytes": payload["generated"]["bytes"],
+            "rows": payload["generated"]["rows"],
+            "generateMs": payload["generated"]["generateMs"],
+        },
         "commands": [
             {"name": item["name"], "elapsedMs": item["elapsedMs"], "rssBytes": item["rssBytes"], "exit": item["exit"]}
             for item in results

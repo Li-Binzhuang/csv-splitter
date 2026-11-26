@@ -23,6 +23,7 @@ for name in ("schema", "filter", "search", "quality"):
     assert any(item["name"] == name for item in data["commands"]), data
 summary = json.load(open(sys.argv[1].replace(".bench.json", ".summary.json")))
 assert summary["dataset"]["rows"] == 1000, summary
+assert "path" not in summary["dataset"], summary
 assert summary["totalMs"] > 0, summary
 print("bench_smoke=json_ok")
 PY

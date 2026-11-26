@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 22（摘要脱敏修正）：summary 的 dataset 只保留 bytes/rows/generateMs，
+不含生成路径；smoke 断言 `path` 不存在，兑现“无原始路径”承诺；发布包 SHA `308f9ba0…80bf`。
+
 Round 21（benchmark 摘要自生成）：harness 自动写 `<out>.summary.json`（脱敏、
 无原始路径/行值），smoke 校验 dataset/total；`docs/bench-100gb...json` 为同形摘要；发布包 SHA `7a6620b5…cc266`。
 
