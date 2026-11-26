@@ -1,0 +1,43 @@
+{
+  "measuredAt": "2026-11-26",
+  "machine": "Apple M5 / 16 GiB / macOS 27.2.1 arm64",
+  "binary": "csvx 4.2.0 release",
+  "dataset": {
+    "bytes": 99999999969,
+    "rows": 1259779856,
+    "generateMs": 128676.9,
+    "deterministic": true
+  },
+  "commands": [
+    {
+      "name": "schema",
+      "elapsedMs": 70186.3,
+      "rssBytes": 34668544,
+      "exit": 0
+    },
+    {
+      "name": "filter",
+      "elapsedMs": 23547.5,
+      "rssBytes": 99631104,
+      "exit": 0
+    },
+    {
+      "name": "search",
+      "elapsedMs": 18720.1,
+      "rssBytes": 97075200,
+      "exit": 0
+    },
+    {
+      "name": "quality",
+      "elapsedMs": 456003.1,
+      "rssBytes": 17956864,
+      "exit": 0
+    }
+  ],
+  "totalMs": 568457.0,
+  "notes": [
+    "no page-cache drop",
+    "quality is about 80% of measured time",
+    "not an SLA"
+  ]
+}

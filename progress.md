@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 18（benchmark 可读摘要）：新增 `docs/bench-100gb-2026-11-26.json`，
+只含机器/数据量/四命令 elapsed/RSS，不含原始行；随发布包分发；发布包 SHA `3cb1887a…07677`。
+
 Round 17（benchmark 机器信息）：BENCHMARKS 写明本机 Apple M5 / 16 GiB /
 macOS 27.2.1 arm64，100GB/1GB/smoke 均标注同机实测；发布包 SHA `5a778439…b60f5`。
 

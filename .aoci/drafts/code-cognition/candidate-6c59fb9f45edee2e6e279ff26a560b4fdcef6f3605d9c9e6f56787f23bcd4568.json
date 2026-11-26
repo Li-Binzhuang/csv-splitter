@@ -1,0 +1,75 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "c57c9978da66f2e698cbe2b49564751def46c22a3b599c51decee3ff52b18a79",
+  "batch_id": "6c59fb9f45edee2e6e279ff26a560b4fdcef6f3605d9c9e6f56787f23bcd4568",
+  "composite_identity": "a64e574f0aeda2c256371ac40d3c0fa6ec8e27127a4fbfe956d69e1ea542308b",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "ca7b9e00e9cb739fbf1c2ad9fdd7651f1b101c489231a4562d087aeb3135b9b6",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "11cadb1fb66c67856f2769d6795c3a50609a811399a3e418bcfca0de533cba53",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现性能基准与 1GB/100GB 实测 | R:code:scripts/bench_100gb.py,code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:机器 Apple M5/16GiB/macOS27.2.1；100GB 568.46s；1GB 5.73s | S:未 drop cache；quality 约 80%；其他机器需重跑；smoke≠100GB"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/bench-100gb-2026-11-26.json",
+      "path": "docs/bench-100gb-2026-11-26.json",
+      "change": "create",
+      "source_sha256": "3c155653f11ce1ffb185cc678240a14f26534589f7c852c0e0d55d6a99be1d5e"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "944aa55478c8987d9519177549fbf14d333d148fe350d1a19326b3a5154af360",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round17 机器信息与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "5b6b3bae64689624ce70243ed074407c6c4924aa458fb304114f32a0244586d0",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验哈希与真实安装 smoke | R:code:scripts/verify_dist.sh,code:scripts/install_offline.sh,code:scripts/check_release.py | A:tar+verify+release.json；真实包 install+version；失败整包失败 | S:不联网/不打 tag；dist gitignore；DSH 可选"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "74fc56ecd3d3e1e50641f55cd2757226987f86342ca617d3abbf92be8329520d",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "11cadb1fb66c67856f2769d6795c3a50609a811399a3e418bcfca0de533cba53",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现性能基准与 1GB/100GB 实测 | R:code:scripts/bench_100gb.py,code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:机器 Apple M5/16GiB/macOS27.2.1；100GB 568.46s；1GB 5.73s | S:未 drop cache；quality 约 80%；其他机器需重跑；smoke≠100GB"
+    },
+    {
+      "candidate_id": "ae0d9837303934b009a2521115bd49406b33160ddad7ab0221cc2e9f36e2e9f3",
+      "object_ref": "code:docs/bench-100gb-2026-11-26.json",
+      "path": "docs/bench-100gb-2026-11-26.json",
+      "change": "create",
+      "source_sha256": "3c155653f11ce1ffb185cc678240a14f26534589f7c852c0e0d55d6a99be1d5e"
+    },
+    {
+      "candidate_id": "d5ccf4ecb15740588176d4c954783bfa0a55104e255aae4bdc80bdb481042c0d",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "944aa55478c8987d9519177549fbf14d333d148fe350d1a19326b3a5154af360",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round17 机器信息与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "2b1c471fa894580a80f901aafb3da44200cc249d09ea6eae140aa231dee4ec04",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "5b6b3bae64689624ce70243ed074407c6c4924aa458fb304114f32a0244586d0",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验哈希与真实安装 smoke | R:code:scripts/verify_dist.sh,code:scripts/install_offline.sh,code:scripts/check_release.py | A:tar+verify+release.json；真实包 install+version；失败整包失败 | S:不联网/不打 tag；dist gitignore；DSH 可选"
+    }
+  ]
+}
