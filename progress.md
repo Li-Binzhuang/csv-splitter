@@ -48,8 +48,10 @@
 - [x] 项25 `--formats --sheet Hidden` 测试；`formats_can_target_a_hidden_sheet`。
 - [x] 项26 `--formats` 非 xlsx/组合标志/`--json` 缺 formats 错误诊断；
   `formats_rejects_non_xlsx_and_conflicting_flags`。
-- [ ] 项27 `--formats --sheet missing` 错误诊断测试。
-- [ ] 项28 `--formats --json` schema 稳定测试（sheet/columns/column_index）。
+- [x] 项27/28 `--formats --sheet Nope` 错误诊断 + JSON schema（sheet/columns/
+  column_index）稳定测试；`formats_reports_a_missing_sheet_and_stable_json_shape`。
+- [ ] 项29 `--formats --all-sheets` 输出所有 sheet 的列格式。
+- [ ] 项30 内置日期 numFmt 14 读回 `yyyy-mm-dd` 测试。
 - [x] 项22 `--formats --json` 机器可读输出；CLI 测试扩展。
 - [x] 项17 DATEDIF 扩展单位 MD/YM/YD；测试 `datedif_supports_ym_md_and_yd`。
 - [x] 项16 公式第四批：YEARFRAC/ISOWEEKNUM/TIME；测试
@@ -67,6 +69,9 @@
   `positive;(negative)` 被误拆列的问题。
 
 ## 当前进度
+
+Round 123（项27/28 格式诊断）：missing sheet 错误与 JSON schema 测试；全量 gate/package 通过；发布包
+SHA `472e9efe…c345b`。
 
 Round 122（项23/25/26 格式入口收口）：JSON 增加 sheet/column_index；hidden
 sheet 与错误诊断测试；全量 gate/package 通过；发布包 SHA `ff2e2491…52b91`。

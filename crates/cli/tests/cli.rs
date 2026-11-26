@@ -2965,6 +2965,45 @@ fn formats_rejects_non_xlsx_and_conflicting_flags() {
     );
 }
 
+#[test]
+fn formats_reports_a_missing_sheet_and_stable_json_shape() {
+    let dir = TempDir::new("xlsfmtmiss");
+    let book = dir.join("book.xlsx");
+    write_hidden_sheet_xlsx(&book);
+    let missing = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--formats",
+            "--sheet",
+            "Nope",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(missing.status.code(), Some(1));
+    assert!(
+        String::from_utf8_lossy(&missing.stderr).contains("no sheet named"),
+        "{}",
+        String::from_utf8_lossy(&missing.stderr)
+    );
+    let json = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--formats",
+            "--sheet",
+            "Hidden",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(json.status.code(), Some(0));
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(stdout.contains("\"sheet\":\"Hidden\""), "{stdout}");
+    assert!(stdout.contains("\"columns\":["), "{stdout}");
+    assert!(stdout.contains("\"column_index\":0"), "{stdout}");
+}
+
 /// `datecounts` groups a timestamp column by its first ten characters.
 #[test]
 fn report_datecounts_groups_timestamps_by_date() {
