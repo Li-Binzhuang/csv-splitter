@@ -1439,6 +1439,74 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // IRR: values are period-0 cash flows; solve NPV(rate)=0.
+        "irr" => {
+            if args.is_empty() || args.len() > 2 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            if values.len() < 2
+                || !values.iter().any(|value| *value > 0.0)
+                || !values.iter().any(|value| *value < 0.0)
+            {
+                return Value::Error;
+            }
+            let guess = args
+                .get(1)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(0.1))
+                .unwrap_or(f64::NAN);
+            if !guess.is_finite() || guess <= -1.0 {
+                return Value::Error;
+            }
+            let npv = |rate: f64| {
+                values
+                    .iter()
+                    .enumerate()
+                    .map(|(period, value)| value / (1.0 + rate).powi(period as i32))
+                    .sum::<f64>()
+            };
+            if npv(guess).abs() < 1e-10 {
+                return Value::Number(guess);
+            }
+            let mut rate = guess;
+            for _ in 0..100 {
+                let value = npv(rate);
+                let derivative = values
+                    .iter()
+                    .enumerate()
+                    .map(|(period, cash)| {
+                        if period == 0 {
+                            0.0
+                        } else {
+                            -(period as f64) * cash / (1.0 + rate).powi(period as i32 + 1)
+                        }
+                    })
+                    .sum::<f64>();
+                if !derivative.is_finite() || derivative.abs() < 1e-12 {
+                    break;
+                }
+                let next = rate - value / derivative;
+                if !next.is_finite() || next <= -1.0 {
+                    break;
+                }
+                if (next - rate).abs() < 1e-10 {
+                    rate = next;
+                    break;
+                }
+                rate = next;
+            }
+            if rate.is_finite() && rate > -1.0 && npv(rate).abs() < 1e-7 {
+                Value::Number(rate)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

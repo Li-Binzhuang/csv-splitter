@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "98df5e40796f59cc68af19407effa44e5acbb9e8061ee92c46fc46e8c7ef91c9",
+  "batch_id": "66f31867734dd0e8434bd9cc2cf90c23a561c1e9f6bca69ba5775e253f3f63ff",
+  "composite_identity": "87fe8b7d3566d55b5586b87e42a464ab6d6511b3a187688b25aaf2b450e2f624",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "654e647d92db7b8f02aa357f9759f6f298c686a4ef1f28344cc1ed632e687d8d",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "66fd8f3b1a899c47bf868ac5c2fb1c9d1f4b5e4aa8ec3dc4829ac31fcf79fa5a",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/区间；TEXT；日期时间族/INTL；查找/小计；UNICHAR/UNICODE；FIXED/DOLLAR/NUMBERVALUE；数论/组合；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；DECIMAL/BASE；财务 PMT/FV/PV/NPER/NPV/RATE | S:单列按整列；HLOOKUP 仅单行；位运算限 48 位；SUBTOTAL/AGGREGATE 空区间报错；内部错误统一报 #VALUE"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "90e299d73d4ab78edc7f801d927aa58d7ce729956bbf852e94fa36dcbef27339",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族/INTL；查找/小计；UNICHAR/UNICODE；数论；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；进制转换；财务 PMT/FV/PV/NPER/NPV/RATE | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "105eaea5706fe4c0c97063f637b6a7028d5ba2441a36baed19c0a4125242dbc7",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/日期时间族/INTL；查找/小计；UNICHAR/UNICODE；数论/组合；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；DECIMAL/BASE；财务 PMT/FV/PV/NPER/NPV/RATE | S:矩阵只记当前实现；HLOOKUP 仅单行；IRR/EFFECT/NOMINAL 仍列计划"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "67a96d6a68ee8ee6a8d57b2e87916a29080f0aa7e5e9a3cccb3f6530019ea937",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 个功能级项；Round178 RATE 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ded63b0f2709b8c597a7a9a6cc2452f4631d421dd6e1e3ad4350e2d699da8504",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "66fd8f3b1a899c47bf868ac5c2fb1c9d1f4b5e4aa8ec3dc4829ac31fcf79fa5a",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/区间；TEXT；日期时间族/INTL；查找/小计；UNICHAR/UNICODE；FIXED/DOLLAR/NUMBERVALUE；数论/组合；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；DECIMAL/BASE；财务 PMT/FV/PV/NPER/NPV/RATE | S:单列按整列；HLOOKUP 仅单行；位运算限 48 位；SUBTOTAL/AGGREGATE 空区间报错；内部错误统一报 #VALUE"
+    },
+    {
+      "candidate_id": "78426643f7e067168cff2049a6ecb7e93941b435d4dd87a8b28b62ec683c90c0",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "90e299d73d4ab78edc7f801d927aa58d7ce729956bbf852e94fa36dcbef27339",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族/INTL；查找/小计；UNICHAR/UNICODE；数论；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；进制转换；财务 PMT/FV/PV/NPER/NPV/RATE | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "03b683582025ce192593287212b338a88e794905ceb7eed1c1cd1e1ac1ba6e7f",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "105eaea5706fe4c0c97063f637b6a7028d5ba2441a36baed19c0a4125242dbc7",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/日期时间族/INTL；查找/小计；UNICHAR/UNICODE；数论/组合；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；DECIMAL/BASE；财务 PMT/FV/PV/NPER/NPV/RATE | S:矩阵只记当前实现；HLOOKUP 仅单行；IRR/EFFECT/NOMINAL 仍列计划"
+    },
+    {
+      "candidate_id": "91d8d5d9e23c8ab0bd75f73de3d1b69fa829ebc450c3240d4e1565ad4f5c03ef",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "67a96d6a68ee8ee6a8d57b2e87916a29080f0aa7e5e9a3cccb3f6530019ea937",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 个功能级项；Round178 RATE 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

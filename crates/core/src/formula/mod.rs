@@ -1442,6 +1442,51 @@ mod tests {
     }
 
     #[test]
+    fn irr_solves_periodic_cash_flows() {
+        let columns = vec!["cash1".to_string(), "cash2".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("cash1".to_string(), "-100".to_string());
+        cells.insert("cash2".to_string(), "110".to_string());
+        let formula = Formula::parse("irr(A2:B2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "0.1"
+        );
+        let columns = vec![
+            "cash1".to_string(),
+            "cash2".to_string(),
+            "cash3".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        cells.insert("cash1".to_string(), "-100".to_string());
+        cells.insert("cash2".to_string(), "0".to_string());
+        cells.insert("cash3".to_string(), "121".to_string());
+        let formula = Formula::parse("irr(A2:C2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "0.1"
+        );
+        let columns = vec!["cash1".to_string(), "cash2".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("cash1".to_string(), "10".to_string());
+        cells.insert("cash2".to_string(), "20".to_string());
+        for source in ["irr(A2:B2)", "irr(A2:B2, -1)"] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "#VALUE!",
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
     fn rate_solves_the_annuity_equation() {
         assert_eq!(eval_str("rate(10, -100, 1000)", &[]), "0");
         assert_eq!(eval_str("rate(1, -1100, 1000)", &[]), "0.1");
