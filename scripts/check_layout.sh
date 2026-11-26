@@ -52,7 +52,7 @@ while IFS= read -r entry; do
   [[ "$allowed" == 1 ]] || fail "unexpected CLI entry file: crates/cli/src/$name (update docs/ENTRYPOINTS.md first)"
 done < <(find crates/cli/src -maxdepth 1 -name '*.rs' -print | sort)
 
-MCP_SRC_ALLOWED=(lib.rs rmcp_server.rs tools.rs jobs.rs cache.rs executor.rs json.rs executor/paths.rs)
+MCP_SRC_ALLOWED=(lib.rs rmcp_server.rs tools.rs jobs.rs cache.rs executor.rs json.rs executor/paths.rs executor/commands.rs)
 while IFS= read -r entry; do
   name=${entry#crates/mcp/src/}
   allowed=0
@@ -89,6 +89,7 @@ mcp_limit jobs.rs 400
 mcp_limit cache.rs 350
 mcp_limit json.rs 350
 mcp_limit executor/paths.rs 250
+mcp_limit executor/commands.rs 550
 mcp_limit tools.rs 50
 
 line_count=$(wc -l < crates/cli/src/main.rs)

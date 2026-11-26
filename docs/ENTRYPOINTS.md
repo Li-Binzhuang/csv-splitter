@@ -90,7 +90,7 @@ bash scripts/package_release.sh
 1. **冻结 + 目录制度**（本文件、`check_layout.sh`、gate）。
 2. **抽 `crates/mcp`（已完成）**：官方 `rmcp` 是默认 stdio 传输；手写协议循环已删除。
    模块拆分：`tools.rs`（23 工具 schema）、`jobs.rs`（job 状态）、`cache.rs`（材料化缓存）、
-   `executor.rs`（工具执行/命令构建）、`executor/paths.rs`（路径校验）、`json.rs`（McpJson/McpParser）、
+   `executor.rs`（工具执行/命令构建）、`executor/paths.rs`（路径校验）、`executor/commands.rs`（23 工具命令分派）、`json.rs`（McpJson/McpParser）、
    `rmcp_server.rs`（传输）、`lib.rs`（入口/manifest）。HTTP 端点仍在 `serve.rs`。
    单文件上限由 `check_layout.sh` 强制：`lib.rs` 450、`executor.rs` 700、
    `rmcp_server.rs` 500、`jobs.rs` 400、`cache.rs`/`json.rs` 350。

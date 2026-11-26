@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 5：`executor.rs` 468 → 78 行；23 工具命令分派拆到 `executor/commands.rs`（406 行）。
+官方 SDK 仍 `sdk_calls=23`，gate 通过；发布包 SHA `911365bf…e534`。
+
 Round 4：12 路由 smoke 增加无 token 检查（必须 401）与错误方法检查（必须 405）。
 实测 `routes=12 route_bodies=12 unauth=12 method_guards=2`；发布包 SHA `5e3a52b4…67395`。
 
@@ -28,7 +31,7 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 ## 未完成
 
 - 23 工具 schema 语义级参数一致性（当前是字段到 flag 的映射检查）。
-- `executor.rs` 仍可继续拆命令分派。
+- `executor/commands.rs` 406 行，后续可再按工具族拆分。
 - 12 路由已有响应体、401、405 契约。
 - 商业化/产品化未开始。
 
@@ -39,6 +42,6 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 ## 下一轮具体行动
 
-1. 全量 gate、AOCI 收尾并提交。
+1. AOCI 收尾并提交。
 2. push 本轮提交一次。
-3. 下一轮转向 `crates/mcp` 命令分派拆分或 schema 语义校验。
+3. 下一轮把 schema 检查升级为参数语义/必填校验。
