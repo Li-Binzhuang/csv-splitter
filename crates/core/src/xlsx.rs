@@ -1026,12 +1026,18 @@ fn sheet_rows_with_limit_system(
                 }
             };
             let reference = attr(attrs, "r").unwrap_or_default();
-            let column = if reference.is_empty() {
-                cells.len()
+            let (column, reference_row) = if reference.is_empty() {
+                (cells.len(), row)
             } else {
-                column_from_reference(&reference)
-                    .ok_or_else(|| invalid(&format!("cell reference {reference:?} is invalid")))?
+                let (column, row_number) = cell_reference_parts(&reference)
+                    .ok_or_else(|| invalid(&format!("cell reference {reference:?} is invalid")))?;
+                (column, row_number)
             };
+            if reference_row != row {
+                return Err(invalid(&format!(
+                    "cell {reference} does not belong to row {row}"
+                )));
+            }
             if column >= MAX_COLUMNS {
                 return Err(invalid(&format!(
                     "cell {reference} is beyond Excel's {MAX_COLUMNS} column limit"
@@ -1056,20 +1062,24 @@ fn sheet_rows_with_limit_system(
     Ok(out)
 }
 
-fn column_from_reference(reference: &str) -> Option<usize> {
+fn cell_reference_parts(reference: &str) -> Option<(usize, u64)> {
     let mut column = 0usize;
-    let mut saw = false;
-    for byte in reference.bytes() {
+    let mut letters = 0;
+    let mut rest = reference;
+    for (index, byte) in reference.bytes().enumerate() {
         if byte.is_ascii_alphabetic() {
             column = column * 26 + (byte.to_ascii_uppercase() - b'A' + 1) as usize;
-            saw = true;
-        } else if byte.is_ascii_digit() {
-            break;
+            letters += 1;
         } else {
-            return None;
+            rest = &reference[index..];
+            break;
         }
     }
-    saw.then_some(column.saturating_sub(1))
+    if letters == 0 || rest.is_empty() || !rest.bytes().all(|byte| byte.is_ascii_digit()) {
+        return None;
+    }
+    let row = rest.parse::<u64>().ok()?;
+    (row > 0).then_some((column.saturating_sub(1), row))
 }
 
 fn cell_value(
@@ -1581,6 +1591,13 @@ mod tests {
         let xml = r#"<sheetData><row r="1"><c r="A1"><v>1</v></c></row></sheetData><rowBreaks count="1"><break id="1"/></rowBreaks>"#;
         let rows = sheet_rows(xml, &[], &[]).unwrap();
         assert_eq!(rows.len(), 1);
+    }
+
+    #[test]
+    fn a_cell_reference_must_match_its_row() {
+        let xml = r#"<sheetData><row r="1"><c r="A2"><v>1</v></c></row></sheetData>"#;
+        let error = sheet_rows(xml, &[], &[]).unwrap_err().to_string();
+        assert!(error.contains("does not belong to row 1"), "{error}");
     }
 
     #[test]
