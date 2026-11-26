@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "250e0a8798b477e5955072a680b5a4f8eebc02aa25f64bb7bf3583f14def4f00",
+  "batch_id": "d27ac954444149fe27f9cff10745418d49ebcf0302656f28d59343215a8c36fa",
+  "composite_identity": "f2b7a1fc259f51afee552a4a63ba00f3e7fc1d768f1bf62357505641833ac11e",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "9071b82b52b935d6aaf5b7fc939d2cf3ac4343d0f5d62ed5a1b14e757b5efb0d",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/SECURITY.md",
+      "path": "docs/SECURITY.md",
+      "change": "update",
+      "source_sha256": "e4727e389e42e1bf681024c5032a68789c4e9caaa98f974c3ad9886801dcebf4",
+      "existing_entry": "SECURITY.md[SS7T]: F:本地部署安全评审材料 | R:code:docs/AGENT_API.md,code:docs/MCP_COMPAT.md,code:scripts/test_install_offline.sh | A:数据边界；401/404；root escape；journal；审计；安装 manifest；限制 | S:只写实测；非认证；无多用户/OS 沙箱/远程签名"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "efe5d28ddf04c493e3ef1002b91be5f89fa3686aee74becf6eabf5edf687b52b",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round36 打包清理与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "f1d9f1e0ddb00524975a421427b17bfccb927e1ee1a3f2fd03237ebe8c7f1296",
+      "object_ref": "code:docs/SECURITY.md",
+      "path": "docs/SECURITY.md",
+      "change": "update",
+      "source_sha256": "e4727e389e42e1bf681024c5032a68789c4e9caaa98f974c3ad9886801dcebf4",
+      "existing_entry": "SECURITY.md[SS7T]: F:本地部署安全评审材料 | R:code:docs/AGENT_API.md,code:docs/MCP_COMPAT.md,code:scripts/test_install_offline.sh | A:数据边界；401/404；root escape；journal；审计；安装 manifest；限制 | S:只写实测；非认证；无多用户/OS 沙箱/远程签名"
+    },
+    {
+      "candidate_id": "0d2d9b312fc29cd4e44eddfe41d39e433b24ffee9445e9345923b11a27bd2e7e",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "efe5d28ddf04c493e3ef1002b91be5f89fa3686aee74becf6eabf5edf687b52b",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round36 打包清理与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    }
+  ]
+}

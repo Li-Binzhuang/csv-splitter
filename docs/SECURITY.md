@@ -27,11 +27,15 @@
 - 离线安装器校验 SHA256 后才解包，可用可选 release manifest 复核 bytes/SHA；
   坏 SHA256 或 manifest 不匹配均拒绝且不写安装 manifest：
   `scripts/test_install_offline.sh` 实测 `bad_sha=rejected`、bad manifest 拒绝。
+- release manifest 记录 SECURITY/SUPPORT_MATRIX/DEPLOY/MIGRATION 四份文档在
+  tar 内的 SHA256；`scripts/check_release.py` 会重新哈希。发布后复验只写
+  `.reverify.json`，不覆盖 manifest 绑定的 `.verify.json`。
 
 ## 4. MCP 边界
 
-- 23 个工具、2 个资源（`csvx://agent`、`csvx://operations`）之外的请求返回错误。
-- `resources=3` 包含审计资源；`csvx://audit` 只读本地 JSONL。
+- 23 个工具、3 个资源（`csvx://agent`、`csvx://operations`、`csvx://audit`）
+  之外的请求返回错误。
+- `csvx://audit` 只读本地 JSONL。
 - 官方 SDK 回归实测：
   `sdk_calls=23`、`required_rejections=20`、`bool_rejections=2`、
   `range_rejections=8`、`root_escape_rejections=2`。

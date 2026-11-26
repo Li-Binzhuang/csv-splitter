@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 37（安全文档纠偏）：SECURITY 资源数从 2/3 矛盾改为明确 3（agent/
+operations/audit），并补 release manifest 四文档哈希与复验不覆盖绑定 verify；
+发布包 SHA `419fae53…38b56`。
+
 Round 36（打包前清理旧验证）：`package_release.sh` 在重新打包前删除旧
 verify/release 文件，避免旧 `.release.json` 让 verify_dist 写 reverify、release
 manifest 读到旧 checks；连跑两次发布包均 `manifest=ok`，SHA `249861cc…e647`。
