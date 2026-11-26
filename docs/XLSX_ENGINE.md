@@ -66,4 +66,15 @@
 | 行上限 | 解析中限制，表头单独计 | `sheet_rows_stops_before_an_unbounded_worksheet`、`table_from_rows_skips_empty_rows_and_enforces_the_limit` |
 | inlineStr | 有 `<is>` 解析；空 body 视为空单元格 | xlsx fixture 与 `convert_imports_xlsx_shared_strings_and_sheets` |
 
+## 8. 实测（2026-11-26，release）
+
+```text
+200,000 行 × 10 列，CSV 6.8 MB → xlsx 8.3 MB
+导出 1.4–2.0 s；导回 CSV 0.93–0.96 s；round-trip 字节一致
+复现：scripts/bench_xlsx_roundtrip.sh
+```
+
+同数据集在优化前导回需 240–295 s。原因是每个 cell/attribute 都重新编译正则；
+改为线性标签扫描 + 手工属性解析 + `OnceLock` 缓存值正则后降到 0.93 s，差异约 250×。
+
 `convert` 是用户可跑的入口；`read_xlsx_to_csv` 的错误会保留为 stderr，失败不写输出文件。

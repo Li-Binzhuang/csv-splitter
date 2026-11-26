@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 72（xlsx 导入性能）：200k×10 导回从 240–295 s 降到 0.93–0.96 s（release），
+round-trip 字节一致；原因是 per-cell 正则编译，改为线性扫描/手工 attrs/OnceLock。
+复现脚本 `scripts/bench_xlsx_roundtrip.sh`；发布包 SHA `f91e2a2b…5eed665`。
+
 Round 71（夜间检查点）：刷新 NIGHT_CHECKPOINT 到 2026-11-26（CLI 177、xlsx 18、
 AOCI 243、包 87ee），NIGHT_QUEUE 记录 calamine 依赖与 goal edit 待拍板。
 

@@ -944,19 +944,50 @@ fn sheet_rows_with_limit_system(
     date1904: bool,
     max_sheet_rows: u64,
 ) -> std::io::Result<Vec<(u64, Vec<String>)>> {
-    let row_re = Regex::new(r#"(?s)<row\b([^>]*?)(?:/>|>(.*?)</row>)"#).unwrap();
-    let cell_re = Regex::new(r#"(?s)<c\b([^>]*?)(?:/>|>(.*?)</c>)"#).unwrap();
     let mut out = Vec::new();
-    for captures in row_re.captures_iter(xml) {
-        let row_attrs = &captures[1];
+    let mut cursor = 0;
+    while let Some(offset) = xml[cursor..].find("<row") {
+        let row_start = cursor + offset;
+        let Some(open_end) = xml[row_start..].find('>').map(|i| row_start + i) else {
+            break;
+        };
+        let attrs = &xml[row_start + 4..open_end];
+        let self_closing = attrs.trim_end().ends_with('/');
+        let row_attrs = attrs.trim_end_matches('/').trim_end();
+        let body_start = open_end + 1;
+        let (body, next) = if self_closing {
+            ("", body_start)
+        } else {
+            match xml[body_start..].find("</row>") {
+                Some(close) => (&xml[body_start..body_start + close], body_start + close + 6),
+                None => (&xml[body_start..], xml.len()),
+            }
+        };
         let row: u64 = attr(row_attrs, "r")
             .and_then(|value| value.parse().ok())
             .unwrap_or(out.len() as u64 + 1);
-        let body = captures.get(2).map(|m| m.as_str()).unwrap_or("");
         let mut cells = Vec::new();
-        for cell in cell_re.captures_iter(body) {
-            let attrs = &cell[1];
-            let body = cell.get(2).map(|m| m.as_str()).unwrap_or("");
+        let mut cell_cursor = 0;
+        while let Some(offset) = body[cell_cursor..].find("<c") {
+            let cell_start = cell_cursor + offset;
+            let Some(cell_open_end) = body[cell_start..].find('>').map(|i| cell_start + i) else {
+                break;
+            };
+            let attrs = &body[cell_start + 2..cell_open_end];
+            let self_closing = attrs.trim_end().ends_with('/');
+            let attrs = attrs.trim_end_matches('/').trim_end();
+            let cell_body_start = cell_open_end + 1;
+            let (cell_body, next) = if self_closing {
+                ("", cell_body_start)
+            } else {
+                match body[cell_body_start..].find("</c>") {
+                    Some(close) => (
+                        &body[cell_body_start..cell_body_start + close],
+                        cell_body_start + close + 4,
+                    ),
+                    None => (&body[cell_body_start..], body.len()),
+                }
+            };
             let reference = attr(attrs, "r").unwrap_or_default();
             let column = column_from_reference(&reference).unwrap_or(cells.len());
             if column >= MAX_COLUMNS {
@@ -967,7 +998,8 @@ fn sheet_rows_with_limit_system(
             while cells.len() <= column {
                 cells.push(String::new());
             }
-            cells[column] = cell_value(attrs, body, shared, date_styles, date1904)?;
+            cells[column] = cell_value(attrs, cell_body, shared, date_styles, date1904)?;
+            cell_cursor = next;
         }
         out.push((row, cells));
         if out.len() as u64 > max_sheet_rows {
@@ -976,6 +1008,7 @@ fn sheet_rows_with_limit_system(
                 max_sheet_rows
             )));
         }
+        cursor = next;
     }
     Ok(out)
 }
@@ -1011,23 +1044,10 @@ fn cell_value(
     }
     let kind = attr(attrs, "t").unwrap_or_default();
     match kind.as_str() {
-        "inlineStr" => {
-            let is_re = Regex::new(r#"(?s)<is\b[^>]*>(.*?)</is>"#).unwrap();
-            let t_re = Regex::new(r#"(?s)<t\b[^>]*>(.*?)</t>"#).unwrap();
-            let Some(is) = is_re.captures(body) else {
-                return Ok(String::new());
-            };
-            let mut text = String::new();
-            for run in t_re.captures_iter(&is[1]) {
-                text.push_str(&xml_unescape(&run[1]));
-            }
-            Ok(text)
-        }
+        "inlineStr" => Ok(inline_string_text(body).unwrap_or_default()),
         "s" => {
-            let v_re = Regex::new(r#"(?s)<v>(.*?)</v>"#).unwrap();
-            let index = v_re
-                .captures(body)
-                .and_then(|m| m[1].trim().parse::<usize>().ok())
+            let index = v_text(body)
+                .and_then(|value| value.trim().parse::<usize>().ok())
                 .ok_or_else(|| invalid(&format!("shared string cell {reference} has no index")))?;
             match shared.get(index) {
                 Some(value) => Ok(value.clone()),
@@ -1036,27 +1056,13 @@ fn cell_value(
                 ))),
             }
         }
-        "str" => {
-            let v_re = Regex::new(r#"(?s)<v>(.*?)</v>"#).unwrap();
-            Ok(v_re
-                .captures(body)
-                .map(|m| xml_unescape(m[1].trim()))
-                .unwrap_or_default())
-        }
-        "b" => {
-            let v_re = Regex::new(r#"(?s)<v>(.*?)</v>"#).unwrap();
-            Ok(v_re
-                .captures(body)
-                .map(|m| if m[1].trim() == "1" { "true" } else { "false" })
-                .unwrap_or_default()
-                .to_string())
-        }
+        "str" => Ok(v_text(body).unwrap_or_default()),
+        "b" => Ok(v_text(body)
+            .map(|value| if value.trim() == "1" { "true" } else { "false" })
+            .unwrap_or_default()
+            .to_string()),
         _ => {
-            let v_re = Regex::new(r#"(?s)<v>(.*?)</v>"#).unwrap();
-            let raw = v_re
-                .captures(body)
-                .map(|m| xml_unescape(m[1].trim()))
-                .unwrap_or_default();
+            let raw = v_text(body).unwrap_or_default();
             let style = attr(attrs, "s")
                 .and_then(|value| value.parse::<usize>().ok())
                 .unwrap_or(0);
@@ -1073,11 +1079,60 @@ fn cell_value(
 }
 
 fn attr(attrs: &str, name: &str) -> Option<String> {
-    let pattern = format!(r#"{name}="([^"]*)""#);
-    Regex::new(&pattern)
-        .ok()?
-        .captures(attrs)
-        .map(|captures| xml_unescape(&captures[1]))
+    let mut search = 0;
+    while let Some(offset) = attrs[search..].find(name) {
+        let start = search + offset;
+        let after_name = start + name.len();
+        let before_ok = attrs[..start]
+            .chars()
+            .next_back()
+            .map(|c| c.is_ascii_whitespace())
+            .unwrap_or(true);
+        let after_char = attrs[after_name..].chars().next();
+        if !before_ok
+            || !after_char
+                .map(|c| c == '=' || c.is_ascii_whitespace())
+                .unwrap_or(false)
+        {
+            search = after_name;
+            continue;
+        }
+        let rest = attrs[after_name..].trim_start();
+        let Some(value) = rest.strip_prefix('=') else {
+            search = after_name;
+            continue;
+        };
+        let value = value.trim_start();
+        let quote = value.chars().next()?;
+        if quote != '"' && quote != '\'' {
+            search = after_name;
+            continue;
+        }
+        let value = &value[1..];
+        return value.find(quote).map(|end| xml_unescape(&value[..end]));
+    }
+    None
+}
+
+fn inline_string_text(body: &str) -> Option<String> {
+    static IS_RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    static T_RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    let is_re = IS_RE.get_or_init(|| Regex::new(r#"(?s)<is\b[^>]*>(.*?)</is>"#).unwrap());
+    let t_re = T_RE.get_or_init(|| Regex::new(r#"(?s)<t\b[^>]*>(.*?)</t>"#).unwrap());
+    let Some(is) = is_re.captures(body) else {
+        return Some(String::new());
+    };
+    let mut text = String::new();
+    for run in t_re.captures_iter(&is[1]) {
+        text.push_str(&xml_unescape(&run[1]));
+    }
+    Some(text)
+}
+
+fn v_text(body: &str) -> Option<String> {
+    static V_RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    let re = V_RE.get_or_init(|| Regex::new(r#"(?s)<v>(.*?)</v>"#).unwrap());
+    re.captures(body).map(|m| xml_unescape(m[1].trim()))
 }
 
 fn xml_unescape(value: &str) -> String {

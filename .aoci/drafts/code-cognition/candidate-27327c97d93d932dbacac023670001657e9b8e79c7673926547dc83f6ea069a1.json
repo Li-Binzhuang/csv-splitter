@@ -1,0 +1,75 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "e1838228eecce30e13d798c1aa07a55715f57bf0835fe8ed86218a0e4a4c41f2",
+  "batch_id": "27327c97d93d932dbacac023670001657e9b8e79c7673926547dc83f6ea069a1",
+  "composite_identity": "30bb36c73be7c16f24610eca1a0e8ecddd296ad9d05fa1294c0bea6e232642f5",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "6a4814f591f21d23b64fd4841820afd39fdf7c6e4971cb41e09209a394e8bcae",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "f25df0b2aa4c1c580e25e5f54114bf1ace6b6c988fa4ae06772b720efb3d231d",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；ISO 日期/日期时间/纯时间；1904 日期系统；cellIs；读 shared/inline/缓存值/日期；16384 列/1,048,576 数据行 | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式/坏索引/超限报错"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "a83ea081ef265474362049f4ce7c16a2867e2f9d53e08fa28d5df974f8862d66",
+      "existing_entry": "XLSX_ENGINE.md[SZ7T]: F:XLSX 引擎决策、迁移方案与覆盖矩阵 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；自写子集；12 项边界/测试；1904 日期 | S:迁移未执行待批准；不新增依赖；商业化暂缓"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "a7b4610e86a7a1803c5d583ab84868967cc07b0a165f251f558afa15b1f59ded",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round71 夜间检查点与待决策 | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/bench_xlsx_roundtrip.sh",
+      "path": "scripts/bench_xlsx_roundtrip.sh",
+      "change": "create",
+      "source_sha256": "18aa3ad712294ec90d220f5dda0064a3fc9e6370b4eab1b27adce979f701fb0b"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "90e472d322a402ae88f83ac5616d55f267817b612bb5dba7c4dc2e5f9172ca86",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "f25df0b2aa4c1c580e25e5f54114bf1ace6b6c988fa4ae06772b720efb3d231d",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；ISO 日期/日期时间/纯时间；1904 日期系统；cellIs；读 shared/inline/缓存值/日期；16384 列/1,048,576 数据行 | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式/坏索引/超限报错"
+    },
+    {
+      "candidate_id": "7667376fd36ff5d9fecec8940c23781b6bb40ca7a1d845744f022137d0b81c8f",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "a83ea081ef265474362049f4ce7c16a2867e2f9d53e08fa28d5df974f8862d66",
+      "existing_entry": "XLSX_ENGINE.md[SZ7T]: F:XLSX 引擎决策、迁移方案与覆盖矩阵 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；自写子集；12 项边界/测试；1904 日期 | S:迁移未执行待批准；不新增依赖；商业化暂缓"
+    },
+    {
+      "candidate_id": "508b5054770ffe7778c8d63ba4a751b086e0835a472279bb5ccf8b4b37b7369b",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "a7b4610e86a7a1803c5d583ab84868967cc07b0a165f251f558afa15b1f59ded",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round71 夜间检查点与待决策 | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "f74d2230910b6393512a7f9085cfb04e50dad1c3d0e8d6226b288c055b1a4e11",
+      "object_ref": "code:scripts/bench_xlsx_roundtrip.sh",
+      "path": "scripts/bench_xlsx_roundtrip.sh",
+      "change": "create",
+      "source_sha256": "18aa3ad712294ec90d220f5dda0064a3fc9e6370b4eab1b27adce979f701fb0b"
+    }
+  ]
+}
