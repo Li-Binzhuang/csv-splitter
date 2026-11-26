@@ -110,6 +110,37 @@ pub(crate) fn append_run(
     PipelineHistory::new(root).append(&line)
 }
 
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn append_attempt(
+    root: &Path,
+    plan: &Path,
+    plan_hash: &str,
+    step: &str,
+    attempt: usize,
+    elapsed_ms: u64,
+    ok: bool,
+    code: &str,
+    error: &str,
+    retry_delay_ms: Option<u64>,
+) -> std::io::Result<()> {
+    let retry = retry_delay_ms
+        .map(|delay| format!(",\"retryDelayMs\":{delay}"))
+        .unwrap_or_default();
+    let line = format!(
+        r#"{{"event":"attempt","plan":{},"planHash":{},"step":{},"attempt":{},"ms":{},"ok":{},"code":{},"error":{}{}}}"#,
+        json_quote(&plan.display().to_string()),
+        json_quote(plan_hash),
+        json_quote(step),
+        attempt,
+        elapsed_ms,
+        ok,
+        json_quote(code),
+        json_quote(error),
+        retry
+    );
+    PipelineHistory::new(root).append(&line)
+}
+
 pub(crate) fn read(root: &Path) -> std::io::Result<String> {
     PipelineHistory::new(root).read()
 }

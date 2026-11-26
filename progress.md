@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 2（Pipeline 自动化第二阶段）：history 增加 `event:"attempt"`（attempt/ms/
+ok/code/retryDelayMs），失败重试可审计；`pipeline status --verify` JSON 增加
+`staleReason`（input/output missing、hash changed、stamp changed 等）；发布包 SHA `5bfa79ef…5d543`。
+
 Round 1（Pipeline 历史目标）：每轮 `pipeline run` 追加 `.csvx/pipeline-history.jsonl`；
 CLI `pipeline history` 可读；3 个历史单测 + 1 个 CLI 集成测试；默认 4 MiB 轮转。
 失败记录 `pipeline_error`，fresh 步骤记 `skipped`；发布包 SHA `8170577b…64abb`。
@@ -109,5 +113,5 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 ## 下一轮具体行动
 
 1. 全量 gate、打包、AOCI 收尾。
-2. 提交并 push 本轮。
-3. 下一轮实现失败重试记录与过期告警。
+2. 提交并 push 本轮（含上一轮本地提交）。
+3. 下一轮转向下一个付费候选。

@@ -299,9 +299,10 @@ joined,filtered,lookup,--key cust_no --reference customers.csv --get name --out 
 PID 已不存在 → 立即视为残留；文件无 PID 且超过 24 小时 → 才按年龄视为残留。锁在正常返回/失败时释放。
 `--unlock` 可在运行前显式删除锁；仅在确认没有其他 run 时使用。
 `pipeline history` 读取 `<root>/.csvx/pipeline-history.jsonl`：每次 `run` 追加
-planHash、起止时间、每步 status/ms/fresh，失败记录 `pipeline_error`；文件默认
-4 MiB 轮转（`CSVX_PIPELINE_HISTORY_MAX_BYTES` 可调）。`pipeline status --verify`
-按当前 input/output 的 stamp/hash 重新判断 fresh/stale；
+planHash、起止时间、每步 status/ms/fresh，失败记录 `pipeline_error`；每次实际尝试
+另记 `event:"attempt"`（attempt/ms/ok/code/retryDelayMs），可审计重试与退避；文件
+默认 4 MiB 轮转（`CSVX_PIPELINE_HISTORY_MAX_BYTES` 可调）。`pipeline status --verify`
+按当前 input/output 的 stamp/hash 重新判断 fresh/stale，JSON 输出 `staleReason`；
 JSON 增加 `"fresh"`；配合 `--fail-on-stale` 在发现 stale 时以退出码 3 结束，
 便于定时任务/CI 判断。成功运行后会写 `<plan>.lineage.csv`（列 `step,deps`，deps 以 `;` 分隔），dry-run 不写。
 `--dry-run` 只报告 fresh / would-run，不执行、不写 state；`--json` 输出

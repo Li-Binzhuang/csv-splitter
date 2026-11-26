@@ -1,0 +1,109 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "10c8cd3ff0744c635ffbb453d74391f65af4d573b9cbe978ff6dffb02c34c5d7",
+  "batch_id": "c8832ee01eaaea1a9b4e7ab0833ca72cd47daeba0a297291eadd19193bea2033",
+  "composite_identity": "8572efc90f292331959c1170f4a702f590a37e49ee6482efd14758d248c53b9b",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "8bf0b782345c35e8953db34f0febf80a5fae784ce1d6d6347a158d34f9952084",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/pipeline.rs",
+      "path": "crates/cli/src/commands/pipeline.rs",
+      "change": "update",
+      "source_sha256": "70dc3377b6dc6f35ca81a270fecfd4059fc644ed8917bd65ffcbb5157b9843ca",
+      "existing_entry": "pipeline.rs[EN9L]: F:CLI pipeline：DAG/线性执行、watch、状态、锁与历史 | R:code:crates/cli/src/commands/pipeline_history.rs,code:crates/cli/src/commands/shared.rs,code:crates/core/src/pipeline | A:run/watch/history/status；run_pipeline_plan；history 落盘；DAG 拓扑 | S:锁防并发；失败也记录 pipeline_error；dry-run 不写历史"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/pipeline_history.rs",
+      "path": "crates/cli/src/commands/pipeline_history.rs",
+      "change": "update",
+      "source_sha256": "d3fc775893f9fc996fece26a9b1f915fe4f8728e6f77d912d73511fb1c51e1bd",
+      "existing_entry": "pipeline_history.rs[EN7S]: F:Pipeline 运行历史：JSONL 落盘、轮转、读取 | R:code:crates/cli/src/commands/pipeline.rs,code:crates/cli/src/commands/shared.rs | A:append_run；read；planHash；started/ended；steps fresh/ms | S:默认 4MiB 可调；.1 轮转；失败仅警告；只记 step 名不含值"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "e3b212b79d914ba900bfe5e8fd1689f21cc73a31850a07bd0f5a3cb937e6a59c",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI/HTTP/MCP 与边界 | R:code:docs/API.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/FORMULA_CACHE.md | A:pipeline history；filter；gate；report；MCP 23 工具；agent serve | S:history 默认 4MiB 轮转；无 GUI；缓存上限；SSE 轮询"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "eea6ecc6249135544386e1d82e39ee7c87d019ca839ca7561b419e6cbd8e5624",
+      "existing_entry": "ENTRYPOINTS.md[SG7S]: F:入口层目录、行数与客户端验证规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:docs/MCP_COMPAT.md | A:根与MCP白名单；pipeline_history；pipeline 2250/history 250；audit 300 | S:rmcp 唯一传输；新模块先文档；超限失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "9ce3c0d6d888dc792b6325c3e006298b6feac4a02129f34e725bda290a0f00fb",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Pipeline 历史 Round1 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "630154d95d995645b4e7dd76a0b3f1eaaaa234d3b4f2d79875f18ca4850e330b",
+      "existing_entry": "check_layout.sh[XQ7S]: F:入口层目录与行数规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根/CLI/MCP 白名单；pipeline 2250；history 250；audit 300 | S:未知模块退出；超行数失败；先改文档再加模块"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "382a7273be344050fc5d0a05f4d55194bd57a1c1bb14ef1be5b5e5dafaf28bde",
+      "object_ref": "code:crates/cli/src/commands/pipeline.rs",
+      "path": "crates/cli/src/commands/pipeline.rs",
+      "change": "update",
+      "source_sha256": "70dc3377b6dc6f35ca81a270fecfd4059fc644ed8917bd65ffcbb5157b9843ca",
+      "existing_entry": "pipeline.rs[EN9L]: F:CLI pipeline：DAG/线性执行、watch、状态、锁与历史 | R:code:crates/cli/src/commands/pipeline_history.rs,code:crates/cli/src/commands/shared.rs,code:crates/core/src/pipeline | A:run/watch/history/status；run_pipeline_plan；history 落盘；DAG 拓扑 | S:锁防并发；失败也记录 pipeline_error；dry-run 不写历史"
+    },
+    {
+      "candidate_id": "4cd8395bb1d486a8b13b4b37871ba97a08a287c6a54a0d8f5339687ae43986a2",
+      "object_ref": "code:crates/cli/src/commands/pipeline_history.rs",
+      "path": "crates/cli/src/commands/pipeline_history.rs",
+      "change": "update",
+      "source_sha256": "d3fc775893f9fc996fece26a9b1f915fe4f8728e6f77d912d73511fb1c51e1bd",
+      "existing_entry": "pipeline_history.rs[EN7S]: F:Pipeline 运行历史：JSONL 落盘、轮转、读取 | R:code:crates/cli/src/commands/pipeline.rs,code:crates/cli/src/commands/shared.rs | A:append_run；read；planHash；started/ended；steps fresh/ms | S:默认 4MiB 可调；.1 轮转；失败仅警告；只记 step 名不含值"
+    },
+    {
+      "candidate_id": "a1f8646992cf29713c95d04cdc1cce2d8d719d1d7d5472c72650e6191208b5a0",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "e3b212b79d914ba900bfe5e8fd1689f21cc73a31850a07bd0f5a3cb937e6a59c",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI/HTTP/MCP 与边界 | R:code:docs/API.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/FORMULA_CACHE.md | A:pipeline history；filter；gate；report；MCP 23 工具；agent serve | S:history 默认 4MiB 轮转；无 GUI；缓存上限；SSE 轮询"
+    },
+    {
+      "candidate_id": "39a171cb985ab92979136855a49582f486b1a63b51e170514724633e21b59748",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "eea6ecc6249135544386e1d82e39ee7c87d019ca839ca7561b419e6cbd8e5624",
+      "existing_entry": "ENTRYPOINTS.md[SG7S]: F:入口层目录、行数与客户端验证规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:docs/MCP_COMPAT.md | A:根与MCP白名单；pipeline_history；pipeline 2250/history 250；audit 300 | S:rmcp 唯一传输；新模块先文档；超限失败"
+    },
+    {
+      "candidate_id": "480a6a773915b21cefaf1f2a25541b7c11d514e7ca698e913876b2880d631174",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "9ce3c0d6d888dc792b6325c3e006298b6feac4a02129f34e725bda290a0f00fb",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Pipeline 历史 Round1 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "5aacb77ca8343fc4d28f035eeb7c8491f720f29336dcebad45fc43556ff30d83",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "630154d95d995645b4e7dd76a0b3f1eaaaa234d3b4f2d79875f18ca4850e330b",
+      "existing_entry": "check_layout.sh[XQ7S]: F:入口层目录与行数规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根/CLI/MCP 白名单；pipeline 2250；history 250；audit 300 | S:未知模块退出；超行数失败；先改文档再加模块"
+    }
+  ]
+}

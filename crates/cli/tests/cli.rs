@@ -2797,7 +2797,8 @@ fn pipeline_history_records_runs_and_failures() {
 
     let history = dir.join(".csvx/pipeline-history.jsonl");
     let text = std::fs::read_to_string(&history).unwrap();
-    assert_eq!(text.lines().count(), 2, "{text}");
+    assert_eq!(text.matches(r#""run":""#).count(), 2, "{text}");
+    assert!(text.matches(r#""event":"attempt""#).count() >= 1, "{text}");
     assert!(text.contains(r#""planHash":"#), "{text}");
     assert!(text.contains(r#""status":"ok""#), "{text}");
     assert!(text.contains(r#""status":"skipped""#), "{text}");
@@ -2815,6 +2816,10 @@ fn pipeline_history_records_runs_and_failures() {
             bad.to_str().unwrap(),
             "--root",
             dir.0.to_str().unwrap(),
+            "--retries",
+            "1",
+            "--retry-delay",
+            "1",
         ])
         .output()
         .unwrap();
@@ -2822,6 +2827,9 @@ fn pipeline_history_records_runs_and_failures() {
     let text = std::fs::read_to_string(&history).unwrap();
     assert!(text.contains(r#""ok":false"#), "{text}");
     assert!(text.contains(r#"pipeline_error"#), "{text}");
+    assert!(text.contains(r#""event":"attempt""#), "{text}");
+    assert!(text.contains(r#""attempt":2"#), "{text}");
+    assert!(text.contains(r#"retryDelayMs"#), "{text}");
 
     let listed = Command::new(bin())
         .args(["pipeline", "history", "--root", dir.0.to_str().unwrap()])
@@ -3731,7 +3739,12 @@ fn pipeline_status_verify_detects_stale_output() {
         .output()
         .unwrap();
     assert!(stale.status.success());
-    assert!(String::from_utf8_lossy(&stale.stdout).contains(r#""fresh":false"#));
+    let stale_text = String::from_utf8_lossy(&stale.stdout);
+    assert!(stale_text.contains(r#""fresh":false"#));
+    assert!(
+        stale_text.contains(r#""staleReason":"output"#),
+        "{stale_text}"
+    );
     let gate = Command::new(bin())
         .args([
             "pipeline",

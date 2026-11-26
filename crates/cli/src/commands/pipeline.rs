@@ -466,6 +466,7 @@ fn run_pipeline_plan(
         .map(std::path::Path::to_path_buf)
         .or_else(|| plan.parent().map(std::path::Path::to_path_buf))
         .unwrap_or_else(|| std::path::PathBuf::from("."));
+    let plan_hash = pipeline_hash_file(plan).unwrap_or_default();
     let reader = csvx_core::encoding::open_decoded(plan)?;
     let mut records = csvx_core::csv_reader::RecordReader::new(
         std::io::BufReader::with_capacity(256 * 1024, reader),
@@ -846,6 +847,18 @@ fn run_pipeline_plan(
                 Ok(result) => {
                     elapsed_ms = started.elapsed().as_millis() as u64;
                     if result.status.success() {
+                        let _ = pipeline_history::append_attempt(
+                            &root,
+                            plan,
+                            &plan_hash,
+                            &step.name,
+                            attempt + 1,
+                            elapsed_ms,
+                            true,
+                            "ok",
+                            "",
+                            None,
+                        );
                         output = Some(result);
                         break;
                     }
@@ -853,6 +866,18 @@ fn run_pipeline_plan(
                         "step {} failed: {}",
                         step.name,
                         String::from_utf8_lossy(&result.stderr).trim()
+                    );
+                    let _ = pipeline_history::append_attempt(
+                        &root,
+                        plan,
+                        &plan_hash,
+                        &step.name,
+                        attempt + 1,
+                        elapsed_ms,
+                        false,
+                        "step_failed",
+                        &last,
+                        Some(retry_delay_ms),
                     );
                     if attempt < retries {
                         eprintln!("{last}; retrying ({}/{})", attempt + 1, retries);
@@ -867,6 +892,18 @@ fn run_pipeline_plan(
                 }
                 Err(error) if error.kind() == std::io::ErrorKind::TimedOut => {
                     let last = format!("step {} timed out after {} ms", step.name, step_timeout_ms);
+                    let _ = pipeline_history::append_attempt(
+                        &root,
+                        plan,
+                        &plan_hash,
+                        &step.name,
+                        attempt + 1,
+                        step_timeout_ms,
+                        false,
+                        "timeout",
+                        &last,
+                        Some(retry_delay_ms),
+                    );
                     if attempt < retries {
                         eprintln!("{last}; retrying ({}/{})", attempt + 1, retries);
                         thread::sleep(Duration::from_millis(retry_delay_ms));
@@ -879,6 +916,18 @@ fn run_pipeline_plan(
                     )));
                 }
                 Err(error) => {
+                    let _ = pipeline_history::append_attempt(
+                        &root,
+                        plan,
+                        &plan_hash,
+                        &step.name,
+                        attempt + 1,
+                        started.elapsed().as_millis() as u64,
+                        false,
+                        "spawn_error",
+                        &error.to_string(),
+                        None,
+                    );
                     let _ = std::fs::remove_file(&temp);
                     return Err(error);
                 }
@@ -1305,19 +1354,26 @@ pub(crate) fn cmd_pipeline(args: &[String]) -> i32 {
                 println!("(no pipeline state yet)");
                 return 0;
             }
-            let fresh: Vec<bool> = if verify {
+            let stale: Vec<Option<String>> = if verify {
                 rows.iter()
-                    .map(|row| pipeline_state_is_fresh(row, content_check))
+                    .map(|row| pipeline_state_stale_reason(row, content_check))
                     .collect()
             } else {
-                vec![false; rows.len()]
+                vec![None; rows.len()]
             };
+            let fresh: Vec<bool> = stale.iter().map(|reason| reason.is_none()).collect();
             let items: Vec<String> = rows
                 .iter()
-                .zip(fresh.iter())
-                .map(|(row, is_fresh)| {
+                .zip(stale.iter())
+                .map(|(row, reason)| {
                     let verify_field = if verify {
-                        format!(r#","fresh":{}"#, is_fresh)
+                        match reason {
+                            Some(reason) => format!(
+                                r#","fresh":false,"staleReason":{}"#,
+                                json_quote(reason)
+                            ),
+                            None => r#","fresh":true"#.to_string(),
+                        }
                     } else {
                         String::new()
                     };
@@ -1341,13 +1397,16 @@ pub(crate) fn cmd_pipeline(args: &[String]) -> i32 {
             }
             if verify {
                 println!("{:<20} {:<32} {:>8} status", "step", "output", "ms");
-                for (row, is_fresh) in rows.iter().zip(fresh.iter()) {
+                for (row, reason) in rows.iter().zip(stale.iter()) {
                     println!(
                         "{:<20} {:<32} {:>8} {}",
                         row.name,
                         row.output,
                         row.elapsed_ms,
-                        if *is_fresh { "fresh" } else { "stale" }
+                        match reason {
+                            Some(reason) => format!("stale ({reason})"),
+                            None => "fresh".to_string(),
+                        }
                     );
                 }
             } else {
@@ -1808,33 +1867,61 @@ fn pipeline_auto_content_check(input: &std::path::Path, output: &std::path::Path
     size(input) <= limit && size(output) <= limit
 }
 
-fn pipeline_state_is_fresh(row: &PipelineStateRow, content_check: bool) -> bool {
+fn pipeline_state_stale_reason(row: &PipelineStateRow, content_check: bool) -> Option<String> {
     let input = std::path::Path::new(&row.input);
     let output = std::path::Path::new(&row.output);
-    if !input.exists() || !output.exists() {
-        return false;
+    if !input.exists() {
+        return Some("input missing".to_string());
+    }
+    if !output.exists() {
+        return Some("output missing".to_string());
     }
     let hash_content = content_check || pipeline_auto_content_check(input, output);
     if hash_content && !row.input_hash.is_empty() && !row.output_hash.is_empty() {
-        return pipeline_hash_file(input)
-            .map(|hash| hash == row.input_hash)
-            .unwrap_or(false)
-            && pipeline_hash_file(output)
-                .map(|hash| hash == row.output_hash)
-                .unwrap_or(false);
+        let input_hash = match pipeline_hash_file(input) {
+            Ok(hash) => hash,
+            Err(_) => return Some("input hash unavailable".to_string()),
+        };
+        if input_hash != row.input_hash {
+            return Some("input hash changed".to_string());
+        }
+        let output_hash = match pipeline_hash_file(output) {
+            Ok(hash) => hash,
+            Err(_) => return Some("output hash unavailable".to_string()),
+        };
+        if output_hash != row.output_hash {
+            return Some("output hash changed".to_string());
+        }
+        return None;
     }
     if !row.input_stamp.is_empty() && !row.output_stamp.is_empty() {
-        let input_stamp = pipeline_file_stamp(input).ok();
-        let output_stamp = pipeline_file_stamp(output).ok();
-        return input_stamp.as_deref() == Some(row.input_stamp.as_str())
-            && output_stamp.as_deref() == Some(row.output_stamp.as_str());
+        match pipeline_file_stamp(input) {
+            Ok(stamp) if stamp == row.input_stamp => {}
+            Ok(_) => return Some("input stamp changed".to_string()),
+            Err(_) => return Some("input stamp unavailable".to_string()),
+        }
+        match pipeline_file_stamp(output) {
+            Ok(stamp) if stamp == row.output_stamp => {}
+            Ok(_) => return Some("output stamp changed".to_string()),
+            Err(_) => return Some("output stamp unavailable".to_string()),
+        }
+        return None;
     }
-    pipeline_hash_file(input)
-        .map(|hash| hash == row.input_hash)
-        .unwrap_or(false)
-        && pipeline_hash_file(output)
-            .map(|hash| hash == row.output_hash)
-            .unwrap_or(false)
+    let input_hash = match pipeline_hash_file(input) {
+        Ok(hash) => hash,
+        Err(_) => return Some("input hash unavailable".to_string()),
+    };
+    if input_hash != row.input_hash {
+        return Some("input hash changed".to_string());
+    }
+    let output_hash = match pipeline_hash_file(output) {
+        Ok(hash) => hash,
+        Err(_) => return Some("output hash unavailable".to_string()),
+    };
+    if output_hash != row.output_hash {
+        return Some("output hash changed".to_string());
+    }
+    None
 }
 
 fn pipeline_dependencies(steps: &[PipelineStep], index: usize) -> Vec<String> {
