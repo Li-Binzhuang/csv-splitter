@@ -133,6 +133,14 @@ console.log(`cancel_state=${cancelled.state}`);
 const unknown = await client.callTool({ name: "csvx_nope", arguments: {} });
 console.log(`unknown_tool_error=${unknown.isError === true}`);
 console.log(`unknown_code=${unknown.structuredContent?.code ?? ""}`);
+const noRequired = new Set(["csvx_cache_clear", "csvx_cache_stats", "csvx_job_list"]);
+let requiredRejections = 0;
+for (const name of expectedTools) {
+  if (noRequired.has(name)) continue;
+  const result = await client.callTool({ name, arguments: {} });
+  if (result.isError) requiredRejections += 1;
+}
+console.log(`required_rejections=${requiredRejections}`);
 const missingTools = expectedTools.filter((name) => !called.has(name));
 console.log(`sdk_calls=${expectedTools.length - missingTools.length}`);
 console.log(`sdk_missing=${missingTools.join(",")}`);

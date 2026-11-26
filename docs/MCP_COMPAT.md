@@ -28,6 +28,7 @@ job_listed=true
 cancel_state=done
 job_reject_code=job_start_error
 unknown_code=unknown_tool
+required_rejections=20
 ```
 
 gate 的 `mcp-sdk` 阶段默认使用 `target/debug/csvx`，避免测到旧的 release 产物；

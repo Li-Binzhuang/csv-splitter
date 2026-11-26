@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "22285b7cbc70c0d76aa6822963ea87b626a354d39baa98e5294350f89d1051b8",
+  "batch_id": "f34030c4fad672888102259de7bb47ace8d4efec4f5174ffa043e9b77ea8851e",
+  "composite_identity": "7bf4ab3be5d3d691759a70e5b748c4c0347ef341ddf4577386c66164cafd540b",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "0edfebc8996268c4f71faba70964ba033139c4f352bed0f2df034e4dc6f39425",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "update",
+      "source_sha256": "1a1e1adb88017f8b10f024f2b2953c0288a716a73ffa58df9568c522faa9948e",
+      "existing_entry": "MCP_COMPAT.md[SD7S]: F:官方 SDK、schema 与 DSH 客户端验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:scripts/check_mcp_dsh.sh,code:docs/ENTRYPOINTS.md | A:23 工具全调用；schema 43 字段；DSH headless 实测 2 行；命令与期望输出 | S:不改 DSH profile；DSH 检查需 CSVX_DSH_TEST=1；结果均本机实测"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "a91da6aacd30591c728d4cf59750f958093417ab1762ae7067c714ab966c3243",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round5 拆分与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_mcp_sdk.sh",
+      "path": "scripts/check_mcp_sdk.sh",
+      "change": "update",
+      "source_sha256": "5137f87304e32967f565a0b4b3f71e2c54e81fa29a56acdc35949a996fb4eb4e",
+      "existing_entry": "check_mcp_sdk.sh[SD7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:debug 优先；临时 CSV/plan/gzip；23 工具调用/pipeline/cache/job/error | S:node/SDK 缺失跳过；失败非零"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "dac93c038f51877e4443f8bd3c4da4c05c77bc7b73115c1872c536ab0e260da7",
+      "existing_entry": "client.mjs[SG7S]: F:官方 MCP SDK 全 23 工具客户端 | R:code:scripts/mcp_sdk/package.json,code:scripts/check_mcp_sdk.sh | A:called 集合；23 工具逐项；pipeline/gzip/job/cancel/error | S:仅回归；npm 不进 Rust；job 失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "70326b29492473e4c6fe74b941b7168e1cbfa080029222c5c4379fb750724a80",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "update",
+      "source_sha256": "1a1e1adb88017f8b10f024f2b2953c0288a716a73ffa58df9568c522faa9948e",
+      "existing_entry": "MCP_COMPAT.md[SD7S]: F:官方 SDK、schema 与 DSH 客户端验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:scripts/check_mcp_dsh.sh,code:docs/ENTRYPOINTS.md | A:23 工具全调用；schema 43 字段；DSH headless 实测 2 行；命令与期望输出 | S:不改 DSH profile；DSH 检查需 CSVX_DSH_TEST=1；结果均本机实测"
+    },
+    {
+      "candidate_id": "ec27b345f8bc866b16f13da53ac5989b86f761d36049a7ad45866d283190dd08",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "a91da6aacd30591c728d4cf59750f958093417ab1762ae7067c714ab966c3243",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round5 拆分与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "e4283bd0d474f6806337b7179fa43eaab6b13f8e1cd00a7eb09c9d47bfe42557",
+      "object_ref": "code:scripts/check_mcp_sdk.sh",
+      "path": "scripts/check_mcp_sdk.sh",
+      "change": "update",
+      "source_sha256": "5137f87304e32967f565a0b4b3f71e2c54e81fa29a56acdc35949a996fb4eb4e",
+      "existing_entry": "check_mcp_sdk.sh[SD7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:debug 优先；临时 CSV/plan/gzip；23 工具调用/pipeline/cache/job/error | S:node/SDK 缺失跳过；失败非零"
+    },
+    {
+      "candidate_id": "e75b1ca18d91f50d38e2c0be565e96ce1f221e562978dd36d12ead0cfe6a4b51",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "dac93c038f51877e4443f8bd3c4da4c05c77bc7b73115c1872c536ab0e260da7",
+      "existing_entry": "client.mjs[SG7S]: F:官方 MCP SDK 全 23 工具客户端 | R:code:scripts/mcp_sdk/package.json,code:scripts/check_mcp_sdk.sh | A:called 集合；23 工具逐项；pipeline/gzip/job/cancel/error | S:仅回归；npm 不进 Rust；job 失败非零"
+    }
+  ]
+}

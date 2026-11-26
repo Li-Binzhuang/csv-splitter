@@ -17,6 +17,8 @@
 
 ## 当前进度
 
+Round 6：SDK 对 20 个有必填参数的工具传空参数，全部返回错误；`required_rejections=20`；发布包 SHA `abcfc0f5…71cbc`。
+
 Round 5：`executor.rs` 468 → 78 行；23 工具命令分派拆到 `executor/commands.rs`（406 行）。
 官方 SDK 仍 `sdk_calls=23`，gate 通过；发布包 SHA `911365bf…e534`。
 
@@ -30,7 +32,7 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 ## 未完成
 
-- 23 工具 schema 语义级参数一致性（当前是字段到 flag 的映射检查）。
+- 23 工具 schema 字段映射与空参数必填拒绝已覆盖；参数范围/枚举语义仍可加强。
 - `executor/commands.rs` 406 行，后续可再按工具族拆分。
 - 12 路由已有响应体、401、405 契约。
 - 商业化/产品化未开始。
@@ -42,6 +44,6 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 ## 下一轮具体行动
 
-1. AOCI 收尾并提交。
+1. 全量 gate、AOCI 收尾并提交。
 2. push 本轮提交一次。
-3. 下一轮把 schema 检查升级为参数语义/必填校验。
+3. 下一轮补参数枚举/范围语义校验。
