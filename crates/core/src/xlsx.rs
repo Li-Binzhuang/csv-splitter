@@ -871,6 +871,18 @@ pub fn read_xlsx_to_csv(input: &Path, output: &Path, sheet: Option<&str>) -> std
     let date_styles = date_style_map(&styles);
 
     let date1904 = workbook.contains("date1904=\"1\"") || workbook.contains("date1904=\"true\"");
+    let (stream_width, ordered) =
+        stream_width_and_order(&sheet_xml, &shared, &date_styles, date1904)?;
+    if ordered && stream_width > 0 {
+        return write_streamed_sheet(
+            output,
+            &sheet_xml,
+            &shared,
+            &date_styles,
+            date1904,
+            stream_width,
+        );
+    }
     let rows = sheet_rows_with_date_system(&sheet_xml, &shared, &date_styles, date1904)?;
     if rows.is_empty() {
         return Err(invalid("xlsx worksheet has no rows"));
@@ -1012,15 +1024,19 @@ fn sheet_rows_with_limit(
     sheet_rows_with_limit_system(xml, shared, date_styles, false, max_sheet_rows)
 }
 
-fn sheet_rows_with_limit_system(
+fn for_each_sheet_row<F>(
     xml: &str,
     shared: &[String],
     date_styles: &[bool],
     date1904: bool,
     max_sheet_rows: u64,
-) -> std::io::Result<Vec<(u64, Vec<String>)>> {
-    let mut out = Vec::new();
+    mut callback: F,
+) -> std::io::Result<()>
+where
+    F: FnMut(u64, Vec<String>) -> std::io::Result<()>,
+{
     let mut cursor = 0;
+    let mut rows = 0u64;
     while let Some(row_start) = find_tag(xml, cursor, "<row") {
         let Some(open_end) = xml[row_start..].find('>').map(|i| row_start + i) else {
             break;
@@ -1041,7 +1057,7 @@ fn sheet_rows_with_limit_system(
             Some(value) => value
                 .parse()
                 .map_err(|_| invalid(&format!("row reference {value:?} is invalid")))?,
-            None => out.len() as u64 + 1,
+            None => rows + 1,
         };
         if row == 0 {
             return Err(invalid("row reference 0 is invalid"));
@@ -1096,8 +1112,9 @@ fn sheet_rows_with_limit_system(
             cells[column] = cell_value(attrs, cell_body, shared, date_styles, date1904)?;
             cell_cursor = next;
         }
-        out.push((row, cells));
-        if out.len() as u64 > max_sheet_rows {
+        callback(row, cells)?;
+        rows += 1;
+        if rows > max_sheet_rows {
             return Err(invalid(&format!(
                 "xlsx supports at most {} sheet rows including the header",
                 max_sheet_rows
@@ -1105,8 +1122,95 @@ fn sheet_rows_with_limit_system(
         }
         cursor = next;
     }
+    Ok(())
+}
+
+fn sheet_rows_with_limit_system(
+    xml: &str,
+    shared: &[String],
+    date_styles: &[bool],
+    date1904: bool,
+    max_sheet_rows: u64,
+) -> std::io::Result<Vec<(u64, Vec<String>)>> {
+    let mut out = Vec::new();
+    for_each_sheet_row(
+        xml,
+        shared,
+        date_styles,
+        date1904,
+        max_sheet_rows,
+        |row, cells| {
+            out.push((row, cells));
+            Ok(())
+        },
+    )?;
     out.sort_by_key(|(row, _)| *row);
     Ok(out)
+}
+
+fn stream_width_and_order(
+    xml: &str,
+    shared: &[String],
+    date_styles: &[bool],
+    date1904: bool,
+) -> std::io::Result<(usize, bool)> {
+    let mut width = 0usize;
+    let mut previous = 0u64;
+    let mut ordered = true;
+    for_each_sheet_row(
+        xml,
+        shared,
+        date_styles,
+        date1904,
+        MAX_SHEET_ROWS,
+        |row, cells| {
+            if row < previous {
+                ordered = false;
+            }
+            previous = row;
+            if row != 0 && !cells.iter().all(|cell| cell.is_empty()) {
+                width = width.max(cells.len());
+            }
+            Ok(())
+        },
+    )?;
+    Ok((width, ordered))
+}
+
+fn write_streamed_sheet(
+    output: &Path,
+    xml: &str,
+    shared: &[String],
+    date_styles: &[bool],
+    date1904: bool,
+    width: usize,
+) -> std::io::Result<()> {
+    write_atomically(output, |writer| {
+        let mut wrote = false;
+        for_each_sheet_row(
+            xml,
+            shared,
+            date_styles,
+            date1904,
+            MAX_SHEET_ROWS,
+            |row, cells| {
+                if row == 0 || cells.iter().all(|cell| cell.is_empty()) {
+                    return Ok(());
+                }
+                let mut padded: Vec<&str> = Vec::with_capacity(width);
+                for index in 0..width {
+                    padded.push(cells.get(index).map(String::as_str).unwrap_or(""));
+                }
+                writer.write_all(crate::csv_reader::join_csv_line(&padded, b',').as_bytes())?;
+                wrote = true;
+                Ok(())
+            },
+        )?;
+        if !wrote {
+            return Err(invalid("xlsx worksheet has no non-empty rows"));
+        }
+        Ok(())
+    })
 }
 
 fn cell_reference_parts(reference: &str) -> Option<(usize, u64)> {
