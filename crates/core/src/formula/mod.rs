@@ -1508,6 +1508,41 @@ mod tests {
     }
 
     #[test]
+    fn friday_to_monday_and_blank_weekend_work() {
+        assert_eq!(
+            eval_str(r#"networkdays("2024-01-05", "2024-01-08")"#, &[]),
+            "2",
+            "Friday and Monday are both working days"
+        );
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [
+            ("a", "2024-01-06"),
+            ("b", ""),
+            ("c", ""),
+            ("d", "2024-01-09"),
+        ] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        let formula = Formula::parse("workday(A2, 2, B2:C2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "2024-01-09"
+        );
+        assert_eq!(
+            eval_str(r#"days360("2024-03-01", "2024-03-31", 1)"#, &[]),
+            "29"
+        );
+    }
+
+    #[test]
     fn all_blank_holiday_ranges_and_friday_to_sunday_work() {
         let columns = vec![
             "a".to_string(),
