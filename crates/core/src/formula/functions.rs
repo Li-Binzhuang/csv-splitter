@@ -1542,6 +1542,91 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         // ---- row position ---------------------------------------------------
         "row" => Value::Number((ctx.row + 1) as f64),
 
+        // ---- row-local lookup ------------------------------------------------
+        // INDEX(range, n) and INDEX(range, 1, n): pick the n-th cell of a
+        // same-row range. A second row is not materialised, so row_num must be 1.
+        "index" => {
+            if args.len() != 2 && args.len() != 3 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(cells) = range_cells(from, to, ctx) else {
+                return Value::Error;
+            };
+            let position = if args.len() == 3 {
+                let Some(row) = eval(&args[1], ctx).number() else {
+                    return Value::Error;
+                };
+                if !row.is_finite() || row.trunc() != 1.0 {
+                    return Value::Error;
+                }
+                let Some(column) = eval(&args[2], ctx).number() else {
+                    return Value::Error;
+                };
+                column
+            } else {
+                let Some(position) = eval(&args[1], ctx).number() else {
+                    return Value::Error;
+                };
+                position
+            };
+            if !position.is_finite() || position < 1.0 {
+                return Value::Error;
+            }
+            let position = position.trunc() as usize;
+            let Some(cell) = cells.get(position - 1) else {
+                return Value::Error;
+            };
+            cell_as_value(cell)
+        }
+        // MATCH(value, range[, match_type]) / XMATCH(value, range[, match_mode])
+        // on a same-row range. 0 is exact; 1/-1 are the usual sorted neighbours.
+        "match" | "xmatch" => {
+            if args.len() < 2 || args.len() > 4 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.get(1) else {
+                return Value::Error;
+            };
+            let Some(cells) = range_cells(from, to, ctx) else {
+                return Value::Error;
+            };
+            let lookup = eval(&args[0], ctx);
+            let mode = args
+                .get(2)
+                .and_then(|arg| eval(arg, ctx).number())
+                .unwrap_or(if lower == "xmatch" { 0.0 } else { 1.0 });
+            if !mode.is_finite() || ![-1.0, 0.0, 1.0].contains(&mode) {
+                return Value::Error;
+            }
+            if lower == "xmatch" {
+                if let Some(search_mode) = args.get(3).and_then(|arg| eval(arg, ctx).number()) {
+                    if !search_mode.is_finite() || search_mode.trunc() != 1.0 {
+                        return Value::Error;
+                    }
+                }
+            }
+            if mode == 0.0 {
+                return match exact_position(&lookup, &cells) {
+                    Some(position) => Value::Number((position + 1) as f64),
+                    None => Value::Text("#N/A".to_string()),
+                };
+            }
+            // XMATCH's +1 means "exact or larger" while MATCH's +1 means
+            // "largest <= lookup"; flip the direction for the approximate path.
+            if lower == "xmatch" {
+                if let Some(position) = exact_position(&lookup, &cells) {
+                    return Value::Number((position + 1) as f64);
+                }
+            }
+            let direction = if lower == "xmatch" { -mode } else { mode };
+            match approximate_position(&lookup, &cells, direction) {
+                Some(position) => Value::Number((position + 1) as f64),
+                None => Value::Text("#N/A".to_string()),
+            }
+        }
         // ---- cross-sheet reference -----------------------------------------
         // ref("customers.csv", "cust_no", "name"): this row's cust_no looked up
         // in that sheet. The referenced sheet is already in memory; the current
@@ -2036,6 +2121,68 @@ fn round_directed(direction: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         scaled.ceil()
     };
     Value::Number(rounded / factor)
+}
+
+fn cell_as_value(raw: &str) -> Value {
+    match raw.trim().parse::<f64>() {
+        Ok(number) if number.is_finite() => Value::Number(number),
+        _ if raw.trim().is_empty() => Value::Empty,
+        _ => Value::Text(raw.to_string()),
+    }
+}
+
+fn cells_equal(raw: &str, lookup: &Value) -> bool {
+    let cell = raw.trim();
+    match lookup {
+        Value::Number(number) => cell
+            .parse::<f64>()
+            .map(|value| value == *number)
+            .unwrap_or(false),
+        Value::Text(text) => {
+            cell.eq_ignore_ascii_case(text.trim())
+                || cell
+                    .parse::<f64>()
+                    .ok()
+                    .zip(text.trim().parse::<f64>().ok())
+                    .map(|(a, b)| a == b)
+                    .unwrap_or(false)
+        }
+        _ => false,
+    }
+}
+
+fn exact_position(lookup: &Value, cells: &[&str]) -> Option<usize> {
+    cells.iter().position(|cell| cells_equal(cell, lookup))
+}
+
+fn approximate_position(lookup: &Value, cells: &[&str], mode: f64) -> Option<usize> {
+    let target = match lookup {
+        Value::Number(number) => *number,
+        Value::Text(text) => text.trim().parse::<f64>().ok()?,
+        _ => return None,
+    };
+    let mut candidates: Vec<(usize, f64)> = cells
+        .iter()
+        .enumerate()
+        .filter_map(|(index, cell)| cell.trim().parse::<f64>().ok().map(|value| (index, value)))
+        .collect();
+    candidates.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
+    if mode > 0.0 {
+        let mut best = None;
+        for (index, value) in candidates {
+            if value <= target {
+                best = Some(index);
+            }
+        }
+        best
+    } else {
+        for (index, value) in candidates {
+            if value >= target {
+                return Some(index);
+            }
+        }
+        None
+    }
 }
 
 /// 1-based position of `needle` in `text`; 0 when absent, like Excel's FIND/SEARCH.

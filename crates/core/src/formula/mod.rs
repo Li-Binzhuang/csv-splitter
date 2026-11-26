@@ -2894,6 +2894,65 @@ mod tests {
     }
 
     #[test]
+    fn index_match_and_xmatch_read_a_same_row_range() {
+        let columns = vec![
+            "id".to_string(),
+            "amount".to_string(),
+            "qty".to_string(),
+            "note".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [
+            ("id", "7"),
+            ("amount", "10"),
+            ("qty", "3"),
+            ("note", "plain"),
+        ] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        for (source, expected) in [
+            ("index(B2:D2, 2)", "3"),
+            ("index(B2:D2, 1, 3)", "plain"),
+            ("match(10, B2:D2, 0)", "1"),
+            ("match(\"plain\", B2:D2, 0)", "3"),
+            ("match(\"PLAIN\", B2:D2, 0)", "3"),
+            ("xmatch(3, B2:D2, 0)", "2"),
+            ("xmatch(3, B2:D2, 0, 1)", "2"),
+            ("match(5, B2:D2, 1)", "2"),
+            ("xmatch(5, B2:D2, 1)", "1"),
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        for source in [
+            "index(B2:D2, 4)",
+            "match(99, B2:D2, 0)",
+            "match(10, A3:A3, 0)",
+            "match(10, B2:D2, 2)",
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            let expected = if source.starts_with("match(99") {
+                "#N/A"
+            } else {
+                "#VALUE!"
+            };
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
     fn countif_and_sumif_read_a_same_row_range() {
         let columns = vec![
             "id".to_string(),

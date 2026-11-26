@@ -76,8 +76,8 @@
 | XLOOKUP | 支持（受限） | 只接受 `("sheet.csv","key","value")` 显式引用，不支持数组/区间 |
 | VLOOKUP / REF | 支持（受限） | 同上；未命中 `#N/A` |
 | CHOOSE | 首批补齐 | 1-based 序号；越界 `#VALUE!` |
-| INDEX / MATCH / XMATCH | 缺失 | 需要按行号随机访问或整列索引；当前流式只保证当前行 |
-| HLOOKUP / LOOKUP | 缺失 | 同上 |
+| INDEX / MATCH / XMATCH | 支持（受限） | 同一行区间；INDEX 1-based 位置；MATCH 精确/近似，XMATCH 0/±1；跨行 `#VALUE!` |
+| HLOOKUP / LOOKUP | 缺失 | 需要单行表或多行随机访问 |
 | OFFSET / INDIRECT | 不做 | 动态引用会破坏预加载与可预测性 |
 
 ## 数学与聚合
@@ -99,7 +99,7 @@
 | TRIMMEAN | 支持（新增） | 按百分比两端裁剪后平均 |
 | RANK.EQ / STDEV.S / VAR.S / STDEV.P / VAR.P | 支持（新增） | 点号函数名词法；同 RANK/STDEV/VAR 语义 |
 
-| SUBTOTAL / AGGREGATE | 缺失 | 需要函数编号与忽略隐藏行语义 |
+| SUBTOTAL / AGGREGATE | 缺失 | SUBTOTAL 函数编号与忽略隐藏行；CSV 无隐藏行，可先做 1–11 |
 | RAND / RANDBETWEEN | 缺失 | 非确定性，暂不进入可复现导出 |
 | GCD / LCM / FACT / COMBIN / PERMUT / MROUND | 缺失 | 数论/工程函数 |
 | BITAND / BITOR / BITXOR | 缺失 | 位运算 |

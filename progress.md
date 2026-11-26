@@ -86,13 +86,17 @@
   `instance_num`、越界原样、<1 `#VALUE!`；`REPLACE` 改为 Excel 位置语义
   （start_num/num_chars，1-based，越界与非法参数报错）。测试
   `text_concatenation_and_slicing` 覆盖全部/第 N/越界/非法参数。
-- [ ] 项131 同行查找（功能级）：`INDEX(range, n)` 与 `MATCH(value, range, 0)`
-  支持同行区间，1-based；越界/未命中按 Excel `#VALUE!`/`#N/A`。验收：数值与
-  文本、越界、未命中单测 + gate。
+- [x] 项131 同行查找（功能级）：`INDEX(range, n)`、`INDEX(range,1,n)`、
+  `MATCH(value, range, match_type)`、`XMATCH` 支持同行区间，1-based；越界
+  `#VALUE!`，未命中 `#N/A`；MATCH 1/-1 与 XMATCH +1/-1 方向已区分。测试
+  `index_match_and_xmatch_read_a_same_row_range`。
 - [ ] 项132 非 ASCII 码点（功能级）：`UNICHAR`/`UNICODE` 支持 Unicode 码点
   与字符互转；非法码点/多字符报 `#VALUE!`。验收：中文/emoji/边界单测 + gate。
 - [ ] 项133 固定小数/货币文本（功能级）：`FIXED`/`DOLLAR` 生成带千分位/小数位
   的文本，`NUMBERVALUE` 解析区域小数点；验收：格式与错误单测 + gate。
+- [ ] 项134 小计函数（功能级）：`SUBTOTAL(function_num, range)` 支持
+  1/2/3/4/5/6/7/8/9/10/11 与 101–111；同行区间；编号/空区间 `#VALUE!`。
+  验收：各编号、空区间、非法编号单测 + gate。
 
 ## 路线图质量门槛
 
@@ -102,6 +106,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 160（项131 同行查找，功能级）：INDEX/MATCH/XMATCH 同行区间；MATCH 与
+XMATCH 近似方向分离；定向与全量 gate/package 通过；发布包
+SHA `49223809…08ce`。
 
 Round 159（项130 文本替换语义，功能级）：SUBSTITUTE instance_num + REPLACE
 位置语义；旧测试改用 substitute；定向与全量 gate/package 通过；发布包
