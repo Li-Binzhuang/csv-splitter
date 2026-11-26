@@ -102,12 +102,15 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项152 折旧函数（功能级）：`SLN(cost, salvage, life)`/
+  `SYD(cost, salvage, life, period)`；life≤0/period 越界 `#VALUE!`；验收：单测 + gate。
 - [ ] 项151 利率换算（功能级）：`EFFECT(nominal, npery)`/`NOMINAL(effect,
   npery)`；npery≤0/非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项150 内部收益率（功能级）：`IRR(values[, guess])`；迭代求根、
   无解/多解 `#VALUE!`；验收：单测 + gate。
-- [ ] 项149 财务利率（功能级）：`RATE(nper, pmt, pv[, fv[, type[, guess]]])`
-  迭代求解/收敛失败 `#VALUE!`；验收：单测 + gate。
+- [x] 项149 财务利率（功能级）：`RATE(nper, pmt, pv[, fv[, type[, guess]]])`
+  Newton 迭代；nper≤0/guess≤-1/不收敛 `#VALUE!`；测试
+  `rate_solves_the_annuity_equation`。
 - [x] 项148 净现值（功能级）：`NPV(rate, value...)`；现金流从第 1 期
   折现；rate≤-1/非数值/空区间 `#VALUE!`。测试 `npv_discounts_a_cash_flow_series`。
 - [x] 项147 财务期数（功能级）：`NPER(rate, pmt, pv[, fv[, type]])`；
@@ -150,6 +153,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 178（项149 RATE，功能级）：Newton 求根、guess/type 边界与不收敛；
+定向与全量 gate/package 通过；发布包 SHA `992d5ffa…1519e`。
 
 Round 177（项148 NPV，功能级）：现金流折现、空区间/非法利率；
 定向与全量 gate/package 通过；发布包 SHA `52ec8cda…8a36f4`。

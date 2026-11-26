@@ -1361,6 +1361,84 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // RATE: solve the annuity equation by Newton iteration.
+        "rate" => {
+            if args.len() < 3 || args.len() > 6 {
+                return Value::Error;
+            }
+            let (Some(nper), Some(pmt), Some(pv)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            let fv = args
+                .get(3)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(0.0))
+                .unwrap_or(f64::NAN);
+            let payment_type = args
+                .get(4)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(0.0))
+                .unwrap_or(f64::NAN);
+            let guess = args
+                .get(5)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(0.1))
+                .unwrap_or(f64::NAN);
+            if !nper.is_finite()
+                || nper <= 0.0
+                || !pmt.is_finite()
+                || !pv.is_finite()
+                || !fv.is_finite()
+                || !payment_type.is_finite()
+                || !guess.is_finite()
+                || guess <= -1.0
+                || ![0.0, 1.0].contains(&payment_type)
+            {
+                return Value::Error;
+            }
+            let f = |rate: f64| {
+                if rate == 0.0 {
+                    fv + pv + pmt * nper
+                } else {
+                    let growth = (1.0 + rate).powf(nper);
+                    fv + pv * growth + pmt * (1.0 + rate * payment_type) * (growth - 1.0) / rate
+                }
+            };
+            if f(0.0).abs() < 1e-9 {
+                return Value::Number(0.0);
+            }
+            let mut rate = if guess.abs() < 1e-6 { 0.1 } else { guess };
+            for _ in 0..100 {
+                let value = f(rate);
+                let growth = (1.0 + rate).powf(nper);
+                let growth_derivative = nper * (1.0 + rate).powf(nper - 1.0);
+                let ratio = (growth - 1.0) / rate;
+                let ratio_derivative = (growth_derivative * rate - (growth - 1.0)) / (rate * rate);
+                let derivative = pv * growth_derivative
+                    + pmt * (payment_type * ratio + (1.0 + rate * payment_type) * ratio_derivative);
+                if !derivative.is_finite() || derivative.abs() < 1e-12 {
+                    break;
+                }
+                let next = rate - value / derivative;
+                if !next.is_finite() || next <= -1.0 {
+                    break;
+                }
+                if (next - rate).abs() < 1e-10 {
+                    rate = next;
+                    break;
+                }
+                rate = next;
+            }
+            if rate.is_finite() && rate > -1.0 && f(rate).abs() < 1e-7 {
+                Value::Number(rate)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

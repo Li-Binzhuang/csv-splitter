@@ -110,7 +110,8 @@
 | PV | 支持（功能级新增） | rate=0/type 0/1；rate≤-1/非法 type `#VALUE!` |
 | NPER | 支持（功能级新增） | rate=0/type 0/1；rate≤-1/pmt=0（rate=0）`#VALUE!` |
 | NPV | 支持（功能级新增） | rate≤-1/非数值/空区间 `#VALUE!`；现金流从第 1 期折现 |
-| RATE / IRR | 缺失 | 财务函数；迭代求根待评估 |
+| RATE | 支持（功能级新增） | Newton 迭代；nper≤0/guess≤-1/不收敛 `#VALUE!` |
+| IRR | 缺失 | 财务函数；迭代求根待评估 |
 | GCD / LCM / FACT / COMBIN / PERMUT | 支持（功能级新增） | 非负整数；FACT≤170；非法/非整数 `#VALUE!` |
 | MROUND / CEILING.PRECISE / FLOOR.PRECISE | 支持（功能级新增） | MROUND 同号倍数；PRECISE 忽略 significance 符号；零倍数/非法参数 `#VALUE!` |
 | DECIMAL / BASE | 支持（功能级新增） | 2–36 进制；DECIMAL 大小写/符号，BASE 非负整数与 min_length 0–255 |

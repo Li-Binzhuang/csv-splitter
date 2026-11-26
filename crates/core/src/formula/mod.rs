@@ -1442,6 +1442,21 @@ mod tests {
     }
 
     #[test]
+    fn rate_solves_the_annuity_equation() {
+        assert_eq!(eval_str("rate(10, -100, 1000)", &[]), "0");
+        assert_eq!(eval_str("rate(1, -1100, 1000)", &[]), "0.1");
+        assert_eq!(eval_str("rate(1, -1100, 1000, 0, 0, 0.2)", &[]), "0.1");
+        for source in [
+            "rate(0, -100, 1000)",
+            "rate(1, -1100, 1000, 0, 2)",
+            "rate(1, -1100, 1000, 0, 0, -1)",
+            "rate(1, -1100)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn npv_discounts_a_cash_flow_series() {
         assert_eq!(eval_str("npv(0, -100, 200)", &[]), "100");
         assert_eq!(eval_str("npv(0, 100)", &[]), "100");
