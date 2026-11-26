@@ -2826,6 +2826,52 @@ fn write_minimal_xlsx_full(
 }
 
 #[test]
+fn convert_skips_hidden_sheets_by_default() {
+    let dir = TempDir::new("xlsxhidden");
+    let book = dir.join("book.xlsx");
+    write_hidden_sheet_xlsx(&book);
+    let out = dir.join("visible.csv");
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--format",
+            "csv",
+            "--out",
+            out.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(std::fs::read_to_string(&out).unwrap(), "city\nA\n");
+
+    let hidden = dir.join("hidden.csv");
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--format",
+            "csv",
+            "--sheet",
+            "Hidden",
+            "--out",
+            hidden.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(std::fs::read_to_string(&hidden).unwrap(), "hidden\n");
+}
+
+#[test]
 fn convert_honors_the_1904_date_system() {
     let dir = TempDir::new("xlsx1904");
     let book = dir.join("book.xlsx");
@@ -2853,6 +2899,24 @@ fn convert_honors_the_1904_date_system() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert_eq!(std::fs::read_to_string(&out).unwrap(), "day\n1904-01-02\n");
+}
+
+fn write_hidden_sheet_xlsx(path: &std::path::Path) {
+    use std::io::Write as _;
+    let file = std::fs::File::create(path).unwrap();
+    let mut zip = zip::ZipWriter::new(file);
+    let options =
+        zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+    zip.start_file("xl/workbook.xml", options).unwrap();
+    zip.write_all(br#"<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Hidden" sheetId="1" state="hidden" r:id="rId1"/><sheet name="Data" sheetId="2" r:id="rId2"/></sheets></workbook>"#).unwrap();
+    zip.start_file("xl/_rels/workbook.xml.rels", options)
+        .unwrap();
+    zip.write_all(br#"<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/></Relationships>"#).unwrap();
+    zip.start_file("xl/worksheets/sheet1.xml", options).unwrap();
+    zip.write_all(br#"<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>hidden</t></is></c></row></sheetData></worksheet>"#).unwrap();
+    zip.start_file("xl/worksheets/sheet2.xml", options).unwrap();
+    zip.write_all(br#"<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>city</t></is></c></row><row r="2"><c r="A2" t="inlineStr"><is><t>A</t></is></c></row></sheetData></worksheet>"#).unwrap();
+    zip.finish().unwrap();
 }
 
 #[test]

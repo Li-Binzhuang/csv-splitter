@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 78（hidden sheet CLI）：真实双 sheet xlsx 验证默认跳过 Hidden、显式
+`--sheet Hidden` 仍可读；用户面行为与单元测试对齐；发布包 SHA `83615a36…d15da`。
+
 Round 77（sheet 状态解析）：`workbook_sheets` 解析 hidden/veryHidden 的状态测试，
 覆盖 selection 测试未触及的 XML 属性路径；发布包 SHA `285096dd…fd136`。
 
