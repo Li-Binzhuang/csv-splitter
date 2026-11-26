@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "b2ce21687907b5706ab808638072f140f2cebdfb494300e4b0e9a36186203c4e",
+  "batch_id": "a844bc68deb60ce7a42bd2c9ff1764115f5808a2c978634261fe4d55e8217f3c",
+  "composite_identity": "3fd7a75dc905111e1c9ef288f8d3fb4dc128bf2db3fcd048404d06c336d03ddb",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e151ce898699bc2af4275eca40e4a481129b1656a3599c9ca2ef98a76fe309a6",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "06c6cd357e5888dc457f907dea66c12259fbda90ba823686d98e76e3af465ed5",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；ISO 日期/日期时间/纯时间；cellIs；读 shared/inline/缓存值/日期；custom hh:mm:ss；16384 列/1,048,576 数据行 | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式/坏索引/超限报错"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "269aa164ca0d68e2c6136749efd3ae40564aacede167ae072fd28eff6b1c36e0",
+      "existing_entry": "XLSX_ENGINE.md[SZ7T]: F:XLSX 引擎决策、迁移方案与覆盖矩阵 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；自写子集；11 项边界/测试矩阵；读迁/写留 | S:迁移未执行待批准；不新增依赖；商业化暂缓"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "239d88e8081c7d9faa009549b10bc73cf93acdf89eeaaf4308b026086852fe90",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round67 覆盖矩阵与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "9b251f1dcf6531464e4df5c1ad4d8f60d943698ca0956d810abea0891e6d474d",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "06c6cd357e5888dc457f907dea66c12259fbda90ba823686d98e76e3af465ed5",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；ISO 日期/日期时间/纯时间；cellIs；读 shared/inline/缓存值/日期；custom hh:mm:ss；16384 列/1,048,576 数据行 | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式/坏索引/超限报错"
+    },
+    {
+      "candidate_id": "0a4eb541c863502d91d71016fa55165118057ee9fd5993a89a026a0b87ebe1c2",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "269aa164ca0d68e2c6136749efd3ae40564aacede167ae072fd28eff6b1c36e0",
+      "existing_entry": "XLSX_ENGINE.md[SZ7T]: F:XLSX 引擎决策、迁移方案与覆盖矩阵 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；自写子集；11 项边界/测试矩阵；读迁/写留 | S:迁移未执行待批准；不新增依赖；商业化暂缓"
+    },
+    {
+      "candidate_id": "eb8fd6935c90cedf68234c8f43e331aef64ebc0d9ef35a6f0e51a26dd0e44376",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "239d88e8081c7d9faa009549b10bc73cf93acdf89eeaaf4308b026086852fe90",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round67 覆盖矩阵与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

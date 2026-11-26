@@ -521,7 +521,12 @@ fn is_date_format(code: &str) -> bool {
         || lower.contains("mm:ss")
 }
 
+#[cfg(test)]
 fn serial_to_date(serial: f64) -> Option<String> {
+    serial_to_date_with_system(serial, false)
+}
+
+fn serial_to_date_with_system(serial: f64, date1904: bool) -> Option<String> {
     if !serial.is_finite() || serial < 0.0 {
         return None;
     }
@@ -531,15 +536,25 @@ fn serial_to_date(serial: f64) -> Option<String> {
         whole += 1;
         seconds = 0;
     }
-    if whole == 0 && seconds > 0 {
-        return Some(format_clock(seconds));
+    if !date1904 && whole == 0 {
+        return (seconds > 0).then(|| format_clock(seconds));
     }
-    if !(1..=2_958_465).contains(&whole) {
+    let epoch = if date1904 {
+        days_from_civil(1904, 1, 1)
+    } else {
+        days_from_civil(1899, 12, 30)
+    };
+    let max_serial = if date1904 {
+        2_958_465 - 1_462
+    } else {
+        2_958_465
+    };
+    if !(0..=max_serial).contains(&whole) {
         return None;
     }
-    let days = whole + days_from_civil(1899, 12, 30);
+    let days = whole + epoch;
     let (year, month, day) = civil_from_days(days);
-    if year < 1900 {
+    if !date1904 && year < 1900 {
         return None;
     }
     if seconds == 0 {
@@ -752,7 +767,8 @@ fn table_from_rows(
 }
 
 /// strings, cached formula values, booleans, numbers and date styles (built-in
-/// IDs plus custom `numFmt` codes; dates are `YYYY-MM-DD`, date-times
+/// IDs plus custom `numFmt` codes; 1904 date-system workbooks are honored;
+/// dates are `YYYY-MM-DD`, date-times
 /// `YYYY-MM-DDTHH:MM:SS`, time-only cells `HH:MM:SS`). Merged cells are not expanded: only
 /// the stored top-left value is emitted. A formula cell with no cached value is
 /// an error rather than an invented empty cell, and shared-string indices are
@@ -803,7 +819,8 @@ pub fn read_xlsx_to_csv(input: &Path, output: &Path, sheet: Option<&str>) -> std
     let styles = read_entry(&mut archive, "xl/styles.xml").unwrap_or_default();
     let date_styles = date_style_map(&styles);
 
-    let rows = sheet_rows(&sheet_xml, &shared, &date_styles)?;
+    let date1904 = workbook.contains("date1904=\"1\"") || workbook.contains("date1904=\"true\"");
+    let rows = sheet_rows_with_date_system(&sheet_xml, &shared, &date_styles, date1904)?;
     if rows.is_empty() {
         return Err(invalid("xlsx worksheet has no rows"));
     }
@@ -892,6 +909,7 @@ fn shared_strings(xml: &str) -> Vec<String> {
         .collect()
 }
 
+#[cfg(test)]
 fn sheet_rows(
     xml: &str,
     shared: &[String],
@@ -900,10 +918,30 @@ fn sheet_rows(
     sheet_rows_with_limit(xml, shared, date_styles, MAX_DATA_ROWS + 1)
 }
 
+fn sheet_rows_with_date_system(
+    xml: &str,
+    shared: &[String],
+    date_styles: &[bool],
+    date1904: bool,
+) -> std::io::Result<Vec<(u64, Vec<String>)>> {
+    sheet_rows_with_limit_system(xml, shared, date_styles, date1904, MAX_DATA_ROWS + 1)
+}
+
+#[cfg(test)]
 fn sheet_rows_with_limit(
     xml: &str,
     shared: &[String],
     date_styles: &[bool],
+    max_sheet_rows: u64,
+) -> std::io::Result<Vec<(u64, Vec<String>)>> {
+    sheet_rows_with_limit_system(xml, shared, date_styles, false, max_sheet_rows)
+}
+
+fn sheet_rows_with_limit_system(
+    xml: &str,
+    shared: &[String],
+    date_styles: &[bool],
+    date1904: bool,
     max_sheet_rows: u64,
 ) -> std::io::Result<Vec<(u64, Vec<String>)>> {
     let row_re = Regex::new(r#"(?s)<row\b([^>]*?)(?:/>|>(.*?)</row>)"#).unwrap();
@@ -929,7 +967,7 @@ fn sheet_rows_with_limit(
             while cells.len() <= column {
                 cells.push(String::new());
             }
-            cells[column] = cell_value(attrs, body, shared, date_styles)?;
+            cells[column] = cell_value(attrs, body, shared, date_styles, date1904)?;
         }
         out.push((row, cells));
         if out.len() as u64 > max_sheet_rows {
@@ -963,6 +1001,7 @@ fn cell_value(
     body: &str,
     shared: &[String],
     date_styles: &[bool],
+    date1904: bool,
 ) -> std::io::Result<String> {
     let reference = attr(attrs, "r").unwrap_or_default();
     if body.contains("<f") && !body.contains("<v") {
@@ -1023,7 +1062,7 @@ fn cell_value(
                 .unwrap_or(0);
             if date_styles.get(style).copied().unwrap_or(false) {
                 if let Ok(serial) = raw.parse::<f64>() {
-                    if let Some(date) = serial_to_date(serial) {
+                    if let Some(date) = serial_to_date_with_system(serial, date1904) {
                         return Ok(date);
                     }
                 }
@@ -1315,6 +1354,18 @@ mod tests {
         assert_eq!(serial_to_date(45292.5), Some("2024-01-01T12:00:00".into()));
         assert_eq!(serial_to_date(0.25), Some("06:00:00".into()));
         assert_eq!(serial_to_date(-1.0), None);
+        assert_eq!(
+            serial_to_date_with_system(0.0, true),
+            Some("1904-01-01".into())
+        );
+        assert_eq!(
+            serial_to_date_with_system(1.0, true),
+            Some("1904-01-02".into())
+        );
+        assert_eq!(
+            serial_to_date_with_system(0.5, true),
+            Some("1904-01-01T12:00:00".into())
+        );
         let rows = sheet_rows(
             r#"<sheetData><row r="1"><c r="A1" s="1"><v>45292.5</v></c></row></sheetData>"#,
             &[],
