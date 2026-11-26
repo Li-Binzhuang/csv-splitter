@@ -516,19 +516,41 @@ fn is_date_format(code: &str) -> bool {
 }
 
 fn serial_to_date(serial: f64) -> Option<String> {
-    if !serial.is_finite() || serial.fract() != 0.0 {
+    if !serial.is_finite() || serial < 0.0 {
         return None;
     }
-    let serial = serial as i64;
-    if !(1..=2_958_465).contains(&serial) {
+    let mut whole = serial.floor() as i64;
+    let mut seconds = ((serial - whole as f64) * 86_400.0).round() as i64;
+    if seconds >= 86_400 {
+        whole += 1;
+        seconds = 0;
+    }
+    if whole == 0 && seconds > 0 {
+        return Some(format_clock(seconds));
+    }
+    if !(1..=2_958_465).contains(&whole) {
         return None;
     }
-    let days = serial + days_from_civil(1899, 12, 30);
+    let days = whole + days_from_civil(1899, 12, 30);
     let (year, month, day) = civil_from_days(days);
     if year < 1900 {
         return None;
     }
-    Some(format!("{year:04}-{month:02}-{day:02}"))
+    if seconds == 0 {
+        Some(format!("{year:04}-{month:02}-{day:02}"))
+    } else {
+        Some(format!(
+            "{year:04}-{month:02}-{day:02}T{}",
+            format_clock(seconds)
+        ))
+    }
+}
+
+fn format_clock(seconds: i64) -> String {
+    let hour = seconds / 3_600;
+    let minute = (seconds % 3_600) / 60;
+    let second = seconds % 60;
+    format!("{hour:02}:{minute:02}:{second:02}")
 }
 
 fn civil_from_days(days: i64) -> (i64, i64, i64) {
@@ -702,7 +724,8 @@ fn sheet_columns_xml(headers: &[String], rows: &[Vec<String>]) -> String {
 ///
 /// The reader understands a small, common subset: shared strings, inline
 /// strings, cached formula values, booleans, numbers and date styles (built-in
-/// IDs plus custom `numFmt` codes; serials are rendered as `YYYY-MM-DD`). Merged cells are not expanded: only
+/// IDs plus custom `numFmt` codes; dates are `YYYY-MM-DD`, date-times
+/// `YYYY-MM-DDTHH:MM:SS`, time-only cells `HH:MM:SS`). Merged cells are not expanded: only
 /// the stored top-left value is emitted. A formula cell with no cached value is
 /// an error rather than an invented empty cell, and shared-string indices are
 /// validated. Charts and comments are ignored.
@@ -1248,6 +1271,14 @@ mod tests {
         <mergeCells count="1"><mergeCell ref="A1:B1"/></mergeCells>"#;
         let rows = sheet_rows(xml, &[], &[]).unwrap();
         assert_eq!(rows[0].1, vec!["merged"], "only A1 has a stored value");
+    }
+
+    #[test]
+    fn date_serials_carry_time_fractions_and_time_only_cells() {
+        assert_eq!(serial_to_date(45292.0), Some("2024-01-01".into()));
+        assert_eq!(serial_to_date(45292.5), Some("2024-01-01T12:00:00".into()));
+        assert_eq!(serial_to_date(0.25), Some("06:00:00".into()));
+        assert_eq!(serial_to_date(-1.0), None);
     }
 
     #[test]

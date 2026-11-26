@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "7113087a3564489ac7e2eba2f93ba8074ef3b0eafc6630152992eb40e24d5f0a",
+  "batch_id": "f9ad9a751e0401621b7e06a6c9a9753cc4263b93512edb01dd5d438d113387e6",
+  "composite_identity": "3c7c2d97d49642c92dca487d2a286bfc031a82b2f7e942ad1fc689b3c3b53129",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "33d03f755259d78f583d83e6ccfd9cf642106328cec4f7f0ffc8a99929f437cb",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "66e41af46e98dbb271926e8054c7a3b0362262a964b6d14595536e0ff41e70cb",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；ISO 日期；cellIs；读 shared/inline/缓存值/内置+custom numFmt 日期/合并左上 | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式值/坏共享索引报错"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "f5a755724373745f82fe72897671312d44fb56ef7747cb66036c47082edcf068",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证与真实缺口 | R:code:docs/CAPABILITIES.md,code:crates/core/src/workbook/export.rs,code:crates/core/src/xlsx.rs | A:已实测优势；真实缺口聚合区间/跨表随机/前端；xlsx 含自定义日期与诊断；缓存 0.051ms | S:任何超越必须可测量、有测试、不撒谎；合并不展开"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "e05d286ba3f1dabbc434b598f649ee716d356732372af72d078d8c5d40255794",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round51 自定义日期与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "8d26efb745b36903cd2697c428d06b5548db6c0d0ff9c9d4e26a9cac91428d5b",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "66e41af46e98dbb271926e8054c7a3b0362262a964b6d14595536e0ff41e70cb",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；ISO 日期；cellIs；读 shared/inline/缓存值/内置+custom numFmt 日期/合并左上 | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式值/坏共享索引报错"
+    },
+    {
+      "candidate_id": "b1b6a1174403508562cb5e1eccbfaf0b4b0c37db937b0b4308d0fac9bc46644e",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "f5a755724373745f82fe72897671312d44fb56ef7747cb66036c47082edcf068",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证与真实缺口 | R:code:docs/CAPABILITIES.md,code:crates/core/src/workbook/export.rs,code:crates/core/src/xlsx.rs | A:已实测优势；真实缺口聚合区间/跨表随机/前端；xlsx 含自定义日期与诊断；缓存 0.051ms | S:任何超越必须可测量、有测试、不撒谎；合并不展开"
+    },
+    {
+      "candidate_id": "cc710cd2fbe730885bfc86af9a665814492c665587c9f3af1ed0467a2ef343ff",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "e05d286ba3f1dabbc434b598f649ee716d356732372af72d078d8c5d40255794",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round51 自定义日期与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
