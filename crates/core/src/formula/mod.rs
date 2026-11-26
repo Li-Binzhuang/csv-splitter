@@ -1508,6 +1508,30 @@ mod tests {
     }
 
     #[test]
+    fn out_of_range_holidays_and_leap_february_work() {
+        assert_eq!(
+            eval_str(
+                r#"networkdays("2024-01-01", "2024-01-05", "2024-01-10")"#,
+                &[]
+            ),
+            "5",
+            "a holiday outside the range is ignored"
+        );
+        assert_eq!(
+            eval_str(r#"workday("2024-01-08", -1, "2024-01-08")"#, &[]),
+            "2024-01-05"
+        );
+        assert_eq!(
+            eval_str(r#"days360("2024-02-28", "2024-03-31")"#, &[]),
+            "33"
+        );
+        assert_eq!(
+            eval_str(r#"days360("2024-02-28", "2024-03-31", 1)"#, &[]),
+            "32"
+        );
+    }
+
+    #[test]
     fn all_holiday_and_cross_year_edges_work() {
         assert_eq!(
             eval_str(
