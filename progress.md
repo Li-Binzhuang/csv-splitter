@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 69（1904 CLI 集成）：真实 xlsx fixture 带 `date1904` 与日期样式，
+`convert` 输出 `1904-01-02`；覆盖工作簿标记到 CSV 的整条路径。
+首轮全量 gate 有 1 个 CLI 用例偶发失败，单跑与复跑均 177 passed；发布包 SHA `87ee0ae1…81adc`。
+
 Round 68（1904 日期系统）：读取 workbook `date1904`，日期序列号按 1904 纪元
 换算；测试覆盖 0/1/0.5 三个边界；发布包 SHA `4cb49af6…9489d`。
 

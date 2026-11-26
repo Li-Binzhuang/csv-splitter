@@ -2789,22 +2789,70 @@ fn convert_imports_xlsx_shared_strings_and_sheets() {
 }
 
 fn write_minimal_xlsx(path: &std::path::Path, sheet: &str) {
+    write_minimal_xlsx_full(
+        path,
+        br#"<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>"#,
+        sheet,
+        None,
+    );
+}
+
+fn write_minimal_xlsx_full(
+    path: &std::path::Path,
+    workbook: &[u8],
+    sheet: &str,
+    styles: Option<&str>,
+) {
     use std::io::Write as _;
     let file = std::fs::File::create(path).unwrap();
     let mut zip = zip::ZipWriter::new(file);
     let options =
         zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
     zip.start_file("xl/workbook.xml", options).unwrap();
-    zip.write_all(br#"<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>"#).unwrap();
+    zip.write_all(workbook).unwrap();
     zip.start_file("xl/_rels/workbook.xml.rels", options)
         .unwrap();
     zip.write_all(br#"<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>"#).unwrap();
+    if let Some(styles) = styles {
+        zip.start_file("xl/styles.xml", options).unwrap();
+        zip.write_all(styles.as_bytes()).unwrap();
+    }
     zip.start_file("xl/worksheets/sheet1.xml", options).unwrap();
     zip.write_all(br#"<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>"#)
         .unwrap();
     zip.write_all(sheet.as_bytes()).unwrap();
     zip.write_all(b"</sheetData></worksheet>").unwrap();
     zip.finish().unwrap();
+}
+
+#[test]
+fn convert_honors_the_1904_date_system() {
+    let dir = TempDir::new("xlsx1904");
+    let book = dir.join("book.xlsx");
+    write_minimal_xlsx_full(
+        &book,
+        br#"<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><workbookPr date1904="1"/><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>"#,
+        r#"<row r="1"><c r="A1" t="inlineStr"><is><t>day</t></is></c></row><row r="2"><c r="A2" s="1"><v>1</v></c></row>"#,
+        Some(r#"<cellXfs count="2"><xf numFmtId="0"/><xf numFmtId="14"/></cellXfs>"#),
+    );
+    let out = dir.join("out.csv");
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--format",
+            "csv",
+            "--out",
+            out.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(std::fs::read_to_string(&out).unwrap(), "day\n1904-01-02\n");
 }
 
 #[test]
