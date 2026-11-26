@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "7d97251fca01e0398c01611dc28c8454ad9b2a1c8e9d5224a953d2d65bc35a48",
+  "batch_id": "d410ea8bf72b3655c1f3d348148972d3a697e601d546038f65c7754b76bdcc7c",
+  "composite_identity": "c25b3a87c1fe986747248fbff60a47ddeacb2b41fb265ff012f07a345b0d30bd",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "2b6d7b6a9e28f7c6e8b4a702611b4703587dfe6b994164a9090d8709be9797d3",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "32228e50f54283030c37e5f9ed188c7a0d71fba609ae76dcbc595ca2324ded78",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现性能基准与 100GB harness | R:code:scripts/bench_100gb.py,code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:历史 100/81GB 数字；bench_100gb.py schema/filter/search/quality；smoke 1348.3ms | S:未 drop cache；smoke≠100GB；完整数字需目标机重跑"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "66c8b4555771da5a7e523a79f5f572906797361c32879333117d9d87ee6b9366",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round6 harness 1348.3ms 与 SHA | S:每轮更新；smoke 不冒充 100GB；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "1fb094f60a325acad91d197aca23e8d89570a70cc17bcd4c15890be0a144d8ff",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "32228e50f54283030c37e5f9ed188c7a0d71fba609ae76dcbc595ca2324ded78",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现性能基准与 100GB harness | R:code:scripts/bench_100gb.py,code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:历史 100/81GB 数字；bench_100gb.py schema/filter/search/quality；smoke 1348.3ms | S:未 drop cache；smoke≠100GB；完整数字需目标机重跑"
+    },
+    {
+      "candidate_id": "9f9463d900e24aa2caaab8272ac77622a0b12364685457d081bc60346f6e0d60",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "66c8b4555771da5a7e523a79f5f572906797361c32879333117d9d87ee6b9366",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round6 harness 1348.3ms 与 SHA | S:每轮更新；smoke 不冒充 100GB；push 失败不阻塞"
+    }
+  ]
+}

@@ -15,6 +15,19 @@ analyze --quality --json
 
 每条命令记录 wall time 与 peak RSS，输出 `<out>.bench.json` 和 `<out>.bench.md`。
 
+1 GB 实际运行（2026-11-26，release 二进制，生成确定性数据）：
+
+```text
+bytes=999,999,971 rows=12,597,801
+schema 636.7 ms / 27.66 MB
+filter 178.5 ms / 79.69 MB
+search 108.2 ms / 77.20 MB
+quality 4804.3 ms / 18.42 MB
+total 5727.7 ms
+```
+
+这是 1 GB 实测，不是 100 GB 承诺。
+
 小规模 smoke（本轮实测，1000 行 / 77,403 bytes，非 100GB 承诺）：
 
 ```text
