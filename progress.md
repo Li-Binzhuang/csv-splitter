@@ -96,9 +96,12 @@
 - [x] 项133 固定小数/货币文本（功能级）：`FIXED` 固定小数/千分位/
   `no_commas`；`DOLLAR` 货币与负数括号；`NUMBERVALUE` 区域分隔符、百分号、
   括号负数与非法分隔符报错。测试 `fixed_dollar_and_numbervalue_work`。
-- [ ] 项134 小计函数（功能级）：`SUBTOTAL(function_num, range)` 支持
-  1/2/3/4/5/6/7/8/9/10/11 与 101–111；同行区间；编号/空区间 `#VALUE!`。
-  验收：各编号、空区间、非法编号单测 + gate。
+- [x] 项134 小计函数（功能级）：`SUBTOTAL(function_num, range)` 支持
+  1–11 与 101–111；同行区间；空区间/非法编号 `#VALUE!`。测试
+  `subtotal_supports_the_excel_function_numbers`、
+  `subtotal_rejects_an_all_empty_range`。
+- [ ] 项137 AGGREGATE（功能级）：`AGGREGATE(function_num, options, range)`
+  支持 1–11/14–19 与 options 0/4/6；非法编号/选项 `#VALUE!`；验收：单测 + gate。
 - [ ] 项136 数论/组合函数（功能级）：`GCD`/`LCM`/`FACT`/`COMBIN`/`PERMUT`
   支持非负整数，非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项135 单行 HLOOKUP/LOOKUP（功能级）：`HLOOKUP(value, range, 1[, FALSE])`
@@ -113,6 +116,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 163（项134 SUBTOTAL，功能级）：1–11/101–111、空区间/非法编号；定向
+测试与全量 gate/package 通过；发布包 SHA `60e37a07…2d99`。
 
 Round 162（项133 FIXED/DOLLAR/NUMBERVALUE，功能级）：固定小数、货币文本、
 区域数字解析；定向与全量 gate/package 通过；发布包 SHA `b359981b…c0545`。

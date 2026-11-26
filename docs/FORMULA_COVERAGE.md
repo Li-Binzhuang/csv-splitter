@@ -99,7 +99,8 @@
 | TRIMMEAN | 支持（新增） | 按百分比两端裁剪后平均 |
 | RANK.EQ / STDEV.S / VAR.S / STDEV.P / VAR.P | 支持（新增） | 点号函数名词法；同 RANK/STDEV/VAR 语义 |
 
-| SUBTOTAL / AGGREGATE | 缺失 | SUBTOTAL 函数编号与忽略隐藏行；CSV 无隐藏行，可先做 1–11 |
+| SUBTOTAL | 支持（功能级新增） | 1–11/101–111；同行区间；CSV 无隐藏行，100 系列同值 |
+| AGGREGATE | 缺失 | 19 个函数编号 + options（忽略错误/隐藏行） |
 | RAND / RANDBETWEEN | 缺失 | 非确定性，暂不进入可复现导出 |
 | GCD / LCM / FACT / COMBIN / PERMUT / MROUND | 缺失 | 数论/工程函数 |
 | BITAND / BITOR / BITXOR | 缺失 | 位运算 |

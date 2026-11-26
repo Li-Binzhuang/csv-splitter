@@ -1278,6 +1278,72 @@ mod tests {
     }
 
     #[test]
+    fn subtotal_rejects_an_all_empty_range() {
+        let columns = vec!["a".to_string(), "b".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("a".to_string(), String::new());
+        cells.insert("b".to_string(), String::new());
+        let formula = Formula::parse("subtotal(9, A2:B2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+    }
+
+    #[test]
+    fn subtotal_supports_the_excel_function_numbers() {
+        let columns = vec![
+            "id".to_string(),
+            "amount".to_string(),
+            "qty".to_string(),
+            "note".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [
+            ("id", "7"),
+            ("amount", "10"),
+            ("qty", "3"),
+            ("note", "plain"),
+        ] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        for (code, expected) in [
+            (1, "6.5"),
+            (2, "2"),
+            (3, "3"),
+            (4, "10"),
+            (5, "3"),
+            (6, "30"),
+            (7, "4.949747"),
+            (8, "3.5"),
+            (9, "13"),
+            (10, "24.5"),
+            (11, "12.25"),
+            (101, "6.5"),
+            (111, "12.25"),
+        ] {
+            let formula = Formula::parse(&format!("subtotal({code}, B2:D2)")).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "code={code}"
+            );
+        }
+        for source in [
+            "subtotal(0, B2:D2)",
+            "subtotal(12, B2:D2)",
+            "subtotal(100, B2:D2)",
+            "subtotal(9, B3:D3)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn fixed_dollar_and_numbervalue_work() {
         assert_eq!(eval_str("fixed(1234.5678)", &[]), "1,234.57");
         assert_eq!(eval_str("fixed(1234.5678, 0)", &[]), "1,235");

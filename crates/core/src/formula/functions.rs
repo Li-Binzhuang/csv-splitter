@@ -223,6 +223,37 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             };
             Value::Number(blank as f64)
         }
+        // SUBTOTAL(function_num, range): 1–11 and 101–111. CSV has no hidden
+        // rows, so the 100-series maps to the same calculation.
+        "subtotal" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let Some(code) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            let Some(Expr::Range { from, to }) = args.get(1) else {
+                return Value::Error;
+            };
+            let Some(cells) = range_cells(from, to, ctx) else {
+                return Value::Error;
+            };
+            if cells.iter().all(|cell| cell.trim().is_empty()) {
+                return Value::Error;
+            }
+            if !code.is_finite() {
+                return Value::Error;
+            }
+            let code = code.trunc() as i32;
+            let code = if (101..=111).contains(&code) {
+                code - 100
+            } else if (1..=11).contains(&code) {
+                code
+            } else {
+                return Value::Error;
+            };
+            subtotal_value(code, &cells)
+        }
         // Sample standard deviation / variance: Excel's STDEV.S and VAR.S. The pre-pass
         // kept the sum of squares, so this is O(1) per row.
         "stdev" | "var" | "stdevp" | "varp" | "stdev.s" | "var.s" | "stdev.p" | "var.p" => {
@@ -2366,6 +2397,59 @@ fn find_in(args: &[Expr], ctx: &Ctx<'_>, case_sensitive: bool) -> Value {
             Value::Number((char_index + start) as f64)
         }
         None => Value::Number(0.0),
+    }
+}
+
+fn subtotal_value(code: i32, cells: &[&str]) -> Value {
+    let values: Vec<f64> = cells
+        .iter()
+        .filter_map(|cell| cell.trim().parse::<f64>().ok())
+        .filter(|value| value.is_finite())
+        .collect();
+    let count = values.len() as u64;
+    let sum: f64 = values.iter().sum();
+    let squares: f64 = values.iter().map(|value| value * value).sum();
+    match code {
+        1 => {
+            if count == 0 {
+                Value::Error
+            } else {
+                Value::Number(sum / count as f64)
+            }
+        }
+        2 => Value::Number(count as f64),
+        3 => Value::Number(cells.iter().filter(|cell| !cell.trim().is_empty()).count() as f64),
+        4 => values
+            .iter()
+            .copied()
+            .reduce(f64::max)
+            .map_or(Value::Error, Value::Number),
+        5 => values
+            .iter()
+            .copied()
+            .reduce(f64::min)
+            .map_or(Value::Error, Value::Number),
+        6 => {
+            if count == 0 {
+                Value::Error
+            } else {
+                Value::Number(values.iter().product())
+            }
+        }
+        7 => sample_variance(sum, squares, count)
+            .map(|variance| Value::Number(variance.sqrt()))
+            .unwrap_or(Value::Error),
+        8 => population_variance(sum, squares, count)
+            .map(|variance| Value::Number(variance.sqrt()))
+            .unwrap_or(Value::Error),
+        9 => Value::Number(sum),
+        10 => sample_variance(sum, squares, count)
+            .map(Value::Number)
+            .unwrap_or(Value::Error),
+        11 => population_variance(sum, squares, count)
+            .map(Value::Number)
+            .unwrap_or(Value::Error),
+        _ => Value::Error,
     }
 }
 
