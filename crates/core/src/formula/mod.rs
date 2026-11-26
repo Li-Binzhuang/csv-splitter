@@ -1484,6 +1484,30 @@ mod tests {
     }
 
     #[test]
+    fn iso_week_equivalence_and_reverse_ranges_work() {
+        for date in ["2024-01-01", "2024-12-30", "2025-01-01"] {
+            assert_eq!(
+                eval_str(&format!(r#"weeknum("{date}", 21)"#), &[]),
+                eval_str(&format!(r#"isoweeknum("{date}")"#), &[]),
+                "{date}"
+            );
+        }
+        assert_eq!(eval_str(r#"workday("2024-01-02", 0)"#, &[]), "2024-01-02");
+        assert_eq!(
+            eval_str(r#"networkdays("2024-01-05", "2024-01-01")"#, &[]),
+            "#VALUE!"
+        );
+        assert_eq!(
+            eval_str(
+                r#"networkdays("2024-01-01", "2024-01-05", "2024-01-02", "2024-01-02")"#,
+                &[]
+            ),
+            "4",
+            "duplicate holidays count once"
+        );
+    }
+
+    #[test]
     fn date_range_boundaries_work() {
         assert_eq!(
             eval_str(r#"networkdays("2024-02-28", "2024-03-01")"#, &[]),
