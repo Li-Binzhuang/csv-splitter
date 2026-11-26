@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 21（benchmark 摘要自生成）：harness 自动写 `<out>.summary.json`（脱敏、
+无原始路径/行值），smoke 校验 dataset/total；`docs/bench-100gb...json` 为同形摘要；发布包 SHA `7a6620b5…cc266`。
+
 Round 20（README 对外证据）：README 增加 100GB 本机实测三项数字与机器可读
 摘要链接，明确非 SLA；发布包 SHA `ba0bafed…53a86`。
 

@@ -181,6 +181,20 @@ def main():
     json_path = Path(args.json_out or (str(out) + ".bench.json"))
     md_path = Path(args.md_out or (str(out) + ".bench.md"))
     json_path.write_text(json.dumps(payload, indent=2) + "\n")
+    summary = {
+        "measuredAt": time.strftime("%Y-%m-%d"),
+        "machine": f"{platform.system()}-{platform.machine()}",
+        "binary": str(binary),
+        "dataset": payload["generated"],
+        "commands": [
+            {"name": item["name"], "elapsedMs": item["elapsedMs"], "rssBytes": item["rssBytes"], "exit": item["exit"]}
+            for item in results
+        ],
+        "totalMs": total_ms,
+        "notes": ["no page-cache drop", "not an SLA"],
+    }
+    summary_path = Path(str(out) + ".summary.json")
+    summary_path.write_text(json.dumps(summary, indent=2) + "\n")
     md = [
         f"# csvx benchmark: {human_bytes(size)} / {rows:,} rows",
         "",
@@ -197,6 +211,7 @@ def main():
     md_path.write_text("\n".join(md))
     print(f"bench_json={json_path}")
     print(f"bench_md={md_path}")
+    print(f"bench_summary={summary_path}")
     print(f"bench_bytes={size} bench_rows={rows} bench_total_ms={total_ms}")
     if args.clean:
         out.unlink(missing_ok=True)

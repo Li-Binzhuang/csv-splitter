@@ -17,7 +17,8 @@ search ZZZUNIQUE
 analyze --quality --json
 ```
 
-每条命令记录 wall time 与 peak RSS，输出 `<out>.bench.json` 和 `<out>.bench.md`。
+每条命令记录 wall time 与 peak RSS，输出 `<out>.bench.json`、`<out>.bench.md`
+和脱敏的 `<out>.summary.json`（不含原始路径/行值）。
 
 100 GB 实际运行（2026-11-26，release 二进制，生成确定性数据）：
 

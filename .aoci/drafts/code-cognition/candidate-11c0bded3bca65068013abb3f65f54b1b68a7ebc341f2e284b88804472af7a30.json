@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "c74b8079f72dbd7aeeb875e2949141f09ad82241ce536492b749dbff02f00d2a",
+  "batch_id": "11c0bded3bca65068013abb3f65f54b1b68a7ebc341f2e284b88804472af7a30",
+  "composite_identity": "e72ad0ffaf7b2195972baf6e80e6f47cc86407842077c62f29ca581773541d5b",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "2aa67fe9d5d23e63afbf9dc7f75f874d8ca13693706e000921236a33eff3c30b",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "3cc7d76addcd94d642e4ddc50f1e52d91d77553d7bac935c0c29910f93d65cb5",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现基准与 1GB/100GB 实测 | R:code:scripts/bench_100gb.py,code:docs/bench-100gb-2026-11-26.json | A:Apple M5/16GiB/macOS27.2.1；100GB 568.46s；1GB 5.73s；机器摘要链接 | S:未 drop cache；quality 约 80%；他机重跑；smoke≠100GB"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "69c719304f451ba27ea07fe0ed55aefc737bda5e82523689abef3eee783ac7c6",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round20 README 证据与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/bench_100gb.py",
+      "path": "scripts/bench_100gb.py",
+      "change": "update",
+      "source_sha256": "4369f2e9afc484d8ff7898b6acad2f3ad22e167acdf9c0bb7798451648607a1e",
+      "existing_entry": "bench_100gb.py[TP7M]: F:流式生成 CSV 并测 schema/filter/search/quality | R:code:scripts/test_bench_100gb.sh,code:docs/BENCHMARKS.md | A:--gb/--rows/--out/--binary；schema --json；JSON+MD | S:不默认真跑 100GB；RSS 依赖 /usr/bin/time；结果本机实测"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_bench_100gb.sh",
+      "path": "scripts/test_bench_100gb.sh",
+      "change": "update",
+      "source_sha256": "8df3958702e8a3d122fa6218349d69edceada2feb5b352e68fa3e53d139498a3",
+      "existing_entry": "test_bench_100gb.sh[TP7T]: F:benchmark harness smoke 脚本 | R:code:scripts/bench_100gb.py,code:scripts/dev.sh | A:1000 行；JSON/MD；四命令；坏 binary 拒绝 | S:gate 必跑；不生成大文件；失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4c326002804aa00c60c2cc70253ec6bf7d5a4207ece40b5ed043fe32368ea2f1",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "3cc7d76addcd94d642e4ddc50f1e52d91d77553d7bac935c0c29910f93d65cb5",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现基准与 1GB/100GB 实测 | R:code:scripts/bench_100gb.py,code:docs/bench-100gb-2026-11-26.json | A:Apple M5/16GiB/macOS27.2.1；100GB 568.46s；1GB 5.73s；机器摘要链接 | S:未 drop cache；quality 约 80%；他机重跑；smoke≠100GB"
+    },
+    {
+      "candidate_id": "a2526295e40fe6a30fd372dc951031a184f61c2137f55d126f01c3f028bd2fe0",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "69c719304f451ba27ea07fe0ed55aefc737bda5e82523689abef3eee783ac7c6",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round20 README 证据与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "fde3bf0211ae47262d2fcc908ee557443376501b09a7e451f3993394bd5023c8",
+      "object_ref": "code:scripts/bench_100gb.py",
+      "path": "scripts/bench_100gb.py",
+      "change": "update",
+      "source_sha256": "4369f2e9afc484d8ff7898b6acad2f3ad22e167acdf9c0bb7798451648607a1e",
+      "existing_entry": "bench_100gb.py[TP7M]: F:流式生成 CSV 并测 schema/filter/search/quality | R:code:scripts/test_bench_100gb.sh,code:docs/BENCHMARKS.md | A:--gb/--rows/--out/--binary；schema --json；JSON+MD | S:不默认真跑 100GB；RSS 依赖 /usr/bin/time；结果本机实测"
+    },
+    {
+      "candidate_id": "d01eeaba4967b7b83c63045dc158008d6be399ed825518d3268c4aaf06260ab2",
+      "object_ref": "code:scripts/test_bench_100gb.sh",
+      "path": "scripts/test_bench_100gb.sh",
+      "change": "update",
+      "source_sha256": "8df3958702e8a3d122fa6218349d69edceada2feb5b352e68fa3e53d139498a3",
+      "existing_entry": "test_bench_100gb.sh[TP7T]: F:benchmark harness smoke 脚本 | R:code:scripts/bench_100gb.py,code:scripts/dev.sh | A:1000 行；JSON/MD；四命令；坏 binary 拒绝 | S:gate 必跑；不生成大文件；失败非零"
+    }
+  ]
+}

@@ -11,6 +11,7 @@ OUT="$WORK/orders.csv"
 CSVX_BIN="$BIN" python3 scripts/bench_100gb.py --rows 1000 --out "$OUT" --clean >"$WORK/run.log" 2>&1
 test -s "$OUT.bench.json" || { echo "bench_smoke=fail json" >&2; exit 1; }
 test -s "$OUT.bench.md" || { echo "bench_smoke=fail markdown" >&2; exit 1; }
+test -s "$OUT.summary.json" || { echo "bench_smoke=fail summary" >&2; exit 1; }
 python3 - "$OUT.bench.json" <<'PY'
 import json
 import sys
@@ -20,6 +21,9 @@ assert data["generated"]["bytes"] > 0, data
 assert data["totalMs"] > 0, data
 for name in ("schema", "filter", "search", "quality"):
     assert any(item["name"] == name for item in data["commands"]), data
+summary = json.load(open(sys.argv[1].replace(".bench.json", ".summary.json")))
+assert summary["dataset"]["rows"] == 1000, summary
+assert summary["totalMs"] > 0, summary
 print("bench_smoke=json_ok")
 PY
 if CSVX_BIN="$BIN" python3 scripts/bench_100gb.py --rows 10 --out "$WORK/nope.csv" --binary "$WORK/missing" >/dev/null 2>&1; then
