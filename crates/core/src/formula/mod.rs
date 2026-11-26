@@ -1508,6 +1508,45 @@ mod tests {
     }
 
     #[test]
+    fn duplicate_range_holidays_and_feb29_work() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [
+            ("a", "2024-01-01"),
+            ("b", "2024-01-02"),
+            ("c", "2024-01-02"),
+            ("d", "2024-01-05"),
+        ] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        let formula = Formula::parse("networkdays(A2, D2, B2:C2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "4",
+            "a duplicated date in the holiday range counts once"
+        );
+        assert_eq!(
+            eval_str(r#"workday("2024-01-06", 1, "2024-01-08")"#, &[]),
+            "2024-01-09"
+        );
+        assert_eq!(
+            eval_str(r#"days360("2024-02-29", "2024-03-31")"#, &[]),
+            "32"
+        );
+        assert_eq!(
+            eval_str(r#"days360("2024-02-29", "2024-03-31", 1)"#, &[]),
+            "31"
+        );
+    }
+
+    #[test]
     fn holidays_before_start_and_leap_day_ends_work() {
         assert_eq!(
             eval_str(
