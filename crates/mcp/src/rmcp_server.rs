@@ -94,11 +94,26 @@ impl CsvxServer {
             }
             "csvx_job_status" => {
                 let id = value.get("id").and_then(Value::as_str)?.to_string();
-                let wait = value
-                    .get("wait")
-                    .and_then(Value::as_u64)
-                    .unwrap_or(0)
-                    .min(30);
+                let wait = match value.get("wait") {
+                    None => 0,
+                    Some(Value::Number(number)) => match number.as_u64() {
+                        Some(value) if value <= 30 => value,
+                        _ => {
+                            return Some(tool_result(
+                                "wait must be an integer between 0 and 30".to_string(),
+                                true,
+                                "wait_range",
+                            ));
+                        }
+                    },
+                    Some(_) => {
+                        return Some(tool_result(
+                            "wait must be an integer between 0 and 30".to_string(),
+                            true,
+                            "wait_range",
+                        ));
+                    }
+                };
                 let jobs = Arc::clone(&self.jobs);
                 let result = tokio::task::spawn_blocking(move || {
                     jobs.lock()

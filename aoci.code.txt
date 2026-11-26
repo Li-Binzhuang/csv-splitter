@@ -8,7 +8,7 @@ CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:�
 Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml,code:crates/agent/Cargo.toml,code:crates/cli/Cargo.toml | A:members core/mcp/agent/cli；workspace.dependencies csvx-core；version 4.2.0 是发布真相 | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
 README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md,code:docs/OPERATIONS.md | A:顶部定位与 Rust 徽章；快速开始；公式节；性能实测；命令表含 serve/mcp/ops/gate/report；concat/gate 目录；report CSV spec；PRODUCT_PLAN/销售入口 | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；性能数字必须来自实测
-progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round7 枚举/范围与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成
+progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round9 wait/gate 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成
 
 ===/<repository>/.github/workflows/===
 ci.yml[OV7S]: F:主 CI：格式化、引擎与 CLI 测试、性能守卫、clippy 工作区、失败注解 | R:code:scripts/smoke.sh,code:scripts/regress.sh,code:scripts/backend-smoke.sh,code:scripts/release-decision.sh | A:单 job 串联；engine 与 CLI 两个测试步骤失败时各重试一次并留 warning annotation（本地单跑/两线程均绿的负载型 flake）；每步 tee 日志，失败时把测试名转成公开 annotation 并上传 artifact | S:曾因双 job + 缓存配额出现“跳过一半、红叉无信息”，故单 job；重试只限一次且日志保留，真 bug 仍会两次失败
@@ -132,7 +132,7 @@ DSH_SKILL.md[SD7T]: F:把 csvx skill 安装到本地 DSH profile 的说明 | R:c
 AGENT_TRACE.md[SD7T]: F:Agent JSONL trace 与 HTTP audit/replay/actions/curl/runbook 的可复刻流程 | R:code:crates/cli/src/agent.rs,code:docs/AGENT_API.md,code:skills/csvx-data/SKILL.md | A:run/model/tool/final；--trace/--replay；HTTP audit、replay、actions.md/html、curl、runbook、sessions 汇总；阻断提示 | S:不写 key/token；observation 截 20k；trace 含数据；重放编辑用副本
 QUICKSTART_AGENT.md[SD7T]: F:Agent 一页快速上手：MCP、HTTP、runner、skill、Excel、TRY_CSVX 与安全 | R:code:docs/AGENT_API.md,code:docs/AGENT_TRACE.md,code:docs/DSH_SKILL.md,code:examples/try_csvx.sh | A:MCP 配置；HTTP session/actions/audit/replay/curl/runbook；runner --trace/--replay；install_skill.sh；xlsx 示例；TRY_CSVX 自校验 | S:不写 key；审批单次；root 边界；trace/audit 含数据按敏感
 ENTRYPOINTS.md[SG7S]: F:入口层目录、行数与客户端验证规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:docs/MCP_COMPAT.md | A:根与MCP白名单；executor/commands 与 paths；行数上限；SDK/schema 进 gate | S:rmcp 唯一传输；schema 默认跑；DSH 默认跳过；超限失败
-MCP_COMPAT.md[SD7S]: F:官方 SDK、schema 与 DSH 客户端验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:docs/ENTRYPOINTS.md | A:23 工具；20 必填拒绝；enum/range 各 2 拒绝；43 字段；DSH 2 行 | S:不改 DSH profile；DSH 需 CSVX_DSH_TEST=1；结果本机实测
+MCP_COMPAT.md[SD7S]: F:官方 SDK、schema 与 DSH 客户端验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:docs/ENTRYPOINTS.md | A:23 工具；20 必填；enum 2；range 8（count/limit/jobs/wait/gate）；43 字段 | S:不改 DSH profile；DSH 需 CSVX_DSH_TEST=1；结果本机实测
 
 ===/<repository>/scripts/===
 backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换、自引用拒绝与请求上限；BIN 默认取 ./target/debug/csvx | S:脚本默认跑 target/debug 的二进制，改了代码只重建 release 会在这里看到旧行为；裸 wait 会连自己起的 server 一起等，必须收集 PID 逐个等待
@@ -166,7 +166,7 @@ check_release.py[SD7T]: F:重新哈希 manifest 并拒绝失败验证/非 ok 阶
 check_phase_times.py[SD7T]: F:拒绝超出预算的包验收阶段 | R:code:scripts/verify_dist.sh,code:scripts/dev.sh | A:读 verify.json phaseMs；extract<2s skill<3s try<3s agent<5s xlsx<2s trace<2s；输出 phase_thresholds=ok | S:失败命名字段；退出 1；不联网
 check_phase_times_negative.sh[SD7T]: F:测试阶段预算拒绝慢值 | R:code:scripts/check_phase_times.py,code:scripts/dev.sh | A:构造 agent=9999ms；断言非零；grep mismatch/agent；输出 phase negative=ok | S:仅测试；临时日志；不联网
 check_layout.sh[XQ7S]: F:入口层目录与行数规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根/CLI/MCP 白名单；executor/paths 250；executor/commands 550；MCP 单文件阈值 | S:未知模块退出；超行数失败；先改文档再加模块
-check_mcp_sdk.sh[TQ7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:debug 优先；23 工具；20 必填；enum/range 各 2；progress/job/error | S:node/SDK 缺失跳过；失败非零
+check_mcp_sdk.sh[TQ7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:debug 优先；23 工具；20 必填；enum 2/range 8；progress/job/error | S:node/SDK 缺失跳过；失败非零
 check_mcp_dsh.sh[TQ7T]: F:可选的真实 DSH MCP 回归脚本 | R:code:scripts/check_mcp_sdk.sh,code:docs/MCP_COMPAT.md,code:scripts/package_release.sh | A:CSVX_DSH_TEST=1 才启动 headless；临时 patch/CSV；断言 2 rows 与 city | S:默认 skip 不耗模型；dsh 缺失 skip；不改 profile
 check_mcp_schema.py[TQ7T]: F:校验 23 工具 schema 字段都能落到 CLI flag | R:code:crates/mcp/src/tools.rs,code:scripts/dev.sh,code:docs/MCP_COMPAT.md | A:initialize/tools-list；命令映射；camel→kebab；跳过 positional/meta | S:43 字段；6 个 server 工具跳过；缺 flag 非零
 
@@ -177,7 +177,7 @@ orders.csv[AZ4L]: F:demo 命令生成的示例数据：6 列 20 120 行，含刻
 csvx.service[OV6T]: F:csvx 后端的 systemd unit：回环绑定、最小权限与只写 sidecar | R:- | A:ExecStart 为 /usr/local/bin/csvx serve --root /srv/csvx --port 8787，ExecStartPre 先跑 --check 自检；User 与 Group 都是 csvx；ReadWritePaths 只放 /srv/csvx；Restart=on-failure | S:服务刻意只绑回环且没有任何鉴权，暴露到非本机必须由反向代理做认证；进程不得改写被服务的 CSV，只写 .idx/.parquet/.journal 旁文件
 
 ===/<repository>/scripts/mcp_sdk/===
-client.mjs[XQ7S]: F:官方 MCP SDK 全 23 工具与参数语义回归 | R:code:scripts/mcp_sdk/package.json,code:scripts/check_mcp_sdk.sh | A:called 集合；23 工具；20 必填；format/row/count 拒绝；pipeline/gzip/job | S:仅回归；npm 不进 Rust；job 失败非零
+client.mjs[XQ7S]: F:官方 MCP SDK 全 23 工具与参数语义回归 | R:code:scripts/mcp_sdk/package.json,code:scripts/check_mcp_sdk.sh | A:called；23 工具；20 必填；format/row/count/jobs/wait/gate 拒绝 | S:仅回归；npm 不进 Rust；job 失败非零
 package.json[FV7T]: F:MCP SDK 演示的 npm 依赖清单 | R:code:scripts/mcp_sdk/client.mjs | A:private、type module；固定 @modelcontextprotocol/sdk 1.32.2 | S:仅演示目录使用；node_modules 已在 .gitignore；升级 SDK 需重跑兼容性验证
 
 ===/<repository>/examples/agent/===
@@ -196,7 +196,7 @@ Cargo.toml[FV7T]: F:csvx-mcp crate 清单 | R:code:crates/core/Cargo.toml | A:cs
 
 ===/<repository>/crates/mcp/src/===
 lib.rs[EN7L]: F:MCP 入口：run_mcp_stdio、agent manifest、模块重导出 | R:code:crates/mcp/src/json.rs,code:crates/mcp/src/executor.rs,code:crates/mcp/src/rmcp_server.rs | A:只走 rmcp；McpJson/McpParser 重导出；AGENT_INSTRUCTIONS | S:路径限 root；stdout 仅 rmcp；schema 在 tools.rs
-rmcp_server.rs[EN7M]: F:官方 rmcp 适配器：串行泵、job/cache、progress | R:code:crates/mcp/src/lib.rs,code:crates/mcp/Cargo.toml | A:ServerHandler；23 schema；请求等响应；McpJobRegistry；structuredContent；progress 通知 | S:默认传输；串行保序；旧 initialize 兼容
+rmcp_server.rs[EN7L]: F:官方 rmcp 适配器：串行泵、job/cache、progress | R:code:crates/mcp/src/lib.rs,code:crates/mcp/Cargo.toml | A:ServerHandler；23 schema；请求等响应；job_status wait 0..30 校验；progress | S:默认传输；串行保序；旧 initialize 兼容
 jobs.rs[EN7M]: F:MCP job 提交/状态/取消/列表与 cache 状态 | R:code:crates/mcp/src/rmcp_server.rs,code:crates/mcp/src/cache.rs | A:McpJobRegistry；mcp_start_job；mcp_job_text；prune；输出文件 | S:job 上限 128；进程清理；只提交允许工具
 tools.rs[SD7T]: F:23 个 MCP 工具 schema 单一来源 | R:code:crates/mcp/src/lib.rs,code:crates/mcp/src/rmcp_server.rs | A:mcp_tools JSON；edit_delete 增加 count | S:冻结 23 工具；JSON 必须可解析
 cache.rs[EN7M]: F:MCP 材料化缓存：临时文件、字节/条目上限、命中统计 | R:code:crates/mcp/src/executor.rs,code:crates/mcp/src/jobs.rs | A:CachedMaterialized；MATERIALIZE_*；mcp_materialize；cleanup dead PID | S:缓存进程内；文件旁挂；清理 dead PID
@@ -255,4 +255,4 @@ pipeline.rs[EN9L]: F:CLI pipeline 命令：DAG/线性执行、watch、状态与�
 
 ===/<repository>/crates/mcp/src/executor/===
 paths.rs[ES7T]: F:MCP 路径安全：input/output 限定 root | R:code:crates/mcp/src/executor.rs,code:crates/mcp/src/lib.rs | A:mcp_path；mcp_named_file；mcp_output_path；canonicalize 与父目录拒绝 | S:../ 拒绝；canonicalize 后仍校验 root；输出目录必须已存在
-commands.rs[EN8L]: F:23 个 MCP 工具到 csvx CLI 的参数映射 | R:code:crates/mcp/src/executor.rs,code:crates/mcp/src/tools.rs,code:crates/mcp/src/executor/paths.rs | A:build；concat；schema/view/filter/search/edit/report/gate/convert/pipeline；report format 只收 md/html | S:非法 report format 报错；路径限 root；edit_delete 带 count；只拼 argv
+commands.rs[EN8L]: F:23 个 MCP 工具到 csvx CLI 的参数映射 | R:code:crates/mcp/src/executor.rs,code:crates/mcp/src/tools.rs,code:crates/mcp/src/executor/paths.rs | A:build；report format 只收 md/html；count/limit 1..1000；pipeline jobs 1..64；gate 非负 | S:越界报错；路径限 root；edit_delete 带 count；只拼 argv

@@ -158,7 +158,32 @@ const badRow = await client.callTool({
   name: "csvx_edit_set",
   arguments: { path: file, row: 0, col: "city", value: "X" },
 });
-console.log(`range_rejections=${(badCount.isError === true ? 1 : 0) + (badRow.isError === true ? 1 : 0)}`);
+const badCountHigh = await client.callTool({
+  name: "csvx_view",
+  arguments: { path: file, count: 1001 },
+});
+const badFilterLimit = await client.callTool({
+  name: "csvx_filter",
+  arguments: { path: file, where: "city=CDMX", limit: 1001 },
+});
+const badSearchLimit = await client.callTool({
+  name: "csvx_search",
+  arguments: { path: file, query: "CDMX", limit: 1001 },
+});
+const badJobs = await client.callTool({
+  name: "csvx_pipeline_run",
+  arguments: { path: "plan.csv", jobs: 65 },
+});
+const badWait = await client.callTool({
+  name: "csvx_job_status",
+  arguments: { id: job.job, wait: 31 },
+});
+const badGate = await client.callTool({
+  name: "csvx_gate",
+  arguments: { path: file, minRows: -1 },
+});
+const rangeResults = [badCount, badRow, badCountHigh, badFilterLimit, badSearchLimit, badJobs, badWait, badGate];
+console.log(`range_rejections=${rangeResults.filter((result) => result.isError === true).length}`);
 const missingTools = expectedTools.filter((name) => !called.has(name));
 console.log(`sdk_calls=${expectedTools.length - missingTools.length}`);
 console.log(`sdk_missing=${missingTools.join(",")}`);

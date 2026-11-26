@@ -17,6 +17,11 @@
 
 ## 当前进度
 
+Round 9：`csvx_job_status wait=31` 拒绝（wait_range）；`csvx_gate minRows=-1` 拒绝；`range_rejections=8`；发布包 SHA `d3a0c69f…782d1`。
+
+Round 8：MCP 层按 schema 上界拒绝 `view count=1001`、`filter/search limit=1001`、`pipeline jobs=65`；
+`range_rejections=6`。
+
 Round 7：SDK 增加枚举/范围语义：`convert`/`report` 非法 format、`view count=0`、`edit_set row=0` 均拒绝。
 实测 `enum_rejections=2 range_rejections=2`；发布包 SHA `84f231e8…779ac`；`csvx_report` 不再把未知 format 静默成 md。
 
@@ -35,7 +40,7 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 ## 未完成
 
-- 23 工具 schema 字段映射、必填拒绝、format 枚举与 row/count 下界已覆盖。
+- 23 工具字段映射、必填、format 枚举、count/limit/jobs/wait/gate 边界已覆盖。
 - `executor/commands.rs` 406 行，后续可再按工具族拆分。
 - 12 路由已有响应体、401、405 契约。
 - 商业化/产品化未开始。
@@ -49,4 +54,4 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 1. 全量 gate、AOCI 收尾并提交。
 2. push 本轮提交一次。
-3. 下一轮补 count/limit 上界与 pipeline jobs 语义。
+3. 下一轮做 12 路由的 close/events 生命周期契约。

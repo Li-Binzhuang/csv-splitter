@@ -3,6 +3,36 @@ use std::path::{Path, PathBuf};
 
 use super::paths::{mcp_named_file, mcp_output_path};
 
+fn bounded(args: &McpJson, key: &str, min: u64, max: u64, default: u64) -> Result<u64, String> {
+    match args.get(key) {
+        None => Ok(default),
+        Some(value) => {
+            let number = value
+                .as_u64()
+                .ok_or_else(|| format!("{key} must be a non-negative integer"))?;
+            if !(min..=max).contains(&number) {
+                return Err(format!("{key} must be between {min} and {max}"));
+            }
+            Ok(number)
+        }
+    }
+}
+
+fn optional_bounded(args: &McpJson, key: &str, min: u64, max: u64) -> Result<Option<u64>, String> {
+    match args.get(key) {
+        None => Ok(None),
+        Some(value) => {
+            let number = value
+                .as_u64()
+                .ok_or_else(|| format!("{key} must be a non-negative integer"))?;
+            if !(min..=max).contains(&number) {
+                return Err(format!("{key} must be between {min} and {max}"));
+            }
+            Ok(Some(number))
+        }
+    }
+}
+
 pub(super) fn concat(
     bin: &Path,
     root: &Path,
@@ -102,11 +132,7 @@ pub(super) fn build(
         "csvx_view" => {
             command.args(["view", path.to_str().unwrap_or(""), "--json"]);
             let start = args.get("start").and_then(McpJson::as_u64).unwrap_or(0);
-            let count = args
-                .get("count")
-                .and_then(McpJson::as_u64)
-                .unwrap_or(100)
-                .min(1000);
+            let count = bounded(args, "count", 1, 1000, 100)?;
             command.args(["--start", &start.to_string(), "--count", &count.to_string()]);
             if let Some(where_clause) = args.get("where").and_then(McpJson::as_str) {
                 command.args(["--where", where_clause]);
@@ -117,11 +143,7 @@ pub(super) fn build(
                 .get("where")
                 .and_then(McpJson::as_str)
                 .ok_or("where is required")?;
-            let limit = args
-                .get("limit")
-                .and_then(McpJson::as_u64)
-                .unwrap_or(100)
-                .min(1000);
+            let limit = bounded(args, "limit", 1, 1000, 100)?;
             command.args([
                 "filter",
                 path.to_str().unwrap_or(""),
@@ -147,11 +169,7 @@ pub(super) fn build(
                 .get("query")
                 .and_then(McpJson::as_str)
                 .ok_or("query is required")?;
-            let limit = args
-                .get("limit")
-                .and_then(McpJson::as_u64)
-                .unwrap_or(100)
-                .min(1000);
+            let limit = bounded(args, "limit", 1, 1000, 100)?;
             command.args([
                 "search",
                 path.to_str().unwrap_or(""),
@@ -266,8 +284,8 @@ pub(super) fn build(
             {
                 command.arg("--dag");
             }
-            if let Some(jobs) = args.get("jobs").and_then(McpJson::as_u64) {
-                command.args(["--jobs", &jobs.clamp(1, 64).to_string()]);
+            if let Some(jobs) = optional_bounded(args, "jobs", 1, 64)? {
+                command.args(["--jobs", &jobs.to_string()]);
             }
             if args
                 .get("clean")
@@ -368,10 +386,10 @@ pub(super) fn build(
         }
         "csvx_gate" => {
             command.args(["gate", path.to_str().unwrap_or(""), "--json"]);
-            if let Some(minimum) = args.get("minRows").and_then(McpJson::as_u64) {
+            if let Some(minimum) = optional_bounded(args, "minRows", 0, u64::MAX)? {
                 command.args(["--min-rows", &minimum.to_string()]);
             }
-            if let Some(maximum) = args.get("maxEmpty").and_then(McpJson::as_u64) {
+            if let Some(maximum) = optional_bounded(args, "maxEmpty", 0, u64::MAX)? {
                 command.args(["--max-empty", &maximum.to_string()]);
             }
             if let Some(name) = args.get("unique").and_then(McpJson::as_str) {
