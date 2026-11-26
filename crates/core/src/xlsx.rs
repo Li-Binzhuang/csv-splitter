@@ -995,9 +995,15 @@ fn sheet_rows_with_limit_system(
                 None => (&xml[body_start..], xml.len()),
             }
         };
-        let row: u64 = attr(row_attrs, "r")
-            .and_then(|value| value.parse().ok())
-            .unwrap_or(out.len() as u64 + 1);
+        let row: u64 = match attr(row_attrs, "r") {
+            Some(value) => value
+                .parse()
+                .map_err(|_| invalid(&format!("row reference {value:?} is invalid")))?,
+            None => out.len() as u64 + 1,
+        };
+        if row == 0 {
+            return Err(invalid("row reference 0 is invalid"));
+        }
         let mut cells = Vec::new();
         let mut cell_cursor = 0;
         while let Some(cell_start) = find_tag(body, cell_cursor, "<c") {
@@ -1575,6 +1581,13 @@ mod tests {
         let xml = r#"<sheetData><row r="1"><c r="A1"><v>1</v></c></row></sheetData><rowBreaks count="1"><break id="1"/></rowBreaks>"#;
         let rows = sheet_rows(xml, &[], &[]).unwrap();
         assert_eq!(rows.len(), 1);
+    }
+
+    #[test]
+    fn an_invalid_row_reference_is_an_error() {
+        let xml = r#"<sheetData><row r="x"><c r="A1"><v>1</v></c></row></sheetData>"#;
+        let error = sheet_rows(xml, &[], &[]).unwrap_err().to_string();
+        assert!(error.contains("row reference"), "{error}");
     }
 
     #[test]
