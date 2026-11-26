@@ -894,6 +894,15 @@ fn sheet_rows(
     shared: &[String],
     date_styles: &[bool],
 ) -> std::io::Result<Vec<(u64, Vec<String>)>> {
+    sheet_rows_with_limit(xml, shared, date_styles, MAX_DATA_ROWS + 1)
+}
+
+fn sheet_rows_with_limit(
+    xml: &str,
+    shared: &[String],
+    date_styles: &[bool],
+    max_sheet_rows: u64,
+) -> std::io::Result<Vec<(u64, Vec<String>)>> {
     let row_re = Regex::new(r#"(?s)<row\b([^>]*?)(?:/>|>(.*?)</row>)"#).unwrap();
     let cell_re = Regex::new(r#"(?s)<c\b([^>]*?)(?:/>|>(.*?)</c>)"#).unwrap();
     let mut out = Vec::new();
@@ -920,6 +929,12 @@ fn sheet_rows(
             cells[column] = cell_value(attrs, body, shared, date_styles)?;
         }
         out.push((row, cells));
+        if out.len() as u64 > max_sheet_rows {
+            return Err(invalid(&format!(
+                "xlsx supports at most {} sheet rows including the header",
+                max_sheet_rows
+            )));
+        }
     }
     Ok(out)
 }
@@ -1304,6 +1319,19 @@ mod tests {
         )
         .unwrap();
         assert_eq!(rows[0].1, vec!["2024-01-01T12:00:00"]);
+    }
+
+    #[test]
+    fn sheet_rows_stops_before_an_unbounded_worksheet() {
+        let xml = r#"<sheetData>
+            <row r="1"><c r="A1"><v>1</v></c></row>
+            <row r="2"><c r="A2"><v>2</v></c></row>
+            <row r="3"><c r="A3"><v>3</v></c></row>
+        </sheetData>"#;
+        let error = sheet_rows_with_limit(xml, &[], &[], 2)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("at most 2 sheet rows"), "{error}");
     }
 
     #[test]
