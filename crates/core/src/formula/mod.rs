@@ -1442,6 +1442,54 @@ mod tests {
     }
 
     #[test]
+    fn skew_and_kurtosis_measure_distribution_shape() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+            "e".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [("a", "1"), ("b", "2"), ("c", "3"), ("d", "4"), ("e", "5")] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        for (source, expected) in [("skew(A2:E2)", "0"), ("kurt(A2:E2)", "-1.2")] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        for source in ["skew(A2:B2)", "kurt(A2:C2)", "skew(A2:E2)"] {
+            if source == "skew(A2:E2)" {
+                continue;
+            }
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "#VALUE!",
+                "{source}"
+            );
+        }
+        for name in ["a", "b", "c", "d", "e"] {
+            cells.insert(name.to_string(), "3".to_string());
+        }
+        let formula = Formula::parse("skew(A2:E2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+    }
+
+    #[test]
     fn pduration_reports_growth_periods() {
         assert_eq!(eval_str("pduration(0.1, 100, 121)", &[]), "2");
         assert_eq!(eval_str("pduration(0.1, 100, 110)", &[]), "1");

@@ -94,7 +94,7 @@
 | COUNTBLANK | 支持 | 同行区间 |
 | MEDIAN / MODE / LARGE / SMALL / PERCENTILE | 支持（受限） | 只读同行区间；MEDIAN 不做整列 |
 | STDEV / VAR / STDEVP / VARP | 支持 | 整列 |
-| SKEW / KURT | 缺失 | 偏度/峰度；需同行样本或整列 |
+| SKEW / KURT | 支持（功能级新增） | 同行样本；SKEW≥3、KURT≥4；零方差 `#VALUE!` |
 | ROUND / ROUNDUP / ROUNDDOWN | 支持 | 十进制位数 |
 | ABS / SIGN / POWER / EXP / LN / LOG | 支持 | LOG 支持底数 |
 | FLOOR / CEIL / CEILING / INT / TRUNC / SQRT / MOD | 支持 | 标量 |

@@ -2089,6 +2089,24 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // SKEW/KURT: sample skewness and excess kurtosis over a same-row range.
+        "skew" | "kurt" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            let result = if lower == "skew" {
+                sample_skewness(&values)
+            } else {
+                sample_kurtosis(&values)
+            };
+            result.map_or(Value::Error, Value::Number)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
@@ -3893,6 +3911,44 @@ fn payment_parts(
     } else {
         None
     }
+}
+
+fn sample_skewness(values: &[f64]) -> Option<f64> {
+    let n = values.len();
+    if n < 3 {
+        return None;
+    }
+    let mean = values.iter().sum::<f64>() / n as f64;
+    let sum_squares = values.iter().map(|v| (v - mean).powi(2)).sum::<f64>();
+    if sum_squares == 0.0 {
+        return None;
+    }
+    let standard_deviation = (sum_squares / (n - 1) as f64).sqrt();
+    let sum_cubes = values
+        .iter()
+        .map(|v| ((v - mean) / standard_deviation).powi(3))
+        .sum::<f64>();
+    Some(n as f64 / ((n - 1) as f64 * (n - 2) as f64) * sum_cubes)
+}
+
+fn sample_kurtosis(values: &[f64]) -> Option<f64> {
+    let n = values.len();
+    if n < 4 {
+        return None;
+    }
+    let mean = values.iter().sum::<f64>() / n as f64;
+    let sum_squares = values.iter().map(|v| (v - mean).powi(2)).sum::<f64>();
+    if sum_squares == 0.0 {
+        return None;
+    }
+    let standard_deviation = (sum_squares / (n - 1) as f64).sqrt();
+    let sum_fourths = values
+        .iter()
+        .map(|v| ((v - mean) / standard_deviation).powi(4))
+        .sum::<f64>();
+    let n = n as f64;
+    let first = n * (n + 1.0) / ((n - 1.0) * (n - 2.0) * (n - 3.0)) * sum_fourths;
+    Some(first - 3.0 * (n - 1.0).powi(2) / ((n - 2.0) * (n - 3.0)))
 }
 
 fn subtotal_value(code: i32, cells: &[&str]) -> Value {
