@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 3（MCP 配置目标）：`csvx mcp config --client dsh|claude|cursor|generic`
+输出可粘贴 JSON；默认当前 exe 绝对路径；未知 client 列出合法值；3 个单测 + 1 个
+CLI 集成测试；文档写明粘贴位置；发布包 SHA `4cff7664…55ac0`。
+
 Round 2（Pipeline 自动化第二阶段）：history 增加 `event:"attempt"`（attempt/ms/
 ok/code/retryDelayMs），失败重试可审计；`pipeline status --verify` JSON 增加
 `staleReason`（input/output missing、hash changed、stamp changed 等）；发布包 SHA `5bfa79ef…5d543`。
@@ -113,5 +117,5 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 ## 下一轮具体行动
 
 1. 全量 gate、打包、AOCI 收尾。
-2. 提交并 push 本轮（含上一轮本地提交）。
-3. 下一轮转向下一个付费候选。
+2. 提交并 push 本轮。
+3. 下一轮转向企业部署包或 benchmark。

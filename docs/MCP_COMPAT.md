@@ -140,6 +140,31 @@ mcp_dsh=ok
 DSH: `csvx_schema` reports 2 rows (id, city); no edits.
 ```
 
+## 6. 客户端配置生成器
+
+```bash
+csvx mcp config --client dsh --root /data
+csvx mcp config --client claude --root /data
+csvx mcp config --client cursor --root /data
+csvx mcp config --client generic --root /data
+```
+
+输出可直接粘贴的 JSON：
+
+- `dsh` / `claude` / `cursor` 使用 `mcpServers.csvx` 形状；
+- `generic` 使用 `name` / `transport` / `command` / `args` / `env` 扁平形状；
+- `command` 默认是当前 `csvx` 可执行文件绝对路径，可用 `--binary` 覆盖；
+- `args` 固定为 `["mcp","--root","<绝对 root>"]`；
+- `env` 为空对象；路径经 JSON 转义。
+
+粘贴位置：
+
+- Claude Desktop：`~/Library/Application Support/Claude/claude_desktop_config.json`
+  （Windows 为 `%APPDATA%\Claude\claude_desktop_config.json`）的 `mcpServers`。
+- Cursor：项目 `.cursor/mcp.json` 或用户 `~/.cursor/mcp.json` 的 `mcpServers`。
+- DSH：DSH profile 的 MCP 客户端配置中 `mcpServers` 段（profile 路径随 DSH 版本）。
+- generic：任意接受 stdio `command`/`args`/`env` 的客户端。
+
 ## 契约
 
 - 23 个工具名与 schema 由 `crates/mcp/src/tools.rs` 冻结；

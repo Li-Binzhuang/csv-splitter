@@ -2839,6 +2839,64 @@ fn pipeline_history_records_runs_and_failures() {
     assert!(String::from_utf8_lossy(&listed.stdout).contains("filtered"));
 }
 
+#[test]
+fn mcp_config_generates_paste_ready_client_json() {
+    let dir = TempDir::new("mcp-config");
+    for client in ["dsh", "claude", "cursor", "generic"] {
+        let out = Command::new(bin())
+            .args([
+                "mcp",
+                "config",
+                "--client",
+                client,
+                "--root",
+                dir.0.to_str().unwrap(),
+                "--binary",
+                bin(),
+            ])
+            .output()
+            .unwrap();
+        assert!(out.status.success(), "{client}: {:?}", out.stderr);
+        let text = String::from_utf8_lossy(&out.stdout);
+        assert!(text.contains(r#""command": "#), "{client}: {text}");
+        assert!(text.contains(dir.0.to_str().unwrap()), "{client}: {text}");
+        assert!(
+            text.contains(r#""args": ["mcp","--root","#),
+            "{client}: {text}"
+        );
+        if client == "generic" {
+            assert!(text.contains(r#""transport": "stdio""#), "{client}: {text}");
+        } else {
+            assert!(text.contains(r#""mcpServers""#), "{client}: {text}");
+        }
+    }
+    let auto = Command::new(bin())
+        .args([
+            "mcp",
+            "config",
+            "--client",
+            "generic",
+            "--root",
+            dir.0.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(auto.status.success(), "{:?}", auto.stderr);
+    assert!(
+        String::from_utf8_lossy(&auto.stdout).contains(bin()),
+        "default binary must be the running executable"
+    );
+
+    let bad = Command::new(bin())
+        .args(["mcp", "config", "--client", "nope"])
+        .output()
+        .unwrap();
+    assert!(!bad.status.success());
+    let error = String::from_utf8_lossy(&bad.stderr);
+    assert!(error.contains("unknown client"), "{error}");
+    assert!(error.contains("dsh, claude, cursor, generic"), "{error}");
+}
+
 /// The pipeline runner chains commands, skips unchanged steps and reruns downstream
 /// when an input changes; a failed step leaves no partial output.
 #[test]

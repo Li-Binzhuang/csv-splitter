@@ -419,7 +419,10 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
     (
         "mcp",
         &[
+            ("config", "Generate paste-ready client config: --client dsh|claude|cursor|generic"),
+            ("--client", "Client to generate for: dsh, claude, cursor or generic"),
             ("--root", "Directory the tools may read (default: cwd)"),
+            ("--binary", "Binary path (default: the running csvx executable)"),
         ],
     ),
     (
@@ -640,6 +643,7 @@ COMMANDS
   cache    <input>              Columnar cache for fast filtered/ordered pages
   serve    --root <dir>          Local HTTP API (JSON) for a web front-end
   mcp      --root <dir>          MCP stdio server (read-only tools) for agents
+  mcp      config --client C     Paste-ready client config (dsh/claude/cursor/generic)
   agent    serve --root <dir>     HTTP Agent API (sessions, actions, audit)
   agent    run --root <dir>       OpenAI-compatible model loop over csvx tools
   convert  <input>               Transcode a CSV to UTF-8 (GBK / UTF-16 input)

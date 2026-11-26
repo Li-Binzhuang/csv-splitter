@@ -1,0 +1,139 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "94026fa0f86ee2762ef33607e5d456705e02b454d2e382eb2d5a38553b122757",
+  "batch_id": "5890e3592217a5d5ca92c7da770d70a6ba494f2452fc2b8005fa36b165ef365a",
+  "composite_identity": "8ffbf4c8e186702cda82b3b2172a0eea80954954ff9f631294680d7522661989",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "92f069d741cbd2aedfce986f54904c165487c31a8a6606b2df0700a988adfdbb",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/cli_support.rs",
+      "path": "crates/cli/src/cli_support.rs",
+      "change": "update",
+      "source_sha256": "1e6e6967a64ca8adaee0ae07ace33eb5446810fb8dbc8fdb7cef65c8291af024",
+      "existing_entry": "cli_support.rs[EN9L]: F:CLI 通用支持：help 表、参数、输出、报表、路径 helper | R:code:crates/cli/src/main.rs,code:crates/cli/src/commands/shared.rs,code:crates/cli/src/commands/pipeline.rs | A:COMMAND_OPTIONS；print_help；Parser；parse_delimiter；print_table；SheetPath；quality 输出 | S:commands 通过 crate 重导出引用；不直接读写业务文件"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/mcp.rs",
+      "path": "crates/cli/src/commands/mcp.rs",
+      "change": "update",
+      "source_sha256": "7e1b276fabfe442be2643ac04fcefb2308cba7fc3a5852e1bd2510b37f66e38c",
+      "existing_entry": "mcp.rs[SD7T]: F:CLI mcp 命令：解析 --root 并启动 MCP | R:code:crates/mcp/src/lib.rs,code:crates/cli/src/commands/mod.rs | A:Parser；--root；help；csvx_mcp::run_mcp_stdio | S:默认 legacy；错误打 stderr；不打印 token"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/mcp_config.rs",
+      "path": "crates/cli/src/commands/mcp_config.rs",
+      "change": "create",
+      "source_sha256": "0eb6cdd831afbedaaf23ed395d36a45cd5ee2934157702dd3ad26dfdfaeebf50"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/mod.rs",
+      "path": "crates/cli/src/commands/mod.rs",
+      "change": "update",
+      "source_sha256": "f95e2507eebbcb2f3ef65103dd0c80aa0c6a8deb26aff8fcbe72387fcdbc20a8",
+      "existing_entry": "mod.rs[SD7T]: F:CLI 命令模块清单 | R:code:crates/cli/src/commands/pipeline.rs,code:crates/cli/src/commands/pipeline_history.rs | A:三十九个命令子模块（含 shared/pipeline_history） | S:新增命令前更新 ENTRYPOINTS 与 check_layout"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "ccc3c6564ac6e9787f24d338c1e1b426cce4118312a745b0b3b25c3e3a692412",
+      "existing_entry": "ENTRYPOINTS.md[SG7S]: F:入口层目录、行数与客户端验证规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:docs/MCP_COMPAT.md | A:pipeline_history；pipeline 2300/history 250；audit 300；SDK/schema gate | S:rmcp 唯一传输；新模块先文档；超限失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "update",
+      "source_sha256": "fb14e578a2d5066b2eab648d7b355cf423e584f178d63ab4a7146cae3ac42312",
+      "existing_entry": "MCP_COMPAT.md[SD7S]: F:官方 SDK、schema、DSH 与审计验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:docs/ENTRYPOINTS.md | A:23 工具；resources=3；审计路径/脱敏/轮转；schema/参数语义；DSH | S:DSH 需 CSVX_DSH_TEST=1；审计仅本地；结果本机实测"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "0052b7417d86d030497fdb72f40e43a0b3b3e3ddba44a0cb8586a3047ac5c829",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round2 重试/staleReason 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "959f46c82fae1eef0cc8482489e571fc52da72c3206c36e5f27c57c0c87d0136",
+      "existing_entry": "check_layout.sh[XQ7S]: F:入口层目录与行数规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根/CLI/MCP 白名单；pipeline 2300；history 250；audit 300 | S:未知模块退出；超行数失败；先改文档再加模块"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "e22c9efed1cc44ee7af752391933b6c51aff58dca47becd058a2afcb4eda4946",
+      "object_ref": "code:crates/cli/src/cli_support.rs",
+      "path": "crates/cli/src/cli_support.rs",
+      "change": "update",
+      "source_sha256": "1e6e6967a64ca8adaee0ae07ace33eb5446810fb8dbc8fdb7cef65c8291af024",
+      "existing_entry": "cli_support.rs[EN9L]: F:CLI 通用支持：help 表、参数、输出、报表、路径 helper | R:code:crates/cli/src/main.rs,code:crates/cli/src/commands/shared.rs,code:crates/cli/src/commands/pipeline.rs | A:COMMAND_OPTIONS；print_help；Parser；parse_delimiter；print_table；SheetPath；quality 输出 | S:commands 通过 crate 重导出引用；不直接读写业务文件"
+    },
+    {
+      "candidate_id": "cf6b03c4d64018b81678fc45579092b02d81271d1bbb55229dd6e962d5e33428",
+      "object_ref": "code:crates/cli/src/commands/mcp.rs",
+      "path": "crates/cli/src/commands/mcp.rs",
+      "change": "update",
+      "source_sha256": "7e1b276fabfe442be2643ac04fcefb2308cba7fc3a5852e1bd2510b37f66e38c",
+      "existing_entry": "mcp.rs[SD7T]: F:CLI mcp 命令：解析 --root 并启动 MCP | R:code:crates/mcp/src/lib.rs,code:crates/cli/src/commands/mod.rs | A:Parser；--root；help；csvx_mcp::run_mcp_stdio | S:默认 legacy；错误打 stderr；不打印 token"
+    },
+    {
+      "candidate_id": "0565f91cc855ce7d7d4d7ae68c93b88214ad504bda2027273a70c9625bb2bab0",
+      "object_ref": "code:crates/cli/src/commands/mcp_config.rs",
+      "path": "crates/cli/src/commands/mcp_config.rs",
+      "change": "create",
+      "source_sha256": "0eb6cdd831afbedaaf23ed395d36a45cd5ee2934157702dd3ad26dfdfaeebf50"
+    },
+    {
+      "candidate_id": "7c1cf1453c964ffd47eda05640ee8f8c06ce55b41e910b6e41956bec2a9c0b92",
+      "object_ref": "code:crates/cli/src/commands/mod.rs",
+      "path": "crates/cli/src/commands/mod.rs",
+      "change": "update",
+      "source_sha256": "f95e2507eebbcb2f3ef65103dd0c80aa0c6a8deb26aff8fcbe72387fcdbc20a8",
+      "existing_entry": "mod.rs[SD7T]: F:CLI 命令模块清单 | R:code:crates/cli/src/commands/pipeline.rs,code:crates/cli/src/commands/pipeline_history.rs | A:三十九个命令子模块（含 shared/pipeline_history） | S:新增命令前更新 ENTRYPOINTS 与 check_layout"
+    },
+    {
+      "candidate_id": "6b9b2c96c17df3cb1ddf26561a336b4fefadd99979946f977cb5cd1fc9ed6197",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "ccc3c6564ac6e9787f24d338c1e1b426cce4118312a745b0b3b25c3e3a692412",
+      "existing_entry": "ENTRYPOINTS.md[SG7S]: F:入口层目录、行数与客户端验证规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:docs/MCP_COMPAT.md | A:pipeline_history；pipeline 2300/history 250；audit 300；SDK/schema gate | S:rmcp 唯一传输；新模块先文档；超限失败"
+    },
+    {
+      "candidate_id": "b0ca5200651b27e00e1e3d12cb6207ba219d4c9c4b8ac12c640d5df87459f236",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "update",
+      "source_sha256": "fb14e578a2d5066b2eab648d7b355cf423e584f178d63ab4a7146cae3ac42312",
+      "existing_entry": "MCP_COMPAT.md[SD7S]: F:官方 SDK、schema、DSH 与审计验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:docs/ENTRYPOINTS.md | A:23 工具；resources=3；审计路径/脱敏/轮转；schema/参数语义；DSH | S:DSH 需 CSVX_DSH_TEST=1；审计仅本地；结果本机实测"
+    },
+    {
+      "candidate_id": "c3ae5d70e0de6518d6bbfdf6378bd4e5af83be6373a70c34c846dde4c85445f2",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "0052b7417d86d030497fdb72f40e43a0b3b3e3ddba44a0cb8586a3047ac5c829",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round2 重试/staleReason 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "ba0200a080471954666618dca83133581f69089b53ab75869f959de8aa1e0aa9",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "959f46c82fae1eef0cc8482489e571fc52da72c3206c36e5f27c57c0c87d0136",
+      "existing_entry": "check_layout.sh[XQ7S]: F:入口层目录与行数规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根/CLI/MCP 白名单；pipeline 2300；history 250；audit 300 | S:未知模块退出；超行数失败；先改文档再加模块"
+    }
+  ]
+}

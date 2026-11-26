@@ -19,6 +19,7 @@ pub(crate) mod index;
 pub(crate) mod layout;
 pub(crate) mod lookup;
 pub(crate) mod mcp;
+pub(crate) mod mcp_config;
 pub(crate) mod merge;
 pub(crate) mod ops;
 pub(crate) mod partition;
