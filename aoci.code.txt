@@ -8,7 +8,7 @@ CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:�
 Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml,code:crates/agent/Cargo.toml,code:crates/cli/Cargo.toml | A:members core/mcp/agent/cli；workspace.dependencies csvx-core；version 4.2.0 是发布真相 | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
 README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md,code:docs/OPERATIONS.md | A:顶部定位与 Rust 徽章；快速开始；公式节；性能实测；命令表含 serve/mcp/ops/gate/report；concat/gate 目录；report CSV spec；PRODUCT_PLAN/销售入口 | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；性能数字必须来自实测
-progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round8 intake 与 SHA | S:每轮更新；定价未决；push 失败不阻塞
+progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round9 kit+intake 与 SHA | S:每轮更新；定价未决；push 失败不阻塞
 
 ===/<repository>/.github/workflows/===
 ci.yml[OV7S]: F:主 CI：格式化、引擎与 CLI 测试、性能守卫、clippy 工作区、失败注解 | R:code:scripts/smoke.sh,code:scripts/regress.sh,code:scripts/backend-smoke.sh,code:scripts/release-decision.sh | A:单 job 串联；engine 与 CLI 两个测试步骤失败时各重试一次并留 warning annotation（本地单跑/两线程均绿的负载型 flake）；每步 tee 日志，失败时把测试名转成公开 annotation 并上传 artifact | S:曾因双 job + 缓存配额出现“跳过一半、红叉无信息”，故单 job；重试只限一次且日志保留，真 bug 仍会两次失败
@@ -134,7 +134,7 @@ QUICKSTART_AGENT.md[SD7T]: F:Agent 一页快速上手：MCP、HTTP、runner、sk
 ENTRYPOINTS.md[SG7S]: F:入口层目录、行数与客户端验证规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:docs/MCP_COMPAT.md | A:pipeline 2300；history 250；mcp_config 120；mcp_audit 200；audit 300 | S:rmcp 唯一传输；新模块先文档；超限失败
 MCP_COMPAT.md[SD7S]: F:官方 SDK、schema、DSH、审计、配置与查询记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:docs/ENTRYPOINTS.md | A:23 工具；resources=3；audit；mcp config；mcp audit 过滤 | S:DSH 需 CSVX_DSH_TEST=1；审计仅本地；查询不写
 SECURITY.md[SS7T]: F:本地部署安全评审材料 | R:code:docs/AGENT_API.md,code:docs/MCP_COMPAT.md,code:scripts/test_install_offline.sh | A:数据边界；401/404；root escape；journal；审计；无遥测；限制 | S:只写实测证据；非认证；无多用户/OS 沙箱/远程签名
-DESIGN_PARTNER.md[SG7T]: F:设计伙伴四周试点与 intake 支持 | R:code:scripts/pilot_kit.sh,code:scripts/pilot_intake.py,code:scripts/pilot_report.py | A:四周表；指标；kickoff；intake 敏感列名/大小检查；非目标 | S:定价/合同人工确认；不落原始行；本地单用户
+DESIGN_PARTNER.md[SG7T]: F:设计伙伴四周试点与 intake 支持 | R:code:scripts/pilot_kit.sh,code:scripts/pilot_intake.py,code:scripts/pilot_report.py | A:四周表；指标；kickoff+intake；敏感列名/大小检查；非目标 | S:定价/合同人工确认；不落原始行；本地单用户
 
 ===/<repository>/scripts/===
 backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换、自引用拒绝与请求上限；BIN 默认取 ./target/debug/csvx | S:脚本默认跑 target/debug 的二进制，改了代码只重建 release 会在这里看到旧行为；裸 wait 会连自己起的 server 一起等，必须收集 PID 逐个等待
@@ -175,8 +175,8 @@ install_offline.sh[OV7S]: F:离线安装发布包到 prefix 并写版本锁 | R:
 test_install_offline.sh[TQ7T]: F:离线安装器正负例脚本 | R:code:scripts/install_offline.sh,code:scripts/dev.sh | A:真实 tar；manifest 字段；坏 SHA 拒绝；版本锁拒绝 | S:不联网；gate 必跑；失败非零
 bench_100gb.py[TP7M]: F:流式生成 CSV 并测 schema/filter/search/quality | R:code:scripts/test_bench_100gb.sh,code:docs/BENCHMARKS.md | A:--gb/--rows/--out/--binary；schema --json；JSON+MD | S:不默认真跑 100GB；RSS 依赖 /usr/bin/time；结果本机实测
 test_bench_100gb.sh[TP7T]: F:benchmark harness smoke 脚本 | R:code:scripts/bench_100gb.py,code:scripts/dev.sh | A:1000 行；JSON/MD；四命令；坏 binary 拒绝 | S:gate 必跑；不生成大文件；失败非零
-pilot_kit.sh[OG7T]: F:生成脱敏 demo + pilot report + kickoff | R:code:scripts/pilot_report.py,code:docs/DESIGN_PARTNER.md | A:csvx demo；report；kickoff.json/md；checklist | S:无网络；拒绝覆盖已有目录；合成数据非客户数据
-test_pilot_kit.sh[TQ7T]: F:设计伙伴 kit smoke 与拒绝路径 | R:code:scripts/pilot_kit.sh,code:scripts/dev.sh | A:产物四件；JSON 字段；report 内容；重复目录拒绝 | S:gate 必跑；不联网；失败非零
+pilot_kit.sh[OG7T]: F:生成 demo、pilot report、intake 与 kickoff | R:code:scripts/pilot_report.py,code:scripts/pilot_intake.py,code:docs/DESIGN_PARTNER.md | A:csvx demo；report；intake；kickoff.json/md；checklist | S:无网络；拒绝覆盖；合成数据非客户数据
+test_pilot_kit.sh[TQ7T]: F:设计伙伴 kit smoke 与拒绝路径 | R:code:scripts/pilot_kit.sh,code:scripts/dev.sh | A:六件产物含 intake；JSON 字段；report 内容；重复目录拒绝 | S:gate 必跑；不联网；失败非零
 pilot_intake.py[OG7T]: F:伙伴样本 intake 校验与脱敏报告 | R:code:docs/DESIGN_PARTNER.md,code:scripts/pilot_kit.sh | A:size/limit；header；敏感列名 email/phone/ssn/name/address；intake.json/md | S:只读 header；不落原始行；超限退出 1；无网络
 test_pilot_intake.sh[TQ7T]: F:伙伴 intake smoke 与大小/缺失负例 | R:code:scripts/pilot_intake.py,code:scripts/dev.sh | A:敏感列名；无原始值；超限 1；缺失 2 | S:gate 必跑；不联网；失败非零
 

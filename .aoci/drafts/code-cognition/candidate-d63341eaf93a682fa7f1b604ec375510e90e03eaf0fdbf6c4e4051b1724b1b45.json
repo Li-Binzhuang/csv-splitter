@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "31d58924d85bf602556026eaf6c783a4c266933dcdde64880e722f7014b095fd",
+  "batch_id": "d63341eaf93a682fa7f1b604ec375510e90e03eaf0fdbf6c4e4051b1724b1b45",
+  "composite_identity": "59571811d610db7d4553414016dbf93e1ee02b5732f355cf7a4a9ec6739a0f0b",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "5526d58b7f0f83c52eecf6202a8f6995c58bef894bac6cb25d2dda17f5c73198",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DESIGN_PARTNER.md",
+      "path": "docs/DESIGN_PARTNER.md",
+      "change": "update",
+      "source_sha256": "98bdbfbb20b89277f69af3516faf651bb9f0e582489a83eabd4dd8d232a485a9",
+      "existing_entry": "DESIGN_PARTNER.md[SG7T]: F:设计伙伴四周试点与 intake 支持 | R:code:scripts/pilot_kit.sh,code:scripts/pilot_intake.py,code:scripts/pilot_report.py | A:四周表；指标；kickoff；intake 敏感列名/大小检查；非目标 | S:定价/合同人工确认；不落原始行；本地单用户"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "4990cbec16e4c22b6e0e5540fd6e21edb890525871f10078cdc9ce8fa866da3b",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round8 intake 与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/pilot_kit.sh",
+      "path": "scripts/pilot_kit.sh",
+      "change": "update",
+      "source_sha256": "52d721491fb2e2cab285f65e6367040d836a69ec2a25f3171f89b613a57f4d62",
+      "existing_entry": "pilot_kit.sh[OG7T]: F:生成脱敏 demo + pilot report + kickoff | R:code:scripts/pilot_report.py,code:docs/DESIGN_PARTNER.md | A:csvx demo；report；kickoff.json/md；checklist | S:无网络；拒绝覆盖已有目录；合成数据非客户数据"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_pilot_kit.sh",
+      "path": "scripts/test_pilot_kit.sh",
+      "change": "update",
+      "source_sha256": "13d69bb4ab142162b3ffa215136457b2ea8aaaf59ee317ee17f51682d5c70814",
+      "existing_entry": "test_pilot_kit.sh[TQ7T]: F:设计伙伴 kit smoke 与拒绝路径 | R:code:scripts/pilot_kit.sh,code:scripts/dev.sh | A:产物四件；JSON 字段；report 内容；重复目录拒绝 | S:gate 必跑；不联网；失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "b4447e66722a084fbcbe13cc106cb50411611c873a1be19c263bcec0af1a5c61",
+      "object_ref": "code:docs/DESIGN_PARTNER.md",
+      "path": "docs/DESIGN_PARTNER.md",
+      "change": "update",
+      "source_sha256": "98bdbfbb20b89277f69af3516faf651bb9f0e582489a83eabd4dd8d232a485a9",
+      "existing_entry": "DESIGN_PARTNER.md[SG7T]: F:设计伙伴四周试点与 intake 支持 | R:code:scripts/pilot_kit.sh,code:scripts/pilot_intake.py,code:scripts/pilot_report.py | A:四周表；指标；kickoff；intake 敏感列名/大小检查；非目标 | S:定价/合同人工确认；不落原始行；本地单用户"
+    },
+    {
+      "candidate_id": "7b4045e7c01e3e395302442096b8ee061a38377ecf24291d74e417973f878696",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "4990cbec16e4c22b6e0e5540fd6e21edb890525871f10078cdc9ce8fa866da3b",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round8 intake 与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "33442faf18e5dff66457335d23137d73301fe409bf2902a5476bef1626535a4d",
+      "object_ref": "code:scripts/pilot_kit.sh",
+      "path": "scripts/pilot_kit.sh",
+      "change": "update",
+      "source_sha256": "52d721491fb2e2cab285f65e6367040d836a69ec2a25f3171f89b613a57f4d62",
+      "existing_entry": "pilot_kit.sh[OG7T]: F:生成脱敏 demo + pilot report + kickoff | R:code:scripts/pilot_report.py,code:docs/DESIGN_PARTNER.md | A:csvx demo；report；kickoff.json/md；checklist | S:无网络；拒绝覆盖已有目录；合成数据非客户数据"
+    },
+    {
+      "candidate_id": "00d2dfddd3d636a4b806cf7eb30a6ab72b71f9e20c90f38e52a4fa34b8ca626d",
+      "object_ref": "code:scripts/test_pilot_kit.sh",
+      "path": "scripts/test_pilot_kit.sh",
+      "change": "update",
+      "source_sha256": "13d69bb4ab142162b3ffa215136457b2ea8aaaf59ee317ee17f51682d5c70814",
+      "existing_entry": "test_pilot_kit.sh[TQ7T]: F:设计伙伴 kit smoke 与拒绝路径 | R:code:scripts/pilot_kit.sh,code:scripts/dev.sh | A:产物四件；JSON 字段；report 内容；重复目录拒绝 | S:gate 必跑；不联网；失败非零"
+    }
+  ]
+}

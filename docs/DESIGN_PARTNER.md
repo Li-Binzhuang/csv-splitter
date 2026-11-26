@@ -52,6 +52,7 @@ bash scripts/pilot_kit.sh   # 一键生成 demo + report + kickoff
 
 - `demo/orders.csv`
 - `pilot-report.md`
+- `intake/intake.json` + `intake/intake.md`
 - `kickoff.json`
 - `kickoff.md`
 

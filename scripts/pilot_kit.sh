@@ -19,6 +19,7 @@ python3 scripts/pilot_report.py \
   --key id \
   --group city \
   --out "$OUT/pilot-report.md" >/dev/null
+python3 scripts/pilot_intake.py --sample "$SAMPLE" --out "$OUT/intake" --max-gb 1 >/dev/null
 VERSION="$("$BIN" --version)"
 python3 - "$OUT" "$VERSION" "$SAMPLE" <<'PY'
 import datetime
@@ -31,6 +32,7 @@ kickoff = {
     "binaryVersion": sys.argv[2],
     "sample": str(pathlib.Path(sys.argv[3]).resolve()),
     "report": str((out / "pilot-report.md").resolve()),
+    "intake": str((out / "intake/intake.json").resolve()),
     "checklist": [
         {"id": "scope", "status": "partner", "item": "one concrete question and acceptance metric"},
         {"id": "sample", "status": "partner", "item": "de-identified 1-20 GB slice or 1 GB first"},
@@ -48,6 +50,7 @@ md = [
     f"- binary: `{kickoff['binaryVersion']}`",
     f"- sample: `{kickoff['sample']}`",
     f"- report: `{kickoff['report']}`",
+    f"- intake: `{kickoff['intake']}`",
     "",
     "## Checklist",
     "",

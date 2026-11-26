@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 9（试点 kit 整合）：`pilot_kit.sh` 现在同时生成 `intake/intake.json/md`，
+kickoff JSON/MD 引用 intake；smoke 覆盖六件产物；发布包 SHA `176b6660…45d75`。
+
 Round 8（设计伙伴 intake）：新增 `scripts/pilot_intake.py`，只读 header/大小并检测
 可疑敏感列名，输出 intake JSON/MD，不落原始行；smoke 纳入 gate；发布包 SHA `0e8b7002…d310f`。
 
