@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "418e11ebe3d242a52460a9f344d966615dc74fb873ad1e51fde4b5241e4ac460",
+  "batch_id": "71c88fdf303b3b0b16e168e878e2af1d9b80272576bce3d4d568459b488eeefd",
+  "composite_identity": "375c7dbdcf2bee32bb2c2da1a0312fbfa8a18fdaa61330d568eb9008552bc9b6",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "46c1689bcaff5058c7c46f766f75371f31c0650425913398f332cae8d3c9edda",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "f48786375b14b5cd1d4d0ed4ba8b3d197206148be85bb5d11988a4b19be837fd",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现基准、1GB/100GB 实测与回归比较 | R:code:scripts/bench_100gb.py,code:scripts/bench_compare.py | A:Apple M5/16GiB；100GB 568.46s；1GB 5.73s；同数据集/20% 阈值 | S:未 drop cache；quality 约 80%；他机重跑；smoke≠100GB"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "7be280df41f763e9da35affcf5790974555837e049c4c1639ef68a2f61c1fc73",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round45 数据集/总量与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/bench_compare.py",
+      "path": "scripts/bench_compare.py",
+      "change": "update",
+      "source_sha256": "5562dd3ae4a2fa734ef2d1b69e5364fb33820f4ebfb023acd7124d751738f5aa",
+      "existing_entry": "bench_compare.py[TP7T]: F:比较两份 benchmark summary 的回归 | R:code:scripts/bench_100gb.py,code:docs/BENCHMARKS.md | A:逐命令/total 阈值；dataset bytes/rows 一致性；missing/added | S:不联网；异数据集/缺 elapsed 失败；非 SLA"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_bench_compare.sh",
+      "path": "scripts/test_bench_compare.sh",
+      "change": "update",
+      "source_sha256": "8b0e464934c55b168d9ce3d600aec828c251780af1791fbe2f0c8cecaa4aaa0a",
+      "existing_entry": "test_bench_compare.sh[TQ7T]: F:benchmark 比较 smoke | R:code:scripts/bench_compare.py,code:scripts/dev.sh | A:4%通过；30%回归；total 40%拒绝；dataset mismatch | S:gate 必跑；不联网；失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "d5a746a44ebdaddca3b2acca7195658d134aee191f2308bb6f546d171a16fdf3",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "f48786375b14b5cd1d4d0ed4ba8b3d197206148be85bb5d11988a4b19be837fd",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现基准、1GB/100GB 实测与回归比较 | R:code:scripts/bench_100gb.py,code:scripts/bench_compare.py | A:Apple M5/16GiB；100GB 568.46s；1GB 5.73s；同数据集/20% 阈值 | S:未 drop cache；quality 约 80%；他机重跑；smoke≠100GB"
+    },
+    {
+      "candidate_id": "d2a90f7aa85b82c8c5b73f2d28298ad7cf44adeb610af98a41d095cf10c30554",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "7be280df41f763e9da35affcf5790974555837e049c4c1639ef68a2f61c1fc73",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round45 数据集/总量与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "1e91bc36a54ba116be091966503aeee31e785620f308d8ebb7d7d578d5284e5c",
+      "object_ref": "code:scripts/bench_compare.py",
+      "path": "scripts/bench_compare.py",
+      "change": "update",
+      "source_sha256": "5562dd3ae4a2fa734ef2d1b69e5364fb33820f4ebfb023acd7124d751738f5aa",
+      "existing_entry": "bench_compare.py[TP7T]: F:比较两份 benchmark summary 的回归 | R:code:scripts/bench_100gb.py,code:docs/BENCHMARKS.md | A:逐命令/total 阈值；dataset bytes/rows 一致性；missing/added | S:不联网；异数据集/缺 elapsed 失败；非 SLA"
+    },
+    {
+      "candidate_id": "65b2a5e32a7f1d476e372101ece2459fb69b7d2e8607a55b3b9834fb102fea6e",
+      "object_ref": "code:scripts/test_bench_compare.sh",
+      "path": "scripts/test_bench_compare.sh",
+      "change": "update",
+      "source_sha256": "8b0e464934c55b168d9ce3d600aec828c251780af1791fbe2f0c8cecaa4aaa0a",
+      "existing_entry": "test_bench_compare.sh[TQ7T]: F:benchmark 比较 smoke | R:code:scripts/bench_compare.py,code:scripts/dev.sh | A:4%通过；30%回归；total 40%拒绝；dataset mismatch | S:gate 必跑；不联网；失败非零"
+    }
+  ]
+}

@@ -31,6 +31,7 @@ def main():
     cand = {item["name"]: item for item in candidate["commands"]}
     missing = sorted(set(base) - set(cand))
     added = sorted(set(cand) - set(base))
+    failed = [{"name": name, "exit": cand[name].get("exit")} for name in cand if cand[name].get("exit") not in (0, None)]
     regressions = []
     for name in sorted(set(base) & set(cand)):
         before = base[name].get("elapsedMs")
@@ -51,7 +52,7 @@ def main():
             if key in base_dataset and key in cand_dataset and base_dataset[key] != cand_dataset[key]:
                 dataset_mismatch.append({"key": key, "baseline": base_dataset[key], "candidate": cand_dataset[key]})
     result = {
-        "ok": not missing and not regressions and not total_regression and not dataset_mismatch,
+        "ok": not missing and not regressions and not total_regression and not dataset_mismatch and not failed,
         "baseline": args.baseline,
         "candidate": args.candidate,
         "maxRegressionPercent": args.max_regression_percent,
@@ -60,6 +61,7 @@ def main():
         "missingCommands": missing,
         "addedCommands": added,
         "datasetMismatch": dataset_mismatch,
+        "failedCommands": failed,
         "regressions": regressions,
     }
     if args.json:

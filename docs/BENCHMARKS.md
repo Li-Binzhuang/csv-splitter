@@ -21,7 +21,7 @@ analyze --quality --json
 和脱敏的 `<out>.summary.json`（不含原始路径/行值）。smoke 会对同一行数生成两次并
 逐字节比较，验证数据确定性。`scripts/bench_compare.py` 可比较两份 summary 的
 逐命令耗时与总量，默认 20% 阈值；超阈值或缺命令时非零退出。两份 summary 的数据集 bytes/rows
-必须一致，否则拒绝比较。
+必须一致，否则拒绝比较；命令 exit 非 0 也拒绝。
 
 100 GB 实际运行（2026-11-26，release 二进制，生成确定性数据）：
 

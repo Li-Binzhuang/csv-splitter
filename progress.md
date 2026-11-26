@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 46（失败命令门）：bench_compare 拒绝 exit 非 0 的命令，smoke 增加
+failed_command 负例；发布包 SHA `176fe361…fd236`。
+
 Round 45（数据集一致性）：bench_compare 拒绝 bytes/rows 不同的两份 summary；
 smoke 修正 total 用例并增加 dataset mismatch 负例；发布包 SHA `bd3433ad…26c4b`。
 
