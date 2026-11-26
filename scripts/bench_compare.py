@@ -43,8 +43,15 @@ def main():
 
     total_pct = (candidate["totalMs"] - baseline["totalMs"]) / baseline["totalMs"] * 100.0
     total_regression = total_pct > args.max_regression_percent
+    dataset_mismatch = []
+    base_dataset = baseline.get("dataset")
+    cand_dataset = candidate.get("dataset")
+    if isinstance(base_dataset, dict) and isinstance(cand_dataset, dict):
+        for key in ("bytes", "rows"):
+            if key in base_dataset and key in cand_dataset and base_dataset[key] != cand_dataset[key]:
+                dataset_mismatch.append({"key": key, "baseline": base_dataset[key], "candidate": cand_dataset[key]})
     result = {
-        "ok": not missing and not regressions and not total_regression,
+        "ok": not missing and not regressions and not total_regression and not dataset_mismatch,
         "baseline": args.baseline,
         "candidate": args.candidate,
         "maxRegressionPercent": args.max_regression_percent,
@@ -52,6 +59,7 @@ def main():
         "totalRegression": total_regression,
         "missingCommands": missing,
         "addedCommands": added,
+        "datasetMismatch": dataset_mismatch,
         "regressions": regressions,
     }
     if args.json:

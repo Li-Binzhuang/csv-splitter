@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 45（数据集一致性）：bench_compare 拒绝 bytes/rows 不同的两份 summary；
+smoke 修正 total 用例并增加 dataset mismatch 负例；发布包 SHA `bd3433ad…26c4b`。
+
 Round 44（总量回归门）：bench_compare 除逐命令外也拒绝 totalMs 超阈值，
 smoke 增加 total 40% 增长拒绝；发布包 SHA `af877f83…38858`。
 
