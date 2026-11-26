@@ -29,7 +29,7 @@
 
 | 能力 | 实现 | 证据 |
 |---|---|---|
-| xlsx 导入/导出 | `read_xlsx_to_csv` 已支持共享字符串、日期样式、sheet 选择与缓存公式值；导出已实现 | `crates/core/src/xlsx.rs` 与 xlsx 测试 |
+| xlsx 导入/导出 | `read_xlsx_to_csv` 已支持共享字符串、日期样式、sheet 选择与缓存公式值；无缓存公式值/坏共享字符串索引会报错；合并单元格只保留存储的左上值；导出已实现 | `crates/core/src/xlsx.rs` 与 xlsx 测试 |
 | 多操作事务块 | `set-many` 与 `POST /edit?action=transaction` 先校验、一次 journal 写入；失败一条不写；`undo`/`redo` 整批撤回/恢复 | CLI 与 HTTP 事务测试 |
 | 公式窗口缓存 | 同一 journal 版本重复读命中；编辑/undo/redo、base 或引用表变化立即失效 | `window_history_tests`/`window_cache_tests`，命中实测 0.051 ms |
 

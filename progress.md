@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 50（xlsx 导入保真审计）：补共享字符串/cached formula/合并单元格测试；
+无缓存公式值、越界共享字符串改为可诊断错误；文档写明不展开合并单元格；
+发布包 SHA `fb7bdcc5…97e482`。
+
 Round 49（Excel 公式缓存验收）：确认 `window()` 已有按 journal ops/base/引用表
 缓存；补引用表失效与 Sheet 编辑/undo 失效单测；命中实测 0.051 ms（100 次最差，debug）；BEYOND_EXCEL 移除非真实缺口
 xlsx/事务块/缓存；发布包 SHA `75996c19…2e711b`。

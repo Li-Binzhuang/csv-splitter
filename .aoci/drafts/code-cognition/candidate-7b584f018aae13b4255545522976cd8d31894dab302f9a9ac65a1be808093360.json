@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "1dcb6b20f5ba7526bc276100160aada4a39e882e86750539c65d57e3000f550e",
+  "batch_id": "7b584f018aae13b4255545522976cd8d31894dab302f9a9ac65a1be808093360",
+  "composite_identity": "512e186c4da71298989b54769d08b48ab92214c73816980e4bbb2605f145ae50",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "7ec1ff562fdfe52c6a15898464d7b5829e87d733695f22dceb0f6c01591f3076",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "443c8062eef60b810d1c1b25979ea196bde9c16c2a9c230882a7789c48564cfa",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs,code:crates/core/src/types.rs,code:crates/core/src/engine.rs | A:ZIP 写 ContentTypes/rels/workbook/styles/worksheet；流式单 sheet + 内存多 sheet；表头冻结/列宽；严格 ISO 日期 numFmtId=14；cellIs 条件格式 + dxf；读 sharedStrings/inlineStr/缓存值/布尔/数值/日期样式 | S:不写公式/图表；前导零文本；日期仅内置样式 14-22/45-47；条件格式只支持 cellIs；多 sheet rels 必须匹配"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "e2878b44b14ca40e2eea1ee664ef936322cc2e47893805f40f2eac5733281494",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证与真实缺口 | R:code:docs/CAPABILITIES.md,code:crates/core/src/workbook/export.rs | A:已实测优势；真实缺口 1 聚合区间/2 跨表随机/3 前端；已实现 xlsx、事务块、公式窗口缓存 0.051ms | S:任何超越必须可测量、有测试、不撒谎；只写形容词或演示不算证据"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "9dbfde82f0636ee90f36fb9e02afcc4594cfaba17bfc31516e2c383f386e45a1",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round49 公式缓存验收与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "12c30e61b60dd343ec462707d781949a9773232dd71887a4af91b41879d7515e",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "443c8062eef60b810d1c1b25979ea196bde9c16c2a9c230882a7789c48564cfa",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs,code:crates/core/src/types.rs,code:crates/core/src/engine.rs | A:ZIP 写 ContentTypes/rels/workbook/styles/worksheet；流式单 sheet + 内存多 sheet；表头冻结/列宽；严格 ISO 日期 numFmtId=14；cellIs 条件格式 + dxf；读 sharedStrings/inlineStr/缓存值/布尔/数值/日期样式 | S:不写公式/图表；前导零文本；日期仅内置样式 14-22/45-47；条件格式只支持 cellIs；多 sheet rels 必须匹配"
+    },
+    {
+      "candidate_id": "6c2f74c42c5531799ad28d81814d57f6bddd47f1ec07cdf5c623175ad3db9f07",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "e2878b44b14ca40e2eea1ee664ef936322cc2e47893805f40f2eac5733281494",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证与真实缺口 | R:code:docs/CAPABILITIES.md,code:crates/core/src/workbook/export.rs | A:已实测优势；真实缺口 1 聚合区间/2 跨表随机/3 前端；已实现 xlsx、事务块、公式窗口缓存 0.051ms | S:任何超越必须可测量、有测试、不撒谎；只写形容词或演示不算证据"
+    },
+    {
+      "candidate_id": "c6c6f2e675250c617a5155b40adc7a44880826be4e52157156d3d0225bffb890",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "9dbfde82f0636ee90f36fb9e02afcc4594cfaba17bfc31516e2c383f386e45a1",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round49 公式缓存验收与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

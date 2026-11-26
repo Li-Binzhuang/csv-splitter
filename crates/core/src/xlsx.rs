@@ -681,8 +681,10 @@ fn sheet_columns_xml(headers: &[String], rows: &[Vec<String>]) -> String {
 ///
 /// The reader understands a small, common subset: shared strings, inline
 /// strings, cached formula values, booleans, numbers and built-in date styles
-/// (serials are rendered as `YYYY-MM-DD`). Merged cells, charts and comments
-/// are ignored.
+/// (serials are rendered as `YYYY-MM-DD`). Merged cells are not expanded: only
+/// the stored top-left value is emitted. A formula cell with no cached value is
+/// an error rather than an invented empty cell, and shared-string indices are
+/// validated. Charts and comments are ignored.
 pub fn read_xlsx_to_csv(input: &Path, output: &Path, sheet: Option<&str>) -> std::io::Result<()> {
     let file = std::fs::File::open(input)?;
     let mut archive = zip::ZipArchive::new(file).map_err(|e| {
@@ -882,6 +884,12 @@ fn cell_value(
     shared: &[String],
     date_styles: &[bool],
 ) -> std::io::Result<String> {
+    let reference = attr(attrs, "r").unwrap_or_default();
+    if body.contains("<f") && !body.contains("<v") {
+        return Err(invalid(&format!(
+            "formula cell {reference} has no cached value; open it in Excel once or export values first"
+        )));
+    }
     let kind = attr(attrs, "t").unwrap_or_default();
     match kind.as_str() {
         "inlineStr" => {
@@ -901,8 +909,13 @@ fn cell_value(
             let index = v_re
                 .captures(body)
                 .and_then(|m| m[1].trim().parse::<usize>().ok())
-                .unwrap_or(usize::MAX);
-            Ok(shared.get(index).cloned().unwrap_or_default())
+                .ok_or_else(|| invalid(&format!("shared string cell {reference} has no index")))?;
+            match shared.get(index) {
+                Some(value) => Ok(value.clone()),
+                None => Err(invalid(&format!(
+                    "shared string cell {reference} points at missing index {index}"
+                ))),
+            }
         }
         "str" => {
             let v_re = Regex::new(r#"(?s)<v>(.*?)</v>"#).unwrap();
@@ -1172,6 +1185,48 @@ mod tests {
         assert!(workbook.contains("Summary"), "{workbook}");
         assert!(workbook.contains("Data"), "{workbook}");
         std::fs::remove_file(output).ok();
+    }
+
+    #[test]
+    fn reads_shared_strings_and_cached_formula_values() {
+        let shared = vec!["name".to_string(), "Ada".to_string()];
+        let xml = r#"<sheetData>
+            <row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c><c r="C1"><v>2</v></c></row>
+        </sheetData>"#;
+        let rows = sheet_rows(xml, &shared, &[]).unwrap();
+        assert_eq!(rows[0].1, vec!["name", "Ada", "2"]);
+    }
+
+    #[test]
+    fn formula_without_a_cached_value_is_an_error() {
+        let xml = r#"<sheetData>
+            <row r="1"><c r="A1"><f>SUM(B1:B2)</f></c></row>
+        </sheetData>"#;
+        let error = sheet_rows(xml, &[], &[]).unwrap_err().to_string();
+        assert!(
+            error.contains("formula cell A1 has no cached value"),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn a_missing_shared_string_index_is_an_error_not_an_empty_cell() {
+        let xml = r#"<sheetData>
+            <row r="1"><c r="A1" t="s"><v>99</v></c></row>
+        </sheetData>"#;
+        let error = sheet_rows(xml, &[], &[]).unwrap_err().to_string();
+        assert!(error.contains("points at missing index 99"), "{error}");
+    }
+
+    #[test]
+    fn merged_cells_keep_the_stored_top_left_value_without_inventing_others() {
+        let xml = r#"<sheetData>
+            <row r="1"><c r="A1" t="inlineStr"><is><t>merged</t></is></c></row>
+            <row r="2"><c r="A2"><v>1</v></c></row>
+        </sheetData>
+        <mergeCells count="1"><mergeCell ref="A1:B1"/></mergeCells>"#;
+        let rows = sheet_rows(xml, &[], &[]).unwrap();
+        assert_eq!(rows[0].1, vec!["merged"], "only A1 has a stored value");
     }
 
     #[test]
