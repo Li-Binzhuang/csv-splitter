@@ -37,10 +37,12 @@
   CLI 测试 `convert_xlsx_can_apply_per_column_number_formats`。
 - [ ] 项9 xlsx 导入 numFmt → ColumnMeta 格式保真（日期之外的小数/百分比/货币）。
 - [ ] 项15 xlsx 导入科学/会计/@ numFmt → ColumnMeta 格式。
+- [ ] 项16 公式第四批：YEARFRAC/ISOWEEKNUM/TIME。
 - [x] 项10 数字格式诊断：重复列/非法码报错，`--number-format` 与 `--highlight`
   同用；CLI 测试 `number_format_rejects_repeated_columns_and_bad_codes`、
   `number_format_and_highlight_can_be_combined`。
-- [ ] 项11 公式第三批：TIMEVALUE/NOW/TODAY/DATEDIF。
+- [x] 项11 公式第三批：TIMEVALUE/NOW/TODAY/DATEDIF；测试
+  `timevalue_datedif_and_clock_cells_work`。
 - [x] 项14 `--number-format` 日期时间格式导出；CLI 测试
   `number_format_exports_a_date_time_code`；修复列名/时间冒号拆分。
 - [x] 项12 `TEXT()` 覆盖 Scientific/Accounting/@；公式测试扩展通过。
@@ -49,6 +51,8 @@
   `positive;(negative)` 被误拆列的问题。
 
 ## 当前进度
+
+Round 115（项11 公式第三批）：TIMEVALUE/NOW/TODAY/DATEDIF；测试、全量 gate/package 通过；发布包 SHA `4fc016b6…d714a`。
 
 Round 114（项14 日期时间导出）：CLI 日期时间格式测试；修复 `column:format` 按
 首个冒号拆分；全量 gate/package 通过；发布包 SHA `e9d3aeaf…f02ed`。

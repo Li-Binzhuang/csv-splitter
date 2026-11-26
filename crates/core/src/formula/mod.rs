@@ -1432,6 +1432,32 @@ mod tests {
     }
 
     #[test]
+    fn timevalue_datedif_and_clock_cells_work() {
+        assert_eq!(eval_str(r#"timevalue("13:04:05")"#, &[]), "0.544502");
+        assert_eq!(
+            eval_str(r#"datedif("2020-01-01", "2024-01-01", "Y")"#, &[]),
+            "4"
+        );
+        assert_eq!(
+            eval_str(r#"datedif("2020-01-01", "2024-01-01", "M")"#, &[]),
+            "48"
+        );
+        assert_eq!(
+            eval_str(r#"datedif("2020-01-01", "2024-01-01", "D")"#, &[]),
+            "1461"
+        );
+        assert_eq!(
+            eval_str(r#"datedif("2024-01-02", "2024-01-01", "D")"#, &[]),
+            "#VALUE!"
+        );
+        let today = eval_str("today()", &[]);
+        assert_eq!(today.len(), 10, "{today}");
+        let now = eval_str("now()", &[]);
+        assert_eq!(now.len(), 19, "{now}");
+        assert!(now.contains(' '), "{now}");
+    }
+
+    #[test]
     fn text_and_time_helpers_match_spreadsheet_expectations() {
         assert_eq!(eval_str(r##"text(1234.5, "#,##0.00")"##, &[]), "1,234.50");
         assert_eq!(eval_str(r#"text(0.123, "0.0%")"#, &[]), "12.3%");

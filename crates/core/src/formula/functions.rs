@@ -754,6 +754,33 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             },
             None => Value::Error,
         },
+        "timevalue" => match args.first().map(|a| eval(a, ctx)) {
+            Some(v) => match time_fraction(&v.text()) {
+                Some(fraction) => Value::Number(fraction),
+                None => Value::Error,
+            },
+            None => Value::Error,
+        },
+        // Volatile cells: the clock is read once per evaluation. The CSV export
+        // never persists them, so a rerun is expected to differ from yesterday.
+        "today" => Value::Text(now_parts().0),
+        "now" => Value::Text(format!("{} {}", now_parts().0, now_parts().1)),
+        "datedif" => match (args.first(), args.get(1), args.get(2)) {
+            (Some(start), Some(end), Some(unit)) => {
+                let (Some(start), Some(end)) = (
+                    parse_date(&eval(start, ctx).text()),
+                    parse_date(&eval(end, ctx).text()),
+                ) else {
+                    return Value::Error;
+                };
+                let unit = eval(unit, ctx).text().to_ascii_uppercase();
+                match date_difference(start, end, &unit) {
+                    Some(value) => Value::Number(value as f64),
+                    None => Value::Error,
+                }
+            }
+            _ => Value::Error,
+        },
 
         // ---- text ----------------------------------------------------------
         "len" => match args.first().map(|a| eval(a, ctx)) {
@@ -1251,6 +1278,60 @@ fn text_slice(args: &[Expr], ctx: &Ctx<'_>, take: impl Fn(&str, usize) -> String
         .unwrap_or(1.0)
         .max(0.0) as usize;
     Value::Text(take(&text, count))
+}
+
+fn time_fraction(text: &str) -> Option<f64> {
+    let trimmed = text.trim();
+    if let Some((hour, minute, second)) = parse_clock(trimmed) {
+        return Some((hour * 3_600 + minute * 60 + second) as f64 / 86_400.0);
+    }
+    let fraction = trimmed.parse::<f64>().ok()?;
+    (0.0..1.0).contains(&fraction).then_some(fraction)
+}
+
+fn now_parts() -> (String, String) {
+    let seconds = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_secs() as i64)
+        .unwrap_or(0);
+    let days = seconds.div_euclid(86_400);
+    let (year, month, day) = civil_from_days(days);
+    let clock = seconds.rem_euclid(86_400);
+    (
+        format!("{year:04}-{month:02}-{day:02}"),
+        format!(
+            "{:02}:{:02}:{:02}",
+            clock / 3_600,
+            (clock / 60) % 60,
+            clock % 60
+        ),
+    )
+}
+
+fn date_difference(start: (i32, u32, u32), end: (i32, u32, u32), unit: &str) -> Option<i64> {
+    if end < start {
+        return None;
+    }
+    match unit {
+        "D" => {
+            Some(days_from_civil(end.0, end.1, end.2) - days_from_civil(start.0, start.1, start.2))
+        }
+        "Y" => {
+            let mut years = end.0 - start.0;
+            if (end.1, end.2) < (start.1, start.2) {
+                years -= 1;
+            }
+            Some(years as i64)
+        }
+        "M" => {
+            let mut months = (end.0 - start.0) as i64 * 12 + end.1 as i64 - start.1 as i64;
+            if end.2 < start.2 {
+                months -= 1;
+            }
+            Some(months)
+        }
+        _ => None,
+    }
 }
 
 fn text_around(args: &[Expr], ctx: &Ctx<'_>, before: bool) -> Value {

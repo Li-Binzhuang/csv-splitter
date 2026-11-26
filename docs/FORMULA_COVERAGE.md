@@ -41,9 +41,10 @@
 | DATESTRING / DATEKEY | 支持 | 截取 ISO 前缀 |
 | DATEVALUE | 支持（新增） | ISO 日期 → Excel 1900 序列号（45292） |
 | HOUR / MINUTE / SECOND | 支持（新增） | ISO 日期时间、纯时间、0–1 天小数 |
-| TIMEVALUE | 缺失 | 时间文本 → 0–1 天小数 |
-| NOW / TODAY | 缺失 | 需要注入时钟，保证可测试与可复现 |
-| DATEDIF / YEARFRAC | 缺失 | 日期差与年分数 |
+| TIMEVALUE | 支持（新增） | 时间文本 → 0–1 天小数 |
+| NOW / TODAY | 支持（易变） | 读系统 UTC 时钟；不落盘，重跑可变 |
+| DATEDIF | 支持（新增） | Y/M/D；end < start 报 #VALUE! |
+| YEARFRAC | 缺失 | 年分数 |
 | ISOWEEKNUM / TIME | 缺失 | ISO 周与时间构造 |
 
 明确不做：跨时区/EOMONTH 自定义节假日；当前仓库只把日期当 ISO 前缀文本。
@@ -98,7 +99,8 @@
 
 ## 本轮验收（首批补齐）
 
-第二批新增行级测试 `text_and_time_helpers_match_spreadsheet_expectations`：TEXT 数字/
+第三批新增 `timevalue_datedif_and_clock_cells_work`：TIMEVALUE=0.544502、
+DATEDIF Y/M/D、反向日期报错、TODAY/NOW 形状。第二批测试：TEXT 数字/
 百分比/日期格式、TEXTBEFORE/AFTER 第 N 个分隔符、DATEVALUE=45292、HOUR/MINUTE/
 SECOND 与 0.5 天小数。第一批测试：
 
