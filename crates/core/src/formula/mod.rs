@@ -1508,6 +1508,40 @@ mod tests {
     }
 
     #[test]
+    fn saturday_to_monday_and_zero_day_workdays_work() {
+        assert_eq!(
+            eval_str(r#"networkdays("2024-01-06", "2024-01-08")"#, &[]),
+            "1"
+        );
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [
+            ("a", "2024-01-06"),
+            ("b", ""),
+            ("c", ""),
+            ("d", "2024-01-08"),
+        ] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        let formula = Formula::parse("workday(A2, 0, B2:C2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "2024-01-06"
+        );
+        assert_eq!(
+            eval_str(r#"days360("2024-03-30", "2024-03-31", 1)"#, &[]),
+            "0"
+        );
+    }
+
+    #[test]
     fn friday_to_monday_and_blank_weekend_work() {
         assert_eq!(
             eval_str(r#"networkdays("2024-01-05", "2024-01-08")"#, &[]),
