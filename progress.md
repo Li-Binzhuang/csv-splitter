@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 20：`executor/commands.rs` 360 → 259 行；参数助手与 concat 拆到
+`executor/commands/{args,concat}.rs`；push 一次仍失败（send-pack 断连）；发布包 SHA `7730c4b1…2fba`。
+
 Round 19：`rmcp_server.rs` 319 → 207 行；stdin/stdout 泵与 legacy initialize shim
 拆到 `rmcp_server/transport.rs`（116 行）；发布包 SHA `765848bf…b1d60`。
 
@@ -70,7 +73,7 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 ## 未完成
 
 - 23 工具字段映射、必填、format 枚举、count/limit/jobs/wait/gate 边界已覆盖。
-- `lib.rs` 55 行；`rmcp_server.rs` 207 行；jobs/transport 子模块化。
+- `lib.rs` 55 行；`rmcp_server.rs` 207 行；`commands.rs` 259 行；另有 args/concat 子模块。
 - DSH 可选回归脚本已实跑通过；MCP resources/initialize 已验证。
 - 商业化/产品化未开始。
 
@@ -83,4 +86,4 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 1. 跑 SDK 与全量 gate。
 2. AOCI 收尾并提交。
-3. push 本轮提交一次。
+3. 下一轮重试 push。
