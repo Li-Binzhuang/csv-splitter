@@ -871,6 +871,27 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             Some(arg) => Value::Bool(!truthy(&eval(arg, ctx))),
             None => Value::Error,
         },
+        // ERROR.TYPE maps each error code to Excel's 1–7 numbering. Internal
+        // `Value::Error` has no further subtype, so it reports #VALUE! (3).
+        "error.type" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            match eval(&args[0], ctx) {
+                Value::Error => Value::Number(3.0),
+                Value::Text(text) => match text.trim().to_ascii_uppercase().as_str() {
+                    "#NULL!" => Value::Number(1.0),
+                    "#DIV/0!" => Value::Number(2.0),
+                    "#VALUE!" => Value::Number(3.0),
+                    "#REF!" => Value::Number(4.0),
+                    "#NAME?" => Value::Number(5.0),
+                    "#NUM!" => Value::Number(6.0),
+                    "#N/A" => Value::Number(7.0),
+                    _ => Value::Text("#N/A".to_string()),
+                },
+                _ => Value::Text("#N/A".to_string()),
+            }
+        }
         // TYPE: 1 number, 2 text, 4 logical, 16 error; empty cells read as 0.
         "type" => {
             if args.len() != 1 {

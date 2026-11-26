@@ -1473,14 +1473,24 @@ mod tests {
     }
 
     #[test]
-    fn type_reports_values_and_errors() {
-        assert_eq!(eval_str("type(1)", &[]), "1");
-        assert_eq!(eval_str("type(\"x\")", &[]), "2");
-        assert_eq!(eval_str("type(\"\")", &[]), "2");
-        assert_eq!(eval_str("type(true())", &[]), "4");
-        assert_eq!(eval_str("type(1/0)", &[]), "16");
-        assert_eq!(eval_str("type()", &[]), "#VALUE!");
-        assert_eq!(eval_str("type(1, 2)", &[]), "#VALUE!");
+    fn error_type_maps_excel_codes() {
+        for (source, expected) in [
+            (r##"error.type("#NULL!")"##, "1"),
+            (r##"error.type("#DIV/0!")"##, "2"),
+            (r##"error.type("#VALUE!")"##, "3"),
+            (r##"error.type("#REF!")"##, "4"),
+            (r##"error.type("#NAME?")"##, "5"),
+            (r##"error.type("#NUM!")"##, "6"),
+            (r##"error.type("#N/A")"##, "7"),
+            ("error.type(na())", "7"),
+            ("error.type(1/0)", "3"),
+            ("error.type(1)", "#N/A"),
+            (r#"error.type("x")"#, "#N/A"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        assert_eq!(eval_str("error.type()", &[]), "#VALUE!");
+        assert_eq!(eval_str("error.type(1, 2)", &[]), "#VALUE!");
     }
 
     #[test]

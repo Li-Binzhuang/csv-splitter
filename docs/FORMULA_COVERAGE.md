@@ -68,6 +68,7 @@
 | NA | 首批补齐 | 显式 `#N/A` 常量 |
 | ISBLANK / ISNUMBER / ISTEXT | 支持 | 空文本按空白处理 |
 | TYPE | 支持（功能级新增） | 数字=1、文本=2、布尔=4、错误=16；空单元格按数字 |
+| ERROR.TYPE | 支持（功能级新增） | #NULL!/#DIV/0!/#VALUE!/#REF!/#NAME?/#NUM!/#N/A → 1–7；非错误 `#N/A` |
 | ISERROR / ISNA | 支持 | 分别覆盖全部错误与 `#N/A` |
 | LET / LAMBDA / MAP / BYROW | 不做 | 需要名字绑定与数组求值，超出逐行标量模型 |
 
