@@ -1025,6 +1025,7 @@ fn sheet_rows_with_limit_system(
         }
         cursor = next;
     }
+    out.sort_by_key(|(row, _)| *row);
     Ok(out)
 }
 
@@ -1469,6 +1470,17 @@ mod tests {
         ];
         let error = table_from_rows(rows, 2).unwrap_err().to_string();
         assert!(error.contains("at most 2 data rows"), "{error}");
+    }
+
+    #[test]
+    fn rows_are_ordered_by_their_xml_reference() {
+        let xml = r#"<sheetData>
+            <row r="2"><c r="A2"><v>2</v></c></row>
+            <row r="1"><c r="A1"><v>1</v></c></row>
+        </sheetData>"#;
+        let rows = sheet_rows(xml, &[], &[]).unwrap();
+        assert_eq!(rows[0].0, 1);
+        assert_eq!(rows[1].0, 2);
     }
 
     #[test]
