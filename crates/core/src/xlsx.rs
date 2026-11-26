@@ -1020,7 +1020,12 @@ fn sheet_rows_with_limit_system(
                 }
             };
             let reference = attr(attrs, "r").unwrap_or_default();
-            let column = column_from_reference(&reference).unwrap_or(cells.len());
+            let column = if reference.is_empty() {
+                cells.len()
+            } else {
+                column_from_reference(&reference)
+                    .ok_or_else(|| invalid(&format!("cell reference {reference:?} is invalid")))?
+            };
             if column >= MAX_COLUMNS {
                 return Err(invalid(&format!(
                     "cell {reference} is beyond Excel's {MAX_COLUMNS} column limit"
@@ -1570,6 +1575,13 @@ mod tests {
         let xml = r#"<sheetData><row r="1"><c r="A1"><v>1</v></c></row></sheetData><rowBreaks count="1"><break id="1"/></rowBreaks>"#;
         let rows = sheet_rows(xml, &[], &[]).unwrap();
         assert_eq!(rows.len(), 1);
+    }
+
+    #[test]
+    fn an_invalid_cell_reference_is_an_error() {
+        let xml = r#"<sheetData><row r="1"><c r="1A"><v>1</v></c></row></sheetData>"#;
+        let error = sheet_rows(xml, &[], &[]).unwrap_err().to_string();
+        assert!(error.contains("is invalid"), "{error}");
     }
 
     #[test]
