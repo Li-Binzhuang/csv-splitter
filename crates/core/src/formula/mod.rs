@@ -1484,6 +1484,24 @@ mod tests {
     }
 
     #[test]
+    fn date_range_boundaries_work() {
+        assert_eq!(
+            eval_str(r#"networkdays("2024-02-28", "2024-03-01")"#, &[]),
+            "3"
+        );
+        assert_eq!(eval_str(r#"weeknum("2024-12-30", 21)"#, &[]), "1");
+        assert_eq!(
+            eval_str(r#"days360("2024-01-31", "2024-02-29")"#, &[]),
+            "29"
+        );
+        assert_eq!(
+            eval_str(r#"networkdays("2024-01-06", "2024-01-07")"#, &[]),
+            "0"
+        );
+        assert_eq!(eval_str(r#"eomonth("2024-03-15", -1)"#, &[]), "2024-02-29");
+    }
+
+    #[test]
     fn date_helpers_handle_the_1900_system_boundary() {
         assert_eq!(eval_str(r#"eomonth("1900-02-01", 0)"#, &[]), "1900-02-28");
         assert_eq!(

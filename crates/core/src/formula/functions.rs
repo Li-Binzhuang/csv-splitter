@@ -1688,8 +1688,8 @@ fn iso_week_number(year: i32, month: u32, day: u32) -> u32 {
     let weekday = (date + 3).rem_euclid(7) + 1;
     let thursday = date + (4 - weekday);
     let (iso_year, _, _) = civil_from_days(thursday);
-    let jan4 = days_from_civil(iso_year, 1, 4);
-    (1 + (thursday - jan4).div_euclid(7)) as u32
+    let jan1 = days_from_civil(iso_year, 1, 1);
+    (1 + (thursday - jan1).div_euclid(7)) as u32
 }
 
 fn year_fraction(start: (i32, u32, u32), end: (i32, u32, u32), basis: f64) -> Option<f64> {
