@@ -3039,6 +3039,42 @@ fn formats_all_sheets_prints_each_sheet_and_json_array() {
     assert!(stdout.contains("\"sheet\":\"Data\""), "{stdout}");
 }
 
+#[test]
+fn formats_all_sheets_rejects_sheet_and_reports_an_empty_workbook() {
+    let dir = TempDir::new("xlsfmtconflict");
+    let book = dir.join("book.xlsx");
+    write_hidden_sheet_xlsx(&book);
+    let conflict = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--formats",
+            "--all-sheets",
+            "--sheet",
+            "Hidden",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(conflict.status.code(), Some(2));
+    assert!(
+        String::from_utf8_lossy(&conflict.stderr).contains("cannot be combined"),
+        "{}",
+        String::from_utf8_lossy(&conflict.stderr)
+    );
+    let empty = dir.join("empty.xlsx");
+    write_minimal_xlsx(&empty, "");
+    let output = Command::new(bin())
+        .args(["convert", empty.to_str().unwrap(), "--formats"])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(1));
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("no header row"),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
 /// `datecounts` groups a timestamp column by its first ten characters.
 #[test]
 fn report_datecounts_groups_timestamps_by_date() {

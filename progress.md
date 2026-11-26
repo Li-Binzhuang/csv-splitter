@@ -54,8 +54,10 @@
   `formats_all_sheets_prints_each_sheet_and_json_array`。
 - [x] 项30 内置日期 numFmt 14 读回 `yyyy-mm-dd`；
   `builtin_date_num_fmt_14_reads_as_an_iso_date`。
-- [ ] 项31 `--formats --all-sheets` 与 `--sheet` 冲突测试。
-- [ ] 项32 `--formats --all-sheets` 空/无 header workbook 错误诊断。
+- [x] 项31/32 `--formats --all-sheets` 与 `--sheet` 冲突、空 workbook
+  `no header row` 诊断；`formats_all_sheets_rejects_sheet_and_reports_an_empty_workbook`。
+- [ ] 项33 公式 RANK（与 RANK.EQ 对齐）。
+- [ ] 项34 公式 QUARTILE/TRIMMEAN。
 - [x] 项22 `--formats --json` 机器可读输出；CLI 测试扩展。
 - [x] 项17 DATEDIF 扩展单位 MD/YM/YD；测试 `datedif_supports_ym_md_and_yd`。
 - [x] 项16 公式第四批：YEARFRAC/ISOWEEKNUM/TIME；测试
@@ -73,6 +75,9 @@
   `positive;(negative)` 被误拆列的问题。
 
 ## 当前进度
+
+Round 125（项31/32 all-sheets 边界）：冲突与空 workbook 错误测试；全量 gate/package 通过；发布包
+SHA `2ae3f030…8c5fa`。
 
 Round 124（项29/30 格式边界）：all-sheets 文本/JSON + 内置 numFmt 14；全量 gate/package 通过；发布包
 SHA `cf2b528d…587f6`。
