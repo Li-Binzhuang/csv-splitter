@@ -1473,6 +1473,16 @@ mod tests {
     }
 
     #[test]
+    fn attributes_do_not_collide_on_prefixes_or_escapes() {
+        let attrs = r#"r="A1" r:id="rId1" t="s" s="1" name="Sheet &amp; Data""#;
+        assert_eq!(attr(attrs, "r").as_deref(), Some("A1"));
+        assert_eq!(attr(attrs, "r:id").as_deref(), Some("rId1"));
+        assert_eq!(attr(attrs, "t").as_deref(), Some("s"));
+        assert_eq!(attr(attrs, "s").as_deref(), Some("1"));
+        assert_eq!(attr(attrs, "name").as_deref(), Some("Sheet & Data"));
+    }
+
+    #[test]
     fn rows_are_ordered_by_their_xml_reference() {
         let xml = r#"<sheetData>
             <row r="2"><c r="A2"><v>2</v></c></row>
