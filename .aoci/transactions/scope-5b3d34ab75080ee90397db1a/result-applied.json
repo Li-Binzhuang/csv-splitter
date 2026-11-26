@@ -1,0 +1,21 @@
+{
+  "version": "managed-scope-change-result/v2",
+  "transaction_id": "5b3d34ab75080ee90397db1a",
+  "status": "applied",
+  "envelope_digest": "5b3d34ab75080ee90397db1a48b5f44183c312716b8dec0e31858cf437ca00ae",
+  "authorization_mechanism": "policy_bound_auto",
+  "approval_digest": "14264fbef966f6509741bdfa870a6f03e69dfc335e6136fcb08f5f54c2c43559",
+  "written_paths": [
+    "aoci.txt",
+    ".aoci/config.json",
+    ".aoci/baseline.json",
+    ".aoci/ledger.jsonl"
+  ],
+  "recovered_paths": [],
+  "index_sha256": "94b15c6193b07f337a8a96a63207687df1288403817a63f7280d61aa6a191e69",
+  "baseline_sha256": "09ceb3ca26577fede53b00c135719b982ead0210505568a4760e393ef8dcef4a",
+  "policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "budget_policy_identity": "15e9b37a6c57e9bf03c9df3d0d049eb5b9a7f5540f9d34960408114e2538a32d",
+  "recovery_available": true,
+  "network_accessed": false
+}

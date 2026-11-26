@@ -15,7 +15,7 @@ fn parse_column_formats(
     let mut formats = Vec::new();
     for raw in split_format_specs(text) {
         let (column, code) = raw
-            .rsplit_once(':')
+            .split_once(':')
             .ok_or_else(|| format!("number format {raw:?} needs column:format-code"))?;
         let column = column.trim().to_string();
         if column.is_empty() {
