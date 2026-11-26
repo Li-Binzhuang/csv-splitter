@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "edd74770a63ac024f8e4fd9179834930f85f1df80e2a092aef78cfe85c215938",
+  "batch_id": "481c3034a8f59f3434f2c2c2e1fc971f19b30500c4799f8016ad8ee963341c9a",
+  "composite_identity": "a5abdb8ab481b0535e88ef3c5651ff3d377d0d915ce2347b60bc8efeebf7a483",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "59784a186e6efab621e6cf631c0c0ef74802aa7dbd6c30f25d22cbf8fb36f4b9",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/SECURITY.md",
+      "path": "docs/SECURITY.md",
+      "change": "update",
+      "source_sha256": "771e3efe06a57f1d951a5e5be917f320ec9142d84ce723b60da9de780cbb3401",
+      "existing_entry": "SECURITY.md[SS7T]: F:本地部署安全评审材料 | R:code:docs/AGENT_API.md,code:docs/MCP_COMPAT.md,code:scripts/test_install_offline.sh | A:数据边界；401/404；root escape；journal；审计；无遥测；限制 | S:只写实测证据；非认证；无多用户/OS 沙箱/远程签名"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "13f69dcb4b5e2c37d3bcd8b69ad5c6339dd1e771b4b0b4573bd36d2cccb3f7b1",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round10 intake 健壮性与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/install_offline.sh",
+      "path": "scripts/install_offline.sh",
+      "change": "update",
+      "source_sha256": "dab81a22b697ab98ab190e7a5fb8352b4730471197cceb5a9eaa40f8ea275212",
+      "existing_entry": "install_offline.sh[OV7S]: F:离线安装发布包到 prefix 并写版本锁 | R:code:scripts/release_manifest.py,code:scripts/verify_dist.sh,code:scripts/test_install_offline.sh | A:SHA256；解包；demo smoke；安装 bin/docs；install-manifest.json | S:无网络；坏 SHA/版本不符拒绝；已有不同 manifest 需 --force"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_install_offline.sh",
+      "path": "scripts/test_install_offline.sh",
+      "change": "update",
+      "source_sha256": "4a475be9213967ff6b0d792ac3c7aeb72e27aeb526ee48c6f372b387b353ec8f",
+      "existing_entry": "test_install_offline.sh[TQ7T]: F:离线安装器正负例脚本 | R:code:scripts/install_offline.sh,code:scripts/dev.sh | A:真实 tar；manifest 字段；坏 SHA 拒绝；版本锁拒绝 | S:不联网；gate 必跑；失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "1b2934cd0beade49553315ca743bf11bf40a3111e13ed9e20c81a10b730cc868",
+      "object_ref": "code:docs/SECURITY.md",
+      "path": "docs/SECURITY.md",
+      "change": "update",
+      "source_sha256": "771e3efe06a57f1d951a5e5be917f320ec9142d84ce723b60da9de780cbb3401",
+      "existing_entry": "SECURITY.md[SS7T]: F:本地部署安全评审材料 | R:code:docs/AGENT_API.md,code:docs/MCP_COMPAT.md,code:scripts/test_install_offline.sh | A:数据边界；401/404；root escape；journal；审计；无遥测；限制 | S:只写实测证据；非认证；无多用户/OS 沙箱/远程签名"
+    },
+    {
+      "candidate_id": "3fa41b3bbdcfffa564ac5b89d1079a0c05830d6da1218cfe2598d07acdd56454",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "13f69dcb4b5e2c37d3bcd8b69ad5c6339dd1e771b4b0b4573bd36d2cccb3f7b1",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round10 intake 健壮性与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "2c0b52f6bb53152e5351f9fcfc9c543ef05b36e9b61f83e6d430458c79431fb9",
+      "object_ref": "code:scripts/install_offline.sh",
+      "path": "scripts/install_offline.sh",
+      "change": "update",
+      "source_sha256": "dab81a22b697ab98ab190e7a5fb8352b4730471197cceb5a9eaa40f8ea275212",
+      "existing_entry": "install_offline.sh[OV7S]: F:离线安装发布包到 prefix 并写版本锁 | R:code:scripts/release_manifest.py,code:scripts/verify_dist.sh,code:scripts/test_install_offline.sh | A:SHA256；解包；demo smoke；安装 bin/docs；install-manifest.json | S:无网络；坏 SHA/版本不符拒绝；已有不同 manifest 需 --force"
+    },
+    {
+      "candidate_id": "8cdf216be30fb3d209edde892fe3c62720356d69d1f5c1dfadc959828aa4af56",
+      "object_ref": "code:scripts/test_install_offline.sh",
+      "path": "scripts/test_install_offline.sh",
+      "change": "update",
+      "source_sha256": "4a475be9213967ff6b0d792ac3c7aeb72e27aeb526ee48c6f372b387b353ec8f",
+      "existing_entry": "test_install_offline.sh[TQ7T]: F:离线安装器正负例脚本 | R:code:scripts/install_offline.sh,code:scripts/dev.sh | A:真实 tar；manifest 字段；坏 SHA 拒绝；版本锁拒绝 | S:不联网；gate 必跑；失败非零"
+    }
+  ]
+}

@@ -24,8 +24,9 @@
 - 编辑通过 journal + undo；原文件不直接覆盖，失败写入有回滚。
 - Pipeline 失败不写状态、不留 partial 输出；staging 清理与失败路径有
   `crates/cli/tests/cli.rs` 回归测试。
-- 离线安装器校验 SHA256 后才解包；坏 SHA256 拒绝且不写 manifest：
-  `scripts/test_install_offline.sh` 实测 `bad_sha=rejected`。
+- 离线安装器校验 SHA256 后才解包，可用可选 release manifest 复核 bytes/SHA；
+  坏 SHA256 或 manifest 不匹配均拒绝且不写安装 manifest：
+  `scripts/test_install_offline.sh` 实测 `bad_sha=rejected`、bad manifest 拒绝。
 
 ## 4. MCP 边界
 

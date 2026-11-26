@@ -23,14 +23,17 @@ else
 fi
 
 PREFIX="$WORK/prefix"
-bash scripts/install_offline.sh --archive "$WORK/csvx-test.tar.gz" --prefix "$PREFIX" >/dev/null
+SHA="$(awk '{print $1}' "$WORK/csvx-test.tar.gz.sha256")"
+BYTES="$(wc -c < "$WORK/csvx-test.tar.gz" | tr -d ' ')"
+printf '{"name":"csvx-test","sha256":"%s","bytes":%s}\n' "$SHA" "$BYTES" > "$WORK/release.json"
+bash scripts/install_offline.sh --archive "$WORK/csvx-test.tar.gz" --prefix "$PREFIX" --manifest "$WORK/release.json" >/dev/null
 [[ -x "$PREFIX/bin/csvx" ]] || { echo "install_offline=fail binary missing" >&2; exit 1; }
 "$PREFIX/bin/csvx" --version >/dev/null
 python3 - "$PREFIX/install-manifest.json" <<'PY'
 import json
 import sys
 manifest = json.load(open(sys.argv[1]))
-for key in ("version", "sha256", "installedAt", "binary"):
+for key in ("version", "sha256", "installedAt", "binary", "platform"):
     if key not in manifest:
         raise SystemExit(f"missing {key}")
 print("install_manifest=ok")
@@ -44,10 +47,17 @@ if bash scripts/install_offline.sh --archive "$WORK/csvx-test.tar.gz" --prefix "
 fi
 [[ ! -f "$bad_prefix/install-manifest.json" ]] || { echo "install_offline=fail bad checksum wrote manifest" >&2; exit 1; }
 
+printf '{"name":"csvx-test","sha256":"0000000000000000000000000000000000000000000000000000000000000000","bytes":%s}\n' "$BYTES" > "$WORK/bad-release.json"
+if bash scripts/install_offline.sh --archive "$WORK/csvx-test.tar.gz" --prefix "$WORK/bad-manifest-prefix" \
+  --manifest "$WORK/bad-release.json" >/dev/null 2>&1; then
+  echo "install_offline=fail bad manifest accepted" >&2
+  exit 1
+fi
+
 if bash scripts/install_offline.sh --archive "$WORK/csvx-test.tar.gz" --prefix "$WORK/version-prefix" \
   --require-version 0.0.0 >/dev/null 2>&1; then
   echo "install_offline=fail version mismatch accepted" >&2
   exit 1
 fi
 
-echo "install_offline=ok bad_sha=rejected version_lock=rejected"
+echo "install_offline=ok bad_sha=rejected bad_manifest=rejected version_lock=rejected"

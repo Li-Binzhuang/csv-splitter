@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 11（离线安装 manifest）：`install_offline.sh` 支持可选 release manifest 复核
+release JSON 的 sha256/bytes；安装 manifest 增加 platform；smoke 覆盖 bad manifest 拒绝；发布包 SHA `6a431bf2…47b9`。
+
 Round 10（intake 健壮性）：无法读取 header 的样本写 `error` 并以 2 退出；
 smoke 覆盖 2 MB 单行畸形 CSV，不再抛出 traceback；发布包 SHA `61a56094…69db4`。
 
