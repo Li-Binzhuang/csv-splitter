@@ -1,0 +1,91 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "222d5bd71df2b1eaae8078cafcb9f98e8e6e97b14b0401ed8c9ab704cc240775",
+  "batch_id": "e4241b8c5c9e3168274469fd0bf0b6982d943b636786be7048a14335bd8f3b38",
+  "composite_identity": "b1ae30a1b2dc3d8cfd4796387d35a30e69766aa9af3f5800ea5e553af11b6498",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "195059547df393745506775e79ec95978bcb2fb47cdf5ae220541d121ac5373e",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/lib.rs",
+      "path": "crates/mcp/src/lib.rs",
+      "change": "update",
+      "source_sha256": "3afdace02e706e1c98f52e494fe7b0f85abf704c3e85fa0997098fded3a24aea",
+      "existing_entry": "lib.rs[EN7L]: F:MCP 入口：run_mcp_stdio、agent manifest、模块重导出 | R:code:crates/mcp/src/json.rs,code:crates/mcp/src/executor.rs,code:crates/mcp/src/rmcp_server.rs | A:只走 rmcp；McpJson/McpParser 重导出；AGENT_INSTRUCTIONS | S:路径限 root；stdout 仅 rmcp；schema 在 tools.rs"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/tests.rs",
+      "path": "crates/mcp/src/tests.rs",
+      "change": "create",
+      "source_sha256": "4d5588377644309766746e4c737f1678ad1ed90148f62b81eb3e322101b481d6"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "44c6e523702a93abf3040e92d6f49fbafd5081373be41abb7dd4d6189b60ee9b",
+      "existing_entry": "ENTRYPOINTS.md[SG7S]: F:入口层目录、行数与客户端验证规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:docs/MCP_COMPAT.md | A:根与MCP白名单；executor/commands 与 paths；行数上限；SDK/schema 进 gate | S:rmcp 唯一传输；schema 默认跑；DSH 默认跳过；超限失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "29b013a3701c4d6dceadc0884f826f63fa4d69a6f4f18727a6095edb229c551f",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round16 manifest 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "d5900f60e520f2dc12f1d351f754374c47999aefa57efead61e7cb0203bba8f9",
+      "existing_entry": "check_layout.sh[XQ7S]: F:入口层目录与行数规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根/CLI/MCP 白名单；executor/commands 上限 450；MCP 单文件阈值 | S:未知模块退出；超行数失败；先改文档再加模块"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "e5831ebdc2c03f3d71251851cc4f32bf69e1e9f0df3438b2bf3e6eb3bac1d632",
+      "object_ref": "code:crates/mcp/src/lib.rs",
+      "path": "crates/mcp/src/lib.rs",
+      "change": "update",
+      "source_sha256": "3afdace02e706e1c98f52e494fe7b0f85abf704c3e85fa0997098fded3a24aea",
+      "existing_entry": "lib.rs[EN7L]: F:MCP 入口：run_mcp_stdio、agent manifest、模块重导出 | R:code:crates/mcp/src/json.rs,code:crates/mcp/src/executor.rs,code:crates/mcp/src/rmcp_server.rs | A:只走 rmcp；McpJson/McpParser 重导出；AGENT_INSTRUCTIONS | S:路径限 root；stdout 仅 rmcp；schema 在 tools.rs"
+    },
+    {
+      "candidate_id": "ff4ac9c61756c195cfd81a0f6d98b4ca21803a45462f562168ed9a0d314bc8ee",
+      "object_ref": "code:crates/mcp/src/tests.rs",
+      "path": "crates/mcp/src/tests.rs",
+      "change": "create",
+      "source_sha256": "4d5588377644309766746e4c737f1678ad1ed90148f62b81eb3e322101b481d6"
+    },
+    {
+      "candidate_id": "902e61be8c70c2fac63639729d91a656e4e58fa2917d3008272f3eebec719497",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "44c6e523702a93abf3040e92d6f49fbafd5081373be41abb7dd4d6189b60ee9b",
+      "existing_entry": "ENTRYPOINTS.md[SG7S]: F:入口层目录、行数与客户端验证规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:docs/MCP_COMPAT.md | A:根与MCP白名单；executor/commands 与 paths；行数上限；SDK/schema 进 gate | S:rmcp 唯一传输；schema 默认跑；DSH 默认跳过；超限失败"
+    },
+    {
+      "candidate_id": "631a38e85d5a4bdec5a9861d1463906eaabb6cec6e887aa05cc8bed7f2ba6c2b",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "29b013a3701c4d6dceadc0884f826f63fa4d69a6f4f18727a6095edb229c551f",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round16 manifest 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "7d5f2b9fc6601d0c239702322a963a9e96dcdff0ac1cbc8a56f914851bdbad09",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "d5900f60e520f2dc12f1d351f754374c47999aefa57efead61e7cb0203bba8f9",
+      "existing_entry": "check_layout.sh[XQ7S]: F:入口层目录与行数规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根/CLI/MCP 白名单；executor/commands 上限 450；MCP 单文件阈值 | S:未知模块退出；超行数失败；先改文档再加模块"
+    }
+  ]
+}

@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 17：`crates/mcp/src/lib.rs` 312 → 55 行，7 个单元测试整体迁到 `tests.rs`；
+layout 覆盖 tests.rs（≤350）；发布包 SHA `8a05a259…7701a`。
+
 Round 16：HTTP/MCP manifest 契约：protocol、8 endpoints、6 workflow、root_bound；
 发布包 SHA `c007988d…193d3c`。
 
@@ -62,7 +65,7 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 ## 未完成
 
 - 23 工具字段映射、必填、format 枚举、count/limit/jobs/wait/gate 边界已覆盖。
-- `executor/commands.rs` 360 行，仍在 450 上限内。
+- `lib.rs` 55 行；测试在 `tests.rs` 261 行。
 - DSH 可选回归脚本已实跑通过；MCP resources/initialize 已验证。
 - 商业化/产品化未开始。
 
@@ -73,6 +76,6 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 ## 下一轮具体行动
 
-1. 全量 gate、AOCI 收尾并提交。
-2. push 本轮提交一次。
-3. 下一轮转向产品化或 mcp 模块瘦身。
+1. 跑 SDK 与全量 gate。
+2. AOCI 收尾并提交。
+3. push 本轮提交一次。
