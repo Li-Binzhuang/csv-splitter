@@ -41,9 +41,16 @@ def main():
     size = sample.stat().st_size
     limit = args.max_gb * GB
     within = size <= limit
-    with open_text(sample) as handle:
-        reader = csv.reader(handle)
-        header = next(reader, [])
+    error = None
+    try:
+        with open_text(sample) as handle:
+            reader = csv.reader(handle)
+            header = next(reader, [])
+        if not header:
+            error = "empty header"
+    except (csv.Error, OSError, UnicodeError) as exc:
+        header = []
+        error = f"cannot read header: {exc}"
     warnings = []
     for column in header:
         for label, pattern in SENSITIVE.items():
@@ -61,6 +68,7 @@ def main():
         "columnCount": len(header),
         "sensitiveWarnings": warnings,
         "readRawRows": False,
+        "error": error,
     }
     (out / "intake.json").write_text(json.dumps(payload, indent=2) + "\n")
     md = [
@@ -90,8 +98,11 @@ def main():
         "",
     ]
     (out / "intake.md").write_text("\n".join(md) + "\n")
-    print(f"pilot_intake={'ok' if within else 'too_large'} file={sample} bytes={size} columns={len(header)} warnings={len(warnings)}")
+    state = "invalid" if error else ("ok" if within else "too_large")
+    print(f"pilot_intake={state} file={sample} bytes={size} columns={len(header)} warnings={len(warnings)}")
     print(f"intake_json={out / 'intake.json'}")
+    if error:
+        return 2
     return 0 if within else 1
 
 

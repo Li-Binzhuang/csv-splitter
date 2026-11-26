@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 10（intake 健壮性）：无法读取 header 的样本写 `error` 并以 2 退出；
+smoke 覆盖 2 MB 单行畸形 CSV，不再抛出 traceback；发布包 SHA `61a56094…69db4`。
+
 Round 9（试点 kit 整合）：`pilot_kit.sh` 现在同时生成 `intake/intake.json/md`，
 kickoff JSON/MD 引用 intake；smoke 覆盖六件产物；发布包 SHA `176b6660…45d75`。
 

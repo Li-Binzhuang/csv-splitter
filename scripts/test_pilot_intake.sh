@@ -37,6 +37,19 @@ data = json.load(open(sys.argv[1]))
 assert data["withinLimit"] is False, data
 PY
 
+printf 'x%.0s' $(seq 1 300000) > "$WORK/malformed.csv"
+set +e
+python3 scripts/pilot_intake.py --sample "$WORK/malformed.csv" --out "$WORK/malformed" >/dev/null 2>&1
+code=$?
+set -e
+[[ "$code" -eq 2 ]] || { echo "pilot_intake_smoke=fail malformed code=$code" >&2; exit 1; }
+python3 - "$WORK/malformed/intake.json" <<'PY'
+import json
+import sys
+data = json.load(open(sys.argv[1]))
+assert data["error"], data
+PY
+
 set +e
 python3 scripts/pilot_intake.py --sample "$WORK/missing.csv" --out "$WORK/missing" >/dev/null 2>&1
 code=$?

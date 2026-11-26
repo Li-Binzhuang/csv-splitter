@@ -70,7 +70,7 @@ CSVX_PILOT_FILE=pilot-kit/demo/orders.csv \
 - 按列名可疑的 email/phone/SSN/name/address 警告；
 - 不含原始行值，不访问网络。
 
-超限样本会写 `withinLimit:false` 并以 1 退出；缺失样本以 2 退出。
+超限样本会写 `withinLimit:false` 并以 1 退出；缺失/无法读取 header 的样本写 `error` 并以 2 退出。
 
 ## 7. 数据边界
 
