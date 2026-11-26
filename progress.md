@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 19：`rmcp_server.rs` 319 → 207 行；stdin/stdout 泵与 legacy initialize shim
+拆到 `rmcp_server/transport.rs`（116 行）；发布包 SHA `765848bf…b1d60`。
+
 Round 18：`rmcp_server.rs` 410 → 319 行，job/cache 工具处理拆到 `rmcp_server/jobs.rs`（98 行）；发布包 SHA `1f71b4fa…03fe`。
 
 Round 17：`crates/mcp/src/lib.rs` 312 → 55 行，7 个单元测试整体迁到 `tests.rs`；
@@ -67,7 +70,7 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 ## 未完成
 
 - 23 工具字段映射、必填、format 枚举、count/limit/jobs/wait/gate 边界已覆盖。
-- `lib.rs` 55 行；`rmcp_server.rs` 319 行；测试在 `tests.rs`。
+- `lib.rs` 55 行；`rmcp_server.rs` 207 行；jobs/transport 子模块化。
 - DSH 可选回归脚本已实跑通过；MCP resources/initialize 已验证。
 - 商业化/产品化未开始。
 

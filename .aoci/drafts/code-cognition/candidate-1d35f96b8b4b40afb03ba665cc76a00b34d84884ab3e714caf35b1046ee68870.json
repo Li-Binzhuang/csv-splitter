@@ -1,0 +1,91 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "9c146074fcd64072c1d83330b90d1451dc9c6f8e5136a35add966e78f5a9a9b6",
+  "batch_id": "1d35f96b8b4b40afb03ba665cc76a00b34d84884ab3e714caf35b1046ee68870",
+  "composite_identity": "3d147d98b5030603b0444d0a8cb159f127f36fae5dd3cac8830b32639f1ebcc3",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "a156698f7c70dda33f43f5bfeedb8c29af030f7b9a5db417a67d325b7ab39cbd",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/rmcp_server.rs",
+      "path": "crates/mcp/src/rmcp_server.rs",
+      "change": "update",
+      "source_sha256": "1955a6191ef7e90bd90ba4aa431d1964badac6f9858268bb67154917e8dde287",
+      "existing_entry": "rmcp_server.rs[EN7M]: F:官方 rmcp 适配器：串行泵、resource、progress | R:code:crates/mcp/src/lib.rs,code:crates/mcp/src/rmcp_server/jobs.rs | A:ServerHandler；23 schema；请求等响应；resource；progress；job 处理已拆 | S:默认传输；串行保序；旧 initialize 兼容"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/rmcp_server/transport.rs",
+      "path": "crates/mcp/src/rmcp_server/transport.rs",
+      "change": "create",
+      "source_sha256": "bc17fa5050a8c8e7e6f37a349a22d692b04b398d4e94fd44448c67e2a452245e"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "74a02da4a557739384b06e0dda3fd2211e923433280fefc76c91ec9d5a70d05c",
+      "existing_entry": "ENTRYPOINTS.md[SG7S]: F:入口层目录、行数与客户端验证规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:docs/MCP_COMPAT.md | A:根与MCP白名单；rmcp_server/jobs；lib/tests/executor；行数上限；SDK/schema 进 gate | S:rmcp 唯一传输；tests.rs 350；jobs 200；超限失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "8b865350bcd49724be4e7040347f8cddd16960794bc1ed31e1ff4f066f653091",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round18 rmcp jobs 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "f926f2c60f5d3c7267a4018fe2ede9fc3f234a64784d6ef7a216094fa6d5cb8c",
+      "existing_entry": "check_layout.sh[XQ7S]: F:入口层目录与行数规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根/CLI/MCP 白名单；rmcp_server/jobs 200；tests 350；commands 450 | S:未知模块退出；超行数失败；先改文档再加模块"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "720bd0a426458e021de616044fcd34c50a55ddfdac85f6e13550c2fa3acd1f07",
+      "object_ref": "code:crates/mcp/src/rmcp_server.rs",
+      "path": "crates/mcp/src/rmcp_server.rs",
+      "change": "update",
+      "source_sha256": "1955a6191ef7e90bd90ba4aa431d1964badac6f9858268bb67154917e8dde287",
+      "existing_entry": "rmcp_server.rs[EN7M]: F:官方 rmcp 适配器：串行泵、resource、progress | R:code:crates/mcp/src/lib.rs,code:crates/mcp/src/rmcp_server/jobs.rs | A:ServerHandler；23 schema；请求等响应；resource；progress；job 处理已拆 | S:默认传输；串行保序；旧 initialize 兼容"
+    },
+    {
+      "candidate_id": "68a87e21667faa932bd2cfb9819ea8eb3fccf1009f471de5c415c1483b9b1a83",
+      "object_ref": "code:crates/mcp/src/rmcp_server/transport.rs",
+      "path": "crates/mcp/src/rmcp_server/transport.rs",
+      "change": "create",
+      "source_sha256": "bc17fa5050a8c8e7e6f37a349a22d692b04b398d4e94fd44448c67e2a452245e"
+    },
+    {
+      "candidate_id": "98eea3b7fec9d3a92dad7deaf14b50a8d184745deea9aabfdb36241bb7285a14",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "74a02da4a557739384b06e0dda3fd2211e923433280fefc76c91ec9d5a70d05c",
+      "existing_entry": "ENTRYPOINTS.md[SG7S]: F:入口层目录、行数与客户端验证规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:docs/MCP_COMPAT.md | A:根与MCP白名单；rmcp_server/jobs；lib/tests/executor；行数上限；SDK/schema 进 gate | S:rmcp 唯一传输；tests.rs 350；jobs 200；超限失败"
+    },
+    {
+      "candidate_id": "04e2c360ba6f9435b1d40ccb9469d2ce41a7c6c5aa4d907f78a4142aaa70215e",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "8b865350bcd49724be4e7040347f8cddd16960794bc1ed31e1ff4f066f653091",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round18 rmcp jobs 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "a33d7667c90f1c034c9719c5391806b3275267dd985a9b1c272df380fc5224f0",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "f926f2c60f5d3c7267a4018fe2ede9fc3f234a64784d6ef7a216094fa6d5cb8c",
+      "existing_entry": "check_layout.sh[XQ7S]: F:入口层目录与行数规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根/CLI/MCP 白名单；rmcp_server/jobs 200；tests 350；commands 450 | S:未知模块退出；超行数失败；先改文档再加模块"
+    }
+  ]
+}
