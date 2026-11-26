@@ -33,6 +33,11 @@ const call = async (name, params) => {
   return json(text);
 };
 
+const capabilities = client.getServerCapabilities();
+console.log(`capabilities_tools=${capabilities?.tools !== undefined}`);
+console.log(`capabilities_resources=${capabilities?.resources !== undefined}`);
+const instructions = client.getInstructions() ?? "";
+console.log(`instructions_chars=${instructions.length}`);
 const resources = await client.listResources();
 console.log(`resources=${resources.resources.length}`);
 const resource = await client.readResource({ uri: "csvx://agent" });
@@ -44,6 +49,13 @@ const operationsResource = await client.readResource({ uri: "csvx://operations" 
 const operations = json(operationsResource.contents?.[0]?.text ?? "{}");
 console.log(`resource_operations=${(operations.operations ?? []).length}`);
 console.log(`resource_error_codes=${(operations.errorCodes ?? []).length}`);
+let unknownResource = false;
+try {
+  await client.readResource({ uri: "csvx://nope" });
+} catch {
+  unknownResource = true;
+}
+console.log(`unknown_resource_error=${unknownResource}`);
 const tools = await client.listTools();
 console.log(`sdk_tools=${tools.tools.length}`);
 console.log(`sdk_annotated=${tools.tools.filter((tool) => tool.annotations).length}`);

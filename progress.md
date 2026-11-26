@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 12：SDK 验证 initialize 能力与指令、未知资源错误：tools/resources=true、
+instructions 529 字符、unknown_resource_error=true；发布包 SHA `0ea6df47…a7d60`。
+
 Round 11：官方 SDK 同时验证 MCP resources：2 个资源、`csvx://agent` 23 工具、
 `csvx://operations` 17 操作与 10 错误码；发布包 SHA `c95c7fab…254`。
 
@@ -48,7 +51,7 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 - 23 工具字段映射、必填、format 枚举、count/limit/jobs/wait/gate 边界已覆盖。
 - `executor/commands.rs` 406 行，后续可再按工具族拆分。
-- 12 路由已有响应体、401、405、close/events 生命周期契约；MCP resources 已验证。
+- 12 路由已有响应体、401、405、close/events 生命周期契约；MCP resources/initialize 已验证。
 - 商业化/产品化未开始。
 
 ## 遇到的问题
@@ -60,4 +63,4 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 1. 全量 gate、AOCI 收尾并提交。
 2. push 本轮提交一次。
-3. 下一轮转向 mcp 模块进一步瘦身或产品化。
+3. 下一轮转向产品化切片或 mcp 模块瘦身。
