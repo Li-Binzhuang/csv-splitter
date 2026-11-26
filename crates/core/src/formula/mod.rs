@@ -1442,6 +1442,16 @@ mod tests {
     }
 
     #[test]
+    fn rri_reports_equivalent_growth_rate() {
+        assert_eq!(eval_str("rri(10, 1000, 2000)", &[]), "0.071773");
+        assert_eq!(eval_str("rri(1, 100, 110)", &[]), "0.1");
+        assert_eq!(eval_str("rri(2, 100, 121)", &[]), "0.1");
+        for source in ["rri(0, 100, 110)", "rri(10, 0, 110)", "rri(10, 100, -110)"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn xnpv_discounts_by_calendar_dates() {
         let columns = vec![
             "cash1".to_string(),

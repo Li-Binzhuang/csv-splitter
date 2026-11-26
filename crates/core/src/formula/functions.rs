@@ -1728,6 +1728,29 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // RRI: equivalent periodic rate for a present-to-future value growth.
+        "rri" => {
+            if args.len() != 3 {
+                return Value::Error;
+            }
+            let (Some(nper), Some(pv), Some(fv)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !nper.is_finite()
+                || !pv.is_finite()
+                || !fv.is_finite()
+                || nper <= 0.0
+                || pv == 0.0
+                || fv / pv <= 0.0
+            {
+                return Value::Error;
+            }
+            Value::Number((fv / pv).powf(1.0 / nper) - 1.0)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

@@ -115,6 +115,7 @@
 | EFFECT / NOMINAL | 支持（功能级新增） | npery 正整数；负利率/非整数周期 `#VALUE!` |
 | SLN / SYD | 支持（功能级新增） | 直线/年数总和折旧；life≤0、period 越界/非整数 `#VALUE!` |
 | DB / DDB | 支持（功能级新增） | 固定/双倍余额递减；period 越界、月数/因子非法 `#VALUE!` |
+| RRI | 支持（功能级新增） | nper≤0、pv=0、异号现金流 `#VALUE!` |
 | XNPV | 支持（功能级新增） | 按实际天数/365 折现；values/dates 等长；非法日期/利率 `#VALUE!` |
 | GCD / LCM / FACT / COMBIN / PERMUT | 支持（功能级新增） | 非负整数；FACT≤170；非法/非整数 `#VALUE!` |
 | MROUND / CEILING.PRECISE / FLOOR.PRECISE | 支持（功能级新增） | MROUND 同号倍数；PRECISE 忽略 significance 符号；零倍数/非法参数 `#VALUE!` |
