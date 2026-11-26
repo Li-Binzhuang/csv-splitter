@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 49（Excel 公式缓存验收）：确认 `window()` 已有按 journal ops/base/引用表
+缓存；补引用表失效与 Sheet 编辑/undo 失效单测；命中实测 0.051 ms（100 次最差，debug）；BEYOND_EXCEL 移除非真实缺口
+xlsx/事务块/缓存；发布包 SHA `75996c19…2e711b`。
+
 Round 48（安装清单内容断言）：install smoke 除检查 release-manifest 存在外，
 还断言其 sha256/name 与安装清单/原始 release 一致；发布包 SHA `65ecdec0…ec6a0`。
 

@@ -13,6 +13,7 @@
 | 自动化 | 宏 + COM，难在服务端跑 | HTTP API + `/capabilities` + `/spec` 机器可读契约 | `/spec` 与 18 路由字段守卫 |
 | 编辑可审计 | 撤销栈随文件关闭即失 | journal sidecar，文件不动、操作可撤销可导出 | `/journal`、`edit export` |
 | 公式列成本 | 写进单元格，复制整列 | **读时求值，不落盘**；加一列不复制数据 | `formula/mod.rs` 模块说明 |
+| 公式窗口缓存 | 每次读重算 | 同一 journal 版本窗口命中 **0.051 ms**（本机 debug 100 次最差，2026-11-26） | `window_cache_tests`；缓存键含 base 大小/mtime、journal ops、引用表大小/mtime |
 | 大文件分析 | 透视表受内存限制 | DuckDB 引擎分流；原生与 SQL 双引擎等价有测试 | `engine.rs` 等价测试 |
 | 分片与还原 | 手动另存 | `split` → `merge` 带片号/片数/行数清单三重校验 | merge 测试组 |
 
@@ -22,15 +23,19 @@
 |---|---|---|---|---|
 | 1 | **聚合公式**（SUM/AVERAGE/COUNTIF 对整列或区间） | 整列/条件聚合与 .agg 缓存已实现；同行区间 `sum(B2:C2)`/`median(A2:C2)` 可用；跨行区间**不支持** | 跨行区间需要按行随机访问或按列前缀和；后者在 5000 万行时每列约 400 MB，超出内存预算，因此暂不实现 | 同一列 `sum()` 在 100 万行上冷启动预扫 **≈25–30 ms**（2026-11-23 实测：纯 sum 冷 0.11/warm 0.08，另一次 0.12/0.09；`countif` 冷 0.09–0.10、`countifs` 冷 0.11，warm 0.06–0.08，8 线程，中位数），已达标；整列 `median` 需保留全部值，明确不支持 |
 | 2 | **跨表引用** | `ref()`/`vlookup`/`xlookup` 按本行键取目标表值；同一行可同时引用多张表（CLI 测试：customers + regions 一次导出两颗列） | `Sheet!A1` 需要跨表**按行号随机对齐**，流式导出无法保证正确语义，因此不做；多表关系用 ref 显式声明 | 多个 ref 同时命中/未命中都与 `lookup` 一致；文档写明 `Sheet!A1` 不做 |
-| 3 | **xlsx 读写** | 明确不做（当前硬约束）| 可选：仅导出（写好表头/类型），不引进 xlsx 解析器 | 需要用户解除约束 |
-| 4 | **图形界面** | 无（HTTP API + 内置浏览页） | 可选：独立前端消费现有端点 | 需要用户确认 |
-| 5 | **多操作事务块** | `set-many` 与 `POST /edit?action=transaction` 都先校验、一次 journal 写入：一批失败**一条都不写**；`.journal.blocks`/`.journal.redo.blocks` 记边界，`undo`/`redo` **一次撤回/恢复整批** | — | 一批失败全部不生效；CLI 与 HTTP 均有整批撤销与重做测试 |
-| 6 | **公式重算性能** | 读时求值，每次读重算 | 可选：按 journal 版本缓存计算结果 | 重复读同一屏 < 2 ms |
+| 3 | **图形界面** | 无（HTTP API + 内置浏览页） | 可选：独立前端消费现有端点 | 需要用户确认 |
+
+## 已实现（不再列为缺口，2026-11-26 校正）
+
+| 能力 | 实现 | 证据 |
+|---|---|---|
+| xlsx 导入/导出 | `read_xlsx_to_csv` 已支持共享字符串、日期样式、sheet 选择与缓存公式值；导出已实现 | `crates/core/src/xlsx.rs` 与 xlsx 测试 |
+| 多操作事务块 | `set-many` 与 `POST /edit?action=transaction` 先校验、一次 journal 写入；失败一条不写；`undo`/`redo` 整批撤回/恢复 | CLI 与 HTTP 事务测试 |
+| 公式窗口缓存 | 同一 journal 版本重复读命中；编辑/undo/redo、base 或引用表变化立即失效 | `window_history_tests`/`window_cache_tests`，命中实测 0.051 ms |
 
 ## 明确的非目标
 
 - 不做多用户鉴权（服务只绑回环地址，靠部署侧隔离）。
-- 不做 xlsx 解析（除非用户解除约束）。
 - 不做宏/VBA。
 
 ## 判断标准

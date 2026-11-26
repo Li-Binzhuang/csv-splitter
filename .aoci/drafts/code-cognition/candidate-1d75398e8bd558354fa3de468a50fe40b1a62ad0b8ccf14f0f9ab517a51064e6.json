@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "1dbd1d206f1cc22cf2ee5305f0df4804611f84698febc56e485d28e5095ac218",
+  "batch_id": "1d75398e8bd558354fa3de468a50fe40b1a62ad0b8ccf14f0f9ab517a51064e6",
+  "composite_identity": "d10b5e39274d218836923eae1e13c74e59cbb88d59b9677c282cf65a731ce9f4",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "7a0fb678283aff9722866a2c6f9582a87ca4e90ae325b3b67cdd90fc77472432",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/workbook/export.rs",
+      "path": "crates/core/src/workbook/export.rs",
+      "change": "update",
+      "source_sha256": "e99a9e6406d641f8d028125f58216b17664d2d3164b2a151a24d920a84761504",
+      "existing_entry": "export.rs[CD9L]: F:逐行组装、导出与分页读取 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/journal.rs | A:一次顺序扫描；被 journal 触及的行走 RowPipeline；相同公式算一次；预扫 totals；window 读缓存（key=文件大小/mtime+ops+delimiter+start/count，64 项，hits/misses 计数） | S:插入锚点越界留幽灵基行；join_csv_line 自带换行；缓存须随文件或 journal 失效；会读当前行的公式不得走快路"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "f8db99b0418a0bfabd68ae91795e65142a03e908aaf9ec7f999bbe8a2add370f",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：已实测优势与未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 区分整列/同行/跨行：纯 sum 冷启动约 25–30 ms，countif/countifs 冷 0.09–0.11 s；跨行需按列前缀和故暂不做；缺口 2 多表 ref 可并行（CLI 测试），Sheet!A1 因流式导出无跨表按行随机访问而不做；缺口 5 已含整批撤销与重做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "6c99e2f24403559fcd80f40ecaf9b0620a2aeadae8d0e62d152602d777f8f8ca",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round48 清单内容断言与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "1189b7d9fbc190db1e0514410dc766055e5df401b7d670e7eb33f210ef543ed3",
+      "object_ref": "code:crates/core/src/workbook/export.rs",
+      "path": "crates/core/src/workbook/export.rs",
+      "change": "update",
+      "source_sha256": "e99a9e6406d641f8d028125f58216b17664d2d3164b2a151a24d920a84761504",
+      "existing_entry": "export.rs[CD9L]: F:逐行组装、导出与分页读取 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/workbook/journal.rs | A:一次顺序扫描；被 journal 触及的行走 RowPipeline；相同公式算一次；预扫 totals；window 读缓存（key=文件大小/mtime+ops+delimiter+start/count，64 项，hits/misses 计数） | S:插入锚点越界留幽灵基行；join_csv_line 自带换行；缓存须随文件或 journal 失效；会读当前行的公式不得走快路"
+    },
+    {
+      "candidate_id": "727fb0a81f34dfa1ab6b67b1801ea60aafa82270ea011322e237028574a19c76",
+      "object_ref": "code:docs/BEYOND_EXCEL.md",
+      "path": "docs/BEYOND_EXCEL.md",
+      "change": "update",
+      "source_sha256": "f8db99b0418a0bfabd68ae91795e65142a03e908aaf9ec7f999bbe8a2add370f",
+      "existing_entry": "BEYOND_EXCEL.md[SZ7T]: F:超越 Excel 的可验证论证：已实测优势与未达成缺口 | R:code:docs/CAPABILITIES.md | A:每条优势给 Excel 现状、本项目现状与证据；缺口 1 区分整列/同行/跨行：纯 sum 冷启动约 25–30 ms，countif/countifs 冷 0.09–0.11 s；跨行需按列前缀和故暂不做；缺口 2 多表 ref 可并行（CLI 测试），Sheet!A1 因流式导出无跨表按行随机访问而不做；缺口 5 已含整批撤销与重做 | S:任何超越必须同时可测量、有测试、不撒谎；只写形容词或没测试的演示不算证据"
+    },
+    {
+      "candidate_id": "77a2ba808c0cb5b048fafb2f84f18b5f4c1d38fd907c63d048be347847d91dcd",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "6c99e2f24403559fcd80f40ecaf9b0620a2aeadae8d0e62d152602d777f8f8ca",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round48 清单内容断言与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    }
+  ]
+}

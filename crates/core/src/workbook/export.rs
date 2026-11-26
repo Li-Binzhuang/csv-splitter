@@ -874,6 +874,43 @@ fn window_cache() -> &'static std::sync::Mutex<std::collections::HashMap<String,
     CACHE.get_or_init(|| std::sync::Mutex::new(std::collections::HashMap::new()))
 }
 
+fn referenced_sheet_stamp(base: &Path, ops: &[Op]) -> String {
+    let directory = base.parent().unwrap_or_else(|| Path::new("."));
+    let mut stamps = Vec::new();
+    for op in ops {
+        let formula = match op {
+            Op::AddColumn { formula, .. } => formula,
+            Op::AddColumnAt {
+                source: ColumnSource::Formula(formula),
+                ..
+            } => formula,
+            Op::SetColumnFormula { formula, .. } => formula,
+            _ => continue,
+        };
+        let Ok(parsed) = crate::formula::Formula::parse(formula) else {
+            continue;
+        };
+        for (sheet, _, _) in parsed.sheet_references() {
+            let path = if Path::new(&sheet).is_absolute() {
+                std::path::PathBuf::from(&sheet)
+            } else {
+                directory.join(&sheet)
+            };
+            let metadata = std::fs::metadata(&path).ok();
+            let len = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
+            let modified = metadata
+                .and_then(|m| m.modified().ok())
+                .and_then(|d| d.duration_since(std::time::UNIX_EPOCH).ok())
+                .map(|d| d.as_nanos())
+                .unwrap_or(0);
+            stamps.push(format!("{sheet}\u{1f}{len}\u{1f}{modified}"));
+        }
+    }
+    stamps.sort();
+    stamps.dedup();
+    stamps.join("\u{1e}")
+}
+
 fn window_cache_key(
     base: &Path,
     ops: &[Op],
@@ -894,6 +931,8 @@ fn window_cache_key(
         ops.len(),
         delimiter = delimiter
     ) + &format!("{:?}", ops)
+        + "\u{1f}"
+        + &referenced_sheet_stamp(base, ops)
 }
 
 /// Cache hits/misses since the process started, for diagnostics and tests.
@@ -959,6 +998,92 @@ mod window_cache_tests {
         let journal = window(&base, &ops2, 0, 1, Delimiter::Comma).unwrap();
         let index = journal.columns.iter().position(|c| c == "double").unwrap();
         assert_eq!(journal.rows[0][index], "30");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn an_edit_and_undo_invalidate_the_plain_window() {
+        let dir = temp("edit-undo");
+        let base = dir.join("t.csv");
+        std::fs::write(&base, "id,amount\n1,10\n2,20\n").unwrap();
+        clear_window_cache();
+        let mut sheet = crate::sheet::Sheet::open(&base, Default::default()).unwrap();
+        let first = sheet.window(0, 2).unwrap();
+        assert_eq!(first.rows[0][1], "10");
+        sheet
+            .apply(Op::SetCell {
+                row: 0,
+                column: "amount".into(),
+                value: "99".into(),
+            })
+            .unwrap();
+        let edited = sheet.window(0, 2).unwrap();
+        assert_eq!(
+            edited.rows[0][1], "99",
+            "an edit must bypass the cached page"
+        );
+        sheet.undo().unwrap();
+        let undone = sheet.window(0, 2).unwrap();
+        assert_eq!(undone.rows[0][1], "10", "undo must bypass the cached page");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn a_referenced_sheet_change_invalidates_the_window() {
+        let dir = temp("sheet-ref");
+        let base = dir.join("orders.csv");
+        let referenced = dir.join("customers.csv");
+        std::fs::write(&base, "id\n1\n2\n").unwrap();
+        std::fs::write(&referenced, "id,name\n1,Alice\n2,Bob\n").unwrap();
+        clear_window_cache();
+        let ops = vec![Op::AddColumn {
+            name: "customer".into(),
+            formula: "ref(\"customers.csv\", \"id\", \"name\")".into(),
+        }];
+        let first = window(&base, &ops, 0, 2, Delimiter::Comma).unwrap();
+        let index = first.columns.iter().position(|c| c == "customer").unwrap();
+        assert_eq!(first.rows[0][index], "Alice");
+        let hit = window(&base, &ops, 0, 2, Delimiter::Comma).unwrap();
+        assert_eq!(hit.rows[1][index], "Bob");
+        std::fs::write(&referenced, "id,name\n1,Carol\n2,Dave\n").unwrap();
+        let after = window(&base, &ops, 0, 2, Delimiter::Comma).unwrap();
+        assert_eq!(
+            after.rows[0][index], "Carol",
+            "a referenced sheet change must invalidate the page"
+        );
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    #[ignore = "timing probe; run with --ignored --nocapture"]
+    fn cached_formula_window_hit_is_under_two_milliseconds() {
+        let dir = temp("timing");
+        let base = dir.join("t.csv");
+        let mut text = String::from("id,amount\n");
+        for i in 0..500 {
+            text.push_str(&format!("{i},{}\n", i * 10));
+        }
+        std::fs::write(&base, text).unwrap();
+        clear_window_cache();
+        let ops = vec![Op::AddColumn {
+            name: "double".into(),
+            formula: "amount * 2".into(),
+        }];
+        let _ = window(&base, &ops, 0, 50, Delimiter::Comma).unwrap();
+        let mut worst = std::time::Duration::ZERO;
+        for _ in 0..100 {
+            let started = std::time::Instant::now();
+            let _ = window(&base, &ops, 0, 50, Delimiter::Comma).unwrap();
+            worst = worst.max(started.elapsed());
+        }
+        println!(
+            "formula_window_cache_hit_worst_ms={:.3}",
+            worst.as_secs_f64() * 1000.0
+        );
+        assert!(
+            worst < std::time::Duration::from_millis(2),
+            "cached window hit took {worst:?}"
+        );
         std::fs::remove_dir_all(dir).ok();
     }
 }
