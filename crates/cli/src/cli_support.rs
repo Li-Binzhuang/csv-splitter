@@ -119,6 +119,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
         &[
             ("--format", "Data format: csv | tsv | ndjson | parquet | xlsx"),
             ("--highlight", "XLSX rules: amount>1000:red;status=bad:amber;amount:top3:green"),
+            ("--number-format", "Per-column xlsx format: amount:#,##0.00;rate:0.0%"),
             ("--sheet", "Worksheet name for xlsx input (default: first sheet)"),
             ("--all-sheets", "Extract every xlsx sheet into <out>/<sheet>.csv"),
             ("--delim", "Field delimiter for CSV input"),

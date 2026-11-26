@@ -1,0 +1,109 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "8c4cf3f760142c2daa8da98301511ed7150a67b470db951c332bf3dde66679dc",
+  "batch_id": "93cc428e1317b6b178927bf19cfe2b70db24ee4fd72d8cd9530a26048f079fba",
+  "composite_identity": "f1208e0a1faeaa608e34926c30a646c11516f4aecafa8315a532be53962e5de7",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "a2c1f19cba8b71206d4071ce34211382a03b0b376ebff7e73043c9bf2418b34b",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/cli_support.rs",
+      "path": "crates/cli/src/cli_support.rs",
+      "change": "update",
+      "source_sha256": "8a8f10240144253d105e42a604695fd0fd2267dca1c78a84d139f5748f8bd898",
+      "existing_entry": "cli_support.rs[EN9L]: F:CLI 通用支持：help 表、参数、输出、报表、路径 helper | R:code:crates/cli/src/main.rs,code:crates/cli/src/commands/shared.rs,code:crates/cli/src/commands/pipeline.rs | A:COMMAND_OPTIONS；convert 含 --all-sheets；--highlight 帮助含 top3；mcp config/audit；print_help；Parser | S:commands 通过 crate 重导出引用；不直接读写业务文件"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "83f3f4ab3c326ceb69254effedb245e0ea8dcf0b86271204078a6bbc15c596ad",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert 命令：编码转码、xlsx/csv/tsv/ndjson/parquet、highlight | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；-o/--format/--from/--to/--highlight/--sheet/--all-sheets/--delim；highlight 支持 comparison 与 column:topN/bottomN:color；文件名安全化 | S:不覆盖输入；--all-sheets 仅 xlsx→csv；rank=0/无冒号/未知颜色报错"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "18eabde44cdd4ccd7ee15daab4e5bc56f238e6c766739fe1b0ebc3822fb51e9b",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；write_sheets_with_formats 映射 numFmt+样式；条件规则支持 cellIs 与 top/bottom rank（top10/bottom10）；zip entry 流式解析；1M 峰值 53MB | S:不写公式/图表；custom 日期只识别常见 token；合并不展开；无缓存公式/坏引用/超限报错；rank=0/非法报错；格式映射只对可解析数字/日期生效"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NUMBER_FORMAT_COVERAGE.md",
+      "path": "docs/NUMBER_FORMAT_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "4564b2f3412cf7b98319efdc35bf6e5af0b677af3c40050150096b9273e197e0",
+      "existing_entry": "NUMBER_FORMAT_COVERAGE.md[SA7T]: F:数字格式覆盖矩阵与缺口 | R:code:crates/core/src/layout.rs | A:千分位/小数/百分比/货币/日期时间；支持 8 种日期时间格式；缺失科学计数/会计/负数段/@；输入 ISO 日期 | S:格式只对数字/日期生效，非匹配原样返回；未识别格式报错"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "4e7a6aebd7a0e0071c20b35acb4c780558ab24db5151d98e5fc6cb5f847ff6ee",
+      "existing_entry": "XLSX_ENGINE.md[SZ7T]: F:XLSX 引擎决策、迁移方案、覆盖矩阵与实测 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；1904/hidden；全 sheet；数字格式导出；Top/Bottom CLI 语法；1M 8.04s/53MB | S:迁移未执行待批准；不新增依赖；性能仅 release；内存 macOS time -l"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "60aa612216413d2e652f340773af73571510eb2bb8d25aa69f02f49cd019b200",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round109 CLI Top/Bottom 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "e5f19ea9ab87cd4cdd398a2351f4c8ebbdeb46b1873d1f18c7124e1efeacf006",
+      "object_ref": "code:crates/cli/src/cli_support.rs",
+      "path": "crates/cli/src/cli_support.rs",
+      "change": "update",
+      "source_sha256": "8a8f10240144253d105e42a604695fd0fd2267dca1c78a84d139f5748f8bd898",
+      "existing_entry": "cli_support.rs[EN9L]: F:CLI 通用支持：help 表、参数、输出、报表、路径 helper | R:code:crates/cli/src/main.rs,code:crates/cli/src/commands/shared.rs,code:crates/cli/src/commands/pipeline.rs | A:COMMAND_OPTIONS；convert 含 --all-sheets；--highlight 帮助含 top3；mcp config/audit；print_help；Parser | S:commands 通过 crate 重导出引用；不直接读写业务文件"
+    },
+    {
+      "candidate_id": "b2be7e39f6bf0cfea20ec8b361712de6afa493926604cf9369b11b9631594fd8",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "83f3f4ab3c326ceb69254effedb245e0ea8dcf0b86271204078a6bbc15c596ad",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert 命令：编码转码、xlsx/csv/tsv/ndjson/parquet、highlight | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；-o/--format/--from/--to/--highlight/--sheet/--all-sheets/--delim；highlight 支持 comparison 与 column:topN/bottomN:color；文件名安全化 | S:不覆盖输入；--all-sheets 仅 xlsx→csv；rank=0/无冒号/未知颜色报错"
+    },
+    {
+      "candidate_id": "09702d2f99292ff91c8821ab8d038693289ff1c81d3ea6ddfd926941969111f2",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "18eabde44cdd4ccd7ee15daab4e5bc56f238e6c766739fe1b0ebc3822fb51e9b",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；write_sheets_with_formats 映射 numFmt+样式；条件规则支持 cellIs 与 top/bottom rank（top10/bottom10）；zip entry 流式解析；1M 峰值 53MB | S:不写公式/图表；custom 日期只识别常见 token；合并不展开；无缓存公式/坏引用/超限报错；rank=0/非法报错；格式映射只对可解析数字/日期生效"
+    },
+    {
+      "candidate_id": "a18fc6dce3104b96e75971a4c5531b89c7578b00b6e115cd4c6f1dd2f2c29aa9",
+      "object_ref": "code:docs/NUMBER_FORMAT_COVERAGE.md",
+      "path": "docs/NUMBER_FORMAT_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "4564b2f3412cf7b98319efdc35bf6e5af0b677af3c40050150096b9273e197e0",
+      "existing_entry": "NUMBER_FORMAT_COVERAGE.md[SA7T]: F:数字格式覆盖矩阵与缺口 | R:code:crates/core/src/layout.rs | A:千分位/小数/百分比/货币/日期时间；支持 8 种日期时间格式；缺失科学计数/会计/负数段/@；输入 ISO 日期 | S:格式只对数字/日期生效，非匹配原样返回；未识别格式报错"
+    },
+    {
+      "candidate_id": "44d971b97413db0e6357a4b6576d61fd8c65bd6703d5acdda817a5776d272e22",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "4e7a6aebd7a0e0071c20b35acb4c780558ab24db5151d98e5fc6cb5f847ff6ee",
+      "existing_entry": "XLSX_ENGINE.md[SZ7T]: F:XLSX 引擎决策、迁移方案、覆盖矩阵与实测 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；1904/hidden；全 sheet；数字格式导出；Top/Bottom CLI 语法；1M 8.04s/53MB | S:迁移未执行待批准；不新增依赖；性能仅 release；内存 macOS time -l"
+    },
+    {
+      "candidate_id": "d47fff5a73fc66664d31798505b248f4b1c5860157ac1a4b2526c4b365e3e59e",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "60aa612216413d2e652f340773af73571510eb2bb8d25aa69f02f49cd019b200",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round109 CLI Top/Bottom 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

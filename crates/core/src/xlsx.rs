@@ -55,7 +55,19 @@ pub fn csv_to_xlsx_with_rules(
     tx: &ProgressSender,
     rules: &[ConditionalRule],
 ) -> std::io::Result<()> {
-    let result = csv_to_xlsx_inner(input, output, delimiter, tx, rules);
+    csv_to_xlsx_with_number_formats(input, output, delimiter, tx, rules, &[])
+}
+
+/// Export a CSV as one xlsx sheet with per-column Excel number formats.
+pub fn csv_to_xlsx_with_number_formats(
+    input: &Path,
+    output: &Path,
+    delimiter: Delimiter,
+    tx: &ProgressSender,
+    rules: &[ConditionalRule],
+    formats: &[(String, crate::layout::NumberFormat)],
+) -> std::io::Result<()> {
+    let result = csv_to_xlsx_inner(input, output, delimiter, tx, rules, formats);
     if result.is_err() {
         let _ = std::fs::remove_file(output);
     }
@@ -68,6 +80,7 @@ fn csv_to_xlsx_inner(
     delimiter: Delimiter,
     tx: &ProgressSender,
     rules: &[ConditionalRule],
+    formats: &[(String, crate::layout::NumberFormat)],
 ) -> std::io::Result<()> {
     let sheet_name = workbook_sheet_name(input);
     let total_bytes = std::fs::metadata(input).map(|m| m.len()).unwrap_or(0);
@@ -120,12 +133,8 @@ fn csv_to_xlsx_inner(
         workbook_rels(),
         options,
     )?;
-    write_part(
-        &mut zip,
-        "xl/styles.xml",
-        &styles_xml_with_rules(rules),
-        options,
-    )?;
+    let (styles, style_map) = styles_xml_with_rules_and_formats(rules, formats);
+    write_part(&mut zip, "xl/styles.xml", &styles, options)?;
 
     zip.start_file("xl/worksheets/sheet1.xml", options)
         .map_err(|e| std::io::Error::other(e.to_string()))?;
@@ -168,7 +177,20 @@ fn csv_to_xlsx_inner(
         }
         write!(zip, "<row r=\"{}\">", data_rows + 1)?;
         for (index, cell) in cells.iter().enumerate() {
-            write_cell(&mut zip, index, data_rows + 1, cell, false)?;
+            let format = formats
+                .iter()
+                .find(|(header, _)| header == &headers[index])
+                .map(|(_, format)| format);
+            match format {
+                Some(format) => {
+                    let code = format.name();
+                    let style = style_map.get(&code).copied();
+                    let mut xml = String::new();
+                    write_formatted_cell(&mut xml, index, data_rows + 1, cell, format, style);
+                    write!(zip, "{xml}")?;
+                }
+                None => write_cell(&mut zip, index, data_rows + 1, cell, false)?,
+            }
         }
         write!(zip, "</row>")?;
         if data_rows.is_multiple_of(100_000) {
@@ -380,21 +402,6 @@ fn workbook_xml(sheet_name: &str) -> String {
     )
 }
 
-fn styles_xml() -> &'static str {
-    concat!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>",
-        "<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">",
-        "<fonts count=\"2\"><font><sz val=\"11\"/><name val=\"Calibri\"/><family val=\"2\"/></font><font><b/><sz val=\"11\"/><name val=\"Calibri\"/><family val=\"2\"/></font></fonts>",
-        "<fills count=\"2\"><fill><patternFill patternType=\"none\"/></fill><fill><patternFill patternType=\"gray125\"/></fill></fills>",
-        "<borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders>",
-        "<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>",
-        "<numFmts count=\"1\"><numFmt numFmtId=\"14\" formatCode=\"yyyy-mm-dd\"/></numFmts>",
-        "<cellXfs count=\"3\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/><xf numFmtId=\"0\" fontId=\"1\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyFont=\"1\"/><xf numFmtId=\"14\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyNumberFormat=\"1\"/></cellXfs>",
-        "<cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\"/></cellStyles>",
-        "</styleSheet>"
-    )
-}
-
 fn styles_xml_for(
     formats: &[crate::layout::NumberFormat],
 ) -> (String, std::collections::HashMap<String, usize>) {
@@ -559,10 +566,15 @@ fn dxf_color(name: &str) -> Option<(&'static str, &'static str)> {
     }
 }
 
-fn styles_xml_with_rules(rules: &[ConditionalRule]) -> String {
-    let mut out = styles_xml().to_string();
+fn styles_xml_with_rules_and_formats(
+    rules: &[ConditionalRule],
+    formats: &[(String, crate::layout::NumberFormat)],
+) -> (String, std::collections::HashMap<String, usize>) {
+    let flat: Vec<crate::layout::NumberFormat> =
+        formats.iter().map(|(_, format)| format.clone()).collect();
+    let (mut out, map) = styles_xml_for(&flat);
     if rules.is_empty() {
-        return out;
+        return (out, map);
     }
     let mut dxfs = String::from("<dxfs count=\"");
     dxfs.push_str(&rules.len().to_string());
@@ -575,7 +587,7 @@ fn styles_xml_with_rules(rules: &[ConditionalRule]) -> String {
     }
     dxfs.push_str("</dxfs>");
     out = out.replace("</styleSheet>", &format!("{dxfs}</styleSheet>"));
-    out
+    (out, map)
 }
 
 fn conditional_formatting_xml(

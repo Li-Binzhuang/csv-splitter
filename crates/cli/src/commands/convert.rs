@@ -9,6 +9,31 @@ use std::path::PathBuf;
 use std::sync::mpsc;
 use std::time::Instant;
 
+fn parse_column_formats(
+    text: &str,
+) -> Result<Vec<(String, csvx_core::layout::NumberFormat)>, String> {
+    let mut formats = Vec::new();
+    for raw in text.split(';').filter(|raw| !raw.trim().is_empty()) {
+        let (column, code) = raw
+            .rsplit_once(':')
+            .ok_or_else(|| format!("number format {raw:?} needs column:format-code"))?;
+        let column = column.trim().to_string();
+        if column.is_empty() {
+            return Err(format!("number format {raw:?} needs a column"));
+        }
+        if formats.iter().any(|(name, _)| name == &column) {
+            return Err(format!("number format column {column:?} is repeated"));
+        }
+        let format = csvx_core::layout::NumberFormat::parse(code.trim())
+            .map_err(|error| format!("number format {column:?}: {error}"))?;
+        formats.push((column, format));
+    }
+    if formats.is_empty() {
+        return Err("--number-format needs at least one column:format-code".to_string());
+    }
+    Ok(formats)
+}
+
 fn safe_sheet_file_name(name: &str) -> String {
     let mut out = String::new();
     for character in name.chars() {
@@ -116,6 +141,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut sheet: Option<String> = None;
     let mut all_sheets = false;
     let mut highlight: Option<String> = None;
+    let mut number_format: Option<String> = None;
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -143,6 +169,13 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 }
             },
             "--all-sheets" => all_sheets = true,
+            "--number-format" => match p.value("--number-format") {
+                Ok(v) => number_format = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--sheet" => match p.value("--sheet") {
                 Ok(v) => sheet = Some(v),
                 Err(e) => {
@@ -205,6 +238,10 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             }
             if highlight.is_some() {
                 eprintln!("error: --highlight needs a single xlsx output, not a directory");
+                return 2;
+            }
+            if number_format.is_some() {
+                eprintln!("error: --number-format needs a single xlsx output, not a directory");
                 return 2;
             }
             if let Err(code) = check_output(Some(&input), &out) {
@@ -280,6 +317,20 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             }
             Some(text) => match parse_highlight_rules(text) {
                 Ok(rules) => rules,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            None => Vec::new(),
+        };
+        let column_formats = match number_format.as_deref() {
+            Some(_) if !target.eq_ignore_ascii_case("xlsx") => {
+                eprintln!("error: --number-format is only valid with --format xlsx");
+                return 2;
+            }
+            Some(text) => match parse_column_formats(text) {
+                Ok(formats) => formats,
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -414,7 +465,16 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         }
         let (tx, rx) = mpsc::channel();
         let reporter = spawn_reporter("convert", rx, true);
-        let result = if rules.is_empty() {
+        let result = if !column_formats.is_empty() {
+            csvx_core::xlsx::csv_to_xlsx_with_number_formats(
+                &input,
+                &out,
+                delimiter,
+                &tx,
+                &rules,
+                &column_formats,
+            )
+        } else if rules.is_empty() {
             csvx_core::engine::convert_format(&input, &out, &target, delimiter, &tx)
         } else {
             csvx_core::xlsx::csv_to_xlsx_with_rules(&input, &out, delimiter, &tx, &rules)

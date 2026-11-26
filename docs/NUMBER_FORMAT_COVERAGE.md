@@ -42,5 +42,5 @@ scripts/gate.sh
 
 ## 与后续项的关系
 
-- 本项只做 **view/format 的解析与渲染**；xlsx 导出样式映射是下一项（项 3）。
+- view/format 的解析与渲染已实现；xlsx 导出样式映射（`write_sheets_with_formats` / `--number-format`）已接线。
 - 负数括号/会计格式未实现，不在本项冒充“已支持”。
