@@ -770,6 +770,37 @@ fn select_sheet<'a>(sheets: &'a [SheetRef], sheet: Option<&str>) -> std::io::Res
 /// Read one worksheet from an `.xlsx`/`.xlsm` workbook into a CSV file.
 ///
 /// The reader understands a small, common subset: shared strings, inline
+fn write_atomically<F>(output: &std::path::Path, write: F) -> std::io::Result<()>
+where
+    F: FnOnce(&mut std::io::BufWriter<std::fs::File>) -> std::io::Result<()>,
+{
+    use std::io::Write as _;
+    static SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let sequence = SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let name = output
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("xlsx-output");
+    let temp = output.with_file_name(format!(".{name}.{}.{}.tmp", std::process::id(), sequence));
+    let file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&temp)?;
+    let mut writer = std::io::BufWriter::new(file);
+    let result = write(&mut writer).and_then(|()| writer.flush());
+    drop(writer);
+    if result.is_ok() {
+        if let Err(error) = std::fs::rename(&temp, output) {
+            std::fs::remove_file(&temp).ok();
+            return Err(error);
+        }
+        Ok(())
+    } else {
+        std::fs::remove_file(&temp).ok();
+        result
+    }
+}
+
 fn table_from_rows(
     rows: Vec<(u64, Vec<String>)>,
     max_rows: u64,
@@ -850,17 +881,17 @@ pub fn read_xlsx_to_csv(input: &Path, output: &Path, sheet: Option<&str>) -> std
     if width == 0 {
         return Err(invalid("xlsx worksheet is empty"));
     }
-    let file = std::fs::File::create(output)?;
-    let mut writer = std::io::BufWriter::new(file);
-    let mut padded: Vec<&str> = Vec::with_capacity(width);
-    for row in &table {
-        padded.clear();
-        for index in 0..width {
-            padded.push(row.get(index).map(String::as_str).unwrap_or(""));
+    write_atomically(output, |writer| {
+        let mut padded: Vec<&str> = Vec::with_capacity(width);
+        for row in &table {
+            padded.clear();
+            for index in 0..width {
+                padded.push(row.get(index).map(String::as_str).unwrap_or(""));
+            }
+            writer.write_all(crate::csv_reader::join_csv_line(&padded, b',').as_bytes())?;
         }
-        writer.write_all(crate::csv_reader::join_csv_line(&padded, b',').as_bytes())?;
-    }
-    writer.flush()
+        Ok(())
+    })
 }
 
 struct SheetRef {

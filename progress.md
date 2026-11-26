@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 94（原子输出）：xlsx→CSV 先写同目录临时文件再 rename，写出失败不会
+截断既有输出；成功路径字节不变；发布包 SHA `8a0738b8…865f1`。
+
 Round 93（待决策记录）：NIGHT_QUEUE 增加 xlsx 流式解析选项（1M 峰值 1.02 GB）
 与 calamine/goal edit 一并留白天决定；发布包 SHA `7ca5eda4…bc5bc29`。
 

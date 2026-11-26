@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "24963f8e19b0b3ba7b85ac381f26bcb77638235db85fd93419f3ad8bc3bc91fe",
+  "batch_id": "868a6b8a79dd000c0db3ef1d2c6abba6887de6dfc768f3fe888dbf63bb36e777",
+  "composite_identity": "0542aa95cd9ac96c2c27981caf137363e46be896590d306c45d859ee7b7d9f2f",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "11e81792010f9a14d0b6a7a4b16ce801a06dec6eb9c609625507f536d8009bbf",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "849b30701e3e81539f011367627d3faf13f84a23977519e46972563512586d14",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；无假 dimension；ISO 日期/日期时间/纯时间；1900 假闰日；1904；hidden sheet；cellIs；线性扫描+手工属性；row/cell 引用校验；1,048,576 总行；CSV BufWriter | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式/坏索引/坏引用/错行/超限报错；MAX_DATA_ROWS=1,048,575 不含表头"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "539f0af7d097ae6d6777c1bb426bd2706c4af20fbc732f37c89155dafbc5822e",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round93 流式解析待决策与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "35c4bc7e0bd9490e537eef8f55a60dcbbe037dc5ce539c6f7bccc72cee66f7eb",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "849b30701e3e81539f011367627d3faf13f84a23977519e46972563512586d14",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；无假 dimension；ISO 日期/日期时间/纯时间；1900 假闰日；1904；hidden sheet；cellIs；线性扫描+手工属性；row/cell 引用校验；1,048,576 总行；CSV BufWriter | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式/坏索引/坏引用/错行/超限报错；MAX_DATA_ROWS=1,048,575 不含表头"
+    },
+    {
+      "candidate_id": "23d6d3ebdc1de0f6767d109ee8836a63b0f143eeb922ed924599dadbec2459e8",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "539f0af7d097ae6d6777c1bb426bd2706c4af20fbc732f37c89155dafbc5822e",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round93 流式解析待决策与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
