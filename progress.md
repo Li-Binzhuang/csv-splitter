@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 13：实跑可选 DSH 回归 `CSVX_DSH_TEST=1 bash scripts/check_mcp_dsh.sh`，
+DSH headless 经 MCP 调用 `csvx_schema` 返回 2 行；`mcp_dsh=ok`；发布包 SHA `26bb5463…f3daf`。
+
 Round 12：SDK 验证 initialize 能力与指令、未知资源错误：tools/resources=true、
 instructions 529 字符、unknown_resource_error=true；发布包 SHA `0ea6df47…a7d60`。
 
@@ -51,7 +54,7 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 - 23 工具字段映射、必填、format 枚举、count/limit/jobs/wait/gate 边界已覆盖。
 - `executor/commands.rs` 406 行，后续可再按工具族拆分。
-- 12 路由已有响应体、401、405、close/events 生命周期契约；MCP resources/initialize 已验证。
+- DSH 可选回归脚本已实跑通过；MCP resources/initialize 已验证。
 - 商业化/产品化未开始。
 
 ## 遇到的问题

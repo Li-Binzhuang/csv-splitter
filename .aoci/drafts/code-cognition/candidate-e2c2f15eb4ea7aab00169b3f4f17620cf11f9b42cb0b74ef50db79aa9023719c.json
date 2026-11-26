@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "033fef4d10820b2692709b222196fd608259eb0ce8271b037f5ce9a3370c9939",
+  "batch_id": "e2c2f15eb4ea7aab00169b3f4f17620cf11f9b42cb0b74ef50db79aa9023719c",
+  "composite_identity": "c0b7b35ef625fd2ea354f26f57dec115aec738ce4d65e6b82abfcee149bf42bd",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "f2c3be255ef25c443cbe1e2e1053868e2b65ef3649beb5472e3a7245e6adfcb1",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "update",
+      "source_sha256": "6e14fdf1592ee6e4c605c6cb97b8fb1f8ffee15685424f032f677026bec92f00",
+      "existing_entry": "MCP_COMPAT.md[SD7S]: F:官方 SDK、schema 与 DSH 客户端验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:docs/ENTRYPOINTS.md | A:23 工具；20 必填；enum 2/range 8；resources 2；initialize 能力/指令；未知资源 | S:不改 DSH profile；DSH 需 CSVX_DSH_TEST=1；结果本机实测"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "19691708d1b608604fab2e82b7570f687b6a335cd4f135b9a7f7287569bcf39f",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round12 initialize/resources 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "3d51374e45157d012451b5864bdcd2d2d9f7286da59761998eadfc979a4520b9",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "update",
+      "source_sha256": "6e14fdf1592ee6e4c605c6cb97b8fb1f8ffee15685424f032f677026bec92f00",
+      "existing_entry": "MCP_COMPAT.md[SD7S]: F:官方 SDK、schema 与 DSH 客户端验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:docs/ENTRYPOINTS.md | A:23 工具；20 必填；enum 2/range 8；resources 2；initialize 能力/指令；未知资源 | S:不改 DSH profile；DSH 需 CSVX_DSH_TEST=1；结果本机实测"
+    },
+    {
+      "candidate_id": "11c62cba58f13e714f95430c6735cd3122e798863c79d82c94922b664167c4a2",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "19691708d1b608604fab2e82b7570f687b6a335cd4f135b9a7f7287569bcf39f",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round12 initialize/resources 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    }
+  ]
+}

@@ -105,7 +105,12 @@ CSVX_DSH_TEST=1 bash scripts/check_mcp_dsh.sh
 ```
 
 只有显式设置 `CSVX_DSH_TEST=1` 才会启动 DSH headless 模型运行；
-未设置时输出 `mcp_dsh=skip`，不消耗模型。
+未设置时输出 `mcp_dsh=skip`，不消耗模型。2026-11-26 实跑一次：
+
+```text
+mcp_dsh=ok
+DSH: `csvx_schema` reports 2 rows (id, city); no edits.
+```
 
 ## 契约
 
