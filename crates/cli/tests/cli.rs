@@ -2810,6 +2810,36 @@ fn number_format_exports_a_date_time_code() {
     );
 }
 
+#[test]
+fn formats_prints_the_xlsx_header_format_codes() {
+    let dir = TempDir::new("xlsfformats");
+    let input = dir.join("t.csv");
+    let book = dir.join("t.xlsx");
+    std::fs::write(&input, "amount,rate\n1234.5,0.123\n").unwrap();
+    let create = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--number-format",
+            "amount:#,##0.00;rate:0.0%",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(create.code(), Some(0));
+    let output = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--formats"])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(0));
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("amount\t#,##0.00"), "{stdout}");
+    assert!(stdout.contains("rate\t0.0%"), "{stdout}");
+}
+
 /// `datecounts` groups a timestamp column by its first ten characters.
 #[test]
 fn report_datecounts_groups_timestamps_by_date() {

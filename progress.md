@@ -40,9 +40,11 @@
 - [x] 项15 xlsx 导入科学/会计/@：同一 API 已覆盖 Scientific/Accounting/Text。
 - [x] 项18 xlsx 导入日期 numFmt：DateTime 白名单读回；测试
   `column_formats_are_read_back_from_export_styles` 覆盖 6 列。
-- [ ] 项19 把 `xlsx_column_formats` 接到 CLI/布局 sidecar。
+- [x] 项19 `xlsx_column_formats` 接到 CLI：`convert book.xlsx --formats` 打印
+  `column<TAB>format`；CLI 测试 `formats_prints_the_xlsx_header_format_codes`。
 - [ ] 项20 公式第五批：RANK/QUARTILE/TRIMMEAN。
 - [ ] 项21 日期时间格式白名单扩展（m/d/yyyy、yyyy-mm-dd hh:mm:ss 等）。
+- [ ] 项22 `--formats --json` 机器可读输出。
 - [x] 项17 DATEDIF 扩展单位 MD/YM/YD；测试 `datedif_supports_ym_md_and_yd`。
 - [x] 项16 公式第四批：YEARFRAC/ISOWEEKNUM/TIME；测试
   `time_isoweeknum_and_yearfrac_work`。
@@ -59,6 +61,9 @@
   `positive;(negative)` 被误拆列的问题。
 
 ## 当前进度
+
+Round 119（项19 格式元数据入口）：`convert book.xlsx --formats` 打印列格式；
+CLI 测试、全量 gate/package 通过；发布包 SHA `ee297b72…63131`。
 
 Round 118（项9/15/18 导入格式元数据）：`xlsx_column_formats` 读取 header+首
 数据行样式，覆盖 6 类 NumberFormat；测试、全量 gate/package 通过；发布包

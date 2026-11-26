@@ -172,6 +172,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut all_sheets = false;
     let mut highlight: Option<String> = None;
     let mut number_format: Option<String> = None;
+    let mut show_formats = false;
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -199,6 +200,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 }
             },
             "--all-sheets" => all_sheets = true,
+            "--formats" => show_formats = true,
             "--number-format" => match p.value("--number-format") {
                 Ok(v) => number_format = Some(v),
                 Err(e) => {
@@ -251,6 +253,41 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         eprintln!("error: convert needs an <input> path");
         return 2;
     };
+
+    if show_formats {
+        let name = input
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if !(name.ends_with(".xlsx") || name.ends_with(".xlsm")) {
+            eprintln!("error: --formats needs an .xlsx/.xlsm input");
+            return 2;
+        }
+        if convert_format.is_some()
+            || out.is_some()
+            || highlight.is_some()
+            || number_format.is_some()
+        {
+            eprintln!("error: --formats cannot be combined with output/conversion flags");
+            return 2;
+        }
+        return match csvx_core::xlsx::xlsx_column_formats(&input, sheet.as_deref()) {
+            Ok(columns) => {
+                for (column, format) in columns {
+                    let code = format
+                        .map(|format| format.name())
+                        .unwrap_or_else(|| "plain".into());
+                    println!("{column}\t{code}");
+                }
+                0
+            }
+            Err(error) => {
+                eprintln!("error: {error}");
+                1
+            }
+        };
+    }
 
     if let Some(target) = convert_format {
         let Some(out) = out else {
