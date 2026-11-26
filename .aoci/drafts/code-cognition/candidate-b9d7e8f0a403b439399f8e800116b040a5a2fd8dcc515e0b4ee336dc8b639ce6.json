@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "c164d257294c7b4cebf17b25e01f3173ae048d6591c326bd49b64d32a950abb0",
+  "batch_id": "b9d7e8f0a403b439399f8e800116b040a5a2fd8dcc515e0b4ee336dc8b639ce6",
+  "composite_identity": "20ff649160a211d8733748ac885cbf707e6f1ecc6b9754e9a9eaadd876bf074f",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "609220dfa44d7726bd4e2100b786286095613b6fd95f6bddaf469086b1953a4b",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "fe12dbcf3430462193a1f247d32df8e574881c9a1d01d5707f9f7d939d32f69b",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round54 日期时间单元格与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "84a544548eee8490a327efd0527418c8f0b022e407e3cb9bcd412cb27b5b7877",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "fe12dbcf3430462193a1f247d32df8e574881c9a1d01d5707f9f7d939d32f69b",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round54 日期时间单元格与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
