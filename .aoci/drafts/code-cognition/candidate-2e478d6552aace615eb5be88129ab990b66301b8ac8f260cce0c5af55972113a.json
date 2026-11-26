@@ -1,0 +1,103 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "5c3691d0a0f4b45e906baf4ff59c03b7438f90659b0d0daa054656dd7821e24f",
+  "batch_id": "2e478d6552aace615eb5be88129ab990b66301b8ac8f260cce0c5af55972113a",
+  "composite_identity": "2794615dd595455c75ac431ee72adda6d354381aa3d9012b5cc8b60d277136c4",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "2c0cca95ea3028ffb5c1b18f96f7be44b23fdf91f8057ede6421bee296c34235",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DESIGN_PARTNER.md",
+      "path": "docs/DESIGN_PARTNER.md",
+      "change": "create",
+      "source_sha256": "427f45aac14f88dc431d0ebd8456f36484f66f9cb82382d53257115f18893bcb"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "d7a8d10eebac6a82617f2c74698af4b6e9a160e5914091ff476c3b7900ba80e7",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round6 100GB 实测 568.46s 与 SHA | S:每轮更新；100GB 数字本机实测；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "e3e39f14cfda168c108da3de885b6d90a7837f1e938fa3676bcff9791f3be9a0",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/test_bench_100gb.sh,code:scripts/test_install_offline.sh | A:gate layout/fmt/clippy/tests/sql/mcp-schema/mcp-sdk/install-offline/bench-smoke | S:gate 必带 sql；安装/bench 负例必须在 gate"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "09076dcd2bda12f935d8188f52a1a54306f900efe3e31ea8fbd24358cfcbfbc8",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布并自验哈希 | R:code:scripts/verify_dist.sh,code:scripts/install_offline.sh,code:scripts/bench_100gb.py | A:打包 SECURITY/离线安装/bench harness；verify_dist；release.json | S:不联网/不打 tag；dist gitignore；DSH 脚本仅可选"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/pilot_kit.sh",
+      "path": "scripts/pilot_kit.sh",
+      "change": "create",
+      "source_sha256": "7efd2cf498bc37967f152ec0809e70497f950a430b9765a4f3cb0ddb3b7efd4f"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_pilot_kit.sh",
+      "path": "scripts/test_pilot_kit.sh",
+      "change": "create",
+      "source_sha256": "db6f6385c6c46203651e75c2c81a714a9037ffcee6bf1c8881a0267b35d40a82"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "753f4ba41d541253f1c11a8123a56c75a79e0f77908ad2fd28cbc822ba9c4827",
+      "object_ref": "code:docs/DESIGN_PARTNER.md",
+      "path": "docs/DESIGN_PARTNER.md",
+      "change": "create",
+      "source_sha256": "427f45aac14f88dc431d0ebd8456f36484f66f9cb82382d53257115f18893bcb"
+    },
+    {
+      "candidate_id": "a8406db1c8140cfd0f0842d4111c99f5827e3d12caf7e20badd527e9267778a1",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "d7a8d10eebac6a82617f2c74698af4b6e9a160e5914091ff476c3b7900ba80e7",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round6 100GB 实测 568.46s 与 SHA | S:每轮更新；100GB 数字本机实测；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "eb5f9e3695d7e27263f76f555d1a24f4c4b14203dbb8d55f56c146668945eb44",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "e3e39f14cfda168c108da3de885b6d90a7837f1e938fa3676bcff9791f3be9a0",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/test_bench_100gb.sh,code:scripts/test_install_offline.sh | A:gate layout/fmt/clippy/tests/sql/mcp-schema/mcp-sdk/install-offline/bench-smoke | S:gate 必带 sql；安装/bench 负例必须在 gate"
+    },
+    {
+      "candidate_id": "c625b47d1e9993c0b2f9071e0a9136e320cd6cf08ae9db0404c3b745c3e1bded",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "09076dcd2bda12f935d8188f52a1a54306f900efe3e31ea8fbd24358cfcbfbc8",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布并自验哈希 | R:code:scripts/verify_dist.sh,code:scripts/install_offline.sh,code:scripts/bench_100gb.py | A:打包 SECURITY/离线安装/bench harness；verify_dist；release.json | S:不联网/不打 tag；dist gitignore；DSH 脚本仅可选"
+    },
+    {
+      "candidate_id": "9511a94f3509e8424c2ff4bd202f2d016da1b0feb1bfb9b27f6864df2f5ee6a8",
+      "object_ref": "code:scripts/pilot_kit.sh",
+      "path": "scripts/pilot_kit.sh",
+      "change": "create",
+      "source_sha256": "7efd2cf498bc37967f152ec0809e70497f950a430b9765a4f3cb0ddb3b7efd4f"
+    },
+    {
+      "candidate_id": "1087120c54648820b5852ba25dc3587dd74d1861452c74171b673c5e3b2ff4fe",
+      "object_ref": "code:scripts/test_pilot_kit.sh",
+      "path": "scripts/test_pilot_kit.sh",
+      "change": "create",
+      "source_sha256": "db6f6385c6c46203651e75c2c81a714a9037ffcee6bf1c8881a0267b35d40a82"
+    }
+  ]
+}

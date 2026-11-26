@@ -17,6 +17,11 @@
 
 ## 当前进度
 
+Round 7（设计伙伴支持）：新增 `scripts/pilot_kit.sh`（demo + pilot report +
+kickoff JSON/MD，无网络）与 smoke；gate 增加 pilot-kit-smoke；新增
+`docs/DESIGN_PARTNER.md`（4 周计划、指标、数据边界、非目标）；发布包 SHA
+`61cfc2cd…4ac72`。
+
 Round 6（Benchmark 目标）：新增 `scripts/bench_100gb.py`（流式生成、schema/filter/
 search/quality、elapsed+RSS、JSON+Markdown）与 smoke 脚本；gate 增加 bench-smoke；
 1000 行 smoke 1348.3 ms；1 GB 实测 total 5727.7 ms；**100 GB 实测**
@@ -132,5 +137,5 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 ## 下一轮具体行动
 
 1. 全量 gate、打包、AOCI 收尾。
-2. 提交本地；本轮 push 已用于补推 3bc8dbd8，下一轮再推。
-3. 验收后 edit 目标转向 100GB benchmark 或试点支持。
+2. 提交本地；本轮 push 已用于补推前一批，下一轮再推。
+3. 目标保持 active，继续试点支持。

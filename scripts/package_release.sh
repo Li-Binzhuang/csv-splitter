@@ -14,12 +14,12 @@ rm -rf "$STAGE"
 mkdir -p "$STAGE/docs"
 cp "$BIN" "$STAGE/csvx"
 cp README.md CHANGELOG.md LICENSE "$STAGE/"
-for doc in ACCEPTANCE AGENT_API AGENT_TRACE QUICKSTART_AGENT CAPABILITIES FORMULA_CACHE DSH_SKILL HANDOVER NIGHT_CHECKPOINT BENCHMARKS BUSINESS DEMO PILOT PILOT_SAMPLE PILOT_CONFIRMATION SALES OUTREACH RELEASE_CHECKLIST ROADMAP PILOT_INTAKE XLSX ENTRYPOINTS MCP_COMPAT SECURITY; do
+for doc in ACCEPTANCE AGENT_API AGENT_TRACE QUICKSTART_AGENT CAPABILITIES FORMULA_CACHE DSH_SKILL HANDOVER NIGHT_CHECKPOINT BENCHMARKS BUSINESS DEMO PILOT PILOT_SAMPLE PILOT_CONFIRMATION SALES OUTREACH RELEASE_CHECKLIST ROADMAP PILOT_INTAKE XLSX ENTRYPOINTS MCP_COMPAT SECURITY DESIGN_PARTNER; do
   [[ -f "docs/$doc.md" ]] && cp "docs/$doc.md" "$STAGE/docs/"
 done
 mkdir -p "$STAGE/scripts"
-cp scripts/demo_end_to_end.sh scripts/mcp_client.py scripts/pilot_report.py scripts/bench_mcp_cache.py scripts/smoke_http.py scripts/install_skill.sh scripts/install_offline.sh scripts/bench_100gb.py "$STAGE/"
-cp scripts/agent_routes_smoke.py scripts/check_agent_stats.py scripts/check_phase_times.py scripts/check_mcp_sdk.sh scripts/check_mcp_schema.py scripts/check_mcp_dsh.sh scripts/test_install_offline.sh scripts/test_bench_100gb.sh "$STAGE/scripts/"
+cp scripts/demo_end_to_end.sh scripts/mcp_client.py scripts/pilot_report.py scripts/bench_mcp_cache.py scripts/smoke_http.py scripts/install_skill.sh scripts/install_offline.sh scripts/bench_100gb.py scripts/pilot_kit.sh "$STAGE/"
+cp scripts/agent_routes_smoke.py scripts/check_agent_stats.py scripts/check_phase_times.py scripts/check_mcp_sdk.sh scripts/check_mcp_schema.py scripts/check_mcp_dsh.sh scripts/test_install_offline.sh scripts/test_bench_100gb.sh scripts/test_pilot_kit.sh "$STAGE/scripts/"
 cp docs/QUICKSTART_AGENT.md "$STAGE/AGENT_QUICKSTART.md"
 mkdir -p "$STAGE/mcp_sdk" "$STAGE/skills/csvx-data" "$STAGE/examples/agent"
 cp skills/csvx-data/SKILL.md "$STAGE/skills/csvx-data/"
