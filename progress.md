@@ -102,12 +102,15 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项159 累计利息/本金（功能级）：`CUMIPMT(rate, nper, pv, start,
+  end[, type])`/`CUMPRINC(...)`；区间越界/type 非法 `#VALUE!`；验收：单测 + gate。
 - [ ] 项158 多期复利（功能级）：`FVSCHEDULE(principal, schedule)`；
   schedule 同行区间/空区间 `#VALUE!`；验收：单测 + gate。
 - [ ] 项157 日期内部收益率（功能级）：`XIRR(values, dates[, guess])`；
   迭代求根/正负现金流/非法日期 `#VALUE!`；验收：单测 + gate。
-- [ ] 项156 分期利息/本金（功能级）：`IPMT(rate, per, nper, pv[, fv[, type]])`/
-  `PPMT(...)`；per 越界/type 非法 `#VALUE!`；验收：单测 + gate。
+- [x] 项156 分期利息/本金（功能级）：`IPMT(rate, per, nper, pv[, fv[, type]])`/
+  `PPMT(...)`；per 越界/type 非法 `#VALUE!`；测试
+  `ipmt_and_ppmt_split_payments`。
 - [x] 项155 等效增长率（功能级）：`RRI(nper, pv, fv)`；nper≤0/非正
   pv/fv `#VALUE!`；测试 `rri_reports_equivalent_growth_rate`。
 - [x] 项154 日期净现值（功能级）：`XNPV(rate, values, dates)`；values/dates
@@ -170,6 +173,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 185（项156 IPMT/PPMT，功能级）：利息/本金拆分、type/期数边界；
+定向与全量 gate/package 通过；发布包 SHA `3bb66345…f51b9`。
 
 Round 184（项155 RRI，功能级）：等效增长率、nper/pv/异号边界；
 定向与全量 gate/package 通过；发布包 SHA `6bc713bc…f0909e`。

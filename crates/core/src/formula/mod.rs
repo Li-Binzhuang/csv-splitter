@@ -1442,6 +1442,27 @@ mod tests {
     }
 
     #[test]
+    fn ipmt_and_ppmt_split_payments() {
+        assert_eq!(eval_str("ipmt(0, 1, 10, 1000)", &[]), "0");
+        assert_eq!(eval_str("ppmt(0, 1, 10, 1000)", &[]), "-100");
+        assert_eq!(eval_str("ipmt(0.1, 1, 2, 1000)", &[]), "-100");
+        assert_eq!(eval_str("ppmt(0.1, 1, 2, 1000)", &[]), "-476.190476");
+        assert_eq!(eval_str("ipmt(0.1, 2, 2, 1000)", &[]), "-52.380952");
+        assert_eq!(eval_str("ppmt(0.1, 2, 2, 1000)", &[]), "-523.809524");
+        assert_eq!(eval_str("ipmt(0.1, 1, 2, 1000, 0, 1)", &[]), "0");
+        assert_eq!(eval_str("ppmt(0.1, 1, 2, 1000, 0, 1)", &[]), "-523.809524");
+        assert_eq!(eval_str("ipmt(0.1, 2, 2, 1000, 0, 1)", &[]), "-47.619048");
+        for source in [
+            "ipmt(0.1, 0, 2, 1000)",
+            "ipmt(0.1, 3, 2, 1000)",
+            "ipmt(0.1, 1, 2, 1000, 0, 2)",
+            "ppmt(0.1, 1, 0, 1000)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn rri_reports_equivalent_growth_rate() {
         assert_eq!(eval_str("rri(10, 1000, 2000)", &[]), "0.071773");
         assert_eq!(eval_str("rri(1, 100, 110)", &[]), "0.1");

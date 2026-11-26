@@ -113,6 +113,7 @@
 | RATE | 支持（功能级新增） | Newton 迭代；nper≤0/guess≤-1/不收敛 `#VALUE!` |
 | IRR | 支持（功能级新增） | 周期现金流 Newton 迭代；需正负现金流；不收敛 `#VALUE!` |
 | EFFECT / NOMINAL | 支持（功能级新增） | npery 正整数；负利率/非整数周期 `#VALUE!` |
+| IPMT / PPMT | 支持（功能级新增） | 期数/type/nper 边界；付款拆分为利息/本金 |
 | SLN / SYD | 支持（功能级新增） | 直线/年数总和折旧；life≤0、period 越界/非整数 `#VALUE!` |
 | DB / DDB | 支持（功能级新增） | 固定/双倍余额递减；period 越界、月数/因子非法 `#VALUE!` |
 | RRI | 支持（功能级新增） | nper≤0、pv=0、异号现金流 `#VALUE!` |

@@ -1751,6 +1751,74 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number((fv / pv).powf(1.0 / nper) - 1.0)
         }
+        // IPMT/PPMT: split each payment into interest and principal.
+        "ipmt" | "ppmt" => {
+            if args.len() < 4 || args.len() > 6 {
+                return Value::Error;
+            }
+            let (Some(rate), Some(per), Some(nper)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            let Some(pv) = eval(&args[3], ctx).number() else {
+                return Value::Error;
+            };
+            let fv = args
+                .get(4)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(0.0))
+                .unwrap_or(f64::NAN);
+            let payment_type = args
+                .get(5)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(0.0))
+                .unwrap_or(f64::NAN);
+            if !rate.is_finite()
+                || !per.is_finite()
+                || !nper.is_finite()
+                || !pv.is_finite()
+                || !fv.is_finite()
+                || !payment_type.is_finite()
+                || rate <= -1.0
+                || nper <= 0.0
+                || per < 1.0
+                || per > nper
+                || per.trunc() != per
+                || ![0.0, 1.0].contains(&payment_type)
+            {
+                return Value::Error;
+            }
+            let payment = if rate == 0.0 {
+                -(pv + fv) / nper
+            } else {
+                let growth = (1.0 + rate).powf(nper);
+                -(fv + pv * growth) * rate / ((1.0 + rate * payment_type) * (growth - 1.0))
+            };
+            let interest = if rate == 0.0 || (payment_type == 1.0 && per == 1.0) {
+                0.0
+            } else if payment_type == 1.0 {
+                let months = per - 2.0;
+                let balance = pv * (1.0 + rate).powf(months)
+                    + payment * ((1.0 + rate).powf(months + 1.0) - 1.0) / rate;
+                -balance * rate
+            } else {
+                let months = per - 1.0;
+                let balance = pv * (1.0 + rate).powf(months)
+                    + payment * ((1.0 + rate).powf(months) - 1.0) / rate;
+                -balance * rate
+            };
+            if !interest.is_finite() || !payment.is_finite() {
+                return Value::Error;
+            }
+            Value::Number(if lower == "ipmt" {
+                interest
+            } else {
+                payment - interest
+            })
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
