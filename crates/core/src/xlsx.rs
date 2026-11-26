@@ -474,7 +474,7 @@ fn write_formatted_cell(
     let reference = format!("{}{}", column_name(column), row);
     let trimmed = value.trim();
     match format {
-        NumberFormat::Plain => {
+        NumberFormat::Plain | NumberFormat::Text => {
             out.push_str(&cell_xml(column, row, value, false));
             return;
         }
@@ -489,7 +489,9 @@ fn write_formatted_cell(
         }
         NumberFormat::Decimal { .. }
         | NumberFormat::Percent { .. }
-        | NumberFormat::Currency { .. } => {
+        | NumberFormat::Currency { .. }
+        | NumberFormat::Scientific { .. }
+        | NumberFormat::Accounting { .. } => {
             let numeric = !trimmed.is_empty()
                 && !(trimmed.starts_with('0') && !trimmed.starts_with("0.") && trimmed != "0")
                 && trimmed.parse::<f64>().is_ok();

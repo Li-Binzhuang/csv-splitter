@@ -8,7 +8,7 @@ CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:�
 Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml,code:crates/agent/Cargo.toml,code:crates/cli/Cargo.toml | A:members core/mcp/agent/cli；workspace.dependencies csvx-core；version 4.2.0 是发布真相 | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
 README.md[SG6L]: F:项目总览、命令表、上手与部署入口 | R:code:docs/BENCHMARKS.md,code:docs/CAPABILITIES.md,code:docs/DEPLOY.md | A:100GB 本机三项数字；bench JSON 链接；快速开始；命令表 | S:性能数字必须实测；本机非 SLA；文档测试校验默认端口
-progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round110 导出接线与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞
+progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round111 格式第二批与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞
 
 ===/<repository>/.github/workflows/===
 ci.yml[OV7S]: F:主 CI：格式化、引擎与 CLI 测试、性能守卫、clippy 工作区、失败注解 | R:code:scripts/smoke.sh,code:scripts/regress.sh,code:scripts/backend-smoke.sh,code:scripts/release-decision.sh | A:单 job 串联；engine 与 CLI 两个测试步骤失败时各重试一次并留 warning annotation（本地单跑/两线程均绿的负载型 flake）；每步 tee 日志，失败时把测试名转成公开 annotation 并上传 artifact | S:曾因双 job + 缓存配额出现“跳过一半、红叉无信息”，故单 job；重试只限一次且日志保留，真 bug 仍会两次失败
@@ -52,7 +52,7 @@ groupby.rs[KA8L]: F:流式分组聚合，内存随组数而非行数增长 | R:c
 index.rs[CP8L]: F:稀疏行索引：把每第 N 条记录的字节偏移存成 sidecar，任意行跳转与扫描起点无关 | R:code:crates/core/src/workbook/export.rs | A:默认每 1000 条一个检查点，定位后最多再跳过 999 条；checkpoints() 公开检查点偏移，filter/search 的分段并行据此切分并得到每段的起始行号；UTF-16 输入拒绝建索引 | S:索引记的是字节偏移，UTF-16 的逗号与换行是两字节，算出来会是错行号
 jobs.rs[MW8L]: F:后台任务注册表：进度、状态、取消令牌与终态判定 | R:code:crates/cli/src/serve.rs | A:任务在独立线程运行，进度写入共享表，客户端按 id 轮询；只有真正检查取消标志的任务才标为可取消 | S:把状态改成已取消而工作仍在继续，比不提供取消更糟，因此不可取消的任务返回 409
 json.rs[CG5T]: F:唯一的 JSON 字符串转义实现 | R:code:crates/core/src/validate.rs | A:转义引号、反斜杠、换行、制表与低于 0x20 的控制字符 | S:此前三处各自实现且对控制字符处理不一致，同一份数据在不同端点会转义成不同字节
-layout.rs[CU7L]: F:显示元数据 sidecar：列名替换、列宽、数字格式与冻结列 | R:code:crates/core/src/sheet.rs | A:NumberFormat 含 Decimal/Percent/Currency/DateTime；日期时间白名单 yyyy-mm-dd、dd/mm/yyyy、hh:mm:ss 等 8 种；非数字/非日期原样返回 | S:只影响展示不改值，写 .view 不写 journal；格式未识别时报错不静默套用；输入日期是 ISO 前缀不是 Excel 序列号
+layout.rs[CU7L]: F:显示元数据 sidecar：列名替换、列宽、数字格式与冻结列 | R:code:crates/core/src/sheet.rs | A:NumberFormat 含 Decimal/Percent/Currency/DateTime/Scientific/Accounting/Text；日期 8 种；科学计数指数补位；负数括号；@ 原样 | S:只影响展示不改值，写 .view 不写 journal；未识别格式报错不静默；输入日期是 ISO 前缀
 lib.rs[CG6T]: F:core crate 的模块清单与基础类型再导出 | R:code:crates/core/src/engine.rs,code:crates/core/src/xlsx.rs,code:crates/core/src/contract.rs | A:读取、编辑、分析、查询、SQL、xlsx 导出各模块；scan_parallel；contract/ops；pub use types | S:新增模块必须写进 ARCHITECTURE.md；xlsx 模块不依赖 sql feature
 listing.rs[CQ7M]: F:目录列举：在 root 下列出可打开的 CSV 及大小与修改时间 | R:code:crates/core/src/book.rs | A:按扩展名过滤，路径相对 root，一次返回足够渲染文件选择器 | S:-
 lookup.rs[DD8L]: F:跨表查找：引用表加载成映射，主表保持流式 | R:code:crates/core/src/workbook/rows.rs | A:未命中写 #N/A；max_keys 限制引用表规模；key 与 from-key 可用逗号写成复合键，各部分用单元分隔符拼接 | S:单键在 id 重复的参考表上会静默附上第一行，例如把 1,CDMX 配成 1,Puebla 的地区；复合键修的就是这个
@@ -79,7 +79,7 @@ engine.rs[EG8L]: F:引擎选择器：native 与 DuckDB 分析路径的统一入�
 scan_parallel.rs[KP7M]: F:filter 与 search 共用的分段并行、可续扫扫描 | R:code:crates/core/src/index.rs,code:crates/core/src/filter.rs,code:crates/core/src/search.rs | A:ScanOptions；scan_parallel_bytes 接受字节谓词；每波按 64 检查点分段；is_seekable 对压缩文件返回 false，从而让压缩输入走顺序路径 | S:行号必须与顺序一致；行数上限每波兑现；GBK/UTF-16 不支持游标；压缩流不可 seek
 contract.rs[CG9M]: F:CLI/HTTP/MCP 共用的操作契约：效果、稳定错误码与 17 个操作目录 | R:code:crates/core/src/lib.rs,code:crates/cli/src/main.rs,code:docs/OPERATIONS.md | A:Effect read/preview/apply/job、ErrorCode 10 与 17 OperationSpec；operations_json 手工拼 JSON；gate 支持文件/目录并输出 failures；report 支持 spec/specText；concat 支持 paths/dir/ignoreHeader；CLI ops、HTTP /ops、MCP resource 共用 | S:名称/错误码是公开契约；input/output 只是摘要不是 JSON Schema；gate/report 归 read、concat 归 apply；typed adapter 仍在迁移
 ops.rs[CG9L]: F:typed schema/view/filter/edit preview 与 edit apply：行号/预算/原子写语义 | R:code:crates/core/src/contract.rs,code:crates/core/src/sheet.rs,code:crates/core/src/filter.rs,code:crates/cli/src/main.rs,code:crates/cli/src/serve.rs | A:SchemaRequest；FilterRequest 四条执行路径；ViewRequest 无编辑 WindowViewer/有编辑 Sheet；preview_edit 不写；EditApplyRequest 原子 append journal 并返回 applied/operations；单测覆盖 | S:view HTTP 只接简单窗口；MCP 尚无 transaction apply；filter 行号 1-based；preview hash 非 SHA
-xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；csv_to_xlsx_with_number_formats 流式导出列格式；write_sheets_with_formats；条件规则 top/bottom；zip entry 流式解析；1M 53MB | S:不写公式/图表；合并不展开；无缓存公式/坏引用/超限报错；格式映射只对可解析数字/日期生效
+xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；csv_to_xlsx_with_number_formats 流式列格式；write_sheets_with_formats；Scientific/Accounting/Text 样式；条件 top/bottom；zip entry 流式；1M 53MB | S:不写公式/图表；合并不展开；无缓存公式/坏引用/超限报错；格式只对可解析数字/日期生效
 
 ===/<repository>/crates/core/src/formula/===
 functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/条件/同行区间；ref/vlookup 返回 #N/A；IFS/SWITCH/IFNA/CHOOSE/NA/XOR/TRUE/FALSE；TEXT 复用 NumberFormat；TEXTBEFORE/TEXTAFTER instance；DATEVALUE/HOUR/MINUTE/SECOND | S:单列参数按整列；无预扫整列聚合 #VALUE!；跨行区间/整列 median 不支持；large/small k、percentile p、TEXTBEFORE instance 越界报错；networkdays 无节假日
@@ -141,7 +141,7 @@ PILOT_INTERVIEW.md[SG7T]: F:30 分钟设计伙伴访谈提纲 | R:code:docs/DESI
 SUPPORT_MATRIX.md[SG7T]: F:平台/功能支持矩阵与工单模板 | R:code:docs/DEPLOY.md,code:docs/OPERATIONS.md,code:docs/SECURITY.md | A:macOS arm64 实测；Linux 未验证；Windows 不支持；安装保留/复核清单 | S:非 SLA；跨平台包不通用；工单不含凭据/原始行
 XLSX_ENGINE.md[SZ7T]: F:XLSX 引擎决策、迁移方案、覆盖矩阵与实测 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；1904/hidden；全 sheet；数字格式导出；CLI --number-format；1M 8.04s/53MB | S:迁移未执行待批准；不新增依赖；性能仅 release；内存 macOS time -l
 FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/TEXTBEFORE/AFTER/DATEVALUE/HOUR/MINUTE/SECOND 第二批；错误 #VALUE!/#N/A | S:矩阵只记当前实现；查找受限 sheet/key/value；TEXT 仅基础格式
-NUMBER_FORMAT_COVERAGE.md[SA7T]: F:数字格式覆盖矩阵与缺口 | R:code:crates/core/src/layout.rs,code:crates/core/src/xlsx.rs | A:千分位/小数/百分比/货币/日期时间；8 种日期格式；导出接线 --number-format；缺失科学计数/会计/负数段/@ | S:格式只对数字/日期生效；未识别格式报错
+NUMBER_FORMAT_COVERAGE.md[SA7T]: F:数字格式覆盖矩阵与缺口 | R:code:crates/core/src/layout.rs,code:crates/core/src/xlsx.rs | A:千分位/小数/百分比/货币/日期时间；8 种日期；Scientific/Accounting/Text；导出接线；缺失会计对齐/颜色段 | S:格式只对数字/日期生效；未识别格式报错
 
 ===/<repository>/scripts/===
 backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | R:code:scripts/smoke.sh | A:逐项 ok 或 FAIL 计数并以非零退出；覆盖 CORS、ETag、gzip、job、编辑、编码转换、自引用拒绝与请求上限；BIN 默认取 ./target/debug/csvx | S:脚本默认跑 target/debug 的二进制，改了代码只重建 release 会在这里看到旧行为；裸 wait 会连自己起的 server 一起等，必须收集 PID 逐个等待

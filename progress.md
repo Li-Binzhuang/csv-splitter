@@ -29,15 +29,20 @@
   测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [x] 项5 公式第二批：TEXT/TEXTBEFORE/TEXTAFTER/DATEVALUE/HOUR/MINUTE/SECOND；
   测试 `text_and_time_helpers_match_spreadsheet_expectations`。
-- [ ] 项6 数字格式第二批：科学计数/会计/负数括号/@ 文本。
+- [x] 项6 数字格式第二批：`0.00E+00`、负数括号会计、`@` 文本；测试
+  `scientific_accounting_and_text_formats_work`。
 - [x] 项7 `--highlight` CLI 支持 `amount:top2:green` / `bottom1:red`，帮助与
   CLI 测试 `convert_xlsx_can_highlight_a_top_rank`。
 - [x] 项8 convert 导出接线数字格式：`--number-format "amount:#,##0.00;rate:0.0%"`；
   CLI 测试 `convert_xlsx_can_apply_per_column_number_formats`。
 - [ ] 项9 xlsx 导入 numFmt → ColumnMeta 格式保真（日期之外的小数/百分比/货币）。
 - [ ] 项10 `--number-format` 与 `--highlight` 同用、重复列/非法码错误诊断测试。
+- [ ] 项11 公式第三批：TIMEVALUE/NOW/TODAY/DATEDIF。
 
 ## 当前进度
+
+Round 111（项6 格式第二批）：`NumberFormat` 新增 Scientific/Accounting/Text，
+布局测试、全量 gate/package 通过；发布包 SHA `6c900b13…0eee8`。
 
 Round 110（项8 导出接线）：新增 `--number-format`，把 Decimal/Percent/Currency/
 DateTime 映射进 streaming xlsx 导出；CLI 测试、全量 gate/package 通过；发布包

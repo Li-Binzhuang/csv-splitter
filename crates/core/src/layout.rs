@@ -32,6 +32,15 @@ pub enum NumberFormat {
     Currency { symbol: String, places: usize },
     /// Date/time display, e.g. `yyyy-mm-dd` or `yyyy-mm-dd hh:mm`.
     DateTime { pattern: String },
+    /// Scientific notation, e.g. `0.00E+00`.
+    Scientific { places: usize, upper: bool },
+    /// Negative values in parentheses, e.g. `#,##0.00;(#,##0.00)`.
+    Accounting {
+        symbol: Option<String>,
+        places: usize,
+    },
+    /// `@`: text is shown as entered.
+    Text,
 }
 
 impl NumberFormat {
@@ -45,6 +54,48 @@ impl NumberFormat {
             return Ok(Self::Percent {
                 places: decimals(percent),
             });
+        }
+        if spec == "@" {
+            return Ok(Self::Text);
+        }
+        if let Some((positive, negative)) = spec.split_once(';') {
+            let positive = positive.trim();
+            let negative = negative.trim();
+            if negative.starts_with('(') && negative.ends_with(')') {
+                let symbol = positive
+                    .chars()
+                    .next()
+                    .filter(|character| matches!(character, '$' | '¥' | '€'))
+                    .map(|character| character.to_string());
+                let rest = symbol.as_ref().map(|_| &positive[1..]).unwrap_or(positive);
+                if rest
+                    .chars()
+                    .all(|character| matches!(character, '#' | '0' | ',' | '.'))
+                {
+                    return Ok(Self::Accounting {
+                        symbol,
+                        places: decimals(rest),
+                    });
+                }
+            }
+        }
+        if let Some((mantissa, exponent)) = spec.split_once(['E', 'e']) {
+            let upper = spec.contains('E');
+            let mantissa_ok = mantissa
+                .chars()
+                .all(|character| matches!(character, '0' | '.'))
+                && mantissa.contains('.');
+            let exponent_ok = exponent
+                .strip_prefix(['+', '-'])
+                .unwrap_or(exponent)
+                .chars()
+                .all(|character| character == '0');
+            if mantissa_ok && exponent_ok && !exponent.is_empty() {
+                return Ok(Self::Scientific {
+                    places: decimals(mantissa),
+                    upper,
+                });
+            }
         }
         if is_date_time_pattern(spec) {
             return Ok(Self::DateTime {
@@ -101,6 +152,24 @@ impl NumberFormat {
                 }
             }
             Self::DateTime { pattern } => pattern.clone(),
+            Self::Scientific { places, upper } => {
+                let exponent = if *upper { "E+00" } else { "e+00" };
+                if *places == 0 {
+                    format!("0{exponent}")
+                } else {
+                    format!("0.{} {exponent}", "0".repeat(*places)).replace(' ', "")
+                }
+            }
+            Self::Accounting { symbol, places } => {
+                let symbol = symbol.as_deref().unwrap_or("");
+                let body = if *places == 0 {
+                    "#,##0".to_string()
+                } else {
+                    format!("#,##0.{}", "0".repeat(*places))
+                };
+                format!("{symbol}{body};({symbol}{body})")
+            }
+            Self::Text => "@".to_string(),
         }
     }
 
@@ -139,8 +208,33 @@ impl NumberFormat {
             Self::DateTime { pattern } => {
                 render_date_time(pattern, value).unwrap_or_else(|| value.to_string())
             }
+            Self::Scientific { places, upper } => render_scientific(number, *places, *upper),
+            Self::Accounting { symbol, places } => {
+                let (negative, rendered) = if number < 0.0 {
+                    (true, format!("{:.places$}", number.abs()))
+                } else {
+                    (false, format!("{number:.places$}"))
+                };
+                let rendered = group(&rendered);
+                let symbol = symbol.as_deref().unwrap_or("");
+                if negative {
+                    format!("({symbol}{rendered})")
+                } else {
+                    format!("{symbol}{rendered}")
+                }
+            }
+            Self::Text => value.to_string(),
         }
     }
+}
+
+fn render_scientific(number: f64, places: usize, upper: bool) -> String {
+    let rendered = format!("{number:.places$E}");
+    let (mantissa, exponent) = rendered.split_once('E').unwrap_or((&rendered, "0"));
+    let exponent: i32 = exponent.parse().unwrap_or(0);
+    let marker = if upper { 'E' } else { 'e' };
+    let sign = if exponent < 0 { '-' } else { '+' };
+    format!("{mantissa}{marker}{sign}{:02}", exponent.abs())
 }
 
 fn is_date_time_pattern(spec: &str) -> bool {
@@ -541,6 +635,24 @@ mod tests {
         assert_eq!(date.render("N/A"), "N/A");
         assert_eq!(date.render("123"), "123");
         assert!(NumberFormat::parse("yyyy-mm").is_err());
+    }
+
+    #[test]
+    fn scientific_accounting_and_text_formats_work() {
+        let sci = NumberFormat::parse("0.00E+00").unwrap();
+        assert_eq!(sci.name(), "0.00E+00");
+        assert_eq!(sci.render("1234.5"), "1.23E+03");
+        let lower = NumberFormat::parse("0.0e+00").unwrap();
+        assert_eq!(lower.render("1234.5"), "1.2e+03");
+
+        let money = NumberFormat::parse("$#,##0.00;($#,##0.00)").unwrap();
+        assert_eq!(money.render("1234.5"), "$1,234.50");
+        assert_eq!(money.render("-1234.5"), "($1,234.50)");
+
+        let text = NumberFormat::parse("@").unwrap();
+        assert_eq!(text.render("007"), "007");
+        assert_eq!(text.render("-"), "-");
+        assert!(NumberFormat::parse("0.00E").is_err());
     }
 
     #[test]
