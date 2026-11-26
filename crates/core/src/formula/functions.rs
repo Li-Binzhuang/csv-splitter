@@ -1537,6 +1537,51 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // SLN/SYD: straight-line and sum-of-years depreciation.
+        "sln" => {
+            if args.len() != 3 {
+                return Value::Error;
+            }
+            let (Some(cost), Some(salvage), Some(life)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !cost.is_finite() || !salvage.is_finite() || !life.is_finite() || life <= 0.0 {
+                return Value::Error;
+            }
+            Value::Number((cost - salvage) / life)
+        }
+        "syd" => {
+            if args.len() != 4 {
+                return Value::Error;
+            }
+            let (Some(cost), Some(salvage), Some(life), Some(period)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+                eval(&args[3], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !cost.is_finite()
+                || !salvage.is_finite()
+                || !life.is_finite()
+                || !period.is_finite()
+                || life <= 0.0
+                || period < 1.0
+                || period > life
+                || life.trunc() != life
+                || period.trunc() != period
+            {
+                return Value::Error;
+            }
+            let factor = life - period + 1.0;
+            let sum = life * (life + 1.0) / 2.0;
+            Value::Number((cost - salvage) * factor / sum)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

@@ -1442,6 +1442,25 @@ mod tests {
     }
 
     #[test]
+    fn straight_line_and_sum_of_years_depreciation() {
+        assert_eq!(eval_str("sln(10000, 1000, 5)", &[]), "1800");
+        assert_eq!(eval_str("sln(1000, 0, 4)", &[]), "250");
+        assert_eq!(eval_str("syd(10000, 1000, 5, 1)", &[]), "3000");
+        assert_eq!(eval_str("syd(10000, 1000, 5, 2)", &[]), "2400");
+        assert_eq!(eval_str("syd(10000, 1000, 5, 5)", &[]), "600");
+        for source in [
+            "sln(1000, 0, 0)",
+            "sln(1000, 0, -1)",
+            "syd(1000, 0, 0, 1)",
+            "syd(1000, 0, 5, 0)",
+            "syd(1000, 0, 5, 6)",
+            "syd(1000, 0, 5.5, 1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn effect_and_nominal_convert_rates() {
         assert_eq!(eval_str("effect(0.12, 12)", &[]), "0.126825");
         assert_eq!(eval_str("effect(0.12, 4)", &[]), "0.125509");
