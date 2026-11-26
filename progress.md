@@ -78,8 +78,34 @@
 - [x] 项13 `--number-format` 导出 Scientific/Accounting/@ 样式；CLI 测试
   `number_format_exports_scientific_accounting_and_text_codes`；修复会计码
   `positive;(negative)` 被误拆列的问题。
+- [x] 项129 边界加固合并（一次性收尾）：把项39–128 的周末/节假日/DAYS360
+  微变体合并为「日期边界加固」，已由 `date_range_boundaries_work`、
+  `workday_weekend_start_and_holiday_weekends_work` 等既有测试覆盖；后续同类
+  微测试不再单独立项。
+- [x] 项130 文本替换语义（功能级）：`SUBSTITUTE` 默认全替换、第 N 个
+  `instance_num`、越界原样、<1 `#VALUE!`；`REPLACE` 改为 Excel 位置语义
+  （start_num/num_chars，1-based，越界与非法参数报错）。测试
+  `text_concatenation_and_slicing` 覆盖全部/第 N/越界/非法参数。
+- [ ] 项131 同行查找（功能级）：`INDEX(range, n)` 与 `MATCH(value, range, 0)`
+  支持同行区间，1-based；越界/未命中按 Excel `#VALUE!`/`#N/A`。验收：数值与
+  文本、越界、未命中单测 + gate。
+- [ ] 项132 非 ASCII 码点（功能级）：`UNICHAR`/`UNICODE` 支持 Unicode 码点
+  与字符互转；非法码点/多字符报 `#VALUE!`。验收：中文/emoji/边界单测 + gate。
+- [ ] 项133 固定小数/货币文本（功能级）：`FIXED`/`DOLLAR` 生成带千分位/小数位
+  的文本，`NUMBERVALUE` 解析区域小数点；验收：格式与错误单测 + gate。
+
+## 路线图质量门槛
+
+- 每一项必须是功能级变更：新函数/新格式能力/新 CLI/API 能力/真实 bug 修复；
+- 已支持函数的纯测试边界变体不再独立立项，归入「边界加固」并一次性收尾；
+- 每轮最多收 1 个功能级项；未完成项恒 ≥3，来源只能是覆盖矩阵缺失或
+  `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 159（项130 文本替换语义，功能级）：SUBSTITUTE instance_num + REPLACE
+位置语义；旧测试改用 substitute；定向与全量 gate/package 通过；发布包
+SHA `5da45239…0c6a6`。
 
 Round 158（项124/125/126 周日→周五与 0 天节假日）：周日→周五、0 天节假日、
 Mar US；测试、全量 gate/package 通过；发布包 SHA `91ab2653…8e54e`。

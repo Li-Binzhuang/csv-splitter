@@ -1184,7 +1184,7 @@ mod tests {
         assert_eq!(eval_str("upper(city)", &[("city", "cdmx")]), "CDMX");
         assert_eq!(eval_str("trim(city)", &[("city", "  x  ")]), "x");
         assert_eq!(
-            eval_str("replace(city, \"C\", \"X\")", &[("city", "CDMX")]),
+            eval_str("substitute(city, \"C\", \"X\")", &[("city", "CDMX")]),
             "XDMX"
         );
     }
@@ -3136,6 +3136,18 @@ mod tests {
         assert_eq!(eval_str("proper('hello world')", &[]), "Hello World");
         assert_eq!(eval_str("rept('ab', 3)", &[]), "ababab");
         assert_eq!(eval_str("substitute('a-b-c', '-', '+')", &[]), "a+b+c");
+        assert_eq!(eval_str("substitute('a-b-c', '-', '+', 2)", &[]), "a-b+c");
+        assert_eq!(
+            eval_str("substitute('a-b-c', '-', '+', 4)", &[]),
+            "a-b-c",
+            "an instance past the hit count leaves the text unchanged"
+        );
+        assert_eq!(eval_str("substitute('a-b-c', '-', '+', 0)", &[]), "#VALUE!");
+        assert_eq!(eval_str("replace('a-b-c', 3, 1, '+')", &[]), "a-+-c");
+        assert_eq!(eval_str("replace('abcdef', 2, 3, 'XY')", &[]), "aXYef");
+        assert_eq!(eval_str("replace('abc', 0, 1, 'x')", &[]), "#VALUE!");
+        assert_eq!(eval_str("replace('abc', 2, -1, 'x')", &[]), "#VALUE!");
+        assert_eq!(eval_str("replace('abc', 5, 1, 'x')", &[]), "abc");
         assert_eq!(eval_str("find('B', 'aBc')", &[]), "2");
         assert_eq!(eval_str("search('b', 'aBc')", &[]), "2");
         assert_eq!(eval_str("find('z', 'aBc')", &[]), "0");

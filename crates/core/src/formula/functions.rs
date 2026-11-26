@@ -1179,20 +1179,80 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 .collect();
             Value::Text(taken)
         }
+        // Excel REPLACE(text, start_num, num_chars, new_text): a positional edit,
+        // distinct from SUBSTITUTE's occurrence-based search.
         "replace" => {
+            if args.len() != 4 {
+                return Value::Error;
+            }
             let Some(text) = args.first().map(|a| eval(a, ctx).text()) else {
                 return Value::Error;
             };
-            let Some(from) = args.get(1).map(|a| eval(a, ctx).text()) else {
+            let Some(start) = args.get(1).and_then(|a| eval(a, ctx).number()) else {
                 return Value::Error;
             };
-            let Some(to) = args.get(2).map(|a| eval(a, ctx).text()) else {
+            let Some(count) = args.get(2).and_then(|a| eval(a, ctx).number()) else {
                 return Value::Error;
             };
-            if from.is_empty() {
+            let Some(new_text) = args.get(3).map(|a| eval(a, ctx).text()) else {
+                return Value::Error;
+            };
+            if !start.is_finite() || start < 1.0 || !count.is_finite() || count < 0.0 {
+                return Value::Error;
+            }
+            let chars: Vec<char> = text.chars().collect();
+            let start = start.trunc() as usize;
+            let count = count.trunc() as usize;
+            if start > chars.len() + 1 {
                 return Value::Text(text);
             }
-            Value::Text(text.replace(&from, &to))
+            let prefix: String = chars[..start - 1].iter().collect();
+            let suffix: String = chars[(start - 1 + count).min(chars.len())..]
+                .iter()
+                .collect();
+            Value::Text(format!("{prefix}{new_text}{suffix}"))
+        }
+        // Excel SUBSTITUTE(text, old_text, new_text[, instance_num]): replace all
+        // occurrences, or only the 1-based N-th one.
+        "substitute" => {
+            if args.len() < 3 || args.len() > 4 {
+                return Value::Error;
+            }
+            let Some(text) = args.first().map(|a| eval(a, ctx).text()) else {
+                return Value::Error;
+            };
+            let Some(old_text) = args.get(1).map(|a| eval(a, ctx).text()) else {
+                return Value::Error;
+            };
+            let Some(new_text) = args.get(2).map(|a| eval(a, ctx).text()) else {
+                return Value::Error;
+            };
+            if old_text.is_empty() {
+                return Value::Text(text);
+            }
+            let instance = match args.get(3).and_then(|a| eval(a, ctx).number()) {
+                Some(number) if number.is_finite() && number >= 1.0 => {
+                    Some(number.trunc() as usize)
+                }
+                Some(_) => return Value::Error,
+                None => None,
+            };
+            let Some(instance) = instance else {
+                return Value::Text(text.replace(&old_text, &new_text));
+            };
+            let hits: Vec<usize> = text
+                .match_indices(&old_text)
+                .map(|(index, _)| index)
+                .collect();
+            let Some(index) = hits.get(instance - 1).copied() else {
+                return Value::Text(text);
+            };
+            Value::Text(format!(
+                "{}{}{}",
+                &text[..index],
+                new_text,
+                &text[index + old_text.len()..]
+            ))
         }
         "concat" => {
             let mut out = String::new();
@@ -1293,9 +1353,6 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             (Some(a), Some(b)) => Value::Bool(a == b),
             _ => Value::Error,
         },
-        // Excel's SUBSTITUTE(text, old, new) replaces every occurrence. Our `replace`
-        // already had that meaning, so this is the name a spreadsheet user expects.
-        "substitute" => call("replace", args, ctx),
         "find" => find_in(args, ctx, true),
         "search" => find_in(args, ctx, false),
         "proper" => match args.first().map(|a| eval(a, ctx).text()) {
