@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 99（项2 完成）：`convert xlsx --format csv --all-sheets --out DIR` 已实现；
+每张 sheet 一个 CSV（含 hidden），文件名安全化与去重，冲突参数报错；两项 CLI
+fixture 测试通过；全量 gate/package 通过；发布包 SHA `afb18b00…00f1f3`。
+
 Round 98（项1 验收）：xlsx 读取改为 zip entry 逐块解压 + 行级解析 + 流式 CSV；
 1M×10 峰值 408 MB → 53 MB（目标 <200 MB），导回 8.04 s，输出逐字节一致；
 28 定向测试、全量 gate、package_release 通过；发布包 SHA `5c705de0…4cf4f6`。

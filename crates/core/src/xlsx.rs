@@ -830,6 +830,22 @@ fn table_from_rows(
 /// the stored top-left value is emitted. A formula cell with no cached value is
 /// an error rather than an invented empty cell, and shared-string indices are
 /// validated. Charts and comments are ignored.
+pub fn xlsx_sheet_names(input: &Path) -> std::io::Result<Vec<String>> {
+    let file = std::fs::File::open(input)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let workbook = read_entry(&mut archive, "xl/workbook.xml")?;
+    let sheets = workbook_sheets(&workbook);
+    if sheets.is_empty() {
+        return Err(invalid("xlsx has no worksheets"));
+    }
+    Ok(sheets.into_iter().map(|sheet| sheet.name).collect())
+}
+
 pub fn read_xlsx_to_csv(input: &Path, output: &Path, sheet: Option<&str>) -> std::io::Result<()> {
     let file = std::fs::File::open(input)?;
     let mut archive = zip::ZipArchive::new(file).map_err(|e| {

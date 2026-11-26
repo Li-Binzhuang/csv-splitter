@@ -2712,6 +2712,39 @@ fn convert_directory_to_xlsx_makes_multiple_sheets() {
 
 /// Xlsx import reads shared strings and selects a named worksheet.
 #[test]
+fn convert_extracts_every_xlsx_sheet_to_a_directory() {
+    let fixture =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/xlsx/shared.xlsx");
+    let dir = TempDir::new("xlsxall");
+    let out = dir.join("sheets");
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            fixture.to_str().unwrap(),
+            "--format",
+            "csv",
+            "--all-sheets",
+            "--out",
+            out.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        std::fs::read_to_string(out.join("Summary.csv")).unwrap(),
+        "city,n\nA,2\nB,3\n"
+    );
+    assert_eq!(
+        std::fs::read_to_string(out.join("Data.csv")).unwrap(),
+        "id,name,amount\n1,x & y,12.5\n2,007,7\n3,\"line\nbreak\",1\n"
+    );
+}
+
+#[test]
 fn convert_imports_xlsx_shared_strings_and_sheets() {
     let fixture =
         std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/xlsx/shared.xlsx");
@@ -2880,6 +2913,39 @@ fn a_failed_xlsx_conversion_leaves_an_existing_output_untouched() {
         .unwrap();
     assert_eq!(output.status.code(), Some(1));
     assert_eq!(std::fs::read_to_string(&out).unwrap(), "keep me\n");
+}
+
+#[test]
+fn convert_all_sheets_includes_hidden_ones() {
+    let dir = TempDir::new("xlsxallhidden");
+    let book = dir.join("book.xlsx");
+    write_hidden_sheet_xlsx(&book);
+    let out = dir.join("sheets");
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--format",
+            "csv",
+            "--all-sheets",
+            "--out",
+            out.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        std::fs::read_to_string(out.join("Hidden.csv")).unwrap(),
+        "hidden\n"
+    );
+    assert_eq!(
+        std::fs::read_to_string(out.join("Data.csv")).unwrap(),
+        "city\nA\n"
+    );
 }
 
 #[test]

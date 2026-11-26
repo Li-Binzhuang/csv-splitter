@@ -7,6 +7,28 @@ use std::path::PathBuf;
 use std::sync::mpsc;
 use std::time::Instant;
 
+fn safe_sheet_file_name(name: &str) -> String {
+    let mut out = String::new();
+    for character in name.chars() {
+        if character.is_control()
+            || matches!(
+                character,
+                '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|'
+            )
+        {
+            out.push('_');
+        } else {
+            out.push(character);
+        }
+    }
+    let trimmed = out.trim_matches([' ', '.']);
+    if trimmed.is_empty() {
+        "sheet".to_string()
+    } else {
+        trimmed.to_string()
+    }
+}
+
 pub(crate) fn parse_highlight_rules(
     text: &str,
 ) -> Result<Vec<csvx_core::xlsx::ConditionalRule>, String> {
@@ -58,6 +80,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut to = "utf-8".to_string();
     let mut convert_format: Option<String> = None;
     let mut sheet: Option<String> = None;
+    let mut all_sheets = false;
     let mut highlight: Option<String> = None;
     let mut delim = "comma".to_string();
     let mut quiet = false;
@@ -85,6 +108,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                     return 2;
                 }
             },
+            "--all-sheets" => all_sheets = true,
             "--sheet" => match p.value("--sheet") {
                 Ok(v) => sheet = Some(v),
                 Err(e) => {
@@ -244,6 +268,63 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         if sheet.is_some() && (!is_xlsx || !target.eq_ignore_ascii_case("csv")) {
             eprintln!("error: --sheet is only valid for xlsx input converted to csv");
             return 2;
+        }
+        if all_sheets {
+            if !is_xlsx {
+                eprintln!("error: --all-sheets needs an .xlsx/.xlsm input");
+                return 2;
+            }
+            if !target.eq_ignore_ascii_case("csv") {
+                eprintln!("error: --all-sheets only supports --format csv");
+                return 2;
+            }
+            if sheet.is_some() {
+                eprintln!("error: --all-sheets cannot be combined with --sheet");
+                return 2;
+            }
+            if highlight.is_some() {
+                eprintln!("error: --all-sheets cannot be combined with --highlight");
+                return 2;
+            }
+            if out.exists() && !out.is_dir() {
+                eprintln!(
+                    "error: --all-sheets needs an output directory: {}",
+                    out.display()
+                );
+                return 2;
+            }
+            if let Err(error) = std::fs::create_dir_all(&out) {
+                eprintln!("error: cannot create {}: {error}", out.display());
+                return 2;
+            }
+            let names = match csvx_core::xlsx::xlsx_sheet_names(&input) {
+                Ok(names) => names,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            };
+            let mut used = std::collections::BTreeMap::<String, usize>::new();
+            for name in names {
+                let base = safe_sheet_file_name(&name);
+                let count = used.entry(base.clone()).or_insert(0);
+                *count += 1;
+                let file_name = if *count == 1 {
+                    format!("{base}.csv")
+                } else {
+                    format!("{base}-{count}.csv")
+                };
+                let target = out.join(file_name);
+                if let Err(error) = csvx_core::xlsx::read_xlsx_to_csv(&input, &target, Some(&name))
+                {
+                    eprintln!("error: sheet {name:?}: {error}");
+                    return 1;
+                }
+                if !quiet {
+                    println!("✓ {} → {}", name, target.display());
+                }
+            }
+            return 0;
         }
         if is_xlsx {
             if !target.eq_ignore_ascii_case("csv") {
