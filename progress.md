@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 62（行上限防护）：抽出 `table_from_rows`，xlsx 读取也执行 1,048,576
+行上限；测试覆盖空行跳过与超限拒绝；发布包 SHA `6963f97b…78ad`。
+
 Round 61（列上限防护）：`sheet_rows` 拒绝超出 Excel 16384 列的 cell 引用，
 避免畸形 xlsx 触发巨量单元格分配；发布包 SHA `0c348be6…71eaa`。
 

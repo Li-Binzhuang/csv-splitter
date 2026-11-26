@@ -726,6 +726,28 @@ fn sheet_columns_xml(headers: &[String], rows: &[Vec<String>]) -> String {
 /// Read one worksheet from an `.xlsx`/`.xlsm` workbook into a CSV file.
 ///
 /// The reader understands a small, common subset: shared strings, inline
+fn table_from_rows(
+    rows: Vec<(u64, Vec<String>)>,
+    max_rows: u64,
+) -> std::io::Result<Vec<Vec<String>>> {
+    let mut table: Vec<Vec<String>> = Vec::new();
+    for (row_number, cells) in rows {
+        if row_number == 0 || cells.iter().all(|cell| cell.is_empty()) {
+            continue;
+        }
+        table.push(cells);
+        if table.len() as u64 > max_rows {
+            return Err(invalid(&format!(
+                "xlsx supports at most {max_rows} data rows in one sheet"
+            )));
+        }
+    }
+    if table.is_empty() {
+        return Err(invalid("xlsx worksheet has no non-empty rows"));
+    }
+    Ok(table)
+}
+
 /// strings, cached formula values, booleans, numbers and date styles (built-in
 /// IDs plus custom `numFmt` codes; dates are `YYYY-MM-DD`, date-times
 /// `YYYY-MM-DDTHH:MM:SS`, time-only cells `HH:MM:SS`). Merged cells are not expanded: only
@@ -782,19 +804,7 @@ pub fn read_xlsx_to_csv(input: &Path, output: &Path, sheet: Option<&str>) -> std
     if rows.is_empty() {
         return Err(invalid("xlsx worksheet has no rows"));
     }
-    let mut table: Vec<Vec<String>> = Vec::new();
-    for (row_number, cells) in rows {
-        if row_number == 0 {
-            continue;
-        }
-        if cells.iter().all(|cell| cell.is_empty()) {
-            continue;
-        }
-        table.push(cells);
-    }
-    if table.is_empty() {
-        return Err(invalid("xlsx worksheet has no non-empty rows"));
-    }
+    let table = table_from_rows(rows, MAX_DATA_ROWS)?;
 
     let width = table.iter().map(|row| row.len()).max().unwrap_or(0);
     if width == 0 {
@@ -1294,6 +1304,18 @@ mod tests {
         )
         .unwrap();
         assert_eq!(rows[0].1, vec!["2024-01-01T12:00:00"]);
+    }
+
+    #[test]
+    fn table_from_rows_skips_empty_rows_and_enforces_the_limit() {
+        let rows = vec![
+            (1, vec!["id".to_string()]),
+            (2, vec![String::new()]),
+            (3, vec!["1".to_string()]),
+            (4, vec!["2".to_string()]),
+        ];
+        let error = table_from_rows(rows, 2).unwrap_err().to_string();
+        assert!(error.contains("at most 2 data rows"), "{error}");
     }
 
     #[test]
