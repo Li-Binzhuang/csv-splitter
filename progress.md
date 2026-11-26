@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 23（确定性验证）：bench smoke 对同一 `--rows` 跑两次并 `cmp` 生成 CSV，
+证明数据确定性，而不只是文档声明；发布包 SHA `f77bff96…5acc3`。
+
 Round 22（摘要脱敏修正）：summary 的 dataset 只保留 bytes/rows/generateMs，
 不含生成路径；smoke 断言 `path` 不存在，兑现“无原始路径”承诺；发布包 SHA `308f9ba0…80bf`。
 

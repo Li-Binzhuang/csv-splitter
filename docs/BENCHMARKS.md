@@ -18,7 +18,8 @@ analyze --quality --json
 ```
 
 每条命令记录 wall time 与 peak RSS，输出 `<out>.bench.json`、`<out>.bench.md`
-和脱敏的 `<out>.summary.json`（不含原始路径/行值）。
+和脱敏的 `<out>.summary.json`（不含原始路径/行值）。smoke 会对同一行数生成两次并
+逐字节比较，验证数据确定性。
 
 100 GB 实际运行（2026-11-26，release 二进制，生成确定性数据）：
 

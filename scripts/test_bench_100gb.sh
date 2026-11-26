@@ -27,6 +27,13 @@ assert "path" not in summary["dataset"], summary
 assert summary["totalMs"] > 0, summary
 print("bench_smoke=json_ok")
 PY
+for name in a b; do
+  CSVX_BIN="$BIN" python3 scripts/bench_100gb.py --rows 200 --out "$WORK/det-$name.csv" >/dev/null
+  test -s "$WORK/det-$name.csv" || { echo "bench_smoke=fail determinism data" >&2; exit 1; }
+done
+cmp "$WORK/det-a.csv" "$WORK/det-b.csv" || { echo "bench_smoke=fail non-deterministic data" >&2; exit 1; }
+echo "bench_smoke=deterministic"
+
 if CSVX_BIN="$BIN" python3 scripts/bench_100gb.py --rows 10 --out "$WORK/nope.csv" --binary "$WORK/missing" >/dev/null 2>&1; then
   echo "bench_smoke=fail bad binary accepted" >&2
   exit 1

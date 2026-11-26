@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "1a7f439d7db8d2e40ca4aa553a51df962e11e43234a041685a4c1c5273906f8c",
+  "batch_id": "4b70b3b6e04e83cfcca0ecdccced89dafab59d1f8a41f64f8bddf58e5c46a6c1",
+  "composite_identity": "d65fab142a192ddc05eab5fd17c5d28ac83a63dc66b150f5b418a1c79ee9f022",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "cb5d9cc269aad09bef8e5f79259788fed94d92f470ed60808fffd38cbef98365",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "672debbf42ce66564ad7c5cb25a3c9063912fa33e33c329e943b660d1a25bdd6",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现基准与 1GB/100GB 实测 | R:code:scripts/bench_100gb.py,code:docs/bench-100gb-2026-11-26.json | A:Apple M5/16GiB/macOS27.2.1；100GB 568.46s；1GB 5.73s；summary 自动生成 | S:未 drop cache；quality 约 80%；他机重跑；smoke≠100GB"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "1c51a3540fbab8c51615b31fb5f3db930aa9163e90e33a624c8152d05b967cf2",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round22 摘要脱敏与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_bench_100gb.sh",
+      "path": "scripts/test_bench_100gb.sh",
+      "change": "update",
+      "source_sha256": "ad7a1afaf4dbf0009ec790028a4ce992cb9047f4b24226b61fbb3468551bac5d",
+      "existing_entry": "test_bench_100gb.sh[TP7T]: F:benchmark harness smoke 脚本 | R:code:scripts/bench_100gb.py,code:scripts/dev.sh | A:1000 行；JSON/MD/summary；无 path；四命令；坏 binary | S:gate 必跑；不生成大文件；失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "9ebbe64d41624cf70bf8f67c285ffaec4aab9d56bb878cb7b135d4ecaf26dbd8",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "672debbf42ce66564ad7c5cb25a3c9063912fa33e33c329e943b660d1a25bdd6",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现基准与 1GB/100GB 实测 | R:code:scripts/bench_100gb.py,code:docs/bench-100gb-2026-11-26.json | A:Apple M5/16GiB/macOS27.2.1；100GB 568.46s；1GB 5.73s；summary 自动生成 | S:未 drop cache；quality 约 80%；他机重跑；smoke≠100GB"
+    },
+    {
+      "candidate_id": "5b81df7ac461390df73049e7c17069880822b80c438b682120e54695263aba58",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "1c51a3540fbab8c51615b31fb5f3db930aa9163e90e33a624c8152d05b967cf2",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round22 摘要脱敏与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "aa7c04b2b9295a5575506f7d13d7bcdd9a82147b695a281e00b61e908fa4a1d0",
+      "object_ref": "code:scripts/test_bench_100gb.sh",
+      "path": "scripts/test_bench_100gb.sh",
+      "change": "update",
+      "source_sha256": "ad7a1afaf4dbf0009ec790028a4ce992cb9047f4b24226b61fbb3468551bac5d",
+      "existing_entry": "test_bench_100gb.sh[TP7T]: F:benchmark harness smoke 脚本 | R:code:scripts/bench_100gb.py,code:scripts/dev.sh | A:1000 行；JSON/MD/summary；无 path；四命令；坏 binary | S:gate 必跑；不生成大文件；失败非零"
+    }
+  ]
+}
