@@ -1496,6 +1496,20 @@ mod tests {
     }
 
     #[test]
+    fn workbook_sheet_states_are_parsed() {
+        let xml = r#"<workbook><sheets>
+            <sheet name="Hidden" sheetId="1" state="hidden" r:id="rId1"/>
+            <sheet name="Very" sheetId="2" state="veryHidden" r:id="rId2"/>
+            <sheet name="Visible" sheetId="3" r:id="rId3"/>
+        </sheets></workbook>"#;
+        let sheets = workbook_sheets(xml);
+        assert_eq!(sheets.len(), 3);
+        assert!(sheets[0].hidden);
+        assert!(sheets[1].hidden);
+        assert!(!sheets[2].hidden);
+    }
+
+    #[test]
     fn hidden_sheets_are_not_selected_by_default() {
         let sheets = vec![
             SheetRef {

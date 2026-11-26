@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "bc497e8fc58307548c21dcd40abc59fecfff743786cef544ea59adca89c550c5",
+  "batch_id": "cd2543ff5fcc8b818c6ef9bc9ca262f6dff5659b16266bf49df049441da1b18b",
+  "composite_identity": "dfc1aab0364cf893438d490800403763394b7baff4465a04358c64212a0bd83a",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "eccee847792a2489cc6f04a66c7f3e723327332b3c56babd042f0395e48f1e66",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "8f740cebd2287b3d7b5994052b3d1e9f1fae359f2bf3a38d8c07bc7d43f122bc",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；ISO 日期/日期时间/纯时间；1904 日期系统；默认跳过隐藏 sheet；cellIs；线性扫描+手工属性解析；按 row r 排序 | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式/坏索引/超限报错；显式 sheet 可选 hidden"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "eae3ca6fe13882d5b06598ef82b0d610940e9c3a62459a4aa7fc3d410627c66c",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round76 hidden sheet 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "f270c87f5a428af97bba3a86c9fef2ccff4ddd2979a94729dd7eb8a08149c22c",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "8f740cebd2287b3d7b5994052b3d1e9f1fae359f2bf3a38d8c07bc7d43f122bc",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；ISO 日期/日期时间/纯时间；1904 日期系统；默认跳过隐藏 sheet；cellIs；线性扫描+手工属性解析；按 row r 排序 | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式/坏索引/超限报错；显式 sheet 可选 hidden"
+    },
+    {
+      "candidate_id": "10f3dcd50f49fdce232ce0a993f19bb5378da7bdbdf362a925dfabde0c2a5849",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "eae3ca6fe13882d5b06598ef82b0d610940e9c3a62459a4aa7fc3d410627c66c",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round76 hidden sheet 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
