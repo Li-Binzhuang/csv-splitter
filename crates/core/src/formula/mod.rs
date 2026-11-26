@@ -634,7 +634,7 @@ fn tokenize(src: &str) -> Result<Vec<Token>, String> {
             c if c.is_alphanumeric() || c == '_' => {
                 let mut name = String::new();
                 while let Some(&ch) = chars.peek() {
-                    if ch.is_alphanumeric() || ch == '_' {
+                    if ch.is_alphanumeric() || ch == '_' || ch == '.' {
                         name.push(ch);
                         chars.next();
                     } else {
@@ -1626,6 +1626,46 @@ mod tests {
                 .render(),
             "1",
             "a value larger than every cell still ranks first"
+        );
+    }
+
+    #[test]
+    fn dotted_statistical_aliases_parse_and_evaluate() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [("a", "1"), ("b", "2"), ("c", "3"), ("d", "4")] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        let rank = Formula::parse("rank.eq(3, A2:D2)").unwrap();
+        assert_eq!(
+            rank.eval_at(&cells, &columns, &Refs::default(), 1).render(),
+            "2"
+        );
+        let sample = Formula::parse("stdev.s(A2:D2)").unwrap();
+        assert_eq!(
+            sample
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "1.290994"
+        );
+        let population = Formula::parse("stdev.p(A2:D2)").unwrap();
+        assert_eq!(
+            population
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "1.118034"
+        );
+        let variance = Formula::parse("var.s(A2:D2)").unwrap();
+        assert_eq!(
+            variance
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "1.666667"
         );
     }
 

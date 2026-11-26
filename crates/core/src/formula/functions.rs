@@ -225,7 +225,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         }
         // Sample standard deviation / variance: Excel's STDEV.S and VAR.S. The pre-pass
         // kept the sum of squares, so this is O(1) per row.
-        "stdev" | "var" | "stdevp" | "varp" => {
+        "stdev" | "var" | "stdevp" | "varp" | "stdev.s" | "var.s" | "stdev.p" | "var.p" => {
             let (sum, squares, count) = if let Some(Expr::Range { from, to }) = args.first() {
                 let Some(values) = range_values(from, to, ctx) else {
                     return Value::Error;

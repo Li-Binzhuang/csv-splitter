@@ -95,7 +95,7 @@
 | RANK | 支持（新增） | 同列范围；默认降序，order≠0 升序；并列同名次 |
 | QUARTILE | 支持（新增） | quart 0–4，线性插值 |
 | TRIMMEAN | 支持（新增） | 按百分比两端裁剪后平均 |
-| RANK.EQ / STDEV.S 等点号别名 | 缺失 | 解析器仍把 `.` 当数字，需词法扩展 |
+| RANK.EQ / STDEV.S / VAR.S / STDEV.P / VAR.P | 支持（新增） | 点号函数名词法；同 RANK/STDEV/VAR 语义 |
 | GEOMEAN / HARMEAN | 缺失 | 几何/调和平均 |
 | SUBTOTAL / AGGREGATE | 缺失 | 需要函数编号与忽略隐藏行语义 |
 | RAND / RANDBETWEEN | 缺失 | 非确定性，暂不进入可复现导出 |

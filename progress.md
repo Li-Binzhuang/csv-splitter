@@ -57,9 +57,11 @@
   `builtin_date_num_fmt_14_reads_as_an_iso_date`。
 - [x] 项31/32 `--formats --all-sheets` 与 `--sheet` 冲突、空 workbook
   `no header row` 诊断；`formats_all_sheets_rejects_sheet_and_reports_an_empty_workbook`。
-- [ ] 项35 点号函数名（RANK.EQ/STDEV.S）词法支持。
+- [x] 项35 点号函数名（RANK.EQ/STDEV.S/VAR.S/STDEV.P/VAR.P）词法支持；
+  测试 `dotted_statistical_aliases_parse_and_evaluate`。
 - [ ] 项36 PERCENTRANK。
 - [ ] 项37 GEOMEAN/HARMEAN。
+- [ ] 项38 PERCENTILE.EXC / PERCENTILE.INC 别名。
 - [x] 项34 公式 QUARTILE/TRIMMEAN（见上）。
 - [x] 项22 `--formats --json` 机器可读输出；CLI 测试扩展。
 - [x] 项17 DATEDIF 扩展单位 MD/YM/YD；测试 `datedif_supports_ym_md_and_yd`。
@@ -78,6 +80,9 @@
   `positive;(negative)` 被误拆列的问题。
 
 ## 当前进度
+
+Round 127（项35 点号别名）：词法允许 `.`，RANK.EQ/STDEV.S/VAR.S/STDEV.P/VAR.P
+ 可用；测试、全量 gate/package 通过；发布包 SHA `d3f77638…0f855`。
 
 Round 126（项20/33/34 公式第五批）：RANK/QUARTILE/TRIMMEAN；全量 gate/package 通过；发布包 SHA `18cb6b67…573e5`。
 
