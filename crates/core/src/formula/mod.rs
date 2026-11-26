@@ -1344,6 +1344,67 @@ mod tests {
     }
 
     #[test]
+    fn aggregate_covers_subtotal_and_rank_families() {
+        let columns = vec![
+            "id".to_string(),
+            "amount".to_string(),
+            "qty".to_string(),
+            "note".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [
+            ("id", "7"),
+            ("amount", "10"),
+            ("qty", "3"),
+            ("note", "plain"),
+        ] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        for (source, expected) in [
+            ("aggregate(1, 0, B2:D2)", "6.5"),
+            ("aggregate(2, 0, B2:D2)", "2"),
+            ("aggregate(3, 0, B2:D2)", "3"),
+            ("aggregate(4, 0, B2:D2)", "10"),
+            ("aggregate(9, 0, B2:D2)", "13"),
+            ("aggregate(9, 4, B2:D2)", "13"),
+            ("aggregate(9, 6, B2:D2)", "13"),
+            ("aggregate(14, 0, B2:D2, 2)", "3"),
+            ("aggregate(15, 0, B2:D2, 1)", "3"),
+            ("aggregate(16, 0, B2:D2, 0.5)", "6.5"),
+            ("aggregate(17, 0, B2:D2, 2)", "6.5"),
+            ("aggregate(18, 0, B2:D2, 0.5)", "6.5"),
+            ("aggregate(19, 0, B2:D2, 2)", "6.5"),
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        for source in [
+            "aggregate(12, 0, B2:D2)",
+            "aggregate(13, 0, B2:D2)",
+            "aggregate(20, 0, B2:D2)",
+            "aggregate(1, 5, B2:D2)",
+            "aggregate(14, 0, B2:D2)",
+            "aggregate(14, 0, B2:D2, 0)",
+            "aggregate(14, 0, B2:D2, 3)",
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "#VALUE!",
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
     fn number_theory_functions_work() {
         assert_eq!(eval_str("gcd(12, 18)", &[]), "6");
         assert_eq!(eval_str("gcd(0, 5)", &[]), "5");

@@ -254,6 +254,44 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             };
             subtotal_value(code, &cells)
         }
+        // AGGREGATE(function_num, options, range[, k]): SUBTOTAL's 1–11 plus
+        // LARGE/SMALL/PERCENTILE/QUARTILE families (14–19). CSV has no hidden rows
+        // or error cells, so options 0/4/6 are equivalent here.
+        "aggregate" => {
+            if args.len() < 3 || args.len() > 4 {
+                return Value::Error;
+            }
+            let Some(code) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            let Some(options) = eval(&args[1], ctx).number() else {
+                return Value::Error;
+            };
+            let Some(Expr::Range { from, to }) = args.get(2) else {
+                return Value::Error;
+            };
+            let Some(cells) = range_cells(from, to, ctx) else {
+                return Value::Error;
+            };
+            if cells.iter().all(|cell| cell.trim().is_empty()) {
+                return Value::Error;
+            }
+            if !options.is_finite() || ![0.0, 4.0, 6.0].contains(&options) {
+                return Value::Error;
+            }
+            if !code.is_finite() {
+                return Value::Error;
+            }
+            let code = code.trunc() as i32;
+            if !((1..=11).contains(&code) || (14..=19).contains(&code)) {
+                return Value::Error;
+            }
+            let k = args.get(3).and_then(|arg| eval(arg, ctx).number());
+            if (14..=19).contains(&code) && k.is_none() {
+                return Value::Error;
+            }
+            aggregate_value(code, k, &cells)
+        }
         // Sample standard deviation / variance: Excel's STDEV.S and VAR.S. The pre-pass
         // kept the sum of squares, so this is O(1) per row.
         "stdev" | "var" | "stdevp" | "varp" | "stdev.s" | "var.s" | "stdev.p" | "var.p" => {
@@ -2592,6 +2630,57 @@ fn subtotal_value(code: i32, cells: &[&str]) -> Value {
         11 => population_variance(sum, squares, count)
             .map(Value::Number)
             .unwrap_or(Value::Error),
+        _ => Value::Error,
+    }
+}
+
+fn aggregate_value(code: i32, k: Option<f64>, cells: &[&str]) -> Value {
+    if (1..=11).contains(&code) {
+        return subtotal_value(code, cells);
+    }
+    let Some(k) = k else {
+        return Value::Error;
+    };
+    if !k.is_finite() {
+        return Value::Error;
+    }
+    let mut values: Vec<f64> = cells
+        .iter()
+        .filter_map(|cell| cell.trim().parse::<f64>().ok())
+        .filter(|value| value.is_finite())
+        .collect();
+    if values.is_empty() {
+        return Value::Error;
+    }
+    values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    match code {
+        14 => {
+            if k < 1.0 || k.trunc() > values.len() as f64 {
+                return Value::Error;
+            }
+            let index = values.len() - k.trunc() as usize;
+            Value::Number(values[index])
+        }
+        15 => {
+            if k < 1.0 || k.trunc() > values.len() as f64 {
+                return Value::Error;
+            }
+            Value::Number(values[k.trunc() as usize - 1])
+        }
+        16 => percentile_of(&values, k).map_or(Value::Error, Value::Number),
+        17 => {
+            if !(0.0..=4.0).contains(&k) {
+                return Value::Error;
+            }
+            percentile_of(&values, k / 4.0).map_or(Value::Error, Value::Number)
+        }
+        18 => percentile_exc_of(&values, k).map_or(Value::Error, Value::Number),
+        19 => {
+            if !(0.0..=4.0).contains(&k) {
+                return Value::Error;
+            }
+            percentile_exc_of(&values, k / 4.0).map_or(Value::Error, Value::Number)
+        }
         _ => Value::Error,
     }
 }
