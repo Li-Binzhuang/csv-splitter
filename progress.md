@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 8（设计伙伴 intake）：新增 `scripts/pilot_intake.py`，只读 header/大小并检测
+可疑敏感列名，输出 intake JSON/MD，不落原始行；smoke 纳入 gate；发布包 SHA `0e8b7002…d310f`。
+
 Round 7（设计伙伴支持）：新增 `scripts/pilot_kit.sh`（demo + pilot report +
 kickoff JSON/MD，无网络）与 smoke；gate 增加 pilot-kit-smoke；新增
 `docs/DESIGN_PARTNER.md`（4 周计划、指标、数据边界、非目标）；发布包 SHA

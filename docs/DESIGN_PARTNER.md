@@ -55,20 +55,36 @@ bash scripts/pilot_kit.sh   # 一键生成 demo + report + kickoff
 - `kickoff.json`
 - `kickoff.md`
 
-## 6. 数据边界
+## 6. 样本 intake 检查
+
+```bash
+CSVX_PILOT_FILE=pilot-kit/demo/orders.csv \
+  python3 scripts/pilot_intake.py --out pilot-intake
+```
+
+输出 `intake.json` / `intake.md`，只包含：
+
+- 文件名、大小、是否超过上限；
+- 列名；
+- 按列名可疑的 email/phone/SSN/name/address 警告；
+- 不含原始行值，不访问网络。
+
+超限样本会写 `withinLimit:false` 并以 1 退出；缺失样本以 2 退出。
+
+## 7. 数据边界
 
 - 纯本地；没有遥测或上传路径；
 - MCP/HTTP 访问受 root 与 token 约束；
 - 试用结束按约定删除样本；
 - 报告只含文件名、大小、耗时、RSS、结果计数，不含原始行内容。
 
-## 7. 非目标
+## 8. 非目标
 
 - 不做 SaaS、多用户鉴权、GUI；
 - 不在本阶段实现收费门控、License 强制或自动续费；
 - 价格、合同、SLA 需人工确认。
 
-## 8. 交付物
+## 9. 交付物
 
 - 一份可复现的 `pilot-report.md`；
 - 对应 pipeline plan（若适用）；

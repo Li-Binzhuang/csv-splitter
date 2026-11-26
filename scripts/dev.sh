@@ -75,6 +75,7 @@ case "${1:-check}" in
     run_stage install-offline bash scripts/test_install_offline.sh
     run_stage bench-smoke bash scripts/test_bench_100gb.sh
     run_stage pilot-kit-smoke bash scripts/test_pilot_kit.sh
+    run_stage pilot-intake-smoke bash scripts/test_pilot_intake.sh
     VERIFY_BIN=target/release/csvx
     [ -x "$VERIFY_BIN" ] || VERIFY_BIN=target/debug/csvx
     if [ -x "$VERIFY_BIN" ]; then
