@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "ecd99d024c5d5103cfebdf8bb63d6aa82d7f0040169661c68da66f88062c5c23",
+  "batch_id": "d732a92ddc0c30b3956f5f3af5aee337f8f2fda8a3bc98888e24cda3ca7a0e76",
+  "composite_identity": "617ba1c9b5992a5ae2730f0943a12206bb59ff5baa42a0ceac7169e7d96a261f",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "c30d77727fadb9b4d81323c082ee3dc26d800e2facf6a3e7d3bd88f4dbd376cd",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DESIGN_PARTNER.md",
+      "path": "docs/DESIGN_PARTNER.md",
+      "change": "update",
+      "source_sha256": "3ec6fae891127e41d99fcd79e4e6cbd57b86b6fdee641a1f123d817157f5bc7c",
+      "existing_entry": "DESIGN_PARTNER.md[SG7T]: F:设计伙伴四周试点与 intake 支持 | R:code:scripts/pilot_kit.sh,code:scripts/pilot_intake.py,code:scripts/pilot_report.py | A:四周表；指标；CSVX_PILOT_FILE；WHERE/KEY/GROUP 条件；非目标 | S:定价人工确认；不落原始行；本地单用户"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "d01ed6cad77419cf940594121582325875a2cf27d7ebc6730d7446897eedd76e",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round15 商业材料与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/pilot_intake.py",
+      "path": "scripts/pilot_intake.py",
+      "change": "update",
+      "source_sha256": "64685201705f9cdca1ed5b9beb3299a59bbf328a60be5ea18c970e2d60da44d8",
+      "existing_entry": "pilot_intake.py[OG7S]: F:伙伴样本 intake 校验与脱敏报告 | R:code:docs/DESIGN_PARTNER.md,code:scripts/pilot_kit.sh | A:size/limit；header；敏感列名；畸形 header error；intake.json/md | S:只读 header；不落原始行；超限 1；错误 2；无网络"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_pilot_intake.sh",
+      "path": "scripts/test_pilot_intake.sh",
+      "change": "update",
+      "source_sha256": "b3d567165c4cb43ddfa1eab9ce820757dbc084d2d8aed38787f831b2f4e59e58",
+      "existing_entry": "test_pilot_intake.sh[TQ7T]: F:伙伴 intake smoke 与大小/缺失/畸形负例 | R:code:scripts/pilot_intake.py,code:scripts/dev.sh | A:敏感列名；无原始值；超限 1；缺失/畸形 2 | S:gate 必跑；不联网；失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "1106672d76ecf23b528cf5cb48ad349a1120108f510dbeb7702f45054d9874ff",
+      "object_ref": "code:docs/DESIGN_PARTNER.md",
+      "path": "docs/DESIGN_PARTNER.md",
+      "change": "update",
+      "source_sha256": "3ec6fae891127e41d99fcd79e4e6cbd57b86b6fdee641a1f123d817157f5bc7c",
+      "existing_entry": "DESIGN_PARTNER.md[SG7T]: F:设计伙伴四周试点与 intake 支持 | R:code:scripts/pilot_kit.sh,code:scripts/pilot_intake.py,code:scripts/pilot_report.py | A:四周表；指标；CSVX_PILOT_FILE；WHERE/KEY/GROUP 条件；非目标 | S:定价人工确认；不落原始行；本地单用户"
+    },
+    {
+      "candidate_id": "ed3dff33b4ee10c2b3db6fc63d4538a5c42f0ec4e844d1187372dae23f0238c8",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "d01ed6cad77419cf940594121582325875a2cf27d7ebc6730d7446897eedd76e",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round15 商业材料与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "e2e0169f2c953017f8c3b83cd4b0138e7d1b332654f0ee4a533bbbc75d5392bf",
+      "object_ref": "code:scripts/pilot_intake.py",
+      "path": "scripts/pilot_intake.py",
+      "change": "update",
+      "source_sha256": "64685201705f9cdca1ed5b9beb3299a59bbf328a60be5ea18c970e2d60da44d8",
+      "existing_entry": "pilot_intake.py[OG7S]: F:伙伴样本 intake 校验与脱敏报告 | R:code:docs/DESIGN_PARTNER.md,code:scripts/pilot_kit.sh | A:size/limit；header；敏感列名；畸形 header error；intake.json/md | S:只读 header；不落原始行；超限 1；错误 2；无网络"
+    },
+    {
+      "candidate_id": "2a35a15db1eac5a1002a930d3e09886f62119948e657f53e4a3857abf8ac9b3e",
+      "object_ref": "code:scripts/test_pilot_intake.sh",
+      "path": "scripts/test_pilot_intake.sh",
+      "change": "update",
+      "source_sha256": "b3d567165c4cb43ddfa1eab9ce820757dbc084d2d8aed38787f831b2f4e59e58",
+      "existing_entry": "test_pilot_intake.sh[TQ7T]: F:伙伴 intake smoke 与大小/缺失/畸形负例 | R:code:scripts/pilot_intake.py,code:scripts/dev.sh | A:敏感列名；无原始值；超限 1；缺失/畸形 2 | S:gate 必跑；不联网；失败非零"
+    }
+  ]
+}

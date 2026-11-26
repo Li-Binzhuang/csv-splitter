@@ -63,7 +63,7 @@ CSVX_PILOT_FILE=pilot-kit/demo/orders.csv \
   python3 scripts/pilot_intake.py --out pilot-intake
 ```
 
-输出 `intake.json` / `intake.md`，只包含：
+支持 `.gz` / `.bz2` / `.zst`（zst 需要本机 `zstd`）。输出 `intake.json` / `intake.md`，只包含：
 
 - 文件名、大小、是否超过上限；
 - 列名；

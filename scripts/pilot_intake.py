@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Validate a design-partner sample without reading raw rows into reports."""
 import argparse
+import bz2
 import csv
 import gzip
 import json
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -19,10 +21,33 @@ SENSITIVE = {
 GB = 1_000_000_000
 
 
-def open_text(path):
-    if path.suffix.lower() == ".gz":
-        return gzip.open(path, "rt", encoding="utf-8", errors="replace")
-    return path.open("r", encoding="utf-8", errors="replace")
+def read_header(path):
+    suffix = path.suffix.lower()
+    if suffix == ".zst":
+        proc = subprocess.Popen(
+            ["zstd", "-dc", str(path)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        first = proc.stdout.readline() if proc.stdout else ""
+        proc.terminate()
+        try:
+            proc.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        if proc.returncode not in (0, -15) and not first:
+            raise OSError("zstd decompression failed")
+        return next(csv.reader([first]), [])
+    if suffix == ".bz2":
+        handle = bz2.open(path, "rt", encoding="utf-8", errors="replace")
+    elif suffix == ".gz":
+        handle = gzip.open(path, "rt", encoding="utf-8", errors="replace")
+    else:
+        handle = path.open("r", encoding="utf-8", errors="replace")
+    with handle as stream:
+        reader = csv.reader(stream)
+        return next(reader, [])
 
 
 def main():
@@ -43,9 +68,7 @@ def main():
     within = size <= limit
     error = None
     try:
-        with open_text(sample) as handle:
-            reader = csv.reader(handle)
-            header = next(reader, [])
+        header = read_header(sample)
         if not header:
             error = "empty header"
     except (csv.Error, OSError, UnicodeError) as exc:

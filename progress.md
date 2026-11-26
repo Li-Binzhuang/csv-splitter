@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 16（压缩 intake）：`pilot_intake.py` 支持 `.gz`/`.bz2`/`.zst` header；
+zstd 通过本机 `zstd -dc` 只读首行；smoke 覆盖三种压缩；发布包 SHA `9f0d5b3e…99f9e`。
+
 Round 15（商业材料）：BUSINESS.md 增加“已落地地基”表，明确审计/配置/Pipeline/
 离线安装/100GB 证据，并重申无收费门控、无 License、无遥测；发布包 SHA `a625af15…ad2c6`。
 

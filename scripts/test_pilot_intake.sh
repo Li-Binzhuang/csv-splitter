@@ -21,6 +21,33 @@ assert "person@example.test" not in raw
 print("pilot_intake_smoke=json_ok")
 PY
 
+gzip -c "$WORK/sample.csv" > "$WORK/sample.csv.gz"
+python3 scripts/pilot_intake.py --sample "$WORK/sample.csv.gz" --out "$WORK/gz" >/dev/null
+python3 - "$WORK/gz/intake.json" <<'PY'
+import json
+import sys
+data = json.load(open(sys.argv[1]))
+assert data["columnCount"] == 4 and not data["error"], data
+PY
+bzip2 -c "$WORK/sample.csv" > "$WORK/sample.csv.bz2"
+python3 scripts/pilot_intake.py --sample "$WORK/sample.csv.bz2" --out "$WORK/bz2" >/dev/null
+python3 - "$WORK/bz2/intake.json" <<'PY'
+import json
+import sys
+data = json.load(open(sys.argv[1]))
+assert data["columnCount"] == 4 and not data["error"], data
+PY
+if command -v zstd >/dev/null 2>&1; then
+  zstd -q -c "$WORK/sample.csv" > "$WORK/sample.csv.zst"
+  python3 scripts/pilot_intake.py --sample "$WORK/sample.csv.zst" --out "$WORK/zst" >/dev/null
+  python3 - "$WORK/zst/intake.json" <<'PY'
+import json
+import sys
+data = json.load(open(sys.argv[1]))
+assert data["columnCount"] == 4 and not data["error"], data
+PY
+fi
+
 {
   printf 'id,note\n'
   for i in $(seq 1 100000); do printf '%s,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n' "$i"; done
