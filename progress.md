@@ -25,9 +25,17 @@
   `date_time_formats_render_iso_values`。
 - [x] 项3 xlsx 导出数字格式保真：`write_sheets_with_formats`；Decimal/Percent/
   Currency/DateTime → numFmt + 样式；round-trip 测试。
-- [ ] 项4 条件显示规则增强：Excel 式单元格值/前 N 项规则。
+- [x] 项4 条件显示规则增强：`top`/`bottom` rank 导出为 `top10`/`bottom10`；
+  测试 `conditional_rules_support_top_and_bottom_ranks`。
+- [ ] 项5 公式第二批：TEXT/TEXTBEFORE/TEXTAFTER/DATEVALUE/HOUR/MINUTE/SECOND。
+- [ ] 项6 数字格式第二批：科学计数/会计/负数括号/@ 文本。
+- [ ] 项7 `--highlight` CLI 支持 top/bottom 语法与帮助/测试。
 
 ## 当前进度
+
+Round 107（项4 条件显示）：`ConditionalRule` 支持 `top`/`bottom` + rank，
+导出 `top10`/`bottom10`；rank 必须 >0，非法 rank 报错；全量 gate/package 通过；
+发布包 SHA `ddea9a94…c4c00`。
 
 Round 106（项3 导出保真）：新增 `write_sheets_with_formats`，把布局格式映射为
 xlsx numFmt 与单元格样式；测试 `formats_are_mapped_into_export_styles_and_round_trip`；

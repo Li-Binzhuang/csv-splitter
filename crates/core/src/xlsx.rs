@@ -594,28 +594,54 @@ fn conditional_formatting_xml(
                     rule.column
                 ))
             })?;
-        let operator = match rule.operator.as_str() {
-            ">" => "greaterThan",
-            "<" => "lessThan",
-            ">=" => "greaterThanOrEqual",
-            "<=" => "lessThanOrEqual",
-            "=" => "equal",
-            "!=" => "notEqual",
+        let (operator, formula) = match rule.operator.as_str() {
+            ">" => ("greaterThan", Some(rule.value.clone())),
+            "<" => ("lessThan", Some(rule.value.clone())),
+            ">=" => ("greaterThanOrEqual", Some(rule.value.clone())),
+            "<=" => ("lessThanOrEqual", Some(rule.value.clone())),
+            "=" => ("equal", Some(rule.value.clone())),
+            "!=" => ("notEqual", Some(rule.value.clone())),
+            // Excel's Top 10 / Bottom 10 family: the rank is N, not a comparison.
+            "top" | "bottom" => {
+                let rank = rule.value.parse::<u32>().map_err(|_| {
+                    invalid(&format!(
+                        "highlight {} rank {:?} is not a positive integer",
+                        rule.operator, rule.value
+                    ))
+                })?;
+                if rank == 0 {
+                    return Err(invalid("highlight rank must be greater than 0"));
+                }
+                let kind = if rule.operator == "top" {
+                    "top10"
+                } else {
+                    "bottom10"
+                };
+                out.push_str(&format!(
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"{kind}\" dxfId=\"{index}\" priority=\"{priority}\" rank=\"{rank}\"/></conditionalFormatting>",
+                    col = column_name(column),
+                    priority = index + 1,
+                ));
+                continue;
+            }
             other => {
                 return Err(invalid(&format!(
                     "unsupported highlight operator {other:?}"
                 )))
             }
         };
-        let formula = if rule.value.parse::<f64>().is_ok() {
-            rule.value.clone()
-        } else {
-            format!("\"{}\"", xml_attr(&rule.value))
-        };
+        let formula = formula.map(|value| {
+            if value.parse::<f64>().is_ok() {
+                value
+            } else {
+                format!("\"{}\"", xml_attr(&value))
+            }
+        });
         out.push_str(&format!(
             "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"cellIs\" dxfId=\"{index}\" priority=\"{priority}\" operator=\"{operator}\"><formula>{formula}</formula></cfRule></conditionalFormatting>",
             col = column_name(column),
             priority = index + 1,
+            formula = formula.unwrap_or_default()
         ));
     }
     Ok(out)
@@ -1794,6 +1820,57 @@ mod tests {
         );
         let styles = read_zip(&output, "xl/styles.xml");
         assert!(styles.contains("<dxfs count=\"1\">"), "{styles}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn conditional_rules_support_top_and_bottom_ranks() {
+        let dir = std::env::temp_dir().join(format!("csvx_xlsx_cf_rank_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("cf.csv");
+        let output = dir.join("cf.xlsx");
+        std::fs::write(
+            &input,
+            "id,amount
+1,1200
+2,10
+3,900
+",
+        )
+        .unwrap();
+        let rules = vec![
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "top".into(),
+                value: "2".into(),
+                color: "green".into(),
+            },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "bottom".into(),
+                value: "1".into(),
+                color: "red".into(),
+            },
+        ];
+        let (tx, _rx) = std::sync::mpsc::channel();
+        csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
+        let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
+        assert!(sheet.contains("type=\"top10\""), "{sheet}");
+        assert!(sheet.contains("rank=\"2\""), "{sheet}");
+        assert!(sheet.contains("type=\"bottom10\""), "{sheet}");
+        assert!(sheet.contains("rank=\"1\""), "{sheet}");
+        assert!(sheet.contains("B2:B4"), "{sheet}");
+
+        let bad = vec![ConditionalRule {
+            column: "amount".into(),
+            operator: "top".into(),
+            value: "0".into(),
+            color: "green".into(),
+        }];
+        let err = csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &bad)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("greater than 0"), "{err}");
         std::fs::remove_dir_all(dir).ok();
     }
 
