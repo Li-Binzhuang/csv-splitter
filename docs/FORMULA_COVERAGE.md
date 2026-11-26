@@ -39,7 +39,7 @@
 | WEEKDAY / WEEKNUM | 支持 | 默认周日为 1；WEEKNUM 用 return_type 1 |
 | DAYS / NETWORKDAYS / WORKDAY | 支持 | 工作日跳过周末；不含自定义节假日 |
 | DATESTRING / DATEKEY | 支持 | 截取 ISO 前缀 |
-| DATEVALUE | 支持（新增） | ISO 日期 → Excel 1900 序列号（45292） |
+| DATEVALUE | 支持（新增） | ISO 日期 → Excel 1900 序列号；1900-01-01=1、假闰日=60 |
 | HOUR / MINUTE / SECOND | 支持（新增） | ISO 日期时间、纯时间、0–1 天小数 |
 | TIMEVALUE | 支持（新增） | 时间文本 → 0–1 天小数 |
 | NOW / TODAY | 支持（易变） | 读系统 UTC 时钟；不落盘，重跑可变 |

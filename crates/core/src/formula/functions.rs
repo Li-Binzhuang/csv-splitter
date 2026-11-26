@@ -989,9 +989,19 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         },
         "datevalue" => match args.first().map(|a| eval(a, ctx)) {
             Some(v) => match parse_date(&v.text()) {
-                Some((year, month, day)) => Value::Number(
-                    (days_from_civil(year, month, day) - days_from_civil(1899, 12, 30)) as f64,
-                ),
+                Some((year, month, day)) => {
+                    let mut serial =
+                        days_from_civil(year, month, day) - days_from_civil(1899, 12, 30);
+                    // Excel's 1900 system has a fake 1900-02-29; dates before
+                    // 1900-03-01 sit one serial lower than the civil count.
+                    if (year, month, day) < (1900, 3, 1) {
+                        serial -= 1;
+                    }
+                    if (year, month, day) == (1900, 2, 29) {
+                        serial = 60;
+                    }
+                    Value::Number(serial as f64)
+                }
                 None => Value::Error,
             },
             None => Value::Error,

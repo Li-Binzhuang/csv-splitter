@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "134a7dc9afdf9206c7c840a23a1e2dc586015af2aea24ef2f11578ecc559c836",
+  "batch_id": "128a8fa39096beb0aead09fa9061c5f9db4862f56d0df63b9604bdea4ad450a6",
+  "composite_identity": "f8577b10cbe35afffd721de5734ce2ab15ad104b911f9fe4d196875c8c1421ca",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "981ca93f5bcbb098d3b32ebfd65e7a97a0c2741ef422184e8a59c6db72aabe4f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "5e503728915c76a9d36a9795496faa4556181657e78c705859327eaa73acda85",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/区间；TEXT；日期时间族；RANK/RANK.AVG/QUARTILE/QUARTILE.EXC/TRIMMEAN；PERCENTRANK.EXC；GEOMEAN/HARMEAN；YEARFRAC basis 0–4 | S:单列按整列；跨行区间/整列 median 不支持；PERCENTILE.EXC 边界外报错；YEARFRAC basis1 近似"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "631b49b36c9f20c870fd97f16303233ae14d207dd7001d2e1bf0966b36285b6e",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族；RANK.AVG/QUARTILE.EXC/PERCENTRANK.EXC；YEARFRAC basis 0–4；点号函数名 | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "fe567d9014ae5c88718029f7862e5bc99c1513e79b0cebfd40a5dcfe80b75cd9",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/日期时间族；排名/分位族；YEARFRAC basis 0–4；点号别名 | S:矩阵只记当前实现；查找受限 sheet/key/value"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "3383144bde3dd7e61157f1f185e2df0f89e46fba73cac076b13c2db822677e44",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round131 YEARFRAC basis 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "a2017ee67782d5946f2fc677076d83a642e78f109091b384bf70d3083bee9a32",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "5e503728915c76a9d36a9795496faa4556181657e78c705859327eaa73acda85",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/区间；TEXT；日期时间族；RANK/RANK.AVG/QUARTILE/QUARTILE.EXC/TRIMMEAN；PERCENTRANK.EXC；GEOMEAN/HARMEAN；YEARFRAC basis 0–4 | S:单列按整列；跨行区间/整列 median 不支持；PERCENTILE.EXC 边界外报错；YEARFRAC basis1 近似"
+    },
+    {
+      "candidate_id": "529e8dcb6aa65b0fda9f39ef8789276f98672c96884a65d28d94ef6d02b19306",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "631b49b36c9f20c870fd97f16303233ae14d207dd7001d2e1bf0966b36285b6e",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族；RANK.AVG/QUARTILE.EXC/PERCENTRANK.EXC；YEARFRAC basis 0–4；点号函数名 | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "3dfe128d852fb18f352dca19441d1ea4537c831eeacc374f5f5c92416559caa6",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "fe567d9014ae5c88718029f7862e5bc99c1513e79b0cebfd40a5dcfe80b75cd9",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/日期时间族；排名/分位族；YEARFRAC basis 0–4；点号别名 | S:矩阵只记当前实现；查找受限 sheet/key/value"
+    },
+    {
+      "candidate_id": "972bfa5de866a511fc208ff09c272188db3551c03194cca8ff5ced1235233f26",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "3383144bde3dd7e61157f1f185e2df0f89e46fba73cac076b13c2db822677e44",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round131 YEARFRAC basis 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

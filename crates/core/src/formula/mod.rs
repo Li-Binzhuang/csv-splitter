@@ -1529,6 +1529,10 @@ mod tests {
         assert_eq!(eval_str(r#"textbefore("a-b", "-", 2)"#, &[]), "#N/A");
         assert_eq!(eval_str(r#"textafter("a-b", "", 1)"#, &[]), "#VALUE!");
         assert_eq!(eval_str(r#"datevalue("2024-01-01")"#, &[]), "45292");
+        assert_eq!(eval_str(r#"datevalue("1900-01-01")"#, &[]), "1");
+        assert_eq!(eval_str(r#"datevalue("1900-02-28")"#, &[]), "59");
+        assert_eq!(eval_str(r#"datevalue("1900-02-29")"#, &[]), "60");
+        assert_eq!(eval_str(r#"datevalue("1900-03-01")"#, &[]), "61");
         assert_eq!(eval_str(r#"hour("2024-01-01 13:04:05")"#, &[]), "13");
         assert_eq!(eval_str(r#"minute("2024-01-01T13:04:05")"#, &[]), "4");
         assert_eq!(eval_str(r#"second("13:04:05")"#, &[]), "5");
@@ -1718,6 +1722,35 @@ mod tests {
                 .render(),
             "1.666667"
         );
+    }
+
+    #[test]
+    fn percentile_family_rejects_empty_or_text_only_ranges() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for name in ["a", "b", "c", "d"] {
+            cells.insert(name.to_string(), "n/a".to_string());
+        }
+        for formula in [
+            "percentile(A2:D2, 0.5)",
+            "quartile(A2:D2, 2)",
+            "percentrank(A2:D2, 2)",
+            "geomean(A2:D2)",
+        ] {
+            let parsed = Formula::parse(formula).unwrap();
+            assert_eq!(
+                parsed
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "#VALUE!",
+                "{formula}"
+            );
+        }
     }
 
     #[test]
