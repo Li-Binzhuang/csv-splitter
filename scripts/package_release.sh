@@ -46,7 +46,20 @@ if ! bash scripts/install_offline.sh --archive "dist/$NAME.tar.gz" --manifest "d
   exit 1
 fi
 "$INSTALL_DIR/bin/csvx" --version >/dev/null
+if ! bash scripts/install_selfcheck.sh --prefix "$INSTALL_DIR" > "$INSTALL_DIR/selfcheck.json"; then
+  cat "$INSTALL_DIR/selfcheck.json" >&2 || true
+  rm -rf "$INSTALL_DIR"
+  echo "installed prefix self-check failed" >&2
+  exit 1
+fi
+python3 - "$INSTALL_DIR/selfcheck.json" <<'PYCHECK'
+import json
+import sys
+data = json.load(open(sys.argv[1]))
+if not data.get("ok"):
+    raise SystemExit(data)
+PYCHECK
 rm -rf "$INSTALL_DIR"
-printf 'install_manifest=ok\n'
+printf 'install_manifest=ok selfcheck=ok\n'
 du -h "dist/$NAME.tar.gz"
 cat "dist/$NAME.tar.gz.sha256"

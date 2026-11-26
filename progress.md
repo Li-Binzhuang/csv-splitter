@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 27（发布后自检）：`package_release.sh` 在真实安装后运行
+`install_selfcheck.sh`，要求 JSON `ok=true` 才产出发布包；发布包 SHA `e2c2d13a…ebadf`。
+
 Round 26（升级/回滚演练）：新增 `test_upgrade_rollback.sh`，双 prefix 演练
 4.1→4.2 切换/回滚与缺失 prefix 拒绝；smoke 进 gate；发布包 SHA `9233849d…2ff0e`。
 
