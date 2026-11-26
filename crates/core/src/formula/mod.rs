@@ -1405,6 +1405,25 @@ mod tests {
     }
 
     #[test]
+    fn engineering_rounding_works() {
+        assert_eq!(eval_str("mround(10, 3)", &[]), "9");
+        assert_eq!(eval_str("mround(11, 3)", &[]), "12");
+        assert_eq!(eval_str("mround(-10, -3)", &[]), "-9");
+        assert_eq!(eval_str("mround(-11, -3)", &[]), "-12");
+        assert_eq!(eval_str("mround(10, -3)", &[]), "#VALUE!");
+        assert_eq!(eval_str("mround(10, 0)", &[]), "#VALUE!");
+        assert_eq!(eval_str("ceiling.precise(4.3, 2)", &[]), "6");
+        assert_eq!(eval_str("ceiling.precise(-4.3, 2)", &[]), "-4");
+        assert_eq!(eval_str("ceiling.precise(4.3, -2)", &[]), "6");
+        assert_eq!(eval_str("ceiling.precise(5)", &[]), "5");
+        assert_eq!(eval_str("floor.precise(4.3, 2)", &[]), "4");
+        assert_eq!(eval_str("floor.precise(-4.3, 2)", &[]), "-6");
+        assert_eq!(eval_str("floor.precise(-4.3, -2)", &[]), "-6");
+        assert_eq!(eval_str("floor.precise(5)", &[]), "5");
+        assert_eq!(eval_str("ceiling.precise(5, 0)", &[]), "0");
+    }
+
+    #[test]
     fn bitwise_functions_work() {
         assert_eq!(eval_str("bitand(5, 3)", &[]), "1");
         assert_eq!(eval_str("bitor(5, 3)", &[]), "7");

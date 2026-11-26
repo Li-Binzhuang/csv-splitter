@@ -959,6 +959,51 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             Some(Some(n)) => Value::Number(n.ceil()),
             _ => Value::Error,
         },
+        // MROUND and the PRECISE rounding pair. MROUND keeps the sign relationship;
+        // PRECISE ignores the sign of the significance.
+        "mround" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let (Some(number), Some(multiple)) =
+                (eval(&args[0], ctx).number(), eval(&args[1], ctx).number())
+            else {
+                return Value::Error;
+            };
+            if !number.is_finite() || !multiple.is_finite() || multiple == 0.0 {
+                return Value::Error;
+            }
+            if number != 0.0 && (number < 0.0) != (multiple < 0.0) {
+                return Value::Error;
+            }
+            Value::Number((number / multiple).round() * multiple)
+        }
+        "ceiling.precise" | "floor.precise" => {
+            if args.is_empty() || args.len() > 2 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            let significance = args
+                .get(1)
+                .and_then(|arg| eval(arg, ctx).number())
+                .unwrap_or(1.0);
+            if !number.is_finite() || !significance.is_finite() {
+                return Value::Error;
+            }
+            if significance == 0.0 {
+                return Value::Number(0.0);
+            }
+            let significance = significance.abs();
+            let ratio = number / significance;
+            let rounded = if lower == "ceiling.precise" {
+                ratio.ceil()
+            } else {
+                ratio.floor()
+            };
+            Value::Number(rounded * significance)
+        }
         "int" | "trunc" => match args.first().map(|a| eval(a, ctx).number()) {
             Some(Some(n)) => Value::Number(n.trunc()),
             _ => Value::Error,

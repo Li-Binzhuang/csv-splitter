@@ -103,7 +103,7 @@
 | AGGREGATE | 支持（功能级新增） | 1–11/14–19，options 0/4/6；k 用于排名/分位；无隐藏行/错误单元格 |
 | RAND / RANDBETWEEN | 缺失 | 非确定性，暂不进入可复现导出 |
 | GCD / LCM / FACT / COMBIN / PERMUT | 支持（功能级新增） | 非负整数；FACT≤170；非法/非整数 `#VALUE!` |
-| MROUND / CEILING.PRECISE / FLOOR.PRECISE | 缺失 | 工程舍入 |
+| MROUND / CEILING.PRECISE / FLOOR.PRECISE | 支持（功能级新增） | MROUND 同号倍数；PRECISE 忽略 significance 符号；零倍数/非法参数 `#VALUE!` |
 | BITAND / BITOR / BITXOR | 支持（功能级新增） | 48 位非负整数；非法/非整数/超范围 `#VALUE!` |
 
 ## 本轮验收（首批补齐）

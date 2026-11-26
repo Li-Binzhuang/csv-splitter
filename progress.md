@@ -102,10 +102,13 @@
   `subtotal_rejects_an_all_empty_range`。
 - [ ] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空值按 1；验收：单测 + gate。
+- [ ] 项142 进制转换（功能级）：`DECIMAL(text, radix)`/`BASE(number, radix[,
+  min_length])`；2–36 进制、非法输入 `#VALUE!`；验收：单测 + gate。
 - [ ] 项140 国际工作日（功能级）：`NETWORKDAYS.INTL`/`WORKDAY.INTL`
   支持 weekend 字符串/编号与节假日；非法 weekend `#VALUE!`；验收：单测 + gate。
-- [ ] 项139 工程舍入（功能级）：`MROUND`、`CEILING.PRECISE`、
-  `FLOOR.PRECISE`；负数/零倍数/非法参数语义；验收：单测 + gate。
+- [x] 项139 工程舍入（功能级）：`MROUND`（同号倍数，异号/零倍数
+  `#VALUE!`）；`CEILING.PRECISE`/`FLOOR.PRECISE` 忽略 significance 符号。
+  测试 `engineering_rounding_works`。
 - [x] 项138 位运算函数（功能级）：`BITAND`/`BITOR`/`BITXOR` 支持 48 位
   非负整数；非法/非整数/超范围 `#VALUE!`。测试 `bitwise_functions_work`。
 - [x] 项137 AGGREGATE（功能级）：`AGGREGATE(function_num, options, range[, k])`
@@ -126,6 +129,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 168（项139 工程舍入，功能级）：MROUND/PRECISE；同号、负倍数、
+零倍数边界；定向与全量 gate/package 通过；发布包 SHA `9f186bec…01f52`。
 
 Round 167（项138 位运算，功能级）：BITAND/BITOR/BITXOR；48 位边界与
 非法参数；定向与全量 gate/package 通过；发布包 SHA `1bdf7653…b06df`。
