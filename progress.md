@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 61（列上限防护）：`sheet_rows` 拒绝超出 Excel 16384 列的 cell 引用，
+避免畸形 xlsx 触发巨量单元格分配；发布包 SHA `0c348be6…71eaa`。
+
 Round 60（公式缓存类型）：补 cached string/boolean 公式值测试，确保
 t=str/t=b 都读缓存值而非重算；发布包 SHA `ebc7aee8…d71c88`。
 

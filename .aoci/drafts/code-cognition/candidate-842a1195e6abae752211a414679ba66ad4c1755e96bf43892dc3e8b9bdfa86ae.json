@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "8cb1b18ef088a6069eeb1b245b8fc591ec9a2778a5342c1771f2a3c18153059a",
+  "batch_id": "842a1195e6abae752211a414679ba66ad4c1755e96bf43892dc3e8b9bdfa86ae",
+  "composite_identity": "2e88b46278516db46bb1b7c57c43562f1faf9e96f339a5f65058ac92709758e0",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "411bc2e626039f50acfd0b020e2f0201733f09784d83a021c853618457357515",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "21b70f9273c7d1b1a923523afb0d281f47a4fd34d5e6a792e8397e2a38b8bd9c",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；ISO 日期/日期时间/纯时间；cellIs；读 shared/inline/缓存值/内置+custom 日期；cached string/bool 测试 | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式值/坏共享索引报错"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "b1a0a017e796b61a86bfdd94c94f10f11e590d281352c17a390cea1080a93d42",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round60 公式缓存类型与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "7e292896b20013dfedf95ed5e63e1ea252babff697f79f2378e3addc4f1e1a13",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "21b70f9273c7d1b1a923523afb0d281f47a4fd34d5e6a792e8397e2a38b8bd9c",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；ISO 日期/日期时间/纯时间；cellIs；读 shared/inline/缓存值/内置+custom 日期；cached string/bool 测试 | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式值/坏共享索引报错"
+    },
+    {
+      "candidate_id": "44ce86f5d5b980de033daa2989ea5088ae79b5ccec19735aff8602138f0f49db",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "b1a0a017e796b61a86bfdd94c94f10f11e590d281352c17a390cea1080a93d42",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round60 公式缓存类型与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

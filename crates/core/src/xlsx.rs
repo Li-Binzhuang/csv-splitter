@@ -15,6 +15,9 @@ use std::path::{Path, PathBuf};
 /// Excel's hard limit for data rows in one worksheet (excluding the header).
 pub const MAX_DATA_ROWS: u64 = 1_048_576;
 
+/// Excel's hard limit for columns in one worksheet.
+pub const MAX_COLUMNS: usize = 16_384;
+
 /// One worksheet's input: headers plus rows already in memory.
 pub struct Sheet {
     pub name: String,
@@ -896,6 +899,11 @@ fn sheet_rows(
             let body = cell.get(2).map(|m| m.as_str()).unwrap_or("");
             let reference = attr(attrs, "r").unwrap_or_default();
             let column = column_from_reference(&reference).unwrap_or(cells.len());
+            if column >= MAX_COLUMNS {
+                return Err(invalid(&format!(
+                    "cell {reference} is beyond Excel's {MAX_COLUMNS} column limit"
+                )));
+            }
             while cells.len() <= column {
                 cells.push(String::new());
             }
@@ -1286,6 +1294,13 @@ mod tests {
         )
         .unwrap();
         assert_eq!(rows[0].1, vec!["2024-01-01T12:00:00"]);
+    }
+
+    #[test]
+    fn a_cell_beyond_excels_column_limit_is_an_error() {
+        let xml = r#"<sheetData><row r="1"><c r="XFE1"><v>1</v></c></row></sheetData>"#;
+        let error = sheet_rows(xml, &[], &[]).unwrap_err().to_string();
+        assert!(error.contains("16384 column limit"), "{error}");
     }
 
     #[test]
