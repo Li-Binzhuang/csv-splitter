@@ -516,6 +516,9 @@ fn is_date_format(code: &str) -> bool {
         || lower.contains("dd/mm")
         || lower.contains("m/d")
         || lower.contains("d/m")
+        || lower.contains("hh")
+        || lower.contains("h:mm")
+        || lower.contains("mm:ss")
 }
 
 fn serial_to_date(serial: f64) -> Option<String> {
@@ -1352,6 +1355,19 @@ mod tests {
         let xml = r#"<sheetData><row r="1"><c r="XFE1"><v>1</v></c></row></sheetData>"#;
         let error = sheet_rows(xml, &[], &[]).unwrap_err().to_string();
         assert!(error.contains("16384 column limit"), "{error}");
+    }
+
+    #[test]
+    fn custom_time_formats_are_recognized_and_render_as_clock() {
+        let styles = r#"<numFmts count="1"><numFmt numFmtId="166" formatCode="hh:mm:ss"/></numFmts><cellXfs count="2"><xf numFmtId="0"/><xf numFmtId="166"/></cellXfs>"#;
+        assert_eq!(date_style_map(styles), vec![false, true]);
+        let rows = sheet_rows(
+            r#"<sheetData><row r="1"><c r="A1" s="1"><v>0.5</v></c></row></sheetData>"#,
+            &[],
+            &date_style_map(styles),
+        )
+        .unwrap();
+        assert_eq!(rows[0].1, vec!["12:00:00"]);
     }
 
     #[test]

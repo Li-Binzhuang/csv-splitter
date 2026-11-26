@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 66（自定义时间格式）：`is_date_format` 识别 hh:mm:ss，纯时间单元格
+0.5 输出 12:00:00；测试覆盖；发布包 SHA `960e7f21…ffb68`。
+
 Round 65（XLSX 引擎决策）：新增 XLSX_ENGINE.md，明确无官方 Rust 库、
 calamine 为社区库，记录迁移方案与待批准的依赖/离线成本；文档进发布包；
 发布包 SHA `c4111884…42026e`。
