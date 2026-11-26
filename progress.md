@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项164 标准化（功能级）：`STANDARDIZE(x, mean, standard_dev)`；
+  standard_dev≤0/非数值 `#VALUE!`；验收：单测 + gate。
 - [ ] 项163 几何/调和平均（功能级）：`GEOMEAN`/`HARMEAN`；同行正数样本、
   非正数/空样本 `#VALUE!`；验收：单测 + gate。
 - [ ] 项162 偏度/峰度（功能级）：`SKEW(values)`/`KURT(values)`；同行样本、
   样本量不足 `#VALUE!`；验收：单测 + gate。
-- [ ] 项161 投资期数（功能级）：`PDURATION(rate, pv, fv)`；rate≤-1/
-  非正 pv/fv `#VALUE!`；验收：单测 + gate。
+- [x] 项161 投资期数（功能级）：`PDURATION(rate, pv, fv)`；rate≤-1/
+  非正 pv/fv `#VALUE!`；测试 `pduration_reports_growth_periods`。
 - [x] 项160 变动余额折旧（功能级）：`VDB(cost, salvage, life, start,
   end[, factor[, no_switch]])`；区间/因子非法 `#VALUE!`；测试
   `vdb_varies_declining_balance_depreciation`。
@@ -185,6 +187,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 190（项161 PDURATION，功能级）：增长期数、零利率/非正边界；
+定向与全量 gate/package 通过；发布包 SHA `7903f0bf…dcb2a`。
 
 Round 189（项160 VDB，功能级）：变动余额折旧、区间/因子/开关边界；
 定向与全量 gate/package 通过；发布包 SHA `bbc13b74…65e2a`。

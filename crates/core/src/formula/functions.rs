@@ -2055,6 +2055,40 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number(total)
         }
+        // PDURATION: periods needed to grow pv to fv at a fixed rate.
+        "pduration" => {
+            if args.len() != 3 {
+                return Value::Error;
+            }
+            let (Some(rate), Some(pv), Some(fv)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !rate.is_finite()
+                || !pv.is_finite()
+                || !fv.is_finite()
+                || rate <= -1.0
+                || pv <= 0.0
+                || fv <= 0.0
+            {
+                return Value::Error;
+            }
+            if rate == 0.0 {
+                if pv == fv {
+                    return Value::Number(0.0);
+                }
+                return Value::Error;
+            }
+            let periods = (fv / pv).ln() / (1.0 + rate).ln();
+            if periods.is_finite() {
+                Value::Number(periods)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

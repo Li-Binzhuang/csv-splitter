@@ -1442,6 +1442,22 @@ mod tests {
     }
 
     #[test]
+    fn pduration_reports_growth_periods() {
+        assert_eq!(eval_str("pduration(0.1, 100, 121)", &[]), "2");
+        assert_eq!(eval_str("pduration(0.1, 100, 110)", &[]), "1");
+        assert_eq!(eval_str("pduration(0.1, 100, 100)", &[]), "0");
+        for source in [
+            "pduration(-1, 100, 121)",
+            "pduration(0.1, 0, 121)",
+            "pduration(0.1, 100, 0)",
+            "pduration(0, 100, 121)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+        assert_eq!(eval_str("pduration(0, 100, 100)", &[]), "0");
+    }
+
+    #[test]
     fn vdb_varies_declining_balance_depreciation() {
         assert_eq!(eval_str("vdb(2400, 300, 10, 0, 1)", &[]), "480");
         assert_eq!(eval_str("vdb(2400, 300, 10, 1, 2)", &[]), "384");
