@@ -741,6 +741,20 @@ fn sheet_columns_xml(headers: &[String], rows: &[Vec<String>]) -> String {
     xml
 }
 
+fn select_sheet<'a>(sheets: &'a [SheetRef], sheet: Option<&str>) -> std::io::Result<&'a SheetRef> {
+    if let Some(name) = sheet {
+        return sheets
+            .iter()
+            .find(|entry| entry.name.eq_ignore_ascii_case(name))
+            .ok_or_else(|| invalid(&format!("xlsx has no sheet named {name:?}")));
+    }
+    sheets
+        .iter()
+        .find(|entry| !entry.hidden)
+        .or_else(|| sheets.first())
+        .ok_or_else(|| invalid("xlsx has no worksheets"))
+}
+
 /// Read one worksheet from an `.xlsx`/`.xlsm` workbook into a CSV file.
 ///
 /// The reader understands a small, common subset: shared strings, inline
@@ -788,13 +802,7 @@ pub fn read_xlsx_to_csv(input: &Path, output: &Path, sheet: Option<&str>) -> std
     if sheets.is_empty() {
         return Err(invalid("xlsx has no worksheets"));
     }
-    let selected = match sheet {
-        Some(name) => sheets
-            .iter()
-            .find(|entry| entry.name.eq_ignore_ascii_case(name))
-            .ok_or_else(|| invalid(&format!("xlsx has no sheet named {name:?}")))?,
-        None => &sheets[0],
-    };
+    let selected = select_sheet(&sheets, sheet)?;
     let target = relationship_target(&rels, &selected.rid)
         .or_else(|| {
             // Some producers omit the relationship; one-sheet workbooks still work.
@@ -844,6 +852,7 @@ pub fn read_xlsx_to_csv(input: &Path, output: &Path, sheet: Option<&str>) -> std
 struct SheetRef {
     name: String,
     rid: String,
+    hidden: bool,
 }
 
 fn read_entry<R: std::io::Read + std::io::Seek>(
@@ -872,9 +881,13 @@ fn workbook_sheets(xml: &str) -> Vec<SheetRef> {
         let Some(rid) = attr(attrs, "r:id") else {
             continue;
         };
+        let hidden = attr(attrs, "state")
+            .map(|state| state == "hidden" || state == "veryHidden")
+            .unwrap_or(false);
         out.push(SheetRef {
             name: xml_unescape(&name),
             rid: rid.to_string(),
+            hidden,
         });
     }
     out
@@ -1480,6 +1493,27 @@ mod tests {
         assert_eq!(attr(attrs, "t").as_deref(), Some("s"));
         assert_eq!(attr(attrs, "s").as_deref(), Some("1"));
         assert_eq!(attr(attrs, "name").as_deref(), Some("Sheet & Data"));
+    }
+
+    #[test]
+    fn hidden_sheets_are_not_selected_by_default() {
+        let sheets = vec![
+            SheetRef {
+                name: "Hidden".into(),
+                rid: "rId1".into(),
+                hidden: true,
+            },
+            SheetRef {
+                name: "Visible".into(),
+                rid: "rId2".into(),
+                hidden: false,
+            },
+        ];
+        assert_eq!(select_sheet(&sheets, None).unwrap().name, "Visible");
+        assert_eq!(
+            select_sheet(&sheets, Some("hidden")).unwrap().name,
+            "Hidden"
+        );
     }
 
     #[test]

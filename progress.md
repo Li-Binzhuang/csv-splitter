@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 76（隐藏 sheet）：默认选择第一张可见 sheet；显式 `--sheet` 仍可选 hidden；
+测试覆盖 default/显式两条路径；发布包 SHA `e4a282e2…10f21`。
+
 Round 75（属性解析测试）：手工 attr 解析覆盖前缀碰撞（r vs r:id）、单双引号与
 XML 转义，防止性能优化悄悄改变属性语义；发布包 SHA `1195416d…4cbeb0`。
 

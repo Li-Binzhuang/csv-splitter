@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-26T14:23:21Z",
+  "updated_at": "2026-11-26T14:27:19Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "c13c92fe7ef56dab1c825f0435ea1d5006e9ffa807d53b2f2998b094911a398f",
-      "size": 86146,
-      "normalized_sha256": "c13c92fe7ef56dab1c825f0435ea1d5006e9ffa807d53b2f2998b094911a398f"
+      "sha256": "eccee847792a2489cc6f04a66c7f3e723327332b3c56babd042f0395e48f1e66",
+      "size": 86134,
+      "normalized_sha256": "eccee847792a2489cc6f04a66c7f3e723327332b3c56babd042f0395e48f1e66"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -796,9 +796,9 @@
     },
     "crates/core/src/xlsx.rs": {
       "role": "index",
-      "sha256": "fd89fb89c4f4e47cf409f9a5548ae28d314296165233bb172236297d48fc7afa",
-      "size": 56946,
-      "normalized_sha256": "fd89fb89c4f4e47cf409f9a5548ae28d314296165233bb172236297d48fc7afa"
+      "sha256": "5133343e66aa0b6e54d162f2b591b79882521724451d99aa8d809f485aef9492",
+      "size": 57988,
+      "normalized_sha256": "5133343e66aa0b6e54d162f2b591b79882521724451d99aa8d809f485aef9492"
     },
     "crates/core/tests/partition.rs": {
       "role": "observe",
@@ -1192,9 +1192,9 @@
     },
     "docs/XLSX_ENGINE.md": {
       "role": "index",
-      "sha256": "a83ea081ef265474362049f4ce7c16a2867e2f9d53e08fa28d5df974f8862d66",
-      "size": 4832,
-      "normalized_sha256": "a83ea081ef265474362049f4ce7c16a2867e2f9d53e08fa28d5df974f8862d66"
+      "sha256": "bdf3094fbb039b26eb5a766846987cb57e752fb615ab2fae2b60aec2a754baff",
+      "size": 4845,
+      "normalized_sha256": "bdf3094fbb039b26eb5a766846987cb57e752fb615ab2fae2b60aec2a754baff"
     },
     "docs/bench-100gb-2026-11-26.json": {
       "role": "index",
@@ -1248,9 +1248,9 @@
     },
     "progress.md": {
       "role": "index",
-      "sha256": "0bd107baee3352909a2d5564d1b0e9066efe3f4f82710838d5ac48478814b78b",
-      "size": 22707,
-      "normalized_sha256": "0bd107baee3352909a2d5564d1b0e9066efe3f4f82710838d5ac48478814b78b"
+      "sha256": "06d2bfabd8b89c1ba2e5a96fc36461ee63066b7e235df5f707f83ffe004973f6",
+      "size": 22888,
+      "normalized_sha256": "06d2bfabd8b89c1ba2e5a96fc36461ee63066b7e235df5f707f83ffe004973f6"
     },
     "scripts/agent_routes_smoke.py": {
       "role": "index",

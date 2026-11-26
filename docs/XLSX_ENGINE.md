@@ -61,7 +61,7 @@
 | 自定义日期/时间 | 常见 token；日期时间/纯时间 | `custom_date_number_formats_are_recognized`、`date_serials_carry_time_fractions_and_time_only_cells`、`custom_time_formats_are_recognized_and_render_as_clock` |
 | 合并单元格 | 只输出存储的左上值，不展开 | `merged_cells_keep_the_stored_top_left_value_without_inventing_others`、CLI `convert_keeps_a_merged_cell_top_left_only` |
 | 空行 | 跳过 | `table_from_rows_skips_empty_rows_and_enforces_the_limit`、CLI `convert_skips_empty_xlsx_rows` |
-| sheet 名 | 大小写不敏感 | `reads_a_named_sheet`、CLI `convert_imports_xlsx_shared_strings_and_sheets` |
+| sheet 名 | 大小写不敏感；默认跳过 hidden | `reads_a_named_sheet`、`hidden_sheets_are_not_selected_by_default` |
 | 列上限 | >16384 拒绝 | `a_cell_beyond_excels_column_limit_is_an_error` |
 | 行上限 | 解析中限制，表头单独计 | `sheet_rows_stops_before_an_unbounded_worksheet`、`table_from_rows_skips_empty_rows_and_enforces_the_limit` |
 | inlineStr | 有 `<is>` 解析；空 body 视为空单元格 | xlsx fixture 与 `convert_imports_xlsx_shared_strings_and_sheets` |
