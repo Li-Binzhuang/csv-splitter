@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 25（安装自检）：新增 `install_selfcheck.sh` 校验 manifest/version/platform/
+docs/审计目录并输出 JSON；正负例 smoke 进 gate；DEPLOY 增加升级/回滚/排障；
+发布包 SHA `9e8f3929…cccd1`。
+
 Round 24（设计伙伴材料）：新增 PILOT_INTERVIEW.md / MIGRATION.md；
 `pilot_report.py` 自动写 `pilot-report.md.json`（版本/样本量/四操作/限制，
 不含原始行）；pilot kit smoke 断言客户样本摘要；发布包 SHA `14d4e9e6…3b339`。

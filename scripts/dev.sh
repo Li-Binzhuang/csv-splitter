@@ -73,6 +73,7 @@ case "${1:-check}" in
     run_stage mcp-schema python3 scripts/check_mcp_schema.py
     run_stage mcp-sdk bash scripts/check_mcp_sdk.sh
     run_stage install-offline bash scripts/test_install_offline.sh
+    run_stage install-selfcheck bash scripts/test_install_selfcheck.sh
     run_stage bench-smoke bash scripts/test_bench_100gb.sh
     run_stage pilot-kit-smoke bash scripts/test_pilot_kit.sh
     run_stage pilot-intake-smoke bash scripts/test_pilot_intake.sh

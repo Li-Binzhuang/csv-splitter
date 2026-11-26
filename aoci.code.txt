@@ -8,7 +8,7 @@ CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:�
 Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml,code:crates/agent/Cargo.toml,code:crates/cli/Cargo.toml | A:members core/mcp/agent/cli；workspace.dependencies csvx-core；version 4.2.0 是发布真相 | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
 README.md[SG6L]: F:项目总览、命令表、上手与部署入口 | R:code:docs/BENCHMARKS.md,code:docs/CAPABILITIES.md,code:docs/DEPLOY.md | A:100GB 本机三项数字；bench JSON 链接；快速开始；命令表 | S:性能数字必须实测；本机非 SLA；文档测试校验默认端口
-progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round24 试点材料与 SHA | S:每轮更新；定价未决；push 失败不阻塞
+progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round25 安装自检与 SHA | S:每轮更新；定价未决；push 失败不阻塞
 
 ===/<repository>/.github/workflows/===
 ci.yml[OV7S]: F:主 CI：格式化、引擎与 CLI 测试、性能守卫、clippy 工作区、失败注解 | R:code:scripts/smoke.sh,code:scripts/regress.sh,code:scripts/backend-smoke.sh,code:scripts/release-decision.sh | A:单 job 串联；engine 与 CLI 两个测试步骤失败时各重试一次并留 warning annotation（本地单跑/两线程均绿的负载型 flake）；每步 tee 日志，失败时把测试名转成公开 annotation 并上传 artifact | S:曾因双 job + 缓存配额出现“跳过一半、红叉无信息”，故单 job；重试只限一次且日志保留，真 bug 仍会两次失败
@@ -101,7 +101,7 @@ API.md[SD7L]: F:HTTP 端点、参数、状态码契约与请求上限 | R:code:c
 ARCHITECTURE.md[SD6S]: F:架构说明：分层、磁盘格式、编辑模型、读路径与模块地图 | R:code:crates/core/src/lib.rs,code:docs/OPERATIONS.md,code:crates/mcp/src/lib.rs,code:crates/agent/src/lib.rs | A:core 41 模块；磁盘格式/操作契约；入口 CLI/HTTP/MCP/Agent（axum） | S:模块地图测试；侧车可删；journal 丢编辑；入口 crate 独立
 CAPABILITIES.md[SD7L]: F:能力清单：CLI/HTTP/MCP 与边界 | R:code:docs/API.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/FORMULA_CACHE.md | A:pipeline history/attempt；staleReason；filter；gate；MCP 23 工具 | S:history 默认 4MiB 轮转；无 GUI；缓存上限；SSE 轮询
 CI.md[SO6S]: F:CI 结构说明：单 job 流水线、滚动缓存、重试策略与失败注解机制 | R:code:.github/workflows/ci.yml | A:解释为何合并单 job、缓存 key 滚动；新增“偶发失败与一次重试”节：具体案例 reads_stay_consistent_while_edits_land、本地 30 次与两线程全绿、断言未改、两次都红就修测试；本地 gate 的 tests 阶段也重试一次（tests-retry） | S:重试不得用来掩盖真 bug；annotation 保留两次日志；两次都红才是真失败
-DEPLOY.md[SO7M]: F:部署材料：三种安装、配置项、systemd、升级回滚与安全边界 | R:code:deploy/csvx.service | A:明确单机单用户、无鉴权、默认 loopback；配置表含 CSVX_SCAN_THREADS（filter/search 的并行线程数，1 退回顺序）；给出 release-check 与 install-check 两条自检 | S:安全表必须写明没有鉴权与没有多用户隔离，只列防护不列边界会让人误判风险
+DEPLOY.md[SO7M]: F:部署材料：安装、配置、systemd、升级回滚与自检 | R:code:deploy/csvx.service,code:scripts/install_selfcheck.sh | A:三种安装；升级/回滚；自检字段；排障顺序；无鉴权边界 | S:必须写明无鉴权/无多用户；自检默认审计目录；缺一失败
 GETTING_STARTED.md[SU6M]: F:十分钟上手：用故意不干净的示例走完整链路 | R:code:crates/core/src/demo.rs | A:逐步骤贴真实输出，覆盖带引号换行与多一个逗号的错位行；命令一律以 csvx 开头，示例目录为 csvx-demo/ | S:-
 HANDOVER.md[SU5M]: F:交接说明：现状、已知债、下一步，以及本仓两层认知层的用法 | R:code:docs/ROADMAP.md,code:aoci.code.txt | A:开头演示；csvx 4.2.0；阶段 1–5；A Pipeline 含 --dry-run（JSON）、--step-timeout、--retries、--clean、DAG/group staging 提交；B MCP 读写+job+pipeline_run/job_cancel/job_list 与官方 SDK；C 100/81 GB 演练达标；压缩输入顺序读；64 GB 自适应；demo/OUTREACH/试点报告/打包；下一步真实客户 | S:.aoci 运行时产物与 .codegraph 不入库，aoci 三卷、baseline、config、gitattributes 与 AGENTS 必须入库；数字取多轮范围
 INTEGRATION.md[SN6S]: F:前端接入走查：从起服务到翻行、改值、多文件的一页纸 | R:code:docs/API.md | A:按 0–7 步给出真实可跑的调用（起服务、打开文件、画一屏、读写单元格含 expect、行身份、写后、多文件）；每条都对应 crates/cli/tests/serve.rs 的测试 | S:-
@@ -144,7 +144,7 @@ backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | 
 bench.sh[TP5T]: F:基准脚本：切分与合并吞吐 | R:code:scripts/smoke.sh | A:生成数据、计时并打印每秒兆字节；先 cargo build --release -p csvx-cli，再用 target/release/csvx 跑 | S:-
 check_match_arms.py[XQ5T]: F:检查 serve.rs 里 match 分支标签是否重复 | R:code:crates/cli/src/serve.rs | A:按仓库根解析目标路径，由 regress 调用 | S:按调用者工作目录解析会在临时目录里找不到文件并假失败
 clean.sh[XO4T]: F:清理构建与本地产物 | R:- | A:删除 target 与 dist，不碰数据文件 | S:-
-dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/test_pilot_intake.sh,code:scripts/test_pilot_kit.sh | A:gate layout/fmt/clippy/tests/sql/mcp/install-offline/bench/pilot-kit/intake | S:gate 必带 sql；pilot/intake 负例必须在 gate
+dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/test_install_selfcheck.sh | A:gate layout/fmt/clippy/tests/sql/mcp/install-offline/install-selfcheck/bench/pilot | S:gate 必带 sql；安装自检负例必须在 gate
 install-check.sh[TO6T]: F:验证三条安装路径：源码构建、cargo install 与发布产物 | R:code:scripts/release-check.sh | A:每条路径各跑版本、demo 与 serve --check；case 以 csvx 前缀校验版本输出；二进制分别位于 target/release/csvx 与 $PREFIX/bin/csvx | S:cargo install 先离线后联网，冷缓存机器上静默联网会变成假失败
 package.sh[OV7T]: F:把二进制打成 tar.gz 或 zip 并生成校验和 | R:code:.github/workflows/release.yml | A:产物写 dist；BIN=csvx，Windows 打 zip 其余 tar.gz；发布工作流调用同一脚本；先删旧产物再打包；shasum 或 sha256sum 生成 .sha256 | S:打包与发布必须共用这一个脚本，否则本地验过的不是真正发布的那份
 regress.sh[TQ7S]: F:回归扫全量：逐条命令跑一遍并把 FAIL 计入退出码 | R:code:scripts/smoke.sh | A:每条命令一行 ok 或 FAIL；含 release-decision 自测与 match 分支查重；BIN 默认 ./target/debug/csvx 并转成绝对路径；在临时工作目录里运行 | S:相对调用者工作目录解析会在临时目录里找不到脚本并产生假失败
@@ -157,8 +157,8 @@ demo.sh[SZ6S]: F:一条命令的产品巡演：生成示例数据后跑预览、
 demo_end_to_end.sh[XQ7T]: F:一键产品演示：pipeline + watch + MCP + Agent 路由/审批/重放 | R:code:scripts/mcp_client.py,code:scripts/mcp_sdk/client.mjs,code:scripts/agent_routes_smoke.py | A:release 检查；orders/plan；pipeline/watch；mcp_client；SDK；agent serve + 路由 + 428/审批 + replay；trap 清理 | S:无网络/无 GUI/无 xlsx；BIN 可覆盖；SDK 缺 node_modules 只提示；临时目录不残留
 mcp_client.py[XQ7S]: F:无依赖 MCP stdio 客户端，供端到端演示 | R:code:scripts/demo_end_to_end.sh | A:spawn csvx mcp；initialize/notifications、tools/list、tools/call；示例调用 schema/filter/view/edit_set/undo/convert/job_submit/job_status；plan.csv 存在时 pipeline_status 带 contentCheck；orders.csv.gz 存在时两次 search materialize，调 cache_stats/clear 打印命中/清空/死进程数并复查 entries=0；tools/list 打印 annotated_tools；所有结果按 JSON 解析 | S:只用于本地演示；必须处理 job 轮询超时并以非零退出；不得写入 MCP root 之外
 pilot_report.py[XQ7S]: F:客户样本试点报告与机器可读摘要 | R:code:docs/PILOT.md,code:scripts/pilot_kit.sh | A:报告；pilot-report.md.json；版本/样本量/四操作/限制 | S:不联网；不读原始行；摘要不含原始行；非 SLA
-package_release.sh[XQ7T]: F:构建离线发布、自验、安装与证据 | R:code:scripts/verify_dist.sh,code:scripts/install_offline.sh,code:docs/MIGRATION.md | A:脚本归档 scripts/；真实 install；访谈/迁移文档进包 | S:不联网/不打 tag；成员校验失败整包失败
-verify_dist.sh[XQ7S]: F:发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:docs/MIGRATION.md,code:docs/PILOT_INTERVIEW.md | A:成员契约加 SECURITY/DESIGN/MIGRATION/INTERVIEW/100GB JSON/scripts | S:仅发布方；不联网；缺成员失败
+package_release.sh[XQ7T]: F:构建离线发布、自验、安装与证据 | R:code:scripts/install_selfcheck.sh,code:scripts/verify_dist.sh,code:docs/MIGRATION.md | A:脚本归档 scripts/；真实 install；自检脚本/文档进包 | S:不联网/不打 tag；成员校验失败整包失败
+verify_dist.sh[XQ7S]: F:发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:scripts/install_selfcheck.sh,code:docs/MIGRATION.md | A:成员契约含自检/安装/bench/pilot/访谈/迁移/100GB JSON | S:仅发布方；不联网；缺成员失败
 bench_mcp_cache.py[XQ7T]: F:可复现 MCP 解压缓存 benchmark | R:code:scripts/mcp_client.py,code:docs/BENCHMARKS.md | A:参数 binary/root/file/query；同一 server 连续两次 search materialize，打印 run1/run2 秒 + scanned/matched；CSVX_MCP_CACHE_BYTES 设 8 GiB；结束打印 maxrss（mac 与 Linux 单位换算） | S:仅本地基准；不联网；file 相对 root；不是 SLA
 smoke_http.py[XQ7T]: F:HTTP 发布包冒烟：viewer、/ops、/report chart+compare、/gate global、/concat dir | R:code:crates/cli/src/serve.rs,code:docs/RELEASE_CHECKLIST.md,code:scripts/package_release.sh,code:docs/ACCEPTANCE.md | A:临时 root + 随机端口；生成 t/other/spec/sub/dup 夹具；等待 /health；校验 GET / viewer HTML、17 操作、HTML SVG+Compare、gate 文件通过、uniqueGlobal 失败、concat job done；失败退出 1；finally 终止 server | S:依赖 Python 标准库与 release binary；随机端口先 bind 再关闭有极小竞争；只在本机回环；不写用户数据
 install_skill.sh[XQ7T]: F:把 csvx skill 复制到本地 DSH skills 目录（仓库/包内布局） | R:code:skills/csvx-data/SKILL.md,code:docs/DSH_SKILL.md | A:定位 here/skills 或 here/../skills；DSH_HOME 覆盖；mkdir/cp；缺源退出 2 | S:只写目标 skill 目录；不碰 key/配置；覆盖同名 SKILL.md
@@ -182,6 +182,8 @@ pilot_kit.sh[OG7T]: F:生成 demo/真实样本 report、intake 与 kickoff | R:c
 test_pilot_kit.sh[TQ7T]: F:设计伙伴 kit smoke 与拒绝路径 | R:code:scripts/pilot_kit.sh,code:scripts/dev.sh | A:六件产物；客户样本/email；摘要断言；重复目录拒绝 | S:gate 必跑；不联网；失败非零
 pilot_intake.py[OG7S]: F:伙伴样本 intake 校验与脱敏报告 | R:code:docs/DESIGN_PARTNER.md,code:scripts/pilot_kit.sh | A:size/limit；gz/bz2/zst header；敏感列名；intake.json/md | S:只读 header；不落原始行；错误 2；无网络
 test_pilot_intake.sh[TQ7T]: F:伙伴 intake smoke 与压缩/大小/缺失负例 | R:code:scripts/pilot_intake.py,code:scripts/dev.sh | A:gz/bz2/zst；敏感列名；超限 1；缺失/畸形 2 | S:gate 必跑；不联网；失败非零
+install_selfcheck.sh[OV7S]: F:已安装 prefix 自检并输出 JSON | R:code:scripts/install_offline.sh,code:docs/DEPLOY.md | A:manifest/version/platform/docs/审计目录；checks；ok | S:不联网；缺项非零；审计目录可写测试
+test_install_selfcheck.sh[TQ7T]: F:安装自检正负例 | R:code:scripts/install_selfcheck.sh,code:scripts/dev.sh | A:假 prefix；manifest/version/docs；坏版本/缺文档拒绝 | S:gate 必跑；不联网；失败非零
 
 ===/<repository>/csvx-demo/===
 orders.csv[AZ4L]: F:demo 命令生成的示例数据：6 列 20 120 行，含刻意保留的脏数据 | R:code:crates/core/src/demo.rs | A:列为 id,cust_no,city,amount,note,ts；20 行多一个逗号、100 行重复、900 个空备注，用来演示预览与统计对错位行的容忍 | S:脏数据是故意的，不要清理——GETTING_STARTED 与契约测试都引用这份输入

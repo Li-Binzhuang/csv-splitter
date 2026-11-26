@@ -240,3 +240,42 @@ MSVC** 跑 `cargo check -p csvx-cli`，只在 `crates/**` 或依赖清单变化�
 曾经用 ubuntu + mingw-w64 做这件事，**失败了**，原因值得记下来：那个 mingw 是 GCC 10 的
 win32 线程模型，它的 libstdc++ **没有 `std::mutex` / `std::shared_mutex`**，而 DuckDB 的头
 文件用到了两者，于是死在 `libduckdb-sys` 里。一个连引擎都编译不了的交叉检查，不算交叉检查。
+
+## 安装自检、升级与回滚（离线）
+
+### 安装自检
+
+安装后用 `scripts/install_selfcheck.sh` 检查 prefix；前缀可用环境变量
+`CSVX_INSTALL_PREFIX` 指定，或由脚本参数给出。输出一个 JSON 对象，包含：
+
+- `install-manifest.json` 是否存在；
+- `bin/csvx` 是否可执行、版本是否与 manifest 一致；
+- 当前平台是否与 manifest 的 platform 一致；
+- `share/csvx/docs` 下 SECURITY/MIGRATION 是否存在；
+- 审计目录是否可写（默认 `PREFIX/var/csvx/audit`）。
+
+任一项失败时 JSON 的 `ok=false` 并以非零退出；脚本不访问网络。
+
+### 升级
+
+1. 用新版本离线包和对应 release manifest；
+2. 先安装到新的 prefix，或保留旧 prefix 备份；
+3. 运行自检；
+4. 切换 PATH/服务 unit 到新 prefix；
+5. 保留旧 prefix 直到试点验证通过。
+
+### 回滚
+
+1. 停止服务；
+2. 将 PATH/unit 指回旧 prefix；
+3. 运行旧 prefix 的自检；
+4. 确认审计与 journal 仍在预期位置。
+
+### 排障顺序
+
+1. `install-manifest.json` 是否存在且可解析；
+2. 二进制是否可执行、`--version` 是否可读；
+3. manifest 的 platform 是否与当前主机一致；
+4. docs 是否完整；
+5. 审计目录权限；
+6. 最后才检查业务命令与数据权限。

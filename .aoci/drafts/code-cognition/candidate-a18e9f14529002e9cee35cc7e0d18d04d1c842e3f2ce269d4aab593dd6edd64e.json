@@ -1,0 +1,121 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "699aef440cfc8d8899c4db65063b217ad8a8e6751af3b9a8214a027a1c1c1618",
+  "batch_id": "a18e9f14529002e9cee35cc7e0d18d04d1c842e3f2ce269d4aab593dd6edd64e",
+  "composite_identity": "0ab41882c2858292aa0aad5a169f46845ad2a9bf6199bfdc5e3922de4d2bc882",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "53baf2d05fad4cc872c1235f4c6593b76f2268263bdefbb6b395a41807ee33c9",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DEPLOY.md",
+      "path": "docs/DEPLOY.md",
+      "change": "update",
+      "source_sha256": "ca800dae6ff2f954b1275337466fe872c7d4cb4cbed5eddf2a8fba4cf736c9af",
+      "existing_entry": "DEPLOY.md[SO7M]: F:部署材料：三种安装、配置项、systemd、升级回滚与安全边界 | R:code:deploy/csvx.service | A:明确单机单用户、无鉴权、默认 loopback；配置表含 CSVX_SCAN_THREADS（filter/search 的并行线程数，1 退回顺序）；给出 release-check 与 install-check 两条自检 | S:安全表必须写明没有鉴权与没有多用户隔离，只列防护不列边界会让人误判风险"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "6f4358bab41b1e4872925c0a7e9b65321d804a411954d39c3dfc07fdc6212f27",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round24 试点材料与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "5263d685aa56633807b74505c2d436040beca16e2f1bc601d08a622105115e89",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/test_pilot_intake.sh,code:scripts/test_pilot_kit.sh | A:gate layout/fmt/clippy/tests/sql/mcp/install-offline/bench/pilot-kit/intake | S:gate 必带 sql；pilot/intake 负例必须在 gate"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/install_selfcheck.sh",
+      "path": "scripts/install_selfcheck.sh",
+      "change": "create",
+      "source_sha256": "44fbffcb3ec298319a3e659b3643746245ca0bdfccd3954a4e8edae6fb1aa1d5"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "c68e3169094006d9371b4dc1e26c455991aa670a0e7be1018342bab93cfdbf4a",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装与证据 | R:code:scripts/verify_dist.sh,code:scripts/install_offline.sh,code:docs/MIGRATION.md | A:脚本归档 scripts/；真实 install；访谈/迁移文档进包 | S:不联网/不打 tag；成员校验失败整包失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_install_selfcheck.sh",
+      "path": "scripts/test_install_selfcheck.sh",
+      "change": "create",
+      "source_sha256": "ce9395e20b47241846b0357ed0e7ef6e0688e5d11120615c184f024738d7f4c2"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "39243a9b0d0848b90b88c5c7778fada2dc32409079df211588baa9992322f2c8",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:docs/MIGRATION.md,code:docs/PILOT_INTERVIEW.md | A:成员契约加 SECURITY/DESIGN/MIGRATION/INTERVIEW/100GB JSON/scripts | S:仅发布方；不联网；缺成员失败"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "069449f24e4cefcf55285c156e4aefaea96aff219bb9f86febaf4bdd97f47f17",
+      "object_ref": "code:docs/DEPLOY.md",
+      "path": "docs/DEPLOY.md",
+      "change": "update",
+      "source_sha256": "ca800dae6ff2f954b1275337466fe872c7d4cb4cbed5eddf2a8fba4cf736c9af",
+      "existing_entry": "DEPLOY.md[SO7M]: F:部署材料：三种安装、配置项、systemd、升级回滚与安全边界 | R:code:deploy/csvx.service | A:明确单机单用户、无鉴权、默认 loopback；配置表含 CSVX_SCAN_THREADS（filter/search 的并行线程数，1 退回顺序）；给出 release-check 与 install-check 两条自检 | S:安全表必须写明没有鉴权与没有多用户隔离，只列防护不列边界会让人误判风险"
+    },
+    {
+      "candidate_id": "e44ab1487f3fd080a540755b248515cbaa77e5d24727e24be38ae05fc9ab5806",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "6f4358bab41b1e4872925c0a7e9b65321d804a411954d39c3dfc07fdc6212f27",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round24 试点材料与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "2c3f4de11ac728de5eff4dad90787bd37a2d91014cab1d3bbe75d3e7d688911c",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "5263d685aa56633807b74505c2d436040beca16e2f1bc601d08a622105115e89",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/test_pilot_intake.sh,code:scripts/test_pilot_kit.sh | A:gate layout/fmt/clippy/tests/sql/mcp/install-offline/bench/pilot-kit/intake | S:gate 必带 sql；pilot/intake 负例必须在 gate"
+    },
+    {
+      "candidate_id": "f17935a153fc1549e51069f765996b5b7045d03e8e09db54893ce06aea34d2d0",
+      "object_ref": "code:scripts/install_selfcheck.sh",
+      "path": "scripts/install_selfcheck.sh",
+      "change": "create",
+      "source_sha256": "44fbffcb3ec298319a3e659b3643746245ca0bdfccd3954a4e8edae6fb1aa1d5"
+    },
+    {
+      "candidate_id": "f6522c4120d9e5e67b8645919ba4612b0d6e5385c72e5c0a6d82da067e329675",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "c68e3169094006d9371b4dc1e26c455991aa670a0e7be1018342bab93cfdbf4a",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装与证据 | R:code:scripts/verify_dist.sh,code:scripts/install_offline.sh,code:docs/MIGRATION.md | A:脚本归档 scripts/；真实 install；访谈/迁移文档进包 | S:不联网/不打 tag；成员校验失败整包失败"
+    },
+    {
+      "candidate_id": "9184c35d3b0faa52638cb8a1a9345a512b5ecc89c0bae2238cdd547ecb6e0209",
+      "object_ref": "code:scripts/test_install_selfcheck.sh",
+      "path": "scripts/test_install_selfcheck.sh",
+      "change": "create",
+      "source_sha256": "ce9395e20b47241846b0357ed0e7ef6e0688e5d11120615c184f024738d7f4c2"
+    },
+    {
+      "candidate_id": "73905fd36477711fea1333ed296a17ffb2404f1c01d5d8f681357898efdc3d22",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "39243a9b0d0848b90b88c5c7778fada2dc32409079df211588baa9992322f2c8",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:docs/MIGRATION.md,code:docs/PILOT_INTERVIEW.md | A:成员契约加 SECURITY/DESIGN/MIGRATION/INTERVIEW/100GB JSON/scripts | S:仅发布方；不联网；缺成员失败"
+    }
+  ]
+}
