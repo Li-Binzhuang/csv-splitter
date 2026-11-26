@@ -34,7 +34,7 @@ shasum -a 256 "dist/$NAME.tar.gz" > "dist/$NAME.tar.gz.sha256"
 TAR_SHA=$(shasum -a 256 "dist/$NAME.tar.gz" | awk '{print $1}')
 if ! { printf '# date: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; printf '# sha256: %s\n' "$TAR_SHA"; bash scripts/verify_dist.sh "dist/$NAME.tar.gz"; } 2>&1 | tee "dist/$NAME.verify.log"; then
   echo "package verification failed; removing incomplete artifacts" >&2
-  rm -f "dist/$NAME.tar.gz" "dist/$NAME.tar.gz.sha256"
+  rm -f "dist/$NAME.tar.gz" "dist/$NAME.tar.gz.sha256" "dist/$NAME.verify.json" "dist/$NAME.verify.log" "dist/$NAME.reverify.json" "dist/$NAME.release.json"
   exit 1
 fi
 python3 scripts/release_manifest.py "$NAME" "dist/$NAME.tar.gz" "dist/$NAME.verify.log"

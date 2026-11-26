@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "24ad87d7f429b5411774ffc0f22fe21c1f614f51ccfee5d0c94b910b6921078c",
+  "batch_id": "c452b87b75d830c9aed7966be08b3a57cc60f0c2325c668d740059504209beb8",
+  "composite_identity": "d510bf09887d8da3f4f0ec72a68fff5a2a98d0aff299310a3d13f6c29b331cc8",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "a965e4dbf749a161f833a73dc7da1b1af40b911ea5e7a58db6e724e3b9e7d069",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "8d2a95cdda1fa66460a75d68ab25483a76a28b05b3077b66cdf4e148d907853a",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round35 复验与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "3d06f0510494d34ce34594f842b378bc653dcf1b420b14b424ccc480fd5d1f96",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装、自检/运维/诊断与证据 | R:code:scripts/release_manifest.py,code:scripts/check_release.py,code:docs/DEPLOY.md | A:真实 install；selfcheck/ops/bundle；DEPLOY 与 criticalDocs 进包 | S:不联网/不打 tag；缺关键文档整包失败"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "5b9f2c907e6320c8338db8b50068ebb2fef70c77e6a11ed25cb488e073dd01d3",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "8d2a95cdda1fa66460a75d68ab25483a76a28b05b3077b66cdf4e148d907853a",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round35 复验与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "e8d1ba01803a7ad436e123ca98056dba55e2e0f08907d13ed5b7f02bbfbdb78f",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "3d06f0510494d34ce34594f842b378bc653dcf1b420b14b424ccc480fd5d1f96",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装、自检/运维/诊断与证据 | R:code:scripts/release_manifest.py,code:scripts/check_release.py,code:docs/DEPLOY.md | A:真实 install；selfcheck/ops/bundle；DEPLOY 与 criticalDocs 进包 | S:不联网/不打 tag；缺关键文档整包失败"
+    }
+  ]
+}

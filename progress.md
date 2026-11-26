@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 36（打包前清理旧验证）：`package_release.sh` 在重新打包前删除旧
+verify/release 文件，避免旧 `.release.json` 让 verify_dist 写 reverify、release
+manifest 读到旧 checks；连跑两次发布包均 `manifest=ok`，SHA `249861cc…e647`。
+
 Round 35（复验不破坏 manifest）：`verify_dist.sh` 发现有 `.release.json` 时写
 `.reverify.json`，保留 manifest 绑定的 `.verify.json`；复验后 `check_release`
 仍通过；发布包 SHA `6989b299…35353e`，复验写 `.reverify.json` 且 `check_release=manifest=ok`。
