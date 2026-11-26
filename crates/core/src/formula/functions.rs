@@ -16,6 +16,7 @@
 
 use super::state::SetOp;
 use super::{eval, truthy, Ctx, Expr, Value};
+use crate::layout::NumberFormat;
 
 pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
     let lower = name.to_ascii_lowercase();
@@ -737,6 +738,22 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             None => Value::Error,
         },
+        "datevalue" => match args.first().map(|a| eval(a, ctx)) {
+            Some(v) => match parse_date(&v.text()) {
+                Some((year, month, day)) => Value::Number(
+                    (days_from_civil(year, month, day) - days_from_civil(1899, 12, 30)) as f64,
+                ),
+                None => Value::Error,
+            },
+            None => Value::Error,
+        },
+        "hour" | "minute" | "second" => match args.first().map(|a| eval(a, ctx)) {
+            Some(v) => match time_part(&v.text(), &lower) {
+                Some(n) => Value::Number(n as f64),
+                None => Value::Error,
+            },
+            None => Value::Error,
+        },
 
         // ---- text ----------------------------------------------------------
         "len" => match args.first().map(|a| eval(a, ctx)) {
@@ -755,6 +772,19 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             Some(v) => Value::Text(v.text().trim().to_string()),
             None => Value::Error,
         },
+        // TEXT(value, format): reuse the same NumberFormat the viewer uses.
+        "text" => match (args.first(), args.get(1)) {
+            (Some(value), Some(format)) => {
+                let spec = eval(format, ctx).text();
+                match NumberFormat::parse(&spec) {
+                    Ok(format) => Value::Text(format.render(&eval(value, ctx).text())),
+                    Err(_) => Value::Error,
+                }
+            }
+            _ => Value::Error,
+        },
+        "textbefore" => text_around(args, ctx, true),
+        "textafter" => text_around(args, ctx, false),
         "left" => text_slice(args, ctx, |s, n| s.chars().take(n).collect()),
         "right" => text_slice(args, ctx, |s, n| {
             let total = s.chars().count();
@@ -1221,6 +1251,80 @@ fn text_slice(args: &[Expr], ctx: &Ctx<'_>, take: impl Fn(&str, usize) -> String
         .unwrap_or(1.0)
         .max(0.0) as usize;
     Value::Text(take(&text, count))
+}
+
+fn text_around(args: &[Expr], ctx: &Ctx<'_>, before: bool) -> Value {
+    let Some(text) = args.first().map(|a| eval(a, ctx).text()) else {
+        return Value::Error;
+    };
+    let Some(delimiter) = args.get(1).map(|a| eval(a, ctx).text()) else {
+        return Value::Error;
+    };
+    if delimiter.is_empty() {
+        return Value::Error;
+    }
+    let instance = args
+        .get(2)
+        .and_then(|a| eval(a, ctx).number())
+        .unwrap_or(1.0);
+    if instance < 1.0 || !instance.is_finite() {
+        return Value::Error;
+    }
+    let mut cursor = 0usize;
+    let mut where_delimiter = None;
+    for _ in 0..instance as usize {
+        match text[cursor..].find(&delimiter) {
+            Some(index) => {
+                where_delimiter = Some(cursor + index);
+                cursor += index + delimiter.len();
+            }
+            None => return Value::Text("#N/A".to_string()),
+        }
+    }
+    match where_delimiter {
+        Some(index) if before => Value::Text(text[..index].to_string()),
+        Some(index) => Value::Text(text[index + delimiter.len()..].to_string()),
+        None => Value::Text("#N/A".to_string()),
+    }
+}
+
+fn time_part(text: &str, part: &str) -> Option<u32> {
+    let trimmed = text.trim();
+    let time_text = if let Some(index) = trimmed.find('T') {
+        &trimmed[index + 1..]
+    } else if let Some(index) = trimmed.find(' ') {
+        &trimmed[index + 1..]
+    } else {
+        trimmed
+    };
+    if let Some((hour, minute, second)) = parse_clock(time_text) {
+        return match part {
+            "hour" => Some(hour),
+            "minute" => Some(minute),
+            _ => Some(second),
+        };
+    }
+    let fraction = trimmed.parse::<f64>().ok()?;
+    if !(0.0..1.0).contains(&fraction) {
+        return None;
+    }
+    let total = (fraction * 86_400.0).round() as u32;
+    match part {
+        "hour" => Some(total / 3_600),
+        "minute" => Some((total / 60) % 60),
+        _ => Some(total % 60),
+    }
+}
+
+fn parse_clock(text: &str) -> Option<(u32, u32, u32)> {
+    let mut pieces = text.split(':');
+    let hour: u32 = pieces.next()?.parse().ok()?;
+    let minute: u32 = pieces.next()?.parse().ok()?;
+    let second: u32 = pieces.next().unwrap_or("0").parse().ok()?;
+    if pieces.next().is_some() || hour > 23 || minute > 59 || second > 59 {
+        return None;
+    }
+    Some((hour, minute, second))
 }
 
 /// Pull `year`, `month` or `day` out of a leading ISO date.

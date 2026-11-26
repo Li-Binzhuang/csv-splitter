@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "04712469acb5598bca237e62cd63d7e9425df09301ffeeb57f33dd70087a1b9b",
+  "batch_id": "dff677ac1f08f1fc26718d2ecf087475f7304c949034769150e0224a0bb84c97",
+  "composite_identity": "f7e4255a52675ed9003d7163f74dba51b4624bf4f44615a39c35dc22731f31cd",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "8b93529ef97e56b1ba5b8a56814a34fb7ea112956866c36d2244a542c521dcaa",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "12a90659eeb0dc52f9712af3553de4de9430edc05a70f298273a7fe4f4edbfbb",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合支持整列/同行区间/多条件；sumifs 家族按同位置配对；median/large/small/percentile/mode 仅同行；ref/vlookup 返回 #N/A，xlookup 可 fallback；IFS/SWITCH/IFNA/CHOOSE/NA/XOR/TRUE/FALSE；IFERROR 捕获 #N/A；日期含 edate/eomonth/weekday/worknum/networkdays | S:单列参数按整列解释；无预扫状态整列聚合为 #VALUE!；跨行区间/整列 median 为 #VALUE!；large/small k、percentile p 越界报错；networkdays/workday 无节假日"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "05ba5023abcf85e82aa0c5e14b7f8e3a5ba123c91d2b0d635ffcf261874e7750",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、stdev/var、median/large/small/percentile/mode/sumsq/product 同行区间、多段 sumproduct、iserror/isna/istext、date/text、IFS/SWITCH/IFNA/CHOOSE/NA；collect_sheet_refs 预加载 ref/vlookup/xlookup | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；别名不喂加载器会在打开时失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "9caa50a85c0ada54754b5b5cf94d797c44b468ea99bca96b6475bba84fc2bfb5",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口清单 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:文本/日期/逻辑/查找/数学分类；支持/首批补齐/缺失/不做；错误语义 #VALUE! 与 #N/A；首批 IFS/SWITCH/IFNA/CHOOSE/NA/XOR/TRUE/FALSE | S:矩阵只记当前实现，不承诺未做函数；查找受限为显式 sheet/key/value"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "5f26e3e29fbc8684339249bdfcbe678a57ce3f58066de8ef33203ac1b51913d7",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round107 Top/Bottom 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "31734462e19ff68c6a87870aefab13bfe0311cfc08ab572c01a709993376c5fa",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "12a90659eeb0dc52f9712af3553de4de9430edc05a70f298273a7fe4f4edbfbb",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合支持整列/同行区间/多条件；sumifs 家族按同位置配对；median/large/small/percentile/mode 仅同行；ref/vlookup 返回 #N/A，xlookup 可 fallback；IFS/SWITCH/IFNA/CHOOSE/NA/XOR/TRUE/FALSE；IFERROR 捕获 #N/A；日期含 edate/eomonth/weekday/worknum/networkdays | S:单列参数按整列解释；无预扫状态整列聚合为 #VALUE!；跨行区间/整列 median 为 #VALUE!；large/small k、percentile p 越界报错；networkdays/workday 无节假日"
+    },
+    {
+      "candidate_id": "c22e84a29b83fe28c0375d16be5e48355c988d6461a57029bd7ce9fe3dc39970",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "05ba5023abcf85e82aa0c5e14b7f8e3a5ba123c91d2b0d635ffcf261874e7750",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含整列/条件/多条件/空单元格聚合、stdev/var、median/large/small/percentile/mode/sumsq/product 同行区间、多段 sumproduct、iserror/isna/istext、date/text、IFS/SWITCH/IFNA/CHOOSE/NA；collect_sheet_refs 预加载 ref/vlookup/xlookup | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；别名不喂加载器会在打开时失败"
+    },
+    {
+      "candidate_id": "2a1fdc32a326f1bcc87f2d56900c879e47615de5376f5b86a55f40bca5046952",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "9caa50a85c0ada54754b5b5cf94d797c44b468ea99bca96b6475bba84fc2bfb5",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口清单 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:文本/日期/逻辑/查找/数学分类；支持/首批补齐/缺失/不做；错误语义 #VALUE! 与 #N/A；首批 IFS/SWITCH/IFNA/CHOOSE/NA/XOR/TRUE/FALSE | S:矩阵只记当前实现，不承诺未做函数；查找受限为显式 sheet/key/value"
+    },
+    {
+      "candidate_id": "d930b71d28d99fbec373c661d4e3b43f9462353d4b782b6b25e5247ba42f509d",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "5f26e3e29fbc8684339249bdfcbe678a57ce3f58066de8ef33203ac1b51913d7",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round107 Top/Bottom 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

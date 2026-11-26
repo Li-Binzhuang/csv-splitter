@@ -27,11 +27,17 @@
   Currency/DateTime → numFmt + 样式；round-trip 测试。
 - [x] 项4 条件显示规则增强：`top`/`bottom` rank 导出为 `top10`/`bottom10`；
   测试 `conditional_rules_support_top_and_bottom_ranks`。
-- [ ] 项5 公式第二批：TEXT/TEXTBEFORE/TEXTAFTER/DATEVALUE/HOUR/MINUTE/SECOND。
+- [x] 项5 公式第二批：TEXT/TEXTBEFORE/TEXTAFTER/DATEVALUE/HOUR/MINUTE/SECOND；
+  测试 `text_and_time_helpers_match_spreadsheet_expectations`。
 - [ ] 项6 数字格式第二批：科学计数/会计/负数括号/@ 文本。
 - [ ] 项7 `--highlight` CLI 支持 top/bottom 语法与帮助/测试。
+- [ ] 项8 convert/report 导出接线布局格式（write_sheets_with_formats 的用户入口）。
 
 ## 当前进度
+
+Round 108（项5 公式第二批）：新增 TEXT/TEXTBEFORE/TEXTAFTER/DATEVALUE/HOUR/
+MINUTE/SECOND；`text_and_time_helpers_match_spreadsheet_expectations` 通过；全量
+gate/package 通过；发布包 SHA `d2687093…b0c636`。
 
 Round 107（项4 条件显示）：`ConditionalRule` 支持 `top`/`bottom` + rank，
 导出 `top10`/`bottom10`；rank 必须 >0，非法 rank 报错；全量 gate/package 通过；

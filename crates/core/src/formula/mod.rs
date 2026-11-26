@@ -1432,6 +1432,27 @@ mod tests {
     }
 
     #[test]
+    fn text_and_time_helpers_match_spreadsheet_expectations() {
+        assert_eq!(eval_str(r##"text(1234.5, "#,##0.00")"##, &[]), "1,234.50");
+        assert_eq!(eval_str(r#"text(0.123, "0.0%")"#, &[]), "12.3%");
+        assert_eq!(
+            eval_str(r#"text("2024-01-01", "yyyy-mm-dd")"#, &[]),
+            "2024-01-01"
+        );
+        assert_eq!(eval_str(r#"text(1, "banana")"#, &[]), "#VALUE!");
+        assert_eq!(eval_str(r#"textbefore("a-b-c", "-", 2)"#, &[]), "a-b");
+        assert_eq!(eval_str(r#"textafter("a-b-c", "-", 2)"#, &[]), "c");
+        assert_eq!(eval_str(r#"textbefore("a-b", "-", 2)"#, &[]), "#N/A");
+        assert_eq!(eval_str(r#"textafter("a-b", "", 1)"#, &[]), "#VALUE!");
+        assert_eq!(eval_str(r#"datevalue("2024-01-01")"#, &[]), "45292");
+        assert_eq!(eval_str(r#"hour("2024-01-01 13:04:05")"#, &[]), "13");
+        assert_eq!(eval_str(r#"minute("2024-01-01T13:04:05")"#, &[]), "4");
+        assert_eq!(eval_str(r#"second("13:04:05")"#, &[]), "5");
+        assert_eq!(eval_str(r#"hour("0.5")"#, &[]), "12");
+        assert_eq!(eval_str(r#"minute("bad")"#, &[]), "#VALUE!");
+    }
+
+    #[test]
     fn logical_fallbacks_and_switch_are_lazy() {
         assert_eq!(eval_str(r#"ifs(1>2, "a", 2>1, "b")"#, &[]), "b");
         assert_eq!(eval_str(r#"ifs(1>2, "a")"#, &[]), "#N/A");

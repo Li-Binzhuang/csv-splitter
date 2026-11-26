@@ -24,8 +24,8 @@
 | CHAR / CODE | 支持 | ASCII 码点 |
 | FIND / SEARCH | 支持 | SEARCH 不区分大小写；均支持起始位置 |
 | PROPER / REPT / EXACT / VALUE | 支持 | VALUE 只解析数字文本 |
-| TEXT | 缺失 | 数字格式码（0.00、#,##0、0%）尚无渲染层 |
-| TEXTBEFORE / TEXTAFTER | 缺失 | 365 文本切分 |
+| TEXT | 支持（基础） | 复用 `NumberFormat`：0.00/#,##0/0%/日期时间；科学计数/会计格式仍缺 |
+| TEXTBEFORE / TEXTAFTER | 支持（受限） | 支持 instance_num；match_mode/match_end/if_not_found 未实现 |
 | UNICHAR / UNICODE | 缺失 | 非 ASCII 码点 |
 | NUMBERVALUE / FIXED / DOLLAR | 缺失 | 区域小数点/货币格式 |
 | TEXTSPLIT / ARRAYTOTEXT | 缺失 | 动态数组，非目标 |
@@ -39,9 +39,9 @@
 | WEEKDAY / WEEKNUM | 支持 | 默认周日为 1；WEEKNUM 用 return_type 1 |
 | DAYS / NETWORKDAYS / WORKDAY | 支持 | 工作日跳过周末；不含自定义节假日 |
 | DATESTRING / DATEKEY | 支持 | 截取 ISO 前缀 |
-| DATEVALUE | 缺失 | 需要把日期文本转成 Excel 序列号 |
-| TIMEVALUE | 缺失 | 需要把时间文本转成 0–1 天的小数 |
-| HOUR / MINUTE / SECOND | 缺失 | 只解析 ISO 前缀，尚无时间分量 |
+| DATEVALUE | 支持（新增） | ISO 日期 → Excel 1900 序列号（45292） |
+| HOUR / MINUTE / SECOND | 支持（新增） | ISO 日期时间、纯时间、0–1 天小数 |
+| TIMEVALUE | 缺失 | 时间文本 → 0–1 天小数 |
 | NOW / TODAY | 缺失 | 需要注入时钟，保证可测试与可复现 |
 | DATEDIF / YEARFRAC | 缺失 | 日期差与年分数 |
 | ISOWEEKNUM / TIME | 缺失 | ISO 周与时间构造 |
@@ -98,7 +98,9 @@
 
 ## 本轮验收（首批补齐）
 
-新增行级测试 `logical_fallbacks_and_switch_are_lazy`：
+第二批新增行级测试 `text_and_time_helpers_match_spreadsheet_expectations`：TEXT 数字/
+百分比/日期格式、TEXTBEFORE/AFTER 第 N 个分隔符、DATEVALUE=45292、HOUR/MINUTE/
+SECOND 与 0.5 天小数。第一批测试：
 
 ```text
 IFS 命中/无命中；SWITCH 命中/默认/无命中；CHOOSE 正常/越界；
