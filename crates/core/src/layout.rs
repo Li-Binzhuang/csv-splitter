@@ -30,6 +30,8 @@ pub enum NumberFormat {
     Percent { places: usize },
     /// Money: `$ 1,234.50`.
     Currency { symbol: String, places: usize },
+    /// Date/time display, e.g. `yyyy-mm-dd` or `yyyy-mm-dd hh:mm`.
+    DateTime { pattern: String },
 }
 
 impl NumberFormat {
@@ -42,6 +44,11 @@ impl NumberFormat {
         if let Some(percent) = spec.strip_suffix('%') {
             return Ok(Self::Percent {
                 places: decimals(percent),
+            });
+        }
+        if is_date_time_pattern(spec) {
+            return Ok(Self::DateTime {
+                pattern: spec.to_string(),
             });
         }
         if spec.starts_with('$') || spec.starts_with('¥') || spec.starts_with('€') {
@@ -93,6 +100,7 @@ impl NumberFormat {
                     format!("{symbol}#,##0.{}", "0".repeat(*places))
                 }
             }
+            Self::DateTime { pattern } => pattern.clone(),
         }
     }
 
@@ -106,6 +114,9 @@ impl NumberFormat {
             return value.to_string();
         }
         let Ok(number) = value.trim().parse::<f64>() else {
+            if let Self::DateTime { pattern } = self {
+                return render_date_time(pattern, value).unwrap_or_else(|| value.to_string());
+            }
             return value.to_string();
         };
         match self {
@@ -125,8 +136,116 @@ impl NumberFormat {
             Self::Currency { symbol, places } => {
                 format!("{symbol}{}", group(&format!("{number:.places$}")))
             }
+            Self::DateTime { pattern } => {
+                render_date_time(pattern, value).unwrap_or_else(|| value.to_string())
+            }
         }
     }
+}
+
+fn is_date_time_pattern(spec: &str) -> bool {
+    let lower = spec.to_ascii_lowercase();
+    matches!(
+        lower.as_str(),
+        "yyyy-mm-dd"
+            | "yyyy/mm/dd"
+            | "dd/mm/yyyy"
+            | "mm/dd/yyyy"
+            | "yyyy-mm-dd hh:mm"
+            | "yyyy-mm-dd hh:mm:ss"
+            | "hh:mm"
+            | "hh:mm:ss"
+    )
+}
+
+fn render_date_time(pattern: &str, value: &str) -> Option<String> {
+    let lower = pattern.to_ascii_lowercase();
+    let text = value.trim();
+    let normalized = text.replace('T', " ");
+    let (date, time) = match normalized.split_once(' ') {
+        Some((date, time)) => (Some(date), Some(time)),
+        None if normalized.contains(':') => (None, Some(normalized.as_str())),
+        None => (Some(normalized.as_str()), None),
+    };
+    let date_parts = match date {
+        Some(value) => Some(parse_date_parts(value)?),
+        None => None,
+    };
+    let time_parts = match time {
+        Some(value) => Some(parse_time_parts(value)?),
+        None => None,
+    };
+    match lower.as_str() {
+        "yyyy-mm-dd" => {
+            let (year, month, day) = date_parts?;
+            Some(format!("{year:04}-{month:02}-{day:02}"))
+        }
+        "yyyy/mm/dd" => {
+            let (year, month, day) = date_parts?;
+            Some(format!("{year:04}/{month:02}/{day:02}"))
+        }
+        "dd/mm/yyyy" => {
+            let (year, month, day) = date_parts?;
+            Some(format!("{day:02}/{month:02}/{year:04}"))
+        }
+        "mm/dd/yyyy" => {
+            let (year, month, day) = date_parts?;
+            Some(format!("{month:02}/{day:02}/{year:04}"))
+        }
+        "yyyy-mm-dd hh:mm" => {
+            let (year, month, day) = date_parts?;
+            let (hour, minute, _) = time_parts?;
+            Some(format!(
+                "{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}"
+            ))
+        }
+        "yyyy-mm-dd hh:mm:ss" => {
+            let (year, month, day) = date_parts?;
+            let (hour, minute, second) = time_parts?;
+            Some(format!(
+                "{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02}"
+            ))
+        }
+        "hh:mm" => {
+            let (hour, minute, _) = time_parts?;
+            Some(format!("{hour:02}:{minute:02}"))
+        }
+        "hh:mm:ss" => {
+            let (hour, minute, second) = time_parts?;
+            Some(format!("{hour:02}:{minute:02}:{second:02}"))
+        }
+        _ => None,
+    }
+}
+
+fn parse_date_parts(text: &str) -> Option<(u32, u32, u32)> {
+    let mut parts = text.split(['-', '/']);
+    let first = parts.next()?;
+    let second = parts.next()?;
+    let third = parts.next()?;
+    if parts.next().is_some() {
+        return None;
+    }
+    let first: u32 = first.parse().ok()?;
+    let second: u32 = second.parse().ok()?;
+    let third: u32 = third.parse().ok()?;
+    let (year, month, day) = if first > 31 {
+        (first, second, third)
+    } else {
+        (third, second, first)
+    };
+    ((1..=12).contains(&month) && (1..=31).contains(&day)).then_some((year, month, day))
+}
+
+fn parse_time_parts(text: &str) -> Option<(u32, u32, u32)> {
+    let mut parts = text.split(':');
+    let hour: u32 = parts.next()?.parse().ok()?;
+    let minute: u32 = parts.next()?.parse().ok()?;
+    let second: u32 = parts.next().unwrap_or("0").parse().ok()?;
+    if parts.next().is_some() || hour > 23 || minute > 59 || second > 59 {
+        return None;
+    }
+    Some((hour, minute, second))
 }
 
 fn decimals(pattern: &str) -> usize {
@@ -402,6 +521,26 @@ mod tests {
         assert_eq!(plain.render("3.7"), "4");
 
         assert!(NumberFormat::parse("banana").is_err());
+    }
+
+    #[test]
+    fn date_time_formats_render_iso_values() {
+        let date = NumberFormat::parse("yyyy-mm-dd").unwrap();
+        assert_eq!(date.render("2024-01-02"), "2024-01-02");
+        assert_eq!(date.name(), "yyyy-mm-dd");
+        let day_first = NumberFormat::parse("dd/mm/yyyy").unwrap();
+        assert_eq!(day_first.render("2024-01-02"), "02/01/2024");
+        let month_first = NumberFormat::parse("mm/dd/yyyy").unwrap();
+        assert_eq!(month_first.render("2024-01-02"), "01/02/2024");
+        let minute = NumberFormat::parse("yyyy-mm-dd hh:mm").unwrap();
+        assert_eq!(minute.render("2024-01-02 13:04:05"), "2024-01-02 13:04");
+        assert_eq!(minute.render("2024-01-02T13:04:05"), "2024-01-02 13:04");
+        let seconds = NumberFormat::parse("hh:mm:ss").unwrap();
+        assert_eq!(seconds.render("13:04:05"), "13:04:05");
+        // A format never invents a date from a non-date value.
+        assert_eq!(date.render("N/A"), "N/A");
+        assert_eq!(date.render("123"), "123");
+        assert!(NumberFormat::parse("yyyy-mm").is_err());
     }
 
     #[test]

@@ -20,11 +20,17 @@
 - [x] 项1 公式函数覆盖审计与首批补齐：`docs/FORMULA_COVERAGE.md`；IFS/SWITCH/
   IFNA/CHOOSE/NA/XOR/TRUE/FALSE，IFERROR 捕获 #N/A；测试
   `logical_fallbacks_and_switch_are_lazy`。
-- [ ] 项2 数字格式/显示对齐：千分位/小数位/百分比/日期时间显示。
+- [x] 项2 数字格式/显示对齐：`docs/NUMBER_FORMAT_COVERAGE.md`；新增
+  `yyyy-mm-dd`/`dd/mm/yyyy`/`hh:mm:ss` 等 8 种日期时间格式，测试
+  `date_time_formats_render_iso_values`。
 - [ ] 项3 xlsx 导出数字格式保真：格式映射进导出样式，round-trip。
 - [ ] 项4 条件显示规则增强：Excel 式单元格值/前 N 项规则。
 
 ## 当前进度
+
+Round 105（项2 数字格式）：审计 layout `NumberFormat`；千分位/小数/百分比/
+货币已支持，补日期时间 8 种格式；测试、全量 gate、package 通过；发布包
+SHA `d12928d5…8a43e`。
 
 Round 104（项1 公式覆盖）：矩阵落盘并补齐 IFS/SWITCH/IFNA/CHOOSE/NA/XOR/
 TRUE/FALSE；IFERROR 修正为也捕获 #N/A；全量 gate/package 通过；发布包

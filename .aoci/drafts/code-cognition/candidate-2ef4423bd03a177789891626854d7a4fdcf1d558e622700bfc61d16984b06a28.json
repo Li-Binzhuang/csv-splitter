@@ -1,0 +1,59 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "df7b16214759426f01ade8c98fc287fc40d84475bc0a47fed588ea1162b5d813",
+  "batch_id": "2ef4423bd03a177789891626854d7a4fdcf1d558e622700bfc61d16984b06a28",
+  "composite_identity": "cf57a57d5615e3df8b398134f1c816ffb5cc0b7fc13327add05d06c4bef8cab1",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "f80f5a9d520aad48c54bcabf407678dfec30ba70fd5bb41c63811cb39b6389e8",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/layout.rs",
+      "path": "crates/core/src/layout.rs",
+      "change": "update",
+      "source_sha256": "14d9f36ebbbd7575eb8d430a6f48be68ef3039ea4253c73f2f2a68ddc00c5bc9",
+      "existing_entry": "layout.rs[CU7L]: F:显示元数据 sidecar：列名替换、列宽、数字格式与冻结列 | R:code:crates/core/src/sheet.rs | A:只影响展示不改值，因此写 `.view` 而不是 journal；每列可选替换名与格式 | S:放进 journal 会把长什么样的设置混进是什么的审计链，撤销一次改名会连带重放显示设置"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NUMBER_FORMAT_COVERAGE.md",
+      "path": "docs/NUMBER_FORMAT_COVERAGE.md",
+      "change": "create",
+      "source_sha256": "60dd86f23eace43d9334d0e153ee2306070a08b106c69b6cb957e7bab1feab35"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "b1e48f2ab53b04b70baace1f47d1296f9aaed5cd09eab972353e6cb7f9c0138c",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round104 公式覆盖与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "abac5ab531c01be434b450e14c18041b719411425e6bc3a39848af4d90518379",
+      "object_ref": "code:crates/core/src/layout.rs",
+      "path": "crates/core/src/layout.rs",
+      "change": "update",
+      "source_sha256": "14d9f36ebbbd7575eb8d430a6f48be68ef3039ea4253c73f2f2a68ddc00c5bc9",
+      "existing_entry": "layout.rs[CU7L]: F:显示元数据 sidecar：列名替换、列宽、数字格式与冻结列 | R:code:crates/core/src/sheet.rs | A:只影响展示不改值，因此写 `.view` 而不是 journal；每列可选替换名与格式 | S:放进 journal 会把长什么样的设置混进是什么的审计链，撤销一次改名会连带重放显示设置"
+    },
+    {
+      "candidate_id": "bb7fbac0d8e5bb6fc38ecc1cd9e1170bc4007e928e3d237153f23cbd5f82416d",
+      "object_ref": "code:docs/NUMBER_FORMAT_COVERAGE.md",
+      "path": "docs/NUMBER_FORMAT_COVERAGE.md",
+      "change": "create",
+      "source_sha256": "60dd86f23eace43d9334d0e153ee2306070a08b106c69b6cb957e7bab1feab35"
+    },
+    {
+      "candidate_id": "dfbe9c32784be4173b6cdf6c60ab0076bfd49d58f996fa9d4b26cd95a885f0cd",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "b1e48f2ab53b04b70baace1f47d1296f9aaed5cd09eab972353e6cb7f9c0138c",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round104 公式覆盖与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
