@@ -1630,6 +1630,45 @@ mod tests {
     }
 
     #[test]
+    fn dotted_aliases_match_undotted_and_unknown_dotted_is_an_error() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [("a", "1"), ("b", "2"), ("c", "3"), ("d", "4")] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        for (dotted_source, plain_source) in [
+            ("stdev.s(A2:D2)", "stdev(A2:D2)"),
+            ("var.s(A2:D2)", "var(A2:D2)"),
+            ("stdev.p(A2:D2)", "stdevp(A2:D2)"),
+            ("var.p(A2:D2)", "varp(A2:D2)"),
+        ] {
+            let dotted = Formula::parse(dotted_source).unwrap();
+            let plain = Formula::parse(plain_source).unwrap();
+            assert_eq!(
+                dotted
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                plain
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "{dotted_source} vs {plain_source}"
+            );
+        }
+        let unknown = Formula::parse("foo.bar(A2:D2)").unwrap();
+        assert_eq!(
+            unknown
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+    }
+
+    #[test]
     fn dotted_statistical_aliases_parse_and_evaluate() {
         let columns = vec![
             "a".to_string(),

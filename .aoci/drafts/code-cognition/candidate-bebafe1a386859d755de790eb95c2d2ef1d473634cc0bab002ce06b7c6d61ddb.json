@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a5be10f069553f38d26a101f5a4d89675345d6ad24d5589950eb48507be14070",
+  "batch_id": "bebafe1a386859d755de790eb95c2d2ef1d473634cc0bab002ce06b7c6d61ddb",
+  "composite_identity": "4430c7419b748544f2a2cebba42956478c3ec6302c3d0c7aedf975b6a65ff9ec",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "947fe15433b162c29f994cf3c0725b556c08302703dd7c7e32cc040fa58827af",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "118c0a7a2fd730d8e26854eb7be7e1bf564e556831f24ad5e4d3540a65b2bf3f",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族；RANK/QUARTILE/TRIMMEAN；PERCENTRANK/PERCENTILE.EXC；点号函数名 | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "c247da7ad75fd8f228672cb61e8a5ff50f6aa87f59ecc7309cee05ca6a04b6a3",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round128 统计补齐与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "7121ce599cb15fa382444714b68eae392f0cf9d781bc82a1a72f81709ebe6a12",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "118c0a7a2fd730d8e26854eb7be7e1bf564e556831f24ad5e4d3540a65b2bf3f",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族；RANK/QUARTILE/TRIMMEAN；PERCENTRANK/PERCENTILE.EXC；点号函数名 | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "bda31b16b1f6cca23a9a8804bc149583832f5584085d9b0e69ebd6d543d2b02b",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "c247da7ad75fd8f228672cb61e8a5ff50f6aa87f59ecc7309cee05ca6a04b6a3",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round128 统计补齐与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

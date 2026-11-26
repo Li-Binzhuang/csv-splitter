@@ -81,6 +81,9 @@
 
 ## 当前进度
 
+Round 129（项39/40/41 点号等价）：dotted/undotted 等价与未知函数错误测试；
+全量 gate/package 通过；发布包 SHA `66e0cf69…a18a`。
+
 Round 128（项36/37/38 统计补齐）：PERCENTRANK/PERCENTILE.EXC/GEOMEAN/
 HARMEAN；测试、全量 gate/package 通过；发布包 SHA `c9cb1883…c3009`。
 
