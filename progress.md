@@ -81,6 +81,9 @@
 
 ## 当前进度
 
+Round 131（项45 YEARFRAC basis）：basis 2/3/4（实际/360、实际/365、欧式
+30/360）；测试、全量 gate/package 通过；发布包 SHA `d8a3f332…3a3e`。
+
 Round 130（项42/43/44 排名 EXC/AVG）：RANK.AVG、PERCENTRANK.EXC、
 QUARTILE.EXC；测试、全量 gate/package 通过；发布包 SHA `54a66fcf…ddf90`。
 

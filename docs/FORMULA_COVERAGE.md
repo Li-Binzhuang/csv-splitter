@@ -44,7 +44,7 @@
 | TIMEVALUE | 支持（新增） | 时间文本 → 0–1 天小数 |
 | NOW / TODAY | 支持（易变） | 读系统 UTC 时钟；不落盘，重跑可变 |
 | DATEDIF | 支持（新增） | Y/M/D/YM/MD/YD；end < start 报 #VALUE! |
-| YEARFRAC | 支持（受限） | basis 0=30/360；basis 1=实际天数/365.25（近似） |
+| YEARFRAC | 支持（受限） | basis 0=US 30/360；1=实际/365.25；2=实际/360；3=实际/365；4=欧式 30/360 |
 | ISOWEEKNUM | 支持（新增） | ISO 周（周一为 1） |
 | TIME | 支持（新增） | 时/分/秒 → 0–1 天小数 |
 

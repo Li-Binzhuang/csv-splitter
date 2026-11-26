@@ -1618,17 +1618,26 @@ fn year_fraction(start: (i32, u32, u32), end: (i32, u32, u32), basis: f64) -> Op
     if end < start {
         return None;
     }
+    let actual =
+        (days_from_civil(end.0, end.1, end.2) - days_from_civil(start.0, start.1, start.2)) as f64;
     match basis as u32 {
         // 0 = US 30/360, the Excel default.
         0 => Some(days_360(start, end) / 360.0),
         // 1 = actual days divided by an average year; documented as approximate.
-        1 => Some(
-            (days_from_civil(end.0, end.1, end.2) - days_from_civil(start.0, start.1, start.2))
-                as f64
-                / 365.25,
-        ),
+        1 => Some(actual / 365.25),
+        2 => Some(actual / 360.0),
+        3 => Some(actual / 365.0),
+        // 4 = European 30/360.
+        4 => Some(days_360_european(start, end) / 360.0),
         _ => None,
     }
+}
+
+fn days_360_european(start: (i32, u32, u32), end: (i32, u32, u32)) -> f64 {
+    let start_day = if start.2 == 31 { 30 } else { start.2 } as i64;
+    let end_day = if end.2 == 31 { 30 } else { end.2 } as i64;
+    ((end.0 - start.0) as i64 * 360 + (end.1 as i64 - start.1 as i64) * 30 + (end_day - start_day))
+        as f64
 }
 
 fn days_360(start: (i32, u32, u32), end: (i32, u32, u32)) -> f64 {
