@@ -1,0 +1,105 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "153fd144e8446b0c221e4a9e9e649867bf15f76735be74c095fa0436010f2617",
+  "batch_id": "8be96090cd87ef34939d7b4f8737e7c29a2840fdbb7d9d1827b2735610dc5a52",
+  "composite_identity": "344369b9664e0660932ef3aa3e9fa23fb107acbc09e2399b4b0d92165c8763f1",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "11d93e583aa5a4fa967cf47daaacbe666b392dc767d987fc5550d889ecb2c1b1",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "9096e4a45b353419559fed806ac40b8d98819dc0584f2672c4ee9dac8a0eb835",
+      "existing_entry": "ENTRYPOINTS.md[SG7S]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:docs/MCP_COMPAT.md | A:根白名单；MCP 模块白名单与行数上限；CLI main/serve/cli_support+commands；客户端兼容记录 | S:rmcp 默认；SDK/DSH 验证；单文件上限强制"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "update",
+      "source_sha256": "8520b861e2e1483b90893f0c8faa44abfd23372258076d05623351873df0e93b",
+      "existing_entry": "MCP_COMPAT.md[SD7S]: F:官方 SDK 与 DSH 真实 MCP 客户端验证记录 | R:code:scripts/check_mcp_sdk.sh,code:docs/ENTRYPOINTS.md | A:SDK 23 工具/gate；DSH headless 临时 patch；实测 2 行结果 | S:不改 profile；legacy 已删；结果均为本机实测"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_mcp_dsh.sh",
+      "path": "scripts/check_mcp_dsh.sh",
+      "change": "create",
+      "source_sha256": "258c692713e4418e7969dda78381e6a03f9cd4c32121da0e7861f93cfbe2eb5f"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_mcp_schema.py",
+      "path": "scripts/check_mcp_schema.py",
+      "change": "create",
+      "source_sha256": "7d8c66a95897285f620c357c6fa26a1d60172293b2ca54163307a16d835e31fe"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "d0f717a278fb18198457ba5438ade7a1e12adf1525ca5e353115d3e8dd089575",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/check_mcp_sdk.sh,code:scripts/verify_dist_negative.sh | A:gate layout/fmt/clippy/测试/sql/mcp-sdk/verify/stats/phase 负向 | S:gate 必带 sql；SDK 缺失跳过；负向检查不可静默跳过"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "caea7cd552b8f9ce0e2fe93932a9372b7de2ed62e1b704f662bccaf445e7c4d3",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布（自验日志、manifest、哈希复核） | R:code:scripts/verify_dist.sh,code:scripts/check_release.py,code:scripts/check_mcp_sdk.sh | A:打包 docs（含 MCP_COMPAT）/scripts/mcp_sdk；verify_dist；release.json | S:不打 tag/不联网；dist gitignore"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "1ddf450d53c38ebb0fe8625c85577e463a50064d565ebd8df8e5976508f57e94",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "9096e4a45b353419559fed806ac40b8d98819dc0584f2672c4ee9dac8a0eb835",
+      "existing_entry": "ENTRYPOINTS.md[SG7S]: F:入口层目录与迁移规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:docs/MCP_COMPAT.md | A:根白名单；MCP 模块白名单与行数上限；CLI main/serve/cli_support+commands；客户端兼容记录 | S:rmcp 默认；SDK/DSH 验证；单文件上限强制"
+    },
+    {
+      "candidate_id": "8efb0452925e4547048152c71c6a9b73fd4a16f64ada8384f23217bf81733a8f",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "update",
+      "source_sha256": "8520b861e2e1483b90893f0c8faa44abfd23372258076d05623351873df0e93b",
+      "existing_entry": "MCP_COMPAT.md[SD7S]: F:官方 SDK 与 DSH 真实 MCP 客户端验证记录 | R:code:scripts/check_mcp_sdk.sh,code:docs/ENTRYPOINTS.md | A:SDK 23 工具/gate；DSH headless 临时 patch；实测 2 行结果 | S:不改 profile；legacy 已删；结果均为本机实测"
+    },
+    {
+      "candidate_id": "7c97c83db08034a2dfff2943771010672490da9bc1397c509b6d11064942c595",
+      "object_ref": "code:scripts/check_mcp_dsh.sh",
+      "path": "scripts/check_mcp_dsh.sh",
+      "change": "create",
+      "source_sha256": "258c692713e4418e7969dda78381e6a03f9cd4c32121da0e7861f93cfbe2eb5f"
+    },
+    {
+      "candidate_id": "3028bc03ff3a617f47a98f9140d70029a4ea1471b5539060122a1a79674146f1",
+      "object_ref": "code:scripts/check_mcp_schema.py",
+      "path": "scripts/check_mcp_schema.py",
+      "change": "create",
+      "source_sha256": "7d8c66a95897285f620c357c6fa26a1d60172293b2ca54163307a16d835e31fe"
+    },
+    {
+      "candidate_id": "01bc62bd1cf0ec81b149e28fac87159b863e263b047da887fd676a25354edd91",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "d0f717a278fb18198457ba5438ade7a1e12adf1525ca5e353115d3e8dd089575",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/check_mcp_sdk.sh,code:scripts/verify_dist_negative.sh | A:gate layout/fmt/clippy/测试/sql/mcp-sdk/verify/stats/phase 负向 | S:gate 必带 sql；SDK 缺失跳过；负向检查不可静默跳过"
+    },
+    {
+      "candidate_id": "1b22bc6761abfbe7ae56ca7a9ea017dd8c888b9258e8a8c8caf8734d6beda2a8",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "caea7cd552b8f9ce0e2fe93932a9372b7de2ed62e1b704f662bccaf445e7c4d3",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布（自验日志、manifest、哈希复核） | R:code:scripts/verify_dist.sh,code:scripts/check_release.py,code:scripts/check_mcp_sdk.sh | A:打包 docs（含 MCP_COMPAT）/scripts/mcp_sdk；verify_dist；release.json | S:不打 tag/不联网；dist gitignore"
+    }
+  ]
+}

@@ -70,6 +70,7 @@ case "${1:-check}" in
     # workspace alone builds core *without* it, so core's own SQL tests — the read-only
     # guard, the query wrapper — used to be skipped by the gate entirely.
     run_stage tests-sql cargo test -p csvx-core --features sql --quiet
+    run_stage mcp-schema python3 scripts/check_mcp_schema.py
     run_stage mcp-sdk bash scripts/check_mcp_sdk.sh
     VERIFY_BIN=target/release/csvx
     [ -x "$VERIFY_BIN" ] || VERIFY_BIN=target/debug/csvx

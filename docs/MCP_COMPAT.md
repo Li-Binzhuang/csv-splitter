@@ -68,6 +68,33 @@ dsh headless --patch /tmp/csvx-mcp-patch.yml \
 
 说明 DSH 的 MCP 客户端完成握手、`tools/list` 与 `tools/call`，并读到 csvx 的结果。
 
+## 3. Schema 与 CLI 参数一致性
+
+```bash
+python3 scripts/check_mcp_schema.py
+```
+
+实测：
+
+```text
+mcp_schema_tools=23
+mcp_schema_fields=43
+mcp_schema_failures=0
+mcp_schema=ok
+```
+
+检查每个 MCP tool 的非位置参数都能在对应 CLI 命令的 `--help` 中找到。
+这项已进 gate 的 `mcp-schema` 阶段。
+
+## 4. 可重复的 DSH 检查（默认跳过）
+
+```bash
+CSVX_DSH_TEST=1 bash scripts/check_mcp_dsh.sh
+```
+
+只有显式设置 `CSVX_DSH_TEST=1` 才会启动 DSH headless 模型运行；
+未设置时输出 `mcp_dsh=skip`，不消耗模型。
+
 ## 契约
 
 - 23 个工具名与 schema 由 `crates/mcp/src/tools.rs` 冻结；

@@ -79,6 +79,8 @@ cargo test --workspace
 cargo test -p csvx-core --features sql
 bash scripts/gate.sh          # 含官方 MCP SDK 端到端检查
 bash scripts/check_mcp_sdk.sh # 单独复跑 23 工具/progress/job
+python3 scripts/check_mcp_schema.py # schema 与 CLI flags 一致性
+CSVX_DSH_TEST=1 bash scripts/check_mcp_dsh.sh # 可选真实 DSH 回归
 AOCI maintain
 bash scripts/package_release.sh
 ```
