@@ -19,8 +19,9 @@
 
 Round 6（Benchmark 目标）：新增 `scripts/bench_100gb.py`（流式生成、schema/filter/
 search/quality、elapsed+RSS、JSON+Markdown）与 smoke 脚本；gate 增加 bench-smoke；
-1000 行 smoke 1348.3 ms；1 GB 实测 999,999,971 bytes / 12,597,801 rows，total
-5727.7 ms（非 100GB）；发布包 SHA `dff33922…01e20`；smoke 使用 schema --json。
+1000 行 smoke 1348.3 ms；1 GB 实测 total 5727.7 ms；**100 GB 实测**
+99,999,999,969 bytes / 1,259,779,856 rows：schema 70.19s、filter 23.55s、
+search 18.72s、quality 456.00s、total 568.46s（quality 约 80%）；发布包 SHA `85de6c1d…bfe28`。
 
 Round 5（企业部署目标）：新增 `scripts/install_offline.sh`（SHA256→解包→demo
 smoke→prefix/bin + docs→`install-manifest.json`），坏 SHA 与版本不符拒绝；

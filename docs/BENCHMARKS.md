@@ -15,6 +15,21 @@ analyze --quality --json
 
 每条命令记录 wall time 与 peak RSS，输出 `<out>.bench.json` 和 `<out>.bench.md`。
 
+100 GB 实际运行（2026-11-26，release 二进制，生成确定性数据）：
+
+```text
+bytes=99,999,999,969 rows=1,259,779,856
+generate 128,676.9 ms
+schema  70,186.3 ms / 34.67 MB
+filter  23,547.5 ms / 99.63 MB
+search  18,720.1 ms / 97.08 MB
+quality 456,003.1 ms / 17.96 MB
+total   568,457.0 ms
+```
+
+这是本机实际生成的 100 GB 文件；未清 page cache，quality 占约 80% 总时间。
+C 主线旧的 104.5 GB 数字保留在 §1，不和本表混用。
+
 1 GB 实际运行（2026-11-26，release 二进制，生成确定性数据）：
 
 ```text
@@ -38,14 +53,14 @@ quality 332.0 ms / 53.13 MB
 total 1348.3 ms
 ```
 
-完整 100 GB 运行：
+复现完整 100 GB：
 
 ```bash
 python3 scripts/bench_100gb.py --gb 100 --out bench/orders.csv --binary target/release/csvx
 ```
 
-该命令会实际生成/扫描 100 GB；本轮只验证了 harness 的 smoke，不把 smoke 数字当作
-100 GB 性能。完整数字需在目标机器上重跑后替换本文表格。
+该命令实际生成/扫描 100 GB；上面是本机实测。其他机器需重跑后替换数字，smoke
+数字不能当作 100 GB 性能。
 
 ## 1. 100 GB 级（C 主线，2026-11-23）
 

@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "14b8d14155cf4e0de28302a17f56790ea5affeff2f49da0ace02faf2761a9cf2",
+  "batch_id": "d4244233d58d55115cf7333ded019b495fd89f68f7d78d0aea020e517e53d089",
+  "composite_identity": "dc8641a9dc884420a6e04c310420d5002b15268443f9cc361b9543ce73d97063",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "4c2a811d3e8079f7468a0e8e206c6652dd645297902d7a546e8a38d02e05d555",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "e5a7a083c28dc469f2e53944fed9feda4b9c05c0ae0527e92725d9e71732f319",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现性能基准与 1GB/100GB harness | R:code:scripts/bench_100gb.py,code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:历史 100/81GB；1GB 实测 5727.7ms；四命令；smoke 1348.3ms | S:未 drop cache；1GB≠100GB；完整数字需目标机重跑"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "178179c86cae7109d8488f3c89c33fee29c3bac9c55003cb736ecc1f8ed803aa",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round6 1GB 实测 5727.7ms 与 SHA | S:每轮更新；1GB 不冒充 100GB；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "fc8903fdf9bc0c4c5686c975f836d6de50ceabeb1d1a9e0859748dd51f355550",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "e5a7a083c28dc469f2e53944fed9feda4b9c05c0ae0527e92725d9e71732f319",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现性能基准与 1GB/100GB harness | R:code:scripts/bench_100gb.py,code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:历史 100/81GB；1GB 实测 5727.7ms；四命令；smoke 1348.3ms | S:未 drop cache；1GB≠100GB；完整数字需目标机重跑"
+    },
+    {
+      "candidate_id": "90f0067a3db4e7eb5df5fe6446c7a97d6e382c13039371859822b8235ba40a24",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "178179c86cae7109d8488f3c89c33fee29c3bac9c55003cb736ecc1f8ed803aa",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round6 1GB 实测 5727.7ms 与 SHA | S:每轮更新；1GB 不冒充 100GB；push 失败不阻塞"
+    }
+  ]
+}
