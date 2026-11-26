@@ -2583,6 +2583,40 @@ fn convert_xlsx_can_highlight_a_rule() {
     assert!(sheet.contains("B2:B3"), "{sheet}");
 }
 
+#[test]
+fn convert_xlsx_can_highlight_a_top_rank() {
+    let dir = TempDir::new("xlsxtop");
+    let input = dir.join("t.csv");
+    let output = dir.join("t.xlsx");
+    std::fs::write(&input, "id,amount\n1,1200\n2,10\n3,900\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            output.to_str().unwrap(),
+            "--highlight",
+            "amount:top2:green",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let file = std::fs::File::open(&output).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    let mut sheet = String::new();
+    use std::io::Read as _;
+    archive
+        .by_name("xl/worksheets/sheet1.xml")
+        .unwrap()
+        .read_to_string(&mut sheet)
+        .unwrap();
+    assert!(sheet.contains("type=\"top10\""), "{sheet}");
+    assert!(sheet.contains("rank=\"2\""), "{sheet}");
+    assert!(sheet.contains("B2:B4"), "{sheet}");
+}
+
 /// `datecounts` groups a timestamp column by its first ten characters.
 #[test]
 fn report_datecounts_groups_timestamps_by_date() {

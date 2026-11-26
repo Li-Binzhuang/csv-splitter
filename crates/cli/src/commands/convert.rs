@@ -36,22 +36,9 @@ pub(crate) fn parse_highlight_rules(
 ) -> Result<Vec<csvx_core::xlsx::ConditionalRule>, String> {
     let mut rules = Vec::new();
     for raw in text.split(';').filter(|raw| !raw.trim().is_empty()) {
-        let (expression, color) = raw
-            .split_once(':')
-            .ok_or_else(|| format!("highlight rule {raw:?} needs column>value:color"))?;
-        let (operator, (column, value)) = ["!=", ">=", "<=", ">", "<", "="]
-            .iter()
-            .find_map(|operator| {
-                expression
-                    .split_once(*operator)
-                    .filter(|(_, value)| !value.trim().is_empty())
-                    .map(|(column, value)| (*operator, (column, value)))
-            })
-            .ok_or_else(|| format!("highlight rule {expression:?} needs an operator"))?;
-        let column = column.trim().to_string();
-        if column.is_empty() {
-            return Err(format!("highlight rule {expression:?} needs a column"));
-        }
+        let (head, color) = raw.rsplit_once(':').ok_or_else(|| {
+            format!("highlight rule {raw:?} needs a color (e.g. amount>1000:red)")
+        })?;
         let color = color.trim().to_ascii_lowercase();
         if !matches!(
             color.as_str(),
@@ -60,6 +47,51 @@ pub(crate) fn parse_highlight_rules(
             return Err(format!(
                 "unsupported highlight color {color:?}; use red/amber/green/blue"
             ));
+        }
+        // Rank form: amount:top3:green / amount:bottom2:red.
+        if let Some((column, rank)) = head.split_once(':') {
+            let column = column.trim().to_string();
+            let rank_spec = rank.trim().to_ascii_lowercase();
+            let (operator, number) = if let Some(number) = rank_spec.strip_prefix("top") {
+                ("top", number)
+            } else if let Some(number) = rank_spec.strip_prefix("bottom") {
+                ("bottom", number)
+            } else {
+                return Err(format!(
+                    "highlight rule {raw:?}: expected topN/bottomN (e.g. amount:top3:green)"
+                ));
+            };
+            let number: usize = number
+                .trim()
+                .parse()
+                .map_err(|_| format!("highlight rule {raw:?}: rank must be a positive integer"))?;
+            if number == 0 {
+                return Err(format!(
+                    "highlight rule {raw:?}: rank must be greater than 0"
+                ));
+            }
+            if column.is_empty() {
+                return Err(format!("highlight rule {raw:?} needs a column"));
+            }
+            rules.push(csvx_core::xlsx::ConditionalRule {
+                column,
+                operator: operator.to_string(),
+                value: number.to_string(),
+                color,
+            });
+            continue;
+        }
+        let (operator, (column, value)) = ["!=", ">=", "<=", ">", "<", "="]
+            .iter()
+            .find_map(|operator| {
+                head.split_once(*operator)
+                    .filter(|(_, value)| !value.trim().is_empty())
+                    .map(|(column, value)| (*operator, (column, value)))
+            })
+            .ok_or_else(|| format!("highlight rule {head:?} needs an operator"))?;
+        let column = column.trim().to_string();
+        if column.is_empty() {
+            return Err(format!("highlight rule {head:?} needs a column"));
         }
         rules.push(csvx_core::xlsx::ConditionalRule {
             column,

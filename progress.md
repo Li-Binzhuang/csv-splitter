@@ -30,10 +30,16 @@
 - [x] 项5 公式第二批：TEXT/TEXTBEFORE/TEXTAFTER/DATEVALUE/HOUR/MINUTE/SECOND；
   测试 `text_and_time_helpers_match_spreadsheet_expectations`。
 - [ ] 项6 数字格式第二批：科学计数/会计/负数括号/@ 文本。
-- [ ] 项7 `--highlight` CLI 支持 top/bottom 语法与帮助/测试。
+- [x] 项7 `--highlight` CLI 支持 `amount:top2:green` / `bottom1:red`，帮助与
+  CLI 测试 `convert_xlsx_can_highlight_a_top_rank`。
 - [ ] 项8 convert/report 导出接线布局格式（write_sheets_with_formats 的用户入口）。
+- [ ] 项9 xlsx 导入 numFmt → ColumnMeta 格式保真（日期之外的小数/百分比/货币）。
 
 ## 当前进度
+
+Round 109（项7 CLI Top/Bottom）：`--highlight` 支持 `amount:top2:green` /
+`bottom1:red`；rank 必须 >0；CLI 测试、全量 gate/package 通过；发布包
+SHA `372a67a2…5c464`。
 
 Round 108（项5 公式第二批）：新增 TEXT/TEXTBEFORE/TEXTAFTER/DATEVALUE/HOUR/
 MINUTE/SECOND；`text_and_time_helpers_match_spreadsheet_expectations` 通过；全量
