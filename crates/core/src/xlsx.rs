@@ -909,6 +909,23 @@ fn shared_strings(xml: &str) -> Vec<String> {
         .collect()
 }
 
+fn find_tag(xml: &str, from: usize, tag: &str) -> Option<usize> {
+    let mut cursor = from;
+    while let Some(offset) = xml[cursor..].find(tag) {
+        let start = cursor + offset;
+        let after = start + tag.len();
+        let next = xml[after..].chars().next();
+        if next
+            .map(|c| c == '>' || c == '/' || c.is_ascii_whitespace())
+            .unwrap_or(false)
+        {
+            return Some(start);
+        }
+        cursor = after;
+    }
+    None
+}
+
 #[cfg(test)]
 fn sheet_rows(
     xml: &str,
@@ -946,8 +963,7 @@ fn sheet_rows_with_limit_system(
 ) -> std::io::Result<Vec<(u64, Vec<String>)>> {
     let mut out = Vec::new();
     let mut cursor = 0;
-    while let Some(offset) = xml[cursor..].find("<row") {
-        let row_start = cursor + offset;
+    while let Some(row_start) = find_tag(xml, cursor, "<row") {
         let Some(open_end) = xml[row_start..].find('>').map(|i| row_start + i) else {
             break;
         };
@@ -968,8 +984,7 @@ fn sheet_rows_with_limit_system(
             .unwrap_or(out.len() as u64 + 1);
         let mut cells = Vec::new();
         let mut cell_cursor = 0;
-        while let Some(offset) = body[cell_cursor..].find("<c") {
-            let cell_start = cell_cursor + offset;
+        while let Some(cell_start) = find_tag(body, cell_cursor, "<c") {
             let Some(cell_open_end) = body[cell_start..].find('>').map(|i| cell_start + i) else {
                 break;
             };
@@ -1454,6 +1469,13 @@ mod tests {
         ];
         let error = table_from_rows(rows, 2).unwrap_err().to_string();
         assert!(error.contains("at most 2 data rows"), "{error}");
+    }
+
+    #[test]
+    fn row_breaks_are_not_mistaken_for_rows() {
+        let xml = r#"<sheetData><row r="1"><c r="A1"><v>1</v></c></row></sheetData><rowBreaks count="1"><break id="1"/></rowBreaks>"#;
+        let rows = sheet_rows(xml, &[], &[]).unwrap();
+        assert_eq!(rows.len(), 1);
     }
 
     #[test]

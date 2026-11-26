@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 73（rowBreaks 边界）：线性扫描必须校验标签边界，`<rowBreaks>` 不再被
+误当 `<row>`；新增测试，防性能改写引入语义回归；复测导回 0.92 s，
+发布包 SHA `7c1e6a72…20ebf`。
+
 Round 72（xlsx 导入性能）：200k×10 导回从 240–295 s 降到 0.93–0.96 s（release），
 round-trip 字节一致；原因是 per-cell 正则编译，改为线性扫描/手工 attrs/OnceLock。
 复现脚本 `scripts/bench_xlsx_roundtrip.sh`；发布包 SHA `f91e2a2b…5eed665`。

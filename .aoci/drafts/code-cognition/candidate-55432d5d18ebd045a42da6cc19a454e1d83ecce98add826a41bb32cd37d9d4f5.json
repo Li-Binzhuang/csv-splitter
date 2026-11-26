@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "ae4a0089cb3ab6ae2b51ae5d8fdde06650cf5069506b698af382509499cba9fa",
+  "batch_id": "55432d5d18ebd045a42da6cc19a454e1d83ecce98add826a41bb32cd37d9d4f5",
+  "composite_identity": "017b7c166bbba9aa5b09cad0ffcc42830f3aeabd938ee3bf193271c0003b7f4b",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "35eb1f1e75586d487edd44ec4dc1ec8ce450fcc67cac7b8aeec94ea9fa7db6ee",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "accb780c9810dbfc5fda51cf2cef6e6cacebfb80c0ebd75c716c6798fe51e77c",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；ISO 日期/日期时间/纯时间；1904 日期系统；cellIs；线性标签扫描+手工属性解析；读 shared/inline/缓存值/日期；16384 列/1,048,576 数据行 | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式/坏索引/超限报错；attr 是手工解析避免 per-cell 正则"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "664ac810223547d5d1dfb1432cf3aa0f786a8d9a12d494ed4504dea3daa8534b",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round72 xlsx 导入 250× 性能修复与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4da196cb9ba5fdfd0a8185d248f4b5e7afc674aca43db9e41350cf5818e05f55",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "accb780c9810dbfc5fda51cf2cef6e6cacebfb80c0ebd75c716c6798fe51e77c",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；流式单 sheet；表头冻结/列宽；ISO 日期/日期时间/纯时间；1904 日期系统；cellIs；线性标签扫描+手工属性解析；读 shared/inline/缓存值/日期；16384 列/1,048,576 数据行 | S:不写公式/图表；custom 日期只识别常见 token；条件格式仅 cellIs；合并不展开；无缓存公式/坏索引/超限报错；attr 是手工解析避免 per-cell 正则"
+    },
+    {
+      "candidate_id": "1d10d6e5efe7cbb3e2b1de2ea53c07c640e0fadf71397d4acdc5cea40a66910e",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "664ac810223547d5d1dfb1432cf3aa0f786a8d9a12d494ed4504dea3daa8534b",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round72 xlsx 导入 250× 性能修复与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
