@@ -10,8 +10,8 @@ OUT="${CSVX_PILOT_OUT:-pilot-kit}"
 [[ -e "$OUT" ]] && { echo "error: $OUT already exists; choose another --out" >&2; exit 2; }
 
 "$BIN" demo -o "$OUT/demo" >/dev/null
-SAMPLE="$OUT/demo/orders.csv"
-[[ -s "$SAMPLE" ]] || { echo "pilot_kit=fail demo data missing" >&2; exit 1; }
+SAMPLE="${CSVX_PILOT_FILE:-$OUT/demo/orders.csv}"
+[[ -s "$SAMPLE" ]] || { echo "pilot_kit=fail sample missing: $SAMPLE" >&2; exit 1; }
 python3 scripts/pilot_report.py \
   --binary "$BIN" \
   --file "$SAMPLE" \
@@ -19,7 +19,7 @@ python3 scripts/pilot_report.py \
   --key id \
   --group city \
   --out "$OUT/pilot-report.md" >/dev/null
-python3 scripts/pilot_intake.py --sample "$SAMPLE" --out "$OUT/intake" --max-gb 1 >/dev/null
+python3 scripts/pilot_intake.py --sample "$SAMPLE" --out "$OUT/intake" --max-gb "${CSVX_PILOT_MAX_GB:-20}" >/dev/null
 VERSION="$("$BIN" --version)"
 python3 - "$OUT" "$VERSION" "$SAMPLE" <<'PY'
 import datetime

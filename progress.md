@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 12（试点真实样本）：`pilot_kit.sh` 支持 `CSVX_PILOT_FILE` 对已脱敏样本生成
+报告与 intake；`CSVX_PILOT_MAX_GB` 默认 20；smoke 覆盖客户样本与 email 警告；发布包 SHA `97fc2acf…3f8da`。
+
 Round 11（离线安装 manifest）：`install_offline.sh` 支持可选 release manifest 复核
 release JSON 的 sha256/bytes；安装 manifest 增加 platform；smoke 覆盖 bad manifest 拒绝；发布包 SHA `6a431bf2…47b9`。
 

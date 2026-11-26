@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-26T08:13:02Z",
+  "updated_at": "2026-11-26T08:19:18Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "59784a186e6efab621e6cf631c0c0ef74802aa7dbd6c30f25d22cbf8fb36f4b9",
-      "size": 84018,
-      "normalized_sha256": "59784a186e6efab621e6cf631c0c0ef74802aa7dbd6c30f25d22cbf8fb36f4b9"
+      "sha256": "bcf094f7e877e4d123a5cb8fdcf57b62f800792dc14ed9713515939e697d1f83",
+      "size": 83987,
+      "normalized_sha256": "bcf094f7e877e4d123a5cb8fdcf57b62f800792dc14ed9713515939e697d1f83"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -1150,9 +1150,9 @@
     },
     "docs/SECURITY.md": {
       "role": "index",
-      "sha256": "8187379646d216fc05e41fbc47c538e4b25baabbe114686ef21749ce88c68852",
-      "size": 3219,
-      "normalized_sha256": "8187379646d216fc05e41fbc47c538e4b25baabbe114686ef21749ce88c68852"
+      "sha256": "771e3efe06a57f1d951a5e5be917f320ec9142d84ce723b60da9de780cbb3401",
+      "size": 3324,
+      "normalized_sha256": "771e3efe06a57f1d951a5e5be917f320ec9142d84ce723b60da9de780cbb3401"
     },
     "docs/THIN_FRONTEND_PLAN.md": {
       "role": "index",
@@ -1218,9 +1218,9 @@
     },
     "progress.md": {
       "role": "index",
-      "sha256": "ab02622b974e583122e2a41423058aca1fc1223793a9fbcea8727080057ebc88",
-      "size": 8938,
-      "normalized_sha256": "ab02622b974e583122e2a41423058aca1fc1223793a9fbcea8727080057ebc88"
+      "sha256": "13f69dcb4b5e2c37d3bcd8b69ad5c6339dd1e771b4b0b4573bd36d2cccb3f7b1",
+      "size": 9171,
+      "normalized_sha256": "13f69dcb4b5e2c37d3bcd8b69ad5c6339dd1e771b4b0b4573bd36d2cccb3f7b1"
     },
     "scripts/agent_routes_smoke.py": {
       "role": "index",
@@ -1356,9 +1356,9 @@
     },
     "scripts/install_offline.sh": {
       "role": "index",
-      "sha256": "50735e7f1d46b59a595c4d52c12a8f1d50029d1026c23dc84d3d132b349f772c",
-      "size": 4017,
-      "normalized_sha256": "50735e7f1d46b59a595c4d52c12a8f1d50029d1026c23dc84d3d132b349f772c"
+      "sha256": "dab81a22b697ab98ab190e7a5fb8352b4730471197cceb5a9eaa40f8ea275212",
+      "size": 4712,
+      "normalized_sha256": "dab81a22b697ab98ab190e7a5fb8352b4730471197cceb5a9eaa40f8ea275212"
     },
     "scripts/install_skill.sh": {
       "role": "index",
@@ -1464,9 +1464,9 @@
     },
     "scripts/test_install_offline.sh": {
       "role": "index",
-      "sha256": "fbe5f038b982316d8cce0e5e5d7ca9e8e76f7ee43599c65c4fa7d52363744510",
-      "size": 1969,
-      "normalized_sha256": "fbe5f038b982316d8cce0e5e5d7ca9e8e76f7ee43599c65c4fa7d52363744510"
+      "sha256": "4a475be9213967ff6b0d792ac3c7aeb72e27aeb526ee48c6f372b387b353ec8f",
+      "size": 2638,
+      "normalized_sha256": "4a475be9213967ff6b0d792ac3c7aeb72e27aeb526ee48c6f372b387b353ec8f"
     },
     "scripts/test_pilot_intake.sh": {
       "role": "index",
