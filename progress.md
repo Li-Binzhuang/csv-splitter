@@ -81,6 +81,9 @@
 
 ## 当前进度
 
+Round 140（项70/71/72 周末起点与 US DAYS360）：周末起点、周末节假日、
+29/30 差异；测试、全量 gate/package 通过；发布包 SHA `266ccf5f…d348f`。
+
 Round 139（项67/68/69 周末与 31 日边界）：WORKDAY 0、欧式 31 日、
 ISO 跨年；测试、全量 gate/package 通过；发布包 SHA `c84ac4a6…b338f`。
 

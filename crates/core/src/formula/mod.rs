@@ -1508,6 +1508,21 @@ mod tests {
     }
 
     #[test]
+    fn workday_weekend_start_and_holiday_weekends_work() {
+        assert_eq!(eval_str(r#"workday("2024-01-06", 1)"#, &[]), "2024-01-08");
+        assert_eq!(
+            eval_str(
+                r#"networkdays("2024-01-01", "2024-01-05", "2024-01-06")"#,
+                &[]
+            ),
+            "5",
+            "a weekend holiday does not reduce the count"
+        );
+        assert_eq!(eval_str(r#"days360("2024-01-29", "2024-01-31")"#, &[]), "2");
+        assert_eq!(eval_str(r#"days360("2024-01-30", "2024-01-31")"#, &[]), "0");
+    }
+
+    #[test]
     fn weekend_and_31_day_boundaries_work() {
         assert_eq!(eval_str(r#"workday("2024-01-06", 0)"#, &[]), "2024-01-06");
         assert_eq!(
