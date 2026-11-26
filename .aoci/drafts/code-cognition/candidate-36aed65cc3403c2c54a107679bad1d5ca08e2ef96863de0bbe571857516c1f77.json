@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "d81c8925a076ad484f46582bf37d8d4f796696227033aa0a3f911ce2b540bd9a",
+  "batch_id": "36aed65cc3403c2c54a107679bad1d5ca08e2ef96863de0bbe571857516c1f77",
+  "composite_identity": "0d06357906dbfbd9f342d8136041617279922daf016bbfe7a3b3b1e24061284a",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "bdf904203b1b0d376bfe0d901781209b4e3e93854a2082504823f109eaa5a6f3",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "c845211c95a5debc1ff8ebaa8c8ae597b00eef0ec5814503a4623ce43bd29e63",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族；WEEKDAY/WEEKNUM（含 ISO 21）；NETWORKDAYS 节假日/去重；周末起点与 29/30 边界测试 | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "a7a0e285d0b5b594b59b5f9f26d0d075db36513e630622ab6371d7371ec0d922",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round140 周末起点/US DAYS360 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "066e3234faf088a4cc71cec74c1e1cfa910b4e5ddbbc63ab32bd931f0b0e600f",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "c845211c95a5debc1ff8ebaa8c8ae597b00eef0ec5814503a4623ce43bd29e63",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族；WEEKDAY/WEEKNUM（含 ISO 21）；NETWORKDAYS 节假日/去重；周末起点与 29/30 边界测试 | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "ff80c35fe6fc6cafed0cea158695d25a3aa71eb77317eb075e63ae7632d01ba7",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "a7a0e285d0b5b594b59b5f9f26d0d075db36513e630622ab6371d7371ec0d922",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round140 周末起点/US DAYS360 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
