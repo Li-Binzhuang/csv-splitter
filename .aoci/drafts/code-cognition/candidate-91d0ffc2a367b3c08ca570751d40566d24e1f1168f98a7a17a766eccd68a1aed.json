@@ -1,0 +1,105 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "17367290f9d2ee4711e8c3ba11154a77fd28c14f7deb4ae1d5c8714f3ba41ba9",
+  "batch_id": "91d0ffc2a367b3c08ca570751d40566d24e1f1168f98a7a17a766eccd68a1aed",
+  "composite_identity": "5bd3819ffccc599b4d08188821fdd7c6c1228f81aab5b13cdd933e6e96ec9203",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "7fa6ba6201c32a1d384a7af55471e97e6fc62a3b59dd26a79dab905b6b32ba61",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "fdecab47e46ac0b20585e4b799757267242d61cf116e6a4966e08f8251ba2e0a",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现基准与 1GB/100GB 实测 | R:code:scripts/bench_100gb.py,code:docs/bench-100gb-2026-11-26.json | A:Apple M5/16GiB；100GB 568.46s；1GB 5.73s；summary 自动；双跑 cmp | S:未 drop cache；quality 约 80%；他机重跑；smoke≠100GB"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "fe22d642e406d1408c612e15c1102c3cea662e6817bef104e727dde577b9a22a",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round38 字节校验与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/bench_compare.py",
+      "path": "scripts/bench_compare.py",
+      "change": "create",
+      "source_sha256": "403044202a67b1208d400a9bbfebc0defbb4fe81badaa54a039ce653a26c4736"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "a63519a34201f16434b6e0156ad4a6ad05b939be8602c2627a94b75380e54570",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装、自检/运维/诊断与证据 | R:code:scripts/release_manifest.py,code:scripts/check_release.py,code:scripts/verify_dist.sh | A:打包前清理旧 verify/release；真实 install；自检/ops/bundle | S:不联网/不打 tag；缺关键文档整包失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_bench_compare.sh",
+      "path": "scripts/test_bench_compare.sh",
+      "change": "create",
+      "source_sha256": "bfc13d0debb3ea2021a0a51d61a433e820e4be8246c80c4b5eeac63821599ce8"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "f45c52076479d1013303a59502807a3e87d2640d444312fd3d4426e1a99b860f",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:发布包验收、写 verify/reverify | R:code:scripts/package_release.sh,code:scripts/check_release.py | A:有 manifest 时写 reverify；成员/阈值/路由；保留绑定 verify | S:仅发布方；不联网；复验不破坏 manifest"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "a7a02056a93495c8a30bde48aa35ece81e7c71dbc9ff515e65c522c59490fcfb",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "fdecab47e46ac0b20585e4b799757267242d61cf116e6a4966e08f8251ba2e0a",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现基准与 1GB/100GB 实测 | R:code:scripts/bench_100gb.py,code:docs/bench-100gb-2026-11-26.json | A:Apple M5/16GiB；100GB 568.46s；1GB 5.73s；summary 自动；双跑 cmp | S:未 drop cache；quality 约 80%；他机重跑；smoke≠100GB"
+    },
+    {
+      "candidate_id": "2b6f01bcf60f354454ea77d8fb0157682322cfb85b5587fb1713b687b6ae3231",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "fe22d642e406d1408c612e15c1102c3cea662e6817bef104e727dde577b9a22a",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round38 字节校验与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "61ef18e19bf4d58f16e55a031ffe5068cd2a26861557ac24cfaec0eaee89fe15",
+      "object_ref": "code:scripts/bench_compare.py",
+      "path": "scripts/bench_compare.py",
+      "change": "create",
+      "source_sha256": "403044202a67b1208d400a9bbfebc0defbb4fe81badaa54a039ce653a26c4736"
+    },
+    {
+      "candidate_id": "cc7400fc75e18652bef98826e55c2464cd52d986626c1957ab6701709a44c9a8",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "a63519a34201f16434b6e0156ad4a6ad05b939be8602c2627a94b75380e54570",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装、自检/运维/诊断与证据 | R:code:scripts/release_manifest.py,code:scripts/check_release.py,code:scripts/verify_dist.sh | A:打包前清理旧 verify/release；真实 install；自检/ops/bundle | S:不联网/不打 tag；缺关键文档整包失败"
+    },
+    {
+      "candidate_id": "b4af5ea999529734d1e13e49ef013de1a2afe60101bc5ca3a86b2480dd95f8c8",
+      "object_ref": "code:scripts/test_bench_compare.sh",
+      "path": "scripts/test_bench_compare.sh",
+      "change": "create",
+      "source_sha256": "bfc13d0debb3ea2021a0a51d61a433e820e4be8246c80c4b5eeac63821599ce8"
+    },
+    {
+      "candidate_id": "4c056c09e008042de18cb88ab188506a8ca174436377f750ea2ebd6451671b0c",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "f45c52076479d1013303a59502807a3e87d2640d444312fd3d4426e1a99b860f",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:发布包验收、写 verify/reverify | R:code:scripts/package_release.sh,code:scripts/check_release.py | A:有 manifest 时写 reverify；成员/阈值/路由；保留绑定 verify | S:仅发布方；不联网；复验不破坏 manifest"
+    }
+  ]
+}

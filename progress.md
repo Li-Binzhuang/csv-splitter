@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 39（性能回归比较）：新增 `bench_compare.py` 比较两份 summary 的逐命令
+耗时/总量，默认 20% 阈值；smoke 覆盖通过、回归拒绝、缺命令拒绝；已进 gate；
+发布包 SHA `ec830a1a…6590e`。
+
 Round 38（关键文档字节校验）：`check_release.py` 对 criticalDocs 同时校验
 SHA256 与 bytes，任一不符即拒绝；发布清单面积扩展到大小/哈希双重绑定；
 发布包 SHA `93c7df7f…7899b`。

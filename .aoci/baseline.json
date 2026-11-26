@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-26T11:24:05Z",
+  "updated_at": "2026-11-26T11:28:10Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "7fa6ba6201c32a1d384a7af55471e97e6fc62a3b59dd26a79dab905b6b32ba61",
-      "size": 85466,
-      "normalized_sha256": "7fa6ba6201c32a1d384a7af55471e97e6fc62a3b59dd26a79dab905b6b32ba61"
+      "sha256": "8327b83b5cc5d3614146390d63b1a5240087a2d6abb901bf07cb6c8f20445af6",
+      "size": 85895,
+      "normalized_sha256": "8327b83b5cc5d3614146390d63b1a5240087a2d6abb901bf07cb6c8f20445af6"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -970,9 +970,9 @@
     },
     "docs/BENCHMARKS.md": {
       "role": "index",
-      "sha256": "672debbf42ce66564ad7c5cb25a3c9063912fa33e33c329e943b660d1a25bdd6",
-      "size": 9336,
-      "normalized_sha256": "672debbf42ce66564ad7c5cb25a3c9063912fa33e33c329e943b660d1a25bdd6"
+      "sha256": "fdecab47e46ac0b20585e4b799757267242d61cf116e6a4966e08f8251ba2e0a",
+      "size": 9477,
+      "normalized_sha256": "fdecab47e46ac0b20585e4b799757267242d61cf116e6a4966e08f8251ba2e0a"
     },
     "docs/BEYOND_EXCEL.md": {
       "role": "index",
@@ -1242,9 +1242,9 @@
     },
     "progress.md": {
       "role": "index",
-      "sha256": "c3a39c8b9a5ddae8f8fff6a66700c0daee96b9d0ea161d899c7c8e958f4d256d",
-      "size": 14990,
-      "normalized_sha256": "c3a39c8b9a5ddae8f8fff6a66700c0daee96b9d0ea161d899c7c8e958f4d256d"
+      "sha256": "fe22d642e406d1408c612e15c1102c3cea662e6817bef104e727dde577b9a22a",
+      "size": 15227,
+      "normalized_sha256": "fe22d642e406d1408c612e15c1102c3cea662e6817bef104e727dde577b9a22a"
     },
     "scripts/agent_routes_smoke.py": {
       "role": "index",
@@ -1269,6 +1269,12 @@
       "sha256": "498e5579cbd93e86e85bfad727afb23af3df998376843cdc42362245ad82fa16",
       "size": 7990,
       "normalized_sha256": "498e5579cbd93e86e85bfad727afb23af3df998376843cdc42362245ad82fa16"
+    },
+    "scripts/bench_compare.py": {
+      "role": "index",
+      "sha256": "403044202a67b1208d400a9bbfebc0defbb4fe81badaa54a039ce653a26c4736",
+      "size": 2573,
+      "normalized_sha256": "403044202a67b1208d400a9bbfebc0defbb4fe81badaa54a039ce653a26c4736"
     },
     "scripts/bench_mcp_cache.py": {
       "role": "index",
@@ -1440,9 +1446,9 @@
     },
     "scripts/package_release.sh": {
       "role": "index",
-      "sha256": "3d06f0510494d34ce34594f842b378bc653dcf1b420b14b424ccc480fd5d1f96",
-      "size": 4618,
-      "normalized_sha256": "3d06f0510494d34ce34594f842b378bc653dcf1b420b14b424ccc480fd5d1f96"
+      "sha256": "a63519a34201f16434b6e0156ad4a6ad05b939be8602c2627a94b75380e54570",
+      "size": 4673,
+      "normalized_sha256": "a63519a34201f16434b6e0156ad4a6ad05b939be8602c2627a94b75380e54570"
     },
     "scripts/pilot_intake.py": {
       "role": "index",
@@ -1504,6 +1510,12 @@
       "size": 1846,
       "normalized_sha256": "ad7a1afaf4dbf0009ec790028a4ce992cb9047f4b24226b61fbb3468551bac5d"
     },
+    "scripts/test_bench_compare.sh": {
+      "role": "index",
+      "sha256": "bfc13d0debb3ea2021a0a51d61a433e820e4be8246c80c4b5eeac63821599ce8",
+      "size": 1675,
+      "normalized_sha256": "bfc13d0debb3ea2021a0a51d61a433e820e4be8246c80c4b5eeac63821599ce8"
+    },
     "scripts/test_install_offline.sh": {
       "role": "index",
       "sha256": "4a475be9213967ff6b0d792ac3c7aeb72e27aeb526ee48c6f372b387b353ec8f",
@@ -1554,9 +1566,9 @@
     },
     "scripts/verify_dist.sh": {
       "role": "index",
-      "sha256": "562c7430615015e2420ed8a412b3ce08e5b244003b1b54803b6b039711fff17a",
-      "size": 6621,
-      "normalized_sha256": "562c7430615015e2420ed8a412b3ce08e5b244003b1b54803b6b039711fff17a"
+      "sha256": "f45c52076479d1013303a59502807a3e87d2640d444312fd3d4426e1a99b860f",
+      "size": 6646,
+      "normalized_sha256": "f45c52076479d1013303a59502807a3e87d2640d444312fd3d4426e1a99b860f"
     },
     "scripts/verify_dist_negative.sh": {
       "role": "index",
