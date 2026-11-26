@@ -1452,6 +1452,26 @@ mod tests {
     }
 
     #[test]
+    fn datedif_supports_ym_md_and_yd() {
+        assert_eq!(
+            eval_str(r#"datedif("2020-01-15", "2024-02-15", "YM")"#, &[]),
+            "1"
+        );
+        assert_eq!(
+            eval_str(r#"datedif("2020-01-01", "2020-01-31", "MD")"#, &[]),
+            "30"
+        );
+        assert_eq!(
+            eval_str(r#"datedif("2020-01-01", "2021-01-01", "YD")"#, &[]),
+            "0"
+        );
+        assert_eq!(
+            eval_str(r#"datedif("2024-01-02", "2024-01-01", "MD")"#, &[]),
+            "#VALUE!"
+        );
+    }
+
+    #[test]
     fn timevalue_datedif_and_clock_cells_work() {
         assert_eq!(eval_str(r#"timevalue("13:04:05")"#, &[]), "0.544502");
         assert_eq!(

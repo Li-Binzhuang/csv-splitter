@@ -37,7 +37,8 @@
   CLI 测试 `convert_xlsx_can_apply_per_column_number_formats`。
 - [ ] 项9 xlsx 导入 numFmt → ColumnMeta 格式保真（日期之外的小数/百分比/货币）。
 - [ ] 项15 xlsx 导入科学/会计/@ numFmt → ColumnMeta 格式。
-- [ ] 项17 DATEDIF 扩展单位 MD/YM/YD。
+- [ ] 项18 xlsx 导入日期 numFmt → ColumnMeta 日期显示审计。
+- [x] 项17 DATEDIF 扩展单位 MD/YM/YD；测试 `datedif_supports_ym_md_and_yd`。
 - [x] 项16 公式第四批：YEARFRAC/ISOWEEKNUM/TIME；测试
   `time_isoweeknum_and_yearfrac_work`。
 - [x] 项10 数字格式诊断：重复列/非法码报错，`--number-format` 与 `--highlight`
@@ -53,6 +54,8 @@
   `positive;(negative)` 被误拆列的问题。
 
 ## 当前进度
+
+Round 117（项17 DATEDIF 单位）：MD/YM/YD 已实现并测试；全量 gate/package 通过；发布包 SHA `946b06ff…a915c`。
 
 Round 116（项16 公式第四批）：TIME/ISOWEEKNUM/YEARFRAC；测试、全量 gate/package 通过；发布包 SHA `7f506e68…9d195`。
 

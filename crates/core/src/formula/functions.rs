@@ -1416,6 +1416,38 @@ fn date_difference(start: (i32, u32, u32), end: (i32, u32, u32), unit: &str) -> 
             }
             Some(months)
         }
+        // Months ignoring years.
+        "YM" => {
+            let mut months = end.1 as i64 - start.1 as i64;
+            if end.2 < start.2 {
+                months -= 1;
+            }
+            Some(months.rem_euclid(12))
+        }
+        // Days ignoring months and years.
+        "MD" => {
+            let (mut year, mut month) = (end.0, end.1);
+            let mut anchor_day = start.2;
+            if end.2 < start.2 {
+                if month == 1 {
+                    year -= 1;
+                    month = 12;
+                } else {
+                    month -= 1;
+                }
+                anchor_day = anchor_day.min(days_in_month(year, month));
+            }
+            Some(days_from_civil(end.0, end.1, end.2) - days_from_civil(year, month, anchor_day))
+        }
+        // Days ignoring years.
+        "YD" => {
+            let mut year = end.0;
+            if (end.1, end.2) < (start.1, start.2) {
+                year -= 1;
+            }
+            let anchor_day = start.2.min(days_in_month(year, start.1));
+            Some(days_from_civil(end.0, end.1, end.2) - days_from_civil(year, start.1, anchor_day))
+        }
         _ => None,
     }
 }
