@@ -234,6 +234,12 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             .and_then(|name| name.to_str())
             .unwrap_or("")
             .to_ascii_lowercase();
+        if input_name.ends_with(".xls") || input_name.ends_with(".xlsb") {
+            eprintln!(
+                "error: legacy Excel format .xls/.xlsb is not supported; save it as .xlsx first"
+            );
+            return 2;
+        }
         let is_xlsx = input_name.ends_with(".xlsx") || input_name.ends_with(".xlsm");
         if sheet.is_some() && (!is_xlsx || !target.eq_ignore_ascii_case("csv")) {
             eprintln!("error: --sheet is only valid for xlsx input converted to csv");

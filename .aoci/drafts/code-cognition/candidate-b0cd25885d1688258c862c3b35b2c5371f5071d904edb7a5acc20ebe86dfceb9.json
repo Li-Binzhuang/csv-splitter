@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "761056d2c350dfbd2de52930b4ccd19605c13ac9acd2150668b0c0386759fb47",
+  "batch_id": "b0cd25885d1688258c862c3b35b2c5371f5071d904edb7a5acc20ebe86dfceb9",
+  "composite_identity": "9ab0380c60557a8c7a4bcf022d0f5b6a84af7b7d1fa73fae9ebb1e14bc3616b5",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "58e00f43a85a715ecb119bb60ee444a146be0fe7714ed9c8bae864fbedbc5636",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "659de240fa16016501e3e16ab6fc0830dca003b61c887926eab7b38ddda27093",
+      "existing_entry": "convert.rs[SD7M]: F:CLI convert 命令：编码转码、xlsx/csv/tsv/ndjson/parquet、highlight | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；-o/--format/--from/--to/--highlight/--sheet/--delim/--quiet；parse_delimiter；read/write sheets；spawn_reporter | S:不覆盖输入；xlsx 规则解析；错误非零"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "4adbbbde0a9c60c14221e4c8d58f9bfefdff7e913eac7768a0663a2f1d360916",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round88 行上限语义与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "52f66c31fc5aa54fda417b2334d8f925daef907475d8f647c3ec80a274004a88",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "659de240fa16016501e3e16ab6fc0830dca003b61c887926eab7b38ddda27093",
+      "existing_entry": "convert.rs[SD7M]: F:CLI convert 命令：编码转码、xlsx/csv/tsv/ndjson/parquet、highlight | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；-o/--format/--from/--to/--highlight/--sheet/--delim/--quiet；parse_delimiter；read/write sheets；spawn_reporter | S:不覆盖输入；xlsx 规则解析；错误非零"
+    },
+    {
+      "candidate_id": "3280804744a550961407789bcfc1304c47fd5a54473bb2e8ff8e35714d392e9b",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "4adbbbde0a9c60c14221e4c8d58f9bfefdff7e913eac7768a0663a2f1d360916",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round88 行上限语义与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

@@ -2872,6 +2872,29 @@ fn convert_skips_hidden_sheets_by_default() {
 }
 
 #[test]
+fn legacy_excel_formats_are_rejected_with_a_clear_error() {
+    let dir = TempDir::new("xlslegacy");
+    let input = dir.join("old.xls");
+    std::fs::write(&input, b"not a zip").unwrap();
+    let out = dir.join("out.csv");
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "csv",
+            "--out",
+            out.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("legacy Excel format"), "{stderr}");
+    assert!(!out.exists(), "unsupported input must not write output");
+}
+
+#[test]
 fn converting_xlsx_over_itself_is_refused() {
     let dir = TempDir::new("xlsxoverwrite");
     let book = dir.join("book.xlsx");
