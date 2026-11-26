@@ -2385,6 +2385,21 @@ mod tests {
     }
 
     #[test]
+    fn builtin_date_num_fmt_14_reads_as_an_iso_date() {
+        use crate::layout::NumberFormat;
+        let styles = r#"<styleSheet><cellXfs count="2"><xf numFmtId="0"/><xf numFmtId="14"/></cellXfs></styleSheet>"#;
+        let formats = style_number_formats(styles);
+        assert_eq!(formats.len(), 2);
+        assert_eq!(formats[0], None);
+        assert_eq!(
+            formats[1],
+            Some(NumberFormat::DateTime {
+                pattern: "yyyy-mm-dd".into()
+            })
+        );
+    }
+
+    #[test]
     fn column_formats_are_read_back_from_export_styles() {
         use crate::layout::NumberFormat;
         let path = temp_path("column-formats.xlsx");

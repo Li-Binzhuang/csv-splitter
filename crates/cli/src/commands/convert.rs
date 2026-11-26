@@ -297,44 +297,71 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             eprintln!("error: --formats cannot be combined with output/conversion flags");
             return 2;
         }
-        return match csvx_core::xlsx::xlsx_column_formats(&input, sheet.as_deref()) {
-            Ok(columns) => {
-                if formats_json {
-                    print!(
-                        "{{\"sheet\":{},\"columns\":[",
-                        json_string(sheet.as_deref().unwrap_or(""))
-                    );
-                    for (index, (column, format)) in columns.iter().enumerate() {
-                        if index > 0 {
-                            print!(", ");
-                        }
-                        let code = format
-                            .as_ref()
-                            .map(|format| format.name())
-                            .unwrap_or_else(|| "plain".into());
-                        print!(
-                            "{{\"name\":{},\"format\":{},\"column_index\":{}}}",
-                            json_string(column),
-                            json_string(&code),
-                            index
-                        );
-                    }
-                    println!("]}}");
-                } else {
-                    for (column, format) in columns {
-                        let code = format
-                            .map(|format| format.name())
-                            .unwrap_or_else(|| "plain".into());
-                        println!("{column}\t{code}");
-                    }
+        if sheet.is_some() && all_sheets {
+            eprintln!("error: --formats --all-sheets cannot be combined with --sheet");
+            return 2;
+        }
+        let names = if all_sheets {
+            match csvx_core::xlsx::xlsx_sheet_names(&input) {
+                Ok(names) => names,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
                 }
-                0
             }
-            Err(error) => {
-                eprintln!("error: {error}");
-                1
-            }
+        } else {
+            vec![sheet.clone().unwrap_or_default()]
         };
+        if formats_json {
+            print!("[");
+        }
+        for (sheet_index, name) in names.iter().enumerate() {
+            let sheet_arg = (!name.is_empty()).then_some(name.as_str());
+            let columns = match csvx_core::xlsx::xlsx_column_formats(&input, sheet_arg) {
+                Ok(columns) => columns,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            };
+            let sheet_name = sheet_arg.unwrap_or("");
+            if formats_json {
+                if sheet_index > 0 {
+                    print!(",");
+                }
+                print!("{{\"sheet\":{},\"columns\":[", json_string(sheet_name));
+                for (index, (column, format)) in columns.iter().enumerate() {
+                    if index > 0 {
+                        print!(", ");
+                    }
+                    let code = format
+                        .as_ref()
+                        .map(|format| format.name())
+                        .unwrap_or_else(|| "plain".into());
+                    print!(
+                        "{{\"name\":{},\"format\":{},\"column_index\":{}}}",
+                        json_string(column),
+                        json_string(&code),
+                        index
+                    );
+                }
+                print!("]}}");
+            } else {
+                if all_sheets {
+                    println!("# {sheet_name}");
+                }
+                for (column, format) in columns {
+                    let code = format
+                        .map(|format| format.name())
+                        .unwrap_or_else(|| "plain".into());
+                    println!("{column}\t{code}");
+                }
+            }
+        }
+        if formats_json {
+            println!("]");
+        }
+        return 0;
     }
 
     if let Some(target) = convert_format {

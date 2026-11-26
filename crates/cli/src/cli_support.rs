@@ -121,6 +121,7 @@ const COMMAND_OPTIONS: &[(&str, &[(&str, &str)])] = &[
             ("--highlight", "XLSX rules: amount>1000:red;status=bad:amber;amount:top3:green"),
             ("--number-format", "Per-column xlsx format: amount:#,##0.00;rate:0.0%"),
             ("--formats", "Print an xlsx header's number-format codes and exit"),
+            ("--all-sheets", "With --formats: print every worksheet"),
             ("--sheet", "Worksheet name for xlsx input (default: first sheet)"),
             ("--all-sheets", "Extract every xlsx sheet into <out>/<sheet>.csv"),
             ("--delim", "Field delimiter for CSV input"),

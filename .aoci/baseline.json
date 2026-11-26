@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-26T19:00:35Z",
+  "updated_at": "2026-11-26T19:04:56Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "4800f8c05253d067d3901a368300a3a4f4fb9637e7f8b8839ca2f1ccee3050c4",
+      "sha256": "53655564bc0714fc5716a9f5667aadab24796cfe59fcf3558483b2ee6b5a00bf",
       "size": 86276,
-      "normalized_sha256": "4800f8c05253d067d3901a368300a3a4f4fb9637e7f8b8839ca2f1ccee3050c4"
+      "normalized_sha256": "53655564bc0714fc5716a9f5667aadab24796cfe59fcf3558483b2ee6b5a00bf"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -130,9 +130,9 @@
     },
     "crates/cli/src/cli_support.rs": {
       "role": "index",
-      "sha256": "2c0dd9fd34a5c9bddcf9a10dabb981f2c81132ce4017fd76a9e0ee2baf7927e0",
-      "size": 80315,
-      "normalized_sha256": "2c0dd9fd34a5c9bddcf9a10dabb981f2c81132ce4017fd76a9e0ee2baf7927e0"
+      "sha256": "450cc4917ec8d81eb015a08f66469ec1f4289e2d9b226d20f812a338a9568dd8",
+      "size": 80386,
+      "normalized_sha256": "450cc4917ec8d81eb015a08f66469ec1f4289e2d9b226d20f812a338a9568dd8"
     },
     "crates/cli/src/commands/agent.rs": {
       "role": "index",
@@ -178,9 +178,9 @@
     },
     "crates/cli/src/commands/convert.rs": {
       "role": "index",
-      "sha256": "547af0fd19441ca3da09cb8fcf8b1f44f98385bd3705986c8a28b4b4d3549572",
-      "size": 24069,
-      "normalized_sha256": "547af0fd19441ca3da09cb8fcf8b1f44f98385bd3705986c8a28b4b4d3549572"
+      "sha256": "b906b60f447300a28e255a3dc363f06c412267d64b40e263df6f64bd38034b22",
+      "size": 24931,
+      "normalized_sha256": "b906b60f447300a28e255a3dc363f06c412267d64b40e263df6f64bd38034b22"
     },
     "crates/cli/src/commands/dedupe.rs": {
       "role": "index",
@@ -424,9 +424,9 @@
     },
     "crates/cli/tests/cli.rs": {
       "role": "observe",
-      "sha256": "cffdcfed2c0a0fbd4167d59916c7c2fc45d2647fe574ee8837802bb11bae7033",
-      "size": 317514,
-      "normalized_sha256": "cffdcfed2c0a0fbd4167d59916c7c2fc45d2647fe574ee8837802bb11bae7033"
+      "sha256": "594fa5606b67979947ad5519c5efb8a1cf308e9a57160d3693eae927a2527e68",
+      "size": 318637,
+      "normalized_sha256": "594fa5606b67979947ad5519c5efb8a1cf308e9a57160d3693eae927a2527e68"
     },
     "crates/cli/tests/contract.rs": {
       "role": "observe",
@@ -796,9 +796,9 @@
     },
     "crates/core/src/xlsx.rs": {
       "role": "index",
-      "sha256": "f1b9516de5120f17e0a934b0b45105b8697ee780d40d78d46c65d1116dcd10be",
-      "size": 88516,
-      "normalized_sha256": "f1b9516de5120f17e0a934b0b45105b8697ee780d40d78d46c65d1116dcd10be"
+      "sha256": "68025fb286db6b8873ae52006c05ffd2eeb491435f003bf616ff0557530ba46d",
+      "size": 89036,
+      "normalized_sha256": "68025fb286db6b8873ae52006c05ffd2eeb491435f003bf616ff0557530ba46d"
     },
     "crates/core/tests/partition.rs": {
       "role": "observe",
@@ -1204,9 +1204,9 @@
     },
     "docs/XLSX_ENGINE.md": {
       "role": "index",
-      "sha256": "fabe983768e480e58129900ca48924d38b5e4ff4ce0903fdda83393cd27575ba",
-      "size": 6305,
-      "normalized_sha256": "fabe983768e480e58129900ca48924d38b5e4ff4ce0903fdda83393cd27575ba"
+      "sha256": "e637c2788e447a213f4b2eafbe446aabf1a253f33a5199a1a294dd5c502efb6c",
+      "size": 6320,
+      "normalized_sha256": "e637c2788e447a213f4b2eafbe446aabf1a253f33a5199a1a294dd5c502efb6c"
     },
     "docs/bench-100gb-2026-11-26.json": {
       "role": "index",
@@ -1260,9 +1260,9 @@
     },
     "progress.md": {
       "role": "index",
-      "sha256": "4589af5044b2a25fa66f259b543224f7473b6cd67459e2a01168a8092ffdf220",
-      "size": 35605,
-      "normalized_sha256": "4589af5044b2a25fa66f259b543224f7473b6cd67459e2a01168a8092ffdf220"
+      "sha256": "78f08566709d13de966b3d5e4473628eee3e49da990022c1f250f820bd3a416d",
+      "size": 36019,
+      "normalized_sha256": "78f08566709d13de966b3d5e4473628eee3e49da990022c1f250f820bd3a416d"
     },
     "scripts/agent_routes_smoke.py": {
       "role": "index",

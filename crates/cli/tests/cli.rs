@@ -3004,6 +3004,41 @@ fn formats_reports_a_missing_sheet_and_stable_json_shape() {
     assert!(stdout.contains("\"column_index\":0"), "{stdout}");
 }
 
+#[test]
+fn formats_all_sheets_prints_each_sheet_and_json_array() {
+    let dir = TempDir::new("xlsfmtall");
+    let book = dir.join("book.xlsx");
+    write_hidden_sheet_xlsx(&book);
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--formats",
+            "--all-sheets",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(0));
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("# Hidden"), "{stdout}");
+    assert!(stdout.contains("# Data"), "{stdout}");
+    let json = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--formats",
+            "--all-sheets",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(json.status.code(), Some(0));
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(stdout.starts_with('['), "{stdout}");
+    assert!(stdout.contains("\"sheet\":\"Hidden\""), "{stdout}");
+    assert!(stdout.contains("\"sheet\":\"Data\""), "{stdout}");
+}
+
 /// `datecounts` groups a timestamp column by its first ten characters.
 #[test]
 fn report_datecounts_groups_timestamps_by_date() {

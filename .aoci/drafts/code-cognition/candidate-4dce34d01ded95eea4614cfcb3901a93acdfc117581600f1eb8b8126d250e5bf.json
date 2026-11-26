@@ -1,0 +1,93 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "0f25955717adfdc3a72b465b59e077411297dc8602d89b347a808be222d042d5",
+  "batch_id": "4dce34d01ded95eea4614cfcb3901a93acdfc117581600f1eb8b8126d250e5bf",
+  "composite_identity": "0b205e3498a47202ef68d50cd12fccf7c87fc77dd9bbaf15a973dfc1cf7dfd16",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "4800f8c05253d067d3901a368300a3a4f4fb9637e7f8b8839ca2f1ccee3050c4",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/cli_support.rs",
+      "path": "crates/cli/src/cli_support.rs",
+      "change": "update",
+      "source_sha256": "450cc4917ec8d81eb015a08f66469ec1f4289e2d9b226d20f812a338a9568dd8",
+      "existing_entry": "cli_support.rs[EN9L]: F:CLI 通用支持：help 表、参数、输出、报表、路径 helper | R:code:crates/cli/src/main.rs,code:crates/cli/src/commands/shared.rs,code:crates/cli/src/commands/pipeline.rs | A:COMMAND_OPTIONS；convert 含 --all-sheets/--highlight top3/--number-format/--formats；mcp config/audit；Parser | S:commands 通过 crate 重导出引用；不直接读写业务文件"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "b906b60f447300a28e255a3dc363f06c412267d64b40e263df6f64bd38034b22",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert 命令：编码转码、xlsx/csv/tsv/ndjson/parquet、highlight、number-format、formats | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；--formats 打印 column\u003cTAB\u003eformat 或 JSON(sheet/columns/column_index)；--number-format 支持 Scientific/Accounting/@/日期时间；highlight topN | S:不覆盖输入；--formats 仅 xlsx 且禁与其他转换标志；--json 需 --formats；rank=0/重复列/非法格式报错"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "68025fb286db6b8873ae52006c05ffd2eeb491435f003bf616ff0557530ba46d",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles；csv_to_xlsx_with_number_formats；write_sheets_with_formats；xlsx_column_formats 读 header+首数据行样式；条件 top/bottom；zip 流式；1M 53MB | S:不写公式/图表；合并不展开；无缓存公式/坏引用/超限报错；格式只对可解析数字/日期生效；导入格式按首数据行"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "e637c2788e447a213f4b2eafbe446aabf1a253f33a5199a1a294dd5c502efb6c",
+      "existing_entry": "XLSX_ENGINE.md[SZ7T]: F:XLSX 引擎决策、迁移方案、覆盖矩阵与实测 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；1904/hidden；全 sheet；数字格式导出；xlsx_column_formats；--formats JSON 含 sheet/index；1M 8.04s/53MB | S:迁移未执行待批准；不新增依赖；导入格式取首数据行；性能仅 release"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "78f08566709d13de966b3d5e4473628eee3e49da990022c1f250f820bd3a416d",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round123 格式诊断与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "dda41ee2def4cef672b344b93b62501f290063a14ac54ee15bf35dba4f6274ff",
+      "object_ref": "code:crates/cli/src/cli_support.rs",
+      "path": "crates/cli/src/cli_support.rs",
+      "change": "update",
+      "source_sha256": "450cc4917ec8d81eb015a08f66469ec1f4289e2d9b226d20f812a338a9568dd8",
+      "existing_entry": "cli_support.rs[EN9L]: F:CLI 通用支持：help 表、参数、输出、报表、路径 helper | R:code:crates/cli/src/main.rs,code:crates/cli/src/commands/shared.rs,code:crates/cli/src/commands/pipeline.rs | A:COMMAND_OPTIONS；convert 含 --all-sheets/--highlight top3/--number-format/--formats；mcp config/audit；Parser | S:commands 通过 crate 重导出引用；不直接读写业务文件"
+    },
+    {
+      "candidate_id": "a43bb18c69b1d7651c503db3815216eff43f1417568162e97fd8b306761e42a5",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "b906b60f447300a28e255a3dc363f06c412267d64b40e263df6f64bd38034b22",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert 命令：编码转码、xlsx/csv/tsv/ndjson/parquet、highlight、number-format、formats | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；--formats 打印 column\u003cTAB\u003eformat 或 JSON(sheet/columns/column_index)；--number-format 支持 Scientific/Accounting/@/日期时间；highlight topN | S:不覆盖输入；--formats 仅 xlsx 且禁与其他转换标志；--json 需 --formats；rank=0/重复列/非法格式报错"
+    },
+    {
+      "candidate_id": "09078b3be0e4927838a0fd146e764e25ebfb8542b63b78574d0ffe98b17d6c32",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "68025fb286db6b8873ae52006c05ffd2eeb491435f003bf616ff0557530ba46d",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles；csv_to_xlsx_with_number_formats；write_sheets_with_formats；xlsx_column_formats 读 header+首数据行样式；条件 top/bottom；zip 流式；1M 53MB | S:不写公式/图表；合并不展开；无缓存公式/坏引用/超限报错；格式只对可解析数字/日期生效；导入格式按首数据行"
+    },
+    {
+      "candidate_id": "7b41a9ebf204cae4b9f36fac73fea4db56508130b2137be9b3219045f759be85",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "e637c2788e447a213f4b2eafbe446aabf1a253f33a5199a1a294dd5c502efb6c",
+      "existing_entry": "XLSX_ENGINE.md[SZ7T]: F:XLSX 引擎决策、迁移方案、覆盖矩阵与实测 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；1904/hidden；全 sheet；数字格式导出；xlsx_column_formats；--formats JSON 含 sheet/index；1M 8.04s/53MB | S:迁移未执行待批准；不新增依赖；导入格式取首数据行；性能仅 release"
+    },
+    {
+      "candidate_id": "feb9069d9feeb1b609978c721911613e757c148f8deb33c6e6c83ca744a5f45c",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "78f08566709d13de966b3d5e4473628eee3e49da990022c1f250f820bd3a416d",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round123 格式诊断与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
