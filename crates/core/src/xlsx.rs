@@ -13,7 +13,10 @@ use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
 
 /// Excel's hard limit for data rows in one worksheet (excluding the header).
-pub const MAX_DATA_ROWS: u64 = 1_048_576;
+pub const MAX_DATA_ROWS: u64 = 1_048_575;
+
+/// Excel's hard limit for rows in one worksheet, including the header row.
+pub const MAX_SHEET_ROWS: u64 = MAX_DATA_ROWS + 1;
 
 /// Excel's hard limit for columns in one worksheet.
 pub const MAX_COLUMNS: usize = 16_384;
@@ -948,7 +951,7 @@ fn sheet_rows(
     shared: &[String],
     date_styles: &[bool],
 ) -> std::io::Result<Vec<(u64, Vec<String>)>> {
-    sheet_rows_with_limit(xml, shared, date_styles, MAX_DATA_ROWS + 1)
+    sheet_rows_with_limit(xml, shared, date_styles, MAX_SHEET_ROWS)
 }
 
 fn sheet_rows_with_date_system(
@@ -957,7 +960,7 @@ fn sheet_rows_with_date_system(
     date_styles: &[bool],
     date1904: bool,
 ) -> std::io::Result<Vec<(u64, Vec<String>)>> {
-    sheet_rows_with_limit_system(xml, shared, date_styles, date1904, MAX_DATA_ROWS + 1)
+    sheet_rows_with_limit_system(xml, shared, date_styles, date1904, MAX_SHEET_ROWS)
 }
 
 #[cfg(test)]
@@ -1003,6 +1006,11 @@ fn sheet_rows_with_limit_system(
         };
         if row == 0 {
             return Err(invalid("row reference 0 is invalid"));
+        }
+        if row > MAX_SHEET_ROWS {
+            return Err(invalid(&format!(
+                "row {row} is beyond Excel's {MAX_SHEET_ROWS} row limit"
+            )));
         }
         let mut cells = Vec::new();
         let mut cell_cursor = 0;
@@ -1591,6 +1599,13 @@ mod tests {
         let xml = r#"<sheetData><row r="1"><c r="A1"><v>1</v></c></row></sheetData><rowBreaks count="1"><break id="1"/></rowBreaks>"#;
         let rows = sheet_rows(xml, &[], &[]).unwrap();
         assert_eq!(rows.len(), 1);
+    }
+
+    #[test]
+    fn a_row_beyond_excels_limit_is_an_error() {
+        let xml = r#"<sheetData><row r="1048577"><c r="A1048577"><v>1</v></c></row></sheetData>"#;
+        let error = sheet_rows(xml, &[], &[]).unwrap_err().to_string();
+        assert!(error.contains("row limit"), "{error}");
     }
 
     #[test]
