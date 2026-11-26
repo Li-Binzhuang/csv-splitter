@@ -1,0 +1,75 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "9c84f848256bf8f56a78839011270f08bc652b2c367292f32991fd1247043bc1",
+  "batch_id": "16e6049a112eaa480ce9c87ac814041ee0e0702ff31891ec939c1d6839d8632e",
+  "composite_identity": "e97c44061bfdc7fe66304c2922b1ad2e327968970ba7a6329999ac873ec767ba",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "d3bf600063645e33d4654c9424601d06d65eb3e97f05d0a49ced7f1848c86a0d",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/SUPPORT_MATRIX.md",
+      "path": "docs/SUPPORT_MATRIX.md",
+      "change": "create",
+      "source_sha256": "d02c6616a034a3755b8bacfe9060b79b00b156623b8c6d4807dc1e6d9ab9a674"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "51460c1a60ff69c240a04a15e081d42f342f5e68feabf3e67feab33daa834755",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round30 诊断包与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "60e6b5743e8bd75b320c13b93a05c357d1576bf1e796eb929160d1613f5c366d",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装、自检/运维与证据 | R:code:scripts/ops_bundle.sh,code:scripts/ops_status.sh,code:scripts/verify_dist.sh | A:真实 install；selfcheck；ops status；诊断包进包 | S:不联网/不打 tag；成员校验失败整包失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "0ccbf9396ce93dd2bc0a19a1d33cd6dbec53cec99b754e4d416b84df93580cc4",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:scripts/ops_bundle.sh,code:docs/OPERATIONS.md | A:成员契约含诊断/ops/自检/升级/安装/bench/pilot/访谈/迁移/100GB JSON | S:仅发布方；不联网；缺成员失败"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "480e2d0c59ee9ebb08c6e849346df566e9db537ab0cac3caff970618b9c385f6",
+      "object_ref": "code:docs/SUPPORT_MATRIX.md",
+      "path": "docs/SUPPORT_MATRIX.md",
+      "change": "create",
+      "source_sha256": "d02c6616a034a3755b8bacfe9060b79b00b156623b8c6d4807dc1e6d9ab9a674"
+    },
+    {
+      "candidate_id": "e34d74745067d9112ead98a80e22242e426016a0465d9ac84ec2cca8967248f4",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "51460c1a60ff69c240a04a15e081d42f342f5e68feabf3e67feab33daa834755",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round30 诊断包与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "607a801912b74807fb8bbc7fb7b1177cffa7409036c33c77b9f959b33ea96c50",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "60e6b5743e8bd75b320c13b93a05c357d1576bf1e796eb929160d1613f5c366d",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装、自检/运维与证据 | R:code:scripts/ops_bundle.sh,code:scripts/ops_status.sh,code:scripts/verify_dist.sh | A:真实 install；selfcheck；ops status；诊断包进包 | S:不联网/不打 tag；成员校验失败整包失败"
+    },
+    {
+      "candidate_id": "45d7862a4ee138a96a9ccab4c0874d7d1bc77e36abd0451e8cc2c923448fc423",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "0ccbf9396ce93dd2bc0a19a1d33cd6dbec53cec99b754e4d416b84df93580cc4",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:scripts/ops_bundle.sh,code:docs/OPERATIONS.md | A:成员契约含诊断/ops/自检/升级/安装/bench/pilot/访谈/迁移/100GB JSON | S:仅发布方；不联网；缺成员失败"
+    }
+  ]
+}

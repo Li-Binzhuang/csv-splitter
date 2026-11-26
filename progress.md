@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 31（支持矩阵）：新增 SUPPORT_MATRIX.md（平台/功能矩阵、数据边界、
+工单最小信息、响应边界），并入发布包与成员校验；发布包 SHA `571754d2…dbc06`。
+
 Round 30（诊断包）：新增 `ops_bundle.sh` 生成带 SHA 的本地诊断 tar.gz；
 默认不含审计/历史，显式 include-logs 选项才加 state；smoke 进 gate；发布包 SHA `d3f94422…dba49`。
 
