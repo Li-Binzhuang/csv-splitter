@@ -1,0 +1,121 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "d0f7fa9015c68146a19b957c6506d47c4d1a1f0b0ad4f6f32b5d3fa05699e200",
+  "batch_id": "b3291b08670c25b8ccc42afc215ab33706947c25dc5c21e2308385d03abeaf04",
+  "composite_identity": "95e4523382db400b28cf8f0f396b4e801e6ba593f60d482c9fa1e48cc0e9d430",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "a71204a1fc85c6bae83a76f9cfb4b902947061cab3e7db738e76e5955072d280",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/OPERATIONS.md",
+      "path": "docs/OPERATIONS.md",
+      "change": "update",
+      "source_sha256": "52bc4f5f5ad5c2f805e752f2e5268a265333d36c5df8ccd7f50d07850d11501b",
+      "existing_entry": "OPERATIONS.md[SG8S]: F:操作契约层 ADR 与本地运维快照 | R:code:crates/core/src/contract.rs,code:scripts/ops_status.sh | A:17 操作；ops_status 聚合自检/pipeline/audit；preview/apply 规则 | S:view 复杂路径未接；journal hash 非 SHA；快照仅本地"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "933ed03c7ff0b45e0134a9d16b5845c7920ef71ac16de60960af079cc4370427",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round29 发布后 ops 与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "381b6f4535444b9799b9217265d6672ca68efb4a99881563fb549ca7f50e64f1",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/test_ops_status.sh | A:gate layout/fmt/clippy/tests/sql/mcp/install/selfcheck/upgrade/ops/bench/pilot | S:gate 必带 sql；安装/运维负例必须在 gate"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/ops_bundle.sh",
+      "path": "scripts/ops_bundle.sh",
+      "change": "create",
+      "source_sha256": "72661c0186e0a85f3e7bbcb2f5b742d04651fa6accc930b89ff7ff49c8cca48a"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "45f91e5ca291f0abb396179a0f9ab5d059d3e8aae2510e7760386dc9b83c32c9",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装、自检/运维与证据 | R:code:scripts/ops_status.sh,code:scripts/install_selfcheck.sh,code:scripts/verify_dist.sh | A:真实 install；selfcheck JSON；ops_status installOk；失败整包失败 | S:不联网/不打 tag；成员校验失败整包失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_ops_bundle.sh",
+      "path": "scripts/test_ops_bundle.sh",
+      "change": "create",
+      "source_sha256": "aeb2953b0fcb27cfa55edcc6ae2b1137b908dbdbcce5bf880a8539044da4d49f"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "4c66c4b041339694b6066088e4fb387bc2d1c886df9d72589d31c0772b674c5e",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:scripts/ops_status.sh,code:docs/OPERATIONS.md | A:成员契约含 ops/自检/升级/安装/bench/pilot/访谈/迁移/100GB JSON | S:仅发布方；不联网；缺成员失败"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ec8a166857be47f5318246d60d6d75aa630ee5ec9684946beb243d00f8db7d88",
+      "object_ref": "code:docs/OPERATIONS.md",
+      "path": "docs/OPERATIONS.md",
+      "change": "update",
+      "source_sha256": "52bc4f5f5ad5c2f805e752f2e5268a265333d36c5df8ccd7f50d07850d11501b",
+      "existing_entry": "OPERATIONS.md[SG8S]: F:操作契约层 ADR 与本地运维快照 | R:code:crates/core/src/contract.rs,code:scripts/ops_status.sh | A:17 操作；ops_status 聚合自检/pipeline/audit；preview/apply 规则 | S:view 复杂路径未接；journal hash 非 SHA；快照仅本地"
+    },
+    {
+      "candidate_id": "a18d980a8b58762e80a8f27fdee31808546f47744e8c5969f228496eb1122eee",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "933ed03c7ff0b45e0134a9d16b5845c7920ef71ac16de60960af079cc4370427",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round29 发布后 ops 与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "31d6747fe606de31f438ce26243d0ef0d954078603df9a7cc0fccaac835966f2",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "381b6f4535444b9799b9217265d6672ca68efb4a99881563fb549ca7f50e64f1",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/test_ops_status.sh | A:gate layout/fmt/clippy/tests/sql/mcp/install/selfcheck/upgrade/ops/bench/pilot | S:gate 必带 sql；安装/运维负例必须在 gate"
+    },
+    {
+      "candidate_id": "2dc2064e493f3608bbef5d9f44862f751546a1c04305413b9919b035b7aca47a",
+      "object_ref": "code:scripts/ops_bundle.sh",
+      "path": "scripts/ops_bundle.sh",
+      "change": "create",
+      "source_sha256": "72661c0186e0a85f3e7bbcb2f5b742d04651fa6accc930b89ff7ff49c8cca48a"
+    },
+    {
+      "candidate_id": "b4f60bf14f1105635d3452b9c221f18818a84e17da589ab66f35b69643a3be1a",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "45f91e5ca291f0abb396179a0f9ab5d059d3e8aae2510e7760386dc9b83c32c9",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装、自检/运维与证据 | R:code:scripts/ops_status.sh,code:scripts/install_selfcheck.sh,code:scripts/verify_dist.sh | A:真实 install；selfcheck JSON；ops_status installOk；失败整包失败 | S:不联网/不打 tag；成员校验失败整包失败"
+    },
+    {
+      "candidate_id": "7922ccc3d3994545a149c4626e18614f502b528cbbf0a0998e43597e318c4cf9",
+      "object_ref": "code:scripts/test_ops_bundle.sh",
+      "path": "scripts/test_ops_bundle.sh",
+      "change": "create",
+      "source_sha256": "aeb2953b0fcb27cfa55edcc6ae2b1137b908dbdbcce5bf880a8539044da4d49f"
+    },
+    {
+      "candidate_id": "ee3aa4cb8d2f8ca329ad94b876f0971c05f3d9c2cdbd374b3f7077308fd6cac2",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "4c66c4b041339694b6066088e4fb387bc2d1c886df9d72589d31c0772b674c5e",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:scripts/ops_status.sh,code:docs/OPERATIONS.md | A:成员契约含 ops/自检/升级/安装/bench/pilot/访谈/迁移/100GB JSON | S:仅发布方；不联网；缺成员失败"
+    }
+  ]
+}

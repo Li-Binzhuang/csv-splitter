@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 30（诊断包）：新增 `ops_bundle.sh` 生成带 SHA 的本地诊断 tar.gz；
+默认不含审计/历史，显式 include-logs 选项才加 state；smoke 进 gate；发布包 SHA `d3f94422…dba49`。
+
 Round 29（发布后运维快照）：`package_release.sh` 在真实安装后运行
 `ops_status.sh`，要求 `installOk=true` 才产出发布包；发布包 SHA `6e938fe5…6761c`。
 

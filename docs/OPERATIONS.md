@@ -120,5 +120,18 @@ MCP adapter ─┘        │
 
 根目录用 `CSVX_OPS_ROOT`，prefix 用 `CSVX_INSTALL_PREFIX`，审计目录可用
 `CSVX_AUDIT_DIR` 覆盖。安装自检失败时整体退出非零，但 JSON 仍包含 pipeline/audit 计数。
-测试见 `scripts/test_ops_status.sh`，已进入 gate。
+测试见 `scripts/test_ops_status.sh`，已进入 gate。\n
+## 诊断包（2026-11-26）
+
+`scripts/ops_bundle.sh` 生成 `ops-bundle.tar.gz` + `.sha256`，用于本地排障/工单：
+
+- `BUNDLE.txt`：root/prefix/采集策略/时间；
+- `environment.txt`：uname 与 csvx 版本；
+- `selfcheck.json`、`ops-status.json`；
+- `install-manifest.json`（存在时）；
+- 默认**不含** `mcp-audit.jsonl`/`pipeline-history.jsonl`；
+- 只有显式 include-logs 选项才加入 `state/` 下的两份 JSONL。
+
+审计 JSONL 的参数已脱敏，但工单仍按数据边界处理；发布包不包含原始 CSV。
+测试见 `scripts/test_ops_bundle.sh`，已进入 gate。
 
