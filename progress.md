@@ -100,12 +100,14 @@
   1–11 与 101–111；同行区间；空区间/非法编号 `#VALUE!`。测试
   `subtotal_supports_the_excel_function_numbers`、
   `subtotal_rejects_an_all_empty_range`。
+- [ ] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
+  错误=16；空值按 1；验收：单测 + gate。
 - [ ] 项140 国际工作日（功能级）：`NETWORKDAYS.INTL`/`WORKDAY.INTL`
   支持 weekend 字符串/编号与节假日；非法 weekend `#VALUE!`；验收：单测 + gate。
 - [ ] 项139 工程舍入（功能级）：`MROUND`、`CEILING.PRECISE`、
   `FLOOR.PRECISE`；负数/零倍数/非法参数语义；验收：单测 + gate。
-- [ ] 项138 位运算函数（功能级）：`BITAND`/`BITOR`/`BITXOR` 支持非负整数，
-  非法/超范围 `#VALUE!`；验收：单测 + gate。
+- [x] 项138 位运算函数（功能级）：`BITAND`/`BITOR`/`BITXOR` 支持 48 位
+  非负整数；非法/非整数/超范围 `#VALUE!`。测试 `bitwise_functions_work`。
 - [x] 项137 AGGREGATE（功能级）：`AGGREGATE(function_num, options, range[, k])`
   支持 1–11/14–19、options 0/4/6；k 用于排名/分位；非法编号/选项/缺少 k
   `#VALUE!`。测试 `aggregate_covers_subtotal_and_rank_families`。
@@ -124,6 +126,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 167（项138 位运算，功能级）：BITAND/BITOR/BITXOR；48 位边界与
+非法参数；定向与全量 gate/package 通过；发布包 SHA `1bdf7653…b06df`。
 
 Round 166（项137 AGGREGATE，功能级）：1–11/14–19、options 0/4/6、k 分位；
 定向与全量 gate/package 通过；发布包 SHA `bf9367af…cfd06`。

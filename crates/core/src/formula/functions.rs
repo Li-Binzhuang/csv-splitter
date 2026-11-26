@@ -1052,6 +1052,25 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number(result.round())
         }
+        // BITAND/BITOR/BITXOR: 48-bit non-negative integers.
+        "bitand" | "bitor" | "bitxor" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let (Some(left), Some(right)) =
+                (eval(&args[0], ctx).number(), eval(&args[1], ctx).number())
+            else {
+                return Value::Error;
+            };
+            let (Some(left), Some(right)) = (bit_integer(left), bit_integer(right)) else {
+                return Value::Error;
+            };
+            Value::Number(match lower.as_str() {
+                "bitand" => (left & right) as f64,
+                "bitor" => (left | right) as f64,
+                _ => (left ^ right) as f64,
+            })
+        }
         "min" | "max" => {
             // `min(amount)` means the whole column, exactly like `sum(amount)`; a bare
             // column argument would otherwise read this row's cell and call it a day.
@@ -2738,6 +2757,15 @@ fn range_cells<'a>(
 }
 
 /// Sample variance from (sum, sum of squares, n); `None` when n < 2.
+fn bit_integer(value: f64) -> Option<u64> {
+    if value.is_finite() && value >= 0.0 && value.trunc() == value && value <= 281_474_976_710_655.0
+    {
+        Some(value as u64)
+    } else {
+        None
+    }
+}
+
 fn nonnegative_integer(value: f64) -> Option<u64> {
     if value.is_finite() && value >= 0.0 && value.trunc() == value && value <= u64::MAX as f64 {
         Some(value as u64)

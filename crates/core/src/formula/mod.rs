@@ -1405,6 +1405,26 @@ mod tests {
     }
 
     #[test]
+    fn bitwise_functions_work() {
+        assert_eq!(eval_str("bitand(5, 3)", &[]), "1");
+        assert_eq!(eval_str("bitor(5, 3)", &[]), "7");
+        assert_eq!(eval_str("bitxor(5, 3)", &[]), "6");
+        assert_eq!(eval_str("bitand(0, 0)", &[]), "0");
+        assert_eq!(
+            eval_str("bitor(281474976710655, 0)", &[]),
+            "281474976710655"
+        );
+        for source in [
+            "bitand(-1, 3)",
+            "bitand(2.5, 3)",
+            "bitor(281474976710656, 0)",
+            "bitxor(5)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn number_theory_functions_work() {
         assert_eq!(eval_str("gcd(12, 18)", &[]), "6");
         assert_eq!(eval_str("gcd(0, 5)", &[]), "5");

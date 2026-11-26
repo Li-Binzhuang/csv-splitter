@@ -104,7 +104,7 @@
 | RAND / RANDBETWEEN | 缺失 | 非确定性，暂不进入可复现导出 |
 | GCD / LCM / FACT / COMBIN / PERMUT | 支持（功能级新增） | 非负整数；FACT≤170；非法/非整数 `#VALUE!` |
 | MROUND / CEILING.PRECISE / FLOOR.PRECISE | 缺失 | 工程舍入 |
-| BITAND / BITOR / BITXOR | 缺失 | 位运算 |
+| BITAND / BITOR / BITXOR | 支持（功能级新增） | 48 位非负整数；非法/非整数/超范围 `#VALUE!` |
 
 ## 本轮验收（首批补齐）
 
