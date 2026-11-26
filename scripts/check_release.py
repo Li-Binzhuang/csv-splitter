@@ -50,6 +50,8 @@ def main():
                 data = archive.extractfile(member).read()
                 if hashlib.sha256(data).hexdigest() != expected.get("sha256"):
                     failures.append(f"critical doc sha256 mismatch: {name}")
+                if len(data) != expected.get("bytes"):
+                    failures.append(f"critical doc bytes mismatch: {name}")
     except (OSError, tarfile.TarError) as error:
         failures.append(f"cannot inspect tarball: {error}")
     if checks.get("phaseThresholds") != "ok":

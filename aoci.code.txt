@@ -8,7 +8,7 @@ CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:�
 Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml,code:crates/agent/Cargo.toml,code:crates/cli/Cargo.toml | A:members core/mcp/agent/cli；workspace.dependencies csvx-core；version 4.2.0 是发布真相 | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
 README.md[SG6L]: F:项目总览、命令表、上手与部署入口 | R:code:docs/BENCHMARKS.md,code:docs/CAPABILITIES.md,code:docs/DEPLOY.md | A:100GB 本机三项数字；bench JSON 链接；快速开始；命令表 | S:性能数字必须实测；本机非 SLA；文档测试校验默认端口
-progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round37 安全文档与 SHA | S:每轮更新；定价未决；push 失败不阻塞
+progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round38 字节校验与 SHA | S:每轮更新；定价未决；push 失败不阻塞
 
 ===/<repository>/.github/workflows/===
 ci.yml[OV7S]: F:主 CI：格式化、引擎与 CLI 测试、性能守卫、clippy 工作区、失败注解 | R:code:scripts/smoke.sh,code:scripts/regress.sh,code:scripts/backend-smoke.sh,code:scripts/release-decision.sh | A:单 job 串联；engine 与 CLI 两个测试步骤失败时各重试一次并留 warning annotation（本地单跑/两线程均绿的负载型 flake）；每步 tee 日志，失败时把测试名转成公开 annotation 并上传 artifact | S:曾因双 job + 缓存配额出现“跳过一半、红叉无信息”，故单 job；重试只限一次且日志保留，真 bug 仍会两次失败
@@ -168,7 +168,7 @@ verify_dist_negative.sh[SD7T]: F:证明不完整发布包被拒绝且写失败 v
 check_agent_stats.py[SD7T]: F:Agent 冒烟 stats 阈值检查，失败命名字段 | R:code:scripts/agent_routes_smoke.py,code:scripts/verify_dist.sh | A:routes/replay/actions/sse；thresholds=ok；失败 threshold mismatch | S:routes=12；replay=actions；sse_ms<100；退出码 1
 check_agent_stats_negative.sh[SD7T]: F:测试 stats 阈值拒绝坏值 | R:code:scripts/check_agent_stats.py,code:scripts/dev.sh | A:构造 routes=11/sse=900；断言非零；grep routes/sse 字段；输出 stats negative=ok | S:仅测试；临时日志；不联网
 release_manifest.py[SD7T]: F:从已验证包写出 manifest + criticalDocs | R:code:scripts/package_release.sh,code:scripts/check_release.py | A:sha/bytes/UTC；verifyJson；四份关键文档 tar 内 SHA/bytes | S:仅打包后；不联网；缺文档即失败
-check_release.py[SD7T]: F:重哈希 manifest、关键文档与验证阶段 | R:code:scripts/release_manifest.py,code:scripts/package_release.sh | A:tar/verify sha；criticalDocs 重哈希；verified/phaseThresholds；失败退出 1 | S:仅发布方；不联网；缺文档/哈希不符拒绝
+check_release.py[SD7T]: F:重哈希 manifest、关键文档与验证阶段 | R:code:scripts/release_manifest.py,code:scripts/package_release.sh | A:tar/verify sha；criticalDocs sha+bytes；phaseThresholds；失败退出 1 | S:仅发布方；不联网；缺文档/哈希/大小不符拒绝
 check_phase_times.py[SD7T]: F:拒绝超出预算的包验收阶段 | R:code:scripts/verify_dist.sh,code:scripts/dev.sh | A:读 verify.json phaseMs；extract<2s skill<3s try<3s agent<5s xlsx<2s trace<2s；输出 phase_thresholds=ok | S:失败命名字段；退出 1；不联网
 check_phase_times_negative.sh[SD7T]: F:测试阶段预算拒绝慢值 | R:code:scripts/check_phase_times.py,code:scripts/dev.sh | A:构造 agent=9999ms；断言非零；grep mismatch/agent；输出 phase negative=ok | S:仅测试；临时日志；不联网
 check_layout.sh[XQ7S]: F:入口层目录与行数规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根/CLI/MCP 白名单；pipeline 2300；mcp_audit 200；mcp_config 120 | S:未知模块退出；超行数失败；先改文档再加模块
@@ -190,7 +190,7 @@ ops_status.sh[OV7T]: F:本地运维快照：自检/pipeline/审计聚合 | R:cod
 test_ops_status.sh[TQ7T]: F:运维快照正负例 | R:code:scripts/ops_status.sh,code:scripts/dev.sh | A:审计/历史计数；坏 prefix 仍输出；退出 1 | S:gate 必跑；不联网；失败非零
 ops_bundle.sh[OV7T]: F:本地诊断 tar.gz + SHA | R:code:scripts/ops_status.sh,code:scripts/install_selfcheck.sh,code:docs/OPERATIONS.md | A:BUNDLE/env/selfcheck/ops-status；默认不含日志；include-logs 加 state | S:不联网；不含原始行/参数值；SHA 文件
 test_ops_bundle.sh[TQ7T]: F:诊断包 smoke 与日志边界 | R:code:scripts/ops_bundle.sh,code:scripts/dev.sh | A:tar 内容；计数；默认无 state；include-logs 有 | S:gate 必跑；不联网；失败非零
-test_release_manifest.sh[TQ7T]: F:发布 manifest criticalDocs 正负例 | R:code:scripts/release_manifest.py,code:scripts/check_release.py | A:四文档哈希；check_release 通过；缺 DEPLOY 拒绝 | S:gate 必跑；不联网；失败非零
+test_release_manifest.sh[TQ7T]: F:发布 manifest criticalDocs 正负例 | R:code:scripts/release_manifest.py,code:scripts/check_release.py | A:四文档哈希/字节；bytes 不符拒绝；缺 DEPLOY 拒绝 | S:gate 必跑；不联网；失败非零
 
 ===/<repository>/csvx-demo/===
 orders.csv[AZ4L]: F:demo 命令生成的示例数据：6 列 20 120 行，含刻意保留的脏数据 | R:code:crates/core/src/demo.rs | A:列为 id,cust_no,city,amount,note,ts；20 行多一个逗号、100 行重复、900 个空备注，用来演示预览与统计对错位行的容忍 | S:脏数据是故意的，不要清理——GETTING_STARTED 与契约测试都引用这份输入

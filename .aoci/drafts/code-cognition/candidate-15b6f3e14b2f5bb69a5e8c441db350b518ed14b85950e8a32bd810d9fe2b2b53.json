@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "8eb643b0b593bd65278f17f663531617633bd11a0c1feccc9d77f6b2836e0153",
+  "batch_id": "15b6f3e14b2f5bb69a5e8c441db350b518ed14b85950e8a32bd810d9fe2b2b53",
+  "composite_identity": "f430da2e30dc7f047982de4acfb06be520a4c946a805129126fa8294ce84d475",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "cecfa9e1cc1d3b7ebf7dc7727624f0b16f5e87ce5adbcccf82f91630ca4b1591",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "c3a39c8b9a5ddae8f8fff6a66700c0daee96b9d0ea161d899c7c8e958f4d256d",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round37 安全文档与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_release.py",
+      "path": "scripts/check_release.py",
+      "change": "update",
+      "source_sha256": "42f268c9c9e37ed939cb1666ea3653bfac8d7f7a6357e313d1ad4ea9a0a12113",
+      "existing_entry": "check_release.py[SD7T]: F:重哈希 manifest、关键文档与验证阶段 | R:code:scripts/release_manifest.py,code:scripts/package_release.sh | A:tar/verify sha；criticalDocs 重哈希；verified/phaseThresholds；失败退出 1 | S:仅发布方；不联网；缺文档/哈希不符拒绝"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_release_manifest.sh",
+      "path": "scripts/test_release_manifest.sh",
+      "change": "update",
+      "source_sha256": "3ab5a1e1bb9826fc351921807cbac9308436eaaa56b644b6a012cf409c8278ce",
+      "existing_entry": "test_release_manifest.sh[TQ7T]: F:发布 manifest criticalDocs 正负例 | R:code:scripts/release_manifest.py,code:scripts/check_release.py | A:四文档哈希；check_release 通过；缺 DEPLOY 拒绝 | S:gate 必跑；不联网；失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "1ec987d46b6d8237a516050ab86bb0a19bf23e91b659a4019b978b26c2e880b4",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "c3a39c8b9a5ddae8f8fff6a66700c0daee96b9d0ea161d899c7c8e958f4d256d",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round37 安全文档与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "e9659e05bd307bb4a275a4116ace7626b9ffde8742c120264606ecd15e2c72e3",
+      "object_ref": "code:scripts/check_release.py",
+      "path": "scripts/check_release.py",
+      "change": "update",
+      "source_sha256": "42f268c9c9e37ed939cb1666ea3653bfac8d7f7a6357e313d1ad4ea9a0a12113",
+      "existing_entry": "check_release.py[SD7T]: F:重哈希 manifest、关键文档与验证阶段 | R:code:scripts/release_manifest.py,code:scripts/package_release.sh | A:tar/verify sha；criticalDocs 重哈希；verified/phaseThresholds；失败退出 1 | S:仅发布方；不联网；缺文档/哈希不符拒绝"
+    },
+    {
+      "candidate_id": "aa9f6bf408702e1035377e49d40056b2cdfff7faee1c806d26a1c8af4fcf9dc0",
+      "object_ref": "code:scripts/test_release_manifest.sh",
+      "path": "scripts/test_release_manifest.sh",
+      "change": "update",
+      "source_sha256": "3ab5a1e1bb9826fc351921807cbac9308436eaaa56b644b6a012cf409c8278ce",
+      "existing_entry": "test_release_manifest.sh[TQ7T]: F:发布 manifest criticalDocs 正负例 | R:code:scripts/release_manifest.py,code:scripts/check_release.py | A:四文档哈希；check_release 通过；缺 DEPLOY 拒绝 | S:gate 必跑；不联网；失败非零"
+    }
+  ]
+}

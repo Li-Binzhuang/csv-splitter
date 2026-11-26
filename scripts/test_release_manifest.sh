@@ -23,6 +23,18 @@ assert sorted(data["criticalDocs"]) == ["docs/DEPLOY.md", "docs/MIGRATION.md", "
 print("release_manifest=critical_docs")
 PY
 python3 scripts/check_release.py "$WORK/$NAME.release.json" >/dev/null
+python3 - "$WORK/$NAME.release.json" "$WORK/bad-bytes.json" <<'PYBYTES'
+import json
+import sys
+data = json.load(open(sys.argv[1]))
+data["criticalDocs"]["docs/DEPLOY.md"]["bytes"] += 1
+json.dump(data, open(sys.argv[2], "w"))
+PYBYTES
+if python3 scripts/check_release.py "$WORK/bad-bytes.json" >/dev/null 2>&1; then
+  echo "release_manifest=fail bytes mismatch accepted" >&2
+  exit 1
+fi
+echo "release_manifest=bytes_mismatch_rejected"
 
 BAD="$WORK/stage-bad/$NAME"
 mkdir -p "$BAD/docs"

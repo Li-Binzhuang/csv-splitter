@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 38（关键文档字节校验）：`check_release.py` 对 criticalDocs 同时校验
+SHA256 与 bytes，任一不符即拒绝；发布清单面积扩展到大小/哈希双重绑定；
+发布包 SHA `93c7df7f…7899b`。
+
 Round 37（安全文档纠偏）：SECURITY 资源数从 2/3 矛盾改为明确 3（agent/
 operations/audit），并补 release manifest 四文档哈希与复验不覆盖绑定 verify；
 发布包 SHA `419fae53…38b56`。
