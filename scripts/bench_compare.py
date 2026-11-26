@@ -42,12 +42,14 @@ def main():
             regressions.append({"name": name, "baselineMs": before, "candidateMs": after, "deltaPercent": round(pct, 2)})
 
     total_pct = (candidate["totalMs"] - baseline["totalMs"]) / baseline["totalMs"] * 100.0
+    total_regression = total_pct > args.max_regression_percent
     result = {
-        "ok": not missing and not regressions,
+        "ok": not missing and not regressions and not total_regression,
         "baseline": args.baseline,
         "candidate": args.candidate,
         "maxRegressionPercent": args.max_regression_percent,
         "totalDeltaPercent": round(total_pct, 2),
+        "totalRegression": total_regression,
         "missingCommands": missing,
         "addedCommands": added,
         "regressions": regressions,

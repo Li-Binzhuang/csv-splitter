@@ -41,6 +41,11 @@ assert data["ok"] is False, data
 assert data["regressions"][0]["name"] == "filter", data
 print("bench_compare=regression_rejected")
 PY
+if python3 scripts/bench_compare.py --json "$WORK/base.json" "$WORK/total.json" >/dev/null 2>&1; then
+  echo "bench_compare=fail total regression accepted" >&2
+  exit 1
+fi
+echo "bench_compare=total_regression_rejected"
 if python3 scripts/bench_compare.py --json "$WORK/base.json" "$WORK/missing.json" >/dev/null 2>&1; then
   echo "bench_compare=fail missing command accepted" >&2
   exit 1

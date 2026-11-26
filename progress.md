@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 44（总量回归门）：bench_compare 除逐命令外也拒绝 totalMs 超阈值，
+smoke 增加 total 40% 增长拒绝；发布包 SHA `af877f83…38858`。
+
 Round 43（发布艺术品复核）：对 `85312532…afb70` 包复验
 `phase_thresholds=ok`、`verified=true`、`check_release manifest=ok`、
 `criticalDocs=4`；复验写 `.reverify.json`，不覆盖 manifest 绑定的 `.verify.json`。

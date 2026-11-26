@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "c1e98659dbbf97f2f548c8fb55f43bb178ec30ac89e9e95ae5ea448685fa0768",
+  "batch_id": "0cf166bdd376a43616addf35023dc05778ee4ce0aabbd8d083c6f1110a1059e0",
+  "composite_identity": "a78f0de84893ca5855a367622e31c8df29659ef326bed5cd2231ba7497e6da73",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "ae2f160326d538b453a452ae02fc0020f1f1c88a126329665eb24d55be9d64af",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "083a5ca585a8b74955056dbd231484bee8eb3bd927062304796e8b31b8f60072",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round43 发布艺术品复核与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/bench_compare.py",
+      "path": "scripts/bench_compare.py",
+      "change": "update",
+      "source_sha256": "76fac99c7b5e7b6742b159f3f1b5a31232f4c60bc74edceb9d33517490a1510f",
+      "existing_entry": "bench_compare.py[TP7T]: F:比较两份 benchmark summary 的回归 | R:code:scripts/bench_100gb.py,code:docs/BENCHMARKS.md | A:逐命令 elapsed；total；默认 20%；missing/added | S:不联网；缺 elapsed 失败；非 SLA"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_bench_compare.sh",
+      "path": "scripts/test_bench_compare.sh",
+      "change": "update",
+      "source_sha256": "e94a6564889557edaa187715e871c5397cc502d4d8b2438631509bf4ae5e25d5",
+      "existing_entry": "test_bench_compare.sh[TQ7T]: F:benchmark 比较 smoke | R:code:scripts/bench_compare.py,code:scripts/dev.sh | A:通过/4%总量；30%回归拒绝；缺命令拒绝 | S:gate 必跑；不联网；失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "8b57ee34ad0d6f7f1d9d64b5fe300b9cc63a7ae3b42c4f929f81a993dfb97f51",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "083a5ca585a8b74955056dbd231484bee8eb3bd927062304796e8b31b8f60072",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round43 发布艺术品复核与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "55da2d04e9ef7b20b2d071bb6bee44071b0b7ed87cce597c4851d40456b89e07",
+      "object_ref": "code:scripts/bench_compare.py",
+      "path": "scripts/bench_compare.py",
+      "change": "update",
+      "source_sha256": "76fac99c7b5e7b6742b159f3f1b5a31232f4c60bc74edceb9d33517490a1510f",
+      "existing_entry": "bench_compare.py[TP7T]: F:比较两份 benchmark summary 的回归 | R:code:scripts/bench_100gb.py,code:docs/BENCHMARKS.md | A:逐命令 elapsed；total；默认 20%；missing/added | S:不联网；缺 elapsed 失败；非 SLA"
+    },
+    {
+      "candidate_id": "e8bda19b6b99022bb3f6dc3f1351b60c1c43a8ecc06b2103056f753c05f185bc",
+      "object_ref": "code:scripts/test_bench_compare.sh",
+      "path": "scripts/test_bench_compare.sh",
+      "change": "update",
+      "source_sha256": "e94a6564889557edaa187715e871c5397cc502d4d8b2438631509bf4ae5e25d5",
+      "existing_entry": "test_bench_compare.sh[TQ7T]: F:benchmark 比较 smoke | R:code:scripts/bench_compare.py,code:scripts/dev.sh | A:通过/4%总量；30%回归拒绝；缺命令拒绝 | S:gate 必跑；不联网；失败非零"
+    }
+  ]
+}
