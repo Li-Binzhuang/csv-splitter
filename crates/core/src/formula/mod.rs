@@ -1508,6 +1508,22 @@ mod tests {
     }
 
     #[test]
+    fn zero_day_weekend_holiday_and_tuesday_holiday_work() {
+        assert_eq!(
+            eval_str(r#"workday("2024-01-06", 0, "2024-01-06")"#, &[]),
+            "2024-01-06"
+        );
+        assert_eq!(
+            eval_str(
+                r#"networkdays("2024-01-07", "2024-01-09", "2024-01-08")"#,
+                &[]
+            ),
+            "1"
+        );
+        assert_eq!(eval_str(r#"days360("2024-03-28", "2024-03-31")"#, &[]), "3");
+    }
+
+    #[test]
     fn sunday_to_tuesday_and_zero_day_holiday_work() {
         assert_eq!(
             eval_str(r#"networkdays("2024-01-07", "2024-01-09")"#, &[]),
