@@ -14,6 +14,7 @@
 | `yyyy/mm/dd` | 支持（新增） | 斜杠日期 | 同上 |
 | `dd/mm/yyyy` | 支持（新增） | 日/月/年 | 同上 |
 | `mm/dd/yyyy` | 支持（新增） | 月/日/年 | 同上 |
+| `m/d/yyyy` / `yyyy/m/d` | 支持（新增） | 不补零的月/日 | `date_time_formats_render_iso_values` |
 | `yyyy-mm-dd hh:mm` | 支持（新增） | 日期 + 时:分 | 同上 |
 | `yyyy-mm-dd hh:mm:ss` | 支持（新增） | 日期 + 时:分:秒 | 同上 |
 | `hh:mm` / `hh:mm:ss` | 支持（新增） | 纯时间显示 | 同上 |

@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "84b37924db884abaaa98c8ca53690a25982c11d55c7c3649bb013d624cdd0d2b",
+  "batch_id": "8c906f34ce4c82696d1dd10b3f16018add3f5e83abb0bf057ddee7b06da859c5",
+  "composite_identity": "edb00215f889f03ea13221958461ae957fa05c1e81457aba952f4d89d078ab63",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "77090205c7752cd093defc13e5b6da310e5216a2242d783fe5c1e438b52cde09",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/layout.rs",
+      "path": "crates/core/src/layout.rs",
+      "change": "update",
+      "source_sha256": "1ef481228bcb940071be9c8430e1f16b3848fadea1513635999f1139eaa57051",
+      "existing_entry": "layout.rs[CU7L]: F:显示元数据 sidecar：列名替换、列宽、数字格式与冻结列 | R:code:crates/core/src/sheet.rs | A:NumberFormat 含 Decimal/Percent/Currency/DateTime/Scientific/Accounting/Text；日期 8 种；科学计数指数补位；负数括号；@ 原样 | S:只影响展示不改值，写 .view 不写 journal；未识别格式报错不静默；输入日期是 ISO 前缀"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NUMBER_FORMAT_COVERAGE.md",
+      "path": "docs/NUMBER_FORMAT_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "e90c79ca6cbd9dc3a47f3c4d45458b48f4a7a89cf47c6f26589b001d9083a793",
+      "existing_entry": "NUMBER_FORMAT_COVERAGE.md[SA7T]: F:数字格式覆盖矩阵与缺口 | R:code:crates/core/src/layout.rs,code:crates/core/src/xlsx.rs | A:千分位/小数/百分比/货币/日期时间；8 种日期；Scientific/Accounting/Text；导出接线；xlsx_column_formats 导入读回 | S:格式只对数字/日期生效；未识别格式报错"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "fb47e40c4a1806a73fe4fbe2f1cbb01a6719fbb28ee1c692d215195ebf0fb980",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round120 --formats --json 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "320c7191a498a536e307ec09875d37ba95cdaf34af6faaf52065249c3371ea21",
+      "object_ref": "code:crates/core/src/layout.rs",
+      "path": "crates/core/src/layout.rs",
+      "change": "update",
+      "source_sha256": "1ef481228bcb940071be9c8430e1f16b3848fadea1513635999f1139eaa57051",
+      "existing_entry": "layout.rs[CU7L]: F:显示元数据 sidecar：列名替换、列宽、数字格式与冻结列 | R:code:crates/core/src/sheet.rs | A:NumberFormat 含 Decimal/Percent/Currency/DateTime/Scientific/Accounting/Text；日期 8 种；科学计数指数补位；负数括号；@ 原样 | S:只影响展示不改值，写 .view 不写 journal；未识别格式报错不静默；输入日期是 ISO 前缀"
+    },
+    {
+      "candidate_id": "17c7393fb57fb96ad50b3f9b1c78ea0ce5dec128e449f5ab5fe7cd4140b56c2a",
+      "object_ref": "code:docs/NUMBER_FORMAT_COVERAGE.md",
+      "path": "docs/NUMBER_FORMAT_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "e90c79ca6cbd9dc3a47f3c4d45458b48f4a7a89cf47c6f26589b001d9083a793",
+      "existing_entry": "NUMBER_FORMAT_COVERAGE.md[SA7T]: F:数字格式覆盖矩阵与缺口 | R:code:crates/core/src/layout.rs,code:crates/core/src/xlsx.rs | A:千分位/小数/百分比/货币/日期时间；8 种日期；Scientific/Accounting/Text；导出接线；xlsx_column_formats 导入读回 | S:格式只对数字/日期生效；未识别格式报错"
+    },
+    {
+      "candidate_id": "92049e549078d35ecd0f19a23896c8e2dfde7881a39b44c97440ece80fb2dc86",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "fb47e40c4a1806a73fe4fbe2f1cbb01a6719fbb28ee1c692d215195ebf0fb980",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round120 --formats --json 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

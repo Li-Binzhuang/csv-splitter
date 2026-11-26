@@ -2848,6 +2848,38 @@ fn formats_prints_the_xlsx_header_format_codes() {
     assert!(json.contains("\"format\":\"#,##0.00\""), "{json}");
 }
 
+#[test]
+fn number_format_exports_a_short_date_code() {
+    let dir = TempDir::new("xlsxsd");
+    let input = dir.join("t.csv");
+    let output = dir.join("t.xlsx");
+    std::fs::write(&input, "when\n2024-01-02\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            output.to_str().unwrap(),
+            "--number-format",
+            "when:m/d/yyyy",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let file = std::fs::File::open(&output).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    let mut styles = String::new();
+    use std::io::Read as _;
+    archive
+        .by_name("xl/styles.xml")
+        .unwrap()
+        .read_to_string(&mut styles)
+        .unwrap();
+    assert!(styles.contains("formatCode=\"m/d/yyyy\""), "{styles}");
+}
+
 /// `datecounts` groups a timestamp column by its first ten characters.
 #[test]
 fn report_datecounts_groups_timestamps_by_date() {
