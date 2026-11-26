@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "d9678c5f01a347bcb3a0b1ae1d869a7c5a9ec96bfb973b029d0ebdd64854e9fe",
+  "batch_id": "41b2b8987a97e25404d128dc60c29974cff00bdaa164eb4e50e85f6451d805a8",
+  "composite_identity": "5128c9792b4af27a7aeab51b0cc797f2502ad4e5d2534fedaf9eb39e237ce8e5",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "735fcd52043eb95cd32e7bfd6167d5885c137f82d86fb164735977d0c45c3c88",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "44131fb1653e04e2da2047696ece3d8aef5b9a86c65bad9bfb058e76aea5fda0",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族；WEEKDAY/WEEKNUM（含 ISO 21）；NETWORKDAYS 节假日/去重/空单元格/纯周末；WORKDAY 小数/起点节假日/重复区间；半开二月边界 | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "d4095e2d1ffd67f2356f5667cc6b7ae38e6885b7d87bb9c1f2da01ddcf04130e",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round148 两日周末/半开二月与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4da2456c54c43173ab00c5347a18d25d0f95e52844e0d56cb66e6178a9374b4d",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "44131fb1653e04e2da2047696ece3d8aef5b9a86c65bad9bfb058e76aea5fda0",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族；WEEKDAY/WEEKNUM（含 ISO 21）；NETWORKDAYS 节假日/去重/空单元格/纯周末；WORKDAY 小数/起点节假日/重复区间；半开二月边界 | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "3e68d2fdc14e9dcb21680df82270aff864bd48ffa113ca510116a93e7aec94bc",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "d4095e2d1ffd67f2356f5667cc6b7ae38e6885b7d87bb9c1f2da01ddcf04130e",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round148 两日周末/半开二月与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
