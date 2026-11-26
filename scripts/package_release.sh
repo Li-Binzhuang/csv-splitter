@@ -59,7 +59,20 @@ data = json.load(open(sys.argv[1]))
 if not data.get("ok"):
     raise SystemExit(data)
 PYCHECK
+if ! bash scripts/ops_status.sh --prefix "$INSTALL_DIR" --root "$INSTALL_DIR" > "$INSTALL_DIR/ops.json"; then
+  cat "$INSTALL_DIR/ops.json" >&2 || true
+  rm -rf "$INSTALL_DIR"
+  echo "installed prefix ops status failed" >&2
+  exit 1
+fi
+python3 - "$INSTALL_DIR/ops.json" <<'PYOPS'
+import json
+import sys
+data = json.load(open(sys.argv[1]))
+if not data.get("installOk"):
+    raise SystemExit(data)
+PYOPS
 rm -rf "$INSTALL_DIR"
-printf 'install_manifest=ok selfcheck=ok\n'
+printf 'install_manifest=ok selfcheck=ok ops_status=ok\n'
 du -h "dist/$NAME.tar.gz"
 cat "dist/$NAME.tar.gz.sha256"

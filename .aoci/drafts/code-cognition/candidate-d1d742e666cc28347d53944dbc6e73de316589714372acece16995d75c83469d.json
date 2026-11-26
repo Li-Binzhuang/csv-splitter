@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "065c4c9a34cf246e1d7ffd8e4cb5ed80824ae389b4ee0ad1279b2133a0b119ad",
+  "batch_id": "d1d742e666cc28347d53944dbc6e73de316589714372acece16995d75c83469d",
+  "composite_identity": "ad3ebbac4d4ecae12599bcb9e57f856eae259fa2d4e05fcab5c8f1935a4e47f8",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "d1b5a34c0b31948f9f200d23aab56a81c383c1a93a0e56588388ae6c155ad1b7",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "2cb4f386e84bff4281d66eeedf2810142bab5dd4a42a255739d9dd7095387e37",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round28 ops_status 与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "cfb3a84c30a889c6d8d766e3094c442475e148e2202423e678a5345d17c93492",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装、自检与证据 | R:code:scripts/ops_status.sh,code:scripts/install_selfcheck.sh,code:scripts/verify_dist.sh | A:脚本归档 scripts/；真实 install+selfcheck；运维脚本进包 | S:不联网/不打 tag；成员校验失败整包失败"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "1b2e22f7137834004004f02c081a872070d160ee599bf683da8ad203ce013e40",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "2cb4f386e84bff4281d66eeedf2810142bab5dd4a42a255739d9dd7095387e37",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round28 ops_status 与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "32bab6779220cf0b5deb6a93958297c1da6570afe20157674e2f616ad8a9aca7",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "cfb3a84c30a889c6d8d766e3094c442475e148e2202423e678a5345d17c93492",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装、自检与证据 | R:code:scripts/ops_status.sh,code:scripts/install_selfcheck.sh,code:scripts/verify_dist.sh | A:脚本归档 scripts/；真实 install+selfcheck；运维脚本进包 | S:不联网/不打 tag；成员校验失败整包失败"
+    }
+  ]
+}

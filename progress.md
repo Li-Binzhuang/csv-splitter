@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 29（发布后运维快照）：`package_release.sh` 在真实安装后运行
+`ops_status.sh`，要求 `installOk=true` 才产出发布包；发布包 SHA `6e938fe5…6761c`。
+
 Round 28（运维快照）：新增 `ops_status.sh` 聚合安装自检 + pipeline 历史 +
 MCP 审计计数，输出本地 JSON；正负例 smoke 进 gate；发布包 SHA `da60f13a…862fd`。
 
