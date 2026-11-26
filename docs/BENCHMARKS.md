@@ -7,7 +7,7 @@
 `scripts/bench_100gb.py` 流式生成确定性 CSV，然后依次跑：
 
 ```text
-stats --sample 100   (schema/header scan)
+schema --json        (schema/header scan)
 filter --where city=CDMX
 search ZZZUNIQUE
 analyze --quality --json
@@ -18,11 +18,11 @@ analyze --quality --json
 小规模 smoke（本轮实测，1000 行 / 77,403 bytes，非 100GB 承诺）：
 
 ```text
-schema 348.4 ms / 52.13 MB
-filter 303.9 ms / 51.49 MB
-search 344.1 ms / 51.61 MB
-quality 365.5 ms / 53.12 MB
-total 1361.9 ms
+schema 361.6 ms / 69.34 MB
+filter 330.8 ms / 51.48 MB
+search 323.9 ms / 51.58 MB
+quality 332.0 ms / 53.13 MB
+total 1348.3 ms
 ```
 
 完整 100 GB 运行：

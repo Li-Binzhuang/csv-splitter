@@ -153,7 +153,7 @@ def main():
         size, rows, gen_ms = generate_bytes(out, target)
 
     commands = [
-        ("schema", ["stats", str(out), "--sample", "100"]),
+        ("schema", ["schema", str(out), "--json"]),
         ("filter", ["filter", str(out), "--where", "city=CDMX"]),
         ("search", ["search", str(out), "ZZZUNIQUE", "--limit", "10"]),
         ("quality", ["analyze", str(out), "--quality", "--json"]),

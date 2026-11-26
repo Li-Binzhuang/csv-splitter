@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "673be3b801b56317bb1ef682f34388b715fb41a976e3d24fd27a040ae3801e05",
+  "batch_id": "459214237c42c0fa9071a7abe90f2519eb7886887b35a89aaba84fc3b7a8853a",
+  "composite_identity": "db2e41a2baab91dc0ce7beb72696e59ffaff613cce1686b6b7f11487724aae7c",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b1fa73998e89d4ed4a3f47d011ebdf8ea8354dde7eb730a08f6ef485d139a4c9",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "409f64a59c103d8fc8378f817f5d7fa1273285455ffa14e5860f48ff958eab6a",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现性能基准与 100GB harness | R:code:scripts/bench_100gb.py,code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:历史 100/81GB 数字；bench_100gb.py 流式生成/四命令；smoke 1000 行 1361.9ms | S:未 drop cache；smoke≠100GB；完整数字需目标机重跑"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "2f7241d5e331223f18e1847b389abe2e60618fd645a608f496f8d73c31a469ab",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round6 benchmark harness 与 SHA | S:每轮更新；smoke 不冒充 100GB；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/bench_100gb.py",
+      "path": "scripts/bench_100gb.py",
+      "change": "update",
+      "source_sha256": "65f7b5fdf73cf143c92185b2643589fc2216e3848dfa46e3823764ae408c80a8",
+      "existing_entry": "bench_100gb.py[TP7M]: F:流式生成 CSV 并测 scan 命令耗时/RSS | R:code:scripts/test_bench_100gb.sh,code:docs/BENCHMARKS.md | A:--gb/--rows/--out/--binary；schema/filter/search/quality；JSON+MD | S:不默认真跑 100GB；RSS 依赖 /usr/bin/time；结果本机实测"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "b3f0c3324881e51bf14d86ccf1d7f3ede6b93c994b174652630c1f1606ca7f81",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "409f64a59c103d8fc8378f817f5d7fa1273285455ffa14e5860f48ff958eab6a",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现性能基准与 100GB harness | R:code:scripts/bench_100gb.py,code:docs/CAPABILITIES.md,code:docs/HANDOVER.md | A:历史 100/81GB 数字；bench_100gb.py 流式生成/四命令；smoke 1000 行 1361.9ms | S:未 drop cache；smoke≠100GB；完整数字需目标机重跑"
+    },
+    {
+      "candidate_id": "be1fb08eb0051b42157aab1bffc6d8484af1c56d89b6ebf034175bb8789fcd85",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "2f7241d5e331223f18e1847b389abe2e60618fd645a608f496f8d73c31a469ab",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round6 benchmark harness 与 SHA | S:每轮更新；smoke 不冒充 100GB；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "0135e3d1ba5c627f94414e09f15790f419506b6d2041feb1e15f4dbbcb32adca",
+      "object_ref": "code:scripts/bench_100gb.py",
+      "path": "scripts/bench_100gb.py",
+      "change": "update",
+      "source_sha256": "65f7b5fdf73cf143c92185b2643589fc2216e3848dfa46e3823764ae408c80a8",
+      "existing_entry": "bench_100gb.py[TP7M]: F:流式生成 CSV 并测 scan 命令耗时/RSS | R:code:scripts/test_bench_100gb.sh,code:docs/BENCHMARKS.md | A:--gb/--rows/--out/--binary；schema/filter/search/quality；JSON+MD | S:不默认真跑 100GB；RSS 依赖 /usr/bin/time；结果本机实测"
+    }
+  ]
+}

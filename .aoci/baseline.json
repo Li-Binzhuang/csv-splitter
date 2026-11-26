@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-26T07:34:11Z",
+  "updated_at": "2026-11-26T07:37:04Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "b1fa73998e89d4ed4a3f47d011ebdf8ea8354dde7eb730a08f6ef485d139a4c9",
-      "size": 82670,
-      "normalized_sha256": "b1fa73998e89d4ed4a3f47d011ebdf8ea8354dde7eb730a08f6ef485d139a4c9"
+      "sha256": "2b6d7b6a9e28f7c6e8b4a702611b4703587dfe6b994164a9090d8709be9797d3",
+      "size": 82658,
+      "normalized_sha256": "2b6d7b6a9e28f7c6e8b4a702611b4703587dfe6b994164a9090d8709be9797d3"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -970,9 +970,9 @@
     },
     "docs/BENCHMARKS.md": {
       "role": "index",
-      "sha256": "6bbd6622656c4de1f749e65776c502d9ad32056f48bf7c21d0779713c002e56c",
+      "sha256": "409f64a59c103d8fc8378f817f5d7fa1273285455ffa14e5860f48ff958eab6a",
       "size": 8206,
-      "normalized_sha256": "6bbd6622656c4de1f749e65776c502d9ad32056f48bf7c21d0779713c002e56c"
+      "normalized_sha256": "409f64a59c103d8fc8378f817f5d7fa1273285455ffa14e5860f48ff958eab6a"
     },
     "docs/BEYOND_EXCEL.md": {
       "role": "index",
@@ -1212,9 +1212,9 @@
     },
     "progress.md": {
       "role": "index",
-      "sha256": "c4184de6cb6caa2d49c6bc1bb88cf224ac6742ce2bbdab22a31a008cb597ebc4",
-      "size": 7937,
-      "normalized_sha256": "c4184de6cb6caa2d49c6bc1bb88cf224ac6742ce2bbdab22a31a008cb597ebc4"
+      "sha256": "2f7241d5e331223f18e1847b389abe2e60618fd645a608f496f8d73c31a469ab",
+      "size": 7966,
+      "normalized_sha256": "2f7241d5e331223f18e1847b389abe2e60618fd645a608f496f8d73c31a469ab"
     },
     "scripts/agent_routes_smoke.py": {
       "role": "index",
@@ -1236,9 +1236,9 @@
     },
     "scripts/bench_100gb.py": {
       "role": "index",
-      "sha256": "a02582535b0a01996853c6fb20e6e1e68327ecaf3bb09bbc3414d1117aa3f3c0",
-      "size": 7207,
-      "normalized_sha256": "a02582535b0a01996853c6fb20e6e1e68327ecaf3bb09bbc3414d1117aa3f3c0"
+      "sha256": "65f7b5fdf73cf143c92185b2643589fc2216e3848dfa46e3823764ae408c80a8",
+      "size": 7199,
+      "normalized_sha256": "65f7b5fdf73cf143c92185b2643589fc2216e3848dfa46e3823764ae408c80a8"
     },
     "scripts/bench_mcp_cache.py": {
       "role": "index",
