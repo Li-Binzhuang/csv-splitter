@@ -2838,6 +2838,14 @@ fn formats_prints_the_xlsx_header_format_codes() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("amount\t#,##0.00"), "{stdout}");
     assert!(stdout.contains("rate\t0.0%"), "{stdout}");
+    let json = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--formats", "--json"])
+        .output()
+        .unwrap();
+    assert_eq!(json.status.code(), Some(0));
+    let json = String::from_utf8_lossy(&json.stdout);
+    assert!(json.contains("\"name\":\"amount\""), "{json}");
+    assert!(json.contains("\"format\":\"#,##0.00\""), "{json}");
 }
 
 /// `datecounts` groups a timestamp column by its first ten characters.

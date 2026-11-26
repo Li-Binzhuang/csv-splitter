@@ -35,6 +35,24 @@ fn parse_column_formats(
 }
 
 /// Split `a:fmt;b:fmt` on semicolons that are not inside an accounting `(...)`.
+fn json_string(text: &str) -> String {
+    let mut out = String::with_capacity(text.len() + 2);
+    out.push('"');
+    for character in text.chars() {
+        match character {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            control if control < ' ' => out.push_str(&format!("\\u{:04x}", control as u32)),
+            other => out.push(other),
+        }
+    }
+    out.push('"');
+    out
+}
+
 fn split_format_specs(text: &str) -> Vec<&str> {
     let mut specs = Vec::new();
     let mut start = 0usize;
@@ -173,6 +191,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut highlight: Option<String> = None;
     let mut number_format: Option<String> = None;
     let mut show_formats = false;
+    let mut formats_json = false;
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -201,6 +220,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             "--all-sheets" => all_sheets = true,
             "--formats" => show_formats = true,
+            "--json" => formats_json = true,
             "--number-format" => match p.value("--number-format") {
                 Ok(v) => number_format = Some(v),
                 Err(e) => {
@@ -272,13 +292,36 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             eprintln!("error: --formats cannot be combined with output/conversion flags");
             return 2;
         }
+        if formats_json && !show_formats {
+            eprintln!("error: --json needs --formats");
+            return 2;
+        }
         return match csvx_core::xlsx::xlsx_column_formats(&input, sheet.as_deref()) {
             Ok(columns) => {
-                for (column, format) in columns {
-                    let code = format
-                        .map(|format| format.name())
-                        .unwrap_or_else(|| "plain".into());
-                    println!("{column}\t{code}");
+                if formats_json {
+                    print!("[");
+                    for (index, (column, format)) in columns.iter().enumerate() {
+                        if index > 0 {
+                            print!(", ");
+                        }
+                        let code = format
+                            .as_ref()
+                            .map(|format| format.name())
+                            .unwrap_or_else(|| "plain".into());
+                        print!(
+                            "{{\"name\":{},\"format\":{}}}",
+                            json_string(column),
+                            json_string(&code)
+                        );
+                    }
+                    println!("]");
+                } else {
+                    for (column, format) in columns {
+                        let code = format
+                            .map(|format| format.name())
+                            .unwrap_or_else(|| "plain".into());
+                        println!("{column}\t{code}");
+                    }
                 }
                 0
             }

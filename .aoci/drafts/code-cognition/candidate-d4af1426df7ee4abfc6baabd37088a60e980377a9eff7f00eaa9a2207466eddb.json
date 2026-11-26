@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "96fa55fa71ab4ec6a4bb60a582b36d297e3c91f2ba4a4abc439233a9394a0f2a",
+  "batch_id": "d4af1426df7ee4abfc6baabd37088a60e980377a9eff7f00eaa9a2207466eddb",
+  "composite_identity": "db7451cfeabe4043e17498b0fc9f9a69949557bb6508b0773a26f7a36df860fb",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "5f9c0fa49488656842d770dab0e4f969ad5d62d75999de179c9b0ff9b17c35aa",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "d235e80e1a11e1bf96e582568e554000b41df2c3af72d62b983dbfabbecd65ef",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert 命令：编码转码、xlsx/csv/tsv/ndjson/parquet、highlight、number-format、formats | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；--formats 打印 column\u003cTAB\u003eformat 并退出；--number-format 支持 Scientific/Accounting/@/日期时间；highlight topN | S:不覆盖输入；--formats 仅 xlsx 且禁与其他转换标志同用；rank=0/重复列/非法格式报错"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "f9a55b4d0a7f700d2fba627e74a5919c79996d50fd61f83b5ae5bbe6a1610bae",
+      "existing_entry": "XLSX_ENGINE.md[SZ7T]: F:XLSX 引擎决策、迁移方案、覆盖矩阵与实测 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；1904/hidden；全 sheet；数字格式导出；xlsx_column_formats 导入元数据；--formats CLI；1M 8.04s/53MB | S:迁移未执行待批准；不新增依赖；导入格式取首数据行；性能仅 release"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "b65c0b1c8789ec028bfea72be133ba0e102337e4ddb5b8b1a22316369d0701f0",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round119 --formats 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "9220dd51a84df9bc7caa1a3b9665037650107ef643077c008f62c02d4721f97d",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "d235e80e1a11e1bf96e582568e554000b41df2c3af72d62b983dbfabbecd65ef",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert 命令：编码转码、xlsx/csv/tsv/ndjson/parquet、highlight、number-format、formats | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；--formats 打印 column\u003cTAB\u003eformat 并退出；--number-format 支持 Scientific/Accounting/@/日期时间；highlight topN | S:不覆盖输入；--formats 仅 xlsx 且禁与其他转换标志同用；rank=0/重复列/非法格式报错"
+    },
+    {
+      "candidate_id": "c49fd2942eb4404951e684446d49e083749b10bd1923d1c09ab93f9f14430947",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "f9a55b4d0a7f700d2fba627e74a5919c79996d50fd61f83b5ae5bbe6a1610bae",
+      "existing_entry": "XLSX_ENGINE.md[SZ7T]: F:XLSX 引擎决策、迁移方案、覆盖矩阵与实测 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；1904/hidden；全 sheet；数字格式导出；xlsx_column_formats 导入元数据；--formats CLI；1M 8.04s/53MB | S:迁移未执行待批准；不新增依赖；导入格式取首数据行；性能仅 release"
+    },
+    {
+      "candidate_id": "75da26324de0237472552a55f20e82170ed92e5d7d3fa95c040bc0ed2d07abf1",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "b65c0b1c8789ec028bfea72be133ba0e102337e4ddb5b8b1a22316369d0701f0",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round119 --formats 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

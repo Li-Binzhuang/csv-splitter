@@ -44,7 +44,8 @@
   `column<TAB>format`；CLI 测试 `formats_prints_the_xlsx_header_format_codes`。
 - [ ] 项20 公式第五批：RANK/QUARTILE/TRIMMEAN。
 - [ ] 项21 日期时间格式白名单扩展（m/d/yyyy、yyyy-mm-dd hh:mm:ss 等）。
-- [ ] 项22 `--formats --json` 机器可读输出。
+- [ ] 项23 `--formats --json` 增加 sheet/column_index 元数据。
+- [x] 项22 `--formats --json` 机器可读输出；CLI 测试扩展。
 - [x] 项17 DATEDIF 扩展单位 MD/YM/YD；测试 `datedif_supports_ym_md_and_yd`。
 - [x] 项16 公式第四批：YEARFRAC/ISOWEEKNUM/TIME；测试
   `time_isoweeknum_and_yearfrac_work`。
@@ -61,6 +62,9 @@
   `positive;(negative)` 被误拆列的问题。
 
 ## 当前进度
+
+Round 120（项22 JSON 输出）：`--formats --json` 输出 name/format 数组；CLI 测试、
+全量 gate/package 通过；发布包 SHA `b31d86e9…fcc92`。
 
 Round 119（项19 格式元数据入口）：`convert book.xlsx --formats` 打印列格式；
 CLI 测试、全量 gate/package 通过；发布包 SHA `ee297b72…63131`。
