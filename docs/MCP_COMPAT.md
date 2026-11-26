@@ -90,7 +90,24 @@ dsh headless --patch /tmp/csvx-mcp-patch.yml \
 
 说明 DSH 的 MCP 客户端完成握手、`tools/list` 与 `tools/call`，并读到 csvx 的结果。
 
-## 3. Schema 与 CLI 参数一致性
+## 3. MCP 调用审计
+
+每个 `call_tool` 追加一行到 `root/.csvx/mcp-audit.jsonl`：
+
+```json
+{"ts":1770000000,"tool":"csvx_schema","ok":true,"code":"ok","ms":12,"args":{"path":{"type":"string","chars":12}}}
+```
+
+- `args` 只记录 key、类型和字符串长度，不落原始值；
+- 默认 4 MiB 上限，可用 `CSVX_MCP_AUDIT_MAX_BYTES` 调整；
+- 超限轮转为 `.csvx/mcp-audit.jsonl.1`，只保留一份归档；
+- 写入失败只报告到 stderr，不影响工具结果；
+- 读取入口是 MCP resource `csvx://audit`（`application/x-ndjson`），
+  不新增 HTTP 路由。
+
+单测覆盖：脱敏、轮转、不可写路径。
+
+## 4. Schema 与 CLI 参数一致性
 
 ```bash
 python3 scripts/check_mcp_schema.py
@@ -109,7 +126,7 @@ mcp_schema=ok
 检查每个 MCP tool 的非位置参数都能在对应 CLI 命令的 `--help` 中找到。
 这项已进 gate 的 `mcp-schema` 阶段。
 
-## 4. 可重复的 DSH 检查（默认跳过）
+## 5. 可重复的 DSH 检查（默认跳过）
 
 ```bash
 CSVX_DSH_TEST=1 bash scripts/check_mcp_dsh.sh

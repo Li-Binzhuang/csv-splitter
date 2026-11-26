@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "25b0c2e5a28386d7c6c11cde2d2da91231a0494f3196126d3ec2691a1ab40d78",
+  "batch_id": "d06307ad44e8abd99d3a340becc44d6997feda1ec23eaa41932bb19c8f39a920",
+  "composite_identity": "ba166749c86d7c867534a66574a642a0fb11c5089fb32ebbb27e21ce23a7262f",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "c015236069c6f112d71a08e0ef1c5c37588f97e3b47ca9e7cb14386c4893f870",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "update",
+      "source_sha256": "6809300abf756864bb2ca292a63b263eeadc743137ebe893a727171d796783c2",
+      "existing_entry": "MCP_COMPAT.md[SD7S]: F:官方 SDK、schema、DSH 与审计验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:docs/ENTRYPOINTS.md | A:23 工具；resources=3；审计 entries/schema/redacted；schema/参数语义 | S:DSH 需 CSVX_DSH_TEST=1；不改 profile；结果本机实测"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "cd57932d338c545e664f2ce7b29ef659d06db295e659765cb5373cfb943ff4e9",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；审计目标 Round1 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "971d3313568251257de21ff45a4fc28500b27b371125f7e07c3a9619b9b3b14d",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "update",
+      "source_sha256": "6809300abf756864bb2ca292a63b263eeadc743137ebe893a727171d796783c2",
+      "existing_entry": "MCP_COMPAT.md[SD7S]: F:官方 SDK、schema、DSH 与审计验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:docs/ENTRYPOINTS.md | A:23 工具；resources=3；审计 entries/schema/redacted；schema/参数语义 | S:DSH 需 CSVX_DSH_TEST=1；不改 profile；结果本机实测"
+    },
+    {
+      "candidate_id": "2243fe7a1a1dd4b1a1215a923ee1ff7346ce887488ebae4b3aeb4d46c8750dab",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "cd57932d338c545e664f2ce7b29ef659d06db295e659765cb5373cfb943ff4e9",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；审计目标 Round1 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    }
+  ]
+}

@@ -18,8 +18,8 @@
 ## 当前进度
 
 Round 1（审计目标）：MCP `call_tool` 落盘审计已实现，默认 `.csvx/mcp-audit.jsonl`；
-参数仅记录 key/type/长度，4 MiB 轮转；`csvx://audit` 可读；新增 3 个单测，
-MCP 单测 11；SDK `resources=3 audit_entries=63 audit_redacted=true`；发布包 SHA `ecdd3286…e15fd`。
+参数仅记录 key/type/长度，4 MiB 轮转；`csvx://audit` 可读（NDJSON，文档见 MCP_COMPAT §3）；新增 3 个单测，
+MCP 单测 11；SDK `resources=3 audit_entries=63 audit_redacted=true`；发布包 SHA `6fd23f65…9f9a9`。
 
 Round 26：MCP 单测从 7 增至 8，新增命令映射拒绝非法 count 与字符串 force；发布包 SHA `11932a3f…24951`。
 
