@@ -2,6 +2,38 @@
 
 所有数字来自 `--release` 二进制，同一台 macOS / Apple Silicon 机器；用 `/usr/bin/time -l` 记录 wall time 与 peak RSS。没有做系统级 drop cache，因此“冷/热”只表示本次进程的前后两次，不代表磁盘缓存被清空。数字会随机器与缓存变化；以当前代码重跑为准。
 
+## 0. 可复现 harness（新增）
+
+`scripts/bench_100gb.py` 流式生成确定性 CSV，然后依次跑：
+
+```text
+stats --sample 100   (schema/header scan)
+filter --where city=CDMX
+search ZZZUNIQUE
+analyze --quality --json
+```
+
+每条命令记录 wall time 与 peak RSS，输出 `<out>.bench.json` 和 `<out>.bench.md`。
+
+小规模 smoke（本轮实测，1000 行 / 77,403 bytes，非 100GB 承诺）：
+
+```text
+schema 348.4 ms / 52.13 MB
+filter 303.9 ms / 51.49 MB
+search 344.1 ms / 51.61 MB
+quality 365.5 ms / 53.12 MB
+total 1361.9 ms
+```
+
+完整 100 GB 运行：
+
+```bash
+python3 scripts/bench_100gb.py --gb 100 --out bench/orders.csv --binary target/release/csvx
+```
+
+该命令会实际生成/扫描 100 GB；本轮只验证了 harness 的 smoke，不把 smoke 数字当作
+100 GB 性能。完整数字需在目标机器上重跑后替换本文表格。
+
 ## 1. 100 GB 级（C 主线，2026-11-23）
 
 **文件**：104,492,590,800 bytes（约 97.4 GiB / 104.5 GB），1,300,001,300 行，4 列

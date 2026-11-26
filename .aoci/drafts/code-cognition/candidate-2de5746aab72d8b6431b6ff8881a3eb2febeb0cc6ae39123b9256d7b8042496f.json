@@ -1,0 +1,105 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "83d064e52f50d44145fa0ef5de1113ff1db7fed4199ff215538f63eccc8ec193",
+  "batch_id": "2de5746aab72d8b6431b6ff8881a3eb2febeb0cc6ae39123b9256d7b8042496f",
+  "composite_identity": "3c03087d051a8b95ceec3f8ecd4a77755eae9bebfa8d69027c6073291606245c",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "10f92de5300cf00db05b58aa02047ff80396ebe1ecd40614e91613494e8ed26f",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "6bbd6622656c4de1f749e65776c502d9ad32056f48bf7c21d0779713c002e56c",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md,code:docs/PILOT_SAMPLE.md | A:100 GB search 20 s/filter 25.75 s/全量导出 79.62 s；81 GB 7 列 search 39.42/filter 46.70/导出 62.03；2.3 GB zst filter 4.16 s、search 12.13 s、quality 21.73 s；zst materialize search 11.87→3.51/89 MB、filter 6.94→3.62/4.06→2.60；release 冒烟 2.3 GB filter 2.78/88 MB、导出 0.71/60 MB、search 1.57/86 MB、quality 20.79/18.3 MB；DAG 扇出 7.60 s、增量 0.02 s、父 peak 187 MB（含子进程）；zstd 单帧 -T1 0.94/-T4 0.92（1 GB/60M） | S:未 drop cache；100/81 GB 重复块；pilot 0.69/0.43 s 属缓存方差；压缩读 CPU 受限；materialize 需磁盘；DAG 父 RSS 含子进程；MCP gzip 11-24 4.573→1.594/82 MB（4.545/4.914 波动）；zst 0.279→0.101、bz2 0.693→0.100；复现用 bench_mcp_cache.py"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "c4184de6cb6caa2d49c6bc1bb88cf224ac6742ce2bbdab22a31a008cb597ebc4",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round5 离线安装/安全与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/bench_100gb.py",
+      "path": "scripts/bench_100gb.py",
+      "change": "create",
+      "source_sha256": "a02582535b0a01996853c6fb20e6e1e68327ecaf3bb09bbc3414d1117aa3f3c0"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "a1b9f810764d85e88fde2518cc846c3d7228b7216630588e6b77145892b985ef",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/check_mcp_schema.py,code:scripts/check_mcp_sdk.sh | A:gate layout/fmt/clippy/tests/sql/mcp-schema/mcp-sdk/install-offline/负向 | S:gate 必带 sql；安装负例必须在 gate；缺失跳过可见"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "1f175390e1d27f6e1430be495e6dce24d9569a3ac4d28ad836a72ce78fa7862f",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布并自验哈希 | R:code:scripts/verify_dist.sh,code:scripts/check_release.py,code:scripts/install_offline.sh | A:打包 docs/MCP_COMPAT/SECURITY 与离线安装脚本；verify_dist；release.json | S:不联网/不打 tag；dist gitignore；DSH 脚本仅可选"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_bench_100gb.sh",
+      "path": "scripts/test_bench_100gb.sh",
+      "change": "create",
+      "source_sha256": "f8a7183a38831dcc9b4afa6167ab25ca06fd73c75754a76c410b9adc1e6fb9fd"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "0970399d246aa91c2a51c0fba8f7a1aeb7cb13b96f4bc5caf2f06011913b2a14",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "6bbd6622656c4de1f749e65776c502d9ad32056f48bf7c21d0779713c002e56c",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现性能基准：100 GB 与各阶段实测数字、方法、边界 | R:code:docs/CAPABILITIES.md,code:docs/HANDOVER.md,code:docs/PILOT_SAMPLE.md | A:100 GB search 20 s/filter 25.75 s/全量导出 79.62 s；81 GB 7 列 search 39.42/filter 46.70/导出 62.03；2.3 GB zst filter 4.16 s、search 12.13 s、quality 21.73 s；zst materialize search 11.87→3.51/89 MB、filter 6.94→3.62/4.06→2.60；release 冒烟 2.3 GB filter 2.78/88 MB、导出 0.71/60 MB、search 1.57/86 MB、quality 20.79/18.3 MB；DAG 扇出 7.60 s、增量 0.02 s、父 peak 187 MB（含子进程）；zstd 单帧 -T1 0.94/-T4 0.92（1 GB/60M） | S:未 drop cache；100/81 GB 重复块；pilot 0.69/0.43 s 属缓存方差；压缩读 CPU 受限；materialize 需磁盘；DAG 父 RSS 含子进程；MCP gzip 11-24 4.573→1.594/82 MB（4.545/4.914 波动）；zst 0.279→0.101、bz2 0.693→0.100；复现用 bench_mcp_cache.py"
+    },
+    {
+      "candidate_id": "62bc71f6e9c2f989cc162a9123556b64522c818918d5b8e3919e9e0184817856",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "c4184de6cb6caa2d49c6bc1bb88cf224ac6742ce2bbdab22a31a008cb597ebc4",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round5 离线安装/安全与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "5f8e84165191326fb9762dcf3b87a21666c32f21a9f828d20a6bac60c9f295db",
+      "object_ref": "code:scripts/bench_100gb.py",
+      "path": "scripts/bench_100gb.py",
+      "change": "create",
+      "source_sha256": "a02582535b0a01996853c6fb20e6e1e68327ecaf3bb09bbc3414d1117aa3f3c0"
+    },
+    {
+      "candidate_id": "bcf408e4e90276af152c176de487a4b5af415d7337658bb28060f13aef03a33f",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "a1b9f810764d85e88fde2518cc846c3d7228b7216630588e6b77145892b985ef",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/check_mcp_schema.py,code:scripts/check_mcp_sdk.sh | A:gate layout/fmt/clippy/tests/sql/mcp-schema/mcp-sdk/install-offline/负向 | S:gate 必带 sql；安装负例必须在 gate；缺失跳过可见"
+    },
+    {
+      "candidate_id": "17d78e62abaf1c00406b616cca7131c1cd4f0d535e6010d68ecda4170249d974",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "1f175390e1d27f6e1430be495e6dce24d9569a3ac4d28ad836a72ce78fa7862f",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布并自验哈希 | R:code:scripts/verify_dist.sh,code:scripts/check_release.py,code:scripts/install_offline.sh | A:打包 docs/MCP_COMPAT/SECURITY 与离线安装脚本；verify_dist；release.json | S:不联网/不打 tag；dist gitignore；DSH 脚本仅可选"
+    },
+    {
+      "candidate_id": "c24c6d94caad7c3a878a2b4744acbe23bf9d5073171c4c45ef70702ecd0b60d3",
+      "object_ref": "code:scripts/test_bench_100gb.sh",
+      "path": "scripts/test_bench_100gb.sh",
+      "change": "create",
+      "source_sha256": "f8a7183a38831dcc9b4afa6167ab25ca06fd73c75754a76c410b9adc1e6fb9fd"
+    }
+  ]
+}
