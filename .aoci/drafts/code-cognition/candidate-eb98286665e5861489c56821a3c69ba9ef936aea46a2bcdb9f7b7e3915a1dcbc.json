@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "33e9c75073fd1ef5a9253e1da8516aa5a55cd62b440398d28cc27b8edf8b0007",
+  "batch_id": "eb98286665e5861489c56821a3c69ba9ef936aea46a2bcdb9f7b7e3915a1dcbc",
+  "composite_identity": "de278631c6c07ca854bee785c18eb8e952b4ee0512ae080f605df10a08229f21",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "5ef7d2fef21290cd09fecb91011376c35dda5a3f0ac5332677179ae5f2596f4d",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "update",
+      "source_sha256": "a9631bbf9d0ba285781a48f041fcd06277618073d938299c79e6047dcb4425c3",
+      "existing_entry": "MCP_COMPAT.md[SD7S]: F:官方 SDK、schema 与 DSH 客户端验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:scripts/check_mcp_dsh.sh | A:23 工具；必填；root escape；bool/range；xlsx/HTML；resources/manifest | S:DSH 需 CSVX_DSH_TEST=1；不改 profile；结果本机实测"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "3535c3127f5f421a92fc610d174c6b543e777d8293fd840ae799ffd81afd4634",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round23 布尔严格与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_mcp_schema.py",
+      "path": "scripts/check_mcp_schema.py",
+      "change": "update",
+      "source_sha256": "fb896123b8979000eb914c0addb422ab84cdd5e0f6645dc653adf8c1b60c558c",
+      "existing_entry": "check_mcp_schema.py[TQ7T]: F:校验 23 工具 schema 字段都能落到 CLI flag | R:code:crates/mcp/src/tools.rs,code:scripts/dev.sh,code:docs/MCP_COMPAT.md | A:initialize/tools-list；命令映射；camel→kebab；跳过 positional/meta | S:43 字段；6 个 server 工具跳过；缺 flag 非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "d9fc81eb674eb0345cadd211ee824ce20be1f5288c29a99ab114e76c912187fa",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "update",
+      "source_sha256": "a9631bbf9d0ba285781a48f041fcd06277618073d938299c79e6047dcb4425c3",
+      "existing_entry": "MCP_COMPAT.md[SD7S]: F:官方 SDK、schema 与 DSH 客户端验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:scripts/check_mcp_dsh.sh | A:23 工具；必填；root escape；bool/range；xlsx/HTML；resources/manifest | S:DSH 需 CSVX_DSH_TEST=1；不改 profile；结果本机实测"
+    },
+    {
+      "candidate_id": "ed9c0e1d95ff449e927fcf710cfe715fcfaf488873792f6b0f174d42f509b80b",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "3535c3127f5f421a92fc610d174c6b543e777d8293fd840ae799ffd81afd4634",
+      "existing_entry": "progress.md[XQ5T]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round23 布尔严格与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "3938c38ecc3baad6e066c9a93d3247ddb5719be5f295c01ef69faf6e5f4c551a",
+      "object_ref": "code:scripts/check_mcp_schema.py",
+      "path": "scripts/check_mcp_schema.py",
+      "change": "update",
+      "source_sha256": "fb896123b8979000eb914c0addb422ab84cdd5e0f6645dc653adf8c1b60c558c",
+      "existing_entry": "check_mcp_schema.py[TQ7T]: F:校验 23 工具 schema 字段都能落到 CLI flag | R:code:crates/mcp/src/tools.rs,code:scripts/dev.sh,code:docs/MCP_COMPAT.md | A:initialize/tools-list；命令映射；camel→kebab；跳过 positional/meta | S:43 字段；6 个 server 工具跳过；缺 flag 非零"
+    }
+  ]
+}

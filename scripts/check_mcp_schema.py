@@ -63,6 +63,29 @@ if len(tools) != 23:
 
 failures = []
 checked = 0
+shape_errors = []
+allowed_types = {"string", "integer", "number", "boolean", "object", "array"}
+for tool in tools:
+    name = tool.get("name", "")
+    schema = tool.get("inputSchema")
+    if not isinstance(schema, dict) or schema.get("type") != "object":
+        shape_errors.append(f"{name}: inputSchema is not an object schema")
+        continue
+    if schema.get("additionalProperties") is not False:
+        shape_errors.append(f"{name}: additionalProperties is not false")
+    properties = schema.get("properties")
+    if not isinstance(properties, dict):
+        shape_errors.append(f"{name}: properties is not an object")
+        continue
+    required = schema.get("required", [])
+    if not isinstance(required, list) or not set(required).issubset(properties):
+        shape_errors.append(f"{name}: required is not a subset of properties")
+    for field, definition in properties.items():
+        if not isinstance(definition, dict) or definition.get("type") not in allowed_types:
+            shape_errors.append(f"{name}.{field}: invalid or missing type")
+    if not isinstance(tool.get("annotations"), dict):
+        shape_errors.append(f"{name}: missing annotations")
+
 for tool in tools:
     name = tool["name"]
     if name in SERVER_ONLY:
@@ -83,8 +106,12 @@ for tool in tools:
 
 print(f"mcp_schema_tools={len(tools)}")
 print(f"mcp_schema_fields={checked}")
+print(f"mcp_schema_shape_errors={len(shape_errors)}")
 print(f"mcp_schema_failures={len(failures)}")
+for failure in shape_errors:
+    print(f"SHAPE {failure}")
 for failure in failures:
     print(f"FAIL {failure}")
-print("mcp_schema=" + ("ok" if not failures else "fail"))
-sys.exit(0 if not failures else 1)
+ok = not failures and not shape_errors
+print("mcp_schema=" + ("ok" if ok else "fail"))
+sys.exit(0 if ok else 1)

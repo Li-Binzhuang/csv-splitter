@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-26T03:53:16Z",
+  "updated_at": "2026-11-26T03:57:31Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "5ef7d2fef21290cd09fecb91011376c35dda5a3f0ac5332677179ae5f2596f4d",
-      "size": 80962,
-      "normalized_sha256": "5ef7d2fef21290cd09fecb91011376c35dda5a3f0ac5332677179ae5f2596f4d"
+      "sha256": "546b48b9492ef62bc00a431e717c0f75f68c6985c75209592d65aac61cf3572c",
+      "size": 80946,
+      "normalized_sha256": "546b48b9492ef62bc00a431e717c0f75f68c6985c75209592d65aac61cf3572c"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -1036,9 +1036,9 @@
     },
     "docs/MCP_COMPAT.md": {
       "role": "index",
-      "sha256": "b741269ae2a98dfd943a9d06a8197165f359bb5bff9c93357bcdcadd4c570ccb",
-      "size": 3078,
-      "normalized_sha256": "b741269ae2a98dfd943a9d06a8197165f359bb5bff9c93357bcdcadd4c570ccb"
+      "sha256": "a9631bbf9d0ba285781a48f041fcd06277618073d938299c79e6047dcb4425c3",
+      "size": 3104,
+      "normalized_sha256": "a9631bbf9d0ba285781a48f041fcd06277618073d938299c79e6047dcb4425c3"
     },
     "docs/NIGHT_CHECKPOINT.md": {
       "role": "index",
@@ -1182,9 +1182,9 @@
     },
     "progress.md": {
       "role": "index",
-      "sha256": "737c570204cc047aec037f958785f6c0699ffa1afa2bb58be8711e574b6fba04",
-      "size": 5295,
-      "normalized_sha256": "737c570204cc047aec037f958785f6c0699ffa1afa2bb58be8711e574b6fba04"
+      "sha256": "3535c3127f5f421a92fc610d174c6b543e777d8293fd840ae799ffd81afd4634",
+      "size": 5522,
+      "normalized_sha256": "3535c3127f5f421a92fc610d174c6b543e777d8293fd840ae799ffd81afd4634"
     },
     "scripts/agent_routes_smoke.py": {
       "role": "index",
@@ -1242,9 +1242,9 @@
     },
     "scripts/check_mcp_schema.py": {
       "role": "index",
-      "sha256": "7d8c66a95897285f620c357c6fa26a1d60172293b2ca54163307a16d835e31fe",
-      "size": 3254,
-      "normalized_sha256": "7d8c66a95897285f620c357c6fa26a1d60172293b2ca54163307a16d835e31fe"
+      "sha256": "fb896123b8979000eb914c0addb422ab84cdd5e0f6645dc653adf8c1b60c558c",
+      "size": 4566,
+      "normalized_sha256": "fb896123b8979000eb914c0addb422ab84cdd5e0f6645dc653adf8c1b60c558c"
     },
     "scripts/check_mcp_sdk.sh": {
       "role": "index",

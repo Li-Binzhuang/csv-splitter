@@ -98,6 +98,7 @@ python3 scripts/check_mcp_schema.py
 ```text
 mcp_schema_tools=23
 mcp_schema_fields=43
+mcp_schema_shape_errors=0
 mcp_schema_failures=0
 mcp_schema=ok
 ```
