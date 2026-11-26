@@ -1913,6 +1913,38 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // FVSCHEDULE: compound a principal through a schedule of rates.
+        "fvschedule" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let Some(principal) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            let Some(Expr::Range { from, to }) = args.get(1) else {
+                return Value::Error;
+            };
+            let Some(rates) = range_cells(from, to, ctx) else {
+                return Value::Error;
+            };
+            if rates.is_empty() || !principal.is_finite() {
+                return Value::Error;
+            }
+            let mut value = principal;
+            for rate in rates {
+                let Some(rate) = rate.trim().parse::<f64>().ok().filter(|n| n.is_finite()) else {
+                    return Value::Error;
+                };
+                if rate <= -1.0 {
+                    return Value::Error;
+                }
+                value *= 1.0 + rate;
+                if !value.is_finite() {
+                    return Value::Error;
+                }
+            }
+            Value::Number(value)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

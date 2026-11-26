@@ -1442,6 +1442,44 @@ mod tests {
     }
 
     #[test]
+    fn fvschedule_compounds_a_rate_schedule() {
+        let columns = vec!["r1".to_string(), "r2".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("r1".to_string(), "0.1".to_string());
+        cells.insert("r2".to_string(), "0.2".to_string());
+        for (source, expected) in [
+            ("fvschedule(100, A2:B2)", "132"),
+            ("fvschedule(100, A2:A2)", "110"),
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        cells.insert("r1".to_string(), "-1".to_string());
+        let formula = Formula::parse("fvschedule(100, A2:B2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+        cells.insert("r1".to_string(), "x".to_string());
+        let formula = Formula::parse("fvschedule(100, A2:B2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+        assert_eq!(eval_str("fvschedule(100)", &[]), "#VALUE!");
+    }
+
+    #[test]
     fn xirr_solves_date_based_cash_flows() {
         let columns = vec![
             "cash1".to_string(),
