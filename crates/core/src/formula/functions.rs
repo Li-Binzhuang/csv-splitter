@@ -765,6 +765,53 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         // never persists them, so a rerun is expected to differ from yesterday.
         "today" => Value::Text(now_parts().0),
         "now" => Value::Text(format!("{} {}", now_parts().0, now_parts().1)),
+        "time" => match (
+            args.first().and_then(|a| eval(a, ctx).number()),
+            args.get(1).and_then(|a| eval(a, ctx).number()),
+            args.get(2).and_then(|a| eval(a, ctx).number()),
+        ) {
+            (Some(hour), Some(minute), Some(second)) => {
+                if hour < 0.0
+                    || minute < 0.0
+                    || second < 0.0
+                    || hour > 23.0
+                    || minute > 59.0
+                    || second > 59.0
+                {
+                    return Value::Error;
+                }
+                Value::Number(
+                    (hour.trunc() * 3_600.0 + minute.trunc() * 60.0 + second.trunc()) / 86_400.0,
+                )
+            }
+            _ => Value::Error,
+        },
+        "isoweeknum" => match args.first().map(|a| eval(a, ctx)) {
+            Some(value) => match parse_date(&value.text()) {
+                Some((year, month, day)) => Value::Number(iso_week_number(year, month, day) as f64),
+                None => Value::Error,
+            },
+            None => Value::Error,
+        },
+        "yearfrac" => match (args.first(), args.get(1)) {
+            (Some(start), Some(end)) => {
+                let (Some(start), Some(end)) = (
+                    parse_date(&eval(start, ctx).text()),
+                    parse_date(&eval(end, ctx).text()),
+                ) else {
+                    return Value::Error;
+                };
+                let basis = args
+                    .get(2)
+                    .and_then(|a| eval(a, ctx).number())
+                    .unwrap_or(0.0);
+                match year_fraction(start, end, basis) {
+                    Some(value) => Value::Number(value),
+                    None => Value::Error,
+                }
+            }
+            _ => Value::Error,
+        },
         "datedif" => match (args.first(), args.get(1), args.get(2)) {
             (Some(start), Some(end), Some(unit)) => {
                 let (Some(start), Some(end)) = (
@@ -1306,6 +1353,45 @@ fn now_parts() -> (String, String) {
             clock % 60
         ),
     )
+}
+
+fn iso_week_number(year: i32, month: u32, day: u32) -> u32 {
+    let date = days_from_civil(year, month, day);
+    // ISO weekday: Monday = 1 … Sunday = 7.
+    let weekday = (date + 3).rem_euclid(7) + 1;
+    let thursday = date + (4 - weekday);
+    let (iso_year, _, _) = civil_from_days(thursday);
+    let jan4 = days_from_civil(iso_year, 1, 4);
+    (1 + (thursday - jan4).div_euclid(7)) as u32
+}
+
+fn year_fraction(start: (i32, u32, u32), end: (i32, u32, u32), basis: f64) -> Option<f64> {
+    if end < start {
+        return None;
+    }
+    match basis as u32 {
+        // 0 = US 30/360, the Excel default.
+        0 => Some(days_360(start, end) / 360.0),
+        // 1 = actual days divided by an average year; documented as approximate.
+        1 => Some(
+            (days_from_civil(end.0, end.1, end.2) - days_from_civil(start.0, start.1, start.2))
+                as f64
+                / 365.25,
+        ),
+        _ => None,
+    }
+}
+
+fn days_360(start: (i32, u32, u32), end: (i32, u32, u32)) -> f64 {
+    let (mut start_day, mut end_day) = (start.2 as i64, end.2 as i64);
+    if start_day == 31 {
+        start_day = 30;
+    }
+    if end_day == 31 && start_day >= 30 {
+        end_day = 30;
+    }
+    ((end.0 - start.0) as i64 * 360 + (end.1 as i64 - start.1 as i64) * 30 + (end_day - start_day))
+        as f64
 }
 
 fn date_difference(start: (i32, u32, u32), end: (i32, u32, u32), unit: &str) -> Option<i64> {

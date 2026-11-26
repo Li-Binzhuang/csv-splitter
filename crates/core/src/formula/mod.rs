@@ -1432,6 +1432,26 @@ mod tests {
     }
 
     #[test]
+    fn time_isoweeknum_and_yearfrac_work() {
+        assert_eq!(eval_str("time(13, 4, 5)", &[]), "0.544502");
+        assert_eq!(eval_str("time(24, 0, 0)", &[]), "#VALUE!");
+        assert_eq!(eval_str(r#"isoweeknum("2024-01-01")"#, &[]), "1");
+        assert_eq!(eval_str(r#"isoweeknum("2023-12-31")"#, &[]), "52");
+        assert_eq!(
+            eval_str(r#"yearfrac("2024-01-01", "2025-01-01", 0)"#, &[]),
+            "1"
+        );
+        assert_eq!(
+            eval_str(r#"yearfrac("2024-01-01", "2025-01-01", 1)"#, &[]),
+            "1.002053"
+        );
+        assert_eq!(
+            eval_str(r#"yearfrac("2024-01-02", "2024-01-01", 0)"#, &[]),
+            "#VALUE!"
+        );
+    }
+
+    #[test]
     fn timevalue_datedif_and_clock_cells_work() {
         assert_eq!(eval_str(r#"timevalue("13:04:05")"#, &[]), "0.544502");
         assert_eq!(

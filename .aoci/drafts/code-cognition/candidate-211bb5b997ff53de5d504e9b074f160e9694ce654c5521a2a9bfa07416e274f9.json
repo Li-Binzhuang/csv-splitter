@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "abe95c43a60605b4ad33f11baf9bb3cc6117d33a5fbd683edbf9ecd4d8dd2304",
+  "batch_id": "211bb5b997ff53de5d504e9b074f160e9694ce654c5521a2a9bfa07416e274f9",
+  "composite_identity": "97f9692356e5c67633104c89214c48b55e632bd0f806035911945f26dea63856",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "15afb61618138c41130ebe73249597df5eebeb199bd12bd9411979cdb1f09e43",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "92345b62e328f5caae3ad7005be06fe186f2e667da357d6e77805e83c309f538",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/条件/同行区间；IFS/SWITCH/IFNA/CHOOSE/NA/XOR；TEXT 复用 NumberFormat；TEXTBEFORE/AFTER；DATEVALUE/HOUR/MINUTE/SECOND；TIMEVALUE/NOW/TODAY/DATEDIF | S:单列参数按整列；无预扫整列聚合 #VALUE!；跨行区间/整列 median 不支持；DATEDIF end\u003cstart 报错；NOW/TODAY 读系统 UTC 时钟且不落盘"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "598dfae2392f7690122cd0bb9cba6e939cae2589bb1e1dda3aefeff99238bea7",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间、iserror/isna、date/text；TEXT 支持 Scientific/Accounting/@；TIMEVALUE/DATEDIF/NOW/TODAY；collect_sheet_refs 预加载 lookup | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；别名不喂加载器会失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "ee484aa96f460550c4b706daef42fcd6520e3412b868d42f84d2e02632508bed",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/TEXTBEFORE/AFTER/DATEVALUE/TIMEVALUE/NOW/TODAY/DATEDIF；错误 #VALUE!/#N/A | S:矩阵只记当前实现；查找受限 sheet/key/value；NOW/TODAY 易变不落盘"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "4736a6dfded46a0ea0b2cd57c8e625f1aacfac73611da79abbb01a0f7608bdf1",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round115 公式第三批与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "a7927bcbc897eabc9c39dd32afbd7ba506ac290f536dcc95eb3286a123599d23",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "92345b62e328f5caae3ad7005be06fe186f2e667da357d6e77805e83c309f538",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/条件/同行区间；IFS/SWITCH/IFNA/CHOOSE/NA/XOR；TEXT 复用 NumberFormat；TEXTBEFORE/AFTER；DATEVALUE/HOUR/MINUTE/SECOND；TIMEVALUE/NOW/TODAY/DATEDIF | S:单列参数按整列；无预扫整列聚合 #VALUE!；跨行区间/整列 median 不支持；DATEDIF end\u003cstart 报错；NOW/TODAY 读系统 UTC 时钟且不落盘"
+    },
+    {
+      "candidate_id": "ef017625ee3ba7955c83d245ab1aaae71559fe8f2e353d680a18ce20b19721b4",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "598dfae2392f7690122cd0bb9cba6e939cae2589bb1e1dda3aefeff99238bea7",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间、iserror/isna、date/text；TEXT 支持 Scientific/Accounting/@；TIMEVALUE/DATEDIF/NOW/TODAY；collect_sheet_refs 预加载 lookup | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；别名不喂加载器会失败"
+    },
+    {
+      "candidate_id": "a56eb0126a28f86b9f70a0a3207f170a84607a531e02881774ed053ce4de7fcf",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "ee484aa96f460550c4b706daef42fcd6520e3412b868d42f84d2e02632508bed",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/TEXTBEFORE/AFTER/DATEVALUE/TIMEVALUE/NOW/TODAY/DATEDIF；错误 #VALUE!/#N/A | S:矩阵只记当前实现；查找受限 sheet/key/value；NOW/TODAY 易变不落盘"
+    },
+    {
+      "candidate_id": "d6ab9726ec4d453319cb047968caef3cff3e37539b0ca7f46004151acd0edb39",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "4736a6dfded46a0ea0b2cd57c8e625f1aacfac73611da79abbb01a0f7608bdf1",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round115 公式第三批与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
