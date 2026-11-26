@@ -259,3 +259,18 @@ mod moved_cache_tests {
     ));
     }
 }
+
+#[test]
+fn command_mapping_rejects_invalid_types_and_bounds() {
+    let view = McpJson::Object(vec![
+        ("path".to_string(), McpJson::String(".".to_string())),
+        ("count".to_string(), McpJson::Number(0.0)),
+    ]);
+    assert!(crate::executor::mcp_command(Path::new("."), "csvx_view", &view).is_err());
+
+    let pipeline = McpJson::Object(vec![
+        ("path".to_string(), McpJson::String("plan.csv".to_string())),
+        ("force".to_string(), McpJson::String("yes".to_string())),
+    ]);
+    assert!(crate::executor::mcp_command(Path::new("."), "csvx_pipeline_run", &pipeline).is_err());
+}

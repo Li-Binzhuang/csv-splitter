@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "8bbc4350c086ccce998fdb19c8cfccb3098ec0ce50c9a63e2fac3fc109e5bd0f",
+  "batch_id": "d05742c4fa7d9814c12f217b2a4f37d905a3eb0c12ecc63dcdbc402b51e165ad",
+  "composite_identity": "ebba7571ca905466c9cefda57ffa6533b631e59981535d57dc4b8d7c60d1045d",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "6c13209d641815eb3d5dd6c8f2ef85e403f667dc040ec00ccb557046956d051a",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/tests.rs",
+      "path": "crates/mcp/src/tests.rs",
+      "change": "update",
+      "source_sha256": "c3ebfd670389a24e6d4d99c1614b38c05ed58aeb045b57e476b9dee134d5d5c7",
+      "existing_entry": "tests.rs[TQ7M]: F:MCP 单元测试：job 清理、cache LRU、tools JSON | R:code:crates/mcp/src/lib.rs,code:crates/mcp/src/jobs.rs,code:crates/mcp/src/cache.rs | A:7 tests；shutdown/retention；cache 命中/清理；schema 23 工具 | S:cfg(test)；Unix job 测试；不访问网络"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "349da9be192389970a37056b3fb9957afe3fc906d3ed356465f6eb353c2281ad",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round25 annotations 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "d04e2fd87d1edfbd353bb68fb1e41576e109dd40c43d82f7bfddcbcaddac3b47",
+      "object_ref": "code:crates/mcp/src/tests.rs",
+      "path": "crates/mcp/src/tests.rs",
+      "change": "update",
+      "source_sha256": "c3ebfd670389a24e6d4d99c1614b38c05ed58aeb045b57e476b9dee134d5d5c7",
+      "existing_entry": "tests.rs[TQ7M]: F:MCP 单元测试：job 清理、cache LRU、tools JSON | R:code:crates/mcp/src/lib.rs,code:crates/mcp/src/jobs.rs,code:crates/mcp/src/cache.rs | A:7 tests；shutdown/retention；cache 命中/清理；schema 23 工具 | S:cfg(test)；Unix job 测试；不访问网络"
+    },
+    {
+      "candidate_id": "33b33636d698d3a19fc9026e546812f278e405e4d4cc47c8fc8db48c32d29e26",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "349da9be192389970a37056b3fb9957afe3fc906d3ed356465f6eb353c2281ad",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round25 annotations 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    }
+  ]
+}

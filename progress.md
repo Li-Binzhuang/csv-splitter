@@ -17,6 +17,8 @@
 
 ## 当前进度
 
+Round 26：MCP 单测从 7 增至 8，新增命令映射拒绝非法 count 与字符串 force；发布包 SHA `11932a3f…24951`。
+
 Round 25：SDK 校验 annotations 语义：只读 12、破坏性 10、openWorld 1；发布包 SHA `b09025d8…82298d`。
 
 Round 24：schema 结构校验：23 个 tool 全部 object/additionalProperties=false/

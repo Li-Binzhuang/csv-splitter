@@ -8,7 +8,7 @@ CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:�
 Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml,code:crates/agent/Cargo.toml,code:crates/cli/Cargo.toml | A:members core/mcp/agent/cli；workspace.dependencies csvx-core；version 4.2.0 是发布真相 | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
 README.md[SG6L]: F:项目总览：定位、三条不变量、命令表、上手路径与部署入口 | R:code:docs/CAPABILITIES.md,code:docs/ACCEPTANCE.md,code:docs/DEPLOY.md,code:docs/OPERATIONS.md | A:顶部定位与 Rust 徽章；快速开始；公式节；性能实测；命令表含 serve/mcp/ops/gate/report；concat/gate 目录；report CSV spec；PRODUCT_PLAN/销售入口 | S:文档测试要求 README 列出全部命令并出现真实默认端口 127.0.0.1:8787；性能数字必须来自实测
-progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round25 annotations 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成
+progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round26 单测与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成
 
 ===/<repository>/.github/workflows/===
 ci.yml[OV7S]: F:主 CI：格式化、引擎与 CLI 测试、性能守卫、clippy 工作区、失败注解 | R:code:scripts/smoke.sh,code:scripts/regress.sh,code:scripts/backend-smoke.sh,code:scripts/release-decision.sh | A:单 job 串联；engine 与 CLI 两个测试步骤失败时各重试一次并留 warning annotation（本地单跑/两线程均绿的负载型 flake）；每步 tee 日志，失败时把测试名转成公开 annotation 并上传 artifact | S:曾因双 job + 缓存配额出现“跳过一半、红叉无信息”，故单 job；重试只限一次且日志保留，真 bug 仍会两次失败
@@ -202,7 +202,7 @@ tools.rs[SD7T]: F:23 个 MCP 工具 schema 单一来源 | R:code:crates/mcp/src/
 cache.rs[EN7M]: F:MCP 材料化缓存：临时文件、字节/条目上限、命中统计 | R:code:crates/mcp/src/executor.rs,code:crates/mcp/src/jobs.rs | A:CachedMaterialized；MATERIALIZE_*；mcp_materialize；cleanup dead PID | S:缓存进程内；文件旁挂；清理 dead PID
 executor.rs[EN9T]: F:MCP 工具执行编排：白名单、路径/材料化、子进程 | R:code:crates/mcp/src/executor/commands.rs,code:crates/mcp/src/executor/paths.rs,code:crates/mcp/src/cache.rs | A:mcp_command；mcp_run_tool；调用 commands::build | S:未知工具先报；路径限 root；stdin null；gate 失败取 stdout
 json.rs[EN7M]: F:MCP 极简 JSON：McpJson 值、McpParser 解析 | R:code:crates/mcp/src/lib.rs,code:crates/mcp/src/executor.rs | A:Null/Bool/Number/String/Array/Object；get/as_str/as_u64；递归解析 | S:仅协议信封；错误返回 string；不引第三方 JSON
-tests.rs[TQ7M]: F:MCP 单元测试：job 清理、cache LRU、tools JSON | R:code:crates/mcp/src/lib.rs,code:crates/mcp/src/jobs.rs,code:crates/mcp/src/cache.rs | A:7 tests；shutdown/retention；cache 命中/清理；schema 23 工具 | S:cfg(test)；Unix job 测试；不访问网络
+tests.rs[TQ7M]: F:MCP 单元测试：job/cache、schema、参数拒绝 | R:code:crates/mcp/src/lib.rs,code:crates/mcp/src/jobs.rs,code:crates/mcp/src/cache.rs | A:8 tests；shutdown/retention；cache LRU；schema 23；非法 count/force | S:cfg(test)；Unix job 测试；不访问网络
 
 ===/<repository>/crates/agent/===
 Cargo.toml[FV7T]: F:csvx-agent crate 清单 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml | A:csvx-agent；依赖 axum/tokio/tokio-stream/core/mcp；承载 Agent 控制面与 axum 传输 | S:不依赖 csvx-cli；tokio 仅在此 crate；路由契约不变
