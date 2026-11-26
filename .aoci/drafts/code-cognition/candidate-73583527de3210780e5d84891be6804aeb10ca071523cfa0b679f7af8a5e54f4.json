@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a59bc5c0d8d30e2a243f998b447f6c9ed686f399fc49bf6ce73c8cf5e0db4544",
+  "batch_id": "73583527de3210780e5d84891be6804aeb10ca071523cfa0b679f7af8a5e54f4",
+  "composite_identity": "da3040f26052af67cad941f589902246c8b48dec822368ce47f3c0911ddb48ff",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "c6779f380fe58432d03d66f2ae6e45fad0c82fa17f4f538368f7fc5502c1588d",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "fe7269942f6f57c239ff1ee1b9a7443fa3681ba12a99f91bda7a6098f3c531d9",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round57 CLI 公式错误与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "8228d60c08196c86738eb6971ae21f6193053f19361f8137bb214d2353fec1ca",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "fe7269942f6f57c239ff1ee1b9a7443fa3681ba12a99f91bda7a6098f3c531d9",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round57 CLI 公式错误与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 58（空行/夹具复用）：CLI 测试抽取最小 xlsx 夹具构造器；新增空行跳过
+测试，输出只保留表头与数据行；发布包 SHA `567064da…bfe1`。
+
 Round 57（CLI 公式错误）：构造最小 xlsx，无缓存公式值转换返回 1、stderr 含
 no cached value，且不写输出文件；用户面错误路径被测试钉住；
 发布包 SHA `3cba2efe…27fa9`。
