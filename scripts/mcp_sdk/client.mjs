@@ -239,6 +239,12 @@ const escapeAbsolute = await client.callTool({
   arguments: { path: "/etc/passwd" },
 });
 console.log(`root_escape_rejections=${(escapeRelative.isError === true ? 1 : 0) + (escapeAbsolute.isError === true ? 1 : 0)}`);
+const audit = await client.readResource({ uri: "csvx://audit" });
+const auditText = audit.contents?.[0]?.text ?? "";
+const auditLines = auditText.split("\n").filter((line) => line.trim()).length;
+console.log(`audit_entries=${auditLines}`);
+console.log(`audit_has_schema=${auditText.includes('"csvx_schema"')}`);
+console.log(`audit_redacted=${!auditText.includes("orders.csv")}`);
 const missingTools = expectedTools.filter((name) => !called.has(name));
 console.log(`sdk_calls=${expectedTools.length - missingTools.length}`);
 console.log(`sdk_missing=${missingTools.join(",")}`);

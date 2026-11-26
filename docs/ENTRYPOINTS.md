@@ -91,7 +91,7 @@ bash scripts/package_release.sh
 2. **抽 `crates/mcp`（已完成）**：官方 `rmcp` 是默认 stdio 传输；手写协议循环已删除。
    模块拆分：`tools.rs`（23 工具 schema）、`jobs.rs`（job 状态）、`cache.rs`（材料化缓存）、
    `executor.rs`（工具执行/命令构建）、`executor/paths.rs`（路径校验）、`executor/commands.rs`（工具分派）、`executor/commands/{args,concat}.rs`、`json.rs`（McpJson/McpParser）、
-   `rmcp_server.rs`（传输）、`rmcp_server/jobs.rs`（job/cache 工具）、`rmcp_server/transport.rs`（stdin/stdout 泵与 legacy shim）、`tests.rs`（单元测试）、`lib.rs`（入口/manifest）。HTTP 端点仍在 `serve.rs`。
+   `rmcp_server.rs`（传输）、`rmcp_server/jobs.rs`（job/cache 工具）、`rmcp_server/transport.rs`（stdin/stdout 泵与 legacy shim）、`rmcp_server/audit.rs`（调用审计）、`tests.rs`（单元测试）、`lib.rs`（入口/manifest）。HTTP 端点仍在 `serve.rs`。
    单文件上限由 `check_layout.sh` 强制：`lib.rs` 450、`executor.rs` 700、
    `rmcp_server.rs` 500、`jobs.rs` 400、`cache.rs`/`json.rs` 350。
 3. **抽 `crates/agent`（已完成传输替换）**：控制面在 `crates/agent`；HTTP/SSE

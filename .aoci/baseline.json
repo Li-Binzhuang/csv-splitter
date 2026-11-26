@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-26T04:03:55Z",
+  "updated_at": "2026-11-26T04:30:52Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "74cadd6dfc76104bcb920e5f02a17ef3714a37f72533ed978357d54082e7184b",
-      "size": 80962,
-      "normalized_sha256": "74cadd6dfc76104bcb920e5f02a17ef3714a37f72533ed978357d54082e7184b"
+      "sha256": "c015236069c6f112d71a08e0ef1c5c37588f97e3b47ca9e7cb14386c4893f870",
+      "size": 81243,
+      "normalized_sha256": "c015236069c6f112d71a08e0ef1c5c37588f97e3b47ca9e7cb14386c4893f870"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -862,9 +862,15 @@
     },
     "crates/mcp/src/rmcp_server.rs": {
       "role": "index",
-      "sha256": "1955a6191ef7e90bd90ba4aa431d1964badac6f9858268bb67154917e8dde287",
-      "size": 7699,
-      "normalized_sha256": "1955a6191ef7e90bd90ba4aa431d1964badac6f9858268bb67154917e8dde287"
+      "sha256": "9bc265a3f7d5d043adec98a8b0292834a3ca1a2ede3761d2b1d5863897d713c0",
+      "size": 9229,
+      "normalized_sha256": "9bc265a3f7d5d043adec98a8b0292834a3ca1a2ede3761d2b1d5863897d713c0"
+    },
+    "crates/mcp/src/rmcp_server/audit.rs": {
+      "role": "index",
+      "sha256": "bf05c867375189e9d921c316a6fa779b2c633a7fed4583a7812e63e3d5349377",
+      "size": 5209,
+      "normalized_sha256": "bf05c867375189e9d921c316a6fa779b2c633a7fed4583a7812e63e3d5349377"
     },
     "crates/mcp/src/rmcp_server/jobs.rs": {
       "role": "index",
@@ -1006,9 +1012,9 @@
     },
     "docs/ENTRYPOINTS.md": {
       "role": "index",
-      "sha256": "312af323adcfb3e5b8cf80eaaf9ac8e99b50b7de2bc44590b7d27ace34f92075",
-      "size": 5147,
-      "normalized_sha256": "312af323adcfb3e5b8cf80eaaf9ac8e99b50b7de2bc44590b7d27ace34f92075"
+      "sha256": "3fce031fe636660f76a21eb79e8d4589f6ef37b0f4bd9c9a7691388426418d63",
+      "size": 5190,
+      "normalized_sha256": "3fce031fe636660f76a21eb79e8d4589f6ef37b0f4bd9c9a7691388426418d63"
     },
     "docs/FORMULA_CACHE.md": {
       "role": "index",
@@ -1036,9 +1042,9 @@
     },
     "docs/MCP_COMPAT.md": {
       "role": "index",
-      "sha256": "a9631bbf9d0ba285781a48f041fcd06277618073d938299c79e6047dcb4425c3",
-      "size": 3104,
-      "normalized_sha256": "a9631bbf9d0ba285781a48f041fcd06277618073d938299c79e6047dcb4425c3"
+      "sha256": "99fa48bd154e5539ce84a2c8c4d38ce1842d9d77ca3fb0cad2e3a65e4d1a9127",
+      "size": 3163,
+      "normalized_sha256": "99fa48bd154e5539ce84a2c8c4d38ce1842d9d77ca3fb0cad2e3a65e4d1a9127"
     },
     "docs/NIGHT_CHECKPOINT.md": {
       "role": "index",
@@ -1182,9 +1188,9 @@
     },
     "progress.md": {
       "role": "index",
-      "sha256": "349da9be192389970a37056b3fb9957afe3fc906d3ed356465f6eb353c2281ad",
-      "size": 5747,
-      "normalized_sha256": "349da9be192389970a37056b3fb9957afe3fc906d3ed356465f6eb353c2281ad"
+      "sha256": "d6bb1db7981454a84a8552944b8c79b5ad218ff26744c9085904421d30e86f7b",
+      "size": 6073,
+      "normalized_sha256": "d6bb1db7981454a84a8552944b8c79b5ad218ff26744c9085904421d30e86f7b"
     },
     "scripts/agent_routes_smoke.py": {
       "role": "index",
@@ -1224,9 +1230,9 @@
     },
     "scripts/check_layout.sh": {
       "role": "index",
-      "sha256": "05316356d97c08ba54f4be44822e154687fcce503964259e5f096db4d4f8550d",
-      "size": 4060,
-      "normalized_sha256": "05316356d97c08ba54f4be44822e154687fcce503964259e5f096db4d4f8550d"
+      "sha256": "da742943d4c933b274c126dd6e244f5c9526af49ebbdac0a5b7817723e3cd6c9",
+      "size": 4116,
+      "normalized_sha256": "da742943d4c933b274c126dd6e244f5c9526af49ebbdac0a5b7817723e3cd6c9"
     },
     "scripts/check_match_arms.py": {
       "role": "index",
@@ -1248,9 +1254,9 @@
     },
     "scripts/check_mcp_sdk.sh": {
       "role": "index",
-      "sha256": "d68e4c722b2f50c1d6d8fe29a4dc75c641601aa5cdfcecfae60a77cc1fa87233",
-      "size": 4737,
-      "normalized_sha256": "d68e4c722b2f50c1d6d8fe29a4dc75c641601aa5cdfcecfae60a77cc1fa87233"
+      "sha256": "f7789b8d3400ec6de0a683a8b165f38d741095274d22d745d44fa8cd5d72e22a",
+      "size": 5013,
+      "normalized_sha256": "f7789b8d3400ec6de0a683a8b165f38d741095274d22d745d44fa8cd5d72e22a"
     },
     "scripts/check_phase_times.py": {
       "role": "index",
@@ -1326,9 +1332,9 @@
     },
     "scripts/mcp_sdk/client.mjs": {
       "role": "index",
-      "sha256": "e02745d8e6329d83aacb74beda41ebe07eba268f74361efa8061dab5e3ce347d",
-      "size": 11338,
-      "normalized_sha256": "e02745d8e6329d83aacb74beda41ebe07eba268f74361efa8061dab5e3ce347d"
+      "sha256": "867d9b95122451fd93e350167218b76e7dc9ef2cd82927ab11cdf0845d259738",
+      "size": 11718,
+      "normalized_sha256": "867d9b95122451fd93e350167218b76e7dc9ef2cd82927ab11cdf0845d259738"
     },
     "scripts/mcp_sdk/package-lock.json": {
       "role": "observe",

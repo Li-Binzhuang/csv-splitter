@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 1（审计目标）：MCP `call_tool` 落盘审计已实现，默认 `.csvx/mcp-audit.jsonl`；
+参数仅记录 key/type/长度，4 MiB 轮转；`csvx://audit` 可读；新增 3 个单测，
+MCP 单测 11；SDK `resources=3 audit_entries=63 audit_redacted=true`；发布包 SHA `ecdd3286…e15fd`。
+
 Round 26：MCP 单测从 7 增至 8，新增命令映射拒绝非法 count 与字符串 force；发布包 SHA `11932a3f…24951`。
 
 Round 25：SDK 校验 annotations 语义：只读 12、破坏性 10、openWorld 1；发布包 SHA `b09025d8…82298d`。
@@ -102,4 +106,4 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 1. 全量 gate、打包、AOCI 收尾。
 2. 提交并 push 本轮。
-3. 下一轮继续产品化或 mcp 瘦身。
+3. 下一轮补审计 CLI 读取或 Pipeline 自动化候选。

@@ -1,0 +1,139 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "481fde3e057d472902a7a37830cc9a5129e1ac161c8553fd30a709f2dbd60e5c",
+  "batch_id": "0bf205d7550105385c5cf22de157a03e2c652b857e8475911a5c793043982554",
+  "composite_identity": "c6a80fba674fc2cbe1882bab6f4bd0ff76e6c0e883680efe9f6f33b5d9b61785",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "74cadd6dfc76104bcb920e5f02a17ef3714a37f72533ed978357d54082e7184b",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/rmcp_server.rs",
+      "path": "crates/mcp/src/rmcp_server.rs",
+      "change": "update",
+      "source_sha256": "9bc265a3f7d5d043adec98a8b0292834a3ca1a2ede3761d2b1d5863897d713c0",
+      "existing_entry": "rmcp_server.rs[EN7M]: F:官方 rmcp 适配器：handler、resource、progress | R:code:crates/mcp/src/rmcp_server/jobs.rs,code:crates/mcp/src/rmcp_server/transport.rs | A:ServerHandler；23 schema；请求等响应；resource；progress；泵/ job 已拆 | S:默认传输；串行保序；旧 initialize shim"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/mcp/src/rmcp_server/audit.rs",
+      "path": "crates/mcp/src/rmcp_server/audit.rs",
+      "change": "create",
+      "source_sha256": "bf05c867375189e9d921c316a6fa779b2c633a7fed4583a7812e63e3d5349377"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "3fce031fe636660f76a21eb79e8d4589f6ef37b0f4bd9c9a7691388426418d63",
+      "existing_entry": "ENTRYPOINTS.md[SG7S]: F:入口层目录、行数与客户端验证规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:docs/MCP_COMPAT.md | A:根与MCP白名单；commands args/concat；rmcp jobs/transport；行数上限 | S:rmcp 唯一传输；tasks 200；args 100；超限失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "update",
+      "source_sha256": "99fa48bd154e5539ce84a2c8c4d38ce1842d9d77ca3fb0cad2e3a65e4d1a9127",
+      "existing_entry": "MCP_COMPAT.md[SD7S]: F:官方 SDK、schema 与 DSH 客户端验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:scripts/check_mcp_dsh.sh | A:23 工具；必填/root escape/bool/range；schema 结构；xlsx/HTML | S:DSH 需 CSVX_DSH_TEST=1；不改 profile；结果本机实测"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "d6bb1db7981454a84a8552944b8c79b5ad218ff26744c9085904421d30e86f7b",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round26 单测与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "da742943d4c933b274c126dd6e244f5c9526af49ebbdac0a5b7817723e3cd6c9",
+      "existing_entry": "check_layout.sh[XQ7S]: F:入口层目录与行数规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根/CLI/MCP 白名单；commands 300；args 100；concat 120；transport 200 | S:未知模块退出；超行数失败；先改文档再加模块"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_mcp_sdk.sh",
+      "path": "scripts/check_mcp_sdk.sh",
+      "change": "update",
+      "source_sha256": "f7789b8d3400ec6de0a683a8b165f38d741095274d22d745d44fa8cd5d72e22a",
+      "existing_entry": "check_mcp_sdk.sh[TQ7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:debug 优先；23 工具；annotations 12/10/1；必填/边界；xlsx/HTML | S:node/SDK 缺失跳过；失败非零"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "867d9b95122451fd93e350167218b76e7dc9ef2cd82927ab11cdf0845d259738",
+      "existing_entry": "client.mjs[XQ7M]: F:官方 MCP SDK 工具、标注与参数回归 | R:code:scripts/mcp_sdk/package.json,code:scripts/check_mcp_sdk.sh | A:23 工具；readonly/destructive/openworld；bool/range/root escape；xlsx/HTML | S:仅回归；npm 不进 Rust；job 失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "5f1247dba0ee0318e84842ed2d7eb357bb632a78bd009a254332d5fe2dac2702",
+      "object_ref": "code:crates/mcp/src/rmcp_server.rs",
+      "path": "crates/mcp/src/rmcp_server.rs",
+      "change": "update",
+      "source_sha256": "9bc265a3f7d5d043adec98a8b0292834a3ca1a2ede3761d2b1d5863897d713c0",
+      "existing_entry": "rmcp_server.rs[EN7M]: F:官方 rmcp 适配器：handler、resource、progress | R:code:crates/mcp/src/rmcp_server/jobs.rs,code:crates/mcp/src/rmcp_server/transport.rs | A:ServerHandler；23 schema；请求等响应；resource；progress；泵/ job 已拆 | S:默认传输；串行保序；旧 initialize shim"
+    },
+    {
+      "candidate_id": "0c66b507d81571e0a1c725f1e4b9cc1c8f1075f1bd8f9533e1c7a807c956e3ca",
+      "object_ref": "code:crates/mcp/src/rmcp_server/audit.rs",
+      "path": "crates/mcp/src/rmcp_server/audit.rs",
+      "change": "create",
+      "source_sha256": "bf05c867375189e9d921c316a6fa779b2c633a7fed4583a7812e63e3d5349377"
+    },
+    {
+      "candidate_id": "1d824add9c6397ddc8f6cbc2f43da6f194e2d7bb8bcea52b156c9fa6ec2cf9f0",
+      "object_ref": "code:docs/ENTRYPOINTS.md",
+      "path": "docs/ENTRYPOINTS.md",
+      "change": "update",
+      "source_sha256": "3fce031fe636660f76a21eb79e8d4589f6ef37b0f4bd9c9a7691388426418d63",
+      "existing_entry": "ENTRYPOINTS.md[SG7S]: F:入口层目录、行数与客户端验证规则 | R:code:docs/ARCHITECTURE.md,code:scripts/check_layout.sh,code:docs/MCP_COMPAT.md | A:根与MCP白名单；commands args/concat；rmcp jobs/transport；行数上限 | S:rmcp 唯一传输；tasks 200；args 100；超限失败"
+    },
+    {
+      "candidate_id": "4898bae9c956a54b075ab13ff640561153cfc3272d57a490d4b7b455676ac5b9",
+      "object_ref": "code:docs/MCP_COMPAT.md",
+      "path": "docs/MCP_COMPAT.md",
+      "change": "update",
+      "source_sha256": "99fa48bd154e5539ce84a2c8c4d38ce1842d9d77ca3fb0cad2e3a65e4d1a9127",
+      "existing_entry": "MCP_COMPAT.md[SD7S]: F:官方 SDK、schema 与 DSH 客户端验证记录 | R:code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py,code:scripts/check_mcp_dsh.sh | A:23 工具；必填/root escape/bool/range；schema 结构；xlsx/HTML | S:DSH 需 CSVX_DSH_TEST=1；不改 profile；结果本机实测"
+    },
+    {
+      "candidate_id": "6031114344d9a720140ba3a3964815a4b0a5be4d96738f134362f9f51a6f4d31",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "d6bb1db7981454a84a8552944b8c79b5ad218ff26744c9085904421d30e86f7b",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round26 单测与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "a3574c6bd24cc001b8a7696b15da79377c52088960289a4a8ec02564214344cf",
+      "object_ref": "code:scripts/check_layout.sh",
+      "path": "scripts/check_layout.sh",
+      "change": "update",
+      "source_sha256": "da742943d4c933b274c126dd6e244f5c9526af49ebbdac0a5b7817723e3cd6c9",
+      "existing_entry": "check_layout.sh[XQ7S]: F:入口层目录与行数规则检查 | R:code:docs/ENTRYPOINTS.md,code:scripts/dev.sh | A:根/CLI/MCP 白名单；commands 300；args 100；concat 120；transport 200 | S:未知模块退出；超行数失败；先改文档再加模块"
+    },
+    {
+      "candidate_id": "1a6209ba4cb81a553ab46677395d1985668919150e552437bcb2740460885a86",
+      "object_ref": "code:scripts/check_mcp_sdk.sh",
+      "path": "scripts/check_mcp_sdk.sh",
+      "change": "update",
+      "source_sha256": "f7789b8d3400ec6de0a683a8b165f38d741095274d22d745d44fa8cd5d72e22a",
+      "existing_entry": "check_mcp_sdk.sh[TQ7T]: F:官方 MCP SDK 端到端回归脚本 | R:code:scripts/mcp_sdk/client.mjs,code:scripts/dev.sh | A:debug 优先；23 工具；annotations 12/10/1；必填/边界；xlsx/HTML | S:node/SDK 缺失跳过；失败非零"
+    },
+    {
+      "candidate_id": "2a9e09df89ff39ac5ea7849f214961d835d46f536838442efb0a7a12767c4954",
+      "object_ref": "code:scripts/mcp_sdk/client.mjs",
+      "path": "scripts/mcp_sdk/client.mjs",
+      "change": "update",
+      "source_sha256": "867d9b95122451fd93e350167218b76e7dc9ef2cd82927ab11cdf0845d259738",
+      "existing_entry": "client.mjs[XQ7M]: F:官方 MCP SDK 工具、标注与参数回归 | R:code:scripts/mcp_sdk/package.json,code:scripts/check_mcp_sdk.sh | A:23 工具；readonly/destructive/openworld；bool/range/root escape；xlsx/HTML | S:仅回归；npm 不进 Rust；job 失败非零"
+    }
+  ]
+}

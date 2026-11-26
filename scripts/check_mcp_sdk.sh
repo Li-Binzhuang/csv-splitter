@@ -28,7 +28,7 @@ echo "$out"
 grep -q '^capabilities_tools=true$' <<<"$out" || { echo "mcp_sdk=fail tools capability"; exit 1; }
 grep -q '^capabilities_resources=true$' <<<"$out" || { echo "mcp_sdk=fail resources capability"; exit 1; }
 grep -q '^instructions_chars=[1-9]' <<<"$out" || { echo "mcp_sdk=fail instructions"; exit 1; }
-grep -q '^resources=2$' <<<"$out" || { echo "mcp_sdk=fail resources"; exit 1; }
+grep -q '^resources=3$' <<<"$out" || { echo "mcp_sdk=fail resources"; exit 1; }
 grep -q '^resource_protocol=csvx-agent/1$' <<<"$out" || { echo "mcp_sdk=fail resource protocol"; exit 1; }
 grep -q '^resource_tools=23$' <<<"$out" || { echo "mcp_sdk=fail resource tools"; exit 1; }
 grep -q '^resource_endpoints=8$' <<<"$out" || { echo "mcp_sdk=fail resource endpoints"; exit 1; }
@@ -62,6 +62,9 @@ grep -q '^unknown_tool_error=true$' <<<"$out" || { echo "mcp_sdk=fail unknown to
 grep -q '^unknown_code=unknown_tool$' <<<"$out" || { echo "mcp_sdk=fail unknown code"; exit 1; }
 grep -q '^sdk_calls=23$' <<<"$out" || { echo "mcp_sdk=fail tool coverage"; exit 1; }
 grep -q '^sdk_missing=$' <<<"$out" || { echo "mcp_sdk=fail missing tools"; exit 1; }
+grep -q '^audit_entries=[1-9]' <<<"$out" || { echo "mcp_sdk=fail audit entries"; exit 1; }
+grep -q '^audit_has_schema=true$' <<<"$out" || { echo "mcp_sdk=fail audit tool"; exit 1; }
+grep -q '^audit_redacted=true$' <<<"$out" || { echo "mcp_sdk=fail audit redaction"; exit 1; }
 grep -q '^root_escape_rejections=2$' <<<"$out" || { echo "mcp_sdk=fail root escape"; exit 1; }
 grep -q '^required_rejections=20$' <<<"$out" || { echo "mcp_sdk=fail required args"; exit 1; }
 grep -q '^enum_rejections=2$' <<<"$out" || { echo "mcp_sdk=fail enum args"; exit 1; }

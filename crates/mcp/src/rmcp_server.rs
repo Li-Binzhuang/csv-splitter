@@ -19,14 +19,18 @@ use serde_json::{json, Value};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+use std::time::Instant;
+mod audit;
 mod jobs;
 mod transport;
+use audit::AuditLog;
 use transport::{stdin_pump, stdout_pump};
 
 #[derive(Clone)]
 struct CsvxServer {
     root: Arc<PathBuf>,
     jobs: Arc<Mutex<super::McpJobRegistry>>,
+    audit: Arc<Mutex<AuditLog>>,
 }
 
 fn tool_result(text: String, is_error: bool, code: &str) -> CallToolResponse {
@@ -51,6 +55,9 @@ fn resources() -> Vec<Resource> {
         Resource::new("csvx://agent", "agent")
             .with_mime_type("application/json")
             .with_description("Agent manifest: workflow, tools, safety and limits (JSON)"),
+        Resource::new("csvx://audit", "audit")
+            .with_mime_type("application/x-ndjson")
+            .with_description("Redacted MCP call audit log (JSONL)"),
     ]
 }
 
@@ -67,6 +74,21 @@ fn value_to_mcp(value: &Value) -> super::McpJson {
                 .map(|(key, value)| (key.clone(), value_to_mcp(value)))
                 .collect(),
         ),
+    }
+}
+
+fn response_code(response: &CallToolResponse) -> (&str, bool) {
+    match response {
+        CallToolResponse::Complete(result) => {
+            let code = result
+                .structured_content
+                .as_ref()
+                .and_then(|value| value.get("code"))
+                .and_then(Value::as_str)
+                .unwrap_or("complete");
+            (code, !result.is_error.unwrap_or(false))
+        }
+        _ => ("non_complete", false),
     }
 }
 
@@ -124,6 +146,7 @@ impl ServerHandler for CsvxServer {
                 }
             }
         }
+        let started = Instant::now();
         let arguments = request.arguments.unwrap_or_default();
         let value = Value::Object(
             arguments
@@ -131,20 +154,29 @@ impl ServerHandler for CsvxServer {
                 .map(|(key, value)| (key.clone(), value.clone()))
                 .collect(),
         );
-        if let Some(result) = self.job_tool(&request.name, &value).await {
-            return Ok(result);
-        }
-        let args = value_to_mcp(&value);
-        match super::mcp_run_tool(&self.root, &request.name, &args) {
-            Ok(text) => Ok(tool_result(text, false, "ok")),
-            Err(error) if error.starts_with("unknown tool") => {
-                Ok(tool_result(error, true, "unknown_tool"))
+        let response = if let Some(result) = self.job_tool(&request.name, &value).await {
+            result
+        } else {
+            let args = value_to_mcp(&value);
+            match super::mcp_run_tool(&self.root, &request.name, &args) {
+                Ok(text) => tool_result(text, false, "ok"),
+                Err(error) if error.starts_with("unknown tool") => {
+                    tool_result(error, true, "unknown_tool")
+                }
+                Err(error) if error.contains("outside the MCP root") => {
+                    tool_result(error, true, "path_escape")
+                }
+                Err(error) => tool_result(error, true, "cli_error"),
             }
-            Err(error) if error.contains("outside the MCP root") => {
-                Ok(tool_result(error, true, "path_escape"))
+        };
+        let (code, ok) = response_code(&response);
+        let elapsed_ms = started.elapsed().as_millis() as u64;
+        if let Ok(audit) = self.audit.lock() {
+            if let Err(error) = audit.record(&request.name, &value, elapsed_ms, ok, code) {
+                eprintln!("MCP audit write failed: {error}");
             }
-            Err(error) => Ok(tool_result(error, true, "cli_error")),
         }
+        Ok(response)
     }
 
     async fn list_resources(
@@ -166,6 +198,10 @@ impl ServerHandler for CsvxServer {
         let text = match request.uri.as_str() {
             "csvx://operations" => csvx_core::contract::operations_json(),
             "csvx://agent" => super::agent_manifest_json(),
+            "csvx://audit" => match self.audit.lock().unwrap_or_else(|e| e.into_inner()).read() {
+                Ok(text) => text,
+                Err(error) => json!({"error": error.to_string()}).to_string(),
+            },
             _ => {
                 return Err(rmcp::ErrorData::resource_not_found(
                     "unknown resource",
@@ -193,9 +229,11 @@ pub fn run_stdio(root: &Path) -> io::Result<()> {
         tokio::spawn(async move {
             let _ = stdout_pump(output_rx, synth_rx, ack_tx).await;
         });
+        let audit_path = root.join(".csvx/mcp-audit.jsonl");
         let server = CsvxServer {
             root: Arc::new(root),
             jobs: Arc::new(Mutex::new(super::McpJobRegistry::new())),
+            audit: Arc::new(Mutex::new(AuditLog::new(audit_path))),
         };
         let service = server
             .serve((input_rx, output_tx))
