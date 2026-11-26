@@ -1508,6 +1508,24 @@ mod tests {
     }
 
     #[test]
+    fn holidays_before_start_and_leap_day_ends_work() {
+        assert_eq!(
+            eval_str(
+                r#"networkdays("2024-03-01", "2024-03-04", "2024-01-01")"#,
+                &[]
+            ),
+            "2",
+            "holiday before start is ignored"
+        );
+        assert_eq!(
+            eval_str(r#"workday("2024-01-03", 2, "2024-01-03")"#, &[]),
+            "2024-01-05"
+        );
+        assert_eq!(eval_str(r#"days360("2024-02-28", "2024-02-29")"#, &[]), "1");
+        assert_eq!(eval_str(r#"days360("2024-02-29", "2024-03-01")"#, &[]), "2");
+    }
+
+    #[test]
     fn out_of_range_holidays_and_leap_february_work() {
         assert_eq!(
             eval_str(
