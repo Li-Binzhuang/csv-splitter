@@ -1,8 +1,12 @@
 # csvx 性能基准（可复现）
 
-所有数字来自 `--release` 二进制，同一台 macOS / Apple Silicon 机器；用 `/usr/bin/time -l` 记录 wall time 与 peak RSS。没有做系统级 drop cache，因此“冷/热”只表示本次进程的前后两次，不代表磁盘缓存被清空。数字会随机器与缓存变化；以当前代码重跑为准。
+所有数字来自 `--release` 二进制，同一台机器：**Apple M5 / 16 GiB RAM / macOS 27.2.1 arm64**。
+用 `/usr/bin/time -l` 记录 wall time 与 peak RSS。没有做系统级 drop cache，因此“冷/热”只表示本次进程的前后两次，不代表磁盘缓存被清空。数字会随机器与缓存变化；以当前代码重跑为准。
 
 ## 0. 可复现 harness（新增）
+
+本机环境：`Apple M5`、`16 GiB` 内存、`macOS 27.2.1`、`arm64`。其他机器必须重跑，
+不得直接引用本机数字作为 SLA。
 
 `scripts/bench_100gb.py` 流式生成确定性 CSV，然后依次跑：
 

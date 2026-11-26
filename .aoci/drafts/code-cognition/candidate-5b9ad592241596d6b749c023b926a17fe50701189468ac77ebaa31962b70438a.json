@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "de77b3111bd77470101344b365905a5560c2b50adca54f7268660d8f057263bc",
+  "batch_id": "5b9ad592241596d6b749c023b926a17fe50701189468ac77ebaa31962b70438a",
+  "composite_identity": "53fed966b7dd769fa681d645bc6f6ab60a8f259bb2de78409412303f1bf74f37",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "cfe590f783b1d17ffdc2175436b2a9748d22291a45b430c5e05f829bca30b52b",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "fed1f7525ae1d1b32fcd750da740e63e7f15e033a36a0fa71eff5084be0e971b",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现性能基准与 1GB/100GB 实测 | R:code:scripts/bench_100gb.py,code:code:docs/CAPABILITIES.md,code:code:docs/HANDOVER.md | A:100GB 实测 99,999,999,969B/1.26B rows；schema 70.19s/filter 23.55s/search 18.72s/quality 456s；1GB 5.73s | S:未 drop cache；quality 约 80%；其他机器需重跑；smoke≠100GB"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "055f42e7b457c684ff077ff9fc1e242a041395c3f7d416fca3557dcf226807bb",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round16 压缩 intake 与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "610969f2f0dad2aeedcffc21bced533cc275e8d4fcced75f4a795f7382301ddb",
+      "object_ref": "code:docs/BENCHMARKS.md",
+      "path": "docs/BENCHMARKS.md",
+      "change": "update",
+      "source_sha256": "fed1f7525ae1d1b32fcd750da740e63e7f15e033a36a0fa71eff5084be0e971b",
+      "existing_entry": "BENCHMARKS.md[SD7S]: F:可复现性能基准与 1GB/100GB 实测 | R:code:scripts/bench_100gb.py,code:code:docs/CAPABILITIES.md,code:code:docs/HANDOVER.md | A:100GB 实测 99,999,999,969B/1.26B rows；schema 70.19s/filter 23.55s/search 18.72s/quality 456s；1GB 5.73s | S:未 drop cache；quality 约 80%；其他机器需重跑；smoke≠100GB"
+    },
+    {
+      "candidate_id": "280e5f50fcb58772084ff7602e9f493c7dd734fdd75bf6cc03d9f1d7d3e0edd6",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "055f42e7b457c684ff077ff9fc1e242a041395c3f7d416fca3557dcf226807bb",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round16 压缩 intake 与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    }
+  ]
+}

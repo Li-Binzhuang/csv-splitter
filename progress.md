@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 17（benchmark 机器信息）：BENCHMARKS 写明本机 Apple M5 / 16 GiB /
+macOS 27.2.1 arm64，100GB/1GB/smoke 均标注同机实测；发布包 SHA `5a778439…b60f5`。
+
 Round 16（压缩 intake）：`pilot_intake.py` 支持 `.gz`/`.bz2`/`.zst` header；
 zstd 通过本机 `zstd -dc` 只读首行；smoke 覆盖三种压缩；发布包 SHA `9f0d5b3e…99f9e`。
 
