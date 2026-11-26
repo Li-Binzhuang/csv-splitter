@@ -1507,6 +1507,36 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // EFFECT/NOMINAL: annual rate conversions with periodic compounding.
+        "effect" | "nominal" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let (Some(rate), Some(periods)) =
+                (eval(&args[0], ctx).number(), eval(&args[1], ctx).number())
+            else {
+                return Value::Error;
+            };
+            if !rate.is_finite()
+                || !periods.is_finite()
+                || rate < 0.0
+                || periods < 1.0
+                || periods.trunc() != periods
+            {
+                return Value::Error;
+            }
+            let periods = periods as u32;
+            let value = if lower == "effect" {
+                (1.0 + rate / periods as f64).powi(periods as i32) - 1.0
+            } else {
+                periods as f64 * ((1.0 + rate).powf(1.0 / periods as f64) - 1.0)
+            };
+            if value.is_finite() {
+                Value::Number(value)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

@@ -1442,6 +1442,26 @@ mod tests {
     }
 
     #[test]
+    fn effect_and_nominal_convert_rates() {
+        assert_eq!(eval_str("effect(0.12, 12)", &[]), "0.126825");
+        assert_eq!(eval_str("effect(0.12, 4)", &[]), "0.125509");
+        assert_eq!(eval_str("effect(0.12, 1)", &[]), "0.12");
+        assert_eq!(eval_str("effect(0, 1)", &[]), "0");
+        assert_eq!(eval_str("nominal(0.126824, 12)", &[]), "0.119999");
+        assert_eq!(eval_str("nominal(0.12, 1)", &[]), "0.12");
+        assert_eq!(eval_str("nominal(0, 1)", &[]), "0");
+        for source in [
+            "effect(0.12, 0)",
+            "effect(0.12, 1.5)",
+            "effect(-0.1, 12)",
+            "nominal(-0.1, 12)",
+            "nominal(0.12)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn irr_solves_periodic_cash_flows() {
         let columns = vec!["cash1".to_string(), "cash2".to_string()];
         let mut cells = HashMap::new();

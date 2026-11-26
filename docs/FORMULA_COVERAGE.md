@@ -112,6 +112,9 @@
 | NPV | 支持（功能级新增） | rate≤-1/非数值/空区间 `#VALUE!`；现金流从第 1 期折现 |
 | RATE | 支持（功能级新增） | Newton 迭代；nper≤0/guess≤-1/不收敛 `#VALUE!` |
 | IRR | 支持（功能级新增） | 周期现金流 Newton 迭代；需正负现金流；不收敛 `#VALUE!` |
+| EFFECT / NOMINAL | 支持（功能级新增） | npery 正整数；负利率/非整数周期 `#VALUE!` |
+| SLN / SYD / DB / DDB | 缺失 | 折旧函数；按直线/年数总和/余额递减补齐 |
+| XNPV | 缺失 | 带日期现金流净现值 |
 | GCD / LCM / FACT / COMBIN / PERMUT | 支持（功能级新增） | 非负整数；FACT≤170；非法/非整数 `#VALUE!` |
 | MROUND / CEILING.PRECISE / FLOOR.PRECISE | 支持（功能级新增） | MROUND 同号倍数；PRECISE 忽略 significance 符号；零倍数/非法参数 `#VALUE!` |
 | DECIMAL / BASE | 支持（功能级新增） | 2–36 进制；DECIMAL 大小写/符号，BASE 非负整数与 min_length 0–255 |

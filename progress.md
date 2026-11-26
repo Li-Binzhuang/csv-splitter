@@ -102,12 +102,15 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项154 日期净现值（功能级）：`XNPV(rate, values, dates)`；同日期区间
+  配对、首期折现/非法日期 `#VALUE!`；验收：单测 + gate。
 - [ ] 项153 余额递减折旧（功能级）：`DB(cost, salvage, life, period[,
   month])`/`DDB(cost, salvage, life, period[, factor])`；验收：单测 + gate。
 - [ ] 项152 折旧函数（功能级）：`SLN(cost, salvage, life)`/
   `SYD(cost, salvage, life, period)`；life≤0/period 越界 `#VALUE!`；验收：单测 + gate。
-- [ ] 项151 利率换算（功能级）：`EFFECT(nominal, npery)`/`NOMINAL(effect,
-  npery)`；npery≤0/非法参数 `#VALUE!`；验收：单测 + gate。
+- [x] 项151 利率换算（功能级）：`EFFECT(nominal, npery)`/`NOMINAL(effect,
+  npery)`；npery 正整数、负利率/非整数 `#VALUE!`；测试
+  `effect_and_nominal_convert_rates`。
 - [x] 项150 内部收益率（功能级）：`IRR(values[, guess])`；周期现金流
   Newton 迭代；需正负现金流；不收敛 `#VALUE!`。测试
   `irr_solves_periodic_cash_flows`。
@@ -156,6 +159,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 180（项151 EFFECT/NOMINAL，功能级）：复利/名义利率换算、周期边界；
+定向与全量 gate/package 通过；发布包 SHA `2f1a89a7…c5502`。
 
 Round 179（项150 IRR，功能级）：周期现金流 Newton 求根、正负现金流校验；
 定向与全量 gate/package 通过；发布包 SHA `bfb9583d…d961e3`。
