@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 79（1M 行实测）：1,000,000×10 导出 7.18 s、导回 4.76 s、xlsx 43.5 MB，
+round-trip 字节一致；验证线性扩展与上限内可用；发布包 SHA `f5cb97e0…1d810`。
+
 Round 78（hidden sheet CLI）：真实双 sheet xlsx 验证默认跳过 Hidden、显式
 `--sheet Hidden` 仍可读；用户面行为与单元测试对齐；发布包 SHA `83615a36…d15da`。
 

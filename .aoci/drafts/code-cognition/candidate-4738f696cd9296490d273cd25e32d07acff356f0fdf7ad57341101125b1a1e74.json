@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "cf7cacb253a475fb544f39b3d415a25c6e4b40355bed35360a85b29ad311f3be",
+  "batch_id": "4738f696cd9296490d273cd25e32d07acff356f0fdf7ad57341101125b1a1e74",
+  "composite_identity": "c5b9e18645f96e17265114cfc11f0a0e7250513a2fad70b2906136b718e9c34f",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b52d224ae85a4caa4f8007bb9977504788f6d1230154e637c29e1b715716f8e2",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "d88957be812329e34e9b2164cd6efdc85273703f9cf498517fc4ee13f56b77e7",
+      "existing_entry": "XLSX_ENGINE.md[SZ7T]: F:XLSX 引擎决策、迁移方案、覆盖矩阵与实测 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；自写子集；14 项边界；1904 日期；hidden sheet；200k×10 导回 0.93–0.96s | S:迁移未执行待批准；不新增依赖；性能数字仅 release 且 round-trip 字节一致"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "e0088eb6ad94d6dfc4b2bf337eec3fba8166a923e5ddc35a600dc8ee624c1bda",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round78 hidden sheet CLI 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "05bf943fc71eec3d301bc7959a5110d04d971e9e9e842d05404c5d37b5675688",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "d88957be812329e34e9b2164cd6efdc85273703f9cf498517fc4ee13f56b77e7",
+      "existing_entry": "XLSX_ENGINE.md[SZ7T]: F:XLSX 引擎决策、迁移方案、覆盖矩阵与实测 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；自写子集；14 项边界；1904 日期；hidden sheet；200k×10 导回 0.93–0.96s | S:迁移未执行待批准；不新增依赖；性能数字仅 release 且 round-trip 字节一致"
+    },
+    {
+      "candidate_id": "b888266ce417c2a2109410f68dbda4119012c83c8f9470854051e8a1e4ab6b6a",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "e0088eb6ad94d6dfc4b2bf337eec3fba8166a923e5ddc35a600dc8ee624c1bda",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round78 hidden sheet CLI 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

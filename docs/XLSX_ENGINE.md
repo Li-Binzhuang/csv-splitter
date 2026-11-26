@@ -74,7 +74,10 @@
 复现：scripts/bench_xlsx_roundtrip.sh
 ```
 
-同数据集在优化前导回需 240–295 s。原因是每个 cell/attribute 都重新编译正则；
+1,000,000 行 × 10 列（CSV ≈34 MB，xlsx 43.5 MB）：
+导出 7.18 s；导回 4.76 s；round-trip 字节一致；仍在 Excel 1,048,576 行上限内。
+
+同 200k 数据集在优化前导回需 240–295 s。原因是每个 cell/attribute 都重新编译正则；
 改为线性标签扫描 + 手工属性解析 + `OnceLock` 缓存值正则后降到 0.93 s，差异约 250×。
 
 `convert` 是用户可跑的入口；`read_xlsx_to_csv` 的错误会保留为 stderr，失败不写输出文件。
