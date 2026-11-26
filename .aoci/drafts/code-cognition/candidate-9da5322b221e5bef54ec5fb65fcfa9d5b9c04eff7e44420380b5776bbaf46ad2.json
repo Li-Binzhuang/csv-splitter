@@ -1,0 +1,61 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "9fdd4070d23c7f441bafe8aee0ab79ffdf9502656c326b155fcc3367f3aae513",
+  "batch_id": "9da5322b221e5bef54ec5fb65fcfa9d5b9c04eff7e44420380b5776bbaf46ad2",
+  "composite_identity": "652de099847c1f711b583748f5ade0221cf4e3db57878f6c23b18aa1d01e80a5",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "14eb0b29ab797063562710a7587ccdedb709956d7763cc3ea6038ca1b6c23d91",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "f7867b02ef23d77281880f5908cc0f6aa5be76ebee095aed518854a863f635cf",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/check_release.py | A:gate/package；criticalDocs 重哈希；verify 阈值；交付边界 | S:macOS arm64 已验证；其他平台重跑；计时非 SLA"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "72a4b8b6ebaf6cf4730f149b20bf2983bc37e61683506ff0472aefbf19b2d2eb",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round34 发布清单负例与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "562c7430615015e2420ed8a412b3ce08e5b244003b1b54803b6b039711fff17a",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:scripts/check_release.py,code:docs/DEPLOY.md | A:成员契约含 DEPLOY/支持矩阵/诊断/ops/自检/升级/安装/bench/pilot/100GB JSON | S:仅发布方；不联网；缺成员失败"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "779a6e43382b85a906b689945464d97fad911cd590c1f5dc352756424e78755e",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "f7867b02ef23d77281880f5908cc0f6aa5be76ebee095aed518854a863f635cf",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/check_release.py | A:gate/package；criticalDocs 重哈希；verify 阈值；交付边界 | S:macOS arm64 已验证；其他平台重跑；计时非 SLA"
+    },
+    {
+      "candidate_id": "ce03f59a0ad62e666d4be5c11b3eb5c5d030b8333d5d1f8cf927bc74e118a27d",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "72a4b8b6ebaf6cf4730f149b20bf2983bc37e61683506ff0472aefbf19b2d2eb",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round34 发布清单负例与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "39229fed3b69f95f21b537f0825f5504ba27e0d2ea7cc3cf68ebb6ba45437624",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "562c7430615015e2420ed8a412b3ce08e5b244003b1b54803b6b039711fff17a",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:scripts/check_release.py,code:docs/DEPLOY.md | A:成员契约含 DEPLOY/支持矩阵/诊断/ops/自检/升级/安装/bench/pilot/100GB JSON | S:仅发布方；不联网；缺成员失败"
+    }
+  ]
+}

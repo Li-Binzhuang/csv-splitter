@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 35（复验不破坏 manifest）：`verify_dist.sh` 发现有 `.release.json` 时写
+`.reverify.json`，保留 manifest 绑定的 `.verify.json`；复验后 `check_release`
+仍通过；发布包 SHA `6989b299…35353e`，复验写 `.reverify.json` 且 `check_release=manifest=ok`。
+
 Round 34（发布清单负例）：新增 `test_release_manifest.sh`，证明 criticalDocs
 写入并可从 tar 重哈希；缺 DEPLOY 时 release_manifest 拒绝；已进 gate；
 发布包 SHA `4e02656e…c6e7b`。

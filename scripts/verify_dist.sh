@@ -12,6 +12,14 @@ if [[ ! -f "$TAR.sha256" ]]; then
   exit 2
 fi
 VERIFY_RESULT="${TAR%.tar.gz}.verify.json"
+MANIFEST_PATH="${TAR%.tar.gz}.release.json"
+if [[ -f "$MANIFEST_PATH" && -z "${CSVX_VERIFY_OUT:-}" ]]; then
+  # Keep the verify.json bound by the release manifest; a re-run is an extra check.
+  VERIFY_RESULT="${TAR%.tar.gz}.reverify.json"
+fi
+if [[ -n "${CSVX_VERIFY_OUT:-}" ]]; then
+  VERIFY_RESULT="$CSVX_VERIFY_OUT"
+fi
 START_MS=$(python3 -c 'import time; print(int(time.time()*1000))')
 now_ms() { python3 -c 'import time; print(int(time.time()*1000))'; }
 phase_start=$START_MS

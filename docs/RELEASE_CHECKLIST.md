@@ -36,6 +36,8 @@ bash scripts/verify_dist_negative.sh                            # 坏包必须�
 ## 4. 交付
 - 同时交付 tar.gz 与 `.sha256`；接收方先 `shasum -a 256 -c ...`；
 - 发布方可用 `scripts/verify_dist.sh` 校验 checksum、必需成员与包内二进制版本；
+- 已生成 `.release.json` 后再跑 verify_dist 会写 `.reverify.json`，不覆盖 manifest
+  绑定的 `.verify.json`；`check_release.py` 仍以 manifest 绑定的那一次为准；
 - `.release.json` 的 `criticalDocs` 记录 SECURITY/SUPPORT_MATRIX/DEPLOY/MIGRATION
   的 SHA256，`scripts/check_release.py` 会从 tar 内重新哈希；
 - 首次运行建议 `csvx --version` 核对 `4.2.0` 与 DuckDB 编译状态；
