@@ -314,6 +314,78 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 values[k - 1]
             })
         }
+        // QUARTILE.INC over a same-row range: quart 0..4 maps to p = quart/4.
+        "quartile" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            let Some(quart) = eval(&args[1], ctx).number() else {
+                return Value::Error;
+            };
+            if !quart.is_finite() || !(0.0..=4.0).contains(&quart) {
+                return Value::Error;
+            }
+            match percentile_of(&values, quart / 4.0) {
+                Some(value) => Value::Number(value),
+                None => Value::Error,
+            }
+        }
+        // TRIMMEAN: drop the same percentage from both tails, then average.
+        "trimmean" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            let Some(percent) = eval(&args[1], ctx).number() else {
+                return Value::Error;
+            };
+            if values.is_empty() || !percent.is_finite() || !(0.0..=1.0).contains(&percent) {
+                return Value::Error;
+            }
+            let mut values = values;
+            values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+            let trim =
+                ((values.len() as f64 * percent / 2.0).floor() as usize).min(values.len() / 2);
+            let kept = &values[trim..values.len() - trim];
+            Value::Number(kept.iter().sum::<f64>() / kept.len() as f64)
+        }
+        // RANK(number, range[, order]): 1 is the largest by default; ties share a rank.
+        "rank" | "rank.eq" => {
+            if args.len() < 2 || args.len() > 3 {
+                return Value::Error;
+            }
+            let Some(number) = args.first().and_then(|arg| eval(arg, ctx).number()) else {
+                return Value::Error;
+            };
+            let Some(Expr::Range { from, to }) = args.get(1) else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            let ascending = args
+                .get(2)
+                .and_then(|arg| eval(arg, ctx).number())
+                .map(|order| order != 0.0)
+                .unwrap_or(false);
+            let ahead = if ascending {
+                values.iter().filter(|value| **value < number).count()
+            } else {
+                values.iter().filter(|value| **value > number).count()
+            };
+            Value::Number((ahead + 1) as f64)
+        }
         // PERCENTILE.INC over a same-row range: p is 0..1 and the result interpolates
         // between the two neighbouring values.
         "percentile" => {
@@ -1450,6 +1522,22 @@ fn date_difference(start: (i32, u32, u32), end: (i32, u32, u32), unit: &str) -> 
         }
         _ => None,
     }
+}
+
+fn percentile_of(values: &[f64], p: f64) -> Option<f64> {
+    if values.is_empty() || !(0.0..=1.0).contains(&p) {
+        return None;
+    }
+    let mut values = values.to_vec();
+    values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    if values.len() == 1 {
+        return Some(values[0]);
+    }
+    let rank = p * (values.len() - 1) as f64;
+    let low = rank.floor() as usize;
+    let high = (low + 1).min(values.len() - 1);
+    let fraction = rank - low as f64;
+    Some(values[low] + fraction * (values[high] - values[low]))
 }
 
 fn text_around(args: &[Expr], ctx: &Ctx<'_>, before: bool) -> Value {

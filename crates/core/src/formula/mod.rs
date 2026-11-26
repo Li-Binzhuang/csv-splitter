@@ -1594,6 +1594,80 @@ mod tests {
     }
 
     #[test]
+    fn rank_orders_descending_by_default_and_ascending_on_request() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [("a", "1"), ("b", "2"), ("c", "3"), ("d", "4")] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        let formula = Formula::parse("rank(3, A2:D2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "2"
+        );
+        let formula = Formula::parse("rank(3, A2:D2, 1)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "3"
+        );
+        let formula = Formula::parse("rank(5, A2:D2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "1",
+            "a value larger than every cell still ranks first"
+        );
+    }
+
+    #[test]
+    fn quartile_and_trimmean_read_same_row_ranges() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [("a", "1"), ("b", "2"), ("c", "3"), ("d", "4")] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        for (quart, expected) in [("0", "1"), ("2", "2.5"), ("4", "4")] {
+            let formula = Formula::parse(&format!("quartile(A2:D2, {quart})")).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "quart={quart}"
+            );
+        }
+        let formula = Formula::parse("trimmean(A2:D2, 0.5)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "2.5"
+        );
+        let formula = Formula::parse("quartile(A2:D2, 5)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+    }
+
+    #[test]
     fn percentile_interpolates_a_same_row_range() {
         let columns = vec![
             "a".to_string(),

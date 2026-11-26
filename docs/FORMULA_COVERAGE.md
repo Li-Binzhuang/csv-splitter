@@ -92,7 +92,11 @@
 | ROUND / ROUNDUP / ROUNDDOWN | 支持 | 十进制位数 |
 | ABS / SIGN / POWER / EXP / LN / LOG | 支持 | LOG 支持底数 |
 | FLOOR / CEIL / CEILING / INT / TRUNC / SQRT / MOD | 支持 | 标量 |
-| RANK / QUARTILE / TRIMMEAN / GEOMEAN / HARMEAN | 缺失 | 排序/统计扩展 |
+| RANK | 支持（新增） | 同列范围；默认降序，order≠0 升序；并列同名次 |
+| QUARTILE | 支持（新增） | quart 0–4，线性插值 |
+| TRIMMEAN | 支持（新增） | 按百分比两端裁剪后平均 |
+| RANK.EQ / STDEV.S 等点号别名 | 缺失 | 解析器仍把 `.` 当数字，需词法扩展 |
+| GEOMEAN / HARMEAN | 缺失 | 几何/调和平均 |
 | SUBTOTAL / AGGREGATE | 缺失 | 需要函数编号与忽略隐藏行语义 |
 | RAND / RANDBETWEEN | 缺失 | 非确定性，暂不进入可复现导出 |
 | GCD / LCM / FACT / COMBIN / PERMUT / MROUND | 缺失 | 数论/工程函数 |
@@ -100,7 +104,8 @@
 
 ## 本轮验收（首批补齐）
 
-第四批新增 `time_isoweeknum_and_yearfrac_work`：TIME 0.544502、ISO 周、YEARFRAC
+第五批新增 `rank_orders_descending_by_default_and_ascending_on_request` 与
+`quartile_and_trimmean_read_same_row_ranges`。第四批测试：TIME 0.544502、ISO 周、YEARFRAC
 basis 0/1、反向日期报错。第三批测试：TIMEVALUE=0.544502、
 DATEDIF Y/M/D、反向日期报错、TODAY/NOW 形状。第二批测试：TEXT 数字/
 百分比/日期格式、TEXTBEFORE/AFTER 第 N 个分隔符、DATEVALUE=45292、HOUR/MINUTE/
