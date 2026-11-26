@@ -42,6 +42,8 @@ grep -q '^sdk_names=23$' <<<"$out" || { echo "mcp_sdk=fail names"; exit 1; }
 grep -q '^sdk_annotated=23$' <<<"$out" || { echo "mcp_sdk=fail annotations"; exit 1; }
 grep -q '^progress_events=[1-9]' <<<"$out" || { echo "mcp_sdk=fail progress"; exit 1; }
 grep -q '^structured_ok=true$' <<<"$out" || { echo "mcp_sdk=fail structured"; exit 1; }
+grep -q '^xlsx_ok=true$' <<<"$out" || { echo "mcp_sdk=fail xlsx"; exit 1; }
+grep -q '^report_html=true$' <<<"$out" || { echo "mcp_sdk=fail report html"; exit 1; }
 grep -q '^job=done$' <<<"$out" || { echo "mcp_sdk=fail job"; exit 1; }
 grep -q '^pipeline_progress_events=[1-9]' <<<"$out" || { echo "mcp_sdk=fail pipeline progress"; exit 1; }
 grep -q '^status_fresh=[1-9]' <<<"$out" || { echo "mcp_sdk=fail pipeline status"; exit 1; }

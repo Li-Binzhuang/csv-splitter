@@ -85,6 +85,14 @@ await call("csvx_edit_apply", { path: file, ops: "set:1:city:SDK2" });
 await call("csvx_edit_delete", { path: file, row: 2, count: 1 });
 await call("csvx_convert", { path: file, format: "tsv", out: "sdk.tsv" });
 console.log("convert_ok=true");
+await call("csvx_convert", { path: file, format: "xlsx", out: "sdk.xlsx" });
+console.log(`xlsx_ok=${existsSync(join(root, "sdk.xlsx"))}`);
+const html = await call("csvx_report", {
+  path: file,
+  format: "html",
+  specText: "title,SDK report\nsummary,rows",
+});
+console.log(`report_html=${String(html).includes("<")}`);
 if (existsSync(join(root, "plan.csv"))) {
   let pipelineProgress = 0;
   called.add("csvx_pipeline_run");

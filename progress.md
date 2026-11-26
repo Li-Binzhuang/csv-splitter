@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 21：push 重试成功；SDK 增加 xlsx 转换与 HTML report 覆盖：
+`xlsx_ok=true report_html=true`；发布包 SHA `7d922c57…2fc67`。
+
 Round 20：`executor/commands.rs` 360 → 259 行；参数助手与 concat 拆到
 `executor/commands/{args,concat}.rs`；push 一次仍失败（send-pack 断连）；发布包 SHA `7730c4b1…2fba`。
 
@@ -84,6 +87,6 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 
 ## 下一轮具体行动
 
-1. 跑 SDK 与全量 gate。
-2. AOCI 收尾并提交。
-3. 下一轮重试 push。
+1. 全量 gate、打包、AOCI 收尾并提交。
+2. push 本轮提交一次。
+3. 下一轮继续产品化或 mcp 瘦身。
