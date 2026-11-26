@@ -57,6 +57,7 @@
 | 缓存公式值 | number/string/boolean 读缓存值 | `reads_shared_strings_and_cached_formula_values`、`cached_string_and_boolean_formula_values_are_read` |
 | 无缓存公式值 | 明确报错，不写空值 | `formula_without_a_cached_value_is_an_error`、CLI `convert_reports_a_formula_without_a_cached_value` |
 | 内置日期样式 | serial → `YYYY-MM-DD` | `iso_dates_are_written_as_excel_date_cells` |
+| 1900 闰日 | serial 60 输出 Excel 的 1900-02-29 假闰日 | `date_serials_carry_time_fractions_and_time_only_cells` |
 | 1904 日期系统 | `workbookPr date1904` 按 1904 纪元换算 | `date_serials_carry_time_fractions_and_time_only_cells` |
 | 自定义日期/时间 | 常见 token；日期时间/纯时间 | `custom_date_number_formats_are_recognized`、`date_serials_carry_time_fractions_and_time_only_cells`、`custom_time_formats_are_recognized_and_render_as_clock` |
 | 合并单元格 | 只输出存储的左上值，不展开 | `merged_cells_keep_the_stored_top_left_value_without_inventing_others`、CLI `convert_keeps_a_merged_cell_top_left_only` |

@@ -543,6 +543,14 @@ fn serial_to_date_with_system(serial: f64, date1904: bool) -> Option<String> {
     if !date1904 && whole == 0 {
         return (seconds > 0).then(|| format_clock(seconds));
     }
+    if !date1904 && whole == 60 {
+        // Excel keeps Lotus 1-2-3's fake 1900-02-29 for serial 60.
+        return Some(if seconds == 0 {
+            "1900-02-29".to_string()
+        } else {
+            format!("1900-02-29T{}", format_clock(seconds))
+        });
+    }
     let epoch = if date1904 {
         days_from_civil(1904, 1, 1)
     } else {
@@ -1490,6 +1498,7 @@ mod tests {
         assert_eq!(serial_to_date(45292.0), Some("2024-01-01".into()));
         assert_eq!(serial_to_date(45292.5), Some("2024-01-01T12:00:00".into()));
         assert_eq!(serial_to_date(0.25), Some("06:00:00".into()));
+        assert_eq!(serial_to_date(60.0), Some("1900-02-29".into()));
         assert_eq!(serial_to_date(-1.0), None);
         assert_eq!(
             serial_to_date_with_system(0.0, true),
