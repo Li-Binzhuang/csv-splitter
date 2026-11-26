@@ -1484,6 +1484,22 @@ mod tests {
     }
 
     #[test]
+    fn days360_supports_us_and_european_methods() {
+        assert_eq!(
+            eval_str(r#"days360("2024-01-01", "2024-02-01")"#, &[]),
+            "30"
+        );
+        assert_eq!(
+            eval_str(r#"days360("2024-01-01", "2024-02-01", 1)"#, &[]),
+            "30"
+        );
+        assert_eq!(
+            eval_str(r#"days360("2024-02-01", "2024-01-01")"#, &[]),
+            "#VALUE!"
+        );
+    }
+
+    #[test]
     fn timevalue_datedif_and_clock_cells_work() {
         assert_eq!(eval_str(r#"timevalue("13:04:05")"#, &[]), "0.544502");
         assert_eq!(

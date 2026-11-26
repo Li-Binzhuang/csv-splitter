@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "c266899ce33d07d4d8ea0d47f13d6b3bf4c69467d556b652853b019469e39fe0",
+  "batch_id": "9bd3c174fbf17faada11baa008e3e5d4be271bdf613c5b96895d497fe4206db3",
+  "composite_identity": "78567ca9bcb22b35e357ba9ed4607b2b242224df90860a609722523ba0ed0acb",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "bb1db262f5e125ce31adf95e9d2dba19b2d5bbc34df986b10fdda0a129974e5c",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "72575e9fb05b06f02b9b7070ba25eb0a34613b55498fb2fbd55b1fe7e4642612",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/区间；TEXT；日期时间族；排名/分位族；YEARFRAC basis 0–4；DATEVALUE 1900 假闰日；空/全文本区间报错 | S:单列按整列；跨行区间/整列 median 不支持；PERCENTILE.EXC 边界外报错；YEARFRAC basis1 近似"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "9e1ba8ceeff0d3db55956e325627b079272f8b2de42b5caa9c39f46b7459a8da",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族；排名/分位族；YEARFRAC basis 0–4；DATEVALUE 1900；点号函数名 | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "6ff1895cc6f4c72b4a57102c97e844b7a3964734ef11f8f3379d9a6a00f2b9cc",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/日期时间族；排名/分位族；YEARFRAC basis 0–4；DATEVALUE 1900 边界 | S:矩阵只记当前实现；查找受限 sheet/key/value"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "bb1a99a9f86dafe293f49fdf5e71ab67dd68c6e18caf8a386ede77ba57fabaef",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round132 区间/1900 边界与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "28515ce5c89898bd16ef213448c11ce6b6de8eae0213e338c30a18a82361ec2b",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "72575e9fb05b06f02b9b7070ba25eb0a34613b55498fb2fbd55b1fe7e4642612",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/区间；TEXT；日期时间族；排名/分位族；YEARFRAC basis 0–4；DATEVALUE 1900 假闰日；空/全文本区间报错 | S:单列按整列；跨行区间/整列 median 不支持；PERCENTILE.EXC 边界外报错；YEARFRAC basis1 近似"
+    },
+    {
+      "candidate_id": "0fb91d5beba7d7fd4bb66d7b339d4eeb31640ecc250ca65acef46c029d6ce7eb",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "9e1ba8ceeff0d3db55956e325627b079272f8b2de42b5caa9c39f46b7459a8da",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族；排名/分位族；YEARFRAC basis 0–4；DATEVALUE 1900；点号函数名 | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "654d4cacea0d18509f3ced5d014e05de61af205f48225a43cfe42d28bb762efe",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "6ff1895cc6f4c72b4a57102c97e844b7a3964734ef11f8f3379d9a6a00f2b9cc",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/日期时间族；排名/分位族；YEARFRAC basis 0–4；DATEVALUE 1900 边界 | S:矩阵只记当前实现；查找受限 sheet/key/value"
+    },
+    {
+      "candidate_id": "270e3dbbbb529841b9732ef719237ce754bf96e3f9558f096beb3b1512ce85c9",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "bb1a99a9f86dafe293f49fdf5e71ab67dd68c6e18caf8a386ede77ba57fabaef",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round132 区间/1900 边界与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

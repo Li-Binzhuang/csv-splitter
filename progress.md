@@ -81,6 +81,8 @@
 
 ## 当前进度
 
+Round 133（项51 DAYS360）：US/EU 30/360；测试、全量 gate/package 通过；发布包 SHA `ff47ad5b…e9fe1`。
+
 Round 132（项48/49/50 区间与 1900 边界）：空/全文本区间报错；DATEVALUE
 1900-01-01=1、假闰日=60；测试、全量 gate/package 通过；发布包
 SHA `64e7b641…59388`。

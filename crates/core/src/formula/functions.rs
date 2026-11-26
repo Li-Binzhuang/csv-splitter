@@ -987,6 +987,30 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             None => Value::Error,
         },
+        "days360" => match (args.first(), args.get(1)) {
+            (Some(start), Some(end)) => {
+                let (Some(start), Some(end)) = (
+                    parse_date(&eval(start, ctx).text()),
+                    parse_date(&eval(end, ctx).text()),
+                ) else {
+                    return Value::Error;
+                };
+                if end < start {
+                    return Value::Error;
+                }
+                let european = args
+                    .get(2)
+                    .and_then(|arg| eval(arg, ctx).number())
+                    .map(|method| method != 0.0)
+                    .unwrap_or(false);
+                Value::Number(if european {
+                    days_360_european(start, end)
+                } else {
+                    days_360(start, end)
+                })
+            }
+            _ => Value::Error,
+        },
         "datevalue" => match args.first().map(|a| eval(a, ctx)) {
             Some(v) => match parse_date(&v.text()) {
                 Some((year, month, day)) => {
