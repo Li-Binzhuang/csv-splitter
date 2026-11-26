@@ -1670,6 +1670,86 @@ mod tests {
     }
 
     #[test]
+    fn percentrank_and_percentile_aliases_read_same_row_ranges() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [("a", "1"), ("b", "2"), ("c", "3"), ("d", "4")] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        for (source, expected) in [
+            ("percentrank(A2:D2, 2)", "0.333333"),
+            ("percentrank(A2:D2, 2.5)", "0.5"),
+            ("percentrank(A2:D2, 2, 2)", "0.33"),
+            ("percentile.inc(A2:D2, 0.5)", "2.5"),
+            ("percentile.exc(A2:D2, 0.5)", "2.5"),
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        let boundary = Formula::parse("percentile.exc(A2:D2, 0)").unwrap();
+        assert_eq!(
+            boundary
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+        let outside = Formula::parse("percentrank(A2:D2, 0)").unwrap();
+        assert_eq!(
+            outside
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#N/A"
+        );
+    }
+
+    #[test]
+    fn geomean_and_harmmean_read_same_row_ranges() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [("a", "1"), ("b", "2"), ("c", "4"), ("d", "8")] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        let formula = Formula::parse("geomean(A2:D2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "2.828427"
+        );
+        let formula = Formula::parse("harmmean(A2:D2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "2.133333"
+        );
+        cells.insert("a".to_string(), "0".to_string());
+        let formula = Formula::parse("geomean(A2:D2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+    }
+
+    #[test]
     fn quartile_and_trimmean_read_same_row_ranges() {
         let columns = vec![
             "a".to_string(),

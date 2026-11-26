@@ -96,7 +96,7 @@
 | QUARTILE | 支持（新增） | quart 0–4，线性插值 |
 | TRIMMEAN | 支持（新增） | 按百分比两端裁剪后平均 |
 | RANK.EQ / STDEV.S / VAR.S / STDEV.P / VAR.P | 支持（新增） | 点号函数名词法；同 RANK/STDEV/VAR 语义 |
-| GEOMEAN / HARMEAN | 缺失 | 几何/调和平均 |
+
 | SUBTOTAL / AGGREGATE | 缺失 | 需要函数编号与忽略隐藏行语义 |
 | RAND / RANDBETWEEN | 缺失 | 非确定性，暂不进入可复现导出 |
 | GCD / LCM / FACT / COMBIN / PERMUT / MROUND | 缺失 | 数论/工程函数 |

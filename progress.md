@@ -59,9 +59,9 @@
   `no header row` 诊断；`formats_all_sheets_rejects_sheet_and_reports_an_empty_workbook`。
 - [x] 项35 点号函数名（RANK.EQ/STDEV.S/VAR.S/STDEV.P/VAR.P）词法支持；
   测试 `dotted_statistical_aliases_parse_and_evaluate`。
-- [ ] 项36 PERCENTRANK。
-- [ ] 项37 GEOMEAN/HARMEAN。
-- [ ] 项38 PERCENTILE.EXC / PERCENTILE.INC 别名。
+- [x] 项36 PERCENTRANK（含 significance 截断）；测试扩展。
+- [x] 项37 GEOMEAN/HARMEAN；测试 `geomean_and_harmmean_read_same_row_ranges`。
+- [x] 项38 PERCENTILE.EXC / PERCENTILE.INC 别名；边界 0/1 报错。
 - [x] 项34 公式 QUARTILE/TRIMMEAN（见上）。
 - [x] 项22 `--formats --json` 机器可读输出；CLI 测试扩展。
 - [x] 项17 DATEDIF 扩展单位 MD/YM/YD；测试 `datedif_supports_ym_md_and_yd`。
@@ -80,6 +80,9 @@
   `positive;(negative)` 被误拆列的问题。
 
 ## 当前进度
+
+Round 128（项36/37/38 统计补齐）：PERCENTRANK/PERCENTILE.EXC/GEOMEAN/
+HARMEAN；测试、全量 gate/package 通过；发布包 SHA `c9cb1883…c3009`。
 
 Round 127（项35 点号别名）：词法允许 `.`，RANK.EQ/STDEV.S/VAR.S/STDEV.P/VAR.P
  可用；测试、全量 gate/package 通过；发布包 SHA `d3f77638…0f855`。

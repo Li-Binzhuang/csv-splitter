@@ -388,7 +388,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         }
         // PERCENTILE.INC over a same-row range: p is 0..1 and the result interpolates
         // between the two neighbouring values.
-        "percentile" => {
+        "percentile" | "percentile.inc" => {
             if args.len() != 2 {
                 return Value::Error;
             }
@@ -414,6 +414,96 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             let high = (low + 1).min(values.len() - 1);
             let fraction = rank - low as f64;
             Value::Number(values[low] + fraction * (values[high] - values[low]))
+        }
+        // PERCENTILE.EXC: p is exclusive, rank = p*(n+1)-1.
+        "percentile.exc" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            let Some(p) = eval(&args[1], ctx).number() else {
+                return Value::Error;
+            };
+            if values.is_empty() || !p.is_finite() || p <= 0.0 || p >= 1.0 {
+                return Value::Error;
+            }
+            let mut values = values;
+            values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+            let rank = p * (values.len() + 1) as f64 - 1.0;
+            if rank < 0.0 || rank > (values.len() - 1) as f64 {
+                return Value::Error;
+            }
+            let low = rank.floor() as usize;
+            let high = (low + 1).min(values.len() - 1);
+            let fraction = rank - low as f64;
+            Value::Number(values[low] + fraction * (values[high] - values[low]))
+        }
+        // PERCENTRANK.INC: position of a value in 0..1, interpolating between neighbours.
+        "percentrank" => {
+            if args.len() < 2 || args.len() > 3 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            let Some(number) = args.get(1).and_then(|arg| eval(arg, ctx).number()) else {
+                return Value::Error;
+            };
+            if values.is_empty() {
+                return Value::Error;
+            }
+            let mut values = values;
+            values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+            if number < values[0] || number > *values.last().unwrap() {
+                return Value::Text("#N/A".to_string());
+            }
+            let position = match values.iter().position(|value| *value == number) {
+                Some(index) => index as f64,
+                None => {
+                    let upper = values.iter().position(|value| *value > number).unwrap_or(0);
+                    let low = values[upper - 1];
+                    let high = values[upper];
+                    (upper - 1) as f64 + (number - low) / (high - low)
+                }
+            };
+            if values.len() == 1 {
+                return Value::Number(0.0);
+            }
+            let significance = args
+                .get(2)
+                .and_then(|arg| eval(arg, ctx).number())
+                .unwrap_or(6.0);
+            if !significance.is_finite() || !(1.0..=15.0).contains(&significance) {
+                return Value::Error;
+            }
+            let factor = 10f64.powi(significance.trunc() as i32);
+            Value::Number((position / (values.len() - 1) as f64 * factor).trunc() / factor)
+        }
+        // GEOMEAN/HARMEAN over a same-row range; non-positive inputs are #VALUE!.
+        "geomean" | "harmmean" => {
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            if values.is_empty() || values.iter().any(|value| *value <= 0.0) {
+                return Value::Error;
+            }
+            let value = if lower == "geomean" {
+                (values.iter().map(|value| value.ln()).sum::<f64>() / values.len() as f64).exp()
+            } else {
+                values.len() as f64 / values.iter().map(|value| 1.0 / value).sum::<f64>()
+            };
+            Value::Number(value)
         }
         // MODE.SNGL over a same-row range: the most frequent numeric value; ties pick the
         // smallest so the answer is deterministic, and no repeated value is #VALUE!.
