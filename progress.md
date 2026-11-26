@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 42（诊断包收录清单）：`test_ops_bundle.sh` 在 fake prefix 内放
+release-manifest，断言诊断包解包后包含该文件；发布包 SHA `85312532…afb70`。
+
+
 Round 41（自检复核发布清单）：install_selfcheck 若发现 prefix 内有
 `release-manifest.json`，会比对 sha256；不一致拒绝，缺失则记录 not provided；
 发布包 SHA `ec663055…52825`。

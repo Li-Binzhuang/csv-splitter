@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "65a62461c7931629657a2d575edd3e521fe42971ecb26898ced082313c466d06",
+  "batch_id": "6107b4eca353cca112327ca2eb3e2b7d6a46ca162938e9f910a31db38b81bb97",
+  "composite_identity": "9bd162151b456f76f1fdfeee25fc5d58ed2c1869cd196bf9035175912060693b",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b6837a548537e19d36dfacc39e6317ea74f08f26ec2c37daf382b717b5f74fa2",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "c20a9efa1cad592532fd50b34ecc3e2b5a28fba786a696525c788f4de395b813",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round41 自检复核清单与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_ops_bundle.sh",
+      "path": "scripts/test_ops_bundle.sh",
+      "change": "update",
+      "source_sha256": "0a2155ee55cfd2dab7bb32e6a4e4212ba9fac016e771ec4d077c65e4007f8caf",
+      "existing_entry": "test_ops_bundle.sh[TQ7T]: F:诊断包 smoke 与日志边界 | R:code:scripts/ops_bundle.sh,code:scripts/dev.sh | A:tar 内容；计数；默认无 state；include-logs 有 | S:gate 必跑；不联网；失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ce2410bd3d0f545e4fd09a3349d7e4f60bdf3bc9b7fcad3e7f1aac928191f460",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "c20a9efa1cad592532fd50b34ecc3e2b5a28fba786a696525c788f4de395b813",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round41 自检复核清单与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "ce06c54b241b7b4bc81721b4bd1014b5cad83e2a3d0471dc497918db68074aa6",
+      "object_ref": "code:scripts/test_ops_bundle.sh",
+      "path": "scripts/test_ops_bundle.sh",
+      "change": "update",
+      "source_sha256": "0a2155ee55cfd2dab7bb32e6a4e4212ba9fac016e771ec4d077c65e4007f8caf",
+      "existing_entry": "test_ops_bundle.sh[TQ7T]: F:诊断包 smoke 与日志边界 | R:code:scripts/ops_bundle.sh,code:scripts/dev.sh | A:tar 内容；计数；默认无 state；include-logs 有 | S:gate 必跑；不联网；失败非零"
+    }
+  ]
+}

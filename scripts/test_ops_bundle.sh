@@ -27,6 +27,7 @@ path.write_text(json.dumps({
     "binary": str(path.parent / "bin/csvx"),
 }, indent=2) + "\n")
 PY
+printf '{"sha256":"%s"}\n' "0000000000000000000000000000000000000000000000000000000000000000" > "$PREFIX/release-manifest.json"
 cat > "$ROOT/.csvx/mcp-audit.jsonl" <<'JSONL'
 {"ts":1,"tool":"csvx_schema","ok":true,"code":"ok","ms":1,"args":{"path":{"type":"string","chars":9}}}
 {"ts":2,"tool":"csvx_view","ok":false,"code":"cli_error","ms":2,"args":{}}
@@ -45,6 +46,7 @@ if tar -tzf "$BUNDLE" | grep -q './state/'; then
   exit 1
 fi
 mkdir -p "$WORK/out" && tar -xzf "$BUNDLE" -C "$WORK/out"
+test -f "$WORK/out/release-manifest.json" || { echo "ops_bundle=fail release manifest missing" >&2; exit 1; }
 python3 - "$WORK/out/ops-status.json" "$WORK/out/selfcheck.json" <<'PY'
 import json
 import sys
