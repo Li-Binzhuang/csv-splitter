@@ -2826,6 +2826,28 @@ fn write_minimal_xlsx_full(
 }
 
 #[test]
+fn a_failed_xlsx_conversion_leaves_an_existing_output_untouched() {
+    let dir = TempDir::new("xlsxkeepout");
+    let book = dir.join("book.xlsx");
+    write_minimal_xlsx(&book, r#"<row r="1"><c r="A1"><f>SUM(B1:B2)</f></c></row>"#);
+    let out = dir.join("existing.csv");
+    std::fs::write(&out, "keep me\n").unwrap();
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--format",
+            "csv",
+            "--out",
+            out.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(std::fs::read_to_string(&out).unwrap(), "keep me\n");
+}
+
+#[test]
 fn convert_skips_hidden_sheets_by_default() {
     let dir = TempDir::new("xlsxhidden");
     let book = dir.join("book.xlsx");

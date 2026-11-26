@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a370fbaa200ce9c47ba70c5252a3278b3e24d56460689f7d24e88e910edbd1f3",
+  "batch_id": "ba6ffc2a68725091efc2efa9e53db62e95d75811b4eb9a90e2179e659c493d4c",
+  "composite_identity": "2a363e88482c35bd5798906b31f667defa309bac7b77c39f8451157098022772",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "633c09b57c51fb5610bdddc1490314154de1177afec9ec0af61f23cad41c414c",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "18fd5cd4e256979f9df8da516c4bd47294f4a6ddc6371c23793ac13a9245305a",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round91 1900 假闰日与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "87458fcc9fe083f90e6845384e3224b970d6a9560b1e95e2acf444d93041a25f",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "18fd5cd4e256979f9df8da516c4bd47294f4a6ddc6371c23793ac13a9245305a",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round91 1900 假闰日与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
