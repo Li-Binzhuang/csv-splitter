@@ -37,6 +37,129 @@ pub struct ConditionalRule {
     pub color: String,
 }
 
+/// Read a worksheet's header names and their Excel number formats.
+///
+/// This is a metadata read: values are not returned. The header row is parsed
+/// from the streamed worksheet so a million-row file does not build a table.
+pub fn xlsx_column_formats(
+    input: &Path,
+    sheet: Option<&str>,
+) -> std::io::Result<Vec<(String, Option<crate::layout::NumberFormat>)>> {
+    let file = std::fs::File::open(input)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let workbook = read_entry(&mut archive, "xl/workbook.xml")?;
+    let rels = read_entry(&mut archive, "xl/_rels/workbook.xml.rels").unwrap_or_default();
+    let sheets = workbook_sheets(&workbook);
+    if sheets.is_empty() {
+        return Err(invalid("xlsx has no worksheets"));
+    }
+    let selected = select_sheet(&sheets, sheet)?;
+    let target = relationship_target(&rels, &selected.rid)
+        .or_else(|| (sheets.len() == 1).then(|| "xl/worksheets/sheet1.xml".to_string()))
+        .ok_or_else(|| {
+            invalid(&format!(
+                "xlsx sheet {:?} has no relationship target",
+                selected.name
+            ))
+        })?;
+    let normalized = if let Some(stripped) = target.strip_prefix('/') {
+        stripped.to_string()
+    } else if target.starts_with("xl/") {
+        target.clone()
+    } else {
+        format!("xl/{}", target.trim_start_matches("./"))
+    };
+    let styles = read_entry(&mut archive, "xl/styles.xml").unwrap_or_default();
+    let style_formats = style_number_formats(&styles);
+    let shared = read_entry(&mut archive, "xl/sharedStrings.xml").unwrap_or_default();
+    let shared = shared_strings(&shared);
+    let date_styles = date_style_map(&styles);
+    let date1904 = workbook.contains("date1904=\"1\"") || workbook.contains("date1904=\"true\"");
+    let mut header: Option<Vec<String>> = None;
+    let mut result = Vec::new();
+    {
+        let mut entry = archive
+            .by_name(&normalized)
+            .map_err(|error| invalid(&format!("xlsx missing {normalized}: {error}")))?;
+        for_each_zip_row(&mut entry, |fragment| {
+            let (_, cells) = row_from_fragment(fragment, &shared, &date_styles, date1904)?;
+            if header.is_none() {
+                header = Some(cells);
+                return Ok(());
+            }
+            let styles = cell_style_indices(fragment);
+            for (index, name) in header.as_ref().unwrap().iter().enumerate() {
+                let style = styles.get(index).copied().unwrap_or(0);
+                let format = style_formats.get(style).cloned().flatten();
+                result.push((name.clone(), format));
+            }
+            Ok(())
+        })?;
+    }
+    let Some(header) = header else {
+        return Err(invalid("xlsx worksheet has no header row"));
+    };
+    if result.is_empty() {
+        for name in header {
+            result.push((name, None));
+        }
+    }
+    Ok(result)
+}
+
+fn cell_style_indices(fragment: &str) -> Vec<usize> {
+    let mut styles = Vec::new();
+    let mut cursor = 0;
+    while let Some(start) = find_tag(fragment, cursor, "<c") {
+        let Some(open_end) = fragment[start..].find('>').map(|index| start + index) else {
+            break;
+        };
+        let attrs = &fragment[start + 2..open_end];
+        styles.push(
+            attr(attrs, "s")
+                .and_then(|value| value.parse().ok())
+                .unwrap_or(0),
+        );
+        cursor = open_end + 1;
+    }
+    styles
+}
+
+fn style_number_formats(styles: &str) -> Vec<Option<crate::layout::NumberFormat>> {
+    let mut custom = std::collections::HashMap::new();
+    let num_fmt_re = Regex::new(r#"(?s)<numFmt\b([^>]*?)(?:/>|>)"#).unwrap();
+    for captures in num_fmt_re.captures_iter(styles) {
+        let attrs = &captures[1];
+        let Some(id) = attr(attrs, "numFmtId").and_then(|value| value.parse::<u32>().ok()) else {
+            continue;
+        };
+        if let Some(code) = attr(attrs, "formatCode") {
+            custom.insert(id, code);
+        }
+    }
+    let block_re = Regex::new(r#"(?s)<cellXfs\b[^>]*>(.*?)</cellXfs>"#).unwrap();
+    let Some(block) = block_re.captures(styles) else {
+        return Vec::new();
+    };
+    let xf_re = Regex::new(r#"(?s)<xf\b([^>]*?)(?:/>|>)"#).unwrap();
+    xf_re
+        .captures_iter(&block[1])
+        .map(|captures| {
+            let id = attr(&captures[1], "numFmtId").and_then(|value| value.parse::<u32>().ok())?;
+            let code = custom
+                .get(&id)
+                .cloned()
+                .or_else(|| (14..=22).contains(&id).then(|| "yyyy-mm-dd".to_string()))?;
+            crate::layout::NumberFormat::parse(&code).ok()
+        })
+        .collect()
+}
+
 /// Export a CSV file as a single-sheet workbook, streaming rows.
 pub fn csv_to_xlsx(
     input: &Path,
@@ -2259,6 +2382,60 @@ mod tests {
         );
         let _ = std::fs::remove_file(path);
         let _ = std::fs::remove_file(output);
+    }
+
+    #[test]
+    fn column_formats_are_read_back_from_export_styles() {
+        use crate::layout::NumberFormat;
+        let path = temp_path("column-formats.xlsx");
+        let sheet = Sheet {
+            name: "formats".to_string(),
+            headers: vec![
+                "amount".into(),
+                "rate".into(),
+                "when".into(),
+                "label".into(),
+                "sci".into(),
+                "money".into(),
+            ],
+            rows: vec![vec![
+                "1234.5".into(),
+                "0.123".into(),
+                "2024-01-02".into(),
+                "x".into(),
+                "1234.5".into(),
+                "-1234.5".into(),
+            ]],
+        };
+        write_sheets_with_formats(
+            &path,
+            &[sheet],
+            &[vec![
+                NumberFormat::parse("#,##0.00").unwrap(),
+                NumberFormat::parse("0.0%").unwrap(),
+                NumberFormat::parse("yyyy-mm-dd").unwrap(),
+                NumberFormat::parse("plain").unwrap(),
+                NumberFormat::parse("0.00E+00").unwrap(),
+                NumberFormat::parse("$#,##0.00;($#,##0.00)").unwrap(),
+            ]],
+        )
+        .unwrap();
+        let columns = xlsx_column_formats(&path, None).unwrap();
+        assert_eq!(columns.len(), 6, "{columns:?}");
+        assert_eq!(columns[0].0, "amount");
+        assert_eq!(columns[0].1, Some(NumberFormat::parse("#,##0.00").unwrap()));
+        assert_eq!(columns[1].1, Some(NumberFormat::parse("0.0%").unwrap()));
+        assert_eq!(
+            columns[2].1,
+            Some(NumberFormat::parse("yyyy-mm-dd").unwrap())
+        );
+        assert_eq!(columns[3].1, None);
+        assert_eq!(columns[4].1, Some(NumberFormat::parse("0.00E+00").unwrap()));
+        assert_eq!(
+            columns[5].1,
+            Some(NumberFormat::parse("$#,##0.00;($#,##0.00)").unwrap())
+        );
+        let _ = std::fs::remove_file(path);
     }
 
     #[test]

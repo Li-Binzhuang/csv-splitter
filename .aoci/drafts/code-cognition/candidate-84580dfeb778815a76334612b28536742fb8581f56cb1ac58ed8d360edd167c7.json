@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "6f2e2cf7a262475e7614d5d357495c2e6b3ceee5f8b32914886942ed0f9a7667",
+  "batch_id": "84580dfeb778815a76334612b28536742fb8581f56cb1ac58ed8d360edd167c7",
+  "composite_identity": "47fa01eedf1add6734a29ec17f89fd991f2c7e1d07e7fe17657b9e29542b9591",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "a57c5f68670a913b74ce01c0fccc4e18c9194126eee9d77b94cb2ab6aed0acf0",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "f1b9516de5120f17e0a934b0b45105b8697ee780d40d78d46c65d1116dcd10be",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；csv_to_xlsx_with_number_formats 流式列格式；write_sheets_with_formats；Scientific/Accounting/Text 样式；条件 top/bottom；zip entry 流式；1M 53MB | S:不写公式/图表；合并不展开；无缓存公式/坏引用/超限报错；格式只对可解析数字/日期生效"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/NUMBER_FORMAT_COVERAGE.md",
+      "path": "docs/NUMBER_FORMAT_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "73e5c212429156f10730dc8a694f5641e760783a270abfa8c46650a3701c15ca",
+      "existing_entry": "NUMBER_FORMAT_COVERAGE.md[SA7T]: F:数字格式覆盖矩阵与缺口 | R:code:crates/core/src/layout.rs,code:crates/core/src/xlsx.rs | A:千分位/小数/百分比/货币/日期时间；8 种日期；Scientific/Accounting/Text；导出接线；缺失会计对齐/颜色段 | S:格式只对数字/日期生效；未识别格式报错"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "5a3c18cd91c3ae4f40a90ff208ebd76b6c1d76057a7a65a394576be976466c7c",
+      "existing_entry": "XLSX_ENGINE.md[SZ7T]: F:XLSX 引擎决策、迁移方案、覆盖矩阵与实测 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；1904/hidden；全 sheet；数字格式导出；CLI --number-format；1M 8.04s/53MB | S:迁移未执行待批准；不新增依赖；性能仅 release；内存 macOS time -l"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "921c077976f05fd3325f397763e8b1352ad06059f98d19b35b419e53255fd830",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round117 DATEDIF 单位与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "ffc8e6c692a311b6c8fc9166dff9fb376befe72c50296aa28fbfba47511f0736",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "f1b9516de5120f17e0a934b0b45105b8697ee780d40d78d46c65d1116dcd10be",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/worksheet；csv_to_xlsx_with_number_formats 流式列格式；write_sheets_with_formats；Scientific/Accounting/Text 样式；条件 top/bottom；zip entry 流式；1M 53MB | S:不写公式/图表；合并不展开；无缓存公式/坏引用/超限报错；格式只对可解析数字/日期生效"
+    },
+    {
+      "candidate_id": "b3bcb8593f7d6b13299f67edc962a2efe0603ec906922dac8e3b244dc58ca0b7",
+      "object_ref": "code:docs/NUMBER_FORMAT_COVERAGE.md",
+      "path": "docs/NUMBER_FORMAT_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "73e5c212429156f10730dc8a694f5641e760783a270abfa8c46650a3701c15ca",
+      "existing_entry": "NUMBER_FORMAT_COVERAGE.md[SA7T]: F:数字格式覆盖矩阵与缺口 | R:code:crates/core/src/layout.rs,code:crates/core/src/xlsx.rs | A:千分位/小数/百分比/货币/日期时间；8 种日期；Scientific/Accounting/Text；导出接线；缺失会计对齐/颜色段 | S:格式只对数字/日期生效；未识别格式报错"
+    },
+    {
+      "candidate_id": "2bccb1b3fc76b9264bc63541760d1f02b374d5d6a73841fca828b34015dc1be6",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "5a3c18cd91c3ae4f40a90ff208ebd76b6c1d76057a7a65a394576be976466c7c",
+      "existing_entry": "XLSX_ENGINE.md[SZ7T]: F:XLSX 引擎决策、迁移方案、覆盖矩阵与实测 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；1904/hidden；全 sheet；数字格式导出；CLI --number-format；1M 8.04s/53MB | S:迁移未执行待批准；不新增依赖；性能仅 release；内存 macOS time -l"
+    },
+    {
+      "candidate_id": "64b35194a967b2457ab29dde4f6c3b42d117641031e0228042e92cb4aae59c39",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "921c077976f05fd3325f397763e8b1352ad06059f98d19b35b419e53255fd830",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round117 DATEDIF 单位与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

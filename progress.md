@@ -35,9 +35,14 @@
   CLI 测试 `convert_xlsx_can_highlight_a_top_rank`。
 - [x] 项8 convert 导出接线数字格式：`--number-format "amount:#,##0.00;rate:0.0%"`；
   CLI 测试 `convert_xlsx_can_apply_per_column_number_formats`。
-- [ ] 项9 xlsx 导入 numFmt → ColumnMeta 格式保真（日期之外的小数/百分比/货币）。
-- [ ] 项15 xlsx 导入科学/会计/@ numFmt → ColumnMeta 格式。
-- [ ] 项18 xlsx 导入日期 numFmt → ColumnMeta 日期显示审计。
+- [x] 项9 xlsx 导入 numFmt → ColumnMeta 格式保真：`xlsx_column_formats` 读取
+  header + 首数据行样式，返回 NumberFormat。
+- [x] 项15 xlsx 导入科学/会计/@：同一 API 已覆盖 Scientific/Accounting/Text。
+- [x] 项18 xlsx 导入日期 numFmt：DateTime 白名单读回；测试
+  `column_formats_are_read_back_from_export_styles` 覆盖 6 列。
+- [ ] 项19 把 `xlsx_column_formats` 接到 CLI/布局 sidecar。
+- [ ] 项20 公式第五批：RANK/QUARTILE/TRIMMEAN。
+- [ ] 项21 日期时间格式白名单扩展（m/d/yyyy、yyyy-mm-dd hh:mm:ss 等）。
 - [x] 项17 DATEDIF 扩展单位 MD/YM/YD；测试 `datedif_supports_ym_md_and_yd`。
 - [x] 项16 公式第四批：YEARFRAC/ISOWEEKNUM/TIME；测试
   `time_isoweeknum_and_yearfrac_work`。
@@ -54,6 +59,10 @@
   `positive;(negative)` 被误拆列的问题。
 
 ## 当前进度
+
+Round 118（项9/15/18 导入格式元数据）：`xlsx_column_formats` 读取 header+首
+数据行样式，覆盖 6 类 NumberFormat；测试、全量 gate/package 通过；发布包
+SHA `840b73dd…496a8`。
 
 Round 117（项17 DATEDIF 单位）：MD/YM/YD 已实现并测试；全量 gate/package 通过；发布包 SHA `946b06ff…a915c`。
 
