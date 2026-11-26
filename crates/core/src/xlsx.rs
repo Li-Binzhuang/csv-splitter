@@ -736,7 +736,7 @@ fn table_from_rows(
             continue;
         }
         table.push(cells);
-        if table.len() as u64 > max_rows {
+        if table.len() as u64 > max_rows + 1 {
             return Err(invalid(&format!(
                 "xlsx supports at most {max_rows} data rows in one sheet"
             )));
@@ -1313,6 +1313,7 @@ mod tests {
             (2, vec![String::new()]),
             (3, vec!["1".to_string()]),
             (4, vec!["2".to_string()]),
+            (5, vec!["3".to_string()]),
         ];
         let error = table_from_rows(rows, 2).unwrap_err().to_string();
         assert!(error.contains("at most 2 data rows"), "{error}");
