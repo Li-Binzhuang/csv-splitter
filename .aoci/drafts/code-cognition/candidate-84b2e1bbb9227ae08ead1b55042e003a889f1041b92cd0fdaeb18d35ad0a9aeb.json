@@ -1,0 +1,29 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "4563dc4876888730f0a8ce64f6d179aed23c4c8c1fa6fb70bd07f2f6737e49be",
+  "batch_id": "84b2e1bbb9227ae08ead1b55042e003a889f1041b92cd0fdaeb18d35ad0a9aeb",
+  "composite_identity": "ef5ccf3f5345b75bf3052e9abe01caa7548bd84c671eda7756e8a08e8cca291b",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "2d08f498bc5c0e75855f1dc9e917e7917187d2febf6f6e410ad930edb732d661",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "aa3fd4395441b09d8710e03da2ee6de4a3a4e8478d8245000d53748c0caebe95",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round69 1904 CLI 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "32d0851351fff6a3a7eecbd976daa532b71a9fbd89b9f99246a387ee6c268b17",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "aa3fd4395441b09d8710e03da2ee6de4a3a4e8478d8245000d53748c0caebe95",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round69 1904 CLI 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

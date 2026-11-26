@@ -17,6 +17,11 @@
 
 ## 当前进度
 
+Round 70（xlsx 审计验收）：objective 四项已满足——共享字符串/日期/公式缓存、
+可诊断错误、CSV 原生路径不变、定向测试 + 全量 gate + package。证据：
+xlsx 18 passed、CLI 177 passed、gate 复跑 passed、AOCI 243 aligned。
+未做：calamine 迁移需依赖/离线审批；goal edit 需直接人类轮次。
+
 Round 69（1904 CLI 集成）：真实 xlsx fixture 带 `date1904` 与日期样式，
 `convert` 输出 `1904-01-02`；覆盖工作簿标记到 CSV 的整条路径。
 首轮全量 gate 有 1 个 CLI 用例偶发失败，单跑与复跑均 177 passed；发布包 SHA `87ee0ae1…81adc`。
