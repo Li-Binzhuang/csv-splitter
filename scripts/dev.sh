@@ -72,6 +72,7 @@ case "${1:-check}" in
     run_stage tests-sql cargo test -p csvx-core --features sql --quiet
     run_stage mcp-schema python3 scripts/check_mcp_schema.py
     run_stage mcp-sdk bash scripts/check_mcp_sdk.sh
+    run_stage install-offline bash scripts/test_install_offline.sh
     VERIFY_BIN=target/release/csvx
     [ -x "$VERIFY_BIN" ] || VERIFY_BIN=target/debug/csvx
     if [ -x "$VERIFY_BIN" ]; then

@@ -17,6 +17,11 @@
 
 ## 当前进度
 
+Round 5（企业部署目标）：新增 `scripts/install_offline.sh`（SHA256→解包→demo
+smoke→prefix/bin + docs→`install-manifest.json`），坏 SHA 与版本不符拒绝；
+新增 `scripts/test_install_offline.sh` 并进入 gate；新增 `docs/SECURITY.md`
+（逐条引用已有实测证据）；发布包 SHA `f067b28b…cce94b`。
+
 Round 4（MCP 审计查询目标）：`csvx mcp audit` 支持 tool/errors/limit/json；
 缺文件成功退出；元数据含 bytes/rotated/max/total/shown；3 个单测 + 1 个 CLI
 集成测试；文档 §7；发布包 SHA `7640beaa…c52e9`。
@@ -121,5 +126,5 @@ Round 2：`executor.rs` 从 542 行降到 468 行，路径校验拆到 `executor
 ## 下一轮具体行动
 
 1. 全量 gate、打包、AOCI 收尾。
-2. 提交并 push 本轮。
-3. 下一轮转向企业部署包或 benchmark。
+2. 提交本地；本轮 push 已用于补推 3bc8dbd8，下一轮再推。
+3. 验收后 edit 目标转向 100GB benchmark 或试点支持。

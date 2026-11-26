@@ -1,0 +1,103 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "cc509b5e69d7daa78afc1d269420ebf0f96a8123a83d0bc2dbaa3c6cac13c96e",
+  "batch_id": "d03a3a249e054f94b8149b32f48fbf8107d25196da1edfc314802d55161affe8",
+  "composite_identity": "95ef6a923c7be89ea77cb74b5b77645158afb857e8b9d38d1c5f2e239d26a67b",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "4a32c5864b833f5fc9c85a57af72af0da6f6f1c607f80391d26612cdca101479",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/SECURITY.md",
+      "path": "docs/SECURITY.md",
+      "change": "create",
+      "source_sha256": "8187379646d216fc05e41fbc47c538e4b25baabbe114686ef21749ce88c68852"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "09d3d378d50a5f6243d3b9c0a2f9520fa311ed3803ff122ac9e5ba1015e95f94",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round4 mcp audit 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "b5b1c94bd43571e4bf4716e242b2fa6e0de19315ba11565a7dc3ae1f0fa3b3d9",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/check_mcp_schema.py,code:scripts/check_mcp_sdk.sh | A:gate layout/fmt/clippy/tests/sql/mcp-schema/mcp-sdk/负向 | S:gate 必带 sql；schema/sdk 缺失跳过；负向不可静默"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/install_offline.sh",
+      "path": "scripts/install_offline.sh",
+      "change": "create",
+      "source_sha256": "50735e7f1d46b59a595c4d52c12a8f1d50029d1026c23dc84d3d132b349f772c"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "68783e1a6e27694daa8487cf384b0e01805f94958b3c3e737ba3ac25106b3888",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布并自验哈希 | R:code:scripts/verify_dist.sh,code:scripts/check_release.py,code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py | A:打包 docs/MCP_COMPAT 与检查脚本；verify_dist；release.json | S:不联网/不打 tag；dist gitignore；DSH 脚本仅可选"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_install_offline.sh",
+      "path": "scripts/test_install_offline.sh",
+      "change": "create",
+      "source_sha256": "fbe5f038b982316d8cce0e5e5d7ca9e8e76f7ee43599c65c4fa7d52363744510"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "f0d0f4a051db33a2224b741060002805af5afdae88faf7b649c2c8693fa9709e",
+      "object_ref": "code:docs/SECURITY.md",
+      "path": "docs/SECURITY.md",
+      "change": "create",
+      "source_sha256": "8187379646d216fc05e41fbc47c538e4b25baabbe114686ef21749ce88c68852"
+    },
+    {
+      "candidate_id": "a95526f67f3cfa948f01de3a1c7f375ef454022243e3aeb20166962101ff28b0",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "09d3d378d50a5f6243d3b9c0a2f9520fa311ed3803ff122ac9e5ba1015e95f94",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round4 mcp audit 与 SHA | S:每轮更新；push 失败不阻塞；不把临时故障当完成"
+    },
+    {
+      "candidate_id": "9c19912fdd191cddd3149834b8a73e3cd3c0210f001100f818c77e29206d8735",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "b5b1c94bd43571e4bf4716e242b2fa6e0de19315ba11565a7dc3ae1f0fa3b3d9",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/check_mcp_schema.py,code:scripts/check_mcp_sdk.sh | A:gate layout/fmt/clippy/tests/sql/mcp-schema/mcp-sdk/负向 | S:gate 必带 sql；schema/sdk 缺失跳过；负向不可静默"
+    },
+    {
+      "candidate_id": "ceee06b6b0c1d67dea98d49ab5227e2caf03268487a43671203fae1385b500f5",
+      "object_ref": "code:scripts/install_offline.sh",
+      "path": "scripts/install_offline.sh",
+      "change": "create",
+      "source_sha256": "50735e7f1d46b59a595c4d52c12a8f1d50029d1026c23dc84d3d132b349f772c"
+    },
+    {
+      "candidate_id": "8b0156f6413a13945e69c88e98a277cca61ddc77f3ff823a4046246f57c03744",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "68783e1a6e27694daa8487cf384b0e01805f94958b3c3e737ba3ac25106b3888",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布并自验哈希 | R:code:scripts/verify_dist.sh,code:scripts/check_release.py,code:scripts/check_mcp_sdk.sh,code:scripts/check_mcp_schema.py | A:打包 docs/MCP_COMPAT 与检查脚本；verify_dist；release.json | S:不联网/不打 tag；dist gitignore；DSH 脚本仅可选"
+    },
+    {
+      "candidate_id": "630eb7f3f77f96a568270bc09ef58b5c31dce7f376929abec2c0488bbcac6671",
+      "object_ref": "code:scripts/test_install_offline.sh",
+      "path": "scripts/test_install_offline.sh",
+      "change": "create",
+      "source_sha256": "fbe5f038b982316d8cce0e5e5d7ca9e8e76f7ee43599c65c4fa7d52363744510"
+    }
+  ]
+}
