@@ -7,6 +7,30 @@ import os
 import pathlib
 import re
 import sys
+import tarfile
+
+
+CRITICAL_DOCS = (
+    "docs/SECURITY.md",
+    "docs/SUPPORT_MATRIX.md",
+    "docs/DEPLOY.md",
+    "docs/MIGRATION.md",
+)
+
+
+def critical_docs(tarball):
+    found = {}
+    with tarfile.open(tarball, "r:gz") as archive:
+        for member in archive.getmembers():
+            name = member.name
+            for key in CRITICAL_DOCS:
+                if name == key or name.endswith("/" + key):
+                    data = archive.extractfile(member).read()
+                    found[key] = {"sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)}
+    missing = [name for name in CRITICAL_DOCS if name not in found]
+    if missing:
+        raise SystemExit("release tarball missing critical docs: " + ", ".join(missing))
+    return found
 
 
 def main():
@@ -41,6 +65,7 @@ def main():
     manifest["verifyFailedAt"] = checks.get("failedAt") if checks else None
     manifest["verifyDurationMs"] = checks.get("durationMs") if checks else None
     manifest["verifyPhaseMs"] = checks.get("phaseMs") if checks else None
+    manifest["criticalDocs"] = critical_docs(tarball)
     manifest["agentSseLimitMs"] = 100
     manifest["verifyPhaseLimitsMs"] = {
         "extract": 2000,

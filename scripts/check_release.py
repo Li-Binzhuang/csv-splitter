@@ -4,6 +4,7 @@ import hashlib
 import json
 import pathlib
 import sys
+import tarfile
 
 
 def sha(path):
@@ -35,6 +36,22 @@ def main():
         failures.append("skillInstall is not ok")
     if manifest.get("verifyFailedAt") is not None:
         failures.append(f"verify failed at {manifest['verifyFailedAt']}")
+    critical = manifest.get("criticalDocs") or {}
+    if not critical:
+        failures.append("missing criticalDocs")
+    try:
+        with tarfile.open(tar, "r:gz") as archive:
+            members = archive.getmembers()
+            for name, expected in critical.items():
+                member = next((m for m in members if m.name == name or m.name.endswith("/" + name)), None)
+                if member is None:
+                    failures.append(f"missing critical doc: {name}")
+                    continue
+                data = archive.extractfile(member).read()
+                if hashlib.sha256(data).hexdigest() != expected.get("sha256"):
+                    failures.append(f"critical doc sha256 mismatch: {name}")
+    except (OSError, tarfile.TarError) as error:
+        failures.append(f"cannot inspect tarball: {error}")
     if checks.get("phaseThresholds") != "ok":
         failures.append("phase thresholds not ok")
     if failures:

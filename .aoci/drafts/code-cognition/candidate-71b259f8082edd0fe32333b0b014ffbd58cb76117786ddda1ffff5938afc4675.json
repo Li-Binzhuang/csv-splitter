@@ -1,0 +1,109 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a6d9db2fa4dc1837170ba358ad3758f72be9e4f95f486ce61081e79a1e481614",
+  "batch_id": "71b259f8082edd0fe32333b0b014ffbd58cb76117786ddda1ffff5938afc4675",
+  "composite_identity": "a7203a0f6a8ee91c1bbace40e61fd812e03ae8e4bb9c1f80cb58bafd8e54d8c2",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "610ba7b4bdf7f15f94c00f67191e754e75dfe65e64486f2d9f4fb381080b9204",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "0c235c1bd6b85046cb8ff5aef41548589e45972a55fd55a5a5cb463c328b2429",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:scripts/verify_dist_negative.sh,code:scripts/agent_routes_smoke.py | A:发布前 gate/demo/smoke_http/package；verify-negative；verify.log UTC+SHA+stats/stats_json；阈值 routes=12/replay=actions/sse\u003c250 | S:macOS arm64 已验证；xlsx 渐进；计时非 SLA；其他平台需重跑；清单随包分发"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "0111e23db03ea33a1f7bff475446c5d1b735f4eb4dc67ef0425eea6f4406f795",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round32 发布后诊断包与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_release.py",
+      "path": "scripts/check_release.py",
+      "change": "update",
+      "source_sha256": "247aa8634b635c42908ececbab2dd8c5b483258edba123c8592e9dcdbcd93aae",
+      "existing_entry": "check_release.py[SD7T]: F:重新哈希 manifest 并拒绝失败验证/非 ok 阶段阈值 | R:code:scripts/release_manifest.py,code:scripts/package_release.sh | A:tar/verify sha；verified/skillInstall/phaseThresholds；verifyFailedAt；manifest=ok | S:仅发布方；不联网；失败命名字段并退出 1"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "7a0622c94c87b696b83e8b56b07a88be89206028354da5934b5787fa5dc80216",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装、自检/运维/诊断与证据 | R:code:scripts/ops_bundle.sh,code:scripts/ops_status.sh,code:scripts/verify_dist.sh | A:真实 install；selfcheck；ops；bundle tar 内容；失败整包 | S:不联网/不打 tag；成员校验失败整包失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/release_manifest.py",
+      "path": "scripts/release_manifest.py",
+      "change": "update",
+      "source_sha256": "cfa1165f02b7a0cf2af168813d1662aa64a651b222a786245179325e345efef7",
+      "existing_entry": "release_manifest.py[SD7T]: F:从已验证包写出 release manifest（checks/失败/耗时/预算） | R:code:scripts/package_release.sh | A:sha/bytes/UTC；stats；gate/aoci；verifyJson sha；FailedAt/Duration/PhaseMs/Limits；agentSseLimitMs | S:仅打包后；不联网；不改 tar；缺文件时 null"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "5f6376e98608d4f3a3a14de2ab5ca90b8416af89e334c8fef7c766e59a78b95c",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:docs/SUPPORT_MATRIX.md,code:docs/OPERATIONS.md | A:成员契约含支持矩阵/诊断/ops/自检/升级/安装/bench/pilot/100GB JSON | S:仅发布方；不联网；缺成员失败"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4d48ed4b226d57c6d9f382c7bb2cc8079b8d57d689072e7365aa174b7a90dde6",
+      "object_ref": "code:docs/RELEASE_CHECKLIST.md",
+      "path": "docs/RELEASE_CHECKLIST.md",
+      "change": "update",
+      "source_sha256": "0c235c1bd6b85046cb8ff5aef41548589e45972a55fd55a5a5cb463c328b2429",
+      "existing_entry": "RELEASE_CHECKLIST.md[SD7T]: F:4.2.0 离线发布检查清单 | R:code:scripts/package_release.sh,code:scripts/verify_dist.sh,code:scripts/verify_dist_negative.sh,code:scripts/agent_routes_smoke.py | A:发布前 gate/demo/smoke_http/package；verify-negative；verify.log UTC+SHA+stats/stats_json；阈值 routes=12/replay=actions/sse\u003c250 | S:macOS arm64 已验证；xlsx 渐进；计时非 SLA；其他平台需重跑；清单随包分发"
+    },
+    {
+      "candidate_id": "f588e8d00dcf70479c3fe3b6bda1b2d8fa349854b7e9c9fd6e2ac093c7776235",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "0111e23db03ea33a1f7bff475446c5d1b735f4eb4dc67ef0425eea6f4406f795",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round32 发布后诊断包与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "64ba32010ae8adc4ea1d4bfd5d3541171676969b36a52444efe6631a288f22ba",
+      "object_ref": "code:scripts/check_release.py",
+      "path": "scripts/check_release.py",
+      "change": "update",
+      "source_sha256": "247aa8634b635c42908ececbab2dd8c5b483258edba123c8592e9dcdbcd93aae",
+      "existing_entry": "check_release.py[SD7T]: F:重新哈希 manifest 并拒绝失败验证/非 ok 阶段阈值 | R:code:scripts/release_manifest.py,code:scripts/package_release.sh | A:tar/verify sha；verified/skillInstall/phaseThresholds；verifyFailedAt；manifest=ok | S:仅发布方；不联网；失败命名字段并退出 1"
+    },
+    {
+      "candidate_id": "29a77db9d5ceb279b407c7bdcf79d3dff1ac761a651b709995d86c628def91c6",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "7a0622c94c87b696b83e8b56b07a88be89206028354da5934b5787fa5dc80216",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装、自检/运维/诊断与证据 | R:code:scripts/ops_bundle.sh,code:scripts/ops_status.sh,code:scripts/verify_dist.sh | A:真实 install；selfcheck；ops；bundle tar 内容；失败整包 | S:不联网/不打 tag；成员校验失败整包失败"
+    },
+    {
+      "candidate_id": "eb62c52d7b0b2bb10282a011b24430fbf6c1982c61741440fcd7504edd3df64c",
+      "object_ref": "code:scripts/release_manifest.py",
+      "path": "scripts/release_manifest.py",
+      "change": "update",
+      "source_sha256": "cfa1165f02b7a0cf2af168813d1662aa64a651b222a786245179325e345efef7",
+      "existing_entry": "release_manifest.py[SD7T]: F:从已验证包写出 release manifest（checks/失败/耗时/预算） | R:code:scripts/package_release.sh | A:sha/bytes/UTC；stats；gate/aoci；verifyJson sha；FailedAt/Duration/PhaseMs/Limits；agentSseLimitMs | S:仅打包后；不联网；不改 tar；缺文件时 null"
+    },
+    {
+      "candidate_id": "c2ad7028f201d75c6cfe12f42299892ed986a1aa02dc63cce1e40f5d2d6ab676",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "5f6376e98608d4f3a3a14de2ab5ca90b8416af89e334c8fef7c766e59a78b95c",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:docs/SUPPORT_MATRIX.md,code:docs/OPERATIONS.md | A:成员契约含支持矩阵/诊断/ops/自检/升级/安装/bench/pilot/100GB JSON | S:仅发布方；不联网；缺成员失败"
+    }
+  ]
+}

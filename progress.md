@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 33（关键文档哈希）：release manifest 增加 `criticalDocs`（四份文档的
+tar 内 SHA256），`check_release.py` 重哈希校验；缺文档即打包失败；发布包 SHA `968727e7…84b07`。
+
 Round 32（发布后诊断包）：`package_release.sh` 在真实安装上运行
 `ops_bundle.sh` 并检查 tar 内含 selfcheck/ops-status，失败整包失败；发布包 SHA `98143e14…ec3a6`。
 
