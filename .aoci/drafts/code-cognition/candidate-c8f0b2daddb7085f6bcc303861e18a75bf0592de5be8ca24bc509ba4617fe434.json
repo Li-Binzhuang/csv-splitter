@@ -1,0 +1,45 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "60d8cf5f1eb320c6f38aad0269063f58f72afd4253eb9f7a1d828f340af85e58",
+  "batch_id": "c8f0b2daddb7085f6bcc303861e18a75bf0592de5be8ca24bc509ba4617fe434",
+  "composite_identity": "e0165095188c45afb174744506cd0c1a88b7cbde5e0328fb47f43012092392cf",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "9f5ea1c9ef8e4f19ba8009698d16f27300cd43241cffe6c0891328fbdcf79901",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "dd5cf65e4917ab3d3d61ebc1975b4cacdd0c621baa0b1dee41634fcc4ea1f6f0",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round13 真实样本条件与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "84e52b6357028fff6787fd46cd6808645688710aaa65281f2d3fc26b43a0b227",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布并自验哈希 | R:code:scripts/verify_dist.sh,code:scripts/install_offline.sh,code:scripts/pilot_intake.py | A:打包 SECURITY/DESIGN_PARTNER/install/bench/pilot kit/intake；verify_dist | S:不联网/不打 tag；dist gitignore；DSH 脚本仅可选"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "e08b56ee547646e219e4b10e129996d9933eba161fb75275532b6ec6c71213dc",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "dd5cf65e4917ab3d3d61ebc1975b4cacdd0c621baa0b1dee41634fcc4ea1f6f0",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round13 真实样本条件与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "45d74a292830744811d79a691d049cdac46280af4836f7a861f85d241dcafd21",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "84e52b6357028fff6787fd46cd6808645688710aaa65281f2d3fc26b43a0b227",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布并自验哈希 | R:code:scripts/verify_dist.sh,code:scripts/install_offline.sh,code:scripts/pilot_intake.py | A:打包 SECURITY/DESIGN_PARTNER/install/bench/pilot kit/intake；verify_dist | S:不联网/不打 tag；dist gitignore；DSH 脚本仅可选"
+    }
+  ]
+}

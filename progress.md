@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 14（发布安装 smoke）：`package_release.sh` 在真实 tar.gz + release.json 上
+执行离线安装并验证安装后二进制；失败则整包失败；发布包 SHA `d5800167…9ebe8`。
+
 Round 13（真实样本条件）：`pilot_kit.sh` 对 `CSVX_PILOT_FILE` 不再硬编码
 `city=CDMX`/`group city`；可用 `CSVX_PILOT_WHERE/KEY/GROUP`，自定义样本报告验证
 `过滤条件：(未指定)`；发布包 SHA `bdb50034…b06ae`。

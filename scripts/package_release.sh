@@ -37,5 +37,14 @@ if ! { printf '# date: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; printf '# sha256:
 fi
 python3 scripts/release_manifest.py "$NAME" "dist/$NAME.tar.gz" "dist/$NAME.verify.log"
 python3 scripts/check_release.py "dist/$NAME.release.json"
+INSTALL_DIR=$(mktemp -d)
+if ! bash scripts/install_offline.sh --archive "dist/$NAME.tar.gz" --manifest "dist/$NAME.release.json" --prefix "$INSTALL_DIR" >/dev/null; then
+  rm -rf "$INSTALL_DIR"
+  echo "offline install smoke failed" >&2
+  exit 1
+fi
+"$INSTALL_DIR/bin/csvx" --version >/dev/null
+rm -rf "$INSTALL_DIR"
+printf 'install_manifest=ok\n'
 du -h "dist/$NAME.tar.gz"
 cat "dist/$NAME.tar.gz.sha256"
