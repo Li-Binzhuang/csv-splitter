@@ -93,7 +93,7 @@
 | ABS / SIGN / POWER / EXP / LN / LOG | 支持 | LOG 支持底数 |
 | FLOOR / CEIL / CEILING / INT / TRUNC / SQRT / MOD | 支持 | 标量 |
 | RANK | 支持（新增） | 同列范围；默认降序，order≠0 升序；并列同名次 |
-| QUARTILE | 支持（新增） | quart 0–4，线性插值 |
+| QUARTILE / QUARTILE.EXC | 支持（新增） | quart 0–4；EXC 专用边界 |
 | TRIMMEAN | 支持（新增） | 按百分比两端裁剪后平均 |
 | RANK.EQ / STDEV.S / VAR.S / STDEV.P / VAR.P | 支持（新增） | 点号函数名词法；同 RANK/STDEV/VAR 语义 |
 

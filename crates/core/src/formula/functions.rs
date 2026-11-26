@@ -314,6 +314,28 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 values[k - 1]
             })
         }
+        // QUARTILE.EXC: same quart grid, exclusive percentile boundary.
+        "quartile.exc" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            let Some(quart) = eval(&args[1], ctx).number() else {
+                return Value::Error;
+            };
+            if !quart.is_finite() || !(0.0..=4.0).contains(&quart) {
+                return Value::Error;
+            }
+            match percentile_exc_of(&values, quart / 4.0) {
+                Some(value) => Value::Number(value),
+                None => Value::Error,
+            }
+        }
         // QUARTILE.INC over a same-row range: quart 0..4 maps to p = quart/4.
         "quartile" => {
             if args.len() != 2 {
@@ -359,6 +381,38 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 ((values.len() as f64 * percent / 2.0).floor() as usize).min(values.len() / 2);
             let kept = &values[trim..values.len() - trim];
             Value::Number(kept.iter().sum::<f64>() / kept.len() as f64)
+        }
+        // RANK.AVG: tied values share the average of their occupied ranks.
+        "rank.avg" => {
+            if args.len() < 2 || args.len() > 3 {
+                return Value::Error;
+            }
+            let Some(number) = args.first().and_then(|arg| eval(arg, ctx).number()) else {
+                return Value::Error;
+            };
+            let Some(Expr::Range { from, to }) = args.get(1) else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            let ascending = args
+                .get(2)
+                .and_then(|arg| eval(arg, ctx).number())
+                .map(|order| order != 0.0)
+                .unwrap_or(false);
+            let (ahead, equal) = if ascending {
+                (
+                    values.iter().filter(|value| **value < number).count(),
+                    values.iter().filter(|value| **value == number).count(),
+                )
+            } else {
+                (
+                    values.iter().filter(|value| **value > number).count(),
+                    values.iter().filter(|value| **value == number).count(),
+                )
+            };
+            Value::Number(ahead as f64 + (equal as f64 + 1.0) / 2.0)
         }
         // RANK(number, range[, order]): 1 is the largest by default; ties share a rank.
         "rank" | "rank.eq" => {
@@ -442,6 +496,39 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             let high = (low + 1).min(values.len() - 1);
             let fraction = rank - low as f64;
             Value::Number(values[low] + fraction * (values[high] - values[low]))
+        }
+        // PERCENTRANK.EXC: (position+1)/(n+1) with interpolation.
+        "percentrank.exc" => {
+            if args.len() < 2 || args.len() > 3 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            let Some(number) = args.get(1).and_then(|arg| eval(arg, ctx).number()) else {
+                return Value::Error;
+            };
+            if values.is_empty() {
+                return Value::Error;
+            }
+            let mut values = values;
+            values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+            if number < values[0] || number > *values.last().unwrap() {
+                return Value::Text("#N/A".to_string());
+            }
+            let position = match values.iter().position(|value| *value == number) {
+                Some(index) => index as f64,
+                None => {
+                    let upper = values.iter().position(|value| *value > number).unwrap_or(0);
+                    let low = values[upper - 1];
+                    let high = values[upper];
+                    (upper - 1) as f64 + (number - low) / (high - low)
+                }
+            };
+            Value::Number((position + 1.0) / (values.len() as f64 + 1.0))
         }
         // PERCENTRANK.INC: position of a value in 0..1, interpolating between neighbours.
         "percentrank" => {
@@ -1612,6 +1699,22 @@ fn date_difference(start: (i32, u32, u32), end: (i32, u32, u32), unit: &str) -> 
         }
         _ => None,
     }
+}
+
+fn percentile_exc_of(values: &[f64], p: f64) -> Option<f64> {
+    if values.is_empty() || !(0.0..1.0).contains(&p) || p <= 0.0 {
+        return None;
+    }
+    let mut values = values.to_vec();
+    values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let rank = p * (values.len() + 1) as f64 - 1.0;
+    if rank < 0.0 || rank > (values.len() - 1) as f64 {
+        return None;
+    }
+    let low = rank.floor() as usize;
+    let high = (low + 1).min(values.len() - 1);
+    let fraction = rank - low as f64;
+    Some(values[low] + fraction * (values[high] - values[low]))
 }
 
 fn percentile_of(values: &[f64], p: f64) -> Option<f64> {

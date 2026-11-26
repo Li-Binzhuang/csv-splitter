@@ -1709,6 +1709,40 @@ mod tests {
     }
 
     #[test]
+    fn avg_and_exclusive_ranking_variants_work() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [("a", "1"), ("b", "2"), ("c", "2"), ("d", "4")] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        let formula = Formula::parse("rank.avg(2, A2:D2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "2.5"
+        );
+        cells.insert("c".to_string(), "3".to_string());
+        let exc = Formula::parse("percentrank.exc(A2:D2, 2)").unwrap();
+        assert_eq!(
+            exc.eval_at(&cells, &columns, &Refs::default(), 1).render(),
+            "0.4"
+        );
+        let quart = Formula::parse("quartile.exc(A2:D2, 1)").unwrap();
+        assert_eq!(
+            quart
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "1.25"
+        );
+    }
+
+    #[test]
     fn percentrank_and_percentile_aliases_read_same_row_ranges() {
         let columns = vec![
             "a".to_string(),

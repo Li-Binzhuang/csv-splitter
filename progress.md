@@ -81,6 +81,9 @@
 
 ## 当前进度
 
+Round 130（项42/43/44 排名 EXC/AVG）：RANK.AVG、PERCENTRANK.EXC、
+QUARTILE.EXC；测试、全量 gate/package 通过；发布包 SHA `54a66fcf…ddf90`。
+
 Round 129（项39/40/41 点号等价）：dotted/undotted 等价与未知函数错误测试；
 全量 gate/package 通过；发布包 SHA `66e0cf69…a18a`。
 

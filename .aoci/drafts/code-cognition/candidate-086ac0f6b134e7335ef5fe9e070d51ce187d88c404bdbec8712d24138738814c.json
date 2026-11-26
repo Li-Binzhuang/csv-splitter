@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "ed8a25dbe23ddb3946c0985fd71246724bbf4dc3d900ce0e7fea73e5a71128a8",
+  "batch_id": "086ac0f6b134e7335ef5fe9e070d51ce187d88c404bdbec8712d24138738814c",
+  "composite_identity": "016d20651d01f1d1dc7d20ecba0797531da74de87ecd943f4890d2018fed58ce",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "04da1cfdb54db650e710cf6a9f3aa34d5f6c25020364be078ca371a638e9834a",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "d073dd6f3e2aa3a6b90f10d03985a83a6a8eca03c57f4f8cf7e22c3498955f78",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/区间；TEXT；日期时间族；RANK/QUARTILE/TRIMMEAN；STDEV.S/VAR.S；PERCENTRANK/PERCENTILE.EXC；GEOMEAN/HARMEAN | S:单列按整列；跨行区间/整列 median 不支持；DATEDIF end\u003cstart 报错；PERCENTILE.EXC 边界外报错；非正数几何平均报错"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "0c33d2fcd258f97f3068520fa36da921fecaa17e24a5fbc2cf73df7c3193f7f9",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族；RANK/QUARTILE/TRIMMEAN；PERCENTRANK/PERCENTILE.EXC；点号函数名（STDEV.S/VAR.S/RANK.EQ） | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变；未知点号函数 #VALUE!"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "a0eb2e9bd99ec6c144b9408274e546fc863844739090595e757e44a4108c0733",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/日期时间族；RANK/QUARTILE/TRIMMEAN；PERCENTRANK/PERCENTILE.EXC；GEOMEAN/HARMEAN | S:矩阵只记当前实现；查找受限 sheet/key/value"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "371ac4df422fcd59ca392a4c5b41439665633096c2c4985c5fa62b4a70d345a3",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round129 点号等价与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "35840d197feeb4feac05e5a91395079c213cdd691406e4afeedd76afa1a10d1a",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "d073dd6f3e2aa3a6b90f10d03985a83a6a8eca03c57f4f8cf7e22c3498955f78",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/区间；TEXT；日期时间族；RANK/QUARTILE/TRIMMEAN；STDEV.S/VAR.S；PERCENTRANK/PERCENTILE.EXC；GEOMEAN/HARMEAN | S:单列按整列；跨行区间/整列 median 不支持；DATEDIF end\u003cstart 报错；PERCENTILE.EXC 边界外报错；非正数几何平均报错"
+    },
+    {
+      "candidate_id": "15f46116a0ea8628b9a789585d6a665319f4074d4e176bac5fcec67779ec013f",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "0c33d2fcd258f97f3068520fa36da921fecaa17e24a5fbc2cf73df7c3193f7f9",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族；RANK/QUARTILE/TRIMMEAN；PERCENTRANK/PERCENTILE.EXC；点号函数名（STDEV.S/VAR.S/RANK.EQ） | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变；未知点号函数 #VALUE!"
+    },
+    {
+      "candidate_id": "c8e21e8c206a0e3cd94d5cbc351f0e9575ddcb99ae050aee53170555c6578d0b",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "a0eb2e9bd99ec6c144b9408274e546fc863844739090595e757e44a4108c0733",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/日期时间族；RANK/QUARTILE/TRIMMEAN；PERCENTRANK/PERCENTILE.EXC；GEOMEAN/HARMEAN | S:矩阵只记当前实现；查找受限 sheet/key/value"
+    },
+    {
+      "candidate_id": "836c7f8d42e992e10260fb9e917108a17d51274e8ee35eb3cd00f65feb5139ff",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "371ac4df422fcd59ca392a4c5b41439665633096c2c4985c5fa62b4a70d345a3",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项；Round129 点号等价与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
