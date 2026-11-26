@@ -1289,6 +1289,15 @@ mod tests {
     }
 
     #[test]
+    fn cached_string_and_boolean_formula_values_are_read() {
+        let xml = r#"<sheetData>
+            <row r="1"><c r="A1" t="str"><f>CONCAT("a","b")</f><v>ab</v></c><c r="B1" t="b"><f>1=1</f><v>1</v></c></row>
+        </sheetData>"#;
+        let rows = sheet_rows(xml, &[], &[]).unwrap();
+        assert_eq!(rows[0].1, vec!["ab", "true"]);
+    }
+
+    #[test]
     fn custom_date_number_formats_are_recognized() {
         let styles = r#"<numFmts count="2">
             <numFmt numFmtId="164" formatCode="yyyy/mm/dd"/>

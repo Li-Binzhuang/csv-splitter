@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 60（公式缓存类型）：补 cached string/boolean 公式值测试，确保
+t=str/t=b 都读缓存值而非重算；发布包 SHA `ebc7aee8…d71c88`。
+
 Round 59（合并单元格用户面）：CLI 测试确认 merge A1:B1 只输出 A1 的存储值，
 不凭空补 B1；空行/公式测试共用夹具构造器；发布包 SHA `4f7fce51…c5c98e`。
 
