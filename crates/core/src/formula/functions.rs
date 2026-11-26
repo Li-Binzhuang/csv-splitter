@@ -1109,6 +1109,76 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number(result.round())
         }
+        // DECIMAL/BASE convert between a radix-2..36 string and a number.
+        "decimal" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let text = eval(&args[0], ctx).text();
+            let Some(radix) = eval(&args[1], ctx).number().and_then(radix_of) else {
+                return Value::Error;
+            };
+            let mut text = text.trim();
+            let negative = text.starts_with('-');
+            if negative || text.starts_with('+') {
+                text = &text[1..];
+            }
+            if text.is_empty() {
+                return Value::Number(0.0);
+            }
+            let mut value = 0.0f64;
+            for ch in text.chars() {
+                let Some(digit) = ch.to_digit(radix) else {
+                    return Value::Error;
+                };
+                if digit >= radix {
+                    return Value::Error;
+                }
+                value = value * radix as f64 + digit as f64;
+                if !value.is_finite() {
+                    return Value::Error;
+                }
+            }
+            Value::Number(if negative { -value } else { value })
+        }
+        "base" => {
+            if args.len() < 2 || args.len() > 3 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            let Some(radix) = eval(&args[1], ctx).number().and_then(radix_of) else {
+                return Value::Error;
+            };
+            let min_length = match args.get(2) {
+                Some(arg) => match eval(arg, ctx).number() {
+                    Some(value)
+                        if value.is_finite()
+                            && value >= 0.0
+                            && value.trunc() == value
+                            && value <= 255.0 =>
+                    {
+                        value as usize
+                    }
+                    _ => return Value::Error,
+                },
+                None => 0,
+            };
+            if !number.is_finite() || number < 0.0 || number.trunc() != number {
+                return Value::Error;
+            }
+            if number > u64::MAX as f64 {
+                return Value::Error;
+            }
+            let digits = to_base(number as u64, radix);
+            let padded = if digits.len() < min_length {
+                format!("{}{digits}", "0".repeat(min_length - digits.len()))
+            } else {
+                digits
+            };
+            Value::Text(padded)
+        }
         // BITAND/BITOR/BITXOR: 48-bit non-negative integers.
         "bitand" | "bitor" | "bitxor" => {
             if args.len() != 2 {
@@ -2968,6 +3038,31 @@ fn range_cells<'a>(
 }
 
 /// Sample variance from (sum, sum of squares, n); `None` when n < 2.
+fn radix_of(value: f64) -> Option<u32> {
+    if value.is_finite() && value.trunc() == value && (2.0..=36.0).contains(&value) {
+        Some(value as u32)
+    } else {
+        None
+    }
+}
+
+fn to_base(mut number: u64, radix: u32) -> String {
+    if number == 0 {
+        return "0".to_string();
+    }
+    let mut digits = String::new();
+    while number > 0 {
+        let digit = (number % radix as u64) as u32;
+        digits.push(
+            char::from_digit(digit, radix)
+                .unwrap_or('0')
+                .to_ascii_uppercase(),
+        );
+        number /= radix as u64;
+    }
+    digits.chars().rev().collect()
+}
+
 fn bit_integer(value: f64) -> Option<u64> {
     if value.is_finite() && value >= 0.0 && value.trunc() == value && value <= 281_474_976_710_655.0
     {

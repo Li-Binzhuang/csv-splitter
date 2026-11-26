@@ -1442,6 +1442,37 @@ mod tests {
     }
 
     #[test]
+    fn decimal_and_base_convert_radices() {
+        assert_eq!(eval_str(r#"decimal("FF", 16)"#, &[]), "255");
+        assert_eq!(eval_str(r#"decimal("ff", 16)"#, &[]), "255");
+        assert_eq!(eval_str(r#"decimal("1010", 2)"#, &[]), "10");
+        assert_eq!(eval_str(r#"decimal("zz", 36)"#, &[]), "1295");
+        assert_eq!(eval_str(r#"decimal("-FF", 16)"#, &[]), "-255");
+        assert_eq!(eval_str(r#"decimal("", 2)"#, &[]), "0");
+        for source in [
+            r#"decimal("2", 2)"#,
+            r#"decimal("FF", 1)"#,
+            r#"decimal("FF", 37)"#,
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+        assert_eq!(eval_str("base(255, 16)", &[]), "FF");
+        assert_eq!(eval_str("base(255, 16, 4)", &[]), "00FF");
+        assert_eq!(eval_str("base(10, 2)", &[]), "1010");
+        assert_eq!(eval_str("base(0, 2)", &[]), "0");
+        assert_eq!(eval_str("base(0, 2, 3)", &[]), "000");
+        for source in [
+            "base(-1, 2)",
+            "base(1.5, 2)",
+            "base(10, 1)",
+            "base(10, 37)",
+            "base(10, 2, 256)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn type_reports_values_and_errors() {
         assert_eq!(eval_str("type(1)", &[]), "1");
         assert_eq!(eval_str("type(\"x\")", &[]), "2");

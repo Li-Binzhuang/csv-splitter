@@ -102,13 +102,16 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项145 财务终值（功能级）：`FV(rate, nper, pmt[, pv[, type]])`；
+  rate=0/type 0/1/非法参数语义；验收：单测 + gate。
 - [ ] 项144 财务付款（功能级）：`PMT(rate, nper, pv[, fv[, type]])`；
   rate=0/type 0/1/非法参数语义；验收：单测 + gate。
 - [ ] 项143 错误类型（功能级）：`ERROR.TYPE` 对 `#NULL!`/`#DIV/0!`/
   `#VALUE!`/`#REF!`/`#NAME?`/`#NUM!`/`#N/A` 返回 1–7；非错误 `#N/A`；
   验收：单测 + gate。
-- [ ] 项142 进制转换（功能级）：`DECIMAL(text, radix)`/`BASE(number, radix[,
-  min_length])`；2–36 进制、非法输入 `#VALUE!`；验收：单测 + gate。
+- [x] 项142 进制转换（功能级）：`DECIMAL(text, radix)`/`BASE(number, radix[,
+  min_length])`；2–36 进制、非法输入 `#VALUE!`；测试
+  `decimal_and_base_convert_radices`。
 - [x] 项140 国际工作日（功能级）：`NETWORKDAYS.INTL`/`WORKDAY.INTL`
   支持 weekend 代码 1–7/11–17、7 位 0/1 字符串与节假日；非法 weekend
   `#VALUE!`。测试 `intl_workday_functions_work`。
@@ -135,6 +138,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 171（项142 进制转换，功能级）：DECIMAL/BASE、2–36 进制与错误边界；
+定向与全量 gate/package 通过；发布包 SHA `34976a19…be259`。
 
 Round 170（项141 TYPE，功能级）：数字/文本/布尔/错误类型码；定向与全量 gate/package 通过；发布包
 SHA `d23c9f44…70fb5`。
