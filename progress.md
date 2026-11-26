@@ -17,6 +17,11 @@
 
 ## 当前进度
 
+Round 40（安装保留发布清单）：install_offline 在 prefix 内保留
+`release-manifest.json`，ops_bundle 会一并收集；安装 smoke 断言存在。
+本轮另把 skill 安装阶段阈值从 3s 调到 5s（实测 3.47/3.53s 偶发超 3s）；
+发布包 SHA `98e33052…dcc6f`。
+
 Round 39（性能回归比较）：新增 `bench_compare.py` 比较两份 summary 的逐命令
 耗时/总量，默认 20% 阈值；smoke 覆盖通过、回归拒绝、缺命令拒绝；已进 gate；
 发布包 SHA `ec830a1a…6590e`。

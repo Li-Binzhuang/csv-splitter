@@ -28,6 +28,7 @@ BYTES="$(wc -c < "$WORK/csvx-test.tar.gz" | tr -d ' ')"
 printf '{"name":"csvx-test","sha256":"%s","bytes":%s}\n' "$SHA" "$BYTES" > "$WORK/release.json"
 bash scripts/install_offline.sh --archive "$WORK/csvx-test.tar.gz" --prefix "$PREFIX" --manifest "$WORK/release.json" >/dev/null
 [[ -x "$PREFIX/bin/csvx" ]] || { echo "install_offline=fail binary missing" >&2; exit 1; }
+[[ -f "$PREFIX/release-manifest.json" ]] || { echo "install_offline=fail release manifest not retained" >&2; exit 1; }
 "$PREFIX/bin/csvx" --version >/dev/null
 python3 - "$PREFIX/install-manifest.json" <<'PY'
 import json

@@ -46,6 +46,9 @@ fi
 if [[ -f "$PREFIX/install-manifest.json" ]]; then
   cp "$PREFIX/install-manifest.json" "$WORK/install-manifest.json"
 fi
+if [[ -f "$PREFIX/release-manifest.json" ]]; then
+  cp "$PREFIX/release-manifest.json" "$WORK/release-manifest.json"
+fi
 OUT_DIR="$(dirname "$OUT")"
 mkdir -p "$OUT_DIR"
 tar -czf "$OUT" -C "$WORK" .

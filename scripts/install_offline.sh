@@ -112,13 +112,14 @@ for item in README.md CHANGELOG.md LICENSE docs; do
   cp -R "$ROOT/$item" "$PREFIX/share/csvx/"
 done
 
-python3 - "$PREFIX" "$ARCHIVE_ABS" "$ACTUAL" "$VERSION" <<'PY'
+python3 - "$PREFIX" "$ARCHIVE_ABS" "$ACTUAL" "$VERSION" "$MANIFEST" <<'PY'
 import datetime
 import json
 import pathlib
 import platform
 import sys
 prefix = pathlib.Path(sys.argv[1])
+SOURCE_MANIFEST = sys.argv[5]
 manifest = {
     "version": sys.argv[4],
     "sha256": sys.argv[3],
@@ -128,6 +129,8 @@ manifest = {
     "binary": str(prefix / "bin/csvx"),
 }
 (prefix / "install-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+if SOURCE_MANIFEST:
+    (prefix / "release-manifest.json").write_text(open(SOURCE_MANIFEST, encoding="utf-8").read())
 PY
 
 "$PREFIX/bin/csvx" --version

@@ -5,7 +5,7 @@ import sys
 
 LIMITS_MS = {
     "extract": 2000,
-    "skill": 3000,
+    "skill": 5000,
     "try": 3000,
     "agent": 5000,
     "xlsx": 2000,

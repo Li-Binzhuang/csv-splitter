@@ -1,0 +1,125 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "2e0944a7aee9cad5eae939dc8a501cabe8d845ee6dc99a02f982b0418e200234",
+  "batch_id": "7cf7e09eaf0f8f01bd10146841c13ea328a87938d8777235c1924110240ad107",
+  "composite_identity": "29acabd45b0a1d29bf583c255e7dbe752dd5b0d37766d865f3bd8d0bd59f523f",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "8327b83b5cc5d3614146390d63b1a5240087a2d6abb901bf07cb6c8f20445af6",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DEPLOY.md",
+      "path": "docs/DEPLOY.md",
+      "change": "update",
+      "source_sha256": "f7c6c87f1e42d89ac8ffa396b4cb39bd0f8178de55bb6b077561500abafb5c37",
+      "existing_entry": "DEPLOY.md[SO7M]: F:部署材料：安装、配置、systemd、升级回滚与自检 | R:code:scripts/install_selfcheck.sh,code:scripts/test_upgrade_rollback.sh | A:三种安装；升级/回滚演练；自检字段；排障顺序；无鉴权 | S:必须写明无鉴权/多用户；自检默认审计目录；演练不联网"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "113e9da503cd40b627c94225bbd8188282330780ec53ad53d71b62aad4d6df0f",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round39 bench_compare 与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/check_phase_times.py",
+      "path": "scripts/check_phase_times.py",
+      "change": "update",
+      "source_sha256": "8dfe73f9162d6e415a5dc784b7e107c02cd70c9c802a831dbc0efbdfb6e8c802",
+      "existing_entry": "check_phase_times.py[SD7T]: F:拒绝超出预算的包验收阶段 | R:code:scripts/verify_dist.sh,code:scripts/dev.sh | A:读 verify.json phaseMs；extract\u003c2s skill\u003c3s try\u003c3s agent\u003c5s xlsx\u003c2s trace\u003c2s；输出 phase_thresholds=ok | S:失败命名字段；退出 1；不联网"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/install_offline.sh",
+      "path": "scripts/install_offline.sh",
+      "change": "update",
+      "source_sha256": "5042853ed40c7b68ad10274c91a3c52fc12ee3de4e1a89bf374ec79c0493adfb",
+      "existing_entry": "install_offline.sh[OV7S]: F:离线安装发布包到 prefix 并写版本锁 | R:code:scripts/release_manifest.py,code:scripts/test_install_offline.sh | A:SHA256；manifest bytes/sha；解包/demo；bin/docs；platform | S:无网络；坏 SHA/manifest/版本拒绝；已有不同需 --force"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/ops_bundle.sh",
+      "path": "scripts/ops_bundle.sh",
+      "change": "update",
+      "source_sha256": "0ecdeabb0f66ceeeea6898517aaa3c661498697ac243c8a53007e69ed6539677",
+      "existing_entry": "ops_bundle.sh[OV7T]: F:本地诊断 tar.gz + SHA | R:code:scripts/ops_status.sh,code:scripts/install_selfcheck.sh,code:docs/OPERATIONS.md | A:BUNDLE/env/selfcheck/ops-status；默认不含日志；include-logs 加 state | S:不联网；不含原始行/参数值；SHA 文件"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/release_manifest.py",
+      "path": "scripts/release_manifest.py",
+      "change": "update",
+      "source_sha256": "e54b826d032e511e328b98da08405de1042b28179b70e3938348daba9192f752",
+      "existing_entry": "release_manifest.py[SD7T]: F:从已验证包写出 manifest + criticalDocs | R:code:scripts/package_release.sh,code:scripts/check_release.py | A:sha/bytes/UTC；verifyJson；四份关键文档 tar 内 SHA/bytes | S:仅打包后；不联网；缺文档即失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_install_offline.sh",
+      "path": "scripts/test_install_offline.sh",
+      "change": "update",
+      "source_sha256": "bc7e5f0cc1d4a3151fffcf7c1ab98b7deef0ff2b92a33259a993d6ecd13eb31f",
+      "existing_entry": "test_install_offline.sh[TQ7T]: F:离线安装器正负例脚本 | R:code:scripts/install_offline.sh,code:scripts/dev.sh | A:真实 tar；manifest 字段/platform；坏 SHA/manifest；版本锁拒绝 | S:不联网；gate 必跑；失败非零"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "7665981a501651026fd640825e880947bf0ab55d174f46d9d35e07fa16859f0c",
+      "object_ref": "code:docs/DEPLOY.md",
+      "path": "docs/DEPLOY.md",
+      "change": "update",
+      "source_sha256": "f7c6c87f1e42d89ac8ffa396b4cb39bd0f8178de55bb6b077561500abafb5c37",
+      "existing_entry": "DEPLOY.md[SO7M]: F:部署材料：安装、配置、systemd、升级回滚与自检 | R:code:scripts/install_selfcheck.sh,code:scripts/test_upgrade_rollback.sh | A:三种安装；升级/回滚演练；自检字段；排障顺序；无鉴权 | S:必须写明无鉴权/多用户；自检默认审计目录；演练不联网"
+    },
+    {
+      "candidate_id": "30874cce89ff6a99992944a97279a02732dc210ab8d8180d2adf385c24d56830",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "113e9da503cd40b627c94225bbd8188282330780ec53ad53d71b62aad4d6df0f",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round39 bench_compare 与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "9df113f928cf778b13312bacaab35575b905a20cbf66817dcb7d5dd37f403d1d",
+      "object_ref": "code:scripts/check_phase_times.py",
+      "path": "scripts/check_phase_times.py",
+      "change": "update",
+      "source_sha256": "8dfe73f9162d6e415a5dc784b7e107c02cd70c9c802a831dbc0efbdfb6e8c802",
+      "existing_entry": "check_phase_times.py[SD7T]: F:拒绝超出预算的包验收阶段 | R:code:scripts/verify_dist.sh,code:scripts/dev.sh | A:读 verify.json phaseMs；extract\u003c2s skill\u003c3s try\u003c3s agent\u003c5s xlsx\u003c2s trace\u003c2s；输出 phase_thresholds=ok | S:失败命名字段；退出 1；不联网"
+    },
+    {
+      "candidate_id": "d3cf18955b8778fc8e8745d320371c55afe77a3f0afdc675a33f561ac999d6f7",
+      "object_ref": "code:scripts/install_offline.sh",
+      "path": "scripts/install_offline.sh",
+      "change": "update",
+      "source_sha256": "5042853ed40c7b68ad10274c91a3c52fc12ee3de4e1a89bf374ec79c0493adfb",
+      "existing_entry": "install_offline.sh[OV7S]: F:离线安装发布包到 prefix 并写版本锁 | R:code:scripts/release_manifest.py,code:scripts/test_install_offline.sh | A:SHA256；manifest bytes/sha；解包/demo；bin/docs；platform | S:无网络；坏 SHA/manifest/版本拒绝；已有不同需 --force"
+    },
+    {
+      "candidate_id": "6c946f47e51b8882892dcaa7654ece15ac28b788eaa8fa9f0463c1c17cf1c3c6",
+      "object_ref": "code:scripts/ops_bundle.sh",
+      "path": "scripts/ops_bundle.sh",
+      "change": "update",
+      "source_sha256": "0ecdeabb0f66ceeeea6898517aaa3c661498697ac243c8a53007e69ed6539677",
+      "existing_entry": "ops_bundle.sh[OV7T]: F:本地诊断 tar.gz + SHA | R:code:scripts/ops_status.sh,code:scripts/install_selfcheck.sh,code:docs/OPERATIONS.md | A:BUNDLE/env/selfcheck/ops-status；默认不含日志；include-logs 加 state | S:不联网；不含原始行/参数值；SHA 文件"
+    },
+    {
+      "candidate_id": "c4fb24c0ffc6abe6c1ed4f640da56143f8dab1863af1196d217f0e82952948d6",
+      "object_ref": "code:scripts/release_manifest.py",
+      "path": "scripts/release_manifest.py",
+      "change": "update",
+      "source_sha256": "e54b826d032e511e328b98da08405de1042b28179b70e3938348daba9192f752",
+      "existing_entry": "release_manifest.py[SD7T]: F:从已验证包写出 manifest + criticalDocs | R:code:scripts/package_release.sh,code:scripts/check_release.py | A:sha/bytes/UTC；verifyJson；四份关键文档 tar 内 SHA/bytes | S:仅打包后；不联网；缺文档即失败"
+    },
+    {
+      "candidate_id": "f8ec861eac706ac7f41588cce5afba768981ad6201ad57deab707210a34839df",
+      "object_ref": "code:scripts/test_install_offline.sh",
+      "path": "scripts/test_install_offline.sh",
+      "change": "update",
+      "source_sha256": "bc7e5f0cc1d4a3151fffcf7c1ab98b7deef0ff2b92a33259a993d6ecd13eb31f",
+      "existing_entry": "test_install_offline.sh[TQ7T]: F:离线安装器正负例脚本 | R:code:scripts/install_offline.sh,code:scripts/dev.sh | A:真实 tar；manifest 字段/platform；坏 SHA/manifest；版本锁拒绝 | S:不联网；gate 必跑；失败非零"
+    }
+  ]
+}
