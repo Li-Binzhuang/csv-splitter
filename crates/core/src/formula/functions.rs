@@ -1263,6 +1263,58 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // NPER: number of periods from rate, payment and present value.
+        "nper" => {
+            if args.len() < 3 || args.len() > 5 {
+                return Value::Error;
+            }
+            let (Some(rate), Some(pmt), Some(pv)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            let fv = args
+                .get(3)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(0.0))
+                .unwrap_or(f64::NAN);
+            let payment_type = args
+                .get(4)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(0.0))
+                .unwrap_or(f64::NAN);
+            if !rate.is_finite()
+                || !pmt.is_finite()
+                || !pv.is_finite()
+                || !fv.is_finite()
+                || !payment_type.is_finite()
+                || rate <= -1.0
+                || ![0.0, 1.0].contains(&payment_type)
+            {
+                return Value::Error;
+            }
+            let periods = if rate == 0.0 {
+                if pmt == 0.0 {
+                    return Value::Error;
+                }
+                -(pv + fv) / pmt
+            } else {
+                let payment_factor = pmt * (1.0 + rate * payment_type) / rate;
+                let numerator = payment_factor - fv;
+                let denominator = pv + payment_factor;
+                if denominator == 0.0 || numerator / denominator <= 0.0 {
+                    return Value::Error;
+                }
+                (numerator / denominator).ln() / (1.0 + rate).ln()
+            };
+            if periods.is_finite() {
+                Value::Number(periods)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

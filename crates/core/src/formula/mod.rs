@@ -1442,6 +1442,23 @@ mod tests {
     }
 
     #[test]
+    fn nper_reports_the_number_of_periods() {
+        assert_eq!(eval_str("nper(0, -100, 1000)", &[]), "10");
+        assert_eq!(eval_str("nper(0, -150, 1000, 500)", &[]), "10");
+        assert_eq!(eval_str("nper(0.1, -1100, 1000)", &[]), "1");
+        assert_eq!(eval_str("nper(0.1, 0, 1000, -1210)", &[]), "2");
+        assert_eq!(eval_str("nper(0.1, -162.745447, 1000)", &[]), "9.999995");
+        for source in [
+            "nper(0, 0, 1000)",
+            "nper(-1, -100, 1000)",
+            "nper(0.1, -100, 1000, 0, 2)",
+            "nper(0.1, -100)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn pv_discounts_future_cash_flows() {
         assert_eq!(eval_str("pv(0, 10, 100)", &[]), "-1000");
         assert_eq!(eval_str("pv(0, 10, 100, 500)", &[]), "-1500");
