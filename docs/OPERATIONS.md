@@ -108,4 +108,17 @@ MCP adapter ─┘        │
 
 - [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) 的分层与模块地图；
 - [`docs/BEYOND_EXCEL.md`](BEYOND_EXCEL.md) 的能力边界；
-- `crates/core/src/contract.rs`。
+- `crates/core/src/contract.rs`。\n
+## 本地运维快照（2026-11-26）
+
+`scripts/ops_status.sh` 聚合一个本地 JSON 快照，不发网络请求：
+
+- 安装自检结果（prefix 存在时）；
+- `.csvx/pipeline-history.jsonl` 条目数/失败 run 数；
+- `.csvx/mcp-audit.jsonl` 条目数/失败调用数/大小/轮转大小；
+- 限制说明。
+
+根目录用 `CSVX_OPS_ROOT`，prefix 用 `CSVX_INSTALL_PREFIX`，审计目录可用
+`CSVX_AUDIT_DIR` 覆盖。安装自检失败时整体退出非零，但 JSON 仍包含 pipeline/audit 计数。
+测试见 `scripts/test_ops_status.sh`，已进入 gate。
+

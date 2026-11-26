@@ -17,6 +17,9 @@
 
 ## 当前进度
 
+Round 28（运维快照）：新增 `ops_status.sh` 聚合安装自检 + pipeline 历史 +
+MCP 审计计数，输出本地 JSON；正负例 smoke 进 gate；发布包 SHA `da60f13a…862fd`。
+
 Round 27（发布后自检）：`package_release.sh` 在真实安装后运行
 `install_selfcheck.sh`，要求 JSON `ok=true` 才产出发布包；发布包 SHA `e2c2d13a…ebadf`。
 
