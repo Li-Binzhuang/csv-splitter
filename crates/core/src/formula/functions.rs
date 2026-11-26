@@ -1219,6 +1219,50 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // PV: present value of a future value and periodic payments.
+        "pv" => {
+            if args.len() < 3 || args.len() > 5 {
+                return Value::Error;
+            }
+            let (Some(rate), Some(nper), Some(pmt)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            let fv = args
+                .get(3)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(0.0))
+                .unwrap_or(f64::NAN);
+            let payment_type = args
+                .get(4)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(0.0))
+                .unwrap_or(f64::NAN);
+            if !rate.is_finite()
+                || !nper.is_finite()
+                || !pmt.is_finite()
+                || !fv.is_finite()
+                || !payment_type.is_finite()
+                || rate <= -1.0
+                || ![0.0, 1.0].contains(&payment_type)
+            {
+                return Value::Error;
+            }
+            let value = if rate == 0.0 {
+                -(fv + pmt * nper)
+            } else {
+                let growth = (1.0 + rate).powf(nper);
+                -(fv + pmt * (1.0 + rate * payment_type) * (growth - 1.0) / rate) / growth
+            };
+            if value.is_finite() {
+                Value::Number(value)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

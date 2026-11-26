@@ -1442,6 +1442,19 @@ mod tests {
     }
 
     #[test]
+    fn pv_discounts_future_cash_flows() {
+        assert_eq!(eval_str("pv(0, 10, 100)", &[]), "-1000");
+        assert_eq!(eval_str("pv(0, 10, 100, 500)", &[]), "-1500");
+        assert_eq!(eval_str("pv(0.1, 1, -1100)", &[]), "1000");
+        assert_eq!(eval_str("pv(0.1, 1, -1100, 0, 1)", &[]), "1100");
+        assert_eq!(eval_str("pv(0.1, 2, -576.190476)", &[]), "1000");
+        assert_eq!(eval_str("pv(0.1, 2, 0, -1210)", &[]), "1000");
+        for source in ["pv(-1, 1, 100)", "pv(0.1, 1, 100, 0, 2)", "pv(0.1, 1)"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn fv_projects_future_value() {
         assert_eq!(eval_str("fv(0, 10, -100, 1000)", &[]), "0");
         assert_eq!(eval_str("fv(0, 10, -100)", &[]), "1000");
