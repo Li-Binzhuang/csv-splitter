@@ -102,7 +102,8 @@
 | SUBTOTAL | 支持（功能级新增） | 1–11/101–111；同行区间；CSV 无隐藏行，100 系列同值 |
 | AGGREGATE | 缺失 | 19 个函数编号 + options（忽略错误/隐藏行） |
 | RAND / RANDBETWEEN | 缺失 | 非确定性，暂不进入可复现导出 |
-| GCD / LCM / FACT / COMBIN / PERMUT / MROUND | 缺失 | 数论/工程函数 |
+| GCD / LCM / FACT / COMBIN / PERMUT | 支持（功能级新增） | 非负整数；FACT≤170；非法/非整数 `#VALUE!` |
+| MROUND / CEILING.PRECISE / FLOOR.PRECISE | 缺失 | 工程舍入 |
 | BITAND / BITOR / BITXOR | 缺失 | 位运算 |
 
 ## 本轮验收（首批补齐）

@@ -100,12 +100,15 @@
   1–11 与 101–111；同行区间；空区间/非法编号 `#VALUE!`。测试
   `subtotal_supports_the_excel_function_numbers`、
   `subtotal_rejects_an_all_empty_range`。
+- [ ] 项139 工程舍入（功能级）：`MROUND`、`CEILING.PRECISE`、
+  `FLOOR.PRECISE`；负数/零倍数/非法参数语义；验收：单测 + gate。
 - [ ] 项138 位运算函数（功能级）：`BITAND`/`BITOR`/`BITXOR` 支持非负整数，
   非法/超范围 `#VALUE!`；验收：单测 + gate。
 - [ ] 项137 AGGREGATE（功能级）：`AGGREGATE(function_num, options, range)`
   支持 1–11/14–19 与 options 0/4/6；非法编号/选项 `#VALUE!`；验收：单测 + gate。
-- [ ] 项136 数论/组合函数（功能级）：`GCD`/`LCM`/`FACT`/`COMBIN`/`PERMUT`
-  支持非负整数，非法参数 `#VALUE!`；验收：单测 + gate。
+- [x] 项136 数论/组合函数（功能级）：`GCD`/`LCM`/`FACT`/`COMBIN`/`PERMUT`
+  支持非负整数；`FACT` 上限 170；非法/非整数 `#VALUE!`。测试
+  `number_theory_functions_work`。
 - [x] 项135 单行 HLOOKUP/LOOKUP（功能级）：HLOOKUP 同行单行表且
   `row_index=1`；LOOKUP 向量形式，结果区间等宽；精确/近似；越界/不等宽
   `#VALUE!`、未命中 `#N/A`。测试 `hlookup_and_lookup_read_single_row_tables`。
@@ -118,6 +121,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 165（项136 数论/组合函数，功能级）：GCD/LCM/FACT/COMBIN/PERMUT；
+非负整数域与错误语义；定向与全量 gate/package 通过；发布包
+SHA `ebe710e7…fe692`。
 
 Round 164（项135 HLOOKUP/LOOKUP，功能级）：同行单行表、精确/近似、等宽
 校验；定向与全量 gate/package 通过；发布包 SHA `6c94e14c…5d4b6b`。

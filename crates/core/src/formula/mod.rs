@@ -1344,6 +1344,29 @@ mod tests {
     }
 
     #[test]
+    fn number_theory_functions_work() {
+        assert_eq!(eval_str("gcd(12, 18)", &[]), "6");
+        assert_eq!(eval_str("gcd(0, 5)", &[]), "5");
+        assert_eq!(eval_str("gcd(12, 18, 24)", &[]), "6");
+        assert_eq!(eval_str("gcd(-1, 5)", &[]), "#VALUE!");
+        assert_eq!(eval_str("gcd(1.5, 2)", &[]), "#VALUE!");
+        assert_eq!(eval_str("lcm(4, 6)", &[]), "12");
+        assert_eq!(eval_str("lcm(4, 6, 8)", &[]), "24");
+        assert_eq!(eval_str("lcm(0, 6)", &[]), "0");
+        assert_eq!(eval_str("lcm(1.5, 6)", &[]), "#VALUE!");
+        assert_eq!(eval_str("fact(5)", &[]), "120");
+        assert_eq!(eval_str("fact(0)", &[]), "1");
+        assert_eq!(eval_str("fact(171)", &[]), "#VALUE!");
+        assert_eq!(eval_str("fact(2.5)", &[]), "#VALUE!");
+        assert_eq!(eval_str("combin(5, 2)", &[]), "10");
+        assert_eq!(eval_str("combin(5, 0)", &[]), "1");
+        assert_eq!(eval_str("combin(2, 5)", &[]), "#VALUE!");
+        assert_eq!(eval_str("permut(5, 2)", &[]), "20");
+        assert_eq!(eval_str("permut(5, 0)", &[]), "1");
+        assert_eq!(eval_str("permut(2, 5)", &[]), "#VALUE!");
+    }
+
+    #[test]
     fn fixed_dollar_and_numbervalue_work() {
         assert_eq!(eval_str("fixed(1234.5678)", &[]), "1,234.57");
         assert_eq!(eval_str("fixed(1234.5678, 0)", &[]), "1,235");

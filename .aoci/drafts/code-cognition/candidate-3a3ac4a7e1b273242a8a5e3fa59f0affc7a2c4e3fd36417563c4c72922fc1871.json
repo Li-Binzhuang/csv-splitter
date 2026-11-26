@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "45c18339b9e9ef954ac4d433a271e438f30cb0215792a8e45e1ee34f00ae0dcd",
+  "batch_id": "3a3ac4a7e1b273242a8a5e3fa59f0affc7a2c4e3fd36417563c4c72922fc1871",
+  "composite_identity": "b02da9da038339c803f4d15950e2b46684fcd23bd21c2192af0213efcfbae547",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "5177c75162f1ca6dc6a28f736bae7e52059ac07c5a91a51bdbb9fb583d1f7db0",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "276d0de074df8edc8101d092e862832da7470c3dcb5b082cce57af51afba9f26",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/区间；TEXT；日期时间族；REPLACE/SUBSTITUTE；INDEX/MATCH/XMATCH/HLOOKUP/LOOKUP；UNICHAR/UNICODE；FIXED/DOLLAR/NUMBERVALUE；SUBTOTAL | S:单列按整列；HLOOKUP 仅单行 row_index=1；跨行区间不支持；SUBTOTAL 空区间报错"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "73f5075d4909edb4475d9345f45ee1a6990776efdfbb46d76fd6e184b5130714",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族；REPLACE/SUBSTITUTE；INDEX/MATCH/XMATCH/HLOOKUP/LOOKUP；UNICHAR/UNICODE；SUBTOTAL | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "bf88c9684100b4f3e878c41695a2ba2b002fd2fa5aab4a824c68d703ab503f67",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/日期时间族；REPLACE/SUBSTITUTE；INDEX/MATCH/XMATCH/HLOOKUP/LOOKUP；UNICHAR/UNICODE；FIXED/DOLLAR/NUMBERVALUE；SUBTOTAL | S:矩阵只记当前实现；HLOOKUP 仅单行；AGGREGATE 仍缺"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "366dbee9c12105d8b151b970ae908a7d0e5d9f54b5d82b5de816339e0955c691",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 个功能级项；Round164 HLOOKUP/LOOKUP 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "92be002359ccfda801b9342824f2326589fabdfbcb08d00fe32e6b713fa5aa75",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "276d0de074df8edc8101d092e862832da7470c3dcb5b082cce57af51afba9f26",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/区间；TEXT；日期时间族；REPLACE/SUBSTITUTE；INDEX/MATCH/XMATCH/HLOOKUP/LOOKUP；UNICHAR/UNICODE；FIXED/DOLLAR/NUMBERVALUE；SUBTOTAL | S:单列按整列；HLOOKUP 仅单行 row_index=1；跨行区间不支持；SUBTOTAL 空区间报错"
+    },
+    {
+      "candidate_id": "def89b2f34bb8506bd536001e9e27fc82ce14eda2e2a1b6e95efae04d13c8822",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "73f5075d4909edb4475d9345f45ee1a6990776efdfbb46d76fd6e184b5130714",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族；REPLACE/SUBSTITUTE；INDEX/MATCH/XMATCH/HLOOKUP/LOOKUP；UNICHAR/UNICODE；SUBTOTAL | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "005e180fabdd63d5954aff4fd1035a1d38dcbc541874f1ba1e6f72f9212bbb09",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "bf88c9684100b4f3e878c41695a2ba2b002fd2fa5aab4a824c68d703ab503f67",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/日期时间族；REPLACE/SUBSTITUTE；INDEX/MATCH/XMATCH/HLOOKUP/LOOKUP；UNICHAR/UNICODE；FIXED/DOLLAR/NUMBERVALUE；SUBTOTAL | S:矩阵只记当前实现；HLOOKUP 仅单行；AGGREGATE 仍缺"
+    },
+    {
+      "candidate_id": "e49af577d97b6b20ec5f60ebab9a242d45a46ae8a6b089960ed1b87e422f33c3",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "366dbee9c12105d8b151b970ae908a7d0e5d9f54b5d82b5de816339e0955c691",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 个功能级项；Round164 HLOOKUP/LOOKUP 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

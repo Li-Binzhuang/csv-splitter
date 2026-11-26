@@ -942,6 +942,78 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Number(x % y)
             }
         }
+        // GCD/LCM/FACT/COMBIN/PERMUT: non-negative integer domain.
+        "gcd" | "lcm" => {
+            if args.is_empty() {
+                return Value::Error;
+            }
+            let mut result: u64 = if lower == "gcd" { 0 } else { 1 };
+            for arg in args {
+                let Some(number) = eval(arg, ctx).number() else {
+                    return Value::Error;
+                };
+                let Some(number) = nonnegative_integer(number) else {
+                    return Value::Error;
+                };
+                if lower == "gcd" {
+                    result = gcd_u64(result, number);
+                } else if result == 0 || number == 0 {
+                    result = 0;
+                } else {
+                    let Some(product) = result.checked_mul(number) else {
+                        return Value::Error;
+                    };
+                    result = product / gcd_u64(result, number);
+                }
+            }
+            Value::Number(result as f64)
+        }
+        "fact" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            let Some(number) = nonnegative_integer(number) else {
+                return Value::Error;
+            };
+            if number > 170 {
+                return Value::Error;
+            }
+            let mut result = 1.0f64;
+            for value in 1..=number {
+                result *= value as f64;
+            }
+            Value::Number(result)
+        }
+        "combin" | "permut" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let (Some(n), Some(k)) = (eval(&args[0], ctx).number(), eval(&args[1], ctx).number())
+            else {
+                return Value::Error;
+            };
+            let (Some(n), Some(k)) = (nonnegative_integer(n), nonnegative_integer(k)) else {
+                return Value::Error;
+            };
+            if k > n {
+                return Value::Error;
+            }
+            let mut result = 1.0f64;
+            if lower == "combin" {
+                let k = k.min(n - k);
+                for step in 1..=k {
+                    result *= (n - k + step) as f64 / step as f64;
+                }
+            } else {
+                for step in 0..k {
+                    result *= (n - step) as f64;
+                }
+            }
+            Value::Number(result.round())
+        }
         "min" | "max" => {
             // `min(amount)` means the whole column, exactly like `sum(amount)`; a bare
             // column argument would otherwise read this row's cell and call it a day.
@@ -2577,6 +2649,23 @@ fn range_cells<'a>(
 }
 
 /// Sample variance from (sum, sum of squares, n); `None` when n < 2.
+fn nonnegative_integer(value: f64) -> Option<u64> {
+    if value.is_finite() && value >= 0.0 && value.trunc() == value && value <= u64::MAX as f64 {
+        Some(value as u64)
+    } else {
+        None
+    }
+}
+
+fn gcd_u64(mut a: u64, mut b: u64) -> u64 {
+    while b != 0 {
+        let remainder = a % b;
+        a = b;
+        b = remainder;
+    }
+    a
+}
+
 fn sample_variance(sum: f64, squares: f64, count: u64) -> Option<f64> {
     if count < 2 {
         return None;
