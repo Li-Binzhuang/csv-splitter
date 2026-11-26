@@ -1,0 +1,137 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "ee183b5fa35523e98df1c967d56406f37a3de3fea1d42692df51c17ed1c623b5",
+  "batch_id": "4ee71822fd431f5b633340766201dba9c7185cbbb8dd96adde3051327d5fd2c1",
+  "composite_identity": "c032f4fe8590bbada741bd6db34b5b96b342d9d1bd21bc4e605d8c14e85f506d",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "fde4b186a0e05f57456feb595fb6ec3380dd58e9c4825e1bdf0757a4b23b8632",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/DESIGN_PARTNER.md",
+      "path": "docs/DESIGN_PARTNER.md",
+      "change": "update",
+      "source_sha256": "1ce0189a6a0b76db6bfc567ea730dc41eb9c1ebd139d077914bce5fcbe3170e6",
+      "existing_entry": "DESIGN_PARTNER.md[SG7T]: F:设计伙伴四周试点与 intake 支持 | R:code:scripts/pilot_kit.sh,code:scripts/pilot_intake.py,code:scripts/pilot_report.py | A:四周表；指标；CSVX_PILOT_FILE；gz/bz2/zst；非目标 | S:定价人工确认；不落原始行；本地单用户"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/MIGRATION.md",
+      "path": "docs/MIGRATION.md",
+      "change": "create",
+      "source_sha256": "62e3844e705314613332bd33a84e2c4f057953a11b442eafe1db32575bdba910"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/PILOT_INTERVIEW.md",
+      "path": "docs/PILOT_INTERVIEW.md",
+      "change": "create",
+      "source_sha256": "22b04f70510dce0ad49ebca4e61cc26477da0e1b455a96f8aacff7c8347073bd"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "56df20e85d02d18707fc91772191f543aef85a6a64b7a0d98d00c745fb257867",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round23 确定性 cmp 与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "4752010cf36483aab92a2dc81c016b28de05fa3730c3798b8102bdce1ed5942e",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、真实安装与证据 | R:code:scripts/install_offline.sh,code:scripts/verify_dist.sh,code:docs/bench-100gb-2026-11-26.json | A:脚本归档 scripts/；install_skill 根；真实 install；JSON 进包 | S:不联网/不打 tag；成员校验失败整包失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/pilot_report.py",
+      "path": "scripts/pilot_report.py",
+      "change": "update",
+      "source_sha256": "6f2fd69eeccbb66e10cc9e40b92f2a9fe374f5e5f943dc86a4b36c8add6447e4",
+      "existing_entry": "pilot_report.py[XQ7T]: F:客户样本试点报告生成器（本地 Python） | R:code:docs/PILOT.md | A:环境变量/参数驱动；跑 schema/filter(search 全扫)/可选物化导出/quality；记录墙钟与 RUSAGE_CHILDREN 近似 RSS；输出 Markdown，含非 SLA/未 drop cache 声明 | S:默认会写临时导出并在临时目录清理；不联网、不读数据内容；超时由调用方控制"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_pilot_kit.sh",
+      "path": "scripts/test_pilot_kit.sh",
+      "change": "update",
+      "source_sha256": "7941fbcf5d1d10ccaf81025f1c61eadc01fad6d759150708ca70fbf2d2f044a8",
+      "existing_entry": "test_pilot_kit.sh[TQ7T]: F:设计伙伴 kit smoke 与拒绝路径 | R:code:scripts/pilot_kit.sh,code:scripts/dev.sh | A:六件产物；客户样本/email；未指定过滤；重复目录拒绝 | S:gate 必跑；不联网；失败非零"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "a8fedc459043b12f3c300b5692b132f0877b64c83d856561e047c136f80be821",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:scripts/install_offline.sh,code:docs/SECURITY.md | A:成员契约加 SECURITY/DESIGN/100GB JSON/install/bench/pilot；version/skill/TRY/12 路由 | S:仅发布方；不联网；缺成员失败"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "173dfe045f7a7dddeb04b87c9cb1d09249fb2ef6b6f35ad2ad13f8a4c22231b5",
+      "object_ref": "code:docs/DESIGN_PARTNER.md",
+      "path": "docs/DESIGN_PARTNER.md",
+      "change": "update",
+      "source_sha256": "1ce0189a6a0b76db6bfc567ea730dc41eb9c1ebd139d077914bce5fcbe3170e6",
+      "existing_entry": "DESIGN_PARTNER.md[SG7T]: F:设计伙伴四周试点与 intake 支持 | R:code:scripts/pilot_kit.sh,code:scripts/pilot_intake.py,code:scripts/pilot_report.py | A:四周表；指标；CSVX_PILOT_FILE；gz/bz2/zst；非目标 | S:定价人工确认；不落原始行；本地单用户"
+    },
+    {
+      "candidate_id": "22e6024afd8ff37fcbb5f0b1d5a0c817c76d7eaf87ee64dfe2ada5a5e24efcdd",
+      "object_ref": "code:docs/MIGRATION.md",
+      "path": "docs/MIGRATION.md",
+      "change": "create",
+      "source_sha256": "62e3844e705314613332bd33a84e2c4f057953a11b442eafe1db32575bdba910"
+    },
+    {
+      "candidate_id": "08302ff1e33668860f5646976e6273466d21bd8e0977365981f58166cb92c9ee",
+      "object_ref": "code:docs/PILOT_INTERVIEW.md",
+      "path": "docs/PILOT_INTERVIEW.md",
+      "change": "create",
+      "source_sha256": "22b04f70510dce0ad49ebca4e61cc26477da0e1b455a96f8aacff7c8347073bd"
+    },
+    {
+      "candidate_id": "583abe2d3e735af8393834b6d491561e11b848aa0d1ca4483ffa568fec449487",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "56df20e85d02d18707fc91772191f543aef85a6a64b7a0d98d00c745fb257867",
+      "existing_entry": "progress.md[XQ5S]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round23 确定性 cmp 与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "aea525ede5ae6f2de447e2061510f1a9fd3f2bc7cfc5cc794cfbd65d698d32a2",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "4752010cf36483aab92a2dc81c016b28de05fa3730c3798b8102bdce1ed5942e",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、真实安装与证据 | R:code:scripts/install_offline.sh,code:scripts/verify_dist.sh,code:docs/bench-100gb-2026-11-26.json | A:脚本归档 scripts/；install_skill 根；真实 install；JSON 进包 | S:不联网/不打 tag；成员校验失败整包失败"
+    },
+    {
+      "candidate_id": "71c84651d0b5b2fd125f77901db4119940d9ca2fa5d414b21803f10a4c1793a3",
+      "object_ref": "code:scripts/pilot_report.py",
+      "path": "scripts/pilot_report.py",
+      "change": "update",
+      "source_sha256": "6f2fd69eeccbb66e10cc9e40b92f2a9fe374f5e5f943dc86a4b36c8add6447e4",
+      "existing_entry": "pilot_report.py[XQ7T]: F:客户样本试点报告生成器（本地 Python） | R:code:docs/PILOT.md | A:环境变量/参数驱动；跑 schema/filter(search 全扫)/可选物化导出/quality；记录墙钟与 RUSAGE_CHILDREN 近似 RSS；输出 Markdown，含非 SLA/未 drop cache 声明 | S:默认会写临时导出并在临时目录清理；不联网、不读数据内容；超时由调用方控制"
+    },
+    {
+      "candidate_id": "1d7d3a74fe25ef282ab60faa80caf46957a5988ae49e800528a8c3457699ff2c",
+      "object_ref": "code:scripts/test_pilot_kit.sh",
+      "path": "scripts/test_pilot_kit.sh",
+      "change": "update",
+      "source_sha256": "7941fbcf5d1d10ccaf81025f1c61eadc01fad6d759150708ca70fbf2d2f044a8",
+      "existing_entry": "test_pilot_kit.sh[TQ7T]: F:设计伙伴 kit smoke 与拒绝路径 | R:code:scripts/pilot_kit.sh,code:scripts/dev.sh | A:六件产物；客户样本/email；未指定过滤；重复目录拒绝 | S:gate 必跑；不联网；失败非零"
+    },
+    {
+      "candidate_id": "6b732cc2bec9930ef56d9b30924a941c731c91a03ff06d5307385ebb81987af4",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "a8fedc459043b12f3c300b5692b132f0877b64c83d856561e047c136f80be821",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:发布包验收并写 verify.json | R:code:scripts/package_release.sh,code:scripts/install_offline.sh,code:docs/SECURITY.md | A:成员契约加 SECURITY/DESIGN/100GB JSON/install/bench/pilot；version/skill/TRY/12 路由 | S:仅发布方；不联网；缺成员失败"
+    }
+  ]
+}

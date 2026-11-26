@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 24（设计伙伴材料）：新增 PILOT_INTERVIEW.md / MIGRATION.md；
+`pilot_report.py` 自动写 `pilot-report.md.json`（版本/样本量/四操作/限制，
+不含原始行）；pilot kit smoke 断言客户样本摘要；发布包 SHA `14d4e9e6…3b339`。
+
 Round 23（确定性验证）：bench smoke 对同一 `--rows` 跑两次并 `cmp` 生成 CSV，
 证明数据确定性，而不只是文档声明；发布包 SHA `f77bff96…5acc3`。
 

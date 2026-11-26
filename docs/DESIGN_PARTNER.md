@@ -56,6 +56,8 @@ bash scripts/pilot_kit.sh   # 一键生成 demo + report + kickoff
 - `kickoff.json`
 - `kickoff.md`
 
+访谈提纲见 `docs/PILOT_INTERVIEW.md`；迁移步骤见 `docs/MIGRATION.md`。
+
 ## 6. 样本 intake 检查
 
 ```bash

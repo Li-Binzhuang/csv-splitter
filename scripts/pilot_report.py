@@ -147,7 +147,28 @@ def main():
     text = "\n".join(out)
     with open(args.out, "w", encoding="utf-8") as handle:
         handle.write(text)
+    summary = {
+        "generatedAt": datetime.now(timezone.utc).isoformat(),
+        "machine": f"{platform.platform()} / {platform.machine()}",
+        "version": version_text,
+        "sample": os.path.basename(source),
+        "sampleBytes": size,
+        "rows": meta.get("rows"),
+        "columns": meta.get("count"),
+        "where": args.where or None,
+        "operations": [
+            {"name": name, "seconds": round(elapsed, 3), "result": result}
+            for name, elapsed, result in rows
+        ],
+        "rssMb": rss_mb(),
+        "limits": ["single local run", "no page-cache drop", "not an SLA", "no raw rows in summary"],
+    }
+    summary_path = args.out + ".json"
+    with open(summary_path, "w", encoding="utf-8") as handle:
+        json.dump(summary, handle, indent=2, ensure_ascii=False)
+        handle.write("\n")
     print(f"wrote {args.out}")
+    print(f"wrote {summary_path}")
     print(text)
 
 

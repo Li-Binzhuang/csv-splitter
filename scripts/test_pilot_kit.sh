@@ -35,6 +35,11 @@ assert intake["withinLimit"] is True, intake
 assert any(item["kind"] == "email" for item in intake["sensitiveWarnings"]), intake
 report = open(sys.argv[2].replace("intake/intake.json", "pilot-report.md")).read()
 assert "(未指定)" in report, report[:500]
+summary = json.load(open(sys.argv[2].replace("intake/intake.json", "pilot-report.md.json")))
+assert summary["sample"] == "customer.csv", summary
+assert summary["rows"] == 2, summary
+assert summary["limits"], summary
+assert "person@example.test" not in json.dumps(summary, ensure_ascii=False)
 PY
 
 if CSVX_PILOT_BINARY="$BIN" CSVX_PILOT_OUT="$OUT" bash scripts/pilot_kit.sh >/dev/null 2>&1; then
