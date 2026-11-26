@@ -102,10 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [ ] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空值按 1；验收：单测 + gate。
+- [ ] 项143 错误类型（功能级）：`ERROR.TYPE` 对 `#NULL!`/`#DIV/0!`/
+  `#VALUE!`/`#REF!`/`#NAME?`/`#NUM!`/`#N/A` 返回 1–7；非错误 `#N/A`；
+  验收：单测 + gate。
 - [ ] 项142 进制转换（功能级）：`DECIMAL(text, radix)`/`BASE(number, radix[,
   min_length])`；2–36 进制、非法输入 `#VALUE!`；验收：单测 + gate。
-- [ ] 项140 国际工作日（功能级）：`NETWORKDAYS.INTL`/`WORKDAY.INTL`
-  支持 weekend 字符串/编号与节假日；非法 weekend `#VALUE!`；验收：单测 + gate。
+- [x] 项140 国际工作日（功能级）：`NETWORKDAYS.INTL`/`WORKDAY.INTL`
+  支持 weekend 代码 1–7/11–17、7 位 0/1 字符串与节假日；非法 weekend
+  `#VALUE!`。测试 `intl_workday_functions_work`。
 - [x] 项139 工程舍入（功能级）：`MROUND`（同号倍数，异号/零倍数
   `#VALUE!`）；`CEILING.PRECISE`/`FLOOR.PRECISE` 忽略 significance 符号。
   测试 `engineering_rounding_works`。
@@ -129,6 +133,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 169（项140 国际工作日，功能级）：weekend 代码/字符串、节假日；
+定向与全量 gate/package 通过；发布包 SHA `ded77353…a9848`。
 
 Round 168（项139 工程舍入，功能级）：MROUND/PRECISE；同号、负倍数、
 零倍数边界；定向与全量 gate/package 通过；发布包 SHA `9f186bec…01f52`。

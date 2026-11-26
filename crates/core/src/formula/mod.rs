@@ -1405,6 +1405,43 @@ mod tests {
     }
 
     #[test]
+    fn intl_workday_functions_work() {
+        for (source, expected) in [
+            (
+                r#"networkdays.intl("2024-01-01", "2024-01-07", "0000011")"#,
+                "5",
+            ),
+            (
+                r#"networkdays.intl("2024-01-01", "2024-01-07", "0000001")"#,
+                "6",
+            ),
+            (r#"networkdays.intl("2024-01-01", "2024-01-07", 11)"#, "6"),
+            (r#"networkdays.intl("2024-01-01", "2024-01-07", 2)"#, "5"),
+            (
+                r#"networkdays.intl("2024-01-01", "2024-01-07", "0000011", "2024-01-03")"#,
+                "4",
+            ),
+            (r#"workday.intl("2024-01-01", 1, "0000001")"#, "2024-01-02"),
+            (r#"workday.intl("2024-01-05", 1, "0000010")"#, "2024-01-07"),
+            (r#"workday.intl("2024-01-07", 1, "0000001")"#, "2024-01-08"),
+            (
+                r#"workday.intl("2024-01-01", 2, "0000011", "2024-01-03")"#,
+                "2024-01-04",
+            ),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            r#"networkdays.intl("2024-01-01", "2024-01-07", "000000")"#,
+            r#"networkdays.intl("2024-01-01", "2024-01-07", "1111111")"#,
+            r#"networkdays.intl("2024-01-01", "2024-01-07", 99)"#,
+            r#"workday.intl("2024-01-01", 1, "1111111")"#,
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn engineering_rounding_works() {
         assert_eq!(eval_str("mround(10, 3)", &[]), "9");
         assert_eq!(eval_str("mround(11, 3)", &[]), "12");

@@ -1786,6 +1786,48 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
 
         // NETWORKDAYS(start, end) without a holiday list: weekdays only, both ends
         // included. Sunday=1..Saturday=7, so business days are 2..=6.
+        "networkdays.intl" | "workday.intl" => {
+            if args.len() < 2 || args.len() > 4 {
+                return Value::Error;
+            }
+            let Some(mask) = weekend_mask(args.get(2), ctx) else {
+                return Value::Error;
+            };
+            let holidays = if args.len() > 3 {
+                match holiday_days(&args[3..], ctx) {
+                    Ok(holidays) => holidays,
+                    Err(_) => return Value::Error,
+                }
+            } else {
+                Vec::new()
+            };
+            if lower == "networkdays.intl" {
+                let start = eval(&args[0], ctx).text();
+                let end = eval(&args[1], ctx).text();
+                let (Some(start), Some(end)) = (parse_date(&start), parse_date(&end)) else {
+                    return Value::Error;
+                };
+                match networkdays_with_mask(start, end, &mask, &holidays) {
+                    Some(count) => Value::Number(count as f64),
+                    None => Value::Error,
+                }
+            } else {
+                let start = eval(&args[0], ctx).text();
+                let Some(days) = eval(&args[1], ctx).number() else {
+                    return Value::Error;
+                };
+                if !days.is_finite() {
+                    return Value::Error;
+                }
+                let Some(start) = parse_date(&start) else {
+                    return Value::Error;
+                };
+                match workday_with_mask(start, days.trunc() as i64, &mask, &holidays) {
+                    Some(date) => Value::Text(date),
+                    None => Value::Error,
+                }
+            }
+        }
         "networkdays" => match (
             args.first().map(|a| eval(a, ctx).text()),
             args.get(1).map(|a| eval(a, ctx).text()),
@@ -2425,6 +2467,118 @@ fn parse_clock(text: &str) -> Option<(u32, u32, u32)> {
         return None;
     }
     Some((hour, minute, second))
+}
+
+fn weekend_mask(arg: Option<&Expr>, ctx: &Ctx<'_>) -> Option<[bool; 7]> {
+    let Some(arg) = arg else {
+        return Some([false, false, false, false, false, true, true]);
+    };
+    let raw = eval(arg, ctx).text();
+    let text = raw.trim();
+    // A 7-character 0/1 string is a weekend mask; only otherwise is it a code.
+    if text.chars().count() == 7 && text.chars().all(|ch| ch == '0' || ch == '1') {
+        let mut mask = [false; 7];
+        for (index, ch) in text.chars().enumerate() {
+            mask[index] = ch == '1';
+        }
+        if mask.iter().all(|weekend| *weekend) {
+            return None;
+        }
+        return Some(mask);
+    }
+    text.parse::<u64>().ok().and_then(weekend_mask_from_number)
+}
+
+fn weekend_mask_from_number(code: u64) -> Option<[bool; 7]> {
+    let mask = match code {
+        1 => [false, false, false, false, false, true, true],
+        2 => [true, false, false, false, false, false, true],
+        3 => [true, true, false, false, false, false, false],
+        4 => [false, true, true, false, false, false, false],
+        5 => [false, false, true, true, false, false, false],
+        6 => [false, false, false, true, true, false, false],
+        7 => [false, false, false, false, true, true, false],
+        11 => [false, false, false, false, false, false, true],
+        12 => [true, false, false, false, false, false, false],
+        13 => [false, true, false, false, false, false, false],
+        14 => [false, false, true, false, false, false, false],
+        15 => [false, false, false, true, false, false, false],
+        16 => [false, false, false, false, true, false, false],
+        17 => [false, false, false, false, false, true, false],
+        _ => return None,
+    };
+    Some(mask)
+}
+
+fn mask_index(day: i64, mask: &[bool; 7]) -> Option<bool> {
+    let weekday = (day + 4).rem_euclid(7) + 1;
+    let index = ((weekday + 5) % 7) as usize;
+    mask.get(index).copied()
+}
+
+fn networkdays_with_mask(
+    start: (i32, u32, u32),
+    end: (i32, u32, u32),
+    mask: &[bool; 7],
+    holidays: &[i64],
+) -> Option<u64> {
+    let start_day = days_from_civil(start.0, start.1, start.2);
+    let end_day = days_from_civil(end.0, end.1, end.2);
+    if end_day < start_day {
+        return None;
+    }
+    let workdays_per_week = mask.iter().filter(|weekend| !**weekend).count() as u64;
+    if workdays_per_week == 0 {
+        return None;
+    }
+    let total = (end_day - start_day + 1) as u64;
+    let full_weeks = total / 7 * workdays_per_week;
+    let remainder = total % 7;
+    let start_index = ((weekday(start.0, start.1, start.2) + 5) % 7) as usize;
+    let mut extra = 0;
+    for step in 0..remainder {
+        if !mask[(start_index + step as usize) % 7] {
+            extra += 1;
+        }
+    }
+    let mut count = full_weeks + extra;
+    let mut unique = std::collections::HashSet::new();
+    for holiday in holidays {
+        if *holiday >= start_day
+            && *holiday <= end_day
+            && !mask_index(*holiday, mask).unwrap_or(true)
+            && unique.insert(*holiday)
+        {
+            count = count.saturating_sub(1);
+        }
+    }
+    Some(count)
+}
+
+fn workday_with_mask(
+    start: (i32, u32, u32),
+    days: i64,
+    mask: &[bool; 7],
+    holidays: &[i64],
+) -> Option<String> {
+    if mask.iter().all(|weekend| *weekend) {
+        return None;
+    }
+    let mut civil = days_from_civil(start.0, start.1, start.2);
+    let step = days.signum();
+    let mut left = days.abs();
+    while left > 0 {
+        civil += step;
+        if mask_index(civil, mask).unwrap_or(true) {
+            continue;
+        }
+        if holidays.contains(&civil) {
+            continue;
+        }
+        left -= 1;
+    }
+    let (year, month, day) = civil_from_days(civil);
+    Some(format!("{year:04}-{month:02}-{day:02}"))
 }
 
 fn holiday_days(args: &[Expr], ctx: &Ctx<'_>) -> Result<Vec<i64>, Value> {
