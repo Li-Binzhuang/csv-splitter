@@ -1,0 +1,75 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "e35473d7b52f21c1cad30b9fec8e4f59e8239cbde1b70c9b8f55d075df1ebad9",
+  "batch_id": "3d9a8d3f9c5a1fd5036dc9d31548c0fe341ba2967e163c07e70b121f69fb447c",
+  "composite_identity": "80d2b45e3aa58bbf68c6302d84b9414d509e4c750a700798e9ef81eb9a8e3dbf",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "12ec39a043d187e10b0c11afd522e2a583c93bb1178d421189544f61b6843e1e",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "create",
+      "source_sha256": "699714f0bd1926ea38c7ce64e1fd055d2ea6fed45516e8c59cec482760b752ee"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "3124c5c6439fb983bc59b25c95dad8c38b0dcf025f2792202e3cb3df916318c0",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round64 解析上限前置与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "3064d6263bb36031723ff29d7d1b33471ba847ba5b859c52a3087f7e86408016",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装、自检/运维/诊断与证据 | R:code:scripts/release_manifest.py,code:scripts/bench_compare.py,code:scripts/verify_dist.sh | A:清理旧验证；真实 install；自检/ops/bundle；bench 比较进包 | S:不联网/不打 tag；缺关键文档整包失败"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "da22cda1c7ddbca03811eb28d2f113874cbeeab2c5c540c50c6eea8ef433dc92",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:发布包验收、写 verify/reverify | R:code:scripts/package_release.sh,code:scripts/check_release.py | A:bench 比较成员；有 manifest 写 reverify；保留绑定 verify | S:仅发布方；不联网；复验不破坏 manifest"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "0cac4325d8142a0844b66ebb8a763673bb22797be813859eda6a6650ce287a95",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "create",
+      "source_sha256": "699714f0bd1926ea38c7ce64e1fd055d2ea6fed45516e8c59cec482760b752ee"
+    },
+    {
+      "candidate_id": "60b9cdf76c6b8eb9bbf12dceefc7d0759c6912f6ddd18e91f773770f4f191f49",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "3124c5c6439fb983bc59b25c95dad8c38b0dcf025f2792202e3cb3df916318c0",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round64 解析上限前置与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "93c5f87afd7be07c9998d3cddbb9ec11746db16f7c959b420eb65936d1c3eea6",
+      "object_ref": "code:scripts/package_release.sh",
+      "path": "scripts/package_release.sh",
+      "change": "update",
+      "source_sha256": "3064d6263bb36031723ff29d7d1b33471ba847ba5b859c52a3087f7e86408016",
+      "existing_entry": "package_release.sh[XQ7T]: F:构建离线发布、自验、安装、自检/运维/诊断与证据 | R:code:scripts/release_manifest.py,code:scripts/bench_compare.py,code:scripts/verify_dist.sh | A:清理旧验证；真实 install；自检/ops/bundle；bench 比较进包 | S:不联网/不打 tag；缺关键文档整包失败"
+    },
+    {
+      "candidate_id": "b44d79905d0863eb2844f521276e3a24b7263d2ea508d14d688cd0bf140541e8",
+      "object_ref": "code:scripts/verify_dist.sh",
+      "path": "scripts/verify_dist.sh",
+      "change": "update",
+      "source_sha256": "da22cda1c7ddbca03811eb28d2f113874cbeeab2c5c540c50c6eea8ef433dc92",
+      "existing_entry": "verify_dist.sh[XQ7S]: F:发布包验收、写 verify/reverify | R:code:scripts/package_release.sh,code:scripts/check_release.py | A:bench 比较成员；有 manifest 写 reverify；保留绑定 verify | S:仅发布方；不联网；复验不破坏 manifest"
+    }
+  ]
+}
