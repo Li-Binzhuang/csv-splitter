@@ -77,6 +77,7 @@ case "${1:-check}" in
     run_stage upgrade-rollback bash scripts/test_upgrade_rollback.sh
     run_stage ops-status bash scripts/test_ops_status.sh
     run_stage ops-bundle bash scripts/test_ops_bundle.sh
+    run_stage release-docs bash scripts/test_release_manifest.sh
     run_stage bench-smoke bash scripts/test_bench_100gb.sh
     run_stage pilot-kit-smoke bash scripts/test_pilot_kit.sh
     run_stage pilot-intake-smoke bash scripts/test_pilot_intake.sh

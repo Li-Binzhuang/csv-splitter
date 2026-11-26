@@ -8,7 +8,7 @@ CHANGELOG.md[SZ5L]: F:按版本记录变更、修复与实测证据 | R:- | A:�
 Cargo.toml[FV7T]: F:workspace 定义：成员、统一版本、依赖版本集中声明 | R:code:crates/core/Cargo.toml,code:crates/mcp/Cargo.toml,code:crates/agent/Cargo.toml,code:crates/cli/Cargo.toml | A:members core/mcp/agent/cli；workspace.dependencies csvx-core；version 4.2.0 是发布真相 | S:-
 LICENSE[SZ3T]: F:MIT 许可证全文 | R:- | A:标准 MIT 文本，版权人 Li Binzhuang，年份 2025 | S:-
 README.md[SG6L]: F:项目总览、命令表、上手与部署入口 | R:code:docs/BENCHMARKS.md,code:docs/CAPABILITIES.md,code:docs/DEPLOY.md | A:100GB 本机三项数字；bench JSON 链接；快速开始；命令表 | S:性能数字必须实测；本机非 SLA；文档测试校验默认端口
-progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round33 关键文档哈希与 SHA | S:每轮更新；定价未决；push 失败不阻塞
+progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round34 发布清单负例与 SHA | S:每轮更新；定价未决；push 失败不阻塞
 
 ===/<repository>/.github/workflows/===
 ci.yml[OV7S]: F:主 CI：格式化、引擎与 CLI 测试、性能守卫、clippy 工作区、失败注解 | R:code:scripts/smoke.sh,code:scripts/regress.sh,code:scripts/backend-smoke.sh,code:scripts/release-decision.sh | A:单 job 串联；engine 与 CLI 两个测试步骤失败时各重试一次并留 warning annotation（本地单跑/两线程均绿的负载型 flake）；每步 tee 日志，失败时把测试名转成公开 annotation 并上传 artifact | S:曾因双 job + 缓存配额出现“跳过一半、红叉无信息”，故单 job；重试只限一次且日志保留，真 bug 仍会两次失败
@@ -145,7 +145,7 @@ backend-smoke.sh[TQ7M]: F:后端冒烟：起真服务跑上百项 HTTP 断言 | 
 bench.sh[TP5T]: F:基准脚本：切分与合并吞吐 | R:code:scripts/smoke.sh | A:生成数据、计时并打印每秒兆字节；先 cargo build --release -p csvx-cli，再用 target/release/csvx 跑 | S:-
 check_match_arms.py[XQ5T]: F:检查 serve.rs 里 match 分支标签是否重复 | R:code:crates/cli/src/serve.rs | A:按仓库根解析目标路径，由 regress 调用 | S:按调用者工作目录解析会在临时目录里找不到文件并假失败
 clean.sh[XO4T]: F:清理构建与本地产物 | R:- | A:删除 target 与 dist，不碰数据文件 | S:-
-dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/test_ops_bundle.sh | A:gate layout/fmt/clippy/tests/sql/mcp/install/selfcheck/upgrade/ops/bundle/bench | S:gate 必带 sql；诊断包负例必须在 gate
+dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/test_release_manifest.sh | A:gate layout/fmt/clippy/tests/sql/mcp/install/selfcheck/upgrade/ops/bundle/release-docs | S:gate 必带 sql；发布清单负例必须在 gate
 install-check.sh[TO6T]: F:验证三条安装路径：源码构建、cargo install 与发布产物 | R:code:scripts/release-check.sh | A:每条路径各跑版本、demo 与 serve --check；case 以 csvx 前缀校验版本输出；二进制分别位于 target/release/csvx 与 $PREFIX/bin/csvx | S:cargo install 先离线后联网，冷缓存机器上静默联网会变成假失败
 package.sh[OV7T]: F:把二进制打成 tar.gz 或 zip 并生成校验和 | R:code:.github/workflows/release.yml | A:产物写 dist；BIN=csvx，Windows 打 zip 其余 tar.gz；发布工作流调用同一脚本；先删旧产物再打包；shasum 或 sha256sum 生成 .sha256 | S:打包与发布必须共用这一个脚本，否则本地验过的不是真正发布的那份
 regress.sh[TQ7S]: F:回归扫全量：逐条命令跑一遍并把 FAIL 计入退出码 | R:code:scripts/smoke.sh | A:每条命令一行 ok 或 FAIL；含 release-decision 自测与 match 分支查重；BIN 默认 ./target/debug/csvx 并转成绝对路径；在临时工作目录里运行 | S:相对调用者工作目录解析会在临时目录里找不到脚本并产生假失败
@@ -190,6 +190,7 @@ ops_status.sh[OV7T]: F:本地运维快照：自检/pipeline/审计聚合 | R:cod
 test_ops_status.sh[TQ7T]: F:运维快照正负例 | R:code:scripts/ops_status.sh,code:scripts/dev.sh | A:审计/历史计数；坏 prefix 仍输出；退出 1 | S:gate 必跑；不联网；失败非零
 ops_bundle.sh[OV7T]: F:本地诊断 tar.gz + SHA | R:code:scripts/ops_status.sh,code:scripts/install_selfcheck.sh,code:docs/OPERATIONS.md | A:BUNDLE/env/selfcheck/ops-status；默认不含日志；include-logs 加 state | S:不联网；不含原始行/参数值；SHA 文件
 test_ops_bundle.sh[TQ7T]: F:诊断包 smoke 与日志边界 | R:code:scripts/ops_bundle.sh,code:scripts/dev.sh | A:tar 内容；计数；默认无 state；include-logs 有 | S:gate 必跑；不联网；失败非零
+test_release_manifest.sh[TQ7T]: F:发布 manifest criticalDocs 正负例 | R:code:scripts/release_manifest.py,code:scripts/check_release.py | A:四文档哈希；check_release 通过；缺 DEPLOY 拒绝 | S:gate 必跑；不联网；失败非零
 
 ===/<repository>/csvx-demo/===
 orders.csv[AZ4L]: F:demo 命令生成的示例数据：6 列 20 120 行，含刻意保留的脏数据 | R:code:crates/core/src/demo.rs | A:列为 id,cust_no,city,amount,note,ts；20 行多一个逗号、100 行重复、900 个空备注，用来演示预览与统计对错位行的容忍 | S:脏数据是故意的，不要清理——GETTING_STARTED 与契约测试都引用这份输入

@@ -17,6 +17,10 @@
 
 ## 当前进度
 
+Round 34（发布清单负例）：新增 `test_release_manifest.sh`，证明 criticalDocs
+写入并可从 tar 重哈希；缺 DEPLOY 时 release_manifest 拒绝；已进 gate；
+发布包 SHA `4e02656e…c6e7b`。
+
 Round 33（关键文档哈希）：release manifest 增加 `criticalDocs`（四份文档的
 tar 内 SHA256），`check_release.py` 重哈希校验；缺文档即打包失败；发布包 SHA `968727e7…84b07`。
 

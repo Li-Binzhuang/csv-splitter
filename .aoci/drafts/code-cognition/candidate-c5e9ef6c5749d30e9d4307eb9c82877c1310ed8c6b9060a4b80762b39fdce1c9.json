@@ -1,0 +1,59 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a52a8cc7d0b1bc228894d91a9ffec205d78cb5637e405cb3cbb7cce654943c25",
+  "batch_id": "c5e9ef6c5749d30e9d4307eb9c82877c1310ed8c6b9060a4b80762b39fdce1c9",
+  "composite_identity": "ecad08f546db603b8a3b451fa5d2549c45462146f3d4bda7568141e85f0f088c",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "8d1dec666a58fb0643a550a08944eee42390b242fcf5e3ab7b7e928789dbbce3",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "8b3f9d7e54e4beb217cc0e13feb1c113c6b06d52e4867cc9f74791c9c18a935f",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round33 关键文档哈希与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "4fa0c44689d8a3183501cab44873399fd16f7e786e6c58e5f1b0f9656bf93521",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/test_ops_bundle.sh | A:gate layout/fmt/clippy/tests/sql/mcp/install/selfcheck/upgrade/ops/bundle/bench | S:gate 必带 sql；诊断包负例必须在 gate"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:scripts/test_release_manifest.sh",
+      "path": "scripts/test_release_manifest.sh",
+      "change": "create",
+      "source_sha256": "a06d31584afafc3f7de7a5b17e380b697fd99fa8847cf95927b817ec74ac00cc"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "4b4a71264907fea06458c61e5fe3c8c94bef9600b00e0209dbb618d3936a2bab",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "8b3f9d7e54e4beb217cc0e13feb1c113c6b06d52e4867cc9f74791c9c18a935f",
+      "existing_entry": "progress.md[XQ5M]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；Round33 关键文档哈希与 SHA | S:每轮更新；定价未决；push 失败不阻塞"
+    },
+    {
+      "candidate_id": "3e222ff06815e37a860fd87067cf0f53a8846e9e4c1b776416bbaf451a70a4aa",
+      "object_ref": "code:scripts/dev.sh",
+      "path": "scripts/dev.sh",
+      "change": "update",
+      "source_sha256": "4fa0c44689d8a3183501cab44873399fd16f7e786e6c58e5f1b0f9656bf93521",
+      "existing_entry": "dev.sh[XO5T]: F:开发包装：check、test、clippy 与 gate | R:code:scripts/check_layout.sh,code:scripts/test_ops_bundle.sh | A:gate layout/fmt/clippy/tests/sql/mcp/install/selfcheck/upgrade/ops/bundle/bench | S:gate 必带 sql；诊断包负例必须在 gate"
+    },
+    {
+      "candidate_id": "ebc40e5b8a964e88347f762fb0e38bd68f80f09202bfb24594e766d4dd042124",
+      "object_ref": "code:scripts/test_release_manifest.sh",
+      "path": "scripts/test_release_manifest.sh",
+      "change": "create",
+      "source_sha256": "a06d31584afafc3f7de7a5b17e380b697fd99fa8847cf95927b817ec74ac00cc"
+    }
+  ]
+}

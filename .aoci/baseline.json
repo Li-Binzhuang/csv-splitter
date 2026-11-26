@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-26T11:06:08Z",
+  "updated_at": "2026-11-26T11:09:39Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "8d1dec666a58fb0643a550a08944eee42390b242fcf5e3ab7b7e928789dbbce3",
-      "size": 85227,
-      "normalized_sha256": "8d1dec666a58fb0643a550a08944eee42390b242fcf5e3ab7b7e928789dbbce3"
+      "sha256": "14eb0b29ab797063562710a7587ccdedb709956d7763cc3ea6038ca1b6c23d91",
+      "size": 85489,
+      "normalized_sha256": "14eb0b29ab797063562710a7587ccdedb709956d7763cc3ea6038ca1b6c23d91"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -1242,9 +1242,9 @@
     },
     "progress.md": {
       "role": "index",
-      "sha256": "0111e23db03ea33a1f7bff475446c5d1b735f4eb4dc67ef0425eea6f4406f795",
-      "size": 13760,
-      "normalized_sha256": "0111e23db03ea33a1f7bff475446c5d1b735f4eb4dc67ef0425eea6f4406f795"
+      "sha256": "8b3f9d7e54e4beb217cc0e13feb1c113c6b06d52e4867cc9f74791c9c18a935f",
+      "size": 13976,
+      "normalized_sha256": "8b3f9d7e54e4beb217cc0e13feb1c113c6b06d52e4867cc9f74791c9c18a935f"
     },
     "scripts/agent_routes_smoke.py": {
       "role": "index",
@@ -1356,9 +1356,9 @@
     },
     "scripts/dev.sh": {
       "role": "index",
-      "sha256": "381b6f4535444b9799b9217265d6672ca68efb4a99881563fb549ca7f50e64f1",
-      "size": 4036,
-      "normalized_sha256": "381b6f4535444b9799b9217265d6672ca68efb4a99881563fb549ca7f50e64f1"
+      "sha256": "4fa0c44689d8a3183501cab44873399fd16f7e786e6c58e5f1b0f9656bf93521",
+      "size": 4101,
+      "normalized_sha256": "4fa0c44689d8a3183501cab44873399fd16f7e786e6c58e5f1b0f9656bf93521"
     },
     "scripts/drill.sh": {
       "role": "index",
@@ -1539,6 +1539,12 @@
       "sha256": "7941fbcf5d1d10ccaf81025f1c61eadc01fad6d759150708ca70fbf2d2f044a8",
       "size": 2284,
       "normalized_sha256": "7941fbcf5d1d10ccaf81025f1c61eadc01fad6d759150708ca70fbf2d2f044a8"
+    },
+    "scripts/test_release_manifest.sh": {
+      "role": "index",
+      "sha256": "a06d31584afafc3f7de7a5b17e380b697fd99fa8847cf95927b817ec74ac00cc",
+      "size": 1463,
+      "normalized_sha256": "a06d31584afafc3f7de7a5b17e380b697fd99fa8847cf95927b817ec74ac00cc"
     },
     "scripts/test_upgrade_rollback.sh": {
       "role": "index",
