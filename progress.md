@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项258 第二类贝塞尔函数（功能级）：`BESSELK(x, n)`；
+  非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项257 超几何分布（功能级）：`HYPGEOM.DIST(s, n, K, N, cumulative)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项256 修正贝塞尔 I 函数（功能级）：`BESSELI(x, n)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
-- [ ] 项255 贝塞尔 J 函数（功能级）：`BESSELJ(x, n)`；
-  非法参数 `#VALUE!`；验收：单测 + gate。
+- [x] 项255 贝塞尔 J 函数（功能级）：`BESSELJ(x, n)`；
+  非法参数 `#VALUE!`；测试 `besselj_returns_first_kind_values`。
 - [x] 项254 t 检验（功能级）：`T.TEST(array1, array2, tails, type)`；
   非法参数 `#VALUE!`；测试 `t_test_returns_pvalues`。
 - [x] 项253 t 置信区间（功能级）：`CONFIDENCE.T(alpha, sd, n)`；
@@ -377,6 +379,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 282（项255 BESSELJ，功能级）：整数阶第一类贝塞尔、级数；
+定向与全量 gate/package 通过；发布包 SHA `51b10586…d24209c6`；
+push 已在轮首成功，本轮不再 push。
 
 Round 281（项254 T.TEST，功能级）：成对/等方差/Welch、单双尾；
 定向与全量 gate/package 通过；发布包 SHA `8317b9f7…56254181`；

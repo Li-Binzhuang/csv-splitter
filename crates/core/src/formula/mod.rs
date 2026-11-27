@@ -3504,6 +3504,28 @@ mod tests {
     }
 
     #[test]
+    fn besselj_returns_first_kind_values() {
+        for (source, expected) in [
+            ("besselj(0, 0)", "1"),
+            ("besselj(0, 1)", "0"),
+            ("besselj(1, 0)", "0.765198"),
+            ("besselj(1, 1)", "0.440051"),
+            ("besselj(2, 0)", "0.223891"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "besselj(1, -1)",
+            "besselj(1, 1.5)",
+            "besselj(1, 101)",
+            r#"besselj("x", 0)"#,
+            "besselj(1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn t_test_returns_pvalues() {
         let columns = vec![
             "id".to_string(),
