@@ -310,9 +310,11 @@
   测试 `approximate_reference_picks_the_next_larger_key` 扩展。
 - [x] 项366 XMATCH search_mode -1（功能级）：反向查找，精确/通配符；
   测试 `index_match_and_xmatch_read_a_same_row_range`。
-- [ ] 项367 HLOOKUP 文本近似（功能级）：近似模式文本候选；
-  验收：单测 + gate。
+- [x] 项367 HLOOKUP 文本近似（功能级）：近似模式复用文本候选；
+  测试 `hlookup_and_lookup_read_single_row_tables`。
 - [ ] 项368 VLOOKUP 负向近似（功能级）：match_mode -1；
+  验收：单测 + gate。
+- [ ] 项369 DOLLARDE/DOLLARFR 分数校验（功能级）：分数分母须正整数；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -595,6 +597,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 391（项367 HLOOKUP 文本近似，功能级）：补测试锁定；
+定向与全量 gate/package 通过；发布包 SHA `932cd296…f75ed0bd`；
+轮首 push 成功，本轮不再 push。
 
 Round 390（项366 XMATCH 反向，功能级）：search_mode -1；
 定向与全量 gate/package 通过；发布包 SHA `178ba465…6a36a2f`；
