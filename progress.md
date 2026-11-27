@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项228 伽马分布（功能级）：`GAMMA.DIST(x, alpha, beta, cumulative)`；
+  非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项227 贝塔分布（功能级）：`BETA.DIST(x, alpha, beta, cumulative)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项226 威布尔分布（功能级）：`WEIBULL.DIST(x, alpha, beta, cumulative)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
-- [ ] 项225 对数正态分布（功能级）：`LOGNORM.DIST(x, mean, sd, cumulative)`；
-  非法参数 `#VALUE!`；验收：单测 + gate。
+- [x] 项225 对数正态分布（功能级）：`LOGNORM.DIST(x, mean, sd, cumulative)`；
+  非法参数 `#VALUE!`；测试 `lognorm_dist_returns_density_or_cumulative`。
 - [x] 项224 二项分布（功能级）：`BINOM.DIST(k, n, p, cumulative)`；
   非法参数 `#VALUE!`；测试 `binom_dist_returns_mass_or_cumulative`。
 - [x] 项223 指数分布（功能级）：`EXPON.DIST(x, lambda, cumulative)`；
@@ -317,6 +319,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 252（项225 LOGNORM.DIST，功能级）：对数正态密度/累积；
+定向与全量 gate/package 通过；发布包 SHA `413a55f8…215c5b1c`；
+push 已在轮首成功，本轮不再 push。
 
 Round 251（项224 BINOM.DIST，功能级）：二项质量/累积、参数边界；
 定向与全量 gate/package 通过；发布包 SHA `4f7f906f…dc2e08f`；

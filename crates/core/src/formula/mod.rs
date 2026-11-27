@@ -3504,6 +3504,25 @@ mod tests {
     }
 
     #[test]
+    fn lognorm_dist_returns_density_or_cumulative() {
+        for (source, expected) in [
+            ("lognorm.dist(1, 0, 1, 1)", "0.5"),
+            ("lognorm.dist(1, 0, 1, 0)", "0.398942"),
+            ("lognorm.dist(2, 0, 1, 1)", "0.755891"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "lognorm.dist(0, 0, 1, 1)",
+            "lognorm.dist(1, 0, 0, 1)",
+            r#"lognorm.dist("x", 0, 1, 1)"#,
+            "lognorm.dist(1, 0, 1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn binom_dist_returns_mass_or_cumulative() {
         for (source, expected) in [
             ("binom.dist(0, 1, 0.5, 0)", "0.5"),
