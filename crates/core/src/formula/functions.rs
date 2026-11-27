@@ -4445,6 +4445,43 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number((low + high) / 2.0)
         }
+        // CHISQ.INV.RT: inverse right-tail chi-square distribution.
+        "chisq.inv.rt" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let (Some(probability), Some(degrees)) =
+                (eval(&args[0], ctx).number(), eval(&args[1], ctx).number())
+            else {
+                return Value::Error;
+            };
+            if !probability.is_finite()
+                || !degrees.is_finite()
+                || probability <= 0.0
+                || probability >= 1.0
+                || degrees <= 0.0
+            {
+                return Value::Error;
+            }
+            let right_tail = |value: f64| 1.0 - regularized_gamma(degrees / 2.0, value / 2.0);
+            let mut low = 0.0;
+            let mut high = 1.0;
+            while right_tail(high) > probability {
+                high *= 2.0;
+                if high > 1.0e9 {
+                    return Value::Error;
+                }
+            }
+            for _ in 0..200 {
+                let middle = (low + high) / 2.0;
+                if right_tail(middle) > probability {
+                    low = middle;
+                } else {
+                    high = middle;
+                }
+            }
+            Value::Number((low + high) / 2.0)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
