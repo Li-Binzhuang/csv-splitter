@@ -3504,6 +3504,28 @@ mod tests {
     }
 
     #[test]
+    fn besseli_returns_modified_values() {
+        for (source, expected) in [
+            ("besseli(0, 0)", "1"),
+            ("besseli(0, 1)", "0"),
+            ("besseli(1, 0)", "1.266066"),
+            ("besseli(1, 1)", "0.565159"),
+            ("besseli(2, 0)", "2.279585"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "besseli(1, -1)",
+            "besseli(1, 1.5)",
+            "besseli(1, 101)",
+            r#"besseli("x", 0)"#,
+            "besseli(1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn besselj_returns_first_kind_values() {
         for (source, expected) in [
             ("besselj(0, 0)", "1"),

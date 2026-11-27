@@ -4928,6 +4928,48 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // BESSELI: modified Bessel function of the first kind, integer order.
+        "besseli" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let (Some(number), Some(order)) =
+                (eval(&args[0], ctx).number(), eval(&args[1], ctx).number())
+            else {
+                return Value::Error;
+            };
+            if !number.is_finite()
+                || !order.is_finite()
+                || order < 0.0
+                || order > 100.0
+                || order.trunc() != order
+            {
+                return Value::Error;
+            }
+            let order = order as u64;
+            if number == 0.0 {
+                return Value::Number(if order == 0 { 1.0 } else { 0.0 });
+            }
+            let half = number / 2.0;
+            let mut term = half.powi(order as i32) / factorial(order);
+            if !term.is_finite() {
+                return Value::Error;
+            }
+            let mut sum = term;
+            for k in 1..500u64 {
+                term *= (half * half) / ((k as f64) * ((k + order) as f64));
+                let previous = sum;
+                sum += term;
+                if sum == previous || term.abs() < 1e-15 * sum.abs().max(1.0) {
+                    break;
+                }
+            }
+            if sum.is_finite() {
+                Value::Number(sum)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
