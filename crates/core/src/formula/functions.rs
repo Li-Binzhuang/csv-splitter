@@ -6054,15 +6054,18 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             Value::Text(parts.join(&separator))
         }
         // CHAR(65) = "A"; CODE("A") = 65.
-        "char" => match args.first().map(|a| eval(a, ctx).number()) {
-            Some(Some(code)) if (0.0..=0x10FFFF as f64).contains(&code) => {
-                match char::from_u32(code as u32) {
-                    Some(ch) => Value::Text(ch.to_string()),
-                    None => Value::Error,
-                }
+        "char" => {
+            if args.len() != 1 {
+                return Value::Error;
             }
-            _ => Value::Error,
-        },
+            let Some(code) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            if !code.is_finite() || !(1.0..=255.0).contains(&code) {
+                return Value::Error;
+            }
+            Value::Text((code.trunc() as u8 as char).to_string())
+        }
         "code" => match args.first().map(|a| eval(a, ctx).text()) {
             Some(text) => match text.chars().next() {
                 Some(ch) => Value::Number(ch as u32 as f64),

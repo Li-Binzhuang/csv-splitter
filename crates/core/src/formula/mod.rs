@@ -2450,6 +2450,16 @@ mod tests {
         );
 
         assert_eq!(eval_str("char(65)", &[]), "A");
+        assert_eq!(eval_str("char(255)", &[]), "ÿ");
+        for source in [
+            "char(0)",
+            "char(256)",
+            "char(-1)",
+            r#"char("x")"#,
+            "char(65, 1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
         assert_eq!(eval_str("code(\"A\")", &[]), "65");
         assert_eq!(eval_str("code(\"\")", &[]), "#VALUE!");
         assert_eq!(eval_str("unichar(20013)", &[]), "中");
