@@ -216,9 +216,11 @@
   测试 `date_time_formats_render_iso_values`。
 - [x] 项317 补零月日短日期（功能级）：`mm/dd/yy` 解析/显示；
   测试 `date_time_formats_render_iso_values`（2024-01-02 → 01/02/24）。
-- [ ] 项318 日在前短日期导出（功能级）：`d/m/yyyy` xlsx 样式并 round-trip；
-  验收：单测 + gate。
+- [x] 项318 日在前短日期导出（功能级）：`d/m/yyyy` 样式并 round-trip；
+  测试 `formats_are_mapped_into_export_styles_and_round_trip` 与 `column_formats_are_read_back_from_export_styles`。
 - [ ] 项319 补零月日短日期导出（功能级）：`mm/dd/yy` xlsx 样式并 round-trip；
+  验收：单测 + gate。
+- [ ] 项320 日在前短日期 12 小时制（功能级）：`d/m/yyyy h:mm AM/PM` 解析/显示；
   验收：单测 + gate。
 - [ ] 项260 第二类贝塞尔 Y 函数（功能级）：`BESSELY(x, n)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
@@ -501,6 +503,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 343（项318 d/m/yyyy 导出，功能级）：样式与 round-trip；
+定向与全量 gate/package 通过；发布包 SHA `bc5c3924…0d27daca`；
+轮首 push 成功，本轮不再 push。
 
 Round 342（项317 mm/dd/yy，功能级）：补零月日短日期；
 定向与全量 gate/package 通过；发布包 SHA `1903271d…267181f0`；
