@@ -3202,6 +3202,30 @@ mod tests {
     }
 
     #[test]
+    fn slash_date_formats_map_into_export_styles() {
+        use crate::layout::NumberFormat;
+        let path = temp_path("slash.xlsx");
+        let sheet = Sheet {
+            name: "slash".to_string(),
+            headers: vec!["us".into(), "eu".into()],
+            rows: vec![vec!["2024-01-02".into(), "2024-01-02".into()]],
+        };
+        write_sheets_with_formats(
+            &path,
+            &[sheet],
+            &[vec![
+                NumberFormat::parse("m/d/yyyy").unwrap(),
+                NumberFormat::parse("mm/dd/yyyy").unwrap(),
+            ]],
+        )
+        .unwrap();
+        let styles = read_zip(&path, "xl/styles.xml");
+        assert!(styles.contains("formatCode=\"m/d/yyyy\""), "{styles}");
+        assert!(styles.contains("formatCode=\"mm/dd/yyyy\""), "{styles}");
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
     fn dotted_and_dashed_formats_map_into_export_styles() {
         use crate::layout::NumberFormat;
         let path = temp_path("dotted.xlsx");

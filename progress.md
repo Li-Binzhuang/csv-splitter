@@ -434,9 +434,11 @@
   验收：单测 + gate。
 - [ ] 项428 条件格式 dxf 蓝色规则同 id 断言（功能级）：蓝色多规则同 dxfId；
   验收：单测 + gate。
-- [ ] 项429 斜杠日期格式导出 round-trip（功能级）：m/d/yyyy 写入 numFmt；
-  验收：单测 + gate。
+- [x] 项429 斜杠日期格式导出 round-trip（功能级）：m/d/yyyy、mm/dd/yyyy 写入 numFmt；
+  测试 `slash_date_formats_map_into_export_styles`。
 - [ ] 项430 斜杠日期格式 h/hh 导出（功能级）：带时间变体；
+  验收：单测 + gate。
+- [ ] 项431 斜杠日期格式 h:mm 支持（功能级）：mm/dd/yyyy h:mm；
   验收：单测 + gate。
 - [x] 项322 日期时间格式码语法矩阵（功能级）：点/破折号/12 小时/h-hh 补零/导出 round-trip；
   测试 `dotted_date_formats_match_excel_orders` + `dotted_and_dashed_formats_map_into_export_styles`。
@@ -719,6 +721,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 451（项429 斜杠日期导出，功能级）：m/d/yyyy 等写入 numFmt；
+定向与全量 gate/package 通过；发布包 SHA `c26242c1…c6da92769`；
+轮首 push 成功，本轮不再 push。
 
 Round 450（项322 收官：h/hh 补零，功能级）：9:05 vs 09:05；
 定向与全量 gate/package 通过；发布包 SHA `78d1f369…9ebb2acf`；
