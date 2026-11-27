@@ -6533,7 +6533,12 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 .get(2)
                 .and_then(|arg| eval(arg, ctx).number())
                 .unwrap_or(if lower == "xmatch" { 0.0 } else { 1.0 });
-            if !mode.is_finite() || ![-1.0, 0.0, 1.0].contains(&mode) {
+            let allowed = if lower == "xmatch" {
+                [-1.0, 0.0, 1.0, 2.0].as_slice()
+            } else {
+                [-1.0, 0.0, 1.0].as_slice()
+            };
+            if !mode.is_finite() || !allowed.contains(&mode) {
                 return Value::Error;
             }
             if lower == "xmatch" {
@@ -6543,7 +6548,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                     }
                 }
             }
-            if mode == 0.0 {
+            if mode == 0.0 || (lower == "xmatch" && mode == 2.0) {
                 let wildcard = match &lookup {
                     Value::Text(text) if text.chars().any(|ch| matches!(ch, '*' | '?' | '~')) => {
                         Some(text.as_str())
