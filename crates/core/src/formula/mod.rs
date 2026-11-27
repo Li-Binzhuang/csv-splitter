@@ -3504,6 +3504,23 @@ mod tests {
     }
 
     #[test]
+    fn f_inv_returns_left_tail_quantiles() {
+        for (source, expected) in [("f.inv(0.5, 1, 1)", "1"), ("f.inv(0.5, 2, 2)", "1")] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "f.inv(0, 1, 1)",
+            "f.inv(1, 1, 1)",
+            "f.inv(0.5, 0, 1)",
+            "f.inv(0.5, 1, 0)",
+            r#"f.inv("x", 1, 1)"#,
+            "f.inv(0.5, 1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn f_inv_right_tail_returns_quantiles() {
         for (source, expected) in [("f.inv.rt(0.5, 1, 1)", "1"), ("f.inv.rt(0.5, 2, 2)", "1")] {
             assert_eq!(eval_str(source, &[]), expected, "{source}");
