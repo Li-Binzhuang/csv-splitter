@@ -2905,6 +2905,34 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             };
             Value::Text(format_complex(real, imaginary, &suffix))
         }
+        // IMPRODUCT/IMDIV: multiply or divide two complex-number texts.
+        "improduct" | "imdiv" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let left_text = eval(&args[0], ctx).text();
+            let right_text = eval(&args[1], ctx).text();
+            let (Some((left_real, left_imaginary, suffix)), Some((right_real, right_imaginary, _))) =
+                (parse_complex(&left_text), parse_complex(&right_text))
+            else {
+                return Value::Error;
+            };
+            if lower == "improduct" {
+                let real = left_real * right_real - left_imaginary * right_imaginary;
+                let imaginary = left_real * right_imaginary + left_imaginary * right_real;
+                Value::Text(format_complex(real, imaginary, &suffix))
+            } else {
+                let denominator = right_real * right_real + right_imaginary * right_imaginary;
+                if denominator == 0.0 {
+                    return Value::Error;
+                }
+                let real =
+                    (left_real * right_real + left_imaginary * right_imaginary) / denominator;
+                let imaginary =
+                    (left_imaginary * right_real - left_real * right_imaginary) / denominator;
+                Value::Text(format_complex(real, imaginary, &suffix))
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

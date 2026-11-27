@@ -3504,6 +3504,25 @@ mod tests {
     }
 
     #[test]
+    fn complex_product_and_division_work() {
+        for (source, expected) in [
+            (r#"improduct("3+4i", "1+2i")"#, "-5+10i"),
+            (r#"imdiv("3+4i", "1+2i")"#, "2.2-0.4i"),
+            (r#"imdiv("3+4i", "1-2i")"#, "-1+2i"),
+            (r#"improduct("3+4j", "1+2j")"#, "-5+10j"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            r#"imdiv("3+4i", "0+0i")"#,
+            r#"improduct("3+4i", "abc")"#,
+            "imdiv(1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn complex_sum_and_difference_work() {
         for (source, expected) in [
             (r#"imsum("3+4i", "1+2i")"#, "4+6i"),
