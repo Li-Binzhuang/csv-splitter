@@ -220,9 +220,11 @@
   测试 `formats_are_mapped_into_export_styles_and_round_trip` 与 `column_formats_are_read_back_from_export_styles`。
 - [x] 项260 第二类贝塞尔 Y 函数（功能级）：`BESSELY(x, n)`；
   整数阶 0–20、x>0；非法 `#VALUE!`；测试 `bessely_returns_second_kind_values`。
-- [ ] 项278 xlsx 列格式去重（功能级）：`xlsx_column_formats` 多行多列不重复；
-  验收：单测 + gate。
+- [x] 项278 xlsx 列格式去重（功能级）：多行重复格式只生成一个 numFmt，列数不重复；
+  测试 `repeated_column_formats_are_deduplicated_across_rows`。
 - [ ] 项323 经过时间格式（功能级）：`[h]:mm:ss` 解析/显示，超过 24 小时累计；
+  验收：单测 + gate。
+- [ ] 项324 WEEKNUM 周起始扩展（功能级）：return_type 2/11–17 支持周一起算；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -506,9 +508,13 @@
 
 ## 当前进度
 
+Round 346（项278 列格式去重，功能级）：多行重复格式只写一个 numFmt；真实修复/验证项；
+定向与全量 gate/package 通过；发布包 SHA `8d30229f…91542556`；
+本轮未 push（累计提交待下轮一次推送）。
+
 Round 345（项260 BESSELY，功能级）：整数阶 0–20、x>0；结构不同的新函数；
 定向与全量 gate/package 通过；发布包 SHA `495e2c54…37be89`；
-轮首 push 成功，本轮不再 push。按巡检纠偏：320/321 合并入项322 格式语法矩阵；
+本轮未 push。按巡检纠偏：320/321 合并入项322 格式语法矩阵；
 未完成项改为 278 去重（真实修复）、322 矩阵、323 经过时间（新能力）。
 
 Round 344（项319 mm/dd/yy 导出，功能级）：样式与 round-trip；

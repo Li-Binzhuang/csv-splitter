@@ -2613,6 +2613,33 @@ mod tests {
     }
 
     #[test]
+    fn repeated_column_formats_are_deduplicated_across_rows() {
+        use crate::layout::NumberFormat;
+        let path = temp_path("dedup-formats.xlsx");
+        let sheet = Sheet {
+            name: "dedup".to_string(),
+            headers: vec!["a".into(), "b".into()],
+            rows: vec![
+                vec!["1.5".into(), "2.5".into()],
+                vec!["3.5".into(), "4.5".into()],
+            ],
+        };
+        let format = NumberFormat::parse("#,##0.00").unwrap();
+        write_sheets_with_formats(&path, &[sheet], &[vec![format.clone(), format]]).unwrap();
+        let styles = read_zip(&path, "xl/styles.xml");
+        assert_eq!(
+            styles.matches("formatCode=\"#,##0.00\"").count(),
+            1,
+            "{styles}"
+        );
+        let columns = xlsx_column_formats(&path, None).unwrap();
+        assert_eq!(columns.len(), 2, "{columns:?}");
+        assert_eq!(columns[0].0, "a");
+        assert_eq!(columns[1].0, "b");
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
     fn column_formats_are_read_back_from_export_styles() {
         use crate::layout::NumberFormat;
         let path = temp_path("column-formats.xlsx");
