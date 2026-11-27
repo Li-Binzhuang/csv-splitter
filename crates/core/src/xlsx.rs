@@ -2510,6 +2510,12 @@ mod tests {
             },
             ConditionalRule {
                 column: "amount".into(),
+                operator: "notContains".into(),
+                value: "P&Q".into(),
+                color: "lime".into(),
+            },
+            ConditionalRule {
+                column: "amount".into(),
                 operator: "aboveAverage".into(),
                 value: String::new(),
                 color: "teal".into(),
@@ -2646,6 +2652,7 @@ mod tests {
         assert!(sheet.contains("type=\"notContainsText\""), "{sheet}");
         assert!(sheet.contains("ISERROR(SEARCH(\"zz\",B2))"), "{sheet}");
         assert!(sheet.contains("ISERROR(SEARCH(\"x\"\"y\",B2))"), "{sheet}");
+        assert!(sheet.contains("ISERROR(SEARCH(\"P&amp;Q\",B2))"), "{sheet}");
         assert!(sheet.contains("type=\"aboveAverage\""), "{sheet}");
         assert!(sheet.contains("B2>AVERAGE(B:B)"), "{sheet}");
         assert!(sheet.contains("type=\"duplicateValues\""), "{sheet}");
