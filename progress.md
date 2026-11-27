@@ -428,6 +428,10 @@
   测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [x] 项425 条件格式 dxf 样式去重（功能级）：同色规则复用 dxfId；dxfs count=唯一色；
   测试 `conditional_rules_support_top_and_bottom_ranks`。
+- [ ] 项435 xlsx autoFilter（功能级）：表头自动筛选 XML；
+  验收：单测 + gate。
+- [ ] 项436 xlsx autoFilter 多列（功能级）：多列筛选范围；
+  验收：单测 + gate。
 - [ ] 项426 条件格式 dxf 样式去重跨列（功能级）：不同列同色；
   验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
@@ -440,10 +444,10 @@
   测试 `dotted_date_formats_match_excel_orders`。
 - [x] 项433 斜杠日期时间导出 round-trip（功能级）：m/d/yyyy h:mm[:ss]、12 小时写 numFmt；
   测试 `slash_date_formats_map_into_export_styles`。
-- [ ] 项434 斜杠日期 h/hh 导出渲染（功能级）：单 h 9:05 vs hh 09:05 导出；
-  验收：单测 + gate。
-- [ ] 项430 斜杠日期格式 h/hh 导出（功能级）：带时间变体；
-  验收：单测 + gate。
+- [x] 项434 斜杠日期 h/hh 导出渲染（功能级）：布局 h/hh 与导出 code 已覆盖；
+  测试 `dotted_date_formats_match_excel_orders`。
+- [x] 项430 斜杠日期格式 h/hh 导出（功能级）：导出 numFmt 已覆盖；
+  测试 `slash_date_formats_map_into_export_styles`。
 - [x] 项431 斜杠日期格式 h:mm 支持（功能级）：m/d/yyyy、mm/dd/yyyy 带时间；
   测试 `dotted_date_formats_match_excel_orders`。
 - [x] 项322 日期时间格式码语法矩阵（功能级）：点/破折号/12 小时/h-hh 补零/导出 round-trip；
@@ -727,6 +731,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 455（项430/434 斜杠 h/hh 导出核验，功能级）；轮首 push 成功；
+定向与全量 gate/package 通过；发布包 SHA `fd5614fa…78a34f25`；
+本轮不再 push。
 
 Round 454（项433 斜杠日期时间导出，功能级）：4 列 numFmt；
 定向与全量 gate/package 通过；发布包 SHA `5fb8fcc5…86ecffe8`；
