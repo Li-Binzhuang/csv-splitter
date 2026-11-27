@@ -112,8 +112,10 @@
   空区间/无众数 `#VALUE!`；测试扩展 `mode_picks_the_most_frequent_value_of_a_same_row_range`。
 - [x] 项269 众数多值（功能级）：`MODE.MULT(array)`；
   仅支持首众数/无众数 `#VALUE!`；测试扩展 `mode_picks_the_most_frequent_value_of_a_same_row_range`。
-- [ ] 项270 数组转文本（功能级）：`ARRAYTOTEXT(array, [format])`；
-  单行区间转逗号分隔文本；非法 format/空区间 `#VALUE!`；验收：单测 + gate。
+- [x] 项270 数组转文本（功能级）：`ARRAYTOTEXT(array, [format])`；
+  单行区间转逗号分隔文本；非法 format/空区间 `#VALUE!`；测试 `arraytotext_renders_same_row_range`。
+- [ ] 项271 卡方拟合检验（功能级）：`CHISQ.TEST(observed, expected)`；
+  单行等长区间、df=n-1；非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项264 精确伽马对数（功能级）：`GAMMALN.PRECISE(x)`；
   非正/非有限 `#VALUE!`；验收：单测 + gate。
 - [x] 项263 逻辑/非文本判断（功能级）：`ISLOGICAL`/`ISNONTEXT`；
@@ -403,6 +405,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 295（项270 ARRAYTOTEXT，功能级）：单行区间文本、格式 0/1；
+定向与全量 gate/package 通过；发布包 SHA `215b171b…3739a2e25`；
+push 已在轮首成功，本轮不再 push；AOCI 仍 Not connected。
 
 Round 294（项269 MODE.MULT，功能级）：首众数、无众数；
 定向与全量 gate/package 通过；发布包 SHA `b0d2115e…0aa32c1f`；

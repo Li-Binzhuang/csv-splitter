@@ -427,6 +427,70 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 None => Value::Error,
             }
         }
+        // ARRAYTOTEXT: render a same-row range as text (concise or strict).
+        "arraytotext" => {
+            if args.is_empty() || args.len() > 2 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            if from.1 != super::FIRST_DATA_ROW as u64 || to.1 != super::FIRST_DATA_ROW as u64 {
+                return Value::Error;
+            }
+            let (Some(start_name), Some(end_name)) = (
+                super::column_from_letters(&from.0, ctx.columns),
+                super::column_from_letters(&to.0, ctx.columns),
+            ) else {
+                return Value::Error;
+            };
+            let (Some(start), Some(end)) = (
+                ctx.columns.iter().position(|c| c == &start_name),
+                ctx.columns.iter().position(|c| c == &end_name),
+            ) else {
+                return Value::Error;
+            };
+            if start > end {
+                return Value::Error;
+            }
+            let format = args
+                .get(1)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(0.0))
+                .unwrap_or(f64::NAN);
+            if !format.is_finite() || !(0.0..=1.0).contains(&format) || format.trunc() != format {
+                return Value::Error;
+            }
+            let mut pieces = Vec::new();
+            let mut non_empty = false;
+            for name in &ctx.columns[start..=end] {
+                let Some(raw) = ctx.cells.get(name) else {
+                    return Value::Error;
+                };
+                let trimmed = raw.trim().to_string();
+                if !trimmed.is_empty() {
+                    non_empty = true;
+                }
+                if format == 1.0 {
+                    if trimmed.parse::<f64>().is_ok() {
+                        pieces.push(trimmed);
+                    } else {
+                        pieces.push(format!("\"{}\"", trimmed.replace('"', "\"\"")));
+                    }
+                } else {
+                    pieces.push(trimmed);
+                }
+            }
+            if !non_empty {
+                return Value::Error;
+            }
+            let result = if format == 1.0 {
+                format!("{{{}}}", pieces.join(","))
+            } else {
+                pieces.join(", ")
+            };
+            Value::Text(result)
+        }
         // TRIMMEAN: drop the same percentage from both tails, then average.
         "trimmean" => {
             if args.len() != 2 {

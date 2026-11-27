@@ -3311,6 +3311,46 @@ mod tests {
     }
 
     #[test]
+    fn arraytotext_renders_same_row_range() {
+        let columns = vec![
+            "id".to_string(),
+            "amount".to_string(),
+            "qty".to_string(),
+            "note".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        cells.insert("id".to_string(), "7".to_string());
+        cells.insert("amount".to_string(), "10".to_string());
+        cells.insert("qty".to_string(), "3".to_string());
+        cells.insert("note".to_string(), "plain".to_string());
+
+        for (source, expected) in [
+            ("arraytotext(B2:D2)", "10, 3, plain"),
+            ("arraytotext(B2:D2, 0)", "10, 3, plain"),
+            ("arraytotext(B2:D2, 1)", "{10,3,\"plain\"}"),
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        for source in ["arraytotext(1)", "arraytotext(B2:D2, 2)"] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "#VALUE!",
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
     fn mode_picks_the_most_frequent_value_of_a_same_row_range() {
         let columns = vec![
             "a".to_string(),
