@@ -321,6 +321,7 @@ fn is_date_time_pattern(spec: &str) -> bool {
             | "m/d/yyyy"
             | "m/d/yy"
             | "m/d/yy h:mm"
+            | "m/d/yy h:mm:ss"
             | "yyyy/m/d"
             | "yyyy-mm-dd hh:mm"
             | "yyyy-mm-dd hh:mm:ss"
@@ -392,6 +393,14 @@ fn render_date_time(pattern: &str, value: &str) -> Option<String> {
             let (hour, minute, _) = time_parts?;
             Some(format!(
                 "{month}/{day}/{} {hour:02}:{minute:02}",
+                year % 100
+            ))
+        }
+        "m/d/yy h:mm:ss" => {
+            let (year, month, day) = date_parts?;
+            let (hour, minute, second) = time_parts?;
+            Some(format!(
+                "{month}/{day}/{} {hour:02}:{minute:02}:{second:02}",
                 year % 100
             ))
         }
@@ -806,6 +815,12 @@ mod tests {
         assert_eq!(short_dt.name(), "m/d/yy h:mm");
         assert_eq!(short_dt.render("2024-01-02 13:04:05"), "1/2/24 13:04");
         assert_eq!(short_dt.render("2024-01-02T13:04:05"), "1/2/24 13:04");
+        let short_seconds = NumberFormat::parse("m/d/yy h:mm:ss").unwrap();
+        assert_eq!(short_seconds.name(), "m/d/yy h:mm:ss");
+        assert_eq!(
+            short_seconds.render("2024-01-02 13:04:05"),
+            "1/2/24 13:04:05"
+        );
         let seconds = NumberFormat::parse("hh:mm:ss").unwrap();
         assert_eq!(seconds.render("13:04:05"), "13:04:05");
         let ampm = NumberFormat::parse("h:mm AM/PM").unwrap();
