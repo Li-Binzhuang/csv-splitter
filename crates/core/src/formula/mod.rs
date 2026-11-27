@@ -3504,6 +3504,27 @@ mod tests {
     }
 
     #[test]
+    fn erf_and_erfc_approximate_error_functions() {
+        for (source, expected) in [
+            ("erf(0)", 0.0),
+            ("erf(1)", 0.8427007929497148),
+            ("erfc(1)", 0.15729920705028516),
+            ("erf(1, 2)", 0.15262147206923793),
+            ("erfc(0)", 1.0),
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            let value = formula
+                .eval_at(&HashMap::new(), &Vec::new(), &Refs::default(), 1)
+                .number()
+                .unwrap();
+            assert!((value - expected).abs() < 1e-6, "{source}: {value}");
+        }
+        for source in ["erfc(1, 2)", r#"erf("x")"#, "erf()"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn gestep_compares_threshold() {
         for (source, expected) in [
             ("gestep(5, 4)", "1"),

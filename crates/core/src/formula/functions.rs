@@ -3103,6 +3103,30 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number(if number >= step { 1.0 } else { 0.0 })
         }
+        // ERF/ERFC: error function and complementary error function.
+        "erf" | "erfc" => {
+            if args.is_empty() || args.len() > 2 || (lower == "erfc" && args.len() != 1) {
+                return Value::Error;
+            }
+            let Some(first) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            let second = args
+                .get(1)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(0.0))
+                .unwrap_or(f64::NAN);
+            if !first.is_finite() || !second.is_finite() {
+                return Value::Error;
+            }
+            if lower == "erfc" {
+                Value::Number(1.0 - erf_approx(first))
+            } else if args.len() == 2 {
+                Value::Number(erf_approx(second) - erf_approx(first))
+            } else {
+                Value::Number(erf_approx(first))
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
@@ -5100,6 +5124,23 @@ fn parse_complex(text: &str) -> Option<(f64, f64, String)> {
         }
         Some((0.0, imaginary, suffix))
     }
+}
+
+fn erf_approx(value: f64) -> f64 {
+    let sign = if value < 0.0 { -1.0 } else { 1.0 };
+    let absolute = value.abs();
+    if absolute == 0.0 {
+        return 0.0;
+    }
+    if absolute > 5.0 {
+        return sign;
+    }
+    let t = 1.0 / (1.0 + 0.3275911 * absolute);
+    let polynomial = (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736)
+        * t
+        + 0.254829592)
+        * t;
+    sign * (1.0 - polynomial * (-absolute * absolute).exp())
 }
 
 fn factorial(number: u64) -> f64 {
