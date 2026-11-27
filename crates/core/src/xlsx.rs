@@ -801,7 +801,11 @@ fn conditional_formatting_xml(
             "!=" => ("notEqual", Some(rule.value.clone())),
             // Excel's Top 10 / Bottom 10 family: the rank is N, not a comparison.
             "top" | "bottom" => {
-                let rank = rule.value.parse::<u32>().map_err(|_| {
+                let (raw, percent) = match rule.value.strip_suffix('%') {
+                    Some(raw) => (raw.trim(), true),
+                    None => (rule.value.as_str(), false),
+                };
+                let rank = raw.parse::<u32>().map_err(|_| {
                     invalid(&format!(
                         "highlight {} rank {:?} is not a positive integer",
                         rule.operator, rule.value
@@ -810,13 +814,17 @@ fn conditional_formatting_xml(
                 if rank == 0 {
                     return Err(invalid("highlight rank must be greater than 0"));
                 }
+                if percent && rank > 100 {
+                    return Err(invalid("highlight percent rank must be 1–100"));
+                }
                 let kind = if rule.operator == "top" {
                     "top10"
                 } else {
                     "bottom10"
                 };
+                let percent = if percent { " percent=\"1\"" } else { "" };
                 out.push_str(&format!(
-                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"{kind}\" dxfId=\"{index}\" priority=\"{priority}\" rank=\"{rank}\"/></conditionalFormatting>",
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"{kind}\" dxfId=\"{index}\" priority=\"{priority}\" rank=\"{rank}\"{percent}/></conditionalFormatting>",
                     col = column_name(column),
                     priority = index + 1,
                 ));
@@ -2093,6 +2101,12 @@ mod tests {
                 value: "1".into(),
                 color: "red".into(),
             },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "top".into(),
+                value: "50%".into(),
+                color: "yellow".into(),
+            },
         ];
         let (tx, _rx) = std::sync::mpsc::channel();
         csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
@@ -2102,6 +2116,7 @@ mod tests {
         assert!(sheet.contains("type=\"bottom10\""), "{sheet}");
         assert!(sheet.contains("rank=\"1\""), "{sheet}");
         assert!(sheet.contains("B2:B4"), "{sheet}");
+        assert!(sheet.contains("rank=\"50\" percent=\"1\""), "{sheet}");
 
         let bad = vec![ConditionalRule {
             column: "amount".into(),

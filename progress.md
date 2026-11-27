@@ -342,9 +342,11 @@
   测试 `the_everyday_functions_behave_like_a_spreadsheet`。
 - [x] 项382 CLEAN C1 控制符（功能级）：C0/DEL/C1 去除；
   测试 `the_everyday_functions_behave_like_a_spreadsheet`。
-- [ ] 项383 条件格式前 N 项（功能级）：前/后 N 项规则后端表达；
-  验收：单测 + gate。
+- [x] 项383 条件格式前 N 项（功能级）：top/bottom 已支持，扩展百分位 `top50%`；
+  测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [ ] 项384 条件格式色阶（功能级）：双色/三色色阶后端表达；
+  验收：单测 + gate。
+- [ ] 项385 条件格式包含文本（功能级）：xlsx `containsText` 规则；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -627,6 +629,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 407（项383 条件格式前 N 项，功能级）：新增百分位；
+定向与全量 gate/package 通过；发布包 SHA `3b3c6ed1…20ca6543`；
+轮首 push 成功，本轮不再 push。
 
 Round 406（项382 CLEAN C1，功能级）：C0/DEL/C1 去除；
 定向与全量 gate/package 通过；发布包 SHA `2e6f98cb…72d5f829`；
