@@ -3048,6 +3048,25 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 &suffix,
             ))
         }
+        // IMLOG2: principal base-2 logarithm of a complex number.
+        "imlog2" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let text = eval(&args[0], ctx).text();
+            let Some((real, imaginary, suffix)) = parse_complex(&text) else {
+                return Value::Error;
+            };
+            let magnitude = (real * real + imaginary * imaginary).sqrt();
+            if magnitude == 0.0 {
+                return Value::Error;
+            }
+            Value::Text(format_complex(
+                magnitude.log2(),
+                imaginary.atan2(real) / std::f64::consts::LN_2,
+                &suffix,
+            ))
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项201 误差函数（功能级）：`ERF`/`ERFC`；数值近似与边界；
+  非数值 `#VALUE!`；验收：单测 + gate。
 - [ ] 项200 阈值阶跃（功能级）：`GESTEP(number[, step])`；大于等于阈值
   返回 1，否则 0；非数值 `#VALUE!`；验收：单测 + gate。
 - [ ] 项199 单位阶跃（功能级）：`DELTA(number1[, number2])`；相等返回 1，
   否则 0；非数值 `#VALUE!`；验收：单测 + gate。
-- [ ] 项198 复数二进制对数（功能级）：`IMLOG2`；零/非法复数
-  `#VALUE!`；验收：单测 + gate。
+- [x] 项198 复数二进制对数（功能级）：`IMLOG2`；零/非法复数
+  `#VALUE!`；测试 `complex_base_two_log_works`。
 - [x] 项197 复数自然对数（功能级）：`IMLN`；零/非法复数
   `#VALUE!`；测试 `complex_natural_log_works`。
 - [x] 项196 复数乘幂（功能级）：`IMPOWER(inumber, power)`；零的负幂
@@ -263,6 +265,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 225（项198 IMLOG2，功能级）：二进制对数、零复数边界；
+定向与全量 gate/package 通过；发布包 SHA `9fcb2796…b50a39cd9`；
+push 已在轮首成功，本轮不再 push。
 
 Round 224（项197 IMLN，功能级）：自然对数、零复数边界；
 定向与全量 gate/package 通过；发布包 SHA `03792494…e0bfa1`；
