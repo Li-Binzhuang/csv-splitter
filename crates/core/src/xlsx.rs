@@ -776,6 +776,14 @@ fn styles_xml_with_rules_and_formats(
     (out, map)
 }
 
+fn quote_formula(value: &str) -> String {
+    if value.parse::<f64>().is_ok() {
+        value.to_string()
+    } else {
+        format!("\"{}\"", xml_attr(value))
+    }
+}
+
 fn parse_hex_color(text: &str) -> Option<String> {
     let text = text.trim().trim_start_matches('#');
     if text.len() == 6 && text.chars().all(|ch| ch.is_ascii_hexdigit()) {
@@ -809,6 +817,28 @@ fn conditional_formatting_xml(
             "=" => ("equal", Some(rule.value.clone())),
             "!=" => ("notEqual", Some(rule.value.clone())),
             // Excel's Top 10 / Bottom 10 family: the rank is N, not a comparison.
+            "between" | "notBetween" => {
+                let parts: Vec<&str> = rule.value.split(',').map(str::trim).collect();
+                if parts.len() != 2 {
+                    return Err(invalid(&format!(
+                        "highlight {} needs two comma-separated bounds",
+                        rule.operator
+                    )));
+                }
+                let operator = if rule.operator == "between" {
+                    "between"
+                } else {
+                    "notBetween"
+                };
+                let first = quote_formula(parts[0]);
+                let second = quote_formula(parts[1]);
+                out.push_str(&format!(
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"cellIs\" dxfId=\"{index}\" priority=\"{priority}\" operator=\"{operator}\"><formula>{first}</formula><formula>{second}</formula></cfRule></conditionalFormatting>",
+                    col = column_name(column),
+                    priority = index + 1,
+                ));
+                continue;
+            }
             "blank" | "containsBlanks" | "nonblank" | "notContainsBlanks" => {
                 let blank = rule.operator == "blank" || rule.operator == "containsBlanks";
                 let (kind, formula) = if blank {
@@ -2264,6 +2294,12 @@ mod tests {
                 value: String::new(),
                 color: "cyan".into(),
             },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "between".into(),
+                value: "500,1000".into(),
+                color: "pink".into(),
+            },
         ];
         let (tx, _rx) = std::sync::mpsc::channel();
         csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
@@ -2294,6 +2330,11 @@ mod tests {
         assert!(sheet.contains("LEN(TRIM(B2))=0"), "{sheet}");
         assert!(sheet.contains("type=\"notContainsBlanks\""), "{sheet}");
         assert!(sheet.contains("LEN(TRIM(B2))>0"), "{sheet}");
+        assert!(sheet.contains("operator=\"between\""), "{sheet}");
+        assert!(
+            sheet.contains("<formula>500</formula><formula>1000</formula>"),
+            "{sheet}"
+        );
 
         let bad = vec![ConditionalRule {
             column: "amount".into(),
