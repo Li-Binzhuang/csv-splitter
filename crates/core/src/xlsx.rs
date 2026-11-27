@@ -860,6 +860,12 @@ fn conditional_formatting_xml(
                 continue;
             }
             "beginsWith" | "startsWith" | "endsWith" => {
+                if rule.value.trim().is_empty() {
+                    return Err(invalid(&format!(
+                        "highlight {} needs a non-empty text",
+                        rule.operator
+                    )));
+                }
                 let text = xml_attr(&rule.value);
                 let (kind, formula) = if rule.operator == "endsWith" {
                     (
@@ -2599,7 +2605,7 @@ mod tests {
             .to_string();
         assert!(err.contains("greater than 0"), "{err}");
 
-        for operator in ["contains", "notContains"] {
+        for operator in ["contains", "notContains", "beginsWith", "endsWith"] {
             let bad = vec![ConditionalRule {
                 column: "amount".into(),
                 operator: operator.into(),
