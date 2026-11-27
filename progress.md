@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项224 二项分布（功能级）：`BINOM.DIST(k, n, p, cumulative)`；
+  非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项223 指数分布（功能级）：`EXPON.DIST(x, lambda, cumulative)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项222 泊松分布（功能级）：`POISSON.DIST(x, mean, cumulative)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
-- [ ] 项221 标准正态分布（功能级）：`NORM.S.DIST(z, cumulative)`；
-  非数值 `#VALUE!`；验收：单测 + gate。
+- [x] 项221 标准正态分布（功能级）：`NORM.S.DIST(z, cumulative)`；
+  非数值 `#VALUE!`；测试 `norm_s_dist_returns_cumulative_or_density`。
 - [x] 项220 标准正态密度（功能级）：`PHI(z)`；非数值
   `#VALUE!`；测试 `phi_returns_normal_density`。
 - [x] 项219 标准正态分位（功能级）：`NORM.S.INV`；概率(0,1)外
@@ -309,6 +311,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 248（项221 NORM.S.DIST，功能级）：累积/密度双模式；
+定向与全量 gate/package 通过；发布包 SHA `78c0b2f6…041507a`；
+push 已在轮首成功，本轮不再 push。
 
 Round 247（项220 PHI，功能级）：标准正态密度；
 定向与全量 gate/package 通过；发布包 SHA `3dc72535…876726`；

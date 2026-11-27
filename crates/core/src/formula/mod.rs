@@ -3504,6 +3504,26 @@ mod tests {
     }
 
     #[test]
+    fn norm_s_dist_returns_cumulative_or_density() {
+        for (source, expected) in [
+            ("norm.s.dist(0, 1)", "0.5"),
+            ("norm.s.dist(0, 0)", "0.398942"),
+            ("norm.s.dist(1, 1)", "0.841345"),
+            ("norm.s.dist(1, 0)", "0.241971"),
+            ("norm.s.dist(-1, 1)", "0.158655"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "norm.s.dist(0)",
+            r#"norm.s.dist("x", 1)"#,
+            "norm.s.dist(0, 1, 2)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn phi_returns_normal_density() {
         for (source, expected) in [
             ("phi(0)", "0.398942"),

@@ -3536,6 +3536,26 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number((-0.5 * number * number).exp() / (2.0 * std::f64::consts::PI).sqrt())
         }
+        // NORM.S.DIST: standard normal cumulative or density.
+        "norm.s.dist" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            let Some(cumulative) = eval(&args[1], ctx).number() else {
+                return Value::Error;
+            };
+            if !number.is_finite() || !cumulative.is_finite() {
+                return Value::Error;
+            }
+            if cumulative != 0.0 {
+                Value::Number(0.5 * (1.0 + erf_approx(number / std::f64::consts::SQRT_2)))
+            } else {
+                Value::Number((-0.5 * number * number).exp() / (2.0 * std::f64::consts::PI).sqrt())
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
