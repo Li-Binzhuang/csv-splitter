@@ -3504,6 +3504,28 @@ mod tests {
     }
 
     #[test]
+    fn confidence_norm_returns_half_width() {
+        for (source, expected) in [
+            ("confidence.norm(0.05, 1, 100)", "0.195996"),
+            ("confidence.norm(0.05, 1, 25)", "0.391993"),
+            ("confidence.norm(0.05, 2, 16)", "0.979982"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "confidence.norm(0, 1, 100)",
+            "confidence.norm(1, 1, 100)",
+            "confidence.norm(0.05, 0, 100)",
+            "confidence.norm(0.05, 1, 0)",
+            "confidence.norm(0.05, 1, 2.5)",
+            r#"confidence.norm("x", 1, 100)"#,
+            "confidence.norm(0.05, 1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn f_test_returns_two_tailed_pvalue() {
         let columns = vec![
             "id".to_string(),

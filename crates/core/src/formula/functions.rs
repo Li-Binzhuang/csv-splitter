@@ -4678,6 +4678,36 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // CONFIDENCE.NORM: normal confidence interval half-width.
+        "confidence.norm" => {
+            if args.len() != 3 {
+                return Value::Error;
+            }
+            let (Some(alpha), Some(deviation), Some(size)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !alpha.is_finite()
+                || !deviation.is_finite()
+                || !size.is_finite()
+                || alpha <= 0.0
+                || alpha >= 1.0
+                || deviation <= 0.0
+                || size < 1.0
+                || size.trunc() != size
+            {
+                return Value::Error;
+            }
+            let result = normal_inverse(1.0 - alpha / 2.0) * deviation / size.sqrt();
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
