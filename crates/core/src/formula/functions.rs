@@ -2187,6 +2187,27 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 correlation * correlation
             })
         }
+        // DEVSQ: sum of squared deviations from the mean.
+        "devsq" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            if values.is_empty() {
+                return Value::Error;
+            }
+            let mean = values.iter().sum::<f64>() / values.len() as f64;
+            let result = values
+                .iter()
+                .map(|value| (value - mean).powi(2))
+                .sum::<f64>();
+            Value::Number(result)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
