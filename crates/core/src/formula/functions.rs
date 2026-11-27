@@ -2933,6 +2933,23 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Text(format_complex(real, imaginary, &suffix))
             }
         }
+        // IMCONJUGATE/IMARGUMENT: complex conjugate and polar argument.
+        "imconjugate" | "imargument" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let text = eval(&args[0], ctx).text();
+            let Some((real, imaginary, suffix)) = parse_complex(&text) else {
+                return Value::Error;
+            };
+            if lower == "imconjugate" {
+                Value::Text(format_complex(real, -imaginary, &suffix))
+            } else if real == 0.0 && imaginary == 0.0 {
+                Value::Error
+            } else {
+                Value::Number(imaginary.atan2(real))
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

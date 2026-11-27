@@ -130,6 +130,7 @@
 | DB / DDB / VDB | 支持（功能级新增） | 固定/双倍/变动余额递减；区间、月数、因子非法 `#VALUE!` |
 | FVSCHEDULE | 支持（功能级新增） | 复利 schedule 区间；空区间/rate≤-1 `#VALUE!` |
 | SUMXMY2 / SUMX2MY2 / SUMX2PY2 | 支持（功能级新增） | 同行等长 x/y、空区间/长度不等 `#VALUE!` |
+| IMCONJUGATE / IMARGUMENT | 支持（功能级新增） | 共轭/极角；零复数 argument `#VALUE!` |
 | IMPRODUCT / IMDIV | 支持（功能级新增） | 两个复数文本；除零/非法复数 `#VALUE!` |
 | IMSUM / IMSUB | 支持（功能级新增） | 两个复数文本；保留首个后缀；非法复数 `#VALUE!` |
 | STEYX | 支持（功能级新增） | 同行等长 y/x、样本≥3、零方差 `#VALUE!` |

@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项196 复数乘幂（功能级）：`IMPOWER(inumber, power)`；非法复数/
+  零的负幂 `#VALUE!`；验收：单测 + gate。
 - [ ] 项195 复数平方根（功能级）：`IMSQRT`；零/非法复数
   `#VALUE!`；验收：单测 + gate。
 - [ ] 项194 复数指数对数（功能级）：`IMEXP`/`IMLOG10`；非法复数
   `#VALUE!`；验收：单测 + gate。
-- [ ] 项193 复数极坐标（功能级）：`IMCONJUGATE`/`IMARGUMENT`；非法复数
-  `#VALUE!`；验收：单测 + gate。
+- [x] 项193 复数极坐标（功能级）：`IMCONJUGATE`/`IMARGUMENT`；零复数
+  argument `#VALUE!`；测试 `complex_conjugate_and_argument_work`。
 - [x] 项192 复数乘除（功能级）：`IMPRODUCT`/`IMDIV` 两个复数文本参数；
   除零/非法复数 `#VALUE!`；测试 `complex_product_and_division_work`。
 - [x] 项191 复数加减（功能级）：`IMSUM`/`IMSUB` 两个复数文本参数；
@@ -253,6 +255,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 220（项193 IMCONJUGATE/IMARGUMENT，功能级）：共轭、极角与零复数；
+定向与全量 gate/package 通过；发布包 SHA `34fb8adc…89f5aa83`。
 
 Round 219（项192 IMPRODUCT/IMDIV，功能级）：复数乘除、除零与后缀；
 定向与全量 gate/package 通过；发布包 SHA `7427eea4…8af5d4d4`。

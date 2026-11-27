@@ -3504,6 +3504,27 @@ mod tests {
     }
 
     #[test]
+    fn complex_conjugate_and_argument_work() {
+        for (source, expected) in [
+            (r#"imconjugate("3+4i")"#, "3-4i"),
+            (r#"imconjugate("3-4i")"#, "3+4i"),
+            (r#"imconjugate("4i")"#, "-4i"),
+            (r#"imargument("1+1i")"#, "0.785398"),
+            (r#"imargument("3+4i")"#, "0.927295"),
+            (r#"imargument("0+1i")"#, "1.570796"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            r#"imargument("0+0i")"#,
+            r#"imconjugate("abc")"#,
+            "imargument()",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn complex_product_and_division_work() {
         for (source, expected) in [
             (r#"improduct("3+4i", "1+2i")"#, "-5+10i"),
