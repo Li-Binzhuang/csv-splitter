@@ -6066,13 +6066,16 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Text((code.trunc() as u8 as char).to_string())
         }
-        "code" => match args.first().map(|a| eval(a, ctx).text()) {
-            Some(text) => match text.chars().next() {
+        "code" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let text = eval(&args[0], ctx).text();
+            match text.chars().next() {
                 Some(ch) => Value::Number(ch as u32 as f64),
                 None => Value::Error,
-            },
-            None => Value::Error,
-        },
+            }
+        }
         // UNICHAR/UNICODE cover the non-ASCII code points CHAR/CODE cannot.
         "unichar" => {
             if args.len() != 1 {
