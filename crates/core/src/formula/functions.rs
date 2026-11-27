@@ -3488,6 +3488,26 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number(0.5 * erf_approx(number / std::f64::consts::SQRT_2))
         }
+        // N/T: Excel value coercion helpers.
+        "n" | "t" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let value = eval(&args[0], ctx);
+            if lower == "t" {
+                return match value {
+                    Value::Text(text) => Value::Text(text),
+                    Value::Error => Value::Error,
+                    _ => Value::Text(String::new()),
+                };
+            }
+            match value {
+                Value::Number(number) => Value::Number(number),
+                Value::Bool(flag) => Value::Number(if flag { 1.0 } else { 0.0 }),
+                Value::Error => Value::Error,
+                _ => Value::Number(0.0),
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

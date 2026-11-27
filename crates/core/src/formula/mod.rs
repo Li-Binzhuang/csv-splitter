@@ -3504,6 +3504,26 @@ mod tests {
     }
 
     #[test]
+    fn n_and_t_coerce_values() {
+        for (source, expected) in [
+            ("n(1)", "1"),
+            ("n(1=1)", "1"),
+            ("n(1=0)", "0"),
+            (r#"n("x")"#, "0"),
+            (r#"n("")"#, "0"),
+            (r#"t("x")"#, "x"),
+            ("t(1)", ""),
+            ("t(1=1)", ""),
+            (r#"t("")"#, ""),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in ["n(1, 2)", r#"t("x", "y")"#, "n(1/0)", "t(1/0)"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn gauss_returns_normal_half_probability() {
         for (source, expected) in [
             ("gauss(0)", "0"),
