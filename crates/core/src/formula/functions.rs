@@ -3217,6 +3217,33 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // ASINH/ACOSH/ATANH: inverse hyperbolic functions.
+        "asinh" | "acosh" | "atanh" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            if !number.is_finite() {
+                return Value::Error;
+            }
+            if (lower == "acosh" && number < 1.0)
+                || (lower == "atanh" && !(-1.0..1.0).contains(&number))
+            {
+                return Value::Error;
+            }
+            let result = match lower.as_str() {
+                "asinh" => number.asinh(),
+                "acosh" => number.acosh(),
+                _ => number.atanh(),
+            };
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

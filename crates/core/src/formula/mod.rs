@@ -3504,6 +3504,23 @@ mod tests {
     }
 
     #[test]
+    fn inverse_hyperbolic_functions_work() {
+        for (source, expected) in [
+            ("asinh(0)", "0"),
+            ("asinh(1)", "0.881374"),
+            ("acosh(1)", "0"),
+            ("acosh(2)", "1.316958"),
+            ("atanh(0)", "0"),
+            ("atanh(0.5)", "0.549306"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in ["acosh(0.5)", "atanh(1)", "atanh(-1)", r#"asinh("x")"#] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn hyperbolic_functions_work() {
         for (source, expected) in [
             ("sinh(0)", "0"),

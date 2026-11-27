@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项209 复数双曲（功能级）：`IMCOSH`/`IMSINH`；非法复数
+  `#VALUE!`；验收：单测 + gate。
 - [ ] 项208 角度弧度（功能级）：`DEGREES`/`RADIANS`；非数值
   `#VALUE!`；验收：单测 + gate。
 - [ ] 项207 ISO 天花板（功能级）：`ISO.CEILING(number[, significance])`；
   零 significance/非法参数 `#VALUE!`；验收：单测 + gate。
-- [ ] 项206 反双曲函数（功能级）：`ASINH`/`ACOSH`/`ATANH`；定义域外
-  `#VALUE!`；验收：单测 + gate。
+- [x] 项206 反双曲函数（功能级）：`ASINH`/`ACOSH`/`ATANH`；定义域外
+  `#VALUE!`；测试 `inverse_hyperbolic_functions_work`。
 - [x] 项205 双曲函数（功能级）：`SINH`/`COSH`/`TANH`；非数值
   `#VALUE!`；测试 `hyperbolic_functions_work`。
 - [x] 项204 余切函数（功能级）：`COT`/`ACOT`；零点/非数值
@@ -279,6 +281,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 233（项206 ASINH/ACOSH/ATANH，功能级）：反双曲函数与定义域；
+定向与全量 gate/package 通过；发布包 SHA `e22e2ee0…5dc50c9`；
+push 已在轮首成功，本轮不再 push。
 
 Round 232（项205 SINH/COSH/TANH，功能级）：双曲函数与符号；
 定向与全量 gate/package 通过；发布包 SHA `72b2b593…be846b`；
