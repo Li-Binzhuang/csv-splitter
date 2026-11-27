@@ -3504,6 +3504,26 @@ mod tests {
     }
 
     #[test]
+    fn gamma_inv_returns_quantiles() {
+        for (source, expected) in [
+            ("gamma.inv(0.5, 1, 1)", "0.693147"),
+            ("gamma.inv(0.5, 1, 2)", "1.386294"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "gamma.inv(0, 1, 1)",
+            "gamma.inv(1, 1, 1)",
+            "gamma.inv(0.5, 0, 1)",
+            "gamma.inv(0.5, 1, 0)",
+            r#"gamma.inv("x", 1, 1)"#,
+            "gamma.inv(0.5, 1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn beta_inv_returns_quantiles() {
         for (source, expected) in [
             ("beta.inv(0.5, 2, 2, 0, 1)", "0.5"),

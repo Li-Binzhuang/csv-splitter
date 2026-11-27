@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项252 正态置信区间（功能级）：`CONFIDENCE.NORM(alpha, sd, n)`；
+  非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项251 F 检验（功能级）：`F.TEST(array1, array2)`；
   空区间/非法 `#VALUE!`；验收：单测 + gate。
 - [ ] 项250 Z 检验（功能级）：`Z.TEST(array, x, [sigma])`；
   空区间/非法 `#VALUE!`；验收：单测 + gate。
-- [ ] 项249 伽马反函数（功能级）：`GAMMA.INV(p, alpha, beta)`；
-  概率(0,1)外/非法 `#VALUE!`；验收：单测 + gate。
+- [x] 项249 伽马反函数（功能级）：`GAMMA.INV(p, alpha, beta)`；
+  概率(0,1)外/非法 `#VALUE!`；测试 `gamma_inv_returns_quantiles`。
 - [x] 项248 Beta 反函数（功能级）：`BETA.INV(p, alpha, beta, A, B)`；
   概率(0,1)外/非法 `#VALUE!`；测试 `beta_inv_returns_quantiles`。
 - [x] 项247 卡方右尾反函数（功能级）：`CHISQ.INV.RT(p, df)`；
@@ -365,6 +367,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 276（项249 GAMMA.INV，功能级）：伽马分位、参数边界；
+定向与全量 gate/package 通过；发布包 SHA `c6af61fe…5ea08a78`；
+push 已在轮首成功，本轮不再 push。
 
 Round 275（项248 BETA.INV，功能级）：Beta 分位、可选上下界；
 定向与全量 gate/package 通过；发布包 SHA `620a0d49…779a2a7d`；
