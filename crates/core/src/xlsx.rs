@@ -2484,6 +2484,7 @@ mod tests {
                 "label".into(),
                 "clock".into(),
                 "code".into(),
+                "frac".into(),
             ],
             rows: vec![vec![
                 "1234.5".into(),
@@ -2492,6 +2493,7 @@ mod tests {
                 "001".into(),
                 "06:30:15".into(),
                 "123".into(),
+                "1.25".into(),
             ]],
         };
         write_sheets_with_formats(
@@ -2504,6 +2506,7 @@ mod tests {
                 NumberFormat::parse("@").unwrap(),
                 NumberFormat::parse("hh:mm:ss").unwrap(),
                 NumberFormat::parse("@").unwrap(),
+                NumberFormat::parse("# ?/?").unwrap(),
             ]],
         )
         .unwrap();
@@ -2513,10 +2516,11 @@ mod tests {
         assert!(styles.contains("formatCode=\"yyyy-mm-dd\""), "{styles}");
         assert!(styles.contains("formatCode=\"hh:mm:ss\""), "{styles}");
         assert!(styles.contains("formatCode=\"@\""), "{styles}");
+        assert!(styles.contains("formatCode=\"# ?/?\""), "{styles}");
         read_xlsx_to_csv(&path, &output, None).unwrap();
         assert_eq!(
             std::fs::read_to_string(&output).unwrap(),
-            "amount,rate,when,label,clock,code\n1234.5,0.123,2024-01-02,001,06:30:15,123\n"
+            "amount,rate,when,label,clock,code,frac\n1234.5,0.123,2024-01-02,001,06:30:15,123,1.25\n"
         );
         let _ = std::fs::remove_file(path);
         let _ = std::fs::remove_file(output);
@@ -2550,6 +2554,7 @@ mod tests {
                 "label".into(),
                 "sci".into(),
                 "money".into(),
+                "frac".into(),
             ],
             rows: vec![
                 vec![
@@ -2559,6 +2564,7 @@ mod tests {
                     "x".into(),
                     "1234.5".into(),
                     "-1234.5".into(),
+                    "1.25".into(),
                 ],
                 vec![
                     "99.5".into(),
@@ -2567,6 +2573,7 @@ mod tests {
                     "y".into(),
                     "9.5".into(),
                     "9.5".into(),
+                    "1.25".into(),
                 ],
             ],
         };
@@ -2580,11 +2587,12 @@ mod tests {
                 NumberFormat::parse("plain").unwrap(),
                 NumberFormat::parse("0.00E+00").unwrap(),
                 NumberFormat::parse("$#,##0.00;($#,##0.00)").unwrap(),
+                NumberFormat::parse("# ?/?").unwrap(),
             ]],
         )
         .unwrap();
         let columns = xlsx_column_formats(&path, None).unwrap();
-        assert_eq!(columns.len(), 6, "{columns:?}");
+        assert_eq!(columns.len(), 7, "{columns:?}");
         assert_eq!(columns[0].0, "amount");
         assert_eq!(columns[0].1, Some(NumberFormat::parse("#,##0.00").unwrap()));
         assert_eq!(columns[1].1, Some(NumberFormat::parse("0.0%").unwrap()));
@@ -2592,6 +2600,7 @@ mod tests {
             columns[2].1,
             Some(NumberFormat::parse("yyyy-mm-dd").unwrap())
         );
+        assert_eq!(columns[6].1, Some(NumberFormat::parse("# ?/?").unwrap()));
         assert_eq!(columns[3].1, None);
         assert_eq!(columns[4].1, Some(NumberFormat::parse("0.00E+00").unwrap()));
         assert_eq!(
