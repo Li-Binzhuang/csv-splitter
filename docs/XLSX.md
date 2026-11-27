@@ -81,7 +81,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 ## 尚未实现
 
 - 合并单元格、样式复制；
-- 其他自定义数字格式（分数 `# ?/?`、`?/?`、`# ??/??`、`??/??`、百分比 `#,##0.0%` 已支持）；
+- 其他自定义数字格式（分数 `# ?/?`、`?/?`、百分比 `#,##0.0%`、经过时间 `[h]:mm:ss` 已支持）；
 - 公式写入（只写值，不写公式）。
 
 ## 报表 xlsx
@@ -94,7 +94,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 
 ## 日期
 
-严格 `YYYY-MM-DD` 自动写成 Excel 日期单元格（内置格式 14），`YYYY-MM-DDTHH:MM:SS` 写成带时间小数的日期，`HH:MM[:SS]` 在时间格式列写成当天小数；导入时按 `cellXfs` 的日期/时间格式还原；`@` 文本格式写成带样式 inlineStr，非 ISO 文本保持原样。
+严格 `YYYY-MM-DD` 自动写成 Excel 日期单元格（内置格式 14），`YYYY-MM-DDTHH:MM:SS` 写成带时间小数的日期，`HH:MM[:SS]` 在时间格式列写成当天小数；导入时按 `cellXfs` 的日期/时间格式还原；`@` 文本格式写成带样式 inlineStr，非 ISO 文本保持原样；`[h]:mm:ss` 经过时间格式写成累计小时序列（1.5 = 36:00:00），导入保持数值不猜日期。
 
 ## 边界
 

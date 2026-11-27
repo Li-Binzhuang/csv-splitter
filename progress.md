@@ -226,9 +226,11 @@
   测试 `date_time_formats_render_iso_values`（0.5/1.5/2.25）。
 - [x] 项324 WEEKNUM 周起始扩展（功能级）：return_type 2 与 11–17 支持任意周起始；
   测试 `weeknum_return_types_control_week_start`。
-- [ ] 项325 经过时间格式导出（功能级）：`[h]:mm:ss` xlsx 样式并保证 hours>24 round-trip；
-  验收：单测 + gate。
+- [x] 项325 经过时间格式导出（功能级）：`[h]:mm:ss` 样式；数值/36:00:00 写成序列 1.5，raw CSV round-trip；
+  测试 `elapsed_formats_export_as_serial_and_round_trip_raw`。
 - [ ] 项326 TEXTBEFORE/TEXTAFTER 匹配模式（功能级）：match_mode 0/1 区分大小写；
+  验收：单测 + gate。
+- [ ] 项327 CLEAN 控制字符清理（功能级）：`CLEAN(text)` 去掉 0–31 控制字符；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -511,6 +513,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 349（项325 经过时间导出，功能级）：`[h]:mm:ss` 序列 1.5、raw round-trip；
+定向与全量 gate/package 通过；发布包 SHA `b987fc62…ec95aca1`；
+轮首 push 成功，本轮不再 push。
 
 Round 348（项324 WEEKNUM 周起始，功能级）：return_type 11–17 + 非法类型校验；
 定向与全量 gate/package 通过；发布包 SHA `e4ce86db…1e37b913`；

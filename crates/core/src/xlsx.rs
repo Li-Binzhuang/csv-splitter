@@ -650,11 +650,19 @@ fn write_formatted_cell(
             }
             return;
         }
-        NumberFormat::DateTime { .. } => {
-            if let Some(serial) = datetime_serial(trimmed)
-                .or_else(|| date_serial(trimmed).map(|serial| serial as f64))
-                .or_else(|| time_serial(trimmed))
-            {
+        NumberFormat::DateTime { pattern } => {
+            let serial = if pattern.eq_ignore_ascii_case("[h]:mm:ss") {
+                trimmed
+                    .parse::<f64>()
+                    .ok()
+                    .or_else(|| elapsed_serial(trimmed))
+            } else {
+                None
+            }
+            .or_else(|| datetime_serial(trimmed))
+            .or_else(|| date_serial(trimmed).map(|serial| serial as f64))
+            .or_else(|| time_serial(trimmed));
+            if let Some(serial) = serial {
                 out.push_str(&format!(
                     "<c r=\"{reference}\" s=\"{}\"><v>{serial}</v></c>",
                     style.unwrap_or(2)
@@ -866,6 +874,9 @@ fn date_style_map(styles: &str) -> Vec<bool> {
 
 fn is_date_format(code: &str) -> bool {
     let lower = code.to_ascii_lowercase();
+    if lower.contains("[h]") {
+        return false;
+    }
     lower.contains("yyyy")
         || lower.contains("yy")
         || lower.contains("mmm")
@@ -968,6 +979,18 @@ fn time_serial(text: &str) -> Option<f64> {
         return None;
     }
     Some((hour * 3_600 + minute * 60 + second) as f64 / 86_400.0)
+}
+
+/// Elapsed clock (`H:MM:SS`, hours may exceed 23) as an Excel serial fraction.
+fn elapsed_serial(text: &str) -> Option<f64> {
+    let mut pieces = text.trim().split(':');
+    let hour: u32 = pieces.next()?.parse().ok()?;
+    let minute: u32 = pieces.next()?.parse().ok()?;
+    let second: u32 = pieces.next()?.parse().ok()?;
+    if pieces.next().is_some() || minute > 59 || second > 59 {
+        return None;
+    }
+    Some((hour as f64 * 3_600.0 + minute as f64 * 60.0 + second as f64) / 86_400.0)
 }
 
 /// Strict ISO calendar date (`YYYY-MM-DD`) to an Excel 1900-date serial.
@@ -2610,6 +2633,28 @@ mod tests {
                 pattern: "yyyy-mm-dd".into()
             })
         );
+    }
+
+    #[test]
+    fn elapsed_formats_export_as_serial_and_round_trip_raw() {
+        use crate::layout::NumberFormat;
+        let path = temp_path("elapsed.xlsx");
+        let output = temp_path("elapsed.csv");
+        let sheet = Sheet {
+            name: "elapsed".to_string(),
+            headers: vec!["a".into(), "b".into()],
+            rows: vec![vec!["1.5".into(), "36:00:00".into()]],
+        };
+        let format = NumberFormat::parse("[h]:mm:ss").unwrap();
+        write_sheets_with_formats(&path, &[sheet], &[vec![format.clone(), format]]).unwrap();
+        let styles = read_zip(&path, "xl/styles.xml");
+        assert!(styles.contains("formatCode=\"[h]:mm:ss\""), "{styles}");
+        let sheet_xml = read_zip(&path, "xl/worksheets/sheet1.xml");
+        assert_eq!(sheet_xml.matches("<v>1.5</v>").count(), 2, "{sheet_xml}");
+        read_xlsx_to_csv(&path, &output, None).unwrap();
+        assert_eq!(std::fs::read_to_string(&output).unwrap(), "a,b\n1.5,1.5\n");
+        let _ = std::fs::remove_file(path);
+        let _ = std::fs::remove_file(output);
     }
 
     #[test]
