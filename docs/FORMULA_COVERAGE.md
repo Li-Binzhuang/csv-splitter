@@ -37,7 +37,7 @@
 |---|---|---|
 | DATE / YEAR / MONTH / DAY | 支持 | DATE 生成 ISO 日期文本 |
 | EDATE / EOMONTH | 支持 | 月末按日历计算；1900-02 为 28 日（Excel 假闰日只影响序列号） |
-| WEEKDAY / WEEKNUM | 支持 | 默认周日为 1；WEEKNUM 用 return_type 1 |
+| WEEKDAY / WEEKNUM | 支持（功能级新增） | WEEKDAY 默认周日=1；WEEKNUM 支持 1/2/11–17/21 周起始 |
 | DAYS / NETWORKDAYS / WORKDAY | 支持 | 工作日跳过周末；节假日支持单值或同行区间 |
 | NETWORKDAYS.INTL / WORKDAY.INTL | 支持（功能级新增） | weekend 代码 1–7/11–17 或 7 位 0/1 字符串；节假日同上 |
 | DAYS360 | 支持（新增） | US/EU 30/360；反向报错 |

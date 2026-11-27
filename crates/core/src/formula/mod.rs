@@ -2583,6 +2583,31 @@ mod tests {
     }
 
     #[test]
+    fn weeknum_return_types_control_week_start() {
+        for (source, expected) in [
+            (r#"weeknum("2024-01-07")"#, "2"),
+            (r#"weeknum("2024-01-07", 2)"#, "1"),
+            (r#"weeknum("2024-01-07", 11)"#, "1"),
+            (r#"weeknum("2024-01-02", 12)"#, "2"),
+            (r#"weeknum("2024-01-03", 13)"#, "2"),
+            (r#"weeknum("2024-01-04", 14)"#, "2"),
+            (r#"weeknum("2024-01-05", 15)"#, "2"),
+            (r#"weeknum("2024-01-06", 16)"#, "2"),
+            (r#"weeknum("2024-01-07", 17)"#, "2"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            r#"weeknum("2024-01-01", 0)"#,
+            r#"weeknum("2024-01-01", 3)"#,
+            r#"weeknum("2024-01-01", 2.5)"#,
+            "weeknum(1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn time_isoweeknum_and_yearfrac_work() {
         assert_eq!(eval_str("time(13, 4, 5)", &[]), "0.544502");
         assert_eq!(eval_str("time(24, 0, 0)", &[]), "#VALUE!");

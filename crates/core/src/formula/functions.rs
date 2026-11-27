@@ -5542,15 +5542,25 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                         .get(1)
                         .and_then(|arg| eval(arg, ctx).number())
                         .unwrap_or(1.0);
-                    if return_type as u32 == 21 {
+                    if !return_type.is_finite() || return_type.fract() != 0.0 {
+                        return Value::Error;
+                    }
+                    let return_type = return_type as u32;
+                    if return_type == 21 {
                         return Value::Number(iso_week_number(year, month, day) as f64);
                     }
-                    // return_type 1 starts on Sunday, 2 starts on Monday.
-                    let offset = match return_type as u32 {
-                        1 => weekday(year, 1, 1) - 1,
-                        2 => (weekday(year, 1, 1) + 5) % 7,
+                    // 11–17 map Monday–Sunday; 1/2 are Sunday/Monday.
+                    let start = match return_type {
+                        1 | 17 => 1,
+                        2 | 11 => 2,
+                        12 => 3,
+                        13 => 4,
+                        14 => 5,
+                        15 => 6,
+                        16 => 7,
                         _ => return Value::Error,
                     };
+                    let offset = (weekday(year, 1, 1) + 7 - start) % 7;
                     Value::Number((((day_of_year + offset as i64 - 1) / 7) + 1) as f64)
                 }
                 None => Value::Error,
