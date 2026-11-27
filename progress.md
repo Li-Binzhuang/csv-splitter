@@ -428,10 +428,10 @@
   测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [x] 项425 条件格式 dxf 样式去重（功能级）：同色规则复用 dxfId；dxfs count=唯一色；
   测试 `conditional_rules_support_top_and_bottom_ranks`。
-- [ ] 项435 xlsx autoFilter（功能级）：表头自动筛选 XML；
-  验收：单测 + gate。
-- [ ] 项436 xlsx autoFilter 多列（功能级）：多列筛选范围；
-  验收：单测 + gate。
+- [x] 项435 xlsx autoFilter（功能级）：单/多 sheet 输出 autoFilter；
+  测试 `conditional_rules_support_top_and_bottom_ranks`。
+- [x] 项436 xlsx autoFilter 多列（功能级）：A1:B4 双列范围已测；
+  测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [ ] 项426 条件格式 dxf 样式去重跨列（功能级）：不同列同色；
   验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
@@ -731,6 +731,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 456（项435/436 xlsx autoFilter，功能级）：A1:B4；
+定向与全量 gate/package 通过；发布包 SHA `0bf061e0…ffc889e3`；
+轮首 push 成功，本轮不再 push。
 
 Round 455（项430/434 斜杠 h/hh 导出核验，功能级）；轮首 push 成功；
 定向与全量 gate/package 通过；发布包 SHA `fd5614fa…78a34f25`；

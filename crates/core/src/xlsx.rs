@@ -361,6 +361,14 @@ fn csv_to_xlsx_inner(
         }
     }
     write!(zip, "</sheetData>")?;
+    if data_rows > 0 && !headers.is_empty() {
+        let last_column = column_name(headers.len() - 1);
+        write!(
+            zip,
+            "<autoFilter ref=\"A1:{last_column}{}\"/>",
+            data_rows + 1
+        )?;
+    }
     if !rules.is_empty() && data_rows > 0 {
         let xml = conditional_formatting_xml(rules, &headers, data_rows + 1)?;
         write!(zip, "{}", xml)?;
@@ -495,7 +503,15 @@ pub fn write_sheets_with_formats(
             }
             xml.push_str("</row>");
         }
-        xml.push_str("</sheetData></worksheet>");
+        xml.push_str("</sheetData>");
+        if !sheet.rows.is_empty() && !sheet.headers.is_empty() {
+            let last_column = column_name(sheet.headers.len() - 1);
+            xml.push_str(&format!(
+                "<autoFilter ref=\"A1:{last_column}{}\"/>",
+                sheet.rows.len() + 1
+            ));
+        }
+        xml.push_str("</worksheet>");
         write!(zip, "{xml}")?;
     }
     zip.finish()
@@ -2737,6 +2753,7 @@ mod tests {
         let styles = read_zip(&output, "xl/styles.xml");
         assert!(styles.contains("<dxfs count=\"4\">"), "{styles}");
         assert!(sheet.contains("dxfId=\"3\""), "{sheet}");
+        assert!(sheet.contains("<autoFilter ref=\"A1:B4\"/>"), "{sheet}");
 
         let bad = vec![ConditionalRule {
             column: "amount".into(),

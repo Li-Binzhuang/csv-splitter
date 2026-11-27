@@ -62,6 +62,7 @@
 | 自定义日期/时间 | 常见 token；日期时间/纯时间 | `custom_date_number_formats_are_recognized`、`date_serials_carry_time_fractions_and_time_only_cells`、`custom_time_formats_are_recognized_and_render_as_clock` |
 | 合并单元格 | 只输出存储的左上值，不展开 | `merged_cells_keep_the_stored_top_left_value_without_inventing_others`、CLI `convert_keeps_a_merged_cell_top_left_only` |
 | 空行 | 跳过 | `table_from_rows_skips_empty_rows_and_enforces_the_limit`、CLI `convert_skips_empty_xlsx_rows` |
+| 表头自动筛选 | 每个有数据的 sheet 输出 `<autoFilter ref="A1:最后一列最后行"/>` | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 dxf 去重 | 相同颜色规则复用同一 `dxfId`，`dxfs count` 为唯一颜色数 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 日期周期 | `--highlight` 支持 `today/yesterday`、`last7/30Days`、`this/last/nextWeek`、`this/last/nextMonth`，导出 `timePeriod` | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 iconSet | 支持 `amount:iconSet`（默认 3TrafficLights1）或 value 选 3Symbols/3Arrows/3Arrows2/3Flags/3Stars；未知预设报错 | `conditional_rules_support_top_and_bottom_ranks` |
