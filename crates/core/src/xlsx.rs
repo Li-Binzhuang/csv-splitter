@@ -899,7 +899,8 @@ fn conditional_formatting_xml(
                 ));
                 continue;
             }
-            "today" | "yesterday" | "last7Days" | "last30Days" => {
+            "today" | "yesterday" | "last7Days" | "last30Days" | "thisWeek" | "lastWeek"
+            | "nextWeek" => {
                 let col = column_name(column);
                 let (period, formula) = match rule.operator.as_str() {
                     "today" => ("today", format!("FLOOR({col}2,1)=TODAY()")),
@@ -908,9 +909,27 @@ fn conditional_formatting_xml(
                         "last7Days",
                         format!("AND(FLOOR({col}2,1)>TODAY()-7,FLOOR({col}2,1)<=TODAY())"),
                     ),
-                    _ => (
+                    "last30Days" => (
                         "last30Days",
                         format!("AND(FLOOR({col}2,1)>TODAY()-30,FLOOR({col}2,1)<=TODAY())"),
+                    ),
+                    "thisWeek" => (
+                        "thisWeek",
+                        format!(
+                            "AND(FLOOR({col}2,1)>=TODAY()-WEEKDAY(TODAY(),2)+1,FLOOR({col}2,1)<TODAY()-WEEKDAY(TODAY(),2)+8)"
+                        ),
+                    ),
+                    "lastWeek" => (
+                        "lastWeek",
+                        format!(
+                            "AND(FLOOR({col}2,1)>=TODAY()-WEEKDAY(TODAY(),2)-6,FLOOR({col}2,1)<TODAY()-WEEKDAY(TODAY(),2)+1)"
+                        ),
+                    ),
+                    _ => (
+                        "nextWeek",
+                        format!(
+                            "AND(FLOOR({col}2,1)>=TODAY()-WEEKDAY(TODAY(),2)+8,FLOOR({col}2,1)<TODAY()-WEEKDAY(TODAY(),2)+15)"
+                        ),
                     ),
                 };
                 out.push_str(&format!(
@@ -2431,6 +2450,12 @@ mod tests {
                 value: String::new(),
                 color: "silver".into(),
             },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "thisWeek".into(),
+                value: String::new(),
+                color: "gold".into(),
+            },
         ];
         let (tx, _rx) = std::sync::mpsc::channel();
         csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
@@ -2488,6 +2513,8 @@ mod tests {
             sheet.contains("AND(FLOOR(B2,1)>TODAY()-30,FLOOR(B2,1)<=TODAY())"),
             "{sheet}"
         );
+        assert!(sheet.contains("timePeriod=\"thisWeek\""), "{sheet}");
+        assert!(sheet.contains("WEEKDAY(TODAY(),2)"), "{sheet}");
 
         let bad = vec![ConditionalRule {
             column: "amount".into(),
