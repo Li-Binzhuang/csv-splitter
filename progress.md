@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项256 修正贝塞尔 I 函数（功能级）：`BESSELI(x, n)`；
+  非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项255 贝塞尔 J 函数（功能级）：`BESSELJ(x, n)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项254 t 检验（功能级）：`T.TEST(array1, array2, tails, type)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
-- [ ] 项253 t 置信区间（功能级）：`CONFIDENCE.T(alpha, sd, n)`；
-  非法参数 `#VALUE!`；验收：单测 + gate。
+- [x] 项253 t 置信区间（功能级）：`CONFIDENCE.T(alpha, sd, n)`；
+  非法参数 `#VALUE!`；测试 `confidence_t_returns_half_width`。
 - [x] 项252 正态置信区间（功能级）：`CONFIDENCE.NORM(alpha, sd, n)`；
   非法参数 `#VALUE!`；测试 `confidence_norm_returns_half_width`。
 - [x] 项251 F 检验（功能级）：`F.TEST(array1, array2)`；
@@ -373,6 +375,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 280（项253 CONFIDENCE.T，功能级）：t 置信半宽、参数边界；
+定向测试通过；首轮 gate 遇 serve 测试 flake，重跑通过；package SHA
+`40d2d099…4bb2bcf4`；push 已在轮首成功，本轮不再 push。
 
 Round 279（项252 CONFIDENCE.NORM，功能级）：正态置信半宽、参数边界；
 定向与全量 gate/package 通过；发布包 SHA `76b6af17…7fe1ee`；

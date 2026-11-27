@@ -4708,6 +4708,64 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // CONFIDENCE.T: t-based confidence interval half-width.
+        "confidence.t" => {
+            if args.len() != 3 {
+                return Value::Error;
+            }
+            let (Some(alpha), Some(deviation), Some(size)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !alpha.is_finite()
+                || !deviation.is_finite()
+                || !size.is_finite()
+                || alpha <= 0.0
+                || alpha >= 1.0
+                || deviation <= 0.0
+                || size < 2.0
+                || size.trunc() != size
+            {
+                return Value::Error;
+            }
+            let degrees = size - 1.0;
+            let target = 1.0 - alpha / 2.0;
+            let cumulative = |value: f64| {
+                let tail =
+                    0.5 * regularized_beta(degrees / (degrees + value * value), degrees / 2.0, 0.5);
+                if value < 0.0 {
+                    tail
+                } else {
+                    1.0 - tail
+                }
+            };
+            let mut low = 0.0;
+            let mut high = 1.0;
+            while cumulative(high) < target {
+                high *= 2.0;
+                if high > 1.0e9 {
+                    return Value::Error;
+                }
+            }
+            for _ in 0..200 {
+                let middle = (low + high) / 2.0;
+                if cumulative(middle) < target {
+                    low = middle;
+                } else {
+                    high = middle;
+                }
+            }
+            let quantile = (low + high) / 2.0;
+            let result = quantile * deviation / size.sqrt();
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

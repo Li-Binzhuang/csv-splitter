@@ -3504,6 +3504,27 @@ mod tests {
     }
 
     #[test]
+    fn confidence_t_returns_half_width() {
+        for (source, expected) in [
+            ("confidence.t(0.5, 1, 2)", "0.707107"),
+            ("confidence.t(0.5, 2, 2)", "1.414214"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "confidence.t(0, 1, 2)",
+            "confidence.t(1, 1, 2)",
+            "confidence.t(0.5, 0, 2)",
+            "confidence.t(0.5, 1, 1)",
+            "confidence.t(0.5, 1, 2.5)",
+            r#"confidence.t("x", 1, 2)"#,
+            "confidence.t(0.5, 1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn confidence_norm_returns_half_width() {
         for (source, expected) in [
             ("confidence.norm(0.05, 1, 100)", "0.195996"),
