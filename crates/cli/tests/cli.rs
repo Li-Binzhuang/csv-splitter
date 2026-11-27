@@ -2728,6 +2728,48 @@ fn convert_xlsx_no_auto_filter_keeps_number_formats() {
 }
 
 #[test]
+fn convert_xlsx_combines_highlight_and_number_formats() {
+    let dir = TempDir::new("xlsxcfmts");
+    let input = dir.join("t.csv");
+    let output = dir.join("t.xlsx");
+    std::fs::write(&input, "id,amount\n1,1200\n2,10\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            output.to_str().unwrap(),
+            "--highlight",
+            "amount>1000:red",
+            "--number-format",
+            "amount:#,##0.00",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let file = std::fs::File::open(&output).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    let mut styles = String::new();
+    let mut sheet = String::new();
+    use std::io::Read as _;
+    archive
+        .by_name("xl/styles.xml")
+        .unwrap()
+        .read_to_string(&mut styles)
+        .unwrap();
+    archive
+        .by_name("xl/worksheets/sheet1.xml")
+        .unwrap()
+        .read_to_string(&mut sheet)
+        .unwrap();
+    assert!(styles.contains("formatCode=\"#,##0.00\""), "{styles}");
+    assert!(sheet.contains("conditionalFormatting"), "{sheet}");
+    assert!(sheet.contains("B2:B3"), "{sheet}");
+}
+
+#[test]
 fn convert_xlsx_can_apply_per_column_number_formats() {
     let dir = TempDir::new("xlsxfmts");
     let input = dir.join("t.csv");

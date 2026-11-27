@@ -464,7 +464,11 @@
   测试 `convert_xlsx_no_auto_filter_keeps_number_formats`。
 - [ ] 项451 CF + no-freeze + no-auto 四组合（功能级）：CI 集成；
   验收：单测 + gate。
-- [ ] 项452 highlight + formats 组合（功能级）：CF 与数字格式共存；
+- [x] 项452 highlight + formats 组合（功能级）：CF 与数字格式共存；
+  测试 `convert_xlsx_combines_highlight_and_number_formats`。
+- [ ] 项453 xlsx 数据验证下拉（功能级）：dataValidation list；
+  验收：单测 + gate。
+- [ ] 项454 xlsx 数据验证范围（功能级）：多列 sqref；
   验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
@@ -763,6 +767,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 470（项452 highlight + formats，功能级）；push 首试失败（权限），本地攒 1 提交；
+定向与全量 gate/package 通过；发布包 SHA `5d1e5f91…338f8a18`；
+本轮不再 push（累计 2 提交待下轮）。
 
 Round 469（项450 no-auto + formats，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `e1e875e9…393d4c30`；
