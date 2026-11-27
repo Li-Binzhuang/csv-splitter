@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项217 高斯误差（功能级）：`GAUSS(z)`；非数值
+  `#VALUE!`；验收：单测 + gate。
 - [ ] 项216 正割余割（功能级）：`SEC`/`CSC`；零点/非数值
   `#VALUE!`；验收：单测 + gate。
 - [ ] 项215 可重复排列（功能级）：`PERMUTATIONA(n, k)`；非负整数/
   越界 `#VALUE!`；验收：单测 + gate。
-- [ ] 项214 平方根 π（功能级）：`SQRTPI(number)`；负数/非数值
-  `#VALUE!`；验收：单测 + gate。
+- [x] 项214 平方根 π（功能级）：`SQRTPI(number)`；负数/非数值
+  `#VALUE!`；测试 `sqrtpi_scales_by_pi`。
 - [x] 项213 复数余切（功能级）：`IMCOT`；零点/非法复数
   `#VALUE!`；测试 `complex_cotangent_works`。
 - [x] 项212 复数余割正割（功能级）：`IMCSC`/`IMSEC`；零点/非法复数
@@ -295,6 +297,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 241（项214 SQRTPI，功能级）：π 缩放平方根、负数边界；
+定向与全量 gate/package 通过；发布包 SHA `798f1ab9…30fbdf`；
+push 已在轮首成功，本轮不再 push。
 
 Round 240（项213 IMCOT，功能级）：复数余切、零点；
 定向与全量 gate/package 通过；发布包 SHA `793a43e7…e3b16910`；

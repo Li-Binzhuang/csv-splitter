@@ -3504,6 +3504,20 @@ mod tests {
     }
 
     #[test]
+    fn sqrtpi_scales_by_pi() {
+        for (source, expected) in [
+            ("sqrtpi(0)", "0"),
+            ("sqrtpi(1)", "1.772454"),
+            ("sqrtpi(4)", "3.544908"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in ["sqrtpi(-1)", r#"sqrtpi("x")"#, "sqrtpi()"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn complex_cotangent_works() {
         for (source, expected) in [
             (r#"imcot("1+0i")"#, "0.6420926159343308"),

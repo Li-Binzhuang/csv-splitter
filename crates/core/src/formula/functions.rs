@@ -3406,6 +3406,24 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 &suffix,
             ))
         }
+        // SQRTPI: square root of number times pi.
+        "sqrtpi" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            if !number.is_finite() || number < 0.0 {
+                return Value::Error;
+            }
+            let result = (number * std::f64::consts::PI).sqrt();
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
