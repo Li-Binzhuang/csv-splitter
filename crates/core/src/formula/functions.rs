@@ -3915,6 +3915,44 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // T.DIST: Student t probability density or left-tail cumulative.
+        "t.dist" => {
+            if args.len() != 3 {
+                return Value::Error;
+            }
+            let (Some(number), Some(degrees), Some(cumulative)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !number.is_finite()
+                || !degrees.is_finite()
+                || !cumulative.is_finite()
+                || degrees <= 0.0
+            {
+                return Value::Error;
+            }
+            let result = if cumulative != 0.0 {
+                let tail = 0.5
+                    * regularized_beta(degrees / (degrees + number * number), degrees / 2.0, 0.5);
+                if number < 0.0 {
+                    tail
+                } else {
+                    1.0 - tail
+                }
+            } else {
+                let beta = (ln_gamma((degrees + 1.0) / 2.0) - ln_gamma(degrees / 2.0)).exp();
+                beta / (degrees * std::f64::consts::PI).sqrt()
+                    * (1.0 + number * number / degrees).powf(-(degrees + 1.0) / 2.0)
+            };
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

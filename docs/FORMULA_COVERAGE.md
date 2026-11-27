@@ -130,6 +130,7 @@
 | DB / DDB / VDB | 支持（功能级新增） | 固定/双倍/变动余额递减；区间、月数、因子非法 `#VALUE!` |
 | FVSCHEDULE | 支持（功能级新增） | 复利 schedule 区间；空区间/rate≤-1 `#VALUE!` |
 | SUMXMY2 / SUMX2MY2 / SUMX2PY2 | 支持（功能级新增） | 同行等长 x/y、空区间/长度不等 `#VALUE!` |
+| T.DIST | 支持（功能级新增） | 任意 x、df>0；密度/左尾；非法 `#VALUE!` |
 | F.DIST | 支持（功能级新增） | x≥0、d1/d2>0；密度/累积；非法 `#VALUE!` |
 | NORM.DIST | 支持（功能级新增） | 任意 mean/sd>0；密度/累积；非法 `#VALUE!` |
 | CHISQ.DIST | 支持（功能级新增） | x≥0、df>0；密度/累积；非法 `#VALUE!` |
