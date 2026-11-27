@@ -348,9 +348,11 @@
   测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [x] 项385 条件格式包含文本（功能级）：containsText + SEARCH 公式；
   测试 `conditional_rules_support_top_and_bottom_ranks`。
-- [ ] 项386 条件格式数据条（功能级）：xlsx `dataBar` 规则；
-  验收：单测 + gate。
+- [x] 项386 条件格式数据条（功能级）：dataBar 导出；
+  测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [ ] 项387 条件格式 beginsWith/endsWith（功能级）：前缀/后缀文本规则；
+  验收：单测 + gate。
+- [ ] 项388 条件格式空值规则（功能级）：空/非空单元格规则；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -633,6 +635,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 410（项386 条件格式数据条，功能级）：dataBar；
+定向与全量 gate/package 通过；发布包 SHA `0eb1e288…5f20500b`；
+轮首 push 成功，本轮不再 push。
 
 Round 409（项385 条件格式包含文本，功能级）：containsText；
 定向与全量 gate/package 通过；发布包 SHA `d355b115…1b1a10cb`；
