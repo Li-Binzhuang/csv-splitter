@@ -3504,6 +3504,25 @@ mod tests {
     }
 
     #[test]
+    fn t_dist_two_tail_works() {
+        for (source, expected) in [
+            ("t.dist.2t(0, 1)", "1"),
+            ("t.dist.2t(1, 1)", "0.5"),
+            ("t.dist.2t(1, 2)", "0.42265"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "t.dist.2t(-1, 1)",
+            "t.dist.2t(1, 0)",
+            r#"t.dist.2t("x", 1)"#,
+            "t.dist.2t(1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn binom_inv_finds_cutoff() {
         for (source, expected) in [
             ("binom.inv(1, 0.5, 0.5)", "0"),
