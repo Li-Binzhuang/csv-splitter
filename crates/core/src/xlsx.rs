@@ -2500,6 +2500,7 @@ mod tests {
                 "shortampms".into(),
                 "dashampm".into(),
                 "dashampms".into(),
+                "isoampm".into(),
             ],
             rows: vec![vec![
                 "1234.5".into(),
@@ -2518,6 +2519,7 @@ mod tests {
                 "2024-01-02 13:04:05".into(),
                 "2024-01-02 13:04:05".into(),
                 "2024-01-02".into(),
+                "2024-01-02 13:04:05".into(),
                 "2024-01-02 13:04:05".into(),
                 "2024-01-02 13:04:05".into(),
                 "2024-01-02 13:04:05".into(),
@@ -2552,6 +2554,7 @@ mod tests {
                 NumberFormat::parse("m/d/yy h:mm:ss AM/PM").unwrap(),
                 NumberFormat::parse("yy-mm-dd h:mm AM/PM").unwrap(),
                 NumberFormat::parse("yy-mm-dd h:mm:ss AM/PM").unwrap(),
+                NumberFormat::parse("yyyy-mm-dd hh:mm AM/PM").unwrap(),
             ]],
         )
         .unwrap();
@@ -2579,7 +2582,7 @@ mod tests {
         read_xlsx_to_csv(&path, &output, None).unwrap();
         assert_eq!(
             std::fs::read_to_string(&output).unwrap(),
-            "amount,rate,when,label,clock,code,frac,pctg,pct0,ampm,ampms,ampmh,shortdate,shortdt,shortdts,dashdate,dashdt,dashdts,shortampm,shortampms,dashampm,dashampms\n1234.5,0.123,2024-01-02,001,06:30:15,123,1.25,12345.6,12345.6,13:04:05,13:04:05,13:04:05,2024-01-02,2024-01-02T13:04:05,2024-01-02T13:04:05,2024-01-02,2024-01-02T13:04:05,2024-01-02T13:04:05,2024-01-02T13:04:05,2024-01-02T13:04:05,2024-01-02T13:04:05,2024-01-02T13:04:05\n"
+            "amount,rate,when,label,clock,code,frac,pctg,pct0,ampm,ampms,ampmh,shortdate,shortdt,shortdts,dashdate,dashdt,dashdts,shortampm,shortampms,dashampm,dashampms,isoampm\n1234.5,0.123,2024-01-02,001,06:30:15,123,1.25,12345.6,12345.6,13:04:05,13:04:05,13:04:05,2024-01-02,2024-01-02T13:04:05,2024-01-02T13:04:05,2024-01-02,2024-01-02T13:04:05,2024-01-02T13:04:05,2024-01-02T13:04:05,2024-01-02T13:04:05,2024-01-02T13:04:05,2024-01-02T13:04:05,2024-01-02T13:04:05\n"
         );
         let _ = std::fs::remove_file(path);
         let _ = std::fs::remove_file(output);
@@ -2629,6 +2632,7 @@ mod tests {
                 "shortampms".into(),
                 "dashampm".into(),
                 "dashampms".into(),
+                "isoampm".into(),
             ],
             rows: vec![
                 vec![
@@ -2648,6 +2652,7 @@ mod tests {
                     "2024-01-03 13:04:05".into(),
                     "2024-01-03 13:04:05".into(),
                     "2024-01-03".into(),
+                    "2024-01-03 13:04:05".into(),
                     "2024-01-03 13:04:05".into(),
                     "2024-01-03 13:04:05".into(),
                     "2024-01-03 13:04:05".into(),
@@ -2692,11 +2697,12 @@ mod tests {
                 NumberFormat::parse("m/d/yy h:mm:ss AM/PM").unwrap(),
                 NumberFormat::parse("yy-mm-dd h:mm AM/PM").unwrap(),
                 NumberFormat::parse("yy-mm-dd h:mm:ss AM/PM").unwrap(),
+                NumberFormat::parse("yyyy-mm-dd hh:mm AM/PM").unwrap(),
             ]],
         )
         .unwrap();
         let columns = xlsx_column_formats(&path, None).unwrap();
-        assert_eq!(columns.len(), 22, "{columns:?}");
+        assert_eq!(columns.len(), 23, "{columns:?}");
         assert_eq!(columns[0].0, "amount");
         assert_eq!(columns[0].1, Some(NumberFormat::parse("#,##0.00").unwrap()));
         assert_eq!(columns[1].1, Some(NumberFormat::parse("0.0%").unwrap()));
