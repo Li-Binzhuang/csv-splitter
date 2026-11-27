@@ -3504,6 +3504,24 @@ mod tests {
     }
 
     #[test]
+    fn logical_and_nontext_tests_work() {
+        for (source, expected) in [
+            ("islogical(true())", "TRUE"),
+            ("islogical(1)", "FALSE"),
+            (r#"islogical("TRUE")"#, "FALSE"),
+            ("isnontext(1)", "TRUE"),
+            (r#"isnontext("x")"#, "FALSE"),
+            ("isnontext(true())", "TRUE"),
+            ("isnontext(na())", "TRUE"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in ["islogical()", "isnontext()"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn precise_error_functions_work() {
         for (source, expected) in [
             ("erf.precise(0)", "0"),

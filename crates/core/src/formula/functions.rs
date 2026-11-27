@@ -943,6 +943,18 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             Some(_) => Value::Bool(false),
             None => Value::Error,
         },
+        // ISLOGICAL/ISNONTEXT test the coerced value class.
+        "islogical" | "isnontext" => match args.first() {
+            Some(arg) => {
+                let value = eval(arg, ctx);
+                Value::Bool(if lower == "islogical" {
+                    matches!(value, Value::Bool(_))
+                } else {
+                    !matches!(&value, Value::Text(text) if text != "#N/A")
+                })
+            }
+            None => Value::Error,
+        },
         "istext" => match args.first() {
             Some(arg) => Value::Bool(matches!(eval(arg, ctx), Value::Text(_))),
             None => Value::Error,
