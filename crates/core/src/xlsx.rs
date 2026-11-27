@@ -899,6 +899,19 @@ fn conditional_formatting_xml(
                 ));
                 continue;
             }
+            "duplicate" | "duplicateValues" | "unique" | "uniqueValues" => {
+                let kind = if rule.operator == "duplicate" || rule.operator == "duplicateValues" {
+                    "duplicateValues"
+                } else {
+                    "uniqueValues"
+                };
+                out.push_str(&format!(
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"{kind}\" dxfId=\"{index}\" priority=\"{priority}\"/></conditionalFormatting>",
+                    col = column_name(column),
+                    priority = index + 1,
+                ));
+                continue;
+            }
             "aboveAverage" | "belowAverage" => {
                 let col = column_name(column);
                 let formula = if rule.operator == "aboveAverage" {
@@ -2335,6 +2348,18 @@ mod tests {
                 value: String::new(),
                 color: "teal".into(),
             },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "duplicate".into(),
+                value: String::new(),
+                color: "brown".into(),
+            },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "unique".into(),
+                value: String::new(),
+                color: "navy".into(),
+            },
         ];
         let (tx, _rx) = std::sync::mpsc::channel();
         csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
@@ -2374,6 +2399,8 @@ mod tests {
         assert!(sheet.contains("ISERROR(SEARCH(\"zz\",B2))"), "{sheet}");
         assert!(sheet.contains("type=\"aboveAverage\""), "{sheet}");
         assert!(sheet.contains("B2>AVERAGE(B:B)"), "{sheet}");
+        assert!(sheet.contains("type=\"duplicateValues\""), "{sheet}");
+        assert!(sheet.contains("type=\"uniqueValues\""), "{sheet}");
 
         let bad = vec![ConditionalRule {
             column: "amount".into(),
