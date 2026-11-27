@@ -317,6 +317,7 @@ fn is_date_time_pattern(spec: &str) -> bool {
         "yyyy-mm-dd"
             | "yy-mm-dd"
             | "yy-mm-dd h:mm"
+            | "yy-mm-dd h:mm:ss"
             | "yyyy/mm/dd"
             | "dd/mm/yyyy"
             | "mm/dd/yyyy"
@@ -368,6 +369,14 @@ fn render_date_time(pattern: &str, value: &str) -> Option<String> {
             let (hour, minute, _) = time_parts?;
             Some(format!(
                 "{:02}-{month:02}-{day:02} {hour:02}:{minute:02}",
+                year % 100
+            ))
+        }
+        "yy-mm-dd h:mm:ss" => {
+            let (year, month, day) = date_parts?;
+            let (hour, minute, second) = time_parts?;
+            Some(format!(
+                "{:02}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02}",
                 year % 100
             ))
         }
@@ -833,6 +842,12 @@ mod tests {
         assert_eq!(short_dt.name(), "m/d/yy h:mm");
         assert_eq!(short_dt.render("2024-01-02 13:04:05"), "1/2/24 13:04");
         assert_eq!(short_dt.render("2024-01-02T13:04:05"), "1/2/24 13:04");
+        let dashed_seconds = NumberFormat::parse("yy-mm-dd h:mm:ss").unwrap();
+        assert_eq!(dashed_seconds.name(), "yy-mm-dd h:mm:ss");
+        assert_eq!(
+            dashed_seconds.render("2024-01-02 13:04:05"),
+            "24-01-02 13:04:05"
+        );
         let dashed_dt = NumberFormat::parse("yy-mm-dd h:mm").unwrap();
         assert_eq!(dashed_dt.name(), "yy-mm-dd h:mm");
         assert_eq!(dashed_dt.render("2024-01-02 13:04:05"), "24-01-02 13:04");
