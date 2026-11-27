@@ -2462,6 +2462,12 @@ mod tests {
             },
             ConditionalRule {
                 column: "amount".into(),
+                operator: "endsWith".into(),
+                value: "B&C".into(),
+                color: "orange".into(),
+            },
+            ConditionalRule {
+                column: "amount".into(),
                 operator: "blank".into(),
                 value: String::new(),
                 color: "gray".into(),
@@ -2615,6 +2621,10 @@ mod tests {
         );
         assert!(sheet.contains("type=\"endsWith\""), "{sheet}");
         assert!(sheet.contains("RIGHT(B2,LEN(\"00\"))=\"00\""), "{sheet}");
+        assert!(
+            sheet.contains("RIGHT(B2,LEN(\"B&amp;C\"))=\"B&amp;C\""),
+            "{sheet}"
+        );
         assert!(sheet.contains("type=\"containsBlanks\""), "{sheet}");
         assert!(sheet.contains("LEN(TRIM(B2))=0"), "{sheet}");
         assert!(sheet.contains("type=\"notContainsBlanks\""), "{sheet}");

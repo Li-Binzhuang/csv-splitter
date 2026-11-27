@@ -1,0 +1,35 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "0966f4140836f1000eeb42ab50cbe9779f19129ca2e0817c1a7606202c649b93",
+  "batch_id": "8aaa91fa2b8da5b5b40f6ec55fc0b36420f84ee5ee44735d0653790db8f294d7",
+  "composite_identity": "18170117841ecc5ef3b1ffad664c13199d2f7abcf04140a9d1ad27f8bc1281b5",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "a749c57f4b2c2d0aab46c28449ca0adc7004ebb2fbf567807fa53d9420fe3e26",
+  "targets": [
+    {
+      "candidate_id": "5508d9b0935df28b18d248a9456fbac3c0b9f221c1416b7e1eb9aeaf238744a5",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "305870d346bbb5abcff6f2ff4292f6c847f3c7da3d3260b67eb6c82379c319a1",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles；csv_to_xlsx_with_number_formats；write_sheets_with_formats；条件格式 cellIs/top10/bottom10/colorScale/contains/notContains/dataBar/begins/ends/blank/nonblank/between/notBetween/above-belowAverage/duplicate-unique/iconSet/timePeriod；公式文本转义引号与 XML \u0026/\u003c；文本规则非空；日期时间/时间小数；流式 ZIP | S:不写公式/图表；合并不展开；无缓存公式/坏引用报错；格式仅对可解析数字/日期/时间"
+    },
+    {
+      "candidate_id": "ae8c2dd125fb096b28adc385adb6d4fcc6738d0f28b4be7ec5375eb4ab022427",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "d5ad2dd83eff24d085595e513ff0a9629a912b89c082dcc15127ba8f61be21f8",
+      "existing_entry": "XLSX_ENGINE.md[SZ7S]: F:XLSX 引擎决策、迁移方案、覆盖矩阵与实测 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；1904/hidden；全 sheet；数字格式导出；--formats 支持 --json/--all-sheets；内置 numFmt 14；条件格式 top/bottom/colorScale/contains/notContains/dataBar/begins/ends/blank/nonblank/between/notBetween/above-belowAverage/duplicate/unique/iconSet/timePeriod；公式引号与 XML 转义；1M 8.04s/53MB | S:迁移未执行待批准；不新增依赖；导入格式取首数据行；性能仅 release"
+    },
+    {
+      "candidate_id": "4ec95022c1c5c20104801d7ea47f1a840c3c75a2469a00a58126499f67f7743b",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "3be57d56209c869df2e3e17d96d344df4ab8769b0a019290b841f1e47923d507",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；Round440 右尖括号/begins XML 转义与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
