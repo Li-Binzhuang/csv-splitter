@@ -34,10 +34,20 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             let [Expr::Number(bottom), Expr::Number(top)] = args else {
                 return Value::Error;
             };
-            if bottom.fract() != 0.0 || top.fract() != 0.0 || *bottom > *top {
+            const MAX_SAFE_INTEGER: f64 = 9_007_199_254_740_992.0;
+            if bottom.fract() != 0.0
+                || top.fract() != 0.0
+                || *bottom > *top
+                || bottom.abs() > MAX_SAFE_INTEGER
+                || top.abs() > MAX_SAFE_INTEGER
+            {
                 return Value::Error;
             }
-            let span = (*top as i64 - *bottom as i64 + 1) as u64;
+            let span = *top - *bottom + 1.0;
+            if span > MAX_SAFE_INTEGER {
+                return Value::Error;
+            }
+            let span = span as u64;
             let offset = (next_random() * span as f64).floor() as i64;
             Value::Number(*bottom + offset as f64)
         }

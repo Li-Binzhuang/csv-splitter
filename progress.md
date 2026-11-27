@@ -440,10 +440,14 @@
   测试 `header_freeze_can_be_disabled`。
 - [x] 项441 no-freeze 目录/多 sheet（功能级）：write_sheets_without_freeze + CLI 目录分支；
   测试 `multi_sheet_export_can_skip_header_freeze`。
-- [ ] 项439 RANDBETWEEN 大范围（功能级）：span 超 2^53 精度；
-  验收：单测 + gate。
+- [x] 项439 RANDBETWEEN 大范围（功能级）：>2^53 报 #VALUE!；
+  测试 `rand_and_randbetween_stay_in_bounds`。
 - [x] 项440 冻结开关 CLI 接线（功能级）：convert `--no-freeze` 接线；
   测试 `every_command_documents_the_flags_it_parses` + core 单测。
+- [ ] 项442 xlsx autoFilter 开关（功能级）：可选不输出筛选；
+  验收：单测 + gate。
+- [ ] 项443 RANDBETWEEN 单元格参数（功能级）：A2/B2 引用求值；
+  验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
 - [ ] 项428 条件格式 dxf 蓝色规则同 id 断言（功能级）：蓝色多规则同 dxfId；
@@ -741,6 +745,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 462（项439 RANDBETWEEN 大范围守卫，功能级）：>2^53 报错；
+定向与全量 gate/package 通过；发布包 SHA `b518c2c7…c23b1084`；
+轮首 push 成功，本轮不再 push。
 
 Round 461（项441 no-freeze 多 sheet，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `4fd445f2…f00ce689`；

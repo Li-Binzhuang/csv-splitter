@@ -7299,5 +7299,6 @@ mod tests {
         assert_eq!(eval_str("randbetween(10,1)", &[]), "#VALUE!");
         assert_eq!(eval_str("randbetween(1.5,3)", &[]), "#VALUE!");
         assert_eq!(eval_str("rand(1)", &[]), "#VALUE!");
+        assert_eq!(eval_str("randbetween(0,9007199254740994)", &[]), "#VALUE!");
     }
 }
