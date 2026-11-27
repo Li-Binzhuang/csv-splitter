@@ -3362,6 +3362,8 @@ mod tests {
             (r#"textbefore("aXb", "x", 1, 0, 1)"#, "aXb"),
             (r#"textafter("aXb", "x", 1, 0, 1)"#, ""),
             (r#"textbefore("abc", "-", 1, 0, 1, "none")"#, "abc"),
+            (r#"textafter("aÄb", "ä", 1, 1)"#, "b"),
+            (r#"textbefore("Ä-B", "ä", 1, 1)"#, ""),
         ] {
             assert_eq!(eval_str(source, &[]), expected, "{source}");
         }

@@ -6825,6 +6825,43 @@ fn percentile_of(values: &[f64], p: f64) -> Option<f64> {
     Some(values[low] + fraction * (values[high] - values[low]))
 }
 
+/// Case-insensitive search using simple per-character lowercase folding;
+/// returns the original byte index so callers can slice the source text.
+fn find_case_insensitive(haystack: &str, needle: &str, from: usize) -> Option<usize> {
+    let needle_chars: Vec<char> = needle.chars().collect();
+    if needle_chars.is_empty() {
+        return Some(from);
+    }
+    let first = needle_chars[0]
+        .to_lowercase()
+        .next()
+        .unwrap_or(needle_chars[0]);
+    for (index, character) in haystack[from..].char_indices() {
+        let lowered = character.to_lowercase().next().unwrap_or(character);
+        if lowered != first {
+            continue;
+        }
+        let mut hay = haystack[from + index..].chars();
+        let mut matched = true;
+        for expected in &needle_chars {
+            let Some(actual) = hay.next() else {
+                matched = false;
+                break;
+            };
+            let actual = actual.to_lowercase().next().unwrap_or(actual);
+            let expected = expected.to_lowercase().next().unwrap_or(*expected);
+            if actual != expected {
+                matched = false;
+                break;
+            }
+        }
+        if matched {
+            return Some(from + index);
+        }
+    }
+    None
+}
+
 fn text_around(args: &[Expr], ctx: &Ctx<'_>, before: bool) -> Value {
     if args.len() > 6 {
         return Value::Error;
@@ -6875,23 +6912,18 @@ fn text_around(args: &[Expr], ctx: &Ctx<'_>, before: bool) -> Value {
         Some(text) => Value::Text(text.clone()),
         None => Value::Text("#N/A".to_string()),
     };
-    let haystack = if match_mode == 1 {
-        text.to_ascii_lowercase()
-    } else {
-        text.clone()
-    };
-    let needle = if match_mode == 1 {
-        delimiter.to_ascii_lowercase()
-    } else {
-        delimiter.clone()
-    };
     let mut cursor = 0usize;
     let mut where_delimiter = None;
     for _ in 0..instance as usize {
-        match haystack[cursor..].find(&needle) {
+        let found = if match_mode == 1 {
+            find_case_insensitive(&text, &delimiter, cursor)
+        } else {
+            text[cursor..].find(&delimiter).map(|index| cursor + index)
+        };
+        match found {
             Some(index) => {
-                where_delimiter = Some(cursor + index);
-                cursor += index + delimiter.len();
+                where_delimiter = Some(index);
+                cursor = index + delimiter.len();
             }
             None => {
                 where_delimiter = None;

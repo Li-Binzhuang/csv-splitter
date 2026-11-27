@@ -236,9 +236,11 @@
   测试 `valuetotext_converts_values_and_quotes_strict_text`。
 - [x] 项329 TEXTSPLIT ignore_empty（功能级）：跳过空段返回首个非空片段；
   测试 `textsplit_can_skip_empty_segments`。
-- [ ] 项330 TEXTBEFORE/AFTER Unicode 大小写不敏感（功能级）：match_mode 1 支持非 ASCII；
-  验收：单测 + gate。
+- [x] 项330 TEXTBEFORE/AFTER Unicode 大小写不敏感（功能级）：match_mode 1 支持非 ASCII；
+  测试 `textbefore_after_honor_match_mode_and_match_end`。
 - [ ] 项331 TEXT 科学计数/会计格式（功能级）：TEXT 复用 NumberFormat 的 E+/会计格式；
+  验收：单测 + gate。
+- [ ] 项332 SEARCH Unicode 大小写不敏感（功能级）：SEARCH 非 ASCII 大小写折叠；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -521,6 +523,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 354（项330 Unicode 大小写不敏感，功能级）：TEXTBEFORE/AFTER match_mode 1；
+定向与全量 gate/package 通过；发布包 SHA `baea9a10…44a0051c`；
+轮首 push 失败，本轮不再 push。
 
 Round 353（项329 TEXTSPLIT ignore_empty，功能级）：跳过空段；
 定向与全量 gate/package 通过；发布包 SHA `5e9abb58…c702eb8c`；
