@@ -899,6 +899,15 @@ fn conditional_formatting_xml(
                 ));
                 continue;
             }
+            "notContains" | "notContainsText" => {
+                let text = xml_attr(&rule.value);
+                out.push_str(&format!(
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"notContainsText\" dxfId=\"{index}\" priority=\"{priority}\" operator=\"notContainsText\" text=\"{text}\"><formula>ISERROR(SEARCH(\"{text}\",{col}2))</formula></cfRule></conditionalFormatting>",
+                    col = column_name(column),
+                    priority = index + 1,
+                ));
+                continue;
+            }
             "contains" | "containsText" => {
                 let text = xml_attr(&rule.value);
                 out.push_str(&format!(
@@ -2300,6 +2309,12 @@ mod tests {
                 value: "500,1000".into(),
                 color: "pink".into(),
             },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "notContains".into(),
+                value: "zz".into(),
+                color: "lime".into(),
+            },
         ];
         let (tx, _rx) = std::sync::mpsc::channel();
         csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
@@ -2335,6 +2350,8 @@ mod tests {
             sheet.contains("<formula>500</formula><formula>1000</formula>"),
             "{sheet}"
         );
+        assert!(sheet.contains("type=\"notContainsText\""), "{sheet}");
+        assert!(sheet.contains("ISERROR(SEARCH(\"zz\",B2))"), "{sheet}");
 
         let bad = vec![ConditionalRule {
             column: "amount".into(),
