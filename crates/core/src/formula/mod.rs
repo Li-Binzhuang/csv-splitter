@@ -3504,6 +3504,20 @@ mod tests {
     }
 
     #[test]
+    fn complex_cosecant_and_secant_work() {
+        for (source, expected) in [
+            (r#"imcsc("1+0i")"#, "1.1883951057781212"),
+            (r#"imsec("1+0i")"#, "1.8508157176809252"),
+            (r#"imsec("0+0i")"#, "1"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [r#"imcsc("0+0i")"#, r#"imcsc("abc")"#, "imsec(1, 2)"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn complex_trigonometric_functions_work() {
         for (source, expected) in [
             (r#"imsin("0+0i")"#, "0"),

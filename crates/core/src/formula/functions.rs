@@ -3354,6 +3354,35 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             };
             Value::Text(format_complex(real_part, imaginary_part, &suffix))
         }
+        // IMCSC/IMSEC: complex cosecant and secant.
+        "imcsc" | "imsec" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let text = eval(&args[0], ctx).text();
+            let Some((real, imaginary, suffix)) = parse_complex(&text) else {
+                return Value::Error;
+            };
+            let sin_real = real.sin() * imaginary.cosh();
+            let sin_imaginary = real.cos() * imaginary.sinh();
+            let cos_real = real.cos() * imaginary.cosh();
+            let cos_imaginary = -real.sin() * imaginary.sinh();
+            let (numerator_real, numerator_imaginary) = if lower == "imcsc" {
+                (sin_real, sin_imaginary)
+            } else {
+                (cos_real, cos_imaginary)
+            };
+            let denominator =
+                numerator_real * numerator_real + numerator_imaginary * numerator_imaginary;
+            if denominator == 0.0 {
+                return Value::Error;
+            }
+            Value::Text(format_complex(
+                numerator_real / denominator,
+                -numerator_imaginary / denominator,
+                &suffix,
+            ))
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
