@@ -3504,6 +3504,26 @@ mod tests {
     }
 
     #[test]
+    fn lognorm_inv_returns_quantiles() {
+        for (source, expected) in [
+            ("lognorm.inv(0.5, 0, 1)", "1"),
+            ("lognorm.inv(0.841344746, 0, 1)", "2.718282"),
+            ("lognorm.inv(0.975, 0, 1)", "7.099071"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "lognorm.inv(0, 0, 1)",
+            "lognorm.inv(1, 0, 1)",
+            "lognorm.inv(0.5, 0, 0)",
+            r#"lognorm.inv("x", 0, 1)"#,
+            "lognorm.inv(0.5, 0)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn t_dist_returns_density_or_cumulative() {
         for (source, expected) in [
             ("t.dist(0, 1, 1)", "0.5"),

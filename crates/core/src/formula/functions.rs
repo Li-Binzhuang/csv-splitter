@@ -3953,6 +3953,33 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // LOGNORM.INV: inverse lognormal cumulative distribution.
+        "lognorm.inv" => {
+            if args.len() != 3 {
+                return Value::Error;
+            }
+            let (Some(probability), Some(mean), Some(deviation)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !probability.is_finite()
+                || !mean.is_finite()
+                || !deviation.is_finite()
+                || !(0.0..1.0).contains(&probability)
+                || deviation <= 0.0
+            {
+                return Value::Error;
+            }
+            let result = (mean + deviation * normal_inverse(probability)).exp();
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
