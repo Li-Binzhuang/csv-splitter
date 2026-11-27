@@ -1,0 +1,27 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "292ce46d96139b5b3da3e10a21b3430fd8fb8d89ac1a65a328069713613f2ee6",
+  "batch_id": "064307f9f00be4fa5e8f8e62c21f4ad48b6a410c4f80a31a1074031fd76e864d",
+  "composite_identity": "80e966f6b0c963e86924ace66df3fbd21a596d80a44b6b30c8a98827025e3928",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e31b8d270abe22b6aa6e72aaf28d66b669e31a4d378e42295f13b271cc9c771d",
+  "targets": [
+    {
+      "candidate_id": "9f5eb708768aab19fb1b83498d8aabfda5c6729c2866796e2cc1b4d2edb47ebe",
+      "object_ref": "code:docs/XLSX.md",
+      "path": "docs/XLSX.md",
+      "change": "update",
+      "source_sha256": "9e57481e6223ea22742a28511a800ae8de78cb79ef9d708129a677244be5459f",
+      "existing_entry": "XLSX.md[SD7S]: F:xlsx 互操作现状与边界：导出、多 sheet、导入、report xlsx、日期/条件格式 | R:code:crates/core/src/xlsx.rs,code:crates/cli/src/main.rs,code:docs/CAPABILITIES.md | A:convert 流式导出；目录多 sheet；导入；MCP sheet；report xlsx；ISO 日期 numFmtId=14；--highlight；--no-freeze；--no-auto-filter；--data-validation 下拉与提示 | S:只写值不写公式；日期仅 ISO；验证重复列/空列表/非 xlsx 退出 2；不做宏/VBA"
+    },
+    {
+      "candidate_id": "05a1e1b97d50851ec14418c30e428547beab4b42b7f4769b401cbfd67c3c98d7",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "6e275c82b323faa784c328fa6d6d25440ec7d28a59930bbf694ea798586584a0",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；Round477 数据验证提示 CLI 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

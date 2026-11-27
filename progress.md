@@ -480,8 +480,10 @@
   测试 `data_validation_prompts_are_escaped_attributes`。
 - [x] 项459 数据验证提示 CLI（功能级）：`--data-validation-prompt "列:标题|正文"`；
   测试 `convert_xlsx_can_add_validation_prompt`。
-- [ ] 项460 数据验证提示错误（功能级）：缺失验证/非法格式退出 2；
-  验收：CLI + 单测 + gate。
+- [x] 项460 数据验证提示错误（功能级）：缺失验证/缺分隔符/重复列/非 xlsx 退出 2；
+  测试 `convert_rejects_bad_validation_prompts`。
+- [ ] 项461 数据验证错误提示（功能级）：errorTitle/error；
+  验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
 - [ ] 项428 条件格式 dxf 蓝色规则同 id 断言（功能级）：蓝色多规则同 dxfId；
@@ -779,6 +781,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 478（项460 数据验证提示错误，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `e2c9d73c…aec3334543`；
+轮首 push 成功，本轮不再 push。
 
 Round 477（项459 数据验证提示 CLI，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `219e8c59…611e164f`；

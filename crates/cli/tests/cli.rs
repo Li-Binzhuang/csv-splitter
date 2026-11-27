@@ -2812,6 +2812,56 @@ fn convert_xlsx_can_add_validation_prompt() {
 }
 
 #[test]
+fn convert_rejects_bad_validation_prompts() {
+    let dir = TempDir::new("xlsxvalpromptbad");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,status\n1,good\n").unwrap();
+    for (prompt, message) in [
+        ("id:Id|Pick", "no validation"),
+        ("status:Status", "title|message"),
+        ("status:A|B;status:C|D", "repeated"),
+    ] {
+        let output = Command::new(bin())
+            .args([
+                "convert",
+                input.to_str().unwrap(),
+                "--format",
+                "xlsx",
+                "--out",
+                dir.join("bad.xlsx").to_str().unwrap(),
+                "--data-validation",
+                "status:good,ok",
+                "--data-validation-prompt",
+                prompt,
+            ])
+            .output()
+            .unwrap();
+        assert_eq!(output.status.code(), Some(2), "{message}");
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(stderr.contains("validation prompt"), "{message}: {stderr}");
+    }
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "csv",
+            "--out",
+            dir.join("plain.csv").to_str().unwrap(),
+            "--data-validation-prompt",
+            "status:S|M",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(2));
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("only valid with --format xlsx"),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[test]
 fn convert_xlsx_can_highlight_a_top_rank() {
     let dir = TempDir::new("xlsxtop");
     let input = dir.join("t.csv");
