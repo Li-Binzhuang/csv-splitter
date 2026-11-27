@@ -25,6 +25,7 @@
 | CHAR / CODE / UNICHAR / UNICODE | 支持（UNICHAR/UNICODE 新增） | ASCII 与 Unicode 码点互转；非法码点/空文本报错 |
 | FIND / SEARCH | 支持 | SEARCH 不区分大小写；均支持起始位置 |
 | PROPER / REPT / EXACT / VALUE | 支持 | VALUE 只解析数字文本 |
+| CLEAN | 支持（功能级新增） | 去掉 ASCII 0–31 控制字符；不裁首尾空格；多参 `#VALUE!` |
 | TEXT | 支持（基础） | 复用 `NumberFormat`：0.00/#,##0/0%/日期时间；科学计数/会计格式仍缺 |
 | TEXTBEFORE / TEXTAFTER | 支持（功能级新增） | instance_num、match_mode 0/1（ASCII 不区分大小写）、match_end、if_not_found |
 

@@ -230,9 +230,11 @@
   测试 `elapsed_formats_export_as_serial_and_round_trip_raw`。
 - [x] 项326 TEXTBEFORE/TEXTAFTER 匹配模式（功能级）：match_mode 0/1 + match_end + if_not_found；
   测试 `textbefore_after_honor_match_mode_and_match_end`。
-- [ ] 项327 CLEAN 控制字符清理（功能级）：`CLEAN(text)` 去掉 0–31 控制字符；
-  验收：单测 + gate。
+- [x] 项327 CLEAN 控制字符清理（功能级）：`CLEAN(text)` 去掉 ASCII 0–31，不裁空格；
+  测试 `clean_strips_control_characters`。
 - [ ] 项328 VALUETOTEXT 文本化（功能级）：`VALUETOTEXT(value)` 数字/布尔/错误转为文本；
+  验收：单测 + gate。
+- [ ] 项329 TEXTSPLIT ignore_empty（功能级）：`TEXTSPLIT(text, delimiter, , 1)` 跳过空段；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -515,6 +517,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 351（项327 CLEAN，功能级）：ASCII 控制字符清理；
+定向与全量 gate/package 通过；发布包 SHA `848ec701…07cfc71c`；
+轮首 push 成功，本轮不再 push。
 
 Round 350（项326 TEXTBEFORE/AFTER 匹配模式，功能级）：match_mode/match_end/if_not_found；
 定向与全量 gate/package 通过；发布包 SHA `1b4c0433…687d3865`；

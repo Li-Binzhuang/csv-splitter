@@ -5719,6 +5719,19 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             Some(v) => Value::Text(v.text().trim().to_string()),
             None => Value::Error,
         },
+        // CLEAN strips ASCII control characters (0–31); it does not trim spaces.
+        "clean" => match (args.len(), args.first()) {
+            (1, Some(arg)) => {
+                let value = eval(arg, ctx).text();
+                Value::Text(
+                    value
+                        .chars()
+                        .filter(|character| (*character as u32) >= 32)
+                        .collect(),
+                )
+            }
+            _ => Value::Error,
+        },
         // TEXT(value, format): reuse the same NumberFormat the viewer uses.
         "text" => match (args.first(), args.get(1)) {
             (Some(value), Some(format)) => {

@@ -3375,6 +3375,21 @@ mod tests {
     }
 
     #[test]
+    fn clean_strips_control_characters() {
+        for (source, expected) in [
+            (r#"clean(concat("a", char(9), "b"))"#, "ab"),
+            (r#"clean(concat("a", char(10), "b"))"#, "ab"),
+            (r#"clean(" a ")"#, " a "),
+            (r#"clean("plain")"#, "plain"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in ["clean()", r#"clean("x", "y")"#] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn textsplit_returns_first_segment() {
         for (source, expected) in [
             (r#"textsplit("a,b,c", ",")"#, "a"),
