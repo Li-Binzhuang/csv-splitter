@@ -5585,6 +5585,7 @@ mod tests {
         for source in [
             "roman(4000)",
             "roman(4, 5)",
+            "roman(4, 1.5)",
             "roman(4.5)",
             r#"arabic("ABC")"#,
             "arabic()",

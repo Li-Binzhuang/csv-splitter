@@ -2852,7 +2852,11 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                     .map(|arg| eval(arg, ctx).number())
                     .unwrap_or(Some(0.0))
                     .unwrap_or(f64::NAN);
-                if !number.is_finite() || number.trunc() != number || !form.is_finite() {
+                if !number.is_finite()
+                    || number.trunc() != number
+                    || !form.is_finite()
+                    || form.trunc() != form
+                {
                     return Value::Error;
                 }
                 if !(0.0..=3999.0).contains(&number) || !(0.0..=4.0).contains(&form) {

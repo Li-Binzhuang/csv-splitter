@@ -217,7 +217,7 @@
 | COMPLEX / IMREAL / IMAGINARY / IMABS | 支持（功能级新增） | i/j 后缀；非法复数 `#VALUE!` |
 | MULTINOMIAL | 支持（功能级新增） | 同行非负整数、总和≤170；空区间/负数 `#VALUE!` |
 | FACTDOUBLE | 支持（功能级新增） | 非负整数 0..300；负数/非整数/过大 `#VALUE!` |
-| ROMAN / ARABIC | 支持（功能级新增） | 0..3999；form 接受 0..4（统一标准形） |
+| ROMAN / ARABIC | 支持（功能级新增） | 0..3999；form 须整数 0..4；ARABIC 非法罗马数字报错 |
 | ENCODEURL | 支持（功能级新增） | UTF-8 百分号编码；RFC3986 unreserved 保留 |
 | DOLLARDE / DOLLARFR | 支持（功能级新增） | 分数分母正整数；非正/非整数 `#VALUE!` |
 | MAXA / MINA | 支持（功能级新增） | 文本按 0、TRUE/FALSE 按 1/0；空样本 `#VALUE!` |

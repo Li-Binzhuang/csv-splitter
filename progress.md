@@ -316,9 +316,11 @@
   测试 `vlookup_preloads_the_same_reference_as_ref`。
 - [x] 项369 DOLLARDE/DOLLARFR 分数校验（功能级）：分母正整数，0/负/小数/非数值报错；
   测试 `dollar_fraction_round_trips`。
-- [ ] 项370 ROMAN 范围校验（功能级）：ROMAN 仅 1–3999；
-  验收：单测 + gate。
+- [x] 项370 ROMAN form 校验（功能级）：form 须整数 0–4，小数报错；
+  测试 `roman_and_arabic_round_trip`。
 - [ ] 项371 BASE 进制范围校验（功能级）：基数 2–36；
+  验收：单测 + gate。
+- [ ] 项372 DECIMAL 字符校验（功能级）：空串/非法数字 → #VALUE!；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -601,6 +603,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 394（项370 ROMAN form 校验，功能级）：form 须整数；
+定向与全量 gate/package 通过；发布包 SHA `f915baeb…db585ef9`；
+轮首 push 成功，本轮不再 push。
 
 Round 393（项369 DOLLARDE 分数校验，功能级）：补测试锁定；
 定向与全量 gate/package 通过；发布包 SHA `5ffbde31…9d6891b2`；
