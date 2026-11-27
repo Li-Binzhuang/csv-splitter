@@ -809,6 +809,32 @@ fn conditional_formatting_xml(
             "=" => ("equal", Some(rule.value.clone())),
             "!=" => ("notEqual", Some(rule.value.clone())),
             // Excel's Top 10 / Bottom 10 family: the rank is N, not a comparison.
+            "beginsWith" | "startsWith" | "endsWith" => {
+                let text = xml_attr(&rule.value);
+                let (kind, formula) = if rule.operator == "endsWith" {
+                    (
+                        "endsWith",
+                        format!(
+                            "RIGHT({col}2,LEN(\"{text}\"))=\"{text}\"",
+                            col = column_name(column)
+                        ),
+                    )
+                } else {
+                    (
+                        "beginsWith",
+                        format!(
+                            "LEFT({col}2,LEN(\"{text}\"))=\"{text}\"",
+                            col = column_name(column)
+                        ),
+                    )
+                };
+                out.push_str(&format!(
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"{kind}\" dxfId=\"{index}\" priority=\"{priority}\" operator=\"{kind}\" text=\"{text}\"><formula>{formula}</formula></cfRule></conditionalFormatting>",
+                    col = column_name(column),
+                    priority = index + 1,
+                ));
+                continue;
+            }
             "dataBar" | "databar" => {
                 let Some(value) = parse_hex_color(&rule.value) else {
                     return Err(invalid(&format!(
@@ -2194,6 +2220,18 @@ mod tests {
                 value: "FF0000".into(),
                 color: String::new(),
             },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "beginsWith".into(),
+                value: "12".into(),
+                color: "purple".into(),
+            },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "endsWith".into(),
+                value: "00".into(),
+                color: "orange".into(),
+            },
         ];
         let (tx, _rx) = std::sync::mpsc::channel();
         csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
@@ -2216,6 +2254,10 @@ mod tests {
         assert!(sheet.contains("NOT(ISERROR(SEARCH(\"00\",B2)))"), "{sheet}");
         assert!(sheet.contains("type=\"dataBar\""), "{sheet}");
         assert!(sheet.contains("rgb=\"FFFF0000\""), "{sheet}");
+        assert!(sheet.contains("type=\"beginsWith\""), "{sheet}");
+        assert!(sheet.contains("LEFT(B2,LEN(\"12\"))=\"12\""), "{sheet}");
+        assert!(sheet.contains("type=\"endsWith\""), "{sheet}");
+        assert!(sheet.contains("RIGHT(B2,LEN(\"00\"))=\"00\""), "{sheet}");
 
         let bad = vec![ConditionalRule {
             column: "amount".into(),
