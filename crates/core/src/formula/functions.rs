@@ -6040,13 +6040,19 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             let Some(ignore_empty) = ignore_empty else {
                 return Value::Error;
             };
+            if !ignore_empty.is_finite()
+                || ignore_empty.fract() != 0.0
+                || !matches!(ignore_empty as u32, 0 | 1)
+            {
+                return Value::Error;
+            }
             if args.len() < 3 {
                 return Value::Error;
             }
             let mut parts = Vec::new();
             for arg in args.iter().skip(2) {
                 let text = eval(arg, ctx).text();
-                if ignore_empty != 0.0 && text.is_empty() {
+                if ignore_empty == 1.0 && text.is_empty() {
                     continue;
                 }
                 parts.push(text);

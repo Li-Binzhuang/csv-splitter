@@ -2466,6 +2466,13 @@ mod tests {
             "CDMX-ready"
         );
 
+        for source in [
+            r#"textjoin("-", 2, "a", "b")"#,
+            r#"textjoin("-", 1.5, "a", "b")"#,
+            r#"textjoin("-", "x", "a", "b")"#,
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
         assert_eq!(eval_str("char(65)", &[]), "A");
         assert_eq!(eval_str("char(255)", &[]), "ÿ");
         for source in [
