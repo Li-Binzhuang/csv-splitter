@@ -3504,6 +3504,49 @@ mod tests {
     }
 
     #[test]
+    fn maxa_and_mina_treat_text_as_zero() {
+        let columns = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("a".to_string(), "1".to_string());
+        cells.insert("b".to_string(), "2".to_string());
+        cells.insert("c".to_string(), "text".to_string());
+        for (source, expected) in [("maxa(A2:C2)", "2"), ("mina(A2:C2)", "0")] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        cells.insert("a".to_string(), "TRUE".to_string());
+        cells.insert("b".to_string(), "FALSE".to_string());
+        cells.insert("c".to_string(), String::new());
+        for (source, expected) in [("maxa(A2:C2)", "1"), ("mina(A2:C2)", "0")] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        let columns = vec!["a".to_string(), "b".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("a".to_string(), String::new());
+        cells.insert("b".to_string(), String::new());
+        let formula = Formula::parse("maxa(A2:B2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+    }
+
+    #[test]
     fn averagea_treats_text_and_booleans_as_numbers() {
         let columns = vec![
             "a".to_string(),

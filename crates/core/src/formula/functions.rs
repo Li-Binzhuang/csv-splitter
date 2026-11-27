@@ -2620,6 +2620,37 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number(total / count)
         }
+        // MAXA/MINA: extrema with text=0 and logical TRUE/FALSE=1/0.
+        "maxa" | "mina" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(cells) = range_cells(from, to, ctx) else {
+                return Value::Error;
+            };
+            let mut result: Option<f64> = None;
+            for cell in cells {
+                let text = cell.trim();
+                if text.is_empty() {
+                    continue;
+                }
+                let value = match text.parse::<f64>() {
+                    Ok(value) if value.is_finite() => value,
+                    _ if text.eq_ignore_ascii_case("true") => 1.0,
+                    _ if text.eq_ignore_ascii_case("false") => 0.0,
+                    _ => 0.0,
+                };
+                result = Some(match result {
+                    None => value,
+                    Some(current) if lower == "maxa" => current.max(value),
+                    Some(current) => current.min(value),
+                });
+            }
+            result.map_or(Value::Error, Value::Number)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
