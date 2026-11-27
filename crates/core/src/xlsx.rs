@@ -809,6 +809,15 @@ fn conditional_formatting_xml(
             "=" => ("equal", Some(rule.value.clone())),
             "!=" => ("notEqual", Some(rule.value.clone())),
             // Excel's Top 10 / Bottom 10 family: the rank is N, not a comparison.
+            "contains" | "containsText" => {
+                let text = xml_attr(&rule.value);
+                out.push_str(&format!(
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"containsText\" dxfId=\"{index}\" priority=\"{priority}\" operator=\"containsText\" text=\"{text}\"><formula>NOT(ISERROR(SEARCH(\"{text}\",{col}2)))</formula></cfRule></conditionalFormatting>",
+                    col = column_name(column),
+                    priority = index + 1,
+                ));
+                continue;
+            }
             "scale2" | "scale3" => {
                 let expected = if rule.operator == "scale2" { 2 } else { 3 };
                 let colors: Vec<&str> = rule.value.split(',').map(str::trim).collect();
@@ -2159,6 +2168,12 @@ mod tests {
                 value: "F8696B,FFEB84,63BE7B".into(),
                 color: String::new(),
             },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "contains".into(),
+                value: "00".into(),
+                color: "blue".into(),
+            },
         ];
         let (tx, _rx) = std::sync::mpsc::channel();
         csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
@@ -2176,6 +2191,9 @@ mod tests {
         );
         assert!(sheet.contains("rgb=\"FFF8696B\""), "{sheet}");
         assert!(sheet.contains("rgb=\"FF63BE7B\""), "{sheet}");
+        assert!(sheet.contains("type=\"containsText\""), "{sheet}");
+        assert!(sheet.contains("text=\"00\""), "{sheet}");
+        assert!(sheet.contains("NOT(ISERROR(SEARCH(\"00\",B2)))"), "{sheet}");
 
         let bad = vec![ConditionalRule {
             column: "amount".into(),
