@@ -1,0 +1,35 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "a9e81b253d899b3de91508846167ebbdcdb6608821a538232f0076a7cbb5a752",
+  "batch_id": "5f66725ec4b3fbf6adfb406c238e4aa788c27db492bbfa1c7dd8cd790193fb70",
+  "composite_identity": "b7f5e94aee1b178ce4d89299bca0810923744a569c4b21a2f4693844750fccd8",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "873132dc4c6d505a5c329e72e1fd99bee1230176ed3331bc8dbfca9d93eb1593",
+  "targets": [
+    {
+      "candidate_id": "6e76d59ddfe6a3541580a2a403b49c0d184563eaab40028606aa6484b591dd18",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "0b1b1b914aa3aaa5250815e478102b3d42bc6d7e4b25f173b01966f23a7c9ed8",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert：编码转码、xlsx/csv/tsv/ndjson/parquet、highlight、number-format、formats、no-freeze、no-auto-filter、data-validation | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；--formats 支持 --json/--all-sheets；--number-format；--no-freeze/--no-auto-filter；--data-validation 列:值1,值2；highlight topN | S:不覆盖输入；--formats 仅 xlsx；--json 需 --formats；重复列/空值/非法格式/非 xlsx 报错"
+    },
+    {
+      "candidate_id": "1b550e5e0c320d141f133087e3292648569efb70ad453f35fe3534070f7f2f8d",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "25b257862f95836a097844a17b57c7f08d9b11c352dab1051fce577c32bd4cc6",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles；csv_to_xlsx_with_all（rules/formats/validations/freeze/auto）；多列 dataValidations；条件格式全族/dxf 去重；日期时间格式 numFmt；autoFilter | S:不写公式/图表；合并不展开；无缓存公式/坏引用报错；验证列表 ≤255 字符且禁逗号/引号"
+    },
+    {
+      "candidate_id": "e49b85ecc3e06ac73210f5dfa1fb22284cb0fa3473818767d039dc2f4a825a49",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "7aa70aec8aac44cf451f73cb132ee885774b37cc2b50b925508300c67bc9f3e8",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；Round475 数据验证+CF 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

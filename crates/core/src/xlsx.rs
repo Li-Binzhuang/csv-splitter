@@ -42,6 +42,10 @@ pub struct ConditionalRule {
 pub struct DataValidation {
     pub column: String,
     pub values: Vec<String>,
+    /// Optional input-message title shown when the cell is selected.
+    pub prompt_title: Option<String>,
+    /// Optional input-message body shown when the cell is selected.
+    pub prompt_message: Option<String>,
 }
 
 /// Read a worksheet's header names and their Excel number formats.
@@ -1030,6 +1034,20 @@ fn quote_formula(value: &str) -> String {
 
 /// A double-quoted Excel formula string. Inner quotes are doubled, and the
 /// XML text is escaped so the formula parser receives the intended literal.
+fn xml_attribute(value: &str) -> String {
+    let mut escaped = String::new();
+    for ch in value.chars() {
+        match ch {
+            '&' => escaped.push_str("&amp;"),
+            '<' => escaped.push_str("&lt;"),
+            '>' => escaped.push_str("&gt;"),
+            '"' => escaped.push_str("&quot;"),
+            _ => escaped.push(ch),
+        }
+    }
+    escaped
+}
+
 fn data_validations_xml(
     validations: &[DataValidation],
     headers: &[String],
@@ -1070,8 +1088,24 @@ fn data_validations_xml(
             ));
         }
         let column = column_name(index);
+        let mut prompt = String::new();
+        if validation.prompt_title.is_some() || validation.prompt_message.is_some() {
+            let title = validation.prompt_title.as_deref().unwrap_or_default();
+            let message = validation.prompt_message.as_deref().unwrap_or_default();
+            if title.chars().count() > 32 || message.chars().count() > 255 {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "data validation prompt title (32) or message (255) is too long",
+                ));
+            }
+            prompt.push_str(&format!(
+                " showInputMessage=\"1\" promptTitle=\"{}\" prompt=\"{}\"",
+                xml_attribute(title),
+                xml_attribute(message)
+            ));
+        }
         out.push_str(&format!(
-            "<dataValidation type=\"list\" allowBlank=\"0\" showErrorMessage=\"1\" sqref=\"{column}2:{column}{last_row}\"><formula1>{}</formula1></dataValidation>",
+            "<dataValidation type=\"list\" allowBlank=\"0\" showErrorMessage=\"1\"{prompt} sqref=\"{column}2:{column}{last_row}\"><formula1>{}</formula1></dataValidation>",
             formula_literal(&joined)
         ));
     }
@@ -3686,10 +3720,14 @@ mod tests {
             DataValidation {
                 column: "status".to_string(),
                 values: vec!["good".into(), "ok".into(), "bad".into()],
+                prompt_title: None,
+                prompt_message: None,
             },
             DataValidation {
                 column: "id".to_string(),
                 values: vec!["1".into(), "2".into(), "3".into()],
+                prompt_title: None,
+                prompt_message: None,
             },
         ];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
@@ -3701,6 +3739,34 @@ mod tests {
         assert!(sheet.contains("<formula1>\"1,2,3\"</formula1>"), "{sheet}");
         assert!(
             sheet.contains("<formula1>\"good,ok,bad\"</formula1>"),
+            "{sheet}"
+        );
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn data_validation_prompts_are_escaped_attributes() {
+        let dir = temp_path("validationprompt");
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("validation.csv");
+        let output = dir.join("validation.xlsx");
+        std::fs::write(&input, "id,status\n1,good\n2,ok\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let validations = vec![DataValidation {
+            column: "status".to_string(),
+            values: vec!["good".into(), "ok".into()],
+            prompt_title: Some("Status \"pick\"".to_string()),
+            prompt_message: Some("Choose <one> & confirm".to_string()),
+        }];
+        csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
+        let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
+        assert!(sheet.contains("showInputMessage=\"1\""), "{sheet}");
+        assert!(
+            sheet.contains("promptTitle=\"Status &quot;pick&quot;\""),
+            "{sheet}"
+        );
+        assert!(
+            sheet.contains("prompt=\"Choose &lt;one&gt; &amp; confirm\""),
             "{sheet}"
         );
         std::fs::remove_dir_all(dir).ok();

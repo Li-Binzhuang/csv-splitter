@@ -61,7 +61,12 @@ fn parse_data_validations(text: &str) -> Result<Vec<csvx_core::xlsx::DataValidat
                 "data validation {column:?} needs at least one value"
             ));
         }
-        validations.push(csvx_core::xlsx::DataValidation { column, values });
+        validations.push(csvx_core::xlsx::DataValidation {
+            column,
+            values,
+            prompt_title: None,
+            prompt_message: None,
+        });
     }
     if validations.is_empty() {
         return Err("--data-validation needs at least one column:values".to_string());
