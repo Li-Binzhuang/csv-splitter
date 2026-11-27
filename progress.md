@@ -446,7 +446,9 @@
   测试 `every_command_documents_the_flags_it_parses` + core 单测。
 - [ ] 项442 xlsx autoFilter 开关（功能级）：可选不输出筛选；
   验收：单测 + gate。
-- [ ] 项443 RANDBETWEEN 单元格参数（功能级）：A2/B2 引用求值；
+- [x] 项443 RANDBETWEEN 单元格参数（功能级）：lo/hi 引用求值；
+  测试 `rand_and_randbetween_stay_in_bounds`。
+- [ ] 项444 no-freeze + number-format 组合（功能级）：CLI 同时生效；
   验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
@@ -745,6 +747,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 463（项443 RANDBETWEEN 单元格参数，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `4cef237a…b514d3c`；
+轮首 push 成功，本轮不再 push。
 
 Round 462（项439 RANDBETWEEN 大范围守卫，功能级）：>2^53 报错；
 定向与全量 gate/package 通过；发布包 SHA `b518c2c7…c23b1084`；

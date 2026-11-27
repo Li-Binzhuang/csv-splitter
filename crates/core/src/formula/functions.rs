@@ -31,25 +31,29 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
         }
         "randbetween" => {
-            let [Expr::Number(bottom), Expr::Number(top)] = args else {
+            let [bottom, top] = args else {
+                return Value::Error;
+            };
+            let (Some(bottom), Some(top)) = (eval(bottom, ctx).number(), eval(top, ctx).number())
+            else {
                 return Value::Error;
             };
             const MAX_SAFE_INTEGER: f64 = 9_007_199_254_740_992.0;
             if bottom.fract() != 0.0
                 || top.fract() != 0.0
-                || *bottom > *top
+                || bottom > top
                 || bottom.abs() > MAX_SAFE_INTEGER
                 || top.abs() > MAX_SAFE_INTEGER
             {
                 return Value::Error;
             }
-            let span = *top - *bottom + 1.0;
+            let span = top - bottom + 1.0;
             if span > MAX_SAFE_INTEGER {
                 return Value::Error;
             }
             let span = span as u64;
             let offset = (next_random() * span as f64).floor() as i64;
-            Value::Number(*bottom + offset as f64)
+            Value::Number(bottom + offset as f64)
         }
         // History functions: they read the state the exporter maintains, so a formula
         // can see the row before it without the file being loaded.
