@@ -2496,6 +2496,7 @@ mod tests {
             "char(-1)",
             r#"char("x")"#,
             "char(65, 1)",
+            "char(65.5)",
         ] {
             assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
         }

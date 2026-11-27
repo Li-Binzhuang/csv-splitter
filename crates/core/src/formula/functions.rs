@@ -6080,10 +6080,10 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             let Some(code) = eval(&args[0], ctx).number() else {
                 return Value::Error;
             };
-            if !code.is_finite() || !(1.0..=255.0).contains(&code) {
+            if !code.is_finite() || code.trunc() != code || !(1.0..=255.0).contains(&code) {
                 return Value::Error;
             }
-            Value::Text((code.trunc() as u8 as char).to_string())
+            Value::Text((code as u8 as char).to_string())
         }
         "code" => {
             if args.len() != 1 {
