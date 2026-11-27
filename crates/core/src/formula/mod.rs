@@ -6638,6 +6638,8 @@ mod tests {
         }
         for source in [
             "index(B2:D2, 4)",
+            "index(B2:D2, 1.5)",
+            "index(B2:D2, 1, 1.5)",
             "match(99, B2:D2, 0)",
             "match(10, A3:A3, 0)",
             "match(10, B2:D2, 2)",

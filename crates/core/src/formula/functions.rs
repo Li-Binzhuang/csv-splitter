@@ -6519,10 +6519,10 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 };
                 position
             };
-            if !position.is_finite() || position < 1.0 {
+            if !position.is_finite() || position.fract() != 0.0 || position < 1.0 {
                 return Value::Error;
             }
-            let position = position.trunc() as usize;
+            let position = position as usize;
             let Some(cell) = cells.get(position - 1) else {
                 return Value::Error;
             };
