@@ -3504,6 +3504,27 @@ mod tests {
     }
 
     #[test]
+    fn beta_inv_returns_quantiles() {
+        for (source, expected) in [
+            ("beta.inv(0.5, 2, 2, 0, 1)", "0.5"),
+            ("beta.inv(0.5, 2, 2, 10, 20)", "15"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "beta.inv(0, 2, 2, 0, 1)",
+            "beta.inv(1, 2, 2, 0, 1)",
+            "beta.inv(0.5, 0, 2, 0, 1)",
+            "beta.inv(0.5, 2, 0, 0, 1)",
+            "beta.inv(0.5, 2, 2, 1, 0)",
+            r#"beta.inv("x", 2, 2, 0, 1)"#,
+            "beta.inv(0.5, 2)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn chisq_inv_right_tail_returns_quantiles() {
         for (source, expected) in [
             ("chisq.inv.rt(0.5, 1)", "0.454936"),

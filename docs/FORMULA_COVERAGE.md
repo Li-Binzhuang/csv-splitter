@@ -130,6 +130,7 @@
 | DB / DDB / VDB | 支持（功能级新增） | 固定/双倍/变动余额递减；区间、月数、因子非法 `#VALUE!` |
 | FVSCHEDULE | 支持（功能级新增） | 复利 schedule 区间；空区间/rate≤-1 `#VALUE!` |
 | SUMXMY2 / SUMX2MY2 / SUMX2PY2 | 支持（功能级新增） | 同行等长 x/y、空区间/长度不等 `#VALUE!` |
+| BETA.INV | 支持（功能级新增） | p(0,1)、alpha/beta>0、A<B；可选 A/B 默认 0/1 |
 | CHISQ.INV.RT | 支持（功能级新增） | 右尾反函数；概率(0,1)严格内、df>0；非法 `#VALUE!` |
 | CHISQ.INV | 支持（功能级新增） | 左尾反函数；概率(0,1)严格内、df>0；非法 `#VALUE!` |
 | F.INV | 支持（功能级新增） | 左尾反函数；概率(0,1)严格内、d1/d2>0 |

@@ -4482,6 +4482,58 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number((low + high) / 2.0)
         }
+        // BETA.INV: inverse regularized beta distribution.
+        "beta.inv" => {
+            if args.len() < 4 || args.len() > 5 {
+                return Value::Error;
+            }
+            let (Some(probability), Some(alpha), Some(beta)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            let lower = if args.len() == 5 {
+                eval(&args[3], ctx).number()
+            } else {
+                Some(0.0)
+            };
+            let upper = if args.len() == 5 {
+                eval(&args[4], ctx).number()
+            } else {
+                Some(1.0)
+            };
+            let (Some(lower), Some(upper)) = (lower, upper) else {
+                return Value::Error;
+            };
+            if !probability.is_finite()
+                || !alpha.is_finite()
+                || !beta.is_finite()
+                || !lower.is_finite()
+                || !upper.is_finite()
+                || probability <= 0.0
+                || probability >= 1.0
+                || alpha <= 0.0
+                || beta <= 0.0
+                || lower >= upper
+            {
+                return Value::Error;
+            }
+            let span = upper - lower;
+            let cumulative = |value: f64| regularized_beta((value - lower) / span, alpha, beta);
+            let mut low = lower;
+            let mut high = upper;
+            for _ in 0..200 {
+                let middle = (low + high) / 2.0;
+                if cumulative(middle) < probability {
+                    low = middle;
+                } else {
+                    high = middle;
+                }
+            }
+            Value::Number((low + high) / 2.0)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
