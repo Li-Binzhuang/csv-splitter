@@ -2789,6 +2789,43 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number(result)
         }
+        // COMPLEX/IMREAL/IMAGINARY/IMABS: complex-number construction and accessors.
+        "complex" | "imreal" | "imaginary" | "imabs" => {
+            if lower == "complex" {
+                if args.len() < 2 || args.len() > 3 {
+                    return Value::Error;
+                }
+                let (Some(real), Some(imaginary)) =
+                    (eval(&args[0], ctx).number(), eval(&args[1], ctx).number())
+                else {
+                    return Value::Error;
+                };
+                if !real.is_finite() || !imaginary.is_finite() {
+                    return Value::Error;
+                }
+                let suffix = args
+                    .get(2)
+                    .map(|arg| eval(arg, ctx).text().to_ascii_lowercase())
+                    .unwrap_or_else(|| "i".to_string());
+                if suffix != "i" && suffix != "j" {
+                    return Value::Error;
+                }
+                Value::Text(format_complex(real, imaginary, &suffix))
+            } else {
+                if args.len() != 1 {
+                    return Value::Error;
+                }
+                let text = eval(&args[0], ctx).text();
+                let Some((real, imaginary, _suffix)) = parse_complex(&text) else {
+                    return Value::Error;
+                };
+                Value::Number(match lower.as_str() {
+                    "imreal" => real,
+                    "imaginary" => imaginary,
+                    _ => (real * real + imaginary * imaginary).sqrt(),
+                })
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
@@ -4666,6 +4703,92 @@ fn from_roman(text: &str) -> Option<u32> {
         }
     }
     u32::try_from(total).ok().filter(|value| *value <= 3999)
+}
+
+fn format_number(value: f64) -> String {
+    if value == 0.0 {
+        "0".to_string()
+    } else {
+        value.to_string()
+    }
+}
+
+fn format_complex(real: f64, imaginary: f64, suffix: &str) -> String {
+    if imaginary == 0.0 {
+        return format_number(real);
+    }
+    let imaginary_part = if imaginary == 1.0 {
+        suffix.to_string()
+    } else if imaginary == -1.0 {
+        format!("-{suffix}")
+    } else {
+        format!("{}{suffix}", format_number(imaginary))
+    };
+    if real == 0.0 {
+        imaginary_part
+    } else if imaginary > 0.0 {
+        format!("{}+{imaginary_part}", format_number(real))
+    } else {
+        format!("{}{}", format_number(real), imaginary_part)
+    }
+}
+
+fn parse_complex(text: &str) -> Option<(f64, f64, String)> {
+    let trimmed = text.trim();
+    let (body, suffix) = match trimmed.chars().last() {
+        Some(character)
+            if character.eq_ignore_ascii_case(&'i') || character.eq_ignore_ascii_case(&'j') =>
+        {
+            (
+                &trimmed[..trimmed.len() - 1],
+                character.to_ascii_lowercase().to_string(),
+            )
+        }
+        _ => (trimmed, "i".to_string()),
+    };
+    if body.is_empty() {
+        return Some((0.0, 1.0, suffix));
+    }
+    let bytes = body.as_bytes();
+    let mut split = None;
+    for index in (1..bytes.len()).rev() {
+        if (bytes[index] == b'+' || bytes[index] == b'-')
+            && bytes[index - 1] != b'e'
+            && bytes[index - 1] != b'E'
+        {
+            split = Some(index);
+            break;
+        }
+    }
+    if let Some(index) = split {
+        let real = body[..index].trim().parse::<f64>().ok()?;
+        let imaginary_text = body[index + 1..].trim();
+        let imaginary = if imaginary_text.is_empty() {
+            if bytes[index] == b'-' {
+                -1.0
+            } else {
+                1.0
+            }
+        } else {
+            imaginary_text.parse::<f64>().ok()?
+        };
+        if !real.is_finite() || !imaginary.is_finite() {
+            return None;
+        }
+        Some((real, imaginary, suffix))
+    } else {
+        let imaginary = if body == "+" {
+            1.0
+        } else if body == "-" {
+            -1.0
+        } else {
+            body.parse::<f64>().ok()?
+        };
+        if !imaginary.is_finite() {
+            return None;
+        }
+        Some((0.0, imaginary, suffix))
+    }
 }
 
 fn factorial(number: u64) -> f64 {

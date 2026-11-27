@@ -130,6 +130,7 @@
 | DB / DDB / VDB | 支持（功能级新增） | 固定/双倍/变动余额递减；区间、月数、因子非法 `#VALUE!` |
 | FVSCHEDULE | 支持（功能级新增） | 复利 schedule 区间；空区间/rate≤-1 `#VALUE!` |
 | SUMXMY2 / SUMX2MY2 / SUMX2PY2 | 支持（功能级新增） | 同行等长 x/y、空区间/长度不等 `#VALUE!` |
+| COMPLEX / IMREAL / IMAGINARY / IMABS | 支持（功能级新增） | i/j 后缀；非法复数 `#VALUE!` |
 | MULTINOMIAL | 支持（功能级新增） | 同行非负整数、总和≤170；空区间/负数 `#VALUE!` |
 | FACTDOUBLE | 支持（功能级新增） | 非负整数 0..300；负数/非整数/过大 `#VALUE!` |
 | ROMAN / ARABIC | 支持（功能级新增） | 0..3999；form 接受 0..4（统一标准形） |

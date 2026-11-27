@@ -3504,6 +3504,28 @@ mod tests {
     }
 
     #[test]
+    fn complex_numbers_round_trip() {
+        for (source, expected) in [
+            ("complex(3, 4)", "3+4i"),
+            ("complex(3, -4)", "3-4i"),
+            ("complex(0, 4)", "4i"),
+            ("complex(3, 1)", "3+i"),
+            ("complex(3, -1)", "3-i"),
+            ("complex(0, 0)", "0"),
+            (r#"complex(3, 4, "j")"#, "3+4j"),
+            (r#"imreal("3+4i")"#, "3"),
+            (r#"imaginary("3+4i")"#, "4"),
+            (r#"imabs("3+4i")"#, "5"),
+            (r#"imaginary("4i")"#, "4"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [r#"complex(3, 4, "x")"#, r#"imreal("abc")"#, "imabs()"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn multinomial_counts_arrangements() {
         let columns = vec!["a".to_string(), "b".to_string(), "c".to_string()];
         let mut cells = HashMap::new();
