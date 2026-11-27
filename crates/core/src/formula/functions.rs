@@ -928,6 +928,11 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             None => Value::Error,
         },
+        // ISERR ignores the "#N/A" miss spelling; only expression errors count.
+        "iserr" => match args.first() {
+            Some(arg) => Value::Bool(matches!(eval(arg, ctx), Value::Error)),
+            None => Value::Error,
+        },
         // ISNA is the narrow test: ref/vlookup spell a miss as the text "#N/A", so
         // that spelling is the only thing it accepts (expression errors are ISERROR's).
         "isna" => match args.first() {

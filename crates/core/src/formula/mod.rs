@@ -3504,6 +3504,20 @@ mod tests {
     }
 
     #[test]
+    fn iserr_ignores_na_but_sees_other_errors() {
+        for (source, expected) in [
+            ("iserr(1)", "FALSE"),
+            (r#"iserr("x")"#, "FALSE"),
+            ("iserr(na())", "FALSE"),
+            ("iserr(1/0)", "TRUE"),
+            ("iserr(sqrt(-1))", "TRUE"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        assert_eq!(eval_str("iserr()", &[]), "#VALUE!");
+    }
+
+    #[test]
     fn logical_and_nontext_tests_work() {
         for (source, expected) in [
             ("islogical(true())", "TRUE"),
