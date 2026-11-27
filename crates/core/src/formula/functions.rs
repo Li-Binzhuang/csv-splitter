@@ -3299,6 +3299,32 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             };
             Value::Text(format_complex(real_part, imaginary_part, &suffix))
         }
+        // CSCH/SECH/COTH: reciprocal hyperbolic functions.
+        "csch" | "sech" | "coth" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            if !number.is_finite() {
+                return Value::Error;
+            }
+            let result = match lower.as_str() {
+                "csch" => number.sinh(),
+                "sech" => number.cosh(),
+                _ => number.tanh(),
+            };
+            if result == 0.0 {
+                return Value::Error;
+            }
+            let reciprocal = 1.0 / result;
+            if reciprocal.is_finite() {
+                Value::Number(reciprocal)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

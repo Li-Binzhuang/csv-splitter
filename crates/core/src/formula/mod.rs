@@ -3504,6 +3504,22 @@ mod tests {
     }
 
     #[test]
+    fn reciprocal_hyperbolic_functions_work() {
+        for (source, expected) in [
+            ("csch(1)", "0.850918"),
+            ("sech(1)", "0.648054"),
+            ("coth(1)", "1.313035"),
+            ("sech(0)", "1"),
+            ("csch(-1)", "-0.850918"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in ["csch(0)", "coth(0)", r#"sech("x")"#, "csch(1, 2)"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn complex_hyperbolic_functions_work() {
         for (source, expected) in [
             (r#"imsinh("0+0i")"#, "0"),
