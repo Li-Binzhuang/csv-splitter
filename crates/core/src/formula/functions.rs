@@ -3449,6 +3449,32 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // SEC/CSC: reciprocal trigonometric functions.
+        "sec" | "csc" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            if !number.is_finite() {
+                return Value::Error;
+            }
+            let base = if lower == "sec" {
+                number.cos()
+            } else {
+                number.sin()
+            };
+            if base == 0.0 {
+                return Value::Error;
+            }
+            let result = 1.0 / base;
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

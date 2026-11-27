@@ -3504,6 +3504,21 @@ mod tests {
     }
 
     #[test]
+    fn sec_and_csc_are_reciprocals() {
+        for (source, expected) in [
+            ("sec(0)", "1"),
+            ("sec(1)", "1.850816"),
+            ("csc(1)", "1.188395"),
+            ("csc(-1)", "-1.188395"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in ["csc(0)", r#"sec("x")"#, "sec(1, 2)"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn permutationa_counts_repetition_permutations() {
         for (source, expected) in [
             ("permutationa(3, 2)", "9"),
