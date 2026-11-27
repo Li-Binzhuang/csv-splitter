@@ -3504,6 +3504,27 @@ mod tests {
     }
 
     #[test]
+    fn gamma_matches_factorials() {
+        for (source, expected) in [
+            ("gamma(1)", "1"),
+            ("gamma(2)", "1"),
+            ("gamma(5)", "24"),
+            ("gamma(0.5)", "1.772454"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "gamma(0)",
+            "gamma(-1)",
+            "gamma(-0.5)",
+            r#"gamma("x")"#,
+            "gamma()",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn erf_and_erfc_approximate_error_functions() {
         for (source, expected) in [
             ("erf(0)", 0.0),

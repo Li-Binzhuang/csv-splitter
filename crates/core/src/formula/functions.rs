@@ -3127,6 +3127,24 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Number(erf_approx(first))
             }
         }
+        // GAMMA: gamma function for positive numbers.
+        "gamma" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            if !number.is_finite() || number <= 0.0 {
+                return Value::Error;
+            }
+            let result = ln_gamma(number).exp();
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
