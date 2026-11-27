@@ -335,6 +335,11 @@ fn is_date_time_pattern(spec: &str) -> bool {
             | "m/d/yy h:mm am/pm"
             | "m/d/yy h:mm:ss am/pm"
             | "yyyy/m/d"
+            | "dd-mm-yyyy"
+            | "d-m-yyyy"
+            | "yyyy-m-d"
+            | "dd-mm-yyyy h:mm"
+            | "dd-mm-yyyy h:mm:ss"
             | "dd.mm.yyyy"
             | "d.m.yyyy"
             | "yyyy.mm.dd"
@@ -466,6 +471,32 @@ fn render_date_time(pattern: &str, value: &str) -> Option<String> {
         "yyyy/m/d" => {
             let (year, month, day) = date_parts?;
             Some(format!("{year:04}/{month}/{day}"))
+        }
+        "dd-mm-yyyy" => {
+            let (year, month, day) = date_parts?;
+            Some(format!("{day:02}-{month:02}-{year:04}"))
+        }
+        "d-m-yyyy" => {
+            let (year, month, day) = date_parts?;
+            Some(format!("{day}-{month}-{year:04}"))
+        }
+        "yyyy-m-d" => {
+            let (year, month, day) = date_parts?;
+            Some(format!("{year:04}-{month}-{day}"))
+        }
+        "dd-mm-yyyy h:mm" => {
+            let (year, month, day) = date_parts?;
+            let (hour, minute, _) = time_parts?;
+            Some(format!(
+                "{day:02}-{month:02}-{year:04} {hour:02}:{minute:02}"
+            ))
+        }
+        "dd-mm-yyyy h:mm:ss" => {
+            let (year, month, day) = date_parts?;
+            let (hour, minute, second) = time_parts?;
+            Some(format!(
+                "{day:02}-{month:02}-{year:04} {hour:02}:{minute:02}:{second:02}"
+            ))
         }
         "dd.mm.yyyy" => {
             let (year, month, day) = date_parts?;
@@ -1178,6 +1209,14 @@ fn dotted_date_formats_match_excel_orders() {
         ("yyyy.m.d", "2026-11-28", "2026.11.28"),
         ("dd.mm.yyyy h:mm", "2026-11-28T09:05:00", "28.11.2026 09:05"),
         ("yyyy.mm.dd h:mm", "2026-11-28T09:05:00", "2026.11.28 09:05"),
+        ("dd-mm-yyyy", "2026-11-28", "28-11-2026"),
+        ("d-m-yyyy", "2026-11-28", "28-11-2026"),
+        ("yyyy-m-d", "2026-11-28", "2026-11-28"),
+        (
+            "dd-mm-yyyy h:mm:ss",
+            "2026-11-28T09:05:07",
+            "28-11-2026 09:05:07",
+        ),
     ] {
         let format = NumberFormat::parse(pattern).unwrap();
         assert_eq!(format.render(input), expected, "{pattern}");

@@ -434,8 +434,8 @@
   验收：单测 + gate。
 - [ ] 项428 条件格式 dxf 蓝色规则同 id 断言（功能级）：蓝色多规则同 dxfId；
   验收：单测 + gate。
-- [ ] 项322 日期时间格式码语法矩阵（功能级）：已完成点分隔 8 种（dd.mm.yyyy 等）；
-  待做：破折号 d-m/yy、12 小时、补零矩阵与 xlsx round-trip；验收：矩阵测试 + gate。
+- [ ] 项322 日期时间格式码语法矩阵（功能级）：已完成点分隔 8 种、破折号 5 种；
+  待做 12 小时/补零矩阵与 xlsx round-trip；验收：矩阵测试 + gate。
 - [x] 项259 超几何反函数（功能级）：`HYPGEOM.INV(n, K, N, alpha)`；
   非法参数 `#VALUE!`；测试 `hypgeom_inv_finds_cutoff`。
 - [x] 项258 第二类贝塞尔函数（功能级）：`BESSELK(x, n)`；
@@ -715,6 +715,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 447（项322 日期格式矩阵第 2 片，功能级）：破折号 5 种；push 失败（本地 ahead=2）；
+定向与全量 gate/package 通过；发布包 SHA `d2cad827…bb0178a9`。
 
 Round 446（项322 日期格式矩阵第 1 片，功能级）：点分隔 8 种；
 定向与全量 gate/package 通过；发布包 SHA `58e9ad33…47b7fab7`；
