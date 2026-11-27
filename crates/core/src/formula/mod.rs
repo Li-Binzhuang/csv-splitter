@@ -5621,6 +5621,9 @@ mod tests {
             "dollarde(1.02, 0)",
             "dollarfr(1.125, -16)",
             "dollarde(1.02, 2.5)",
+            "dollarde(1.02, 3.5)",
+            "dollarfr(1.125, 0)",
+            r#"dollarde(1.02, "x")"#,
             "dollarde(1.02)",
         ] {
             assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
