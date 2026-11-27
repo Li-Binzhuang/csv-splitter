@@ -3202,6 +3202,33 @@ mod tests {
     }
 
     #[test]
+    fn dotted_and_dashed_formats_map_into_export_styles() {
+        use crate::layout::NumberFormat;
+        let path = temp_path("dotted.xlsx");
+        let sheet = Sheet {
+            name: "dotted".to_string(),
+            headers: vec!["when".into(), "stamp".into()],
+            rows: vec![vec!["2024-01-02".into(), "2024-01-02T13:04:05".into()]],
+        };
+        write_sheets_with_formats(
+            &path,
+            &[sheet],
+            &[vec![
+                NumberFormat::parse("dd.mm.yyyy").unwrap(),
+                NumberFormat::parse("dd-mm-yyyy h:mm:ss am/pm").unwrap(),
+            ]],
+        )
+        .unwrap();
+        let styles = read_zip(&path, "xl/styles.xml");
+        assert!(styles.contains("formatCode=\"dd.mm.yyyy\""), "{styles}");
+        assert!(
+            styles.contains("formatCode=\"dd-mm-yyyy h:mm:ss am/pm\""),
+            "{styles}"
+        );
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
     fn formats_are_mapped_into_export_styles_and_round_trip() {
         use crate::layout::NumberFormat;
         let path = temp_path("formatted.xlsx");
