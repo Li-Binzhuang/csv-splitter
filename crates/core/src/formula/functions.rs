@@ -5776,7 +5776,10 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Text(
                     value
                         .chars()
-                        .filter(|character| (*character as u32) >= 32)
+                        .filter(|character| {
+                            let code = *character as u32;
+                            !(code < 32 || code == 0x7F || (0x80..=0x9F).contains(&code))
+                        })
                         .collect(),
                 )
             }
