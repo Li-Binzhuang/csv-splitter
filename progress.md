@@ -126,8 +126,10 @@
   测试 `datetime_cells_are_written_with_a_time_fraction`。
 - [x] 项276 xlsx 文本格式保真（功能级）：`@` 导出为 numFmt 样式并写回 inlineStr；
   round-trip 读取仍为 Text；测试 `formats_are_mapped_into_export_styles_and_round_trip`。
-- [ ] 项277 xlsx 文本列数字保真（功能级）：`@` 列中 `001`/`123` 保持 inlineStr，不转数值；
-  round-trip 读取仍为文本；验收：单测 + gate。
+- [x] 项277 xlsx 文本列数字保真（功能级）：`@` 列中 `001`/`123` 保持 inlineStr，不转数值；
+  round-trip 测试 `formats_are_mapped_into_export_styles_and_round_trip`。
+- [ ] 项278 xlsx 列格式去重（功能级）：`xlsx_column_formats` 只读首数据行，多行不重复；
+  验收：单测 + gate。
 - [ ] 项264 精确伽马对数（功能级）：`GAMMALN.PRECISE(x)`；
   非正/非有限 `#VALUE!`；验收：单测 + gate。
 - [x] 项263 逻辑/非文本判断（功能级）：`ISLOGICAL`/`ISNONTEXT`；
@@ -417,6 +419,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 302（项277 xlsx 文本列数字保真，功能级）：001/123 inlineStr、round-trip；
+定向与全量 gate/package 通过；发布包 SHA `38ceb363…8604ad0f2`；
+push 已在轮首成功，本轮不再 push。
 
 Round 301（项276 xlsx 文本格式 @，功能级）：inlineStr + 样式、round-trip；
 定向与全量 gate/package 通过；发布包 SHA `bfecb276…e71330bd`；

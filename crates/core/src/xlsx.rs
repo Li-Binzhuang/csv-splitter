@@ -81,6 +81,7 @@ pub fn xlsx_column_formats(
     let date_styles = date_style_map(&styles);
     let date1904 = workbook.contains("date1904=\"1\"") || workbook.contains("date1904=\"true\"");
     let mut header: Option<Vec<String>> = None;
+    let mut seen_data = false;
     let mut result = Vec::new();
     {
         let mut entry = archive
@@ -92,6 +93,10 @@ pub fn xlsx_column_formats(
                 header = Some(cells);
                 return Ok(());
             }
+            if seen_data {
+                return Ok(());
+            }
+            seen_data = true;
             let styles = cell_style_indices(fragment);
             for (index, name) in header.as_ref().unwrap().iter().enumerate() {
                 let style = styles.get(index).copied().unwrap_or(0);
@@ -2443,13 +2448,15 @@ mod tests {
                 "when".into(),
                 "label".into(),
                 "clock".into(),
+                "code".into(),
             ],
             rows: vec![vec![
                 "1234.5".into(),
                 "0.123".into(),
                 "2024-01-02".into(),
-                "x".into(),
+                "001".into(),
                 "06:30:15".into(),
+                "123".into(),
             ]],
         };
         write_sheets_with_formats(
@@ -2461,6 +2468,7 @@ mod tests {
                 NumberFormat::parse("yyyy-mm-dd").unwrap(),
                 NumberFormat::parse("@").unwrap(),
                 NumberFormat::parse("hh:mm:ss").unwrap(),
+                NumberFormat::parse("@").unwrap(),
             ]],
         )
         .unwrap();
@@ -2473,7 +2481,7 @@ mod tests {
         read_xlsx_to_csv(&path, &output, None).unwrap();
         assert_eq!(
             std::fs::read_to_string(&output).unwrap(),
-            "amount,rate,when,label,clock\n1234.5,0.123,2024-01-02,x,06:30:15\n"
+            "amount,rate,when,label,clock,code\n1234.5,0.123,2024-01-02,001,06:30:15,123\n"
         );
         let _ = std::fs::remove_file(path);
         let _ = std::fs::remove_file(output);
@@ -2508,14 +2516,24 @@ mod tests {
                 "sci".into(),
                 "money".into(),
             ],
-            rows: vec![vec![
-                "1234.5".into(),
-                "0.123".into(),
-                "2024-01-02".into(),
-                "x".into(),
-                "1234.5".into(),
-                "-1234.5".into(),
-            ]],
+            rows: vec![
+                vec![
+                    "1234.5".into(),
+                    "0.123".into(),
+                    "2024-01-02".into(),
+                    "x".into(),
+                    "1234.5".into(),
+                    "-1234.5".into(),
+                ],
+                vec![
+                    "99.5".into(),
+                    "0.5".into(),
+                    "2024-01-03".into(),
+                    "y".into(),
+                    "9.5".into(),
+                    "9.5".into(),
+                ],
+            ],
         };
         write_sheets_with_formats(
             &path,
