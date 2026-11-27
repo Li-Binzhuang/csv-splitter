@@ -900,7 +900,7 @@ fn conditional_formatting_xml(
                 continue;
             }
             "today" | "yesterday" | "last7Days" | "last30Days" | "thisWeek" | "lastWeek"
-            | "nextWeek" => {
+            | "nextWeek" | "thisMonth" | "lastMonth" | "nextMonth" => {
                 let col = column_name(column);
                 let (period, formula) = match rule.operator.as_str() {
                     "today" => ("today", format!("FLOOR({col}2,1)=TODAY()")),
@@ -925,6 +925,21 @@ fn conditional_formatting_xml(
                             "AND(FLOOR({col}2,1)>=TODAY()-WEEKDAY(TODAY(),2)-6,FLOOR({col}2,1)<TODAY()-WEEKDAY(TODAY(),2)+1)"
                         ),
                     ),
+                    "nextMonth" | "lastMonth" | "thisMonth" => {
+                        let start = match rule.operator.as_str() {
+                            "thisMonth" => 0,
+                            "lastMonth" => -1,
+                            _ => 1,
+                        };
+                        (
+                            rule.operator.as_str(),
+                            format!(
+                                "AND(FLOOR({col}2,1)>=DATE(YEAR(TODAY()),MONTH(TODAY()){start:+},1),FLOOR({col}2,1)<DATE(YEAR(TODAY()),MONTH(TODAY()){end:+},1))",
+                                start = start,
+                                end = start + 1,
+                            ),
+                        )
+                    }
                     _ => (
                         "nextWeek",
                         format!(
@@ -2456,6 +2471,12 @@ mod tests {
                 value: String::new(),
                 color: "gold".into(),
             },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "thisMonth".into(),
+                value: String::new(),
+                color: "magenta".into(),
+            },
         ];
         let (tx, _rx) = std::sync::mpsc::channel();
         csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
@@ -2515,6 +2536,11 @@ mod tests {
         );
         assert!(sheet.contains("timePeriod=\"thisWeek\""), "{sheet}");
         assert!(sheet.contains("WEEKDAY(TODAY(),2)"), "{sheet}");
+        assert!(sheet.contains("timePeriod=\"thisMonth\""), "{sheet}");
+        assert!(
+            sheet.contains("DATE(YEAR(TODAY()),MONTH(TODAY())+0,1)"),
+            "{sheet}"
+        );
 
         let bad = vec![ConditionalRule {
             column: "amount".into(),

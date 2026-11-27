@@ -62,7 +62,7 @@
 | 自定义日期/时间 | 常见 token；日期时间/纯时间 | `custom_date_number_formats_are_recognized`、`date_serials_carry_time_fractions_and_time_only_cells`、`custom_time_formats_are_recognized_and_render_as_clock` |
 | 合并单元格 | 只输出存储的左上值，不展开 | `merged_cells_keep_the_stored_top_left_value_without_inventing_others`、CLI `convert_keeps_a_merged_cell_top_left_only` |
 | 空行 | 跳过 | `table_from_rows_skips_empty_rows_and_enforces_the_limit`、CLI `convert_skips_empty_xlsx_rows` |
-| 条件格式 日期周期 | `--highlight` 支持 `today`、`yesterday`、`last7Days`、`last30Days`、`thisWeek`、`lastWeek`、`nextWeek`，导出 `timePeriod` | `conditional_rules_support_top_and_bottom_ranks` |
+| 条件格式 日期周期 | `--highlight` 支持 `today`、`yesterday`、`last7Days`、`last30Days`、`thisWeek`、`lastWeek`、`nextWeek`、`thisMonth`，导出 `timePeriod` | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 iconSet | `--highlight` 支持 `amount:iconSet`（默认 3TrafficLights1）或 value 选 3Symbols/3Arrows/3Arrows2/3Flags/3Stars | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 duplicate/unique | `--highlight` 支持 `amount:duplicate:brown`、`unique:navy`，导出 duplicateValues/uniqueValues | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 above/belowAverage | `--highlight` 支持 `amount:aboveAverage:teal`、`belowAverage`，导出 `AVERAGE(列)` 公式 | `conditional_rules_support_top_and_bottom_ranks` |
