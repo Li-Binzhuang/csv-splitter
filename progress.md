@@ -422,9 +422,13 @@
   测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [x] 项422 条件格式 notContainsText XML & 转义（功能级）：`P&Q` 已转义；
   测试 `conditional_rules_support_top_and_bottom_ranks`。
-- [ ] 项423 条件格式 between XML & 文本边界（功能级）：`&` 边界转义；
-  验收：单测 + gate。
+- [x] 项423 条件格式 between XML & 文本边界（功能级）：`&` 边界转义；
+  测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [ ] 项424 条件格式 notBetween XML 文本边界（功能级）：`&` 边界转义；
+  验收：单测 + gate。
+- [ ] 项425 条件格式 dxf 样式去重（功能级）：同色规则复用 dxfId；
+  验收：单测 + gate。
+- [ ] 项426 条件格式 dxf 样式去重跨列（功能级）：不同列同色；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -707,6 +711,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 443（项423 between XML 文本边界，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `64e6bc02…42b985372`；
+轮首 push 成功，本轮不再 push。
 
 Round 442（项422 notContainsText XML 转义，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `3b61657a…47ed0b7d2`；

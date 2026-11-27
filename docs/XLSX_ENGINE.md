@@ -67,7 +67,7 @@
 | 条件格式 duplicate/unique | `--highlight` 支持 `amount:duplicate:brown`、`unique:navy`，导出 duplicateValues/uniqueValues | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 above/belowAverage | `--highlight` 支持 `amount:aboveAverage:teal`、`belowAverage`，导出 `AVERAGE(列)` 公式 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 notContainsText | 支持 `amount:notContains:zz`（非空），导出 `ISERROR(SEARCH(...))`；引号/XML 均转义 | `conditional_rules_support_top_and_bottom_ranks` |
-| 条件格式 between | 支持 `between:500,1000` / `notBetween:1,10`，恰好两边界；文本边界按公式字符串加引号 | `conditional_rules_support_top_and_bottom_ranks` |
+| 条件格式 between | 支持 `between:500,1000` / `notBetween:1,10`，恰好两边界；文本边界加引号并转义 XML | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 blank/nonblank | `--highlight` 支持 `amount:blank:gray`、`nonblank:cyan`，导出 containsBlanks/notContainsBlanks | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 begins/ends | 支持 `beginsWith:12`、`endsWith:00`（非空），LEFT/RIGHT 公式，引号/XML 均转义（含 `&`） | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 dataBar | 支持 `amount:dataBar:#FF0000`，颜色必填且 #RRGGBB，导出 `dataBar` 最小/最大 | `conditional_rules_support_top_and_bottom_ranks` |

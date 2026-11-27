@@ -2498,6 +2498,12 @@ mod tests {
             },
             ConditionalRule {
                 column: "amount".into(),
+                operator: "between".into(),
+                value: "x&y,z".into(),
+                color: "pink".into(),
+            },
+            ConditionalRule {
+                column: "amount".into(),
                 operator: "notContains".into(),
                 value: "zz".into(),
                 color: "lime".into(),
@@ -2643,6 +2649,10 @@ mod tests {
         assert!(sheet.contains("operator=\"notBetween\""), "{sheet}");
         assert!(
             sheet.contains("<formula>\"apple\"</formula><formula>\"banana\"</formula>"),
+            "{sheet}"
+        );
+        assert!(
+            sheet.contains("<formula>\"x&amp;y\"</formula><formula>\"z\"</formula>"),
             "{sheet}"
         );
         assert!(
