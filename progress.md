@@ -302,9 +302,11 @@
   测试 `approximate_reference_picks_the_next_larger_key`。
 - [x] 项362 LOOKUP 文本近似（功能级）：复用文本近似位置，已补测试锁定；
   测试 `hlookup_and_lookup_read_single_row_tables`。
-- [ ] 项363 VLOOKUP 近似模式（功能级）：match_mode 1；
-  验收：单测 + gate。
+- [x] 项363 VLOOKUP 近似模式（功能级）：match_mode 1 复用近似 key；
+  测试 `vlookup_preloads_the_same_reference_as_ref`。
 - [ ] 项364 INDEX 位置校验（功能级）：位置须正整数；
+  验收：单测 + gate。
+- [ ] 项365 XLOOKUP match_mode -1（功能级）：最大 key ≤ 目标；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -587,6 +589,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 387（项363 VLOOKUP 近似，功能级）：match_mode 1；
+定向与全量 gate/package 通过；发布包 SHA `d7ffc145…89d1d35f`；
+轮首 push 成功，本轮不再 push。
 
 Round 386（项362 LOOKUP 文本近似，功能级）：补测试锁定；
 定向与全量 gate/package 通过；发布包 SHA `edead006…66559b78`；

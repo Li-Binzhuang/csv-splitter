@@ -6673,7 +6673,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                     };
                     if !number.is_finite()
                         || number.fract() != 0.0
-                        || !matches!(number as u32, 0 | 2)
+                        || !matches!(number as u32, 0..=2)
                     {
                         return Value::Error;
                     }
@@ -6690,6 +6690,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                     .min()
                     .and_then(|candidate| reference.get(candidate))
                     .cloned(),
+                None if match_mode == 1 => approximate_reference_value(&reference.values, &key),
                 None => None,
             };
             match found {

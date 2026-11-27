@@ -2606,6 +2606,7 @@ mod tests {
         for text in [
             r#"vlookup("people.csv", "cust", "name")"#,
             r#"vlookup("people.csv", "cust", "name", 2)"#,
+            r#"vlookup("people.csv", "cust", "name", 1)"#,
         ] {
             let formula = Formula::parse(text).unwrap();
             assert_eq!(
