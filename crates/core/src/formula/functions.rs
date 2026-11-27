@@ -7293,17 +7293,20 @@ fn find_in(args: &[Expr], ctx: &Ctx<'_>, case_sensitive: bool) -> Value {
     if needle.is_empty() {
         return Value::Error;
     }
-    let haystack_slice: String = haystack.chars().skip(start.saturating_sub(1)).collect();
-    let (needle_cmp, haystack_cmp) = if case_sensitive {
-        (needle.clone(), haystack_slice.clone())
+    let byte_start = haystack
+        .char_indices()
+        .nth(start.saturating_sub(1))
+        .map(|(index, _)| index)
+        .unwrap_or(haystack.len());
+    let found = if case_sensitive {
+        haystack[byte_start..]
+            .find(&needle)
+            .map(|index| byte_start + index)
     } else {
-        (needle.to_lowercase(), haystack_slice.to_lowercase())
+        find_case_insensitive(&haystack, &needle, byte_start)
     };
-    match haystack_cmp.find(&needle_cmp) {
-        Some(byte_index) => {
-            let char_index = haystack_cmp[..byte_index].chars().count();
-            Value::Number((char_index + start) as f64)
-        }
+    match found {
+        Some(index) => Value::Number((haystack[..index].chars().count() + 1) as f64),
         None => Value::Number(0.0),
     }
 }

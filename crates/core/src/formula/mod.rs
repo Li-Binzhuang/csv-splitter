@@ -3415,6 +3415,20 @@ mod tests {
     }
 
     #[test]
+    fn search_folds_unicode_case_and_keeps_positions() {
+        for (source, expected) in [
+            (r#"search("é", "ÉCLAIR")"#, "1"),
+            (r#"search("ä", "BÄR")"#, "2"),
+            (r#"search("c", "äbc", 2)"#, "3"),
+            (r#"find("É", "ÉCLAIR")"#, "1"),
+            (r#"find("é", "ÉCLAIR")"#, "0"),
+            (r#"search("x", "abc", 9)"#, "0"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+    }
+
+    #[test]
     fn clean_strips_control_characters() {
         for (source, expected) in [
             (r#"clean(concat("a", char(9), "b"))"#, "ab"),

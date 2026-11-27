@@ -240,9 +240,11 @@
   测试 `textbefore_after_honor_match_mode_and_match_end`。
 - [x] 项331 TEXT 科学计数/会计格式（功能级）：TEXT 复用 NumberFormat 的 E+/会计格式；
   测试 `text_renders_scientific_and_accounting_formats`。
-- [ ] 项332 SEARCH Unicode 大小写不敏感（功能级）：SEARCH 非 ASCII 大小写折叠；
-  验收：单测 + gate。
+- [x] 项332 SEARCH Unicode 大小写不敏感（功能级）：非 ASCII 折叠且按字符定位；
+  测试 `search_folds_unicode_case_and_keeps_positions`。
 - [ ] 项333 TEXTSPLIT 行分隔符（功能级）：支持第 3 参数行分隔符并返回首行首段；
+  验收：单测 + gate。
+- [ ] 项334 TEXTSPLIT pad_with（功能级）：全空段时返回 pad_with；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -525,6 +527,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 356（项332 SEARCH Unicode，功能级）：Unicode 折叠、字符位置；
+定向与全量 gate/package 通过；发布包 SHA `e279940d…0e8f7fa7`；
+轮首 push 失败，本轮不再 push。
 
 Round 355（项331 TEXT 科学计数/会计，功能级）：验证并锁定格式渲染；
 定向与全量 gate/package 通过；发布包 SHA `997e8489…4ff205`；
