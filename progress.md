@@ -378,9 +378,13 @@
   测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [x] 项400 条件格式 thisMonth（功能级）：本月 timePeriod；
   测试 `conditional_rules_support_top_and_bottom_ranks`。
-- [ ] 项401 条件格式 nextMonth（功能级）：下月 timePeriod；
+- [x] 项401 条件格式 nextMonth（功能级）：nextMonth 公式已锁定；
+  测试 `conditional_rules_support_top_and_bottom_ranks`。
+- [x] 项402 条件格式 lastMonth（功能级）：lastMonth 公式已锁定；
+  测试 `conditional_rules_support_top_and_bottom_ranks`。
+- [ ] 项403 条件格式 notBetween（功能级）：区间外规则；
   验收：单测 + gate。
-- [ ] 项402 条件格式 lastMonth（功能级）：上月 timePeriod；
+- [ ] 项404 条件格式 bottom10 百分位（功能级）：bottom 百分比；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -663,6 +667,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 424（项401/402 条件格式 last/nextMonth，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `a926fb9c…e3f0ee0`；
+轮首 push 成功，本轮不再 push。
 
 Round 423（项400 条件格式 thisMonth，功能级）：月周期；
 定向与全量 gate/package 通过；发布包 SHA `8b0929e4…873b2180b`；

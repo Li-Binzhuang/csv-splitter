@@ -2477,6 +2477,18 @@ mod tests {
                 value: String::new(),
                 color: "magenta".into(),
             },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "lastMonth".into(),
+                value: String::new(),
+                color: "plum".into(),
+            },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "nextMonth".into(),
+                value: String::new(),
+                color: "violet".into(),
+            },
         ];
         let (tx, _rx) = std::sync::mpsc::channel();
         csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
@@ -2539,6 +2551,16 @@ mod tests {
         assert!(sheet.contains("timePeriod=\"thisMonth\""), "{sheet}");
         assert!(
             sheet.contains("DATE(YEAR(TODAY()),MONTH(TODAY())+0,1)"),
+            "{sheet}"
+        );
+        assert!(sheet.contains("timePeriod=\"lastMonth\""), "{sheet}");
+        assert!(
+            sheet.contains("DATE(YEAR(TODAY()),MONTH(TODAY())-1,1)"),
+            "{sheet}"
+        );
+        assert!(sheet.contains("timePeriod=\"nextMonth\""), "{sheet}");
+        assert!(
+            sheet.contains("DATE(YEAR(TODAY()),MONTH(TODAY())+1,1)"),
             "{sheet}"
         );
 
