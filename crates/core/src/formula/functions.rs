@@ -5882,7 +5882,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             let normalized = text.replace(group, "").replace(decimal, ".");
             if normalized.is_empty() {
-                return Value::Number(0.0);
+                return Value::Error;
             }
             match normalized.parse::<f64>() {
                 Ok(value) if value.is_finite() => Value::Number(

@@ -29,7 +29,7 @@
 | TEXT | 支持（功能级扩展） | 复用 `NumberFormat`；支持 `正;负;零;文本` 四段与负段减号 |
 | TEXTBEFORE / TEXTAFTER | 支持（功能级新增） | instance_num 须整数≥1；match_mode 0/1、match_end、if_not_found |
 
-| NUMBERVALUE / FIXED / DOLLAR | 支持（功能级新增） | FIXED 固定小数/千分位；DOLLAR 负数为括号；NUMBERVALUE 区域分隔符/百分号/括号负数 |
+| NUMBERVALUE / FIXED / DOLLAR | 支持（功能级新增） | FIXED/DOLLAR 文本格式化；NUMBERVALUE 分隔符/百分号/括号负数，空文本报错 |
 | TEXTSPLIT | 支持（受限，功能级新增） | 标量引擎返回首行首个非空片段；row_delimiter/ignore_empty/pad_with 生效 |
 
 ## 日期与时间

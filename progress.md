@@ -274,9 +274,11 @@
   测试 `text_renders_sectioned_formats`。
 - [x] 项348 CODE 参数校验（功能级）：空文本/多参 → #VALUE!；
   测试 `textjoin_char_and_code_work_like_a_spreadsheet`。
-- [ ] 项349 NUMBERVALUE 参数校验（功能级）：空文本/非法分隔符 → #VALUE!；
-  验收：单测 + gate。
+- [x] 项349 NUMBERVALUE 参数校验（功能级）：空文本/非法分隔符 → #VALUE!；
+  测试 `fixed_dollar_and_numbervalue_work`。
 - [ ] 项350 UNICODE 参数校验（功能级）：空文本/多参 → #VALUE!；
+  验收：单测 + gate。
+- [ ] 项351 VALUE 文本数字解析扩展（功能级）：千分位/百分比/货币符号；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -559,6 +561,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 373（项349 NUMBERVALUE 校验，功能级）：空文本；
+定向与全量 gate/package 通过；发布包 SHA `c21107a3…b3d4d669`；
+轮首 push 成功，本轮不再 push。
 
 Round 372（项348 CODE 参数校验，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `261bf6ba…39d3046e0`；

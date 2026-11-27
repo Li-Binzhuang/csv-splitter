@@ -2419,6 +2419,10 @@ mod tests {
         assert_eq!(eval_str(r#"numbervalue("(123)")"#, &[]), "-123");
         assert_eq!(eval_str(r#"numbervalue("1.23.4")"#, &[]), "#VALUE!");
         assert_eq!(eval_str(r#"numbervalue("1,23", ",", ",")"#, &[]), "#VALUE!");
+        assert_eq!(eval_str(r#"numbervalue("")"#, &[]), "#VALUE!");
+        assert_eq!(eval_str(r#"numbervalue("  ")"#, &[]), "#VALUE!");
+        assert_eq!(eval_str(r#"numbervalue("1.2", "..", ",")"#, &[]), "#VALUE!");
+        assert_eq!(eval_str(r#"numbervalue("1.2", "", ",")"#, &[]), "#VALUE!");
     }
 
     #[test]
