@@ -3504,6 +3504,27 @@ mod tests {
     }
 
     #[test]
+    fn binom_dist_range_sums_interval() {
+        for (source, expected) in [
+            ("binom.dist.range(4, 0.5, 2, 3)", "0.625"),
+            ("binom.dist.range(4, 0.5, 0, 0)", "0.0625"),
+            ("binom.dist.range(4, 0.5, 4, 4)", "0.0625"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "binom.dist.range(-1, 0.5, 0, 1)",
+            "binom.dist.range(4, 1.5, 0, 1)",
+            "binom.dist.range(4, 0.5, 3, 2)",
+            "binom.dist.range(4, 0.5, 0, 5)",
+            r#"binom.dist.range("x", 0.5, 0, 1)"#,
+            "binom.dist.range(4, 0.5, 0)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn t_inv_returns_quantiles() {
         for (source, expected) in [
             ("t.inv(0.5, 1)", "0"),

@@ -4142,6 +4142,49 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number((low + high) / 2.0)
         }
+        // BINOM.DIST.RANGE: binomial probability over [s, t].
+        "binom.dist.range" => {
+            if args.len() != 4 {
+                return Value::Error;
+            }
+            let (Some(trials), Some(probability), Some(low), Some(high)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+                eval(&args[3], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !trials.is_finite()
+                || !probability.is_finite()
+                || !low.is_finite()
+                || !high.is_finite()
+                || trials < 0.0
+                || trials > 170.0
+                || trials.trunc() != trials
+                || !(0.0..=1.0).contains(&probability)
+                || low < 0.0
+                || high < 0.0
+                || low.trunc() != low
+                || high.trunc() != high
+                || low > high
+                || high > trials
+            {
+                return Value::Error;
+            }
+            let trials = trials as u64;
+            let pmf = |k: u64| {
+                factorial(trials) / (factorial(k) * factorial(trials - k))
+                    * probability.powi(k as i32)
+                    * (1.0 - probability).powi((trials - k) as i32)
+            };
+            let result: f64 = (low as u64..=high as u64).map(pmf).sum();
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
