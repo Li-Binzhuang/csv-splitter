@@ -66,7 +66,7 @@
 | 条件格式 iconSet | 支持 `amount:iconSet`（默认 3TrafficLights1）或 value 选 3Symbols/3Arrows/3Arrows2/3Flags/3Stars；未知预设报错 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 duplicate/unique | `--highlight` 支持 `amount:duplicate:brown`、`unique:navy`，导出 duplicateValues/uniqueValues | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 above/belowAverage | `--highlight` 支持 `amount:aboveAverage:teal`、`belowAverage`，导出 `AVERAGE(列)` 公式 | `conditional_rules_support_top_and_bottom_ranks` |
-| 条件格式 notContainsText | 支持 `amount:notContains:zz:lime`（文本非空），导出 `ISERROR(SEARCH(...))` | `conditional_rules_support_top_and_bottom_ranks` |
+| 条件格式 notContainsText | 支持 `amount:notContains:zz`（非空），导出 `ISERROR(SEARCH(...))`；引号按 `""` 转义 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 between | 支持 `between:500,1000` / `notBetween:1,10`，恰好两边界；文本边界按公式字符串加引号 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 blank/nonblank | `--highlight` 支持 `amount:blank:gray`、`nonblank:cyan`，导出 containsBlanks/notContainsBlanks | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 begins/ends | 支持 `beginsWith:12`、`endsWith:00`（文本非空），导出 LEFT/RIGHT 公式 | `conditional_rules_support_top_and_bottom_ranks` |

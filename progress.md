@@ -406,9 +406,11 @@
   测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [x] 项414 条件格式 between 文本边界（功能级）：文本边界加引号导出；
   测试 `conditional_rules_support_top_and_bottom_ranks`。
-- [ ] 项415 条件格式 notContainsText 引号转义（功能级）：same literal helper；
-  验收：单测 + gate。
+- [x] 项415 条件格式 notContainsText 引号转义（功能级）：同 literal 助手；
+  测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [ ] 项416 条件格式 begins/ends 引号转义（功能级）：formula_literal 复用；
+  验收：单测 + gate。
+- [ ] 项417 条件格式公式 XML 转义（功能级）：&/< 字符正确转义；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -691,6 +693,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 436（项415 notContainsText 引号转义，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `fc6641cd…a6662aee`；
+轮首 push 成功，本轮不再 push。
 
 Round 435（项414 between 文本边界，功能级）：重试 push 成功补齐 2 提交；
 定向与全量 gate/package 通过；发布包 SHA `e795e5f5…a4768014`；
