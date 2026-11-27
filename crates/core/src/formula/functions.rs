@@ -406,7 +406,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
         }
         // QUARTILE.INC over a same-row range: quart 0..4 maps to p = quart/4.
-        "quartile" => {
+        "quartile" | "quartile.inc" => {
             if args.len() != 2 {
                 return Value::Error;
             }

@@ -5644,14 +5644,16 @@ mod tests {
             cells.insert(name.to_string(), value.to_string());
         }
         for (quart, expected) in [("0", "1"), ("2", "2.5"), ("4", "4")] {
-            let formula = Formula::parse(&format!("quartile(A2:D2, {quart})")).unwrap();
-            assert_eq!(
-                formula
-                    .eval_at(&cells, &columns, &Refs::default(), 1)
-                    .render(),
-                expected,
-                "quart={quart}"
-            );
+            for name in ["quartile", "quartile.inc"] {
+                let formula = Formula::parse(&format!("{name}(A2:D2, {quart})")).unwrap();
+                assert_eq!(
+                    formula
+                        .eval_at(&cells, &columns, &Refs::default(), 1)
+                        .render(),
+                    expected,
+                    "{name} quart={quart}"
+                );
+            }
         }
         let formula = Formula::parse("trimmean(A2:D2, 0.5)").unwrap();
         assert_eq!(
