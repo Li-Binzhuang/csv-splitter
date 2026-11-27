@@ -3464,6 +3464,9 @@ mod tests {
             assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
         }
         assert_eq!(eval_str(r#"textsplit("|a,b", ",", "|", 1, "")"#, &[]), "");
+        assert_eq!(eval_str(r#"textsplit(",", ",", "", 1, "x")"#, &[]), "x");
+        assert_eq!(eval_str(r#"textsplit("", ",", "", 1, "x")"#, &[]), "x");
+        assert_eq!(eval_str(r#"textsplit(",", ",", "", 0, "x")"#, &[]), "");
     }
 
     #[test]

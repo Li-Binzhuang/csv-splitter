@@ -466,9 +466,11 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 }
                 ignore_empty = number == 1.0;
             }
+            let pad_with = args.get(4).map(|pad| eval(pad, ctx).text());
             let mut segments = first_row.split(&delimiter);
             match segments.find(|segment| !ignore_empty || !segment.is_empty()) {
                 Some(first) => Value::Text(first.to_string()),
+                None if ignore_empty => Value::Text(pad_with.unwrap_or_default()),
                 None => Value::Text(String::new()),
             }
         }
