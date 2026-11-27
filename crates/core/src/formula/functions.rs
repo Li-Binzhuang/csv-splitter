@@ -4277,6 +4277,43 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // ASECH/ACSCH/ACOTH: inverse reciprocal hyperbolic functions.
+        "asech" | "acsch" | "acoth" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            if !number.is_finite() {
+                return Value::Error;
+            }
+            let result = match lower.as_str() {
+                "asech" => {
+                    if number <= 0.0 || number > 1.0 {
+                        return Value::Error;
+                    }
+                    ((1.0 + (1.0 - number * number).sqrt()) / number).ln()
+                }
+                "acsch" => {
+                    if number == 0.0 {
+                        return Value::Error;
+                    }
+                    (1.0 / number).asinh()
+                }
+                _ => {
+                    if number.abs() <= 1.0 {
+                        return Value::Error;
+                    }
+                    0.5 * ((number + 1.0) / (number - 1.0)).ln()
+                }
+            };
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

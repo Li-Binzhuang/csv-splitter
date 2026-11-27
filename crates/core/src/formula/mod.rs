@@ -3504,6 +3504,30 @@ mod tests {
     }
 
     #[test]
+    fn inverse_reciprocal_hyperbolic_work() {
+        for (source, expected) in [
+            ("asech(1)", "0"),
+            ("asech(0.5)", "1.316958"),
+            ("acsch(1)", "0.881374"),
+            ("acsch(-1)", "-0.881374"),
+            ("acoth(2)", "0.549306"),
+            ("acoth(-2)", "-0.549306"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "asech(0)",
+            "asech(2)",
+            "acsch(0)",
+            "acoth(1)",
+            "acoth(0.5)",
+            r#"asech("x")"#,
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn chisq_dist_right_tail_works() {
         for (source, expected) in [
             ("chisq.dist.rt(0, 1)", "1"),
