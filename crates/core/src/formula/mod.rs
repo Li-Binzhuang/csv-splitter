@@ -3504,6 +3504,27 @@ mod tests {
     }
 
     #[test]
+    fn factdouble_computes_double_factorials() {
+        for (source, expected) in [
+            ("factdouble(0)", "1"),
+            ("factdouble(1)", "1"),
+            ("factdouble(4)", "8"),
+            ("factdouble(5)", "15"),
+            ("factdouble(6)", "48"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "factdouble(-2)",
+            "factdouble(2.5)",
+            "factdouble(301)",
+            "factdouble()",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn roman_and_arabic_round_trip() {
         for (source, expected) in [
             ("roman(4)", "IV"),

@@ -130,6 +130,7 @@
 | DB / DDB / VDB | 支持（功能级新增） | 固定/双倍/变动余额递减；区间、月数、因子非法 `#VALUE!` |
 | FVSCHEDULE | 支持（功能级新增） | 复利 schedule 区间；空区间/rate≤-1 `#VALUE!` |
 | SUMXMY2 / SUMX2MY2 / SUMX2PY2 | 支持（功能级新增） | 同行等长 x/y、空区间/长度不等 `#VALUE!` |
+| FACTDOUBLE | 支持（功能级新增） | 非负整数 0..300；负数/非整数/过大 `#VALUE!` |
 | ROMAN / ARABIC | 支持（功能级新增） | 0..3999；form 接受 0..4（统一标准形） |
 | ENCODEURL | 支持（功能级新增） | UTF-8 百分号编码；RFC3986 unreserved 保留 |
 | DOLLARDE / DOLLARFR | 支持（功能级新增） | 分数分母正整数；非正/非整数 `#VALUE!` |

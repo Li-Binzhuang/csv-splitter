@@ -2736,6 +2736,28 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 from_roman(text).map_or(Value::Error, |value| Value::Number(value as f64))
             }
         }
+        // FACTDOUBLE: n!! = n*(n-2)*(n-4)...; 0!! and 1!! are 1.
+        "factdouble" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            if !number.is_finite() || number.trunc() != number || number < 0.0 || number > 300.0 {
+                return Value::Error;
+            }
+            let mut current = number as u64;
+            let mut result = 1.0;
+            while current > 0 {
+                result *= current as f64;
+                if !result.is_finite() {
+                    return Value::Error;
+                }
+                current = current.saturating_sub(2);
+            }
+            Value::Number(result)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
