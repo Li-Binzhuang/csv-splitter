@@ -3145,6 +3145,35 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // COMBINA: combinations with repetition C(n+k-1, k).
+        "combina" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let (Some(n), Some(k)) = (eval(&args[0], ctx).number(), eval(&args[1], ctx).number())
+            else {
+                return Value::Error;
+            };
+            if !n.is_finite()
+                || !k.is_finite()
+                || n.trunc() != n
+                || k.trunc() != k
+                || n < 0.0
+                || k < 0.0
+            {
+                return Value::Error;
+            }
+            if n == 0.0 {
+                return Value::Number(if k == 0.0 { 1.0 } else { 0.0 });
+            }
+            let total = n + k - 1.0;
+            if total > 170.0 {
+                return Value::Error;
+            }
+            Value::Number(
+                factorial(total as u64) / (factorial(k as u64) * factorial((n - 1.0) as u64)),
+            )
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

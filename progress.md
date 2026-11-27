@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项206 反双曲函数（功能级）：`ASINH`/`ACOSH`/`ATANH`；定义域外
+  `#VALUE!`；验收：单测 + gate。
 - [ ] 项205 双曲函数（功能级）：`SINH`/`COSH`/`TANH`；非数值
   `#VALUE!`；验收：单测 + gate。
 - [ ] 项204 余切函数（功能级）：`COT`/`ACOT`；零点/非数值
   `#VALUE!`；验收：单测 + gate。
-- [ ] 项203 可重复组合（功能级）：`COMBINA(n, k)`；非负整数/越界
-  `#VALUE!`；验收：单测 + gate。
+- [x] 项203 可重复组合（功能级）：`COMBINA(n, k)`；非负整数/越界
+  `#VALUE!`；测试 `combina_counts_repetition_combinations`。
 - [x] 项202 伽马函数（功能级）：`GAMMA(number)`；非正/非有限
   `#VALUE!`；测试 `gamma_matches_factorials`。
 - [x] 项201 误差函数（功能级）：`ERF`/`ERFC`；数值近似与边界；
@@ -273,6 +275,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 230（项203 COMBINA，功能级）：可重复组合、非负整数与数值边界；
+定向与全量 gate/package 通过；发布包 SHA `c6e3c68b…66909`；
+push 已在轮首成功，本轮不再 push。
 
 Round 229（项202 GAMMA，功能级）：伽马函数、正数域与阶乘一致性；
 定向与全量 gate/package 通过；发布包 SHA `c8560b6a…cfa3fb9140`；

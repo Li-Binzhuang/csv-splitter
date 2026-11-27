@@ -3504,6 +3504,27 @@ mod tests {
     }
 
     #[test]
+    fn combina_counts_repetition_combinations() {
+        for (source, expected) in [
+            ("combina(4, 3)", "20"),
+            ("combina(3, 2)", "6"),
+            ("combina(0, 0)", "1"),
+            ("combina(0, 1)", "0"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "combina(-1, 2)",
+            "combina(2.5, 2)",
+            "combina(86, 86)",
+            r#"combina("x", 2)"#,
+            "combina(1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn gamma_matches_factorials() {
         for (source, expected) in [
             ("gamma(1)", "1"),
