@@ -4012,6 +4012,27 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // T.DIST.RT: Student t right-tail probability.
+        "t.dist.rt" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let (Some(number), Some(degrees)) =
+                (eval(&args[0], ctx).number(), eval(&args[1], ctx).number())
+            else {
+                return Value::Error;
+            };
+            if !number.is_finite() || !degrees.is_finite() || number < 0.0 || degrees <= 0.0 {
+                return Value::Error;
+            }
+            let result =
+                0.5 * regularized_beta(degrees / (degrees + number * number), degrees / 2.0, 0.5);
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

@@ -3504,6 +3504,25 @@ mod tests {
     }
 
     #[test]
+    fn t_dist_right_tail_works() {
+        for (source, expected) in [
+            ("t.dist.rt(0, 1)", "0.5"),
+            ("t.dist.rt(1, 1)", "0.25"),
+            ("t.dist.rt(1, 2)", "0.211325"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "t.dist.rt(-1, 1)",
+            "t.dist.rt(1, 0)",
+            r#"t.dist.rt("x", 1)"#,
+            "t.dist.rt(1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn f_dist_right_tail_works() {
         for (source, expected) in [
             ("f.dist.rt(1, 1, 1)", "0.5"),
