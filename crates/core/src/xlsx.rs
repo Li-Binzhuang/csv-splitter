@@ -2359,6 +2359,12 @@ mod tests {
             },
             ConditionalRule {
                 column: "amount".into(),
+                operator: "bottom".into(),
+                value: "25%".into(),
+                color: "azure".into(),
+            },
+            ConditionalRule {
+                column: "amount".into(),
                 operator: "scale2".into(),
                 value: "#F8696B,#63BE7B".into(),
                 color: String::new(),
@@ -2505,6 +2511,7 @@ mod tests {
         assert!(sheet.contains("rank=\"1\""), "{sheet}");
         assert!(sheet.contains("B2:B4"), "{sheet}");
         assert!(sheet.contains("rank=\"50\" percent=\"1\""), "{sheet}");
+        assert!(sheet.contains("rank=\"25\" percent=\"1\""), "{sheet}");
         assert!(sheet.contains("type=\"colorScale\""), "{sheet}");
         assert!(
             sheet.contains("<cfvo type=\"percentile\" val=\"50\"/>"),

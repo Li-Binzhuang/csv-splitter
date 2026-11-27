@@ -73,7 +73,7 @@
 | 条件格式 dataBar | `--highlight` 支持 `amount:dataBar:#FF0000`，导出 `dataBar` 最小/最大 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 containsText | `--highlight` 支持 `amount:contains:00:blue`，导出 `containsText` + `SEARCH` 公式 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 ColorScale | `--highlight` 支持 `amount:scale2:#F8696B,#63BE7B` 与 `scale3:...`，导出 `colorScale` | `conditional_rules_support_top_and_bottom_ranks` |
-| 条件格式 Top/Bottom | `--highlight` 支持 `amount:top2:green`、`bottom1:red`、`top50%:yellow`，导出 `top10`/`bottom10`（可带 `percent`） | `conditional_rules_support_top_and_bottom_ranks` |
+| 条件格式 Top/Bottom | `--highlight` 支持 `top2`、`bottom1`、`top50%`、`bottom25%`，导出 `top10`/`bottom10`（可带 `percent`） | `conditional_rules_support_top_and_bottom_ranks` |
 | 导入格式元数据 | `xlsx_column_formats` 读 header + 首数据行样式；`convert book.xlsx --formats [--json] [--all-sheets]` 打印列格式（JSON 含 sheet/column_index） | `column_formats_are_read_back_from_export_styles`、`formats_prints_the_xlsx_header_format_codes` |
 | CLI 数字格式 | `--number-format "amount:#,##0.00;rate:0.0%"` 接线到导出样式 | `convert_xlsx_can_apply_per_column_number_formats` |
 | 数字格式导出 | `write_sheets_with_formats` 把 Decimal/Percent/Currency/DateTime 映射为 numFmt + 单元格样式 | `formats_are_mapped_into_export_styles_and_round_trip` |
