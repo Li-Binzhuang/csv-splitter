@@ -3504,6 +3504,40 @@ mod tests {
     }
 
     #[test]
+    fn z_test_returns_one_tailed_probability() {
+        let columns = vec!["id".to_string(), "amount".to_string(), "qty".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("id".to_string(), "7".to_string());
+        cells.insert("amount".to_string(), "10".to_string());
+        cells.insert("qty".to_string(), "3".to_string());
+
+        for (source, expected) in [
+            ("z.test(B2:C2, 6.5)", "0.5"),
+            ("z.test(B2:C2, 6)", "0.443201"),
+            ("z.test(B2:C2, 6.5, 1)", "0.5"),
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        for source in ["z.test(B2:C2, 6.5, 0)", "z.test(B2:C2, 6.5, -1)"] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "#VALUE!",
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
     fn gamma_inv_returns_quantiles() {
         for (source, expected) in [
             ("gamma.inv(0.5, 1, 1)", "0.693147"),
