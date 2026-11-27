@@ -3504,6 +3504,21 @@ mod tests {
     }
 
     #[test]
+    fn delta_compares_numbers() {
+        for (source, expected) in [
+            ("delta(5, 5)", "1"),
+            ("delta(5, 4)", "0"),
+            ("delta(0)", "1"),
+            ("delta(0, 1)", "0"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in ["delta(1, 2, 3)", r#"delta("x")"#, "delta()"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn complex_base_two_log_works() {
         for (source, expected) in [
             (r#"imlog2("3+4i")"#, "2.321928094887362+1.3378042124509761i"),
