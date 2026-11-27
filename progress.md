@@ -492,8 +492,10 @@
   测试 `data_validation_can_allow_blank_cells`。
 - [x] 项465 数据验证 allowBlank CLI（功能级）：`--data-validation-blank`；
   测试 `convert_xlsx_can_allow_blank_validated_cells`。
-- [ ] 项466 xlsx 工作表保护（功能级）：sheetProtection 元素；
-  验收：单测 + gate。
+- [x] 项466 xlsx 工作表保护（功能级）：sheetProtection；
+  测试 `worksheet_protection_is_written_before_filtering`。
+- [ ] 项467 工作表保护 CLI（功能级）：convert 保护开关；
+  验收：CLI + 单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
 - [ ] 项428 条件格式 dxf 蓝色规则同 id 断言（功能级）：蓝色多规则同 dxfId；
@@ -791,6 +793,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 484（项466 工作表保护，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `8942d47d…1cde144c`；
+轮首 push 成功，本轮不再 push。
 
 Round 483（项465 allowBlank CLI，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `0dad3e94…5f9db08d`；

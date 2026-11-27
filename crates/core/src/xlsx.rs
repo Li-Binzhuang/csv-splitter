@@ -256,6 +256,7 @@ pub fn csv_to_xlsx_with_number_formats(
         &[],
         true,
         true,
+        false,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -281,6 +282,7 @@ pub fn csv_to_xlsx_without_auto_filter(
         formats,
         &[],
         true,
+        false,
         false,
     );
     if result.is_err() {
@@ -311,6 +313,7 @@ pub fn csv_to_xlsx_with_options(
         &[],
         freeze_header,
         auto_filter,
+        false,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -341,6 +344,32 @@ pub fn csv_to_xlsx_with_all(
         validations,
         freeze_header,
         auto_filter,
+        false,
+    );
+    if result.is_err() {
+        let _ = std::fs::remove_file(output);
+    }
+    result
+}
+
+/// Export a CSV as one xlsx sheet with worksheet protection enabled.
+pub fn csv_to_xlsx_with_protection(
+    input: &Path,
+    output: &Path,
+    delimiter: Delimiter,
+    tx: &ProgressSender,
+) -> std::io::Result<()> {
+    let result = csv_to_xlsx_inner(
+        input,
+        output,
+        delimiter,
+        tx,
+        &[],
+        &[],
+        &[],
+        true,
+        true,
+        true,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -366,6 +395,7 @@ pub fn csv_to_xlsx_with_validations(
         validations,
         true,
         true,
+        false,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -392,6 +422,7 @@ pub fn csv_to_xlsx_without_freeze(
         &[],
         false,
         true,
+        false,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -410,6 +441,7 @@ fn csv_to_xlsx_inner(
     validations: &[DataValidation],
     freeze_header: bool,
     auto_filter: bool,
+    protect: bool,
 ) -> std::io::Result<()> {
     let sheet_name = workbook_sheet_name(input);
     let total_bytes = std::fs::metadata(input).map(|m| m.len()).unwrap_or(0);
@@ -530,6 +562,12 @@ fn csv_to_xlsx_inner(
         }
     }
     write!(zip, "</sheetData>")?;
+    if protect {
+        write!(
+            zip,
+            "<sheetProtection sheet=\"1\" objects=\"1\" scenarios=\"1\"/>"
+        )?;
+    }
     if auto_filter && data_rows > 0 && !headers.is_empty() {
         let last_column = column_name(headers.len() - 1);
         write!(
@@ -3852,6 +3890,24 @@ mod tests {
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
         assert!(sheet.contains("allowBlank=\"1\""), "{sheet}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn worksheet_protection_is_written_before_filtering() {
+        let dir = temp_path("protect");
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("protect.csv");
+        let output = dir.join("protect.xlsx");
+        std::fs::write(&input, "id,amount\n1,10\n2,20\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        csv_to_xlsx_with_protection(&input, &output, Delimiter::Comma, &tx).unwrap();
+        let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
+        assert!(
+            sheet.contains("<sheetProtection sheet=\"1\" objects=\"1\" scenarios=\"1\"/>"),
+            "{sheet}"
+        );
+        assert!(sheet.contains("<autoFilter"), "{sheet}");
         std::fs::remove_dir_all(dir).ok();
     }
 
