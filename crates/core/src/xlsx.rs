@@ -2450,6 +2450,12 @@ mod tests {
             },
             ConditionalRule {
                 column: "amount".into(),
+                operator: "beginsWith".into(),
+                value: "A&B".into(),
+                color: "purple".into(),
+            },
+            ConditionalRule {
+                column: "amount".into(),
                 operator: "endsWith".into(),
                 value: "00".into(),
                 color: "orange".into(),
@@ -2601,6 +2607,10 @@ mod tests {
         assert!(sheet.contains("text=\"a&quot;b\""), "{sheet}");
         assert!(
             sheet.contains("LEFT(B2,LEN(\"a\"\"b\"))=\"a\"\"b\""),
+            "{sheet}"
+        );
+        assert!(
+            sheet.contains("LEFT(B2,LEN(\"A&amp;B\"))=\"A&amp;B\""),
             "{sheet}"
         );
         assert!(sheet.contains("type=\"endsWith\""), "{sheet}");

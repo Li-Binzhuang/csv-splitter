@@ -69,7 +69,7 @@
 | 条件格式 notContainsText | 支持 `amount:notContains:zz`（非空），导出 `ISERROR(SEARCH(...))`；引号按 `""` 转义 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 between | 支持 `between:500,1000` / `notBetween:1,10`，恰好两边界；文本边界按公式字符串加引号 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 blank/nonblank | `--highlight` 支持 `amount:blank:gray`、`nonblank:cyan`，导出 containsBlanks/notContainsBlanks | `conditional_rules_support_top_and_bottom_ranks` |
-| 条件格式 begins/ends | 支持 `beginsWith:12`、`endsWith:00`（非空），LEFT/RIGHT 公式，引号按 `""` 转义 | `conditional_rules_support_top_and_bottom_ranks` |
+| 条件格式 begins/ends | 支持 `beginsWith:12`、`endsWith:00`（非空），LEFT/RIGHT 公式，引号/XML 均转义 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 dataBar | 支持 `amount:dataBar:#FF0000`，颜色必填且 #RRGGBB，导出 `dataBar` 最小/最大 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 containsText | 支持 `amount:contains:00`（非空），导出 `containsText` + `SEARCH`；引号 `""`、XML `&amp;/&lt;/&gt;` 正确转义 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 ColorScale | 支持 `scale2`（2 色）/`scale3`（3 色），颜色数匹配且均须 #RRGGBB，导出 `colorScale` + `percentile` 50 | `conditional_rules_support_top_and_bottom_ranks` |
