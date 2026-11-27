@@ -64,7 +64,7 @@
 | 空行 | 跳过 | `table_from_rows_skips_empty_rows_and_enforces_the_limit`、CLI `convert_skips_empty_xlsx_rows` |
 | 冻结开关 CLI | `convert --no-freeze` 单 sheet/目录多 sheet 均省略 pane | `header_freeze_can_be_disabled` + `multi_sheet_export_can_skip_header_freeze` |
 | 表头冻结开关 | 默认冻结首行；`csv_to_xlsx_without_freeze` 省略 `<pane>` | `header_freeze_can_be_disabled` |
-| 表头自动筛选 | 每个有数据的 sheet 输出 `<autoFilter ref="A1:最后一列最后行"/>` | `conditional_rules_support_top_and_bottom_ranks` |
+| 表头自动筛选 | 每个有数据的 sheet 输出 `<autoFilter ref="A1:最后一列最后行"/>`；可选关闭 | `conditional_rules_support_top_and_bottom_ranks` + `auto_filter_can_be_disabled` |
 | 条件格式 dxf 去重 | 相同颜色规则复用同一 `dxfId`，`dxfs count` 为唯一颜色数 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 日期周期 | `--highlight` 支持 `today/yesterday`、`last7/30Days`、`this/last/nextWeek`、`this/last/nextMonth`，导出 `timePeriod` | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 iconSet | 支持 `amount:iconSet`（默认 3TrafficLights1）或 value 选 3Symbols/3Arrows/3Arrows2/3Flags/3Stars；未知预设报错 | `conditional_rules_support_top_and_bottom_ranks` |

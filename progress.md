@@ -444,12 +444,14 @@
   测试 `rand_and_randbetween_stay_in_bounds`。
 - [x] 项440 冻结开关 CLI 接线（功能级）：convert `--no-freeze` 接线；
   测试 `every_command_documents_the_flags_it_parses` + core 单测。
-- [ ] 项442 xlsx autoFilter 开关（功能级）：可选不输出筛选；
-  验收：单测 + gate。
+- [x] 项442 xlsx autoFilter 开关（功能级）：csv_to_xlsx_without_auto_filter；
+  测试 `auto_filter_can_be_disabled`。
 - [x] 项443 RANDBETWEEN 单元格参数（功能级）：lo/hi 引用求值；
   测试 `rand_and_randbetween_stay_in_bounds`。
 - [ ] 项444 no-freeze + number-format 组合（功能级）：CLI 同时生效；
   验收：单测 + gate。
+- [ ] 项445 autoFilter CLI 开关（功能级）：convert 增加不输出筛选选项；
+  验收：CLI + 单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
 - [ ] 项428 条件格式 dxf 蓝色规则同 id 断言（功能级）：蓝色多规则同 dxfId；
@@ -747,6 +749,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 464（项442 autoFilter 开关，功能级）：核心 API 可省略筛选；
+clippy 首跑 too_many_arguments（已 allow）；全量 gate/package 通过；
+发布包 SHA `43a5b496…01986a62`；轮首 push 成功，本轮不再 push。
 
 Round 463（项443 RANDBETWEEN 单元格参数，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `4cef237a…b514d3c`；

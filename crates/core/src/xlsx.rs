@@ -229,7 +229,23 @@ pub fn csv_to_xlsx_with_number_formats(
     rules: &[ConditionalRule],
     formats: &[(String, crate::layout::NumberFormat)],
 ) -> std::io::Result<()> {
-    let result = csv_to_xlsx_inner(input, output, delimiter, tx, rules, formats, true);
+    let result = csv_to_xlsx_inner(input, output, delimiter, tx, rules, formats, true, true);
+    if result.is_err() {
+        let _ = std::fs::remove_file(output);
+    }
+    result
+}
+
+/// Export a CSV-as-xlsx sheet without the header auto-filter.
+pub fn csv_to_xlsx_without_auto_filter(
+    input: &Path,
+    output: &Path,
+    delimiter: Delimiter,
+    tx: &ProgressSender,
+    rules: &[ConditionalRule],
+    formats: &[(String, crate::layout::NumberFormat)],
+) -> std::io::Result<()> {
+    let result = csv_to_xlsx_inner(input, output, delimiter, tx, rules, formats, true, false);
     if result.is_err() {
         let _ = std::fs::remove_file(output);
     }
@@ -245,13 +261,14 @@ pub fn csv_to_xlsx_without_freeze(
     rules: &[ConditionalRule],
     formats: &[(String, crate::layout::NumberFormat)],
 ) -> std::io::Result<()> {
-    let result = csv_to_xlsx_inner(input, output, delimiter, tx, rules, formats, false);
+    let result = csv_to_xlsx_inner(input, output, delimiter, tx, rules, formats, false, true);
     if result.is_err() {
         let _ = std::fs::remove_file(output);
     }
     result
 }
 
+#[allow(clippy::too_many_arguments)]
 fn csv_to_xlsx_inner(
     input: &Path,
     output: &Path,
@@ -260,6 +277,7 @@ fn csv_to_xlsx_inner(
     rules: &[ConditionalRule],
     formats: &[(String, crate::layout::NumberFormat)],
     freeze_header: bool,
+    auto_filter: bool,
 ) -> std::io::Result<()> {
     let sheet_name = workbook_sheet_name(input);
     let total_bytes = std::fs::metadata(input).map(|m| m.len()).unwrap_or(0);
@@ -380,7 +398,7 @@ fn csv_to_xlsx_inner(
         }
     }
     write!(zip, "</sheetData>")?;
-    if data_rows > 0 && !headers.is_empty() {
+    if auto_filter && data_rows > 0 && !headers.is_empty() {
         let last_column = column_name(headers.len() - 1);
         write!(
             zip,
@@ -411,9 +429,14 @@ pub fn write_sheets(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
     write_sheets_with_formats(output, sheets, &[])
 }
 
+/// Write sheets without a header auto-filter.
+pub fn write_sheets_without_auto_filter(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
+    write_sheets_inner(output, sheets, &[], true, false)
+}
+
 /// Write sheets without freezing the header row on any sheet.
 pub fn write_sheets_without_freeze(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, &[], false)
+    write_sheets_inner(output, sheets, &[], false, true)
 }
 
 /// Write sheets and map each column's display format into an Excel cell style.
@@ -427,7 +450,7 @@ pub fn write_sheets_with_formats(
     sheets: &[Sheet],
     formats: &[Vec<crate::layout::NumberFormat>],
 ) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, formats, true)
+    write_sheets_inner(output, sheets, formats, true, true)
 }
 
 fn write_sheets_inner(
@@ -435,6 +458,7 @@ fn write_sheets_inner(
     sheets: &[Sheet],
     formats: &[Vec<crate::layout::NumberFormat>],
     freeze_header: bool,
+    auto_filter: bool,
 ) -> std::io::Result<()> {
     if sheets.is_empty() {
         return Err(std::io::Error::new(
@@ -539,7 +563,7 @@ fn write_sheets_inner(
             xml.push_str("</row>");
         }
         xml.push_str("</sheetData>");
-        if !sheet.rows.is_empty() && !sheet.headers.is_empty() {
+        if auto_filter && !sheet.rows.is_empty() && !sheet.headers.is_empty() {
             let last_column = column_name(sheet.headers.len() - 1);
             xml.push_str(&format!(
                 "<autoFilter ref=\"A1:{last_column}{}\"/>",
@@ -3370,6 +3394,21 @@ mod tests {
             assert!(!xml.contains("<pane "), "{part}: {xml}");
             assert!(xml.contains("<autoFilter"), "{part}: {xml}");
         }
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn auto_filter_can_be_disabled() {
+        let dir = temp_path("nofilter");
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("nofilter.csv");
+        let output = dir.join("nofilter.xlsx");
+        std::fs::write(&input, "id,amount\n1,10\n2,20\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        csv_to_xlsx_without_auto_filter(&input, &output, Delimiter::Comma, &tx, &[], &[]).unwrap();
+        let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
+        assert!(!sheet.contains("<autoFilter"), "{sheet}");
+        assert!(sheet.contains("<pane "), "{sheet}");
         std::fs::remove_dir_all(dir).ok();
     }
 
