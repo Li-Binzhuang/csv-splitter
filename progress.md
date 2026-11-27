@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项186 双阶乘（功能级）：`FACTDOUBLE(number)`；负数/非整数/
+  过大 `#VALUE!`；验收：单测 + gate。
 - [ ] 项185 罗马数字（功能级）：`ROMAN(number[, form])`/`ARABIC(text)`；
   范围/非法字符 `#VALUE!`；验收：单测 + gate。
 - [ ] 项184 URL 编码（功能级）：`ENCODEURL(text)` 按 UTF-8 百分号编码；
   非文本/参数不足 `#VALUE!`；验收：单测 + gate。
-- [ ] 项183 分数美元（功能级）：`DOLLARDE`/`DOLLARFR`；分数分母≤0/
-  非法参数 `#VALUE!`；验收：单测 + gate。
+- [x] 项183 分数美元（功能级）：`DOLLARDE`/`DOLLARFR`；分数分母≤0/
+  非整数 `#VALUE!`；测试 `dollar_fraction_round_trips`。
 - [x] 项182 文本感知极值（功能级）：`MAXA`/`MINA` 把布尔/文本按 1/0
   计入；空样本 `#VALUE!`；测试 `maxa_and_mina_treat_text_as_zero`。
 - [x] 项181 文本感知平均（功能级）：`AVERAGEA(values)` 把布尔/文本按
@@ -233,6 +235,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 210（项183 DOLLARDE/DOLLARFR，功能级）：分数美元双向转换、
+分母边界；定向与全量 gate/package 通过；发布包 SHA `748e5310…3b56eb0`；
+push 已在轮首成功，本轮不再 push。
 
 Round 209（项182 MAXA/MINA，功能级）：文本/布尔极值、空样本；
 定向与全量 gate/package 通过；发布包 SHA `42aa3087…3c3dd0`；

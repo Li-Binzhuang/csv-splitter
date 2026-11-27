@@ -130,6 +130,7 @@
 | DB / DDB / VDB | 支持（功能级新增） | 固定/双倍/变动余额递减；区间、月数、因子非法 `#VALUE!` |
 | FVSCHEDULE | 支持（功能级新增） | 复利 schedule 区间；空区间/rate≤-1 `#VALUE!` |
 | SUMXMY2 / SUMX2MY2 / SUMX2PY2 | 支持（功能级新增） | 同行等长 x/y、空区间/长度不等 `#VALUE!` |
+| DOLLARDE / DOLLARFR | 支持（功能级新增） | 分数分母正整数；非正/非整数 `#VALUE!` |
 | MAXA / MINA | 支持（功能级新增） | 文本按 0、TRUE/FALSE 按 1/0；空样本 `#VALUE!` |
 | AVERAGEA | 支持（功能级新增） | 文本按 0、TRUE/FALSE 按 1/0；空样本 `#VALUE!` |
 | STDEVPA / VARPA | 支持（功能级新增） | 文本按 0、TRUE/FALSE 按 1/0；空样本 `#VALUE!` |

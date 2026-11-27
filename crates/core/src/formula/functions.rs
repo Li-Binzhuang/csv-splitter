@@ -2651,6 +2651,37 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             result.map_or(Value::Error, Value::Number)
         }
+        // DOLLARDE/DOLLARFR: convert between decimal and fractional dollar notation.
+        "dollarde" | "dollarfr" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let Some(dollar) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            let Some(fraction) = eval(&args[1], ctx).number() else {
+                return Value::Error;
+            };
+            if !dollar.is_finite()
+                || !fraction.is_finite()
+                || fraction <= 0.0
+                || fraction.trunc() != fraction
+            {
+                return Value::Error;
+            }
+            let sign = if dollar < 0.0 { -1.0 } else { 1.0 };
+            let absolute = dollar.abs();
+            let integer = absolute.trunc();
+            let fractional_part = absolute - integer;
+            let digits = fraction.log10().ceil().max(0.0) as i32;
+            let scale = 10f64.powi(digits);
+            let result = if lower == "dollarde" {
+                integer + fractional_part * scale / fraction
+            } else {
+                integer + fractional_part * fraction / scale
+            };
+            Value::Number(sign * result)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

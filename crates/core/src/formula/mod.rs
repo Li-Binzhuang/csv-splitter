@@ -3504,6 +3504,26 @@ mod tests {
     }
 
     #[test]
+    fn dollar_fraction_round_trips() {
+        for (source, expected) in [
+            ("dollarde(1.02, 16)", "1.125"),
+            ("dollarfr(1.125, 16)", "1.02"),
+            ("dollarde(-1.02, 16)", "-1.125"),
+            ("dollarfr(-1.125, 16)", "-1.02"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "dollarde(1.02, 0)",
+            "dollarfr(1.125, -16)",
+            "dollarde(1.02, 2.5)",
+            "dollarde(1.02)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn maxa_and_mina_treat_text_as_zero() {
         let columns = vec!["a".to_string(), "b".to_string(), "c".to_string()];
         let mut cells = HashMap::new();
