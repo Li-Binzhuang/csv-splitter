@@ -1442,6 +1442,62 @@ mod tests {
     }
 
     #[test]
+    fn forecast_predicts_from_a_line() {
+        let columns = vec![
+            "y1".to_string(),
+            "y2".to_string(),
+            "y3".to_string(),
+            "x1".to_string(),
+            "x2".to_string(),
+            "x3".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [
+            ("y1", "2"),
+            ("y2", "4"),
+            ("y3", "6"),
+            ("x1", "1"),
+            ("x2", "2"),
+            ("x3", "3"),
+        ] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        for (source, expected) in [
+            ("forecast(4, A2:C2, D2:F2)", "8"),
+            ("forecast.linear(0, A2:C2, D2:F2)", "0"),
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        for source in ["forecast(4, A2:C2, D2:E2)", "forecast(4, A2:C2)"] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "#VALUE!",
+                "{source}"
+            );
+        }
+        for name in ["x1", "x2", "x3"] {
+            cells.insert(name.to_string(), "1".to_string());
+        }
+        let formula = Formula::parse("forecast(4, A2:C2, D2:F2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+    }
+
+    #[test]
     fn covariance_functions_work() {
         let columns = vec![
             "y1".to_string(),

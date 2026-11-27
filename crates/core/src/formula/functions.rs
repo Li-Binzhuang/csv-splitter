@@ -2253,6 +2253,41 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             };
             Value::Number(sum / divisor)
         }
+        // FORECAST/FORECAST.LINEAR: predict y for a given x from paired ranges.
+        "forecast" | "forecast.linear" => {
+            if args.len() != 3 {
+                return Value::Error;
+            }
+            let Some(x_value) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            let (
+                Some(Expr::Range {
+                    from: y_from,
+                    to: y_to,
+                }),
+                Some(Expr::Range {
+                    from: x_from,
+                    to: x_to,
+                }),
+            ) = (args.get(1), args.get(2))
+            else {
+                return Value::Error;
+            };
+            let Some(known_y) = range_values(y_from, y_to, ctx) else {
+                return Value::Error;
+            };
+            let Some(known_x) = range_values(x_from, x_to, ctx) else {
+                return Value::Error;
+            };
+            let Some((slope, intercept)) = linear_regression(&known_y, &known_x) else {
+                return Value::Error;
+            };
+            if !x_value.is_finite() {
+                return Value::Error;
+            }
+            Value::Number(intercept + slope * x_value)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
