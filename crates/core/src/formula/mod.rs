@@ -3435,6 +3435,12 @@ mod tests {
         ] {
             assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
         }
+        assert_eq!(
+            eval_str(r#"rept("abcdefg", 4681)"#, &[]),
+            "abcdefg".repeat(4681)
+        );
+        assert_eq!(eval_str(r#"rept("abcdefg", 4682)"#, &[]), "#VALUE!");
+        assert_eq!(eval_str(r#"rept("abcd", 10000)"#, &[]), "#VALUE!");
     }
 
     #[test]

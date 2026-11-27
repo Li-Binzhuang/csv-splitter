@@ -6140,6 +6140,10 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             (Some(text), Some(Some(times)))
                 if times.fract() == 0.0 && (0.0..=10_000.0).contains(&times) =>
             {
+                let length = text.chars().count().saturating_mul(times as usize);
+                if length > 32_767 {
+                    return Value::Error;
+                }
                 Value::Text(text.repeat(times as usize))
             }
             _ => Value::Error,
