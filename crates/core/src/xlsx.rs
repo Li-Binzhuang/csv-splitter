@@ -37,6 +37,13 @@ pub struct ConditionalRule {
     pub color: String,
 }
 
+/// A list-style Excel data validation (a dropdown of allowed values).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DataValidation {
+    pub column: String,
+    pub values: Vec<String>,
+}
+
 /// Read a worksheet's header names and their Excel number formats.
 ///
 /// This is a metadata read: values are not returned. The header row is parsed
@@ -229,7 +236,17 @@ pub fn csv_to_xlsx_with_number_formats(
     rules: &[ConditionalRule],
     formats: &[(String, crate::layout::NumberFormat)],
 ) -> std::io::Result<()> {
-    let result = csv_to_xlsx_inner(input, output, delimiter, tx, rules, formats, true, true);
+    let result = csv_to_xlsx_inner(
+        input,
+        output,
+        delimiter,
+        tx,
+        rules,
+        formats,
+        &[],
+        true,
+        true,
+    );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
     }
@@ -245,7 +262,17 @@ pub fn csv_to_xlsx_without_auto_filter(
     rules: &[ConditionalRule],
     formats: &[(String, crate::layout::NumberFormat)],
 ) -> std::io::Result<()> {
-    let result = csv_to_xlsx_inner(input, output, delimiter, tx, rules, formats, true, false);
+    let result = csv_to_xlsx_inner(
+        input,
+        output,
+        delimiter,
+        tx,
+        rules,
+        formats,
+        &[],
+        true,
+        false,
+    );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
     }
@@ -271,8 +298,34 @@ pub fn csv_to_xlsx_with_options(
         tx,
         rules,
         formats,
+        &[],
         freeze_header,
         auto_filter,
+    );
+    if result.is_err() {
+        let _ = std::fs::remove_file(output);
+    }
+    result
+}
+
+/// Export a CSV as one xlsx sheet with dropdown data validation.
+pub fn csv_to_xlsx_with_validations(
+    input: &Path,
+    output: &Path,
+    delimiter: Delimiter,
+    tx: &ProgressSender,
+    validations: &[DataValidation],
+) -> std::io::Result<()> {
+    let result = csv_to_xlsx_inner(
+        input,
+        output,
+        delimiter,
+        tx,
+        &[],
+        &[],
+        validations,
+        true,
+        true,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -289,7 +342,17 @@ pub fn csv_to_xlsx_without_freeze(
     rules: &[ConditionalRule],
     formats: &[(String, crate::layout::NumberFormat)],
 ) -> std::io::Result<()> {
-    let result = csv_to_xlsx_inner(input, output, delimiter, tx, rules, formats, false, true);
+    let result = csv_to_xlsx_inner(
+        input,
+        output,
+        delimiter,
+        tx,
+        rules,
+        formats,
+        &[],
+        false,
+        true,
+    );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
     }
@@ -304,6 +367,7 @@ fn csv_to_xlsx_inner(
     tx: &ProgressSender,
     rules: &[ConditionalRule],
     formats: &[(String, crate::layout::NumberFormat)],
+    validations: &[DataValidation],
     freeze_header: bool,
     auto_filter: bool,
 ) -> std::io::Result<()> {
@@ -436,6 +500,10 @@ fn csv_to_xlsx_inner(
     }
     if !rules.is_empty() && data_rows > 0 {
         let xml = conditional_formatting_xml(rules, &headers, data_rows + 1)?;
+        write!(zip, "{}", xml)?;
+    }
+    if !validations.is_empty() && data_rows > 0 {
+        let xml = data_validations_xml(validations, &headers, data_rows + 1)?;
         write!(zip, "{}", xml)?;
     }
     write!(zip, "</worksheet>")?;
@@ -932,6 +1000,55 @@ fn quote_formula(value: &str) -> String {
 
 /// A double-quoted Excel formula string. Inner quotes are doubled, and the
 /// XML text is escaped so the formula parser receives the intended literal.
+fn data_validations_xml(
+    validations: &[DataValidation],
+    headers: &[String],
+    last_row: u64,
+) -> std::io::Result<String> {
+    let mut out = format!("<dataValidations count=\"{}\">", validations.len());
+    for validation in validations {
+        let index = headers
+            .iter()
+            .position(|header| header == &validation.column)
+            .ok_or_else(|| {
+                std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!("data validation column not found: {}", validation.column),
+                )
+            })?;
+        if validation.values.is_empty() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "data validation needs at least one value",
+            ));
+        }
+        if validation
+            .values
+            .iter()
+            .any(|value| value.contains(',') || value.contains('"'))
+        {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "data validation values cannot contain commas or quotes",
+            ));
+        }
+        let joined = validation.values.join(",");
+        if joined.chars().count() > 255 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "data validation list is longer than Excel's 255-character limit",
+            ));
+        }
+        let column = column_name(index);
+        out.push_str(&format!(
+            "<dataValidation type=\"list\" allowBlank=\"0\" showErrorMessage=\"1\" sqref=\"{column}2:{column}{last_row}\"><formula1>{}</formula1></dataValidation>",
+            formula_literal(&joined)
+        ));
+    }
+    out.push_str("</dataValidations>");
+    Ok(out)
+}
+
 fn formula_literal(value: &str) -> String {
     let mut escaped = String::new();
     for ch in value.chars() {
@@ -3524,6 +3641,30 @@ mod tests {
             assert!(!xml.contains("<pane "), "{part}: {xml}");
             assert!(!xml.contains("<autoFilter"), "{part}: {xml}");
         }
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn data_validation_lists_are_written_as_dropdowns() {
+        let dir = temp_path("validation");
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("validation.csv");
+        let output = dir.join("validation.xlsx");
+        std::fs::write(&input, "id,status\n1,good\n2,ok\n3,bad\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let validations = vec![DataValidation {
+            column: "status".to_string(),
+            values: vec!["good".into(), "ok".into(), "bad".into()],
+        }];
+        csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
+        let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
+        assert!(sheet.contains("<dataValidations count=\"1\">"), "{sheet}");
+        assert!(sheet.contains("type=\"list\""), "{sheet}");
+        assert!(sheet.contains("sqref=\"B2:B4\""), "{sheet}");
+        assert!(
+            sheet.contains("<formula1>\"good,ok,bad\"</formula1>"),
+            "{sheet}"
+        );
         std::fs::remove_dir_all(dir).ok();
     }
 

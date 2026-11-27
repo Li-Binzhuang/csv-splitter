@@ -466,8 +466,8 @@
   验收：单测 + gate。
 - [x] 项452 highlight + formats 组合（功能级）：CF 与数字格式共存；
   测试 `convert_xlsx_combines_highlight_and_number_formats`。
-- [ ] 项453 xlsx 数据验证下拉（功能级）：dataValidation list；
-  验收：单测 + gate。
+- [x] 项453 xlsx 数据验证下拉（功能级）：csv_to_xlsx_with_validations；
+  测试 `data_validation_lists_are_written_as_dropdowns`。
 - [ ] 项454 xlsx 数据验证范围（功能级）：多列 sqref；
   验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
@@ -767,6 +767,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 471（项453 数据验证下拉，功能级）：status 列 good/ok/bad；
+定向与全量 gate/package 通过；发布包 SHA `edcc6467…3206bf1a3`；
+轮首 push 成功，本轮不再 push。
 
 Round 470（项452 highlight + formats，功能级）；push 首试失败（权限），本地攒 1 提交；
 定向与全量 gate/package 通过；发布包 SHA `5d1e5f91…338f8a18`；
