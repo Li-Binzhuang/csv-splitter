@@ -102,10 +102,12 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项264 精确伽马对数（功能级）：`GAMMALN.PRECISE(x)`；
+  非正/非有限 `#VALUE!`；验收：单测 + gate。
 - [ ] 项263 逻辑/非文本判断（功能级）：`ISLOGICAL`/`ISNONTEXT`；
   无参 `#VALUE!`；验收：单测 + gate。
-- [ ] 项262 精确误差函数（功能级）：`ERF.PRECISE`/`ERFC.PRECISE`；
-  非法参数 `#VALUE!`；验收：单测 + gate。
+- [x] 项262 精确误差函数（功能级）：`ERF.PRECISE`/`ERFC.PRECISE`；
+  非法参数 `#VALUE!`；测试 `precise_error_functions_work`。
 - [x] 项261 引用判断（功能级）：`ISREF(value)`；
   区间/引用返回 TRUE，值/文本返回 FALSE；测试 `isref_recognizes_references_without_evaluating`。
 - [ ] 项260 第二类贝塞尔 Y 函数（功能级）：`BESSELY(x, n)`；
@@ -389,6 +391,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 288（项262 ERF.PRECISE/ERFC.PRECISE，功能级）：精确误差函数；
+定向与全量 gate/package 通过；发布包 SHA `11da4f89…47cd207f`；
+push 已在轮首失败，本轮保留本地。
 
 Round 287（项261 ISREF，功能级）：表达式形状判断、不求值；
 定向与全量 gate/package 通过；发布包 SHA `71652362…105b761762`；

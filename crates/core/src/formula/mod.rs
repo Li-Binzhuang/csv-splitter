@@ -3504,6 +3504,27 @@ mod tests {
     }
 
     #[test]
+    fn precise_error_functions_work() {
+        for (source, expected) in [
+            ("erf.precise(0)", "0"),
+            ("erf.precise(1)", "0.842701"),
+            ("erfc.precise(0)", "1"),
+            ("erfc.precise(1)", "0.157299"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            r#"erf.precise("x")"#,
+            "erf.precise(1, 2)",
+            "erf.precise()",
+            r#"erfc.precise("x")"#,
+            "erfc.precise(1, 2)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn isref_recognizes_references_without_evaluating() {
         for (source, expected) in [
             ("isref(A1)", "TRUE"),

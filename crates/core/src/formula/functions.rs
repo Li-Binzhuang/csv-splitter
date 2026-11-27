@@ -3133,6 +3133,24 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Number(erf_approx(first))
             }
         }
+        // ERF.PRECISE/ERFC.PRECISE: single-argument exact error functions.
+        "erf.precise" | "erfc.precise" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            if !number.is_finite() {
+                return Value::Error;
+            }
+            let result = erf_approx(number);
+            Value::Number(if lower == "erfc.precise" {
+                1.0 - result
+            } else {
+                result
+            })
+        }
         // GAMMA: gamma function for positive numbers.
         "gamma" => {
             if args.len() != 1 {
