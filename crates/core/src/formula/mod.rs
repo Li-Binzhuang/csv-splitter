@@ -3504,6 +3504,27 @@ mod tests {
     }
 
     #[test]
+    fn norm_inv_returns_quantiles() {
+        for (source, expected) in [
+            ("norm.inv(0.5, 0, 1)", "0"),
+            ("norm.inv(0.841344746, 0, 1)", "1"),
+            ("norm.inv(0.975, 0, 1)", "1.959964"),
+            ("norm.inv(0.5, 10, 2)", "10"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "norm.inv(0, 0, 1)",
+            "norm.inv(1, 0, 1)",
+            "norm.inv(0.5, 0, 0)",
+            r#"norm.inv("x", 0, 1)"#,
+            "norm.inv(0.5, 0)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn t_inv_two_tail_returns_positive_quantile() {
         for (source, expected) in [("t.inv.2t(0.5, 1)", "1"), ("t.inv.2t(0.8, 1)", "0.32492")] {
             assert_eq!(eval_str(source, &[]), expected, "{source}");
