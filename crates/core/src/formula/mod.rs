@@ -6555,6 +6555,8 @@ mod tests {
             ("lookup(3, C2:C2, D2:D2)", "plain"),
             ("lookup(5, C2:C2, D2:D2)", "plain"),
             ("lookup(10, B2:B2)", "10"),
+            ("lookup(\"plao\", B2:D2)", "plain"),
+            ("lookup(\"plao\", B2:D2, B2:D2)", "plain"),
         ] {
             let formula = Formula::parse(source).unwrap();
             assert_eq!(

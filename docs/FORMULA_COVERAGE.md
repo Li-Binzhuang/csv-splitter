@@ -81,7 +81,7 @@
 | VLOOKUP / REF | 支持（受限） | 显式引用；可选 match_mode 2 通配符；未命中 `#N/A` |
 | CHOOSE | 首批补齐 | 1-based 序号；越界 `#VALUE!` |
 | INDEX / MATCH / XMATCH | 支持（受限） | 同行区间；MATCH 0/±1（数值+文本近似）；通配符；XMATCH 2 |
-| HLOOKUP / LOOKUP | 支持（受限） | HLOOKUP 同行单行、row_index=1、精确含通配符；LOOKUP 向量等宽 |
+| HLOOKUP / LOOKUP | 支持（受限） | HLOOKUP 单行/精确+通配符；LOOKUP 数值与文本近似，结果等宽 |
 | OFFSET / INDIRECT | 不做 | 动态引用会破坏预加载与可预测性 |
 
 ## 数学与聚合
