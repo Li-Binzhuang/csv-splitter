@@ -2487,6 +2487,7 @@ mod tests {
                 "frac".into(),
                 "pctg".into(),
                 "pct0".into(),
+                "ampm".into(),
             ],
             rows: vec![vec![
                 "1234.5".into(),
@@ -2498,6 +2499,7 @@ mod tests {
                 "1.25".into(),
                 "12345.6".into(),
                 "12345.6".into(),
+                "13:04:05".into(),
             ]],
         };
         write_sheets_with_formats(
@@ -2513,6 +2515,7 @@ mod tests {
                 NumberFormat::parse("# ?/?").unwrap(),
                 NumberFormat::parse("#,##0.0%").unwrap(),
                 NumberFormat::parse("#,##0%").unwrap(),
+                NumberFormat::parse("h:mm AM/PM").unwrap(),
             ]],
         )
         .unwrap();
@@ -2525,10 +2528,11 @@ mod tests {
         assert!(styles.contains("formatCode=\"# ?/?\""), "{styles}");
         assert!(styles.contains("formatCode=\"#,##0.0%\""), "{styles}");
         assert!(styles.contains("formatCode=\"#,##0%\""), "{styles}");
+        assert!(styles.contains("formatCode=\"h:mm AM/PM\""), "{styles}");
         read_xlsx_to_csv(&path, &output, None).unwrap();
         assert_eq!(
             std::fs::read_to_string(&output).unwrap(),
-            "amount,rate,when,label,clock,code,frac,pctg,pct0\n1234.5,0.123,2024-01-02,001,06:30:15,123,1.25,12345.6,12345.6\n"
+            "amount,rate,when,label,clock,code,frac,pctg,pct0,ampm\n1234.5,0.123,2024-01-02,001,06:30:15,123,1.25,12345.6,12345.6,13:04:05\n"
         );
         let _ = std::fs::remove_file(path);
         let _ = std::fs::remove_file(output);
@@ -2565,6 +2569,7 @@ mod tests {
                 "frac".into(),
                 "pctg".into(),
                 "pct0".into(),
+                "ampm".into(),
             ],
             rows: vec![
                 vec![
@@ -2577,6 +2582,7 @@ mod tests {
                     "1.25".into(),
                     "12345.6".into(),
                     "12345.6".into(),
+                    "13:04:05".into(),
                 ],
                 vec![
                     "99.5".into(),
@@ -2602,11 +2608,12 @@ mod tests {
                 NumberFormat::parse("# ?/?").unwrap(),
                 NumberFormat::parse("#,##0.0%").unwrap(),
                 NumberFormat::parse("#,##0%").unwrap(),
+                NumberFormat::parse("h:mm AM/PM").unwrap(),
             ]],
         )
         .unwrap();
         let columns = xlsx_column_formats(&path, None).unwrap();
-        assert_eq!(columns.len(), 9, "{columns:?}");
+        assert_eq!(columns.len(), 10, "{columns:?}");
         assert_eq!(columns[0].0, "amount");
         assert_eq!(columns[0].1, Some(NumberFormat::parse("#,##0.00").unwrap()));
         assert_eq!(columns[1].1, Some(NumberFormat::parse("0.0%").unwrap()));
