@@ -3418,6 +3418,26 @@ mod tests {
     }
 
     #[test]
+    fn rept_requires_integer_count_within_limit() {
+        for (source, expected) in [
+            (r#"rept("ab", 2)"#, "abab"),
+            (r#"rept("ab", 0)"#, ""),
+            (r#"rept("ab", 10000)"#, &"ab".repeat(10000)),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            r#"rept("ab", 2.5)"#,
+            r#"rept("ab", -1)"#,
+            r#"rept("ab", 10001)"#,
+            r#"rept("ab", "x")"#,
+            "rept()",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn search_folds_unicode_case_and_keeps_positions() {
         for (source, expected) in [
             (r#"search("é", "ÉCLAIR")"#, "1"),

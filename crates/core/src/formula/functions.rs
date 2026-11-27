@@ -6132,7 +6132,9 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             args.first().map(|a| eval(a, ctx).text()),
             args.get(1).map(|a| eval(a, ctx).number()),
         ) {
-            (Some(text), Some(Some(times))) if (0.0..=10_000.0).contains(&times) => {
+            (Some(text), Some(Some(times)))
+                if times.fract() == 0.0 && (0.0..=10_000.0).contains(&times) =>
+            {
                 Value::Text(text.repeat(times as usize))
             }
             _ => Value::Error,
