@@ -14,6 +14,9 @@
 | `yyyy/mm/dd` | 支持（新增） | 斜杠日期 | 同上 |
 | `dd/mm/yyyy` | 支持（新增） | 日/月/年 | 同上 |
 | `dd-mm-yyyy` / `d-m-yyyy` | 支持（新增） | 破折号日/月/年 | `dotted_date_formats_match_excel_orders` |
+| `yyyy-mm-dd h:mm[:ss] am/pm` | 支持（新增） | 12 小时制，AM/PM | 同上 |
+| `dd-mm-yyyy h:mm[:ss] am/pm` | 支持（新增） | 12 小时制，日/月/年 | 同上 |
+| `yyyy.mm.dd h:mm am/pm` | 支持（新增） | 12 小时制，点分隔 | 同上 |
 | `yyyy-m-d` | 支持（新增） | 破折号年/月/日（不补零） | 同上 |
 | `dd.mm.yyyy` / `d.m.yyyy` | 支持（新增） | 点分隔日/月/年 | 同上 |
 | `yyyy.mm.dd` / `yyyy.m.d` | 支持（新增） | 点分隔年/月/日 | 同上 |

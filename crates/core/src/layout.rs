@@ -340,6 +340,11 @@ fn is_date_time_pattern(spec: &str) -> bool {
             | "yyyy-m-d"
             | "dd-mm-yyyy h:mm"
             | "dd-mm-yyyy h:mm:ss"
+            | "yyyy-mm-dd h:mm am/pm"
+            | "yyyy-mm-dd h:mm:ss am/pm"
+            | "dd-mm-yyyy h:mm am/pm"
+            | "dd-mm-yyyy h:mm:ss am/pm"
+            | "yyyy.mm.dd h:mm am/pm"
             | "dd.mm.yyyy"
             | "d.m.yyyy"
             | "yyyy.mm.dd"
@@ -471,6 +476,66 @@ fn render_date_time(pattern: &str, value: &str) -> Option<String> {
         "yyyy/m/d" => {
             let (year, month, day) = date_parts?;
             Some(format!("{year:04}/{month}/{day}"))
+        }
+        "yyyy-mm-dd h:mm am/pm" => {
+            let (year, month, day) = date_parts?;
+            let (hour, minute, _) = time_parts?;
+            let hour12 = match hour % 12 {
+                0 => 12,
+                value => value,
+            };
+            let suffix = if hour < 12 { "AM" } else { "PM" };
+            Some(format!(
+                "{year:04}-{month:02}-{day:02} {hour12}:{minute:02} {suffix}"
+            ))
+        }
+        "yyyy-mm-dd h:mm:ss am/pm" => {
+            let (year, month, day) = date_parts?;
+            let (hour, minute, second) = time_parts?;
+            let hour12 = match hour % 12 {
+                0 => 12,
+                value => value,
+            };
+            let suffix = if hour < 12 { "AM" } else { "PM" };
+            Some(format!(
+                "{year:04}-{month:02}-{day:02} {hour12}:{minute:02}:{second:02} {suffix}"
+            ))
+        }
+        "dd-mm-yyyy h:mm am/pm" => {
+            let (year, month, day) = date_parts?;
+            let (hour, minute, _) = time_parts?;
+            let hour12 = match hour % 12 {
+                0 => 12,
+                value => value,
+            };
+            let suffix = if hour < 12 { "AM" } else { "PM" };
+            Some(format!(
+                "{day:02}-{month:02}-{year:04} {hour12}:{minute:02} {suffix}"
+            ))
+        }
+        "dd-mm-yyyy h:mm:ss am/pm" => {
+            let (year, month, day) = date_parts?;
+            let (hour, minute, second) = time_parts?;
+            let hour12 = match hour % 12 {
+                0 => 12,
+                value => value,
+            };
+            let suffix = if hour < 12 { "AM" } else { "PM" };
+            Some(format!(
+                "{day:02}-{month:02}-{year:04} {hour12}:{minute:02}:{second:02} {suffix}"
+            ))
+        }
+        "yyyy.mm.dd h:mm am/pm" => {
+            let (year, month, day) = date_parts?;
+            let (hour, minute, _) = time_parts?;
+            let hour12 = match hour % 12 {
+                0 => 12,
+                value => value,
+            };
+            let suffix = if hour < 12 { "AM" } else { "PM" };
+            Some(format!(
+                "{year:04}.{month:02}.{day:02} {hour12}:{minute:02} {suffix}"
+            ))
         }
         "dd-mm-yyyy" => {
             let (year, month, day) = date_parts?;
@@ -1216,6 +1281,31 @@ fn dotted_date_formats_match_excel_orders() {
             "dd-mm-yyyy h:mm:ss",
             "2026-11-28T09:05:07",
             "28-11-2026 09:05:07",
+        ),
+        (
+            "yyyy-mm-dd h:mm am/pm",
+            "2026-11-28T13:05:00",
+            "2026-11-28 1:05 PM",
+        ),
+        (
+            "yyyy-mm-dd h:mm:ss am/pm",
+            "2026-11-28T00:05:07",
+            "2026-11-28 12:05:07 AM",
+        ),
+        (
+            "dd-mm-yyyy h:mm am/pm",
+            "2026-11-28T13:05:00",
+            "28-11-2026 1:05 PM",
+        ),
+        (
+            "dd-mm-yyyy h:mm:ss am/pm",
+            "2026-11-28T00:05:07",
+            "28-11-2026 12:05:07 AM",
+        ),
+        (
+            "yyyy.mm.dd h:mm am/pm",
+            "2026-11-28T13:05:00",
+            "2026.11.28 1:05 PM",
         ),
     ] {
         let format = NumberFormat::parse(pattern).unwrap();
