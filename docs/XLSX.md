@@ -69,7 +69,7 @@ MCP：
 ```bash
 csvx convert data.csv --format xlsx -o data.xlsx \
   --highlight "amount>1000:red;status=bad:amber" \
-  --no-freeze
+  --no-freeze --no-auto-filter
 ```
 
 - 规则用 `;` 分隔，每条 `列 操作符 值 : 颜色`；
@@ -78,6 +78,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 - 写成 Excel `cellIs` 条件格式（`dxf` + `conditionalFormatting`），
   不是静态涂色；
 - `--no-freeze` 省略表头冻结行；
+- `--no-auto-filter` 省略表头筛选；
 - 目录→workbook 不支持 `--highlight`。
 
 ## 尚未实现

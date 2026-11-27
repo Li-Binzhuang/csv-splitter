@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-27T22:22:03Z",
+  "updated_at": "2026-11-27T22:26:57Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "6de4fea8738e1c43e370dd247fee8000fd6f5d703c60185415ed0c98fce21ff5",
-      "size": 87617,
-      "normalized_sha256": "6de4fea8738e1c43e370dd247fee8000fd6f5d703c60185415ed0c98fce21ff5"
+      "sha256": "b44e85b5f45f0ac8d52ba906777ee44299ebfb61e8fa3bbbce4971da304efc24",
+      "size": 87626,
+      "normalized_sha256": "b44e85b5f45f0ac8d52ba906777ee44299ebfb61e8fa3bbbce4971da304efc24"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -178,9 +178,9 @@
     },
     "crates/cli/src/commands/convert.rs": {
       "role": "index",
-      "sha256": "fe9afe572ef686d2331f420759bca069910885cb5828200b6ec2e4f7b1ec1a55",
-      "size": 25827,
-      "normalized_sha256": "fe9afe572ef686d2331f420759bca069910885cb5828200b6ec2e4f7b1ec1a55"
+      "sha256": "238bad8ec738767b987540a541a587563d6d305249508e0330db734af083e946",
+      "size": 26572,
+      "normalized_sha256": "238bad8ec738767b987540a541a587563d6d305249508e0330db734af083e946"
     },
     "crates/cli/src/commands/dedupe.rs": {
       "role": "index",
@@ -796,9 +796,9 @@
     },
     "crates/core/src/xlsx.rs": {
       "role": "index",
-      "sha256": "735c0732d089d0a679d7c096d4b1a012693ff3d016491d548d15e73ede62cdce",
-      "size": 142842,
-      "normalized_sha256": "735c0732d089d0a679d7c096d4b1a012693ff3d016491d548d15e73ede62cdce"
+      "sha256": "cd4253ab2ee2928db87f7c2cff3355063c6b8962f486d48bf62da30662692cc9",
+      "size": 144889,
+      "normalized_sha256": "cd4253ab2ee2928db87f7c2cff3355063c6b8962f486d48bf62da30662692cc9"
     },
     "crates/core/tests/partition.rs": {
       "role": "observe",
@@ -1198,15 +1198,15 @@
     },
     "docs/XLSX.md": {
       "role": "index",
-      "sha256": "add61a56690704dd3d0f49bc196597e7e9ef245e9b482b177439599d7557ee4a",
-      "size": 3802,
-      "normalized_sha256": "add61a56690704dd3d0f49bc196597e7e9ef245e9b482b177439599d7557ee4a"
+      "sha256": "1d3f4ee8fc55b29d9bf84f8bb032061d56402ecbc9256c7c732f426735869d58",
+      "size": 3862,
+      "normalized_sha256": "1d3f4ee8fc55b29d9bf84f8bb032061d56402ecbc9256c7c732f426735869d58"
     },
     "docs/XLSX_ENGINE.md": {
       "role": "index",
-      "sha256": "f518691d5a3433ccf82546f33d30a48a6911dafe6fbdb7db38527f5de53ccf6e",
-      "size": 9093,
-      "normalized_sha256": "f518691d5a3433ccf82546f33d30a48a6911dafe6fbdb7db38527f5de53ccf6e"
+      "sha256": "257d01c067a25815df182e1eba535961fd12467c9c0399dae026f766c0a02a06",
+      "size": 9156,
+      "normalized_sha256": "257d01c067a25815df182e1eba535961fd12467c9c0399dae026f766c0a02a06"
     },
     "docs/bench-100gb-2026-11-26.json": {
       "role": "index",
@@ -1260,9 +1260,9 @@
     },
     "progress.md": {
       "role": "index",
-      "sha256": "7a4d8073d24ef7fab567e545f0ee3652602eb6044471a0328ffe6f06b5b5caca",
-      "size": 155024,
-      "normalized_sha256": "7a4d8073d24ef7fab567e545f0ee3652602eb6044471a0328ffe6f06b5b5caca"
+      "sha256": "44c35f76fc0ea19bd7f3eb0cfd3c12b585f2274a641872f2d6ebc31a223bc7a9",
+      "size": 155607,
+      "normalized_sha256": "44c35f76fc0ea19bd7f3eb0cfd3c12b585f2274a641872f2d6ebc31a223bc7a9"
     },
     "scripts/agent_routes_smoke.py": {
       "role": "index",

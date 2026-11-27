@@ -191,6 +191,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut highlight: Option<String> = None;
     let mut number_format: Option<String> = None;
     let mut no_freeze = false;
+    let mut no_auto_filter = false;
     let mut show_formats = false;
     let mut formats_json = false;
     let mut delim = "comma".to_string();
@@ -221,6 +222,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             "--all-sheets" => all_sheets = true,
             "--no-freeze" => no_freeze = true,
+            "--no-auto-filter" => no_auto_filter = true,
             "--formats" => show_formats = true,
             "--json" => formats_json = true,
             "--number-format" => match p.value("--number-format") {
@@ -436,8 +438,13 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                     }
                 }
             }
-            let result = if no_freeze {
-                csvx_core::xlsx::write_sheets_without_freeze(&out, &sheets)
+            let result = if no_freeze || no_auto_filter {
+                csvx_core::xlsx::write_sheets_with_options(
+                    &out,
+                    &sheets,
+                    !no_freeze,
+                    !no_auto_filter,
+                )
             } else {
                 csvx_core::xlsx::write_sheets(&out, &sheets)
             };
@@ -614,15 +621,18 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         }
         let (tx, rx) = mpsc::channel();
         let reporter = spawn_reporter("convert", rx, true);
+        let xlsx_choices = no_freeze || no_auto_filter;
         let result = if !column_formats.is_empty() {
-            if no_freeze {
-                csvx_core::xlsx::csv_to_xlsx_without_freeze(
+            if xlsx_choices {
+                csvx_core::xlsx::csv_to_xlsx_with_options(
                     &input,
                     &out,
                     delimiter,
                     &tx,
                     &rules,
                     &column_formats,
+                    !no_freeze,
+                    !no_auto_filter,
                 )
             } else {
                 csvx_core::xlsx::csv_to_xlsx_with_number_formats(
@@ -635,13 +645,31 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 )
             }
         } else if rules.is_empty() {
-            if no_freeze {
-                csvx_core::xlsx::csv_to_xlsx_without_freeze(&input, &out, delimiter, &tx, &[], &[])
+            if xlsx_choices {
+                csvx_core::xlsx::csv_to_xlsx_with_options(
+                    &input,
+                    &out,
+                    delimiter,
+                    &tx,
+                    &[],
+                    &[],
+                    !no_freeze,
+                    !no_auto_filter,
+                )
             } else {
                 csvx_core::engine::convert_format(&input, &out, &target, delimiter, &tx)
             }
-        } else if no_freeze {
-            csvx_core::xlsx::csv_to_xlsx_without_freeze(&input, &out, delimiter, &tx, &rules, &[])
+        } else if xlsx_choices {
+            csvx_core::xlsx::csv_to_xlsx_with_options(
+                &input,
+                &out,
+                delimiter,
+                &tx,
+                &rules,
+                &[],
+                !no_freeze,
+                !no_auto_filter,
+            )
         } else {
             csvx_core::xlsx::csv_to_xlsx_with_rules(&input, &out, delimiter, &tx, &rules)
         };

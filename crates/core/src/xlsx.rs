@@ -252,6 +252,34 @@ pub fn csv_to_xlsx_without_auto_filter(
     result
 }
 
+/// Export a CSV-as-xlsx sheet with explicit freeze and auto-filter choices.
+#[allow(clippy::too_many_arguments)]
+pub fn csv_to_xlsx_with_options(
+    input: &Path,
+    output: &Path,
+    delimiter: Delimiter,
+    tx: &ProgressSender,
+    rules: &[ConditionalRule],
+    formats: &[(String, crate::layout::NumberFormat)],
+    freeze_header: bool,
+    auto_filter: bool,
+) -> std::io::Result<()> {
+    let result = csv_to_xlsx_inner(
+        input,
+        output,
+        delimiter,
+        tx,
+        rules,
+        formats,
+        freeze_header,
+        auto_filter,
+    );
+    if result.is_err() {
+        let _ = std::fs::remove_file(output);
+    }
+    result
+}
+
 /// Export a CSV-as-xlsx sheet without freezing the header row.
 pub fn csv_to_xlsx_without_freeze(
     input: &Path,
@@ -427,6 +455,16 @@ fn csv_to_xlsx_inner(
 /// Write multiple in-memory sheets (used by report/agent exports later).
 pub fn write_sheets(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
     write_sheets_with_formats(output, sheets, &[])
+}
+
+/// Write sheets with explicit freeze and auto-filter choices.
+pub fn write_sheets_with_options(
+    output: &Path,
+    sheets: &[Sheet],
+    freeze_header: bool,
+    auto_filter: bool,
+) -> std::io::Result<()> {
+    write_sheets_inner(output, sheets, &[], freeze_header, auto_filter)
 }
 
 /// Write sheets without a header auto-filter.
@@ -3409,6 +3447,35 @@ mod tests {
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
         assert!(!sheet.contains("<autoFilter"), "{sheet}");
         assert!(sheet.contains("<pane "), "{sheet}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn options_can_disable_freeze_and_filter_with_formats() {
+        use crate::layout::NumberFormat;
+        let dir = temp_path("options");
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("options.csv");
+        let output = dir.join("options.xlsx");
+        std::fs::write(&input, "id,amount\n1,10\n2,20\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let formats = vec![("amount".to_string(), NumberFormat::parse("0.00").unwrap())];
+        csv_to_xlsx_with_options(
+            &input,
+            &output,
+            Delimiter::Comma,
+            &tx,
+            &[],
+            &formats,
+            false,
+            false,
+        )
+        .unwrap();
+        let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
+        assert!(!sheet.contains("<pane "), "{sheet}");
+        assert!(!sheet.contains("<autoFilter"), "{sheet}");
+        let styles = read_zip(&output, "xl/styles.xml");
+        assert!(styles.contains("formatCode=\"0.00\""), "{styles}");
         std::fs::remove_dir_all(dir).ok();
     }
 
