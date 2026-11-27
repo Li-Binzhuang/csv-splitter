@@ -110,8 +110,10 @@
   非法参数/空区间 `#VALUE!`；测试扩展 `percentrank_and_percentile_aliases_read_same_row_ranges`。
 - [x] 项268 众数别名（功能级）：`MODE.SNGL(array)`；
   空区间/无众数 `#VALUE!`；测试扩展 `mode_picks_the_most_frequent_value_of_a_same_row_range`。
-- [ ] 项269 众数多值（功能级）：`MODE.MULT(array)`；
-  仅支持首众数/无众数 `#VALUE!`；验收：单测 + gate。
+- [x] 项269 众数多值（功能级）：`MODE.MULT(array)`；
+  仅支持首众数/无众数 `#VALUE!`；测试扩展 `mode_picks_the_most_frequent_value_of_a_same_row_range`。
+- [ ] 项270 数组转文本（功能级）：`ARRAYTOTEXT(array, [format])`；
+  单行区间转逗号分隔文本；非法 format/空区间 `#VALUE!`；验收：单测 + gate。
 - [ ] 项264 精确伽马对数（功能级）：`GAMMALN.PRECISE(x)`；
   非正/非有限 `#VALUE!`；验收：单测 + gate。
 - [x] 项263 逻辑/非文本判断（功能级）：`ISLOGICAL`/`ISNONTEXT`；
@@ -401,6 +403,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 294（项269 MODE.MULT，功能级）：首众数、无众数；
+定向与全量 gate/package 通过；发布包 SHA `b0d2115e…0aa32c1f`；
+push 已在轮首成功，本轮不再 push；AOCI 仍 Not connected。
 
 Round 293（项268 MODE.SNGL，功能级）：众数别名、并列/无众数；
 定向与全量 gate/package 通过；发布包 SHA `06b29f12…13af212`；

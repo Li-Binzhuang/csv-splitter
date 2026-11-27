@@ -3322,7 +3322,7 @@ mod tests {
         for (name, value) in [("a", "10"), ("b", "3"), ("c", "10"), ("d", "7")] {
             cells.insert(name.to_string(), value.to_string());
         }
-        for source in ["mode(A2:D2)", "mode.sngl(A2:D2)"] {
+        for source in ["mode(A2:D2)", "mode.sngl(A2:D2)", "mode.mult(A2:D2)"] {
             let formula = Formula::parse(source).unwrap();
             assert_eq!(
                 formula
