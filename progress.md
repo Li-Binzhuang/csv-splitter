@@ -352,9 +352,11 @@
   测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [x] 项387 条件格式 beginsWith/endsWith（功能级）：LEFT/RIGHT 公式；
   测试 `conditional_rules_support_top_and_bottom_ranks`。
-- [ ] 项388 条件格式空值规则（功能级）：空/非空单元格规则；
-  验收：单测 + gate。
+- [x] 项388 条件格式空值规则（功能级）：containsBlanks/notContainsBlanks；
+  测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [ ] 项389 条件格式 between 规则（功能级）：区间 cellIs between；
+  验收：单测 + gate。
+- [ ] 项390 条件格式 notContainsText（功能级）：不含文本规则；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -637,6 +639,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 412（项388 条件格式空值，功能级）：blank/nonblank；
+定向与全量 gate/package 通过；发布包 SHA `fda4529f…f375758f`；
+轮首 push 成功，本轮不再 push。
 
 Round 411（项387 条件格式前缀/后缀，功能级）：beginsWith/endsWith；
 定向与全量 gate/package 通过；发布包 SHA `9a1af3c2…ce775fd5`；

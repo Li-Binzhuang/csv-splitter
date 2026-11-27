@@ -809,6 +809,26 @@ fn conditional_formatting_xml(
             "=" => ("equal", Some(rule.value.clone())),
             "!=" => ("notEqual", Some(rule.value.clone())),
             // Excel's Top 10 / Bottom 10 family: the rank is N, not a comparison.
+            "blank" | "containsBlanks" | "nonblank" | "notContainsBlanks" => {
+                let blank = rule.operator == "blank" || rule.operator == "containsBlanks";
+                let (kind, formula) = if blank {
+                    (
+                        "containsBlanks",
+                        format!("LEN(TRIM({col}2))=0", col = column_name(column)),
+                    )
+                } else {
+                    (
+                        "notContainsBlanks",
+                        format!("LEN(TRIM({col}2))>0", col = column_name(column)),
+                    )
+                };
+                out.push_str(&format!(
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"{kind}\" dxfId=\"{index}\" priority=\"{priority}\"><formula>{formula}</formula></cfRule></conditionalFormatting>",
+                    col = column_name(column),
+                    priority = index + 1,
+                ));
+                continue;
+            }
             "beginsWith" | "startsWith" | "endsWith" => {
                 let text = xml_attr(&rule.value);
                 let (kind, formula) = if rule.operator == "endsWith" {
@@ -2232,6 +2252,18 @@ mod tests {
                 value: "00".into(),
                 color: "orange".into(),
             },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "blank".into(),
+                value: String::new(),
+                color: "gray".into(),
+            },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "nonblank".into(),
+                value: String::new(),
+                color: "cyan".into(),
+            },
         ];
         let (tx, _rx) = std::sync::mpsc::channel();
         csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
@@ -2258,6 +2290,10 @@ mod tests {
         assert!(sheet.contains("LEFT(B2,LEN(\"12\"))=\"12\""), "{sheet}");
         assert!(sheet.contains("type=\"endsWith\""), "{sheet}");
         assert!(sheet.contains("RIGHT(B2,LEN(\"00\"))=\"00\""), "{sheet}");
+        assert!(sheet.contains("type=\"containsBlanks\""), "{sheet}");
+        assert!(sheet.contains("LEN(TRIM(B2))=0"), "{sheet}");
+        assert!(sheet.contains("type=\"notContainsBlanks\""), "{sheet}");
+        assert!(sheet.contains("LEN(TRIM(B2))>0"), "{sheet}");
 
         let bad = vec![ConditionalRule {
             column: "amount".into(),
