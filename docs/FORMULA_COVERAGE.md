@@ -232,7 +232,7 @@
 | XNPV | 支持（功能级新增） | 按实际天数/365 折现；values/dates 等长；非法日期/利率 `#VALUE!` |
 | GCD / LCM / FACT / COMBIN / PERMUT | 支持（功能级新增） | 非负整数；FACT≤170；非法/非整数 `#VALUE!` |
 | MROUND / CEILING.PRECISE / FLOOR.PRECISE | 支持（功能级新增） | MROUND 同号倍数；PRECISE 忽略 significance 符号；零倍数/非法参数 `#VALUE!` |
-| DECIMAL / BASE | 支持（功能级新增） | 2–36 进制；DECIMAL 大小写/符号，BASE 非负整数与 min_length 0–255 |
+| DECIMAL / BASE | 支持（功能级新增） | 2–36 进制；DECIMAL 非法字符/仅符号报错，BASE 非负整数/min_length 0–255 |
 | BITAND / BITOR / BITXOR | 支持（功能级新增） | 48 位非负整数；非法/非整数/超范围 `#VALUE!` |
 
 ## 本轮验收（首批补齐）

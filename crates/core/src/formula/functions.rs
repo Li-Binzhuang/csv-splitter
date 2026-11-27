@@ -5428,11 +5428,16 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             };
             let mut text = text.trim();
             let negative = text.starts_with('-');
-            if negative || text.starts_with('+') {
+            let signed = negative || text.starts_with('+');
+            if signed {
                 text = &text[1..];
             }
             if text.is_empty() {
-                return Value::Number(0.0);
+                return if signed {
+                    Value::Error
+                } else {
+                    Value::Number(0.0)
+                };
             }
             let mut value = 0.0f64;
             for ch in text.chars() {

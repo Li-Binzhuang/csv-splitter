@@ -2296,6 +2296,10 @@ mod tests {
         assert_eq!(eval_str(r#"decimal("", 2)"#, &[]), "0");
         for source in [
             r#"decimal("2", 2)"#,
+            r#"decimal("G", 16)"#,
+            r#"decimal("1.5", 2)"#,
+            r#"decimal("-", 2)"#,
+            r#"decimal("+", 2)"#,
             r#"decimal("FF", 1)"#,
             r#"decimal("FF", 37)"#,
         ] {
