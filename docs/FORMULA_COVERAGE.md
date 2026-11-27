@@ -130,6 +130,7 @@
 | DB / DDB / VDB | 支持（功能级新增） | 固定/双倍/变动余额递减；区间、月数、因子非法 `#VALUE!` |
 | FVSCHEDULE | 支持（功能级新增） | 复利 schedule 区间；空区间/rate≤-1 `#VALUE!` |
 | SUMXMY2 / SUMX2MY2 / SUMX2PY2 | 支持（功能级新增） | 同行等长 x/y、空区间/长度不等 `#VALUE!` |
+| ISREF | 支持（功能级新增） | 不求得值，按表达式形状判断引用；无参 `#VALUE!` |
 | HYPGEOM.INV | 支持（功能级新增） | 最小分位使累积≥alpha；alpha∈[0,1]；非法 `#VALUE!` |
 | BESSELK | 支持（功能级新增） | 整数阶 0–20、x>0；数值积分+递推；非法 `#VALUE!` |
 | HYPGEOM.DIST | 支持（功能级新增） | 质量/累积；N/K/n/s 整数与边界校验；非法 `#VALUE!` |

@@ -3504,6 +3504,21 @@ mod tests {
     }
 
     #[test]
+    fn isref_recognizes_references_without_evaluating() {
+        for (source, expected) in [
+            ("isref(A1)", "TRUE"),
+            ("isref(A1:B1)", "TRUE"),
+            ("isref(1)", "FALSE"),
+            (r#"isref("A1")"#, "FALSE"),
+            ("isref(sum(A1:B1))", "FALSE"),
+            ("isref(na())", "FALSE"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        assert_eq!(eval_str("isref()", &[]), "#VALUE!");
+    }
+
+    #[test]
     fn hypgeom_inv_finds_cutoff() {
         for (source, expected) in [
             ("hypgeom.inv(4, 8, 20, 0.5)", "2"),

@@ -937,6 +937,12 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             None => Value::Error,
         },
+        // ISREF tests the unevaluated expression shape: only references are TRUE.
+        "isref" => match args.first() {
+            Some(Expr::CellRef { .. }) | Some(Expr::Range { .. }) => Value::Bool(true),
+            Some(_) => Value::Bool(false),
+            None => Value::Error,
+        },
         "istext" => match args.first() {
             Some(arg) => Value::Bool(matches!(eval(arg, ctx), Value::Text(_))),
             None => Value::Error,
