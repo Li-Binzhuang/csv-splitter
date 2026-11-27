@@ -2605,6 +2605,19 @@ mod tests {
             .to_string();
         assert!(err.contains("greater than 0"), "{err}");
 
+        for preset in ["4Arrows", "3TrafficLights2"] {
+            let bad = vec![ConditionalRule {
+                column: "amount".into(),
+                operator: "iconSet".into(),
+                value: preset.into(),
+                color: String::new(),
+            }];
+            let err = csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &bad)
+                .unwrap_err()
+                .to_string();
+            assert!(err.contains("is not supported"), "{preset}: {err}");
+        }
+
         for value in ["", "red"] {
             let bad = vec![ConditionalRule {
                 column: "amount".into(),
