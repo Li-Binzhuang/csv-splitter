@@ -4092,6 +4092,56 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // T.INV: left-tail inverse of the Student t distribution.
+        "t.inv" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let (Some(probability), Some(degrees)) =
+                (eval(&args[0], ctx).number(), eval(&args[1], ctx).number())
+            else {
+                return Value::Error;
+            };
+            if !probability.is_finite()
+                || !degrees.is_finite()
+                || !(0.0..1.0).contains(&probability)
+                || degrees <= 0.0
+            {
+                return Value::Error;
+            }
+            let cumulative = |value: f64| {
+                let tail =
+                    0.5 * regularized_beta(degrees / (degrees + value * value), degrees / 2.0, 0.5);
+                if value < 0.0 {
+                    tail
+                } else {
+                    1.0 - tail
+                }
+            };
+            let mut low = -1.0;
+            while cumulative(low) > probability {
+                low *= 2.0;
+                if low < -1.0e9 {
+                    return Value::Error;
+                }
+            }
+            let mut high = 1.0;
+            while cumulative(high) < probability {
+                high *= 2.0;
+                if high > 1.0e9 {
+                    return Value::Error;
+                }
+            }
+            for _ in 0..200 {
+                let middle = (low + high) / 2.0;
+                if cumulative(middle) < probability {
+                    low = middle;
+                } else {
+                    high = middle;
+                }
+            }
+            Value::Number((low + high) / 2.0)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

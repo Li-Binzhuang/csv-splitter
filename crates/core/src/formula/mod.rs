@@ -3504,6 +3504,27 @@ mod tests {
     }
 
     #[test]
+    fn t_inv_returns_quantiles() {
+        for (source, expected) in [
+            ("t.inv(0.5, 1)", "0"),
+            ("t.inv(0.75, 1)", "1"),
+            ("t.inv(0.25, 1)", "-1"),
+            ("t.inv(0.5, 10)", "0"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "t.inv(0, 1)",
+            "t.inv(1, 1)",
+            "t.inv(0.5, 0)",
+            r#"t.inv("x", 1)"#,
+            "t.inv(0.5)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn t_dist_two_tail_works() {
         for (source, expected) in [
             ("t.dist.2t(0, 1)", "1"),
