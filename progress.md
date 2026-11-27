@@ -426,11 +426,13 @@
   测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [x] 项424 条件格式 notBetween XML 文本边界（功能级）：`&` 边界转义；
   测试 `conditional_rules_support_top_and_bottom_ranks`。
-- [ ] 项425 条件格式 dxf 样式去重（功能级）：同色规则复用 dxfId；
-  验收：单测 + gate。
+- [x] 项425 条件格式 dxf 样式去重（功能级）：同色规则复用 dxfId；dxfs count=唯一色；
+  测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [ ] 项426 条件格式 dxf 样式去重跨列（功能级）：不同列同色；
   验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
+  验收：单测 + gate。
+- [ ] 项428 条件格式 dxf 蓝色规则同 id 断言（功能级）：蓝色多规则同 dxfId；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -713,6 +715,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 445（项425 条件格式 dxf 去重，功能级）：唯一色 4；
+定向与全量 gate/package 通过；发布包 SHA `1618df95…18bfb53f8`；
+轮首 push 成功，本轮不再 push。
 
 Round 444（项424 notBetween XML 文本边界，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `f86e5348…736233`；

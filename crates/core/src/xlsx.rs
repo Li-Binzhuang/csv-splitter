@@ -752,6 +752,28 @@ fn dxf_color(name: &str) -> Option<(&'static str, &'static str)> {
     }
 }
 
+fn dxf_colors(rules: &[ConditionalRule]) -> Vec<(&'static str, &'static str)> {
+    let mut colors = Vec::new();
+    for rule in rules {
+        let color = dxf_color(&rule.color).unwrap_or(("FFFFC7CE", "FFFFC7CE"));
+        if !colors.contains(&color) {
+            colors.push(color);
+        }
+    }
+    colors
+}
+
+fn dxf_ids(rules: &[ConditionalRule]) -> Vec<usize> {
+    let colors = dxf_colors(rules);
+    rules
+        .iter()
+        .map(|rule| {
+            let color = dxf_color(&rule.color).unwrap_or(("FFFFC7CE", "FFFFC7CE"));
+            colors.iter().position(|item| *item == color).unwrap_or(0)
+        })
+        .collect()
+}
+
 fn styles_xml_with_rules_and_formats(
     rules: &[ConditionalRule],
     formats: &[(String, crate::layout::NumberFormat)],
@@ -762,11 +784,11 @@ fn styles_xml_with_rules_and_formats(
     if rules.is_empty() {
         return (out, map);
     }
+    let colors = dxf_colors(rules);
     let mut dxfs = String::from("<dxfs count=\"");
-    dxfs.push_str(&rules.len().to_string());
+    dxfs.push_str(&colors.len().to_string());
     dxfs.push_str("\">");
-    for rule in rules {
-        let (fg, bg) = dxf_color(&rule.color).unwrap_or(("FFFFC7CE", "FFFFC7CE"));
+    for (fg, bg) in colors {
         dxfs.push_str(&format!(
             "<dxf><fill><patternFill patternType=\"solid\"><fgColor rgb=\"{fg}\"/><bgColor rgb=\"{bg}\"/></patternFill></fill></dxf>"
         ));
@@ -815,7 +837,9 @@ fn conditional_formatting_xml(
     last_row: u64,
 ) -> std::io::Result<String> {
     let mut out = String::new();
+    let dxf_ids = dxf_ids(rules);
     for (index, rule) in rules.iter().enumerate() {
+        let dxf = dxf_ids[index];
         let column = headers
             .iter()
             .position(|header| header == &rule.column)
@@ -849,7 +873,7 @@ fn conditional_formatting_xml(
                 let first = quote_formula(parts[0]);
                 let second = quote_formula(parts[1]);
                 out.push_str(&format!(
-                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"cellIs\" dxfId=\"{index}\" priority=\"{priority}\" operator=\"{operator}\"><formula>{first}</formula><formula>{second}</formula></cfRule></conditionalFormatting>",
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"cellIs\" dxfId=\"{dxf}\" priority=\"{priority}\" operator=\"{operator}\"><formula>{first}</formula><formula>{second}</formula></cfRule></conditionalFormatting>",
                     col = column_name(column),
                     priority = index + 1,
                 ));
@@ -869,7 +893,7 @@ fn conditional_formatting_xml(
                     )
                 };
                 out.push_str(&format!(
-                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"{kind}\" dxfId=\"{index}\" priority=\"{priority}\"><formula>{formula}</formula></cfRule></conditionalFormatting>",
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"{kind}\" dxfId=\"{dxf}\" priority=\"{priority}\"><formula>{formula}</formula></cfRule></conditionalFormatting>",
                     col = column_name(column),
                     priority = index + 1,
                 ));
@@ -902,7 +926,7 @@ fn conditional_formatting_xml(
                     )
                 };
                 out.push_str(&format!(
-                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"{kind}\" dxfId=\"{index}\" priority=\"{priority}\" operator=\"{kind}\" text=\"{text}\"><formula>{formula}</formula></cfRule></conditionalFormatting>",
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"{kind}\" dxfId=\"{dxf}\" priority=\"{priority}\" operator=\"{kind}\" text=\"{text}\"><formula>{formula}</formula></cfRule></conditionalFormatting>",
                     col = column_name(column),
                     priority = index + 1,
                 ));
@@ -971,7 +995,7 @@ fn conditional_formatting_xml(
                     ),
                 };
                 out.push_str(&format!(
-                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"timePeriod\" dxfId=\"{index}\" priority=\"{priority}\" timePeriod=\"{period}\"><formula>{formula}</formula></cfRule></conditionalFormatting>",
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"timePeriod\" dxfId=\"{dxf}\" priority=\"{priority}\" timePeriod=\"{period}\"><formula>{formula}</formula></cfRule></conditionalFormatting>",
                     priority = index + 1,
                 ));
                 continue;
@@ -1004,7 +1028,7 @@ fn conditional_formatting_xml(
                     "uniqueValues"
                 };
                 out.push_str(&format!(
-                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"{kind}\" dxfId=\"{index}\" priority=\"{priority}\"/></conditionalFormatting>",
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"{kind}\" dxfId=\"{dxf}\" priority=\"{priority}\"/></conditionalFormatting>",
                     col = column_name(column),
                     priority = index + 1,
                 ));
@@ -1018,7 +1042,7 @@ fn conditional_formatting_xml(
                     format!("{col}2<AVERAGE({col}:{col})")
                 };
                 out.push_str(&format!(
-                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"{kind}\" dxfId=\"{index}\" priority=\"{priority}\"><formula>{formula}</formula></cfRule></conditionalFormatting>",
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"{kind}\" dxfId=\"{dxf}\" priority=\"{priority}\"><formula>{formula}</formula></cfRule></conditionalFormatting>",
                     kind = rule.operator,
                     priority = index + 1,
                 ));
@@ -1030,7 +1054,7 @@ fn conditional_formatting_xml(
                 }
                 let text = xml_attr(&rule.value);
                 out.push_str(&format!(
-                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"notContainsText\" dxfId=\"{index}\" priority=\"{priority}\" operator=\"notContainsText\" text=\"{text}\"><formula>ISERROR(SEARCH({literal},{col}2))</formula></cfRule></conditionalFormatting>",
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"notContainsText\" dxfId=\"{dxf}\" priority=\"{priority}\" operator=\"notContainsText\" text=\"{text}\"><formula>ISERROR(SEARCH({literal},{col}2))</formula></cfRule></conditionalFormatting>",
                     literal = formula_literal(&rule.value),
                     col = column_name(column),
                     priority = index + 1,
@@ -1043,7 +1067,7 @@ fn conditional_formatting_xml(
                 }
                 let text = xml_attr(&rule.value);
                 out.push_str(&format!(
-                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"containsText\" dxfId=\"{index}\" priority=\"{priority}\" operator=\"containsText\" text=\"{text}\"><formula>NOT(ISERROR(SEARCH({literal},{col}2)))</formula></cfRule></conditionalFormatting>",
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"containsText\" dxfId=\"{dxf}\" priority=\"{priority}\" operator=\"containsText\" text=\"{text}\"><formula>NOT(ISERROR(SEARCH({literal},{col}2)))</formula></cfRule></conditionalFormatting>",
                     literal = formula_literal(&rule.value),
                     col = column_name(column),
                     priority = index + 1,
@@ -1105,7 +1129,7 @@ fn conditional_formatting_xml(
                 };
                 let percent = if percent { " percent=\"1\"" } else { "" };
                 out.push_str(&format!(
-                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"{kind}\" dxfId=\"{index}\" priority=\"{priority}\" rank=\"{rank}\"{percent}/></conditionalFormatting>",
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"{kind}\" dxfId=\"{dxf}\" priority=\"{priority}\" rank=\"{rank}\"{percent}/></conditionalFormatting>",
                     col = column_name(column),
                     priority = index + 1,
                 ));
@@ -1125,7 +1149,7 @@ fn conditional_formatting_xml(
             }
         });
         out.push_str(&format!(
-            "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"cellIs\" dxfId=\"{index}\" priority=\"{priority}\" operator=\"{operator}\"><formula>{formula}</formula></cfRule></conditionalFormatting>",
+            "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"cellIs\" dxfId=\"{dxf}\" priority=\"{priority}\" operator=\"{operator}\"><formula>{formula}</formula></cfRule></conditionalFormatting>",
             col = column_name(column),
             priority = index + 1,
             formula = formula.unwrap_or_default()
@@ -2710,6 +2734,9 @@ mod tests {
             sheet.contains("DATE(YEAR(TODAY()),MONTH(TODAY())+1,1)"),
             "{sheet}"
         );
+        let styles = read_zip(&output, "xl/styles.xml");
+        assert!(styles.contains("<dxfs count=\"4\">"), "{styles}");
+        assert!(sheet.contains("dxfId=\"3\""), "{sheet}");
 
         let bad = vec![ConditionalRule {
             column: "amount".into(),
