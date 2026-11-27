@@ -228,6 +228,9 @@ impl NumberFormat {
             Self::Currency { symbol, places } => {
                 format!("{symbol}{}", group(&format!("{number:.places$}")))
             }
+            Self::DateTime { pattern } if pattern.eq_ignore_ascii_case("[h]:mm:ss") => {
+                render_elapsed(number)
+            }
             Self::DateTime { pattern } => {
                 render_date_time(pattern, value).unwrap_or_else(|| value.to_string())
             }
@@ -338,12 +341,23 @@ fn is_date_time_pattern(spec: &str) -> bool {
             | "yyyy-mm-dd hh:mm:ss am/pm"
             | "hh:mm"
             | "hh:mm:ss"
+            | "[h]:mm:ss"
             | "h am/pm"
             | "hh am/pm"
             | "h:mm am/pm"
             | "hh:mm am/pm"
             | "h:mm:ss am/pm"
     )
+}
+
+fn render_elapsed(number: f64) -> String {
+    let negative = number < 0.0;
+    let total = (number.abs() * 86_400.0).round() as i64;
+    let hours = total / 3_600;
+    let minutes = (total % 3_600) / 60;
+    let seconds = total % 60;
+    let sign = if negative { "-" } else { "" };
+    format!("{sign}{hours}:{minutes:02}:{seconds:02}")
 }
 
 fn render_date_time(pattern: &str, value: &str) -> Option<String> {
@@ -990,6 +1004,11 @@ mod tests {
             short_seconds.render("2024-01-02 13:04:05"),
             "1/2/24 13:04:05"
         );
+        let elapsed = NumberFormat::parse("[h]:mm:ss").unwrap();
+        assert_eq!(elapsed.name(), "[h]:mm:ss");
+        assert_eq!(elapsed.render("0.5"), "12:00:00");
+        assert_eq!(elapsed.render("1.5"), "36:00:00");
+        assert_eq!(elapsed.render("2.25"), "54:00:00");
         let seconds = NumberFormat::parse("hh:mm:ss").unwrap();
         assert_eq!(seconds.render("13:04:05"), "13:04:05");
         let ampm = NumberFormat::parse("h:mm AM/PM").unwrap();

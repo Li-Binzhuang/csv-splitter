@@ -222,9 +222,11 @@
   整数阶 0–20、x>0；非法 `#VALUE!`；测试 `bessely_returns_second_kind_values`。
 - [x] 项278 xlsx 列格式去重（功能级）：多行重复格式只生成一个 numFmt，列数不重复；
   测试 `repeated_column_formats_are_deduplicated_across_rows`。
-- [ ] 项323 经过时间格式（功能级）：`[h]:mm:ss` 解析/显示，超过 24 小时累计；
-  验收：单测 + gate。
+- [x] 项323 经过时间格式（功能级）：`[h]:mm:ss` 数值显示，超过 24 小时累计；
+  测试 `date_time_formats_render_iso_values`（0.5/1.5/2.25）。
 - [ ] 项324 WEEKNUM 周起始扩展（功能级）：return_type 2/11–17 支持周一起算；
+  验收：单测 + gate。
+- [ ] 项325 经过时间格式导出（功能级）：`[h]:mm:ss` xlsx 样式并保证 hours>24 round-trip；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -507,6 +509,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 347（项323 经过时间格式，功能级）：`[h]:mm:ss` 数值显示，跨 24 小时累计；
+定向与全量 gate/package 通过；发布包 SHA `c3f8e6a4…69097d9`；
+轮首 push 成功，本轮不再 push。
 
 Round 346（项278 列格式去重，功能级）：多行重复格式只写一个 numFmt；真实修复/验证项；
 定向与全量 gate/package 通过；发布包 SHA `8d30229f…91542556`；
