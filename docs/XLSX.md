@@ -70,7 +70,8 @@ MCP：
 csvx convert data.csv --format xlsx -o data.xlsx \
   --highlight "amount>1000:red;status=bad:amber" \
   --no-freeze --no-auto-filter \
-  --data-validation "status:good,ok,bad"
+  --data-validation "status:good,ok,bad" \
+  --data-validation-prompt "status:Status|Choose one"
 ```
 
 - 规则用 `;` 分隔，每条 `列 操作符 值 : 颜色`；
@@ -81,6 +82,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 - `--no-freeze` 省略表头冻结行；
 - `--no-auto-filter` 省略表头筛选；
 - `--data-validation` 写下拉列表，格式 `列:值1,值2,值3`；重复列/空列表/非 xlsx 退出 2；
+- `--data-validation-prompt` 写选中提示，格式 `列:标题|正文`；列须已有验证；
 - 目录→workbook 不支持 `--highlight`。
 
 ## 尚未实现

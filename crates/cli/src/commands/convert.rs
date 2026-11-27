@@ -74,6 +74,30 @@ fn parse_data_validations(text: &str) -> Result<Vec<csvx_core::xlsx::DataValidat
     Ok(validations)
 }
 
+fn parse_validation_prompts(text: &str) -> Result<Vec<(String, String, String)>, String> {
+    let mut prompts = Vec::new();
+    for raw in split_format_specs(text) {
+        let (column, body) = raw
+            .split_once(':')
+            .ok_or_else(|| format!("validation prompt {raw:?} needs column:title|message"))?;
+        let column = column.trim().to_string();
+        let (title, message) = body
+            .split_once('|')
+            .ok_or_else(|| format!("validation prompt {raw:?} needs title|message"))?;
+        if column.is_empty() {
+            return Err(format!("validation prompt {raw:?} needs a column"));
+        }
+        if prompts.iter().any(|(name, _, _)| name == &column) {
+            return Err(format!("validation prompt column {column:?} is repeated"));
+        }
+        prompts.push((column, title.trim().to_string(), message.trim().to_string()));
+    }
+    if prompts.is_empty() {
+        return Err("--data-validation-prompt needs column:title|message".to_string());
+    }
+    Ok(prompts)
+}
+
 /// Split `a:fmt;b:fmt` on semicolons that are not inside an accounting `(...)`.
 fn json_string(text: &str) -> String {
     let mut out = String::with_capacity(text.len() + 2);
@@ -233,6 +257,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut no_freeze = false;
     let mut no_auto_filter = false;
     let mut data_validation: Option<String> = None;
+    let mut data_validation_prompt: Option<String> = None;
     let mut show_formats = false;
     let mut formats_json = false;
     let mut delim = "comma".to_string();
@@ -264,6 +289,13 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--all-sheets" => all_sheets = true,
             "--no-freeze" => no_freeze = true,
             "--no-auto-filter" => no_auto_filter = true,
+            "--data-validation-prompt" => match p.value("--data-validation-prompt") {
+                Ok(v) => data_validation_prompt = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--data-validation" => match p.value("--data-validation") {
                 Ok(v) => data_validation = Some(v),
                 Err(e) => {
@@ -542,7 +574,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             None => Vec::new(),
         };
-        let data_validations = match data_validation.as_deref() {
+        let mut data_validations = match data_validation.as_deref() {
             Some(_) if !target.eq_ignore_ascii_case("xlsx") => {
                 eprintln!("error: --data-validation is only valid with --format xlsx");
                 return 2;
@@ -556,6 +588,31 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             None => Vec::new(),
         };
+        let validation_prompts = match data_validation_prompt.as_deref() {
+            Some(_) if !target.eq_ignore_ascii_case("xlsx") => {
+                eprintln!("error: --data-validation-prompt is only valid with --format xlsx");
+                return 2;
+            }
+            Some(text) => match parse_validation_prompts(text) {
+                Ok(prompts) => prompts,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            None => Vec::new(),
+        };
+        for (column, title, message) in validation_prompts {
+            let Some(validation) = data_validations
+                .iter_mut()
+                .find(|validation| validation.column == column)
+            else {
+                eprintln!("error: data validation prompt column {column:?} has no validation");
+                return 2;
+            };
+            validation.prompt_title = (!title.is_empty()).then_some(title);
+            validation.prompt_message = (!message.is_empty()).then_some(message);
+        }
         let input_name = input
             .file_name()
             .and_then(|name| name.to_str())
