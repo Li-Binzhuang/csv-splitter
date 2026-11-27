@@ -3504,6 +3504,26 @@ mod tests {
     }
 
     #[test]
+    fn f_dist_right_tail_works() {
+        for (source, expected) in [
+            ("f.dist.rt(1, 1, 1)", "0.5"),
+            ("f.dist.rt(1, 2, 2)", "0.5"),
+            ("f.dist.rt(0, 1, 1)", "1"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "f.dist.rt(-1, 1, 1)",
+            "f.dist.rt(1, 0, 1)",
+            "f.dist.rt(1, 1, 0)",
+            r#"f.dist.rt("x", 1, 1)"#,
+            "f.dist.rt(1, 1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn lognorm_inv_returns_quantiles() {
         for (source, expected) in [
             ("lognorm.inv(0.5, 0, 1)", "1"),

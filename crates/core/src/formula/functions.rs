@@ -3980,6 +3980,38 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // F.DIST.RT: F right-tail probability.
+        "f.dist.rt" => {
+            if args.len() != 3 {
+                return Value::Error;
+            }
+            let (Some(number), Some(first_df), Some(second_df)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !number.is_finite()
+                || !first_df.is_finite()
+                || !second_df.is_finite()
+                || number < 0.0
+                || first_df <= 0.0
+                || second_df <= 0.0
+            {
+                return Value::Error;
+            }
+            let result = regularized_beta(
+                second_df / (second_df + first_df * number),
+                second_df / 2.0,
+                first_df / 2.0,
+            );
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

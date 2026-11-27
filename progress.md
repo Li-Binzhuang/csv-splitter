@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项237 t 分布双尾（功能级）：`T.DIST.2T(x, df)`；
+  非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项236 二项反函数（功能级）：`BINOM.INV(n, p, alpha)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项235 t 分布右尾（功能级）：`T.DIST.RT(x, df)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
-- [ ] 项234 F 分布右尾（功能级）：`F.DIST.RT(x, d1, d2)`；
-  非法参数 `#VALUE!`；验收：单测 + gate。
+- [x] 项234 F 分布右尾（功能级）：`F.DIST.RT(x, d1, d2)`；
+  非法参数 `#VALUE!`；测试 `f_dist_right_tail_works`。
 - [x] 项233 对数正态反函数（功能级）：`LOGNORM.INV(p, mean, sd)`；
   概率(0,1)外/非法 `#VALUE!`；测试 `lognorm_inv_returns_quantiles`。
 - [x] 项232 t 分布（功能级）：`T.DIST(x, df, cumulative)`；
@@ -335,6 +337,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 261（项234 F.DIST.RT，功能级）：F 右尾、参数边界；
+定向与全量 gate/package 通过；发布包 SHA `822d6e5a…f6b14426f`；
+push 已在轮首成功，本轮不再 push。
 
 Round 260（项233 LOGNORM.INV，功能级）：对数正态反函数、概率边界；
 goal 已扩额至 1024 轮并 resume；定向与全量 gate/package 通过；
