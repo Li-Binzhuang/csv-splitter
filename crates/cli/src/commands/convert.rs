@@ -190,6 +190,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut all_sheets = false;
     let mut highlight: Option<String> = None;
     let mut number_format: Option<String> = None;
+    let mut no_freeze = false;
     let mut show_formats = false;
     let mut formats_json = false;
     let mut delim = "comma".to_string();
@@ -219,6 +220,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 }
             },
             "--all-sheets" => all_sheets = true,
+            "--no-freeze" => no_freeze = true,
             "--formats" => show_formats = true,
             "--json" => formats_json = true,
             "--number-format" => match p.value("--number-format") {
@@ -608,16 +610,33 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         let (tx, rx) = mpsc::channel();
         let reporter = spawn_reporter("convert", rx, true);
         let result = if !column_formats.is_empty() {
-            csvx_core::xlsx::csv_to_xlsx_with_number_formats(
-                &input,
-                &out,
-                delimiter,
-                &tx,
-                &rules,
-                &column_formats,
-            )
+            if no_freeze {
+                csvx_core::xlsx::csv_to_xlsx_without_freeze(
+                    &input,
+                    &out,
+                    delimiter,
+                    &tx,
+                    &rules,
+                    &column_formats,
+                )
+            } else {
+                csvx_core::xlsx::csv_to_xlsx_with_number_formats(
+                    &input,
+                    &out,
+                    delimiter,
+                    &tx,
+                    &rules,
+                    &column_formats,
+                )
+            }
         } else if rules.is_empty() {
-            csvx_core::engine::convert_format(&input, &out, &target, delimiter, &tx)
+            if no_freeze {
+                csvx_core::xlsx::csv_to_xlsx_without_freeze(&input, &out, delimiter, &tx, &[], &[])
+            } else {
+                csvx_core::engine::convert_format(&input, &out, &target, delimiter, &tx)
+            }
+        } else if no_freeze {
+            csvx_core::xlsx::csv_to_xlsx_without_freeze(&input, &out, delimiter, &tx, &rules, &[])
         } else {
             csvx_core::xlsx::csv_to_xlsx_with_rules(&input, &out, delimiter, &tx, &rules)
         };
