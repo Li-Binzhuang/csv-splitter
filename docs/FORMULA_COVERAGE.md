@@ -96,6 +96,7 @@
 | STDEV / VAR / STDEVP / VARP | 支持 | 整列 |
 | SLOPE / INTERCEPT / PEARSON / RSQ | 支持（功能级新增） | 同行等长 y/x 区间；零方差 `#VALUE!` |
 | STANDARDIZE | 支持（功能级新增） | standard_dev≤0/非数值 `#VALUE!` |
+| COVAR / COVARIANCE.P / COVARIANCE.S | 支持（功能级新增） | 同行等长 y/x；S 需至少 2 个样本 |
 | DEVSQ | 支持（功能级新增） | 同行数值区间；空区间 `#VALUE!` |
 | GEOMEAN / HARMEAN | 支持（功能级新增） | 同行正数样本；非正数/空样本 `#VALUE!`；别名 harmmean 兼容 |
 | SKEW / KURT | 支持（功能级新增） | 同行样本；SKEW≥3、KURT≥4；零方差 `#VALUE!` |

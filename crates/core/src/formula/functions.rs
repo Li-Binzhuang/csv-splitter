@@ -2208,6 +2208,51 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 .sum::<f64>();
             Value::Number(result)
         }
+        // COVAR/COVARIANCE.P/COVARIANCE.S: covariance over paired ranges.
+        "covar" | "covariance.p" | "covariance.s" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let (
+                Some(Expr::Range {
+                    from: y_from,
+                    to: y_to,
+                }),
+                Some(Expr::Range {
+                    from: x_from,
+                    to: x_to,
+                }),
+            ) = (args.first(), args.get(1))
+            else {
+                return Value::Error;
+            };
+            let Some(known_y) = range_values(y_from, y_to, ctx) else {
+                return Value::Error;
+            };
+            let Some(known_x) = range_values(x_from, x_to, ctx) else {
+                return Value::Error;
+            };
+            if known_y.len() != known_x.len() || known_y.is_empty() {
+                return Value::Error;
+            }
+            let count = known_y.len() as f64;
+            let mean_y = known_y.iter().sum::<f64>() / count;
+            let mean_x = known_x.iter().sum::<f64>() / count;
+            let sum = known_x
+                .iter()
+                .zip(known_y.iter())
+                .map(|(x, y)| (x - mean_x) * (y - mean_y))
+                .sum::<f64>();
+            let divisor = if lower == "covariance.s" {
+                if known_y.len() < 2 {
+                    return Value::Error;
+                }
+                count - 1.0
+            } else {
+                count
+            };
+            Value::Number(sum / divisor)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

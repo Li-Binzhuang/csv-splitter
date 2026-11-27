@@ -1442,6 +1442,53 @@ mod tests {
     }
 
     #[test]
+    fn covariance_functions_work() {
+        let columns = vec![
+            "y1".to_string(),
+            "y2".to_string(),
+            "y3".to_string(),
+            "x1".to_string(),
+            "x2".to_string(),
+            "x3".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [
+            ("y1", "1"),
+            ("y2", "2"),
+            ("y3", "3"),
+            ("x1", "2"),
+            ("x2", "4"),
+            ("x3", "6"),
+        ] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        for (source, expected) in [
+            ("covar(A2:C2, D2:F2)", "1.333333"),
+            ("covariance.p(A2:C2, D2:F2)", "1.333333"),
+            ("covariance.s(A2:C2, D2:F2)", "2"),
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        for source in ["covar(A2:C2, D2:E2)", "covariance.s(A2:A2, D2:D2)"] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "#VALUE!",
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
     fn devsq_sums_squared_deviations() {
         let columns = vec![
             "a".to_string(),
