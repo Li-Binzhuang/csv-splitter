@@ -693,6 +693,10 @@ mod tests {
         let grouped_pct = NumberFormat::parse("#,##0.0%").unwrap();
         assert_eq!(grouped_pct.name(), "#,##0.0%");
         assert_eq!(grouped_pct.render("12345.6"), "1,234,560.0%");
+        let zero_pct = NumberFormat::parse("#,##0%").unwrap();
+        assert_eq!(zero_pct.name(), "#,##0%");
+        assert_eq!(zero_pct.render("12345.6"), "1,234,560%");
+        assert_eq!(zero_pct.render("0.5"), "50%");
 
         let money = NumberFormat::parse("$#,##0.00").unwrap();
         assert_eq!(money.render("1234.5"), "$1,234.50");
