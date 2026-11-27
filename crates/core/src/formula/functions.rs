@@ -6904,6 +6904,78 @@ fn percentile_of(values: &[f64], p: f64) -> Option<f64> {
     Some(values[low] + fraction * (values[high] - values[low]))
 }
 
+/// SEARCH wildcards: `*` (any run), `?` (one character), and `~` escapes.
+enum SearchToken {
+    Literal(char),
+    Any,
+    Many,
+}
+
+fn lower_first(character: char) -> char {
+    character.to_lowercase().next().unwrap_or(character)
+}
+
+fn compile_search_pattern(needle: &str) -> Vec<SearchToken> {
+    let mut tokens = Vec::new();
+    let mut characters = needle.chars();
+    while let Some(character) = characters.next() {
+        match character {
+            '*' => tokens.push(SearchToken::Many),
+            '?' => tokens.push(SearchToken::Any),
+            '~' => match characters.next() {
+                Some(escaped @ ('*' | '?' | '~')) => tokens.push(SearchToken::Literal(escaped)),
+                Some(other) => {
+                    tokens.push(SearchToken::Literal('~'));
+                    tokens.push(SearchToken::Literal(lower_first(other)));
+                }
+                None => tokens.push(SearchToken::Literal('~')),
+            },
+            other => tokens.push(SearchToken::Literal(lower_first(other))),
+        }
+    }
+    tokens
+}
+
+fn wildcard_matches(haystack: &[char], pattern: &[SearchToken]) -> bool {
+    match pattern.first() {
+        None => true,
+        Some(SearchToken::Many) => {
+            if wildcard_matches(haystack, &pattern[1..]) {
+                return true;
+            }
+            for skip in 1..=haystack.len() {
+                if wildcard_matches(&haystack[skip..], &pattern[1..]) {
+                    return true;
+                }
+            }
+            false
+        }
+        Some(SearchToken::Any) => {
+            !haystack.is_empty() && wildcard_matches(&haystack[1..], &pattern[1..])
+        }
+        Some(SearchToken::Literal(expected)) => {
+            !haystack.is_empty()
+                && lower_first(haystack[0]) == *expected
+                && wildcard_matches(&haystack[1..], &pattern[1..])
+        }
+    }
+}
+
+/// One-based character index of the first wildcard match at or after `start`.
+fn search_wildcard(haystack: &str, needle: &str, start: usize) -> Option<usize> {
+    let characters: Vec<char> = haystack.chars().collect();
+    if start > characters.len() {
+        return None;
+    }
+    let pattern = compile_search_pattern(needle);
+    for index in start..=characters.len() {
+        if wildcard_matches(&characters[index..], &pattern) {
+            return Some(index + 1);
+        }
+    }
+    None
+}
+
 /// Case-insensitive search using simple per-character lowercase folding;
 /// returns the original byte index so callers can slice the source text.
 fn find_case_insensitive(haystack: &str, needle: &str, from: usize) -> Option<usize> {
@@ -7458,6 +7530,12 @@ fn find_in(args: &[Expr], ctx: &Ctx<'_>, case_sensitive: bool) -> Value {
     };
     if needle.is_empty() {
         return Value::Error;
+    }
+    if !case_sensitive && needle.chars().any(|ch| matches!(ch, '*' | '?' | '~')) {
+        return match search_wildcard(&haystack, &needle, start.saturating_sub(1)) {
+            Some(index) => Value::Number(index as f64),
+            None => Value::Number(0.0),
+        };
     }
     let byte_start = haystack
         .char_indices()

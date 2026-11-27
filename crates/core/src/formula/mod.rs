@@ -3557,6 +3557,17 @@ mod tests {
             (r#"find("é", "ÉCLAIR")"#, "0"),
             (r#"search("x", "abc", 9)"#, "0"),
             (r#"find("a", "abc", 4)"#, "0"),
+            (r#"search("a*", "abc")"#, "1"),
+            (r#"search("b*", "abc")"#, "2"),
+            (r#"search("*c", "abc")"#, "1"),
+            (r#"search("?c", "abc")"#, "2"),
+            (r#"search("a?c", "abc")"#, "1"),
+            (r#"search("*", "abc")"#, "1"),
+            (r#"search("a~*", "a*b")"#, "1"),
+            (r#"search("a~?", "a?b")"#, "1"),
+            (r#"search("É*", "éclair")"#, "1"),
+            (r#"search("z*", "abc")"#, "0"),
+            (r#"find("a*", "a*b")"#, "1"),
         ] {
             assert_eq!(eval_str(source, &[]), expected, "{source}");
         }
