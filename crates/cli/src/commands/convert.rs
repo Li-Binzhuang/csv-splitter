@@ -34,6 +34,41 @@ fn parse_column_formats(
     Ok(formats)
 }
 
+fn parse_data_validations(text: &str) -> Result<Vec<csvx_core::xlsx::DataValidation>, String> {
+    let mut validations = Vec::new();
+    for raw in split_format_specs(text) {
+        let (column, values) = raw
+            .split_once(':')
+            .ok_or_else(|| format!("data validation {raw:?} needs column:value,value"))?;
+        let column = column.trim().to_string();
+        if column.is_empty() {
+            return Err(format!("data validation {raw:?} needs a column"));
+        }
+        if validations
+            .iter()
+            .any(|validation: &csvx_core::xlsx::DataValidation| validation.column == column)
+        {
+            return Err(format!("data validation column {column:?} is repeated"));
+        }
+        let values: Vec<String> = values
+            .split(',')
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string)
+            .collect();
+        if values.is_empty() {
+            return Err(format!(
+                "data validation {column:?} needs at least one value"
+            ));
+        }
+        validations.push(csvx_core::xlsx::DataValidation { column, values });
+    }
+    if validations.is_empty() {
+        return Err("--data-validation needs at least one column:values".to_string());
+    }
+    Ok(validations)
+}
+
 /// Split `a:fmt;b:fmt` on semicolons that are not inside an accounting `(...)`.
 fn json_string(text: &str) -> String {
     let mut out = String::with_capacity(text.len() + 2);
@@ -192,6 +227,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut number_format: Option<String> = None;
     let mut no_freeze = false;
     let mut no_auto_filter = false;
+    let mut data_validation: Option<String> = None;
     let mut show_formats = false;
     let mut formats_json = false;
     let mut delim = "comma".to_string();
@@ -223,6 +259,13 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--all-sheets" => all_sheets = true,
             "--no-freeze" => no_freeze = true,
             "--no-auto-filter" => no_auto_filter = true,
+            "--data-validation" => match p.value("--data-validation") {
+                Ok(v) => data_validation = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--formats" => show_formats = true,
             "--json" => formats_json = true,
             "--number-format" => match p.value("--number-format") {
@@ -494,6 +537,20 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             None => Vec::new(),
         };
+        let data_validations = match data_validation.as_deref() {
+            Some(_) if !target.eq_ignore_ascii_case("xlsx") => {
+                eprintln!("error: --data-validation is only valid with --format xlsx");
+                return 2;
+            }
+            Some(text) => match parse_data_validations(text) {
+                Ok(validations) => validations,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            None => Vec::new(),
+        };
         let input_name = input
             .file_name()
             .and_then(|name| name.to_str())
@@ -621,57 +678,25 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         }
         let (tx, rx) = mpsc::channel();
         let reporter = spawn_reporter("convert", rx, true);
-        let xlsx_choices = no_freeze || no_auto_filter;
-        let result = if !column_formats.is_empty() {
-            if xlsx_choices {
-                csvx_core::xlsx::csv_to_xlsx_with_options(
-                    &input,
-                    &out,
-                    delimiter,
-                    &tx,
-                    &rules,
-                    &column_formats,
-                    !no_freeze,
-                    !no_auto_filter,
-                )
-            } else {
-                csvx_core::xlsx::csv_to_xlsx_with_number_formats(
-                    &input,
-                    &out,
-                    delimiter,
-                    &tx,
-                    &rules,
-                    &column_formats,
-                )
-            }
-        } else if rules.is_empty() {
-            if xlsx_choices {
-                csvx_core::xlsx::csv_to_xlsx_with_options(
-                    &input,
-                    &out,
-                    delimiter,
-                    &tx,
-                    &[],
-                    &[],
-                    !no_freeze,
-                    !no_auto_filter,
-                )
-            } else {
-                csvx_core::engine::convert_format(&input, &out, &target, delimiter, &tx)
-            }
-        } else if xlsx_choices {
-            csvx_core::xlsx::csv_to_xlsx_with_options(
+        let xlsx_options = no_freeze
+            || no_auto_filter
+            || !column_formats.is_empty()
+            || !rules.is_empty()
+            || !data_validations.is_empty();
+        let result = if xlsx_options {
+            csvx_core::xlsx::csv_to_xlsx_with_all(
                 &input,
                 &out,
                 delimiter,
                 &tx,
                 &rules,
-                &[],
+                &column_formats,
+                &data_validations,
                 !no_freeze,
                 !no_auto_filter,
             )
         } else {
-            csvx_core::xlsx::csv_to_xlsx_with_rules(&input, &out, delimiter, &tx, &rules)
+            csvx_core::engine::convert_format(&input, &out, &target, delimiter, &tx)
         };
         drop(tx);
         let _ = reporter.join();

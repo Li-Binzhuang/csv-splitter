@@ -470,8 +470,12 @@
   测试 `data_validation_lists_are_written_as_dropdowns`。
 - [x] 项454 xlsx 数据验证范围（功能级）：status+id 两列 sqref；
   测试 `data_validation_lists_are_written_as_dropdowns`。
-- [ ] 项455 数据验证 CLI（功能级）：convert 增加下拉列表选项；
+- [x] 项455 数据验证 CLI（功能级）：`--data-validation "status:good,ok,bad"`；
+  测试 `convert_xlsx_can_add_data_validation`。
+- [ ] 项456 数据验证参数错误（功能级）：重复列/空值/非 xlsx 报错；
   验收：CLI + 单测 + gate。
+- [ ] 项457 数据验证 + highlight 组合（功能级）：CF 与下拉共存；
+  验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
 - [ ] 项428 条件格式 dxf 蓝色规则同 id 断言（功能级）：蓝色多规则同 dxfId；
@@ -769,6 +773,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 473（项455 数据验证 CLI，功能级）：status:good,ok,bad；
+定向与全量 gate/package 通过；发布包 SHA `99791a04…da9099`；
+轮首 push 成功，本轮不再 push。
 
 Round 472（项454 数据验证多列，功能级）：status+id 两列；
 定向与全量 gate/package 通过；发布包 SHA `39ffebd7…691d7cd9`；

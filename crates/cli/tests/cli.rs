@@ -2654,6 +2654,43 @@ fn convert_xlsx_no_freeze_keeps_highlight() {
 }
 
 #[test]
+fn convert_xlsx_can_add_data_validation() {
+    let dir = TempDir::new("xlsxvalidation");
+    let input = dir.join("t.csv");
+    let output = dir.join("t.xlsx");
+    std::fs::write(&input, "id,status\n1,good\n2,ok\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            output.to_str().unwrap(),
+            "--data-validation",
+            "status:good,ok,bad",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let file = std::fs::File::open(&output).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    let mut sheet = String::new();
+    use std::io::Read as _;
+    archive
+        .by_name("xl/worksheets/sheet1.xml")
+        .unwrap()
+        .read_to_string(&mut sheet)
+        .unwrap();
+    assert!(sheet.contains("<dataValidations count=\"1\">"), "{sheet}");
+    assert!(sheet.contains("sqref=\"B2:B3\""), "{sheet}");
+    assert!(
+        sheet.contains("<formula1>\"good,ok,bad\"</formula1>"),
+        "{sheet}"
+    );
+}
+
+#[test]
 fn convert_xlsx_can_highlight_a_top_rank() {
     let dir = TempDir::new("xlsxtop");
     let input = dir.join("t.csv");

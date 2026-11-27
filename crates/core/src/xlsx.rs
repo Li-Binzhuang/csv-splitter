@@ -308,6 +308,36 @@ pub fn csv_to_xlsx_with_options(
     result
 }
 
+/// Export a CSV-as-xlsx sheet with all optional features at once.
+#[allow(clippy::too_many_arguments)]
+pub fn csv_to_xlsx_with_all(
+    input: &Path,
+    output: &Path,
+    delimiter: Delimiter,
+    tx: &ProgressSender,
+    rules: &[ConditionalRule],
+    formats: &[(String, crate::layout::NumberFormat)],
+    validations: &[DataValidation],
+    freeze_header: bool,
+    auto_filter: bool,
+) -> std::io::Result<()> {
+    let result = csv_to_xlsx_inner(
+        input,
+        output,
+        delimiter,
+        tx,
+        rules,
+        formats,
+        validations,
+        freeze_header,
+        auto_filter,
+    );
+    if result.is_err() {
+        let _ = std::fs::remove_file(output);
+    }
+    result
+}
+
 /// Export a CSV as one xlsx sheet with dropdown data validation.
 pub fn csv_to_xlsx_with_validations(
     input: &Path,
