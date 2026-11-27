@@ -2682,6 +2682,27 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             };
             Value::Number(sign * result)
         }
+        // ENCODEURL: UTF-8 percent-encoding with RFC 3986 unreserved bytes kept.
+        "encodeurl" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let text = eval(&args[0], ctx).text();
+            let mut encoded = String::with_capacity(text.len());
+            for byte in text.as_bytes() {
+                let keep = byte.is_ascii_alphanumeric()
+                    || matches!(*byte, b'-' | b'_' | b'.' | b'~')
+                    || *byte == b' ';
+                if keep && *byte != b' ' {
+                    encoded.push(*byte as char);
+                } else if *byte == b' ' {
+                    encoded.push_str("%20");
+                } else {
+                    encoded.push_str(&format!("%{:02X}", byte));
+                }
+            }
+            Value::Text(encoded)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

@@ -3504,6 +3504,20 @@ mod tests {
     }
 
     #[test]
+    fn encodeurl_percent_encodes_text() {
+        for (source, expected) in [
+            (r#"encodeurl("Hello World")"#, "Hello%20World"),
+            (r#"encodeurl("a/b?c=d&e")"#, "a%2Fb%3Fc%3Dd%26e"),
+            (r#"encodeurl("a-_.~")"#, "a-_.~"),
+            (r#"encodeurl("中文")"#, "%E4%B8%AD%E6%96%87"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        assert_eq!(eval_str("encodeurl()", &[]), "#VALUE!");
+        assert_eq!(eval_str("encodeurl(1, 2)", &[]), "#VALUE!");
+    }
+
+    #[test]
     fn dollar_fraction_round_trips() {
         for (source, expected) in [
             ("dollarde(1.02, 16)", "1.125"),
