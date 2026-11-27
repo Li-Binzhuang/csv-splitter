@@ -386,9 +386,11 @@
   测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [x] 项404 条件格式 bottom10 百分位（功能级）：bottom25% 已导出 percent；
   测试 `conditional_rules_support_top_and_bottom_ranks`。
-- [ ] 项405 条件格式 between 边界校验（功能级）：缺边界/多边界报错；
-  验收：单测 + gate。
+- [x] 项405 条件格式 between 边界校验（功能级）：缺/多边界报错；
+  测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [ ] 项406 条件格式 containsText 空文本（功能级）：空值报错；
+  验收：单测 + gate。
+- [ ] 项407 条件格式 notContainsText 空文本（功能级）：空值报错；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -671,6 +673,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 427（项405 条件格式 between 边界校验，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `50a29877…66a47726`；
+轮首 push 成功，本轮不再 push。
 
 Round 426（项404 条件格式 bottom 百分位，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `39aaa459…b50c239b`；

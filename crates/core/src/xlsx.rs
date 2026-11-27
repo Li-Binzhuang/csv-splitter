@@ -2592,6 +2592,19 @@ mod tests {
             .unwrap_err()
             .to_string();
         assert!(err.contains("greater than 0"), "{err}");
+
+        for value in ["500", "500,1000,2000"] {
+            let bad = vec![ConditionalRule {
+                column: "amount".into(),
+                operator: "between".into(),
+                value: value.into(),
+                color: "pink".into(),
+            }];
+            let err = csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &bad)
+                .unwrap_err()
+                .to_string();
+            assert!(err.contains("two comma-separated bounds"), "{value}: {err}");
+        }
         std::fs::remove_dir_all(dir).ok();
     }
 
