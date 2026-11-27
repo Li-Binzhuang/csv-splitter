@@ -3371,6 +3371,9 @@ mod tests {
             r#"textbefore("a-b", "-", 1, 2)"#,
             r#"textafter("a-b", "-", 1, 0, 2)"#,
             r#"textbefore("a-b", "-", 1, 1.5)"#,
+            r#"textbefore("a-b", "-", 0)"#,
+            r#"textafter("a-b", "-", 1.5)"#,
+            r#"textbefore("a-b", "-", "x")"#,
         ] {
             assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
         }

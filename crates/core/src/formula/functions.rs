@@ -6881,13 +6881,18 @@ fn text_around(args: &[Expr], ctx: &Ctx<'_>, before: bool) -> Value {
     if delimiter.is_empty() {
         return Value::Error;
     }
-    let instance = args
-        .get(2)
-        .and_then(|a| eval(a, ctx).number())
-        .unwrap_or(1.0);
-    if instance < 1.0 || !instance.is_finite() {
-        return Value::Error;
-    }
+    let instance = match args.get(2) {
+        Some(arg) => {
+            let Some(number) = eval(arg, ctx).number() else {
+                return Value::Error;
+            };
+            if !number.is_finite() || number.fract() != 0.0 || number < 1.0 {
+                return Value::Error;
+            }
+            number
+        }
+        None => 1.0,
+    };
     let mut match_mode = 0u32;
     let mut match_end = false;
     let mut if_not_found = None;
