@@ -6769,7 +6769,7 @@ fn percentile_of(values: &[f64], p: f64) -> Option<f64> {
 }
 
 fn text_around(args: &[Expr], ctx: &Ctx<'_>, before: bool) -> Value {
-    if args.len() > 4 {
+    if args.len() > 6 {
         return Value::Error;
     }
     let Some(text) = args.first().map(|a| eval(a, ctx).text()) else {
@@ -6788,25 +6788,64 @@ fn text_around(args: &[Expr], ctx: &Ctx<'_>, before: bool) -> Value {
     if instance < 1.0 || !instance.is_finite() {
         return Value::Error;
     }
-    let if_not_found = args.get(3).map(|arg| eval(arg, ctx).text());
+    let mut match_mode = 0u32;
+    let mut match_end = false;
+    let mut if_not_found = None;
+    if let Some(arg) = args.get(3) {
+        let value = eval(arg, ctx);
+        if let Some(number) = value.number() {
+            if !number.is_finite() || !matches!(number as u32, 0 | 1) || number.fract() != 0.0 {
+                return Value::Error;
+            }
+            match_mode = number as u32;
+        } else {
+            if_not_found = Some(value.text());
+        }
+    }
+    if let Some(arg) = args.get(4) {
+        let Some(number) = eval(arg, ctx).number() else {
+            return Value::Error;
+        };
+        if !number.is_finite() || !matches!(number as u32, 0 | 1) || number.fract() != 0.0 {
+            return Value::Error;
+        }
+        match_end = number as u32 == 1;
+    }
+    if let Some(arg) = args.get(5) {
+        if_not_found = Some(eval(arg, ctx).text());
+    }
     let miss = || match &if_not_found {
         Some(text) => Value::Text(text.clone()),
         None => Value::Text("#N/A".to_string()),
     };
+    let haystack = if match_mode == 1 {
+        text.to_ascii_lowercase()
+    } else {
+        text.clone()
+    };
+    let needle = if match_mode == 1 {
+        delimiter.to_ascii_lowercase()
+    } else {
+        delimiter.clone()
+    };
     let mut cursor = 0usize;
     let mut where_delimiter = None;
     for _ in 0..instance as usize {
-        match text[cursor..].find(&delimiter) {
+        match haystack[cursor..].find(&needle) {
             Some(index) => {
                 where_delimiter = Some(cursor + index);
                 cursor += index + delimiter.len();
             }
-            None => return miss(),
+            None => {
+                where_delimiter = None;
+                break;
+            }
         }
     }
     match where_delimiter {
         Some(index) if before => Value::Text(text[..index].to_string()),
         Some(index) => Value::Text(text[index + delimiter.len()..].to_string()),
+        None if match_end => Value::Text(if before { text.clone() } else { String::new() }),
         None => miss(),
     }
 }

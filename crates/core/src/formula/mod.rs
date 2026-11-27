@@ -3342,7 +3342,7 @@ mod tests {
             (r#"textafter("a-b", "-", 1, "missing")"#, "b"),
             (r#"textbefore("abc", "-", 1, "missing")"#, "missing"),
             (r#"textafter("abc", "-", 1, "missing")"#, "missing"),
-            (r#"textbefore("abc", "-", 1, 0)"#, "0"),
+            (r#"textbefore("abc", "-", 1, 0)"#, "#N/A"),
         ] {
             assert_eq!(eval_str(source, &[]), expected, "{source}");
         }
@@ -3350,6 +3350,28 @@ mod tests {
             assert_eq!(eval_str(source, &[]), "#N/A", "{source}");
         }
         assert_eq!(eval_str(r#"textbefore("a-b", "-", 2, "x")"#, &[]), "x");
+    }
+
+    #[test]
+    fn textbefore_after_honor_match_mode_and_match_end() {
+        for (source, expected) in [
+            (r#"textbefore("A-B", "-", 1, 1)"#, "A"),
+            (r#"textafter("A-B", "-", 1, 1)"#, "B"),
+            (r#"textbefore("aXb", "x", 1, 1)"#, "a"),
+            (r#"textafter("aXb", "x", 1, 1)"#, "b"),
+            (r#"textbefore("aXb", "x", 1, 0, 1)"#, "aXb"),
+            (r#"textafter("aXb", "x", 1, 0, 1)"#, ""),
+            (r#"textbefore("abc", "-", 1, 0, 1, "none")"#, "abc"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            r#"textbefore("a-b", "-", 1, 2)"#,
+            r#"textafter("a-b", "-", 1, 0, 2)"#,
+            r#"textbefore("a-b", "-", 1, 1.5)"#,
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
     }
 
     #[test]
