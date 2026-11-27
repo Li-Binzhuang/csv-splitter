@@ -72,7 +72,7 @@
 | 条件格式 begins/ends | 支持 `beginsWith:12`、`endsWith:00`（文本非空），导出 LEFT/RIGHT 公式 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 dataBar | 支持 `amount:dataBar:#FF0000`，颜色必填且 #RRGGBB，导出 `dataBar` 最小/最大 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 containsText | 支持 `amount:contains:00:blue`（文本非空），导出 `containsText` + `SEARCH` | `conditional_rules_support_top_and_bottom_ranks` |
-| 条件格式 ColorScale | 支持 `scale2`（2 色）/`scale3`（3 色），颜色数必须匹配，导出 `colorScale` + `percentile` 50 | `conditional_rules_support_top_and_bottom_ranks` |
+| 条件格式 ColorScale | 支持 `scale2`（2 色）/`scale3`（3 色），颜色数匹配且均须 #RRGGBB，导出 `colorScale` + `percentile` 50 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 Top/Bottom | `--highlight` 支持 `top2`、`bottom1`、`top50%`、`bottom25%`，导出 `top10`/`bottom10`（可带 `percent`） | `conditional_rules_support_top_and_bottom_ranks` |
 | 导入格式元数据 | `xlsx_column_formats` 读 header + 首数据行样式；`convert book.xlsx --formats [--json] [--all-sheets]` 打印列格式（JSON 含 sheet/column_index） | `column_formats_are_read_back_from_export_styles`、`formats_prints_the_xlsx_header_format_codes` |
 | CLI 数字格式 | `--number-format "amount:#,##0.00;rate:0.0%"` 接线到导出样式 | `convert_xlsx_can_apply_per_column_number_formats` |
