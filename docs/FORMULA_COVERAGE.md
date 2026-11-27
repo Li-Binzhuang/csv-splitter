@@ -122,7 +122,7 @@
 
 | SUBTOTAL | 支持（功能级新增） | 1–11/101–111；同行区间；CSV 无隐藏行，100 系列同值 |
 | AGGREGATE | 支持（功能级新增） | 1–11/14–19，options 0/4/6；k 用于排名/分位；无隐藏行/错误单元格 |
-| RAND / RANDBETWEEN | 缺失 | 非确定性，暂不进入可复现导出 |
+| RAND / RANDBETWEEN | 支持（功能级新增） | 进程内 xorshift，RAND ∈ [0,1)；RANDBETWEEN 参数须整数且 bottom≤top |
 | PMT | 支持（功能级新增） | rate=0/type 0/1；rate≤-1、nper=0、非法 type `#VALUE!` |
 | FV | 支持（功能级新增） | rate=0/type 0/1；rate≤-1/非法 type `#VALUE!` |
 | PV | 支持（功能级新增） | rate=0/type 0/1；rate≤-1/非法 type `#VALUE!` |

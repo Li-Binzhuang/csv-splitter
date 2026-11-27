@@ -7285,4 +7285,19 @@ mod tests {
             "5002"
         );
     }
+    #[test]
+    fn rand_and_randbetween_stay_in_bounds() {
+        for _ in 0..20 {
+            let value: f64 = eval_str("rand()", &[]).parse().unwrap();
+            assert!((0.0..1.0).contains(&value), "{value}");
+            let value: f64 = eval_str("randbetween(1,10)", &[]).parse().unwrap();
+            assert!(
+                value.fract() == 0.0 && (1.0..=10.0).contains(&value),
+                "{value}"
+            );
+        }
+        assert_eq!(eval_str("randbetween(10,1)", &[]), "#VALUE!");
+        assert_eq!(eval_str("randbetween(1.5,3)", &[]), "#VALUE!");
+        assert_eq!(eval_str("rand(1)", &[]), "#VALUE!");
+    }
 }

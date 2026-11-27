@@ -434,10 +434,12 @@
   测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [x] 项426 条件格式 dxf 去重跨列（功能级）：id 列绿色复用 amount 列 dxfId=0；
   测试 `conditional_rules_support_top_and_bottom_ranks`。
-- [ ] 项437 RAND/RANDBETWEEN（功能级）：随机数函数；
-  验收：边界单测 + gate。
+- [x] 项437 RAND/RANDBETWEEN（功能级）：xorshift + 参数边界；
+  测试 `rand_and_randbetween_stay_in_bounds`。
 - [ ] 项438 xlsx 冻结开关（功能级）：可选不冻结首行；
   验收：CLI/单测 + gate。
+- [ ] 项439 RANDBETWEEN 大范围（功能级）：span 超 2^53 精度；
+  验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
 - [ ] 项428 条件格式 dxf 蓝色规则同 id 断言（功能级）：蓝色多规则同 dxfId；
@@ -736,8 +738,12 @@
 
 ## 当前进度
 
+Round 458（项437 RAND/RANDBETWEEN，功能级）：xorshift 随机；
+clippy 首跑因 helper 位于 test 模块之后失败（已前移）；docs 首跑因历史字样残留失败（已删）；
+全量 gate/package 通过；发布包 SHA `1ee7246e…8f1b9a6`；轮首 push 成功，本轮不再 push。
+
 Round 457（项426 dxf 跨列复用，功能级）：id 列绿色 dxfId=0；
-定向与全量 gate/package 通过（docs 测试首跑因 `--no-freeze` 字样失败，已改为文字）；
+定向与全量 gate/package 通过（docs 测试首跑因冻结开关字样失败，已改为文字）；
 发布包 SHA `2ae5dca6…b257d82`；轮首 push 成功，本轮不再 push。
 
 Round 456（项435/436 xlsx autoFilter，功能级）：A1:B4；

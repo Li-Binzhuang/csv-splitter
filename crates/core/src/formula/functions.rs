@@ -22,6 +22,25 @@ use std::collections::HashMap;
 pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
     let lower = name.to_ascii_lowercase();
     match lower.as_str() {
+        // Volatile functions: deterministic per process, but monotonic across calls.
+        "rand" => {
+            if args.is_empty() {
+                Value::Number(next_random())
+            } else {
+                Value::Error
+            }
+        }
+        "randbetween" => {
+            let [Expr::Number(bottom), Expr::Number(top)] = args else {
+                return Value::Error;
+            };
+            if bottom.fract() != 0.0 || top.fract() != 0.0 || *bottom > *top {
+                return Value::Error;
+            }
+            let span = (*top as i64 - *bottom as i64 + 1) as u64;
+            let offset = (next_random() * span as f64).floor() as i64;
+            Value::Number(*bottom + offset as f64)
+        }
         // History functions: they read the state the exporter maintains, so a formula
         // can see the row before it without the file being loaded.
         // Conditional aggregates: the criteria (">1000", "CDMX", "<>10") were compiled
@@ -8595,6 +8614,26 @@ fn approximate_reference_value(
         }
     }
     best.map(|(_, value)| value.clone())
+}
+
+fn next_random() -> f64 {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static STATE: AtomicU64 = AtomicU64::new(0x9E37_79B9_7F4A_7C15);
+    let mut value = STATE.load(Ordering::Relaxed);
+    loop {
+        let mut next = value;
+        next ^= next << 13;
+        next ^= next >> 7;
+        next ^= next << 17;
+        match STATE.compare_exchange_weak(value, next, Ordering::Relaxed, Ordering::Relaxed) {
+            Ok(_) => {
+                value = next;
+                break;
+            }
+            Err(current) => value = current,
+        }
+    }
+    (value >> 11) as f64 / (1u64 << 53) as f64
 }
 
 #[cfg(test)]
