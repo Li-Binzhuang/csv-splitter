@@ -3700,6 +3700,41 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // WEIBULL.DIST: Weibull probability density or cumulative.
+        "weibull.dist" => {
+            if args.len() != 4 {
+                return Value::Error;
+            }
+            let (Some(number), Some(alpha), Some(beta), Some(cumulative)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+                eval(&args[3], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !number.is_finite()
+                || !alpha.is_finite()
+                || !beta.is_finite()
+                || !cumulative.is_finite()
+                || number < 0.0
+                || alpha <= 0.0
+                || beta <= 0.0
+            {
+                return Value::Error;
+            }
+            let scaled = (number / beta).powf(alpha);
+            let result = if cumulative != 0.0 {
+                1.0 - (-scaled).exp()
+            } else {
+                alpha / beta * (number / beta).powf(alpha - 1.0) * (-scaled).exp()
+            };
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

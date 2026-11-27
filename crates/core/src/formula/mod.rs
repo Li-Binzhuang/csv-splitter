@@ -3504,6 +3504,27 @@ mod tests {
     }
 
     #[test]
+    fn weibull_dist_returns_density_or_cumulative() {
+        for (source, expected) in [
+            ("weibull.dist(1, 1, 1, 1)", "0.632121"),
+            ("weibull.dist(1, 1, 1, 0)", "0.367879"),
+            ("weibull.dist(2, 2, 1, 1)", "0.981684"),
+            ("weibull.dist(0, 1, 1, 0)", "1"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "weibull.dist(-1, 1, 1, 1)",
+            "weibull.dist(1, 0, 1, 1)",
+            "weibull.dist(1, 1, 0, 1)",
+            r#"weibull.dist("x", 1, 1, 1)"#,
+            "weibull.dist(1, 1, 1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn lognorm_dist_returns_density_or_cumulative() {
         for (source, expected) in [
             ("lognorm.dist(1, 0, 1, 1)", "0.5"),
