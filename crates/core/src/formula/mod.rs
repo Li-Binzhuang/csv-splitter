@@ -2520,6 +2520,13 @@ mod tests {
             ),
             "#VALUE!"
         );
+        assert_eq!(
+            eval_str(
+                r#"concat(rept("a", 10000), rept("a", 10000), rept("a", 10000), rept("a", 10000))"#,
+                &[]
+            ),
+            "#VALUE!"
+        );
         assert_eq!(eval_str("unichar(65.5)", &[]), "#VALUE!");
         assert_eq!(eval_str("unicode(\"\")", &[]), "#VALUE!");
     }

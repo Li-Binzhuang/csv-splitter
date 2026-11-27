@@ -6039,6 +6039,9 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             let mut out = String::new();
             for arg in args {
                 out.push_str(&eval(arg, ctx).text());
+                if out.chars().count() > 32767 {
+                    return Value::Error;
+                }
             }
             Value::Text(out)
         }
