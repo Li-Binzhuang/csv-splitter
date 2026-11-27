@@ -3736,6 +3736,30 @@ mod tests {
     }
 
     #[test]
+    fn bessely_returns_second_kind_values() {
+        for (source, expected) in [
+            ("bessely(1, 0)", "0.088257"),
+            ("bessely(1, 1)", "-0.781213"),
+            ("bessely(2, 0)", "0.510376"),
+            ("bessely(2, 1)", "-0.107032"),
+            ("bessely(0.5, 0)", "-0.444519"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "bessely(0, 0)",
+            "bessely(-1, 0)",
+            "bessely(1, -1)",
+            "bessely(1, 1.5)",
+            "bessely(1, 21)",
+            r#"bessely("x", 0)"#,
+            "bessely(1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn hypgeom_dist_returns_mass_or_cumulative() {
         for (source, expected) in [
             ("hypgeom.dist(1, 4, 8, 20, 0)", "0.363261"),

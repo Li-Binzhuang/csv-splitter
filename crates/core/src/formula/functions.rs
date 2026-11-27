@@ -5100,6 +5100,68 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // BESSELY: Bessel function of the second kind, integer order.
+        "bessely" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let (Some(number), Some(order)) =
+                (eval(&args[0], ctx).number(), eval(&args[1], ctx).number())
+            else {
+                return Value::Error;
+            };
+            if !number.is_finite()
+                || !order.is_finite()
+                || number <= 0.0
+                || order < 0.0
+                || order > 20.0
+                || order.trunc() != order
+            {
+                return Value::Error;
+            }
+            let order = order as u64;
+            let n = order as f64;
+            let pi = std::f64::consts::PI;
+            let steps = 4000u32;
+            let h = pi / steps as f64;
+            let mut first = 0.0;
+            for step in 0..=steps {
+                let t = step as f64 * h;
+                let weight = if step == 0 || step == steps {
+                    1.0
+                } else if step % 2 == 0 {
+                    2.0
+                } else {
+                    4.0
+                };
+                first += weight * (number * t.sin() - n * t).sin();
+            }
+            first *= h / 3.0;
+            let upper = 14.0;
+            let h = upper / steps as f64;
+            let mut second = 0.0;
+            let sign = if order.is_multiple_of(2) { 1.0 } else { -1.0 };
+            for step in 0..=steps {
+                let t = step as f64 * h;
+                let weight = if step == 0 || step == steps {
+                    1.0
+                } else if step % 2 == 0 {
+                    2.0
+                } else {
+                    4.0
+                };
+                let sinh = (t.exp() - (-t).exp()) / 2.0;
+                let kernel = (n * t).exp() + sign * (-n * t).exp();
+                second += weight * kernel * (-number * sinh).exp();
+            }
+            second *= h / 3.0;
+            let result = (first - second) / pi;
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // HYPGEOM.DIST: hypergeometric probability mass or cumulative.
         "hypgeom.dist" => {
             if args.len() != 5 {

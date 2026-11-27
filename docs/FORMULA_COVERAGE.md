@@ -142,6 +142,7 @@
 | ISREF | 支持（功能级新增） | 不求得值，按表达式形状判断引用；无参 `#VALUE!` |
 | HYPGEOM.INV | 支持（功能级新增） | 最小分位使累积≥alpha；alpha∈[0,1]；非法 `#VALUE!` |
 | BESSELK | 支持（功能级新增） | 整数阶 0–20、x>0；数值积分+递推；非法 `#VALUE!` |
+| BESSELY | 支持（功能级新增） | 整数阶 0–20、x>0；积分表示+Simpson；非法 `#VALUE!` |
 | HYPGEOM.DIST | 支持（功能级新增） | 质量/累积；N/K/n/s 整数与边界校验；非法 `#VALUE!` |
 | BESSELI | 支持（功能级新增） | 整数阶 0–100；幂级数；非法 `#VALUE!` |
 | BESSELJ | 支持（功能级新增） | 整数阶 0–100；级数求和；非法 `#VALUE!` |
@@ -245,6 +246,8 @@ SECOND 与 0.5 天小数。第一批测试：
 IFS 命中/无命中；SWITCH 命中/默认/无命中；CHOOSE 正常/越界；
 NA/IFNA/IFERROR 的 #N/A 语义；XOR/TRUE/FALSE。
 ```
+
+第一百四十九批新增 BESSELY：`bessely_returns_second_kind_values`（1/2/0.5 与 0 阶、边界错误）。
 
 命令：
 

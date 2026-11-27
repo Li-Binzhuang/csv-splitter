@@ -128,8 +128,6 @@
   round-trip 读取仍为 Text；测试 `formats_are_mapped_into_export_styles_and_round_trip`。
 - [x] 项277 xlsx 文本列数字保真（功能级）：`@` 列中 `001`/`123` 保持 inlineStr，不转数值；
   round-trip 测试 `formats_are_mapped_into_export_styles_and_round_trip`。
-- [ ] 项278 xlsx 列格式去重（功能级）：`xlsx_column_formats` 只读首数据行，多行不重复；
-  验收：单测 + gate。
 - [x] 项264 精确伽马对数（功能级）：`GAMMALN.PRECISE(x)`；
   非正/非有限 `#VALUE!`；测试扩展 `gammaln_matches_log_gamma`。
 - [x] 项263 逻辑/非文本判断（功能级）：`ISLOGICAL`/`ISNONTEXT`；
@@ -220,12 +218,14 @@
   测试 `formats_are_mapped_into_export_styles_and_round_trip` 与 `column_formats_are_read_back_from_export_styles`。
 - [x] 项319 补零月日短日期导出（功能级）：`mm/dd/yy` 样式并 round-trip；
   测试 `formats_are_mapped_into_export_styles_and_round_trip` 与 `column_formats_are_read_back_from_export_styles`。
-- [ ] 项320 日在前短日期 12 小时制（功能级）：`d/m/yyyy h:mm AM/PM` 解析/显示；
+- [x] 项260 第二类贝塞尔 Y 函数（功能级）：`BESSELY(x, n)`；
+  整数阶 0–20、x>0；非法 `#VALUE!`；测试 `bessely_returns_second_kind_values`。
+- [ ] 项278 xlsx 列格式去重（功能级）：`xlsx_column_formats` 多行多列不重复；
   验收：单测 + gate。
-- [ ] 项321 补零月日短日期 12 小时制（功能级）：`mm/dd/yy h:mm AM/PM` 解析/显示；
+- [ ] 项323 经过时间格式（功能级）：`[h]:mm:ss` 解析/显示，超过 24 小时累计；
   验收：单测 + gate。
-- [ ] 项260 第二类贝塞尔 Y 函数（功能级）：`BESSELY(x, n)`；
-  非法参数 `#VALUE!`；验收：单测 + gate。
+- [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
+  参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
 - [x] 项259 超几何反函数（功能级）：`HYPGEOM.INV(n, K, N, alpha)`；
   非法参数 `#VALUE!`；测试 `hypgeom_inv_finds_cutoff`。
 - [x] 项258 第二类贝塞尔函数（功能级）：`BESSELK(x, n)`；
@@ -505,6 +505,11 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 345（项260 BESSELY，功能级）：整数阶 0–20、x>0；结构不同的新函数；
+定向与全量 gate/package 通过；发布包 SHA `495e2c54…37be89`；
+轮首 push 成功，本轮不再 push。按巡检纠偏：320/321 合并入项322 格式语法矩阵；
+未完成项改为 278 去重（真实修复）、322 矩阵、323 经过时间（新能力）。
 
 Round 344（项319 mm/dd/yy 导出，功能级）：样式与 round-trip；
 定向与全量 gate/package 通过；发布包 SHA `833b4933…6df538e4`；
