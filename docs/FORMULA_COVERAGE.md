@@ -26,7 +26,7 @@
 | FIND / SEARCH | 支持（功能级扩展） | SEARCH Unicode 折叠按字符定位；start_num 须整数≥1，否则 `#VALUE!` |
 | PROPER / REPT / EXACT / VALUE | 支持（功能级扩展） | PROPER 按非字母分界；REPT 整数 0–10000、结果≤32767 |
 | CLEAN | 支持（功能级新增） | 去掉 ASCII 0–31 控制字符；不裁首尾空格；多参 `#VALUE!` |
-| TEXT | 支持（功能级扩展） | 复用 `NumberFormat`；支持 `正;负;零` 三段与负段减号 |
+| TEXT | 支持（功能级扩展） | 复用 `NumberFormat`；支持 `正;负;零;文本` 四段与负段减号 |
 | TEXTBEFORE / TEXTAFTER | 支持（功能级新增） | instance_num 须整数≥1；match_mode 0/1、match_end、if_not_found |
 
 | NUMBERVALUE / FIXED / DOLLAR | 支持（功能级新增） | FIXED 固定小数/千分位；DOLLAR 负数为括号；NUMBERVALUE 区域分隔符/百分号/括号负数 |

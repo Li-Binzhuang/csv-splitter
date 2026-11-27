@@ -3420,6 +3420,8 @@ mod tests {
             (r#"text(-1.25, "0.0;-0.00")"#, "-1.25"),
             (r#"text(0, "0.0;-0.00")"#, "0.0"),
             (r#"text(1.2, "0.0;-0.0")"#, "1.2"),
+            (r#"text("abc", "0.0;0.0;0.0;@")"#, "abc"),
+            (r#"text("abc", "0.0;0.0;0.0;pre@post")"#, "preabcpost"),
         ] {
             assert_eq!(eval_str(source, &[]), expected, "{source}");
         }

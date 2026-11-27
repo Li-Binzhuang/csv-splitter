@@ -6940,7 +6940,17 @@ fn render_text_format(spec: &str, value: &str) -> Option<String> {
     if !(2..=4).contains(&sections.len()) {
         return None;
     }
-    let number: f64 = value.trim().parse().ok()?;
+    let Ok(number) = value.trim().parse::<f64>() else {
+        if sections.len() != 4 {
+            return None;
+        }
+        let section = sections[3];
+        let literal = section
+            .strip_prefix('"')
+            .and_then(|text| text.strip_suffix('"'))
+            .unwrap_or(section);
+        return Some(literal.replace('@', value));
+    };
     let index = if number > 0.0 {
         0
     } else if number < 0.0 {
