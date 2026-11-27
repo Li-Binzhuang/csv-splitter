@@ -246,9 +246,11 @@
   测试 `textsplit_can_skip_empty_segments`。
 - [x] 项334 TEXTSPLIT pad_with（功能级）：ignore_empty 后全空返回 pad_with；
   测试 `textsplit_can_skip_empty_segments`。
-- [ ] 项335 FIND/SEARCH start_num 校验（功能级）：start_num<1 或非整数 → #VALUE!；
-  验收：单测 + gate。
+- [x] 项335 FIND/SEARCH start_num 校验（功能级）：start_num 非整数/小于 1/非数值 → #VALUE!；
+  测试 `search_folds_unicode_case_and_keeps_positions`。
 - [ ] 项336 TEXTBEFORE/AFTER instance_num 校验（功能级）：instance 非整数/0 → #VALUE!；
+  验收：单测 + gate。
+- [ ] 项337 REPT 次数校验（功能级）：负/非整数/超 10000 → #VALUE!；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -531,6 +533,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 359（项335 FIND/SEARCH start_num 校验，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `87250161…429c0415`；
+轮首 push 成功，本轮不再 push。
 
 Round 358（项334 TEXTSPLIT pad_with，功能级）：全空段回退 pad；
 定向与全量 gate/package 通过；发布包 SHA `f0def82c…94d0d8e`；

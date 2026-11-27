@@ -7286,13 +7286,23 @@ fn group_digits(digits: &str) -> String {
 
 /// 1-based position of `needle` in `text`; 0 when absent, like Excel's FIND/SEARCH.
 fn find_in(args: &[Expr], ctx: &Ctx<'_>, case_sensitive: bool) -> Value {
+    if args.len() > 3 {
+        return Value::Error;
+    }
     let needle = args.first().map(|a| eval(a, ctx).text());
     let haystack = args.get(1).map(|a| eval(a, ctx).text());
-    let start = args
-        .get(2)
-        .and_then(|a| eval(a, ctx).number())
-        .unwrap_or(1.0)
-        .max(1.0) as usize;
+    let start = match args.get(2) {
+        Some(arg) => {
+            let Some(number) = eval(arg, ctx).number() else {
+                return Value::Error;
+            };
+            if !number.is_finite() || number.fract() != 0.0 || number < 1.0 {
+                return Value::Error;
+            }
+            number as usize
+        }
+        None => 1,
+    };
     let (Some(needle), Some(haystack)) = (needle, haystack) else {
         return Value::Error;
     };

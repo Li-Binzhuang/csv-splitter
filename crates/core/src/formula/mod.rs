@@ -3423,8 +3423,18 @@ mod tests {
             (r#"find("É", "ÉCLAIR")"#, "1"),
             (r#"find("é", "ÉCLAIR")"#, "0"),
             (r#"search("x", "abc", 9)"#, "0"),
+            (r#"find("a", "abc", 4)"#, "0"),
         ] {
             assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            r#"find("a", "abc", 0)"#,
+            r#"search("a", "abc", 0)"#,
+            r#"find("a", "abc", 1.5)"#,
+            r#"search("a", "abc", "x")"#,
+            r#"find("a", "abc", 1, 2)"#,
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
         }
     }
 
