@@ -614,8 +614,8 @@ fn write_formatted_cell(
             return;
         }
         NumberFormat::DateTime { .. } => {
-            if let Some(serial) = date_serial(trimmed)
-                .map(|serial| serial as f64)
+            if let Some(serial) = datetime_serial(trimmed)
+                .or_else(|| date_serial(trimmed).map(|serial| serial as f64))
                 .or_else(|| time_serial(trimmed))
             {
                 out.push_str(&format!(
@@ -912,6 +912,12 @@ fn civil_from_days(days: i64) -> (i64, i64, i64) {
     let day = doy - (153 * mp + 2) / 5 + 1;
     let month = if mp < 10 { mp + 3 } else { mp - 9 };
     (year + i64::from(month <= 2), month, day)
+}
+
+/// ISO date-time (`YYYY-MM-DDTHH:MM:SS` or space-separated) as one serial.
+fn datetime_serial(text: &str) -> Option<f64> {
+    let (date, time) = text.split_once('T').or_else(|| text.split_once(' '))?;
+    Some(date_serial(date)? as f64 + time_serial(time)?)
 }
 
 /// A time-only cell (`HH:MM[:SS]`) as an Excel serial fraction of a day.
@@ -1945,6 +1951,13 @@ mod tests {
         assert_eq!(time_serial("06:30:15"), Some(23_415.0 / 86_400.0));
         assert_eq!(time_serial("24:00"), None);
         assert_eq!(time_serial("12:60"), None);
+        assert_eq!(datetime_serial("2024-01-01T12:00:00"), Some(45_292.5));
+        assert_eq!(
+            datetime_serial("2024-01-01 06:30:15"),
+            Some(45_292.0 + 23_415.0 / 86_400.0)
+        );
+        assert_eq!(datetime_serial("2024-01-01T24:00:00"), None);
+        assert_eq!(datetime_serial("2024-01-01"), None);
         let dir = std::env::temp_dir().join(format!("csvx_xlsx_date_{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let input = dir.join("dates.csv");
@@ -2395,6 +2408,16 @@ mod tests {
         )
         .unwrap();
         assert_eq!(rows[0].1, vec!["2024-01-01", "0.5"]);
+    }
+
+    #[test]
+    fn datetime_cells_are_written_with_a_time_fraction() {
+        use crate::layout::NumberFormat;
+        let format = NumberFormat::parse("yyyy-mm-dd hh:mm").unwrap();
+        let mut out = String::new();
+        write_formatted_cell(&mut out, 0, 2, "2024-01-02T03:30:00", &format, Some(4));
+        assert!(out.contains("s=\"4\""), "{out}");
+        assert!(out.contains("45293.145"), "{out}");
     }
 
     #[test]

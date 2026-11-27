@@ -1,0 +1,35 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "36e78be6e3974c8535a0260cd5773b7b4024bfd8b3e8730f45aaedb8416b1eef",
+  "batch_id": "da377b5a05e4ddf511da52d66dca015af086520b3d9aabb8dfc6b92a5ad27381",
+  "composite_identity": "4366a241bb79e38e02b2a246ba7fdee2c4e5461c7e6260d46d605095edc5f44d",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "334789c6751d46da4ed831c2eb84d696c2bbef139371549de6ec1ceedaadafdd",
+  "targets": [
+    {
+      "candidate_id": "6081f27d5f2c2ee5a861f87e48988a1f1d9f8858fef8c140c1bcf6205585b9d7",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "e23aa03fe18eed7c6e4b527649515988271cfc32a2051550732b74ab643f1895",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles；csv_to_xlsx_with_number_formats；write_sheets_with_formats；xlsx_column_formats 读 header+首数据行样式；内置日期/时间 14–22；时间小数导出；zip 流式；1M 53MB | S:不写公式/图表；合并不展开；无缓存公式/坏引用/超限报错；格式只对可解析数字/日期/时间生效；导入格式按首数据行"
+    },
+    {
+      "candidate_id": "8d9f7c704e31f5fbf8fa1ddb89de5f7d98c5797bc59b443f76bc35b9f60df1d6",
+      "object_ref": "code:docs/XLSX.md",
+      "path": "docs/XLSX.md",
+      "change": "update",
+      "source_sha256": "56f94b475c80679d3481e18f12434646c9ac0fbe66e78bcc86591207563b8e03",
+      "existing_entry": "XLSX.md[SD7T]: F:xlsx 互操作现状与边界：导出、多 sheet、导入、report xlsx、日期/条件格式 | R:code:crates/core/src/xlsx.rs,code:crates/cli/src/main.rs,code:docs/CAPABILITIES.md | A:convert 流式导出；目录多 sheet；导入；MCP sheet；report xlsx + datecounts(date:group)；ISO 日期 numFmtId=14；时间格式列写小数；--highlight cellIs+dxf | S:只写值不写公式；日期仅 ISO、时间仅 HH:MM:SS；highlight 仅 cellIs；不做宏/VBA；样式/合并忽略"
+    },
+    {
+      "candidate_id": "f19ea9ccad32ab58949e1a016e669a7584d2292dc55d605d34971e841d2fee08",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "d860d402a553a1dcf12f8bdc1574eea4a34c45139776798f213c5b764e87a441",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 个功能级项；goal 扩额 1024；Round299 xlsx 格式保真与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
