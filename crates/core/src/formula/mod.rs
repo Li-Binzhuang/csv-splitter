@@ -2471,6 +2471,8 @@ mod tests {
         assert_eq!(eval_str("unicode(\"中\")", &[]), "20013");
         assert_eq!(eval_str("unichar(128512)", &[]), "😀");
         assert_eq!(eval_str("unicode(\"😀\")", &[]), "128512");
+        assert_eq!(eval_str("unicode(\"\")", &[]), "#VALUE!");
+        assert_eq!(eval_str("unicode(\"中\", 1)", &[]), "#VALUE!");
         assert_eq!(eval_str("unichar(0)", &[]), "#VALUE!");
         assert_eq!(eval_str("unichar(55296)", &[]), "#VALUE!");
         assert_eq!(eval_str("unicode(\"\")", &[]), "#VALUE!");
