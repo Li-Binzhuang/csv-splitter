@@ -260,6 +260,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut no_freeze = false;
     let mut no_auto_filter = false;
     let mut data_validation: Option<String> = None;
+    let mut data_validation_blank = false;
     let mut data_validation_prompt: Option<String> = None;
     let mut data_validation_error: Option<String> = None;
     let mut show_formats = false;
@@ -300,6 +301,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                     return 2;
                 }
             },
+            "--data-validation-blank" => data_validation_blank = true,
             "--data-validation-prompt" => match p.value("--data-validation-prompt") {
                 Ok(v) => data_validation_prompt = Some(v),
                 Err(e) => {
@@ -638,6 +640,18 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             None => Vec::new(),
         };
+        if data_validation_blank
+            && !data_validations.is_empty()
+            && !target.eq_ignore_ascii_case("xlsx")
+        {
+            eprintln!("error: --data-validation-blank is only valid with --format xlsx");
+            return 2;
+        }
+        if data_validation_blank {
+            for validation in &mut data_validations {
+                validation.allow_blank = true;
+            }
+        }
         for (column, title, message) in validation_errors {
             let Some(validation) = data_validations
                 .iter_mut()
