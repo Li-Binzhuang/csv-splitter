@@ -883,11 +883,12 @@ fn conditional_formatting_xml(
                     )));
                 }
                 let text = xml_attr(&rule.value);
+                let literal = formula_literal(&rule.value);
                 let (kind, formula) = if rule.operator == "endsWith" {
                     (
                         "endsWith",
                         format!(
-                            "RIGHT({col}2,LEN(\"{text}\"))=\"{text}\"",
+                            "RIGHT({col}2,LEN({literal}))={literal}",
                             col = column_name(column)
                         ),
                     )
@@ -895,7 +896,7 @@ fn conditional_formatting_xml(
                     (
                         "beginsWith",
                         format!(
-                            "LEFT({col}2,LEN(\"{text}\"))=\"{text}\"",
+                            "LEFT({col}2,LEN({literal}))={literal}",
                             col = column_name(column)
                         ),
                     )
@@ -2431,6 +2432,12 @@ mod tests {
             },
             ConditionalRule {
                 column: "amount".into(),
+                operator: "beginsWith".into(),
+                value: "a\"b".into(),
+                color: "purple".into(),
+            },
+            ConditionalRule {
+                column: "amount".into(),
                 operator: "endsWith".into(),
                 value: "00".into(),
                 color: "orange".into(),
@@ -2576,6 +2583,11 @@ mod tests {
         assert!(sheet.contains("rgb=\"FFFF0000\""), "{sheet}");
         assert!(sheet.contains("type=\"beginsWith\""), "{sheet}");
         assert!(sheet.contains("LEFT(B2,LEN(\"12\"))=\"12\""), "{sheet}");
+        assert!(sheet.contains("text=\"a&quot;b\""), "{sheet}");
+        assert!(
+            sheet.contains("LEFT(B2,LEN(\"a\"\"b\"))=\"a\"\"b\""),
+            "{sheet}"
+        );
         assert!(sheet.contains("type=\"endsWith\""), "{sheet}");
         assert!(sheet.contains("RIGHT(B2,LEN(\"00\"))=\"00\""), "{sheet}");
         assert!(sheet.contains("type=\"containsBlanks\""), "{sheet}");
