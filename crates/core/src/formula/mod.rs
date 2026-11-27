@@ -6806,6 +6806,11 @@ mod tests {
         assert_eq!(eval_str("proper('76budget')", &[]), "76Budget");
         assert_eq!(eval_str("proper('')", &[]), "");
         assert_eq!(eval_str("proper('a', 2)", &[]), "#VALUE!");
+        assert_eq!(eval_str("trim('  a   b  ')", &[]), "a b");
+        assert_eq!(eval_str("trim('a  b  c')", &[]), "a b c");
+        assert_eq!(eval_str("trim('   ')", &[]), "");
+        assert_eq!(eval_str("trim('a', 'b')", &[]), "#VALUE!");
+        assert_eq!(eval_str("trim(concat('a', char(9), 'b'))", &[]), "a\tb");
         assert_eq!(eval_str("rept('ab', 3)", &[]), "ababab");
         assert_eq!(eval_str("substitute('a-b-c', '-', '+')", &[]), "a+b+c");
         assert_eq!(eval_str("substitute('a-b-c', '-', '+', 2)", &[]), "a-b+c");
