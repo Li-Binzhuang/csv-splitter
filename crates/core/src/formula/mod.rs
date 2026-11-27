@@ -3504,6 +3504,30 @@ mod tests {
     }
 
     #[test]
+    fn binom_dist_returns_mass_or_cumulative() {
+        for (source, expected) in [
+            ("binom.dist(0, 1, 0.5, 0)", "0.5"),
+            ("binom.dist(1, 1, 0.5, 0)", "0.5"),
+            ("binom.dist(0, 1, 0.5, 1)", "0.5"),
+            ("binom.dist(1, 1, 0.5, 1)", "1"),
+            ("binom.dist(2, 4, 0.5, 0)", "0.375"),
+            ("binom.dist(2, 4, 0.5, 1)", "0.6875"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "binom.dist(-1, 4, 0.5, 1)",
+            "binom.dist(5, 4, 0.5, 1)",
+            "binom.dist(1, 1.5, 0.5, 1)",
+            "binom.dist(1, 4, 1.5, 1)",
+            r#"binom.dist("x", 4, 0.5, 1)"#,
+            "binom.dist(1, 4, 0.5)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn expon_dist_returns_density_or_cumulative() {
         for (source, expected) in [
             ("expon.dist(0, 1, 0)", "1"),

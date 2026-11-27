@@ -3622,6 +3622,49 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // BINOM.DIST: binomial probability mass or cumulative probability.
+        "binom.dist" => {
+            if args.len() != 4 {
+                return Value::Error;
+            }
+            let (Some(successes), Some(trials), Some(probability), Some(cumulative)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+                eval(&args[3], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !successes.is_finite()
+                || !trials.is_finite()
+                || !probability.is_finite()
+                || !cumulative.is_finite()
+                || successes < 0.0
+                || trials < 0.0
+                || trials > 170.0
+                || successes.trunc() != successes
+                || trials.trunc() != trials
+                || successes > trials
+                || !(0.0..=1.0).contains(&probability)
+            {
+                return Value::Error;
+            }
+            let pmf = |k: u64| {
+                factorial(trials as u64) / (factorial(k) * factorial(trials as u64 - k))
+                    * probability.powi(k as i32)
+                    * (1.0 - probability).powi((trials as u64 - k) as i32)
+            };
+            let result = if cumulative != 0.0 {
+                (0..=successes as u64).map(pmf).sum()
+            } else {
+                pmf(successes as u64)
+            };
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
