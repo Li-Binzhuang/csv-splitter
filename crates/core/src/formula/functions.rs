@@ -3591,6 +3591,37 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // EXPON.DIST: exponential probability density or cumulative.
+        "expon.dist" => {
+            if args.len() != 3 {
+                return Value::Error;
+            }
+            let (Some(number), Some(lambda), Some(cumulative)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !number.is_finite()
+                || !lambda.is_finite()
+                || !cumulative.is_finite()
+                || number < 0.0
+                || lambda <= 0.0
+            {
+                return Value::Error;
+            }
+            let result = if cumulative != 0.0 {
+                1.0 - (-lambda * number).exp()
+            } else {
+                lambda * (-lambda * number).exp()
+            };
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
