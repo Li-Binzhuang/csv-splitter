@@ -5097,6 +5097,62 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number(if order == 0 { k0 } else { current })
         }
+        // HYPGEOM.INV: smallest hypergeometric quantile reaching alpha.
+        "hypgeom.inv" => {
+            if args.len() != 4 {
+                return Value::Error;
+            }
+            let (Some(sample_size), Some(population_successes), Some(population_size), Some(alpha)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+                eval(&args[3], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !sample_size.is_finite()
+                || !population_successes.is_finite()
+                || !population_size.is_finite()
+                || !alpha.is_finite()
+                || sample_size < 0.0
+                || population_successes < 0.0
+                || population_size <= 0.0
+                || sample_size.trunc() != sample_size
+                || population_successes.trunc() != population_successes
+                || population_size.trunc() != population_size
+                || sample_size > population_size
+                || population_successes > population_size
+                || !(0.0..=1.0).contains(&alpha)
+            {
+                return Value::Error;
+            }
+            let draws = sample_size as u64;
+            let successes = population_successes as u64;
+            let failures = (population_size - population_successes) as u64;
+            let total = population_size as u64;
+            let ln_combination = |a: u64, b: u64| {
+                if b > a {
+                    return f64::NEG_INFINITY;
+                }
+                ln_gamma(a as f64 + 1.0) - ln_gamma(b as f64 + 1.0) - ln_gamma((a - b) as f64 + 1.0)
+            };
+            let denominator = ln_combination(total, draws);
+            let mass = |value: u64| {
+                (ln_combination(successes, value) + ln_combination(failures, draws - value)
+                    - denominator)
+                    .exp()
+            };
+            let low = draws.saturating_sub(failures);
+            let high = draws.min(successes);
+            let mut cumulative = 0.0;
+            for value in low..=high {
+                cumulative += mass(value);
+                if cumulative >= alpha {
+                    return Value::Number(value as f64);
+                }
+            }
+            Value::Number(high as f64)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

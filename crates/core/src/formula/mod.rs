@@ -3504,6 +3504,28 @@ mod tests {
     }
 
     #[test]
+    fn hypgeom_inv_finds_cutoff() {
+        for (source, expected) in [
+            ("hypgeom.inv(4, 8, 20, 0.5)", "2"),
+            ("hypgeom.inv(4, 8, 20, 0.2)", "1"),
+            ("hypgeom.inv(4, 8, 20, 0.1)", "0"),
+            ("hypgeom.inv(4, 8, 20, 1)", "4"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "hypgeom.inv(-1, 8, 20, 0.5)",
+            "hypgeom.inv(4, 21, 20, 0.5)",
+            "hypgeom.inv(4, 8, 20, -0.1)",
+            "hypgeom.inv(4, 8, 20, 1.1)",
+            r#"hypgeom.inv("x", 8, 20, 0.5)"#,
+            "hypgeom.inv(4, 8, 20)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn besselk_returns_second_kind_values() {
         for (source, expected) in [
             ("besselk(1, 0)", "0.421024"),

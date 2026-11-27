@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项262 精确误差函数（功能级）：`ERF.PRECISE`/`ERFC.PRECISE`；
+  非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项261 引用判断（功能级）：`ISREF(value)`；
   区间/引用返回 TRUE，值/文本返回 FALSE；验收：单测 + gate。
 - [ ] 项260 第二类贝塞尔 Y 函数（功能级）：`BESSELY(x, n)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
-- [ ] 项259 超几何反函数（功能级）：`HYPGEOM.INV(n, K, N, alpha)`；
-  非法参数 `#VALUE!`；验收：单测 + gate。
+- [x] 项259 超几何反函数（功能级）：`HYPGEOM.INV(n, K, N, alpha)`；
+  非法参数 `#VALUE!`；测试 `hypgeom_inv_finds_cutoff`。
 - [x] 项258 第二类贝塞尔函数（功能级）：`BESSELK(x, n)`；
   非法参数 `#VALUE!`；测试 `besselk_returns_second_kind_values`。
 - [x] 项257 超几何分布（功能级）：`HYPGEOM.DIST(s, n, K, N, cumulative)`；
@@ -385,6 +387,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 286（项259 HYPGEOM.INV，功能级）：超几何分位、alpha 边界；
+定向与全量 gate/package 通过；发布包 SHA `cf96d200…80f70709`；
+push 已在轮首成功，本轮不再 push。
 
 Round 285（项258 BESSELK，功能级）：整数阶第二类贝塞尔、数值积分；
 定向与全量 gate 通过；package 首轮 phase 阈值 flake，重跑通过；
