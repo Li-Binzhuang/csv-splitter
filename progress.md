@@ -208,9 +208,11 @@
   测试 `date_time_formats_render_iso_values`。
 - [x] 项313 四位年份日期 12 小时制导出（功能级）：`yyyy-mm-dd hh:mm AM/PM` 样式并 round-trip；
   测试 `formats_are_mapped_into_export_styles_and_round_trip` 与 `column_formats_are_read_back_from_export_styles`。
-- [ ] 项314 四位年份日期 12 小时制带秒（功能级）：`yyyy-mm-dd hh:mm:ss AM/PM` 解析/显示；
-  验收：单测 + gate。
+- [x] 项314 四位年份日期 12 小时制带秒（功能级）：`yyyy-mm-dd hh:mm:ss AM/PM` 解析/显示；
+  测试 `date_time_formats_render_iso_values`。
 - [ ] 项315 四位年份日期 12 小时制带秒导出（功能级）：`yyyy-mm-dd hh:mm:ss AM/PM` xlsx 样式并 round-trip；
+  验收：单测 + gate。
+- [ ] 项316 日号补零 ISO 日期（功能级）：`yyyy-mm-dd` 支持 `dd` 模式；
   验收：单测 + gate。
 - [ ] 项260 第二类贝塞尔 Y 函数（功能级）：`BESSELY(x, n)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
@@ -493,6 +495,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 339（项314 yyyy-mm-dd hh:mm:ss AM/PM，功能级）：四位年份 12 小时制带秒；
+定向与全量 gate/package 通过；发布包 SHA `7c81c5a7…9de77f07`；
+轮首 push 成功，本轮不再 push。
 
 Round 338（项313 yyyy-mm-dd hh:mm AM/PM 导出，功能级）：样式与 round-trip；
 定向与全量 gate/package 通过；发布包 SHA `224cbd64…f79789c0`；
