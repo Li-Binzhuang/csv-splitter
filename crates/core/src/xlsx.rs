@@ -899,6 +899,20 @@ fn conditional_formatting_xml(
                 ));
                 continue;
             }
+            "aboveAverage" | "belowAverage" => {
+                let col = column_name(column);
+                let formula = if rule.operator == "aboveAverage" {
+                    format!("{col}2>AVERAGE({col}:{col})")
+                } else {
+                    format!("{col}2<AVERAGE({col}:{col})")
+                };
+                out.push_str(&format!(
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"{kind}\" dxfId=\"{index}\" priority=\"{priority}\"><formula>{formula}</formula></cfRule></conditionalFormatting>",
+                    kind = rule.operator,
+                    priority = index + 1,
+                ));
+                continue;
+            }
             "notContains" | "notContainsText" => {
                 let text = xml_attr(&rule.value);
                 out.push_str(&format!(
@@ -2315,6 +2329,12 @@ mod tests {
                 value: "zz".into(),
                 color: "lime".into(),
             },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "aboveAverage".into(),
+                value: String::new(),
+                color: "teal".into(),
+            },
         ];
         let (tx, _rx) = std::sync::mpsc::channel();
         csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
@@ -2352,6 +2372,8 @@ mod tests {
         );
         assert!(sheet.contains("type=\"notContainsText\""), "{sheet}");
         assert!(sheet.contains("ISERROR(SEARCH(\"zz\",B2))"), "{sheet}");
+        assert!(sheet.contains("type=\"aboveAverage\""), "{sheet}");
+        assert!(sheet.contains("B2>AVERAGE(B:B)"), "{sheet}");
 
         let bad = vec![ConditionalRule {
             column: "amount".into(),

@@ -360,9 +360,11 @@
   测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [x] 项391 TEXTJOIN 全空输出（功能级）：ignore_empty=1 全空返回空串；
   测试 `textjoin_char_and_code_work_like_a_spreadsheet`。
-- [ ] 项392 条件格式 aboveAverage（功能级）：高于/低于平均值规则；
-  验收：单测 + gate。
+- [x] 项392 条件格式 aboveAverage（功能级）：aboveAverage/belowAverage；
+  测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [ ] 项393 条件格式 belowAverage（功能级）：低于平均值规则；
+  验收：单测 + gate。
+- [ ] 项394 条件格式 duplicateValues（功能级）：重复值规则；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -645,6 +647,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 416（项392 条件格式 aboveAverage，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `7d9c5f4f…25ec0593`；
+轮首 push 成功，本轮不再 push。
 
 Round 415（项391 TEXTJOIN 全空，功能级）：补测试锁定；
 定向与全量 gate/package 通过；发布包 SHA `1a63972e…95562b0e`；

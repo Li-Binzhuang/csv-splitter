@@ -62,6 +62,7 @@
 | 自定义日期/时间 | 常见 token；日期时间/纯时间 | `custom_date_number_formats_are_recognized`、`date_serials_carry_time_fractions_and_time_only_cells`、`custom_time_formats_are_recognized_and_render_as_clock` |
 | 合并单元格 | 只输出存储的左上值，不展开 | `merged_cells_keep_the_stored_top_left_value_without_inventing_others`、CLI `convert_keeps_a_merged_cell_top_left_only` |
 | 空行 | 跳过 | `table_from_rows_skips_empty_rows_and_enforces_the_limit`、CLI `convert_skips_empty_xlsx_rows` |
+| 条件格式 above/belowAverage | `--highlight` 支持 `amount:aboveAverage:teal`、`belowAverage`，导出 `AVERAGE(列)` 公式 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 notContainsText | `--highlight` 支持 `amount:notContains:zz:lime`，导出 `ISERROR(SEARCH(...))` | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 between | `--highlight` 支持 `amount:between:500,1000:pink`，导出 cellIs between 双公式 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 blank/nonblank | `--highlight` 支持 `amount:blank:gray`、`nonblank:cyan`，导出 containsBlanks/notContainsBlanks | `conditional_rules_support_top_and_bottom_ranks` |
