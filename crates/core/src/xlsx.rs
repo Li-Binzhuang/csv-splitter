@@ -780,8 +780,24 @@ fn quote_formula(value: &str) -> String {
     if value.parse::<f64>().is_ok() {
         value.to_string()
     } else {
-        format!("\"{}\"", xml_attr(value))
+        formula_literal(value)
     }
+}
+
+/// A double-quoted Excel formula string. Inner quotes are doubled, and the
+/// XML text is escaped so the formula parser receives the intended literal.
+fn formula_literal(value: &str) -> String {
+    let mut escaped = String::new();
+    for ch in value.chars() {
+        match ch {
+            '"' => escaped.push_str("\"\""),
+            '&' => escaped.push_str("&amp;"),
+            '<' => escaped.push_str("&lt;"),
+            '>' => escaped.push_str("&gt;"),
+            _ => escaped.push(ch),
+        }
+    }
+    format!("\"{escaped}\"")
 }
 
 fn parse_hex_color(text: &str) -> Option<String> {
@@ -1013,7 +1029,8 @@ fn conditional_formatting_xml(
                 }
                 let text = xml_attr(&rule.value);
                 out.push_str(&format!(
-                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"notContainsText\" dxfId=\"{index}\" priority=\"{priority}\" operator=\"notContainsText\" text=\"{text}\"><formula>ISERROR(SEARCH(\"{text}\",{col}2))</formula></cfRule></conditionalFormatting>",
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"notContainsText\" dxfId=\"{index}\" priority=\"{priority}\" operator=\"notContainsText\" text=\"{text}\"><formula>ISERROR(SEARCH({literal},{col}2))</formula></cfRule></conditionalFormatting>",
+                    literal = formula_literal(&rule.value),
                     col = column_name(column),
                     priority = index + 1,
                 ));
@@ -1025,7 +1042,8 @@ fn conditional_formatting_xml(
                 }
                 let text = xml_attr(&rule.value);
                 out.push_str(&format!(
-                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"containsText\" dxfId=\"{index}\" priority=\"{priority}\" operator=\"containsText\" text=\"{text}\"><formula>NOT(ISERROR(SEARCH(\"{text}\",{col}2)))</formula></cfRule></conditionalFormatting>",
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"containsText\" dxfId=\"{index}\" priority=\"{priority}\" operator=\"containsText\" text=\"{text}\"><formula>NOT(ISERROR(SEARCH({literal},{col}2)))</formula></cfRule></conditionalFormatting>",
+                    literal = formula_literal(&rule.value),
                     col = column_name(column),
                     priority = index + 1,
                 ));
@@ -2395,6 +2413,12 @@ mod tests {
             },
             ConditionalRule {
                 column: "amount".into(),
+                operator: "contains".into(),
+                value: "a\"b".into(),
+                color: "blue".into(),
+            },
+            ConditionalRule {
+                column: "amount".into(),
                 operator: "dataBar".into(),
                 value: "FF0000".into(),
                 color: String::new(),
@@ -2532,6 +2556,8 @@ mod tests {
         assert!(sheet.contains("rgb=\"FFF8696B\""), "{sheet}");
         assert!(sheet.contains("rgb=\"FF63BE7B\""), "{sheet}");
         assert!(sheet.contains("type=\"containsText\""), "{sheet}");
+        assert!(sheet.contains("text=\"a&quot;b\""), "{sheet}");
+        assert!(sheet.contains("SEARCH(\"a\"\"b\",B2)"), "{sheet}");
         assert!(sheet.contains("text=\"00\""), "{sheet}");
         assert!(sheet.contains("NOT(ISERROR(SEARCH(\"00\",B2)))"), "{sheet}");
         assert!(sheet.contains("type=\"dataBar\""), "{sheet}");
