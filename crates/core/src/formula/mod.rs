@@ -3504,6 +3504,20 @@ mod tests {
     }
 
     #[test]
+    fn complex_natural_log_works() {
+        for (source, expected) in [
+            (r#"imln("3+4i")"#, "1.6094379124341003+0.9272952180016122i"),
+            (r#"imln("1+0i")"#, "0"),
+            (r#"imln("0+1i")"#, "1.5707963267948966i"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [r#"imln("0+0i")"#, r#"imln("abc")"#, "imln()"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn complex_power_works() {
         for (source, expected) in [
             (r#"impower("0+1i", 2)"#, "-1"),

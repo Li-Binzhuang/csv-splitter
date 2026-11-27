@@ -130,6 +130,7 @@
 | DB / DDB / VDB | 支持（功能级新增） | 固定/双倍/变动余额递减；区间、月数、因子非法 `#VALUE!` |
 | FVSCHEDULE | 支持（功能级新增） | 复利 schedule 区间；空区间/rate≤-1 `#VALUE!` |
 | SUMXMY2 / SUMX2MY2 / SUMX2PY2 | 支持（功能级新增） | 同行等长 x/y、空区间/长度不等 `#VALUE!` |
+| IMLN | 支持（功能级新增） | 自然对数；零/非法复数 `#VALUE!` |
 | IMPOWER | 支持（功能级新增） | 实幂；零的负幂 `#VALUE!` |
 | IMSQRT | 支持（功能级新增） | 主平方根；零复数返回 0 |
 | IMEXP / IMLOG10 | 支持（功能级新增） | 复数指数/常用对数；零复数 log `#VALUE!` |

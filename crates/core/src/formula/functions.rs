@@ -3029,6 +3029,25 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 &suffix,
             ))
         }
+        // IMLN: principal natural logarithm of a complex number.
+        "imln" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let text = eval(&args[0], ctx).text();
+            let Some((real, imaginary, suffix)) = parse_complex(&text) else {
+                return Value::Error;
+            };
+            let magnitude = (real * real + imaginary * imaginary).sqrt();
+            if magnitude == 0.0 {
+                return Value::Error;
+            }
+            Value::Text(format_complex(
+                magnitude.ln(),
+                imaginary.atan2(real),
+                &suffix,
+            ))
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
