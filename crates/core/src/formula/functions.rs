@@ -2409,6 +2409,26 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // FISHER/FISHERINV: Fisher z transformation and its inverse.
+        "fisher" | "fisherinv" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(value) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            if !value.is_finite() {
+                return Value::Error;
+            }
+            if lower == "fisher" {
+                if value <= -1.0 || value >= 1.0 {
+                    return Value::Error;
+                }
+                Value::Number(0.5 * ((1.0 + value) / (1.0 - value)).ln())
+            } else {
+                Value::Number(value.tanh())
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

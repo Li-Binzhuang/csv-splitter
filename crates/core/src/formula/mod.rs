@@ -3504,6 +3504,18 @@ mod tests {
     }
 
     #[test]
+    fn fisher_transform_round_trips() {
+        assert_eq!(eval_str("fisher(0)", &[]), "0");
+        assert_eq!(eval_str("fisher(0.5)", &[]), "0.549306");
+        assert_eq!(eval_str("fisherinv(0)", &[]), "0");
+        assert_eq!(eval_str("fisherinv(0.549306)", &[]), "0.5");
+        assert_eq!(eval_str("fisherinv(fisher(0.5))", &[]), "0.5");
+        for source in ["fisher(1)", "fisher(-1)", "fisher(2)", r#"fisher("x")"#] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn mirr_discounts_and_reinvests_cash_flows() {
         let columns = vec!["a".to_string(), "b".to_string(), "c".to_string()];
         let mut cells = HashMap::new();
