@@ -6823,6 +6823,10 @@ mod tests {
         assert_eq!(eval_str("replace('abc', 0, 1, 'x')", &[]), "#VALUE!");
         assert_eq!(eval_str("replace('abc', 2, -1, 'x')", &[]), "#VALUE!");
         assert_eq!(eval_str("replace('abc', 5, 1, 'x')", &[]), "abc");
+        assert_eq!(eval_str("replace('abc', 1.5, 1, 'x')", &[]), "#VALUE!");
+        assert_eq!(eval_str("replace('abc', 2, 1.5, 'x')", &[]), "#VALUE!");
+        assert_eq!(eval_str("replace('abc', 'x', 1, 'y')", &[]), "#VALUE!");
+        assert_eq!(eval_str("replace('abc', 2, 1, 'x', 2)", &[]), "#VALUE!");
         assert_eq!(eval_str("find('B', 'aBc')", &[]), "2");
         assert_eq!(eval_str("search('b', 'aBc')", &[]), "2");
         assert_eq!(eval_str("find('z', 'aBc')", &[]), "0");

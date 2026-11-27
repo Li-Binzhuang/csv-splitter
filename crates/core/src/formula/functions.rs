@@ -5946,7 +5946,13 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             let Some(new_text) = args.get(3).map(|a| eval(a, ctx).text()) else {
                 return Value::Error;
             };
-            if !start.is_finite() || start < 1.0 || !count.is_finite() || count < 0.0 {
+            if !start.is_finite()
+                || start.fract() != 0.0
+                || start < 1.0
+                || !count.is_finite()
+                || count.fract() != 0.0
+                || count < 0.0
+            {
                 return Value::Error;
             }
             let chars: Vec<char> = text.chars().collect();
