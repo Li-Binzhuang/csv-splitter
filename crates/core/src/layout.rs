@@ -40,7 +40,7 @@ pub enum NumberFormat {
         places: usize,
     },
     /// `# ?/?` or `?/?`: mixed/simple fraction display.
-    Fraction { whole: bool },
+    Fraction { whole: bool, digits: usize },
     /// `@`: text is shown as entered.
     Text,
 }
@@ -99,10 +99,8 @@ impl NumberFormat {
                 });
             }
         }
-        if spec == "# ?/?" || spec == "?/?" {
-            return Ok(Self::Fraction {
-                whole: spec.starts_with('#'),
-            });
+        if let Some((whole, digits)) = fraction_shape(spec) {
+            return Ok(Self::Fraction { whole, digits });
         }
         if is_date_time_pattern(spec) {
             return Ok(Self::DateTime {
@@ -176,11 +174,12 @@ impl NumberFormat {
                 };
                 format!("{symbol}{body};({symbol}{body})")
             }
-            Self::Fraction { whole } => {
+            Self::Fraction { whole, digits } => {
+                let marks = "?".repeat(*digits);
                 if *whole {
-                    "# ?/?".to_string()
+                    format!("# {marks}/{marks}")
                 } else {
-                    "?/?".to_string()
+                    format!("{marks}/{marks}")
                 }
             }
             Self::Text => "@".to_string(),
@@ -237,13 +236,23 @@ impl NumberFormat {
                     format!("{symbol}{rendered}")
                 }
             }
-            Self::Fraction { whole } => render_fraction(number, *whole),
+            Self::Fraction { whole, digits } => render_fraction(number, *whole, *digits),
             Self::Text => value.to_string(),
         }
     }
 }
 
-fn render_fraction(number: f64, whole: bool) -> String {
+fn fraction_shape(spec: &str) -> Option<(bool, usize)> {
+    match spec {
+        "# ?/?" => Some((true, 1)),
+        "?/?" => Some((false, 1)),
+        "# ??/??" => Some((true, 2)),
+        "??/??" => Some((false, 2)),
+        _ => None,
+    }
+}
+
+fn render_fraction(number: f64, whole: bool, digits: usize) -> String {
     if !number.is_finite() {
         return number.to_string();
     }
@@ -256,7 +265,8 @@ fn render_fraction(number: f64, whole: bool) -> String {
     } else {
         let mut best = (0, 1);
         let mut error = f64::INFINITY;
-        for candidate in 2..=99 {
+        let limit = 10_usize.pow(digits.min(2) as u32) - 1;
+        for candidate in 2..=limit {
             let numerator = (fraction * candidate as f64).round();
             let error_here = (fraction - numerator / candidate as f64).abs();
             if error_here < error {
@@ -693,6 +703,16 @@ mod tests {
         assert_eq!(simple.name(), "?/?");
         assert_eq!(simple.render("1.25"), "5/4");
         assert_eq!(simple.render("0.5"), "1/2");
+
+        let wide = NumberFormat::parse("# ??/??").unwrap();
+        assert_eq!(wide.name(), "# ??/??");
+        assert_eq!(wide.render("1.25"), "1 1/4");
+        assert_eq!(wide.render("0.36"), "9/25");
+        let narrow = NumberFormat::parse("?/?").unwrap();
+        assert_eq!(narrow.render("0.36"), "3/8");
+        let wide_simple = NumberFormat::parse("??/??").unwrap();
+        assert_eq!(wide_simple.name(), "??/??");
+        assert_eq!(wide_simple.render("0.36"), "9/25");
     }
 
     #[test]
