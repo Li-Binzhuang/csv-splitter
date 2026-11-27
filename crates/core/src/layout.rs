@@ -324,6 +324,9 @@ fn is_date_time_pattern(spec: &str) -> bool {
             | "yyyy-mm-dd hh:mm:ss"
             | "hh:mm"
             | "hh:mm:ss"
+            | "h:mm am/pm"
+            | "hh:mm am/pm"
+            | "h:mm:ss am/pm"
     )
 }
 
@@ -390,6 +393,24 @@ fn render_date_time(pattern: &str, value: &str) -> Option<String> {
         "hh:mm:ss" => {
             let (hour, minute, second) = time_parts?;
             Some(format!("{hour:02}:{minute:02}:{second:02}"))
+        }
+        "h:mm am/pm" | "hh:mm am/pm" | "h:mm:ss am/pm" => {
+            let (hour, minute, second) = time_parts?;
+            let hour12 = match hour % 12 {
+                0 => 12,
+                value => value,
+            };
+            let suffix = if hour < 12 { "AM" } else { "PM" };
+            let hour_text = if lower.starts_with("hh") {
+                format!("{hour12:02}")
+            } else {
+                hour12.to_string()
+            };
+            if lower.contains("ss") {
+                Some(format!("{hour_text}:{minute:02}:{second:02} {suffix}"))
+            } else {
+                Some(format!("{hour_text}:{minute:02} {suffix}"))
+            }
         }
         _ => None,
     }
@@ -750,6 +771,11 @@ mod tests {
         assert_eq!(minute.render("2024-01-02T13:04:05"), "2024-01-02 13:04");
         let seconds = NumberFormat::parse("hh:mm:ss").unwrap();
         assert_eq!(seconds.render("13:04:05"), "13:04:05");
+        let ampm = NumberFormat::parse("h:mm AM/PM").unwrap();
+        assert_eq!(ampm.name(), "h:mm AM/PM");
+        assert_eq!(ampm.render("13:04:05"), "1:04 PM");
+        assert_eq!(ampm.render("00:05"), "12:05 AM");
+        assert_eq!(ampm.render("12:00"), "12:00 PM");
         // A format never invents a date from a non-date value.
         assert_eq!(date.render("N/A"), "N/A");
         assert_eq!(date.render("123"), "123");
