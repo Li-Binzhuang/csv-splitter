@@ -3652,15 +3652,23 @@ mod tests {
         let output = dir.join("validation.xlsx");
         std::fs::write(&input, "id,status\n1,good\n2,ok\n3,bad\n").unwrap();
         let (tx, _rx) = std::sync::mpsc::channel();
-        let validations = vec![DataValidation {
-            column: "status".to_string(),
-            values: vec!["good".into(), "ok".into(), "bad".into()],
-        }];
+        let validations = vec![
+            DataValidation {
+                column: "status".to_string(),
+                values: vec!["good".into(), "ok".into(), "bad".into()],
+            },
+            DataValidation {
+                column: "id".to_string(),
+                values: vec!["1".into(), "2".into(), "3".into()],
+            },
+        ];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
-        assert!(sheet.contains("<dataValidations count=\"1\">"), "{sheet}");
+        assert!(sheet.contains("<dataValidations count=\"2\">"), "{sheet}");
         assert!(sheet.contains("type=\"list\""), "{sheet}");
         assert!(sheet.contains("sqref=\"B2:B4\""), "{sheet}");
+        assert!(sheet.contains("sqref=\"A2:A4\""), "{sheet}");
+        assert!(sheet.contains("<formula1>\"1,2,3\"</formula1>"), "{sheet}");
         assert!(
             sheet.contains("<formula1>\"good,ok,bad\"</formula1>"),
             "{sheet}"
