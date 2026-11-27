@@ -3504,6 +3504,53 @@ mod tests {
     }
 
     #[test]
+    fn paired_sum_functions_work() {
+        let columns = vec![
+            "x1".to_string(),
+            "x2".to_string(),
+            "x3".to_string(),
+            "y1".to_string(),
+            "y2".to_string(),
+            "y3".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [
+            ("x1", "1"),
+            ("x2", "2"),
+            ("x3", "3"),
+            ("y1", "4"),
+            ("y2", "5"),
+            ("y3", "6"),
+        ] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        for (source, expected) in [
+            ("sumxmy2(A2:C2, D2:F2)", "27"),
+            ("sumx2my2(A2:C2, D2:F2)", "-63"),
+            ("sumx2py2(A2:C2, D2:F2)", "91"),
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        for source in ["sumxmy2(A2:C2, D2:E2)", "sumx2py2(A2:C2)"] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "#VALUE!",
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
     fn stdeva_and_vara_treat_text_as_zero() {
         let columns = vec![
             "a".to_string(),

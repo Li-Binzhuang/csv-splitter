@@ -2507,6 +2507,48 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 variance.sqrt()
             })
         }
+        // SUMXMY2/SUMX2MY2/SUMX2PY2: paired-range aggregate products.
+        "sumxmy2" | "sumx2my2" | "sumx2py2" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let (
+                Some(Expr::Range {
+                    from: x_from,
+                    to: x_to,
+                }),
+                Some(Expr::Range {
+                    from: y_from,
+                    to: y_to,
+                }),
+            ) = (args.first(), args.get(1))
+            else {
+                return Value::Error;
+            };
+            let Some(xs) = range_values(x_from, x_to, ctx) else {
+                return Value::Error;
+            };
+            let Some(ys) = range_values(y_from, y_to, ctx) else {
+                return Value::Error;
+            };
+            if xs.len() != ys.len() || xs.is_empty() {
+                return Value::Error;
+            }
+            let total = xs
+                .iter()
+                .zip(ys.iter())
+                .map(|(x, y)| match lower.as_str() {
+                    "sumxmy2" => (x - y).powi(2),
+                    "sumx2my2" => x.powi(2) - y.powi(2),
+                    _ => x.powi(2) + y.powi(2),
+                })
+                .sum::<f64>();
+            if total.is_finite() {
+                Value::Number(total)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
