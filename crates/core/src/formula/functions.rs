@@ -2429,6 +2429,44 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Number(value.tanh())
             }
         }
+        // SERIESSUM: Σ coefficient_k * x^(n + k*m).
+        "seriessum" => {
+            if args.len() != 4 {
+                return Value::Error;
+            }
+            let (Some(x), Some(n), Some(m)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            let Some(Expr::Range { from, to }) = args.get(3) else {
+                return Value::Error;
+            };
+            let Some(coefficients) = range_cells(from, to, ctx) else {
+                return Value::Error;
+            };
+            if !x.is_finite() || !n.is_finite() || !m.is_finite() || coefficients.is_empty() {
+                return Value::Error;
+            }
+            let mut total = 0.0;
+            for (index, coefficient) in coefficients.iter().enumerate() {
+                let Some(coefficient) = coefficient
+                    .trim()
+                    .parse::<f64>()
+                    .ok()
+                    .filter(|value| value.is_finite())
+                else {
+                    return Value::Error;
+                };
+                total += coefficient * x.powf(n + index as f64 * m);
+                if !total.is_finite() {
+                    return Value::Error;
+                }
+            }
+            Value::Number(total)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

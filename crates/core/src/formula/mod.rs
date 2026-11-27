@@ -3504,6 +3504,49 @@ mod tests {
     }
 
     #[test]
+    fn seriessum_sums_powers() {
+        let columns = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("a".to_string(), "1".to_string());
+        cells.insert("b".to_string(), "1".to_string());
+        cells.insert("c".to_string(), "1".to_string());
+        for (source, expected) in [
+            ("seriessum(2, 1, 1, A2:C2)", "14"),
+            ("seriessum(2, 0, 1, A2:C2)", "7"),
+            ("seriessum(1, 1, 1, A2:C2)", "3"),
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        cells.insert("b".to_string(), "x".to_string());
+        let formula = Formula::parse("seriessum(2, 1, 1, A2:C2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+        let columns = vec!["a".to_string(), "b".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("a".to_string(), String::new());
+        cells.insert("b".to_string(), String::new());
+        let formula = Formula::parse("seriessum(2, 1, 1, A2:B2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+        assert_eq!(eval_str("seriessum(2, 1, 1)", &[]), "#VALUE!");
+    }
+
+    #[test]
     fn fisher_transform_round_trips() {
         assert_eq!(eval_str("fisher(0)", &[]), "0");
         assert_eq!(eval_str("fisher(0.5)", &[]), "0.549306");
