@@ -2321,6 +2321,45 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             let even = (number.trunc() as i64) % 2 == 0;
             Value::Bool(if lower == "iseven" { even } else { !even })
         }
+        // CEILING.MATH/FLOOR.MATH: significance-aware rounding with negative modes.
+        "ceiling.math" | "floor.math" => {
+            if args.is_empty() || args.len() > 3 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            let significance = args
+                .get(1)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(1.0))
+                .unwrap_or(f64::NAN);
+            let mode = args
+                .get(2)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(0.0))
+                .unwrap_or(f64::NAN);
+            if !number.is_finite() || !significance.is_finite() || !mode.is_finite() {
+                return Value::Error;
+            }
+            if significance == 0.0 {
+                return Value::Number(0.0);
+            }
+            let significance = significance.abs();
+            let ratio = number / significance;
+            let rounded = if lower == "ceiling.math" {
+                if number >= 0.0 || mode == 0.0 {
+                    ratio.ceil()
+                } else {
+                    ratio.floor()
+                }
+            } else if number >= 0.0 || mode == 0.0 {
+                ratio.floor()
+            } else {
+                ratio.ceil()
+            };
+            Value::Number(rounded * significance)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

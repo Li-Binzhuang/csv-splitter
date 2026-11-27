@@ -3504,6 +3504,27 @@ mod tests {
     }
 
     #[test]
+    fn math_rounding_functions_work() {
+        for (source, expected) in [
+            ("ceiling.math(4.3)", "5"),
+            ("floor.math(4.3)", "4"),
+            ("ceiling.math(4.3, 2)", "6"),
+            ("floor.math(4.3, 2)", "4"),
+            ("ceiling.math(-4.3, 2)", "-4"),
+            ("ceiling.math(-4.3, 2, 1)", "-6"),
+            ("floor.math(-4.3, 2)", "-6"),
+            ("floor.math(-4.3, 2, 1)", "-4"),
+            ("ceiling.math(5, 0)", "0"),
+            ("floor.math(5, 0)", "0"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in ["ceiling.math(4.3, 2, \"x\")", "floor.math()"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn iseven_and_isodd_work() {
         assert_eq!(eval_str("iseven(2)", &[]), "TRUE");
         assert_eq!(eval_str("iseven(3)", &[]), "FALSE");
