@@ -3418,6 +3418,27 @@ mod tests {
     }
 
     #[test]
+    fn mid_validates_start_and_length() {
+        for (source, expected) in [
+            (r#"mid("abc", 2, 2)"#, "bc"),
+            (r#"mid("abc", 1)"#, "abc"),
+            (r#"mid("abc", 9, 2)"#, ""),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            r#"mid("abc", 0, 1)"#,
+            r#"mid("abc", 1.5, 1)"#,
+            r#"mid("abc", "x", 1)"#,
+            r#"mid("abc", 1, -1)"#,
+            r#"mid("abc", 1, 1.5)"#,
+            r#"mid("abc", 1, 1, 2)"#,
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn rept_requires_integer_count_within_limit() {
         for (source, expected) in [
             (r#"rept("ab", 2)"#, "abab"),

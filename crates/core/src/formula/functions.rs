@@ -5891,18 +5891,36 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             s.chars().skip(total.saturating_sub(n)).collect()
         }),
         "mid" => {
+            if args.len() > 3 {
+                return Value::Error;
+            }
             let Some(text) = args.first().map(|a| eval(a, ctx).text()) else {
                 return Value::Error;
             };
-            let start = args
-                .get(1)
-                .and_then(|a| eval(a, ctx).number())
-                .unwrap_or(1.0)
-                .max(1.0) as usize;
-            let length = args
-                .get(2)
-                .and_then(|a| eval(a, ctx).number())
-                .map(|n| n.max(0.0) as usize);
+            let start = match args.get(1) {
+                Some(arg) => {
+                    let Some(number) = eval(arg, ctx).number() else {
+                        return Value::Error;
+                    };
+                    if !number.is_finite() || number.fract() != 0.0 || number < 1.0 {
+                        return Value::Error;
+                    }
+                    number as usize
+                }
+                None => 1,
+            };
+            let length = match args.get(2) {
+                Some(arg) => {
+                    let Some(number) = eval(arg, ctx).number() else {
+                        return Value::Error;
+                    };
+                    if !number.is_finite() || number.fract() != 0.0 || number < 0.0 {
+                        return Value::Error;
+                    }
+                    Some(number as usize)
+                }
+                None => None,
+            };
             let taken: String = text
                 .chars()
                 .skip(start.saturating_sub(1))

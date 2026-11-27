@@ -256,9 +256,11 @@
   定向测试通过。
 - [x] 项339 REPT 输出上限（功能级）：结果 >32767 字符 → #VALUE!；
   测试 `rept_requires_integer_count_within_limit`。
-- [ ] 项340 MID start_num 校验（功能级）：start_num<1/非数值 → #VALUE!；
-  验收：单测 + gate。
+- [x] 项340 MID start_num 校验（功能级）：start_num<1/非整数/非数值、num_chars 负数/非整数 → #VALUE!；
+  测试 `mid_validates_start_and_length`。
 - [ ] 项341 LEFT/RIGHT 长度校验（功能级）：负数/非数值 → #VALUE!；
+  验收：单测 + gate。
+- [ ] 项342 REPLACE start/count 校验（功能级）：非整数/负数 → #VALUE!；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -541,6 +543,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 364（项340 MID start_num 校验，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `5849c636…73426e1`；
+轮首 push 成功，本轮不再 push。
 
 Round 363（项339 REPT 输出上限，功能级）：32767 字符；
 定向与全量 gate/package 通过；发布包 SHA `84973113…108e8065`；
