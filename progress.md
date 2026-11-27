@@ -192,9 +192,11 @@
   测试 `date_time_formats_render_iso_values`。
 - [x] 项305 两位年份日期 12 小时制导出（功能级）：`m/d/yy h:mm AM/PM` 样式并 round-trip；
   测试 `formats_are_mapped_into_export_styles_and_round_trip` 与 `column_formats_are_read_back_from_export_styles`。
-- [ ] 项306 两位年份日期 12 小时制带秒（功能级）：`m/d/yy h:mm:ss AM/PM` 解析/显示；
-  验收：单测 + gate。
+- [x] 项306 两位年份日期 12 小时制带秒（功能级）：`m/d/yy h:mm:ss AM/PM` 解析/显示；
+  测试 `date_time_formats_render_iso_values`。
 - [ ] 项307 两位年份日期 12 小时制带秒导出（功能级）：`m/d/yy h:mm:ss AM/PM` xlsx 样式并 round-trip；
+  验收：单测 + gate。
+- [ ] 项308 短横线两位年份 12 小时制（功能级）：`yy-mm-dd h:mm AM/PM` 解析/显示；
   验收：单测 + gate。
 - [ ] 项260 第二类贝塞尔 Y 函数（功能级）：`BESSELY(x, n)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
@@ -477,6 +479,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 331（项306 m/d/yy h:mm:ss AM/PM，功能级）：两位年份 12 小时制带秒；
+定向与全量 gate/package 通过；发布包 SHA `855e2e99…319d46e41`；
+轮首 push 成功，本轮不再 push。
 
 Round 330（项305 m/d/yy h:mm AM/PM 导出，功能级）：样式与 round-trip；
 定向与全量 gate/package 通过；发布包 SHA `026edfaa…9adb5d7f`；
