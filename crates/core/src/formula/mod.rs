@@ -6946,6 +6946,7 @@ mod tests {
         assert_eq!(eval_str("proper('')", &[]), "");
         assert_eq!(eval_str("proper('a', 2)", &[]), "#VALUE!");
         assert_eq!(eval_str("upper('straße')", &[]), "STRASSE");
+        assert_eq!(eval_str(r#"textjoin(",", 1, "", "")"#, &[]), "");
         assert_eq!(eval_str("clean(\"a\u{85}b\u{9f}c\")", &[]), "abc");
         assert_eq!(eval_str("clean(\"a\u{7f}b\")", &[]), "ab");
         assert_eq!(eval_str("lower('ÄÖÜ')", &[]), "äöü");
