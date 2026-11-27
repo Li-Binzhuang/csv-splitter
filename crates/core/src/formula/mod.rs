@@ -3504,6 +3504,19 @@ mod tests {
     }
 
     #[test]
+    fn complex_cotangent_works() {
+        for (source, expected) in [
+            (r#"imcot("1+0i")"#, "0.6420926159343308"),
+            (r#"imcot("0+1i")"#, "-1.3130352854993315i"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [r#"imcot("0+0i")"#, r#"imcot("abc")"#, "imcot(1, 2)"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn complex_cosecant_and_secant_work() {
         for (source, expected) in [
             (r#"imcsc("1+0i")"#, "1.1883951057781212"),

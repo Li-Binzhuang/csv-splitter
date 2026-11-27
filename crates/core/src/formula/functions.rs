@@ -3383,6 +3383,29 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 &suffix,
             ))
         }
+        // IMCOT: complex cotangent = cos(z) / sin(z).
+        "imcot" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let text = eval(&args[0], ctx).text();
+            let Some((real, imaginary, suffix)) = parse_complex(&text) else {
+                return Value::Error;
+            };
+            let sin_real = real.sin() * imaginary.cosh();
+            let sin_imaginary = real.cos() * imaginary.sinh();
+            let cos_real = real.cos() * imaginary.cosh();
+            let cos_imaginary = -real.sin() * imaginary.sinh();
+            let denominator = sin_real * sin_real + sin_imaginary * sin_imaginary;
+            if denominator == 0.0 {
+                return Value::Error;
+            }
+            Value::Text(format_complex(
+                (cos_real * sin_real + cos_imaginary * sin_imaginary) / denominator,
+                (cos_imaginary * sin_real - cos_real * sin_imaginary) / denominator,
+                &suffix,
+            ))
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
