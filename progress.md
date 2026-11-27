@@ -152,9 +152,11 @@
   测试 `formats_are_mapped_into_export_styles_and_round_trip` 与 `column_formats_are_read_back_from_export_styles`。
 - [x] 项285 百分比零位小数格式（功能级）：`#,##0%` 解析/显示；
   测试 `number_formats_render_the_way_a_spreadsheet_does`。
-- [ ] 项286 百分比零位小数导出（功能级）：`#,##0%` xlsx 样式写入并 round-trip；
-  验收：单测 + gate。
+- [x] 项286 百分比零位小数导出（功能级）：`#,##0%` 样式写入并 round-trip；
+  测试 `formats_are_mapped_into_export_styles_and_round_trip` 与 `column_formats_are_read_back_from_export_styles`。
 - [ ] 项287 12 小时制时间格式（功能级）：`h:mm AM/PM` 解析/显示；
+  验收：单测 + gate。
+- [ ] 项288 12 小时制 xlsx 导出（功能级）：`h:mm AM/PM` 样式写入并 round-trip；
   验收：单测 + gate。
 - [ ] 项260 第二类贝塞尔 Y 函数（功能级）：`BESSELY(x, n)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
@@ -437,6 +439,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 311（项286 百分比零位小数导出，功能级）：#,##0% 样式与 round-trip；
+定向与全量 gate/package 通过；发布包 SHA `dea34614…8d8de313`；
+push 已在轮首成功，本轮不再 push。
 
 Round 310（项285 百分比零位小数，功能级）：#,##0% 解析/显示；
 定向与全量 gate/package 通过；发布包 SHA `be171eb6…0f092096`；
