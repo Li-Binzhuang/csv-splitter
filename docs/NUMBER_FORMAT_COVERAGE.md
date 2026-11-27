@@ -13,6 +13,9 @@
 | `yyyy-mm-dd` | 支持（新增） | ISO 日期 → 破折号日期 | `date_time_formats_render_iso_values` |
 | `yyyy/mm/dd` | 支持（新增） | 斜杠日期 | 同上 |
 | `dd/mm/yyyy` | 支持（新增） | 日/月/年 | 同上 |
+| `dd.mm.yyyy` / `d.m.yyyy` | 支持（新增） | 点分隔日/月/年 | `dotted_date_formats_match_excel_orders` |
+| `yyyy.mm.dd` / `yyyy.m.d` | 支持（新增） | 点分隔年/月/日 | 同上 |
+| `dd.mm.yyyy h:mm[:ss]` | 支持（新增） | 点分隔日期 + 时间 | 同上 |
 | `mm/dd/yyyy` | 支持（新增） | 月/日/年 | 同上 |
 | `m/d/yyyy` / `yyyy/m/d` | 支持（新增） | 不补零的月/日 | `date_time_formats_render_iso_values` |
 | `yyyy-mm-dd hh:mm` | 支持（新增） | 日期 + 时:分 | 同上 |
