@@ -130,6 +130,7 @@
 | DB / DDB / VDB | 支持（功能级新增） | 固定/双倍/变动余额递减；区间、月数、因子非法 `#VALUE!` |
 | FVSCHEDULE | 支持（功能级新增） | 复利 schedule 区间；空区间/rate≤-1 `#VALUE!` |
 | SUMXMY2 / SUMX2MY2 / SUMX2PY2 | 支持（功能级新增） | 同行等长 x/y、空区间/长度不等 `#VALUE!` |
+| PERMUTATIONA | 支持（功能级新增） | `n^k`；非负整数、非有限结果 `#VALUE!` |
 | SQRTPI | 支持（功能级新增） | `sqrt(number*pi)`；负数/非数值 `#VALUE!` |
 | IMCOT | 支持（功能级新增） | 复数余切；零点/非法复数 `#VALUE!` |
 | IMCSC / IMSEC | 支持（功能级新增） | 复数余割/正割；零点/非法复数 `#VALUE!` |

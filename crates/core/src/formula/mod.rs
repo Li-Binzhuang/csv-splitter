@@ -3504,6 +3504,26 @@ mod tests {
     }
 
     #[test]
+    fn permutationa_counts_repetition_permutations() {
+        for (source, expected) in [
+            ("permutationa(3, 2)", "9"),
+            ("permutationa(2, 3)", "8"),
+            ("permutationa(0, 0)", "1"),
+            ("permutationa(0, 2)", "0"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "permutationa(-1, 2)",
+            "permutationa(2.5, 2)",
+            r#"permutationa("x", 2)"#,
+            "permutationa(1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn sqrtpi_scales_by_pi() {
         for (source, expected) in [
             ("sqrtpi(0)", "0"),
