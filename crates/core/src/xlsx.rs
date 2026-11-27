@@ -2426,6 +2426,12 @@ mod tests {
             },
             ConditionalRule {
                 column: "amount".into(),
+                operator: "contains".into(),
+                value: "x>y".into(),
+                color: "blue".into(),
+            },
+            ConditionalRule {
+                column: "amount".into(),
                 operator: "dataBar".into(),
                 value: "FF0000".into(),
                 color: String::new(),
@@ -2585,6 +2591,7 @@ mod tests {
         assert!(sheet.contains("SEARCH(\"a\"\"b\",B2)"), "{sheet}");
         assert!(sheet.contains("text=\"A&amp;B&lt;C\""), "{sheet}");
         assert!(sheet.contains("SEARCH(\"A&amp;B&lt;C\",B2)"), "{sheet}");
+        assert!(sheet.contains("SEARCH(\"x&gt;y\",B2)"), "{sheet}");
         assert!(sheet.contains("text=\"00\""), "{sheet}");
         assert!(sheet.contains("NOT(ISERROR(SEARCH(\"00\",B2)))"), "{sheet}");
         assert!(sheet.contains("type=\"dataBar\""), "{sheet}");
