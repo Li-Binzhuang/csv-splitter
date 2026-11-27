@@ -2413,6 +2413,12 @@ mod tests {
             },
             ConditionalRule {
                 column: "amount".into(),
+                operator: "notBetween".into(),
+                value: "1,10".into(),
+                color: "coral".into(),
+            },
+            ConditionalRule {
+                column: "amount".into(),
                 operator: "notContains".into(),
                 value: "zz".into(),
                 color: "lime".into(),
@@ -2522,6 +2528,11 @@ mod tests {
         assert!(sheet.contains("operator=\"between\""), "{sheet}");
         assert!(
             sheet.contains("<formula>500</formula><formula>1000</formula>"),
+            "{sheet}"
+        );
+        assert!(sheet.contains("operator=\"notBetween\""), "{sheet}");
+        assert!(
+            sheet.contains("<formula>1</formula><formula>10</formula>"),
             "{sheet}"
         );
         assert!(sheet.contains("type=\"notContainsText\""), "{sheet}");
