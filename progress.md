@@ -114,8 +114,10 @@
   仅支持首众数/无众数 `#VALUE!`；测试扩展 `mode_picks_the_most_frequent_value_of_a_same_row_range`。
 - [x] 项270 数组转文本（功能级）：`ARRAYTOTEXT(array, [format])`；
   单行区间转逗号分隔文本；非法 format/空区间 `#VALUE!`；测试 `arraytotext_renders_same_row_range`。
-- [ ] 项271 卡方拟合检验（功能级）：`CHISQ.TEST(observed, expected)`；
-  单行等长区间、df=n-1；非法参数 `#VALUE!`；验收：单测 + gate。
+- [x] 项271 卡方拟合检验（功能级）：`CHISQ.TEST(observed, expected)`；
+  单行等长区间、df=n-1；非法参数 `#VALUE!`；测试 `chisq_test_returns_goodness_of_fit_pvalue`。
+- [ ] 项272 文本拆分（功能级）：`TEXTSPLIT(text, delimiter)`；
+  返回首个分隔片段（标量引擎限制）；空分隔符/缺参 `#VALUE!`；验收：单测 + gate。
 - [ ] 项264 精确伽马对数（功能级）：`GAMMALN.PRECISE(x)`；
   非正/非有限 `#VALUE!`；验收：单测 + gate。
 - [x] 项263 逻辑/非文本判断（功能级）：`ISLOGICAL`/`ISNONTEXT`；
@@ -405,6 +407,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 296（项271 CHISQ.TEST，功能级）：单行拟合检验、df=n-1；
+定向与全量 gate/package 通过；发布包 SHA `a333b5c3…1805cdc3`；
+push 已在轮首成功，本轮不再 push。
 
 Round 295（项270 ARRAYTOTEXT，功能级）：单行区间文本、格式 0/1；
 定向与全量 gate/package 通过；发布包 SHA `215b171b…3739a2e25`；

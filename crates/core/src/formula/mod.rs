@@ -3311,6 +3311,48 @@ mod tests {
     }
 
     #[test]
+    fn chisq_test_returns_goodness_of_fit_pvalue() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+            "e".to_string(),
+            "f".to_string(),
+            "g".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [
+            ("a", "1"),
+            ("b", "10"),
+            ("c", "20"),
+            ("d", "30"),
+            ("e", "12"),
+            ("f", "18"),
+            ("g", "30"),
+        ] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        let formula = Formula::parse("chisq.test(B2:D2, E2:G2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "0.757465"
+        );
+        for source in ["chisq.test(B2:D2, E2:F2)", "chisq.test(1, 2)"] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "#VALUE!",
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
     fn arraytotext_renders_same_row_range() {
         let columns = vec![
             "id".to_string(),

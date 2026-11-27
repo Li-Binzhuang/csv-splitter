@@ -5258,6 +5258,51 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number(high as f64)
         }
+        // CHISQ.TEST: one-row goodness-of-fit chi-square test.
+        "chisq.test" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let (
+                Expr::Range {
+                    from: observed_from,
+                    to: observed_to,
+                },
+                Expr::Range {
+                    from: expected_from,
+                    to: expected_to,
+                },
+            ) = (&args[0], &args[1])
+            else {
+                return Value::Error;
+            };
+            let (Some(observed), Some(expected)) = (
+                range_values(observed_from, observed_to, ctx),
+                range_values(expected_from, expected_to, ctx),
+            ) else {
+                return Value::Error;
+            };
+            if observed.len() != expected.len() || observed.len() < 2 {
+                return Value::Error;
+            }
+            let mut statistic = 0.0;
+            for (value, target) in observed.iter().zip(expected.iter()) {
+                if *target <= 0.0 {
+                    return Value::Error;
+                }
+                statistic += (value - target).powi(2) / target;
+            }
+            if !statistic.is_finite() || statistic < 0.0 {
+                return Value::Error;
+            }
+            let degrees = (observed.len() - 1) as f64;
+            let result = 1.0 - regularized_gamma(degrees / 2.0, statistic / 2.0);
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

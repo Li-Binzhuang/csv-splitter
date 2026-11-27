@@ -108,6 +108,7 @@
 | ABS / SIGN / POWER / EXP / LN / LOG | 支持 | LOG 支持底数 |
 | FLOOR / CEIL / CEILING / INT / TRUNC / SQRT / MOD | 支持 | 标量 |
 | RANK / RANK.EQ / RANK.AVG | 支持（新增） | 默认降序，order≠0 升序；并列同名次/平均名次 |
+| CHISQ.TEST | 支持（功能级新增） | 单行观测/期望等长、df=n-1 拟合检验；非法 `#VALUE!` |
 | ARRAYTOTEXT | 支持（功能级新增） | 单行区间；format 0 逗号分隔、format 1 严格数组文本 |
 | MODE / MODE.SNGL / MODE.MULT | 支持（功能级新增） | 同行区间；并列取小值；MULT 仅返回首众数（无数组结果） |
 | MODE / MODE.SNGL | 支持（功能级新增） | 同行区间；并列取小值；无众数 `#VALUE!` |
