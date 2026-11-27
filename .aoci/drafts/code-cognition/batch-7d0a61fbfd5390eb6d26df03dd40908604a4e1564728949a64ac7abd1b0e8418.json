@@ -1,0 +1,27 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "fc708ffc861b8f782ae61f92e9a3e649ee077dbf579ff5e1a1d0bddca6077b55",
+  "batch_id": "7d0a61fbfd5390eb6d26df03dd40908604a4e1564728949a64ac7abd1b0e8418",
+  "composite_identity": "c51d680f868546201d679b18e3866824c2e18c3505a13be0b26e74f7a1f15751",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "4de507904c21949427ec468decad5e03df097abf0834cc1be0a1dc30ab7b5d24",
+  "targets": [
+    {
+      "candidate_id": "63dcb5d24f0f1867b2eadffd722d5639c8a23dea22f89fb4df5188fc268806f1",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "c7c86cbdea988bbd72e8f25d64b6b8e004d92430ec60facefac9ae82d8bb04f3",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles；csv_to_xlsx_with_number_formats；write_sheets_with_formats；xlsx_column_formats 只读 header+首个带样式数据行；内置日期/时间 14–22；日期时间/时间小数导出；分数 # ?/?、百分比 #,##0%、#,##0.0%、12 小时 h:mm AM/PM、h:mm:ss AM/PM、hh AM/PM、两位年份 m/d/yy、@ 文本样式；zip 流式；1M 53MB | S:不写公式/图表；合并不展开；无缓存公式/坏引用/超限报错；格式只对可解析数字/日期/时间生效；首行无样式回退后行"
+    },
+    {
+      "candidate_id": "bce8981430dd03186cea1de8d3ca292abb8f954e65d49ae0bae8e4d232ac6c1a",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "454d546e4230ba3e4ba7a9d4af11efc0c538bdbb84f57f226f0acc5447ba8061",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 个功能级项；goal 扩额 1024；Round319 m/d/yy h:mm 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
