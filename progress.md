@@ -148,9 +148,11 @@
   分母≤99；测试 `fraction_formats_render_mixed_and_simple_forms`。
 - [x] 项283 百分比千分位格式（功能级）：`#,##0.0%` 解析/显示；
   测试 `number_formats_render_the_way_a_spreadsheet_does`。
-- [ ] 项284 百分比格式导出（功能级）：`#,##0.0%` 写入 xlsx 样式并 round-trip；
-  验收：单测 + gate。
+- [x] 项284 百分比格式导出（功能级）：`#,##0.0%` 样式写入并 round-trip；
+  测试 `formats_are_mapped_into_export_styles_and_round_trip` 与 `column_formats_are_read_back_from_export_styles`。
 - [ ] 项285 百分比零位小数格式（功能级）：`#,##0%` 解析/显示；
+  验收：单测 + gate。
+- [ ] 项286 百分比零位小数导出（功能级）：`#,##0%` xlsx 样式写入并 round-trip；
   验收：单测 + gate。
 - [ ] 项260 第二类贝塞尔 Y 函数（功能级）：`BESSELY(x, n)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
@@ -433,6 +435,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 309（项284 百分比 xlsx 导出，功能级）：#,##0.0% 样式与列格式 round-trip；
+定向与全量 gate/package 通过；发布包 SHA `a68acef8…e664984e`；
+push 已在轮首成功，本轮不再 push。
 
 Round 308（项283 百分比千分位，功能级）：#,##0.0% 解析/显示；
 定向与全量 gate/package 通过；发布包 SHA `88a687f4…122187c9`；
