@@ -4970,6 +4970,77 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // HYPGEOM.DIST: hypergeometric probability mass or cumulative.
+        "hypgeom.dist" => {
+            if args.len() != 5 {
+                return Value::Error;
+            }
+            let (
+                Some(sample_successes),
+                Some(sample_size),
+                Some(population_successes),
+                Some(population_size),
+                Some(cumulative),
+            ) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+                eval(&args[3], ctx).number(),
+                eval(&args[4], ctx).number(),
+            )
+            else {
+                return Value::Error;
+            };
+            if !sample_successes.is_finite()
+                || !sample_size.is_finite()
+                || !population_successes.is_finite()
+                || !population_size.is_finite()
+                || !cumulative.is_finite()
+                || sample_successes < 0.0
+                || sample_size < 0.0
+                || population_successes < 0.0
+                || population_size <= 0.0
+                || sample_successes.trunc() != sample_successes
+                || sample_size.trunc() != sample_size
+                || population_successes.trunc() != population_successes
+                || population_size.trunc() != population_size
+                || sample_size > population_size
+                || population_successes > population_size
+                || sample_successes > sample_size
+                || sample_successes > population_successes
+                || sample_size - sample_successes > population_size - population_successes
+            {
+                return Value::Error;
+            }
+            let successes = population_successes as u64;
+            let failures = (population_size - population_successes) as u64;
+            let draws = sample_size as u64;
+            let observed = sample_successes as u64;
+            let total = population_size as u64;
+            let ln_combination = |a: u64, b: u64| {
+                if b > a {
+                    return f64::NEG_INFINITY;
+                }
+                ln_gamma(a as f64 + 1.0) - ln_gamma(b as f64 + 1.0) - ln_gamma((a - b) as f64 + 1.0)
+            };
+            let log_denominator = ln_combination(total, draws);
+            let mass = |value: u64| {
+                (ln_combination(successes, value) + ln_combination(failures, draws - value)
+                    - log_denominator)
+                    .exp()
+            };
+            let result = if cumulative != 0.0 {
+                let low = draws.saturating_sub(failures);
+                (low..=observed).map(&mass).sum::<f64>()
+            } else {
+                mass(observed)
+            };
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

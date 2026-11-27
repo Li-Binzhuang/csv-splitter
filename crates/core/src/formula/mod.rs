@@ -3504,6 +3504,27 @@ mod tests {
     }
 
     #[test]
+    fn hypgeom_dist_returns_mass_or_cumulative() {
+        for (source, expected) in [
+            ("hypgeom.dist(1, 4, 8, 20, 0)", "0.363261"),
+            ("hypgeom.dist(2, 4, 8, 20, 0)", "0.381424"),
+            ("hypgeom.dist(1, 4, 8, 20, 1)", "0.465428"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "hypgeom.dist(5, 4, 8, 20, 0)",
+            "hypgeom.dist(-1, 4, 8, 20, 0)",
+            "hypgeom.dist(1, 21, 8, 20, 0)",
+            "hypgeom.dist(1, 4, 21, 20, 0)",
+            r#"hypgeom.dist("x", 4, 8, 20, 0)"#,
+            "hypgeom.dist(1, 4, 8, 20)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn besseli_returns_modified_values() {
         for (source, expected) in [
             ("besseli(0, 0)", "1"),
