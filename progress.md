@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项239 二项区间分布（功能级）：`BINOM.DIST.RANGE(n, p, s, t)`；
+  非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项238 t 分布反函数（功能级）：`T.INV(probability, df)`；
   概率(0,1)外/非法 `#VALUE!`；验收：单测 + gate。
 - [ ] 项237 t 分布双尾（功能级）：`T.DIST.2T(x, df)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
-- [ ] 项236 二项反函数（功能级）：`BINOM.INV(n, p, alpha)`；
-  非法参数 `#VALUE!`；验收：单测 + gate。
+- [x] 项236 二项反函数（功能级）：`BINOM.INV(n, p, alpha)`；
+  非法参数 `#VALUE!`；测试 `binom_inv_finds_cutoff`。
 - [x] 项235 t 分布右尾（功能级）：`T.DIST.RT(x, df)`；
   非法参数 `#VALUE!`；测试 `t_dist_right_tail_works`。
 - [x] 项234 F 分布右尾（功能级）：`F.DIST.RT(x, d1, d2)`；
@@ -339,6 +341,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 263（项236 BINOM.INV，功能级）：累积反查、参数边界；
+定向与全量 gate/package 通过；发布包 SHA `e0c8a263…7445ae7`；
+push 已在轮首成功，本轮不再 push。
 
 Round 262（项235 T.DIST.RT，功能级）：t 右尾、参数边界；
 定向与全量 gate/package 通过；发布包 SHA `e6cea182…752a1856`；

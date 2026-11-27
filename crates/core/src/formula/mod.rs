@@ -3504,6 +3504,28 @@ mod tests {
     }
 
     #[test]
+    fn binom_inv_finds_cutoff() {
+        for (source, expected) in [
+            ("binom.inv(1, 0.5, 0.5)", "0"),
+            ("binom.inv(1, 0.5, 0.6)", "1"),
+            ("binom.inv(4, 0.5, 0.6875)", "2"),
+            ("binom.inv(4, 0.5, 1)", "4"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "binom.inv(-1, 0.5, 0.5)",
+            "binom.inv(2.5, 0.5, 0.5)",
+            "binom.inv(4, 1.5, 0.5)",
+            "binom.inv(4, 0.5, -0.1)",
+            r#"binom.inv("x", 0.5, 0.5)"#,
+            "binom.inv(4, 0.5)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn t_dist_right_tail_works() {
         for (source, expected) in [
             ("t.dist.rt(0, 1)", "0.5"),

@@ -130,6 +130,7 @@
 | DB / DDB / VDB | 支持（功能级新增） | 固定/双倍/变动余额递减；区间、月数、因子非法 `#VALUE!` |
 | FVSCHEDULE | 支持（功能级新增） | 复利 schedule 区间；空区间/rate≤-1 `#VALUE!` |
 | SUMXMY2 / SUMX2MY2 / SUMX2PY2 | 支持（功能级新增） | 同行等长 x/y、空区间/长度不等 `#VALUE!` |
+| BINOM.INV | 支持（功能级新增） | 最小 k 使累积≥alpha；n≤170、p/alpha∈[0,1] |
 | T.DIST.RT | 支持（功能级新增） | t 右尾；x≥0、df>0；非法 `#VALUE!` |
 | F.DIST.RT | 支持（功能级新增） | F 右尾；x≥0、d1/d2>0；非法 `#VALUE!` |
 | LOGNORM.INV | 支持（功能级新增） | p(0,1)、sd>0；非法 `#VALUE!` |

@@ -4033,6 +4033,44 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // BINOM.INV: smallest k whose binomial cumulative probability reaches alpha.
+        "binom.inv" => {
+            if args.len() != 3 {
+                return Value::Error;
+            }
+            let (Some(trials), Some(probability), Some(alpha)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !trials.is_finite()
+                || !probability.is_finite()
+                || !alpha.is_finite()
+                || trials < 0.0
+                || trials > 170.0
+                || trials.trunc() != trials
+                || !(0.0..=1.0).contains(&probability)
+                || !(0.0..=1.0).contains(&alpha)
+            {
+                return Value::Error;
+            }
+            let trials = trials as u64;
+            let pmf = |k: u64| {
+                factorial(trials) / (factorial(k) * factorial(trials - k))
+                    * probability.powi(k as i32)
+                    * (1.0 - probability).powi((trials - k) as i32)
+            };
+            let mut cumulative = 0.0;
+            for k in 0..=trials {
+                cumulative += pmf(k);
+                if cumulative >= alpha {
+                    return Value::Number(k as f64);
+                }
+            }
+            Value::Number(trials as f64)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
