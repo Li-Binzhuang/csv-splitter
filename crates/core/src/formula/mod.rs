@@ -3504,6 +3504,23 @@ mod tests {
     }
 
     #[test]
+    fn complex_hyperbolic_functions_work() {
+        for (source, expected) in [
+            (r#"imsinh("0+0i")"#, "0"),
+            (r#"imcosh("0+0i")"#, "1"),
+            (r#"imsinh("1+0i")"#, "1.1752011936438014"),
+            (r#"imcosh("1+0i")"#, "1.5430806348152437"),
+            (r#"imsinh("0+1i")"#, "0.8414709848078965i"),
+            (r#"imcosh("0+1i")"#, "0.5403023058681398"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [r#"imsinh("abc")"#, "imcosh()", "imsinh(1, 2)"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn degrees_and_radians_convert() {
         for (source, expected) in [
             ("degrees(0)", "0"),

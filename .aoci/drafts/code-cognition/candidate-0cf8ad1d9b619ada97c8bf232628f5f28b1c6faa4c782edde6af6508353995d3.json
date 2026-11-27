@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "214e492252027c1478eb5625ff628fcf29daf93ac494c2e5094be1e2668409e4",
+  "batch_id": "0cf8ad1d9b619ada97c8bf232628f5f28b1c6faa4c782edde6af6508353995d3",
+  "composite_identity": "142275ee54324f17b1da8b72e7a7d41f75c305d78b85806b5ecfe32b5a579db6",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "5648caf16b8e85c14750908f722abfd69792fe2728135b9ad0fd7eceeee471d4",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "ba729ef2469d843a0fbf05b46e75ed3688ed0348665df2f22ad0b7e606eb3b81",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/区间；TEXT；日期族/INTL；查找/小计；Unicode；FIXED/DOLLAR；数论/组合；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；进制；统计回归/相关/协方差；FORECAST；AVEDEV；ISEVEN/ISODD；MATH 舍入；FISHER；SERIESSUM；STDEVA/VARA；STDEVPA/VARPA；AVERAGEA；MAXA/MINA；DOLLARDE/DOLLARFR；ENCODEURL；ROMAN/ARABIC；复数；SUMX 成对和；STANDARDIZE；GEOMEAN/HARMEAN；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION/MIRR | S:单列按整列；HLOOKUP 仅单行；位运算限 48 位；SUBTOTAL/AGGREGATE 空区间报错；内部错误统一报 #VALUE"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "2aa6391b7396f9c53c0863a2745d71285d9ca3070cdd2cb9d2e7773aeb1c74c1",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族/INTL；查找/小计；UNICHAR/UNICODE；数论；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；进制转换；SKEW/KURT；SLOPE/INTERCEPT/PEARSON/RSQ；DEVSQ/COVAR；FORECAST；AVEDEV；ISEVEN/ISODD；CEILING.MATH/FLOOR.MATH；FISHER/FISHERINV；SERIESSUM；STDEVA/VARA；SUMX；STANDARDIZE；GEOMEAN/HARMEAN；复数；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧/VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION/MIRR | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "560a11b92e1d663a1be0e972daada40e0d5d5bdff44e46eda9b726cfdb8dcbd7",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/日期时间族/INTL；查找/小计；UNICHAR/UNICODE；数论/组合；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；DECIMAL/BASE；SKEW/KURT；SLOPE/INTERCEPT/PEARSON/RSQ；DEVSQ/COVAR；FORECAST；AVEDEV；ISEVEN/ISODD；CEILING.MATH/FLOOR.MATH；FISHER/FISHERINV；SERIESSUM；STDEVA/VARA；SUMX；STANDARDIZE；GEOMEAN/HARMEAN；复数；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧 VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION/MIRR | S:矩阵只记当前实现；HLOOKUP 仅单行；IMCOSH/CSCH/IMSIN 仍列计划"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "39c31907c5717e5e8440589b9ca31bc5bce9e1935dc3e9729760cddda90f7a69",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 个功能级项；Round235 DEGREES/RADIANS 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "38fcae29db06458ab50b025cf53562ee26253a7e64bea07be3e6fdbc55a8b6f8",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "ba729ef2469d843a0fbf05b46e75ed3688ed0348665df2f22ad0b7e606eb3b81",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/区间；TEXT；日期族/INTL；查找/小计；Unicode；FIXED/DOLLAR；数论/组合；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；进制；统计回归/相关/协方差；FORECAST；AVEDEV；ISEVEN/ISODD；MATH 舍入；FISHER；SERIESSUM；STDEVA/VARA；STDEVPA/VARPA；AVERAGEA；MAXA/MINA；DOLLARDE/DOLLARFR；ENCODEURL；ROMAN/ARABIC；复数；SUMX 成对和；STANDARDIZE；GEOMEAN/HARMEAN；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION/MIRR | S:单列按整列；HLOOKUP 仅单行；位运算限 48 位；SUBTOTAL/AGGREGATE 空区间报错；内部错误统一报 #VALUE"
+    },
+    {
+      "candidate_id": "3b646720609b90fa61f35171db04a9cce8bbace8e883b547198e8d71e3229ac7",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "2aa6391b7396f9c53c0863a2745d71285d9ca3070cdd2cb9d2e7773aeb1c74c1",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族/INTL；查找/小计；UNICHAR/UNICODE；数论；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；进制转换；SKEW/KURT；SLOPE/INTERCEPT/PEARSON/RSQ；DEVSQ/COVAR；FORECAST；AVEDEV；ISEVEN/ISODD；CEILING.MATH/FLOOR.MATH；FISHER/FISHERINV；SERIESSUM；STDEVA/VARA；SUMX；STANDARDIZE；GEOMEAN/HARMEAN；复数；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧/VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION/MIRR | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "7c89997513805e524cfa370b9a9c0f420ccde4c7a39f63fab3980fdf09595ddd",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "560a11b92e1d663a1be0e972daada40e0d5d5bdff44e46eda9b726cfdb8dcbd7",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/日期时间族/INTL；查找/小计；UNICHAR/UNICODE；数论/组合；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；DECIMAL/BASE；SKEW/KURT；SLOPE/INTERCEPT/PEARSON/RSQ；DEVSQ/COVAR；FORECAST；AVEDEV；ISEVEN/ISODD；CEILING.MATH/FLOOR.MATH；FISHER/FISHERINV；SERIESSUM；STDEVA/VARA；SUMX；STANDARDIZE；GEOMEAN/HARMEAN；复数；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧 VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION/MIRR | S:矩阵只记当前实现；HLOOKUP 仅单行；IMCOSH/CSCH/IMSIN 仍列计划"
+    },
+    {
+      "candidate_id": "149ac791222daa6cc6430b14e046330954eec0d9c482faae852785a531946f7a",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "39c31907c5717e5e8440589b9ca31bc5bce9e1935dc3e9729760cddda90f7a69",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 个功能级项；Round235 DEGREES/RADIANS 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

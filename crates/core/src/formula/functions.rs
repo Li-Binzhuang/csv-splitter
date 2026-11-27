@@ -3283,6 +3283,22 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 number.to_radians()
             })
         }
+        // IMCOSH/IMSINH: complex hyperbolic cosine and sine.
+        "imcosh" | "imsinh" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let text = eval(&args[0], ctx).text();
+            let Some((real, imaginary, suffix)) = parse_complex(&text) else {
+                return Value::Error;
+            };
+            let (real_part, imaginary_part) = if lower == "imsinh" {
+                (real.sinh() * imaginary.cos(), real.cosh() * imaginary.sin())
+            } else {
+                (real.cosh() * imaginary.cos(), real.sinh() * imaginary.sin())
+            };
+            Value::Text(format_complex(real_part, imaginary_part, &suffix))
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

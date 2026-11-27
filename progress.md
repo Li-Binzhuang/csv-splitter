@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项212 复数倒数三角（功能级）：`IMCSC`/`IMSEC`/`IMCOT`；
+  零点/非法复数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项211 复数三角（功能级）：`IMSIN`/`IMCOS`/`IMTAN`；非法复数
   `#VALUE!`；验收：单测 + gate。
 - [ ] 项210 双曲倒数（功能级）：`CSCH`/`SECH`/`COTH`；零点/非数值
   `#VALUE!`；验收：单测 + gate。
-- [ ] 项209 复数双曲（功能级）：`IMCOSH`/`IMSINH`；非法复数
-  `#VALUE!`；验收：单测 + gate。
+- [x] 项209 复数双曲（功能级）：`IMCOSH`/`IMSINH`；非法复数
+  `#VALUE!`；测试 `complex_hyperbolic_functions_work`。
 - [x] 项208 角度弧度（功能级）：`DEGREES`/`RADIANS`；非数值
   `#VALUE!`；测试 `degrees_and_radians_convert`。
 - [x] 项207 ISO 天花板（功能级）：`ISO.CEILING(number[, significance])`；
@@ -285,6 +287,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 236（项209 IMCOSH/IMSINH，功能级）：复数双曲函数；
+定向与全量 gate/package 通过；发布包 SHA `defb006f…0b087a9`；
+push 已在轮首成功，本轮不再 push。
 
 Round 235（项208 DEGREES/RADIANS，功能级）：角度弧度互转；
 定向与全量 gate/package 通过；发布包 SHA `d669e911…43ba149`；
