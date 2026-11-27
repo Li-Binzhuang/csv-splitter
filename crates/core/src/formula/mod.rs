@@ -2585,6 +2585,7 @@ mod tests {
         for text in [
             r#"xlookup("people.csv", "cust", "name")"#,
             r#"xlookup("people.csv", "cust", "name", "unknown")"#,
+            r#"xlookup("people.csv", "cust", "name", "unknown", 2)"#,
         ] {
             let formula = Formula::parse(text).unwrap();
             assert_eq!(

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created_at": "2026-11-19T03:23:25Z",
-  "updated_at": "2026-11-27T16:00:17Z",
+  "updated_at": "2026-11-27T16:06:05Z",
   "files": {
     ".gitattributes": {
       "role": "index",
@@ -82,9 +82,9 @@
     },
     "aoci.code.txt": {
       "role": "index",
-      "sha256": "4b00706721e9974a62401a83bafb84c9bd61c3ad13f01122420ca516dbce1982",
-      "size": 88113,
-      "normalized_sha256": "4b00706721e9974a62401a83bafb84c9bd61c3ad13f01122420ca516dbce1982"
+      "sha256": "b3834a505dec228e90720d0ab3ac925aa836688a67e3a3903189fbce1fd9e7ac",
+      "size": 88114,
+      "normalized_sha256": "b3834a505dec228e90720d0ab3ac925aa836688a67e3a3903189fbce1fd9e7ac"
     },
     "aoci.meta.txt": {
       "role": "index",
@@ -562,15 +562,15 @@
     },
     "crates/core/src/formula/functions.rs": {
       "role": "index",
-      "sha256": "1209924bea8edfc2b07ed6eb7b8ce88ee5b94cad4ca4c39503b528838ee38510",
-      "size": 307260,
-      "normalized_sha256": "1209924bea8edfc2b07ed6eb7b8ce88ee5b94cad4ca4c39503b528838ee38510"
+      "sha256": "47b1a3912ec4673e6e1f0fa01bc07afcf4b4df476ef696fbbaea1def5398d999",
+      "size": 310057,
+      "normalized_sha256": "47b1a3912ec4673e6e1f0fa01bc07afcf4b4df476ef696fbbaea1def5398d999"
     },
     "crates/core/src/formula/mod.rs": {
       "role": "index",
-      "sha256": "3751e40cfe8fbf5519272258313796076c44262dbbca065e18b9b821087cdc69",
-      "size": 252027,
-      "normalized_sha256": "3751e40cfe8fbf5519272258313796076c44262dbbca065e18b9b821087cdc69"
+      "sha256": "0d7a5db66f699c87aa12afefc7f4ed95213165ac215e99d4b8d1b6f772dce863",
+      "size": 252097,
+      "normalized_sha256": "0d7a5db66f699c87aa12afefc7f4ed95213165ac215e99d4b8d1b6f772dce863"
     },
     "crates/core/src/formula/sheetref.rs": {
       "role": "index",
@@ -1048,9 +1048,9 @@
     },
     "docs/FORMULA_COVERAGE.md": {
       "role": "index",
-      "sha256": "e98685f54b43902a0c5f8f812e995b7d46f2f113f0e51972386e54f4026a583b",
-      "size": 21118,
-      "normalized_sha256": "e98685f54b43902a0c5f8f812e995b7d46f2f113f0e51972386e54f4026a583b"
+      "sha256": "103f4241876e219a4efb5f71dcf344e1461b696758cbd8de1d181d40bee780ab",
+      "size": 21120,
+      "normalized_sha256": "103f4241876e219a4efb5f71dcf344e1461b696758cbd8de1d181d40bee780ab"
     },
     "docs/GETTING_STARTED.md": {
       "role": "index",
@@ -1260,9 +1260,9 @@
     },
     "progress.md": {
       "role": "index",
-      "sha256": "ccb9cd7d2b4f367c53e7dc71d7a8852549e1e2d936083da3606badb3ad5e93b4",
-      "size": 125285,
-      "normalized_sha256": "ccb9cd7d2b4f367c53e7dc71d7a8852549e1e2d936083da3606badb3ad5e93b4"
+      "sha256": "6026a0f7f860dbf0c2bc8bc42de5fc665726398e1cc89ace0a0262fc1ce8b25c",
+      "size": 125630,
+      "normalized_sha256": "6026a0f7f860dbf0c2bc8bc42de5fc665726398e1cc89ace0a0262fc1ce8b25c"
     },
     "scripts/agent_routes_smoke.py": {
       "role": "index",

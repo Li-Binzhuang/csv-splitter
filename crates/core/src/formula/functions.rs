@@ -6569,7 +6569,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         // XLOOKUP's if_not_found: a miss returns the caller's fallback instead of
         // the "#N/A" text that `iferror` cannot catch.
         "xlookup" => {
-            if args.len() < 3 || args.len() > 4 {
+            if args.len() < 3 || args.len() > 5 {
                 return Value::Error;
             }
             let (Expr::Text(sheet), Expr::Text(key_column), Expr::Text(value_column)) =
@@ -6584,8 +6584,34 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Some(k) => k.trim().to_string(),
                 None => return Value::Error,
             };
-            match reference.get(&key) {
-                Some(value) => Value::Text(value.clone()),
+            let match_mode = match args.get(4) {
+                Some(arg) => {
+                    let Some(number) = eval(arg, ctx).number() else {
+                        return Value::Error;
+                    };
+                    if !number.is_finite()
+                        || number.fract() != 0.0
+                        || !matches!(number as u32, 0..=2)
+                    {
+                        return Value::Error;
+                    }
+                    number as u32
+                }
+                None => 0,
+            };
+            let found = match reference.get(&key) {
+                Some(value) => Some(value.clone()),
+                None if match_mode == 2 => reference
+                    .values
+                    .keys()
+                    .filter(|candidate| wildcard_key_matches(candidate, &key))
+                    .min()
+                    .and_then(|candidate| reference.get(candidate))
+                    .cloned(),
+                None => None,
+            };
+            match found {
+                Some(value) => Value::Text(value),
                 None => match args.get(3) {
                     Some(fallback) => eval(fallback, ctx),
                     None => Value::Text("#N/A".to_string()),
@@ -6964,7 +6990,37 @@ fn wildcard_matches(haystack: &[char], pattern: &[SearchToken]) -> bool {
     }
 }
 
-/// One-based character index of the first wildcard match at or after `start`.
+fn wildcard_matches_entire(haystack: &[char], pattern: &[SearchToken]) -> bool {
+    match pattern.first() {
+        None => haystack.is_empty(),
+        Some(SearchToken::Many) => {
+            if wildcard_matches_entire(haystack, &pattern[1..]) {
+                return true;
+            }
+            for skip in 1..=haystack.len() {
+                if wildcard_matches_entire(&haystack[skip..], &pattern[1..]) {
+                    return true;
+                }
+            }
+            false
+        }
+        Some(SearchToken::Any) => {
+            !haystack.is_empty() && wildcard_matches_entire(&haystack[1..], &pattern[1..])
+        }
+        Some(SearchToken::Literal(expected)) => {
+            !haystack.is_empty()
+                && lower_first(haystack[0]) == *expected
+                && wildcard_matches_entire(&haystack[1..], &pattern[1..])
+        }
+    }
+}
+
+fn wildcard_key_matches(key: &str, pattern: &str) -> bool {
+    let characters: Vec<char> = key.chars().collect();
+    wildcard_matches_entire(&characters, &compile_search_pattern(pattern))
+}
+
+/// One-based character index of the first wildcard match at or after `start`./// One-based character index of the first wildcard match at or after `start`.
 fn search_wildcard(haystack: &str, needle: &str, start: usize) -> Option<usize> {
     let characters: Vec<char> = haystack.chars().collect();
     if start > characters.len() {
@@ -8337,4 +8393,28 @@ fn population_variance(sum: f64, squares: f64, count: u64) -> Option<f64> {
     }
     let n = count as f64;
     Some(((squares - sum * sum / n) / n).max(0.0))
+}
+
+#[cfg(test)]
+mod wildcard_tests {
+    use super::wildcard_key_matches;
+
+    #[test]
+    fn wildcard_keys_match_entire_values() {
+        for (key, pattern) in [
+            ("abc", "a*c"),
+            ("abc", "a*"),
+            ("a", "?"),
+            ("abc", "abc"),
+            ("a*b", "a~*b"),
+            ("a?b", "a~?b"),
+            ("éclair", "É*"),
+            ("abc", "a?c"),
+        ] {
+            assert!(wildcard_key_matches(key, pattern), "{key} / {pattern}");
+        }
+        for (key, pattern) in [("ab", "a"), ("", "a"), ("a", "a?")] {
+            assert!(!wildcard_key_matches(key, pattern), "{key} / {pattern}");
+        }
+    }
 }

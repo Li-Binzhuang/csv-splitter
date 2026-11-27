@@ -77,7 +77,7 @@
 
 | 函数 | 状态 | 说明 |
 |---|---|---|
-| XLOOKUP | 支持（受限） | 只接受 `("sheet.csv","key","value")` 显式引用，不支持数组/区间 |
+| XLOOKUP | 支持（受限） | 显式 `("sheet.csv","key","value")` 引用；fallback；match_mode 2 通配符 |
 | VLOOKUP / REF | 支持（受限） | 同上；未命中 `#N/A` |
 | CHOOSE | 首批补齐 | 1-based 序号；越界 `#VALUE!` |
 | INDEX / MATCH / XMATCH | 支持（受限） | 同一行区间；INDEX 1-based 位置；MATCH 精确/近似，XMATCH 0/±1；跨行 `#VALUE!` |
