@@ -6625,6 +6625,9 @@ mod tests {
             ("xmatch(3, B2:D2, 0)", "2"),
             ("xmatch(3, B2:D2, 0, 1)", "2"),
             ("xmatch(\"pl*\", B2:D2, 2)", "3"),
+            ("xmatch(\"*\", B2:D2, 2, 1)", "1"),
+            ("xmatch(\"*\", B2:D2, 2, -1)", "3"),
+            ("xmatch(\"plain\", B2:D2, 0, -1)", "3"),
             ("match(5, B2:D2, 1)", "2"),
             ("xmatch(5, B2:D2, 1)", "1"),
         ] {
@@ -6646,6 +6649,7 @@ mod tests {
             "match(10, B2:D2, 2)",
             "match(\"nope*\", B2:D2, 0)",
             "xmatch(\"nope*\", B2:D2, 2)",
+            "xmatch(3, B2:D2, 0, 0)",
         ] {
             let formula = Formula::parse(source).unwrap();
             let expected = if source.starts_with("match(99") || source.contains("nope") {

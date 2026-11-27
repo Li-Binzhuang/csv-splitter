@@ -6553,11 +6553,16 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             if !mode.is_finite() || !allowed.contains(&mode) {
                 return Value::Error;
             }
+            let mut reverse = false;
             if lower == "xmatch" {
-                if let Some(search_mode) = args.get(3).and_then(|arg| eval(arg, ctx).number()) {
-                    if !search_mode.is_finite() || search_mode.trunc() != 1.0 {
+                if let Some(arg) = args.get(3) {
+                    let Some(search_mode) = eval(arg, ctx).number() else {
+                        return Value::Error;
+                    };
+                    if !search_mode.is_finite() || ![-1.0, 1.0].contains(&search_mode) {
                         return Value::Error;
                     }
+                    reverse = search_mode == -1.0;
                 }
             }
             if mode == 0.0 || (lower == "xmatch" && mode == 2.0) {
@@ -6568,9 +6573,18 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                     _ => None,
                 };
                 let position = match wildcard {
-                    Some(pattern) => cells
-                        .iter()
-                        .position(|cell| wildcard_key_matches(cell, pattern)),
+                    Some(pattern) => {
+                        if reverse {
+                            cells
+                                .iter()
+                                .rposition(|cell| wildcard_key_matches(cell, pattern))
+                        } else {
+                            cells
+                                .iter()
+                                .position(|cell| wildcard_key_matches(cell, pattern))
+                        }
+                    }
+                    None if reverse => cells.iter().rposition(|cell| cells_equal(cell, &lookup)),
                     None => exact_position(&lookup, &cells),
                 };
                 return match position {
