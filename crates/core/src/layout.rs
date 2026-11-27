@@ -39,6 +39,8 @@ pub enum NumberFormat {
         symbol: Option<String>,
         places: usize,
     },
+    /// `# ?/?` or `?/?`: mixed/simple fraction display.
+    Fraction { whole: bool },
     /// `@`: text is shown as entered.
     Text,
 }
@@ -96,6 +98,11 @@ impl NumberFormat {
                     upper,
                 });
             }
+        }
+        if spec == "# ?/?" || spec == "?/?" {
+            return Ok(Self::Fraction {
+                whole: spec.starts_with('#'),
+            });
         }
         if is_date_time_pattern(spec) {
             return Ok(Self::DateTime {
@@ -169,6 +176,13 @@ impl NumberFormat {
                 };
                 format!("{symbol}{body};({symbol}{body})")
             }
+            Self::Fraction { whole } => {
+                if *whole {
+                    "# ?/?".to_string()
+                } else {
+                    "?/?".to_string()
+                }
+            }
             Self::Text => "@".to_string(),
         }
     }
@@ -223,8 +237,47 @@ impl NumberFormat {
                     format!("{symbol}{rendered}")
                 }
             }
+            Self::Fraction { whole } => render_fraction(number, *whole),
             Self::Text => value.to_string(),
         }
+    }
+}
+
+fn render_fraction(number: f64, whole: bool) -> String {
+    if !number.is_finite() {
+        return number.to_string();
+    }
+    let negative = number < 0.0;
+    let absolute = number.abs();
+    let integer = absolute.trunc();
+    let fraction = absolute - integer;
+    let (numerator, denominator) = if fraction < 1e-9 {
+        (0, 1)
+    } else {
+        let mut best = (0, 1);
+        let mut error = f64::INFINITY;
+        for candidate in 2..=99 {
+            let numerator = (fraction * candidate as f64).round();
+            let error_here = (fraction - numerator / candidate as f64).abs();
+            if error_here < error {
+                error = error_here;
+                best = (numerator as i64, candidate);
+            }
+            if error < 1e-9 {
+                break;
+            }
+        }
+        best
+    };
+    if numerator == 0 || denominator == 1 {
+        return format!("{}", (integer * number.signum()) as i64);
+    }
+    let sign = if negative { "-" } else { "" };
+    if whole && integer > 0.0 {
+        format!("{sign}{} {numerator}/{denominator}", integer as i64)
+    } else {
+        let total = integer * denominator as f64 + numerator as f64;
+        format!("{sign}{}/{denominator}", total as i64)
     }
 }
 
@@ -625,6 +678,21 @@ mod tests {
         assert_eq!(plain.render("3.7"), "4");
 
         assert!(NumberFormat::parse("banana").is_err());
+    }
+
+    #[test]
+    fn fraction_formats_render_mixed_and_simple_forms() {
+        let mixed = NumberFormat::parse("# ?/?").unwrap();
+        assert_eq!(mixed.name(), "# ?/?");
+        assert_eq!(mixed.render("1.25"), "1 1/4");
+        assert_eq!(mixed.render("0.5"), "1/2");
+        assert_eq!(mixed.render("2"), "2");
+        assert_eq!(mixed.render("-1.25"), "-1 1/4");
+
+        let simple = NumberFormat::parse("?/?").unwrap();
+        assert_eq!(simple.name(), "?/?");
+        assert_eq!(simple.render("1.25"), "5/4");
+        assert_eq!(simple.render("0.5"), "1/2");
     }
 
     #[test]

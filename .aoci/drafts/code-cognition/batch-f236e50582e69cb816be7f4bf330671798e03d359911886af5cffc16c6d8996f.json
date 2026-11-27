@@ -1,0 +1,43 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "8b246e2aa0b1b6a78d8702b119c89bb3b6878088a4150ab024a162e4e1d60d9e",
+  "batch_id": "f236e50582e69cb816be7f4bf330671798e03d359911886af5cffc16c6d8996f",
+  "composite_identity": "f558f2bdca427aef41156a8345bd211dc20a59da758755a4006c52042f07edcd",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "435d84d30a30d6d20dab7948fda3435ef63fbc31025f60c9fd316dd5be60c346",
+  "targets": [
+    {
+      "candidate_id": "5929898e031b40531b13726c7c64c4a03aee7a13a6035dd51b5ede0b0bb96ac0",
+      "object_ref": "code:crates/core/src/layout.rs",
+      "path": "crates/core/src/layout.rs",
+      "change": "update",
+      "source_sha256": "486c70dffc58300e2d5ea04b5c07864af6d224967dc3056d2383db4698f9dd67",
+      "existing_entry": "layout.rs[CU7L]: F:显示元数据 sidecar：列名替换、列宽、数字格式与冻结列 | R:code:crates/core/src/sheet.rs | A:NumberFormat 含 Decimal/Percent/Currency/DateTime/Scientific/Accounting/Text；日期含 yyyy-mm-dd、m/d/yyyy、yyyy/m/d、hh:mm:ss 等；负数括号；@ 原样 | S:只影响展示不改值，写 .view 不写 journal；未识别格式报错；输入日期是 ISO 前缀"
+    },
+    {
+      "candidate_id": "df3d6c8b910b6616eb75050b7896384e6479b4d033eda19ceb718c5b4b36bc6f",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "8d5af601388e033d3bcf744b563a01cce7223ba71ea26571e15c15e851fa5fb8",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles；csv_to_xlsx_with_number_formats；write_sheets_with_formats；xlsx_column_formats 只读 header+首个带样式数据行；内置日期/时间 14–22；日期时间/时间小数导出；@ 文本 inlineStr；zip 流式；1M 53MB | S:不写公式/图表；合并不展开；无缓存公式/坏引用/超限报错；格式只对可解析数字/日期/时间生效；首行无样式回退后行"
+    },
+    {
+      "candidate_id": "cdae2012ada0ac95da598a6cbf7e83e942d0adc329a28ca4080a0ed08997fe36",
+      "object_ref": "code:docs/XLSX.md",
+      "path": "docs/XLSX.md",
+      "change": "update",
+      "source_sha256": "380dcabd55cc11a1f897de583d53ed3a58afe258e2ebe409a3d0e09d4d0f5095",
+      "existing_entry": "XLSX.md[SD7S]: F:xlsx 互操作现状与边界：导出、多 sheet、导入、report xlsx、日期/条件格式 | R:code:crates/core/src/xlsx.rs,code:crates/cli/src/main.rs,code:docs/CAPABILITIES.md | A:convert 流式导出；目录多 sheet；导入；MCP sheet；report xlsx + datecounts(date:group)；ISO 日期 numFmtId=14；日期时间/时间格式写小数；@ 文本 inlineStr；--highlight cellIs+dxf | S:只写值不写公式；日期仅 ISO、时间仅 HH:MM:SS；highlight 仅 cellIs；不做宏/VBA；样式/合并忽略"
+    },
+    {
+      "candidate_id": "7685a5544c1d1a51d07103853406bbbc878ea90275ef63a8b43342316a9d5413",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "994777bbdd91f8044f3d0c27b0d1aa8ce6f69fb16696bd8b750362ef96039164",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 个功能级项；goal 扩额 1024；Round304 xlsx 列格式回退与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

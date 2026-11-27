@@ -666,7 +666,8 @@ fn write_formatted_cell(
         | NumberFormat::Percent { .. }
         | NumberFormat::Currency { .. }
         | NumberFormat::Scientific { .. }
-        | NumberFormat::Accounting { .. } => {
+        | NumberFormat::Accounting { .. }
+        | NumberFormat::Fraction { .. } => {
             let numeric = !trimmed.is_empty()
                 && !(trimmed.starts_with('0') && !trimmed.starts_with("0.") && trimmed != "0")
                 && trimmed.parse::<f64>().is_ok();
