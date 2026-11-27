@@ -899,6 +899,14 @@ fn conditional_formatting_xml(
                 ));
                 continue;
             }
+            "iconSet" | "iconset" => {
+                out.push_str(&format!(
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"iconSet\" priority=\"{priority}\"><iconSet iconSet=\"3TrafficLights1\"><cfvo type=\"percent\" val=\"0\"/><cfvo type=\"percent\" val=\"33\"/><cfvo type=\"percent\" val=\"67\"/></iconSet></cfRule></conditionalFormatting>",
+                    col = column_name(column),
+                    priority = index + 1,
+                ));
+                continue;
+            }
             "duplicate" | "duplicateValues" | "unique" | "uniqueValues" => {
                 let kind = if rule.operator == "duplicate" || rule.operator == "duplicateValues" {
                     "duplicateValues"
@@ -2360,6 +2368,12 @@ mod tests {
                 value: String::new(),
                 color: "navy".into(),
             },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "iconSet".into(),
+                value: String::new(),
+                color: String::new(),
+            },
         ];
         let (tx, _rx) = std::sync::mpsc::channel();
         csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
@@ -2401,6 +2415,8 @@ mod tests {
         assert!(sheet.contains("B2>AVERAGE(B:B)"), "{sheet}");
         assert!(sheet.contains("type=\"duplicateValues\""), "{sheet}");
         assert!(sheet.contains("type=\"uniqueValues\""), "{sheet}");
+        assert!(sheet.contains("type=\"iconSet\""), "{sheet}");
+        assert!(sheet.contains("iconSet=\"3TrafficLights1\""), "{sheet}");
 
         let bad = vec![ConditionalRule {
             column: "amount".into(),
