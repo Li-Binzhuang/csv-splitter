@@ -6945,6 +6945,9 @@ mod tests {
         assert_eq!(eval_str("proper('76budget')", &[]), "76Budget");
         assert_eq!(eval_str("proper('')", &[]), "");
         assert_eq!(eval_str("proper('a', 2)", &[]), "#VALUE!");
+        assert_eq!(eval_str("upper('straße')", &[]), "STRASSE");
+        assert_eq!(eval_str("lower('ÄÖÜ')", &[]), "äöü");
+        assert_eq!(eval_str("upper('ǆungla')", &[]), "ǄUNGLA");
         assert_eq!(eval_str("trim('  a  b  ')", &[]), "a b");
         assert_eq!(eval_str("trim(\"\u{3000}a\u{3000}b\u{3000}\")", &[]), "a b");
         assert_eq!(eval_str("trim(\"a\u{a0}\u{a0}b\")", &[]), "a b");

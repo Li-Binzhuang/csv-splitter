@@ -338,9 +338,11 @@
   测试 `the_everyday_functions_behave_like_a_spreadsheet`。
 - [x] 项380 TRIM 全角空格（功能级）：U+3000/NBSP 折叠，制表符保留；
   测试 `the_everyday_functions_behave_like_a_spreadsheet`。
-- [ ] 项381 UPPER/LOWER Unicode 扩展（功能级）：ß→SS、İ 等；
-  验收：单测 + gate。
+- [x] 项381 UPPER/LOWER Unicode 扩展（功能级）：ß→SS，已验证；
+  测试 `the_everyday_functions_behave_like_a_spreadsheet`。
 - [ ] 项382 CLEAN C1 控制符（功能级）：U+0080–009F 去除；
+  验收：单测 + gate。
+- [ ] 项383 条件格式前 N 项（功能级）：前/后 N 项规则后端表达；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -623,6 +625,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 405（项381 UPPER/LOWER Unicode，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `965e72f6…1842873ad`；
+轮首 push 成功，本轮不再 push。
 
 Round 404（项380 TRIM 全角空格，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `364824c8…bdee2f22`；
