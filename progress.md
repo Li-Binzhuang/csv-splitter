@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项249 伽马反函数（功能级）：`GAMMA.INV(p, alpha, beta)`；
+  概率(0,1)外/非法 `#VALUE!`；验收：单测 + gate。
 - [ ] 项248 Beta 反函数（功能级）：`BETA.INV(p, alpha, beta, A, B)`；
   概率(0,1)外/非法 `#VALUE!`；验收：单测 + gate。
 - [ ] 项247 卡方右尾反函数（功能级）：`CHISQ.INV.RT(p, df)`；
   概率(0,1)外/非法 `#VALUE!`；验收：单测 + gate。
-- [ ] 项246 卡方反函数（功能级）：`CHISQ.INV(p, df)`；
-  概率(0,1)外/非法 `#VALUE!`；验收：单测 + gate。
+- [x] 项246 卡方反函数（功能级）：`CHISQ.INV(p, df)`；
+  概率(0,1)外/非法 `#VALUE!`；测试 `chisq_inv_returns_quantiles`。
 - [x] 项245 F 分布左尾反函数（功能级）：`F.INV(p, d1, d2)`；
   概率(0,1)外/非法 `#VALUE!`；测试 `f_inv_returns_left_tail_quantiles`。
 - [x] 项244 F 分布右尾反函数（功能级）：`F.INV.RT(p, d1, d2)`；
@@ -359,6 +361,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 273（项246 CHISQ.INV，功能级）：卡方分位、参数边界；
+定向与全量 gate/package 通过；发布包 SHA `0a18aa16…6879cfea`；
+push 已在轮首成功，本轮不再 push。
 
 Round 272（项245 F.INV，功能级）：F 左尾反函数、严格概率边界；
 定向与全量 gate/package 通过；发布包 SHA `ae5c3455…ea4d5d20`；
