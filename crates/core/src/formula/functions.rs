@@ -17,6 +17,7 @@
 use super::state::SetOp;
 use super::{eval, truthy, Ctx, Expr, Value};
 use crate::layout::NumberFormat;
+use std::collections::HashMap;
 
 pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
     let lower = name.to_ascii_lowercase();
@@ -6636,6 +6637,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                     .min()
                     .and_then(|candidate| reference.get(candidate))
                     .cloned(),
+                None if match_mode == 1 => approximate_reference_value(&reference.values, &key),
                 None => None,
             };
             match found {
@@ -8475,9 +8477,40 @@ fn population_variance(sum: f64, squares: f64, count: u64) -> Option<f64> {
     Some(((squares - sum * sum / n) / n).max(0.0))
 }
 
+/// Approximate XLOOKUP: the smallest stored key >= the lookup value.
+/// Numeric keys win when the lookup is numeric; otherwise text compares
+/// case-insensitively. A HashMap has no row order, so the choice is deterministic.
+fn approximate_reference_value(values: &HashMap<String, String>, target: &str) -> Option<String> {
+    if let Ok(t) = target.parse::<f64>() {
+        let mut best: Option<(f64, &String)> = None;
+        for (candidate, value) in values {
+            let Ok(n) = candidate.parse::<f64>() else {
+                continue;
+            };
+            if n >= t && best.is_none_or(|(current, _)| n < current) {
+                best = Some((n, value));
+            }
+        }
+        return best.map(|(_, value)| value.clone());
+    }
+    let target = target.to_lowercase();
+    let mut best: Option<(String, &String)> = None;
+    for (candidate, value) in values {
+        if candidate.parse::<f64>().is_ok() {
+            continue;
+        }
+        let lowered = candidate.to_lowercase();
+        if lowered >= target && best.as_ref().is_none_or(|(current, _)| lowered < *current) {
+            best = Some((lowered, value));
+        }
+    }
+    best.map(|(_, value)| value.clone())
+}
+
 #[cfg(test)]
 mod wildcard_tests {
-    use super::wildcard_key_matches;
+    use super::{approximate_reference_value, wildcard_key_matches};
+    use std::collections::HashMap;
 
     #[test]
     fn wildcard_keys_match_entire_values() {
@@ -8496,5 +8529,36 @@ mod wildcard_tests {
         for (key, pattern) in [("ab", "a"), ("", "a"), ("a", "a?")] {
             assert!(!wildcard_key_matches(key, pattern), "{key} / {pattern}");
         }
+    }
+
+    #[test]
+    fn approximate_reference_picks_the_next_larger_key() {
+        let numeric: HashMap<String, String> = [("1", "a"), ("3", "b"), ("5", "c")]
+            .into_iter()
+            .map(|(key, value)| (key.to_string(), value.to_string()))
+            .collect();
+        assert_eq!(
+            approximate_reference_value(&numeric, "2").as_deref(),
+            Some("b")
+        );
+        assert_eq!(
+            approximate_reference_value(&numeric, "5").as_deref(),
+            Some("c")
+        );
+        assert_eq!(approximate_reference_value(&numeric, "6"), None);
+
+        let text: HashMap<String, String> = [("apple", "x"), ("Banana", "y"), ("cherry", "z")]
+            .into_iter()
+            .map(|(key, value)| (key.to_string(), value.to_string()))
+            .collect();
+        assert_eq!(
+            approximate_reference_value(&text, "banana").as_deref(),
+            Some("y")
+        );
+        assert_eq!(
+            approximate_reference_value(&text, "blue").as_deref(),
+            Some("z")
+        );
+        assert_eq!(approximate_reference_value(&text, "zzz"), None);
     }
 }
