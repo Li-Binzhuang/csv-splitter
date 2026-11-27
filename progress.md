@@ -436,10 +436,12 @@
   测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [x] 项437 RAND/RANDBETWEEN（功能级）：xorshift + 参数边界；
   测试 `rand_and_randbetween_stay_in_bounds`。
-- [ ] 项438 xlsx 冻结开关（功能级）：可选不冻结首行；
-  验收：CLI/单测 + gate。
+- [x] 项438 xlsx 冻结开关（功能级）：`csv_to_xlsx_without_freeze` 省略 pane；
+  测试 `header_freeze_can_be_disabled`。
 - [ ] 项439 RANDBETWEEN 大范围（功能级）：span 超 2^53 精度；
   验收：单测 + gate。
+- [ ] 项440 冻结开关 CLI 接线（功能级）：convert 增加不冻结选项；
+  验收：CLI/单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
 - [ ] 项428 条件格式 dxf 蓝色规则同 id 断言（功能级）：蓝色多规则同 dxfId；
@@ -737,6 +739,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 459（项438 xlsx 冻结开关，功能级）：核心 API 省略 pane；
+定向与全量 gate/package 通过；发布包 SHA `566d4b98…06a94f5db`；
+轮首 push 成功，本轮不再 push。
 
 Round 458（项437 RAND/RANDBETWEEN，功能级）：xorshift 随机；
 clippy 首跑因 helper 位于 test 模块之后失败（已前移）；docs 首跑因历史字样残留失败（已删）；

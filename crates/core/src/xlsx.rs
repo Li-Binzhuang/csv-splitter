@@ -229,7 +229,23 @@ pub fn csv_to_xlsx_with_number_formats(
     rules: &[ConditionalRule],
     formats: &[(String, crate::layout::NumberFormat)],
 ) -> std::io::Result<()> {
-    let result = csv_to_xlsx_inner(input, output, delimiter, tx, rules, formats);
+    let result = csv_to_xlsx_inner(input, output, delimiter, tx, rules, formats, true);
+    if result.is_err() {
+        let _ = std::fs::remove_file(output);
+    }
+    result
+}
+
+/// Export a CSV-as-xlsx sheet without freezing the header row.
+pub fn csv_to_xlsx_without_freeze(
+    input: &Path,
+    output: &Path,
+    delimiter: Delimiter,
+    tx: &ProgressSender,
+    rules: &[ConditionalRule],
+    formats: &[(String, crate::layout::NumberFormat)],
+) -> std::io::Result<()> {
+    let result = csv_to_xlsx_inner(input, output, delimiter, tx, rules, formats, false);
     if result.is_err() {
         let _ = std::fs::remove_file(output);
     }
@@ -243,6 +259,7 @@ fn csv_to_xlsx_inner(
     tx: &ProgressSender,
     rules: &[ConditionalRule],
     formats: &[(String, crate::layout::NumberFormat)],
+    freeze_header: bool,
 ) -> std::io::Result<()> {
     let sheet_name = workbook_sheet_name(input);
     let total_bytes = std::fs::metadata(input).map(|m| m.len()).unwrap_or(0);
@@ -307,7 +324,9 @@ fn csv_to_xlsx_inner(
     );
     // No dimension hint: the streamed row count is unknown until the sheet is
     // complete, and a false A1 hint is worse than letting Excel calculate it.
-    sheet.push_str("<sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/></sheetView></sheetViews>");
+    if freeze_header {
+        sheet.push_str("<sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/></sheetView></sheetViews>");
+    }
     sheet.push_str("<sheetFormatPr defaultRowHeight=\"15\"/><sheetData>");
     write!(zip, "{}", sheet)?;
 
@@ -3293,6 +3312,23 @@ mod tests {
             "{styles}"
         );
         let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn header_freeze_can_be_disabled() {
+        use crate::layout::NumberFormat;
+        let dir = temp_path("nofreeze");
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("nofreeze.csv");
+        let output = dir.join("nofreeze.xlsx");
+        std::fs::write(&input, "id,amount\n1,10\n2,20\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let formats = vec![("amount".to_string(), NumberFormat::parse("0.00").unwrap())];
+        csv_to_xlsx_without_freeze(&input, &output, Delimiter::Comma, &tx, &[], &formats).unwrap();
+        let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
+        assert!(!sheet.contains("<pane "), "{sheet}");
+        assert!(sheet.contains("<autoFilter"), "{sheet}");
+        std::fs::remove_dir_all(dir).ok();
     }
 
     #[test]
