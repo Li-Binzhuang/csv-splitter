@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项243 反双曲倒数（功能级）：`ASECH`/`ACSCH`/`ACOTH`；
+  定义域外/非法 `#VALUE!`；验收：单测 + gate。
 - [ ] 项242 卡方右尾（功能级）：`CHISQ.DIST.RT(x, df)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项241 一般正态反函数（功能级）：`NORM.INV(p, mean, sd)`；
   概率(0,1)外/非法 `#VALUE!`；验收：单测 + gate。
-- [ ] 项240 t 双尾反函数（功能级）：`T.INV.2T(p, df)`；
-  概率(0,1)外/非法 `#VALUE!`；验收：单测 + gate。
+- [x] 项240 t 双尾反函数（功能级）：`T.INV.2T(p, df)`；
+  概率(0,1)外/非法 `#VALUE!`；测试 `t_inv_two_tail_returns_positive_quantile`。
 - [x] 项239 二项区间分布（功能级）：`BINOM.DIST.RANGE(n, p, s, t)`；
   非法参数 `#VALUE!`；测试 `binom_dist_range_sums_interval`。
 - [x] 项238 t 分布反函数（功能级）：`T.INV(probability, df)`；
@@ -347,6 +349,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 267（项240 T.INV.2T，功能级）：双尾正分位、二分求解；
+定向与全量 gate/package 通过；发布包 SHA `1247111d…8008caa`；
+push 已在轮首失败，本轮保留本地。
 
 Round 266（项239 BINOM.DIST.RANGE，功能级）：区间概率和、边界；
 定向与全量 gate/package 通过；发布包 SHA `9f129f52…ed698a20`；

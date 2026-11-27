@@ -3504,6 +3504,22 @@ mod tests {
     }
 
     #[test]
+    fn t_inv_two_tail_returns_positive_quantile() {
+        for (source, expected) in [("t.inv.2t(0.5, 1)", "1"), ("t.inv.2t(0.8, 1)", "0.32492")] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "t.inv.2t(0, 1)",
+            "t.inv.2t(1, 1)",
+            "t.inv.2t(0.5, 0)",
+            r#"t.inv.2t("x", 1)"#,
+            "t.inv.2t(0.5)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn binom_dist_range_sums_interval() {
         for (source, expected) in [
             ("binom.dist.range(4, 0.5, 2, 3)", "0.625"),
