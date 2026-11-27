@@ -102,12 +102,15 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项168 协方差（功能级）：`COVAR(known_y, known_x)`/
+  `COVARIANCE.P(...)`；同行等长、零方差 `#VALUE!`；验收：单测 + gate。
 - [ ] 项167 偏差平方和（功能级）：`DEVSQ(values)`；同行数值区间/空区间
   `#VALUE!`；验收：单测 + gate。
 - [ ] 项166 相关系数（功能级）：`PEARSON(known_y, known_x)`/`RSQ(...)`；
   同行等长、零方差 `#VALUE!`；验收：单测 + gate。
-- [ ] 项165 线性回归（功能级）：`SLOPE(known_y, known_x)`/
-  `INTERCEPT(known_y, known_x)`；同行等长区间、零方差 `#VALUE!`；验收：单测 + gate。
+- [x] 项165 线性回归（功能级）：`SLOPE(known_y, known_x)`/
+  `INTERCEPT(known_y, known_x)`；同行等长区间、零方差 `#VALUE!`；测试
+  `slope_and_intercept_fit_a_line`。
 - [x] 项164 标准化（功能级）：`STANDARDIZE(x, mean, standard_dev)`；
   standard_dev≤0/非数值 `#VALUE!`；测试 `standardize_returns_z_scores`。
 - [x] 项163 几何/调和平均（功能级）：`GEOMEAN`/`HARMEAN`；同行正数样本、
@@ -194,6 +197,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 194（项165 SLOPE/INTERCEPT，功能级）：最小二乘斜率/截距、等长与零方差；
+定向与全量 gate/package 通过；发布包 SHA `4109e110…171320`。
 
 Round 193（项164 STANDARDIZE，功能级）：z-score、标准差边界；
 定向与全量 gate/package 通过；发布包 SHA `44ab1606…c1c3d`。
