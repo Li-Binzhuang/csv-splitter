@@ -447,11 +447,15 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             if delimiter.is_empty() {
                 return Value::Error;
             }
-            if let Some(row) = args.get(2) {
-                if !eval(row, ctx).text().is_empty() {
-                    return Value::Error;
-                }
-            }
+            let row_delimiter = args
+                .get(2)
+                .map(|row| eval(row, ctx).text())
+                .unwrap_or_default();
+            let first_row = if row_delimiter.is_empty() {
+                text.as_str()
+            } else {
+                text.split(&row_delimiter).next().unwrap_or("")
+            };
             let mut ignore_empty = false;
             if let Some(flag) = args.get(3) {
                 let Some(number) = eval(flag, ctx).number() else {
@@ -462,7 +466,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 }
                 ignore_empty = number == 1.0;
             }
-            let mut segments = text.split(&delimiter);
+            let mut segments = first_row.split(&delimiter);
             match segments.find(|segment| !ignore_empty || !segment.is_empty()) {
                 Some(first) => Value::Text(first.to_string()),
                 None => Value::Text(String::new()),

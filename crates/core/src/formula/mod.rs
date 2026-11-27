@@ -3451,20 +3451,19 @@ mod tests {
             (r#"textsplit("a,,b", ",", "", 1)"#, "a"),
             (r#"textsplit(",", ",", "", 1)"#, ""),
             (r#"textsplit(",a", ",", "", 1, "x")"#, "a"),
+            (r#"textsplit("a,b|c,d", ",", "|")"#, "a"),
+            (r#"textsplit("x|a,b", ",", "|")"#, "x"),
+            (r#"textsplit("a,b|c", ",", "|", 1, "x")"#, "a"),
         ] {
             assert_eq!(eval_str(source, &[]), expected, "{source}");
         }
         for source in [
-            r#"textsplit(",a,b", ",", "x")"#,
             r#"textsplit(",a,b", ",", "", 2)"#,
-            r#"textsplit(",a,b", ",")"#,
+            r#"textsplit(",a,b", "")"#,
         ] {
-            if source == r#"textsplit(",a,b", ",")"# {
-                assert_eq!(eval_str(source, &[]), "", "{source}");
-            } else {
-                assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
-            }
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
         }
+        assert_eq!(eval_str(r#"textsplit("|a,b", ",", "|", 1, "")"#, &[]), "");
     }
 
     #[test]
