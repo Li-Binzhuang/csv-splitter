@@ -3504,6 +3504,21 @@ mod tests {
     }
 
     #[test]
+    fn gauss_returns_normal_half_probability() {
+        for (source, expected) in [
+            ("gauss(0)", "0"),
+            ("gauss(1)", "0.341345"),
+            ("gauss(-1)", "-0.341345"),
+            ("gauss(2)", "0.47725"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [r#"gauss("x")"#, "gauss()", "gauss(1, 2)"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn sec_and_csc_are_reciprocals() {
         for (source, expected) in [
             ("sec(0)", "1"),

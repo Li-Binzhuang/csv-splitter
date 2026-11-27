@@ -3475,6 +3475,19 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // GAUSS: standard normal cumulative probability minus one half.
+        "gauss" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            if !number.is_finite() {
+                return Value::Error;
+            }
+            Value::Number(0.5 * erf_approx(number / std::f64::consts::SQRT_2))
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
