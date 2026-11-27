@@ -3207,8 +3207,13 @@ mod tests {
         let path = temp_path("slash.xlsx");
         let sheet = Sheet {
             name: "slash".to_string(),
-            headers: vec!["us".into(), "eu".into()],
-            rows: vec![vec!["2024-01-02".into(), "2024-01-02".into()]],
+            headers: vec!["us".into(), "eu".into(), "stamp".into(), "ampm".into()],
+            rows: vec![vec![
+                "2024-01-02".into(),
+                "2024-01-02".into(),
+                "2024-01-02T09:05:07".into(),
+                "2024-01-02T13:05:00".into(),
+            ]],
         };
         write_sheets_with_formats(
             &path,
@@ -3216,12 +3221,22 @@ mod tests {
             &[vec![
                 NumberFormat::parse("m/d/yyyy").unwrap(),
                 NumberFormat::parse("mm/dd/yyyy").unwrap(),
+                NumberFormat::parse("m/d/yyyy h:mm:ss").unwrap(),
+                NumberFormat::parse("mm/dd/yyyy h:mm am/pm").unwrap(),
             ]],
         )
         .unwrap();
         let styles = read_zip(&path, "xl/styles.xml");
         assert!(styles.contains("formatCode=\"m/d/yyyy\""), "{styles}");
         assert!(styles.contains("formatCode=\"mm/dd/yyyy\""), "{styles}");
+        assert!(
+            styles.contains("formatCode=\"m/d/yyyy h:mm:ss\""),
+            "{styles}"
+        );
+        assert!(
+            styles.contains("formatCode=\"mm/dd/yyyy h:mm am/pm\""),
+            "{styles}"
+        );
         let _ = std::fs::remove_file(path);
     }
 
