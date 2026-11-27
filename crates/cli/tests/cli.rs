@@ -2862,6 +2862,41 @@ fn convert_rejects_bad_validation_prompts() {
 }
 
 #[test]
+fn convert_xlsx_can_add_validation_error() {
+    let dir = TempDir::new("xlsxvalerror");
+    let input = dir.join("t.csv");
+    let output = dir.join("t.xlsx");
+    std::fs::write(&input, "id,status\n1,good\n2,ok\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            output.to_str().unwrap(),
+            "--data-validation",
+            "status:good,ok,bad",
+            "--data-validation-error",
+            "status:Bad status|Pick good or ok",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let file = std::fs::File::open(&output).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    let mut sheet = String::new();
+    use std::io::Read as _;
+    archive
+        .by_name("xl/worksheets/sheet1.xml")
+        .unwrap()
+        .read_to_string(&mut sheet)
+        .unwrap();
+    assert!(sheet.contains("errorTitle=\"Bad status\""), "{sheet}");
+    assert!(sheet.contains("error=\"Pick good or ok\""), "{sheet}");
+}
+
+#[test]
 fn convert_xlsx_can_highlight_a_top_rank() {
     let dir = TempDir::new("xlsxtop");
     let input = dir.join("t.csv");

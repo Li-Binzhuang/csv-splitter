@@ -260,6 +260,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut no_auto_filter = false;
     let mut data_validation: Option<String> = None;
     let mut data_validation_prompt: Option<String> = None;
+    let mut data_validation_error: Option<String> = None;
     let mut show_formats = false;
     let mut formats_json = false;
     let mut delim = "comma".to_string();
@@ -291,6 +292,13 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--all-sheets" => all_sheets = true,
             "--no-freeze" => no_freeze = true,
             "--no-auto-filter" => no_auto_filter = true,
+            "--data-validation-error" => match p.value("--data-validation-error") {
+                Ok(v) => data_validation_error = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--data-validation-prompt" => match p.value("--data-validation-prompt") {
                 Ok(v) => data_validation_prompt = Some(v),
                 Err(e) => {
@@ -614,6 +622,31 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             };
             validation.prompt_title = (!title.is_empty()).then_some(title);
             validation.prompt_message = (!message.is_empty()).then_some(message);
+        }
+        let validation_errors = match data_validation_error.as_deref() {
+            Some(_) if !target.eq_ignore_ascii_case("xlsx") => {
+                eprintln!("error: --data-validation-error is only valid with --format xlsx");
+                return 2;
+            }
+            Some(text) => match parse_validation_prompts(text) {
+                Ok(errors) => errors,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            None => Vec::new(),
+        };
+        for (column, title, message) in validation_errors {
+            let Some(validation) = data_validations
+                .iter_mut()
+                .find(|validation| validation.column == column)
+            else {
+                eprintln!("error: data validation error column {column:?} has no validation");
+                return 2;
+            };
+            validation.error_title = (!title.is_empty()).then_some(title);
+            validation.error_message = (!message.is_empty()).then_some(message);
         }
         let input_name = input
             .file_name()
