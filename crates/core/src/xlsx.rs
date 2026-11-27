@@ -899,6 +899,26 @@ fn conditional_formatting_xml(
                 ));
                 continue;
             }
+            "today" | "yesterday" | "last7Days" | "last30Days" => {
+                let col = column_name(column);
+                let (period, formula) = match rule.operator.as_str() {
+                    "today" => ("today", format!("FLOOR({col}2,1)=TODAY()")),
+                    "yesterday" => ("yesterday", format!("FLOOR({col}2,1)=TODAY()-1")),
+                    "last7Days" => (
+                        "last7Days",
+                        format!("AND(FLOOR({col}2,1)>TODAY()-7,FLOOR({col}2,1)<=TODAY())"),
+                    ),
+                    _ => (
+                        "last30Days",
+                        format!("AND(FLOOR({col}2,1)>TODAY()-30,FLOOR({col}2,1)<=TODAY())"),
+                    ),
+                };
+                out.push_str(&format!(
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"timePeriod\" dxfId=\"{index}\" priority=\"{priority}\" timePeriod=\"{period}\"><formula>{formula}</formula></cfRule></conditionalFormatting>",
+                    priority = index + 1,
+                ));
+                continue;
+            }
             "iconSet" | "iconset" => {
                 out.push_str(&format!(
                     "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"iconSet\" priority=\"{priority}\"><iconSet iconSet=\"3TrafficLights1\"><cfvo type=\"percent\" val=\"0\"/><cfvo type=\"percent\" val=\"33\"/><cfvo type=\"percent\" val=\"67\"/></iconSet></cfRule></conditionalFormatting>",
@@ -2374,6 +2394,12 @@ mod tests {
                 value: String::new(),
                 color: String::new(),
             },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "today".into(),
+                value: String::new(),
+                color: "olive".into(),
+            },
         ];
         let (tx, _rx) = std::sync::mpsc::channel();
         csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
@@ -2417,6 +2443,9 @@ mod tests {
         assert!(sheet.contains("type=\"uniqueValues\""), "{sheet}");
         assert!(sheet.contains("type=\"iconSet\""), "{sheet}");
         assert!(sheet.contains("iconSet=\"3TrafficLights1\""), "{sheet}");
+        assert!(sheet.contains("type=\"timePeriod\""), "{sheet}");
+        assert!(sheet.contains("timePeriod=\"today\""), "{sheet}");
+        assert!(sheet.contains("FLOOR(B2,1)=TODAY()"), "{sheet}");
 
         let bad = vec![ConditionalRule {
             column: "amount".into(),

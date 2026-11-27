@@ -368,9 +368,11 @@
   测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [x] 项395 条件格式 iconSet（功能级）：3TrafficLights1；
   测试 `conditional_rules_support_top_and_bottom_ranks`。
-- [ ] 项396 条件格式 dateOccurring（功能级）：今天/近 7 天日期规则；
-  验收：单测 + gate。
+- [x] 项396 条件格式 dateOccurring（功能级）：today/yesterday/last7Days/last30Days；
+  测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [ ] 项397 条件格式 iconSet 预设（功能级）：value 选 3Symbols/3Arrows；
+  验收：单测 + gate。
+- [ ] 项398 条件格式 last7Days 语义（功能级）：近 7/30 天边界公式；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -653,6 +655,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 419（项396 条件格式 dateOccurring，功能级）：timePeriod；
+定向与全量 gate/package 通过；发布包 SHA `1531cc76…3fe0ebb2`；
+轮首 push 成功，本轮不再 push。
 
 Round 418（项395 条件格式 iconSet，功能级）：3TrafficLights1；
 定向与全量 gate/package 通过；发布包 SHA `b639d96f…aa41b97`；
