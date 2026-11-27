@@ -609,8 +609,18 @@ fn write_formatted_cell(
     let reference = format!("{}{}", column_name(column), row);
     let trimmed = value.trim();
     match format {
-        NumberFormat::Plain | NumberFormat::Text => {
+        NumberFormat::Plain => {
             out.push_str(&cell_xml(column, row, value, false));
+            return;
+        }
+        NumberFormat::Text => {
+            if !value.is_empty() {
+                out.push_str(&format!(
+                    "<c r=\"{reference}\" s=\"{}\" t=\"inlineStr\"><is><t xml:space=\"preserve\">{}</t></is></c>",
+                    style.unwrap_or(0),
+                    xml_text(value)
+                ));
+            }
             return;
         }
         NumberFormat::DateTime { .. } => {
@@ -2449,7 +2459,7 @@ mod tests {
                 NumberFormat::parse("#,##0.00").unwrap(),
                 NumberFormat::parse("0.0%").unwrap(),
                 NumberFormat::parse("yyyy-mm-dd").unwrap(),
-                NumberFormat::parse("plain").unwrap(),
+                NumberFormat::parse("@").unwrap(),
                 NumberFormat::parse("hh:mm:ss").unwrap(),
             ]],
         )
@@ -2459,6 +2469,7 @@ mod tests {
         assert!(styles.contains("formatCode=\"0.0%\""), "{styles}");
         assert!(styles.contains("formatCode=\"yyyy-mm-dd\""), "{styles}");
         assert!(styles.contains("formatCode=\"hh:mm:ss\""), "{styles}");
+        assert!(styles.contains("formatCode=\"@\""), "{styles}");
         read_xlsx_to_csv(&path, &output, None).unwrap();
         assert_eq!(
             std::fs::read_to_string(&output).unwrap(),

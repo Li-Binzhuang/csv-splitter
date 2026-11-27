@@ -94,7 +94,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 
 ## 日期
 
-严格 `YYYY-MM-DD` 自动写成 Excel 日期单元格（内置格式 14），`YYYY-MM-DDTHH:MM:SS` 写成带时间小数的日期，`HH:MM[:SS]` 在时间格式列写成当天小数；导入时按 `cellXfs` 的日期/时间格式还原；非 ISO 文本保持原样。
+严格 `YYYY-MM-DD` 自动写成 Excel 日期单元格（内置格式 14），`YYYY-MM-DDTHH:MM:SS` 写成带时间小数的日期，`HH:MM[:SS]` 在时间格式列写成当天小数；导入时按 `cellXfs` 的日期/时间格式还原；`@` 文本格式写成带样式 inlineStr，非 ISO 文本保持原样。
 
 ## 边界
 
