@@ -776,6 +776,15 @@ fn styles_xml_with_rules_and_formats(
     (out, map)
 }
 
+fn parse_hex_color(text: &str) -> Option<String> {
+    let text = text.trim().trim_start_matches('#');
+    if text.len() == 6 && text.chars().all(|ch| ch.is_ascii_hexdigit()) {
+        Some(format!("FF{}", text.to_ascii_uppercase()))
+    } else {
+        None
+    }
+}
+
 fn conditional_formatting_xml(
     rules: &[ConditionalRule],
     headers: &[String],
@@ -800,6 +809,37 @@ fn conditional_formatting_xml(
             "=" => ("equal", Some(rule.value.clone())),
             "!=" => ("notEqual", Some(rule.value.clone())),
             // Excel's Top 10 / Bottom 10 family: the rank is N, not a comparison.
+            "scale2" | "scale3" => {
+                let expected = if rule.operator == "scale2" { 2 } else { 3 };
+                let colors: Vec<&str> = rule.value.split(',').map(str::trim).collect();
+                if colors.len() != expected {
+                    return Err(invalid(&format!(
+                        "highlight {} needs {expected} comma-separated colors",
+                        rule.operator
+                    )));
+                }
+                let mut rgb = String::new();
+                for color in &colors {
+                    let Some(value) = parse_hex_color(color) else {
+                        return Err(invalid(&format!(
+                            "highlight color {color:?} is not #RRGGBB"
+                        )));
+                    };
+                    rgb.push_str(&format!("<color rgb=\"{value}\"/>"));
+                }
+                let cfvo = if expected == 2 {
+                    "<cfvo type=\"min\"/><cfvo type=\"max\"/>".to_string()
+                } else {
+                    "<cfvo type=\"min\"/><cfvo type=\"percentile\" val=\"50\"/><cfvo type=\"max\"/>"
+                        .to_string()
+                };
+                out.push_str(&format!(
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"colorScale\" priority=\"{priority}\"><colorScale>{cfvo}{rgb}</colorScale></cfRule></conditionalFormatting>",
+                    col = column_name(column),
+                    priority = index + 1,
+                ));
+                continue;
+            }
             "top" | "bottom" => {
                 let (raw, percent) = match rule.value.strip_suffix('%') {
                     Some(raw) => (raw.trim(), true),
@@ -2107,6 +2147,18 @@ mod tests {
                 value: "50%".into(),
                 color: "yellow".into(),
             },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "scale2".into(),
+                value: "#F8696B,#63BE7B".into(),
+                color: String::new(),
+            },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "scale3".into(),
+                value: "F8696B,FFEB84,63BE7B".into(),
+                color: String::new(),
+            },
         ];
         let (tx, _rx) = std::sync::mpsc::channel();
         csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
@@ -2117,6 +2169,13 @@ mod tests {
         assert!(sheet.contains("rank=\"1\""), "{sheet}");
         assert!(sheet.contains("B2:B4"), "{sheet}");
         assert!(sheet.contains("rank=\"50\" percent=\"1\""), "{sheet}");
+        assert!(sheet.contains("type=\"colorScale\""), "{sheet}");
+        assert!(
+            sheet.contains("<cfvo type=\"percentile\" val=\"50\"/>"),
+            "{sheet}"
+        );
+        assert!(sheet.contains("rgb=\"FFF8696B\""), "{sheet}");
+        assert!(sheet.contains("rgb=\"FF63BE7B\""), "{sheet}");
 
         let bad = vec![ConditionalRule {
             column: "amount".into(),
