@@ -457,6 +457,17 @@ pub fn write_sheets(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
     write_sheets_with_formats(output, sheets, &[])
 }
 
+/// Write sheets with per-column formats and explicit freeze/auto-filter choices.
+pub fn write_sheets_with_options_and_formats(
+    output: &Path,
+    sheets: &[Sheet],
+    formats: &[Vec<crate::layout::NumberFormat>],
+    freeze_header: bool,
+    auto_filter: bool,
+) -> std::io::Result<()> {
+    write_sheets_inner(output, sheets, formats, freeze_header, auto_filter)
+}
+
 /// Write sheets with explicit freeze and auto-filter choices.
 pub fn write_sheets_with_options(
     output: &Path,
@@ -3476,6 +3487,43 @@ mod tests {
         assert!(!sheet.contains("<autoFilter"), "{sheet}");
         let styles = read_zip(&output, "xl/styles.xml");
         assert!(styles.contains("formatCode=\"0.00\""), "{styles}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn multi_sheet_options_keep_formats_without_freeze_or_filter() {
+        use crate::layout::NumberFormat;
+        let dir = temp_path("multiformatoptions");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("multi.xlsx");
+        let sheets = vec![
+            Sheet {
+                name: "one".to_string(),
+                headers: vec!["id".into(), "amount".into()],
+                rows: vec![vec!["1".into(), "10".into()]],
+            },
+            Sheet {
+                name: "two".to_string(),
+                headers: vec!["rate".into()],
+                rows: vec![vec!["0.25".into()]],
+            },
+        ];
+        let formats = vec![
+            vec![
+                NumberFormat::parse("0").unwrap(),
+                NumberFormat::parse("0.00").unwrap(),
+            ],
+            vec![NumberFormat::parse("0.0%").unwrap()],
+        ];
+        write_sheets_with_options_and_formats(&path, &sheets, &formats, false, false).unwrap();
+        let styles = read_zip(&path, "xl/styles.xml");
+        assert!(styles.contains("formatCode=\"0.00\""), "{styles}");
+        assert!(styles.contains("formatCode=\"0.0%\""), "{styles}");
+        for part in ["xl/worksheets/sheet1.xml", "xl/worksheets/sheet2.xml"] {
+            let xml = read_zip(&path, part);
+            assert!(!xml.contains("<pane "), "{part}: {xml}");
+            assert!(!xml.contains("<autoFilter"), "{part}: {xml}");
+        }
         std::fs::remove_dir_all(dir).ok();
     }
 

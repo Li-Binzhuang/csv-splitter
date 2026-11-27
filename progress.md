@@ -452,9 +452,11 @@
   测试 `options_can_disable_freeze_and_filter_with_formats`。
 - [x] 项445 autoFilter CLI 开关（功能级）：convert `--no-auto-filter`；
   测试 `every_command_documents_the_flags_it_parses` + `options_can_disable_freeze_and_filter_with_formats`。
-- [ ] 项446 多 sheet options + 格式（功能级）：write_sheets_with_options 带 formats；
-  验收：单测 + gate。
+- [x] 项446 多 sheet options + 格式（功能级）：write_sheets_with_options_and_formats；
+  测试 `multi_sheet_options_keep_formats_without_freeze_or_filter`。
 - [ ] 项447 no-auto-filter + highlight 组合（功能级）：CLI 同时生效；
+  验收：单测 + gate。
+- [ ] 项448 xlsx 条件格式 + no-auto 导出（功能级）：CF 保留、筛选省略；
   验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
@@ -753,6 +755,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 466（项446 多 sheet options + 格式，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `63831f6a…821940c`；
+轮首 push 成功，本轮不再 push。
 
 Round 465（项445/444 autoFilter CLI + 组合，功能级）：`--no-auto-filter`；
 定向与全量 gate/package 通过；发布包 SHA `072bc8ae…ed0549d6`；
