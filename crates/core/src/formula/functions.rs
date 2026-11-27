@@ -427,6 +427,31 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 None => Value::Error,
             }
         }
+        // TEXTSPLIT: scalar engine exposes only the first split segment.
+        "textsplit" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let (Some(text), Some(delimiter)) = (
+                match eval(&args[0], ctx) {
+                    Value::Text(text) => Some(text),
+                    _ => None,
+                },
+                match eval(&args[1], ctx) {
+                    Value::Text(delimiter) => Some(delimiter),
+                    _ => None,
+                },
+            ) else {
+                return Value::Error;
+            };
+            if delimiter.is_empty() {
+                return Value::Error;
+            }
+            match text.split(&delimiter).next() {
+                Some(first) => Value::Text(first.to_string()),
+                None => Value::Error,
+            }
+        }
         // ARRAYTOTEXT: render a same-row range as text (concise or strict).
         "arraytotext" => {
             if args.is_empty() || args.len() > 2 {

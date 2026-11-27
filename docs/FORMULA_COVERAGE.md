@@ -29,7 +29,7 @@
 | TEXTBEFORE / TEXTAFTER | 支持（受限） | 支持 instance_num；match_mode/match_end/if_not_found 未实现 |
 
 | NUMBERVALUE / FIXED / DOLLAR | 支持（功能级新增） | FIXED 固定小数/千分位；DOLLAR 负数为括号；NUMBERVALUE 区域分隔符/百分号/括号负数 |
-| TEXTSPLIT / ARRAYTOTEXT | 缺失 | 动态数组，非目标 |
+| TEXTSPLIT | 支持（受限，功能级新增） | 标量引擎只返回首个分隔片段；空分隔符/非文本 `#VALUE!` |
 
 ## 日期与时间
 

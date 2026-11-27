@@ -3311,6 +3311,24 @@ mod tests {
     }
 
     #[test]
+    fn textsplit_returns_first_segment() {
+        for (source, expected) in [
+            (r#"textsplit("a,b,c", ",")"#, "a"),
+            (r#"textsplit("abc", "x")"#, "abc"),
+            (r#"textsplit("a-b", "-")"#, "a"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            r#"textsplit("a,b,c", "")"#,
+            "textsplit(1, 2)",
+            "textsplit(\"a\")",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn chisq_test_returns_goodness_of_fit_pvalue() {
         let columns = vec![
             "a".to_string(),
