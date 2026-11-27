@@ -3504,6 +3504,57 @@ mod tests {
     }
 
     #[test]
+    fn averagea_treats_text_and_booleans_as_numbers() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        cells.insert("a".to_string(), "1".to_string());
+        cells.insert("b".to_string(), "2".to_string());
+        cells.insert("c".to_string(), "3".to_string());
+        cells.insert("d".to_string(), "text".to_string());
+        let formula = Formula::parse("averagea(A2:D2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "1.5"
+        );
+        cells.insert("a".to_string(), "1".to_string());
+        cells.insert("b".to_string(), "TRUE".to_string());
+        cells.insert("c".to_string(), "FALSE".to_string());
+        cells.insert("d".to_string(), String::new());
+        let formula = Formula::parse("averagea(A2:D2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "0.666667"
+        );
+        let formula = Formula::parse("averagea(A2:A2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "1"
+        );
+        let columns = vec!["a".to_string(), "b".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("a".to_string(), String::new());
+        cells.insert("b".to_string(), String::new());
+        let formula = Formula::parse("averagea(A2:B2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+    }
+
+    #[test]
     fn population_text_statistics_work() {
         let columns = vec![
             "a".to_string(),

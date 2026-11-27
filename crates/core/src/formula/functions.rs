@@ -2589,6 +2589,37 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 variance.sqrt()
             })
         }
+        // AVERAGEA: arithmetic mean with text=0 and logical TRUE/FALSE=1/0.
+        "averagea" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(cells) = range_cells(from, to, ctx) else {
+                return Value::Error;
+            };
+            let mut total = 0.0;
+            let mut count = 0.0;
+            for cell in cells {
+                let text = cell.trim();
+                if text.is_empty() {
+                    continue;
+                }
+                total += match text.parse::<f64>() {
+                    Ok(value) if value.is_finite() => value,
+                    _ if text.eq_ignore_ascii_case("true") => 1.0,
+                    _ if text.eq_ignore_ascii_case("false") => 0.0,
+                    _ => 0.0,
+                };
+                count += 1.0;
+            }
+            if count == 0.0 {
+                return Value::Error;
+            }
+            Value::Number(total / count)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
