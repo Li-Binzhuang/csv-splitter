@@ -4314,6 +4314,52 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // F.INV.RT: inverse right-tail F distribution.
+        "f.inv.rt" => {
+            if args.len() != 3 {
+                return Value::Error;
+            }
+            let (Some(probability), Some(first_df), Some(second_df)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !probability.is_finite()
+                || !first_df.is_finite()
+                || !second_df.is_finite()
+                || !(0.0..1.0).contains(&probability)
+                || first_df <= 0.0
+                || second_df <= 0.0
+            {
+                return Value::Error;
+            }
+            let right_tail = |value: f64| {
+                regularized_beta(
+                    second_df / (second_df + first_df * value),
+                    second_df / 2.0,
+                    first_df / 2.0,
+                )
+            };
+            let mut low = 0.0;
+            let mut high = 1.0;
+            while right_tail(high) > probability {
+                high *= 2.0;
+                if high > 1.0e9 {
+                    return Value::Error;
+                }
+            }
+            for _ in 0..200 {
+                let middle = (low + high) / 2.0;
+                if right_tail(middle) > probability {
+                    low = middle;
+                } else {
+                    high = middle;
+                }
+            }
+            Value::Number((low + high) / 2.0)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
