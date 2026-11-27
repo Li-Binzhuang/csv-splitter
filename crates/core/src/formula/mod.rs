@@ -3504,6 +3504,48 @@ mod tests {
     }
 
     #[test]
+    fn mirr_discounts_and_reinvests_cash_flows() {
+        let columns = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("a".to_string(), "-100".to_string());
+        cells.insert("b".to_string(), "50".to_string());
+        cells.insert("c".to_string(), "60".to_string());
+        let formula = Formula::parse("mirr(A2:C2, 0.1, 0.05)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "0.06066"
+        );
+        cells.insert("b".to_string(), "110".to_string());
+        cells.insert("c".to_string(), String::new());
+        let columns = vec!["a".to_string(), "b".to_string()];
+        let formula = Formula::parse("mirr(A2:B2, 0.1, 0.1)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "0.1"
+        );
+        cells.insert("a".to_string(), "100".to_string());
+        cells.insert("b".to_string(), "20".to_string());
+        for source in [
+            "mirr(A2:B2, 0.1, 0.1)",
+            "mirr(A2:B2, -1, 0.1)",
+            "mirr(A2:B2, 0.1, -1)",
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "#VALUE!",
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
     fn math_rounding_functions_work() {
         for (source, expected) in [
             ("ceiling.math(4.3)", "5"),

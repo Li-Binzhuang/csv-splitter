@@ -2360,6 +2360,55 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             };
             Value::Number(rounded * significance)
         }
+        // MIRR: modified internal rate of return with separate finance/reinvest rates.
+        "mirr" => {
+            if args.len() != 3 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            let finance_rate = eval(&args[1], ctx).number();
+            let reinvest_rate = eval(&args[2], ctx).number();
+            let (Some(finance_rate), Some(reinvest_rate)) = (finance_rate, reinvest_rate) else {
+                return Value::Error;
+            };
+            if values.len() < 2
+                || !finance_rate.is_finite()
+                || !reinvest_rate.is_finite()
+                || finance_rate <= -1.0
+                || reinvest_rate <= -1.0
+                || !values.iter().any(|value| *value > 0.0)
+                || !values.iter().any(|value| *value < 0.0)
+            {
+                return Value::Error;
+            }
+            let n = values.len() as i32;
+            let future_positive = values
+                .iter()
+                .enumerate()
+                .filter(|(_, value)| **value > 0.0)
+                .map(|(period, value)| value * (1.0 + reinvest_rate).powi(n - 1 - period as i32))
+                .sum::<f64>();
+            let present_negative = values
+                .iter()
+                .enumerate()
+                .filter(|(_, value)| **value < 0.0)
+                .map(|(period, value)| value / (1.0 + finance_rate).powi(period as i32))
+                .sum::<f64>();
+            if future_positive <= 0.0 || present_negative >= 0.0 {
+                return Value::Error;
+            }
+            let result = (future_positive / -present_negative).powf(1.0 / (n - 1) as f64) - 1.0;
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

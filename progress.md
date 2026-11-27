@@ -102,14 +102,17 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项178 文本感知统计（功能级）：`STDEVA`/`VARA` 把布尔与文本按
+  1/0 计入样本；非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项177 级数求和（功能级）：`SERIESSUM(x, n, m, coefficients)`；
   系数区间/非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项176 费雪变换（功能级）：`FISHER(x)`/`FISHERINV(y)`；x 越界
   `#VALUE!`；验收：单测 + gate。
 - [x] 项174 MATH 舍入（功能级）：`CEILING.MATH`/`FLOOR.MATH`；significance/
   mode 语义与零值；测试 `math_rounding_functions_work`。
-- [ ] 项175 修正内部收益率（功能级）：`MIRR(values, finance_rate,
-  reinvest_rate)`；正负现金流/非法利率 `#VALUE!`；验收：单测 + gate。
+- [x] 项175 修正内部收益率（功能级）：`MIRR(values, finance_rate,
+  reinvest_rate)`；正负现金流/非法利率 `#VALUE!`；测试
+  `mirr_discounts_and_reinvests_cash_flows`。
 - [x] 项173 奇偶判断（功能级）：`ISEVEN(number)`/`ISODD(number)`；非整数/
   非数值 `#VALUE!`；测试 `iseven_and_isodd_work`。
 - [x] 项172 百分位排名：审计确认 `PERCENTRANK.INC`/`PERCENTRANK.EXC`
@@ -216,6 +219,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 202（项175 MIRR，功能级）：正负现金流、finance/reinvest 分离与边界；
+定向与全量 gate/package 通过；发布包 SHA `62e146c4…5ff4a7`。
 
 Round 201（项174 CEILING.MATH/FLOOR.MATH，功能级）：significance/mode
 方向、零 significance；定向与全量 gate/package 通过；发布包 SHA `8de3c2c9…b0c979`。
