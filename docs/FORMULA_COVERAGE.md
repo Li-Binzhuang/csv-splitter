@@ -210,7 +210,7 @@
 | IMPRODUCT / IMDIV | 支持（功能级新增） | 两个复数文本；除零/非法复数 `#VALUE!` |
 | IMSUM / IMSUB | 支持（功能级新增） | 两个复数文本；保留首个后缀；非法复数 `#VALUE!` |
 | STEYX | 支持（功能级新增） | 同行等长 y/x、样本≥3、零方差 `#VALUE!` |
-| GAMMALN | 支持（功能级新增） | 正数域；非正/非有限 `#VALUE!` |
+| GAMMALN / GAMMALN.PRECISE | 支持（功能级新增） | 正数域；非正/非有限 `#VALUE!` |
 | COMPLEX / IMREAL / IMAGINARY / IMABS | 支持（功能级新增） | i/j 后缀；非法复数 `#VALUE!` |
 | MULTINOMIAL | 支持（功能级新增） | 同行非负整数、总和≤170；空区间/负数 `#VALUE!` |
 | FACTDOUBLE | 支持（功能级新增） | 非负整数 0..300；负数/非整数/过大 `#VALUE!` |

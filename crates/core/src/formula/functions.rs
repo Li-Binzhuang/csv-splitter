@@ -2939,7 +2939,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
         }
         // GAMMALN: natural logarithm of the gamma function for positive numbers.
-        "gammaln" => {
+        "gammaln" | "gammaln.precise" => {
             if args.len() != 1 {
                 return Value::Error;
             }

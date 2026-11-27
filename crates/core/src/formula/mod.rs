@@ -5115,10 +5115,21 @@ mod tests {
             ("gammaln(2)", "0"),
             ("gammaln(5)", "3.178054"),
             ("gammaln(0.5)", "0.572365"),
+            ("gammaln.precise(1)", "0"),
+            ("gammaln.precise(5)", "3.178054"),
+            ("gammaln.precise(0.5)", "0.572365"),
         ] {
             assert_eq!(eval_str(source, &[]), expected, "{source}");
         }
-        for source in ["gammaln(0)", "gammaln(-1)", r#"gammaln("x")"#, "gammaln()"] {
+        for source in [
+            "gammaln(0)",
+            "gammaln(-1)",
+            r#"gammaln("x")"#,
+            "gammaln()",
+            "gammaln.precise(0)",
+            "gammaln.precise(-1)",
+            "gammaln.precise()",
+        ] {
             assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
         }
     }
