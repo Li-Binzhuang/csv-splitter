@@ -3375,6 +3375,28 @@ mod tests {
     }
 
     #[test]
+    fn valuetotext_converts_values_and_quotes_strict_text() {
+        for (source, expected) in [
+            ("valuetotext(1.5)", "1.5"),
+            ("valuetotext(true())", "TRUE"),
+            ("valuetotext(na())", "#N/A"),
+            (r#"valuetotext("a")"#, "a"),
+            (r#"valuetotext("a", 1)"#, "\"a\""),
+            ("valuetotext(1, 1)", "1"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "valuetotext()",
+            "valuetotext(1, 2)",
+            "valuetotext(1, 1.5)",
+            r#"valuetotext(1, "x")"#,
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn clean_strips_control_characters() {
         for (source, expected) in [
             (r#"clean(concat("a", char(9), "b"))"#, "ab"),

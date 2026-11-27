@@ -5732,6 +5732,34 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             _ => Value::Error,
         },
+        // VALUETOTEXT(value, [format]): format 0 is concise, 1 quotes text.
+        "valuetotext" => {
+            if args.is_empty() || args.len() > 2 {
+                return Value::Error;
+            }
+            let value = eval(&args[0], ctx);
+            let strict = match args.get(1) {
+                Some(arg) => {
+                    let Some(number) = eval(arg, ctx).number() else {
+                        return Value::Error;
+                    };
+                    if !number.is_finite()
+                        || number.fract() != 0.0
+                        || !matches!(number as u32, 0 | 1)
+                    {
+                        return Value::Error;
+                    }
+                    number as u32
+                }
+                None => 0,
+            };
+            if strict == 1 {
+                if let Value::Text(text) = &value {
+                    return Value::Text(format!("\"{}\"", text.replace('"', "\"\"")));
+                }
+            }
+            Value::Text(value.text())
+        }
         // TEXT(value, format): reuse the same NumberFormat the viewer uses.
         "text" => match (args.first(), args.get(1)) {
             (Some(value), Some(format)) => {
