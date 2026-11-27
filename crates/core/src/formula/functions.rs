@@ -4623,6 +4623,61 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // F.TEST: two-tailed F test for equal variances.
+        "f.test" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let (
+                Expr::Range {
+                    from: first_from,
+                    to: first_to,
+                },
+                Expr::Range {
+                    from: second_from,
+                    to: second_to,
+                },
+            ) = (&args[0], &args[1])
+            else {
+                return Value::Error;
+            };
+            let (Some(first), Some(second)) = (
+                range_values(first_from, first_to, ctx),
+                range_values(second_from, second_to, ctx),
+            ) else {
+                return Value::Error;
+            };
+            if first.len() < 2 || second.len() < 2 {
+                return Value::Error;
+            }
+            let variance = |values: &[f64]| {
+                let mean = values.iter().sum::<f64>() / values.len() as f64;
+                values
+                    .iter()
+                    .map(|value| (value - mean).powi(2))
+                    .sum::<f64>()
+                    / (values.len() - 1) as f64
+            };
+            let first_variance = variance(&first);
+            let second_variance = variance(&second);
+            if first_variance <= 0.0 || second_variance <= 0.0 {
+                return Value::Error;
+            }
+            let ratio = first_variance / second_variance;
+            let first_df = (first.len() - 1) as f64;
+            let second_df = (second.len() - 1) as f64;
+            let right = regularized_beta(
+                second_df / (second_df + first_df * ratio),
+                second_df / 2.0,
+                first_df / 2.0,
+            );
+            let result = (2.0 * right.min(1.0 - right)).min(1.0);
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

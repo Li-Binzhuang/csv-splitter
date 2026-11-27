@@ -3504,6 +3504,39 @@ mod tests {
     }
 
     #[test]
+    fn f_test_returns_two_tailed_pvalue() {
+        let columns = vec![
+            "id".to_string(),
+            "amount".to_string(),
+            "qty".to_string(),
+            "note".to_string(),
+            "x".to_string(),
+            "y".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        cells.insert("id".to_string(), "7".to_string());
+        cells.insert("amount".to_string(), "10".to_string());
+        cells.insert("qty".to_string(), "3".to_string());
+        cells.insert("note".to_string(), "plain".to_string());
+        cells.insert("x".to_string(), "5".to_string());
+        cells.insert("y".to_string(), "9".to_string());
+
+        for (source, expected) in [
+            ("f.test(B2:C2, B2:C2)", "1"),
+            ("f.test(B2:C2, E2:F2)", "0.660997"),
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
     fn z_test_returns_one_tailed_probability() {
         let columns = vec!["id".to_string(), "amount".to_string(), "qty".to_string()];
         let mut cells = HashMap::new();
