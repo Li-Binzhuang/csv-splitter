@@ -3838,6 +3838,40 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // NORM.DIST: normal probability density or cumulative for any mean/deviation.
+        "norm.dist" => {
+            if args.len() != 4 {
+                return Value::Error;
+            }
+            let (Some(number), Some(mean), Some(deviation), Some(cumulative)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+                eval(&args[3], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !number.is_finite()
+                || !mean.is_finite()
+                || !deviation.is_finite()
+                || !cumulative.is_finite()
+                || deviation <= 0.0
+            {
+                return Value::Error;
+            }
+            let standardized = (number - mean) / deviation;
+            let result = if cumulative != 0.0 {
+                0.5 * (1.0 + erf_approx(standardized / std::f64::consts::SQRT_2))
+            } else {
+                (-0.5 * standardized * standardized).exp()
+                    / (deviation * (2.0 * std::f64::consts::PI).sqrt())
+            };
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

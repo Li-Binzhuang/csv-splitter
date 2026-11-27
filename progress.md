@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项233 对数正态反函数（功能级）：`LOGNORM.INV(p, mean, sd)`；
+  概率(0,1)外/非法 `#VALUE!`；验收：单测 + gate。
 - [ ] 项232 t 分布（功能级）：`T.DIST(x, df, cumulative)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项231 F 分布（功能级）：`F.DIST(x, d1, d2, cumulative)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
-- [ ] 项230 一般正态分布（功能级）：`NORM.DIST(x, mean, sd, cumulative)`；
-  非法参数 `#VALUE!`；验收：单测 + gate。
+- [x] 项230 一般正态分布（功能级）：`NORM.DIST(x, mean, sd, cumulative)`；
+  非法参数 `#VALUE!`；测试 `norm_dist_returns_density_or_cumulative`。
 - [x] 项229 卡方分布（功能级）：`CHISQ.DIST(x, df, cumulative)`；
   非法参数 `#VALUE!`；测试 `chisq_dist_returns_density_or_cumulative`。
 - [x] 项228 伽马分布（功能级）：`GAMMA.DIST(x, alpha, beta, cumulative)`；
@@ -327,6 +329,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 257（项230 NORM.DIST，功能级）：任意正态密度/累积；
+定向与全量 gate/package 通过；发布包 SHA `94a3645f…bdb430827`；
+push 已在轮首成功，本轮不再 push。
 
 Round 256（项229 CHISQ.DIST，功能级）：卡方密度/累积；
 定向与全量 gate/package 通过；发布包 SHA `6750a6b0…ce1e029e`；
