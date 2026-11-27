@@ -454,9 +454,13 @@
   测试 `every_command_documents_the_flags_it_parses` + `options_can_disable_freeze_and_filter_with_formats`。
 - [x] 项446 多 sheet options + 格式（功能级）：write_sheets_with_options_and_formats；
   测试 `multi_sheet_options_keep_formats_without_freeze_or_filter`。
-- [ ] 项447 no-auto-filter + highlight 组合（功能级）：CLI 同时生效；
+- [x] 项447 no-auto-filter + highlight 组合（功能级）：CLI 同时生效；
+  测试 `convert_xlsx_no_auto_filter_keeps_highlight`。
+- [x] 项448 xlsx 条件格式 + no-auto 导出（功能级）：CF 保留、筛选省略；
+  同 `convert_xlsx_no_auto_filter_keeps_highlight`。
+- [ ] 项449 no-freeze + highlight 组合（功能级）：CF 保留、pane 省略；
   验收：单测 + gate。
-- [ ] 项448 xlsx 条件格式 + no-auto 导出（功能级）：CF 保留、筛选省略；
+- [ ] 项450 no-auto-filter + formats 组合（功能级）：格式保留、筛选省略；
   验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
@@ -755,6 +759,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 467（项447/448 CF + no-auto 组合，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `d6ee8ef3…8053ad0d`；
+轮首 push 成功，本轮不再 push。
 
 Round 466（项446 多 sheet options + 格式，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `63831f6a…821940c`；
