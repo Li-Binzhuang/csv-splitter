@@ -6547,6 +6547,8 @@ mod tests {
         for (source, expected) in [
             ("hlookup(10, B2:D2, 1, false())", "10"),
             ("hlookup(\"plain\", B2:D2, 1, false())", "plain"),
+            ("hlookup(\"pl*\", B2:D2, 1, false())", "plain"),
+            ("hlookup(\"?lain\", B2:D2, 1, false())", "plain"),
             ("hlookup(5, B2:D2, 1)", "3"),
             ("lookup(10, B2:B2, D2:D2)", "plain"),
             ("lookup(3, C2:C2, D2:D2)", "plain"),
@@ -6565,6 +6567,7 @@ mod tests {
         for source in [
             "hlookup(1, B2:D2, 1)",
             "hlookup(10, B2:D2, 2, false())",
+            "hlookup(\"nope*\", B2:D2, 1, false())",
             "lookup(1, B2:B2, D2:D2)",
             "lookup(3, B2:C2, D2:D2)",
         ] {

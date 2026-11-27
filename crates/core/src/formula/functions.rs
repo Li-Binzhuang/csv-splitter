@@ -6430,7 +6430,18 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 .unwrap_or(false);
             let lookup = eval(&args[0], ctx);
             let position = if exact {
-                exact_position(&lookup, &cells)
+                let wildcard = match &lookup {
+                    Value::Text(text) if text.chars().any(|ch| matches!(ch, '*' | '?' | '~')) => {
+                        Some(text.as_str())
+                    }
+                    _ => None,
+                };
+                match wildcard {
+                    Some(pattern) => cells
+                        .iter()
+                        .position(|cell| wildcard_key_matches(cell, pattern)),
+                    None => exact_position(&lookup, &cells),
+                }
             } else {
                 approximate_position(&lookup, &cells, 1.0)
             };
