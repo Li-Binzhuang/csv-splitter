@@ -108,6 +108,7 @@
 | ABS / SIGN / POWER / EXP / LN / LOG | 支持 | LOG 支持底数 |
 | FLOOR / CEIL / CEILING / INT / TRUNC / SQRT / MOD | 支持 | 标量 |
 | RANK / RANK.EQ / RANK.AVG | 支持（新增） | 默认降序，order≠0 升序；并列同名次/平均名次 |
+| MODE / MODE.SNGL | 支持（功能级新增） | 同行区间；并列取小值；无众数 `#VALUE!` |
 | PERCENTRANK / PERCENTRANK.INC / PERCENTRANK.EXC | 支持（功能级新增） | 同行区间、插值、significance 截断；范围外 `#N/A` |
 | QUARTILE / QUARTILE.INC / QUARTILE.EXC | 支持（功能级新增） | quart 0–4；INC 同 QUARTILE，EXC 专用边界 |
 | QUARTILE / QUARTILE.EXC | 支持（新增） | quart 0–4；EXC 专用边界 |

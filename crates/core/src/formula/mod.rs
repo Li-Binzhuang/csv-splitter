@@ -3322,38 +3322,40 @@ mod tests {
         for (name, value) in [("a", "10"), ("b", "3"), ("c", "10"), ("d", "7")] {
             cells.insert(name.to_string(), value.to_string());
         }
-        let formula = Formula::parse("mode(A2:D2)").unwrap();
-        assert_eq!(
-            formula
-                .eval_at(&cells, &columns, &Refs::default(), 1)
-                .render(),
-            "10"
-        );
+        for source in ["mode(A2:D2)", "mode.sngl(A2:D2)"] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "10",
+                "{source}"
+            );
+        }
         // A tie picks the smaller value so the answer is deterministic.
         for (name, value) in [("a", "1"), ("b", "2"), ("c", "1"), ("d", "2")] {
             cells.insert(name.to_string(), value.to_string());
         }
+        let tie = Formula::parse("mode.sngl(A2:D2)").unwrap();
         assert_eq!(
-            formula
-                .eval_at(&cells, &columns, &Refs::default(), 1)
-                .render(),
+            tie.eval_at(&cells, &columns, &Refs::default(), 1).render(),
             "1"
         );
         // No repeated value has no mode.
         for (name, value) in [("a", "10"), ("b", "3"), ("c", "7"), ("d", "5")] {
             cells.insert(name.to_string(), value.to_string());
         }
+        let no_mode = Formula::parse("mode.sngl(A2:D2)").unwrap();
         assert_eq!(
-            formula
+            no_mode
                 .eval_at(&cells, &columns, &Refs::default(), 1)
                 .render(),
             "#VALUE!"
         );
         cells.insert("d".to_string(), "n/a".to_string());
+        let text = Formula::parse("mode.sngl(A2:D2)").unwrap();
         assert_eq!(
-            formula
-                .eval_at(&cells, &columns, &Refs::default(), 1)
-                .render(),
+            text.eval_at(&cells, &columns, &Refs::default(), 1).render(),
             "#VALUE!",
             "text is ignored and leaves three distinct numbers"
         );

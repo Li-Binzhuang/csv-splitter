@@ -663,7 +663,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         }
         // MODE.SNGL over a same-row range: the most frequent numeric value; ties pick the
         // smallest so the answer is deterministic, and no repeated value is #VALUE!.
-        "mode" => {
+        "mode" | "mode.sngl" => {
             let Some(Expr::Range { from, to }) = args.first() else {
                 return Value::Error;
             };
