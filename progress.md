@@ -398,9 +398,11 @@
   测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [x] 项410 条件格式 iconSet 未知预设（功能级）：非法预设报错；
   测试 `conditional_rules_support_top_and_bottom_ranks`。
-- [ ] 项411 条件格式 colorScale 颜色数量（功能级）：scale2/3 颜色数校验；
-  验收：单测 + gate。
+- [x] 项411 条件格式 colorScale 颜色数量（功能级）：数量不匹配报错；
+  测试 `conditional_rules_support_top_and_bottom_ranks`。
 - [ ] 项412 条件格式 colorScale 非法颜色（功能级）：非 #RRGGBB 报错；
+  验收：单测 + gate。
+- [ ] 项413 条件格式 containsText 引号转义（功能级）：“"” 文本正确转义；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -683,6 +685,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 432（项411 条件格式 colorScale 颜色数量，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `9e8901f0…a0970b87`；
+轮首 push 成功，本轮不再 push。
 
 Round 431（项410 条件格式 iconSet 预设校验，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `cb72ec79…84d3c475`；

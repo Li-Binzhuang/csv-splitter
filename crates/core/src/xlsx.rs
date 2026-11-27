@@ -2605,6 +2605,19 @@ mod tests {
             .to_string();
         assert!(err.contains("greater than 0"), "{err}");
 
+        for (operator, value) in [("scale2", "#F8696B"), ("scale2", "#F8696B,#63BE7B,#FFEB84")] {
+            let bad = vec![ConditionalRule {
+                column: "amount".into(),
+                operator: operator.into(),
+                value: value.into(),
+                color: String::new(),
+            }];
+            let err = csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &bad)
+                .unwrap_err()
+                .to_string();
+            assert!(err.contains("comma-separated colors"), "{value}: {err}");
+        }
+
         for preset in ["4Arrows", "3TrafficLights2"] {
             let bad = vec![ConditionalRule {
                 column: "amount".into(),
