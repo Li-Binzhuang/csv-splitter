@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项193 复数极坐标（功能级）：`IMCONJUGATE`/`IMARGUMENT`；非法复数
+  `#VALUE!`；验收：单测 + gate。
 - [ ] 项192 复数乘除（功能级）：`IMPRODUCT`/`IMDIV` 两个复数文本参数；
   除零/非法复数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项191 复数加减（功能级）：`IMSUM`/`IMSUB` 两个复数文本参数；
   非法复数 `#VALUE!`；验收：单测 + gate。
-- [ ] 项190 回归标准误（功能级）：`STEYX(known_y, known_x)`；同行等长、
-  样本≥3、零方差 `#VALUE!`；验收：单测 + gate。
+- [x] 项190 回归标准误（功能级）：`STEYX(known_y, known_x)`；同行等长、
+  样本≥3、零方差 `#VALUE!`；测试 `steyx_measures_regression_error`。
 - [x] 项189 对数伽马（功能级）：`GAMMALN(number)`；非正/非有限
   `#VALUE!`；测试 `gammaln_matches_log_gamma`。
 - [x] 项188 复数基础（功能级）：`COMPLEX`/`IMREAL`/`IMAGINARY`/`IMABS`；
@@ -247,6 +249,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 217（项190 STEYX，功能级）：回归标准误、样本量/零方差；
+定向与全量 gate/package 通过；发布包 SHA `045b2827…15fe75`；
+push 已在轮首成功，本轮不再 push。
 
 Round 216（项189 GAMMALN，功能级）：Lanczos 对数伽马、正数域；
 定向与全量 gate/package 通过；发布包 SHA `cda413c5…0cfb8003`；
