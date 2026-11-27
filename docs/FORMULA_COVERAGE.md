@@ -130,6 +130,7 @@
 | DB / DDB / VDB | 支持（功能级新增） | 固定/双倍/变动余额递减；区间、月数、因子非法 `#VALUE!` |
 | FVSCHEDULE | 支持（功能级新增） | 复利 schedule 区间；空区间/rate≤-1 `#VALUE!` |
 | SUMXMY2 / SUMX2MY2 / SUMX2PY2 | 支持（功能级新增） | 同行等长 x/y、空区间/长度不等 `#VALUE!` |
+| IMSIN / IMCOS / IMTAN | 支持（功能级新增） | 复数三角；非法复数 `#VALUE!` |
 | CSCH / SECH / COTH | 支持（功能级新增） | 双曲倒数；零点/非数值 `#VALUE!` |
 | IMCOSH / IMSINH | 支持（功能级新增） | 复数双曲余弦/正弦；非法复数 `#VALUE!` |
 | DEGREES / RADIANS | 支持（功能级新增） | 角度/弧度互转；非数值 `#VALUE!` |

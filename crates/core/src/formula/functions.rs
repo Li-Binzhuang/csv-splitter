@@ -3325,6 +3325,35 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // IMSIN/IMCOS/IMTAN: complex trigonometric functions.
+        "imsin" | "imcos" | "imtan" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let text = eval(&args[0], ctx).text();
+            let Some((real, imaginary, suffix)) = parse_complex(&text) else {
+                return Value::Error;
+            };
+            let sin_real = real.sin() * imaginary.cosh();
+            let sin_imaginary = real.cos() * imaginary.sinh();
+            let cos_real = real.cos() * imaginary.cosh();
+            let cos_imaginary = -real.sin() * imaginary.sinh();
+            let (real_part, imaginary_part) = if lower == "imsin" {
+                (sin_real, sin_imaginary)
+            } else if lower == "imcos" {
+                (cos_real, cos_imaginary)
+            } else {
+                let denominator = cos_real * cos_real + cos_imaginary * cos_imaginary;
+                if denominator == 0.0 {
+                    return Value::Error;
+                }
+                (
+                    (sin_real * cos_real + sin_imaginary * cos_imaginary) / denominator,
+                    (sin_imaginary * cos_real - sin_real * cos_imaginary) / denominator,
+                )
+            };
+            Value::Text(format_complex(real_part, imaginary_part, &suffix))
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

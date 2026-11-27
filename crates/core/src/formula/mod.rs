@@ -3504,6 +3504,25 @@ mod tests {
     }
 
     #[test]
+    fn complex_trigonometric_functions_work() {
+        for (source, expected) in [
+            (r#"imsin("0+0i")"#, "0"),
+            (r#"imcos("0+0i")"#, "1"),
+            (r#"imtan("0+0i")"#, "0"),
+            (r#"imsin("1+0i")"#, "0.8414709848078965"),
+            (r#"imcos("1+0i")"#, "0.5403023058681398"),
+            (r#"imtan("1+0i")"#, "1.557407724654902"),
+            (r#"imsin("0+1i")"#, "1.1752011936438014i"),
+            (r#"imcos("0+1i")"#, "1.5430806348152437"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [r#"imsin("abc")"#, "imcos()", "imtan(1, 2)"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn reciprocal_hyperbolic_functions_work() {
         for (source, expected) in [
             ("csch(1)", "0.850918"),

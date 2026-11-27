@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项214 平方根 π（功能级）：`SQRTPI(number)`；负数/非数值
+  `#VALUE!`；验收：单测 + gate。
 - [ ] 项213 复数余切（功能级）：`IMCOT`；零点/非法复数
   `#VALUE!`；验收：单测 + gate。
 - [ ] 项212 复数倒数三角（功能级）：`IMCSC`/`IMSEC`/`IMCOT`；
   零点/非法复数 `#VALUE!`；验收：单测 + gate。
-- [ ] 项211 复数三角（功能级）：`IMSIN`/`IMCOS`/`IMTAN`；非法复数
-  `#VALUE!`；验收：单测 + gate。
+- [x] 项211 复数三角（功能级）：`IMSIN`/`IMCOS`/`IMTAN`；非法复数
+  `#VALUE!`；测试 `complex_trigonometric_functions_work`。
 - [x] 项210 双曲倒数（功能级）：`CSCH`/`SECH`/`COTH`；零点/非数值
   `#VALUE!`；测试 `reciprocal_hyperbolic_functions_work`。
 - [x] 项209 复数双曲（功能级）：`IMCOSH`/`IMSINH`；非法复数
@@ -289,6 +291,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 238（项211 IMSIN/IMCOS/IMTAN，功能级）：复数三角；
+定向与全量 gate/package 通过；发布包 SHA `3387b0c8…f534351`；
+push 已在轮首成功，本轮不再 push。
 
 Round 237（项210 CSCH/SECH/COTH，功能级）：双曲倒数、零点；
 定向与全量 gate/package 通过；发布包 SHA `9fcf352b…e617814`；
