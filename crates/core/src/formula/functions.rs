@@ -6140,22 +6140,27 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         },
         "find" => find_in(args, ctx, true),
         "search" => find_in(args, ctx, false),
-        "proper" => match args.first().map(|a| eval(a, ctx).text()) {
-            Some(text) => Value::Text(
-                text.split(' ')
-                    .map(|word| {
-                        let mut chars = word.chars();
-                        match chars.next() {
-                            Some(first) => {
-                                format!("{}{}", first.to_uppercase(), chars.as_str().to_lowercase())
-                            }
-                            None => String::new(),
+        "proper" => match (args.len(), args.first()) {
+            (1, Some(arg)) => {
+                let text = eval(arg, ctx).text();
+                let mut output = String::with_capacity(text.len());
+                let mut word_start = true;
+                for character in text.chars() {
+                    if character.is_alphabetic() {
+                        if word_start {
+                            output.extend(character.to_uppercase());
+                        } else {
+                            output.extend(character.to_lowercase());
                         }
-                    })
-                    .collect::<Vec<_>>()
-                    .join(" "),
-            ),
-            None => Value::Error,
+                        word_start = false;
+                    } else {
+                        output.push(character);
+                        word_start = true;
+                    }
+                }
+                Value::Text(output)
+            }
+            _ => Value::Error,
         },
         "rept" => match (
             args.first().map(|a| eval(a, ctx).text()),

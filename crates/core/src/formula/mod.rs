@@ -6801,6 +6801,11 @@ mod tests {
             "TRUE"
         );
         assert_eq!(eval_str("proper('hello world')", &[]), "Hello World");
+        assert_eq!(eval_str(r#"proper("sally's shop")"#, &[]), "Sally'S Shop");
+        assert_eq!(eval_str("proper('2-way street')", &[]), "2-Way Street");
+        assert_eq!(eval_str("proper('76budget')", &[]), "76Budget");
+        assert_eq!(eval_str("proper('')", &[]), "");
+        assert_eq!(eval_str("proper('a', 2)", &[]), "#VALUE!");
         assert_eq!(eval_str("rept('ab', 3)", &[]), "ababab");
         assert_eq!(eval_str("substitute('a-b-c', '-', '+')", &[]), "a+b+c");
         assert_eq!(eval_str("substitute('a-b-c', '-', '+', 2)", &[]), "a-b+c");

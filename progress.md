@@ -262,9 +262,11 @@
   测试 `left_right_validate_length`。
 - [x] 项342 REPLACE start/count 校验（功能级）：非整数/负数/非数值 → #VALUE!；
   定向测试通过。
-- [ ] 项343 PROPER 撇号/连字符分界（功能级）：PROPER 按非字母分界大写；
-  验收：单测 + gate。
+- [x] 项343 PROPER 撇号/连字符分界（功能级）：非字母分界大写，数字也分界；
+  测试 `the_everyday_functions_behave_like_a_spreadsheet`。
 - [ ] 项344 TRIM 内部空格折叠（功能级）：连续空格压成单个，保留词间；
+  验收：单测 + gate。
+- [ ] 项345 TEXT 正/负/零三段格式（功能级）：解析 `正;负;零` 三段并分别渲染；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -547,6 +549,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 367（项343 PROPER 分界，功能级）：非字母分界；
+定向与全量 gate/package 通过；发布包 SHA `1438d944…e11eaa4`；
+轮首 push 成功，本轮不再 push。
 
 Round 366（项342 REPLACE start/count 校验，功能级）：整数/非负；
 定向与全量 gate/package 通过；发布包 SHA `64423485…c5f63b79`；
