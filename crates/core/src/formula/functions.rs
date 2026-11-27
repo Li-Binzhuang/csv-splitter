@@ -3244,6 +3244,28 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // ISO.CEILING: round toward +infinity using absolute significance.
+        "iso.ceiling" => {
+            if args.is_empty() || args.len() > 2 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            let significance = args
+                .get(1)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(1.0))
+                .unwrap_or(f64::NAN);
+            if !number.is_finite() || !significance.is_finite() {
+                return Value::Error;
+            }
+            if significance == 0.0 {
+                return Value::Number(0.0);
+            }
+            let significance = significance.abs();
+            Value::Number((number / significance).ceil() * significance)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

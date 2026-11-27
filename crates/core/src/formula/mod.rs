@@ -3504,6 +3504,26 @@ mod tests {
     }
 
     #[test]
+    fn iso_ceiling_rounds_up() {
+        for (source, expected) in [
+            ("iso.ceiling(4.3)", "5"),
+            ("iso.ceiling(-4.3)", "-4"),
+            ("iso.ceiling(4.3, 2)", "6"),
+            ("iso.ceiling(-4.3, 2)", "-4"),
+            ("iso.ceiling(4.3, 0)", "0"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "iso.ceiling(1, 2, 3)",
+            r#"iso.ceiling("x")"#,
+            "iso.ceiling()",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn inverse_hyperbolic_functions_work() {
         for (source, expected) in [
             ("asinh(0)", "0"),
