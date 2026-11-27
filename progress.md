@@ -106,8 +106,10 @@
   除 `#N/A` 外错误返回 TRUE；测试 `iserr_ignores_na_but_sees_other_errors`。
 - [x] 项266 包含式四分位（功能级）：`QUARTILE.INC(array, quart)`；
   非法 quart/空区间 `#VALUE!`；测试扩展 `quartile_and_trimmean_read_same_row_ranges`。
-- [ ] 项267 百分位排名（功能级）：`PERCENTRANK.INC`/`PERCENTRANK.EXC`；
-  非法参数/空区间 `#VALUE!`；验收：单测 + gate。
+- [x] 项267 百分位排名（功能级）：`PERCENTRANK.INC`/`PERCENTRANK.EXC`；
+  非法参数/空区间 `#VALUE!`；测试扩展 `percentrank_and_percentile_aliases_read_same_row_ranges`。
+- [ ] 项268 众数别名（功能级）：`MODE.SNGL(array)`；
+  空区间/无众数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项264 精确伽马对数（功能级）：`GAMMALN.PRECISE(x)`；
   非正/非有限 `#VALUE!`；验收：单测 + gate。
 - [x] 项263 逻辑/非文本判断（功能级）：`ISLOGICAL`/`ISNONTEXT`；
@@ -397,6 +399,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 292（项267 PERCENTRANK.INC/EXC，功能级）：百分位排名、significance；
+定向与全量 gate/package 通过；发布包 SHA `9c284848…2499531d`；
+push 已在轮首成功，本轮不再 push。
 
 Round 291（项266 QUARTILE.INC，功能级）：包含式四分位别名；
 定向与全量 gate/package 通过；发布包 SHA `d383a9f7…5e6650b5`；

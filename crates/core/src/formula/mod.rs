@@ -5567,6 +5567,9 @@ mod tests {
             ("percentrank(A2:D2, 2)", "0.333333"),
             ("percentrank(A2:D2, 2.5)", "0.5"),
             ("percentrank(A2:D2, 2, 2)", "0.33"),
+            ("percentrank.inc(A2:D2, 2)", "0.333333"),
+            ("percentrank.inc(A2:D2, 2.5)", "0.5"),
+            ("percentrank.inc(A2:D2, 2, 2)", "0.33"),
             ("percentile.inc(A2:D2, 0.5)", "2.5"),
             ("percentile.exc(A2:D2, 0.5)", "2.5"),
         ] {

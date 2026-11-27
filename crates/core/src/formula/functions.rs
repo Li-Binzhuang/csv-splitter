@@ -600,7 +600,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             Value::Number((position + 1.0) / (values.len() as f64 + 1.0))
         }
         // PERCENTRANK.INC: position of a value in 0..1, interpolating between neighbours.
-        "percentrank" => {
+        "percentrank" | "percentrank.inc" => {
             if args.len() < 2 || args.len() > 3 {
                 return Value::Error;
             }
