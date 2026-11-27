@@ -498,7 +498,9 @@
   测试 `convert_xlsx_can_protect_the_sheet`。
 - [x] 项468 保护 + 格式 + no-freeze 组合（功能级）：CLI 同时生效；
   测试 `convert_xlsx_combines_protection_format_and_no_freeze`。
-- [ ] 项469 保护 + 验证 + CF 全组合（功能级）：三个特性共存；
+- [x] 项469 保护 + 验证 + CF 全组合（功能级）：三个特性共存；
+  测试 `convert_xlsx_combines_protection_validation_and_highlight`。
+- [ ] 项470 数字格式颜色段（功能级）：[Red] 等颜色码；
   验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
@@ -797,6 +799,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 487（项469 保护+验证+CF，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `cbb2da77…d863641a`；
+轮首 push 成功，本轮不再 push。
 
 Round 486（项468 保护组合，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `6af2b459…c5ef4f33d`；
