@@ -1,0 +1,77 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "b406aba56101af6ce41fdf161a17c97fe190b44b04eb021c9f1bdf9e2713ddff",
+  "batch_id": "94e6270021c1258f2f1354d511117a6adf4987599e20105ca1742be1194bd21f",
+  "composite_identity": "b87d063e6352a1ce315b20e86789d6d71def9af8e32a31766fbb87c2247566ed",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "216b3f938fa02ec247b8c70ea8701dbae264cefe923ddd6a2102837f8b7a96bb",
+  "all_targets": [
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "dc1911f028acb7f74edd08200b35f8fa9b4c5fb76243805f1432cc01ea7d5f2e",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/区间；TEXT；日期时间族/INTL；查找/小计；UNICHAR/UNICODE；FIXED/DOLLAR/NUMBERVALUE；数论/组合；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；DECIMAL/BASE；SKEW/KURT；SLOPE/INTERCEPT；STANDARDIZE；GEOMEAN/HARMEAN；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧 VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION | S:单列按整列；HLOOKUP 仅单行；位运算限 48 位；SUBTOTAL/AGGREGATE 空区间报错；内部错误统一报 #VALUE"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "c96c30c4a91a26fa751ef5878560cf3fa63f4338bcbe228e43882ac1e6efa5af",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族/INTL；查找/小计；UNICHAR/UNICODE；数论；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；进制转换；SKEW/KURT；SLOPE/INTERCEPT；STANDARDIZE；GEOMEAN/HARMEAN；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧/VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "7769681744174afc05ab1df65c97f426fb118ebc36c151bf769fa41114ee9147",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/日期时间族/INTL；查找/小计；UNICHAR/UNICODE；数论/组合；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；DECIMAL/BASE；SKEW/KURT；SLOPE/INTERCEPT；STANDARDIZE；GEOMEAN/HARMEAN；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧 VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION | S:矩阵只记当前实现；HLOOKUP 仅单行；PEARSON/RSQ/COVAR/DEVSQ 仍列计划"
+    },
+    {
+      "candidate_id": "",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "dc1e2fd7244da36abe5c00013d9b06dc32f83b09e2003f1684dc48bcf7bcacba",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 个功能级项；Round194 SLOPE/INTERCEPT 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ],
+  "targets": [
+    {
+      "candidate_id": "07765b9245471884e7755ad66585c0a8b1632749264411d072448b5a9723c11c",
+      "object_ref": "code:crates/core/src/formula/functions.rs",
+      "path": "crates/core/src/formula/functions.rs",
+      "change": "update",
+      "source_sha256": "dc1911f028acb7f74edd08200b35f8fa9b4c5fb76243805f1432cc01ea7d5f2e",
+      "existing_entry": "functions.rs[KA7L]: F:公式内置函数表 | R:code:crates/core/src/formula/mod.rs | A:聚合/区间；TEXT；日期时间族/INTL；查找/小计；UNICHAR/UNICODE；FIXED/DOLLAR/NUMBERVALUE；数论/组合；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；DECIMAL/BASE；SKEW/KURT；SLOPE/INTERCEPT；STANDARDIZE；GEOMEAN/HARMEAN；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧 VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION | S:单列按整列；HLOOKUP 仅单行；位运算限 48 位；SUBTOTAL/AGGREGATE 空区间报错；内部错误统一报 #VALUE"
+    },
+    {
+      "candidate_id": "85a3852d530d5a0a87ca2bb909c0f09c6353420df4500c70514f8db652f54a31",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "c96c30c4a91a26fa751ef5878560cf3fa63f4338bcbe228e43882ac1e6efa5af",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族/INTL；查找/小计；UNICHAR/UNICODE；数论；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；进制转换；SKEW/KURT；SLOPE/INTERCEPT；STANDARDIZE；GEOMEAN/HARMEAN；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧/VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW 易变"
+    },
+    {
+      "candidate_id": "7d10d16de6aa6c8dc9147d36112cb42e8cf3c53b071c0ff697cb09ab6b5cbfe1",
+      "object_ref": "code:docs/FORMULA_COVERAGE.md",
+      "path": "docs/FORMULA_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "7769681744174afc05ab1df65c97f426fb118ebc36c151bf769fa41114ee9147",
+      "existing_entry": "FORMULA_COVERAGE.md[SA7S]: F:Excel 公式函数覆盖矩阵与缺口 | R:code:crates/core/src/formula/functions.rs,code:crates/core/src/formula/mod.rs | A:五类矩阵；TEXT/日期时间族/INTL；查找/小计；UNICHAR/UNICODE；数论/组合；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；DECIMAL/BASE；SKEW/KURT；SLOPE/INTERCEPT；STANDARDIZE；GEOMEAN/HARMEAN；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧 VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION | S:矩阵只记当前实现；HLOOKUP 仅单行；PEARSON/RSQ/COVAR/DEVSQ 仍列计划"
+    },
+    {
+      "candidate_id": "3e16d53e46b578e503ab8df911bfb9f3fc38df02a6011089b741dd7d869b9adf",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "dc1e2fd7244da36abe5c00013d9b06dc32f83b09e2003f1684dc48bcf7bcacba",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 个功能级项；Round194 SLOPE/INTERCEPT 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

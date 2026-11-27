@@ -1442,6 +1442,68 @@ mod tests {
     }
 
     #[test]
+    fn pearson_and_rsq_measure_correlation() {
+        let columns = vec![
+            "y1".to_string(),
+            "y2".to_string(),
+            "y3".to_string(),
+            "x1".to_string(),
+            "x2".to_string(),
+            "x3".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [
+            ("y1", "1"),
+            ("y2", "2"),
+            ("y3", "3"),
+            ("x1", "1"),
+            ("x2", "2"),
+            ("x3", "3"),
+        ] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        for (source, expected) in [("pearson(A2:C2, D2:F2)", "1"), ("rsq(A2:C2, D2:F2)", "1")] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        cells.insert("y1".to_string(), "3".to_string());
+        cells.insert("y3".to_string(), "1".to_string());
+        let formula = Formula::parse("pearson(A2:C2, D2:F2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "-1"
+        );
+        for source in ["pearson(A2:C2, D2:E2)", "rsq(A2:C2, D2:E2)"] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "#VALUE!",
+                "{source}"
+            );
+        }
+        for name in ["x1", "x2", "x3"] {
+            cells.insert(name.to_string(), "1".to_string());
+        }
+        let formula = Formula::parse("pearson(A2:C2, D2:F2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+    }
+
+    #[test]
     fn slope_and_intercept_fit_a_line() {
         let columns = vec![
             "y1".to_string(),

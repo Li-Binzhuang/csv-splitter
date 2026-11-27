@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项169 线性预测（功能级）：`FORECAST(x, known_y, known_x)`/
+  `FORECAST.LINEAR(...)`；同行等长/零方差 `#VALUE!`；验收：单测 + gate。
 - [ ] 项168 协方差（功能级）：`COVAR(known_y, known_x)`/
   `COVARIANCE.P(...)`；同行等长、零方差 `#VALUE!`；验收：单测 + gate。
 - [ ] 项167 偏差平方和（功能级）：`DEVSQ(values)`；同行数值区间/空区间
   `#VALUE!`；验收：单测 + gate。
-- [ ] 项166 相关系数（功能级）：`PEARSON(known_y, known_x)`/`RSQ(...)`；
-  同行等长、零方差 `#VALUE!`；验收：单测 + gate。
+- [x] 项166 相关系数（功能级）：`PEARSON(known_y, known_x)`/`RSQ(...)`；
+  同行等长、零方差 `#VALUE!`；测试 `pearson_and_rsq_measure_correlation`。
 - [x] 项165 线性回归（功能级）：`SLOPE(known_y, known_x)`/
   `INTERCEPT(known_y, known_x)`；同行等长区间、零方差 `#VALUE!`；测试
   `slope_and_intercept_fit_a_line`。
@@ -197,6 +199,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 195（项166 PEARSON/RSQ，功能级）：相关系数/决定系数、正负相关与
+零方差；定向与全量 gate/package 通过；发布包 SHA `662fed8d…bc08a`。
 
 Round 194（项165 SLOPE/INTERCEPT，功能级）：最小二乘斜率/截距、等长与零方差；
 定向与全量 gate/package 通过；发布包 SHA `4109e110…171320`。

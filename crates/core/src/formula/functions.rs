@@ -2154,6 +2154,39 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             };
             Value::Number(if lower == "slope" { slope } else { intercept })
         }
+        // PEARSON/RSQ: Pearson correlation and its square over paired ranges.
+        "pearson" | "rsq" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let (
+                Some(Expr::Range {
+                    from: y_from,
+                    to: y_to,
+                }),
+                Some(Expr::Range {
+                    from: x_from,
+                    to: x_to,
+                }),
+            ) = (args.first(), args.get(1))
+            else {
+                return Value::Error;
+            };
+            let Some(known_y) = range_values(y_from, y_to, ctx) else {
+                return Value::Error;
+            };
+            let Some(known_x) = range_values(x_from, x_to, ctx) else {
+                return Value::Error;
+            };
+            let Some(correlation) = pearson_correlation(&known_y, &known_x) else {
+                return Value::Error;
+            };
+            Value::Number(if lower == "pearson" {
+                correlation
+            } else {
+                correlation * correlation
+            })
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
@@ -3958,6 +3991,26 @@ fn payment_parts(
     } else {
         None
     }
+}
+
+fn pearson_correlation(y: &[f64], x: &[f64]) -> Option<f64> {
+    if y.len() != x.len() || y.len() < 2 {
+        return None;
+    }
+    let n = y.len() as f64;
+    let mean_y = y.iter().sum::<f64>() / n;
+    let mean_x = x.iter().sum::<f64>() / n;
+    let sum_xx = x.iter().map(|value| (value - mean_x).powi(2)).sum::<f64>();
+    let sum_yy = y.iter().map(|value| (value - mean_y).powi(2)).sum::<f64>();
+    let sum_xy = x
+        .iter()
+        .zip(y.iter())
+        .map(|(x, y)| (x - mean_x) * (y - mean_y))
+        .sum::<f64>();
+    if sum_xx == 0.0 || sum_yy == 0.0 {
+        return None;
+    }
+    Some(sum_xy / (sum_xx * sum_yy).sqrt())
 }
 
 fn linear_regression(y: &[f64], x: &[f64]) -> Option<(f64, f64)> {
