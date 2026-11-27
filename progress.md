@@ -138,9 +138,11 @@
   非法参数 `#VALUE!`；测试 `precise_error_functions_work`。
 - [x] 项261 引用判断（功能级）：`ISREF(value)`；
   区间/引用返回 TRUE，值/文本返回 FALSE；测试 `isref_recognizes_references_without_evaluating`。
-- [ ] 项279 xlsx 列格式回退扫描（功能级）：首个数据行无样式时向下扫描；
-  验收：单测 + gate。
+- [x] 项279 xlsx 列格式回退扫描（功能级）：首个数据行无样式时向下扫描；
+  测试 `column_formats_fall_back_when_the_first_data_row_has_no_styles`。
 - [ ] 项280 分数数字格式（功能级）：`# ?/?` 解析/显示/导出，round-trip；验收：单测 + gate。
+- [ ] 项281 xlsx 分数格式导出（功能级）：`# ?/?` 样式写入并按格式 round-trip；
+  验收：单测 + gate。
 - [ ] 项260 第二类贝塞尔 Y 函数（功能级）：`BESSELY(x, n)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
 - [x] 项259 超几何反函数（功能级）：`HYPGEOM.INV(n, K, N, alpha)`；
@@ -422,6 +424,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 304（项279 xlsx 列格式回退扫描，功能级）：首行无样式向下扫描；
+定向与全量 gate/package 通过；发布包 SHA `7b4a16b9…8cb827`；
+push 已在轮首成功，本轮不再 push。
 
 Round 303（项264 GAMMALN.PRECISE，功能级）：精确伽马对数别名、非正域；
 定向与全量 gate/package 通过；发布包 SHA `e57f1c7f…3032dd55`；

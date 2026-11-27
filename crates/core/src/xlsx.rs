@@ -81,7 +81,8 @@ pub fn xlsx_column_formats(
     let date_styles = date_style_map(&styles);
     let date1904 = workbook.contains("date1904=\"1\"") || workbook.contains("date1904=\"true\"");
     let mut header: Option<Vec<String>> = None;
-    let mut seen_data = false;
+    let mut captured_data = false;
+    let mut resolved = false;
     let mut result = Vec::new();
     {
         let mut entry = archive
@@ -93,15 +94,17 @@ pub fn xlsx_column_formats(
                 header = Some(cells);
                 return Ok(());
             }
-            if seen_data {
+            if resolved {
                 return Ok(());
             }
-            seen_data = true;
             let styles = cell_style_indices(fragment);
-            for (index, name) in header.as_ref().unwrap().iter().enumerate() {
-                let style = styles.get(index).copied().unwrap_or(0);
-                let format = style_formats.get(style).cloned().flatten();
-                result.push((name.clone(), format));
+            let row = column_formats_for(header.as_ref().unwrap(), &styles, &style_formats);
+            if has_any_format(&row) {
+                resolved = true;
+            }
+            if !captured_data || resolved {
+                result = row;
+                captured_data = true;
             }
             Ok(())
         })?;
@@ -175,6 +178,25 @@ fn style_number_formats(styles: &str) -> Vec<Option<crate::layout::NumberFormat>
             crate::layout::NumberFormat::parse(&code).ok()
         })
         .collect()
+}
+
+fn column_formats_for(
+    header: &[String],
+    styles: &[usize],
+    style_formats: &[Option<crate::layout::NumberFormat>],
+) -> Vec<(String, Option<crate::layout::NumberFormat>)> {
+    header
+        .iter()
+        .enumerate()
+        .map(|(index, name)| {
+            let style = styles.get(index).copied().unwrap_or(0);
+            (name.clone(), style_formats.get(style).cloned().flatten())
+        })
+        .collect()
+}
+
+fn has_any_format(columns: &[(String, Option<crate::layout::NumberFormat>)]) -> bool {
+    columns.iter().any(|(_, format)| format.is_some())
 }
 
 /// Export a CSV file as a single-sheet workbook, streaming rows.
@@ -2380,6 +2402,18 @@ mod tests {
         </sheetData>"#;
         let rows = sheet_rows(xml, &[], &[]).unwrap();
         assert_eq!(rows[0].1, vec!["ab", "true"]);
+    }
+
+    #[test]
+    fn column_formats_fall_back_when_the_first_data_row_has_no_styles() {
+        use crate::layout::NumberFormat;
+        let header = vec!["a".to_string(), "b".to_string()];
+        let style_formats = vec![None, Some(NumberFormat::parse("#,##0.00").unwrap())];
+        let plain = column_formats_for(&header, &[0], &style_formats);
+        assert!(!has_any_format(&plain), "{plain:?}");
+        let styled = column_formats_for(&header, &[0, 1], &style_formats);
+        assert!(has_any_format(&styled), "{styled:?}");
+        assert_eq!(styled[1].1, Some(NumberFormat::parse("#,##0.00").unwrap()));
     }
 
     #[test]
