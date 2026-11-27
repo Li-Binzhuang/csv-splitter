@@ -130,6 +130,7 @@
 | DB / DDB / VDB | 支持（功能级新增） | 固定/双倍/变动余额递减；区间、月数、因子非法 `#VALUE!` |
 | FVSCHEDULE | 支持（功能级新增） | 复利 schedule 区间；空区间/rate≤-1 `#VALUE!` |
 | SUMXMY2 / SUMX2MY2 / SUMX2PY2 | 支持（功能级新增） | 同行等长 x/y、空区间/长度不等 `#VALUE!` |
+| DEGREES / RADIANS | 支持（功能级新增） | 角度/弧度互转；非数值 `#VALUE!` |
 | ISO.CEILING | 支持（功能级新增） | 绝对 significance、朝 +∞ 取整；零 significance 返回 0 |
 | ASINH / ACOSH / ATANH | 支持（功能级新增） | 反双曲函数；定义域外 `#VALUE!` |
 | SINH / COSH / TANH | 支持（功能级新增） | 双曲函数；非有限结果 `#VALUE!` |

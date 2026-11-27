@@ -3266,6 +3266,23 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             let significance = significance.abs();
             Value::Number((number / significance).ceil() * significance)
         }
+        // DEGREES/RADIANS: convert between radians and degrees.
+        "degrees" | "radians" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            if !number.is_finite() {
+                return Value::Error;
+            }
+            Value::Number(if lower == "degrees" {
+                number.to_degrees()
+            } else {
+                number.to_radians()
+            })
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

@@ -3504,6 +3504,22 @@ mod tests {
     }
 
     #[test]
+    fn degrees_and_radians_convert() {
+        for (source, expected) in [
+            ("degrees(0)", "0"),
+            ("degrees(1)", "57.29578"),
+            ("radians(0)", "0"),
+            ("radians(90)", "1.570796"),
+            ("radians(180)", "3.141593"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [r#"degrees("x")"#, "radians()", "degrees(1, 2)"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn iso_ceiling_rounds_up() {
         for (source, expected) in [
             ("iso.ceiling(4.3)", "5"),
