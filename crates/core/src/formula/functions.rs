@@ -6070,7 +6070,11 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 }
                 parts.push(text);
             }
-            Value::Text(parts.join(&separator))
+            let joined = parts.join(&separator);
+            if joined.chars().count() > 32767 {
+                return Value::Error;
+            }
+            Value::Text(joined)
         }
         // CHAR(65) = "A"; CODE("A") = 65.
         "char" => {

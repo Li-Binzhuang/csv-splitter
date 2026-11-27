@@ -21,7 +21,7 @@
 | REPLACE | 支持（功能级修正） | Excel 位置语义：start_num/num_chars，1-based；非法参数 `#VALUE!` |
 | SUBSTITUTE | 支持（功能级修正） | 默认全替换；instance_num 须整数≥1，越界原样 |
 | CONCAT / CONCATENATE | 支持 | CONCATENATE 是别名 |
-| TEXTJOIN | 支持（功能级扩展） | 分隔符 + ignore_empty 须 0/1 + 多段 |
+| TEXTJOIN | 支持（功能级新增） | ignore_empty 0/1；分隔符任意；结果 ≤32767 字符，超限 `#VALUE!` |
 | CHAR / CODE / UNICHAR / UNICODE | 支持（边界加固） | CHAR 1–255 整数；UNICHAR 整数合法码点（0/代理区/小数报错）；CODE/UNICODE 单字符 |
 | FIND / SEARCH | 支持（功能级扩展） | SEARCH Unicode 折叠 + `*`/`?`/`~` 通配符；start_num 整数≥1 |
 | PROPER / REPT / EXACT / VALUE | 支持（功能级扩展） | PROPER 非字母分界；REPT 整数 0–10000；VALUE 支持货币/千分位/百分号/括号负数 |
