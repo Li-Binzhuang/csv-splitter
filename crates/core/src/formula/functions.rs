@@ -4766,6 +4766,126 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // T.TEST: Student t test p-value for paired or two-sample data.
+        "t.test" => {
+            if args.len() != 4 {
+                return Value::Error;
+            }
+            let (
+                Expr::Range {
+                    from: first_from,
+                    to: first_to,
+                },
+                Expr::Range {
+                    from: second_from,
+                    to: second_to,
+                },
+            ) = (&args[0], &args[1])
+            else {
+                return Value::Error;
+            };
+            let (Some(first), Some(second)) = (
+                range_values(first_from, first_to, ctx),
+                range_values(second_from, second_to, ctx),
+            ) else {
+                return Value::Error;
+            };
+            let (Some(tails), Some(kind)) =
+                (eval(&args[2], ctx).number(), eval(&args[3], ctx).number())
+            else {
+                return Value::Error;
+            };
+            if !tails.is_finite()
+                || !kind.is_finite()
+                || tails.trunc() != tails
+                || kind.trunc() != kind
+            {
+                return Value::Error;
+            }
+            let sample_variance = |values: &[f64]| {
+                let mean = values.iter().sum::<f64>() / values.len() as f64;
+                values
+                    .iter()
+                    .map(|value| (value - mean).powi(2))
+                    .sum::<f64>()
+                    / (values.len() - 1) as f64
+            };
+            let (statistic, degrees) = match kind as i64 {
+                1 => {
+                    if first.len() != second.len() || first.len() < 2 {
+                        return Value::Error;
+                    }
+                    let differences: Vec<f64> = first
+                        .iter()
+                        .zip(second.iter())
+                        .map(|(a, b)| a - b)
+                        .collect();
+                    let mean = differences.iter().sum::<f64>() / differences.len() as f64;
+                    let variance = sample_variance(&differences);
+                    if variance <= 0.0 {
+                        return Value::Error;
+                    }
+                    (
+                        mean / (variance.sqrt() / (differences.len() as f64).sqrt()),
+                        (differences.len() - 1) as f64,
+                    )
+                }
+                2 | 3 => {
+                    if first.len() < 2 || second.len() < 2 {
+                        return Value::Error;
+                    }
+                    let first_mean = first.iter().sum::<f64>() / first.len() as f64;
+                    let second_mean = second.iter().sum::<f64>() / second.len() as f64;
+                    let first_variance = sample_variance(&first);
+                    let second_variance = sample_variance(&second);
+                    if kind as i64 == 2 {
+                        let pooled = ((first.len() - 1) as f64 * first_variance
+                            + (second.len() - 1) as f64 * second_variance)
+                            / (first.len() + second.len() - 2) as f64;
+                        if pooled <= 0.0 {
+                            return Value::Error;
+                        }
+                        (
+                            (first_mean - second_mean)
+                                / (pooled.sqrt()
+                                    * (1.0 / first.len() as f64 + 1.0 / second.len() as f64)
+                                        .sqrt()),
+                            (first.len() + second.len() - 2) as f64,
+                        )
+                    } else {
+                        let first_term = first_variance / first.len() as f64;
+                        let second_term = second_variance / second.len() as f64;
+                        let denominator = (first_term + second_term).sqrt();
+                        if denominator <= 0.0 {
+                            return Value::Error;
+                        }
+                        let degrees = (first_term + second_term).powi(2)
+                            / ((first_term.powi(2) / (first.len() - 1) as f64)
+                                + (second_term.powi(2) / (second.len() - 1) as f64));
+                        ((first_mean - second_mean) / denominator, degrees)
+                    }
+                }
+                _ => return Value::Error,
+            };
+            if !statistic.is_finite() || !degrees.is_finite() || degrees <= 0.0 {
+                return Value::Error;
+            }
+            let two_tailed = regularized_beta(
+                degrees / (degrees + statistic * statistic),
+                degrees / 2.0,
+                0.5,
+            );
+            let result = match tails as i64 {
+                1 => two_tailed / 2.0,
+                2 => two_tailed.min(1.0),
+                _ => return Value::Error,
+            };
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

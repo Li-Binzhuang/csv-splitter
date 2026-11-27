@@ -3504,6 +3504,51 @@ mod tests {
     }
 
     #[test]
+    fn t_test_returns_pvalues() {
+        let columns = vec![
+            "id".to_string(),
+            "amount".to_string(),
+            "qty".to_string(),
+            "note".to_string(),
+            "x".to_string(),
+            "y".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        cells.insert("id".to_string(), "7".to_string());
+        cells.insert("amount".to_string(), "10".to_string());
+        cells.insert("qty".to_string(), "3".to_string());
+        cells.insert("note".to_string(), "plain".to_string());
+        cells.insert("x".to_string(), "5".to_string());
+        cells.insert("y".to_string(), "9".to_string());
+
+        for (source, expected) in [
+            ("t.test(B2:C2, B2:C2, 2, 2)", "1"),
+            ("t.test(B2:C2, B2:C2, 1, 2)", "0.5"),
+            ("t.test(B2:C2, E2:F2, 2, 1)", "0.942284"),
+            ("t.test(B2:C2, E2:F2, 1, 1)", "0.471142"),
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        for source in ["t.test(B2:C2, E2:F2, 3, 1)", "t.test(B2:C2, E2:F2, 2, 0)"] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "#VALUE!",
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
     fn confidence_t_returns_half_width() {
         for (source, expected) in [
             ("confidence.t(0.5, 1, 2)", "0.707107"),

@@ -130,6 +130,7 @@
 | DB / DDB / VDB | 支持（功能级新增） | 固定/双倍/变动余额递减；区间、月数、因子非法 `#VALUE!` |
 | FVSCHEDULE | 支持（功能级新增） | 复利 schedule 区间；空区间/rate≤-1 `#VALUE!` |
 | SUMXMY2 / SUMX2MY2 / SUMX2PY2 | 支持（功能级新增） | 同行等长 x/y、空区间/长度不等 `#VALUE!` |
+| T.TEST | 支持（功能级新增） | 成对/等方差/Welch；tails 1/2、type 1–3；非法 `#VALUE!` |
 | CONFIDENCE.T | 支持（功能级新增） | alpha(0,1)、sd>0、n≥2 整数；非法 `#VALUE!` |
 | CONFIDENCE.NORM | 支持（功能级新增） | alpha(0,1)、sd>0、n 正整数；非法 `#VALUE!` |
 | F.TEST | 支持（功能级新增） | 双尾方差齐性检验；两区间各需≥2 值；非法 `#VALUE!` |
