@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项183 分数美元（功能级）：`DOLLARDE`/`DOLLARFR`；分数分母≤0/
+  非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项182 文本感知极值（功能级）：`MAXA`/`MINA` 把布尔/文本按 1/0
   计入；空样本 `#VALUE!`；验收：单测 + gate。
 - [ ] 项181 文本感知平均（功能级）：`AVERAGEA(values)` 把布尔/文本按
   1/0 计入；空样本 `#VALUE!`；验收：单测 + gate。
-- [ ] 项180 总体文本统计（功能级）：`STDEVPA`/`VARPA` 把布尔与文本按
-  1/0 计入总体样本；非法参数 `#VALUE!`；验收：单测 + gate。
+- [x] 项180 总体文本统计（功能级）：`STDEVPA`/`VARPA` 把布尔与文本按
+  1/0 计入总体样本；空样本 `#VALUE!`；测试 `population_text_statistics_work`。
 - [x] 项179 交叉乘积和（功能级）：`SUMXMY2`/`SUMX2MY2`/`SUMX2PY2`；
   同行等长 x/y、长度不等 `#VALUE!`；测试 `paired_sum_functions_work`。
 - [x] 项178 文本感知统计（功能级）：`STDEVA`/`VARA` 把布尔与文本按
@@ -227,6 +229,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 207（项180 STDEVPA/VARPA，功能级）：总体文本统计、单值/空样本；
+定向与全量 gate/package 通过；发布包 SHA `05f78630…1de27d`；
+上轮 push 失败，本轮保留本地。
 
 Round 206（项179 SUMXMY2/SUMX2MY2/SUMX2PY2，功能级）：成对区间聚合、
 长度边界；定向与全量 gate/package 通过；发布包 SHA `98dbdcf1…2e8f6d`。

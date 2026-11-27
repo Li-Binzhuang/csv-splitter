@@ -3504,6 +3504,49 @@ mod tests {
     }
 
     #[test]
+    fn population_text_statistics_work() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        cells.insert("a".to_string(), "1".to_string());
+        cells.insert("b".to_string(), "2".to_string());
+        cells.insert("c".to_string(), "3".to_string());
+        cells.insert("d".to_string(), "text".to_string());
+        for (source, expected) in [("stdevpa(A2:D2)", "1.118034"), ("varpa(A2:D2)", "1.25")] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        let formula = Formula::parse("stdevpa(A2:A2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "0"
+        );
+        let columns = vec!["a".to_string(), "b".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("a".to_string(), String::new());
+        cells.insert("b".to_string(), String::new());
+        let formula = Formula::parse("varpa(A2:B2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+    }
+
+    #[test]
     fn paired_sum_functions_work() {
         let columns = vec![
             "x1".to_string(),

@@ -130,6 +130,7 @@
 | DB / DDB / VDB | 支持（功能级新增） | 固定/双倍/变动余额递减；区间、月数、因子非法 `#VALUE!` |
 | FVSCHEDULE | 支持（功能级新增） | 复利 schedule 区间；空区间/rate≤-1 `#VALUE!` |
 | SUMXMY2 / SUMX2MY2 / SUMX2PY2 | 支持（功能级新增） | 同行等长 x/y、空区间/长度不等 `#VALUE!` |
+| STDEVPA / VARPA | 支持（功能级新增） | 文本按 0、TRUE/FALSE 按 1/0；空样本 `#VALUE!` |
 | STDEVA / VARA | 支持（功能级新增） | 文本按 0、TRUE/FALSE 按 1/0；样本不足 `#VALUE!` |
 | SERIESSUM | 支持（功能级新增） | 系数同行区间；空区间/非数值 `#VALUE!` |
 | FISHER / FISHERINV | 支持（功能级新增） | x 必须 (-1,1)；非有限值 `#VALUE!` |
