@@ -50,6 +50,8 @@ pub struct DataValidation {
     pub error_title: Option<String>,
     /// Optional error-dialog body shown for an invalid value.
     pub error_message: Option<String>,
+    /// Whether an empty cell passes validation.
+    pub allow_blank: bool,
 }
 
 /// Read a worksheet's header names and their Excel number formats.
@@ -1125,7 +1127,8 @@ fn data_validations_xml(
             ));
         }
         out.push_str(&format!(
-            "<dataValidation type=\"list\" allowBlank=\"0\" showErrorMessage=\"1\"{prompt}{error} sqref=\"{column}2:{column}{last_row}\"><formula1>{}</formula1></dataValidation>",
+            "<dataValidation type=\"list\" allowBlank=\"{}\" showErrorMessage=\"1\"{prompt}{error} sqref=\"{column}2:{column}{last_row}\"><formula1>{}</formula1></dataValidation>",
+            if validation.allow_blank { "1" } else { "0" },
             formula_literal(&joined)
         ));
     }
@@ -3744,6 +3747,7 @@ mod tests {
                 prompt_message: None,
                 error_title: None,
                 error_message: None,
+                allow_blank: false,
             },
             DataValidation {
                 column: "id".to_string(),
@@ -3752,6 +3756,7 @@ mod tests {
                 prompt_message: None,
                 error_title: None,
                 error_message: None,
+                allow_blank: false,
             },
         ];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
@@ -3783,6 +3788,7 @@ mod tests {
             prompt_message: Some("Choose <one> & confirm".to_string()),
             error_title: None,
             error_message: None,
+            allow_blank: false,
         }];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
@@ -3813,6 +3819,7 @@ mod tests {
             prompt_message: None,
             error_title: Some("Bad status".to_string()),
             error_message: Some("Pick \"good\" or ok".to_string()),
+            allow_blank: false,
         }];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
@@ -3822,6 +3829,29 @@ mod tests {
             sheet.contains("error=\"Pick &quot;good&quot; or ok\""),
             "{sheet}"
         );
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn data_validation_can_allow_blank_cells() {
+        let dir = temp_path("validationblank");
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("validation.csv");
+        let output = dir.join("validation.xlsx");
+        std::fs::write(&input, "id,status\n1,good\n2,ok\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let validations = vec![DataValidation {
+            column: "status".to_string(),
+            values: vec!["good".into(), "ok".into()],
+            prompt_title: None,
+            prompt_message: None,
+            error_title: None,
+            error_message: None,
+            allow_blank: true,
+        }];
+        csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
+        let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
+        assert!(sheet.contains("allowBlank=\"1\""), "{sheet}");
         std::fs::remove_dir_all(dir).ok();
     }
 

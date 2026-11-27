@@ -488,8 +488,10 @@
   测试 `convert_xlsx_can_add_validation_error`。
 - [x] 项463 RANDBETWEEN 相等边界（功能级）：bottom=top 返回该值；
   测试 `rand_and_randbetween_stay_in_bounds`。
-- [ ] 项464 数据验证 allowBlank（功能级）：可配置空白是否允许；
-  验收：单测 + gate。
+- [x] 项464 数据验证 allowBlank（功能级）：allow_blank 控制属性；
+  测试 `data_validation_can_allow_blank_cells`。
+- [ ] 项465 数据验证 allowBlank CLI（功能级）：空白允许选项；
+  验收：CLI + 单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
 - [ ] 项428 条件格式 dxf 蓝色规则同 id 断言（功能级）：蓝色多规则同 dxfId；
@@ -787,6 +789,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 482（项464 数据验证 allowBlank，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `5120428a…074b09ba`；
+轮首 push 成功，本轮不再 push。
 
 Round 481（项463 RANDBETWEEN 相等边界，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `14993dc3…82019d35`；
