@@ -3504,6 +3504,25 @@ mod tests {
     }
 
     #[test]
+    fn complex_exponential_and_log_work() {
+        for (source, expected) in [
+            (r#"imexp("0")"#, "1"),
+            (r#"imexp("1+0i")"#, "2.718281828459045"),
+            (r#"imexp("0+1i")"#, "0.5403023058681398+0.8414709848078965i"),
+            (
+                r#"imlog10("3+4i")"#,
+                "0.6989700043360189+0.4027191962733731i",
+            ),
+            (r#"imlog10("1+0i")"#, "0"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [r#"imlog10("0+0i")"#, r#"imexp("abc")"#, "imlog10()"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn complex_conjugate_and_argument_work() {
         for (source, expected) in [
             (r#"imconjugate("3+4i")"#, "3-4i"),

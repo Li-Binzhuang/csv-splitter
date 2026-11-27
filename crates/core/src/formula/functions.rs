@@ -2950,6 +2950,34 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Number(imaginary.atan2(real))
             }
         }
+        // IMEXP/IMLOG10: complex exponential and base-10 logarithm.
+        "imexp" | "imlog10" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let text = eval(&args[0], ctx).text();
+            let Some((real, imaginary, suffix)) = parse_complex(&text) else {
+                return Value::Error;
+            };
+            if lower == "imexp" {
+                let magnitude = real.exp();
+                Value::Text(format_complex(
+                    magnitude * imaginary.cos(),
+                    magnitude * imaginary.sin(),
+                    &suffix,
+                ))
+            } else {
+                let magnitude = (real * real + imaginary * imaginary).sqrt();
+                if magnitude == 0.0 {
+                    return Value::Error;
+                }
+                Value::Text(format_complex(
+                    magnitude.log10(),
+                    imaginary.atan2(real) / std::f64::consts::LN_10,
+                    &suffix,
+                ))
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
