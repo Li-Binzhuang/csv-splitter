@@ -3504,6 +3504,25 @@ mod tests {
     }
 
     #[test]
+    fn chisq_dist_right_tail_works() {
+        for (source, expected) in [
+            ("chisq.dist.rt(0, 1)", "1"),
+            ("chisq.dist.rt(1, 1)", "0.317311"),
+            ("chisq.dist.rt(2, 2)", "0.367879"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "chisq.dist.rt(-1, 1)",
+            "chisq.dist.rt(1, 0)",
+            r#"chisq.dist.rt("x", 1)"#,
+            "chisq.dist.rt(1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn norm_inv_returns_quantiles() {
         for (source, expected) in [
             ("norm.inv(0.5, 0, 1)", "0"),
