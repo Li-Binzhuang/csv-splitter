@@ -3504,6 +3504,26 @@ mod tests {
     }
 
     #[test]
+    fn complex_power_works() {
+        for (source, expected) in [
+            (r#"impower("0+1i", 2)"#, "-1"),
+            (r#"impower("1+1i", 2)"#, "2i"),
+            (r#"impower("2+0i", 0.5)"#, "1.4142135623730951"),
+            (r#"impower("0+0i", 0)"#, "1"),
+            (r#"impower("0+0i", 2)"#, "0"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            r#"impower("0+0i", -1)"#,
+            r#"impower("abc", 2)"#,
+            "impower(1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn complex_square_root_work() {
         for (source, expected) in [
             (r#"imsqrt("4+0i")"#, "2"),

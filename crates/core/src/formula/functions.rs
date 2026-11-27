@@ -2999,6 +2999,36 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 &suffix,
             ))
         }
+        // IMPOWER: raise a complex number to a real power.
+        "impower" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let text = eval(&args[0], ctx).text();
+            let Some((real, imaginary, suffix)) = parse_complex(&text) else {
+                return Value::Error;
+            };
+            let Some(power) = eval(&args[1], ctx).number() else {
+                return Value::Error;
+            };
+            if !power.is_finite() {
+                return Value::Error;
+            }
+            let magnitude = (real * real + imaginary * imaginary).sqrt();
+            if magnitude == 0.0 {
+                if power < 0.0 {
+                    return Value::Error;
+                }
+                return Value::Number(if power == 0.0 { 1.0 } else { 0.0 });
+            }
+            let angle = imaginary.atan2(real) * power;
+            let radius = magnitude.powf(power);
+            Value::Text(format_complex(
+                radius * angle.cos(),
+                radius * angle.sin(),
+                &suffix,
+            ))
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
@@ -4913,12 +4943,17 @@ fn format_number(value: f64) -> String {
 }
 
 fn format_complex(real: f64, imaginary: f64, suffix: &str) -> String {
-    let real = if real.abs() < 1e-12 { 0.0 } else { real };
-    let imaginary = if imaginary.abs() < 1e-12 {
-        0.0
-    } else {
-        imaginary
+    let normalize = |value: f64| {
+        if value.abs() < 1e-12 {
+            0.0
+        } else if (value - value.round()).abs() < 1e-12 {
+            value.round()
+        } else {
+            value
+        }
     };
+    let real = normalize(real);
+    let imaginary = normalize(imaginary);
     if imaginary == 0.0 {
         return format_number(real);
     }
