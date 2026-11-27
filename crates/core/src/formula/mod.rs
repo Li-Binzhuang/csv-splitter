@@ -3504,6 +3504,21 @@ mod tests {
     }
 
     #[test]
+    fn normal_inverse_matches_standard_quantiles() {
+        for (source, expected) in [
+            ("norm.s.inv(0.5)", "0"),
+            ("norm.s.inv(0.841344746)", "1"),
+            ("norm.s.inv(0.975)", "1.959964"),
+            ("norm.s.inv(0.025)", "-1.959964"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in ["norm.s.inv(0)", "norm.s.inv(1)", r#"norm.s.inv("x")"#] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn n_and_t_coerce_values() {
         for (source, expected) in [
             ("n(1)", "1"),
