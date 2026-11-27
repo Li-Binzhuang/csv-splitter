@@ -411,6 +411,11 @@ pub fn write_sheets(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
     write_sheets_with_formats(output, sheets, &[])
 }
 
+/// Write sheets without freezing the header row on any sheet.
+pub fn write_sheets_without_freeze(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
+    write_sheets_inner(output, sheets, &[], false)
+}
+
 /// Write sheets and map each column's display format into an Excel cell style.
 ///
 /// Formats are per sheet and per column: `formats[sheet][column]`. A missing
@@ -421,6 +426,15 @@ pub fn write_sheets_with_formats(
     output: &Path,
     sheets: &[Sheet],
     formats: &[Vec<crate::layout::NumberFormat>],
+) -> std::io::Result<()> {
+    write_sheets_inner(output, sheets, formats, true)
+}
+
+fn write_sheets_inner(
+    output: &Path,
+    sheets: &[Sheet],
+    formats: &[Vec<crate::layout::NumberFormat>],
+    freeze_header: bool,
 ) -> std::io::Result<()> {
     if sheets.is_empty() {
         return Err(std::io::Error::new(
@@ -492,7 +506,9 @@ pub fn write_sheets_with_formats(
         xml.push_str(
             "<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\">",
         );
-        xml.push_str("<sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/></sheetView></sheetViews>");
+        if freeze_header {
+            xml.push_str("<sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/></sheetView></sheetViews>");
+        }
         xml.push_str(&sheet_columns_xml(&sheet.headers, &sheet.rows));
         xml.push_str("<sheetData>");
         xml.push_str("<row r=\"1\">");
@@ -3328,6 +3344,32 @@ mod tests {
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
         assert!(!sheet.contains("<pane "), "{sheet}");
         assert!(sheet.contains("<autoFilter"), "{sheet}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn multi_sheet_export_can_skip_header_freeze() {
+        let dir = temp_path("multinofreeze");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("multi.xlsx");
+        let sheets = vec![
+            Sheet {
+                name: "one".to_string(),
+                headers: vec!["id".into()],
+                rows: vec![vec!["1".into()]],
+            },
+            Sheet {
+                name: "two".to_string(),
+                headers: vec!["id".into()],
+                rows: vec![vec!["2".into()]],
+            },
+        ];
+        write_sheets_without_freeze(&path, &sheets).unwrap();
+        for part in ["xl/worksheets/sheet1.xml", "xl/worksheets/sheet2.xml"] {
+            let xml = read_zip(&path, part);
+            assert!(!xml.contains("<pane "), "{part}: {xml}");
+            assert!(xml.contains("<autoFilter"), "{part}: {xml}");
+        }
         std::fs::remove_dir_all(dir).ok();
     }
 

@@ -436,7 +436,12 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                     }
                 }
             }
-            return match csvx_core::xlsx::write_sheets(&out, &sheets) {
+            let result = if no_freeze {
+                csvx_core::xlsx::write_sheets_without_freeze(&out, &sheets)
+            } else {
+                csvx_core::xlsx::write_sheets(&out, &sheets)
+            };
+            return match result {
                 Ok(()) => {
                     if !quiet {
                         println!(

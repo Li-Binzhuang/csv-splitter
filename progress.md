@@ -438,8 +438,8 @@
   测试 `rand_and_randbetween_stay_in_bounds`。
 - [x] 项438 xlsx 冻结开关（功能级）：`csv_to_xlsx_without_freeze` 省略 pane；
   测试 `header_freeze_can_be_disabled`。
-- [ ] 项441 no-freeze 目录/多 sheet（功能级）：--all-sheets 同语义；
-  验收：单测 + gate。
+- [x] 项441 no-freeze 目录/多 sheet（功能级）：write_sheets_without_freeze + CLI 目录分支；
+  测试 `multi_sheet_export_can_skip_header_freeze`。
 - [ ] 项439 RANDBETWEEN 大范围（功能级）：span 超 2^53 精度；
   验收：单测 + gate。
 - [x] 项440 冻结开关 CLI 接线（功能级）：convert `--no-freeze` 接线；
@@ -741,6 +741,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 461（项441 no-freeze 多 sheet，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `4fd445f2…f00ce689`；
+轮首 push 成功，本轮不再 push。
 
 Round 460（项440 冻结开关 CLI，功能级）：convert `--no-freeze`；
 定向与全量 gate/package 通过；发布包 SHA `74aad2ae…5089ed5571`；
