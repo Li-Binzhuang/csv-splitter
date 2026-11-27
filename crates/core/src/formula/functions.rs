@@ -3735,6 +3735,41 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // BETA.DIST: beta probability density or cumulative.
+        "beta.dist" => {
+            if args.len() != 4 {
+                return Value::Error;
+            }
+            let (Some(number), Some(alpha), Some(beta), Some(cumulative)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+                eval(&args[3], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !number.is_finite()
+                || !alpha.is_finite()
+                || !beta.is_finite()
+                || !cumulative.is_finite()
+                || !(0.0..=1.0).contains(&number)
+                || alpha <= 0.0
+                || beta <= 0.0
+            {
+                return Value::Error;
+            }
+            let result = if cumulative != 0.0 {
+                regularized_beta(number, alpha, beta)
+            } else {
+                number.powf(alpha - 1.0) * (1.0 - number).powf(beta - 1.0)
+                    / (ln_gamma(alpha) + ln_gamma(beta) - ln_gamma(alpha + beta)).exp()
+            };
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
@@ -5731,6 +5766,72 @@ fn parse_complex(text: &str) -> Option<(f64, f64, String)> {
             return None;
         }
         Some((0.0, imaginary, suffix))
+    }
+}
+
+fn beta_continued_fraction(alpha: f64, beta: f64, value: f64) -> f64 {
+    const MAX_ITERATIONS: usize = 200;
+    const EPSILON: f64 = 3.0e-14;
+    const TINY: f64 = 1.0e-300;
+    let sum = alpha + beta;
+    let alpha_plus_one = alpha + 1.0;
+    let alpha_minus_one = alpha - 1.0;
+    let mut c = 1.0;
+    let mut d = 1.0 - sum * value / alpha_plus_one;
+    if d.abs() < TINY {
+        d = TINY;
+    }
+    d = 1.0 / d;
+    let mut result = d;
+    for step in 1..=MAX_ITERATIONS {
+        let twice = 2.0 * step as f64;
+        let numerator = step as f64 * (beta - step as f64) * value
+            / ((alpha_minus_one + twice) * (alpha + twice));
+        d = 1.0 + numerator * d;
+        if d.abs() < TINY {
+            d = TINY;
+        }
+        c = 1.0 + numerator / c;
+        if c.abs() < TINY {
+            c = TINY;
+        }
+        d = 1.0 / d;
+        result *= d * c;
+        let numerator = -(alpha + step as f64) * (sum + step as f64) * value
+            / ((alpha + twice) * (alpha_plus_one + twice));
+        d = 1.0 + numerator * d;
+        if d.abs() < TINY {
+            d = TINY;
+        }
+        c = 1.0 + numerator / c;
+        if c.abs() < TINY {
+            c = TINY;
+        }
+        d = 1.0 / d;
+        let delta = d * c;
+        result *= delta;
+        if (delta - 1.0).abs() < EPSILON {
+            break;
+        }
+    }
+    result
+}
+
+fn regularized_beta(value: f64, alpha: f64, beta: f64) -> f64 {
+    if value <= 0.0 {
+        return 0.0;
+    }
+    if value >= 1.0 {
+        return 1.0;
+    }
+    let factor = (ln_gamma(alpha + beta) - ln_gamma(alpha) - ln_gamma(beta)
+        + alpha * value.ln()
+        + beta * (1.0 - value).ln())
+    .exp();
+    if value < (alpha + 1.0) / (alpha + beta + 2.0) {
+        factor * beta_continued_fraction(alpha, beta, value) / alpha
+    } else {
+        1.0 - factor * beta_continued_fraction(beta, alpha, 1.0 - value) / beta
     }
 }
 
