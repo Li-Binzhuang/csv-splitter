@@ -94,6 +94,7 @@
 | COUNTBLANK | 支持 | 同行区间 |
 | MEDIAN / MODE / LARGE / SMALL / PERCENTILE | 支持（受限） | 只读同行区间；MEDIAN 不做整列 |
 | STDEV / VAR / STDEVP / VARP | 支持 | 整列 |
+| STANDARDIZE | 支持（功能级新增） | standard_dev≤0/非数值 `#VALUE!` |
 | GEOMEAN / HARMEAN | 支持（功能级新增） | 同行正数样本；非正数/空样本 `#VALUE!`；别名 harmmean 兼容 |
 | SKEW / KURT | 支持（功能级新增） | 同行样本；SKEW≥3、KURT≥4；零方差 `#VALUE!` |
 | ROUND / ROUNDUP / ROUNDDOWN | 支持 | 十进制位数 |

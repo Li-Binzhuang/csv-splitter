@@ -2107,6 +2107,24 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             };
             result.map_or(Value::Error, Value::Number)
         }
+        // STANDARDIZE: z-score for x with the given mean and standard deviation.
+        "standardize" => {
+            if args.len() != 3 {
+                return Value::Error;
+            }
+            let (Some(value), Some(mean), Some(deviation)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !value.is_finite() || !mean.is_finite() || !deviation.is_finite() || deviation <= 0.0
+            {
+                return Value::Error;
+            }
+            Value::Number((value - mean) / deviation)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

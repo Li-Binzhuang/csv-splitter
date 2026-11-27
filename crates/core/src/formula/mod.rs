@@ -1442,6 +1442,21 @@ mod tests {
     }
 
     #[test]
+    fn standardize_returns_z_scores() {
+        assert_eq!(eval_str("standardize(90, 80, 10)", &[]), "1");
+        assert_eq!(eval_str("standardize(70, 80, 10)", &[]), "-1");
+        assert_eq!(eval_str("standardize(80, 80, 10)", &[]), "0");
+        assert_eq!(eval_str("standardize(80, 80, 5)", &[]), "0");
+        for source in [
+            "standardize(90, 80, 0)",
+            "standardize(90, 80, -1)",
+            "standardize(90, 80)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn geometric_and_harmonic_means_work() {
         let columns = vec!["a".to_string(), "b".to_string(), "c".to_string()];
         let mut cells = HashMap::new();
