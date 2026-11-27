@@ -3556,6 +3556,41 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Number((-0.5 * number * number).exp() / (2.0 * std::f64::consts::PI).sqrt())
             }
         }
+        // POISSON.DIST: Poisson probability mass or cumulative probability.
+        "poisson.dist" => {
+            if args.len() != 3 {
+                return Value::Error;
+            }
+            let (Some(events), Some(mean), Some(cumulative)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !events.is_finite()
+                || !mean.is_finite()
+                || !cumulative.is_finite()
+                || events < 0.0
+                || events.trunc() != events
+                || events > 170.0
+                || mean <= 0.0
+            {
+                return Value::Error;
+            }
+            let mut term = (-mean).exp();
+            let mut total = term;
+            for index in 1..=events as u64 {
+                term *= mean / index as f64;
+                total += term;
+            }
+            let result = if cumulative != 0.0 { total } else { term };
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

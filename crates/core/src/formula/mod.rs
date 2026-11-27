@@ -3504,6 +3504,29 @@ mod tests {
     }
 
     #[test]
+    fn poisson_dist_returns_mass_or_cumulative() {
+        for (source, expected) in [
+            ("poisson.dist(0, 1, 0)", "0.367879"),
+            ("poisson.dist(0, 1, 1)", "0.367879"),
+            ("poisson.dist(1, 1, 0)", "0.367879"),
+            ("poisson.dist(1, 1, 1)", "0.735759"),
+            ("poisson.dist(2, 1, 0)", "0.18394"),
+            ("poisson.dist(2, 1, 1)", "0.919699"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "poisson.dist(-1, 1, 1)",
+            "poisson.dist(1.5, 1, 1)",
+            "poisson.dist(1, 0, 1)",
+            r#"poisson.dist("x", 1, 1)"#,
+            "poisson.dist(1, 1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn norm_s_dist_returns_cumulative_or_density() {
         for (source, expected) in [
             ("norm.s.dist(0, 1)", "0.5"),
