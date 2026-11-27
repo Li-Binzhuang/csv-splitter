@@ -46,6 +46,10 @@ pub struct DataValidation {
     pub prompt_title: Option<String>,
     /// Optional input-message body shown when the cell is selected.
     pub prompt_message: Option<String>,
+    /// Optional error-dialog title shown for an invalid value.
+    pub error_title: Option<String>,
+    /// Optional error-dialog body shown for an invalid value.
+    pub error_message: Option<String>,
 }
 
 /// Read a worksheet's header names and their Excel number formats.
@@ -1104,8 +1108,24 @@ fn data_validations_xml(
                 xml_attribute(message)
             ));
         }
+        let mut error = String::new();
+        if validation.error_title.is_some() || validation.error_message.is_some() {
+            let title = validation.error_title.as_deref().unwrap_or_default();
+            let message = validation.error_message.as_deref().unwrap_or_default();
+            if title.chars().count() > 32 || message.chars().count() > 255 {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "data validation error title (32) or message (255) is too long",
+                ));
+            }
+            error.push_str(&format!(
+                " errorTitle=\"{}\" error=\"{}\"",
+                xml_attribute(title),
+                xml_attribute(message)
+            ));
+        }
         out.push_str(&format!(
-            "<dataValidation type=\"list\" allowBlank=\"0\" showErrorMessage=\"1\"{prompt} sqref=\"{column}2:{column}{last_row}\"><formula1>{}</formula1></dataValidation>",
+            "<dataValidation type=\"list\" allowBlank=\"0\" showErrorMessage=\"1\"{prompt}{error} sqref=\"{column}2:{column}{last_row}\"><formula1>{}</formula1></dataValidation>",
             formula_literal(&joined)
         ));
     }
@@ -3722,12 +3742,16 @@ mod tests {
                 values: vec!["good".into(), "ok".into(), "bad".into()],
                 prompt_title: None,
                 prompt_message: None,
+                error_title: None,
+                error_message: None,
             },
             DataValidation {
                 column: "id".to_string(),
                 values: vec!["1".into(), "2".into(), "3".into()],
                 prompt_title: None,
                 prompt_message: None,
+                error_title: None,
+                error_message: None,
             },
         ];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
@@ -3757,6 +3781,8 @@ mod tests {
             values: vec!["good".into(), "ok".into()],
             prompt_title: Some("Status \"pick\"".to_string()),
             prompt_message: Some("Choose <one> & confirm".to_string()),
+            error_title: None,
+            error_message: None,
         }];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
@@ -3767,6 +3793,33 @@ mod tests {
         );
         assert!(
             sheet.contains("prompt=\"Choose &lt;one&gt; &amp; confirm\""),
+            "{sheet}"
+        );
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn data_validation_error_prompts_are_written() {
+        let dir = temp_path("validationerror");
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("validation.csv");
+        let output = dir.join("validation.xlsx");
+        std::fs::write(&input, "id,status\n1,good\n2,ok\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let validations = vec![DataValidation {
+            column: "status".to_string(),
+            values: vec!["good".into(), "ok".into()],
+            prompt_title: None,
+            prompt_message: None,
+            error_title: Some("Bad status".to_string()),
+            error_message: Some("Pick \"good\" or ok".to_string()),
+        }];
+        csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
+        let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
+        assert!(sheet.contains("showErrorMessage=\"1\""), "{sheet}");
+        assert!(sheet.contains("errorTitle=\"Bad status\""), "{sheet}");
+        assert!(
+            sheet.contains("error=\"Pick &quot;good&quot; or ok\""),
             "{sheet}"
         );
         std::fs::remove_dir_all(dir).ok();

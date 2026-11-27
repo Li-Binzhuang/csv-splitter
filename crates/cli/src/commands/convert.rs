@@ -66,6 +66,8 @@ fn parse_data_validations(text: &str) -> Result<Vec<csvx_core::xlsx::DataValidat
             values,
             prompt_title: None,
             prompt_message: None,
+            error_title: None,
+            error_message: None,
         });
     }
     if validations.is_empty() {
