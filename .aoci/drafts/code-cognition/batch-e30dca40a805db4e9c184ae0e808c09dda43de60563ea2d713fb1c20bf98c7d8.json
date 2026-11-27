@@ -1,0 +1,35 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "731aedf99b343f42b1fc8bdf7dc27aea2018602ad32d3c713bd26d9bd735eaa1",
+  "batch_id": "e30dca40a805db4e9c184ae0e808c09dda43de60563ea2d713fb1c20bf98c7d8",
+  "composite_identity": "09ef4549165d7d0927bbddc9477ca0e03f19d5e8ffefcb64d68fe37355ca6d8c",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "61f9cc1ead8723027cca115a89316114e2f614a30dba92daf687846d89bcb484",
+  "targets": [
+    {
+      "candidate_id": "38fe5fff63008e38e8775c4a5c98b802fdffe9d4b498c78f369a6654dc8d0543",
+      "object_ref": "code:crates/core/src/layout.rs",
+      "path": "crates/core/src/layout.rs",
+      "change": "update",
+      "source_sha256": "e695bcd3c9d54cd9d802ce03263cc6b96274ecf94ef4da4a5117a86fe1cd0871",
+      "existing_entry": "layout.rs[CU7L]: F:显示元数据 sidecar：列名替换、列宽、数字格式与冻结列 | R:code:crates/core/src/sheet.rs | A:NumberFormat 含 Decimal/Percent/Currency/DateTime/Scientific/Accounting/Fraction/Text；日期含 yyyy-mm-dd、yy-mm-dd、点/破折号日与年优先、12 小时 AM/PM、h 不补零 hh 补零、mm/dd/yy、d/m/yyyy；分数；百分比；负数括号；@ 原样 | S:只影响展示不改值，写 .view 不写 journal；未识别格式报错；输入日期是 ISO 前缀"
+    },
+    {
+      "candidate_id": "1be63a03b9f1518563459ee42bc181a47f8863238aec5af63db70dd9c6041551",
+      "object_ref": "code:docs/NUMBER_FORMAT_COVERAGE.md",
+      "path": "docs/NUMBER_FORMAT_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "1c1cb4a5d3bf2cb28ced4bc880a1a15a25824fd2d3dd9c851c95e9d14f9c43f9",
+      "existing_entry": "NUMBER_FORMAT_COVERAGE.md[SA7T]: F:数字格式覆盖矩阵与缺口 | R:code:crates/core/src/layout.rs,code:crates/core/src/xlsx.rs | A:千分位/小数/百分比/货币/日期时间；点分隔/破折号/斜杠；12 小时 AM/PM；h 不补零 hh 补零；日期导出 numFmt+序列号；Scientific/Accounting/Text | S:格式只对数字/日期生效；未识别格式报错"
+    },
+    {
+      "candidate_id": "a76ee7ab72c402d97a2898985cb285d53459a52f660dadb7b1705f2a02971ee1",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "b8361a513e1333a57b087f41a6f261a74e0398c0879e29e151f23bb1005f2718",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；Round451 斜杠日期导出与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

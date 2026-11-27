@@ -328,6 +328,10 @@ fn is_date_time_pattern(spec: &str) -> bool {
             | "mm/dd/yyyy"
             | "m/d/yyyy"
             | "d/m/yyyy"
+            | "m/d/yyyy h:mm"
+            | "mm/dd/yyyy h:mm"
+            | "m/d/yyyy h:mm:ss"
+            | "mm/dd/yyyy h:mm:ss"
             | "m/d/yy"
             | "mm/dd/yy"
             | "m/d/yy h:mm"
@@ -456,6 +460,30 @@ fn render_date_time(pattern: &str, value: &str) -> Option<String> {
         "mm/dd/yyyy" => {
             let (year, month, day) = date_parts?;
             Some(format!("{month:02}/{day:02}/{year:04}"))
+        }
+        "m/d/yyyy h:mm" => {
+            let (year, month, day) = date_parts?;
+            let (hour, minute, _) = time_parts?;
+            Some(format!("{month}/{day}/{year:04} {hour}:{minute:02}"))
+        }
+        "mm/dd/yyyy h:mm" => {
+            let (year, month, day) = date_parts?;
+            let (hour, minute, _) = time_parts?;
+            Some(format!("{month:02}/{day:02}/{year:04} {hour}:{minute:02}"))
+        }
+        "m/d/yyyy h:mm:ss" => {
+            let (year, month, day) = date_parts?;
+            let (hour, minute, second) = time_parts?;
+            Some(format!(
+                "{month}/{day}/{year:04} {hour}:{minute:02}:{second:02}"
+            ))
+        }
+        "mm/dd/yyyy h:mm:ss" => {
+            let (year, month, day) = date_parts?;
+            let (hour, minute, second) = time_parts?;
+            Some(format!(
+                "{month:02}/{day:02}/{year:04} {hour}:{minute:02}:{second:02}"
+            ))
         }
         "m/d/yyyy" => {
             let (year, month, day) = date_parts?;
@@ -1305,6 +1333,12 @@ fn dotted_date_formats_match_excel_orders() {
         ),
         ("yy-mm-dd h:mm", "2026-11-28T09:05:00", "26-11-28 9:05"),
         ("m/d/yy h:mm", "2024-01-02T09:05:00", "1/2/24 9:05"),
+        ("m/d/yyyy h:mm", "2024-01-02T09:05:00", "1/2/2024 9:05"),
+        (
+            "mm/dd/yyyy h:mm:ss",
+            "2024-01-02T09:05:07",
+            "01/02/2024 9:05:07",
+        ),
     ] {
         let format = NumberFormat::parse(pattern).unwrap();
         assert_eq!(format.render(input), expected, "{pattern}");
