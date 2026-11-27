@@ -3504,6 +3504,29 @@ mod tests {
     }
 
     #[test]
+    fn besselk_returns_second_kind_values() {
+        for (source, expected) in [
+            ("besselk(1, 0)", "0.421024"),
+            ("besselk(1, 1)", "0.601907"),
+            ("besselk(2, 0)", "0.113894"),
+            ("besselk(2, 1)", "0.139866"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "besselk(0, 0)",
+            "besselk(-1, 0)",
+            "besselk(1, -1)",
+            "besselk(1, 1.5)",
+            "besselk(1, 21)",
+            r#"besselk("x", 0)"#,
+            "besselk(1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn hypgeom_dist_returns_mass_or_cumulative() {
         for (source, expected) in [
             ("hypgeom.dist(1, 4, 8, 20, 0)", "0.363261"),

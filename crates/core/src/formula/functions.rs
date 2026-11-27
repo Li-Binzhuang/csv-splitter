@@ -5041,6 +5041,62 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // BESSELK: modified Bessel function of the second kind, integer order.
+        "besselk" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let (Some(number), Some(order)) =
+                (eval(&args[0], ctx).number(), eval(&args[1], ctx).number())
+            else {
+                return Value::Error;
+            };
+            if !number.is_finite()
+                || !order.is_finite()
+                || number <= 0.0
+                || order < 0.0
+                || order > 20.0
+                || order.trunc() != order
+            {
+                return Value::Error;
+            }
+            let order = order as u64;
+            let steps = 2000u32;
+            let upper = 10.0;
+            let h = upper / steps as f64;
+            let mut k0 = 0.0;
+            let mut k1 = 0.0;
+            for step in 0..=steps {
+                let t = step as f64 * h;
+                let weight = if step == 0 || step == steps {
+                    1.0
+                } else if step % 2 == 0 {
+                    2.0
+                } else {
+                    4.0
+                };
+                let cosh = ((t).exp() + (-t).exp()) / 2.0;
+                let kernel = (-number * cosh).exp();
+                k0 += weight * kernel;
+                k1 += weight * kernel * cosh;
+            }
+            k0 *= h / 3.0;
+            k1 *= h / 3.0;
+            if !k0.is_finite() || !k1.is_finite() {
+                return Value::Error;
+            }
+            let mut previous = k0;
+            let mut current = k1;
+            for index in 1..order {
+                let next = previous + 2.0 * index as f64 * current / number;
+                if !next.is_finite() {
+                    return Value::Error;
+                }
+                previous = current;
+                current = next;
+            }
+            Value::Number(if order == 0 { k0 } else { current })
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
