@@ -3174,6 +3174,27 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 factorial(total as u64) / (factorial(k as u64) * factorial((n - 1.0) as u64)),
             )
         }
+        // COT/ACOT: cotangent and inverse cotangent in radians.
+        "cot" | "acot" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            if !number.is_finite() {
+                return Value::Error;
+            }
+            if lower == "cot" {
+                let tangent = number.tan();
+                if tangent == 0.0 {
+                    return Value::Error;
+                }
+                Value::Number(1.0 / tangent)
+            } else {
+                Value::Number(std::f64::consts::FRAC_PI_2 - number.atan())
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

@@ -3504,6 +3504,21 @@ mod tests {
     }
 
     #[test]
+    fn cot_and_acot_work() {
+        for (source, expected) in [
+            ("cot(1)", "0.642093"),
+            ("acot(0)", "1.570796"),
+            ("acot(1)", "0.785398"),
+            ("acot(-1)", "2.356194"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in ["cot(0)", r#"cot("x")"#, "acot()"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn combina_counts_repetition_combinations() {
         for (source, expected) in [
             ("combina(4, 3)", "20"),

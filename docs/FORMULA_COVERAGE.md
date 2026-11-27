@@ -130,6 +130,7 @@
 | DB / DDB / VDB | 支持（功能级新增） | 固定/双倍/变动余额递减；区间、月数、因子非法 `#VALUE!` |
 | FVSCHEDULE | 支持（功能级新增） | 复利 schedule 区间；空区间/rate≤-1 `#VALUE!` |
 | SUMXMY2 / SUMX2MY2 / SUMX2PY2 | 支持（功能级新增） | 同行等长 x/y、空区间/长度不等 `#VALUE!` |
+| COT / ACOT | 支持（功能级新增） | 余切/反余切；零点/非数值 `#VALUE!` |
 | COMBINA | 支持（功能级新增） | 可重复组合；非负整数、总和≤170；非法 `#VALUE!` |
 | GAMMA | 支持（功能级新增） | 正数域；非正/非有限 `#VALUE!` |
 | ERF / ERFC | 支持（功能级新增） | 误差函数近似；ERF 支持上下限两参数 |
