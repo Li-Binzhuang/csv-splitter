@@ -7299,6 +7299,8 @@ mod tests {
         assert_eq!(eval_str("randbetween(10,1)", &[]), "#VALUE!");
         assert_eq!(eval_str("randbetween(1.5,3)", &[]), "#VALUE!");
         assert_eq!(eval_str("rand(1)", &[]), "#VALUE!");
+        assert_eq!(eval_str("randbetween(5,5)", &[]), "5");
+        assert_eq!(eval_str("randbetween(-2,-2)", &[]), "-2");
         assert_eq!(eval_str("randbetween(0,9007199254740994)", &[]), "#VALUE!");
         for _ in 0..10 {
             let value: f64 = eval_str("randbetween(lo,hi)", &[("lo", "3"), ("hi", "7")])
