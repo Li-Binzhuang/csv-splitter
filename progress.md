@@ -120,7 +120,10 @@
   返回首个分隔片段（标量引擎限制）；空分隔符/缺参 `#VALUE!`；测试 `textsplit_returns_first_segment`。
 - [x] 项273 查找未命中回退（功能级）：`TEXTBEFORE`/`TEXTAFTER` 支持 `if_not_found`；
   未命中返回回退值；测试 `textbefore_after_support_if_not_found`。
-- [ ] 项274 xlsx 导出数字格式保真（功能级）：导出样式映射已有数字格式，round-trip 测试；验收：单测 + gate。
+- [x] 项274 xlsx 导出数字格式保真（功能级）：内置时间格式映射 + 时间单元格导出；
+  round-trip 测试 `formats_are_mapped_into_export_styles_and_round_trip`。
+- [ ] 项275 xlsx 日期时间导出（功能级）：`YYYY-MM-DDTHH:MM:SS` 写成日期单元格带时间小数；
+  非法保持文本；验收：单测 + gate。
 - [ ] 项264 精确伽马对数（功能级）：`GAMMALN.PRECISE(x)`；
   非正/非有限 `#VALUE!`；验收：单测 + gate。
 - [x] 项263 逻辑/非文本判断（功能级）：`ISLOGICAL`/`ISNONTEXT`；
@@ -410,6 +413,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 299（项274 xlsx 数字格式保真，功能级）：内置时间格式映射、时间单元格导出；
+定向与全量 gate/package 通过；发布包 SHA `094decc7…07d6f16`；
+push 已在轮首成功，本轮不再 push。
 
 Round 298（项273 TEXTBEFORE/TEXTAFTER if_not_found，功能级）：未命中回退、参数边界；
 定向与全量 gate/package 通过；发布包 SHA `82b7db4e…b9e30d67`；

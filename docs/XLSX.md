@@ -56,7 +56,7 @@ csvx convert input.xlsx --format csv --sheet Data -o data.csv
 - 支持 sharedStrings、inlineStr、布尔、数值、缓存公式值；
 - 换行/引号字段通过 CSV 引号规则保留；
 - 样式、合并单元格、图表、批注忽略；
-- 内置日期格式（numFmtId 14–22、45–47）的数值会按样式还原为 `YYYY-MM-DD`；非日期数值不猜。
+- 内置日期/时间格式（numFmtId 14–22、45–47）按样式还原：14–17/45–47 日期，18–21 仅时间，22 日期+时间；非日期数值不猜。
 
 MCP：
 
@@ -94,8 +94,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 
 ## 日期
 
-严格 `YYYY-MM-DD` 自动写成 Excel 日期单元格（内置格式 14），导入时按
-`cellXfs` 的日期格式还原为 `YYYY-MM-DD`；非 ISO 文本保持原样。
+严格 `YYYY-MM-DD` 自动写成 Excel 日期单元格（内置格式 14），`HH:MM[:SS]` 在时间格式列写成当天小数；导入时按 `cellXfs` 的日期/时间格式还原；非 ISO 文本保持原样。
 
 ## 边界
 

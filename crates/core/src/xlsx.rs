@@ -130,6 +130,18 @@ fn cell_style_indices(fragment: &str) -> Vec<usize> {
     styles
 }
 
+/// Excel's built-in date/time number-format ids (14..22) with the closest
+/// pattern this engine can display; unknown built-ins stay plain.
+fn builtin_number_format(id: u32) -> Option<&'static str> {
+    match id {
+        14..=17 => Some("yyyy-mm-dd"),
+        18 | 20 => Some("hh:mm"),
+        19 | 21 => Some("hh:mm:ss"),
+        22 => Some("yyyy-mm-dd hh:mm"),
+        _ => None,
+    }
+}
+
 fn style_number_formats(styles: &str) -> Vec<Option<crate::layout::NumberFormat>> {
     let mut custom = std::collections::HashMap::new();
     let num_fmt_re = Regex::new(r#"(?s)<numFmt\b([^>]*?)(?:/>|>)"#).unwrap();
@@ -154,7 +166,7 @@ fn style_number_formats(styles: &str) -> Vec<Option<crate::layout::NumberFormat>
             let code = custom
                 .get(&id)
                 .cloned()
-                .or_else(|| (14..=22).contains(&id).then(|| "yyyy-mm-dd".to_string()))?;
+                .or_else(|| builtin_number_format(id).map(str::to_string))?;
             crate::layout::NumberFormat::parse(&code).ok()
         })
         .collect()
@@ -602,7 +614,10 @@ fn write_formatted_cell(
             return;
         }
         NumberFormat::DateTime { .. } => {
-            if let Some(serial) = date_serial(trimmed) {
+            if let Some(serial) = date_serial(trimmed)
+                .map(|serial| serial as f64)
+                .or_else(|| time_serial(trimmed))
+            {
                 out.push_str(&format!(
                     "<c r=\"{reference}\" s=\"{}\"><v>{serial}</v></c>",
                     style.unwrap_or(2)
@@ -897,6 +912,18 @@ fn civil_from_days(days: i64) -> (i64, i64, i64) {
     let day = doy - (153 * mp + 2) / 5 + 1;
     let month = if mp < 10 { mp + 3 } else { mp - 9 };
     (year + i64::from(month <= 2), month, day)
+}
+
+/// A time-only cell (`HH:MM[:SS]`) as an Excel serial fraction of a day.
+fn time_serial(text: &str) -> Option<f64> {
+    let mut pieces = text.trim().split(':');
+    let hour: u32 = pieces.next()?.parse().ok()?;
+    let minute: u32 = pieces.next()?.parse().ok()?;
+    let second: u32 = pieces.next().unwrap_or("0").parse().ok()?;
+    if pieces.next().is_some() || hour > 23 || minute > 59 || second > 59 {
+        return None;
+    }
+    Some((hour * 3_600 + minute * 60 + second) as f64 / 86_400.0)
 }
 
 /// Strict ISO calendar date (`YYYY-MM-DD`) to an Excel 1900-date serial.
@@ -1914,6 +1941,10 @@ mod tests {
         assert_eq!(date_serial("2024-01-01"), Some(45_292));
         assert_eq!(date_serial("2024-02-30"), None);
         assert_eq!(date_serial("not-a-date"), None);
+        assert_eq!(time_serial("12:00"), Some(0.5));
+        assert_eq!(time_serial("06:30:15"), Some(23_415.0 / 86_400.0));
+        assert_eq!(time_serial("24:00"), None);
+        assert_eq!(time_serial("12:60"), None);
         let dir = std::env::temp_dir().join(format!("csvx_xlsx_date_{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let input = dir.join("dates.csv");
@@ -2324,6 +2355,32 @@ mod tests {
     }
 
     #[test]
+    fn builtin_time_number_formats_are_not_collapsed_to_dates() {
+        let styles = r#"<cellXfs count="5">
+            <xf numFmtId="0"/><xf numFmtId="14"/><xf numFmtId="20"/>
+            <xf numFmtId="21"/><xf numFmtId="22"/>
+        </cellXfs>"#;
+        let formats = style_number_formats(styles);
+        assert!(formats[0].is_none());
+        assert!(matches!(
+            formats[1],
+            Some(crate::layout::NumberFormat::DateTime { ref pattern }) if pattern == "yyyy-mm-dd"
+        ));
+        assert!(matches!(
+            formats[2],
+            Some(crate::layout::NumberFormat::DateTime { ref pattern }) if pattern == "hh:mm"
+        ));
+        assert!(matches!(
+            formats[3],
+            Some(crate::layout::NumberFormat::DateTime { ref pattern }) if pattern == "hh:mm:ss"
+        ));
+        assert!(matches!(
+            formats[4],
+            Some(crate::layout::NumberFormat::DateTime { ref pattern }) if pattern == "yyyy-mm-dd hh:mm"
+        ));
+    }
+
+    #[test]
     fn custom_date_number_formats_are_recognized() {
         let styles = r#"<numFmts count="2">
             <numFmt numFmtId="164" formatCode="yyyy/mm/dd"/>
@@ -2352,12 +2409,14 @@ mod tests {
                 "rate".into(),
                 "when".into(),
                 "label".into(),
+                "clock".into(),
             ],
             rows: vec![vec![
                 "1234.5".into(),
                 "0.123".into(),
                 "2024-01-02".into(),
                 "x".into(),
+                "06:30:15".into(),
             ]],
         };
         write_sheets_with_formats(
@@ -2368,6 +2427,7 @@ mod tests {
                 NumberFormat::parse("0.0%").unwrap(),
                 NumberFormat::parse("yyyy-mm-dd").unwrap(),
                 NumberFormat::parse("plain").unwrap(),
+                NumberFormat::parse("hh:mm:ss").unwrap(),
             ]],
         )
         .unwrap();
@@ -2375,10 +2435,11 @@ mod tests {
         assert!(styles.contains("formatCode=\"#,##0.00\""), "{styles}");
         assert!(styles.contains("formatCode=\"0.0%\""), "{styles}");
         assert!(styles.contains("formatCode=\"yyyy-mm-dd\""), "{styles}");
+        assert!(styles.contains("formatCode=\"hh:mm:ss\""), "{styles}");
         read_xlsx_to_csv(&path, &output, None).unwrap();
         assert_eq!(
             std::fs::read_to_string(&output).unwrap(),
-            "amount,rate,when,label\n1234.5,0.123,2024-01-02,x\n"
+            "amount,rate,when,label,clock\n1234.5,0.123,2024-01-02,x,06:30:15\n"
         );
         let _ = std::fs::remove_file(path);
         let _ = std::fs::remove_file(output);
