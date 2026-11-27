@@ -3399,6 +3399,22 @@ mod tests {
     }
 
     #[test]
+    fn text_renders_scientific_and_accounting_formats() {
+        for (source, expected) in [
+            (r#"text(1234.5, "0.00E+00")"#, "1.23E+03"),
+            (r#"text(1234.5, "0.00e+00")"#, "1.23e+03"),
+            (r#"text(-1234.5, "$#,##0.00;($#,##0.00)")"#, "($1,234.50)"),
+            (r#"text(1234.5, "$#,##0.00;($#,##0.00)")"#, "$1,234.50"),
+            (r#"text(0.125, "0.0%")"#, "12.5%"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [r#"text(1234.5, "bogus")"#, "text()"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn clean_strips_control_characters() {
         for (source, expected) in [
             (r#"clean(concat("a", char(9), "b"))"#, "ab"),
