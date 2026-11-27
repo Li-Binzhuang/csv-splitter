@@ -407,7 +407,7 @@ fn render_date_time(pattern: &str, value: &str) -> Option<String> {
             let (year, month, day) = date_parts?;
             let (hour, minute, _) = time_parts?;
             Some(format!(
-                "{:02}-{month:02}-{day:02} {hour:02}:{minute:02}",
+                "{:02}-{month:02}-{day:02} {hour}:{minute:02}",
                 year % 100
             ))
         }
@@ -441,7 +441,7 @@ fn render_date_time(pattern: &str, value: &str) -> Option<String> {
             let (year, month, day) = date_parts?;
             let (hour, minute, second) = time_parts?;
             Some(format!(
-                "{:02}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02}",
+                "{:02}-{month:02}-{day:02} {hour}:{minute:02}:{second:02}",
                 year % 100
             ))
         }
@@ -552,15 +552,13 @@ fn render_date_time(pattern: &str, value: &str) -> Option<String> {
         "dd-mm-yyyy h:mm" => {
             let (year, month, day) = date_parts?;
             let (hour, minute, _) = time_parts?;
-            Some(format!(
-                "{day:02}-{month:02}-{year:04} {hour:02}:{minute:02}"
-            ))
+            Some(format!("{day:02}-{month:02}-{year:04} {hour}:{minute:02}"))
         }
         "dd-mm-yyyy h:mm:ss" => {
             let (year, month, day) = date_parts?;
             let (hour, minute, second) = time_parts?;
             Some(format!(
-                "{day:02}-{month:02}-{year:04} {hour:02}:{minute:02}:{second:02}"
+                "{day:02}-{month:02}-{year:04} {hour}:{minute:02}:{second:02}"
             ))
         }
         "dd.mm.yyyy" => {
@@ -582,23 +580,19 @@ fn render_date_time(pattern: &str, value: &str) -> Option<String> {
         "dd.mm.yyyy h:mm" => {
             let (year, month, day) = date_parts?;
             let (hour, minute, _) = time_parts?;
-            Some(format!(
-                "{day:02}.{month:02}.{year:04} {hour:02}:{minute:02}"
-            ))
+            Some(format!("{day:02}.{month:02}.{year:04} {hour}:{minute:02}"))
         }
         "dd.mm.yyyy h:mm:ss" => {
             let (year, month, day) = date_parts?;
             let (hour, minute, second) = time_parts?;
             Some(format!(
-                "{day:02}.{month:02}.{year:04} {hour:02}:{minute:02}:{second:02}"
+                "{day:02}.{month:02}.{year:04} {hour}:{minute:02}:{second:02}"
             ))
         }
         "yyyy.mm.dd h:mm" => {
             let (year, month, day) = date_parts?;
             let (hour, minute, _) = time_parts?;
-            Some(format!(
-                "{year:04}.{month:02}.{day:02} {hour:02}:{minute:02}"
-            ))
+            Some(format!("{year:04}.{month:02}.{day:02} {hour}:{minute:02}"))
         }
         "yyyy-mm-dd hh:mm" => {
             let (year, month, day) = date_parts?;
@@ -610,10 +604,7 @@ fn render_date_time(pattern: &str, value: &str) -> Option<String> {
         "m/d/yy h:mm" => {
             let (year, month, day) = date_parts?;
             let (hour, minute, _) = time_parts?;
-            Some(format!(
-                "{month}/{day}/{} {hour:02}:{minute:02}",
-                year % 100
-            ))
+            Some(format!("{month}/{day}/{} {hour}:{minute:02}", year % 100))
         }
         "m/d/yy h:mm:ss am/pm" => {
             let (year, month, day) = date_parts?;
@@ -645,7 +636,7 @@ fn render_date_time(pattern: &str, value: &str) -> Option<String> {
             let (year, month, day) = date_parts?;
             let (hour, minute, second) = time_parts?;
             Some(format!(
-                "{month}/{day}/{} {hour:02}:{minute:02}:{second:02}",
+                "{month}/{day}/{} {hour}:{minute:02}:{second:02}",
                 year % 100
             ))
         }
@@ -1272,15 +1263,15 @@ fn dotted_date_formats_match_excel_orders() {
         ("d.m.yyyy", "2026-11-28", "28.11.2026"),
         ("yyyy.mm.dd", "2026-11-28", "2026.11.28"),
         ("yyyy.m.d", "2026-11-28", "2026.11.28"),
-        ("dd.mm.yyyy h:mm", "2026-11-28T09:05:00", "28.11.2026 09:05"),
-        ("yyyy.mm.dd h:mm", "2026-11-28T09:05:00", "2026.11.28 09:05"),
+        ("dd.mm.yyyy h:mm", "2026-11-28T09:05:00", "28.11.2026 9:05"),
+        ("yyyy.mm.dd h:mm", "2026-11-28T09:05:00", "2026.11.28 9:05"),
         ("dd-mm-yyyy", "2026-11-28", "28-11-2026"),
         ("d-m-yyyy", "2026-11-28", "28-11-2026"),
         ("yyyy-m-d", "2026-11-28", "2026-11-28"),
         (
             "dd-mm-yyyy h:mm:ss",
             "2026-11-28T09:05:07",
-            "28-11-2026 09:05:07",
+            "28-11-2026 9:05:07",
         ),
         (
             "yyyy-mm-dd h:mm am/pm",
@@ -1307,6 +1298,13 @@ fn dotted_date_formats_match_excel_orders() {
             "2026-11-28T13:05:00",
             "2026.11.28 1:05 PM",
         ),
+        (
+            "yyyy-mm-dd hh:mm",
+            "2026-11-28T09:05:00",
+            "2026-11-28 09:05",
+        ),
+        ("yy-mm-dd h:mm", "2026-11-28T09:05:00", "26-11-28 9:05"),
+        ("m/d/yy h:mm", "2024-01-02T09:05:00", "1/2/24 9:05"),
     ] {
         let format = NumberFormat::parse(pattern).unwrap();
         assert_eq!(format.render(input), expected, "{pattern}");
