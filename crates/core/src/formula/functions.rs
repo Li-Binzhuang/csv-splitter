@@ -6191,13 +6191,16 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             _ => Value::Error,
         },
-        "value" => match args.first().map(|a| eval(a, ctx).text()) {
-            Some(text) => match text.trim().parse::<f64>() {
-                Ok(n) if n.is_finite() => Value::Number(n),
-                _ => Value::Error,
-            },
-            None => Value::Error,
-        },
+        "value" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let text = eval(&args[0], ctx).text();
+            match parse_value_text(&text) {
+                Some(number) => Value::Number(number),
+                None => Value::Error,
+            }
+        }
         // DATE(year, month, day) renders the ISO day a CSV date column can hold, so it
         // composes with year()/month()/day() rather than inventing a serial number.
         "date" => match (
@@ -6974,6 +6977,34 @@ fn render_text_format(spec: &str, value: &str) -> Option<String> {
     } else {
         rendered
     })
+}
+
+/// VALUE accepts the everyday spreadsheet number spellings: optional currency
+/// sign, grouped thousands, percent suffix, and parentheses for negatives.
+fn parse_value_text(text: &str) -> Option<f64> {
+    let mut value = text.trim();
+    let mut negative = false;
+    if value.starts_with('(') && value.ends_with(')') {
+        negative = true;
+        value = value[1..value.len() - 1].trim();
+    }
+    let mut percent = false;
+    if let Some(stripped) = value.strip_suffix('%') {
+        percent = true;
+        value = stripped.trim();
+    }
+    for symbol in ["$", "€", "£", "¥"] {
+        if let Some(stripped) = value.strip_prefix(symbol) {
+            value = stripped.trim();
+            break;
+        }
+    }
+    let normalized = value.replace(',', "");
+    let number: f64 = normalized.trim().parse().ok()?;
+    if !number.is_finite() {
+        return None;
+    }
+    Some(number * if negative { -1.0 } else { 1.0 } * if percent { 0.01 } else { 1.0 })
 }
 
 fn text_around(args: &[Expr], ctx: &Ctx<'_>, before: bool) -> Value {

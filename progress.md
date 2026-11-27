@@ -278,9 +278,11 @@
   测试 `fixed_dollar_and_numbervalue_work`。
 - [x] 项350 UNICODE 参数校验（功能级）：空文本/多参 → #VALUE!（实现已有，补测试锁定）；
   测试 `textjoin_char_and_code_work_like_a_spreadsheet`。
-- [ ] 项351 VALUE 文本数字解析扩展（功能级）：千分位/百分比/货币符号；
-  验收：单测 + gate。
+- [x] 项351 VALUE 文本数字解析扩展（功能级）：货币/千分位/百分号/括号负数；
+  测试 `fixed_dollar_and_numbervalue_work`。
 - [ ] 项352 TEXTJOIN 参数校验（功能级）：ignore_empty 非 0/1 → #VALUE!；
+  验收：单测 + gate。
+- [ ] 项353 SEARCH 通配符（功能级）：`*`/`?` 匹配；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -563,6 +565,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 375（项351 VALUE 解析扩展，功能级）：货币/千分位；
+定向与全量 gate/package 通过；发布包 SHA `c6923738…d4915d07`；
+轮首 push 成功，本轮不再 push。
 
 Round 374（项350 UNICODE 校验，功能级）：补测试锁定；
 定向与全量 gate/package 通过；发布包 SHA `b3b45a77…43a70b0`；
