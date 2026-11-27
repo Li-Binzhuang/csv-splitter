@@ -3504,6 +3504,27 @@ mod tests {
     }
 
     #[test]
+    fn f_dist_returns_density_or_cumulative() {
+        for (source, expected) in [
+            ("f.dist(1, 1, 1, 1)", "0.5"),
+            ("f.dist(1, 2, 2, 1)", "0.5"),
+            ("f.dist(1, 1, 1, 0)", "0.159155"),
+            ("f.dist(1, 2, 2, 0)", "0.25"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "f.dist(-1, 1, 1, 1)",
+            "f.dist(1, 0, 1, 1)",
+            "f.dist(1, 1, 0, 1)",
+            r#"f.dist("x", 1, 1, 1)"#,
+            "f.dist(1, 1, 1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn norm_dist_returns_density_or_cumulative() {
         for (source, expected) in [
             ("norm.dist(0, 0, 1, 1)", "0.5"),
