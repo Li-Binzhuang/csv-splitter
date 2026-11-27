@@ -30,7 +30,7 @@
 | TEXTBEFORE / TEXTAFTER | 支持（功能级新增） | instance_num、match_mode 0/1（ASCII 不区分大小写）、match_end、if_not_found |
 
 | NUMBERVALUE / FIXED / DOLLAR | 支持（功能级新增） | FIXED 固定小数/千分位；DOLLAR 负数为括号；NUMBERVALUE 区域分隔符/百分号/括号负数 |
-| TEXTSPLIT | 支持（受限，功能级新增） | 标量引擎只返回首个分隔片段；空分隔符/非文本 `#VALUE!` |
+| TEXTSPLIT | 支持（受限，功能级新增） | 标量引擎返回首个非空片段；ignore_empty 支持；行分隔符非空 `#VALUE!` |
 
 ## 日期与时间
 

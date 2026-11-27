@@ -429,7 +429,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         }
         // TEXTSPLIT: scalar engine exposes only the first split segment.
         "textsplit" => {
-            if args.len() != 2 {
+            if !(2..=5).contains(&args.len()) {
                 return Value::Error;
             }
             let (Some(text), Some(delimiter)) = (
@@ -447,9 +447,25 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             if delimiter.is_empty() {
                 return Value::Error;
             }
-            match text.split(&delimiter).next() {
+            if let Some(row) = args.get(2) {
+                if !eval(row, ctx).text().is_empty() {
+                    return Value::Error;
+                }
+            }
+            let mut ignore_empty = false;
+            if let Some(flag) = args.get(3) {
+                let Some(number) = eval(flag, ctx).number() else {
+                    return Value::Error;
+                };
+                if !number.is_finite() || number.fract() != 0.0 || !matches!(number as u32, 0 | 1) {
+                    return Value::Error;
+                }
+                ignore_empty = number == 1.0;
+            }
+            let mut segments = text.split(&delimiter);
+            match segments.find(|segment| !ignore_empty || !segment.is_empty()) {
                 Some(first) => Value::Text(first.to_string()),
-                None => Value::Error,
+                None => Value::Text(String::new()),
             }
         }
         // ARRAYTOTEXT: render a same-row range as text (concise or strict).

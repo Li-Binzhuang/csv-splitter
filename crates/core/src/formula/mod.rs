@@ -3412,6 +3412,30 @@ mod tests {
     }
 
     #[test]
+    fn textsplit_can_skip_empty_segments() {
+        for (source, expected) in [
+            (r#"textsplit(",a,b", ",", "", 1)"#, "a"),
+            (r#"textsplit(",a,b", ",", "", 0)"#, ""),
+            (r#"textsplit("a,,b", ",", "", 1)"#, "a"),
+            (r#"textsplit(",", ",", "", 1)"#, ""),
+            (r#"textsplit(",a", ",", "", 1, "x")"#, "a"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            r#"textsplit(",a,b", ",", "x")"#,
+            r#"textsplit(",a,b", ",", "", 2)"#,
+            r#"textsplit(",a,b", ",")"#,
+        ] {
+            if source == r#"textsplit(",a,b", ",")"# {
+                assert_eq!(eval_str(source, &[]), "", "{source}");
+            } else {
+                assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+            }
+        }
+    }
+
+    #[test]
     fn textsplit_returns_first_segment() {
         for (source, expected) in [
             (r#"textsplit("a,b,c", ",")"#, "a"),
