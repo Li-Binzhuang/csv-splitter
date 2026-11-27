@@ -436,7 +436,9 @@
   验收：单测 + gate。
 - [x] 项429 斜杠日期格式导出 round-trip（功能级）：m/d/yyyy、mm/dd/yyyy 写入 numFmt；
   测试 `slash_date_formats_map_into_export_styles`。
-- [ ] 项432 斜杠日期 12 小时制（功能级）：m/d/yyyy h:mm am/pm；
+- [x] 项432 斜杠日期 12 小时制（功能级）：m/d/yyyy、mm/dd/yyyy 12 小时；
+  测试 `dotted_date_formats_match_excel_orders`。
+- [ ] 项433 斜杠日期时间导出 round-trip（功能级）：m/d/yyyy h:mm 写 numFmt；
   验收：单测 + gate。
 - [ ] 项430 斜杠日期格式 h/hh 导出（功能级）：带时间变体；
   验收：单测 + gate。
@@ -723,6 +725,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 453（项432 斜杠 12 小时制，功能级）：4 种格式；
+定向与全量 gate/package 通过；发布包 SHA `7a97861f…7eeeec8a`；
+轮首 push 成功，本轮不再 push。
 
 Round 452（项431 斜杠日期时间，功能级）：m/d/yyyy h:mm 等 4 种；
 定向与全量 gate/package 通过；发布包 SHA `79256697…82761fe`；

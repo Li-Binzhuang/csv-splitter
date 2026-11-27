@@ -20,6 +20,7 @@
 | 点/破折号格式导出 | 支持（新增） | 写入 `numFmt formatCode` 与序列号单元格 | `dotted_and_dashed_formats_map_into_export_styles` |
 | `m/d/yyyy` / `mm/dd/yyyy` 导出 | 支持（新增） | 斜杠日期格式写入 numFmt | `slash_date_formats_map_into_export_styles` |
 | `m/d/yyyy h:mm[:ss]` / `mm/dd/yyyy h:mm[:ss]` | 支持（新增） | 斜杠日期 + 24 小时时间 | `dotted_date_formats_match_excel_orders` |
+| 斜杠 12 小时 am/pm | 支持（新增） | `m/d/yyyy h:mm[:ss] am/pm`、`mm/dd/yyyy ...` | 同上 |
 | `h` vs `hh` 小时补零 | 支持（新增） | 单个 `h` 不补零（9:05），`hh` 补零（09:05） | `dotted_date_formats_match_excel_orders` |
 | `yyyy-m-d` | 支持（新增） | 破折号年/月/日（不补零） | 同上 |
 | `dd.mm.yyyy` / `d.m.yyyy` | 支持（新增） | 点分隔日/月/年 | 同上 |
