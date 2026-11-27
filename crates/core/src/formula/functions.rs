@@ -2758,6 +2758,37 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number(result)
         }
+        // MULTINOMIAL: (sum n_i)! / product(n_i!) over non-negative integers.
+        "multinomial" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            if values.is_empty()
+                || values
+                    .iter()
+                    .any(|value| !value.is_finite() || *value < 0.0 || value.trunc() != *value)
+            {
+                return Value::Error;
+            }
+            let total = values.iter().sum::<f64>() as u64;
+            if total > 170 {
+                return Value::Error;
+            }
+            let mut result = factorial(total);
+            for value in values {
+                result /= factorial(value as u64);
+                if !result.is_finite() {
+                    return Value::Error;
+                }
+            }
+            Value::Number(result)
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
@@ -4635,6 +4666,14 @@ fn from_roman(text: &str) -> Option<u32> {
         }
     }
     u32::try_from(total).ok().filter(|value| *value <= 3999)
+}
+
+fn factorial(number: u64) -> f64 {
+    let mut result = 1.0;
+    for value in 2..=number {
+        result *= value as f64;
+    }
+    result
 }
 
 fn linear_regression(y: &[f64], x: &[f64]) -> Option<(f64, f64)> {

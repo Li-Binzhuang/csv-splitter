@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项190 回归标准误（功能级）：`STEYX(known_y, known_x)`；同行等长、
+  样本≥3、零方差 `#VALUE!`；验收：单测 + gate。
 - [ ] 项189 对数伽马（功能级）：`GAMMALN(number)`；非正/非有限
   `#VALUE!`；验收：单测 + gate。
 - [ ] 项188 复数基础（功能级）：`COMPLEX`/`IMREAL`/`IMAGINARY`/`IMABS`；
   非法后缀/参数 `#VALUE!`；验收：单测 + gate。
-- [ ] 项187 多项式系数（功能级）：`MULTINOMIAL(values)`；同行非负整数、
-  空区间/负数 `#VALUE!`；验收：单测 + gate。
+- [x] 项187 多项式系数（功能级）：`MULTINOMIAL(values)`；同行非负整数、
+  空区间/负数 `#VALUE!`；测试 `multinomial_counts_arrangements`。
 - [x] 项186 双阶乘（功能级）：`FACTDOUBLE(number)`；负数/非整数/
   过大 `#VALUE!`；测试 `factdouble_computes_double_factorials`。
 - [x] 项185 罗马数字（功能级）：`ROMAN(number[, form])`/`ARABIC(text)`；
@@ -241,6 +243,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 214（项187 MULTINOMIAL，功能级）：多项式系数、整数/总和边界；
+定向与全量 gate/package 通过；发布包 SHA `137feb27…53b37b`；
+push 已在轮首成功，本轮不再 push。
 
 Round 213（项186 FACTDOUBLE，功能级）：双阶乘、0/1 与范围边界；
 定向与全量 gate/package 通过；发布包 SHA `dc70509a…fb2654`；
