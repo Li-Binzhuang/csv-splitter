@@ -27,7 +27,7 @@ pub enum NumberFormat {
     /// `1,234.56`: fixed decimals with thousands separators.
     Decimal { places: usize, grouping: bool },
     /// `12.3%`: the value is a fraction (0.123 → 12.3%).
-    Percent { places: usize },
+    Percent { places: usize, grouping: bool },
     /// Money: `$ 1,234.50`.
     Currency { symbol: String, places: usize },
     /// Date/time display, e.g. `yyyy-mm-dd` or `yyyy-mm-dd hh:mm`.
@@ -55,6 +55,7 @@ impl NumberFormat {
         if let Some(percent) = spec.strip_suffix('%') {
             return Ok(Self::Percent {
                 places: decimals(percent),
+                grouping: percent.contains(','),
             });
         }
         if spec == "@" {
@@ -142,11 +143,16 @@ impl NumberFormat {
                     base
                 }
             }
-            Self::Percent { places } => {
-                if *places == 0 {
-                    "0%".to_string()
+            Self::Percent { places, grouping } => {
+                let base = if *places == 0 {
+                    "0".to_string()
                 } else {
-                    format!("0.{}%", "0".repeat(*places))
+                    format!("0.{}", "0".repeat(*places))
+                };
+                if *grouping {
+                    format!("#,##{base}%")
+                } else {
+                    format!("{base}%")
                 }
             }
             Self::Currency { symbol, places } => {
@@ -211,9 +217,13 @@ impl NumberFormat {
                     rendered
                 }
             }
-            Self::Percent { places } => {
+            Self::Percent { places, grouping } => {
                 let rendered = format!("{:.places$}", number * 100.0);
-                format!("{rendered}%")
+                if *grouping {
+                    format!("{}%", group(&rendered))
+                } else {
+                    format!("{rendered}%")
+                }
             }
             Self::Currency { symbol, places } => {
                 format!("{symbol}{}", group(&format!("{number:.places$}")))
@@ -680,6 +690,9 @@ mod tests {
         let pct = NumberFormat::parse("0.0%").unwrap();
         assert_eq!(pct.render("0.1234"), "12.3%");
         assert_eq!(pct.render("1"), "100.0%");
+        let grouped_pct = NumberFormat::parse("#,##0.0%").unwrap();
+        assert_eq!(grouped_pct.name(), "#,##0.0%");
+        assert_eq!(grouped_pct.render("12345.6"), "1,234,560.0%");
 
         let money = NumberFormat::parse("$#,##0.00").unwrap();
         assert_eq!(money.render("1234.5"), "$1,234.50");
