@@ -318,9 +318,11 @@
   测试 `dollar_fraction_round_trips`。
 - [x] 项370 ROMAN form 校验（功能级）：form 须整数 0–4，小数报错；
   测试 `roman_and_arabic_round_trip`。
-- [ ] 项371 BASE 进制范围校验（功能级）：基数 2–36；
+- [x] 项371 BASE 进制范围校验（功能级）：进制 2–36、整数；越界/小数报错；
+  测试 `decimal_and_base_convert_textual_bases`。
+- [ ] 项372 DECIMAL 非法字符（功能级）：非法字符/越界 → #VALUE!；
   验收：单测 + gate。
-- [ ] 项372 DECIMAL 字符校验（功能级）：空串/非法数字 → #VALUE!；
+- [ ] 项373 UNICHAR 代理区校验（功能级）：0/代理区码点 → #VALUE!；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -603,6 +605,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 395（项371 BASE 进制校验，功能级）：补测试锁定 2–36；
+定向与全量 gate/package 通过；发布包 SHA `f3fafbfd…70ced4e`；
+轮首 push 成功，本轮不再 push。
 
 Round 394（项370 ROMAN form 校验，功能级）：form 须整数；
 定向与全量 gate/package 通过；发布包 SHA `f915baeb…db585ef9`；

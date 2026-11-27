@@ -2306,11 +2306,14 @@ mod tests {
         assert_eq!(eval_str("base(10, 2)", &[]), "1010");
         assert_eq!(eval_str("base(0, 2)", &[]), "0");
         assert_eq!(eval_str("base(0, 2, 3)", &[]), "000");
+        assert_eq!(eval_str("base(35, 36)", &[]), "Z");
         for source in [
             "base(-1, 2)",
             "base(1.5, 2)",
             "base(10, 1)",
             "base(10, 37)",
+            "base(10, 2.5)",
+            "base(10, 0)",
             "base(10, 2, 256)",
         ] {
             assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
