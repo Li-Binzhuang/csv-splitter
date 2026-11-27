@@ -102,12 +102,18 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
-- [ ] 项173 奇偶判断（功能级）：`ISEVEN(number)`/`ISODD(number)`；非整数/
-  非数值 `#VALUE!`；验收：单测 + gate。
-- [ ] 项172 百分位排名（功能级）：`PERCENTRANK.INC(array, x[, significance])`/
-  `PERCENTRANK.EXC(...)`；并列/越界/非法参数 `#VALUE!`；验收：单测 + gate。
-- [ ] 项171 平均排名（功能级）：`RANK.AVG(number, range[, order])`；
-  并列平均名次/非法区间 `#VALUE!`；验收：单测 + gate。
+- [ ] 项176 费雪变换（功能级）：`FISHER(x)`/`FISHERINV(y)`；x 越界
+  `#VALUE!`；验收：单测 + gate。
+- [ ] 项174 MATH 舍入（功能级）：`CEILING.MATH`/`FLOOR.MATH`；significance/
+  mode 非法 `#VALUE!`；验收：单测 + gate。
+- [ ] 项175 修正内部收益率（功能级）：`MIRR(values, finance_rate,
+  reinvest_rate)`；正负现金流/非法利率 `#VALUE!`；验收：单测 + gate。
+- [x] 项173 奇偶判断（功能级）：`ISEVEN(number)`/`ISODD(number)`；非整数/
+  非数值 `#VALUE!`；测试 `iseven_and_isodd_work`。
+- [x] 项172 百分位排名：审计确认 `PERCENTRANK.INC`/`PERCENTRANK.EXC`
+  已实现（含既有测试），关闭，不重复开发。
+- [x] 项171 平均排名：审计确认 `RANK.AVG` 原已实现（并列平均名次），
+  关闭，不重复开发。
 - [x] 项170 平均绝对偏差（功能级）：`AVEDEV(values)`；同行数值区间/
   空区间 `#VALUE!`；测试 `avedev_measures_mean_absolute_deviation`。
 - [x] 项169 线性预测（功能级）：`FORECAST(x, known_y, known_x)`/
@@ -208,6 +214,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 200（项173 ISEVEN/ISODD，功能级）：项171/172 审计关闭（原已实现）；
+新增奇偶判断；新增 MATH 舍入/MIRR/费雪变换待办；定向与全量 gate/package 通过；发布包 SHA `e4537e61…3a662d`。
 
 Round 199（项170 AVEDEV，功能级）：平均绝对偏差、单值/空区间；
 定向与全量 gate/package 通过；发布包 SHA `8913dc71…d68905`。

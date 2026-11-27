@@ -2307,6 +2307,20 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 values.iter().map(|value| (value - mean).abs()).sum::<f64>() / values.len() as f64,
             )
         }
+        // ISEVEN/ISODD: integer parity checks.
+        "iseven" | "isodd" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            if !number.is_finite() || number.trunc() != number {
+                return Value::Error;
+            }
+            let even = (number.trunc() as i64) % 2 == 0;
+            Value::Bool(if lower == "iseven" { even } else { !even })
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

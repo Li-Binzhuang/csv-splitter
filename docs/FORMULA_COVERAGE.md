@@ -98,6 +98,7 @@
 | STANDARDIZE | 支持（功能级新增） | standard_dev≤0/非数值 `#VALUE!` |
 | FORECAST / FORECAST.LINEAR | 支持（功能级新增） | 同行等长 y/x；零方差 `#VALUE!` |
 | COVAR / COVARIANCE.P / COVARIANCE.S | 支持（功能级新增） | 同行等长 y/x；S 需至少 2 个样本 |
+| ISEVEN / ISODD | 支持（功能级新增） | 整数奇偶；非整数/非数值 `#VALUE!` |
 | AVEDEV | 支持（功能级新增） | 同行数值区间；空区间/参数不足 `#VALUE!` |
 | DEVSQ | 支持（功能级新增） | 同行数值区间；空区间 `#VALUE!` |
 | GEOMEAN / HARMEAN | 支持（功能级新增） | 同行正数样本；非正数/空样本 `#VALUE!`；别名 harmmean 兼容 |
@@ -105,7 +106,7 @@
 | ROUND / ROUNDUP / ROUNDDOWN | 支持 | 十进制位数 |
 | ABS / SIGN / POWER / EXP / LN / LOG | 支持 | LOG 支持底数 |
 | FLOOR / CEIL / CEILING / INT / TRUNC / SQRT / MOD | 支持 | 标量 |
-| RANK | 支持（新增） | 同列范围；默认降序，order≠0 升序；并列同名次 |
+| RANK / RANK.EQ / RANK.AVG | 支持（新增） | 默认降序，order≠0 升序；并列同名次/平均名次 |
 | QUARTILE / QUARTILE.EXC | 支持（新增） | quart 0–4；EXC 专用边界 |
 | TRIMMEAN | 支持（新增） | 按百分比两端裁剪后平均 |
 | RANK.EQ / STDEV.S / VAR.S / STDEV.P / VAR.P | 支持（新增） | 点号函数名词法；同 RANK/STDEV/VAR 语义 |

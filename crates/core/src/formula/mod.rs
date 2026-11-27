@@ -3504,6 +3504,23 @@ mod tests {
     }
 
     #[test]
+    fn iseven_and_isodd_work() {
+        assert_eq!(eval_str("iseven(2)", &[]), "TRUE");
+        assert_eq!(eval_str("iseven(3)", &[]), "FALSE");
+        assert_eq!(eval_str("isodd(3)", &[]), "TRUE");
+        assert_eq!(eval_str("isodd(-1)", &[]), "TRUE");
+        assert_eq!(eval_str("iseven(-2)", &[]), "TRUE");
+        for source in [
+            r#"iseven(2.5)"#,
+            r#"isodd(2.5)"#,
+            r#"iseven("x")"#,
+            "isodd()",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn avg_and_exclusive_ranking_variants_work() {
         let columns = vec![
             "a".to_string(),
