@@ -2881,6 +2881,30 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 .sum::<f64>();
             Value::Number((residual_square_sum / (known_y.len() - 2) as f64).sqrt())
         }
+        // IMSUM/IMSUB: add or subtract two complex-number texts.
+        "imsum" | "imsub" => {
+            if args.len() != 2 {
+                return Value::Error;
+            }
+            let left_text = eval(&args[0], ctx).text();
+            let right_text = eval(&args[1], ctx).text();
+            let (Some((left_real, left_imaginary, suffix)), Some((right_real, right_imaginary, _))) =
+                (parse_complex(&left_text), parse_complex(&right_text))
+            else {
+                return Value::Error;
+            };
+            let real = if lower == "imsum" {
+                left_real + right_real
+            } else {
+                left_real - right_real
+            };
+            let imaginary = if lower == "imsum" {
+                left_imaginary + right_imaginary
+            } else {
+                left_imaginary - right_imaginary
+            };
+            Value::Text(format_complex(real, imaginary, &suffix))
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
@@ -4844,14 +4868,11 @@ fn parse_complex(text: &str) -> Option<(f64, f64, String)> {
     if let Some(index) = split {
         let real = body[..index].trim().parse::<f64>().ok()?;
         let imaginary_text = body[index + 1..].trim();
+        let sign = if bytes[index] == b'-' { -1.0 } else { 1.0 };
         let imaginary = if imaginary_text.is_empty() {
-            if bytes[index] == b'-' {
-                -1.0
-            } else {
-                1.0
-            }
+            sign
         } else {
-            imaginary_text.parse::<f64>().ok()?
+            imaginary_text.parse::<f64>().ok()? * sign
         };
         if !real.is_finite() || !imaginary.is_finite() {
             return None;

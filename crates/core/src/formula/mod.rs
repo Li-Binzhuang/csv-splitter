@@ -3504,6 +3504,22 @@ mod tests {
     }
 
     #[test]
+    fn complex_sum_and_difference_work() {
+        for (source, expected) in [
+            (r#"imsum("3+4i", "1+2i")"#, "4+6i"),
+            (r#"imsub("3+4i", "1+2i")"#, "2+2i"),
+            (r#"imsum("3+4i", "3-4i")"#, "6"),
+            (r#"imsum("3+4i", "-3+4i")"#, "8i"),
+            (r#"imsum("3+4j", "1+2j")"#, "4+6j"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [r#"imsum("3+4i", "abc")"#, "imsub(1)"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn steyx_measures_regression_error() {
         let columns = vec![
             "y1".to_string(),

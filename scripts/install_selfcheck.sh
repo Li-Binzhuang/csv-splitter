@@ -52,15 +52,11 @@ MANIFEST_VERSION=""
 MANIFEST_SHA=""
 MANIFEST_PLATFORM=""
 if [[ -f "$MANIFEST" ]]; then
-  eval "$(python3 - "$MANIFEST" <<'PY'
-import json
-import shlex
-import sys
-data = json.load(open(sys.argv[1]))
-for key, var in (("version", "MANIFEST_VERSION"), ("sha256", "MANIFEST_SHA"), ("platform", "MANIFEST_PLATFORM")):
-    print(f"{var}={shlex.quote(str(data.get(key, '')))}")
-PY
-)"
+  # Avoid eval + here-doc inside $(): older macOS bash rejected it with
+  # "syntax error near unexpected token (".
+  MANIFEST_VERSION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("version", ""))' "$MANIFEST")"
+  MANIFEST_SHA="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("sha256", ""))' "$MANIFEST")"
+  MANIFEST_PLATFORM="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("platform", ""))' "$MANIFEST")"
 fi
 if [[ -n "$MANIFEST_VERSION" && "$MANIFEST_VERSION" == "$VERSION" ]]; then
   check manifest_version true "$VERSION"

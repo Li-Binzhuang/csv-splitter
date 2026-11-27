@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项194 复数指数对数（功能级）：`IMEXP`/`IMLOG10`；非法复数
+  `#VALUE!`；验收：单测 + gate。
 - [ ] 项193 复数极坐标（功能级）：`IMCONJUGATE`/`IMARGUMENT`；非法复数
   `#VALUE!`；验收：单测 + gate。
 - [ ] 项192 复数乘除（功能级）：`IMPRODUCT`/`IMDIV` 两个复数文本参数；
   除零/非法复数 `#VALUE!`；验收：单测 + gate。
-- [ ] 项191 复数加减（功能级）：`IMSUM`/`IMSUB` 两个复数文本参数；
-  非法复数 `#VALUE!`；验收：单测 + gate。
+- [x] 项191 复数加减（功能级）：`IMSUM`/`IMSUB` 两个复数文本参数；
+  非法复数 `#VALUE!`；测试 `complex_sum_and_difference_work`。
 - [x] 项190 回归标准误（功能级）：`STEYX(known_y, known_x)`；同行等长、
   样本≥3、零方差 `#VALUE!`；测试 `steyx_measures_regression_error`。
 - [x] 项189 对数伽马（功能级）：`GAMMALN(number)`；非正/非有限
@@ -249,6 +251,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 218（项191 IMSUM/IMSUB，功能级）：复数加减、符号解析与后缀；
+同时修复 macOS CI：`install_selfcheck.sh` 去掉 eval+here-doc，改为独立
+python3 -c 读取 manifest；定向/全量 gate 通过；发布包 SHA `c2fe594c…bec592a`；push 已用一次。
 
 Round 217（项190 STEYX，功能级）：回归标准误、样本量/零方差；
 定向与全量 gate/package 通过；发布包 SHA `045b2827…15fe75`；
