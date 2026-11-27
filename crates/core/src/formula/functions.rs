@@ -2288,6 +2288,25 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number(intercept + slope * x_value)
         }
+        // AVEDEV: mean absolute deviation from the mean.
+        "avedev" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(values) = range_values(from, to, ctx) else {
+                return Value::Error;
+            };
+            if values.is_empty() {
+                return Value::Error;
+            }
+            let mean = values.iter().sum::<f64>() / values.len() as f64;
+            Value::Number(
+                values.iter().map(|value| (value - mean).abs()).sum::<f64>() / values.len() as f64,
+            )
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

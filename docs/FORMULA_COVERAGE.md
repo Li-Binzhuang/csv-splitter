@@ -98,6 +98,7 @@
 | STANDARDIZE | 支持（功能级新增） | standard_dev≤0/非数值 `#VALUE!` |
 | FORECAST / FORECAST.LINEAR | 支持（功能级新增） | 同行等长 y/x；零方差 `#VALUE!` |
 | COVAR / COVARIANCE.P / COVARIANCE.S | 支持（功能级新增） | 同行等长 y/x；S 需至少 2 个样本 |
+| AVEDEV | 支持（功能级新增） | 同行数值区间；空区间/参数不足 `#VALUE!` |
 | DEVSQ | 支持（功能级新增） | 同行数值区间；空区间 `#VALUE!` |
 | GEOMEAN / HARMEAN | 支持（功能级新增） | 同行正数样本；非正数/空样本 `#VALUE!`；别名 harmmean 兼容 |
 | SKEW / KURT | 支持（功能级新增） | 同行样本；SKEW≥3、KURT≥4；零方差 `#VALUE!` |

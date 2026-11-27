@@ -1442,6 +1442,47 @@ mod tests {
     }
 
     #[test]
+    fn avedev_measures_mean_absolute_deviation() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+            "e".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        for (name, value) in [("a", "1"), ("b", "2"), ("c", "3"), ("d", "4"), ("e", "5")] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        let formula = Formula::parse("avedev(A2:E2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "1.2"
+        );
+        let formula = Formula::parse("avedev(A2:A2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "0"
+        );
+        let columns = vec!["a".to_string(), "b".to_string()];
+        let mut cells = HashMap::new();
+        cells.insert("a".to_string(), String::new());
+        cells.insert("b".to_string(), String::new());
+        let formula = Formula::parse("avedev(A2:B2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+        assert_eq!(eval_str("avedev(1, 2)", &[]), "#VALUE!");
+    }
+
+    #[test]
     fn forecast_predicts_from_a_line() {
         let columns = vec![
             "y1".to_string(),

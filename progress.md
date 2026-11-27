@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项173 奇偶判断（功能级）：`ISEVEN(number)`/`ISODD(number)`；非整数/
+  非数值 `#VALUE!`；验收：单测 + gate。
 - [ ] 项172 百分位排名（功能级）：`PERCENTRANK.INC(array, x[, significance])`/
   `PERCENTRANK.EXC(...)`；并列/越界/非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项171 平均排名（功能级）：`RANK.AVG(number, range[, order])`；
   并列平均名次/非法区间 `#VALUE!`；验收：单测 + gate。
-- [ ] 项170 平均绝对偏差（功能级）：`AVEDEV(values)`；同行数值区间/
-  空区间 `#VALUE!`；验收：单测 + gate。
+- [x] 项170 平均绝对偏差（功能级）：`AVEDEV(values)`；同行数值区间/
+  空区间 `#VALUE!`；测试 `avedev_measures_mean_absolute_deviation`。
 - [x] 项169 线性预测（功能级）：`FORECAST(x, known_y, known_x)`/
   `FORECAST.LINEAR(...)`；同行等长/零方差 `#VALUE!`；测试
   `forecast_predicts_from_a_line`。
@@ -206,6 +208,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 199（项170 AVEDEV，功能级）：平均绝对偏差、单值/空区间；
+定向与全量 gate/package 通过；发布包 SHA `8913dc71…d68905`。
 
 Round 198（项169 FORECAST，功能级）：线性预测、等长与零方差；
 定向与全量 gate/package 通过；发布包 SHA `50ba9e57…89d729`。
