@@ -3402,6 +3402,26 @@ mod tests {
     }
 
     #[test]
+    fn text_renders_sectioned_formats() {
+        for (source, expected) in [
+            (r#"text(1234.5, "0.00;0.000;0.0")"#, "1234.50"),
+            (r#"text(-1234.5, "0.00;0.000;0.0")"#, "1234.500"),
+            (r#"text(0, "0.00;0.000;0.0")"#, "0.0"),
+            (r#"text(-1.25, "0.0;-0.00")"#, "-1.25"),
+            (r#"text(0, "0.0;-0.00")"#, "0.0"),
+            (r#"text(1.2, "0.0;-0.0")"#, "1.2"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            r#"text(1, "0.0;0.0;0.0;0.0;0.0")"#,
+            r#"text("x", "0.0;0.0")"#,
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn text_renders_scientific_and_accounting_formats() {
         for (source, expected) in [
             (r#"text(1234.5, "0.00E+00")"#, "1.23E+03"),

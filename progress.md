@@ -266,9 +266,11 @@
   测试 `the_everyday_functions_behave_like_a_spreadsheet`。
 - [x] 项344 TRIM 内部空格折叠（功能级）：连续 ASCII 空格压成单个，制表符保留；
   测试 `the_everyday_functions_behave_like_a_spreadsheet`。
-- [ ] 项345 TEXT 正/负/零三段格式（功能级）：解析 `正;负;零` 三段并分别渲染；
-  验收：单测 + gate。
+- [x] 项345 TEXT 正/负/零三段格式（功能级）：按符号选段、负段取绝对值、负段减号；
+  测试 `text_renders_sectioned_formats`。
 - [ ] 项346 CHAR 范围校验（功能级）：CHAR 只接受 1–255；
+  验收：单测 + gate。
+- [ ] 项347 TEXT 第 4 段文本格式（功能级）：`正;负;零;文本` 第 4 段；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -551,6 +553,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 369（项345 TEXT 三段格式，功能级）：符号选段；
+定向与全量 gate/package 通过；发布包 SHA `3245053b…287f0f63`；
+轮首 push 成功，本轮不再 push。
 
 Round 368（项344 TRIM 空格折叠，功能级）：内部连续空格；
 定向与全量 gate/package 通过；发布包 SHA `6f487669…547fff5b9`；

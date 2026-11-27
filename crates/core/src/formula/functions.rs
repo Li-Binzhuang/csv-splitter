@@ -5794,9 +5794,9 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         "text" => match (args.first(), args.get(1)) {
             (Some(value), Some(format)) => {
                 let spec = eval(format, ctx).text();
-                match NumberFormat::parse(&spec) {
-                    Ok(format) => Value::Text(format.render(&eval(value, ctx).text())),
-                    Err(_) => Value::Error,
+                match render_text_format(&spec, &eval(value, ctx).text()) {
+                    Some(text) => Value::Text(text),
+                    None => Value::Error,
                 }
             }
             _ => Value::Error,
@@ -6924,6 +6924,40 @@ fn find_case_insensitive(haystack: &str, needle: &str, from: usize) -> Option<us
         }
     }
     None
+}
+
+/// TEXT format codes may carry up to four `;`-separated sections
+/// (positive/negative/zero/text). The dedicated NumberFormat variants win
+/// first, then the section matching the value is rendered on its own.
+fn render_text_format(spec: &str, value: &str) -> Option<String> {
+    if let Ok(format) = NumberFormat::parse(spec) {
+        return Some(format.render(value));
+    }
+    let sections: Vec<&str> = spec.split(';').collect();
+    if !(2..=4).contains(&sections.len()) {
+        return None;
+    }
+    let number: f64 = value.trim().parse().ok()?;
+    let index = if number > 0.0 {
+        0
+    } else if number < 0.0 {
+        1
+    } else if sections.len() >= 3 {
+        2
+    } else {
+        0
+    };
+    let section = *sections.get(index)?;
+    let negative_sign = section.starts_with('-');
+    let code = section.strip_prefix('-').unwrap_or(section);
+    let format = NumberFormat::parse(code).ok()?;
+    let display = if number < 0.0 { -number } else { number };
+    let rendered = format.render(&display.to_string());
+    Some(if negative_sign {
+        format!("-{rendered}")
+    } else {
+        rendered
+    })
 }
 
 fn text_around(args: &[Expr], ctx: &Ctx<'_>, before: bool) -> Value {
