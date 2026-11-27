@@ -2587,6 +2587,7 @@ mod tests {
             r#"xlookup("people.csv", "cust", "name", "unknown")"#,
             r#"xlookup("people.csv", "cust", "name", "unknown", 2)"#,
             r#"xlookup("people.csv", "cust", "name", "unknown", 1)"#,
+            r#"xlookup("people.csv", "cust", "name", "unknown", -1)"#,
         ] {
             let formula = Formula::parse(text).unwrap();
             assert_eq!(

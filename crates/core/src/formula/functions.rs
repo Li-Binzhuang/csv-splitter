@@ -6620,11 +6620,11 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                     };
                     if !number.is_finite()
                         || number.fract() != 0.0
-                        || !matches!(number as u32, 0..=2)
+                        || !(-1.0..=2.0).contains(&number)
                     {
                         return Value::Error;
                     }
-                    number as u32
+                    number as i32
                 }
                 None => 0,
             };
@@ -6637,7 +6637,10 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                     .min()
                     .and_then(|candidate| reference.get(candidate))
                     .cloned(),
-                None if match_mode == 1 => approximate_reference_value(&reference.values, &key),
+                None if match_mode == 1 => approximate_reference_value(&reference.values, &key, 1),
+                None if match_mode == -1 => {
+                    approximate_reference_value(&reference.values, &key, -1)
+                }
                 None => None,
             };
             match found {
@@ -6673,11 +6676,11 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                     };
                     if !number.is_finite()
                         || number.fract() != 0.0
-                        || !matches!(number as u32, 0..=2)
+                        || !(0.0..=2.0).contains(&number)
                     {
                         return Value::Error;
                     }
-                    number as u32
+                    number as i32
                 }
                 None => 0,
             };
@@ -6690,7 +6693,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                     .min()
                     .and_then(|candidate| reference.get(candidate))
                     .cloned(),
-                None if match_mode == 1 => approximate_reference_value(&reference.values, &key),
+                None if match_mode == 1 => approximate_reference_value(&reference.values, &key, 1),
                 None => None,
             };
             match found {
@@ -8481,14 +8484,26 @@ fn population_variance(sum: f64, squares: f64, count: u64) -> Option<f64> {
 /// Approximate XLOOKUP: the smallest stored key >= the lookup value.
 /// Numeric keys win when the lookup is numeric; otherwise text compares
 /// case-insensitively. A HashMap has no row order, so the choice is deterministic.
-fn approximate_reference_value(values: &HashMap<String, String>, target: &str) -> Option<String> {
+fn approximate_reference_value(
+    values: &HashMap<String, String>,
+    target: &str,
+    direction: i32,
+) -> Option<String> {
     if let Ok(t) = target.parse::<f64>() {
         let mut best: Option<(f64, &String)> = None;
         for (candidate, value) in values {
             let Ok(n) = candidate.parse::<f64>() else {
                 continue;
             };
-            if n >= t && best.is_none_or(|(current, _)| n < current) {
+            let fits = if direction > 0 { n >= t } else { n <= t };
+            let better = best.is_none_or(|(current, _)| {
+                if direction > 0 {
+                    n < current
+                } else {
+                    n > current
+                }
+            });
+            if fits && better {
                 best = Some((n, value));
             }
         }
@@ -8501,7 +8516,19 @@ fn approximate_reference_value(values: &HashMap<String, String>, target: &str) -
             continue;
         }
         let lowered = candidate.to_lowercase();
-        if lowered >= target && best.as_ref().is_none_or(|(current, _)| lowered < *current) {
+        let fits = if direction > 0 {
+            lowered >= target
+        } else {
+            lowered <= target
+        };
+        let better = best.as_ref().is_none_or(|(current, _)| {
+            if direction > 0 {
+                lowered < *current
+            } else {
+                lowered > *current
+            }
+        });
+        if fits && better {
             best = Some((lowered, value));
         }
     }
@@ -8539,27 +8566,41 @@ mod wildcard_tests {
             .map(|(key, value)| (key.to_string(), value.to_string()))
             .collect();
         assert_eq!(
-            approximate_reference_value(&numeric, "2").as_deref(),
+            approximate_reference_value(&numeric, "2", 1).as_deref(),
             Some("b")
         );
         assert_eq!(
-            approximate_reference_value(&numeric, "5").as_deref(),
+            approximate_reference_value(&numeric, "5", 1).as_deref(),
             Some("c")
         );
-        assert_eq!(approximate_reference_value(&numeric, "6"), None);
+        assert_eq!(approximate_reference_value(&numeric, "6", 1), None);
 
         let text: HashMap<String, String> = [("apple", "x"), ("Banana", "y"), ("cherry", "z")]
             .into_iter()
             .map(|(key, value)| (key.to_string(), value.to_string()))
             .collect();
         assert_eq!(
-            approximate_reference_value(&text, "banana").as_deref(),
+            approximate_reference_value(&text, "banana", 1).as_deref(),
             Some("y")
         );
         assert_eq!(
-            approximate_reference_value(&text, "blue").as_deref(),
+            approximate_reference_value(&text, "blue", 1).as_deref(),
             Some("z")
         );
-        assert_eq!(approximate_reference_value(&text, "zzz"), None);
+        assert_eq!(approximate_reference_value(&text, "zzz", 1), None);
+        assert_eq!(
+            approximate_reference_value(&numeric, "4", -1).as_deref(),
+            Some("b")
+        );
+        assert_eq!(
+            approximate_reference_value(&numeric, "2", -1).as_deref(),
+            Some("a")
+        );
+        assert_eq!(approximate_reference_value(&numeric, "0", -1), None);
+        assert_eq!(
+            approximate_reference_value(&text, "blue", -1).as_deref(),
+            Some("y")
+        );
+        assert_eq!(approximate_reference_value(&text, "A", -1), None);
     }
 }
