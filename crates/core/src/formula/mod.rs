@@ -2435,10 +2435,12 @@ mod tests {
         assert_eq!(eval_str(r#"numbervalue("1.23.4")"#, &[]), "#VALUE!");
         for (source, expected) in [
             (r#"value("$1,234.56")"#, "1234.56"),
+            (r#"value("1.234,56")"#, "1234.56"),
+            (r#"value("1,234")"#, "1234"),
             (r#"value("12%")"#, "0.12"),
             (r#"value("(123)")"#, "-123"),
             (r#"value(" 42 ")"#, "42"),
-            (r#"value("1,23")"#, "123"),
+            (r#"value("1,23")"#, "1.23"),
             (r#"value("€100")"#, "100"),
         ] {
             assert_eq!(eval_str(source, &[]), expected, "{source}");

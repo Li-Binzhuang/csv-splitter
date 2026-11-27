@@ -7226,7 +7226,23 @@ fn parse_value_text(text: &str) -> Option<f64> {
             break;
         }
     }
-    let normalized = value.replace(',', "");
+    // Both separators present: the rightmost one is the decimal mark.
+    let normalized = if value.contains('.') && value.contains(',') {
+        if value.rfind(',') > value.rfind('.') {
+            value.replace('.', "").replace(',', ".")
+        } else {
+            value.replace(',', "")
+        }
+    } else if value.contains(',') && !value.contains('.') {
+        let after = value.rsplit(',').next().unwrap_or("");
+        if value.matches(',').count() == 1 && after.len() == 3 {
+            value.replace(',', "")
+        } else {
+            value.replace(',', ".")
+        }
+    } else {
+        value.to_string()
+    };
     let number: f64 = normalized.trim().parse().ok()?;
     if !number.is_finite() {
         return None;
