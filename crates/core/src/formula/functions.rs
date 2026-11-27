@@ -3770,6 +3770,41 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Value::Error
             }
         }
+        // GAMMA.DIST: gamma probability density or cumulative.
+        "gamma.dist" => {
+            if args.len() != 4 {
+                return Value::Error;
+            }
+            let (Some(number), Some(alpha), Some(beta), Some(cumulative)) = (
+                eval(&args[0], ctx).number(),
+                eval(&args[1], ctx).number(),
+                eval(&args[2], ctx).number(),
+                eval(&args[3], ctx).number(),
+            ) else {
+                return Value::Error;
+            };
+            if !number.is_finite()
+                || !alpha.is_finite()
+                || !beta.is_finite()
+                || !cumulative.is_finite()
+                || number < 0.0
+                || alpha <= 0.0
+                || beta <= 0.0
+            {
+                return Value::Error;
+            }
+            let result = if cumulative != 0.0 {
+                regularized_gamma(alpha, number / beta)
+            } else {
+                number.powf(alpha - 1.0) * (-number / beta).exp()
+                    / (beta.powf(alpha) * ln_gamma(alpha).exp())
+            };
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
@@ -5766,6 +5801,63 @@ fn parse_complex(text: &str) -> Option<(f64, f64, String)> {
             return None;
         }
         Some((0.0, imaginary, suffix))
+    }
+}
+
+fn gamma_series(alpha: f64, value: f64) -> f64 {
+    const MAX_ITERATIONS: usize = 200;
+    const EPSILON: f64 = 1.0e-15;
+    let mut ap = alpha;
+    let mut sum = 1.0 / alpha;
+    let mut term = sum;
+    for _ in 0..MAX_ITERATIONS {
+        ap += 1.0;
+        term *= value / ap;
+        sum += term;
+        if term.abs() < sum.abs() * EPSILON {
+            break;
+        }
+    }
+    sum * (-value + alpha * value.ln() - ln_gamma(alpha)).exp()
+}
+
+fn gamma_continued_fraction(alpha: f64, value: f64) -> f64 {
+    const MAX_ITERATIONS: usize = 200;
+    const EPSILON: f64 = 1.0e-15;
+    const TINY: f64 = 1.0e-300;
+    let mut b = value + 1.0 - alpha;
+    let mut c = 1.0 / TINY;
+    let mut d = 1.0 / b;
+    let mut result = d;
+    for step in 1..=MAX_ITERATIONS {
+        let numerator = -(step as f64) * (step as f64 - alpha);
+        b += 2.0;
+        d = numerator * d + b;
+        if d.abs() < TINY {
+            d = TINY;
+        }
+        c = b + numerator / c;
+        if c.abs() < TINY {
+            c = TINY;
+        }
+        d = 1.0 / d;
+        let delta = d * c;
+        result *= delta;
+        if (delta - 1.0).abs() < EPSILON {
+            break;
+        }
+    }
+    result * (-value + alpha * value.ln() - ln_gamma(alpha)).exp()
+}
+
+fn regularized_gamma(alpha: f64, value: f64) -> f64 {
+    if value <= 0.0 {
+        return 0.0;
+    }
+    if value < alpha + 1.0 {
+        gamma_series(alpha, value)
+    } else {
+        1.0 - gamma_continued_fraction(alpha, value)
     }
 }
 

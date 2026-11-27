@@ -3504,6 +3504,27 @@ mod tests {
     }
 
     #[test]
+    fn gamma_dist_returns_density_or_cumulative() {
+        for (source, expected) in [
+            ("gamma.dist(1, 1, 1, 1)", "0.632121"),
+            ("gamma.dist(1, 1, 1, 0)", "0.367879"),
+            ("gamma.dist(2, 2, 1, 1)", "0.593994"),
+            ("gamma.dist(2, 2, 1, 0)", "0.270671"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "gamma.dist(-1, 1, 1, 1)",
+            "gamma.dist(1, 0, 1, 1)",
+            "gamma.dist(1, 1, 0, 1)",
+            r#"gamma.dist("x", 1, 1, 1)"#,
+            "gamma.dist(1, 1, 1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn beta_dist_returns_density_or_cumulative() {
         for (source, expected) in [
             ("beta.dist(0.5, 1, 1, 1)", "0.5"),
