@@ -920,8 +920,21 @@ fn conditional_formatting_xml(
                 continue;
             }
             "iconSet" | "iconset" => {
+                let preset = if rule.value.trim().is_empty() {
+                    "3TrafficLights1"
+                } else {
+                    match rule.value.trim() {
+                        "3TrafficLights1" | "3Symbols" | "3Arrows" | "3Arrows2" | "3Flags"
+                        | "3Stars" => rule.value.trim(),
+                        other => {
+                            return Err(invalid(&format!(
+                                "highlight iconSet preset {other:?} is not supported"
+                            )))
+                        }
+                    }
+                };
                 out.push_str(&format!(
-                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"iconSet\" priority=\"{priority}\"><iconSet iconSet=\"3TrafficLights1\"><cfvo type=\"percent\" val=\"0\"/><cfvo type=\"percent\" val=\"33\"/><cfvo type=\"percent\" val=\"67\"/></iconSet></cfRule></conditionalFormatting>",
+                    "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"iconSet\" priority=\"{priority}\"><iconSet iconSet=\"{preset}\"><cfvo type=\"percent\" val=\"0\"/><cfvo type=\"percent\" val=\"33\"/><cfvo type=\"percent\" val=\"67\"/></iconSet></cfRule></conditionalFormatting>",
                     col = column_name(column),
                     priority = index + 1,
                 ));
@@ -2396,6 +2409,12 @@ mod tests {
             },
             ConditionalRule {
                 column: "amount".into(),
+                operator: "iconSet".into(),
+                value: "3Symbols".into(),
+                color: String::new(),
+            },
+            ConditionalRule {
+                column: "amount".into(),
                 operator: "today".into(),
                 value: String::new(),
                 color: "olive".into(),
@@ -2443,6 +2462,7 @@ mod tests {
         assert!(sheet.contains("type=\"uniqueValues\""), "{sheet}");
         assert!(sheet.contains("type=\"iconSet\""), "{sheet}");
         assert!(sheet.contains("iconSet=\"3TrafficLights1\""), "{sheet}");
+        assert!(sheet.contains("iconSet=\"3Symbols\""), "{sheet}");
         assert!(sheet.contains("type=\"timePeriod\""), "{sheet}");
         assert!(sheet.contains("timePeriod=\"today\""), "{sheet}");
         assert!(sheet.contains("FLOOR(B2,1)=TODAY()"), "{sheet}");
