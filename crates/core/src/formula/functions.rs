@@ -5817,6 +5817,9 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             if !number.is_finite() || !decimals.is_finite() {
                 return Value::Error;
             }
+            if lower == "dollar" && (decimals.fract() != 0.0 || !(0.0..=4.0).contains(&decimals)) {
+                return Value::Error;
+            }
             let decimals = decimals.trunc() as i32;
             if !(-15..=15).contains(&decimals) {
                 return Value::Error;

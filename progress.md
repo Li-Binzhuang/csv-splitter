@@ -284,9 +284,11 @@
   测试 `textjoin_char_and_code_work_like_a_spreadsheet`。
 - [x] 项353 SEARCH 通配符（功能级）：`*`/`?`/`~` 转义，Unicode 折叠；
   测试 `search_folds_unicode_case_and_keeps_positions`。
-- [ ] 项354 DOLLAR 小数位校验（功能级）：decimals 0–4、整数；
-  验收：单测 + gate。
+- [x] 项354 DOLLAR 小数位校验（功能级）：decimals 须整数 0–4；
+  测试 `fixed_dollar_and_numbervalue_work`。
 - [ ] 项355 XLOOKUP 通配符匹配（功能级）：match_mode 2 支持 `*`/`?`；
+  验收：单测 + gate。
+- [ ] 项356 MATCH 通配符（功能级）：精确匹配支持 `*`/`?`；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -569,6 +571,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 378（项354 DOLLAR 小数位，功能级）：0–4 整数；
+定向与全量 gate/package 通过；发布包 SHA `38f72b0d…c3cea7b2`；
+轮首 push 成功，本轮不再 push。
 
 Round 377（项353 SEARCH 通配符，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `1db11615…565126d5`；

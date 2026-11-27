@@ -2410,6 +2410,14 @@ mod tests {
         assert_eq!(eval_str("dollar(1234.5678)", &[]), "$1,234.57");
         assert_eq!(eval_str("dollar(-1234.5678)", &[]), "($1,234.57)");
         assert_eq!(eval_str("dollar(1234.5678, 0)", &[]), "$1,235");
+        assert_eq!(eval_str("dollar(1234.5678, 4)", &[]), "$1,234.5678");
+        for source in [
+            "dollar(1234.5678, 5)",
+            "dollar(1234.5678, -1)",
+            "dollar(1234.5678, 1.5)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
         assert_eq!(
             eval_str(r#"numbervalue("1.234,56", ",", ".")"#, &[]),
             "1234.56"
