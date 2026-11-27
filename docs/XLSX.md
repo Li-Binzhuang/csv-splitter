@@ -80,7 +80,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
   不是静态涂色；
 - `--no-freeze` 省略表头冻结行；
 - `--no-auto-filter` 省略表头筛选；
-- `--data-validation` 写下拉列表，格式 `列:值1,值2,值3`；
+- `--data-validation` 写下拉列表，格式 `列:值1,值2,值3`；重复列/空列表/非 xlsx 退出 2；
 - 目录→workbook 不支持 `--highlight`。
 
 ## 尚未实现

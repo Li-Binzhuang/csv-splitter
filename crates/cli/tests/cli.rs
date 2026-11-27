@@ -2691,6 +2691,51 @@ fn convert_xlsx_can_add_data_validation() {
 }
 
 #[test]
+fn convert_rejects_bad_data_validation() {
+    let dir = TempDir::new("xlsxvalidationbad");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,status\n1,good\n").unwrap();
+    for spec in ["status:good,ok;status:bad", "status:", "status:,,"] {
+        let output = dir.join("bad.xlsx");
+        let out = Command::new(bin())
+            .args([
+                "convert",
+                input.to_str().unwrap(),
+                "--format",
+                "xlsx",
+                "--out",
+                output.to_str().unwrap(),
+                "--data-validation",
+                spec,
+            ])
+            .output()
+            .unwrap();
+        assert_eq!(out.status.code(), Some(2), "{spec}");
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert!(stderr.contains("data validation"), "{spec}: {stderr}");
+    }
+    let out = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "csv",
+            "--out",
+            dir.join("plain.csv").to_str().unwrap(),
+            "--data-validation",
+            "status:good,ok",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+    assert!(
+        String::from_utf8_lossy(&out.stderr).contains("only valid with --format xlsx"),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+}
+
+#[test]
 fn convert_xlsx_can_highlight_a_top_rank() {
     let dir = TempDir::new("xlsxtop");
     let input = dir.join("t.csv");
