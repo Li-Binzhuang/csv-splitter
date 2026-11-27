@@ -6759,6 +6759,14 @@ mod tests {
             "an instance past the hit count leaves the text unchanged"
         );
         assert_eq!(eval_str("substitute('a-b-c', '-', '+', 0)", &[]), "#VALUE!");
+        assert_eq!(
+            eval_str("substitute('a-b-c', '-', '+', 1.5)", &[]),
+            "#VALUE!"
+        );
+        assert_eq!(
+            eval_str("substitute('a-b-c', '-', '+', 'x')", &[]),
+            "#VALUE!"
+        );
         assert_eq!(eval_str("replace('a-b-c', 3, 1, '+')", &[]), "a-+-c");
         assert_eq!(eval_str("replace('abcdef', 2, 3, 'XY')", &[]), "aXYef");
         assert_eq!(eval_str("replace('abc', 0, 1, 'x')", &[]), "#VALUE!");

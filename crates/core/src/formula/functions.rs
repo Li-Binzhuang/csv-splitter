@@ -5961,11 +5961,16 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             if old_text.is_empty() {
                 return Value::Text(text);
             }
-            let instance = match args.get(3).and_then(|a| eval(a, ctx).number()) {
-                Some(number) if number.is_finite() && number >= 1.0 => {
-                    Some(number.trunc() as usize)
+            let instance = match args.get(3) {
+                Some(arg) => {
+                    let Some(number) = eval(arg, ctx).number() else {
+                        return Value::Error;
+                    };
+                    if !number.is_finite() || number.fract() != 0.0 || number < 1.0 {
+                        return Value::Error;
+                    }
+                    Some(number as usize)
                 }
-                Some(_) => return Value::Error,
                 None => None,
             };
             let Some(instance) = instance else {
