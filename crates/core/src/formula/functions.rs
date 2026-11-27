@@ -2467,6 +2467,46 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number(total)
         }
+        // STDEVA/VARA: sample statistics with text=0 and logical TRUE/FALSE=1/0.
+        "stdeva" | "vara" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(Expr::Range { from, to }) = args.first() else {
+                return Value::Error;
+            };
+            let Some(cells) = range_cells(from, to, ctx) else {
+                return Value::Error;
+            };
+            let mut values = Vec::new();
+            for cell in cells {
+                let text = cell.trim();
+                if text.is_empty() {
+                    continue;
+                }
+                let value = match text.parse::<f64>() {
+                    Ok(value) if value.is_finite() => value,
+                    _ if text.eq_ignore_ascii_case("true") => 1.0,
+                    _ if text.eq_ignore_ascii_case("false") => 0.0,
+                    _ => 0.0,
+                };
+                values.push(value);
+            }
+            if values.len() < 2 {
+                return Value::Error;
+            }
+            let mean = values.iter().sum::<f64>() / values.len() as f64;
+            let variance = values
+                .iter()
+                .map(|value| (value - mean).powi(2))
+                .sum::<f64>()
+                / (values.len() - 1) as f64;
+            Value::Number(if lower == "vara" {
+                variance
+            } else {
+                variance.sqrt()
+            })
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

@@ -3504,6 +3504,45 @@ mod tests {
     }
 
     #[test]
+    fn stdeva_and_vara_treat_text_as_zero() {
+        let columns = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let mut cells = HashMap::new();
+        cells.insert("a".to_string(), "1".to_string());
+        cells.insert("b".to_string(), "2".to_string());
+        cells.insert("c".to_string(), "3".to_string());
+        cells.insert("d".to_string(), "text".to_string());
+        for (source, expected) in [("stdeva(A2:D2)", "1.290994"), ("vara(A2:D2)", "1.666667")] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        let formula = Formula::parse("stdeva(A2:A2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+        let formula = Formula::parse("stdeva(A2:D2, 1)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+    }
+
+    #[test]
     fn seriessum_sums_powers() {
         let columns = vec!["a".to_string(), "b".to_string(), "c".to_string()];
         let mut cells = HashMap::new();

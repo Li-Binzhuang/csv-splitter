@@ -129,6 +129,7 @@
 | SLN / SYD | 支持（功能级新增） | 直线/年数总和折旧；life≤0、period 越界/非整数 `#VALUE!` |
 | DB / DDB / VDB | 支持（功能级新增） | 固定/双倍/变动余额递减；区间、月数、因子非法 `#VALUE!` |
 | FVSCHEDULE | 支持（功能级新增） | 复利 schedule 区间；空区间/rate≤-1 `#VALUE!` |
+| STDEVA / VARA | 支持（功能级新增） | 文本按 0、TRUE/FALSE 按 1/0；样本不足 `#VALUE!` |
 | SERIESSUM | 支持（功能级新增） | 系数同行区间；空区间/非数值 `#VALUE!` |
 | FISHER / FISHERINV | 支持（功能级新增） | x 必须 (-1,1)；非有限值 `#VALUE!` |
 | MIRR | 支持（功能级新增） | 正负现金流、finance/reinvest >-1；不合法 `#VALUE!` |
