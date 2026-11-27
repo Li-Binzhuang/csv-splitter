@@ -3504,6 +3504,26 @@ mod tests {
     }
 
     #[test]
+    fn chisq_dist_returns_density_or_cumulative() {
+        for (source, expected) in [
+            ("chisq.dist(0, 1, 1)", "0"),
+            ("chisq.dist(1, 1, 1)", "0.682689"),
+            ("chisq.dist(2, 2, 1)", "0.632121"),
+            ("chisq.dist(1, 1, 0)", "0.241971"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "chisq.dist(-1, 1, 1)",
+            "chisq.dist(1, 0, 1)",
+            r#"chisq.dist("x", 1, 1)"#,
+            "chisq.dist(1, 1)",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn gamma_dist_returns_density_or_cumulative() {
         for (source, expected) in [
             ("gamma.dist(1, 1, 1, 1)", "0.632121"),
