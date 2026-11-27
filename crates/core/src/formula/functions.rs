@@ -7551,17 +7551,45 @@ fn exact_position(lookup: &Value, cells: &[&str]) -> Option<usize> {
 }
 
 fn approximate_position(lookup: &Value, cells: &[&str], mode: f64) -> Option<usize> {
-    let target = match lookup {
-        Value::Number(number) => *number,
-        Value::Text(text) => text.trim().parse::<f64>().ok()?,
+    let numeric_target = match lookup {
+        Value::Number(number) => Some(*number),
+        Value::Text(text) => text.trim().parse::<f64>().ok(),
         _ => return None,
     };
-    let mut candidates: Vec<(usize, f64)> = cells
+    if let Some(target) = numeric_target {
+        let mut candidates: Vec<(usize, f64)> = cells
+            .iter()
+            .enumerate()
+            .filter_map(|(index, cell)| cell.trim().parse::<f64>().ok().map(|value| (index, value)))
+            .collect();
+        candidates.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
+        if mode > 0.0 {
+            let mut best = None;
+            for (index, value) in candidates {
+                if value <= target {
+                    best = Some(index);
+                }
+            }
+            return best;
+        }
+        for (index, value) in candidates {
+            if value >= target {
+                return Some(index);
+            }
+        }
+        return None;
+    }
+    let Value::Text(text) = lookup else {
+        return None;
+    };
+    let target = text.trim().to_lowercase();
+    let mut candidates: Vec<(usize, String)> = cells
         .iter()
         .enumerate()
-        .filter_map(|(index, cell)| cell.trim().parse::<f64>().ok().map(|value| (index, value)))
+        .filter(|(_, cell)| cell.trim().parse::<f64>().is_err())
+        .map(|(index, cell)| (index, cell.trim().to_lowercase()))
         .collect();
-    candidates.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
+    candidates.sort_by(|a, b| a.1.cmp(&b.1));
     if mode > 0.0 {
         let mut best = None;
         for (index, value) in candidates {
@@ -7571,12 +7599,10 @@ fn approximate_position(lookup: &Value, cells: &[&str], mode: f64) -> Option<usi
         }
         best
     } else {
-        for (index, value) in candidates {
-            if value >= target {
-                return Some(index);
-            }
-        }
-        None
+        candidates
+            .into_iter()
+            .find(|(_, value)| value >= &target)
+            .map(|(index, _)| index)
     }
 }
 

@@ -80,7 +80,7 @@
 | XLOOKUP | 支持（受限） | 显式 `("sheet.csv","key","value")` 引用；fallback；match_mode 2 通配符 |
 | VLOOKUP / REF | 支持（受限） | 显式引用；可选 match_mode 2 通配符；未命中 `#N/A` |
 | CHOOSE | 首批补齐 | 1-based 序号；越界 `#VALUE!` |
-| INDEX / MATCH / XMATCH | 支持（受限） | 同行区间；MATCH 0/±1；MATCH/XMATCH 通配符；XMATCH 2；跨行报错 |
+| INDEX / MATCH / XMATCH | 支持（受限） | 同行区间；MATCH 0/±1（数值+文本近似）；通配符；XMATCH 2 |
 | HLOOKUP / LOOKUP | 支持（受限） | HLOOKUP 同行单行、row_index=1、精确含通配符；LOOKUP 向量等宽 |
 | OFFSET / INDIRECT | 不做 | 动态引用会破坏预加载与可预测性 |
 

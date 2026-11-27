@@ -296,9 +296,11 @@
   测试 `index_match_and_xmatch_read_a_same_row_range`。
 - [x] 项359 HLOOKUP 通配符（功能级）：精确模式支持 `*`/`?`/`~`；
   测试 `hlookup_and_lookup_read_single_row_tables`。
-- [ ] 项360 MATCH 近似文本（功能级）：MATCH 文本近似按字典序；
-  验收：单测 + gate。
+- [x] 项360 MATCH 近似文本（功能级）：文本候选按字典序，大小写不敏感；
+  测试 `index_match_and_xmatch_read_a_same_row_range`。
 - [ ] 项361 XLOOKUP match_mode 1 近似（功能级）：近似匹配；
+  验收：单测 + gate。
+- [ ] 项362 LOOKUP 文本近似（功能级）：向量 LOOKUP 文本候选；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -581,6 +583,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 384（项360 MATCH 近似文本，功能级）；
+定向与全量 gate/package 通过（首跑 agent 9/1，重跑通过）；
+发布包 SHA `4dc0f490…7c177ddd`；轮首 push 成功，本轮不再 push。
 
 Round 383（项359 HLOOKUP 通配符，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `0496219b…12577a00`；
