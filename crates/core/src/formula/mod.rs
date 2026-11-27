@@ -3504,6 +3504,30 @@ mod tests {
     }
 
     #[test]
+    fn roman_and_arabic_round_trip() {
+        for (source, expected) in [
+            ("roman(4)", "IV"),
+            ("roman(1999)", "MCMXCIX"),
+            ("roman(0)", "0"),
+            ("roman(4, 4)", "IV"),
+            (r#"arabic("MCMXCIX")"#, "1999"),
+            (r#"arabic("iv")"#, "4"),
+            (r#"arabic("")"#, "0"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            "roman(4000)",
+            "roman(4, 5)",
+            "roman(4.5)",
+            r#"arabic("ABC")"#,
+            "arabic()",
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn encodeurl_percent_encodes_text() {
         for (source, expected) in [
             (r#"encodeurl("Hello World")"#, "Hello%20World"),

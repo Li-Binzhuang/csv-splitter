@@ -2703,6 +2703,39 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Text(encoded)
         }
+        // ROMAN/ARABIC: convert integers 0..3999 to and from Roman numerals.
+        "roman" | "arabic" => {
+            if args.is_empty() || args.len() > 2 {
+                return Value::Error;
+            }
+            if lower == "roman" {
+                let Some(number) = eval(&args[0], ctx).number() else {
+                    return Value::Error;
+                };
+                let form = args
+                    .get(1)
+                    .map(|arg| eval(arg, ctx).number())
+                    .unwrap_or(Some(0.0))
+                    .unwrap_or(f64::NAN);
+                if !number.is_finite() || number.trunc() != number || !form.is_finite() {
+                    return Value::Error;
+                }
+                if !(0.0..=3999.0).contains(&number) || !(0.0..=4.0).contains(&form) {
+                    return Value::Error;
+                }
+                Value::Text(to_roman(number as u32))
+            } else {
+                if args.len() != 1 {
+                    return Value::Error;
+                }
+                let text = eval(&args[0], ctx).text();
+                let text = text.trim();
+                if text.is_empty() || text == "0" {
+                    return Value::Number(0.0);
+                }
+                from_roman(text).map_or(Value::Error, |value| Value::Number(value as f64))
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
@@ -4527,6 +4560,59 @@ fn pearson_correlation(y: &[f64], x: &[f64]) -> Option<f64> {
         return None;
     }
     Some(sum_xy / (sum_xx * sum_yy).sqrt())
+}
+
+fn to_roman(mut number: u32) -> String {
+    if number == 0 {
+        return "0".to_string();
+    }
+    const TABLE: [(u32, &str); 13] = [
+        (1000, "M"),
+        (900, "CM"),
+        (500, "D"),
+        (400, "CD"),
+        (100, "C"),
+        (90, "XC"),
+        (50, "L"),
+        (40, "XL"),
+        (10, "X"),
+        (9, "IX"),
+        (5, "V"),
+        (4, "IV"),
+        (1, "I"),
+    ];
+    let mut result = String::new();
+    for (value, numeral) in TABLE {
+        while number >= value {
+            result.push_str(numeral);
+            number -= value;
+        }
+    }
+    result
+}
+
+fn from_roman(text: &str) -> Option<u32> {
+    let mut total = 0i32;
+    let mut previous = 0i32;
+    for character in text.chars().rev() {
+        let value = match character.to_ascii_uppercase() {
+            'I' => 1,
+            'V' => 5,
+            'X' => 10,
+            'L' => 50,
+            'C' => 100,
+            'D' => 500,
+            'M' => 1000,
+            _ => return None,
+        };
+        if value < previous {
+            total -= value;
+        } else {
+            total += value;
+            previous = value;
+        }
+    }
+    u32::try_from(total).ok().filter(|value| *value <= 3999)
 }
 
 fn linear_regression(y: &[f64], x: &[f64]) -> Option<(f64, f64)> {
