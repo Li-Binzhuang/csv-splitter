@@ -2978,6 +2978,27 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 ))
             }
         }
+        // IMSQRT: principal square root of a complex number.
+        "imsqrt" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let text = eval(&args[0], ctx).text();
+            let Some((real, imaginary, suffix)) = parse_complex(&text) else {
+                return Value::Error;
+            };
+            let magnitude = (real * real + imaginary * imaginary).sqrt();
+            if magnitude == 0.0 {
+                return Value::Number(0.0);
+            }
+            let root = magnitude.sqrt();
+            let angle = imaginary.atan2(real) / 2.0;
+            Value::Text(format_complex(
+                root * angle.cos(),
+                root * angle.sin(),
+                &suffix,
+            ))
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
@@ -4892,6 +4913,12 @@ fn format_number(value: f64) -> String {
 }
 
 fn format_complex(real: f64, imaginary: f64, suffix: &str) -> String {
+    let real = if real.abs() < 1e-12 { 0.0 } else { real };
+    let imaginary = if imaginary.abs() < 1e-12 {
+        0.0
+    } else {
+        imaginary
+    };
     if imaginary == 0.0 {
         return format_number(real);
     }

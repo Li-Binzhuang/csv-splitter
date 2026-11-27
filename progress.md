@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项198 复数二进制对数（功能级）：`IMLOG2`；零/非法复数
+  `#VALUE!`；验收：单测 + gate。
 - [ ] 项197 复数自然对数（功能级）：`IMLN`；零/非法复数
   `#VALUE!`；验收：单测 + gate。
 - [ ] 项196 复数乘幂（功能级）：`IMPOWER(inumber, power)`；非法复数/
   零的负幂 `#VALUE!`；验收：单测 + gate。
-- [ ] 项195 复数平方根（功能级）：`IMSQRT`；零/非法复数
-  `#VALUE!`；验收：单测 + gate。
+- [x] 项195 复数平方根（功能级）：`IMSQRT`；主平方根/零复数；
+  测试 `complex_square_root_work`。
 - [x] 项194 复数指数对数（功能级）：`IMEXP`/`IMLOG10`；零复数 log
   `#VALUE!`；测试 `complex_exponential_and_log_work`。
 - [x] 项193 复数极坐标（功能级）：`IMCONJUGATE`/`IMARGUMENT`；零复数
@@ -257,6 +259,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 222（项195 IMSQRT，功能级）：主平方根、零复数与负实数；
+定向与全量 gate/package 通过；发布包 SHA `b2dc6069…f934b8f`；
+push 已在轮首成功，本轮不再 push。
 
 Round 221（项194 IMEXP/IMLOG10，功能级）：复数指数与对数、零复数边界；
 定向与全量 gate/package 通过；发布包 SHA `cb4009c4…f8ddd1`；

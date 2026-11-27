@@ -3504,6 +3504,22 @@ mod tests {
     }
 
     #[test]
+    fn complex_square_root_work() {
+        for (source, expected) in [
+            (r#"imsqrt("4+0i")"#, "2"),
+            (r#"imsqrt("9+0i")"#, "3"),
+            (r#"imsqrt("0+0i")"#, "0"),
+            (r#"imsqrt("-4+0i")"#, "2i"),
+            (r#"imsqrt("0+4i")"#, "1.4142135623730951+1.414213562373095i"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [r#"imsqrt("abc")"#, "imsqrt()"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn complex_exponential_and_log_work() {
         for (source, expected) in [
             (r#"imexp("0")"#, "1"),
