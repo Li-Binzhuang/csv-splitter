@@ -6683,14 +6683,24 @@ fn multi_range(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
 }
 
 fn text_slice(args: &[Expr], ctx: &Ctx<'_>, take: impl Fn(&str, usize) -> String) -> Value {
+    if args.len() > 2 {
+        return Value::Error;
+    }
     let Some(text) = args.first().map(|a| eval(a, ctx).text()) else {
         return Value::Error;
     };
-    let count = args
-        .get(1)
-        .and_then(|a| eval(a, ctx).number())
-        .unwrap_or(1.0)
-        .max(0.0) as usize;
+    let count = match args.get(1) {
+        Some(arg) => {
+            let Some(number) = eval(arg, ctx).number() else {
+                return Value::Error;
+            };
+            if !number.is_finite() || number.fract() != 0.0 || number < 0.0 {
+                return Value::Error;
+            }
+            number as usize
+        }
+        None => 1,
+    };
     Value::Text(take(&text, count))
 }
 

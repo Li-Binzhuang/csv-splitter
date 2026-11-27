@@ -3418,6 +3418,30 @@ mod tests {
     }
 
     #[test]
+    fn left_right_validate_length() {
+        for (source, expected) in [
+            (r#"left("abc", 2)"#, "ab"),
+            (r#"right("abc", 2)"#, "bc"),
+            (r#"left("abc")"#, "a"),
+            (r#"right("abc")"#, "c"),
+            (r#"left("abc", 0)"#, ""),
+            (r#"right("abc", 0)"#, ""),
+            (r#"left("abc", 9)"#, "abc"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [
+            r#"left("abc", -1)"#,
+            r#"right("abc", -1)"#,
+            r#"left("abc", 1.5)"#,
+            r#"right("abc", "x")"#,
+            r#"left("abc", 1, 2)"#,
+        ] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn mid_validates_start_and_length() {
         for (source, expected) in [
             (r#"mid("abc", 2, 2)"#, "bc"),
