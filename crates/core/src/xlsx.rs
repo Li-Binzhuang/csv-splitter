@@ -333,6 +333,7 @@ pub fn csv_to_xlsx_with_all(
     validations: &[DataValidation],
     freeze_header: bool,
     auto_filter: bool,
+    protect: bool,
 ) -> std::io::Result<()> {
     let result = csv_to_xlsx_inner(
         input,
@@ -344,7 +345,7 @@ pub fn csv_to_xlsx_with_all(
         validations,
         freeze_header,
         auto_filter,
-        false,
+        protect,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);

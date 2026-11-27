@@ -73,7 +73,8 @@ csvx convert data.csv --format xlsx -o data.xlsx \
   --data-validation "status:good,ok,bad" \
   --data-validation-prompt "status:Status|Choose one" \
   --data-validation-error "status:Bad status|Pick good or ok" \
-  --data-validation-blank
+  --data-validation-blank \
+  --protect-sheet
 ```
 
 - 规则用 `;` 分隔，每条 `列 操作符 值 : 颜色`；
@@ -87,6 +88,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 - `--data-validation-prompt` 写选中提示，格式 `列:标题|正文`；列须已有验证；
 - `--data-validation-error` 写错误提示，格式同上；
 - `--data-validation-blank` 允许空白单元格通过验证；
+- `--protect-sheet` 写工作表保护（对象/场景受限，不设密码）；
   缺失验证/缺 `|`/重复列/非 xlsx 均退出 2；
 - 目录→workbook 不支持 `--highlight`。
 

@@ -261,6 +261,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut no_auto_filter = false;
     let mut data_validation: Option<String> = None;
     let mut data_validation_blank = false;
+    let mut protect_sheet = false;
     let mut data_validation_prompt: Option<String> = None;
     let mut data_validation_error: Option<String> = None;
     let mut show_formats = false;
@@ -302,6 +303,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 }
             },
             "--data-validation-blank" => data_validation_blank = true,
+            "--protect-sheet" => protect_sheet = true,
             "--data-validation-prompt" => match p.value("--data-validation-prompt") {
                 Ok(v) => data_validation_prompt = Some(v),
                 Err(e) => {
@@ -663,6 +665,10 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             validation.error_title = (!title.is_empty()).then_some(title);
             validation.error_message = (!message.is_empty()).then_some(message);
         }
+        if protect_sheet && !target.eq_ignore_ascii_case("xlsx") {
+            eprintln!("error: --protect-sheet is only valid with --format xlsx");
+            return 2;
+        }
         let input_name = input
             .file_name()
             .and_then(|name| name.to_str())
@@ -794,7 +800,8 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             || no_auto_filter
             || !column_formats.is_empty()
             || !rules.is_empty()
-            || !data_validations.is_empty();
+            || !data_validations.is_empty()
+            || protect_sheet;
         let result = if xlsx_options {
             csvx_core::xlsx::csv_to_xlsx_with_all(
                 &input,
@@ -806,6 +813,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 &data_validations,
                 !no_freeze,
                 !no_auto_filter,
+                protect_sheet,
             )
         } else {
             csvx_core::engine::convert_format(&input, &out, &target, delimiter, &tx)
