@@ -6544,7 +6544,19 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 }
             }
             if mode == 0.0 {
-                return match exact_position(&lookup, &cells) {
+                let wildcard = match &lookup {
+                    Value::Text(text) if text.chars().any(|ch| matches!(ch, '*' | '?' | '~')) => {
+                        Some(text.as_str())
+                    }
+                    _ => None,
+                };
+                let position = match wildcard {
+                    Some(pattern) => cells
+                        .iter()
+                        .position(|cell| wildcard_key_matches(cell, pattern)),
+                    None => exact_position(&lookup, &cells),
+                };
+                return match position {
                     Some(position) => Value::Number((position + 1) as f64),
                     None => Value::Text("#N/A".to_string()),
                 };
