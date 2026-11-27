@@ -326,6 +326,7 @@ fn is_date_time_pattern(spec: &str) -> bool {
             | "m/d/yyyy"
             | "d/m/yyyy"
             | "m/d/yy"
+            | "mm/dd/yy"
             | "m/d/yy h:mm"
             | "m/d/yy h:mm:ss"
             | "m/d/yy h:mm am/pm"
@@ -436,6 +437,10 @@ fn render_date_time(pattern: &str, value: &str) -> Option<String> {
         "m/d/yy" => {
             let (year, month, day) = date_parts?;
             Some(format!("{month}/{day}/{}", year % 100))
+        }
+        "mm/dd/yy" => {
+            let (year, month, day) = date_parts?;
+            Some(format!("{month:02}/{day:02}/{:02}", year % 100))
         }
         "yyyy/m/d" => {
             let (year, month, day) = date_parts?;
@@ -914,6 +919,9 @@ mod tests {
         assert_eq!(short_year.name(), "m/d/yy");
         assert_eq!(short_year.render("2024-01-02"), "1/2/24");
         assert_eq!(short_year.render("1999-12-31"), "12/31/99");
+        let padded_short = NumberFormat::parse("mm/dd/yy").unwrap();
+        assert_eq!(padded_short.name(), "mm/dd/yy");
+        assert_eq!(padded_short.render("2024-01-02"), "01/02/24");
         let day_first = NumberFormat::parse("d/m/yyyy").unwrap();
         assert_eq!(day_first.name(), "d/m/yyyy");
         assert_eq!(day_first.render("2024-01-02"), "2/1/2024");
