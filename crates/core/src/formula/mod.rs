@@ -3311,6 +3311,23 @@ mod tests {
     }
 
     #[test]
+    fn textbefore_after_support_if_not_found() {
+        for (source, expected) in [
+            (r#"textbefore("a-b", "-", 1, "missing")"#, "a"),
+            (r#"textafter("a-b", "-", 1, "missing")"#, "b"),
+            (r#"textbefore("abc", "-", 1, "missing")"#, "missing"),
+            (r#"textafter("abc", "-", 1, "missing")"#, "missing"),
+            (r#"textbefore("abc", "-", 1, 0)"#, "0"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [r#"textbefore("abc", "-")"#, r#"textafter("abc", "-")"#] {
+            assert_eq!(eval_str(source, &[]), "#N/A", "{source}");
+        }
+        assert_eq!(eval_str(r#"textbefore("a-b", "-", 2, "x")"#, &[]), "x");
+    }
+
+    #[test]
     fn textsplit_returns_first_segment() {
         for (source, expected) in [
             (r#"textsplit("a,b,c", ",")"#, "a"),

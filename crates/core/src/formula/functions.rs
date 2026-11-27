@@ -6697,6 +6697,9 @@ fn percentile_of(values: &[f64], p: f64) -> Option<f64> {
 }
 
 fn text_around(args: &[Expr], ctx: &Ctx<'_>, before: bool) -> Value {
+    if args.len() > 4 {
+        return Value::Error;
+    }
     let Some(text) = args.first().map(|a| eval(a, ctx).text()) else {
         return Value::Error;
     };
@@ -6713,6 +6716,11 @@ fn text_around(args: &[Expr], ctx: &Ctx<'_>, before: bool) -> Value {
     if instance < 1.0 || !instance.is_finite() {
         return Value::Error;
     }
+    let if_not_found = args.get(3).map(|arg| eval(arg, ctx).text());
+    let miss = || match &if_not_found {
+        Some(text) => Value::Text(text.clone()),
+        None => Value::Text("#N/A".to_string()),
+    };
     let mut cursor = 0usize;
     let mut where_delimiter = None;
     for _ in 0..instance as usize {
@@ -6721,13 +6729,13 @@ fn text_around(args: &[Expr], ctx: &Ctx<'_>, before: bool) -> Value {
                 where_delimiter = Some(cursor + index);
                 cursor += index + delimiter.len();
             }
-            None => return Value::Text("#N/A".to_string()),
+            None => return miss(),
         }
     }
     match where_delimiter {
         Some(index) if before => Value::Text(text[..index].to_string()),
         Some(index) => Value::Text(text[index + delimiter.len()..].to_string()),
-        None => Value::Text("#N/A".to_string()),
+        None => miss(),
     }
 }
 

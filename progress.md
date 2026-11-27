@@ -118,8 +118,9 @@
   单行等长区间、df=n-1；非法参数 `#VALUE!`；测试 `chisq_test_returns_goodness_of_fit_pvalue`。
 - [x] 项272 文本拆分（功能级）：`TEXTSPLIT(text, delimiter)`；
   返回首个分隔片段（标量引擎限制）；空分隔符/缺参 `#VALUE!`；测试 `textsplit_returns_first_segment`。
-- [ ] 项273 查找未命中回退（功能级）：`TEXTBEFORE`/`TEXTAFTER` 支持 `if_not_found`；
-  未命中返回回退值；空参数/非法类型 `#VALUE!`；验收：单测 + gate。
+- [x] 项273 查找未命中回退（功能级）：`TEXTBEFORE`/`TEXTAFTER` 支持 `if_not_found`；
+  未命中返回回退值；测试 `textbefore_after_support_if_not_found`。
+- [ ] 项274 xlsx 导出数字格式保真（功能级）：导出样式映射已有数字格式，round-trip 测试；验收：单测 + gate。
 - [ ] 项264 精确伽马对数（功能级）：`GAMMALN.PRECISE(x)`；
   非正/非有限 `#VALUE!`；验收：单测 + gate。
 - [x] 项263 逻辑/非文本判断（功能级）：`ISLOGICAL`/`ISNONTEXT`；
@@ -409,6 +410,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 298（项273 TEXTBEFORE/TEXTAFTER if_not_found，功能级）：未命中回退、参数边界；
+定向与全量 gate/package 通过；发布包 SHA `82b7db4e…b9e30d67`；
+push 已在轮首成功，本轮不再 push。
 
 Round 297（项272 TEXTSPLIT，功能级）：首分隔片段、空分隔符；
 定向与全量 gate/package 通过；发布包 SHA `bd1e34d2…4a492e38`；
