@@ -2419,6 +2419,18 @@ mod tests {
                 value: String::new(),
                 color: "olive".into(),
             },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "last7Days".into(),
+                value: String::new(),
+                color: "maroon".into(),
+            },
+            ConditionalRule {
+                column: "amount".into(),
+                operator: "last30Days".into(),
+                value: String::new(),
+                color: "silver".into(),
+            },
         ];
         let (tx, _rx) = std::sync::mpsc::channel();
         csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
@@ -2466,6 +2478,16 @@ mod tests {
         assert!(sheet.contains("type=\"timePeriod\""), "{sheet}");
         assert!(sheet.contains("timePeriod=\"today\""), "{sheet}");
         assert!(sheet.contains("FLOOR(B2,1)=TODAY()"), "{sheet}");
+        assert!(sheet.contains("timePeriod=\"last7Days\""), "{sheet}");
+        assert!(
+            sheet.contains("AND(FLOOR(B2,1)>TODAY()-7,FLOOR(B2,1)<=TODAY())"),
+            "{sheet}"
+        );
+        assert!(sheet.contains("timePeriod=\"last30Days\""), "{sheet}");
+        assert!(
+            sheet.contains("AND(FLOOR(B2,1)>TODAY()-30,FLOOR(B2,1)<=TODAY())"),
+            "{sheet}"
+        );
 
         let bad = vec![ConditionalRule {
             column: "amount".into(),
