@@ -1442,6 +1442,49 @@ mod tests {
     }
 
     #[test]
+    fn geometric_and_harmonic_means_work() {
+        let columns = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        let mut cells = HashMap::new();
+        for (name, value) in [("a", "1"), ("b", "4"), ("c", "16")] {
+            cells.insert(name.to_string(), value.to_string());
+        }
+        for (source, expected) in [
+            ("geomean(A2:C2)", "4"),
+            ("harmean(A2:C2)", "2.285714"),
+            ("geomean(A2:A2)", "1"),
+            ("harmean(A2:A2)", "1"),
+        ] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                expected,
+                "{source}"
+            );
+        }
+        cells.insert("c".to_string(), "0".to_string());
+        for source in ["geomean(A2:C2)", "harmean(A2:C2)"] {
+            let formula = Formula::parse(source).unwrap();
+            assert_eq!(
+                formula
+                    .eval_at(&cells, &columns, &Refs::default(), 1)
+                    .render(),
+                "#VALUE!",
+                "{source}"
+            );
+        }
+        cells.insert("c".to_string(), "-1".to_string());
+        let formula = Formula::parse("geomean(A2:C2)").unwrap();
+        assert_eq!(
+            formula
+                .eval_at(&cells, &columns, &Refs::default(), 1)
+                .render(),
+            "#VALUE!"
+        );
+    }
+
+    #[test]
     fn skew_and_kurtosis_measure_distribution_shape() {
         let columns = vec![
             "a".to_string(),

@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项166 相关系数（功能级）：`PEARSON(known_y, known_x)`/`RSQ(...)`；
+  同行等长、零方差 `#VALUE!`；验收：单测 + gate。
 - [ ] 项165 线性回归（功能级）：`SLOPE(known_y, known_x)`/
   `INTERCEPT(known_y, known_x)`；同行等长区间、零方差 `#VALUE!`；验收：单测 + gate。
 - [ ] 项164 标准化（功能级）：`STANDARDIZE(x, mean, standard_dev)`；
   standard_dev≤0/非数值 `#VALUE!`；验收：单测 + gate。
-- [ ] 项163 几何/调和平均（功能级）：`GEOMEAN`/`HARMEAN`；同行正数样本、
-  非正数/空样本 `#VALUE!`；验收：单测 + gate。
+- [x] 项163 几何/调和平均（功能级）：`GEOMEAN`/`HARMEAN`；同行正数样本、
+  非正数/空样本 `#VALUE!`；测试 `geometric_and_harmonic_means_work`。
 - [x] 项162 偏度/峰度（功能级）：`SKEW(values)`/`KURT(values)`；同行样本、
   样本量不足/零方差 `#VALUE!`；测试
   `skew_and_kurtosis_measure_distribution_shape`。
@@ -190,6 +192,9 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 192（项163 GEOMEAN/HARMEAN，功能级）：几何/调和平均、正数样本与
+别名；定向与全量 gate/package 通过；发布包 SHA `93548d92…e7510e`。
 
 Round 191（项162 SKEW/KURT，功能级）：偏度/峰度、样本量与零方差；
 定向与全量 gate/package 通过；发布包 SHA `c8ecb898…cc038`。

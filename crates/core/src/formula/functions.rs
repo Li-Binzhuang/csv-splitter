@@ -644,7 +644,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             Value::Number((position / (values.len() - 1) as f64 * factor).trunc() / factor)
         }
         // GEOMEAN/HARMEAN over a same-row range; non-positive inputs are #VALUE!.
-        "geomean" | "harmmean" => {
+        "geomean" | "harmean" | "harmmean" => {
             let Some(Expr::Range { from, to }) = args.first() else {
                 return Value::Error;
             };
