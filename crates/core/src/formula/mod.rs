@@ -3504,6 +3504,24 @@ mod tests {
     }
 
     #[test]
+    fn hyperbolic_functions_work() {
+        for (source, expected) in [
+            ("sinh(0)", "0"),
+            ("cosh(0)", "1"),
+            ("tanh(0)", "0"),
+            ("sinh(1)", "1.175201"),
+            ("cosh(1)", "1.543081"),
+            ("tanh(1)", "0.761594"),
+            ("sinh(-1)", "-1.175201"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [r#"sinh("x")"#, "cosh()", "tanh(1, 2)"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn cot_and_acot_work() {
         for (source, expected) in [
             ("cot(1)", "0.642093"),
