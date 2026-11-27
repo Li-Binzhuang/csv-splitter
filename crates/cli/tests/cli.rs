@@ -2688,6 +2688,46 @@ fn convert_xlsx_can_highlight_a_top_rank() {
 }
 
 #[test]
+fn convert_xlsx_no_auto_filter_keeps_number_formats() {
+    let dir = TempDir::new("xlsxnoautofmt");
+    let input = dir.join("t.csv");
+    let output = dir.join("t.xlsx");
+    std::fs::write(&input, "amount,rate\n1234.5,0.123\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            output.to_str().unwrap(),
+            "--number-format",
+            "amount:#,##0.00",
+            "--no-auto-filter",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let file = std::fs::File::open(&output).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    let mut styles = String::new();
+    let mut sheet = String::new();
+    use std::io::Read as _;
+    archive
+        .by_name("xl/styles.xml")
+        .unwrap()
+        .read_to_string(&mut styles)
+        .unwrap();
+    archive
+        .by_name("xl/worksheets/sheet1.xml")
+        .unwrap()
+        .read_to_string(&mut sheet)
+        .unwrap();
+    assert!(styles.contains("formatCode=\"#,##0.00\""), "{styles}");
+    assert!(!sheet.contains("<autoFilter"), "{sheet}");
+}
+
+#[test]
 fn convert_xlsx_can_apply_per_column_number_formats() {
     let dir = TempDir::new("xlsxfmts");
     let input = dir.join("t.csv");

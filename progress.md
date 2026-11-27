@@ -460,9 +460,11 @@
   同 `convert_xlsx_no_auto_filter_keeps_highlight`。
 - [x] 项449 no-freeze + highlight 组合（功能级）：CF 保留、pane 省略；
   测试 `convert_xlsx_no_freeze_keeps_highlight`。
-- [ ] 项450 no-auto-filter + formats 组合（功能级）：格式保留、筛选省略；
-  验收：单测 + gate。
+- [x] 项450 no-auto-filter + formats 组合（功能级）：格式保留、筛选省略；
+  测试 `convert_xlsx_no_auto_filter_keeps_number_formats`。
 - [ ] 项451 CF + no-freeze + no-auto 四组合（功能级）：CI 集成；
+  验收：单测 + gate。
+- [ ] 项452 highlight + formats 组合（功能级）：CF 与数字格式共存；
   验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
@@ -761,6 +763,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 469（项450 no-auto + formats，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `e1e875e9…393d4c30`；
+轮首 push 成功，本轮不再 push。
 
 Round 468（项449 no-freeze + highlight，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `5203f146…ae55054`；
