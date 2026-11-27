@@ -1002,6 +1002,9 @@ fn conditional_formatting_xml(
                 continue;
             }
             "notContains" | "notContainsText" => {
+                if rule.value.trim().is_empty() {
+                    return Err(invalid("highlight notContainsText needs a non-empty text"));
+                }
                 let text = xml_attr(&rule.value);
                 out.push_str(&format!(
                     "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"notContainsText\" dxfId=\"{index}\" priority=\"{priority}\" operator=\"notContainsText\" text=\"{text}\"><formula>ISERROR(SEARCH(\"{text}\",{col}2))</formula></cfRule></conditionalFormatting>",
@@ -1011,6 +1014,9 @@ fn conditional_formatting_xml(
                 continue;
             }
             "contains" | "containsText" => {
+                if rule.value.trim().is_empty() {
+                    return Err(invalid("highlight containsText needs a non-empty text"));
+                }
                 let text = xml_attr(&rule.value);
                 out.push_str(&format!(
                     "<conditionalFormatting sqref=\"{col}2:{col}{last_row}\"><cfRule type=\"containsText\" dxfId=\"{index}\" priority=\"{priority}\" operator=\"containsText\" text=\"{text}\"><formula>NOT(ISERROR(SEARCH(\"{text}\",{col}2)))</formula></cfRule></conditionalFormatting>",
@@ -2592,6 +2598,19 @@ mod tests {
             .unwrap_err()
             .to_string();
         assert!(err.contains("greater than 0"), "{err}");
+
+        for operator in ["contains", "notContains"] {
+            let bad = vec![ConditionalRule {
+                column: "amount".into(),
+                operator: operator.into(),
+                value: "  ".into(),
+                color: "blue".into(),
+            }];
+            let err = csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &bad)
+                .unwrap_err()
+                .to_string();
+            assert!(err.contains("non-empty text"), "{operator}: {err}");
+        }
 
         for value in ["500", "500,1000,2000"] {
             let bad = vec![ConditionalRule {

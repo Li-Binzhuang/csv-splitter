@@ -66,12 +66,12 @@
 | 条件格式 iconSet | `--highlight` 支持 `amount:iconSet`（默认 3TrafficLights1）或 value 选 3Symbols/3Arrows/3Arrows2/3Flags/3Stars | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 duplicate/unique | `--highlight` 支持 `amount:duplicate:brown`、`unique:navy`，导出 duplicateValues/uniqueValues | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 above/belowAverage | `--highlight` 支持 `amount:aboveAverage:teal`、`belowAverage`，导出 `AVERAGE(列)` 公式 | `conditional_rules_support_top_and_bottom_ranks` |
-| 条件格式 notContainsText | `--highlight` 支持 `amount:notContains:zz:lime`，导出 `ISERROR(SEARCH(...))` | `conditional_rules_support_top_and_bottom_ranks` |
+| 条件格式 notContainsText | 支持 `amount:notContains:zz:lime`（文本非空），导出 `ISERROR(SEARCH(...))` | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 between | 支持 `between:500,1000` / `notBetween:1,10`，必须恰好两个边界，导出 cellIs 双公式 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 blank/nonblank | `--highlight` 支持 `amount:blank:gray`、`nonblank:cyan`，导出 containsBlanks/notContainsBlanks | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 begins/ends | `--highlight` 支持 `amount:beginsWith:12:purple`、`endsWith:00:orange`，导出 LEFT/RIGHT 公式 | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 dataBar | `--highlight` 支持 `amount:dataBar:#FF0000`，导出 `dataBar` 最小/最大 | `conditional_rules_support_top_and_bottom_ranks` |
-| 条件格式 containsText | `--highlight` 支持 `amount:contains:00:blue`，导出 `containsText` + `SEARCH` 公式 | `conditional_rules_support_top_and_bottom_ranks` |
+| 条件格式 containsText | 支持 `amount:contains:00:blue`（文本非空），导出 `containsText` + `SEARCH` | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 ColorScale | `--highlight` 支持 `amount:scale2:#F8696B,#63BE7B` 与 `scale3:...`，导出 `colorScale` | `conditional_rules_support_top_and_bottom_ranks` |
 | 条件格式 Top/Bottom | `--highlight` 支持 `top2`、`bottom1`、`top50%`、`bottom25%`，导出 `top10`/`bottom10`（可带 `percent`） | `conditional_rules_support_top_and_bottom_ranks` |
 | 导入格式元数据 | `xlsx_column_formats` 读 header + 首数据行样式；`convert book.xlsx --formats [--json] [--all-sheets]` 打印列格式（JSON 含 sheet/column_index） | `column_formats_are_read_back_from_export_styles`、`formats_prints_the_xlsx_header_format_codes` |
