@@ -1,0 +1,27 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "bb26f6be018c29159332936d620414e586c304b402a70ab91908f37fdccb8631",
+  "batch_id": "a617e075d1c48e38002bd44776ca65ac43784131cc5e52f7cf29aa31cbe4623d",
+  "composite_identity": "2ffb2de10c836c2f933823b7dcefcb4aaaa22a184ded4033c72d2db7bf893a1d",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "c01d7b72cd7e8d3b995249f8afaccf6d6603439613228c842dc3f55bfedb4042",
+  "targets": [
+    {
+      "candidate_id": "8b3cdb3ed4cb53c09e3f11c9fb7cc84c2d6e0f29c44ae6abca225b5943efcdbc",
+      "object_ref": "code:crates/core/src/layout.rs",
+      "path": "crates/core/src/layout.rs",
+      "change": "update",
+      "source_sha256": "f0959cc3e289915c908b69c6e700e93f8a3eb67eea03fa3a5ef384768ecd8b5b",
+      "existing_entry": "layout.rs[CU7L]: F:显示元数据 sidecar：列名替换、列宽、数字格式与冻结列 | R:code:crates/core/src/sheet.rs | A:NumberFormat 含 Decimal/Percent/Currency/DateTime/Scientific/Accounting/Fraction/Text；日期含 yyyy-mm-dd、yy-mm-dd、yy-mm-dd h:mm:ss、yy-mm-dd h:mm、m/d/yyyy、m/d/yy、m/d/yy h:mm:ss、m/d/yy h:mm、yyyy/m/d、hh:mm:ss、12 小时 h AM/PM 与 h:mm AM/PM；分数 # ?/?、?/?、# ??/??；百分比 #,##0%/#,##0.0%；负数括号；@ 原样 | S:只影响展示不改值，写 .view 不写 journal；未识别格式报错；输入日期是 ISO 前缀"
+    },
+    {
+      "candidate_id": "ef022db5f63644d4394d27fb93cae75a683d8e204834f4b0a4fb1d6211415cee",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "08975fd06000460f54f235f94af20f7993b8570321a68762f194c13d89e8b84c",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 个功能级项；goal 扩额 1024；Round328 yy-mm-dd h:mm:ss 导出与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
