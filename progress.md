@@ -290,9 +290,11 @@
   测试 `wildcard_keys_match_entire_values` + `xlookup_preloads...`。
 - [x] 项356 MATCH 通配符（功能级）：精确匹配支持 `*`/`?`/`~`；
   测试 `index_match_and_xmatch_read_a_same_row_range`。
-- [ ] 项357 VLOOKUP 通配符（功能级）：第 4 参 match_mode 2；
-  验收：单测 + gate。
+- [x] 项357 VLOOKUP 通配符（功能级）：第 4 参 match_mode 0/2，整键匹配；
+  测试 `vlookup_preloads_the_same_reference_as_ref`。
 - [ ] 项358 XMATCH 通配符（功能级）：match_mode 2；
+  验收：单测 + gate。
+- [ ] 项359 HLOOKUP 通配符（功能级）：同表行查找 + 通配符；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -575,6 +577,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 381（项357 VLOOKUP 通配符，功能级）：match_mode 2；
+定向与全量 gate/package 通过；发布包 SHA `e28ee4dc…f8e43c0d`；
+轮首 push 成功，本轮不再 push。
 
 Round 380（项356 MATCH 通配符，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `991cfb57…0649bdfd`；

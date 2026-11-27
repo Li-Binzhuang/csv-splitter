@@ -6631,7 +6631,7 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
         }
         "ref" | "vlookup" => {
-            if args.len() != 3 {
+            if args.len() < 3 || args.len() > 4 {
                 return Value::Error;
             }
             let (Expr::Text(sheet), Expr::Text(key_column), Expr::Text(value_column)) =
@@ -6648,8 +6648,34 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 Some(k) => k.trim().to_string(),
                 None => return Value::Error,
             };
-            match reference.get(&key) {
-                Some(value) => Value::Text(value.clone()),
+            let match_mode = match args.get(3) {
+                Some(arg) => {
+                    let Some(number) = eval(arg, ctx).number() else {
+                        return Value::Error;
+                    };
+                    if !number.is_finite()
+                        || number.fract() != 0.0
+                        || !matches!(number as u32, 0 | 2)
+                    {
+                        return Value::Error;
+                    }
+                    number as u32
+                }
+                None => 0,
+            };
+            let found = match reference.get(&key) {
+                Some(value) => Some(value.clone()),
+                None if match_mode == 2 => reference
+                    .values
+                    .keys()
+                    .filter(|candidate| wildcard_key_matches(candidate, &key))
+                    .min()
+                    .and_then(|candidate| reference.get(candidate))
+                    .cloned(),
+                None => None,
+            };
+            match found {
+                Some(value) => Value::Text(value),
                 None => Value::Text("#N/A".to_string()),
             }
         }

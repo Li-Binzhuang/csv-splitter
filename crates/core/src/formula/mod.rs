@@ -2602,16 +2602,21 @@ mod tests {
 
     #[test]
     fn vlookup_preloads_the_same_reference_as_ref() {
-        let formula = Formula::parse(r#"vlookup("people.csv", "cust", "name")"#).unwrap();
-        assert_eq!(
-            formula.sheet_references(),
-            vec![(
-                "people.csv".to_string(),
-                "cust".to_string(),
-                "name".to_string()
-            )],
-            "the alias must feed the loader, not only the evaluator"
-        );
+        for text in [
+            r#"vlookup("people.csv", "cust", "name")"#,
+            r#"vlookup("people.csv", "cust", "name", 2)"#,
+        ] {
+            let formula = Formula::parse(text).unwrap();
+            assert_eq!(
+                formula.sheet_references(),
+                vec![(
+                    "people.csv".to_string(),
+                    "cust".to_string(),
+                    "name".to_string()
+                )],
+                "{text}: the alias must feed the loader, not only the evaluator"
+            );
+        }
     }
 
     #[test]
