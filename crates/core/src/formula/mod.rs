@@ -3504,6 +3504,21 @@ mod tests {
     }
 
     #[test]
+    fn gammaln_matches_log_gamma() {
+        for (source, expected) in [
+            ("gammaln(1)", "0"),
+            ("gammaln(2)", "0"),
+            ("gammaln(5)", "3.178054"),
+            ("gammaln(0.5)", "0.572365"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in ["gammaln(0)", "gammaln(-1)", r#"gammaln("x")"#, "gammaln()"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn complex_numbers_round_trip() {
         for (source, expected) in [
             ("complex(3, 4)", "3+4i"),

@@ -2826,6 +2826,24 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
                 })
             }
         }
+        // GAMMALN: natural logarithm of the gamma function for positive numbers.
+        "gammaln" => {
+            if args.len() != 1 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            if !number.is_finite() || number <= 0.0 {
+                return Value::Error;
+            }
+            let result = ln_gamma(number);
+            if result.is_finite() {
+                Value::Number(result)
+            } else {
+                Value::Error
+            }
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {
@@ -4703,6 +4721,32 @@ fn from_roman(text: &str) -> Option<u32> {
         }
     }
     u32::try_from(total).ok().filter(|value| *value <= 3999)
+}
+
+fn ln_gamma(value: f64) -> f64 {
+    const COEFFICIENTS: [f64; 9] = [
+        0.9999999999998099,
+        676.5203681218851,
+        -1259.1392167224028,
+        771.3234287776531,
+        -176.6150291621406,
+        12.507343278686905,
+        -0.13857109526572012,
+        9.984369578019571e-6,
+        1.5056327351493116e-7,
+    ];
+    if value < 0.5 {
+        return (std::f64::consts::PI).ln()
+            - (std::f64::consts::PI * value).sin().ln()
+            - ln_gamma(1.0 - value);
+    }
+    let shifted = value - 1.0;
+    let mut series = COEFFICIENTS[0];
+    for (index, coefficient) in COEFFICIENTS.iter().enumerate().skip(1) {
+        series += coefficient / (shifted + index as f64);
+    }
+    let t = shifted + 7.5;
+    0.5 * (2.0 * std::f64::consts::PI).ln() + (shifted + 0.5) * t.ln() - t + series.ln()
 }
 
 fn format_number(value: f64) -> String {
