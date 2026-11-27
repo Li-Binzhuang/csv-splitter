@@ -102,12 +102,14 @@
   `subtotal_rejects_an_all_empty_range`。
 - [x] 项141 类型信息（功能级）：`TYPE(value)` 返回数字=1/文本=2/布尔=4/
   错误=16；空单元格按 1。测试 `type_reports_values_and_errors`。
+- [ ] 项223 指数分布（功能级）：`EXPON.DIST(x, lambda, cumulative)`；
+  非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项222 泊松分布（功能级）：`POISSON.DIST(x, mean, cumulative)`；
   非法参数 `#VALUE!`；验收：单测 + gate。
 - [ ] 项221 标准正态分布（功能级）：`NORM.S.DIST(z, cumulative)`；
   非数值 `#VALUE!`；验收：单测 + gate。
-- [ ] 项220 标准正态密度（功能级）：`PHI(z)`；非数值
-  `#VALUE!`；验收：单测 + gate。
+- [x] 项220 标准正态密度（功能级）：`PHI(z)`；非数值
+  `#VALUE!`；测试 `phi_returns_normal_density`。
 - [x] 项219 标准正态分位（功能级）：`NORM.S.INV`；概率(0,1)外
   `#VALUE!`；测试 `normal_inverse_matches_standard_quantiles`。
 - [x] 项218 值类型转换（功能级）：`N`/`T`；数字/文本/布尔语义；
@@ -307,6 +309,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 247（项220 PHI，功能级）：标准正态密度；
+定向与全量 gate/package 通过；发布包 SHA `3dc72535…876726`；
+push 已在轮首成功，本轮不再 push。
 
 Round 246（项219 NORM.S.INV，功能级）：标准正态分位、概率边界；
 TEXTBEFORE 审计发现已支持（受限），改用本项；定向测试通过；

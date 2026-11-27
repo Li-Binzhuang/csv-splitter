@@ -3504,6 +3504,21 @@ mod tests {
     }
 
     #[test]
+    fn phi_returns_normal_density() {
+        for (source, expected) in [
+            ("phi(0)", "0.398942"),
+            ("phi(1)", "0.241971"),
+            ("phi(-1)", "0.241971"),
+            ("phi(2)", "0.053991"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in [r#"phi("x")"#, "phi()", "phi(1, 2)"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn normal_inverse_matches_standard_quantiles() {
         for (source, expected) in [
             ("norm.s.inv(0.5)", "0"),
