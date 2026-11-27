@@ -322,9 +322,11 @@
   测试 `decimal_and_base_convert_textual_bases`。
 - [x] 项372 DECIMAL 非法字符（功能级）：非法字符/仅符号 → #VALUE!；
   测试 `decimal_and_base_convert_radices`。
-- [ ] 项373 UNICHAR 代理区校验（功能级）：0/代理区码点 → #VALUE!；
-  验收：单测 + gate。
+- [x] 项373 UNICHAR 码点校验（功能级）：0/代理区/小数/越界 → #VALUE!；
+  测试 `textjoin_char_and_code_work_like_a_spreadsheet`。
 - [ ] 项374 ARABIC 小写支持（功能级）：小写罗马数字可解析；
+  验收：单测 + gate。
+- [ ] 项375 CHAR 整数校验（功能级）：小数码点 → #VALUE!；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -607,6 +609,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 397（项373 UNICHAR 码点校验，功能级）：小数码点拒绝；
+定向与全量 gate/package 通过；发布包 SHA `2019221f…f2a0c347`；
+轮首 push 成功，本轮不再 push。
 
 Round 396（项372 DECIMAL 校验，功能级）：非法字符/仅符号；
 定向与全量 gate/package 通过；发布包 SHA `e3ac3255…73321926`；

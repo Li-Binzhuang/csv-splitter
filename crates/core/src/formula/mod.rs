@@ -2510,6 +2510,7 @@ mod tests {
         assert_eq!(eval_str("unicode(\"中\", 1)", &[]), "#VALUE!");
         assert_eq!(eval_str("unichar(0)", &[]), "#VALUE!");
         assert_eq!(eval_str("unichar(55296)", &[]), "#VALUE!");
+        assert_eq!(eval_str("unichar(65.5)", &[]), "#VALUE!");
         assert_eq!(eval_str("unicode(\"\")", &[]), "#VALUE!");
     }
 

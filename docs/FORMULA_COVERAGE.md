@@ -22,7 +22,7 @@
 | SUBSTITUTE | 支持（功能级修正） | 默认全替换；instance_num 须整数≥1，越界原样 |
 | CONCAT / CONCATENATE | 支持 | CONCATENATE 是别名 |
 | TEXTJOIN | 支持（功能级扩展） | 分隔符 + ignore_empty 须 0/1 + 多段 |
-| CHAR / CODE / UNICHAR / UNICODE | 支持（功能级扩展） | CHAR 1–255；CODE/UNICODE 单参数非空；UNICHAR Unicode |
+| CHAR / CODE / UNICHAR / UNICODE | 支持（边界加固） | CHAR 1–255 整数；UNICHAR 整数合法码点（0/代理区/小数报错）；CODE/UNICODE 单字符 |
 | FIND / SEARCH | 支持（功能级扩展） | SEARCH Unicode 折叠 + `*`/`?`/`~` 通配符；start_num 整数≥1 |
 | PROPER / REPT / EXACT / VALUE | 支持（功能级扩展） | PROPER 非字母分界；REPT 整数 0–10000；VALUE 支持货币/千分位/百分号/括号负数 |
 | CLEAN | 支持（功能级新增） | 去掉 ASCII 0–31 控制字符；不裁首尾空格；多参 `#VALUE!` |

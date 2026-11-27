@@ -6103,10 +6103,10 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             let Some(code) = eval(&args[0], ctx).number() else {
                 return Value::Error;
             };
-            if !code.is_finite() || code < 1.0 || code > 0x10FFFF as f64 {
+            if !code.is_finite() || code.trunc() != code || code < 1.0 || code > 0x10FFFF as f64 {
                 return Value::Error;
             }
-            match char::from_u32(code.trunc() as u32) {
+            match char::from_u32(code as u32) {
                 Some(ch) => Value::Text(ch.to_string()),
                 None => Value::Error,
             }
