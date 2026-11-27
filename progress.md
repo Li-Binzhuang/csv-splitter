@@ -334,9 +334,11 @@
   测试 `fixed_dollar_and_numbervalue_work`。
 - [x] 项378 CONCAT 长度上限（功能级）：结果 ≤32767，超限 #VALUE!；
   测试 `textjoin_char_and_code_work_like_a_spreadsheet`。
-- [ ] 项379 PROPER Unicode 边界（功能级）：非 ASCII 字母边界；
-  验收：单测 + gate。
+- [x] 项379 PROPER Unicode 边界（功能级）：is_alphabetic 分界 + to_uppercase 扩展；
+  测试 `the_everyday_functions_behave_like_a_spreadsheet`。
 - [ ] 项380 TRIM 全角空格（功能级）：U+3000 与 NBSP 折叠；
+  验收：单测 + gate。
+- [ ] 项381 UPPER/LOWER Unicode 扩展（功能级）：ß→SS、İ 等；
   验收：单测 + gate。
 - [ ] 项322 日期时间格式码语法矩阵（功能级）：分隔符（-/./）×年份位（yy/yyyy）×月日序（m-d、d-m）×12/24 小时×秒×补零；
   参数化解析/显示/导出 round-trip，产出矩阵表与参数化测试；验收：矩阵测试 + gate。
@@ -619,6 +621,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 403（项379 PROPER Unicode，功能级）：补测试锁定；
+定向与全量 gate/package 通过；发布包 SHA `526bbc95…470ec110`；
+轮首 push 成功，本轮不再 push。
 
 Round 402（项378 CONCAT 上限，功能级）：结果 ≤32767；
 定向与全量 gate/package 通过；发布包 SHA `8d1a4f73…b1725e4a`；
