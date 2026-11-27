@@ -2417,6 +2417,12 @@ mod tests {
                 color: "green".into(),
             },
             ConditionalRule {
+                column: "id".into(),
+                operator: ">".into(),
+                value: "0".into(),
+                color: "green".into(),
+            },
+            ConditionalRule {
                 column: "amount".into(),
                 operator: "bottom".into(),
                 value: "1".into(),
@@ -2754,6 +2760,11 @@ mod tests {
         assert!(styles.contains("<dxfs count=\"4\">"), "{styles}");
         assert!(sheet.contains("dxfId=\"3\""), "{sheet}");
         assert!(sheet.contains("<autoFilter ref=\"A1:B4\"/>"), "{sheet}");
+        assert!(sheet.contains("sqref=\"A2:A4\""), "{sheet}");
+        assert!(
+            sheet.contains("<cfRule type=\"cellIs\" dxfId=\"0\" priority=\"2\" operator=\"greaterThan\"><formula>0</formula>"),
+            "{sheet}"
+        );
 
         let bad = vec![ConditionalRule {
             column: "amount".into(),
