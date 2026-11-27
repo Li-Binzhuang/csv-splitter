@@ -332,6 +332,7 @@ fn is_date_time_pattern(spec: &str) -> bool {
             | "yyyy/m/d"
             | "yyyy-mm-dd hh:mm"
             | "yyyy-mm-dd hh:mm:ss"
+            | "yyyy-mm-dd hh:mm am/pm"
             | "hh:mm"
             | "hh:mm:ss"
             | "h am/pm"
@@ -481,6 +482,18 @@ fn render_date_time(pattern: &str, value: &str) -> Option<String> {
             Some(format!(
                 "{month}/{day}/{} {hour:02}:{minute:02}:{second:02}",
                 year % 100
+            ))
+        }
+        "yyyy-mm-dd hh:mm am/pm" => {
+            let (year, month, day) = date_parts?;
+            let (hour, minute, _) = time_parts?;
+            let hour12 = match hour % 12 {
+                0 => 12,
+                value => value,
+            };
+            let suffix = if hour < 12 { "AM" } else { "PM" };
+            Some(format!(
+                "{year:04}-{month:02}-{day:02} {hour12:02}:{minute:02} {suffix}"
             ))
         }
         "yyyy-mm-dd hh:mm:ss" => {
@@ -894,6 +907,13 @@ mod tests {
         let minute = NumberFormat::parse("yyyy-mm-dd hh:mm").unwrap();
         assert_eq!(minute.render("2024-01-02 13:04:05"), "2024-01-02 13:04");
         assert_eq!(minute.render("2024-01-02T13:04:05"), "2024-01-02 13:04");
+        let iso_ampm = NumberFormat::parse("yyyy-mm-dd hh:mm AM/PM").unwrap();
+        assert_eq!(iso_ampm.name(), "yyyy-mm-dd hh:mm AM/PM");
+        assert_eq!(
+            iso_ampm.render("2024-01-02 13:04:05"),
+            "2024-01-02 01:04 PM"
+        );
+        assert_eq!(iso_ampm.render("2024-01-02 00:05"), "2024-01-02 12:05 AM");
         let short_dt = NumberFormat::parse("m/d/yy h:mm").unwrap();
         assert_eq!(short_dt.name(), "m/d/yy h:mm");
         assert_eq!(short_dt.render("2024-01-02 13:04:05"), "1/2/24 13:04");
