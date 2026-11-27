@@ -16,7 +16,7 @@
 
 | 函数 | 状态 | 说明 |
 |---|---|---|
-| LEN / UPPER / LOWER / TRIM | 支持（功能级扩展） | Unicode 字符数；TRIM 裁首尾并折叠内部连续空格 |
+| LEN / UPPER / LOWER / TRIM | 支持（功能级扩展） | Unicode 字符数；TRIM 折叠 ASCII 空格/全角空格/NBSP，制表符保留 |
 | LEFT / RIGHT / MID | 支持（功能级扩展） | 按字符；长度/起始须整数且非负（MID start≥1） |
 | REPLACE | 支持（功能级修正） | Excel 位置语义：start_num/num_chars，1-based；非法参数 `#VALUE!` |
 | SUBSTITUTE | 支持（功能级修正） | 默认全替换；instance_num 须整数≥1，越界原样 |

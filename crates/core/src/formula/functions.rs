@@ -5750,12 +5750,22 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
         "trim" => match (args.len(), args.first()) {
             (1, Some(arg)) => {
                 let text = eval(arg, ctx).text();
-                Value::Text(
-                    text.split(' ')
-                        .filter(|part| !part.is_empty())
-                        .collect::<Vec<_>>()
-                        .join(" "),
-                )
+                let mut output = String::with_capacity(text.len());
+                let mut pending_space = false;
+                for character in text.chars() {
+                    if matches!(character, ' ' | '\u{3000}' | '\u{a0}') {
+                        if !output.is_empty() {
+                            pending_space = true;
+                        }
+                    } else {
+                        if pending_space {
+                            output.push(' ');
+                            pending_space = false;
+                        }
+                        output.push(character);
+                    }
+                }
+                Value::Text(output)
             }
             _ => Value::Error,
         },
