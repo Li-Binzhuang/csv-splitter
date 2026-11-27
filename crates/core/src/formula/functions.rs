@@ -3085,6 +3085,24 @@ pub(super) fn call(name: &str, args: &[Expr], ctx: &Ctx<'_>) -> Value {
             }
             Value::Number(if first == second { 1.0 } else { 0.0 })
         }
+        // GESTEP: 1 when number >= step, otherwise 0; step defaults to 0.
+        "gestep" => {
+            if args.is_empty() || args.len() > 2 {
+                return Value::Error;
+            }
+            let Some(number) = eval(&args[0], ctx).number() else {
+                return Value::Error;
+            };
+            let step = args
+                .get(1)
+                .map(|arg| eval(arg, ctx).number())
+                .unwrap_or(Some(0.0))
+                .unwrap_or(f64::NAN);
+            if !number.is_finite() || !step.is_finite() {
+                return Value::Error;
+            }
+            Value::Number(if number >= step { 1.0 } else { 0.0 })
+        }
         // DECIMAL/BASE convert between a radix-2..36 string and a number.
         "decimal" => {
             if args.len() != 2 {

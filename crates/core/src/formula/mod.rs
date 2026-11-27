@@ -3504,6 +3504,22 @@ mod tests {
     }
 
     #[test]
+    fn gestep_compares_threshold() {
+        for (source, expected) in [
+            ("gestep(5, 4)", "1"),
+            ("gestep(4, 5)", "0"),
+            ("gestep(0)", "1"),
+            ("gestep(-1)", "0"),
+            ("gestep(4, 4)", "1"),
+        ] {
+            assert_eq!(eval_str(source, &[]), expected, "{source}");
+        }
+        for source in ["gestep(1, 2, 3)", r#"gestep("x")"#, "gestep()"] {
+            assert_eq!(eval_str(source, &[]), "#VALUE!", "{source}");
+        }
+    }
+
+    #[test]
     fn delta_compares_numbers() {
         for (source, expected) in [
             ("delta(5, 5)", "1"),
