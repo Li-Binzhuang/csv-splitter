@@ -1,0 +1,35 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "ee90208a3401fbbbe41681d76ad055139d5d4c6d0c7d441eed1f7157a26149cc",
+  "batch_id": "ba0254def10ceeace054a9675140b57990ef5d5790d9e6c88e00fa7445d7102c",
+  "composite_identity": "7f9abab0e994fd8f70c534ebb8c8459b41e3c086cf1592aad85cb1f5524f9a04",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "6cf639562f1ab64c0a9661be71cb76bd78e0ccd6702e41c2acc5f8be4f50db20",
+  "targets": [
+    {
+      "candidate_id": "fa3d6a4d5a80a271cf6780750e50388d510f8661c9409dde0fd616522673fd46",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "929d828886a7436d89775841798dd9810baaef3cebeff28e7f41e141da3df91c",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert：转码、xlsx/csv/tsv/ndjson/parquet、highlight、number-format、formats、protection 检测、验证、no-freeze、no-auto-filter、protect-sheet、col-width、密码与粒度 | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；--formats；--protection（--sheet/--all-sheets 互斥）；--number-format（单文件与目录）；目录格式/高亮/验证/提示/密码叠加；--no-freeze/--no-auto-filter；--data-validation；--protect-sheet；allow-objects/scenarios；--col-width | S:不覆盖输入；--formats/--protection 仅 xlsx；密码 1–15 ASCII；公式 ≤255；重复列/空值/宽度越界退出 2；目录未列出列默认 Plain"
+    },
+    {
+      "candidate_id": "1dd543b9677a65d95edf2ae0784e150241b0b2c91781862a77552a497c082634",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "e4bdf8b40899855506e39284494458d06561ed755f935d42b016cf4c739f8d3e",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles；csv_to_xlsx_with_all；write_sheets 系列含 widths/options/formats+widths/多 sheet 保护与密码/目录密码/对象场景粒度/格式+宽度+规则+验证+保护；dataValidations 列表与 type=custom；条件格式全族/dxf 映射表；Colored；xlsx_sheet_protection 与 xlsx_protection_map（未知/空/非法错误）；autoFilter | S:不写公式/图表；合并不展开；验证列表 ≤255 且禁逗号/引号；自定义公式与列表不能混用"
+    },
+    {
+      "candidate_id": "bfcbe5457bd2a94714ce01cbfbe7feafff34fabbd0b00b0ed5975a8c70a9c7ca",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "ce2e7573e347649c1be1f879a78c9cb90bca005169d0b59b1ad4b1d5ddace104",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同新功能，边界并入母项不单独立项，每轮需 feat 增量；保护区饱和后换数据验证类型区（569–571）；Round580 健壮性矩阵与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
