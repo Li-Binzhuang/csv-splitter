@@ -5041,6 +5041,41 @@ fn convert_renders_conditional_formats_as_highlight_text() {
 }
 
 #[test]
+fn convert_reports_core_properties() {
+    let dir = TempDir::new("propertiesinspect");
+    let book = dir.join("book.xlsx");
+    let file = std::fs::File::create(&book).unwrap();
+    let mut zip = zip::ZipWriter::new(file);
+    use std::io::Write as _;
+    let core = r#"<?xml version="1.0"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>Report</dc:title><dc:creator>Lead</dc:creator></cp:coreProperties>"#;
+    zip.start_file(
+        "docProps/core.xml",
+        zip::write::SimpleFileOptions::default(),
+    )
+    .unwrap();
+    zip.write_all(core.as_bytes()).unwrap();
+    zip.finish().unwrap();
+
+    let json = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--properties", "--json"])
+        .output()
+        .unwrap();
+    assert!(json.status.success());
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(stdout.contains("\"title\":\"Report\""), "{stdout}");
+    assert!(stdout.contains("\"creator\":\"Lead\""), "{stdout}");
+
+    let text = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--properties"])
+        .output()
+        .unwrap();
+    assert!(text.status.success());
+    let stdout = String::from_utf8_lossy(&text.stdout);
+    assert!(stdout.contains("title=Report"), "{stdout}");
+    assert!(stdout.contains("creator=Lead"), "{stdout}");
+}
+
+#[test]
 fn convert_reports_sheet_visibility() {
     let dir = TempDir::new("visibilityinspect");
     std::fs::create_dir(dir.join("parts")).unwrap();

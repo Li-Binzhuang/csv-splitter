@@ -550,6 +550,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut column_widths = false;
     let mut row_heights = false;
     let mut sheet_visibility = false;
+    let mut properties = false;
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -680,6 +681,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--widths" => column_widths = true,
             "--heights" => row_heights = true,
             "--visibility" => sheet_visibility = true,
+            "--properties" => properties = true,
             "--json" => formats_json = true,
             "--number-format-raw" => match p.value("--number-format-raw") {
                 Ok(v) => number_format_raw = Some(v),
@@ -753,9 +755,63 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         && !column_widths
         && !row_heights
         && !sheet_visibility
+        && !properties
     {
         eprintln!("error: --json needs --formats or --protection");
         return 2;
+    }
+
+    if properties {
+        if protection
+            || validations
+            || formulas
+            || conditional_formats
+            || sheet_view
+            || show_formats
+            || show_headers
+            || merged_ranges
+            || column_widths
+            || row_heights
+            || sheet_visibility
+        {
+            eprintln!("error: --properties cannot be combined with other inspection modes");
+            return 2;
+        }
+        let name = input
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if !(name.ends_with(".xlsx") || name.ends_with(".xlsm")) {
+            eprintln!("error: --properties needs an .xlsx/.xlsm input");
+            return 2;
+        }
+        if convert_format.is_some() || out.is_some() {
+            eprintln!("error: --properties cannot be combined with output flags");
+            return 2;
+        }
+        let core = match csvx_core::xlsx::xlsx_core_properties(&input) {
+            Ok(core) => core,
+            Err(error) => {
+                eprintln!("error: {error}");
+                return 1;
+            }
+        };
+        if formats_json {
+            println!(
+                "{{\"title\":{},\"creator\":{},\"created\":{},\"modified\":{}}}",
+                json_optional(&core.title),
+                json_optional(&core.creator),
+                json_optional(&core.created),
+                json_optional(&core.modified)
+            );
+        } else {
+            println!("title={}", core.title.as_deref().unwrap_or(""));
+            println!("creator={}", core.creator.as_deref().unwrap_or(""));
+            println!("created={}", core.created.as_deref().unwrap_or(""));
+            println!("modified={}", core.modified.as_deref().unwrap_or(""));
+        }
+        return 0;
     }
 
     if sheet_visibility {
