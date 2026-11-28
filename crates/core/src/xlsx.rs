@@ -4571,6 +4571,45 @@ mod tests {
     }
 
     #[test]
+    fn protection_map_reports_granularity() {
+        let dir = temp_path("protection map granularity");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("map.xlsx");
+        let sheets = vec![
+            Sheet {
+                name: "one".to_string(),
+                headers: vec!["id".into()],
+                rows: vec![vec!["1".into()]],
+            },
+            Sheet {
+                name: "two".to_string(),
+                headers: vec!["id".into()],
+                rows: vec![vec!["2".into()]],
+            },
+        ];
+        write_sheets_with_options_and_password(
+            &path,
+            &sheets,
+            &[],
+            true,
+            true,
+            Some("test"),
+            false,
+            true,
+        )
+        .unwrap();
+        let map = xlsx_protection_map(&path).unwrap();
+        assert_eq!(map.len(), 2);
+        for entry in &map {
+            assert!(entry.protection.protected);
+            assert!(!entry.protection.objects_locked);
+            assert!(entry.protection.scenarios_locked);
+            assert!(entry.protection.password_protected);
+        }
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
     fn protection_map_reports_every_sheet() {
         let dir = temp_path("protection map");
         std::fs::create_dir_all(&dir).unwrap();
