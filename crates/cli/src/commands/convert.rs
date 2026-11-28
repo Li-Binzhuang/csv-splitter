@@ -547,6 +547,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut highlight_text = false;
     let mut show_headers = false;
     let mut merged_ranges = false;
+    let mut column_widths = false;
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -674,6 +675,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--highlight-text" => highlight_text = true,
             "--headers" => show_headers = true,
             "--merged" => merged_ranges = true,
+            "--widths" => column_widths = true,
             "--json" => formats_json = true,
             "--number-format-raw" => match p.value("--number-format-raw") {
                 Ok(v) => number_format_raw = Some(v),
@@ -744,9 +746,98 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         && !sheet_view
         && !show_headers
         && !merged_ranges
+        && !column_widths
     {
         eprintln!("error: --json needs --formats or --protection");
         return 2;
+    }
+
+    if column_widths {
+        if protection
+            || validations
+            || formulas
+            || conditional_formats
+            || sheet_view
+            || show_formats
+            || show_headers
+            || merged_ranges
+        {
+            eprintln!("error: --widths cannot be combined with other inspection modes");
+            return 2;
+        }
+        let name = input
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if !(name.ends_with(".xlsx") || name.ends_with(".xlsm")) {
+            eprintln!("error: --widths needs an .xlsx/.xlsm input");
+            return 2;
+        }
+        if convert_format.is_some() || out.is_some() {
+            eprintln!("error: --widths cannot be combined with output flags");
+            return 2;
+        }
+        if sheet.is_some() && all_sheets {
+            eprintln!("error: --widths --all-sheets cannot be combined with --sheet");
+            return 2;
+        }
+        let names = if all_sheets {
+            match csvx_core::xlsx::xlsx_sheet_names(&input) {
+                Ok(names) => names,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        } else {
+            vec![sheet.clone().unwrap_or_default()]
+        };
+        let mut entries = Vec::new();
+        for name in &names {
+            let sheet_arg = (!name.is_empty()).then_some(name.as_str());
+            match csvx_core::xlsx::xlsx_column_widths(&input, sheet_arg) {
+                Ok(widths) => entries.push((sheet_arg.unwrap_or("").to_string(), widths)),
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        }
+        if formats_json {
+            print!("[");
+            for (index, (sheet_name, widths)) in entries.iter().enumerate() {
+                if index > 0 {
+                    print!(",");
+                }
+                print!("{{\"sheet\":{},\"columns\":[", json_string(sheet_name));
+                for (width_index, width) in widths.iter().enumerate() {
+                    if width_index > 0 {
+                        print!(",");
+                    }
+                    print!(
+                        "{{\"column\":{},\"width\":{},\"custom_width\":{}}}",
+                        json_string(&width.column),
+                        width.width,
+                        width.custom_width
+                    );
+                }
+                print!("]}}");
+            }
+            println!("]");
+        } else if entries.iter().all(|(_, widths)| widths.is_empty()) {
+            println!("no column widths");
+        } else {
+            for (sheet_name, widths) in &entries {
+                if all_sheets {
+                    println!("# {sheet_name}");
+                }
+                for width in widths {
+                    println!("{}\t{}", width.column, width.width);
+                }
+            }
+        }
+        return 0;
     }
 
     if merged_ranges {

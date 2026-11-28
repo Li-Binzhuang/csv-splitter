@@ -93,7 +93,8 @@ csvx convert data.csv --format xlsx -o data.xlsx \
   --sheet-view \
   --highlight-text \
   --headers \
-  --merged
+  --merged \
+  --widths
 ```
 
 - 规则用 `;` 分隔，每条 `列 操作符 值 : 颜色`；
@@ -115,6 +116,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 - `--data-validation-time` 写时间区间验证，`列:起始,结束`（`HH:MM`，内部转 0–1 天小数）；
 - `--data-validation-range` 列表源用单元格区域引用，格式 `列:区域`（如 `$A$2:$A$10`），与内联值互斥；
 - 与 `--conditional-formats` 同用 `--highlight-text` 可把规则还原成可复用的 `--highlight` 文本（仅 cellIs 与四色）；
+- `--widths` 读取 xlsx 列宽与 customWidth，支持 sheet/all-sheets/json；
 - `--merged` 读取 xlsx 合并单元格区域，支持 sheet/all-sheets/json；
 - `--headers` 读取 xlsx 首表头行（列字母 + 名称），支持 sheet/all-sheets/json；
 - `--sheet-view` 读取 xlsx 冻结窗格行/列与 autoFilter 范围，支持 sheet/all-sheets/json；

@@ -5041,6 +5041,48 @@ fn convert_renders_conditional_formats_as_highlight_text() {
 }
 
 #[test]
+fn convert_reports_column_widths() {
+    let dir = TempDir::new("widthsinspect");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,amount\n1,10\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts/a.csv").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--col-width",
+            "amount:20",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let json = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--widths", "--json"])
+        .output()
+        .unwrap();
+    assert!(json.status.success());
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(
+        stdout.contains("\"column\":\"B\",\"width\":20,"),
+        "{stdout}"
+    );
+    assert!(stdout.contains("\"custom_width\":true"), "{stdout}");
+
+    let text = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--widths"])
+        .output()
+        .unwrap();
+    assert!(text.status.success());
+    let stdout = String::from_utf8_lossy(&text.stdout);
+    assert!(stdout.contains("B\t20"), "{stdout}");
+}
+
+#[test]
 fn convert_reports_merged_cells() {
     let dir = TempDir::new("mergedinspect");
     let book = dir.join("book.xlsx");
