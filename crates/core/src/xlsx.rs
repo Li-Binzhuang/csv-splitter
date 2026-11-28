@@ -254,6 +254,7 @@ pub fn csv_to_xlsx_with_number_formats(
         rules,
         formats,
         &[],
+        &[],
         true,
         true,
         false,
@@ -280,6 +281,7 @@ pub fn csv_to_xlsx_without_auto_filter(
         tx,
         rules,
         formats,
+        &[],
         &[],
         true,
         false,
@@ -311,6 +313,7 @@ pub fn csv_to_xlsx_with_options(
         rules,
         formats,
         &[],
+        &[],
         freeze_header,
         auto_filter,
         false,
@@ -331,6 +334,7 @@ pub fn csv_to_xlsx_with_all(
     rules: &[ConditionalRule],
     formats: &[(String, crate::layout::NumberFormat)],
     validations: &[DataValidation],
+    widths: &[(String, f64)],
     freeze_header: bool,
     auto_filter: bool,
     protect: bool,
@@ -343,9 +347,37 @@ pub fn csv_to_xlsx_with_all(
         rules,
         formats,
         validations,
+        widths,
         freeze_header,
         auto_filter,
         protect,
+    );
+    if result.is_err() {
+        let _ = std::fs::remove_file(output);
+    }
+    result
+}
+
+/// Export a CSV as one xlsx sheet with explicit column widths.
+pub fn csv_to_xlsx_with_column_widths(
+    input: &Path,
+    output: &Path,
+    delimiter: Delimiter,
+    tx: &ProgressSender,
+    widths: &[(String, f64)],
+) -> std::io::Result<()> {
+    let result = csv_to_xlsx_inner(
+        input,
+        output,
+        delimiter,
+        tx,
+        &[],
+        &[],
+        &[],
+        widths,
+        true,
+        true,
+        false,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -365,6 +397,7 @@ pub fn csv_to_xlsx_with_protection(
         output,
         delimiter,
         tx,
+        &[],
         &[],
         &[],
         &[],
@@ -394,6 +427,7 @@ pub fn csv_to_xlsx_with_validations(
         &[],
         &[],
         validations,
+        &[],
         true,
         true,
         false,
@@ -421,6 +455,7 @@ pub fn csv_to_xlsx_without_freeze(
         rules,
         formats,
         &[],
+        &[],
         false,
         true,
         false,
@@ -440,6 +475,7 @@ fn csv_to_xlsx_inner(
     rules: &[ConditionalRule],
     formats: &[(String, crate::layout::NumberFormat)],
     validations: &[DataValidation],
+    widths: &[(String, f64)],
     freeze_header: bool,
     auto_filter: bool,
     protect: bool,
@@ -509,6 +545,10 @@ fn csv_to_xlsx_inner(
     // complete, and a false A1 hint is worse than letting Excel calculate it.
     if freeze_header {
         sheet.push_str("<sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/></sheetView></sheetViews>");
+    }
+    if !widths.is_empty() {
+        let columns = sheet_columns_xml(&headers, &[], widths);
+        sheet.push_str(&columns);
     }
     sheet.push_str("<sheetFormatPr defaultRowHeight=\"15\"/><sheetData>");
     write!(zip, "{}", sheet)?;
@@ -729,7 +769,7 @@ fn write_sheets_inner(
         if freeze_header {
             xml.push_str("<sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/></sheetView></sheetViews>");
         }
-        xml.push_str(&sheet_columns_xml(&sheet.headers, &sheet.rows));
+        xml.push_str(&sheet_columns_xml(&sheet.headers, &sheet.rows, &[]));
         xml.push_str("<sheetData>");
         xml.push_str("<row r=\"1\">");
         for (column, header) in sheet.headers.iter().enumerate() {
@@ -1809,7 +1849,7 @@ pub fn read_csv_sheet(path: &Path, delimiter: Delimiter) -> std::io::Result<Shee
     })
 }
 
-fn sheet_columns_xml(headers: &[String], rows: &[Vec<String>]) -> String {
+fn sheet_columns_xml(headers: &[String], rows: &[Vec<String>], widths: &[(String, f64)]) -> String {
     let mut xml = String::from("<cols>");
     for (index, header) in headers.iter().enumerate() {
         let wider = rows
@@ -1819,7 +1859,12 @@ fn sheet_columns_xml(headers: &[String], rows: &[Vec<String>]) -> String {
             .map(|cell| cell.chars().count())
             .max()
             .unwrap_or(0);
-        let width = header.chars().count().max(wider).clamp(8, 60);
+        let width = widths
+            .iter()
+            .find(|(name, _)| name == header)
+            .map(|(_, width)| *width)
+            .unwrap_or_else(|| header.chars().count().max(wider) as f64)
+            .clamp(0.5, 255.0);
         xml.push_str(&format!(
             "<col min=\"{}\" max=\"{}\" width=\"{}\" customWidth=\"1\"/>",
             index + 1,
@@ -3940,6 +3985,24 @@ mod tests {
             "{sheet}"
         );
         assert!(sheet.contains("<autoFilter"), "{sheet}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn explicit_column_widths_are_written() {
+        let dir = temp_path("widths");
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("widths.csv");
+        let output = dir.join("widths.xlsx");
+        std::fs::write(&input, "id,amount\n1,10\n2,20\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let widths = vec![("amount".to_string(), 20.0)];
+        csv_to_xlsx_with_column_widths(&input, &output, Delimiter::Comma, &tx, &widths).unwrap();
+        let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
+        assert!(
+            sheet.contains("<col min=\"2\" max=\"2\" width=\"20\" customWidth=\"1\"/>"),
+            "{sheet}"
+        );
         std::fs::remove_dir_all(dir).ok();
     }
 

@@ -811,6 +811,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 &rules,
                 &column_formats,
                 &data_validations,
+                &[],
                 !no_freeze,
                 !no_auto_filter,
                 protect_sheet,
