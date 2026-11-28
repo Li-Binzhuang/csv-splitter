@@ -2394,6 +2394,71 @@ fn workbook_sheet_name(path: &Path) -> String {
     name.chars().take(31).collect()
 }
 
+/// One row height read back from `<row ht>`.
+#[derive(Clone, Debug, PartialEq)]
+pub struct RowHeight {
+    pub row: u64,
+    pub height: f64,
+    pub custom_height: bool,
+}
+
+/// Read explicit row heights declared on `<row ht>`.
+pub fn xlsx_row_heights(input: &Path, sheet: Option<&str>) -> std::io::Result<Vec<RowHeight>> {
+    let file = std::fs::File::open(input)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let workbook = read_entry(&mut archive, "xl/workbook.xml")?;
+    let rels = read_entry(&mut archive, "xl/_rels/workbook.xml.rels").unwrap_or_default();
+    let sheets = workbook_sheets(&workbook);
+    if sheets.is_empty() {
+        return Err(invalid("xlsx has no worksheets"));
+    }
+    let selected = select_sheet(&sheets, sheet)?;
+    let target = relationship_target(&rels, &selected.rid)
+        .or_else(|| (sheets.len() == 1).then(|| "xl/worksheets/sheet1.xml".to_string()))
+        .ok_or_else(|| {
+            invalid(&format!(
+                "xlsx sheet {:?} has no relationship target",
+                selected.name
+            ))
+        })?;
+    let normalized = if let Some(stripped) = target.strip_prefix('/') {
+        stripped.to_string()
+    } else if target.starts_with("xl/") {
+        target
+    } else {
+        format!("xl/{}", target.trim_start_matches("./"))
+    };
+    let sheet_xml = read_entry(&mut archive, &normalized)?;
+    Ok(parse_row_heights(&sheet_xml))
+}
+
+fn parse_row_heights(sheet_xml: &str) -> Vec<RowHeight> {
+    let mut out = Vec::new();
+    let mut rest = sheet_xml;
+    while let Some(start) = rest.find("<row ") {
+        let tail = &rest[start..];
+        let Some(open) = tail.find('>') else { break };
+        let tag = &tail[..=open];
+        let height = tag_attribute(tag, "ht").and_then(|value| value.parse::<f64>().ok());
+        if let Some(height) = height {
+            if let Some(row) = tag_attribute(tag, "r").and_then(|value| value.parse::<u64>().ok()) {
+                out.push(RowHeight {
+                    row,
+                    height,
+                    custom_height: tag_attribute(tag, "customHeight").as_deref() == Some("1"),
+                });
+            }
+        }
+        rest = &tail[open + 1..];
+    }
+    out
+}
+
 /// One column width read back from `<cols>`.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ColumnWidth {
@@ -5814,6 +5879,52 @@ mod tests {
         assert_eq!(found[1].column, "B");
         assert!((found[1].width - 12.0).abs() < 1e-9, "{found:?}");
         assert!(found[0].custom_width);
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn row_heights_are_read_back() {
+        let dir = temp_path("row height readback");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("rows.xlsx");
+        let file = std::fs::File::create(&path).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        use std::io::Write as _;
+        for (name, body) in [
+            (
+                "xl/workbook.xml",
+                r#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="one" sheetId="1" r:id="rId1"/></sheets></workbook>"#,
+            ),
+            (
+                "xl/_rels/workbook.xml.rels",
+                r#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>"#,
+            ),
+            (
+                "xl/worksheets/sheet1.xml",
+                r#"<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1" ht="30" customHeight="1"><c r="A1"><v>1</v></c></row><row r="2" ht="15"><c r="A2"><v>2</v></c></row></sheetData></worksheet>"#,
+            ),
+        ] {
+            zip.start_file(name, zip::write::SimpleFileOptions::default())
+                .unwrap();
+            zip.write_all(body.as_bytes()).unwrap();
+        }
+        zip.finish().unwrap();
+        let heights = xlsx_row_heights(&path, None).unwrap();
+        assert_eq!(
+            heights,
+            vec![
+                RowHeight {
+                    row: 1,
+                    height: 30.0,
+                    custom_height: true
+                },
+                RowHeight {
+                    row: 2,
+                    height: 15.0,
+                    custom_height: false
+                }
+            ]
+        );
         std::fs::remove_dir_all(dir).ok();
     }
 
