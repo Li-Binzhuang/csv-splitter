@@ -622,12 +622,14 @@
   测试 `convert_renders_conditional_formats_as_highlight_text`。
 - [x] 项590 数据验证检测显示表头名（新能力）：文本用表头名，JSON 增 `header` 字段；
   测试 `convert_validations_show_header_names`。
-- [ ] 项591 表头检测 CLI（新能力）：headers 检测输出表头行列字母与名称，支持 sheet/all/json；
-  验收：CLI + 单测 + gate。
+- [x] 项591 表头检测 CLI（新能力）：`--headers` 输出列字母与表头名，支持 sheet/all/json；
+  测试 `convert_reports_sheet_headers`。
 - [ ] 项592 合并单元格回读 API（新能力）：读取 xlsx mergeCells 区域；
   验收：单测 + round-trip + gate。
 - [ ] 项593 合并单元格检测 CLI（新能力）：sheet-view 同级输出 merged ranges；
   验收：CLI + 单测 + gate。
+- [ ] 项594 合并单元格写出（新能力）：xlsx 导出支持指定合并区域；
+  验收：单测 + round-trip + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
@@ -1033,6 +1035,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 603（项591 表头检测 CLI，feat 级新能力，验收完成）；
+定向与全量 gate/package 通过；发布包 SHA `ccb15d44…60d3dfb`；
+轮首 push 成功，本轮不再 push。
 
 Round 602（项590 数据验证检测显示表头名，feat 级增强，验收完成）；
 定向与全量 gate/package 通过；发布包 SHA `90d46fda…10f7525`；

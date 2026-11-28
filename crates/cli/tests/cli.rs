@@ -5041,6 +5041,50 @@ fn convert_renders_conditional_formats_as_highlight_text() {
 }
 
 #[test]
+fn convert_reports_sheet_headers() {
+    let dir = TempDir::new("headersinspect");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,amount\n1,10\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts/a.csv").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let json = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--headers", "--json"])
+        .output()
+        .unwrap();
+    assert!(json.status.success());
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(
+        stdout.contains("\"column\":\"A\",\"name\":\"id\""),
+        "{stdout}"
+    );
+    assert!(
+        stdout.contains("\"column\":\"B\",\"name\":\"amount\""),
+        "{stdout}"
+    );
+
+    let text = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--headers"])
+        .output()
+        .unwrap();
+    assert!(text.status.success());
+    let stdout = String::from_utf8_lossy(&text.stdout);
+    assert!(stdout.contains("A\tid"), "{stdout}");
+    assert!(stdout.contains("B\tamount"), "{stdout}");
+}
+
+#[test]
 fn convert_validations_show_header_names() {
     let dir = TempDir::new("validationheaders");
     std::fs::create_dir(dir.join("parts")).unwrap();
