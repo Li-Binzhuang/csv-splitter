@@ -3278,6 +3278,29 @@ fn convert_xlsx_can_set_column_widths() {
 }
 
 #[test]
+fn convert_rejects_out_of_range_or_repeated_column_widths() {
+    let dir = TempDir::new("xlsxwidthbad");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,amount\n1,10\n").unwrap();
+    for spec in ["amount:0", "amount:256", "amount:10,amount:20", "amount"] {
+        let status = Command::new(bin())
+            .args([
+                "convert",
+                input.to_str().unwrap(),
+                "--format",
+                "xlsx",
+                "--out",
+                dir.join("t.xlsx").to_str().unwrap(),
+                "--col-width",
+                spec,
+            ])
+            .status()
+            .unwrap();
+        assert_eq!(status.code(), Some(2), "{spec}");
+    }
+}
+
+#[test]
 fn convert_xlsx_can_highlight_a_top_rank() {
     let dir = TempDir::new("xlsxtop");
     let input = dir.join("t.csv");
