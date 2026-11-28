@@ -570,12 +570,14 @@
 - [x] 项561 保护映射空工作簿（功能级）：无工作表返回错误；
   测试 `protection_map_rejects_workbooks_without_sheets`。
 - [x] 项562 目录全特性 + 提示 + 密码（功能级）：已由项560 覆盖。
-- [ ] 项563 保护映射 JSON 顺序（功能级）：--all-sheets 顺序与工作簿一致；
-  验收：CLI + 单测 + gate。
+- [x] 项563 保护映射 JSON 顺序（功能级）：--all-sheets 顺序与工作簿一致；
+  测试 `convert_protection_json_preserves_workbook_sheet_order`。
 - [ ] 项565 保护检测默认 sheet（功能级）：省略 --sheet 读第一表；
   验收：CLI + 单测 + gate。
 - [ ] 项566 保护映射损坏 ZIP（功能级）：截断 zip 返回 InvalidInput；
   验收：单测 + gate。
+- [ ] 项567 目录全特性 + 省略冻结（功能级）：全特性加 no-freeze；
+  验收：CLI + 单测 + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
@@ -981,6 +983,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 579（项563 保护映射 JSON 顺序，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `58127c67…91a242c92`；
+轮首 push 成功，本轮不再 push。
 
 Round 578（项564 单表保护未知 sheet 错误，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `50d3e3ca…7af0608b`；

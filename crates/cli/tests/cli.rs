@@ -5027,6 +5027,45 @@ fn convert_directory_to_xlsx_combines_all_xlsx_features() {
 }
 
 #[test]
+fn convert_protection_json_preserves_workbook_sheet_order() {
+    let dir = TempDir::new("protectionjsonorder");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id\n1\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "id\n2\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--protect-sheet-password",
+            "test",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--protection",
+            "--all-sheets",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    let a = text.find("\"sheet\":\"a\"").unwrap();
+    let b = text.find("\"sheet\":\"b\"").unwrap();
+    assert!(a < b, "{text}");
+}
+
+#[test]
 fn convert_protection_json_objects_share_the_same_fields() {
     let dir = TempDir::new("protectionjsoncontract");
     std::fs::create_dir(dir.join("parts")).unwrap();

@@ -1,0 +1,19 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "b48f71ee385b2762b13553638c6576db759752a6fb267b6b8e70f292c878fc5d",
+  "batch_id": "af466e92bb4af20748590e48ffd4f9de25c07262a0a1c8055a6c7a9fa9f790a0",
+  "composite_identity": "a54dc0ab891046ebe4659107fbb758d8e81c8c6717d83ced3a02a89877bdcdac",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "98f218ea763b3e9d35fe1fa6b30cceb453c50b33819ddf64714a9a2d98dc1342",
+  "targets": [
+    {
+      "candidate_id": "c2b7e1589fab246d688981afa64035a1d704226f60a8b29c24e91540cb2529b7",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "de81b75f14768c3dc762e59ef41d3c3144d4fea8e4d0d2be250ef35991500dc4",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；dxf 逐色项已合并；Round578 单表未知 sheet 错误与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
