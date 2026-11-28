@@ -573,12 +573,15 @@
 - [x] 项568 保护检测健壮性矩阵（合并项563/565/566/567，母功能验收，不再单独立项）：
   参数化覆盖未知 sheet（文本/JSON）、默认读第一表、JSON 顺序、非 xlsx、损坏 ZIP、空工作簿；
   测试 `convert_protection_robustness_matrix`。
-- [~] 项569 数据验证整数/小数区间（新能力）：核心模型 + type=whole/decimal XML 已提交
-  （`numeric_data_validations_write_whole_and_decimal_bounds`）；CLI 两参数待接线后验收。
+- [x] 项569 数据验证整数/小数区间（新能力）：type=whole/decimal + between/单边 + 提示；
+  CLI 两参数与文档已接线；测试 `numeric_data_validations_write_whole_and_decimal_bounds`、
+  `convert_writes_whole_and_decimal_validation_ranges`。
 - [ ] 项570 数据验证回读 API（新 API）：`xlsx_data_validations` 返回列/类型/operator/formula1/2/提示；
   验收：单测 + round-trip + gate。
 - [ ] 项571 数据验证 errorStyle 三态（新能力）：stop/warning/information 写入与 CLI 参数 data-validation-error-style（待实现）；
   验收：XML 断言 + 单测 + gate。
+- [ ] 项572 数据验证检测 CLI（新能力）：CLI 参数 validations 读回列/类型/operator/提示（待实现），支持 sheet/all-sheets/json；
+  验收：CLI + 单测 + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
@@ -984,6 +987,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 581（项569 数据验证整数/小数区间，feat 级新能力，验收完成）；
+定向与全量 gate/package 通过；发布包 SHA `2a542251…ffbb70b60`；
+轮首 push 失败（积压 3 提交，本轮不再重试）；路线图 570/571/572 均结构不同新能力。
 
 Round 580（项568 保护检测健壮性矩阵合并验收；质量门槛已写入 objective）；
 全量 gate/package 通过；发布包 SHA `d93c6d85…965bfa8de`；已 push（0 ahead）；

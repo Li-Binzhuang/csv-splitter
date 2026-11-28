@@ -4954,6 +4954,52 @@ fn convert_directory_to_xlsx_combines_all_xlsx_features() {
 }
 
 #[test]
+fn convert_writes_whole_and_decimal_validation_ranges() {
+    let dir = TempDir::new("numericvalidations");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,amount\n1,10\n").unwrap();
+    let out = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts/a.csv").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            out.to_str().unwrap(),
+            "--data-validation-whole",
+            "amount:0,1200",
+            "--data-validation-decimal",
+            "id:0.5,",
+            "--data-validation-prompt",
+            "amount:Amount|Enter 0-1200",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let file = std::fs::File::open(&out).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    use std::io::Read as _;
+    let mut sheet = String::new();
+    archive
+        .by_name("xl/worksheets/sheet1.xml")
+        .unwrap()
+        .read_to_string(&mut sheet)
+        .unwrap();
+    assert!(
+        sheet.contains("type=\"whole\" operator=\"between\""),
+        "{sheet}"
+    );
+    assert!(sheet.contains("<formula2>1200</formula2>"), "{sheet}");
+    assert!(sheet.contains("promptTitle=\"Amount\""), "{sheet}");
+    assert!(
+        sheet.contains("type=\"decimal\" operator=\"greaterThanOrEqual\""),
+        "{sheet}"
+    );
+    assert!(sheet.contains("<formula1>0.5</formula1>"), "{sheet}");
+}
+
+#[test]
 fn convert_protection_robustness_matrix() {
     let dir = TempDir::new("protectionmatrix");
     std::fs::create_dir(dir.join("parts")).unwrap();

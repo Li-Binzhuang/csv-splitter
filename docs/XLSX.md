@@ -78,7 +78,9 @@ csvx convert data.csv --format xlsx -o data.xlsx \
   --col-width "amount:20" \
   --protect-sheet-password test \
   --protect-sheet-allow-objects \
-  --data-validation-formula "amount:AND(B2>0,B2<100)"
+  --data-validation-formula "amount:AND(B2>0,B2<100)" \
+  --data-validation-whole "amount:0,1200" \
+  --data-validation-decimal "id:0.5,"
 ```
 
 - 规则用 `;` 分隔，每条 `列 操作符 值 : 颜色`；
@@ -92,6 +94,9 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 - `--data-validation-prompt` 写选中提示，格式 `列:标题|正文`；列须已有验证；
 - `--data-validation-error` 写错误提示，格式同上；
 - `--data-validation-blank` 允许空白单元格通过验证；
+- `--data-validation-whole` 写整数区间验证，格式 `列:最小值,最大值`（可单边留空）；
+- `--data-validation-decimal` 写小数区间验证，格式同上；
+- 整数/小数验证与列表、自定义公式互斥；提示/错误/空白开关对它们同样生效；
 - `--protect-sheet` 写工作表保护（对象/场景受限，不设密码）；
 - `--number-format` 支持颜色前缀（`[Red]`、`[Blue]` 等 8 色）并写入 formatCode；
 - `--protection` 读取 xlsx 的 sheetProtection 四标志（可配 `--all-sheets`、`--json`），不产出文件；

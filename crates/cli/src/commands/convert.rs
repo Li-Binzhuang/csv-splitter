@@ -113,6 +113,78 @@ fn parse_validation_formulas(text: &str) -> Result<Vec<csvx_core::xlsx::DataVali
     Ok(validations)
 }
 
+fn parse_numeric_validations(
+    text: &str,
+    kind: csvx_core::xlsx::NumericKind,
+    flag: &str,
+) -> Result<Vec<csvx_core::xlsx::DataValidation>, String> {
+    let mut validations = Vec::new();
+    for raw in split_format_specs(text) {
+        let (column, bounds) = raw
+            .split_once(':')
+            .ok_or_else(|| format!("{flag} {raw:?} needs column:min,max"))?;
+        let column = column.trim().to_string();
+        if column.is_empty() {
+            return Err(format!("{flag} {raw:?} needs a column"));
+        }
+        if validations
+            .iter()
+            .any(|validation: &csvx_core::xlsx::DataValidation| validation.column == column)
+        {
+            return Err(format!("data validation column {column:?} is repeated"));
+        }
+        let mut parts = bounds.split(',');
+        let min = parts.next().map(str::trim).filter(|part| !part.is_empty());
+        let max = match (parts.next(), parts.next()) {
+            (Some(max), None) => max.trim().to_string(),
+            (Some(_), Some(_)) => {
+                return Err(format!("{flag} {column:?} needs exactly min,max"));
+            }
+            (None, _) => String::new(),
+        };
+        if min.is_none() && max.is_empty() {
+            return Err(format!("{flag} {column:?} needs a min or max bound"));
+        }
+        validations.push(csvx_core::xlsx::DataValidation {
+            column,
+            values: Vec::new(),
+            formula: None,
+            prompt_title: None,
+            prompt_message: None,
+            error_title: None,
+            error_message: None,
+            allow_blank: false,
+            numeric: Some(csvx_core::xlsx::NumericValidation {
+                kind,
+                min: min.map(str::to_string),
+                max: (!max.is_empty()).then_some(max),
+            }),
+        });
+    }
+    if validations.is_empty() {
+        return Err(format!("{flag} needs at least one column:min,max"));
+    }
+    Ok(validations)
+}
+
+fn merge_numeric_validations(
+    validations: &mut Vec<csvx_core::xlsx::DataValidation>,
+    text: &str,
+    kind: csvx_core::xlsx::NumericKind,
+    flag: &str,
+) -> Result<(), String> {
+    for numeric in parse_numeric_validations(text, kind, flag)? {
+        if validations.iter().any(|v| v.column == numeric.column) {
+            return Err(format!(
+                "data validation column {:?} is repeated",
+                numeric.column
+            ));
+        }
+        validations.push(numeric);
+    }
+    Ok(())
+}
+
 fn parse_column_widths(text: &str) -> Result<Vec<(String, f64)>, String> {
     let mut widths = Vec::new();
     for raw in split_format_specs(text) {
@@ -324,6 +396,8 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut no_freeze = false;
     let mut no_auto_filter = false;
     let mut data_validation: Option<String> = None;
+    let mut data_validation_whole: Option<String> = None;
+    let mut data_validation_decimal: Option<String> = None;
     let mut data_validation_blank = false;
     let mut protect_sheet = false;
     let mut protect_password: Option<String> = None;
@@ -406,6 +480,20 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             "--data-validation-formula" => match p.value("--data-validation-formula") {
                 Ok(v) => data_validation_formula = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--data-validation-whole" => match p.value("--data-validation-whole") {
+                Ok(v) => data_validation_whole = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--data-validation-decimal" => match p.value("--data-validation-decimal") {
+                Ok(v) => data_validation_decimal = Some(v),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -756,6 +844,34 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                     }
                 }
             }
+            if let Some(text) = data_validation_whole.as_deref() {
+                match merge_numeric_validations(
+                    &mut validations,
+                    text,
+                    csvx_core::xlsx::NumericKind::Whole,
+                    "--data-validation-whole",
+                ) {
+                    Ok(()) => {}
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                }
+            }
+            if let Some(text) = data_validation_decimal.as_deref() {
+                match merge_numeric_validations(
+                    &mut validations,
+                    text,
+                    csvx_core::xlsx::NumericKind::Decimal,
+                    "--data-validation-decimal",
+                ) {
+                    Ok(()) => {}
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                }
+            }
             let validation_prompts = match data_validation_prompt.as_deref() {
                 Some(text) => match parse_validation_prompts(text) {
                     Ok(prompts) => prompts,
@@ -986,6 +1102,42 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                         data_validations.push(formula);
                     }
                 }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            }
+        }
+        if let Some(text) = data_validation_whole.as_deref() {
+            if !target.eq_ignore_ascii_case("xlsx") {
+                eprintln!("error: --data-validation-whole is only valid with --format xlsx");
+                return 2;
+            }
+            match merge_numeric_validations(
+                &mut data_validations,
+                text,
+                csvx_core::xlsx::NumericKind::Whole,
+                "--data-validation-whole",
+            ) {
+                Ok(()) => {}
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            }
+        }
+        if let Some(text) = data_validation_decimal.as_deref() {
+            if !target.eq_ignore_ascii_case("xlsx") {
+                eprintln!("error: --data-validation-decimal is only valid with --format xlsx");
+                return 2;
+            }
+            match merge_numeric_validations(
+                &mut data_validations,
+                text,
+                csvx_core::xlsx::NumericKind::Decimal,
+                "--data-validation-decimal",
+            ) {
+                Ok(()) => {}
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;

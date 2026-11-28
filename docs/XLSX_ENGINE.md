@@ -17,6 +17,7 @@
 - 读：共享字符串、inlineStr、缓存公式值、内置 + 常见自定义日期、sheet 大小写、
   合并左上值、空行跳过、16384 列 / 1,048,576 总行（1,048,575 数据行）上限；
 - 错误：无缓存公式值、坏共享索引、超行/列均显式报错，不静默造值；
+- 验证：列表/自定义公式/整数与小数区间（`type=whole|decimal`，between 或单边）；
 - 保护：密码哈希、objects/scenarios 粒度、`xlsx_sheet_protection` 与 `xlsx_protection_map` 读回；
   检测健壮性矩阵 `convert_protection_robustness_matrix`（未知 sheet/默认首表/JSON 顺序/非 xlsx/损坏 ZIP/空工作簿）。
 
