@@ -509,8 +509,10 @@
   验收：CLI + 单测 + gate。
 - [ ] 项529 目录格式 + no-auto + CF（功能级）：三特性并存；
   验收：CLI + 单测 + gate。
-- [ ] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
+- [ ] 项531 保护检测 + 多 sheet（功能级）：`--all-sheets` 逐表输出；
   验收：CLI + 单测 + gate。
+- [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
+  测试 `convert_reports_sheet_protection`。
 - [x] 项452 highlight + formats 组合（功能级）：CF 与数字格式共存；
   测试 `convert_xlsx_combines_highlight_and_number_formats`。
 - [x] 项453 xlsx 数据验证下拉（功能级）：csv_to_xlsx_with_validations；
@@ -912,6 +914,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 546（项530 保护检测 CLI，功能级；新能力）；
+定向与全量 gate/package 通过；发布包 SHA `76be41a8…3828ae11`；
+轮首 push 成功，本轮不再 push。
 
 Round 545（项527 目录格式+no-freeze，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `e4480665…eb90902b`；

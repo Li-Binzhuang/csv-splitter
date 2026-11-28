@@ -3707,6 +3707,52 @@ fn convert_xlsx_combines_custom_formula_highlight_and_no_auto_filter() {
 }
 
 #[test]
+fn convert_reports_sheet_protection() {
+    let dir = TempDir::new("protectionreport");
+    let input = dir.join("t.csv");
+    let protected = dir.join("protected.xlsx");
+    std::fs::write(&input, "id,amount\n1,10\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            protected.to_str().unwrap(),
+            "--protect-sheet-password",
+            "test",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+
+    let output = Command::new(bin())
+        .args(["convert", protected.to_str().unwrap(), "--protection"])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("protected=true"), "{text}");
+    assert!(text.contains("objects_locked=true"), "{text}");
+    assert!(text.contains("scenarios_locked=true"), "{text}");
+    assert!(text.contains("password_protected=true"), "{text}");
+
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            protected.to_str().unwrap(),
+            "--protection",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("\"password_protected\":true"), "{text}");
+}
+
+#[test]
 fn convert_xlsx_can_highlight_a_top_rank() {
     let dir = TempDir::new("xlsxtop");
     let input = dir.join("t.csv");

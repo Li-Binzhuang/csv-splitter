@@ -333,6 +333,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut data_validation_error: Option<String> = None;
     let mut show_formats = false;
     let mut formats_json = false;
+    let mut protection = false;
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -409,6 +410,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 }
             },
             "--formats" => show_formats = true,
+            "--protection" => protection = true,
             "--json" => formats_json = true,
             "--number-format" => match p.value("--number-format") {
                 Ok(v) => number_format = Some(v),
@@ -463,9 +465,82 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         return 2;
     };
 
-    if formats_json && !show_formats {
-        eprintln!("error: --json needs --formats");
+    if formats_json && !show_formats && !protection {
+        eprintln!("error: --json needs --formats or --protection");
         return 2;
+    }
+
+    if protection {
+        if show_formats {
+            eprintln!("error: --protection cannot be combined with --formats");
+            return 2;
+        }
+        let name = input
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if !(name.ends_with(".xlsx") || name.ends_with(".xlsm")) {
+            eprintln!("error: --protection needs an .xlsx/.xlsm input");
+            return 2;
+        }
+        if convert_format.is_some() || out.is_some() {
+            eprintln!("error: --protection cannot be combined with output/conversion flags");
+            return 2;
+        }
+        let names = if all_sheets {
+            match csvx_core::xlsx::xlsx_sheet_names(&input) {
+                Ok(names) => names,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        } else {
+            vec![sheet.clone().unwrap_or_default()]
+        };
+        if formats_json {
+            print!("[");
+        }
+        for (index, name) in names.iter().enumerate() {
+            let sheet_arg = (!name.is_empty()).then_some(name.as_str());
+            let detail = match csvx_core::xlsx::xlsx_sheet_protection(&input, sheet_arg) {
+                Ok(detail) => detail,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            };
+            let sheet_name = sheet_arg.unwrap_or("");
+            if formats_json {
+                if index > 0 {
+                    print!(",");
+                }
+                print!(
+                    "{{\"sheet\":{},\"protected\":{},\"objects_locked\":{},\"scenarios_locked\":{},\"password_protected\":{}}}",
+                    json_string(sheet_name),
+                    detail.protected,
+                    detail.objects_locked,
+                    detail.scenarios_locked,
+                    detail.password_protected
+                );
+            } else {
+                if all_sheets {
+                    println!("# {sheet_name}");
+                }
+                println!(
+                    "protected={} objects_locked={} scenarios_locked={} password_protected={}",
+                    detail.protected,
+                    detail.objects_locked,
+                    detail.scenarios_locked,
+                    detail.password_protected
+                );
+            }
+        }
+        if formats_json {
+            println!("]");
+        }
+        return 0;
     }
 
     if show_formats {
