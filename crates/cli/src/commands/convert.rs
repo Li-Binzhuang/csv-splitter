@@ -720,6 +720,36 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 },
                 None => Vec::new(),
             };
+            let mut validations = match data_validation.as_deref() {
+                Some(text) => match parse_data_validations(text) {
+                    Ok(validations) => validations,
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                },
+                None => Vec::new(),
+            };
+            if let Some(text) = data_validation_formula.as_deref() {
+                match parse_validation_formulas(text) {
+                    Ok(formulas) => {
+                        for formula in formulas {
+                            if validations.iter().any(|v| v.column == formula.column) {
+                                eprintln!(
+                                    "error: data validation column {:?} is repeated",
+                                    formula.column
+                                );
+                                return 2;
+                            }
+                            validations.push(formula);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                }
+            }
             let per_sheet = if widths.is_empty() {
                 Vec::new()
             } else {
@@ -745,52 +775,54 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                     }
                     mapped
                 };
-            let result = if !per_sheet_formats.is_empty() || !rules.is_empty() {
-                csvx_core::xlsx::write_sheets_with_formats_widths_and_protection(
-                    &out,
-                    &sheets,
-                    &per_sheet_formats,
-                    &per_sheet,
-                    !no_freeze,
-                    !no_auto_filter,
-                    protect_sheet
-                        || protect_password.is_some()
-                        || !protect_objects
-                        || !protect_scenarios,
-                    protect_password.as_deref(),
-                    protect_objects,
-                    protect_scenarios,
-                    &rules,
-                )
-            } else if protect_password.is_some() || !protect_objects || !protect_scenarios {
-                csvx_core::xlsx::write_sheets_with_options_and_password(
-                    &out,
-                    &sheets,
-                    &per_sheet,
-                    !no_freeze,
-                    !no_auto_filter,
-                    protect_password.as_deref(),
-                    protect_objects,
-                    protect_scenarios,
-                )
-            } else if !per_sheet.is_empty() {
-                csvx_core::xlsx::write_sheets_with_widths_and_options(
-                    &out,
-                    &sheets,
-                    &per_sheet,
-                    !no_freeze,
-                    !no_auto_filter,
-                )
-            } else if no_freeze || no_auto_filter {
-                csvx_core::xlsx::write_sheets_with_options(
-                    &out,
-                    &sheets,
-                    !no_freeze,
-                    !no_auto_filter,
-                )
-            } else {
-                csvx_core::xlsx::write_sheets(&out, &sheets)
-            };
+            let result =
+                if !per_sheet_formats.is_empty() || !rules.is_empty() || !validations.is_empty() {
+                    csvx_core::xlsx::write_sheets_with_formats_widths_and_protection(
+                        &out,
+                        &sheets,
+                        &per_sheet_formats,
+                        &per_sheet,
+                        !no_freeze,
+                        !no_auto_filter,
+                        protect_sheet
+                            || protect_password.is_some()
+                            || !protect_objects
+                            || !protect_scenarios,
+                        protect_password.as_deref(),
+                        protect_objects,
+                        protect_scenarios,
+                        &rules,
+                        &validations,
+                    )
+                } else if protect_password.is_some() || !protect_objects || !protect_scenarios {
+                    csvx_core::xlsx::write_sheets_with_options_and_password(
+                        &out,
+                        &sheets,
+                        &per_sheet,
+                        !no_freeze,
+                        !no_auto_filter,
+                        protect_password.as_deref(),
+                        protect_objects,
+                        protect_scenarios,
+                    )
+                } else if !per_sheet.is_empty() {
+                    csvx_core::xlsx::write_sheets_with_widths_and_options(
+                        &out,
+                        &sheets,
+                        &per_sheet,
+                        !no_freeze,
+                        !no_auto_filter,
+                    )
+                } else if no_freeze || no_auto_filter {
+                    csvx_core::xlsx::write_sheets_with_options(
+                        &out,
+                        &sheets,
+                        !no_freeze,
+                        !no_auto_filter,
+                    )
+                } else {
+                    csvx_core::xlsx::write_sheets(&out, &sheets)
+                };
             return match result {
                 Ok(()) => {
                     if !quiet {

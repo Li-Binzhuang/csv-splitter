@@ -1,0 +1,35 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "99ddefd46ae7648cfb374aa49a7d3687e29cad8b9aa0b8e2d3026247b75f7071",
+  "batch_id": "0b95cb5de63fdcba01338dd73a6993eb9cfb89f8415e1fb7a0fea7ac7d7cdb88",
+  "composite_identity": "b0a7dbde373cf3a333cb1ec92f0c5cf68e568fab26686e73ad692dff304a016f",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "9fa8de3885cbe7051cd8b972d2e76634685a3fda6036e1fdf78bf029bfa096d8",
+  "targets": [
+    {
+      "candidate_id": "93163c0b007c44beba34cc1ec54cb34acd09ec1296f4954c3623001ddd7699e5",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "0ba7e78567525ebf128d0b9d3caa2386f8dd6bc19e891a63da6944877230de9c",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert：转码、xlsx/csv/tsv/ndjson/parquet、highlight、number-format、formats、protection 检测、no-freeze、no-auto-filter、data-validation、protect-sheet、col-width、密码与粒度 | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；--formats；--protection；--number-format（单文件与目录）；目录格式/高亮/密码叠加；--no-freeze/--no-auto-filter；--data-validation；--protect-sheet；allow-objects/scenarios；--col-width | S:不覆盖输入；--formats/--protection 仅 xlsx；密码 1–15 ASCII；公式 ≤255；重复列/空值/宽度越界退出 2；目录未列出列默认 Plain"
+    },
+    {
+      "candidate_id": "2b70c8a50ed54cbf16ca2b59036df00db2257814e8076ec2f5ca30a28a794c0a",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "483cbdedf867bfe9c060cbd871e670db8c56f07fa0ee0792cbb5343219c73d20",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles；csv_to_xlsx_with_all；write_sheets 系列含 widths/options/formats+widths/多 sheet 保护与密码/目录密码/对象场景粒度/格式+宽度+规则+保护；dataValidations 列表与 type=custom；allow_blank；prompt/error；条件格式全族/dxf 映射表；Colored；xlsx_sheet_protection；autoFilter | S:不写公式/图表；合并不展开；验证列表 ≤255 且禁逗号/引号；自定义公式与列表不能混用"
+    },
+    {
+      "candidate_id": "1b31be7b1dda0720c2dff016f5d06ddbd7101548d1dfd622b1c165be1f1daedd",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "3506f1c7ab92598917ca8d20e7f44000230d9f994a29c6634d2f677bd19bdd78",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；dxf 逐色项已合并；Round550 目录 CF+密码与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
