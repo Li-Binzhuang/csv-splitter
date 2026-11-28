@@ -318,7 +318,12 @@ impl NumberFormat {
 }
 
 fn accounting_shape(spec: &str) -> Option<(Option<String>, usize)> {
-    let inner = spec.strip_prefix("_(")?.strip_suffix("_)")?.trim();
+    let trimmed = spec.trim();
+    let inner = trimmed
+        .strip_prefix("_(")
+        .and_then(|rest| rest.strip_suffix("_)"))
+        .unwrap_or(trimmed)
+        .trim();
     let (symbol, rest) = match inner.chars().next() {
         Some(character @ ('$' | '¥' | '€')) => (
             Some(character.to_string()),
@@ -1382,6 +1387,12 @@ mod tests {
         assert_eq!(yen.name(), "_(¥* #,##0_)");
         assert_eq!(yen.render("1234"), "¥1,234");
 
+        let bare = NumberFormat::parse("$* #,##0.00").unwrap();
+        assert_eq!(bare.name(), "_($* #,##0.00_)");
+        assert_eq!(bare.render("1234.5"), "$1,234.50");
+        let bare_plain = NumberFormat::parse("* #,##0").unwrap();
+        assert_eq!(bare_plain.name(), "_(* #,##0_)");
+        assert_eq!(bare_plain.render("1234"), "1,234");
         assert!(NumberFormat::parse("_($* #,##0.00").is_err());
         assert!(NumberFormat::parse("_($* #,##0.00#_)").is_err());
     }

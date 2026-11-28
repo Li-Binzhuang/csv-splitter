@@ -468,12 +468,14 @@
   测试 `accounting_alignment_formats_keep_the_excel_code`。
 - [x] 项508 保护密码（功能级）：保护选项接受密码并写 Excel 密码哈希；
   测试 `convert_xlsx_can_protect_with_a_password`、`sheet_password_hashes_match_excel`。
-- [ ] 项509 会计对齐 + 货币符号（功能级）：`$* #,##0.00` 对齐渲染；
-  验收：单测 + gate。
+- [x] 项509 会计对齐 + 货币符号（功能级）：`$* #,##0.00` 归一化为对齐码；
+  测试 `accounting_alignment_formats_keep_the_excel_code`。
 - [ ] 项510 多 sheet 保护密码（功能级）：每 sheet 同一密码哈希；
   验收：单测 + gate。
 - [ ] 项511 密码 + 格式 + no-freeze（功能级）：三特性共存；
   验收：CLI + 单测 + gate。
+- [ ] 项512 数据验证自定义公式（功能级）：写 type=custom 的公式验证；
+  验收：单测 + CLI + gate。
 - [x] 项452 highlight + formats 组合（功能级）：CF 与数字格式共存；
   测试 `convert_xlsx_combines_highlight_and_number_formats`。
 - [x] 项453 xlsx 数据验证下拉（功能级）：csv_to_xlsx_with_validations；
@@ -875,6 +877,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 528（项509 会计对齐+货币符号，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `82feac43…0706fa85`；
+轮首 push 成功，本轮不再 push。
 
 Round 527（项508 保护密码，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `13ab38af…79621ab`；
