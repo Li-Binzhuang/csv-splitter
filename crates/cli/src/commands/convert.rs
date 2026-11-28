@@ -552,6 +552,8 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut sheet_visibility = false;
     let mut properties = false;
     let mut page_setup = false;
+    let mut print_layout = false;
+    let mut print_area: Option<String> = None;
     let mut title: Option<String> = None;
     let mut author: Option<String> = None;
     let mut merges: Vec<String> = Vec::new();
@@ -688,6 +690,14 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--visibility" => sheet_visibility = true,
             "--properties" => properties = true,
             "--page-setup" => page_setup = true,
+            "--print-layout" => print_layout = true,
+            "--print-area" => match p.value("--print-area") {
+                Ok(v) => print_area = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--title" => match p.value("--title") {
                 Ok(v) => title = Some(v),
                 Err(e) => {
@@ -795,9 +805,110 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         && !sheet_visibility
         && !properties
         && !page_setup
+        && !print_layout
     {
         eprintln!("error: --json needs --formats or --protection");
         return 2;
+    }
+
+    if print_layout {
+        if protection
+            || validations
+            || formulas
+            || conditional_formats
+            || sheet_view
+            || show_formats
+            || show_headers
+            || merged_ranges
+            || column_widths
+            || row_heights
+            || sheet_visibility
+            || properties
+            || page_setup
+        {
+            eprintln!("error: --print-layout cannot be combined with other inspection modes");
+            return 2;
+        }
+        let name = input
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if !(name.ends_with(".xlsx") || name.ends_with(".xlsm")) {
+            eprintln!("error: --print-layout needs an .xlsx/.xlsm input");
+            return 2;
+        }
+        if convert_format.is_some() || out.is_some() {
+            eprintln!("error: --print-layout cannot be combined with output flags");
+            return 2;
+        }
+        if sheet.is_some() && all_sheets {
+            eprintln!("error: --print-layout --all-sheets cannot be combined with --sheet");
+            return 2;
+        }
+        let names = if all_sheets {
+            match csvx_core::xlsx::xlsx_sheet_names(&input) {
+                Ok(names) => names,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        } else {
+            vec![sheet.clone().unwrap_or_default()]
+        };
+        let mut entries = Vec::new();
+        for name in &names {
+            let sheet_arg = (!name.is_empty()).then_some(name.as_str());
+            match csvx_core::xlsx::xlsx_print_layout(&input, sheet_arg) {
+                Ok(layout) => entries.push((sheet_arg.unwrap_or("").to_string(), layout)),
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        }
+        if formats_json {
+            print!("[");
+            for (index, (sheet_name, layout)) in entries.iter().enumerate() {
+                if index > 0 {
+                    print!(",");
+                }
+                print!(
+                    "{{\"sheet\":{},\"print_area\":{},\"margins\":{}",
+                    json_string(sheet_name),
+                    json_optional(&layout.print_area),
+                    match layout.margins.as_ref() {
+                        Some(margins) => format!(
+                            "{{\"left\":{},\"right\":{},\"top\":{},\"bottom\":{},\"header\":{},\"footer\":{}}}",
+                            margins.left, margins.right, margins.top, margins.bottom, margins.header, margins.footer
+                        ),
+                        None => "null".to_string(),
+                    }
+                );
+                print!("}}");
+            }
+            println!("]");
+        } else {
+            for (sheet_name, layout) in &entries {
+                if all_sheets {
+                    println!("# {sheet_name}");
+                }
+                println!(
+                    "print_area={} margins={}",
+                    layout.print_area.as_deref().unwrap_or(""),
+                    layout
+                        .margins
+                        .as_ref()
+                        .map(|m| format!(
+                            "left={} right={} top={} bottom={} header={} footer={}",
+                            m.left, m.right, m.top, m.bottom, m.header, m.footer
+                        ))
+                        .unwrap_or_default()
+                );
+            }
+        }
+        return 0;
     }
 
     if page_setup {
@@ -2828,6 +2939,20 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             Some(hide_sheets.clone())
         };
 
+        let print_area_value = if let Some(area) = print_area.as_ref() {
+            if target != "xlsx" {
+                eprintln!("error: --print-area needs an xlsx output");
+                return 2;
+            }
+            if input.is_dir() {
+                eprintln!("error: --print-area applies to single-file xlsx exports");
+                return 2;
+            }
+            Some(area.clone())
+        } else {
+            None
+        };
+
         let result = if xlsx_options {
             csvx_core::xlsx::csv_to_xlsx_with_all(
                 &input,
@@ -2867,6 +2992,12 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 }
                 if let Some(names) = hidden_sheets.as_ref() {
                     if let Err(error) = csvx_core::xlsx::xlsx_hide_sheets(&out, names) {
+                        eprintln!("error: {error}");
+                        return 1;
+                    }
+                }
+                if let Some(area) = print_area_value.as_ref() {
+                    if let Err(error) = csvx_core::xlsx::xlsx_set_print_area(&out, area) {
                         eprintln!("error: {error}");
                         return 1;
                     }

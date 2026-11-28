@@ -670,11 +670,13 @@
   测试 `convert_reports_page_setup`。
 - [x] 项614 打印区域写出 API（新能力）：`xlsx_set_print_area` 写 definedName Print_Area；
   测试 `print_area_can_be_set_after_export`。
-- [ ] 项615 打印区域导出 CLI（新能力）：print-area 参数写 definedName 并回读；
-  验收：CLI + 单测 + gate。
+- [x] 项615 打印区域导出 CLI（新能力）：`--print-area` 写 definedName，`--print-layout` 回读；
+  测试 `convert_writes_and_reports_print_area`。
 - [ ] 项616 页面设置导出 CLI（新能力）：导出时设置纸张尺寸与横向/纵向；
   验收：CLI + 单测 + gate。
 - [ ] 项617 页边距写出 API（新能力）：写 pageMargins 四边与页眉页脚；
+  验收：单测 + round-trip + gate。
+- [ ] 项618 页眉页脚回读 API（新能力）：读取 oddHeader/oddFooter；
   验收：单测 + round-trip + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
@@ -1081,6 +1083,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 627（项615 打印区域导出 CLI，feat 级新能力，验收完成）；
+定向与全量 gate/package 通过；发布包 SHA `a38b0a57…f0812196`；
+轮首 push 成功，本轮不再 push。
 
 Round 626（项614 打印区域写出 API，feat 级新能力，验收完成）；
 定向与全量 gate/package 通过；发布包 SHA `8767743e…a878489b`；
