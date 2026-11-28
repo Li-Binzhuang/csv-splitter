@@ -3707,6 +3707,44 @@ fn convert_xlsx_combines_custom_formula_highlight_and_no_auto_filter() {
 }
 
 #[test]
+fn convert_reports_protection_for_all_sheets() {
+    let dir = TempDir::new("protectionallsheets");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,amount\n1,10\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "id,amount\n2,20\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--protect-sheet-password",
+            "test",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--protection",
+            "--all-sheets",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert_eq!(text.matches("# ").count(), 2, "{text}");
+    assert_eq!(text.matches("password_protected=true").count(), 2, "{text}");
+    assert!(text.contains("protected=true"), "{text}");
+}
+
+#[test]
 fn convert_reports_sheet_protection() {
     let dir = TempDir::new("protectionreport");
     let input = dir.join("t.csv");

@@ -509,11 +509,13 @@
   测试 `convert_directory_to_xlsx_keeps_formats_and_highlights`。
 - [x] 项529 目录格式 + no-auto + CF（功能级）：三特性并存；
   测试 `convert_directory_to_xlsx_keeps_formats_cf_and_no_auto`。
-- [ ] 项531 保护检测 + 多 sheet（功能级）：`--all-sheets` 逐表输出；
-  验收：CLI + 单测 + gate。
+- [x] 项531 保护检测 + 多 sheet（功能级）：`--all-sheets` 逐表输出；
+  测试 `convert_reports_protection_for_all_sheets`。
 - [ ] 项532 目录 CF + 密码（功能级）：高亮与保护叠加；
   验收：CLI + 单测 + gate。
 - [ ] 项533 目录数据验证（功能级）：多 sheet 写下拉/公式验证；
+  验收：CLI + 单测 + gate。
+- [ ] 项534 目录 CF + 密码 + no-freeze（功能级）：三特性并存；
   验收：CLI + 单测 + gate。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
   测试 `convert_reports_sheet_protection`。
@@ -918,6 +920,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 549（项531 保护检测+多 sheet，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `4eacacfa…2ca42cec`；
+轮首 push 成功，本轮不再 push。
 
 Round 548（项529 目录格式+no-auto+CF，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `8806f51d…1eb98232`；
