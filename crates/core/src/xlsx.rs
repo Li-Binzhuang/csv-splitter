@@ -2324,6 +2324,81 @@ fn workbook_sheet_name(path: &Path) -> String {
     name.chars().take(31).collect()
 }
 
+/// One cell holding an Excel formula, with its cached value when present.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FormulaCell {
+    pub cell: String,
+    pub formula: String,
+    pub cached_value: Option<String>,
+}
+
+/// Read formulas (not just cached values) from one worksheet.
+pub fn xlsx_formulas(input: &Path, sheet: Option<&str>) -> std::io::Result<Vec<FormulaCell>> {
+    let file = std::fs::File::open(input)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let workbook = read_entry(&mut archive, "xl/workbook.xml")?;
+    let rels = read_entry(&mut archive, "xl/_rels/workbook.xml.rels").unwrap_or_default();
+    let sheets = workbook_sheets(&workbook);
+    if sheets.is_empty() {
+        return Err(invalid("xlsx has no worksheets"));
+    }
+    let selected = select_sheet(&sheets, sheet)?;
+    let target = relationship_target(&rels, &selected.rid)
+        .or_else(|| (sheets.len() == 1).then(|| "xl/worksheets/sheet1.xml".to_string()))
+        .ok_or_else(|| {
+            invalid(&format!(
+                "xlsx sheet {:?} has no relationship target",
+                selected.name
+            ))
+        })?;
+    let normalized = if let Some(stripped) = target.strip_prefix('/') {
+        stripped.to_string()
+    } else if target.starts_with("xl/") {
+        target
+    } else {
+        format!("xl/{}", target.trim_start_matches("./"))
+    };
+    let sheet_xml = read_entry(&mut archive, &normalized)?;
+    Ok(parse_formula_cells(&sheet_xml))
+}
+
+fn parse_formula_cells(sheet_xml: &str) -> Vec<FormulaCell> {
+    let mut out = Vec::new();
+    let mut rest = sheet_xml;
+    while let Some(start) = rest.find("<c ") {
+        let tail = &rest[start..];
+        let Some(end) = tail.find("</c>") else {
+            break;
+        };
+        let block = &tail[..end + "</c>".len()];
+        let cell = tag_attribute(block, "r").unwrap_or_default();
+        if let Some(formula) = formula_text(block) {
+            out.push(FormulaCell {
+                cell,
+                formula,
+                cached_value: element_text(block, "v"),
+            });
+        }
+        rest = &tail[end + "</c>".len()..];
+    }
+    out
+}
+
+fn formula_text(block: &str) -> Option<String> {
+    let start = block.find("<f")?;
+    let open = block[start..].find('>')? + start;
+    if block[start..=open].ends_with("/>") {
+        return None;
+    }
+    let end = block[open + 1..].find("</f>")? + open + 1;
+    Some(xml_unescape(&block[open + 1..end]))
+}
+
 /// One worksheet data validation read back from an xlsx file.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DataValidationInfo {
@@ -5150,6 +5225,45 @@ mod tests {
         let error = xlsx_sheet_protection(&path, Some("missing")).unwrap_err();
         assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
         assert!(error.to_string().contains("missing"), "{error}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn formulas_are_read_back_with_cached_values() {
+        let dir = temp_path("formula readback");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("formulas.xlsx");
+        let file = std::fs::File::create(&path).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        use std::io::Write as _;
+        for (name, body) in [
+            (
+                "xl/workbook.xml",
+                r#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="one" sheetId="1" r:id="rId1"/></sheets></workbook>"#,
+            ),
+            (
+                "xl/_rels/workbook.xml.rels",
+                r#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>"#,
+            ),
+            (
+                "xl/worksheets/sheet1.xml",
+                r#"<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1"><f>SUM(B2:C2)</f><v>3</v></c></row></sheetData></worksheet>"#,
+            ),
+        ] {
+            zip.start_file(name, zip::write::SimpleFileOptions::default())
+                .unwrap();
+            zip.write_all(body.as_bytes()).unwrap();
+        }
+        zip.finish().unwrap();
+        let formulas = xlsx_formulas(&path, None).unwrap();
+        assert_eq!(
+            formulas,
+            vec![FormulaCell {
+                cell: "A1".to_string(),
+                formula: "SUM(B2:C2)".to_string(),
+                cached_value: Some("3".to_string()),
+            }]
+        );
         std::fs::remove_dir_all(dir).ok();
     }
 
