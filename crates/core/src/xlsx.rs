@@ -3514,6 +3514,69 @@ fn formula_text(block: &str) -> Option<String> {
     Some(xml_unescape(&block[open + 1..end]))
 }
 
+/// Print/page setup settings read back from `<pageSetup>`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct PageSetupInfo {
+    pub orientation: Option<String>,
+    pub paper_size: Option<u32>,
+    pub fit_to_width: Option<u32>,
+    pub fit_to_height: Option<u32>,
+    pub scale: Option<u32>,
+}
+
+/// Read `<pageSetup>` for one worksheet.
+pub fn xlsx_page_setup(input: &Path, sheet: Option<&str>) -> std::io::Result<PageSetupInfo> {
+    let file = std::fs::File::open(input)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let workbook = read_entry(&mut archive, "xl/workbook.xml")?;
+    let rels = read_entry(&mut archive, "xl/_rels/workbook.xml.rels").unwrap_or_default();
+    let sheets = workbook_sheets(&workbook);
+    if sheets.is_empty() {
+        return Err(invalid("xlsx has no worksheets"));
+    }
+    let selected = select_sheet(&sheets, sheet)?;
+    let target = relationship_target(&rels, &selected.rid)
+        .or_else(|| (sheets.len() == 1).then(|| "xl/worksheets/sheet1.xml".to_string()))
+        .ok_or_else(|| {
+            invalid(&format!(
+                "xlsx sheet {:?} has no relationship target",
+                selected.name
+            ))
+        })?;
+    let normalized = if let Some(stripped) = target.strip_prefix('/') {
+        stripped.to_string()
+    } else if target.starts_with("xl/") {
+        target
+    } else {
+        format!("xl/{}", target.trim_start_matches("./"))
+    };
+    let sheet_xml = read_entry(&mut archive, &normalized)?;
+    Ok(parse_page_setup(&sheet_xml))
+}
+
+fn parse_page_setup(sheet_xml: &str) -> PageSetupInfo {
+    let Some(start) = sheet_xml.find("<pageSetup ") else {
+        return PageSetupInfo::default();
+    };
+    let tail = &sheet_xml[start..];
+    let Some(open) = tail.find('>') else {
+        return PageSetupInfo::default();
+    };
+    let tag = &tail[..=open];
+    PageSetupInfo {
+        orientation: tag_attribute(tag, "orientation"),
+        paper_size: tag_attribute(tag, "paperSize").and_then(|value| value.parse().ok()),
+        fit_to_width: tag_attribute(tag, "fitToWidth").and_then(|value| value.parse().ok()),
+        fit_to_height: tag_attribute(tag, "fitToHeight").and_then(|value| value.parse().ok()),
+        scale: tag_attribute(tag, "scale").and_then(|value| value.parse().ok()),
+    }
+}
+
 /// One worksheet data validation read back from an xlsx file.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DataValidationInfo {
@@ -6640,6 +6703,42 @@ mod tests {
         xlsx_set_merge_cells(&path, &["A1:B1".to_string()]).unwrap();
         let ranges = xlsx_merged_ranges(&path, None).unwrap();
         assert_eq!(ranges, vec!["A1:B1".to_string()]);
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn page_setup_is_read_back() {
+        let dir = temp_path("page setup");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("setup.xlsx");
+        let file = std::fs::File::create(&path).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        use std::io::Write as _;
+        for (name, body) in [
+            (
+                "xl/workbook.xml",
+                r#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="one" sheetId="1" r:id="rId1"/></sheets></workbook>"#,
+            ),
+            (
+                "xl/_rels/workbook.xml.rels",
+                r#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>"#,
+            ),
+            (
+                "xl/worksheets/sheet1.xml",
+                r#"<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1"><v>1</v></c></row></sheetData><pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="2" scale="80"/></worksheet>"#,
+            ),
+        ] {
+            zip.start_file(name, zip::write::SimpleFileOptions::default())
+                .unwrap();
+            zip.write_all(body.as_bytes()).unwrap();
+        }
+        zip.finish().unwrap();
+        let setup = xlsx_page_setup(&path, None).unwrap();
+        assert_eq!(setup.orientation.as_deref(), Some("landscape"));
+        assert_eq!(setup.paper_size, Some(9));
+        assert_eq!(setup.fit_to_width, Some(1));
+        assert_eq!(setup.fit_to_height, Some(2));
+        assert_eq!(setup.scale, Some(80));
         std::fs::remove_dir_all(dir).ok();
     }
 
