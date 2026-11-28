@@ -4615,6 +4615,44 @@ fn convert_directory_to_xlsx_applies_number_formats() {
 }
 
 #[test]
+fn convert_directory_to_xlsx_combines_highlight_and_password() {
+    let dir = TempDir::new("xlsxdircfpass");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,amount\n1,1200\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "id,amount\n2,20\n").unwrap();
+    let out = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            out.to_str().unwrap(),
+            "--highlight",
+            "amount>1000:red",
+            "--protect-sheet-password",
+            "test",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let file = std::fs::File::open(&out).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    use std::io::Read as _;
+    for name in ["xl/worksheets/sheet1.xml", "xl/worksheets/sheet2.xml"] {
+        let mut sheet = String::new();
+        archive
+            .by_name(name)
+            .unwrap()
+            .read_to_string(&mut sheet)
+            .unwrap();
+        assert!(sheet.contains("conditionalFormatting"), "{name}: {sheet}");
+        assert!(sheet.contains("password=\"CBEB\""), "{name}: {sheet}");
+    }
+}
+
+#[test]
 fn convert_directory_to_xlsx_keeps_formats_and_highlights() {
     let dir = TempDir::new("xlsxdirfmtcf");
     std::fs::create_dir(dir.join("parts")).unwrap();
