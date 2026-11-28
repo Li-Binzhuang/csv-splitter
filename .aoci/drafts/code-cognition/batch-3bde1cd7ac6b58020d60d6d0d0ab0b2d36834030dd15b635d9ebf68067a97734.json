@@ -1,0 +1,27 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "9b97914de61d3d7650ba9c465538ed6b6a7dbcfc4fdf8dcbcfd773a6c969296d",
+  "batch_id": "3bde1cd7ac6b58020d60d6d0d0ab0b2d36834030dd15b635d9ebf68067a97734",
+  "composite_identity": "7ce96619a88c31324994b5105f101f3375d9a281eb503c5426d6edd3930c543f",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "b2eb7b815f8370b3239e46ef58613c81ec6057f7e93f8cb3b5aabb54090312f1",
+  "targets": [
+    {
+      "candidate_id": "5700f4fb0ea44b85528dce673c2ca088012528ce6d3c1fb9a6e9077aad0804f9",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "aa125e4c0fd94945357460fcd36ecbdd79342b880eed9af154b2e0af1ddb3f44",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族/INTL（WEEKNUM 11–17）；查找/小计；UNICHAR/UNICODE；数论；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；进制转换；SKEW/KURT；SLOPE/INTERCEPT/PEARSON/RSQ；DEVSQ/COVAR；FORECAST；ISEVEN/ISODD；FISHER/FISHERINV；SERIESSUM；SUMX；STANDARDIZE；GEOMEAN/HARMEAN；RAND/RANDBETWEEN；复数；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧/VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION/MIRR；BESSELY | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW/RAND 易变，RAND 无参数且落 [0,1)；RANDBETWEEN 列引用/嵌套/IF、相等边界返回值、参数个数错，文本/空边界/#VALUE 与 \u003e2^53 报错"
+    },
+    {
+      "candidate_id": "7dc92535ff250d04269211b6a082b71587ed4663d593d5c25e14d3bc71fb0717",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "5e190f0063f9d4bb3fb3c9df2aa058839aa8b67af3492bce399d3a5ee9c4c1f6",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；Round515 列宽越界报错与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

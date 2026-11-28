@@ -556,7 +556,9 @@
   测试 `rand_and_randbetween_stay_in_bounds`。
 - [x] 项497 列宽越界 CLI 报错（功能级）：0/256/重复列拒绝；
   测试 `convert_rejects_out_of_range_or_repeated_column_widths`。
-- [ ] 项498 RANDBETWEEN 负区间（功能级）：-5..-1 采样；
+- [x] 项498 RANDBETWEEN 负区间（功能级）：-5..-1 采样；
+  测试 `rand_and_randbetween_stay_in_bounds`。
+- [ ] 项499 RANDBETWEEN 跨零区间（功能级）：-2..2 采样；
   验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
@@ -855,6 +857,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 516（项498 负区间，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `1363f78e…6e07c555`；
+轮首 push 成功，本轮不再 push。
 
 Round 515（项497 列宽越界报错，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `a9fb7629…7f6b21`；
