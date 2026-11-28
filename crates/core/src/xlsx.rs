@@ -2657,6 +2657,45 @@ fn parse_hidden_layout(sheet_xml: &str) -> HiddenLayout {
     layout
 }
 
+/// One workbook sheet entry with its visibility state.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SheetVisibilityEntry {
+    pub name: String,
+    /// `visible`, `hidden`, or `veryHidden`.
+    pub state: String,
+}
+
+/// Read each sheet's `state` attribute from workbook.xml.
+pub fn xlsx_sheet_visibility(input: &Path) -> std::io::Result<Vec<SheetVisibilityEntry>> {
+    let file = std::fs::File::open(input)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let workbook = read_entry(&mut archive, "xl/workbook.xml")?;
+    let sheets = workbook_sheets(&workbook);
+    if sheets.is_empty() {
+        return Err(invalid("xlsx has no worksheets"));
+    }
+    let mut out = Vec::new();
+    let mut rest = workbook.as_str();
+    while let Some(start) = rest.find("<sheet ") {
+        let tail = &rest[start..];
+        let Some(open) = tail.find('>') else { break };
+        let tag = &tail[..=open];
+        if let Some(name) = tag_attribute(tag, "name") {
+            out.push(SheetVisibilityEntry {
+                name: xml_unescape(&name),
+                state: tag_attribute(tag, "state").unwrap_or_else(|| "visible".to_string()),
+            });
+        }
+        rest = &tail[open + 1..];
+    }
+    Ok(out)
+}
+
 /// Merged-cell ranges read back from a worksheet, e.g. `A1:B2`.
 pub fn xlsx_merged_ranges(input: &Path, sheet: Option<&str>) -> std::io::Result<Vec<String>> {
     let file = std::fs::File::open(input)?;
@@ -6030,6 +6069,28 @@ mod tests {
         let layout = xlsx_hidden_layout(&path, None).unwrap();
         assert_eq!(layout.rows, vec![2]);
         assert_eq!(layout.columns, vec!["B".to_string(), "C".to_string()]);
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn sheet_visibility_states_are_read_back() {
+        let dir = temp_path("sheet visibility");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("visibility.xlsx");
+        let file = std::fs::File::create(&path).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        use std::io::Write as _;
+        let workbook = r#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="shown" sheetId="1" r:id="rId1"/><sheet name="secret" sheetId="2" state="hidden" r:id="rId2"/></sheets></workbook>"#;
+        zip.start_file("xl/workbook.xml", zip::write::SimpleFileOptions::default())
+            .unwrap();
+        zip.write_all(workbook.as_bytes()).unwrap();
+        zip.finish().unwrap();
+        let sheets = xlsx_sheet_visibility(&path).unwrap();
+        assert_eq!(sheets.len(), 2);
+        assert_eq!(sheets[0].name, "shown");
+        assert_eq!(sheets[0].state, "visible");
+        assert_eq!(sheets[1].name, "secret");
+        assert_eq!(sheets[1].state, "hidden");
         std::fs::remove_dir_all(dir).ok();
     }
 

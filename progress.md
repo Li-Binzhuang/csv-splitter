@@ -640,12 +640,14 @@
   测试 `convert_reports_column_widths`。
 - [x] 项599 行高写出 API（新能力）：`write_sheets_with_heights` 写 `ht`/`customHeight`；
   测试 `row_heights_are_written_and_read_back`。
-- [ ] 项600 工作表可见性回读 API（新能力）：读取 workbook sheetState（hidden/veryHidden）；
-  验收：单测 + round-trip + gate。
+- [x] 项600 工作表可见性回读 API（新能力）：`xlsx_sheet_visibility` 返回 visible/hidden/veryHidden；
+  测试 `sheet_visibility_states_are_read_back`。
 - [ ] 项601 行高检测 CLI（新能力）：heights 检测输出行号/高度/customHeight；
   验收：CLI + 单测 + gate。
 - [ ] 项602 文档属性回读 API（新能力）：读取 docProps/core.xml 标题/作者/创建时间；
   验收：单测 + round-trip + gate。
+- [ ] 项603 工作表可见性检测 CLI（新能力）：visibility 检测输出 sheet/state；
+  验收：CLI + 单测 + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
@@ -1051,6 +1053,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 612（项600 工作表可见性回读 API，feat 级新能力，验收完成）；
+定向与全量 gate/package 通过；发布包 SHA `93f8c06e…db9f32a3`；
+轮首 push 成功，本轮不再 push。
 
 Round 611（项599 行高写出 API，feat 级新能力，验收完成）；
 定向与全量 gate/package 通过；发布包 SHA `6f4086c9…03dfc626`；
