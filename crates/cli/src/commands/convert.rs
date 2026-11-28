@@ -548,6 +548,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut show_headers = false;
     let mut merged_ranges = false;
     let mut column_widths = false;
+    let mut row_heights = false;
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -676,6 +677,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--headers" => show_headers = true,
             "--merged" => merged_ranges = true,
             "--widths" => column_widths = true,
+            "--heights" => row_heights = true,
             "--json" => formats_json = true,
             "--number-format-raw" => match p.value("--number-format-raw") {
                 Ok(v) => number_format_raw = Some(v),
@@ -747,9 +749,97 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         && !show_headers
         && !merged_ranges
         && !column_widths
+        && !row_heights
     {
         eprintln!("error: --json needs --formats or --protection");
         return 2;
+    }
+
+    if row_heights {
+        if protection
+            || validations
+            || formulas
+            || conditional_formats
+            || sheet_view
+            || show_formats
+            || show_headers
+            || merged_ranges
+            || column_widths
+        {
+            eprintln!("error: --heights cannot be combined with other inspection modes");
+            return 2;
+        }
+        let name = input
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if !(name.ends_with(".xlsx") || name.ends_with(".xlsm")) {
+            eprintln!("error: --heights needs an .xlsx/.xlsm input");
+            return 2;
+        }
+        if convert_format.is_some() || out.is_some() {
+            eprintln!("error: --heights cannot be combined with output flags");
+            return 2;
+        }
+        if sheet.is_some() && all_sheets {
+            eprintln!("error: --heights --all-sheets cannot be combined with --sheet");
+            return 2;
+        }
+        let names = if all_sheets {
+            match csvx_core::xlsx::xlsx_sheet_names(&input) {
+                Ok(names) => names,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        } else {
+            vec![sheet.clone().unwrap_or_default()]
+        };
+        let mut entries = Vec::new();
+        for name in &names {
+            let sheet_arg = (!name.is_empty()).then_some(name.as_str());
+            match csvx_core::xlsx::xlsx_row_heights(&input, sheet_arg) {
+                Ok(heights) => entries.push((sheet_arg.unwrap_or("").to_string(), heights)),
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        }
+        if formats_json {
+            print!("[");
+            for (index, (sheet_name, heights)) in entries.iter().enumerate() {
+                if index > 0 {
+                    print!(",");
+                }
+                print!("{{\"sheet\":{},\"rows\":[", json_string(sheet_name));
+                for (height_index, height) in heights.iter().enumerate() {
+                    if height_index > 0 {
+                        print!(",");
+                    }
+                    print!(
+                        "{{\"row\":{},\"height\":{},\"custom_height\":{}}}",
+                        height.row, height.height, height.custom_height
+                    );
+                }
+                print!("]}}");
+            }
+            println!("]");
+        } else if entries.iter().all(|(_, heights)| heights.is_empty()) {
+            println!("no row heights");
+        } else {
+            for (sheet_name, heights) in &entries {
+                if all_sheets {
+                    println!("# {sheet_name}");
+                }
+                for height in heights {
+                    println!("{}\t{}", height.row, height.height);
+                }
+            }
+        }
+        return 0;
     }
 
     if column_widths {
