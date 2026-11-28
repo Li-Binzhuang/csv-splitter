@@ -4615,6 +4615,54 @@ fn convert_directory_to_xlsx_applies_number_formats() {
 }
 
 #[test]
+fn convert_protection_rejects_invalid_inputs() {
+    let dir = TempDir::new("protectionerrors");
+    let csv = dir.join("t.csv");
+    let plain = dir.join("plain.xlsx");
+    std::fs::write(&csv, "id\n1\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            csv.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            plain.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    for args in [
+        vec!["convert", csv.to_str().unwrap(), "--protection"],
+        vec![
+            "convert",
+            plain.to_str().unwrap(),
+            "--protection",
+            "--format",
+            "csv",
+        ],
+        vec![
+            "convert",
+            plain.to_str().unwrap(),
+            "--protection",
+            "--formats",
+        ],
+    ] {
+        let output = Command::new(bin()).args(args).output().unwrap();
+        assert_eq!(output.status.code(), Some(2));
+    }
+
+    let output = Command::new(bin())
+        .args(["convert", plain.to_str().unwrap(), "--protection"])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("protected=false"), "{text}");
+}
+
+#[test]
 fn convert_reports_protection_json_for_all_sheets() {
     let dir = TempDir::new("protectionjson");
     std::fs::create_dir(dir.join("parts")).unwrap();
