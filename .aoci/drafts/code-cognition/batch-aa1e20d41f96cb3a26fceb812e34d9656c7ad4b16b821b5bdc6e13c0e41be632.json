@@ -1,0 +1,27 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "2a18f0ddc7484b5e8e914a737f2e3a1afefdc05b6377c8c61024e1ec92a3fc8c",
+  "batch_id": "aa1e20d41f96cb3a26fceb812e34d9656c7ad4b16b821b5bdc6e13c0e41be632",
+  "composite_identity": "4d747ebe1b74a165f6016bd2ff3b56176ec2219f924e0431d17e8b350ff21e45",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "4c233f3ab0c5f98e594a9a4dc5f9d8a82720a4cc7b7c6095d66b852b55b7f156",
+  "targets": [
+    {
+      "candidate_id": "41a265e9588950166829d7397f8143c716aa2aa15cf4a31ed35aa006e11f5127",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "fe261c6a7d7e1f11665e28464fbf81f142e898db55eed997ce034a670bf1cd09",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族/INTL（WEEKNUM 11–17）；查找/小计；UNICHAR/UNICODE；数论；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；进制转换；SKEW/KURT；SLOPE/INTERCEPT/PEARSON/RSQ；DEVSQ/COVAR；FORECAST；ISEVEN/ISODD；FISHER/FISHERINV；SERIESSUM；SUMX；STANDARDIZE；GEOMEAN/HARMEAN；RAND/RANDBETWEEN；复数；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧/VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION/MIRR；BESSELY | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW/RAND 易变，RAND 落在 [0,1)；RANDBETWEEN 列引用/嵌套/IF，文本/空边界/#VALUE 与 \u003e2^53 报错"
+    },
+    {
+      "candidate_id": "09f0008fcb39d5a956c37295b3d7bca42eaacdadaa567d6d5cebf22403d334af",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "19709ec9607220d6b24bdc752b0e7c4b76ffe68c5b5cc15c362ac78bc8e5288e",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；Round511 RAND 区间与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

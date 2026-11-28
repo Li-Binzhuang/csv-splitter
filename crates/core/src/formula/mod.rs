@@ -7332,6 +7332,7 @@ mod tests {
             let value: f64 = eval_str("rand()", &[]).parse().unwrap();
             assert!((0.0..1.0).contains(&value), "{value}");
         }
+        assert_eq!(eval_str("randbetween(a,b)", &[("a", "5"), ("b", "5")]), "5");
         assert_eq!(eval_str("randbetween(\"3\",7)", &[]), "#VALUE!");
         assert_eq!(eval_str("randbetween(3,\"7\")", &[]), "#VALUE!");
         assert_eq!(eval_str("randbetween(-2,-2)", &[]), "-2");
