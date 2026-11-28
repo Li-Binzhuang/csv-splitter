@@ -566,6 +566,8 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut margin_bottom: Option<f64> = None;
     let mut margin_header: Option<f64> = None;
     let mut margin_footer: Option<f64> = None;
+    let mut header_text: Option<String> = None;
+    let mut footer_text: Option<String> = None;
     let mut title: Option<String> = None;
     let mut author: Option<String> = None;
     let mut merges: Vec<String> = Vec::new();
@@ -704,6 +706,28 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--page-setup" => page_setup = true,
             "--print-layout" => print_layout = true,
             "--header-footer" => header_footer = true,
+            "--header" => match p.value("--header") {
+                Ok(v) if v.chars().count() <= 255 => header_text = Some(v),
+                Ok(_) => {
+                    eprintln!("error: --header must be 255 characters or fewer");
+                    return 2;
+                }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--footer" => match p.value("--footer") {
+                Ok(v) if v.chars().count() <= 255 => footer_text = Some(v),
+                Ok(_) => {
+                    eprintln!("error: --footer must be 255 characters or fewer");
+                    return 2;
+                }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--margin-left" => match p.value("--margin-left").and_then(|v| {
                 v.parse::<f64>()
                     .map_err(|_| "bad --margin-left".to_string())
@@ -3229,6 +3253,27 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             None
         };
 
+        let header_footer_value = if header_text.is_some() || footer_text.is_some() {
+            if target != "xlsx" {
+                eprintln!("error: --header/--footer need an xlsx output");
+                return 2;
+            }
+            if input.is_dir() {
+                eprintln!("error: --header/--footer apply to single-file xlsx exports");
+                return 2;
+            }
+            Some(csvx_core::xlsx::HeaderFooterInfo {
+                odd_header: header_text.clone(),
+                odd_footer: footer_text.clone(),
+                even_header: None,
+                even_footer: None,
+                first_header: None,
+                first_footer: None,
+            })
+        } else {
+            None
+        };
+
         let result = if xlsx_options {
             csvx_core::xlsx::csv_to_xlsx_with_all(
                 &input,
@@ -3286,6 +3331,12 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 }
                 if let Some(margins) = margins_value.as_ref() {
                     if let Err(error) = csvx_core::xlsx::xlsx_set_page_margins(&out, margins) {
+                        eprintln!("error: {error}");
+                        return 1;
+                    }
+                }
+                if let Some(info) = header_footer_value.as_ref() {
+                    if let Err(error) = csvx_core::xlsx::xlsx_set_header_footer(&out, info) {
                         eprintln!("error: {error}");
                         return 1;
                     }

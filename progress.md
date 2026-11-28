@@ -684,12 +684,14 @@
   测试 `convert_writes_page_margins`。
 - [x] 项621 页眉页脚检测 CLI（新能力）：`--header-footer` 输出 odd/even/first 头尾；
   测试 `convert_reports_header_footer`。
-- [ ] 项622 页眉页脚导出 CLI（新能力）：导出时设置 oddHeader/oddFooter；
-  验收：CLI + 单测 + gate。
+- [x] 项622 页眉页脚导出 CLI（新能力）：`--header/--footer` 单文件导出后写 oddHeader/oddFooter；
+  测试 `convert_writes_header_footer`。
 - [ ] 项623 大纲分组回读 API（新能力）：读取行/列 outlineLevel 与 collapsed；
   验收：单测 + round-trip + gate。
 - [ ] 项624 大纲分组检测 CLI（新能力）：outline 检测输出行/列分组层级；
   验收：CLI + 单测 + gate。
+- [ ] 项625 大纲分组写出 API（新能力）：写行 outlineLevel/hidden 与折叠；
+  验收：单测 + round-trip + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
@@ -1095,6 +1097,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 634（项622 页眉页脚导出 CLI，feat 级新能力，验收完成）；
+定向与全量 gate/package 通过；发布包 SHA `c25883d8…1cc6c29d`；
+轮首 push 成功，本轮不再 push。
 
 Round 633（项621 页眉页脚检测 CLI，feat 级新能力，验收完成）；
 定向与全量 gate/package 通过；发布包 SHA `a3214b4b…c788bb4a`；

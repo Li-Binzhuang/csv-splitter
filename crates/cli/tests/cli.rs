@@ -5240,6 +5240,43 @@ fn convert_reports_header_footer() {
 }
 
 #[test]
+fn convert_writes_header_footer() {
+    let dir = TempDir::new("hfwrite");
+    let csv = dir.join("data.csv");
+    std::fs::write(&csv, "id\n1\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            csv.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--header",
+            "&C report",
+            "--footer",
+            "&L csvx",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let json = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--header-footer",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(json.status.success());
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(stdout.contains("\"odd_header\":\"&C report\""), "{stdout}");
+    assert!(stdout.contains("\"odd_footer\":\"&L csvx\""), "{stdout}");
+}
+
+#[test]
 fn convert_writes_page_margins() {
     let dir = TempDir::new("marginswrite");
     let csv = dir.join("data.csv");

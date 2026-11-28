@@ -107,6 +107,8 @@ csvx convert data.csv --format xlsx -o data.xlsx \
   --scale 85 \
   --margin-left 0.5 \
   --margin-top 0.6 \
+  --header "&C report" \
+  --footer "&L csvx" \
   --merge "A1:B1" \
   --hide-sheet Sheet1 \
   --title "Quarterly report" \
@@ -137,6 +139,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 - `--title`/`--author` 在单文件 xlsx 导出后写入 docProps/core.xml（目录多 sheet 暂不支持）；
 - `--margin-left/right/top/bottom/header/footer` 在单文件 xlsx 导出后写 pageMargins；
 - `--orientation`/`--paper-size`/`--fit-to-width`/`--fit-to-height`/`--scale` 在单文件 xlsx 导出后写 pageSetup；
+- `--header`/`--footer` 在单文件 xlsx 导出后写 oddHeader/oddFooter；
 - `--header-footer` 读取页眉页脚文本（odd/even/first），支持 sheet/all-sheets/json；
 - `--print-area` 在单文件 xlsx 导出后写打印区域 definedName；`--print-layout` 读取打印区域与页边距；
 - `--page-setup` 读取页面方向/纸张/缩放，支持 sheet/all-sheets/json；
