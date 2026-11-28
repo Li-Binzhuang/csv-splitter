@@ -4531,6 +4531,50 @@ fn convert_directory_to_xlsx_applies_number_formats() {
 }
 
 #[test]
+fn convert_directory_to_xlsx_combines_format_and_password() {
+    let dir = TempDir::new("xlsxdirfmtpass");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,amount\n1,1200\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "id,amount\n2,20\n").unwrap();
+    let out = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            out.to_str().unwrap(),
+            "--number-format",
+            "amount:#,##0.00",
+            "--protect-sheet-password",
+            "test",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let file = std::fs::File::open(&out).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    use std::io::Read as _;
+    let mut styles = String::new();
+    archive
+        .by_name("xl/styles.xml")
+        .unwrap()
+        .read_to_string(&mut styles)
+        .unwrap();
+    assert!(styles.contains("formatCode=\"#,##0.00\""), "{styles}");
+    for name in ["xl/worksheets/sheet1.xml", "xl/worksheets/sheet2.xml"] {
+        let mut sheet = String::new();
+        archive
+            .by_name(name)
+            .unwrap()
+            .read_to_string(&mut sheet)
+            .unwrap();
+        assert!(sheet.contains("password=\"CBEB\""), "{name}: {sheet}");
+    }
+}
+
+#[test]
 fn convert_directory_to_xlsx_can_allow_objects() {
     let dir = TempDir::new("xlsxdirallow");
     std::fs::create_dir(dir.join("parts")).unwrap();

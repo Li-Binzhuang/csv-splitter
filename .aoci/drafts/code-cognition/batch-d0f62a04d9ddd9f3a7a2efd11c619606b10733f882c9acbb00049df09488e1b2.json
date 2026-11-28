@@ -1,0 +1,27 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "35dcd51e8580c883c91c17e7d3bb3e4ca1dffa080eae21746f031546d44bd911",
+  "batch_id": "d0f62a04d9ddd9f3a7a2efd11c619606b10733f882c9acbb00049df09488e1b2",
+  "composite_identity": "21bf8166ec863f6c366102a35fa0944b5e86075f43be4a97d6ae3c1e886cf075",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "009ade680525102fdba4a7b737a9970dcb90f0660b1bba0eaf448597fafadc76",
+  "targets": [
+    {
+      "candidate_id": "fd253a0a030c598642d0c64bcc929475779226f8f59e69fc17a10b482b9f48bd",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "99c1f5698e524971464686d88f1fdbff668e800e0d2b1115d1a5ae924fdff8bb",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert：编码转码、xlsx/csv/tsv/ndjson/parquet、highlight、number-format、formats、no-freeze、no-auto-filter、data-validation、protect-sheet、col-width、密码与保护粒度（目录也生效） | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；--formats；--number-format（单文件与目录）；--no-freeze/--no-auto-filter；--data-validation 列表/自定义公式；--protect-sheet；密码；allow-objects/scenarios；--col-width | S:不覆盖输入；--formats 仅 xlsx；密码 1–15 ASCII；公式 ≤255；重复列/空值/非 xlsx/宽度越界退出 2；目录未列出列默认 Plain"
+    },
+    {
+      "candidate_id": "6d8b5d22b9c19d5a22e7a0a620a145a5cf266c2a6fab0749d74d1d5ab3208320",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "593ec87b7bf62312eded5c235b927da401f1eac2717eb7ce4b2c0ebf7b6e5ce9",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；dxf 逐色项已合并；Round542 目录数字格式与 SHA；push 失败积压 | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

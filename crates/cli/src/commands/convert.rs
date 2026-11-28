@@ -672,7 +672,10 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                     &per_sheet,
                     !no_freeze,
                     !no_auto_filter,
-                    protect_sheet,
+                    protect_sheet
+                        || protect_password.is_some()
+                        || !protect_objects
+                        || !protect_scenarios,
                     protect_password.as_deref(),
                     protect_objects,
                     protect_scenarios,

@@ -499,11 +499,13 @@
   测试 `protection_state_is_read_back`。
 - [x] 项524 目录数字格式（功能级）：多 sheet 应用 --number-format；
   测试 `convert_directory_to_xlsx_applies_number_formats`。
-- [ ] 项525 目录格式 + 密码（功能级）：格式与保护叠加；
-  验收：CLI + 单测 + gate。
+- [x] 项525 目录格式 + 密码（功能级）：格式与保护叠加；
+  测试 `convert_directory_to_xlsx_combines_format_and_password`。
 - [ ] 项526 保护细节 + 密码 + 粒度（功能级）：写入后读回四标志一致；
   验收：单测 + gate。
 - [ ] 项527 目录格式 + no-freeze（功能级）：格式与冻结省略叠加；
+  验收：CLI + 单测 + gate。
+- [ ] 项528 目录格式 + CF（功能级）：格式与条件格式共存；
   验收：CLI + 单测 + gate。
 - [x] 项452 highlight + formats 组合（功能级）：CF 与数字格式共存；
   测试 `convert_xlsx_combines_highlight_and_number_formats`。
@@ -906,6 +908,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 543（项525 目录格式+密码，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `d5c70829…11ef215`；
+轮首 push 成功（补发 2 个积压提交），本轮不再 push。
 
 Round 542（项524 目录数字格式，功能级；新能力）；
 定向与全量 gate/package 通过；发布包 SHA `35e203f9…fe3dd8e6`；
