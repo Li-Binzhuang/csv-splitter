@@ -546,11 +546,13 @@
   测试 `protection_map_reports_every_sheet`。
 - [x] 项549 保护检测 JSON 粒度一致性（功能级）：数组内粒度字段；
   测试 `convert_reports_protection_granularity_json`。
-- [ ] 项550 目录验证 + 提示 + 列宽（功能级）：三特性并存；
-  验收：CLI + 单测 + gate。
+- [x] 项550 目录验证 + 提示 + 列宽（功能级）：三特性并存；
+  测试 `convert_directory_to_xlsx_combines_prompts_and_widths`。
 - [ ] 项551 保护映射 + 粒度（功能级）：映射读回放行标志；
   验收：单测 + gate。
 - [ ] 项552 保护检测 JSON 默认值（功能级）：未保护表四字段全 false；
+  验收：CLI + 单测 + gate。
+- [ ] 项553 目录提示 + 列宽 + 密码（功能级）：三特性并存；
   验收：CLI + 单测 + gate。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
   测试 `convert_reports_sheet_protection`。
@@ -955,6 +957,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 567（项550 目录提示+列宽，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `bff72b7f…45314c1`；
+轮首 push 成功，本轮不再 push。
 
 Round 566（项549 保护检测 JSON 粒度一致性，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `13724b33…1cdd0a47`；

@@ -4705,6 +4705,46 @@ fn convert_directory_to_xlsx_combines_widths_validation_and_password() {
 }
 
 #[test]
+fn convert_directory_to_xlsx_combines_prompts_and_widths() {
+    let dir = TempDir::new("xlsxdirpromptwidth");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,amount\n1,10\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "id,amount\n2,20\n").unwrap();
+    let out = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            out.to_str().unwrap(),
+            "--data-validation-formula",
+            "amount:AND(B2>0,B2<100)",
+            "--data-validation-prompt",
+            "amount:Amount|Enter a positive amount",
+            "--col-width",
+            "amount:20",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let file = std::fs::File::open(&out).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    use std::io::Read as _;
+    for name in ["xl/worksheets/sheet1.xml", "xl/worksheets/sheet2.xml"] {
+        let mut sheet = String::new();
+        archive
+            .by_name(name)
+            .unwrap()
+            .read_to_string(&mut sheet)
+            .unwrap();
+        assert!(sheet.contains("width=\"20\""), "{name}: {sheet}");
+        assert!(sheet.contains("promptTitle=\"Amount\""), "{name}: {sheet}");
+    }
+}
+
+#[test]
 fn convert_reports_protection_granularity_json() {
     let dir = TempDir::new("protectiongranularityjson");
     std::fs::create_dir(dir.join("parts")).unwrap();
