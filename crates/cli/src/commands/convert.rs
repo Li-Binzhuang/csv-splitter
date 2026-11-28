@@ -638,14 +638,16 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             } else {
                 vec![widths; sheets.len()]
             };
-            let result = if let Some(password) = protect_password.as_deref() {
+            let result = if protect_password.is_some() || !protect_objects || !protect_scenarios {
                 csvx_core::xlsx::write_sheets_with_options_and_password(
                     &out,
                     &sheets,
                     &per_sheet,
                     !no_freeze,
                     !no_auto_filter,
-                    password,
+                    protect_password.as_deref(),
+                    protect_objects,
+                    protect_scenarios,
                 )
             } else if !per_sheet.is_empty() {
                 csvx_core::xlsx::write_sheets_with_widths_and_options(

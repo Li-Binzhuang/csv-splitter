@@ -704,6 +704,8 @@ pub fn write_sheets_with_options_and_formats(
         auto_filter,
         false,
         None,
+        true,
+        true,
     )
 }
 
@@ -723,17 +725,41 @@ pub fn write_sheets_with_options(
         auto_filter,
         false,
         None,
+        true,
+        true,
     )
 }
 
 /// Write sheets without a header auto-filter.
 pub fn write_sheets_without_auto_filter(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, &[], &[], true, false, false, None)
+    write_sheets_inner(
+        output,
+        sheets,
+        &[],
+        &[],
+        true,
+        false,
+        false,
+        None,
+        true,
+        true,
+    )
 }
 
 /// Write sheets without freezing the header row on any sheet.
 pub fn write_sheets_without_freeze(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, &[], &[], false, true, false, None)
+    write_sheets_inner(
+        output,
+        sheets,
+        &[],
+        &[],
+        false,
+        true,
+        false,
+        None,
+        true,
+        true,
+    )
 }
 
 /// Write sheets and map each column's display format into an Excel cell style.
@@ -748,12 +774,23 @@ pub fn write_sheets_with_protection_password(
     sheets: &[Sheet],
     password: &str,
 ) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, &[], &[], true, true, true, Some(password))
+    write_sheets_inner(
+        output,
+        sheets,
+        &[],
+        &[],
+        true,
+        true,
+        true,
+        Some(password),
+        true,
+        true,
+    )
 }
 
 /// Write sheets with worksheet protection on every sheet.
 pub fn write_sheets_with_protection(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, &[], &[], true, true, true, None)
+    write_sheets_inner(output, sheets, &[], &[], true, true, true, None, true, true)
 }
 
 /// Write sheets with formats, widths and freeze/filter choices.
@@ -775,6 +812,8 @@ pub fn write_sheets_with_formats_widths_and_options(
         auto_filter,
         protect,
         None,
+        true,
+        true,
     )
 }
 
@@ -795,6 +834,8 @@ pub fn write_sheets_with_formats_and_options(
         auto_filter,
         false,
         None,
+        true,
+        true,
     )
 }
 
@@ -805,7 +846,9 @@ pub fn write_sheets_with_formats_and_widths(
     formats: &[Vec<crate::layout::NumberFormat>],
     widths: &[Vec<(String, f64)>],
 ) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, formats, widths, true, true, false, None)
+    write_sheets_inner(
+        output, sheets, formats, widths, true, true, false, None, true, true,
+    )
 }
 
 /// Write sheets with widths plus freeze/filter choices.
@@ -825,17 +868,22 @@ pub fn write_sheets_with_widths_and_options(
         auto_filter,
         false,
         None,
+        true,
+        true,
     )
 }
 
 /// Write sheets with widths, freeze/filter choices and a protection password.
+#[allow(clippy::too_many_arguments)]
 pub fn write_sheets_with_options_and_password(
     output: &Path,
     sheets: &[Sheet],
     widths: &[Vec<(String, f64)>],
     freeze_header: bool,
     auto_filter: bool,
-    password: &str,
+    password: Option<&str>,
+    protect_objects: bool,
+    protect_scenarios: bool,
 ) -> std::io::Result<()> {
     write_sheets_inner(
         output,
@@ -845,7 +893,9 @@ pub fn write_sheets_with_options_and_password(
         freeze_header,
         auto_filter,
         true,
-        Some(password),
+        password,
+        protect_objects,
+        protect_scenarios,
     )
 }
 
@@ -855,7 +905,18 @@ pub fn write_sheets_with_widths(
     sheets: &[Sheet],
     widths: &[Vec<(String, f64)>],
 ) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, &[], widths, true, true, false, None)
+    write_sheets_inner(
+        output,
+        sheets,
+        &[],
+        widths,
+        true,
+        true,
+        false,
+        None,
+        true,
+        true,
+    )
 }
 
 pub fn write_sheets_with_formats(
@@ -863,7 +924,18 @@ pub fn write_sheets_with_formats(
     sheets: &[Sheet],
     formats: &[Vec<crate::layout::NumberFormat>],
 ) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, formats, &[], true, true, false, None)
+    write_sheets_inner(
+        output,
+        sheets,
+        formats,
+        &[],
+        true,
+        true,
+        false,
+        None,
+        true,
+        true,
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -876,6 +948,8 @@ fn write_sheets_inner(
     auto_filter: bool,
     protect: bool,
     protect_password: Option<&str>,
+    protect_objects: bool,
+    protect_scenarios: bool,
 ) -> std::io::Result<()> {
     if sheets.is_empty() {
         return Err(std::io::Error::new(
@@ -994,12 +1068,16 @@ fn write_sheets_inner(
         if protect {
             match protect_password {
                 Some(password) => xml.push_str(&format!(
-                    "<sheetProtection sheet=\"1\" objects=\"1\" scenarios=\"1\" password=\"{}\" />",
+                    "<sheetProtection sheet=\"1\" objects=\"{}\" scenarios=\"{}\" password=\"{}\" />",
+                    u8::from(protect_objects),
+                    u8::from(protect_scenarios),
                     sheet_password_hash(password)
                 )),
-                None => {
-                    xml.push_str("<sheetProtection sheet=\"1\" objects=\"1\" scenarios=\"1\"/>")
-                }
+                None => xml.push_str(&format!(
+                    "<sheetProtection sheet=\"1\" objects=\"{}\" scenarios=\"{}\"/>",
+                    u8::from(protect_objects),
+                    u8::from(protect_scenarios)
+                )),
             }
         }
         if auto_filter && !sheet.rows.is_empty() && !sheet.headers.is_empty() {
