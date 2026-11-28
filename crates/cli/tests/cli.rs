@@ -4705,6 +4705,42 @@ fn convert_directory_to_xlsx_combines_widths_validation_and_password() {
 }
 
 #[test]
+fn convert_protection_rejects_unknown_sheet() {
+    let dir = TempDir::new("protectionunknown");
+    let csv = dir.join("t.csv");
+    let book = dir.join("book.xlsx");
+    std::fs::write(&csv, "id\n1\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            csv.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--protect-sheet-password",
+            "test",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--protection",
+            "--sheet",
+            "missing",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("missing"), "{stderr}");
+}
+
+#[test]
 fn convert_reports_sheet_protection_granularity() {
     let dir = TempDir::new("protectiongranularity");
     std::fs::create_dir(dir.join("parts")).unwrap();
