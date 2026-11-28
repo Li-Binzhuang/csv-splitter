@@ -734,6 +734,7 @@ pub fn write_sheets_with_options_and_formats(
         &[],
         &[],
         &[],
+        &[],
     )
 }
 
@@ -758,6 +759,7 @@ pub fn write_sheets_with_options(
         &[],
         &[],
         &[],
+        &[],
     )
 }
 
@@ -777,6 +779,7 @@ pub fn write_sheets_without_auto_filter(output: &Path, sheets: &[Sheet]) -> std:
         &[],
         &[],
         &[],
+        &[],
     )
 }
 
@@ -793,6 +796,7 @@ pub fn write_sheets_without_freeze(output: &Path, sheets: &[Sheet]) -> std::io::
         None,
         true,
         true,
+        &[],
         &[],
         &[],
         &[],
@@ -825,6 +829,7 @@ pub fn write_sheets_with_protection_password(
         &[],
         &[],
         &[],
+        &[],
     )
 }
 
@@ -841,6 +846,7 @@ pub fn write_sheets_with_protection(output: &Path, sheets: &[Sheet]) -> std::io:
         None,
         true,
         true,
+        &[],
         &[],
         &[],
         &[],
@@ -877,6 +883,7 @@ pub fn write_sheets_with_formats_widths_and_protection(
         rules,
         validations,
         &[],
+        &[],
     )
 }
 
@@ -900,6 +907,31 @@ pub fn write_sheets_with_merges(
         &[],
         &[],
         merges,
+        &[],
+    )
+}
+
+/// Write sheets with explicit row heights (`(row_number, height)`).
+pub fn write_sheets_with_heights(
+    output: &Path,
+    sheets: &[Sheet],
+    row_heights: &[Vec<(u64, f64)>],
+) -> std::io::Result<()> {
+    write_sheets_inner(
+        output,
+        sheets,
+        &[],
+        &[],
+        true,
+        true,
+        false,
+        None,
+        true,
+        true,
+        &[],
+        &[],
+        &[],
+        row_heights,
     )
 }
 
@@ -924,6 +956,7 @@ pub fn write_sheets_with_formats_widths_and_options(
         None,
         true,
         true,
+        &[],
         &[],
         &[],
         &[],
@@ -952,6 +985,7 @@ pub fn write_sheets_with_formats_and_options(
         &[],
         &[],
         &[],
+        &[],
     )
 }
 
@@ -973,6 +1007,7 @@ pub fn write_sheets_with_formats_and_widths(
         None,
         true,
         true,
+        &[],
         &[],
         &[],
         &[],
@@ -998,6 +1033,7 @@ pub fn write_sheets_with_widths_and_options(
         None,
         true,
         true,
+        &[],
         &[],
         &[],
         &[],
@@ -1030,6 +1066,7 @@ pub fn write_sheets_with_options_and_password(
         &[],
         &[],
         &[],
+        &[],
     )
 }
 
@@ -1050,6 +1087,7 @@ pub fn write_sheets_with_widths(
         None,
         true,
         true,
+        &[],
         &[],
         &[],
         &[],
@@ -1075,6 +1113,7 @@ pub fn write_sheets_with_formats(
         &[],
         &[],
         &[],
+        &[],
     )
 }
 
@@ -1093,6 +1132,7 @@ fn write_sheets_inner(
     rules: &[ConditionalRule],
     validations: &[DataValidation],
     merges: &[Vec<String>],
+    row_heights: &[Vec<(u64, f64)>],
 ) -> std::io::Result<()> {
     if sheets.is_empty() {
         return Err(std::io::Error::new(
@@ -1116,6 +1156,12 @@ fn write_sheets_inner(
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
             "xlsx merges need one entry per sheet",
+        ));
+    }
+    if !row_heights.is_empty() && row_heights.len() != sheets.len() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "xlsx row heights need one entry per sheet",
         ));
     }
     let flat_formats: Vec<crate::layout::NumberFormat> = formats
@@ -1188,6 +1234,13 @@ fn write_sheets_inner(
         if freeze_header {
             xml.push_str("<sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/></sheetView></sheetViews>");
         }
+        let sheet_heights = row_heights.get(index);
+        let height_attr = |row: u64| -> String {
+            sheet_heights
+                .and_then(|heights| heights.iter().find(|(number, _)| *number == row))
+                .map(|(_, height)| format!(" ht=\"{height}\" customHeight=\"1\""))
+                .unwrap_or_default()
+        };
         let sheet_widths = widths.get(index).map(Vec::as_slice).unwrap_or(&[]);
         xml.push_str(&sheet_columns_xml(
             &sheet.headers,
@@ -1195,7 +1248,7 @@ fn write_sheets_inner(
             sheet_widths,
         ));
         xml.push_str("<sheetData>");
-        xml.push_str("<row r=\"1\">");
+        xml.push_str(&format!("<row r=\"1\"{}>", height_attr(1)));
         for (column, header) in sheet.headers.iter().enumerate() {
             write_cell_string(&mut xml, column, 1, header, true);
         }
@@ -1208,7 +1261,7 @@ fn write_sheets_inner(
                     format!("xlsx supports at most {MAX_DATA_ROWS} data rows in one sheet"),
                 ));
             }
-            xml.push_str(&format!("<row r=\"{number}\">"));
+            xml.push_str(&format!("<row r=\"{number}\"{}>", height_attr(number)));
             let sheet_formats = formats.get(index).map(Vec::as_slice).unwrap_or(&[]);
             for (column, cell) in cells.iter().enumerate() {
                 match sheet_formats.get(column) {
@@ -5879,6 +5932,25 @@ mod tests {
         assert_eq!(found[1].column, "B");
         assert!((found[1].width - 12.0).abs() < 1e-9, "{found:?}");
         assert!(found[0].custom_width);
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn row_heights_are_written_and_read_back() {
+        let dir = temp_path("row height writeback");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("heights-out.xlsx");
+        let sheets = vec![Sheet {
+            name: "one".to_string(),
+            headers: vec!["id".into()],
+            rows: vec![vec!["1".into()]],
+        }];
+        write_sheets_with_heights(&path, &sheets, &[vec![(1, 30.0), (2, 18.5)]]).unwrap();
+        let heights = xlsx_row_heights(&path, None).unwrap();
+        assert_eq!(heights.len(), 2, "{heights:?}");
+        assert_eq!(heights[0].height, 30.0);
+        assert_eq!(heights[1].height, 18.5);
+        assert!(heights[0].custom_height);
         std::fs::remove_dir_all(dir).ok();
     }
 
