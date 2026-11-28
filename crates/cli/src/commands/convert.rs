@@ -71,6 +71,7 @@ fn parse_data_validations(text: &str) -> Result<Vec<csvx_core::xlsx::DataValidat
             error_message: None,
             allow_blank: false,
             numeric: None,
+            error_style: None,
         });
     }
     if validations.is_empty() {
@@ -108,6 +109,7 @@ fn parse_validation_formulas(text: &str) -> Result<Vec<csvx_core::xlsx::DataVali
             error_message: None,
             allow_blank: false,
             numeric: None,
+            error_style: None,
         });
     }
     Ok(validations)
@@ -159,6 +161,7 @@ fn parse_numeric_validations(
                 min: min.map(str::to_string),
                 max: (!max.is_empty()).then_some(max),
             }),
+            error_style: None,
         });
     }
     if validations.is_empty() {
@@ -183,6 +186,34 @@ fn merge_numeric_validations(
         validations.push(numeric);
     }
     Ok(())
+}
+
+fn parse_validation_error_styles(text: &str) -> Result<Vec<(String, String)>, String> {
+    let mut styles = Vec::new();
+    for raw in split_format_specs(text) {
+        let (column, style) = raw
+            .split_once(':')
+            .ok_or_else(|| format!("data validation error style {raw:?} needs column:style"))?;
+        let column = column.trim().to_string();
+        let style = style.trim().to_ascii_lowercase();
+        if column.is_empty() {
+            return Err(format!(
+                "data validation error style {raw:?} needs a column"
+            ));
+        }
+        if !matches!(style.as_str(), "stop" | "warning" | "information") {
+            return Err(format!(
+                "data validation error style for {column:?} must be stop, warning, or information"
+            ));
+        }
+        if styles.iter().any(|(name, _)| name == &column) {
+            return Err(format!(
+                "data validation error style column {column:?} is repeated"
+            ));
+        }
+        styles.push((column, style));
+    }
+    Ok(styles)
 }
 
 fn parse_column_widths(text: &str) -> Result<Vec<(String, f64)>, String> {
@@ -398,6 +429,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut data_validation: Option<String> = None;
     let mut data_validation_whole: Option<String> = None;
     let mut data_validation_decimal: Option<String> = None;
+    let mut data_validation_error_style: Option<String> = None;
     let mut data_validation_blank = false;
     let mut protect_sheet = false;
     let mut protect_password: Option<String> = None;
@@ -494,6 +526,13 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             "--data-validation-decimal" => match p.value("--data-validation-decimal") {
                 Ok(v) => data_validation_decimal = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--data-validation-error-style" => match p.value("--data-validation-error-style") {
+                Ok(v) => data_validation_error_style = Some(v),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -914,6 +953,27 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 validation.error_title = (!title.is_empty()).then_some(title);
                 validation.error_message = (!message.is_empty()).then_some(message);
             }
+            if let Some(text) = data_validation_error_style.as_deref() {
+                match parse_validation_error_styles(text) {
+                    Ok(styles) => {
+                        for (column, style) in styles {
+                            let Some(validation) =
+                                validations.iter_mut().find(|v| v.column == column)
+                            else {
+                                eprintln!(
+                                    "error: data validation error style column {column:?} has no validation"
+                                );
+                                return 2;
+                            };
+                            validation.error_style = Some(style);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                }
+            }
             if data_validation_blank {
                 for validation in &mut validations {
                     validation.allow_blank = true;
@@ -1183,6 +1243,31 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             None => Vec::new(),
         };
+        if let Some(text) = data_validation_error_style.as_deref() {
+            if !target.eq_ignore_ascii_case("xlsx") {
+                eprintln!("error: --data-validation-error-style is only valid with --format xlsx");
+                return 2;
+            }
+            match parse_validation_error_styles(text) {
+                Ok(styles) => {
+                    for (column, style) in styles {
+                        let Some(validation) =
+                            data_validations.iter_mut().find(|v| v.column == column)
+                        else {
+                            eprintln!(
+                                "error: data validation error style column {column:?} has no validation"
+                            );
+                            return 2;
+                        };
+                        validation.error_style = Some(style);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            }
+        }
         if data_validation_blank
             && !data_validations.is_empty()
             && !target.eq_ignore_ascii_case("xlsx")

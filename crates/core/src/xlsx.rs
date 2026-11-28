@@ -71,6 +71,8 @@ pub struct DataValidation {
     pub allow_blank: bool,
     /// Whole/decimal range validation; replaces list/custom when present.
     pub numeric: Option<NumericValidation>,
+    /// Error dialog style: stop (default), warning, or information.
+    pub error_style: Option<String>,
 }
 
 /// Read a worksheet's header names and their Excel number formats.
@@ -1564,6 +1566,16 @@ fn data_validations_xml(
                 "numeric data validation cannot combine with a list or custom formula",
             ));
         }
+        let mut error_style = String::new();
+        if let Some(style) = validation.error_style.as_deref() {
+            if !matches!(style, "stop" | "warning" | "information") {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "data validation error style must be stop, warning, or information",
+                ));
+            }
+            error_style = format!(" errorStyle=\"{style}\"");
+        }
         if validation.formula.is_some() && !validation.values.is_empty() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
@@ -1660,7 +1672,7 @@ fn data_validations_xml(
                 .map(|max| format!("<formula2>{}</formula2>", xml_text(&max)))
                 .unwrap_or_default();
             out.push_str(&format!(
-                "<dataValidation type=\"{kind}\" operator=\"{operator}\" allowBlank=\"{}\" showErrorMessage=\"1\"{prompt}{error} sqref=\"{column}2:{column}{last_row}\"><formula1>{}</formula1>{second}</dataValidation>",
+                "<dataValidation type=\"{kind}\" operator=\"{operator}\" allowBlank=\"{}\" showErrorMessage=\"1\"{prompt}{error}{error_style} sqref=\"{column}2:{column}{last_row}\"><formula1>{}</formula1>{second}</dataValidation>",
                 if validation.allow_blank { "1" } else { "0" },
                 xml_text(&formula1)
             ));
@@ -1672,13 +1684,13 @@ fn data_validations_xml(
                 ));
             }
             out.push_str(&format!(
-                "<dataValidation type=\"custom\" allowBlank=\"{}\" showErrorMessage=\"1\"{prompt}{error} sqref=\"{column}2:{column}{last_row}\"><formula1>{}</formula1></dataValidation>",
+                "<dataValidation type=\"custom\" allowBlank=\"{}\" showErrorMessage=\"1\"{prompt}{error}{error_style} sqref=\"{column}2:{column}{last_row}\"><formula1>{}</formula1></dataValidation>",
                 if validation.allow_blank { "1" } else { "0" },
                 xml_text(formula)
             ));
         } else {
             out.push_str(&format!(
-                "<dataValidation type=\"list\" allowBlank=\"{}\" showErrorMessage=\"1\"{prompt}{error} sqref=\"{column}2:{column}{last_row}\"><formula1>{}</formula1></dataValidation>",
+                "<dataValidation type=\"list\" allowBlank=\"{}\" showErrorMessage=\"1\"{prompt}{error}{error_style} sqref=\"{column}2:{column}{last_row}\"><formula1>{}</formula1></dataValidation>",
                 if validation.allow_blank { "1" } else { "0" },
                 formula_literal(&joined)
             ));
@@ -2268,6 +2280,7 @@ pub struct DataValidationInfo {
     pub prompt_message: Option<String>,
     pub error_title: Option<String>,
     pub error_message: Option<String>,
+    pub error_style: Option<String>,
 }
 
 /// Read data validations for one worksheet, defaulting to the first sheet.
@@ -2347,6 +2360,7 @@ fn parse_data_validations(sheet_xml: &str, sheet: &str) -> Vec<DataValidationInf
             prompt_message: tag_attribute(tag, "prompt").map(|v| xml_unescape(&v)),
             error_title: tag_attribute(tag, "errorTitle").map(|v| xml_unescape(&v)),
             error_message: tag_attribute(tag, "error").map(|v| xml_unescape(&v)),
+            error_style: tag_attribute(tag, "errorStyle"),
         });
         rest = &tail[next..];
     }
@@ -4521,6 +4535,7 @@ mod tests {
                 error_message: Some("Pick good or bad".to_string()),
                 allow_blank: true,
                 numeric: None,
+                error_style: Some("warning".to_string()),
             },
             DataValidation {
                 column: "amount".to_string(),
@@ -4536,6 +4551,7 @@ mod tests {
                     min: Some("0".to_string()),
                     max: Some("1200".to_string()),
                 }),
+                error_style: None,
             },
         ];
         write_sheets_with_formats_widths_and_protection(
@@ -4553,6 +4569,8 @@ mod tests {
             &validations,
         )
         .unwrap();
+        let sheet_xml = read_zip(&path, "xl/worksheets/sheet1.xml");
+        assert!(sheet_xml.contains("errorStyle=\"warning\""), "{sheet_xml}");
         let read = xlsx_data_validations(&path, None).unwrap();
         assert_eq!(read.len(), 2, "{read:?}");
         let list = read
@@ -4565,6 +4583,7 @@ mod tests {
         assert_eq!(list.prompt_title.as_deref(), Some("Status"));
         assert_eq!(list.prompt_message.as_deref(), Some("Choose good or bad"));
         assert_eq!(list.error_title.as_deref(), Some("Bad"));
+        assert_eq!(list.error_style.as_deref(), Some("warning"));
         assert!(list.allow_blank);
         let range = read
             .iter()
@@ -4603,6 +4622,7 @@ mod tests {
                     min: Some("0".to_string()),
                     max: Some("1200".to_string()),
                 }),
+                error_style: None,
             },
             DataValidation {
                 column: "id".to_string(),
@@ -4618,6 +4638,7 @@ mod tests {
                     min: Some("0.5".to_string()),
                     max: None,
                 }),
+                error_style: None,
             },
         ];
         write_sheets_with_formats_widths_and_protection(
@@ -4735,6 +4756,7 @@ mod tests {
                 error_message: None,
                 allow_blank: false,
                 numeric: None,
+                error_style: None,
             },
             DataValidation {
                 column: "id".to_string(),
@@ -4746,6 +4768,7 @@ mod tests {
                 error_message: None,
                 allow_blank: false,
                 numeric: None,
+                error_style: None,
             },
         ];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
@@ -4780,6 +4803,7 @@ mod tests {
             error_message: None,
             allow_blank: false,
             numeric: None,
+            error_style: None,
         }];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
@@ -4809,6 +4833,7 @@ mod tests {
             error_message: None,
             allow_blank: false,
             numeric: None,
+            error_style: None,
         }];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
@@ -4842,6 +4867,7 @@ mod tests {
             error_message: Some("Pick \"good\" or ok".to_string()),
             allow_blank: false,
             numeric: None,
+            error_style: None,
         }];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
@@ -4872,6 +4898,7 @@ mod tests {
             error_message: None,
             allow_blank: true,
             numeric: None,
+            error_style: None,
         }];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");

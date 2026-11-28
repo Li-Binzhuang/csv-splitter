@@ -578,12 +578,14 @@
   `convert_writes_whole_and_decimal_validation_ranges`。
 - [x] 项570 数据验证回读 API（新 API）：`xlsx_data_validations` 返回 sheet/列字母/sqref/类型/operator/formula1/2/提示；
   测试 `data_validations_read_back_lists_and_ranges`。
-- [ ] 项571 数据验证 errorStyle 三态（新能力）：stop/warning/information 写入与 CLI 参数 data-validation-error-style（待实现）；
-  验收：XML 断言 + 单测 + gate。
+- [x] 项571 数据验证 errorStyle 三态（新能力）：stop/warning/information 写入、回读字段与 CLI 参数；
+  测试 `convert_writes_data_validation_error_styles`、`data_validations_read_back_lists_and_ranges`。
 - [ ] 项572 数据验证检测 CLI（新能力）：CLI 参数 validations 读回列/类型/operator/提示（待实现），支持 sheet/all-sheets/json；
   验收：CLI + 单测 + gate。
 - [ ] 项573 日期序列号显示（新能力）：数字格式把 Excel 日期序列号转 ISO（`NUMBER_FORMAT_COVERAGE` 明确缺口）；
   验收：CLI format + 单测 + gate。
+- [ ] 项574 数据验证列表引用区域（新能力）：列表源用公式引用（如 `$A$2:$A$10`）而非内联值；
+  验收：XML 断言 + 单测 + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
@@ -989,6 +991,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 583（项571 数据验证 errorStyle 三态，feat 级新能力，验收完成）；
+定向与全量 gate/package 通过；发布包 SHA `be3f94cf…77ddb604`；
+轮首 push 成功，本轮不再 push。
 
 Round 582（项570 数据验证回读 API，新 API，feat 级，验收完成）；
 定向与全量 gate/package 通过；发布包 SHA `62a34c1a…4cda46dc`；

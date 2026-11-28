@@ -4954,6 +4954,43 @@ fn convert_directory_to_xlsx_combines_all_xlsx_features() {
 }
 
 #[test]
+fn convert_writes_data_validation_error_styles() {
+    let dir = TempDir::new("validationerrorstyle");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "status,amount\ngood,10\n").unwrap();
+    let out = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts/a.csv").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            out.to_str().unwrap(),
+            "--data-validation",
+            "status:good,bad",
+            "--data-validation-whole",
+            "amount:0,1200",
+            "--data-validation-error-style",
+            "status:warning",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let file = std::fs::File::open(&out).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    use std::io::Read as _;
+    let mut sheet = String::new();
+    archive
+        .by_name("xl/worksheets/sheet1.xml")
+        .unwrap()
+        .read_to_string(&mut sheet)
+        .unwrap();
+    assert!(sheet.contains("type=\"list\""), "{sheet}");
+    assert!(sheet.contains("errorStyle=\"warning\""), "{sheet}");
+}
+
+#[test]
 fn convert_writes_whole_and_decimal_validation_ranges() {
     let dir = TempDir::new("numericvalidations");
     std::fs::create_dir(dir.join("parts")).unwrap();
