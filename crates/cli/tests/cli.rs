@@ -4017,6 +4017,47 @@ fn convert_directory_to_xlsx_applies_column_widths() {
     }
 }
 
+/// Directory mode keeps widths when the header freeze is disabled.
+#[test]
+fn convert_directory_to_xlsx_keeps_widths_without_freeze() {
+    let dir = TempDir::new("xlsxdirwidthnofreeze");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,amount\n1,10\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "id,amount\n2,20\n").unwrap();
+    let out = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            out.to_str().unwrap(),
+            "--col-width",
+            "amount:20",
+            "--no-freeze",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let file = std::fs::File::open(&out).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    use std::io::Read as _;
+    for name in ["xl/worksheets/sheet1.xml", "xl/worksheets/sheet2.xml"] {
+        let mut sheet = String::new();
+        archive
+            .by_name(name)
+            .unwrap()
+            .read_to_string(&mut sheet)
+            .unwrap();
+        assert!(
+            sheet.contains("<col min=\"2\" max=\"2\" width=\"20\" customWidth=\"1\"/>"),
+            "{name}: {sheet}"
+        );
+        assert!(!sheet.contains("<pane "), "{name}: {sheet}");
+    }
+}
+
 /// Xlsx import reads shared strings and selects a named worksheet.
 #[test]
 fn convert_extracts_every_xlsx_sheet_to_a_directory() {
