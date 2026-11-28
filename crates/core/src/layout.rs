@@ -293,7 +293,8 @@ impl NumberFormat {
                 render_elapsed(number)
             }
             Self::DateTime { pattern } => {
-                render_date_time(pattern, value).unwrap_or_else(|| value.to_string())
+                let text = serial_to_iso(number).unwrap_or_else(|| value.to_string());
+                render_date_time(pattern, &text).unwrap_or_else(|| value.to_string())
             }
             Self::Scientific { places, upper } => render_scientific(number, *places, *upper),
             Self::Accounting { symbol, places, .. } => {
@@ -478,6 +479,41 @@ fn render_elapsed(number: f64) -> String {
     let seconds = total % 60;
     let sign = if negative { "-" } else { "" };
     format!("{sign}{hours}:{minutes:02}:{seconds:02}")
+}
+
+/// Render an Excel date serial (days since 1899-12-31) as ISO date-time text.
+fn serial_to_iso(serial: f64) -> Option<String> {
+    if !serial.is_finite() || serial < 1.0 || serial >= 2_958_466.0 {
+        return None;
+    }
+    let days = serial.floor() as i64;
+    let fraction = serial - days as f64;
+    let (year, month, day) = if days == 60 {
+        (1900, 2, 29)
+    } else {
+        civil_from_days(days - 25_569)
+    };
+    let total_seconds = (fraction * 86_400.0).round() as i64;
+    let total_seconds = total_seconds.min(86_399);
+    let hour = total_seconds / 3_600;
+    let minute = (total_seconds % 3_600) / 60;
+    let second = total_seconds % 60;
+    Some(format!(
+        "{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02}"
+    ))
+}
+
+fn civil_from_days(z: i64) -> (i32, u32, u32) {
+    let z = z + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = mp + if mp < 10 { 3 } else { -9 };
+    (if m <= 2 { y + 1 } else { y } as i32, m as u32, d as u32)
 }
 
 fn render_date_time(pattern: &str, value: &str) -> Option<String> {
@@ -1247,6 +1283,21 @@ mod tests {
     }
 
     #[test]
+    fn date_serials_render_like_excel() {
+        let date = NumberFormat::parse("yyyy-mm-dd").unwrap();
+        assert_eq!(date.render("45292"), "2024-01-01");
+        assert_eq!(date.render("45292.5"), "2024-01-01");
+        assert_eq!(date.render("60"), "1900-02-29");
+        let stamp = NumberFormat::parse("yyyy-mm-dd hh:mm").unwrap();
+        assert_eq!(stamp.render("45292.5"), "2024-01-01 12:00");
+        let time = NumberFormat::parse("hh:mm:ss").unwrap();
+        assert_eq!(time.render("45292.75"), "18:00:00");
+        assert_eq!(date.render("N/A"), "N/A");
+        assert_eq!(date.render("0.5"), "0.5");
+        assert_eq!(date.render("9999999"), "9999999");
+    }
+
+    #[test]
     fn date_time_formats_render_iso_values() {
         let date = NumberFormat::parse("yyyy-mm-dd").unwrap();
         assert_eq!(date.render("2024-01-02"), "2024-01-02");
@@ -1348,9 +1399,9 @@ mod tests {
         assert_eq!(hour.render("00:05"), "12 AM");
         let padded = NumberFormat::parse("hh AM/PM").unwrap();
         assert_eq!(padded.render("13:04:05"), "01 PM");
-        // A format never invents a date from a non-date value.
+        // Out-of-range or non-numeric values stay as they are; date serials render.
         assert_eq!(date.render("N/A"), "N/A");
-        assert_eq!(date.render("123"), "123");
+        assert_eq!(date.render("0.5"), "0.5");
         assert!(NumberFormat::parse("yyyy-mm").is_err());
     }
 

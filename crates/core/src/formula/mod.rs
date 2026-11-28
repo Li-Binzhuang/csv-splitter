@@ -1067,6 +1067,16 @@ mod tests {
     }
 
     #[test]
+    fn text_formats_excel_date_serials() {
+        assert_eq!(eval_str("TEXT(45292,\"yyyy-mm-dd\")", &[]), "2024-01-01");
+        assert_eq!(eval_str("TEXT(60,\"yyyy-mm-dd\")", &[]), "1900-02-29");
+        assert_eq!(
+            eval_str("TEXT(45292.5,\"yyyy-mm-dd hh:mm\")", &[]),
+            "2024-01-01 12:00"
+        );
+    }
+
+    #[test]
     fn column_names_with_spaces_use_brackets() {
         assert_eq!(eval_str("[客户编号] + 1", &[("客户编号", "41")]), "42");
     }

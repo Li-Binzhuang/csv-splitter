@@ -1,0 +1,43 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "9384cac4d8bca90ab33fa1f9c6dc94d75008ce8bcba3c7141c454736af9c2766",
+  "batch_id": "6e80d03cb58d90fd88d0270e6e75864698541a08bcaf340e954241f7911d423e",
+  "composite_identity": "7ef7f442e347190cd3f124cab797a3c8e0acff23ef0005ed67a8e43b656e72a7",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "d5b634c16f59ee09463a9ff8a62b78d07917342f6fe7b3063586de8a5fb69787",
+  "targets": [
+    {
+      "candidate_id": "d9e96bc78a39548948b49b33425fe679386ea5e213fa92ca04245aa56855a362",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "1e22cd7d390466039b268b20c01b68ad570e0af7e2855b021c53461accd07010",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族/INTL（WEEKNUM 11–17）；查找/小计；UNICHAR/UNICODE；数论；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；进制转换；SKEW/KURT；SLOPE/INTERCEPT/PEARSON/RSQ；DEVSQ/COVAR；FORECAST；ISEVEN/ISODD；FISHER/FISHERINV；SERIESSUM；SUMX；STANDARDIZE；GEOMEAN/HARMEAN；RAND/RANDBETWEEN；复数；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧/VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION/MIRR；BESSELY | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW/RAND 易变，RAND 无参数/落 [0,1)/连续不同；RANDBETWEEN 列引用/嵌套/IF、相等边界、负/跨零区间，参数个数错，文本/空边界/#VALUE 与 \u003e2^53 报错"
+    },
+    {
+      "candidate_id": "dc841da9289b37ffc23c3b09048b5f42362aa4953dedcbf2436deba0768d9eca",
+      "object_ref": "code:crates/core/src/layout.rs",
+      "path": "crates/core/src/layout.rs",
+      "change": "update",
+      "source_sha256": "143e2daf755e1776240f5c7c8f23c82b848ffb45c12e1cc076b115871450e603",
+      "existing_entry": "layout.rs[CU7L]: F:显示元数据 sidecar：列名替换、列宽、数字格式与冻结列 | R:code:crates/core/src/sheet.rs | A:NumberFormat 含 Decimal/Percent/Currency/DateTime/Scientific/Accounting/Fraction/Text/Colored；日期点/破折号/斜杠与 12 小时、h/hh；分数 1/2/4 位；会计对齐 `_($* #,##0.00_)` 含裸 `$*` 归一化；8 色前缀 | S:只影响展示不改值，写 .view 不写 journal；未识别格式/未知颜色报错；[h] 属 elapsed 非颜色"
+    },
+    {
+      "candidate_id": "f5f16c14206315f349ce545cc5b6136abebf673bdea7775c5679545637a823db",
+      "object_ref": "code:docs/NUMBER_FORMAT_COVERAGE.md",
+      "path": "docs/NUMBER_FORMAT_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "7b2a8911a3a5c39225c70a47d1f23491f43d4d7e003bbe7b6c5e7352a3439f14",
+      "existing_entry": "NUMBER_FORMAT_COVERAGE.md[SA7T]: F:数字格式覆盖矩阵与缺口 | R:code:crates/core/src/layout.rs,code:crates/core/src/xlsx.rs | A:千分位/小数/百分比/货币/日期时间；点/破折号/斜杠；12 小时 AM/PM；h/hh 补零；四位分数；8 色前缀；会计对齐含裸 `$*`；Scientific/Text；日期导出 numFmt | S:格式只对数字/日期生效；未识别格式报错；多段会计码仍不支持"
+    },
+    {
+      "candidate_id": "dde63e4de11d11e2ef1fe46c8d125279db383383e82e84b292ed020b516626e8",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "9fdad66d1bc552263a8a48564c4054aace62b6fea217fad212e960b45db5e430",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同新功能，边界并入母项，每轮需 feat 增量；572 验收、573–575 待做；Round584 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
