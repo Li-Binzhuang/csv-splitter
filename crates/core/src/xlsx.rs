@@ -2657,6 +2657,36 @@ fn parse_hidden_layout(sheet_xml: &str) -> HiddenLayout {
     layout
 }
 
+/// Document core properties read back from `docProps/core.xml`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CoreProperties {
+    pub title: Option<String>,
+    pub creator: Option<String>,
+    pub created: Option<String>,
+    pub modified: Option<String>,
+}
+
+/// Read `docProps/core.xml` values; a missing part yields all `None`.
+pub fn xlsx_core_properties(input: &Path) -> std::io::Result<CoreProperties> {
+    let file = std::fs::File::open(input)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let core = match read_entry(&mut archive, "docProps/core.xml") {
+        Ok(core) => core,
+        Err(_) => return Ok(CoreProperties::default()),
+    };
+    Ok(CoreProperties {
+        title: inner_text(&core, "dc:title"),
+        creator: inner_text(&core, "dc:creator"),
+        created: inner_text(&core, "dcterms:created"),
+        modified: inner_text(&core, "dcterms:modified"),
+    })
+}
+
 /// One workbook sheet entry with its visibility state.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SheetVisibilityEntry {
@@ -6069,6 +6099,30 @@ mod tests {
         let layout = xlsx_hidden_layout(&path, None).unwrap();
         assert_eq!(layout.rows, vec![2]);
         assert_eq!(layout.columns, vec!["B".to_string(), "C".to_string()]);
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn core_properties_are_read_back() {
+        let dir = temp_path("core properties");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("props.xlsx");
+        let file = std::fs::File::create(&path).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        use std::io::Write as _;
+        let core = r#"<?xml version="1.0"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>Report</dc:title><dc:creator>Lead</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">2026-01-02T03:04:05Z</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">2026-02-03T04:05:06Z</dcterms:modified></cp:coreProperties>"#;
+        zip.start_file(
+            "docProps/core.xml",
+            zip::write::SimpleFileOptions::default(),
+        )
+        .unwrap();
+        zip.write_all(core.as_bytes()).unwrap();
+        zip.finish().unwrap();
+        let properties = xlsx_core_properties(&path).unwrap();
+        assert_eq!(properties.title.as_deref(), Some("Report"));
+        assert_eq!(properties.creator.as_deref(), Some("Lead"));
+        assert_eq!(properties.created.as_deref(), Some("2026-01-02T03:04:05Z"));
+        assert_eq!(properties.modified.as_deref(), Some("2026-02-03T04:05:06Z"));
         std::fs::remove_dir_all(dir).ok();
     }
 
