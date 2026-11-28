@@ -1,0 +1,27 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "b983d0cf1cb7ecde13b2a499fe6b2aa7818f489bebdcaf93100b8821cb178d3f",
+  "batch_id": "04dc7e63956536fe473e97927858c36a322637de58e722f93096110999e031db",
+  "composite_identity": "a19e02e4213433199ee5ace4bc161471c9242e5bc284aec5a671201f55cb98ab",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "eb6674625957f9e955664ddbdce42ba2c5f30f491c3e4b9bb8c0eca0e9673ffe",
+  "targets": [
+    {
+      "candidate_id": "2cf84355a815c9ea30a8ca1da51c1270490a0d066355dceddb05cdfe6bc3fbe7",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "3836592b55db6853432154e0b90ce0268055bb35f158bc7506f90861e33b08e6",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族/INTL（WEEKNUM 11–17）；查找/小计；UNICHAR/UNICODE；数论；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；进制转换；SKEW/KURT；SLOPE/INTERCEPT/PEARSON/RSQ；DEVSQ/COVAR；FORECAST；ISEVEN/ISODD；FISHER/FISHERINV；SERIESSUM；SUMX；STANDARDIZE；GEOMEAN/HARMEAN；RAND/RANDBETWEEN；复数；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧/VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION/MIRR；BESSELY | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW/RAND 易变，RAND 落 [0,1)；RANDBETWEEN 列引用/嵌套/IF、相等边界返回值、参数个数错，文本/空边界/#VALUE 与 \u003e2^53 报错"
+    },
+    {
+      "candidate_id": "39bc9e4c60ec808c124740be6b00f2333b69b9a9a76be6edff0fdaa08dfd6e34",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "0d5c5c7b313d9b58fe08194a8d99c2321b539a323668422fbc35dcb899247fd4",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；Round513 RANDBETWEEN 参数个数与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

@@ -7333,6 +7333,7 @@ mod tests {
             assert!((0.0..1.0).contains(&value), "{value}");
         }
         assert_eq!(eval_str("randbetween(a,b)", &[("a", "5"), ("b", "5")]), "5");
+        assert_eq!(eval_str("rand(1)", &[]), "#VALUE!");
         assert_eq!(eval_str("randbetween(1,2,3)", &[]), "#VALUE!");
         assert_eq!(eval_str("randbetween(1)", &[]), "#VALUE!");
         assert_eq!(eval_str("randbetween()", &[]), "#VALUE!");
