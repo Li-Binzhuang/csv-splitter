@@ -1,0 +1,27 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "beb9b515808a4cc9b26f19dcf121c29e8cf297ba3dad0c111e6d2c7a196082ff",
+  "batch_id": "72dd29e68ea127e01186a0a2310198e28e5ecbac67746b19ce81b87ce720052b",
+  "composite_identity": "59e488c334215cabace878c19a300d4c94484e03b3197c23e58c719ff5931d82",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "13af9ebb719f79f08e2a5f57b36a4c5cf3f07ca83a6920a6cb440bcabbe92d18",
+  "targets": [
+    {
+      "candidate_id": "87b9c3156b08e5969c102f5e1fbf3321046a3e708179cd55b5b9fecfe9245692",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "98ac5f0754153aaa8e47e4ccf67f023dbd60c416076499878e86217d73d30cae",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族/INTL（WEEKNUM 11–17）；查找/小计；UNICHAR/UNICODE；数论；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；进制转换；SKEW/KURT；SLOPE/INTERCEPT/PEARSON/RSQ；DEVSQ/COVAR；FORECAST；ISEVEN/ISODD；FISHER/FISHERINV；SERIESSUM；SUMX；STANDARDIZE；GEOMEAN/HARMEAN；RAND/RANDBETWEEN；复数；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧/VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION/MIRR；BESSELY | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW/RAND 易变，RAND 落 [0,1)；RANDBETWEEN 列引用/嵌套/IF、相等边界返回值，文本/空边界/#VALUE 与 \u003e2^53 报错"
+    },
+    {
+      "candidate_id": "d46c492ca692646886f8ead49e195ef532e8abd21e2b0475d418f3b59dcc01c1",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "f8d6cf34a97d097a3665cee55407ed6a12100226aa1cbf0cd22ef85b9908115a",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；Round512 相等列边界与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

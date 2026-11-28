@@ -550,7 +550,9 @@
   测试 `rand_and_randbetween_stay_in_bounds`。
 - [x] 项494 RANDBETWEEN 相等列边界（功能级）：a=b 返回该值；
   测试 `rand_and_randbetween_stay_in_bounds`。
-- [ ] 项495 RANDBETWEEN 参数个数（功能级）：3 个参数报错；
+- [x] 项495 RANDBETWEEN 参数个数（功能级）：0/1/3 个参数报错；
+  测试 `rand_and_randbetween_stay_in_bounds`。
+- [ ] 项496 RAND 参数个数（功能级）：带参数报错；
   验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
@@ -849,6 +851,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 513（项495 RANDBETWEEN 参数个数，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `5e892dce…5c9b575a`；
+轮首 push 成功，本轮不再 push。
 
 Round 512（项494 相等列边界，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `8eff7c6f…8eb1c025`；
