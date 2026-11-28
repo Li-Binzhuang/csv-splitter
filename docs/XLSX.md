@@ -82,6 +82,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
   --data-validation-whole "amount:0,1200" \
   --data-validation-decimal "id:0.5," \
   --data-validation-error-style "status:warning" \
+  --data-validation-range "status:$A$2:$A$10" \
   --validations
 ```
 
@@ -100,6 +101,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 - `--data-validation-decimal` 写小数区间验证，格式同上；
 - 整数/小数验证与列表、自定义公式互斥；提示/错误/空白开关对它们同样生效；
 - `--data-validation-error-style` 指定错误对话框样式，格式 `列:stop|warning|information`；列须已有验证；
+- `--data-validation-range` 列表源用单元格区域引用，格式 `列:区域`（如 `$A$2:$A$10`），与内联值互斥；
 - `--validations` 读取 xlsx 的数据验证（列/类型/operator/公式/提示/错误样式），可配 `--sheet`/`--all-sheets`/`--json`；
 - `--protect-sheet` 写工作表保护（对象/场景受限，不设密码）；
 - `--number-format` 支持颜色前缀（`[Red]`、`[Blue]` 等 8 色）并写入 formatCode；

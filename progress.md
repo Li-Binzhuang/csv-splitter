@@ -585,12 +585,15 @@
 - [x] 项573 日期序列号显示（新能力）：数字格式把 Excel 日期序列号转 ISO，含 1900-02-29 假闰日；
   `TEXT(45292,"yyyy-mm-dd")` 走同一路径；测试 `date_serials_render_like_excel`、
   `text_formats_excel_date_serials`。
-- [ ] 项574 数据验证列表引用区域（新能力）：列表源用公式引用（如 `$A$2:$A$10`）而非内联值；
-  验收：XML 断言 + 单测 + gate。
+- [x] 项574 数据验证列表引用区域（新能力）：`--data-validation-range` 写 type=list + 区域引用；
+  测试 `data_validation_list_ranges_use_a_formula_reference`、
+  `convert_writes_data_validation_list_ranges`。
 - [ ] 项575 任意自定义格式码透传（新能力）：NUMBER_FORMAT_COVERAGE 白名单缺口，导出保留原码；
   验收：CLI + 单测 + gate。
 - [ ] 项576 preview/view 数字格式显示（新能力）：把 layout render 接到 CLI 预览，支持日期序列号/百分比等；
   验收：CLI + 单测 + gate。
+- [ ] 项577 数据验证日期/时间区间（新能力）：type=date/time，边界用 ISO 转序列；
+  验收：XML 断言 + 单测 + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
@@ -996,6 +999,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 586（项574 数据验证列表引用区域，feat 级新能力，验收完成）；
+定向与全量 gate/package 通过；发布包 SHA `08187e7a…09fdad`；
+轮首 push 失败（积压 2 提交，本轮不再重试）。
 
 Round 585（项573 日期序列号显示，feat 级新能力，验收完成）；
 定向与全量 gate/package 通过；发布包 SHA `c5e5bfd7…488fa21`；

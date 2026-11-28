@@ -4954,6 +4954,39 @@ fn convert_directory_to_xlsx_combines_all_xlsx_features() {
 }
 
 #[test]
+fn convert_writes_data_validation_list_ranges() {
+    let dir = TempDir::new("validationlistrange");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "status\ngood\nbad\n").unwrap();
+    let out = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts/a.csv").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            out.to_str().unwrap(),
+            "--data-validation-range",
+            "status:$A$2:$A$10",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let file = std::fs::File::open(&out).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    use std::io::Read as _;
+    let mut sheet = String::new();
+    archive
+        .by_name("xl/worksheets/sheet1.xml")
+        .unwrap()
+        .read_to_string(&mut sheet)
+        .unwrap();
+    assert!(sheet.contains("type=\"list\""), "{sheet}");
+    assert!(sheet.contains("<formula1>$A$2:$A$10</formula1>"), "{sheet}");
+}
+
+#[test]
 fn convert_reports_data_validations() {
     let dir = TempDir::new("validationsinspect");
     std::fs::create_dir(dir.join("parts")).unwrap();

@@ -73,6 +73,8 @@ pub struct DataValidation {
     pub numeric: Option<NumericValidation>,
     /// Error dialog style: stop (default), warning, or information.
     pub error_style: Option<String>,
+    /// List source as an Excel range reference, e.g. `$A$2:$A$10`.
+    pub list_range: Option<String>,
 }
 
 /// Read a worksheet's header names and their Excel number formats.
@@ -1552,6 +1554,7 @@ fn data_validations_xml(
         if validation.formula.is_none()
             && validation.values.is_empty()
             && validation.numeric.is_none()
+            && validation.list_range.is_none()
         {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
@@ -1565,6 +1568,24 @@ fn data_validations_xml(
                 std::io::ErrorKind::InvalidInput,
                 "numeric data validation cannot combine with a list or custom formula",
             ));
+        }
+        if let Some(range) = validation.list_range.as_deref() {
+            let range = range.trim();
+            if range.is_empty() || range.chars().count() > 255 {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "data validation list range must be 1-255 characters",
+                ));
+            }
+            if validation.formula.is_some()
+                || validation.numeric.is_some()
+                || !validation.values.is_empty()
+            {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "data validation list range cannot combine with other sources",
+                ));
+            }
         }
         let mut error_style = String::new();
         if let Some(style) = validation.error_style.as_deref() {
@@ -1633,7 +1654,13 @@ fn data_validations_xml(
                 xml_attribute(message)
             ));
         }
-        if let Some(numeric) = validation.numeric.as_ref() {
+        if let Some(range) = validation.list_range.as_deref() {
+            out.push_str(&format!(
+                "<dataValidation type=\"list\" allowBlank=\"{}\" showErrorMessage=\"1\"{prompt}{error}{error_style} sqref=\"{column}2:{column}{last_row}\"><formula1>{}</formula1></dataValidation>",
+                if validation.allow_blank { "1" } else { "0" },
+                xml_text(range.trim())
+            ));
+        } else if let Some(numeric) = validation.numeric.as_ref() {
             let min = numeric
                 .min
                 .as_deref()
@@ -4515,6 +4542,51 @@ mod tests {
     }
 
     #[test]
+    fn data_validation_list_ranges_use_a_formula_reference() {
+        let dir = temp_path("validation list range");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("range.xlsx");
+        let sheets = vec![Sheet {
+            name: "one".to_string(),
+            headers: vec!["status".into()],
+            rows: vec![vec!["good".into()]],
+        }];
+        let validations = vec![DataValidation {
+            column: "status".to_string(),
+            values: Vec::new(),
+            formula: None,
+            prompt_title: Some("Status".to_string()),
+            prompt_message: None,
+            error_title: None,
+            error_message: None,
+            allow_blank: false,
+            numeric: None,
+            error_style: None,
+            list_range: Some("$A$2:$A$10".to_string()),
+        }];
+        write_sheets_with_formats_widths_and_protection(
+            &path,
+            &sheets,
+            &[Vec::new()],
+            &[Vec::new()],
+            true,
+            false,
+            false,
+            None,
+            true,
+            true,
+            &[],
+            &validations,
+        )
+        .unwrap();
+        let sheet = read_zip(&path, "xl/worksheets/sheet1.xml");
+        assert!(sheet.contains("type=\"list\""), "{sheet}");
+        assert!(sheet.contains("<formula1>$A$2:$A$10</formula1>"), "{sheet}");
+        assert!(!sheet.contains("$A$2:$A$10,"), "{sheet}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
     fn data_validations_read_back_lists_and_ranges() {
         let dir = temp_path("validation readback");
         std::fs::create_dir_all(&dir).unwrap();
@@ -4536,6 +4608,7 @@ mod tests {
                 allow_blank: true,
                 numeric: None,
                 error_style: Some("warning".to_string()),
+                list_range: None,
             },
             DataValidation {
                 column: "amount".to_string(),
@@ -4552,6 +4625,7 @@ mod tests {
                     max: Some("1200".to_string()),
                 }),
                 error_style: None,
+                list_range: None,
             },
         ];
         write_sheets_with_formats_widths_and_protection(
@@ -4623,6 +4697,7 @@ mod tests {
                     max: Some("1200".to_string()),
                 }),
                 error_style: None,
+                list_range: None,
             },
             DataValidation {
                 column: "id".to_string(),
@@ -4639,6 +4714,7 @@ mod tests {
                     max: None,
                 }),
                 error_style: None,
+                list_range: None,
             },
         ];
         write_sheets_with_formats_widths_and_protection(
@@ -4757,6 +4833,7 @@ mod tests {
                 allow_blank: false,
                 numeric: None,
                 error_style: None,
+                list_range: None,
             },
             DataValidation {
                 column: "id".to_string(),
@@ -4769,6 +4846,7 @@ mod tests {
                 allow_blank: false,
                 numeric: None,
                 error_style: None,
+                list_range: None,
             },
         ];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
@@ -4804,6 +4882,7 @@ mod tests {
             allow_blank: false,
             numeric: None,
             error_style: None,
+            list_range: None,
         }];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
@@ -4834,6 +4913,7 @@ mod tests {
             allow_blank: false,
             numeric: None,
             error_style: None,
+            list_range: None,
         }];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
@@ -4868,6 +4948,7 @@ mod tests {
             allow_blank: false,
             numeric: None,
             error_style: None,
+            list_range: None,
         }];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
@@ -4899,6 +4980,7 @@ mod tests {
             allow_blank: true,
             numeric: None,
             error_style: None,
+            list_range: None,
         }];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");

@@ -1,0 +1,51 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "aff1e286c5bddf71c830b189335ff5c38015a120baccb450bcca7ba948ab5674",
+  "batch_id": "61cc9d856fef41fbb11c325f276bb31b68f952fce47690eecd1c7c9955435ea8",
+  "composite_identity": "2702598f6959a85958004fc90d6f3e5342a667c5026b469836b208fbe9976f2d",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "371c06440978e26d9a6630b75d70eea119f90320da252fcd3282fb0f7d5a52c9",
+  "targets": [
+    {
+      "candidate_id": "4f22a6c082f6b6c0a496d12b4b534e613973a7b9920c773ca4f241411688c6ac",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "f6b977b5db6135f6e6477676103fc87849f22dc95f7a5de470b660ec6f901937",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert：转码、xlsx/csv/tsv/ndjson/parquet、highlight、number-format、formats、protection 检测、验证、no-freeze、protect-sheet、col-width、密码与粒度 | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；--formats；--protection；--validations 检测（sheet/all-sheets/json）；--number-format；目录叠加；--data-validation 列表/公式/whole/decimal/error-style；--col-width | S:不覆盖输入；检测仅 xlsx；密码 1–15 ASCII；公式 ≤255；重复列/空值/宽度越界退出 2"
+    },
+    {
+      "candidate_id": "54bbc2a94c15f837223ebdaaaf6c4650a27cc8f8cd94b360a7422b9b419cbdf8",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "18e44a6aa733209cd057e4de9a1fff3f1ee1b2dd69a1f765da1dc884f39966a6",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles；dataValidations 列表/custom/whole|decimal/errorStyle；回读 xlsx_data_validations（含样式）；条件格式全族/dxf；保护读回；autoFilter | S:不写公式/图表；验证列表 ≤255 且禁逗号/引号；list/custom/numeric 三选一；errorStyle 仅三态"
+    },
+    {
+      "candidate_id": "83906880d9c71e2681ea4cfa8664d192c953edca75427328d23970ba2908c6b0",
+      "object_ref": "code:docs/XLSX.md",
+      "path": "docs/XLSX.md",
+      "change": "update",
+      "source_sha256": "bdabd72103443b2fc08781bf96118f989a3c102f35ca62cb52ea85487f486b19",
+      "existing_entry": "XLSX.md[SD7S]: F:xlsx 互操作现状与边界：导出、多 sheet、导入、report xlsx、日期/条件格式 | R:code:crates/core/src/xlsx.rs,code:crates/cli/src/main.rs,code:docs/CAPABILITIES.md | A:convert 流式导出；目录多 sheet；导入；ISO 日期；--highlight；--no-freeze；--data-validation 列表/公式/整数/小数/error-style；--disciplined--validations 检测；--protection；--col-width | S:只写值不写公式；日期仅 ISO；验证提示缺失/重复/非 xlsx 退出 2；密码 1–15 ASCII；不做宏/VBA"
+    },
+    {
+      "candidate_id": "2e59ff01e7c93f2cc830f1791c1be7b97179dfe187806193b5a42fa7d34d69aa",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "9480722f74cfb31e94122c43a44c66a6d84042608ecbeabb1a8c51a09106d3b4",
+      "existing_entry": "XLSX_ENGINE.md[SZ7S]: F:XLSX 引擎决策、迁移方案、覆盖矩阵与实测 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine MIT；全 sheet；数字格式导出；条件格式全族/dxf；数据验证列表/custom/whole|decimal/errorStyle 与回读；--validations 检测；保护矩阵；1M 8.04s/53MB | S:迁移未执行待批准；不新增依赖；导入格式取首数据行；性能仅 release"
+    },
+    {
+      "candidate_id": "a3b6833ccffc3dfdf8c0b9c56e36fa661587b9fc3029d9dc89f67d025bf71b1a",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "b8e09dced925c6c360123e054aeb69eff9cea0dec3282a271d8380b59e168bd8",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同新功能，边界并入母项，每轮需 feat 增量；573 验收、574–576 待做；Round585 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

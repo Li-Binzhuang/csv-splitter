@@ -19,7 +19,7 @@
 - 错误：无缓存公式值、坏共享索引、超行/列均显式报错，不静默造值；
 - 验证：列表/自定义公式/整数与小数区间（`type=whole|decimal`，between 或单边）；
   errorStyle 三态 stop/warning/information；回读 `xlsx_data_validations`；
-  `--validations` 检测模式（sheet/all-sheets/json）；
+  `--validations` 检测模式（sheet/all-sheets/json）；列表源可为内联值或区域引用；
 - 保护：密码哈希、objects/scenarios 粒度、`xlsx_sheet_protection` 与 `xlsx_protection_map` 读回；
   检测健壮性矩阵 `convert_protection_robustness_matrix`（未知 sheet/默认首表/JSON 顺序/非 xlsx/损坏 ZIP/空工作簿）。
 

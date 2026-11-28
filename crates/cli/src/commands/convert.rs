@@ -72,6 +72,7 @@ fn parse_data_validations(text: &str) -> Result<Vec<csvx_core::xlsx::DataValidat
             allow_blank: false,
             numeric: None,
             error_style: None,
+            list_range: None,
         });
     }
     if validations.is_empty() {
@@ -110,6 +111,7 @@ fn parse_validation_formulas(text: &str) -> Result<Vec<csvx_core::xlsx::DataVali
             allow_blank: false,
             numeric: None,
             error_style: None,
+            list_range: None,
         });
     }
     Ok(validations)
@@ -162,6 +164,7 @@ fn parse_numeric_validations(
                 max: (!max.is_empty()).then_some(max),
             }),
             error_style: None,
+            list_range: None,
         });
     }
     if validations.is_empty() {
@@ -186,6 +189,59 @@ fn merge_numeric_validations(
         validations.push(numeric);
     }
     Ok(())
+}
+
+fn merge_validation_ranges(
+    validations: &mut Vec<csvx_core::xlsx::DataValidation>,
+    text: &str,
+) -> Result<(), String> {
+    for validation in parse_validation_ranges(text)? {
+        if validations.iter().any(|v| v.column == validation.column) {
+            return Err(format!(
+                "data validation column {:?} is repeated",
+                validation.column
+            ));
+        }
+        validations.push(validation);
+    }
+    Ok(())
+}
+
+fn parse_validation_ranges(text: &str) -> Result<Vec<csvx_core::xlsx::DataValidation>, String> {
+    let mut validations = Vec::new();
+    for raw in split_format_specs(text) {
+        let (column, range) = raw
+            .split_once(':')
+            .ok_or_else(|| format!("data validation range {raw:?} needs column:range"))?;
+        let column = column.trim().to_string();
+        let range = range.trim().to_string();
+        if column.is_empty() || range.is_empty() {
+            return Err(format!("data validation range {raw:?} needs column:range"));
+        }
+        if validations
+            .iter()
+            .any(|validation: &csvx_core::xlsx::DataValidation| validation.column == column)
+        {
+            return Err(format!("data validation column {column:?} is repeated"));
+        }
+        validations.push(csvx_core::xlsx::DataValidation {
+            column,
+            values: Vec::new(),
+            formula: None,
+            prompt_title: None,
+            prompt_message: None,
+            error_title: None,
+            error_message: None,
+            allow_blank: false,
+            numeric: None,
+            error_style: None,
+            list_range: Some(range),
+        });
+    }
+    if validations.is_empty() {
+        return Err("--data-validation-range needs at least one column:range".to_string());
+    }
+    Ok(validations)
 }
 
 fn parse_validation_error_styles(text: &str) -> Result<Vec<(String, String)>, String> {
@@ -437,6 +493,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut data_validation_whole: Option<String> = None;
     let mut data_validation_decimal: Option<String> = None;
     let mut data_validation_error_style: Option<String> = None;
+    let mut data_validation_range: Option<String> = None;
     let mut data_validation_blank = false;
     let mut protect_sheet = false;
     let mut protect_password: Option<String> = None;
@@ -541,6 +598,13 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             "--data-validation-error-style" => match p.value("--data-validation-error-style") {
                 Ok(v) => data_validation_error_style = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--data-validation-range" => match p.value("--data-validation-range") {
+                Ok(v) => data_validation_range = Some(v),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -1012,6 +1076,15 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                     }
                 }
             }
+            if let Some(text) = data_validation_range.as_deref() {
+                match merge_validation_ranges(&mut validations, text) {
+                    Ok(()) => {}
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                }
+            }
             let validation_prompts = match data_validation_prompt.as_deref() {
                 Some(text) => match parse_validation_prompts(text) {
                     Ok(prompts) => prompts,
@@ -1298,6 +1371,19 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 csvx_core::xlsx::NumericKind::Decimal,
                 "--data-validation-decimal",
             ) {
+                Ok(()) => {}
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            }
+        }
+        if let Some(text) = data_validation_range.as_deref() {
+            if !target.eq_ignore_ascii_case("xlsx") {
+                eprintln!("error: --data-validation-range is only valid with --format xlsx");
+                return 2;
+            }
+            match merge_validation_ranges(&mut data_validations, text) {
                 Ok(()) => {}
                 Err(e) => {
                     eprintln!("error: {e}");
