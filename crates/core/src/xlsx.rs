@@ -2338,6 +2338,55 @@ fn workbook_sheet_name(path: &Path) -> String {
     name.chars().take(31).collect()
 }
 
+/// Merged-cell ranges read back from a worksheet, e.g. `A1:B2`.
+pub fn xlsx_merged_ranges(input: &Path, sheet: Option<&str>) -> std::io::Result<Vec<String>> {
+    let file = std::fs::File::open(input)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let workbook = read_entry(&mut archive, "xl/workbook.xml")?;
+    let rels = read_entry(&mut archive, "xl/_rels/workbook.xml.rels").unwrap_or_default();
+    let sheets = workbook_sheets(&workbook);
+    if sheets.is_empty() {
+        return Err(invalid("xlsx has no worksheets"));
+    }
+    let selected = select_sheet(&sheets, sheet)?;
+    let target = relationship_target(&rels, &selected.rid)
+        .or_else(|| (sheets.len() == 1).then(|| "xl/worksheets/sheet1.xml".to_string()))
+        .ok_or_else(|| {
+            invalid(&format!(
+                "xlsx sheet {:?} has no relationship target",
+                selected.name
+            ))
+        })?;
+    let normalized = if let Some(stripped) = target.strip_prefix('/') {
+        stripped.to_string()
+    } else if target.starts_with("xl/") {
+        target
+    } else {
+        format!("xl/{}", target.trim_start_matches("./"))
+    };
+    let sheet_xml = read_entry(&mut archive, &normalized)?;
+    Ok(parse_merge_cells(&sheet_xml))
+}
+
+fn parse_merge_cells(sheet_xml: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut rest = sheet_xml;
+    while let Some(start) = rest.find("<mergeCell ") {
+        let tail = &rest[start..];
+        let Some(open) = tail.find('>') else { break };
+        if let Some(range) = tag_attribute(&tail[..=open], "ref") {
+            out.push(range);
+        }
+        rest = &tail[open + 1..];
+    }
+    out
+}
+
 /// First-row header cell values, paired with their Excel column letters.
 pub fn xlsx_header_names(
     input: &Path,
@@ -5521,6 +5570,38 @@ mod tests {
         let error = xlsx_sheet_protection(&path, Some("missing")).unwrap_err();
         assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
         assert!(error.to_string().contains("missing"), "{error}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn merged_ranges_are_read_back() {
+        let dir = temp_path("merged readback");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("merged.xlsx");
+        let file = std::fs::File::create(&path).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        use std::io::Write as _;
+        for (name, body) in [
+            (
+                "xl/workbook.xml",
+                r#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="one" sheetId="1" r:id="rId1"/></sheets></workbook>"#,
+            ),
+            (
+                "xl/_rels/workbook.xml.rels",
+                r#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>"#,
+            ),
+            (
+                "xl/worksheets/sheet1.xml",
+                r#"<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>title</t></is></c></row></sheetData><mergeCells count="1"><mergeCell ref="A1:B1"/></mergeCells></worksheet>"#,
+            ),
+        ] {
+            zip.start_file(name, zip::write::SimpleFileOptions::default())
+                .unwrap();
+            zip.write_all(body.as_bytes()).unwrap();
+        }
+        zip.finish().unwrap();
+        let ranges = xlsx_merged_ranges(&path, None).unwrap();
+        assert_eq!(ranges, vec!["A1:B1".to_string()]);
         std::fs::remove_dir_all(dir).ok();
     }
 
