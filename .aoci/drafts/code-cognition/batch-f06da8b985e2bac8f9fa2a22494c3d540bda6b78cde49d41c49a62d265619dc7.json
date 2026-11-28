@@ -1,0 +1,27 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "61b001efd2c1330f123e4c18966842a416261e9940f79e68f5d254618d43852f",
+  "batch_id": "f06da8b985e2bac8f9fa2a22494c3d540bda6b78cde49d41c49a62d265619dc7",
+  "composite_identity": "1beb22a0229ae1ee8242dcfbd879ce8d846a8a6377adc053e10ba108dae61d3a",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "6b37980104bfa2245c9178deb1a89812a33754c4d5f535c2bf69717056cfaec9",
+  "targets": [
+    {
+      "candidate_id": "455c714761a770f3946c623a206ff44ed6b6f3b917ffc132526dd522247e3059",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "be3e130254cbf43bbf45b23d333226ed3bd103f0aca4fd2af78778f45e4d617c",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles；csv_to_xlsx_with_all；write_sheets 系列含 widths/options/formats+widths/多 sheet 保护与密码/目录密码/对象场景粒度/格式+宽度+规则+验证+保护；dataValidations 列表与 type=custom；条件格式全族/dxf 映射表；Colored；xlsx_sheet_protection 与 xlsx_protection_map 一致；autoFilter | S:不写公式/图表；合并不展开；验证列表 ≤255 且禁逗号/引号；自定义公式与列表不能混用"
+    },
+    {
+      "candidate_id": "79a5916b3a97380f54b4c181c1e6a656a214d205867e494738d382085892624e",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "33c2181d789785b033f7300bd75b534defcf62904b20754fe75eb78ebe904a36",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；dxf 逐色项已合并；Round574 目录全特性与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

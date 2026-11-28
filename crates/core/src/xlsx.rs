@@ -4571,6 +4571,18 @@ mod tests {
     }
 
     #[test]
+    fn protection_map_rejects_non_xlsx_files() {
+        let dir = temp_path("protection map invalid");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("not-a-workbook.xlsx");
+        std::fs::write(&path, "id,amount\n1,10\n").unwrap();
+        let error = xlsx_protection_map(&path).unwrap_err();
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
+        assert!(error.to_string().contains("not a zip/xlsx"), "{error}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
     fn protection_map_matches_single_sheet_reads() {
         let dir = temp_path("protection map matches");
         std::fs::create_dir_all(&dir).unwrap();
