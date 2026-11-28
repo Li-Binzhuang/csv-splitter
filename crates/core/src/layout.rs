@@ -38,6 +38,8 @@ pub enum NumberFormat {
     Accounting {
         symbol: Option<String>,
         places: usize,
+        /// `_($* #,##0.00_)`: keep Excel's alignment placeholders in the name.
+        aligned: bool,
     },
     /// `# ?/?` or `?/?`: mixed/simple fraction display.
     Fraction { whole: bool, digits: usize },
@@ -90,6 +92,13 @@ impl NumberFormat {
         if spec == "@" {
             return Ok(Self::Text);
         }
+        if let Some((symbol, places)) = accounting_shape(spec) {
+            return Ok(Self::Accounting {
+                symbol,
+                places,
+                aligned: true,
+            });
+        }
         if let Some((positive, negative)) = spec.split_once(';') {
             let positive = positive.trim();
             let negative = negative.trim();
@@ -107,6 +116,7 @@ impl NumberFormat {
                     return Ok(Self::Accounting {
                         symbol,
                         places: decimals(rest),
+                        aligned: false,
                     });
                 }
             }
@@ -200,14 +210,22 @@ impl NumberFormat {
                     format!("0.{} {exponent}", "0".repeat(*places)).replace(' ', "")
                 }
             }
-            Self::Accounting { symbol, places } => {
+            Self::Accounting {
+                symbol,
+                places,
+                aligned,
+            } => {
                 let symbol = symbol.as_deref().unwrap_or("");
                 let body = if *places == 0 {
                     "#,##0".to_string()
                 } else {
                     format!("#,##0.{}", "0".repeat(*places))
                 };
-                format!("{symbol}{body};({symbol}{body})")
+                if *aligned {
+                    format!("_({symbol}* {body}_)")
+                } else {
+                    format!("{symbol}{body};({symbol}{body})")
+                }
             }
             Self::Fraction { whole, digits } => {
                 let marks = "?".repeat(*digits);
@@ -278,7 +296,7 @@ impl NumberFormat {
                 render_date_time(pattern, value).unwrap_or_else(|| value.to_string())
             }
             Self::Scientific { places, upper } => render_scientific(number, *places, *upper),
-            Self::Accounting { symbol, places } => {
+            Self::Accounting { symbol, places, .. } => {
                 let (negative, rendered) = if number < 0.0 {
                     (true, format!("{:.places$}", number.abs()))
                 } else {
@@ -297,6 +315,32 @@ impl NumberFormat {
             Self::Colored { inner, .. } => inner.render(value),
         }
     }
+}
+
+fn accounting_shape(spec: &str) -> Option<(Option<String>, usize)> {
+    let inner = spec.strip_prefix("_(")?.strip_suffix("_)")?.trim();
+    let (symbol, rest) = match inner.chars().next() {
+        Some(character @ ('$' | '¥' | '€')) => (
+            Some(character.to_string()),
+            inner[character.len_utf8()..].trim_start(),
+        ),
+        _ => (None, inner),
+    };
+    let rest = rest.strip_prefix('*')?.trim();
+    if !rest.starts_with("#,##0") {
+        return None;
+    }
+    let tail = &rest["#,##0".len()..];
+    let places = if tail.is_empty() {
+        0
+    } else {
+        let decimals = tail.strip_prefix('.')?;
+        if decimals.is_empty() || !decimals.chars().all(|character| character == '0') {
+            return None;
+        }
+        decimals.len()
+    };
+    Some((symbol, places))
 }
 
 fn fraction_shape(spec: &str) -> Option<(bool, usize)> {
@@ -1321,6 +1365,25 @@ mod tests {
         assert_eq!(text.render("007"), "007");
         assert_eq!(text.render("-"), "-");
         assert!(NumberFormat::parse("0.00E").is_err());
+    }
+
+    #[test]
+    fn accounting_alignment_formats_keep_the_excel_code() {
+        let money = NumberFormat::parse("_($* #,##0.00_)").unwrap();
+        assert_eq!(money.name(), "_($* #,##0.00_)");
+        assert_eq!(money.render("1234.5"), "$1,234.50");
+        assert_eq!(money.render("-1234.5"), "($1,234.50)");
+
+        let plain = NumberFormat::parse("_(* #,##0.00_)").unwrap();
+        assert_eq!(plain.name(), "_(* #,##0.00_)");
+        assert_eq!(plain.render("1234.5"), "1,234.50");
+
+        let yen = NumberFormat::parse("_(¥* #,##0_)").unwrap();
+        assert_eq!(yen.name(), "_(¥* #,##0_)");
+        assert_eq!(yen.render("1234"), "¥1,234");
+
+        assert!(NumberFormat::parse("_($* #,##0.00").is_err());
+        assert!(NumberFormat::parse("_($* #,##0.00#_)").is_err());
     }
 
     #[test]

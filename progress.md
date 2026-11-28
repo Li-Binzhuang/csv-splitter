@@ -464,8 +464,8 @@
   测试 `convert_xlsx_no_auto_filter_keeps_number_formats`。
 - [x] 项451 CF + no-freeze + no-auto 四组合（功能级，优先）：
   测试 `convert_xlsx_highlight_survives_freeze_and_filter_combinations`。
-- [ ] 项507 会计对齐格式（功能级）：`_($* #,##0.00_)` 解析与渲染；
-  验收：单测 + gate。
+- [x] 项507 会计对齐格式（功能级）：`_($* #,##0.00_)` 解析与渲染；
+  测试 `accounting_alignment_formats_keep_the_excel_code`。
 - [ ] 项508 保护密码（功能级）：保护选项接受密码并写 Excel 密码哈希；
   验收：CLI + 单测 + gate。
 - [ ] 项509 会计对齐 + 货币符号（功能级）：`$* #,##0.00` 对齐渲染；
@@ -873,6 +873,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 526（项507 会计对齐格式，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `9c5ddd5f…a07db97a`；
+轮首 push 成功，本轮不再 push。
 
 Round 525（项503 dxf 映射表，功能级；参数化覆盖 6 种颜色/别名）；
 定向与全量 gate/package 通过；发布包 SHA `536d8ae7…5e40fc5e`；
