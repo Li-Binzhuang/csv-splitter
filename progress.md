@@ -632,12 +632,14 @@
   测试 `merged_ranges_are_written_and_read_back`。
 - [x] 项595 隐藏行列回读 API（新能力）：`xlsx_hidden_layout` 返回隐藏行号与列字母；
   测试 `hidden_rows_and_columns_are_read_back`。
-- [ ] 项596 列宽回读 API（新能力）：读取 xlsx `<col width>` 与 customWidth；
-  验收：单测 + round-trip + gate。
+- [x] 项596 列宽回读 API（新能力）：`xlsx_column_widths` 返回列字母/宽度/customWidth；
+  测试 `column_widths_are_written_and_read_back`。
 - [ ] 项597 行高回读 API（新能力）：读取 xlsx `<row ht>` 与 customHeight；
   验收：单测 + round-trip + gate。
 - [ ] 项598 列宽检测 CLI（新能力）：输出每列宽度与 customWidth；
   验收：CLI + 单测 + gate。
+- [ ] 项599 行高写出 API（新能力）：xlsx 导出写 `<row ht customHeight>`；
+  验收：单测 + round-trip + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
@@ -1043,6 +1045,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 608（项596 列宽回读 API，feat 级新能力，验收完成）；
+定向与全量 gate/package 通过；发布包 SHA `108a11cb…1efa2f5`；
+轮首 push 成功，本轮不再 push。
 
 Round 607（项595 隐藏行列回读 API，feat 级新能力，验收完成）；
 定向与全量 gate/package 通过；发布包 SHA `f96b6adc…1d19941`；
