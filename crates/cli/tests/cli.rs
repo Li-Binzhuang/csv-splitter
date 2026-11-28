@@ -4615,6 +4615,47 @@ fn convert_directory_to_xlsx_applies_number_formats() {
 }
 
 #[test]
+fn convert_directory_to_xlsx_combines_validation_and_widths() {
+    let dir = TempDir::new("xlsxdirvalwidth");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,status\n1,good\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "id,status\n2,bad\n").unwrap();
+    let out = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            out.to_str().unwrap(),
+            "--data-validation",
+            "status:good,bad",
+            "--col-width",
+            "status:20",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let file = std::fs::File::open(&out).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    use std::io::Read as _;
+    for name in ["xl/worksheets/sheet1.xml", "xl/worksheets/sheet2.xml"] {
+        let mut sheet = String::new();
+        archive
+            .by_name(name)
+            .unwrap()
+            .read_to_string(&mut sheet)
+            .unwrap();
+        assert!(
+            sheet.contains("<dataValidations count=\"1\">"),
+            "{name}: {sheet}"
+        );
+        assert!(sheet.contains("width=\"20\""), "{name}: {sheet}");
+    }
+}
+
+#[test]
 fn convert_directory_to_xlsx_combines_validation_cf_and_password() {
     let dir = TempDir::new("xlsxdirvalcfpass");
     std::fs::create_dir(dir.join("parts")).unwrap();
