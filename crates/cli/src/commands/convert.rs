@@ -553,6 +553,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut properties = false;
     let mut page_setup = false;
     let mut print_layout = false;
+    let mut header_footer = false;
     let mut print_area: Option<String> = None;
     let mut orientation: Option<String> = None;
     let mut paper_size: Option<u32> = None;
@@ -702,6 +703,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--properties" => properties = true,
             "--page-setup" => page_setup = true,
             "--print-layout" => print_layout = true,
+            "--header-footer" => header_footer = true,
             "--margin-left" => match p.value("--margin-left").and_then(|v| {
                 v.parse::<f64>()
                     .map_err(|_| "bad --margin-left".to_string())
@@ -932,9 +934,103 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         && !properties
         && !page_setup
         && !print_layout
+        && !header_footer
     {
         eprintln!("error: --json needs --formats or --protection");
         return 2;
+    }
+
+    if header_footer {
+        if protection
+            || validations
+            || formulas
+            || conditional_formats
+            || sheet_view
+            || show_formats
+            || show_headers
+            || merged_ranges
+            || column_widths
+            || row_heights
+            || sheet_visibility
+            || properties
+            || page_setup
+            || print_layout
+        {
+            eprintln!("error: --header-footer cannot be combined with other inspection modes");
+            return 2;
+        }
+        let name = input
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if !(name.ends_with(".xlsx") || name.ends_with(".xlsm")) {
+            eprintln!("error: --header-footer needs an .xlsx/.xlsm input");
+            return 2;
+        }
+        if convert_format.is_some() || out.is_some() {
+            eprintln!("error: --header-footer cannot be combined with output flags");
+            return 2;
+        }
+        if sheet.is_some() && all_sheets {
+            eprintln!("error: --header-footer --all-sheets cannot be combined with --sheet");
+            return 2;
+        }
+        let names = if all_sheets {
+            match csvx_core::xlsx::xlsx_sheet_names(&input) {
+                Ok(names) => names,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        } else {
+            vec![sheet.clone().unwrap_or_default()]
+        };
+        let mut entries = Vec::new();
+        for name in &names {
+            let sheet_arg = (!name.is_empty()).then_some(name.as_str());
+            match csvx_core::xlsx::xlsx_header_footer(&input, sheet_arg) {
+                Ok(info) => entries.push((sheet_arg.unwrap_or("").to_string(), info)),
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        }
+        if formats_json {
+            print!("[");
+            for (index, (sheet_name, info)) in entries.iter().enumerate() {
+                if index > 0 {
+                    print!(",");
+                }
+                print!(
+                    "{{\"sheet\":{},\"odd_header\":{},\"odd_footer\":{},\"even_header\":{},\"even_footer\":{},\"first_header\":{},\"first_footer\":{}}}",
+                    json_string(sheet_name),
+                    json_optional(&info.odd_header),
+                    json_optional(&info.odd_footer),
+                    json_optional(&info.even_header),
+                    json_optional(&info.even_footer),
+                    json_optional(&info.first_header),
+                    json_optional(&info.first_footer)
+                );
+            }
+            println!("]");
+        } else {
+            for (sheet_name, info) in &entries {
+                if all_sheets {
+                    println!("# {sheet_name}");
+                }
+                println!("odd_header={}", info.odd_header.as_deref().unwrap_or(""));
+                println!("odd_footer={}", info.odd_footer.as_deref().unwrap_or(""));
+                println!("even_header={}", info.even_header.as_deref().unwrap_or(""));
+                println!(
+                    "first_header={}",
+                    info.first_header.as_deref().unwrap_or("")
+                );
+            }
+        }
+        return 0;
     }
 
     if print_layout {
