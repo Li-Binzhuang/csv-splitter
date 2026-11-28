@@ -504,7 +504,9 @@
   测试 `rand_and_randbetween_stay_in_bounds`。
 - [x] 项471 四位分数格式（功能级）：`# ????/????` 与 `????/????`；
   测试 `fraction_formats_render_mixed_and_simple_forms`。
-- [ ] 项472 数字格式颜色段（功能级）：[Red] 等颜色码；
+- [x] 项472 数字格式颜色段（功能级）：`[Red]` 等 8 色；
+  测试 `coloured_formats_keep_the_excel_code_and_render_the_inner_format`。
+- [ ] 项473 Colored 导出样式（功能级）：xlsx formatCode 保留颜色；
   验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
@@ -803,6 +805,11 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 490（项472 数字格式颜色段，功能级）；
+gate 首跑 2 个测试因 `[h]` 被误判为颜色（已排除 elapsed bracket）；
+全量 gate/package 通过；发布包 SHA `430a8758…3f671bd1`；
+轮首 push 成功，本轮不再 push。
 
 Round 489（项471 四位分数格式，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `317e55b8…babb1a1da`；

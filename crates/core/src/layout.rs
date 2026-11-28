@@ -43,6 +43,11 @@ pub enum NumberFormat {
     Fraction { whole: bool, digits: usize },
     /// `@`: text is shown as entered.
     Text,
+    /// Excel colour prefix such as `[Red]#,##0.00`; the colour travels to xlsx.
+    Colored {
+        color: String,
+        inner: Box<NumberFormat>,
+    },
 }
 
 impl NumberFormat {
@@ -51,6 +56,30 @@ impl NumberFormat {
         let spec = spec.trim();
         if spec.is_empty() || spec.eq_ignore_ascii_case("plain") {
             return Ok(Self::Plain);
+        }
+        if spec.starts_with('[') {
+            let end = spec
+                .find(']')
+                .ok_or_else(|| format!("unterminated colour in number format {spec:?}"))?;
+            let colour = &spec[1..end];
+            let lower = colour.to_ascii_lowercase();
+            // `[h]:mm:ss` and friends are elapsed-time formats, not colours.
+            if !matches!(lower.as_str(), "h" | "m" | "s") {
+                let inner = spec[end + 1..].trim();
+                if !matches!(
+                    lower.as_str(),
+                    "red" | "blue" | "green" | "black" | "white" | "yellow" | "magenta" | "cyan"
+                ) {
+                    return Err(format!("unsupported colour {colour:?} in number format"));
+                }
+                if inner.is_empty() {
+                    return Err(format!("colour {colour:?} needs a number format"));
+                }
+                return Ok(Self::Colored {
+                    color: lower,
+                    inner: Box::new(Self::parse(inner)?),
+                });
+            }
         }
         if let Some(percent) = spec.strip_suffix('%') {
             return Ok(Self::Percent {
@@ -189,6 +218,20 @@ impl NumberFormat {
                 }
             }
             Self::Text => "@".to_string(),
+            Self::Colored { color, inner } => {
+                let inner = inner.name();
+                let upper = match color.as_str() {
+                    "red" => "Red",
+                    "blue" => "Blue",
+                    "green" => "Green",
+                    "black" => "Black",
+                    "white" => "White",
+                    "yellow" => "Yellow",
+                    "magenta" => "Magenta",
+                    _ => "Cyan",
+                };
+                format!("[{upper}]{inner}")
+            }
         }
     }
 
@@ -251,6 +294,7 @@ impl NumberFormat {
             }
             Self::Fraction { whole, digits } => render_fraction(number, *whole, *digits),
             Self::Text => value.to_string(),
+            Self::Colored { inner, .. } => inner.render(value),
         }
     }
 }
@@ -1106,6 +1150,18 @@ mod tests {
         assert_eq!(plain.render("3.7"), "4");
 
         assert!(NumberFormat::parse("banana").is_err());
+    }
+
+    #[test]
+    fn coloured_formats_keep_the_excel_code_and_render_the_inner_format() {
+        let red = NumberFormat::parse("[Red]#,##0.00").unwrap();
+        assert_eq!(red.name(), "[Red]#,##0.00");
+        assert_eq!(red.render("1234.5"), "1,234.50");
+        let blue = NumberFormat::parse("[blue]0.0%").unwrap();
+        assert_eq!(blue.name(), "[Blue]0.0%");
+        assert_eq!(blue.render("0.125"), "12.5%");
+        assert!(NumberFormat::parse("[Purple]0.00").is_err());
+        assert!(NumberFormat::parse("[Red]").is_err());
     }
 
     #[test]

@@ -907,6 +907,10 @@ fn write_formatted_cell(
     let reference = format!("{}{}", column_name(column), row);
     let trimmed = value.trim();
     match format {
+        NumberFormat::Colored { inner, .. } => {
+            write_formatted_cell(out, column, row, value, inner.as_ref(), style);
+            return;
+        }
         NumberFormat::Plain => {
             out.push_str(&cell_xml(column, row, value, false));
             return;

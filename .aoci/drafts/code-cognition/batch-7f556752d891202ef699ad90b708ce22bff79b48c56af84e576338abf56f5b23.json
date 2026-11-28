@@ -1,0 +1,43 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "459e73fd18e972eea1de54b11b6b0aac876aedde31c03c0db0cfb9084efd2c81",
+  "batch_id": "7f556752d891202ef699ad90b708ce22bff79b48c56af84e576338abf56f5b23",
+  "composite_identity": "3519491612b78339bbe10193f24004d71828e7bdaa808a61d67e56e9dc018a14",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "7665ea30c4b8963027d3b43ec182eeabc2c8f5867f621aadf4003cafc664d2aa",
+  "targets": [
+    {
+      "candidate_id": "0b8b62b09cdcbb126699f9fee1035c2c28ccb1aeb7c8a95faa48ea1180f33645",
+      "object_ref": "code:crates/core/src/layout.rs",
+      "path": "crates/core/src/layout.rs",
+      "change": "update",
+      "source_sha256": "e9cbc5eb8c908bfc85cf74d690de0c46790914222bd70e7ba6fb5161136c9252",
+      "existing_entry": "layout.rs[CU7L]: F:显示元数据 sidecar：列名替换、列宽、数字格式与冻结列 | R:code:crates/core/src/sheet.rs | A:NumberFormat 含 Decimal/Percent/Currency/DateTime/Scientific/Accounting/Fraction/Text；日期含点/破折号/斜杠与 12 小时 AM/PM、h/hh 补零；分数含 1/2/4 位分母；负数括号；@ 原样 | S:只影响展示不改值，写 .view 不写 journal；未识别格式报错；输入日期是 ISO 前缀"
+    },
+    {
+      "candidate_id": "25fe6d3e99e5e71ce4132b8fd0acc1ae28b9804672fad2961d066c31f59b45e3",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "5f176d444b8ac0fa2ead8aec507c57de3afcbd1547b21f1d7767aafd9b8d94a2",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles；csv_to_xlsx_with_all；csv_to_xlsx_with_protection；多列 dataValidations；allow_blank；promptTitle/prompt、errorTitle/error 转义与 32/255 限制；条件格式全族/dxf 去重；autoFilter | S:不写公式/图表；合并不展开；验证列表 ≤255 字符且禁逗号/引号"
+    },
+    {
+      "candidate_id": "c818bbe4d0f7ec06484edce74747b9c683a9c200007c7d7dfc849a753511c68c",
+      "object_ref": "code:docs/NUMBER_FORMAT_COVERAGE.md",
+      "path": "docs/NUMBER_FORMAT_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "79ce0d071d5eba20f20797ecb66e061725c0429c6392ef91e58e82986d556554",
+      "existing_entry": "NUMBER_FORMAT_COVERAGE.md[SA7T]: F:数字格式覆盖矩阵与缺口 | R:code:crates/core/src/layout.rs,code:crates/core/src/xlsx.rs | A:千分位/小数/百分比/货币/日期时间；点/破折号/斜杠；12 小时 AM/PM；h/hh 补零；四位分数；Scientific/Accounting/Text；日期导出 numFmt | S:格式只对数字/日期生效；未识别格式报错"
+    },
+    {
+      "candidate_id": "66f05b20d7a5e1ab4e351c2c397ba1d653cdf573ece802095ed9d2f966e495a3",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "d3cc8f2b650302a4189f6ca5efa7893bd1941ababc838cd218a18d61c039f787",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；Round489 四位分数与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
