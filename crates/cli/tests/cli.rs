@@ -4954,6 +4954,77 @@ fn convert_directory_to_xlsx_combines_all_xlsx_features() {
 }
 
 #[test]
+fn convert_reports_data_validations() {
+    let dir = TempDir::new("validationsinspect");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "status,amount\ngood,10\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "status,amount\ngood,20\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--data-validation",
+            "status:good,bad",
+            "--data-validation-whole",
+            "amount:0,1200",
+            "--data-validation-error-style",
+            "status:warning",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let text = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--validations",
+            "--sheet",
+            "a",
+        ])
+        .output()
+        .unwrap();
+    assert!(text.status.success());
+    let stdout = String::from_utf8_lossy(&text.stdout);
+    assert!(stdout.contains("type=list"), "{stdout}");
+    assert!(stdout.contains("type=whole"), "{stdout}");
+    assert!(stdout.contains("error_style=warning"), "{stdout}");
+
+    let json = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--validations",
+            "--all-sheets",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(json.status.success());
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(stdout.starts_with('['), "{stdout}");
+    assert!(stdout.contains("\"type\":\"whole\""), "{stdout}");
+    assert_eq!(stdout.matches("\"sheet\"").count(), 4, "{stdout}");
+
+    let unknown = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--validations",
+            "--sheet",
+            "missing",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(unknown.status.code(), Some(1));
+}
+
+#[test]
 fn convert_writes_data_validation_error_styles() {
     let dir = TempDir::new("validationerrorstyle");
     std::fs::create_dir(dir.join("parts")).unwrap();

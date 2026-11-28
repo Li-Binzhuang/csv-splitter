@@ -269,6 +269,13 @@ fn parse_validation_prompts(text: &str) -> Result<Vec<(String, String, String)>,
 }
 
 /// Split `a:fmt;b:fmt` on semicolons that are not inside an accounting `(...)`.
+fn json_optional(value: &Option<String>) -> String {
+    match value {
+        Some(value) => json_string(value),
+        None => "null".to_string(),
+    }
+}
+
 fn json_string(text: &str) -> String {
     let mut out = String::with_capacity(text.len() + 2);
     out.push('"');
@@ -442,6 +449,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut show_formats = false;
     let mut formats_json = false;
     let mut protection = false;
+    let mut validations = false;
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -540,6 +548,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             "--formats" => show_formats = true,
             "--protection" => protection = true,
+            "--validations" => validations = true,
             "--json" => formats_json = true,
             "--number-format" => match p.value("--number-format") {
                 Ok(v) => number_format = Some(v),
@@ -594,12 +603,104 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         return 2;
     };
 
-    if formats_json && !show_formats && !protection {
+    if formats_json && !show_formats && !protection && !validations {
         eprintln!("error: --json needs --formats or --protection");
         return 2;
     }
 
-    if protection {
+    if protection || validations {
+        if validations {
+            if protection || show_formats {
+                eprintln!("error: --validations cannot be combined with --protection or --formats");
+                return 2;
+            }
+            let name = input
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or("")
+                .to_ascii_lowercase();
+            if !(name.ends_with(".xlsx") || name.ends_with(".xlsm")) {
+                eprintln!("error: --validations needs an .xlsx/.xlsm input");
+                return 2;
+            }
+            if convert_format.is_some() || out.is_some() {
+                eprintln!("error: --validations cannot be combined with output/conversion flags");
+                return 2;
+            }
+            if sheet.is_some() && all_sheets {
+                eprintln!("error: --validations --all-sheets cannot be combined with --sheet");
+                return 2;
+            }
+            let names = if all_sheets {
+                match csvx_core::xlsx::xlsx_sheet_names(&input) {
+                    Ok(names) => names,
+                    Err(error) => {
+                        eprintln!("error: {error}");
+                        return 1;
+                    }
+                }
+            } else {
+                vec![sheet.clone().unwrap_or_default()]
+            };
+            let mut entries = Vec::new();
+            for name in &names {
+                let sheet_arg = (!name.is_empty()).then_some(name.as_str());
+                match csvx_core::xlsx::xlsx_data_validations(&input, sheet_arg) {
+                    Ok(mut found) => entries.append(&mut found),
+                    Err(error) => {
+                        eprintln!("error: {error}");
+                        return 1;
+                    }
+                }
+            }
+            if formats_json {
+                print!("[");
+                for (index, entry) in entries.iter().enumerate() {
+                    if index > 0 {
+                        print!(",");
+                    }
+                    print!(
+                    "{{\"sheet\":{},\"column\":{},\"range\":{},\"type\":{},\"operator\":{},\"formula1\":{},\"formula2\":{},\"allow_blank\":{},\"prompt_title\":{},\"prompt_message\":{},\"error_title\":{},\"error_message\":{},\"error_style\":{}}}",
+                    json_string(&entry.sheet),
+                    json_string(&entry.column),
+                    json_string(&entry.range),
+                    json_string(&entry.kind),
+                    json_string(&entry.operator),
+                    json_optional(&entry.formula1),
+                    json_optional(&entry.formula2),
+                    entry.allow_blank,
+                    json_optional(&entry.prompt_title),
+                    json_optional(&entry.prompt_message),
+                    json_optional(&entry.error_title),
+                    json_optional(&entry.error_message),
+                    json_optional(&entry.error_style),
+                );
+                }
+                println!("]");
+            } else if entries.is_empty() {
+                println!("no data validations");
+            } else {
+                for entry in &entries {
+                    if all_sheets {
+                        println!("# {}", entry.sheet);
+                    }
+                    println!(
+                    "column={} range={} type={} operator={} formula1={} formula2={} allow_blank={} prompt_title={} error_style={}",
+                    entry.column,
+                    entry.range,
+                    entry.kind,
+                    entry.operator,
+                    entry.formula1.as_deref().unwrap_or(""),
+                    entry.formula2.as_deref().unwrap_or(""),
+                    entry.allow_blank,
+                    entry.prompt_title.as_deref().unwrap_or(""),
+                    entry.error_style.as_deref().unwrap_or("")
+                );
+                }
+            }
+            return 0;
+        }
+
         if show_formats {
             eprintln!("error: --protection cannot be combined with --formats");
             return 2;

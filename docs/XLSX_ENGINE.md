@@ -18,7 +18,8 @@
   合并左上值、空行跳过、16384 列 / 1,048,576 总行（1,048,575 数据行）上限；
 - 错误：无缓存公式值、坏共享索引、超行/列均显式报错，不静默造值；
 - 验证：列表/自定义公式/整数与小数区间（`type=whole|decimal`，between 或单边）；
-  errorStyle 三态 stop/warning/information；回读 `xlsx_data_validations`（sheet/列/sqref/类型/operator/公式/提示/样式）；
+  errorStyle 三态 stop/warning/information；回读 `xlsx_data_validations`；
+  `--validations` 检测模式（sheet/all-sheets/json）；
 - 保护：密码哈希、objects/scenarios 粒度、`xlsx_sheet_protection` 与 `xlsx_protection_map` 读回；
   检测健壮性矩阵 `convert_protection_robustness_matrix`（未知 sheet/默认首表/JSON 顺序/非 xlsx/损坏 ZIP/空工作簿）。
 
