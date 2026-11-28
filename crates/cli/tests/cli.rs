@@ -3561,6 +3561,43 @@ fn convert_xlsx_custom_validation_keeps_prompts_and_blank() {
 }
 
 #[test]
+fn convert_xlsx_combines_password_highlight_and_no_auto_filter() {
+    let dir = TempDir::new("xlsxpasscfnoauto");
+    let input = dir.join("t.csv");
+    let output = dir.join("t.xlsx");
+    std::fs::write(&input, "id,amount\n1,1200\n2,10\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            output.to_str().unwrap(),
+            "--protect-sheet-password",
+            "test",
+            "--highlight",
+            "amount>1000:red",
+            "--no-auto-filter",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let file = std::fs::File::open(&output).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    let mut sheet = String::new();
+    use std::io::Read as _;
+    archive
+        .by_name("xl/worksheets/sheet1.xml")
+        .unwrap()
+        .read_to_string(&mut sheet)
+        .unwrap();
+    assert!(sheet.contains("password=\"CBEB\""), "{sheet}");
+    assert!(sheet.contains("conditionalFormatting"), "{sheet}");
+    assert!(!sheet.contains("<autoFilter"), "{sheet}");
+}
+
+#[test]
 fn convert_xlsx_can_highlight_a_top_rank() {
     let dir = TempDir::new("xlsxtop");
     let input = dir.join("t.csv");
