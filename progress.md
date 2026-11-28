@@ -462,8 +462,12 @@
   测试 `convert_xlsx_no_freeze_keeps_highlight`。
 - [x] 项450 no-auto-filter + formats 组合（功能级）：格式保留、筛选省略；
   测试 `convert_xlsx_no_auto_filter_keeps_number_formats`。
-- [ ] 项451 CF + no-freeze + no-auto 四组合（功能级）：CI 集成；
+- [x] 项451 CF + no-freeze + no-auto 四组合（功能级，优先）：
+  测试 `convert_xlsx_highlight_survives_freeze_and_filter_combinations`。
+- [ ] 项507 会计对齐格式（功能级）：`_($* #,##0.00_)` 解析与渲染；
   验收：单测 + gate。
+- [ ] 项508 保护密码（功能级）：保护选项接受密码并写 Excel 密码哈希；
+  验收：CLI + 单测 + gate。
 - [x] 项452 highlight + formats 组合（功能级）：CF 与数字格式共存；
   测试 `convert_xlsx_combines_highlight_and_number_formats`。
 - [x] 项453 xlsx 数据验证下拉（功能级）：csv_to_xlsx_with_validations；
@@ -569,14 +573,9 @@
   测试 `blue_rules_share_one_dxf`。
 - [x] 项502 多色 dxf 计数（功能级）：红+蓝+绿各 1 个 dxf；
   测试 `three_colours_create_three_dxfs`。
-- [x] 项503 未知颜色 dxf 默认（功能级）：未知色按红处理；
-  测试 `unknown_rule_colours_fall_back_to_red`。
-- [x] 项504 dxf 琥珀色映射（功能级）：amber/yellow 写 FFFFEB9C；
-  测试 `amber_rules_use_the_yellow_dxf`。
-- [ ] 项505 amber/yellow 同 dxf（功能级）：两别名共享 dxfId；
-  验收：单测 + gate。
-- [ ] 项506 红+琥珀共存（功能级）：2 个 dxf，红在前；
-  验收：单测 + gate。
+- [ ] 项503 dxf 颜色映射表（功能级，合并原 503/504/505/506）：
+  红/蓝/绿/琥珀别名→ARGB；未知色默认红；amber/yellow 共享 dxfId；
+  验收：参数化单测一次覆盖全部颜色 + gate。
 - [x] 项429 斜杠日期格式导出 round-trip（功能级）：m/d/yyyy、mm/dd/yyyy 写入 numFmt；
   测试 `slash_date_formats_map_into_export_styles`。
 - [x] 项432 斜杠日期 12 小时制（功能级）：m/d/yyyy、mm/dd/yyyy 12 小时；
@@ -870,6 +869,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 524（项451 CF 四组合，功能级；路线图已合并 dxf 逐色项）；
+定向与全量 gate/package 通过；发布包 SHA `60c64b78…478cf235`；
+轮首 push 成功，本轮不再 push。
 
 Round 523（项504 琥珀色 dxf，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `5f57f8fb…e9b89bd`；

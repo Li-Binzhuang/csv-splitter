@@ -3301,6 +3301,57 @@ fn convert_rejects_out_of_range_or_repeated_column_widths() {
 }
 
 #[test]
+fn convert_xlsx_highlight_survives_freeze_and_filter_combinations() {
+    let dir = TempDir::new("xlsxcf4");
+    let input = dir.join("t.csv");
+    std::fs::write(&input, "id,amount\n1,1200\n2,10\n").unwrap();
+    for (name, flags, pane, auto_filter) in [
+        ("both", Vec::<&str>::new(), true, true),
+        ("nofreeze", vec!["--no-freeze"], false, true),
+        ("noauto", vec!["--no-auto-filter"], true, false),
+        (
+            "neither",
+            vec!["--no-freeze", "--no-auto-filter"],
+            false,
+            false,
+        ),
+    ] {
+        let output = dir.join(&format!("{name}.xlsx"));
+        let status = Command::new(bin())
+            .args([
+                "convert",
+                input.to_str().unwrap(),
+                "--format",
+                "xlsx",
+                "--out",
+                output.to_str().unwrap(),
+                "--highlight",
+                "amount>1000:red",
+            ])
+            .args(flags)
+            .status()
+            .unwrap();
+        assert_eq!(status.code(), Some(0), "{name}");
+        let file = std::fs::File::open(&output).unwrap();
+        let mut archive = zip::ZipArchive::new(file).unwrap();
+        let mut sheet = String::new();
+        use std::io::Read as _;
+        archive
+            .by_name("xl/worksheets/sheet1.xml")
+            .unwrap()
+            .read_to_string(&mut sheet)
+            .unwrap();
+        assert!(sheet.contains("conditionalFormatting"), "{name}: {sheet}");
+        assert_eq!(sheet.contains("<pane "), pane, "{name}: {sheet}");
+        assert_eq!(
+            sheet.contains("<autoFilter"),
+            auto_filter,
+            "{name}: {sheet}"
+        );
+    }
+}
+
+#[test]
 fn convert_xlsx_can_highlight_a_top_rank() {
     let dir = TempDir::new("xlsxtop");
     let input = dir.join("t.csv");
