@@ -42,6 +42,8 @@ pub struct ConditionalRule {
 pub enum NumericKind {
     Whole,
     Decimal,
+    Date,
+    Time,
 }
 
 /// Bounds for a whole/decimal data validation; either bound may be omitted.
@@ -1536,6 +1538,23 @@ fn xml_attribute(value: &str) -> String {
     escaped
 }
 
+fn validation_bound_serial(bound: &str, kind: NumericKind) -> std::io::Result<String> {
+    if bound.parse::<f64>().is_ok() {
+        return Ok(bound.to_string());
+    }
+    let serial = match kind {
+        NumericKind::Date => date_serial(bound).map(|serial| serial as f64),
+        NumericKind::Time => time_serial(bound),
+        NumericKind::Whole | NumericKind::Decimal => None,
+    };
+    serial.map(|value| format!("{value}")).ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("data validation bound {bound:?} is not a date/time or serial"),
+        )
+    })
+}
+
 fn data_validations_xml(
     validations: &[DataValidation],
     headers: &[String],
@@ -1689,8 +1708,20 @@ fn data_validations_xml(
             let kind = match numeric.kind {
                 NumericKind::Whole => "whole",
                 NumericKind::Decimal => "decimal",
+                NumericKind::Date => "date",
+                NumericKind::Time => "time",
             };
-            let (operator, formula1, formula2) = match (min, max) {
+            let (min, max) = if matches!(numeric.kind, NumericKind::Date | NumericKind::Time) {
+                (
+                    min.map(|value| validation_bound_serial(value, numeric.kind))
+                        .transpose()?,
+                    max.map(|value| validation_bound_serial(value, numeric.kind))
+                        .transpose()?,
+                )
+            } else {
+                (min.map(str::to_string), max.map(str::to_string))
+            };
+            let (operator, formula1, formula2) = match (min.as_deref(), max.as_deref()) {
                 (Some(min), Some(max)) => ("between", min.to_string(), Some(max.to_string())),
                 (Some(min), None) => ("greaterThanOrEqual", min.to_string(), None),
                 (None, Some(max)) => ("lessThanOrEqual", max.to_string(), None),
@@ -4539,6 +4570,84 @@ mod tests {
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
         assert!(!sheet.contains("<autoFilter"), "{sheet}");
         assert!(sheet.contains("<pane "), "{sheet}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn date_and_time_validations_convert_iso_bounds_to_serials() {
+        let dir = temp_path("validation date time");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("dates.xlsx");
+        let sheets = vec![Sheet {
+            name: "one".to_string(),
+            headers: vec!["day".into(), "hour".into()],
+            rows: vec![vec!["2024-01-01".into(), "09:00".into()]],
+        }];
+        let validations = vec![
+            DataValidation {
+                column: "day".to_string(),
+                values: Vec::new(),
+                formula: None,
+                prompt_title: None,
+                prompt_message: None,
+                error_title: None,
+                error_message: None,
+                allow_blank: true,
+                numeric: Some(NumericValidation {
+                    kind: NumericKind::Date,
+                    min: Some("2024-01-01".to_string()),
+                    max: Some("2024-12-31".to_string()),
+                }),
+                error_style: None,
+                list_range: None,
+            },
+            DataValidation {
+                column: "hour".to_string(),
+                values: Vec::new(),
+                formula: None,
+                prompt_title: None,
+                prompt_message: None,
+                error_title: None,
+                error_message: None,
+                allow_blank: false,
+                numeric: Some(NumericValidation {
+                    kind: NumericKind::Time,
+                    min: Some("09:00".to_string()),
+                    max: Some("17:00".to_string()),
+                }),
+                error_style: None,
+                list_range: None,
+            },
+        ];
+        write_sheets_with_formats_widths_and_protection(
+            &path,
+            &sheets,
+            &[Vec::new()],
+            &[Vec::new()],
+            true,
+            false,
+            false,
+            None,
+            true,
+            true,
+            &[],
+            &validations,
+        )
+        .unwrap();
+        let sheet = read_zip(&path, "xl/worksheets/sheet1.xml");
+        assert!(
+            sheet.contains("type=\"date\" operator=\"between\""),
+            "{sheet}"
+        );
+        assert!(sheet.contains("<formula1>45292</formula1>"), "{sheet}");
+        assert!(sheet.contains("<formula2>45657</formula2>"), "{sheet}");
+        assert!(
+            sheet.contains("type=\"time\" operator=\"between\""),
+            "{sheet}"
+        );
+        assert!(sheet.contains("<formula1>0.375</formula1>"), "{sheet}");
+        let error = xlsx_data_validations(&path, None).unwrap();
+        assert_eq!(error.len(), 2);
         std::fs::remove_dir_all(dir).ok();
     }
 

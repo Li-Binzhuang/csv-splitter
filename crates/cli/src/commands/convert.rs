@@ -500,6 +500,8 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut data_validation_decimal: Option<String> = None;
     let mut data_validation_error_style: Option<String> = None;
     let mut data_validation_range: Option<String> = None;
+    let mut data_validation_date: Option<String> = None;
+    let mut data_validation_time: Option<String> = None;
     let mut data_validation_blank = false;
     let mut protect_sheet = false;
     let mut protect_password: Option<String> = None;
@@ -611,6 +613,20 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             "--data-validation-range" => match p.value("--data-validation-range") {
                 Ok(v) => data_validation_range = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--data-validation-date" => match p.value("--data-validation-date") {
+                Ok(v) => data_validation_date = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--data-validation-time" => match p.value("--data-validation-time") {
+                Ok(v) => data_validation_time = Some(v),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -1100,6 +1116,34 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                     }
                 }
             }
+            if let Some(text) = data_validation_date.as_deref() {
+                match merge_numeric_validations(
+                    &mut validations,
+                    text,
+                    csvx_core::xlsx::NumericKind::Date,
+                    "--data-validation-date",
+                ) {
+                    Ok(()) => {}
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                }
+            }
+            if let Some(text) = data_validation_time.as_deref() {
+                match merge_numeric_validations(
+                    &mut validations,
+                    text,
+                    csvx_core::xlsx::NumericKind::Time,
+                    "--data-validation-time",
+                ) {
+                    Ok(()) => {}
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                }
+            }
             let validation_prompts = match data_validation_prompt.as_deref() {
                 Some(text) => match parse_validation_prompts(text) {
                     Ok(prompts) => prompts,
@@ -1401,6 +1445,42 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 return 2;
             }
             match merge_validation_ranges(&mut data_validations, text) {
+                Ok(()) => {}
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            }
+        }
+        if let Some(text) = data_validation_date.as_deref() {
+            if !target.eq_ignore_ascii_case("xlsx") {
+                eprintln!("error: --data-validation-date is only valid with --format xlsx");
+                return 2;
+            }
+            match merge_numeric_validations(
+                &mut data_validations,
+                text,
+                csvx_core::xlsx::NumericKind::Date,
+                "--data-validation-date",
+            ) {
+                Ok(()) => {}
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            }
+        }
+        if let Some(text) = data_validation_time.as_deref() {
+            if !target.eq_ignore_ascii_case("xlsx") {
+                eprintln!("error: --data-validation-time is only valid with --format xlsx");
+                return 2;
+            }
+            match merge_numeric_validations(
+                &mut data_validations,
+                text,
+                csvx_core::xlsx::NumericKind::Time,
+                "--data-validation-time",
+            ) {
                 Ok(()) => {}
                 Err(e) => {
                     eprintln!("error: {e}");

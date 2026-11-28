@@ -5006,6 +5006,42 @@ fn convert_keeps_raw_custom_number_format_codes() {
 }
 
 #[test]
+fn convert_writes_date_and_time_validation_ranges() {
+    let dir = TempDir::new("validationdatetime");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "day,hour\n2024-01-01,09:00\n").unwrap();
+    let out = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts/a.csv").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            out.to_str().unwrap(),
+            "--data-validation-date",
+            "day:2024-01-01,2024-12-31",
+            "--data-validation-time",
+            "hour:09:00,17:00",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let file = std::fs::File::open(&out).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    use std::io::Read as _;
+    let mut sheet = String::new();
+    archive
+        .by_name("xl/worksheets/sheet1.xml")
+        .unwrap()
+        .read_to_string(&mut sheet)
+        .unwrap();
+    assert!(sheet.contains("type=\"date\""), "{sheet}");
+    assert!(sheet.contains("<formula1>45292</formula1>"), "{sheet}");
+    assert!(sheet.contains("type=\"time\""), "{sheet}");
+}
+
+#[test]
 fn convert_writes_data_validation_list_ranges() {
     let dir = TempDir::new("validationlistrange");
     std::fs::create_dir(dir.join("parts")).unwrap();
