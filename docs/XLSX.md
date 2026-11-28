@@ -77,6 +77,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
   --protect-sheet \
   --col-width "amount:20" \
   --protect-sheet-password test \
+  --protect-sheet-allow-objects \
   --data-validation-formula "amount:AND(B2>0,B2<100)"
 ```
 
@@ -94,6 +95,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 - `--protect-sheet` 写工作表保护（对象/场景受限，不设密码）；
 - `--number-format` 支持颜色前缀（`[Red]`、`[Blue]` 等 8 色）并写入 formatCode；
 - `--col-width` 指定列宽，格式 `列:宽度`，宽度 0.5–255；目录多 sheet 时每 sheet 应用同一宽度；
+- `--protect-sheet-allow-objects` / `--protect-sheet-allow-scenarios` 放行对象/场景操作（objects/scenarios=0）；
 - `--protect-sheet-password` 写 Excel 兼容的保护密码哈希（1–15 位 ASCII），可与 `--protect-sheet` 并用。
   缺失验证/缺 `|`/重复列/非 xlsx 均退出 2；
 - 目录→workbook 不支持 `--highlight`。

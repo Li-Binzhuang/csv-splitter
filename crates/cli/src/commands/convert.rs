@@ -326,6 +326,8 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut protect_sheet = false;
     let mut protect_password: Option<String> = None;
     let mut data_validation_formula: Option<String> = None;
+    let mut protect_objects = true;
+    let mut protect_scenarios = true;
     let mut column_width: Option<String> = None;
     let mut data_validation_prompt: Option<String> = None;
     let mut data_validation_error: Option<String> = None;
@@ -369,6 +371,8 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             "--data-validation-blank" => data_validation_blank = true,
             "--protect-sheet" => protect_sheet = true,
+            "--protect-sheet-allow-objects" => protect_objects = false,
+            "--protect-sheet-allow-scenarios" => protect_scenarios = false,
             "--protect-sheet-password" => match p.value("--protect-sheet-password") {
                 Ok(v) => protect_password = Some(v),
                 Err(e) => {
@@ -737,7 +741,8 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 return 2;
             }
         }
-        let protect_sheet = protect_sheet || protect_password.is_some();
+        let protect_sheet =
+            protect_sheet || protect_password.is_some() || !protect_objects || !protect_scenarios;
         let column_widths = match column_width.as_deref() {
             Some(_) if !target.eq_ignore_ascii_case("xlsx") => {
                 eprintln!("error: --col-width is only valid with --format xlsx");
@@ -991,6 +996,8 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 !no_auto_filter,
                 protect_sheet,
                 protect_password.as_deref(),
+                protect_objects,
+                protect_scenarios,
             )
         } else {
             csvx_core::engine::convert_format(&input, &out, &target, delimiter, &tx)

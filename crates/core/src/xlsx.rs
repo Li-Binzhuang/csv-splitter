@@ -261,6 +261,8 @@ pub fn csv_to_xlsx_with_number_formats(
         true,
         false,
         None,
+        true,
+        true,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -290,6 +292,8 @@ pub fn csv_to_xlsx_without_auto_filter(
         false,
         false,
         None,
+        true,
+        true,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -322,6 +326,8 @@ pub fn csv_to_xlsx_with_options(
         auto_filter,
         false,
         None,
+        true,
+        true,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -344,6 +350,8 @@ pub fn csv_to_xlsx_with_all(
     auto_filter: bool,
     protect: bool,
     protect_password: Option<&str>,
+    protect_objects: bool,
+    protect_scenarios: bool,
 ) -> std::io::Result<()> {
     let result = csv_to_xlsx_inner(
         input,
@@ -358,6 +366,8 @@ pub fn csv_to_xlsx_with_all(
         auto_filter,
         protect,
         protect_password,
+        protect_objects,
+        protect_scenarios,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -386,6 +396,8 @@ pub fn csv_to_xlsx_with_column_widths(
         true,
         false,
         None,
+        true,
+        true,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -413,6 +425,8 @@ pub fn csv_to_xlsx_with_protection(
         true,
         true,
         None,
+        true,
+        true,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -441,6 +455,8 @@ pub fn csv_to_xlsx_with_validations(
         true,
         false,
         None,
+        true,
+        true,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -470,6 +486,8 @@ pub fn csv_to_xlsx_without_freeze(
         true,
         false,
         None,
+        true,
+        true,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -491,6 +509,8 @@ fn csv_to_xlsx_inner(
     auto_filter: bool,
     protect: bool,
     protect_password: Option<&str>,
+    protect_objects: bool,
+    protect_scenarios: bool,
 ) -> std::io::Result<()> {
     let sheet_name = workbook_sheet_name(input);
     let total_bytes = std::fs::metadata(input).map(|m| m.len()).unwrap_or(0);
@@ -619,12 +639,16 @@ fn csv_to_xlsx_inner(
         match protect_password {
             Some(password) => write!(
                 zip,
-                "<sheetProtection sheet=\"1\" objects=\"1\" scenarios=\"1\" password=\"{}\" />",
+                "<sheetProtection sheet=\"1\" objects=\"{}\" scenarios=\"{}\" password=\"{}\" />",
+                u8::from(protect_objects),
+                u8::from(protect_scenarios),
                 sheet_password_hash(password)
             )?,
             None => write!(
                 zip,
-                "<sheetProtection sheet=\"1\" objects=\"1\" scenarios=\"1\"/>"
+                "<sheetProtection sheet=\"1\" objects=\"{}\" scenarios=\"{}\"/>",
+                u8::from(protect_objects),
+                u8::from(protect_scenarios)
             )?,
         }
     }
