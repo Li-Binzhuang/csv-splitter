@@ -75,7 +75,8 @@ csvx convert data.csv --format xlsx -o data.xlsx \
   --data-validation-error "status:Bad status|Pick good or ok" \
   --data-validation-blank \
   --protect-sheet \
-  --col-width "amount:20"
+  --col-width "amount:20" \
+  --protect-sheet-password test
 ```
 
 - 规则用 `;` 分隔，每条 `列 操作符 值 : 颜色`；
@@ -91,7 +92,8 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 - `--data-validation-blank` 允许空白单元格通过验证；
 - `--protect-sheet` 写工作表保护（对象/场景受限，不设密码）；
 - `--number-format` 支持颜色前缀（`[Red]`、`[Blue]` 等 8 色）并写入 formatCode；
-- `--col-width` 指定列宽，格式 `列:宽度`，宽度 0.5–255；目录多 sheet 时每 sheet 应用同一宽度。
+- `--col-width` 指定列宽，格式 `列:宽度`，宽度 0.5–255；目录多 sheet 时每 sheet 应用同一宽度；
+- `--protect-sheet-password` 写 Excel 兼容的保护密码哈希（1–15 位 ASCII），可与 `--protect-sheet` 并用。
   缺失验证/缺 `|`/重复列/非 xlsx 均退出 2；
 - 目录→workbook 不支持 `--highlight`。
 

@@ -3352,6 +3352,54 @@ fn convert_xlsx_highlight_survives_freeze_and_filter_combinations() {
 }
 
 #[test]
+fn convert_xlsx_can_protect_with_a_password() {
+    let dir = TempDir::new("xlsxpass");
+    let input = dir.join("t.csv");
+    let output = dir.join("t.xlsx");
+    std::fs::write(&input, "id,amount\n1,10\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            output.to_str().unwrap(),
+            "--protect-sheet-password",
+            "test",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let file = std::fs::File::open(&output).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    let mut sheet = String::new();
+    use std::io::Read as _;
+    archive
+        .by_name("xl/worksheets/sheet1.xml")
+        .unwrap()
+        .read_to_string(&mut sheet)
+        .unwrap();
+    assert!(sheet.contains("password=\"CBEB\""), "{sheet}");
+    for password in ["", "toolongpasswordvalue"] {
+        let status = Command::new(bin())
+            .args([
+                "convert",
+                input.to_str().unwrap(),
+                "--format",
+                "xlsx",
+                "--out",
+                dir.join("bad.xlsx").to_str().unwrap(),
+                "--protect-sheet-password",
+                password,
+            ])
+            .status()
+            .unwrap();
+        assert_eq!(status.code(), Some(2), "{password:?}");
+    }
+}
+
+#[test]
 fn convert_xlsx_can_highlight_a_top_rank() {
     let dir = TempDir::new("xlsxtop");
     let input = dir.join("t.csv");

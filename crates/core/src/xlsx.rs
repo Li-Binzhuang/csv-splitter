@@ -258,6 +258,7 @@ pub fn csv_to_xlsx_with_number_formats(
         true,
         true,
         false,
+        None,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -286,6 +287,7 @@ pub fn csv_to_xlsx_without_auto_filter(
         true,
         false,
         false,
+        None,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -317,6 +319,7 @@ pub fn csv_to_xlsx_with_options(
         freeze_header,
         auto_filter,
         false,
+        None,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -338,6 +341,7 @@ pub fn csv_to_xlsx_with_all(
     freeze_header: bool,
     auto_filter: bool,
     protect: bool,
+    protect_password: Option<&str>,
 ) -> std::io::Result<()> {
     let result = csv_to_xlsx_inner(
         input,
@@ -351,6 +355,7 @@ pub fn csv_to_xlsx_with_all(
         freeze_header,
         auto_filter,
         protect,
+        protect_password,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -378,6 +383,7 @@ pub fn csv_to_xlsx_with_column_widths(
         true,
         true,
         false,
+        None,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -404,6 +410,7 @@ pub fn csv_to_xlsx_with_protection(
         true,
         true,
         true,
+        None,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -431,6 +438,7 @@ pub fn csv_to_xlsx_with_validations(
         true,
         true,
         false,
+        None,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -459,6 +467,7 @@ pub fn csv_to_xlsx_without_freeze(
         false,
         true,
         false,
+        None,
     );
     if result.is_err() {
         let _ = std::fs::remove_file(output);
@@ -479,6 +488,7 @@ fn csv_to_xlsx_inner(
     freeze_header: bool,
     auto_filter: bool,
     protect: bool,
+    protect_password: Option<&str>,
 ) -> std::io::Result<()> {
     let sheet_name = workbook_sheet_name(input);
     let total_bytes = std::fs::metadata(input).map(|m| m.len()).unwrap_or(0);
@@ -604,10 +614,17 @@ fn csv_to_xlsx_inner(
     }
     write!(zip, "</sheetData>")?;
     if protect {
-        write!(
-            zip,
-            "<sheetProtection sheet=\"1\" objects=\"1\" scenarios=\"1\"/>"
-        )?;
+        match protect_password {
+            Some(password) => write!(
+                zip,
+                "<sheetProtection sheet=\"1\" objects=\"1\" scenarios=\"1\" password=\"{}\" />",
+                sheet_password_hash(password)
+            )?,
+            None => write!(
+                zip,
+                "<sheetProtection sheet=\"1\" objects=\"1\" scenarios=\"1\"/>"
+            )?,
+        }
     }
     if auto_filter && data_rows > 0 && !headers.is_empty() {
         let last_column = column_name(headers.len() - 1);
@@ -1954,6 +1971,20 @@ pub fn read_csv_sheet(path: &Path, delimiter: Delimiter) -> std::io::Result<Shee
         headers,
         rows,
     })
+}
+
+fn sheet_password_hash(password: &str) -> String {
+    let mut hash: u16 = 0;
+    for (index, byte) in password.bytes().enumerate() {
+        let shift = (index + 1) as u32;
+        let value = (byte as u32) << shift;
+        let rotated = value >> 15;
+        let value = value & 0x7fff;
+        hash ^= (value | rotated) as u16;
+    }
+    hash ^= password.len() as u16;
+    hash ^= 0xCE4B;
+    format!("{hash:04X}")
 }
 
 fn sheet_columns_xml(headers: &[String], rows: &[Vec<String>], widths: &[(String, f64)]) -> String {
@@ -4536,6 +4567,13 @@ mod tests {
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
         assert_eq!(sheet.matches("dxfId=\"0\"").count(), 2, "{sheet}");
         std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn sheet_password_hashes_match_excel() {
+        assert_eq!(sheet_password_hash("test"), "CBEB");
+        assert_eq!(sheet_password_hash("password"), "83AF");
+        assert_eq!(sheet_password_hash(""), "CE4B");
     }
 
     #[test]

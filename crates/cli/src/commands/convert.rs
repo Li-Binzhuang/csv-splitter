@@ -290,6 +290,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut data_validation: Option<String> = None;
     let mut data_validation_blank = false;
     let mut protect_sheet = false;
+    let mut protect_password: Option<String> = None;
     let mut column_width: Option<String> = None;
     let mut data_validation_prompt: Option<String> = None;
     let mut data_validation_error: Option<String> = None;
@@ -333,6 +334,13 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             "--data-validation-blank" => data_validation_blank = true,
             "--protect-sheet" => protect_sheet = true,
+            "--protect-sheet-password" => match p.value("--protect-sheet-password") {
+                Ok(v) => protect_password = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--col-width" => match p.value("--col-width") {
                 Ok(v) => column_width = Some(v),
                 Err(e) => {
@@ -662,6 +670,23 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             None => Vec::new(),
         };
+        if let Some(password) = protect_password.as_deref() {
+            if !target.eq_ignore_ascii_case("xlsx") {
+                eprintln!("error: --protect-sheet-password is only valid with --format xlsx");
+                return 2;
+            }
+            if password.is_empty()
+                || password.len() > 15
+                || !password.is_ascii()
+                || password
+                    .chars()
+                    .any(|character| !character.is_ascii_graphic())
+            {
+                eprintln!("error: sheet password must be 1-15 ASCII letters or symbols");
+                return 2;
+            }
+        }
+        let protect_sheet = protect_sheet || protect_password.is_some();
         let column_widths = match column_width.as_deref() {
             Some(_) if !target.eq_ignore_ascii_case("xlsx") => {
                 eprintln!("error: --col-width is only valid with --format xlsx");
@@ -875,6 +900,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             || !rules.is_empty()
             || !data_validations.is_empty()
             || protect_sheet
+            || protect_password.is_some()
             || !column_widths.is_empty();
         let result = if xlsx_options {
             csvx_core::xlsx::csv_to_xlsx_with_all(
@@ -889,6 +915,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 !no_freeze,
                 !no_auto_filter,
                 protect_sheet,
+                protect_password.as_deref(),
             )
         } else {
             csvx_core::engine::convert_format(&input, &out, &target, delimiter, &tx)
