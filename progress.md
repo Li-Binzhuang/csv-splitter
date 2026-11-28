@@ -530,11 +530,13 @@
   测试 `convert_reports_protection_json_for_all_sheets`。
 - [x] 项541 保护检测错误语义（功能级）：非 xlsx/无保护表退出码；
   测试 `convert_protection_rejects_invalid_inputs`。
-- [ ] 项542 目录列宽 + 验证 + 密码（功能级）：三特性并存；
-  验收：CLI + 单测 + gate。
+- [x] 项542 目录列宽 + 验证 + 密码（功能级）：三特性并存；
+  测试 `convert_directory_to_xlsx_combines_widths_validation_and_password`。
 - [ ] 项543 目录验证 + 提示 + 密码（功能级）：提示与保护共存；
   验收：CLI + 单测 + gate。
 - [ ] 项544 保护检测指定 sheet（功能级）：单表选择与 --all-sheets 互斥；
+  验收：CLI + 单测 + gate。
+- [ ] 项545 保护检测指定 sheet JSON（功能级）：单表 JSON 对象契约；
   验收：CLI + 单测 + gate。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
   测试 `convert_reports_sheet_protection`。
@@ -939,6 +941,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 559（项542 目录列宽+验证+密码，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `717d2ed1…490892f2d`；
+轮首 push 成功，本轮不再 push。
 
 Round 558（项541 保护检测错误语义，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `d6229d9c…be6ce3c3`；
