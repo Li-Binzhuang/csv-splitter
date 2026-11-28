@@ -1,0 +1,35 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "62d0920b54e8a1fe9b1f3d7421faff10572df3a0278f5f11e17430feddf55300",
+  "batch_id": "89e81721192d85b09e6eb957094a39d5989279387d9bd7ff541b81afb931a3f4",
+  "composite_identity": "14af80b7b99c1022c0a68a668e831ba63a717786b422dd7b5544a11d26d0592e",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "f82a77a18eacf077de18f9ed4ca7ebbed519e7b51f4fcc2c376093ab1ba79c3c",
+  "targets": [
+    {
+      "candidate_id": "547ae2a6f5ada819174e55f9ad310ea21a3a5147e6234f2bdebe07880cb17c4b",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "16036f426441b7e9685edda6822da41f5db2089f731309be72e75e55e35e38e4",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert：编码转码、xlsx/csv/tsv/ndjson/parquet、highlight、number-format、formats、no-freeze、no-auto-filter、data-validation、protect-sheet、col-width | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；--formats；--number-format；--no-freeze/--no-auto-filter；--data-validation 列表；自定义公式；--protect-sheet；密码选项；--col-width | S:不覆盖输入；--formats 仅 xlsx；密码 1–15 ASCII；公式 ≤255；重复列/空值/非 xlsx/宽度越界退出 2"
+    },
+    {
+      "candidate_id": "f54ce90155c3b9d3e6fa524f93a5d57f6e29ad194536626f25bc2bc0ef7d78b1",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "a8558ad81d95176e3fec42db8314d8fccf9c75ac0cf92ce612708b836013aea1",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles；csv_to_xlsx_with_all；with_protection；with_column_widths；write_sheets 系列含 widths/options/formats+widths/多 sheet 保护与密码/三特性；dataValidations 列表与 type=custom 公式；allow_blank；prompt/error；条件格式全族/dxf 映射表；Colored；密码哈希；autoFilter | S:不写公式/图表；合并不展开；验证列表 ≤255 且禁逗号/引号；自定义公式与列表不能混用"
+    },
+    {
+      "candidate_id": "07259379b47c093876de56e90c53d9bd72ec2e036499b624f9bf53eb08bd6d08",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "40839a782bbb71de7bfe1dd4c739100f256a6dad89518a7f0cc93dcb1780f57f",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；dxf 逐色项已合并；Round531 自定义验证公式与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

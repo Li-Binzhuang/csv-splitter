@@ -476,11 +476,13 @@
   测试 `convert_xlsx_combines_password_format_and_no_freeze`。
 - [x] 项512 数据验证自定义公式（功能级）：写 type=custom 的公式验证；
   测试 `data_validation_custom_formulas_are_written`、`convert_xlsx_can_add_a_custom_validation_formula`。
-- [ ] 项513 目录保护密码 CLI（功能级）：多 sheet 工作簿统一密码；
-  验收：CLI + 单测 + gate。
+- [x] 项513 目录保护密码 CLI（功能级）：多 sheet 工作簿统一密码；
+  测试 `convert_directory_to_xlsx_protects_with_a_password`。
 - [ ] 项514 密码 + 验证 + CF（功能级）：三特性共存；
   验收：CLI + 单测 + gate。
 - [ ] 项515 自定义公式 + 提示/错误（功能级）：验证提示叠加公式；
+  验收：CLI + 单测 + gate。
+- [ ] 项516 密码 + no-auto + CF（功能级）：三特性共存；
   验收：CLI + 单测 + gate。
 - [x] 项452 highlight + formats 组合（功能级）：CF 与数字格式共存；
   测试 `convert_xlsx_combines_highlight_and_number_formats`。
@@ -883,6 +885,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 532（项513 目录保护密码，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `a2f22e07…3274325c`；
+轮首 push 成功，本轮不再 push。
 
 Round 531（项512 自定义验证公式，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `3dcda94b…c654643830`；

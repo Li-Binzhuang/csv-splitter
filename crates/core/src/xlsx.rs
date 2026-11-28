@@ -804,6 +804,27 @@ pub fn write_sheets_with_widths_and_options(
     )
 }
 
+/// Write sheets with widths, freeze/filter choices and a protection password.
+pub fn write_sheets_with_options_and_password(
+    output: &Path,
+    sheets: &[Sheet],
+    widths: &[Vec<(String, f64)>],
+    freeze_header: bool,
+    auto_filter: bool,
+    password: &str,
+) -> std::io::Result<()> {
+    write_sheets_inner(
+        output,
+        sheets,
+        &[],
+        widths,
+        freeze_header,
+        auto_filter,
+        true,
+        Some(password),
+    )
+}
+
 /// Write sheets with per-sheet column width overrides.
 pub fn write_sheets_with_widths(
     output: &Path,
