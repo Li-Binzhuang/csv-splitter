@@ -4705,6 +4705,46 @@ fn convert_directory_to_xlsx_combines_widths_validation_and_password() {
 }
 
 #[test]
+fn convert_reports_single_sheet_protection_as_json() {
+    let dir = TempDir::new("protectiononejson");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id\n1\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "id\n2\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--protect-sheet-password",
+            "test",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--protection",
+            "--sheet",
+            "b",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.starts_with('['), "{text}");
+    assert!(text.contains("\"password_protected\":true"), "{text}");
+    assert_eq!(text.matches("\"sheet\"").count(), 1, "{text}");
+}
+
+#[test]
 fn convert_reports_protection_for_a_single_sheet() {
     let dir = TempDir::new("protectionone");
     std::fs::create_dir(dir.join("parts")).unwrap();
