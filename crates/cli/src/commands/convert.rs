@@ -77,6 +77,34 @@ fn parse_data_validations(text: &str) -> Result<Vec<csvx_core::xlsx::DataValidat
     Ok(validations)
 }
 
+fn parse_column_widths(text: &str) -> Result<Vec<(String, f64)>, String> {
+    let mut widths = Vec::new();
+    for raw in split_format_specs(text) {
+        let (column, width) = raw
+            .split_once(':')
+            .ok_or_else(|| format!("column width {raw:?} needs column:width"))?;
+        let column = column.trim().to_string();
+        if column.is_empty() {
+            return Err(format!("column width {raw:?} needs a column"));
+        }
+        if widths.iter().any(|(name, _)| name == &column) {
+            return Err(format!("column width {column:?} is repeated"));
+        }
+        let width: f64 = width
+            .trim()
+            .parse()
+            .map_err(|_| format!("column width for {column:?} is not a number"))?;
+        if !(0.5..=255.0).contains(&width) {
+            return Err(format!("column width for {column:?} must be 0.5..=255"));
+        }
+        widths.push((column, width));
+    }
+    if widths.is_empty() {
+        return Err("--col-width needs at least one column:width".to_string());
+    }
+    Ok(widths)
+}
+
 fn parse_validation_prompts(text: &str) -> Result<Vec<(String, String, String)>, String> {
     let mut prompts = Vec::new();
     for raw in split_format_specs(text) {
@@ -262,6 +290,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut data_validation: Option<String> = None;
     let mut data_validation_blank = false;
     let mut protect_sheet = false;
+    let mut column_width: Option<String> = None;
     let mut data_validation_prompt: Option<String> = None;
     let mut data_validation_error: Option<String> = None;
     let mut show_formats = false;
@@ -304,6 +333,13 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             "--data-validation-blank" => data_validation_blank = true,
             "--protect-sheet" => protect_sheet = true,
+            "--col-width" => match p.value("--col-width") {
+                Ok(v) => column_width = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--data-validation-prompt" => match p.value("--data-validation-prompt") {
                 Ok(v) => data_validation_prompt = Some(v),
                 Err(e) => {
@@ -603,6 +639,20 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             None => Vec::new(),
         };
+        let column_widths = match column_width.as_deref() {
+            Some(_) if !target.eq_ignore_ascii_case("xlsx") => {
+                eprintln!("error: --col-width is only valid with --format xlsx");
+                return 2;
+            }
+            Some(text) => match parse_column_widths(text) {
+                Ok(widths) => widths,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            None => Vec::new(),
+        };
         let validation_prompts = match data_validation_prompt.as_deref() {
             Some(_) if !target.eq_ignore_ascii_case("xlsx") => {
                 eprintln!("error: --data-validation-prompt is only valid with --format xlsx");
@@ -801,7 +851,8 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             || !column_formats.is_empty()
             || !rules.is_empty()
             || !data_validations.is_empty()
-            || protect_sheet;
+            || protect_sheet
+            || !column_widths.is_empty();
         let result = if xlsx_options {
             csvx_core::xlsx::csv_to_xlsx_with_all(
                 &input,
@@ -811,7 +862,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 &rules,
                 &column_formats,
                 &data_validations,
-                &[],
+                &column_widths,
                 !no_freeze,
                 !no_auto_filter,
                 protect_sheet,

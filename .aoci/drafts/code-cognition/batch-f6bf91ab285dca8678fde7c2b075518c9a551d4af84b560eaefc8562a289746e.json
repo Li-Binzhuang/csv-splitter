@@ -1,0 +1,35 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "f1a29858e97ba6549857e953c1a4bda2fe14886a4f356b4088f23d157ae5e78a",
+  "batch_id": "f6bf91ab285dca8678fde7c2b075518c9a551d4af84b560eaefc8562a289746e",
+  "composite_identity": "9c91a1048b1018eb8ddb0527764de55f6ae1310ce0ded7990867f980eb971884",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "316b112c3047d83abe204c3383d6b8610067a843048ca55e16beab8f665ec7de",
+  "targets": [
+    {
+      "candidate_id": "f47189eeb1997f8c2cd8be04365e90ff3cc08726b9a5490b8333619d0baca607",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "073ca58089928f16498a27d614dd7df7540caf1d7232127e96cb30679b33437b",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert：编码转码、xlsx/csv/tsv/ndjson/parquet、highlight、number-format、formats、no-freeze、no-auto-filter、data-validation、protect-sheet | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；--formats；--number-format；--no-freeze/--no-auto-filter；--data-validation 列:值；--data-validation-blank；--data-validation-prompt/--data-validation-error；--protect-sheet | S:不覆盖输入；--formats 仅 xlsx；重复列/空值/缺失验证/非 xlsx 报错"
+    },
+    {
+      "candidate_id": "e73b8447ba0854a2b4dc4cc6542b54b8c0fc4307bd5f8cc3b962ed28c8cded6c",
+      "object_ref": "code:docs/XLSX.md",
+      "path": "docs/XLSX.md",
+      "change": "update",
+      "source_sha256": "718dd55853bcee423f1304f8683981e3a1d1b84020dd7e42f88354832bf088b5",
+      "existing_entry": "XLSX.md[SD7S]: F:xlsx 互操作现状与边界：导出、多 sheet、导入、report xlsx、日期/条件格式 | R:code:crates/core/src/xlsx.rs,code:crates/cli/src/main.rs,code:docs/CAPABILITIES.md | A:convert 流式导出；目录多 sheet；导入；MCP sheet；report xlsx；ISO 日期 numFmtId=14；--highlight；--no-freeze；--no-auto-filter；--data-validation 下拉/提示/allowBlank；--protect-sheet；颜色前缀 | S:只写值不写公式；日期仅 ISO；验证提示缺失/重复/非 xlsx 退出 2；不做宏/VBA"
+    },
+    {
+      "candidate_id": "68c9b6cfd141852ec9ce23a2f6b9c5078d692ca05fe97c327bf55890ecdaf7cf",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "71f72da8693bd0e7b2b169176a08491e38c97d47ac123d86f3617681ccea69b5",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；Round499 列宽覆盖与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

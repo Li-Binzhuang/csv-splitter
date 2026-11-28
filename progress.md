@@ -524,8 +524,10 @@
   测试 `convert_xlsx_combines_no_auto_filter_highlight_and_protection`。
 - [x] 项481 xlsx 列宽覆盖（功能级）：csv_to_xlsx_with_column_widths；
   测试 `explicit_column_widths_are_written`。
-- [ ] 项482 列宽 CLI（功能级）：convert 指定列宽；
-  验收：CLI + 单测 + gate。
+- [x] 项482 列宽 CLI（功能级）：`--col-width "amount:20"`；
+  测试 `convert_xlsx_can_set_column_widths`。
+- [ ] 项483 多 sheet 列宽（功能级）：write_sheets 支持 widths；
+  验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
 - [ ] 项428 条件格式 dxf 蓝色规则同 id 断言（功能级）：蓝色多规则同 dxfId；
@@ -823,6 +825,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 500（项482 列宽 CLI，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `7226bb86…4ff8d2d1`；
+轮首 push 成功，本轮不再 push。
 
 Round 499（项481 列宽覆盖，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `bd1c09d2…4ae983f7c8`；
