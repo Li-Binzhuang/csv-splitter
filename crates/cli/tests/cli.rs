@@ -4798,79 +4798,6 @@ fn convert_reports_protection_granularity_json() {
 }
 
 #[test]
-fn convert_protection_json_rejects_unknown_sheet() {
-    let dir = TempDir::new("protectionunknownjson");
-    let csv = dir.join("t.csv");
-    let book = dir.join("book.xlsx");
-    std::fs::write(&csv, "id\n1\n").unwrap();
-    let status = Command::new(bin())
-        .args([
-            "convert",
-            csv.to_str().unwrap(),
-            "--format",
-            "xlsx",
-            "--out",
-            book.to_str().unwrap(),
-            "--protect-sheet-password",
-            "test",
-        ])
-        .status()
-        .unwrap();
-    assert!(status.success());
-
-    let output = Command::new(bin())
-        .args([
-            "convert",
-            book.to_str().unwrap(),
-            "--protection",
-            "--sheet",
-            "missing",
-            "--json",
-        ])
-        .output()
-        .unwrap();
-    assert_eq!(output.status.code(), Some(1));
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("missing"), "{stderr}");
-}
-
-#[test]
-fn convert_protection_rejects_unknown_sheet() {
-    let dir = TempDir::new("protectionunknown");
-    let csv = dir.join("t.csv");
-    let book = dir.join("book.xlsx");
-    std::fs::write(&csv, "id\n1\n").unwrap();
-    let status = Command::new(bin())
-        .args([
-            "convert",
-            csv.to_str().unwrap(),
-            "--format",
-            "xlsx",
-            "--out",
-            book.to_str().unwrap(),
-            "--protect-sheet-password",
-            "test",
-        ])
-        .status()
-        .unwrap();
-    assert!(status.success());
-
-    let output = Command::new(bin())
-        .args([
-            "convert",
-            book.to_str().unwrap(),
-            "--protection",
-            "--sheet",
-            "missing",
-        ])
-        .output()
-        .unwrap();
-    assert_eq!(output.status.code(), Some(1));
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("missing"), "{stderr}");
-}
-
-#[test]
 fn convert_directory_to_xlsx_combines_prompts_widths_and_password() {
     let dir = TempDir::new("xlsxdirpromptwidthpass");
     std::fs::create_dir(dir.join("parts")).unwrap();
@@ -5027,8 +4954,8 @@ fn convert_directory_to_xlsx_combines_all_xlsx_features() {
 }
 
 #[test]
-fn convert_protection_json_preserves_workbook_sheet_order() {
-    let dir = TempDir::new("protectionjsonorder");
+fn convert_protection_robustness_matrix() {
+    let dir = TempDir::new("protectionmatrix");
     std::fs::create_dir(dir.join("parts")).unwrap();
     std::fs::write(dir.join("parts/a.csv"), "id\n1\n").unwrap();
     std::fs::write(dir.join("parts/b.csv"), "id\n2\n").unwrap();
@@ -5047,22 +4974,69 @@ fn convert_protection_json_preserves_workbook_sheet_order() {
         .status()
         .unwrap();
     assert!(status.success());
+    let run = |args: &[&str]| Command::new(bin()).args(args).output().unwrap();
 
-    let output = Command::new(bin())
-        .args([
-            "convert",
-            book.to_str().unwrap(),
-            "--protection",
-            "--all-sheets",
-            "--json",
-        ])
-        .output()
-        .unwrap();
+    // Default sheet: no --sheet reads the first sheet only.
+    let output = run(&["convert", book.to_str().unwrap(), "--protection"]);
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("protected=true"), "{text}");
+    assert!(!text.contains("# "), "{text}");
+
+    // Unknown sheet, text and JSON modes share the same failure.
+    for json in [false, true] {
+        let mut args = vec!["convert", book.to_str().unwrap(), "--protection"];
+        if json {
+            args.push("--json");
+        }
+        args.push("--sheet");
+        args.push("missing");
+        let output = run(&args);
+        assert_eq!(output.status.code(), Some(1), "{args:?}");
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(stderr.contains("missing"), "{stderr}");
+    }
+
+    // JSON order follows workbook sheet order.
+    let output = run(&[
+        "convert",
+        book.to_str().unwrap(),
+        "--protection",
+        "--all-sheets",
+        "--json",
+    ]);
     assert!(output.status.success());
     let text = String::from_utf8_lossy(&output.stdout);
     let a = text.find("\"sheet\":\"a\"").unwrap();
     let b = text.find("\"sheet\":\"b\"").unwrap();
     assert!(a < b, "{text}");
+
+    // Non-xlsx input is rejected.
+    let csv = dir.join("t.csv");
+    std::fs::write(&csv, "id\n1\n").unwrap();
+    let output = run(&["convert", csv.to_str().unwrap(), "--protection"]);
+    assert_ne!(output.status.code(), Some(0));
+
+    // Corrupt zip is rejected.
+    let corrupt = dir.join("corrupt.xlsx");
+    std::fs::write(&corrupt, "not a zip").unwrap();
+    let output = run(&["convert", corrupt.to_str().unwrap(), "--protection"]);
+    assert_ne!(output.status.code(), Some(0));
+
+    // A workbook with no worksheets is rejected.
+    let empty = dir.join("empty.xlsx");
+    let file = std::fs::File::create(&empty).unwrap();
+    let mut zip = zip::ZipWriter::new(file);
+    zip.start_file("xl/workbook.xml", zip::write::SimpleFileOptions::default())
+        .unwrap();
+    use std::io::Write as _;
+    zip.write_all(
+        br#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheets></sheets></workbook>"#,
+    )
+    .unwrap();
+    zip.finish().unwrap();
+    let output = run(&["convert", empty.to_str().unwrap(), "--protection"]);
+    assert_ne!(output.status.code(), Some(0));
 }
 
 #[test]

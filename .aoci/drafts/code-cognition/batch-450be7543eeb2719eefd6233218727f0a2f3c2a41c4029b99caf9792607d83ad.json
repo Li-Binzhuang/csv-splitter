@@ -1,0 +1,27 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "596958e9043c66a70222061af7e0c73f3ea20efbe79092f380eff2462747d954",
+  "batch_id": "450be7543eeb2719eefd6233218727f0a2f3c2a41c4029b99caf9792607d83ad",
+  "composite_identity": "f90a35cc3e9ebc3454ae81a393e801f01d4af8ca38c39c9ddd99db67cdf16154",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "a4308b617dc72dd59504131fb3923ab5fcd202719238f533af13457e76be7157",
+  "targets": [
+    {
+      "candidate_id": "226e614e8a004d0b33fb858b8870293d239813a96cf85aea26d16b53b8b7f636",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "c612d84fa1c0aee46ec9870fe973d8fafc632190944071f862f364dd1f6c8ca1",
+      "existing_entry": "XLSX_ENGINE.md[SZ7S]: F:XLSX 引擎决策、迁移方案、覆盖矩阵与实测 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine 社区 MIT；1904/hidden；全 sheet；数字格式导出；--formats；内置 numFmt 14；条件格式全族/dxf 去重；autoFilter；多列数据验证下拉；CLI 可选不冻结/不筛选；1M 8.04s/53MB | S:迁移未执行待批准；不新增依赖；导入格式取首数据行；性能仅 release"
+    },
+    {
+      "candidate_id": "e8b4295f2b8de65608a567a087b4ac419162a64bc699a2787024093b29070e3b",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "ca010b38c81adcce7d4d6876c257b9d8634143f19cce9eefee1e264c523c3bd4",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；dxf 逐色项已合并；Round579 JSON 顺序契约与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

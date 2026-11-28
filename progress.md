@@ -570,14 +570,16 @@
 - [x] 项561 保护映射空工作簿（功能级）：无工作表返回错误；
   测试 `protection_map_rejects_workbooks_without_sheets`。
 - [x] 项562 目录全特性 + 提示 + 密码（功能级）：已由项560 覆盖。
-- [x] 项563 保护映射 JSON 顺序（功能级）：--all-sheets 顺序与工作簿一致；
-  测试 `convert_protection_json_preserves_workbook_sheet_order`。
-- [ ] 项565 保护检测默认 sheet（功能级）：省略 --sheet 读第一表；
-  验收：CLI + 单测 + gate。
-- [ ] 项566 保护映射损坏 ZIP（功能级）：截断 zip 返回 InvalidInput；
-  验收：单测 + gate。
-- [ ] 项567 目录全特性 + 省略冻结（功能级）：全特性加 no-freeze；
-  验收：CLI + 单测 + gate。
+- [x] 项568 保护检测健壮性矩阵（合并项563/565/566/567，母功能验收，不再单独立项）：
+  参数化覆盖未知 sheet（文本/JSON）、默认读第一表、JSON 顺序、非 xlsx、损坏 ZIP、空工作簿；
+  测试 `convert_protection_robustness_matrix`。
+- [ ] 项569 数据验证整数/小数区间（新能力）：xlsx dataValidation type=whole/decimal + operator；
+  CLI 参数 data-validation-whole / data-validation-decimal（min,max 或单边，待实现）；
+  验收：XML 断言 + 单测 + gate。
+- [ ] 项570 数据验证回读 API（新 API）：`xlsx_data_validations` 返回列/类型/operator/formula1/2/提示；
+  验收：单测 + round-trip + gate。
+- [ ] 项571 数据验证 errorStyle 三态（新能力）：stop/warning/information 写入与 CLI 参数 data-validation-error-style（待实现）；
+  验收：XML 断言 + 单测 + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
@@ -983,6 +985,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 580（项568 保护检测健壮性矩阵，合并 563/565/566/567 为一轮验收；质量门槛已写入 objective）；
+定向与全量 gate/package 通过；发布包 SHA `d93c6d85…965bfa8de`；轮首 push 已被本轮 used（下轮重试）；
+保护区饱和，按 NUMBER_FORMAT_COVERAGE/CAPABILITIES 审计换区数据验证类型扩展（项569–571）。
 
 Round 579（项563 保护映射 JSON 顺序，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `58127c67…91a242c92`；
