@@ -2285,8 +2285,20 @@ pub fn xlsx_sheet_names(input: &Path) -> std::io::Result<Vec<String>> {
     Ok(sheets.into_iter().map(|sheet| sheet.name).collect())
 }
 
-/// Report whether the selected sheet carries Excel worksheet protection.
-pub fn xlsx_sheet_is_protected(input: &Path, sheet: Option<&str>) -> std::io::Result<bool> {
+/// Worksheet protection flags read back from an xlsx sheet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SheetProtection {
+    pub protected: bool,
+    pub objects_locked: bool,
+    pub scenarios_locked: bool,
+    pub password_protected: bool,
+}
+
+/// Report the protection flags of the selected sheet.
+pub fn xlsx_sheet_protection(
+    input: &Path,
+    sheet: Option<&str>,
+) -> std::io::Result<SheetProtection> {
     let file = std::fs::File::open(input)?;
     let mut archive = zip::ZipArchive::new(file).map_err(|error| {
         std::io::Error::new(
@@ -2317,7 +2329,27 @@ pub fn xlsx_sheet_is_protected(input: &Path, sheet: Option<&str>) -> std::io::Re
         format!("xl/{}", target.trim_start_matches("./"))
     };
     let sheet_xml = read_entry(&mut archive, &normalized)?;
-    Ok(sheet_xml.contains("<sheetProtection"))
+    let Some(start) = sheet_xml.find("<sheetProtection") else {
+        return Ok(SheetProtection {
+            protected: false,
+            objects_locked: false,
+            scenarios_locked: false,
+            password_protected: false,
+        });
+    };
+    let tail = &sheet_xml[start..];
+    let tag = tail.split("/>").next().unwrap_or(tail);
+    Ok(SheetProtection {
+        protected: true,
+        objects_locked: !tag.contains("objects=\"0\""),
+        scenarios_locked: !tag.contains("scenarios=\"0\""),
+        password_protected: tag.contains("password=\""),
+    })
+}
+
+/// Report whether the selected sheet carries Excel worksheet protection.
+pub fn xlsx_sheet_is_protected(input: &Path, sheet: Option<&str>) -> std::io::Result<bool> {
+    Ok(xlsx_sheet_protection(input, sheet)?.protected)
 }
 
 pub fn read_xlsx_to_csv(input: &Path, output: &Path, sheet: Option<&str>) -> std::io::Result<()> {
@@ -4655,6 +4687,33 @@ mod tests {
         .unwrap();
         assert!(xlsx_sheet_is_protected(&protected, None).unwrap());
         assert!(!xlsx_sheet_is_protected(&plain, None).unwrap());
+        let default = xlsx_sheet_protection(&protected, None).unwrap();
+        assert!(default.protected);
+        assert!(default.objects_locked);
+        assert!(default.scenarios_locked);
+        assert!(!default.password_protected);
+
+        let opts = dir.join("opts.xlsx");
+        write_sheets_with_options_and_password(
+            &opts,
+            &[Sheet {
+                name: "opts".into(),
+                headers: vec!["id".into()],
+                rows: vec![vec!["1".into()]],
+            }],
+            &[],
+            true,
+            true,
+            Some("test"),
+            false,
+            true,
+        )
+        .unwrap();
+        let detail = xlsx_sheet_protection(&opts, None).unwrap();
+        assert!(detail.protected);
+        assert!(!detail.objects_locked);
+        assert!(detail.scenarios_locked);
+        assert!(detail.password_protected);
         std::fs::remove_dir_all(dir).ok();
     }
 
