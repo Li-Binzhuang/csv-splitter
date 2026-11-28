@@ -2207,6 +2207,41 @@ pub fn xlsx_sheet_names(input: &Path) -> std::io::Result<Vec<String>> {
     Ok(sheets.into_iter().map(|sheet| sheet.name).collect())
 }
 
+/// Report whether the selected sheet carries Excel worksheet protection.
+pub fn xlsx_sheet_is_protected(input: &Path, sheet: Option<&str>) -> std::io::Result<bool> {
+    let file = std::fs::File::open(input)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let workbook = read_entry(&mut archive, "xl/workbook.xml")?;
+    let rels = read_entry(&mut archive, "xl/_rels/workbook.xml.rels").unwrap_or_default();
+    let sheets = workbook_sheets(&workbook);
+    if sheets.is_empty() {
+        return Err(invalid("xlsx has no worksheets"));
+    }
+    let selected = select_sheet(&sheets, sheet)?;
+    let target = relationship_target(&rels, &selected.rid)
+        .or_else(|| (sheets.len() == 1).then(|| "xl/worksheets/sheet1.xml".to_string()))
+        .ok_or_else(|| {
+            invalid(&format!(
+                "xlsx sheet {:?} has no relationship target",
+                selected.name
+            ))
+        })?;
+    let normalized = if let Some(stripped) = target.strip_prefix('/') {
+        stripped.to_string()
+    } else if target.starts_with("xl/") {
+        target
+    } else {
+        format!("xl/{}", target.trim_start_matches("./"))
+    };
+    let sheet_xml = read_entry(&mut archive, &normalized)?;
+    Ok(sheet_xml.contains("<sheetProtection"))
+}
+
 pub fn read_xlsx_to_csv(input: &Path, output: &Path, sheet: Option<&str>) -> std::io::Result<()> {
     let file = std::fs::File::open(input)?;
     let mut archive = zip::ZipArchive::new(file).map_err(|e| {
@@ -4518,6 +4553,30 @@ mod tests {
         assert!(one.contains("width=\"18\""), "{one}");
         let two = read_zip(&path, "xl/worksheets/sheet2.xml");
         assert!(two.contains("width=\"25\""), "{two}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn protection_state_is_read_back() {
+        let dir = temp_path("readprotection");
+        std::fs::create_dir_all(&dir).unwrap();
+        let intact = dir.join("intact.csv");
+        let protected = dir.join("protected.xlsx");
+        let plain = dir.join("plain.xlsx");
+        std::fs::write(&intact, "id,amount\n1,10\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        csv_to_xlsx_with_protection(&intact, &protected, Delimiter::Comma, &tx).unwrap();
+        write_sheets(
+            &plain,
+            &[Sheet {
+                name: "plain".into(),
+                headers: vec!["id".into()],
+                rows: vec![vec!["1".into()]],
+            }],
+        )
+        .unwrap();
+        assert!(xlsx_sheet_is_protected(&protected, None).unwrap());
+        assert!(!xlsx_sheet_is_protected(&plain, None).unwrap());
         std::fs::remove_dir_all(dir).ok();
     }
 
