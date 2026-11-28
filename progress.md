@@ -534,7 +534,9 @@
   测试 `convert_directory_to_xlsx_keeps_widths_without_freeze`。
 - [x] 项486 多 sheet 列宽 + 格式（功能级）：widths 与 number formats 共存；
   测试 `multi_sheet_formats_and_widths_coexist`。
-- [ ] 项487 多 sheet 格式 + no-freeze（功能级）：formats 与 pane 关闭共存；
+- [x] 项487 多 sheet 格式 + no-freeze（功能级）：formats 与 pane 关闭共存；
+  测试 `multi_sheet_formats_survive_without_freeze`。
+- [ ] 项488 多 sheet 格式+列宽+no-freeze（功能级）：三特性共存；
   验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
@@ -833,6 +835,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 505（项487 多 sheet 格式+no-freeze，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `17c60e5e…60ae4516`；
+轮首 push 成功，本轮不再 push。
 
 Round 504（项486 多 sheet 列宽+格式，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `05f42652…380dc3af`；
