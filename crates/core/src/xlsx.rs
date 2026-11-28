@@ -681,6 +681,16 @@ pub fn write_sheets_without_freeze(output: &Path, sheets: &[Sheet]) -> std::io::
 /// entry means plain text/number. The mapping is intentionally the same
 /// `NumberFormat` used by the viewer, so `#,##0.00`, `0.0%`, `$#,##0.00`
 /// and date/time codes do not get invented twice.
+/// Write sheets with per-sheet formats and widths together.
+pub fn write_sheets_with_formats_and_widths(
+    output: &Path,
+    sheets: &[Sheet],
+    formats: &[Vec<crate::layout::NumberFormat>],
+    widths: &[Vec<(String, f64)>],
+) -> std::io::Result<()> {
+    write_sheets_inner(output, sheets, formats, widths, true, true)
+}
+
 /// Write sheets with widths plus freeze/filter choices.
 pub fn write_sheets_with_widths_and_options(
     output: &Path,
@@ -4035,6 +4045,46 @@ mod tests {
             sheet.contains("<col min=\"2\" max=\"2\" width=\"20\" customWidth=\"1\"/>"),
             "{sheet}"
         );
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn multi_sheet_formats_and_widths_coexist() {
+        use crate::layout::NumberFormat;
+        let dir = temp_path("multifmtswidths");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("multi.xlsx");
+        let sheets = vec![
+            Sheet {
+                name: "one".to_string(),
+                headers: vec!["id".into(), "amount".into()],
+                rows: vec![vec!["1".into(), "1234.5".into()]],
+            },
+            Sheet {
+                name: "two".to_string(),
+                headers: vec!["rate".into()],
+                rows: vec![vec!["0.125".into()]],
+            },
+        ];
+        let formats = vec![
+            vec![
+                NumberFormat::Plain,
+                NumberFormat::parse("[Red]#,##0.00").unwrap(),
+            ],
+            vec![NumberFormat::parse("0.0%").unwrap()],
+        ];
+        let widths = vec![
+            vec![("amount".to_string(), 20.0)],
+            vec![("rate".to_string(), 25.0)],
+        ];
+        write_sheets_with_formats_and_widths(&path, &sheets, &formats, &widths).unwrap();
+        let styles = read_zip(&path, "xl/styles.xml");
+        assert!(styles.contains("formatCode=\"[Red]#,##0.00\""), "{styles}");
+        assert!(styles.contains("formatCode=\"0.0%\""), "{styles}");
+        let one = read_zip(&path, "xl/worksheets/sheet1.xml");
+        assert!(one.contains("width=\"20\""), "{one}");
+        let two = read_zip(&path, "xl/worksheets/sheet2.xml");
+        assert!(two.contains("width=\"25\""), "{two}");
         std::fs::remove_dir_all(dir).ok();
     }
 
