@@ -3745,6 +3745,68 @@ pub struct PageMargins {
     pub footer: f64,
 }
 
+/// Header/footer texts read back from `<headerFooter>`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct HeaderFooterInfo {
+    pub odd_header: Option<String>,
+    pub odd_footer: Option<String>,
+    pub even_header: Option<String>,
+    pub even_footer: Option<String>,
+    pub first_header: Option<String>,
+    pub first_footer: Option<String>,
+}
+
+/// Read header and footer texts for one worksheet.
+pub fn xlsx_header_footer(input: &Path, sheet: Option<&str>) -> std::io::Result<HeaderFooterInfo> {
+    let file = std::fs::File::open(input)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let workbook = read_entry(&mut archive, "xl/workbook.xml")?;
+    let rels = read_entry(&mut archive, "xl/_rels/workbook.xml.rels").unwrap_or_default();
+    let sheets = workbook_sheets(&workbook);
+    if sheets.is_empty() {
+        return Err(invalid("xlsx has no worksheets"));
+    }
+    let selected = select_sheet(&sheets, sheet)?;
+    let target = relationship_target(&rels, &selected.rid)
+        .or_else(|| (sheets.len() == 1).then(|| "xl/worksheets/sheet1.xml".to_string()))
+        .ok_or_else(|| {
+            invalid(&format!(
+                "xlsx sheet {:?} has no relationship target",
+                selected.name
+            ))
+        })?;
+    let normalized = if let Some(stripped) = target.strip_prefix('/') {
+        stripped.to_string()
+    } else if target.starts_with("xl/") {
+        target
+    } else {
+        format!("xl/{}", target.trim_start_matches("./"))
+    };
+    let sheet_xml = read_entry(&mut archive, &normalized)?;
+    let block = sheet_xml
+        .find("<headerFooter")
+        .map(|start| {
+            let tail = &sheet_xml[start..];
+            tail.find("</headerFooter>")
+                .map(|end| &tail[..end])
+                .unwrap_or(tail)
+        })
+        .unwrap_or("");
+    Ok(HeaderFooterInfo {
+        odd_header: inner_text(block, "oddHeader"),
+        odd_footer: inner_text(block, "oddFooter"),
+        even_header: inner_text(block, "evenHeader"),
+        even_footer: inner_text(block, "evenFooter"),
+        first_header: inner_text(block, "firstHeader"),
+        first_footer: inner_text(block, "firstFooter"),
+    })
+}
+
 /// Print area (from `definedName`) and page margins read back from an xlsx sheet.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct PrintLayout {
@@ -7128,6 +7190,41 @@ mod tests {
         assert_eq!(read_back.paper_size, Some(9));
         assert_eq!(read_back.fit_to_width, Some(1));
         assert_eq!(read_back.scale, Some(90));
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn header_footer_texts_are_read_back() {
+        let dir = temp_path("header footer");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("hf.xlsx");
+        let file = std::fs::File::create(&path).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        use std::io::Write as _;
+        for (name, body) in [
+            (
+                "xl/workbook.xml",
+                r#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="one" sheetId="1" r:id="rId1"/></sheets></workbook>"#,
+            ),
+            (
+                "xl/_rels/workbook.xml.rels",
+                r#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>"#,
+            ),
+            (
+                "xl/worksheets/sheet1.xml",
+                r#"<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1"><v>1</v></c></row></sheetData><headerFooter differentOddEven="1"><oddHeader>&amp;C page &amp;P</oddHeader><oddFooter>&amp;L date</oddFooter><evenHeader>even</evenHeader></headerFooter></worksheet>"#,
+            ),
+        ] {
+            zip.start_file(name, zip::write::SimpleFileOptions::default())
+                .unwrap();
+            zip.write_all(body.as_bytes()).unwrap();
+        }
+        zip.finish().unwrap();
+        let info = xlsx_header_footer(&path, None).unwrap();
+        assert_eq!(info.odd_header.as_deref(), Some("&C page &P"));
+        assert_eq!(info.odd_footer.as_deref(), Some("&L date"));
+        assert_eq!(info.even_header.as_deref(), Some("even"));
+        assert_eq!(info.first_header, None);
         std::fs::remove_dir_all(dir).ok();
     }
 
