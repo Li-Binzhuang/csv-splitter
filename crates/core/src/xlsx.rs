@@ -2824,6 +2824,76 @@ fn parse_hidden_layout(sheet_xml: &str) -> HiddenLayout {
     layout
 }
 
+/// Add or replace `docProps/core.xml` in an existing xlsx by rewriting its parts.
+pub fn xlsx_set_core_properties(path: &Path, properties: &CoreProperties) -> std::io::Result<()> {
+    let source = std::fs::File::open(path)?;
+    let mut archive = zip::ZipArchive::new(source).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let temp = path.with_extension("properties.tmp");
+    let target = std::fs::File::create(&temp)?;
+    let mut writer = zip::ZipWriter::new(target);
+    let options = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated)
+        .large_file(true);
+    let mut types = None;
+    let mut rels = None;
+    let mut has_core = false;
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index)?;
+        let name = entry.name().to_string();
+        if name == "docProps/core.xml" {
+            has_core = true;
+            continue;
+        }
+        let mut buffer = Vec::new();
+        std::io::Read::read_to_end(&mut entry, &mut buffer)?;
+        match name.as_str() {
+            "[Content_Types].xml" => types = Some(buffer),
+            "_rels/.rels" => rels = Some(buffer),
+            _ => {
+                writer
+                    .start_file(&name, options)
+                    .map_err(|error| std::io::Error::other(error.to_string()))?;
+                std::io::Write::write_all(&mut writer, &buffer)?;
+            }
+        }
+    }
+    let mut types = String::from_utf8_lossy(&types.unwrap_or_default()).to_string();
+    if !types.contains("/docProps/core.xml") {
+        types = types.replace(
+            "</Types>",
+            "<Override PartName=\"/docProps/core.xml\" ContentType=\"application/vnd.openxmlformats-package.core-properties+xml\"/></Types>",
+        );
+    }
+    let mut rels = String::from_utf8_lossy(&rels.unwrap_or_default()).to_string();
+    if !rels.contains("docProps/core.xml") {
+        rels = rels.replace(
+            "</Relationships>",
+            "<Relationship Id=\"rIdProps\" Type=\"http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties\" Target=\"docProps/core.xml\"/></Relationships>",
+        );
+    }
+    for (name, body) in [("[Content_Types].xml", types), ("_rels/.rels", rels)] {
+        writer
+            .start_file(name, options)
+            .map_err(|error| std::io::Error::other(error.to_string()))?;
+        std::io::Write::write_all(&mut writer, body.as_bytes())?;
+    }
+    writer
+        .start_file("docProps/core.xml", options)
+        .map_err(|error| std::io::Error::other(error.to_string()))?;
+    std::io::Write::write_all(&mut writer, core_properties_xml(properties).as_bytes())?;
+    writer
+        .finish()
+        .map_err(|error| std::io::Error::other(error.to_string()))?;
+    let _ = has_core;
+    std::fs::rename(&temp, path)?;
+    Ok(())
+}
+
 /// Document core properties read back from `docProps/core.xml`.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct CoreProperties {
@@ -6291,6 +6361,30 @@ mod tests {
         assert_eq!(read_back.creator.as_deref(), Some("csvx"));
         assert_eq!(read_back.created.as_deref(), Some("2026-01-01T00:00:00Z"));
         assert_eq!(read_back.modified, None);
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn core_properties_can_be_set_after_export() {
+        let dir = temp_path("props postprocess");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("props-set.xlsx");
+        let sheets = vec![Sheet {
+            name: "one".to_string(),
+            headers: vec!["id".into()],
+            rows: vec![vec!["1".into()]],
+        }];
+        write_sheets_with_formats(&path, &sheets, &[Vec::new()]).unwrap();
+        let properties = CoreProperties {
+            title: Some("Set later".to_string()),
+            creator: Some("csvx".to_string()),
+            created: None,
+            modified: None,
+        };
+        xlsx_set_core_properties(&path, &properties).unwrap();
+        let read_back = xlsx_core_properties(&path).unwrap();
+        assert_eq!(read_back.title.as_deref(), Some("Set later"));
+        assert_eq!(read_back.creator.as_deref(), Some("csvx"));
         std::fs::remove_dir_all(dir).ok();
     }
 

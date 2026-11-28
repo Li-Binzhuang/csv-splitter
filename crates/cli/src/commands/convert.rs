@@ -551,6 +551,8 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut row_heights = false;
     let mut sheet_visibility = false;
     let mut properties = false;
+    let mut title: Option<String> = None;
+    let mut author: Option<String> = None;
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -682,6 +684,20 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--heights" => row_heights = true,
             "--visibility" => sheet_visibility = true,
             "--properties" => properties = true,
+            "--title" => match p.value("--title") {
+                Ok(v) => title = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--author" => match p.value("--author") {
+                Ok(v) => author = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--json" => formats_json = true,
             "--number-format-raw" => match p.value("--number-format-raw") {
                 Ok(v) => number_format_raw = Some(v),
@@ -2637,6 +2653,25 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             || protect_sheet
             || protect_password.is_some()
             || !column_widths.is_empty();
+        let doc_properties = if title.is_some() || author.is_some() {
+            if target != "xlsx" {
+                eprintln!("error: --title/--author need an xlsx output");
+                return 2;
+            }
+            if input.is_dir() {
+                eprintln!("error: --title/--author apply to single-file xlsx exports");
+                return 2;
+            }
+            Some(csvx_core::xlsx::CoreProperties {
+                title: title.clone(),
+                creator: author.clone(),
+                created: None,
+                modified: None,
+            })
+        } else {
+            None
+        };
+
         let result = if xlsx_options {
             csvx_core::xlsx::csv_to_xlsx_with_all(
                 &input,
@@ -2661,6 +2696,13 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         let _ = reporter.join();
         return match result {
             Ok(()) => {
+                if let Some(properties) = doc_properties.as_ref() {
+                    if let Err(error) = csvx_core::xlsx::xlsx_set_core_properties(&out, properties)
+                    {
+                        eprintln!("error: {error}");
+                        return 1;
+                    }
+                }
                 if !quiet {
                     println!(
                         "✓ converted {} → {} ({target})",

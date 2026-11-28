@@ -1,0 +1,51 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "1fd211edd8d1df6d135aaf1ac4272f4d90f0729ff691eb14e31c8c8337bb5e98",
+  "batch_id": "89064f63f1c9277fb18a0864e8bf2820caa7526a7f9dd0dd2c2903717380294f",
+  "composite_identity": "fb32c17436fcbfbdbd48ed951177dd190d9e2055b88ff8f628835785d152c994",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "e438ac9d289eaf38fa95424b2cd8ce712ed42ccce1a1457f5c883e40d6adee20",
+  "targets": [
+    {
+      "candidate_id": "56b414037cab0cec3852083f88e617fe383b11de00e087a1649e421585d9fd65",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "927af14c82f1c4bf49b64bb188c97ff346376b7275f6151cac0de8ae20a8342f",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert：转码、xlsx/csv/tsv/ndjson/parquet、highlight、number-format、formats、protection 检测、验证、no-freeze、protect-sheet、col-width、密码与粒度 | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs,code:crates/cli/src/commands/preview.rs | A:Parser；--formats/--protection/--validations/--checks/--formulas/--conditional-formats/--highlight-text/--sheet-view/--headers/--merged/--widths/--heights/--visibility/--properties；--number-format/raw；--data-validation 全类型 | S:不覆盖输入；检测仅 xlsx；辅助模式需配主模式；重复列/宽度越界退出 2"
+    },
+    {
+      "candidate_id": "d1a76f7f03e0d4cad3bbf15b099d044798866c246b170cd49dd14892205712c9",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "cc0d5f28acd53e5a12196d7e94b626f9bfd8dc2cb86df7a3b542abd5fe51e16a",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/docProps；dataValidations；mergeCells 与行高写出；sheet state 写出；回读 validations/formulas/conditional_formats/sheet_view/header_names/merged_ranges/hidden_layout/column_widths/row_heights/sheet_visibility/core_properties；保护 | S:不写公式/图表；列表≤255；四选一验证源；merges/高度/状态一表一项"
+    },
+    {
+      "candidate_id": "a43e509d9bcbadc97aefaa77f25f755ed29170947367ce59199591e5e1cf3f58",
+      "object_ref": "code:docs/XLSX.md",
+      "path": "docs/XLSX.md",
+      "change": "update",
+      "source_sha256": "911015e0d09e8c1845256b958d0f4670901734e66dbc5b97b75e6ceebf42bce8",
+      "existing_entry": "XLSX.md[SD7S]: F:xlsx 互操作现状与边界：导出、多 sheet、导入、report xlsx、日期/条件格式 | R:code:crates/core/src/xlsx.rs,code:crates/cli/src/main.rs,code:docs/CAPABILITIES.md | A:convert 流式导出；目录多 sheet；导入；ISO 日期；--highlight；--data-validation 全类型；--validations/--checks；--formulas；--conditional-formats/--highlight-text；--sheet-view；--headers；--merged；--widths；--heights；--visibility；--properties；--protection；--col-width | S:只写值不写公式；验证非 xlsx 退出 2；密码 1–15 ASCII"
+    },
+    {
+      "candidate_id": "6a0b2f31e336b5203aafdac3cb42900618af95457d2ba34be0b93b0d9fd8bfad",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "b7fcd7e6416b529ff87304437bd09f79710aaf579ffe031c721af68d297774ef",
+      "existing_entry": "XLSX_ENGINE.md[SZ7S]: F:XLSX 引擎决策、迁移方案、覆盖矩阵与实测 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine MIT；全 sheet；数字格式导出；条件格式；数据验证全类型；公式回读；冻结/筛选与表头回读；合并与行高读写；隐藏/列宽/可见性/文档属性读写；--widths/--heights/--visibility/--properties；保护矩阵；1M 8.04s/53MB | S:迁移未执行待批准；不新增依赖；导入格式取首数据行；性能仅 release"
+    },
+    {
+      "candidate_id": "f5bc6c267ffa447c15e3bb2a868a2ad8cb98c24019e33f1129118abe63d88343",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "6f832b70f53fc8475543a8e49667605240ce9587aa08a2f714050f91de670f94",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同新功能，边界并入母项，每轮需 feat 增量；606 验收、607–609 待做；Round618 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

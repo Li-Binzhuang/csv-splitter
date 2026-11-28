@@ -5041,6 +5041,39 @@ fn convert_renders_conditional_formats_as_highlight_text() {
 }
 
 #[test]
+fn convert_writes_document_properties() {
+    let dir = TempDir::new("propertiestitle");
+    let csv = dir.join("data.csv");
+    std::fs::write(&csv, "id\n1\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            csv.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--title",
+            "Quarterly",
+            "--author",
+            "csvx",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let json = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--properties", "--json"])
+        .output()
+        .unwrap();
+    assert!(json.status.success());
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(stdout.contains("\"title\":\"Quarterly\""), "{stdout}");
+    assert!(stdout.contains("\"creator\":\"csvx\""), "{stdout}");
+}
+
+#[test]
 fn convert_reports_core_properties() {
     let dir = TempDir::new("propertiesinspect");
     let book = dir.join("book.xlsx");
