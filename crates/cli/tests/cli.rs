@@ -3073,6 +3073,49 @@ fn convert_xlsx_can_use_a_colored_number_format() {
 }
 
 #[test]
+fn convert_xlsx_combines_colored_format_validation_and_protection() {
+    let dir = TempDir::new("xlsxcolval");
+    let input = dir.join("t.csv");
+    let output = dir.join("t.xlsx");
+    std::fs::write(&input, "id,status,amount\n1,good,1234.5\n2,ok,10\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            output.to_str().unwrap(),
+            "--number-format",
+            "amount:[Red]#,##0.00",
+            "--data-validation",
+            "status:good,ok,bad",
+            "--protect-sheet",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let file = std::fs::File::open(&output).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    let mut styles = String::new();
+    let mut sheet = String::new();
+    use std::io::Read as _;
+    archive
+        .by_name("xl/styles.xml")
+        .unwrap()
+        .read_to_string(&mut styles)
+        .unwrap();
+    archive
+        .by_name("xl/worksheets/sheet1.xml")
+        .unwrap()
+        .read_to_string(&mut sheet)
+        .unwrap();
+    assert!(styles.contains("formatCode=\"[Red]#,##0.00\""), "{styles}");
+    assert!(sheet.contains("<dataValidations count=\"1\">"), "{sheet}");
+    assert!(sheet.contains("<sheetProtection sheet=\"1\""), "{sheet}");
+}
+
+#[test]
 fn convert_xlsx_can_highlight_a_top_rank() {
     let dir = TempDir::new("xlsxtop");
     let input = dir.join("t.csv");
