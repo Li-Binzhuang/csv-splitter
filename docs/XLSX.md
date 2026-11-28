@@ -117,7 +117,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 - `--conditional-formats` 读取 xlsx 条件格式（range/type/operator/value/ARGB 颜色），支持 sheet/all-sheets/json；
 - `--formulas` 读取 xlsx 的公式文本与缓存值（不做重算），可配 `--sheet`/`--all-sheets`/`--json`；
 - 与 `--validations` 同用 `--checks` 会把列表/整数/小数验证转成可复用的 `validate --check` 规则文本；
-- `--validations` 读取 xlsx 的数据验证；日期/时间边界从序列号投影回 ISO/时分秒（列/类型/operator/公式/提示/错误样式），可配 `--sheet`/`--all-sheets`/`--json`；
+- `--validations` 读取 xlsx 的数据验证；文本用表头名显示列，JSON 同时给 `column`（字母）与 `header`（表头名）；日期/时间边界从序列号投影回 ISO/时分秒（列/类型/operator/公式/提示/错误样式），可配 `--sheet`/`--all-sheets`/`--json`；
 - `--protect-sheet` 写工作表保护（对象/场景受限，不设密码）；
 - `--number-format-raw` 原样保留任意自定义格式码到 xlsx `formatCode`（不做渲染解释，≤255 字符）；
 - `--number-format` 支持颜色前缀（`[Red]`、`[Blue]` 等 8 色）并写入 formatCode；

@@ -1172,6 +1172,26 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 return 0;
             }
 
+            let headers_by_sheet: Vec<(String, Vec<(String, String)>)> = names
+                .iter()
+                .filter_map(|sheet_name| {
+                    let sheet_arg = (!sheet_name.is_empty()).then_some(sheet_name.as_str());
+                    csvx_core::xlsx::xlsx_header_names(&input, sheet_arg)
+                        .ok()
+                        .map(|headers| (sheet_name.clone(), headers))
+                })
+                .collect();
+            let header_for = |sheet: &str, letter: &str| -> Option<String> {
+                headers_by_sheet
+                    .iter()
+                    .find(|(name, _)| name == sheet || name.is_empty())
+                    .and_then(|(_, headers)| {
+                        headers
+                            .iter()
+                            .find(|(cell, _)| cell == letter)
+                            .map(|(_, header)| header.clone())
+                    })
+            };
             if formats_json {
                 print!("[");
                 for (index, entry) in entries.iter().enumerate() {
@@ -1179,9 +1199,10 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                         print!(",");
                     }
                     print!(
-                    "{{\"sheet\":{},\"column\":{},\"range\":{},\"type\":{},\"operator\":{},\"formula1\":{},\"formula2\":{},\"allow_blank\":{},\"prompt_title\":{},\"prompt_message\":{},\"error_title\":{},\"error_message\":{},\"error_style\":{}}}",
+                    "{{\"sheet\":{},\"column\":{},\"header\":{},\"range\":{},\"type\":{},\"operator\":{},\"formula1\":{},\"formula2\":{},\"allow_blank\":{},\"prompt_title\":{},\"prompt_message\":{},\"error_title\":{},\"error_message\":{},\"error_style\":{}}}",
                     json_string(&entry.sheet),
                     json_string(&entry.column),
+                    json_optional(&header_for(&entry.sheet, &entry.column)),
                     json_string(&entry.range),
                     json_string(&entry.kind),
                     json_string(&entry.operator),
@@ -1205,7 +1226,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                     }
                     println!(
                     "column={} range={} type={} operator={} formula1={} formula2={} allow_blank={} prompt_title={} error_style={}",
-                    entry.column,
+                    header_for(&entry.sheet, &entry.column).unwrap_or_else(|| entry.column.clone()),
                     entry.range,
                     entry.kind,
                     entry.operator,

@@ -5041,6 +5041,45 @@ fn convert_renders_conditional_formats_as_highlight_text() {
 }
 
 #[test]
+fn convert_validations_show_header_names() {
+    let dir = TempDir::new("validationheaders");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "amount\n10\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts/a.csv").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--data-validation-whole",
+            "amount:0,1200",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let json = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--validations", "--json"])
+        .output()
+        .unwrap();
+    assert!(json.status.success());
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(stdout.contains("\"header\":\"amount\""), "{stdout}");
+    assert!(stdout.contains("\"column\":\"A\""), "{stdout}");
+
+    let text = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--validations"])
+        .output()
+        .unwrap();
+    assert!(text.status.success());
+    let stdout = String::from_utf8_lossy(&text.stdout);
+    assert!(stdout.contains("column=amount"), "{stdout}");
+}
+
+#[test]
 fn convert_reports_validation_checks() {
     let dir = TempDir::new("validationchecks");
     std::fs::create_dir(dir.join("parts")).unwrap();
