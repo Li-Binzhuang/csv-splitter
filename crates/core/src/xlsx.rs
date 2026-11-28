@@ -4451,6 +4451,35 @@ mod tests {
     }
 
     #[test]
+    fn protection_password_and_granularity_round_trip() {
+        let dir = temp_path("protection roundtrip");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("roundtrip.xlsx");
+        let sheets = vec![Sheet {
+            name: "one".to_string(),
+            headers: vec!["id".into()],
+            rows: vec![vec!["1".into()]],
+        }];
+        write_sheets_with_options_and_password(
+            &path,
+            &sheets,
+            &[],
+            true,
+            true,
+            Some("test"),
+            true,
+            false,
+        )
+        .unwrap();
+        let detail = xlsx_sheet_protection(&path, None).unwrap();
+        assert!(detail.protected);
+        assert!(detail.objects_locked);
+        assert!(!detail.scenarios_locked);
+        assert!(detail.password_protected);
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
     fn multi_sheet_protection_can_use_a_password() {
         let dir = temp_path("multi pass");
         std::fs::create_dir_all(&dir).unwrap();

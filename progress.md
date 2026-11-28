@@ -501,11 +501,13 @@
   测试 `convert_directory_to_xlsx_applies_number_formats`。
 - [x] 项525 目录格式 + 密码（功能级）：格式与保护叠加；
   测试 `convert_directory_to_xlsx_combines_format_and_password`。
-- [ ] 项526 保护细节 + 密码 + 粒度（功能级）：写入后读回四标志一致；
-  验收：单测 + gate。
+- [x] 项526 保护细节 + 密码 + 粒度（功能级）：写入后读回四标志一致；
+  测试 `protection_password_and_granularity_round_trip`。
 - [ ] 项527 目录格式 + no-freeze（功能级）：格式与冻结省略叠加；
   验收：CLI + 单测 + gate。
 - [ ] 项528 目录格式 + CF（功能级）：格式与条件格式共存；
+  验收：CLI + 单测 + gate。
+- [ ] 项529 目录格式 + no-auto + CF（功能级）：三特性并存；
   验收：CLI + 单测 + gate。
 - [x] 项452 highlight + formats 组合（功能级）：CF 与数字格式共存；
   测试 `convert_xlsx_combines_highlight_and_number_formats`。
@@ -908,6 +910,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 544（项526 保护写入读回一致，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `07f277c1…d1c34037`；
+轮首 push 成功，本轮不再 push。
 
 Round 543（项525 目录格式+密码，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `d5c70829…11ef215`；
