@@ -4954,6 +4954,38 @@ fn convert_directory_to_xlsx_combines_all_xlsx_features() {
 }
 
 #[test]
+fn convert_keeps_raw_custom_number_format_codes() {
+    let dir = TempDir::new("rawnumberformat");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "amount\n1234.5\n").unwrap();
+    let out = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts/a.csv").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            out.to_str().unwrap(),
+            "--number-format-raw",
+            "amount:[Blue]#,##0.00",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let file = std::fs::File::open(&out).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    use std::io::Read as _;
+    let mut styles = String::new();
+    archive
+        .by_name("xl/styles.xml")
+        .unwrap()
+        .read_to_string(&mut styles)
+        .unwrap();
+    assert!(styles.contains("formatCode=\"[Blue]#,##0.00\""), "{styles}");
+}
+
+#[test]
 fn convert_writes_data_validation_list_ranges() {
     let dir = TempDir::new("validationlistrange");
     std::fs::create_dir(dir.join("parts")).unwrap();

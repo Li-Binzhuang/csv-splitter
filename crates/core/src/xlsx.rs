@@ -1383,7 +1383,8 @@ fn write_formatted_cell(
                 return;
             }
         }
-        NumberFormat::Decimal { .. }
+        NumberFormat::Custom { .. }
+        | NumberFormat::Decimal { .. }
         | NumberFormat::Percent { .. }
         | NumberFormat::Currency { .. }
         | NumberFormat::Scientific { .. }

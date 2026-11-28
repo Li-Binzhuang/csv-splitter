@@ -50,6 +50,8 @@ pub enum NumberFormat {
         color: String,
         inner: Box<NumberFormat>,
     },
+    /// A custom Excel format code kept verbatim for export; display falls back to the raw value.
+    Custom { code: String },
 }
 
 impl NumberFormat {
@@ -167,6 +169,23 @@ impl NumberFormat {
         })
     }
 
+    /// Accept a custom Excel format code verbatim for xlsx export.
+    ///
+    /// Unlike [`NumberFormat::parse`], this does not interpret the code; the
+    /// value is written as a number so Excel applies the code itself.
+    pub fn parse_raw(code: &str) -> Result<Self, String> {
+        let code = code.trim();
+        if code.is_empty() {
+            return Err("number format code is empty".to_string());
+        }
+        if code.chars().count() > 255 {
+            return Err("number format code is longer than 255 characters".to_string());
+        }
+        Ok(Self::Custom {
+            code: code.to_string(),
+        })
+    }
+
     pub fn name(&self) -> String {
         match self {
             Self::Plain => "plain".to_string(),
@@ -250,6 +269,7 @@ impl NumberFormat {
                 };
                 format!("[{upper}]{inner}")
             }
+            Self::Custom { code } => code.clone(),
         }
     }
 
@@ -270,6 +290,7 @@ impl NumberFormat {
         };
         match self {
             Self::Plain => value.to_string(),
+            Self::Custom { .. } => value.to_string(),
             Self::Decimal { places, grouping } => {
                 let rendered = format!("{number:.places$}");
                 if *grouping {
@@ -1280,6 +1301,16 @@ mod tests {
         let wide_simple = NumberFormat::parse("??/??").unwrap();
         assert_eq!(wide_simple.name(), "??/??");
         assert_eq!(wide_simple.render("0.36"), "9/25");
+    }
+
+    #[test]
+    fn raw_number_format_codes_are_kept_verbatim() {
+        let custom = NumberFormat::parse_raw("[Blue]#,##0.00").unwrap();
+        assert_eq!(custom.name(), "[Blue]#,##0.00");
+        assert_eq!(custom.render("1234.5"), "1234.5");
+        assert!(NumberFormat::parse("[Blue]0.00;[Red]-0.00").is_err());
+        assert!(NumberFormat::parse_raw(" ").is_err());
+        assert!(NumberFormat::parse_raw(&"0".repeat(256)).is_err());
     }
 
     #[test]

@@ -11,21 +11,26 @@ use std::time::Instant;
 
 fn parse_column_formats(
     text: &str,
+    raw: bool,
 ) -> Result<Vec<(String, csvx_core::layout::NumberFormat)>, String> {
     let mut formats = Vec::new();
-    for raw in split_format_specs(text) {
-        let (column, code) = raw
+    for spec in split_format_specs(text) {
+        let (column, code) = spec
             .split_once(':')
-            .ok_or_else(|| format!("number format {raw:?} needs column:format-code"))?;
+            .ok_or_else(|| format!("number format {spec:?} needs column:format-code"))?;
         let column = column.trim().to_string();
         if column.is_empty() {
-            return Err(format!("number format {raw:?} needs a column"));
+            return Err(format!("number format {spec:?} needs a column"));
         }
         if formats.iter().any(|(name, _)| name == &column) {
             return Err(format!("number format column {column:?} is repeated"));
         }
-        let format = csvx_core::layout::NumberFormat::parse(code.trim())
-            .map_err(|error| format!("number format {column:?}: {error}"))?;
+        let format = if raw {
+            csvx_core::layout::NumberFormat::parse_raw(code)
+        } else {
+            csvx_core::layout::NumberFormat::parse(code.trim())
+        }
+        .map_err(|error| format!("number format {column:?}: {error}"))?;
         formats.push((column, format));
     }
     if formats.is_empty() {
@@ -487,6 +492,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut all_sheets = false;
     let mut highlight: Option<String> = None;
     let mut number_format: Option<String> = None;
+    let mut number_format_raw: Option<String> = None;
     let mut no_freeze = false;
     let mut no_auto_filter = false;
     let mut data_validation: Option<String> = None;
@@ -614,6 +620,13 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--protection" => protection = true,
             "--validations" => validations = true,
             "--json" => formats_json = true,
+            "--number-format-raw" => match p.value("--number-format-raw") {
+                Ok(v) => number_format_raw = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
             "--number-format" => match p.value("--number-format") {
                 Ok(v) => number_format = Some(v),
                 Err(e) => {
@@ -998,8 +1011,10 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 },
                 None => Vec::new(),
             };
-            let column_formats = match number_format.as_deref() {
-                Some(text) => match parse_column_formats(text) {
+            let raw_format_text = number_format_raw.as_deref().or(number_format.as_deref());
+            let raw_format = number_format_raw.is_some();
+            let column_formats = match raw_format_text {
+                Some(text) => match parse_column_formats(text, raw_format) {
                     Ok(formats) => formats,
                     Err(e) => {
                         eprintln!("error: {e}");
@@ -1258,12 +1273,14 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             None => Vec::new(),
         };
-        let column_formats = match number_format.as_deref() {
+        let raw_format_text = number_format_raw.as_deref().or(number_format.as_deref());
+        let raw_format = number_format_raw.is_some();
+        let column_formats = match raw_format_text {
             Some(_) if !target.eq_ignore_ascii_case("xlsx") => {
                 eprintln!("error: --number-format is only valid with --format xlsx");
                 return 2;
             }
-            Some(text) => match parse_column_formats(text) {
+            Some(text) => match parse_column_formats(text, raw_format) {
                 Ok(formats) => formats,
                 Err(e) => {
                     eprintln!("error: {e}");

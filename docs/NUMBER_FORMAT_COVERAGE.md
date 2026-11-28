@@ -46,7 +46,8 @@
 | 日期序列号显示 | 支持（新增） | 45292 → 2024-01-01；60 → 1900-02-29；小数部分作时间；`TEXT` 同路径 | `date_serials_render_like_excel`、`text_formats_excel_date_serials` |
 | 四位分数 `????/????` | 支持（新增） | `# ????/????` 与 `????/????`，分母上限 9999 |
 
-| 任意 Excel 自定义格式码 | 只识别白名单 | 未识别格式会报 “not a number format”，不静默套用 |
+| 任意 Excel 自定义格式码 | 支持（新增，透传） | `--number-format-raw` 原样写入 formatCode（≤255），不解释、不改写 | `raw_number_format_codes_are_kept_verbatim` |
+| 白名单解析 | 严格模式保留 | `NumberFormat::parse` 对未识别格式仍报错，不静默套用 | `date_time_formats_render_iso_values` |
 
 ## 本轮验收
 

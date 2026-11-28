@@ -82,6 +82,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
   --data-validation-whole "amount:0,1200" \
   --data-validation-decimal "id:0.5," \
   --data-validation-error-style "status:warning" \
+  --number-format-raw "amount:[Blue]#,##0.00" \
   --data-validation-range "status:$A$2:$A$10" \
   --validations
 ```
@@ -104,6 +105,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 - `--data-validation-range` 列表源用单元格区域引用，格式 `列:区域`（如 `$A$2:$A$10`），与内联值互斥；
 - `--validations` 读取 xlsx 的数据验证（列/类型/operator/公式/提示/错误样式），可配 `--sheet`/`--all-sheets`/`--json`；
 - `--protect-sheet` 写工作表保护（对象/场景受限，不设密码）；
+- `--number-format-raw` 原样保留任意自定义格式码到 xlsx `formatCode`（不做渲染解释，≤255 字符）；
 - `--number-format` 支持颜色前缀（`[Red]`、`[Blue]` 等 8 色）并写入 formatCode；
 - `--protection` 读取 xlsx 的 sheetProtection 四标志（可配 `--all-sheets`、`--json`），不产出文件；
 - `--col-width` 指定列宽，格式 `列:宽度`，宽度 0.5–255；目录多 sheet 时每 sheet 应用同一宽度；

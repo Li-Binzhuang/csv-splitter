@@ -1,0 +1,59 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "92cdeef4c16ea930c0201a6d3677602c584f4a4d5377706ae63d31f653f3fccb",
+  "batch_id": "028daed8644c3a88eb4bcb6f583700a71a0d6807892ece8ffec5ffcb34cdc3ea",
+  "composite_identity": "fd5f9df73680d4dbd3d8ed5811012baf023b2143380ee5239ed2e94f3f6c2980",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "a51f271b12c22a775b74eb8db1b40fa7459fa440b52c36f90cd72f7d0b486d79",
+  "targets": [
+    {
+      "candidate_id": "782fc44f2e7ffa2c9308c14b268a1af20616979d0befeb70ffb5d2ce9cb1a512",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "aa09ee4092ba9c94ed507c140d5eda15fed5be1815329b3cb6b85c93dc0b2474",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert：转码、xlsx/csv/tsv/ndjson/parquet、highlight、number-format、formats、protection 检测、验证、no-freeze、protect-sheet、col-width、密码与粒度 | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；--formats；--protection；--validations 检测；--number-format；目录叠加；--data-validation 列表/公式/whole/decimal/error-style/range；--col-width | S:不覆盖输入；检测仅 xlsx；密码 1–15 ASCII；公式 ≤255；重复列/空值/宽度越界退出 2"
+    },
+    {
+      "candidate_id": "4159f662cc91f9517faee0f50ee43432cd4cf20d755b8acec8ac0dba9ae26fdd",
+      "object_ref": "code:crates/core/src/layout.rs",
+      "path": "crates/core/src/layout.rs",
+      "change": "update",
+      "source_sha256": "b15e9cc701c00230514bed5d095d0283103036776310435a10b97c1e4a840452",
+      "existing_entry": "layout.rs[CU7L]: F:显示元数据 sidecar：列名替换、列宽、数字格式与冻结列 | R:code:crates/core/src/sheet.rs | A:NumberFormat 含 Decimal/Percent/Currency/DateTime/Scientific/Accounting/Fraction/Text/Colored；日期序列号→ISO（含 1900-02-29）；点/斜杠/12 小时；分数；会计对齐；8 色前缀 | S:只影响展示不改值；未识别格式报错；[h] 属 elapsed"
+    },
+    {
+      "candidate_id": "8dd20252d67161ecc3266ef1f23f2ead9ca8b55b0f3827fe10022f486dab67af",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "e9408dc94efe4162dd9752ef7c8abdcb1ea5a61057799b264a05bd681c7e9062",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles；dataValidations 列表（内联/区域引用）/custom/whole|decimal/errorStyle；回读 xlsx_data_validations；条件格式全族/dxf；保护读回；autoFilter | S:不写公式/图表；列表 ≤255 禁逗号/引号；list/custom/numeric/range 四选一；errorStyle 仅三态"
+    },
+    {
+      "candidate_id": "b2ea27c73703256443e75f97bbfb013646c438be569f1edbbd6bd9c22ecbed05",
+      "object_ref": "code:docs/NUMBER_FORMAT_COVERAGE.md",
+      "path": "docs/NUMBER_FORMAT_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "e478c661a6186c2b72931420a38785e1b79702b08b8984dfaa6165c3955db21b",
+      "existing_entry": "NUMBER_FORMAT_COVERAGE.md[SA7T]: F:数字格式覆盖矩阵与缺口 | R:code:crates/core/src/layout.rs,code:crates/core/src/xlsx.rs | A:千分位/小数/百分比/货币/日期时间；日期序列号→ISO 含假闰日；点/斜杠/12 小时；分数；8 色；会计对齐；Scientific/Text；日期导出 numFmt | S:格式只对数字/日期生效；未识别格式报错；多段会计码仍不支持"
+    },
+    {
+      "candidate_id": "6ed769514ee585e0f5a3ddf7f3c59b08913811ea0597fbbdba0a99fb00564e7e",
+      "object_ref": "code:docs/XLSX.md",
+      "path": "docs/XLSX.md",
+      "change": "update",
+      "source_sha256": "e43bd84f22441525ea755399b00f4e8d7dfdf2f0bf6bca4e9868720189943b90",
+      "existing_entry": "XLSX.md[SD7S]: F:xlsx 互操作现状与边界：导出、多 sheet、导入、report xlsx、日期/条件格式 | R:code:crates/core/src/xlsx.rs,code:crates/cli/src/main.rs,code:docs/CAPABILITIES.md | A:convert 流式导出；目录多 sheet；导入；ISO 日期；--highlight；--no-freeze；--data-validation 列表/公式/整数/小数/error-style/range；--validations 检测；--protection；--col-width | S:只写值不写公式；日期仅 ISO；验证提示缺失/重复/非 xlsx 退出 2；密码 1–15 ASCII；不做宏/VBA"
+    },
+    {
+      "candidate_id": "d90bbcfec6ea4fd452d1feec55ddca287fc05374b0a7306efe53bf4f7ffc84e8",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "acd406e3d5b6b88233b447d885d025ef6dfe6cec7d0b1b3e1a87c9859b08c821",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同新功能，边界并入母项，每轮需 feat 增量；574 验收、575–577 待做；Round586 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
