@@ -4914,6 +4914,61 @@ fn convert_directory_to_xlsx_combines_prompts_widths_and_password() {
 }
 
 #[test]
+fn convert_directory_to_xlsx_combines_all_xlsx_features() {
+    let dir = TempDir::new("xlsxdirallfeatures");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,amount\n1,1200\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "id,amount\n2,20\n").unwrap();
+    let out = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            out.to_str().unwrap(),
+            "--number-format",
+            "amount:#,##0.00",
+            "--data-validation",
+            "amount:0,10,1200",
+            "--data-validation-prompt",
+            "amount:Amount|Enter a positive amount",
+            "--highlight",
+            "amount>1000:red",
+            "--protect-sheet-password",
+            "test",
+            "--no-auto-filter",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let file = std::fs::File::open(&out).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    use std::io::Read as _;
+    let mut styles = String::new();
+    archive
+        .by_name("xl/styles.xml")
+        .unwrap()
+        .read_to_string(&mut styles)
+        .unwrap();
+    assert!(styles.contains("formatCode=\"#,##0.00\""), "{styles}");
+    for name in ["xl/worksheets/sheet1.xml", "xl/worksheets/sheet2.xml"] {
+        let mut sheet = String::new();
+        archive
+            .by_name(name)
+            .unwrap()
+            .read_to_string(&mut sheet)
+            .unwrap();
+        assert!(sheet.contains("password=\"CBEB\""), "{name}: {sheet}");
+        assert!(sheet.contains("dataValidations"), "{name}: {sheet}");
+        assert!(sheet.contains("promptTitle=\"Amount\""), "{name}: {sheet}");
+        assert!(sheet.contains("conditionalFormatting"), "{name}: {sheet}");
+        assert!(!sheet.contains("<autoFilter"), "{name}: {sheet}");
+    }
+}
+
+#[test]
 fn convert_protection_json_objects_share_the_same_fields() {
     let dir = TempDir::new("protectionjsoncontract");
     std::fs::create_dir(dir.join("parts")).unwrap();
