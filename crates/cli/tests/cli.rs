@@ -3041,6 +3041,38 @@ fn convert_xlsx_combines_protection_validation_and_highlight() {
 }
 
 #[test]
+fn convert_xlsx_can_use_a_colored_number_format() {
+    let dir = TempDir::new("xlsxcolorfmt");
+    let input = dir.join("t.csv");
+    let output = dir.join("t.xlsx");
+    std::fs::write(&input, "id,amount\n1,1234.5\n2,10\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            output.to_str().unwrap(),
+            "--number-format",
+            "amount:[Red]#,##0.00",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let file = std::fs::File::open(&output).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    let mut styles = String::new();
+    use std::io::Read as _;
+    archive
+        .by_name("xl/styles.xml")
+        .unwrap()
+        .read_to_string(&mut styles)
+        .unwrap();
+    assert!(styles.contains("formatCode=\"[Red]#,##0.00\""), "{styles}");
+}
+
+#[test]
 fn convert_xlsx_can_highlight_a_top_rank() {
     let dir = TempDir::new("xlsxtop");
     let input = dir.join("t.csv");
