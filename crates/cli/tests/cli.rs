@@ -3400,6 +3400,49 @@ fn convert_xlsx_can_protect_with_a_password() {
 }
 
 #[test]
+fn convert_xlsx_combines_password_format_and_no_freeze() {
+    let dir = TempDir::new("xlsxpassfmt");
+    let input = dir.join("t.csv");
+    let output = dir.join("t.xlsx");
+    std::fs::write(&input, "id,amount\n1,1234.5\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            output.to_str().unwrap(),
+            "--protect-sheet-password",
+            "test",
+            "--number-format",
+            "amount:#,##0.00",
+            "--no-freeze",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let file = std::fs::File::open(&output).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    let mut styles = String::new();
+    let mut sheet = String::new();
+    use std::io::Read as _;
+    archive
+        .by_name("xl/styles.xml")
+        .unwrap()
+        .read_to_string(&mut styles)
+        .unwrap();
+    archive
+        .by_name("xl/worksheets/sheet1.xml")
+        .unwrap()
+        .read_to_string(&mut sheet)
+        .unwrap();
+    assert!(styles.contains("formatCode=\"#,##0.00\""), "{styles}");
+    assert!(sheet.contains("password=\"CBEB\""), "{sheet}");
+    assert!(!sheet.contains("<pane "), "{sheet}");
+}
+
+#[test]
 fn convert_xlsx_can_highlight_a_top_rank() {
     let dir = TempDir::new("xlsxtop");
     let input = dir.join("t.csv");
