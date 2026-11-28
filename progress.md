@@ -520,8 +520,10 @@
   测试 `convert_xlsx_combines_color_validation_highlight_and_protection`。
 - [x] 项479 no-freeze + 验证 + 颜色（功能级）：CLI 同时生效；
   测试 `convert_xlsx_combines_no_freeze_validation_and_color`。
-- [ ] 项480 no-auto + CF + 保护（功能级）：筛选省略、CF/保护保留；
-  验收：单测 + gate。
+- [x] 项480 no-auto + CF + 保护（功能级）：筛选省略、CF/保护保留；
+  测试 `convert_xlsx_combines_no_auto_filter_highlight_and_protection`。
+- [ ] 项481 xlsx 列宽选项（功能级）：convert 指定列宽；
+  验收：CLI + 单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
 - [ ] 项428 条件格式 dxf 蓝色规则同 id 断言（功能级）：蓝色多规则同 dxfId；
@@ -819,6 +821,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 498（项480 no-auto+CF+保护，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `3b3475d1…7bae45da15`；
+轮首 push 成功，本轮不再 push。
 
 Round 497（项479 no-freeze+验证+颜色，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `e76fed84…0e728251`；
