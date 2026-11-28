@@ -554,6 +554,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut title: Option<String> = None;
     let mut author: Option<String> = None;
     let mut merges: Vec<String> = Vec::new();
+    let mut hide_sheets: Vec<String> = Vec::new();
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -698,6 +699,13 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                         .map(|range| range.trim().to_string())
                         .filter(|range| !range.is_empty()),
                 ),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--hide-sheet" => match p.value("--hide-sheet") {
+                Ok(v) => hide_sheets.push(v),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -2698,6 +2706,20 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             Some(merges.clone())
         };
 
+        let hidden_sheets = if hide_sheets.is_empty() {
+            None
+        } else {
+            if target != "xlsx" {
+                eprintln!("error: --hide-sheet needs an xlsx output");
+                return 2;
+            }
+            if input.is_dir() {
+                eprintln!("error: --hide-sheet applies to single-file xlsx exports");
+                return 2;
+            }
+            Some(hide_sheets.clone())
+        };
+
         let result = if xlsx_options {
             csvx_core::xlsx::csv_to_xlsx_with_all(
                 &input,
@@ -2731,6 +2753,12 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 }
                 if let Some(ranges) = merge_ranges.as_ref() {
                     if let Err(error) = csvx_core::xlsx::xlsx_set_merge_cells(&out, ranges) {
+                        eprintln!("error: {error}");
+                        return 1;
+                    }
+                }
+                if let Some(names) = hidden_sheets.as_ref() {
+                    if let Err(error) = csvx_core::xlsx::xlsx_hide_sheets(&out, names) {
                         eprintln!("error: {error}");
                         return 1;
                     }

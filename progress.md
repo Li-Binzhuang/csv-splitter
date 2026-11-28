@@ -658,11 +658,13 @@
   测试 `convert_writes_document_properties`、`core_properties_can_be_set_after_export`。
 - [x] 项608 合并区域导出 CLI（新能力）：`--merge` 单文件导出后写合并区域；
   测试 `convert_writes_merged_ranges`、`merged_ranges_can_be_set_after_export`。
-- [ ] 项609 隐藏工作表导出 CLI（新能力）：导出时把指定 sheet 设为 hidden；
-  验收：CLI + 单测 + gate。
+- [x] 项609 隐藏工作表导出 CLI（新能力）：`--hide-sheet` 单文件导出后隐藏指定 sheet；
+  测试 `convert_can_hide_a_sheet`、`sheets_can_be_hidden_after_export`。
 - [ ] 项610 页面设置回读 API（新能力）：读取 pageSetup orientation/fitTo/paperSize；
   验收：单测 + round-trip + gate。
 - [ ] 项611 打印区域/页边距回读 API（新能力）：读取 printArea 与 pageMargins；
+  验收：单测 + round-trip + gate。
+- [ ] 项612 页面设置写出 API（新能力）：xlsx 写 pageSetup orientation/fitTo；
   验收：单测 + round-trip + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
@@ -1069,6 +1071,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 621（项609 隐藏工作表导出 CLI，feat 级新能力，验收完成）；
+定向与全量 gate/package 通过；发布包 SHA `c7d27290…b339d11f`；
+轮首 push 成功，本轮不再 push。
 
 Round 620（项608 合并区域导出 CLI，feat 级新能力，验收完成）；
 含 clippy regex-in-loop 修复（gate 两次失败后通过）；发布包 SHA `c54237f9…0bceda8`；

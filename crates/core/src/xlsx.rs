@@ -2836,6 +2836,74 @@ fn validate_merge_range(range: &str) -> std::io::Result<()> {
     }
 }
 
+/// Mark named worksheets as `hidden` in an existing xlsx workbook.
+pub fn xlsx_hide_sheets(path: &Path, names: &[String]) -> std::io::Result<()> {
+    if names.is_empty() {
+        return Ok(());
+    }
+    let source = std::fs::File::open(path)?;
+    let mut archive = zip::ZipArchive::new(source).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let temp = path.with_extension("hide.tmp");
+    let target = std::fs::File::create(&temp)?;
+    let mut writer = zip::ZipWriter::new(target);
+    let options = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated)
+        .large_file(true);
+    let mut found_sheet = false;
+    let sheet_re = Regex::new(r"<sheet\b[^>]*>").unwrap();
+    let state_re = Regex::new(r#"\s+state="[^"]*""#).unwrap();
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index)?;
+        let name = entry.name().to_string();
+        let mut buffer = Vec::new();
+        std::io::Read::read_to_end(&mut entry, &mut buffer)?;
+        if name != "xl/workbook.xml" {
+            writer
+                .start_file(&name, options)
+                .map_err(|error| std::io::Error::other(error.to_string()))?;
+            std::io::Write::write_all(&mut writer, &buffer)?;
+            continue;
+        }
+        let workbook = String::from_utf8_lossy(&buffer).to_string();
+        let mut xml = String::with_capacity(workbook.len() + 64);
+        let mut last = 0;
+        for capture in sheet_re.find_iter(&workbook) {
+            xml.push_str(&workbook[last..capture.start()]);
+            let tag = capture.as_str();
+            let sheet_name = tag_attribute(tag, "name").unwrap_or_default();
+            let mut replacement = state_re.replace_all(tag, "").to_string();
+            if names.iter().any(|name| xml_unescape(&sheet_name) == *name) {
+                found_sheet = true;
+                replacement = replacement.replacen("/>", " state=\"hidden\"/>", 1);
+            }
+            xml.push_str(&replacement);
+            last = capture.end();
+        }
+        xml.push_str(&workbook[last..]);
+        writer
+            .start_file(&name, options)
+            .map_err(|error| std::io::Error::other(error.to_string()))?;
+        std::io::Write::write_all(&mut writer, xml.as_bytes())?;
+    }
+    writer
+        .finish()
+        .map_err(|error| std::io::Error::other(error.to_string()))?;
+    if !found_sheet {
+        let _ = std::fs::remove_file(&temp);
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "none of the requested sheets exist in the workbook",
+        ));
+    }
+    std::fs::rename(&temp, path)?;
+    Ok(())
+}
+
 /// Add or replace `<mergeCells>` on the first worksheet of an existing xlsx.
 pub fn xlsx_set_merge_cells(path: &Path, ranges: &[String]) -> std::io::Result<()> {
     for range in ranges {
@@ -6516,6 +6584,23 @@ mod tests {
         assert_eq!(states.len(), 2);
         assert_eq!(states[0].state, "visible");
         assert_eq!(states[1].state, "hidden");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn sheets_can_be_hidden_after_export() {
+        let dir = temp_path("hide postprocess");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("hidden-set.xlsx");
+        let sheets = vec![Sheet {
+            name: "one".to_string(),
+            headers: vec!["id".into()],
+            rows: vec![vec!["1".into()]],
+        }];
+        write_sheets_with_formats(&path, &sheets, &[Vec::new()]).unwrap();
+        xlsx_hide_sheets(&path, &["one".to_string()]).unwrap();
+        let states = xlsx_sheet_visibility(&path).unwrap();
+        assert_eq!(states[0].state, "hidden");
         std::fs::remove_dir_all(dir).ok();
     }
 

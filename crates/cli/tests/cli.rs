@@ -5232,6 +5232,35 @@ fn convert_reports_column_widths() {
 }
 
 #[test]
+fn convert_can_hide_a_sheet() {
+    let dir = TempDir::new("hidesheet");
+    let csv = dir.join("data.csv");
+    std::fs::write(&csv, "id\n1\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            csv.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--hide-sheet",
+            "data",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let json = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--visibility", "--json"])
+        .output()
+        .unwrap();
+    assert!(json.status.success());
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(stdout.contains("\"state\":\"hidden\""), "{stdout}");
+}
+
+#[test]
 fn convert_writes_merged_ranges() {
     let dir = TempDir::new("mergedwrite");
     let csv = dir.join("data.csv");
