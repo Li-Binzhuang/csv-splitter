@@ -1,0 +1,51 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "dfc23e8fc5527f0a5aaa11310aee66ee203fe3b077045630458c085e7e3fb496",
+  "batch_id": "1ab58153be7a9f61360a07b7d13025957dd161f7be3f0daf0a3e15bba5731be8",
+  "composite_identity": "40e8a167591c9be658818a56ab3e9081f6938b0ada8f1726878847a99dbc50be",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "f2585726a5193346d81666ffc38a9e091d161e69a9cb7716bf90deb68e23c38d",
+  "targets": [
+    {
+      "candidate_id": "9e1fc483305256db981980c48ea081900343a8ef3e0a138840f3780bd50415c2",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "7273c0b23fd7b062c35e6e72ce4b8a58b5a2da971afadb04a27215b5d068ffda",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert：转码、xlsx/csv/tsv/ndjson/parquet、highlight、number-format、formats、protection 检测、验证、no-freeze、protect-sheet、col-width、密码与粒度 | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；--formats；--protection；--validations；--number-format/raw（透传自定义码）；目录叠加；--data-validation 列表/公式/whole/decimal/error-style/range；--col-width | S:不覆盖输入；检测仅 xlsx；密码 1–15 ASCII；公式 ≤255；重复列/宽度越界退出 2"
+    },
+    {
+      "candidate_id": "8f877dda11fad4d108b64805f03ff75c7a5632709d6f35389ee1401d5651b48e",
+      "object_ref": "code:crates/cli/src/commands/preview.rs",
+      "path": "crates/cli/src/commands/preview.rs",
+      "change": "update",
+      "source_sha256": "e540c6e2c614c991d200e91403bc7f6cb3e6c663c1a04cbde137522b78e4069d",
+      "existing_entry": "preview.rs[SD7S]: F:CLI preview 命令：分页预览与索引/缓存读取 | R:code:crates/cli/src/commands/mod.rs,code:crates/cli/src/commands/shared.rs,code:crates/core/src/preview.rs | A:Parser；rows；preview_from_index；SparseIndex；print_table | S:不加载全表；不覆盖输入；错误非零"
+    },
+    {
+      "candidate_id": "5b70f25eba099d885f0d9a86a66252a1eec23ab20cd3a1c8cb795316fdf36414",
+      "object_ref": "code:docs/GETTING_STARTED.md",
+      "path": "docs/GETTING_STARTED.md",
+      "change": "update",
+      "source_sha256": "0df94886cfeba5f8ce1beacef3f54cacca1a5c984e740257d8ebfb6c27d0481d",
+      "existing_entry": "GETTING_STARTED.md[SU6M]: F:十分钟上手：用故意不干净的示例走完整链路 | R:code:crates/core/src/demo.rs | A:逐步骤贴真实输出，覆盖带引号换行与多一个逗号的错位行；命令一律以 csvx 开头，示例目录为 csvx-demo/ | S:-"
+    },
+    {
+      "candidate_id": "4749521026676668569fc21b4bd44221396315b90dba998433df22316e1eb30d",
+      "object_ref": "code:docs/NUMBER_FORMAT_COVERAGE.md",
+      "path": "docs/NUMBER_FORMAT_COVERAGE.md",
+      "change": "update",
+      "source_sha256": "244f8a8e62fc71835fe1578b2693c0036084b41558b36c6aff497035503b8ac5",
+      "existing_entry": "NUMBER_FORMAT_COVERAGE.md[SA7T]: F:数字格式覆盖矩阵与缺口 | R:code:crates/core/src/layout.rs,code:crates/core/src/xlsx.rs | A:千分位/小数/百分比/货币/日期时间；日期序列号→ISO；点/斜杠/12 小时；分数；8 色；会计对齐；Scientific/Text；任意自定义码透传 | S:白名单解析严格；透传码 ≤255；多段会计码仍不支持"
+    },
+    {
+      "candidate_id": "2f32ae72b23e96405179577bbebea50d5cfc6ac25db4d5f341e37a3119026e41",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "791661d163b9f821e62e15bb8af3958c49a5e302059a46379fa628d15322381d",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同新功能，边界并入母项，每轮需 feat 增量；575 验收、576–578 待做；Round587 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

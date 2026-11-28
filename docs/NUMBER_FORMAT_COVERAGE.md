@@ -49,6 +49,10 @@
 | 任意 Excel 自定义格式码 | 支持（新增，透传） | `--number-format-raw` 原样写入 formatCode（≤255），不解释、不改写 | `raw_number_format_codes_are_kept_verbatim` |
 | 白名单解析 | 严格模式保留 | `NumberFormat::parse` 对未识别格式仍报错，不静默套用 | `date_time_formats_render_iso_values` |
 
+## CLI 显示
+
+`csvx preview file.csv --number-format "amount:#,##0.00;ts:yyyy-mm-dd"` 只改预览显示，文件不变；日期序列号（如 45292）按 Excel 规则转 ISO。
+
 ## 本轮验收
 
 ```bash

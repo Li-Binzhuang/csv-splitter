@@ -1,3 +1,4 @@
+use crate::commands::convert::parse_column_formats;
 use crate::commands::shared::print_table;
 use crate::{
     parse_delimiter, print_command_help, project_columns, report_failure, warn_pending_edits,
@@ -18,6 +19,7 @@ pub(crate) fn cmd_preview(args: &[String]) -> i32 {
     let mut start_row: u64 = 0;
     let mut shown_columns: Vec<String> = Vec::new();
     let mut index_path: Option<PathBuf> = None;
+    let mut number_format: Option<String> = None;
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
@@ -56,6 +58,13 @@ pub(crate) fn cmd_preview(args: &[String]) -> i32 {
             },
             "--index" => match p.value("--index") {
                 Ok(v) => index_path = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--number-format" => match p.value("--number-format") {
+                Ok(v) => number_format = Some(v),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -106,8 +115,26 @@ pub(crate) fn cmd_preview(args: &[String]) -> i32 {
         }
     };
 
+    let column_formats = match number_format.as_deref() {
+        Some(text) => match parse_column_formats(text, false) {
+            Ok(formats) => formats,
+            Err(e) => {
+                eprintln!("error: {e}");
+                return 2;
+            }
+        },
+        None => Vec::new(),
+    };
+
     if start_row > 0 {
-        return preview_from_index(&input, rows, start_row, override_delim, index_path);
+        return preview_from_index(
+            &input,
+            rows,
+            start_row,
+            override_delim,
+            index_path,
+            &column_formats,
+        );
     }
 
     let quotes = match csvx_core::csv_reader::QuoteStyle::parse(&quotes_text) {
@@ -131,6 +158,7 @@ pub(crate) fn cmd_preview(args: &[String]) -> i32 {
             if let Err(code) = project_columns(&mut headers, &mut shown, &shown_columns) {
                 return code;
             }
+            apply_column_formats(&headers, &mut shown, &column_formats);
             print_table(&headers, &shown);
             0
         }
@@ -145,6 +173,7 @@ fn preview_from_index(
     start_row: u64,
     delim: Option<Delimiter>,
     index_path: Option<PathBuf>,
+    column_formats: &[(String, csvx_core::layout::NumberFormat)],
 ) -> i32 {
     let sidecar = index_path.unwrap_or_else(|| SparseIndex::sidecar_path(input));
     let started = Instant::now();
@@ -177,14 +206,26 @@ fn preview_from_index(
         idx.interval(),
         start_row
     );
-    println!("{}", String::from_utf8_lossy(&header).trim_end());
+    let header_text = String::from_utf8_lossy(&header);
+    let header_fields = parse_csv_record(header_text.trim_end(), delim_byte);
+    println!("{header_text}");
     println!("{}", "-".repeat(40));
 
     match idx.read_rows(input, start_row, rows as u64) {
         Ok(found) => {
             for (i, raw) in found.iter().enumerate() {
                 let text = String::from_utf8_lossy(raw);
-                let fields = parse_csv_record(text.trim_end(), delim_byte);
+                let mut fields = parse_csv_record(text.trim_end(), delim_byte);
+                for (index, header) in header_fields.iter().enumerate() {
+                    let Some(cell) = fields.get_mut(index) else {
+                        continue;
+                    };
+                    if let Some((_, format)) =
+                        column_formats.iter().find(|(name, _)| name == header)
+                    {
+                        *cell = format.render(cell);
+                    }
+                }
                 println!("{:>9}  {}", start_row + i as u64 + 1, fields.join(" | "));
             }
             0
@@ -192,6 +233,23 @@ fn preview_from_index(
         Err(e) => {
             let _ = report_failure("preview", format!("reading rows: {e}"));
             1
+        }
+    }
+}
+
+fn apply_column_formats(
+    headers: &[String],
+    shown: &mut [Vec<String>],
+    formats: &[(String, csvx_core::layout::NumberFormat)],
+) {
+    for (index, header) in headers.iter().enumerate() {
+        let Some((_, format)) = formats.iter().find(|(name, _)| name == header) else {
+            continue;
+        };
+        for row in shown.iter_mut() {
+            if let Some(cell) = row.get_mut(index) {
+                *cell = format.render(cell);
+            }
         }
     }
 }

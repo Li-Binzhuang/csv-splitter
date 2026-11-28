@@ -316,6 +316,26 @@ fn index_builds_a_sidecar_and_reports_rows() {
 }
 
 #[test]
+fn preview_renders_number_formats() {
+    let dir = TempDir::new("previewformats");
+    let csv = dir.join("t.csv");
+    std::fs::write(&csv, "id,amount,ts\n1,1234.5,45292\n").unwrap();
+    let output = Command::new(bin())
+        .args([
+            "preview",
+            csv.to_str().unwrap(),
+            "--number-format",
+            "amount:#,##0.00;ts:yyyy-mm-dd",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("1,234.50"), "{stdout}");
+    assert!(stdout.contains("2024-01-01"), "{stdout}");
+}
+
+#[test]
 fn preview_start_row_uses_the_index() {
     let dir = TempDir::new("jump");
     let input = indexed_csv(&dir);

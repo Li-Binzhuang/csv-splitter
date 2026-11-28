@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use std::sync::mpsc;
 use std::time::Instant;
 
-fn parse_column_formats(
+pub(crate) fn parse_column_formats(
     text: &str,
     raw: bool,
 ) -> Result<Vec<(String, csvx_core::layout::NumberFormat)>, String> {

@@ -591,12 +591,14 @@
 - [x] 项575 任意自定义格式码透传（新能力）：`--number-format-raw` 保留任意格式码到 formatCode；
   测试 `raw_number_format_codes_are_kept_verbatim`、
   `convert_keeps_raw_custom_number_format_codes`。
-- [ ] 项576 preview/view 数字格式显示（新能力）：把 layout render 接到 CLI 预览，支持日期序列号/百分比等；
-  验收：CLI + 单测 + gate。
+- [x] 项576 preview 数字格式显示（新能力）：`preview --number-format 列:格式码` 只改显示；
+  支持千分位/小数/百分比/日期/日期序列号；测试 `preview_renders_number_formats`。
 - [ ] 项577 数据验证日期/时间区间（新能力）：type=date/time，边界用 ISO 转序列；
   验收：XML 断言 + 单测 + gate。
 - [ ] 项578 xlsx 导入自定义格式码回读（新能力）：xlsx_column_formats 保留未识别格式码；
   验收：round-trip + 单测 + gate。
+- [ ] 项579 xlsx 公式回读 API（新能力）：读取带公式单元格的公式文本（不是缓存值）；
+  验收：单测 + round-trip + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
@@ -1002,6 +1004,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 588（项576 preview 数字格式显示，feat 级新能力，验收完成）；
+定向与全量 gate/package 通过；发布包 SHA `a955183d…060a9b00`；
+轮首 push 成功（补发 3 提交），本轮不再 push。
 
 Round 587（项575 任意自定义格式码透传，feat 级新能力，验收完成）；
 定向与全量 gate/package 通过；发布包 SHA `67124db4…212dfe49`；

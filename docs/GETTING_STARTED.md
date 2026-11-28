@@ -25,7 +25,7 @@ cd csvx-demo   # 后面的命令都在这个目录里跑
 ## 1 · 看一眼：`preview`
 
 ```bash
-$ csvx preview orders.csv --rows 5
+$ csvx preview orders.csv --rows 5 --number-format "amount:#,##0.00"
 orders.csv — 0.9 MB, ~20499 rows, delimiter Comma
 id | cust_no | city | amount | note | ts
 ----------------------------------------
@@ -73,6 +73,8 @@ $ csvx search orders.csv "second line" --limit 3 --json
 ```bash
 $ csvx preview orders.csv --start-row 2 --rows 1
 ```
+
+`--number-format "列:格式码"` 只改预览显示（千分位/小数/百分比/日期/日期序列号），文件本身不变。
 
 ## 4 · 筛出来存成文件：`filter --out --verify`
 
