@@ -1,0 +1,27 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "9407bfa4831882c65c452c95458651caaf5e72c1d415cdef981cab33b4a9974b",
+  "batch_id": "1d95c6b142f89cf3b07bb6f332c1765254cf8e37b4593f4db61c978965f86f77",
+  "composite_identity": "45f3f3594300daf73c35917f618a6bee2d30860cbbd85049155159de6325bf47",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "82cbd30f2b2bafc83c2d3d47ace8a0293cc4fbec4144a9cb11ca90ba433dfb4f",
+  "targets": [
+    {
+      "candidate_id": "27e0d34cf40ad031621b29abaf09aea2f9ff9f9005b1356dab3d045c6d0528bd",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "6575988c15688d9d9bf2f84ff62dd489e5d79f316c61ffe25a7bca73317986d9",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles/docProps；dataValidations；mergeCells 与行高写出；sheet state；后处理 set_core_properties/set_merge_cells/hide_sheets/set_page_setup；回读 validations/formulas/conditional_formats/sheet_view/header_names/merged_ranges/hidden_layout/column_widths/row_heights/sheet_visibility/core_properties/page_setup/print_layout | S:不写公式/图表；列表≤255；四选一验证源；后处理需 sheet1/workbook"
+    },
+    {
+      "candidate_id": "d0348c0bb23ec8463554555b5d1116fddec3b55281923ab2cce8273b6c25eb15",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "ee5884fae33917cce855df615e4118b4a12e2033ae0612d545511425c5f5a96f",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同新功能，边界并入母项，每轮需 feat 增量；613 验收、614–616 待做；Round625 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

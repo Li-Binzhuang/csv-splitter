@@ -3583,6 +3583,96 @@ pub fn xlsx_set_page_setup(path: &Path, setup: &PageSetupInfo) -> std::io::Resul
     Ok(())
 }
 
+/// Add or replace the `_xlnm.Print_Area` defined name in an existing xlsx.
+pub fn xlsx_set_print_area(path: &Path, area: &str) -> std::io::Result<()> {
+    let area = area.trim();
+    if area.is_empty() || area.chars().count() > 255 {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "print area must be 1-255 characters",
+        ));
+    }
+    let source = std::fs::File::open(path)?;
+    let mut archive = zip::ZipArchive::new(source).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let temp = path.with_extension("printarea.tmp");
+    let target = std::fs::File::create(&temp)?;
+    let mut writer = zip::ZipWriter::new(target);
+    let options = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated)
+        .large_file(true);
+    let mut found = false;
+    let defined_re =
+        Regex::new(r#"(?s)<definedName\b[^>]*name="_xlnm\.Print_Area"[^>]*>.*?</definedName>"#)
+            .unwrap();
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index)?;
+        let name = entry.name().to_string();
+        let mut buffer = Vec::new();
+        std::io::Read::read_to_end(&mut entry, &mut buffer)?;
+        if name != "xl/workbook.xml" {
+            writer
+                .start_file(&name, options)
+                .map_err(|error| std::io::Error::other(error.to_string()))?;
+            std::io::Write::write_all(&mut writer, &buffer)?;
+            continue;
+        }
+        found = true;
+        let mut xml = String::from_utf8_lossy(&buffer).to_string();
+        let sheet = xml
+            .find("<sheet ")
+            .and_then(|start| {
+                let tag_end = xml[start..].find('>')? + start;
+                tag_attribute(&xml[start..=tag_end], "name")
+            })
+            .map(|name| xml_unescape(&name))
+            .unwrap_or_else(|| "Sheet1".to_string());
+        let value = if area.contains('!') {
+            area.to_string()
+        } else {
+            format!("{sheet}!{area}")
+        };
+        let entry_xml = format!(
+            "<definedName name=\"_xlnm.Print_Area\" localSheetId=\"0\">{}</definedName>",
+            xml_text(&value)
+        );
+        if let Some(capture) = defined_re.find(&xml) {
+            xml.replace_range(capture.range(), &entry_xml);
+        } else if xml.contains("<definedNames>") {
+            xml = xml.replace("<definedNames>", &format!("<definedNames>{entry_xml}"));
+        } else if xml.contains("<definedNames") {
+            let start = xml.find("<definedNames").unwrap();
+            let end = xml[start..].find('>').unwrap() + start + 1;
+            xml.insert_str(end, &entry_xml);
+        } else {
+            xml = xml.replace(
+                "</workbook>",
+                &format!("<definedNames>{entry_xml}</definedNames></workbook>"),
+            );
+        }
+        writer
+            .start_file(&name, options)
+            .map_err(|error| std::io::Error::other(error.to_string()))?;
+        std::io::Write::write_all(&mut writer, xml.as_bytes())?;
+    }
+    writer
+        .finish()
+        .map_err(|error| std::io::Error::other(error.to_string()))?;
+    if !found {
+        let _ = std::fs::remove_file(&temp);
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "xlsx has no xl/workbook.xml",
+        ));
+    }
+    std::fs::rename(&temp, path)?;
+    Ok(())
+}
+
 /// Page margins read back from `<pageMargins>`.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PageMargins {
@@ -6869,6 +6959,23 @@ mod tests {
         xlsx_set_merge_cells(&path, &["A1:B1".to_string()]).unwrap();
         let ranges = xlsx_merged_ranges(&path, None).unwrap();
         assert_eq!(ranges, vec!["A1:B1".to_string()]);
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn print_area_can_be_set_after_export() {
+        let dir = temp_path("print area writeback");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("print-set.xlsx");
+        let sheets = vec![Sheet {
+            name: "one".to_string(),
+            headers: vec!["id".into()],
+            rows: vec![vec!["1".into()]],
+        }];
+        write_sheets_with_formats(&path, &sheets, &[Vec::new()]).unwrap();
+        xlsx_set_print_area(&path, "A1:C9").unwrap();
+        let layout = xlsx_print_layout(&path, None).unwrap();
+        assert_eq!(layout.print_area.as_deref(), Some("one!A1:C9"));
         std::fs::remove_dir_all(dir).ok();
     }
 
