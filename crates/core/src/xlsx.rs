@@ -2333,6 +2333,75 @@ fn workbook_sheet_name(path: &Path) -> String {
     name.chars().take(31).collect()
 }
 
+/// Frozen panes and auto-filter settings read back from a worksheet.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SheetViewInfo {
+    pub frozen_rows: u64,
+    pub frozen_columns: u64,
+    pub auto_filter: Option<String>,
+}
+
+/// Read frozen panes and auto-filter settings for one worksheet.
+pub fn xlsx_sheet_view(input: &Path, sheet: Option<&str>) -> std::io::Result<SheetViewInfo> {
+    let file = std::fs::File::open(input)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let workbook = read_entry(&mut archive, "xl/workbook.xml")?;
+    let rels = read_entry(&mut archive, "xl/_rels/workbook.xml.rels").unwrap_or_default();
+    let sheets = workbook_sheets(&workbook);
+    if sheets.is_empty() {
+        return Err(invalid("xlsx has no worksheets"));
+    }
+    let selected = select_sheet(&sheets, sheet)?;
+    let target = relationship_target(&rels, &selected.rid)
+        .or_else(|| (sheets.len() == 1).then(|| "xl/worksheets/sheet1.xml".to_string()))
+        .ok_or_else(|| {
+            invalid(&format!(
+                "xlsx sheet {:?} has no relationship target",
+                selected.name
+            ))
+        })?;
+    let normalized = if let Some(stripped) = target.strip_prefix('/') {
+        stripped.to_string()
+    } else if target.starts_with("xl/") {
+        target
+    } else {
+        format!("xl/{}", target.trim_start_matches("./"))
+    };
+    let sheet_xml = read_entry(&mut archive, &normalized)?;
+    Ok(parse_sheet_view(&sheet_xml))
+}
+
+fn parse_sheet_view(sheet_xml: &str) -> SheetViewInfo {
+    let pane = sheet_xml.find("<pane ").map(|start| {
+        let tail = &sheet_xml[start..];
+        let end = tail.find('>').map(|index| index + 1).unwrap_or(tail.len());
+        &tail[..end]
+    });
+    let frozen_rows = pane
+        .and_then(|tag| tag_attribute(tag, "ySplit"))
+        .and_then(|value| value.parse::<u64>().ok())
+        .unwrap_or(0);
+    let frozen_columns = pane
+        .and_then(|tag| tag_attribute(tag, "xSplit"))
+        .and_then(|value| value.parse::<u64>().ok())
+        .unwrap_or(0);
+    let auto_filter = sheet_xml.find("<autoFilter ").and_then(|start| {
+        let tail = &sheet_xml[start..];
+        let end = tail.find('>')?;
+        tag_attribute(&tail[..=end], "ref")
+    });
+    SheetViewInfo {
+        frozen_rows,
+        frozen_columns,
+        auto_filter,
+    }
+}
+
 /// One conditional-formatting rule read back from an xlsx sheet.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConditionalFormatInfo {
@@ -5352,6 +5421,38 @@ mod tests {
         let error = xlsx_sheet_protection(&path, Some("missing")).unwrap_err();
         assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
         assert!(error.to_string().contains("missing"), "{error}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn sheet_view_reads_frozen_panes_and_auto_filter() {
+        let dir = temp_path("sheet view");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("view.xlsx");
+        let sheets = vec![Sheet {
+            name: "one".to_string(),
+            headers: vec!["id".into(), "amount".into()],
+            rows: vec![vec!["1".into(), "2".into()]],
+        }];
+        write_sheets_with_formats_widths_and_protection(
+            &path,
+            &sheets,
+            &[Vec::new()],
+            &[Vec::new()],
+            true,
+            true,
+            false,
+            None,
+            true,
+            true,
+            &[],
+            &[],
+        )
+        .unwrap();
+        let view = xlsx_sheet_view(&path, None).unwrap();
+        assert_eq!(view.frozen_rows, 1);
+        assert_eq!(view.frozen_columns, 0);
+        assert_eq!(view.auto_filter.as_deref(), Some("A1:B2"));
         std::fs::remove_dir_all(dir).ok();
     }
 
