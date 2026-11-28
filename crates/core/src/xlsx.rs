@@ -2338,6 +2338,101 @@ fn workbook_sheet_name(path: &Path) -> String {
     name.chars().take(31).collect()
 }
 
+/// First-row header cell values, paired with their Excel column letters.
+pub fn xlsx_header_names(
+    input: &Path,
+    sheet: Option<&str>,
+) -> std::io::Result<Vec<(String, String)>> {
+    let file = std::fs::File::open(input)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let workbook = read_entry(&mut archive, "xl/workbook.xml")?;
+    let rels = read_entry(&mut archive, "xl/_rels/workbook.xml.rels").unwrap_or_default();
+    let sheets = workbook_sheets(&workbook);
+    if sheets.is_empty() {
+        return Err(invalid("xlsx has no worksheets"));
+    }
+    let selected = select_sheet(&sheets, sheet)?;
+    let target = relationship_target(&rels, &selected.rid)
+        .or_else(|| (sheets.len() == 1).then(|| "xl/worksheets/sheet1.xml".to_string()))
+        .ok_or_else(|| {
+            invalid(&format!(
+                "xlsx sheet {:?} has no relationship target",
+                selected.name
+            ))
+        })?;
+    let normalized = if let Some(stripped) = target.strip_prefix('/') {
+        stripped.to_string()
+    } else if target.starts_with("xl/") {
+        target
+    } else {
+        format!("xl/{}", target.trim_start_matches("./"))
+    };
+    let sheet_xml = read_entry(&mut archive, &normalized)?;
+    let shared = read_entry(&mut archive, "xl/sharedStrings.xml").unwrap_or_default();
+    Ok(parse_header_names(&sheet_xml, &shared))
+}
+
+fn inner_text(block: &str, name: &str) -> Option<String> {
+    let start = block.find(&format!("<{name}"))?;
+    let open = block[start..].find('>')? + start;
+    if block[start..=open].ends_with("/>") {
+        return None;
+    }
+    let end = block[open + 1..].find(&format!("</{name}>"))? + open + 1;
+    Some(xml_unescape(&block[open + 1..end]))
+}
+
+fn parse_header_names(sheet_xml: &str, shared_xml: &str) -> Vec<(String, String)> {
+    let shared: Vec<String> = shared_xml
+        .match_indices("<si>")
+        .filter_map(|(start, _)| {
+            let tail = &shared_xml[start..];
+            let end = tail.find("</si>")?;
+            inner_text(&tail[..end], "t")
+        })
+        .collect();
+    let mut out = Vec::new();
+    let mut rest = sheet_xml;
+    while let Some(start) = rest.find("<c ") {
+        let tail = &rest[start..];
+        let Some(end) = tail.find("</c>") else { break };
+        let block = &tail[..end + "</c>".len()];
+        let cell = tag_attribute(block, "r").unwrap_or_default();
+        let row = cell
+            .chars()
+            .filter(|ch| ch.is_ascii_digit())
+            .collect::<String>();
+        if row != "1" {
+            rest = &tail[end + "</c>".len()..];
+            continue;
+        }
+        let letter: String = cell
+            .chars()
+            .take_while(|ch| ch.is_ascii_alphabetic())
+            .collect();
+        let name = if tag_attribute(block, "t").as_deref() == Some("s") {
+            inner_text(block, "v")
+                .and_then(|index| index.parse::<usize>().ok())
+                .and_then(|index| shared.get(index).cloned())
+                .unwrap_or_default()
+        } else {
+            inner_text(block, "t")
+                .or_else(|| inner_text(block, "v"))
+                .unwrap_or_default()
+        };
+        if !letter.is_empty() {
+            out.push((letter, name));
+        }
+        rest = &tail[end + "</c>".len()..];
+    }
+    out
+}
+
 /// Frozen panes and auto-filter settings read back from a worksheet.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SheetViewInfo {
@@ -5426,6 +5521,28 @@ mod tests {
         let error = xlsx_sheet_protection(&path, Some("missing")).unwrap_err();
         assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
         assert!(error.to_string().contains("missing"), "{error}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn header_names_read_first_row_cells() {
+        let dir = temp_path("header names");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("headers.xlsx");
+        let sheets = vec![Sheet {
+            name: "one".to_string(),
+            headers: vec!["id".into(), "amount".into()],
+            rows: vec![vec!["1".into(), "2".into()]],
+        }];
+        write_sheets_with_formats(&path, &sheets, &[Vec::new()]).unwrap();
+        let names = xlsx_header_names(&path, None).unwrap();
+        assert_eq!(
+            names,
+            vec![
+                ("A".to_string(), "id".to_string()),
+                ("B".to_string(), "amount".to_string())
+            ]
+        );
         std::fs::remove_dir_all(dir).ok();
     }
 

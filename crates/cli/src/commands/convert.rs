@@ -533,6 +533,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut formulas = false;
     let mut conditional_formats = false;
     let mut sheet_view = false;
+    let mut validation_checks = false;
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -656,6 +657,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--formulas" => formulas = true,
             "--conditional-formats" => conditional_formats = true,
             "--sheet-view" => sheet_view = true,
+            "--checks" => validation_checks = true,
             "--json" => formats_json = true,
             "--number-format-raw" => match p.value("--number-format-raw") {
                 Ok(v) => number_format_raw = Some(v),
@@ -974,6 +976,11 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         return 0;
     }
 
+    if validation_checks && !validations {
+        eprintln!("error: --checks is only valid together with --validations");
+        return 2;
+    }
+
     if protection || validations {
         if validations {
             if protection || show_formats {
@@ -1019,6 +1026,71 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                     }
                 }
             }
+            if validation_checks {
+                let mut rules: Vec<String> = Vec::new();
+                for sheet_name in &names {
+                    let sheet_arg = (!sheet_name.is_empty()).then_some(sheet_name.as_str());
+                    let headers = match csvx_core::xlsx::xlsx_header_names(&input, sheet_arg) {
+                        Ok(headers) => headers,
+                        Err(error) => {
+                            eprintln!("error: {error}");
+                            return 1;
+                        }
+                    };
+                    for entry in entries
+                        .iter()
+                        .filter(|entry| !all_sheets || entry.sheet == sheet_name.as_str())
+                    {
+                        let header = headers
+                            .iter()
+                            .find(|(letter, _)| letter == &entry.column)
+                            .map(|(_, name)| name.as_str())
+                            .unwrap_or(&entry.column);
+                        match entry.kind.as_str() {
+                            "list" => {
+                                if let Some(formula) = entry.formula1.as_deref() {
+                                    if let Some(inner) = formula
+                                        .trim()
+                                        .strip_prefix('"')
+                                        .and_then(|text| text.strip_suffix('"'))
+                                    {
+                                        if !inner.trim().is_empty() {
+                                            rules.push(format!("{header} in {inner}"));
+                                        }
+                                    }
+                                }
+                            }
+                            "whole" | "decimal" => {
+                                if let Some(min) = entry.formula1.as_deref() {
+                                    rules.push(format!("{header}>={min}"));
+                                }
+                                if let Some(max) = entry.formula2.as_deref() {
+                                    rules.push(format!("{header}<={max}"));
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                if formats_json {
+                    print!("[");
+                    for (index, rule) in rules.iter().enumerate() {
+                        if index > 0 {
+                            print!(",");
+                        }
+                        print!("{}", json_string(rule));
+                    }
+                    println!("]");
+                } else if rules.is_empty() {
+                    println!("no enforceable data validation checks");
+                } else {
+                    for rule in rules {
+                        println!("{rule}");
+                    }
+                }
+                return 0;
+            }
+
             if formats_json {
                 print!("[");
                 for (index, entry) in entries.iter().enumerate() {

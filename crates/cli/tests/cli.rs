@@ -5006,6 +5006,45 @@ fn convert_keeps_raw_custom_number_format_codes() {
 }
 
 #[test]
+fn convert_reports_validation_checks() {
+    let dir = TempDir::new("validationchecks");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "status,amount\ngood,10\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts/a.csv").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--data-validation",
+            "status:good,bad",
+            "--data-validation-whole",
+            "amount:0,1200",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let checks = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--validations",
+            "--checks",
+        ])
+        .output()
+        .unwrap();
+    assert!(checks.status.success());
+    let stdout = String::from_utf8_lossy(&checks.stdout);
+    assert!(stdout.contains("status in good,bad"), "{stdout}");
+    assert!(stdout.contains("amount>=0"), "{stdout}");
+    assert!(stdout.contains("amount<=1200"), "{stdout}");
+}
+
+#[test]
 fn convert_reports_sheet_view_settings() {
     let dir = TempDir::new("sheetviewinspect");
     std::fs::create_dir(dir.join("parts")).unwrap();
