@@ -14,6 +14,8 @@ pub(crate) fn cmd_validate(args: &[String]) -> i32 {
     let mut json = false;
     let mut quiet = false;
     let mut delim = "auto".to_string();
+    let mut against: Option<PathBuf> = None;
+    let mut sheet: Option<String> = None;
 
     while let Some(arg) = p.next() {
         match arg.as_str() {
@@ -40,6 +42,20 @@ pub(crate) fn cmd_validate(args: &[String]) -> i32 {
                     eprintln!("error: --limit is a positive row count");
                     return 2;
                 }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--against" => match p.value("--against") {
+                Ok(v) => against = Some(PathBuf::from(v)),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--sheet" => match p.value("--sheet") {
+                Ok(v) => sheet = Some(v),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -77,8 +93,66 @@ pub(crate) fn cmd_validate(args: &[String]) -> i32 {
         eprintln!("error: validate needs a file");
         return 2;
     };
+    if let Some(book) = against.as_deref() {
+        let delimiter = match parse_delimiter(&delim, &input) {
+            Ok(d) => d,
+            Err(e) => {
+                eprintln!("error: {e}");
+                return 2;
+            }
+        };
+        let quotes = match parse_quotes(&quotes_text) {
+            Ok(q) => q,
+            Err(e) => {
+                eprintln!("error: {e}");
+                return 2;
+            }
+        };
+        let preview =
+            match csvx_core::preview::load_preview_with(&input, 1, Some(delimiter), quotes) {
+                Ok(preview) => preview,
+                Err(e) => return report_failure("validate", e),
+            };
+        let validations = match csvx_core::xlsx::xlsx_data_validations(book, sheet.as_deref()) {
+            Ok(validations) => validations,
+            Err(e) => return report_failure("validate", e),
+        };
+        for validation in validations {
+            let index = excel_letter_index(&validation.column);
+            let Some(header) = preview.headers.get(index) else {
+                continue;
+            };
+            match validation.kind.as_str() {
+                "list" => {
+                    let Some(formula) = validation.formula1.as_deref() else {
+                        continue;
+                    };
+                    let Some(values) = inline_list_values(formula) else {
+                        continue;
+                    };
+                    if !values.is_empty() {
+                        rules_text.push(format!("{header} in {}", values.join(",")));
+                    }
+                }
+                "whole" | "decimal" => {
+                    for (spec, bound) in [
+                        (">=", validation.formula1.as_deref()),
+                        ("<=", validation.formula2.as_deref()),
+                    ] {
+                        if let Some(bound) = bound.filter(|value| !value.trim().is_empty()) {
+                            rules_text.push(format!("{header}{spec}{}", bound.trim()));
+                        }
+                    }
+                    if validation.operator.as_str() == "greaterThanOrEqual" {
+                        // formula1 already covered the >= case above.
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
     if rules_text.is_empty() {
-        eprintln!("error: validate needs at least one --check (e.g. --check \"qty>=0\")");
+        eprintln!("error: validate needs at least one --check or an .xlsx with enforceable rules");
         return 2;
     }
     let rules: Vec<csvx_core::validate::Rule> = {
@@ -183,4 +257,26 @@ pub(crate) fn cmd_validate(args: &[String]) -> i32 {
     } else {
         0
     }
+}
+
+fn excel_letter_index(letters: &str) -> usize {
+    letters
+        .chars()
+        .filter(|ch| ch.is_ascii_alphabetic())
+        .fold(0usize, |acc, ch| {
+            acc * 26 + (ch.to_ascii_uppercase() as usize - 'A' as usize + 1)
+        })
+        .saturating_sub(1)
+}
+
+fn inline_list_values(formula: &str) -> Option<Vec<String>> {
+    let formula = formula.trim();
+    let inner = formula.strip_prefix('"')?.strip_suffix('"')?;
+    let values: Vec<String> = inner
+        .split(',')
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(|value| value.to_string())
+        .collect();
+    Some(values)
 }

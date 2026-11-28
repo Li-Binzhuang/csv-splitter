@@ -5006,6 +5006,59 @@ fn convert_keeps_raw_custom_number_format_codes() {
 }
 
 #[test]
+fn validate_uses_xlsx_data_validations_as_rules() {
+    let dir = TempDir::new("validateagainst");
+    let book = dir.join("book.xlsx");
+    let csv = dir.join("data.csv");
+    std::fs::write(&csv, "status,amount\ngood,10\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            csv.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--data-validation",
+            "status:good,bad",
+            "--data-validation-whole",
+            "amount:0,1200",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let clean = Command::new(bin())
+        .args([
+            "validate",
+            csv.to_str().unwrap(),
+            "--against",
+            book.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        clean.status.success(),
+        "{}",
+        String::from_utf8_lossy(&clean.stderr)
+    );
+
+    std::fs::write(&csv, "status,amount\noops,5000\n").unwrap();
+    let bad = Command::new(bin())
+        .args([
+            "validate",
+            csv.to_str().unwrap(),
+            "--against",
+            book.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(bad.status.code(), Some(1));
+    let stdout = String::from_utf8_lossy(&bad.stdout);
+    assert!(stdout.contains("violation"), "{stdout}");
+}
+
+#[test]
 fn convert_reports_conditional_formats() {
     let dir = TempDir::new("cfinspect");
     std::fs::create_dir(dir.join("parts")).unwrap();

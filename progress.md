@@ -610,11 +610,13 @@
   测试 `convert_reports_conditional_formats`。
 - [x] 项584 冻结与筛选回读 API（新能力）：`xlsx_sheet_view` 返回 frozen_rows/columns 与 autoFilter；
   测试 `sheet_view_reads_frozen_panes_and_auto_filter`。
-- [ ] 项585 数据验证一致性检查（新能力）：用 xlsx 数据验证规则校验 CSV 数据，输出违规单元格；
-  验收：CLI + 单测 + gate。
+- [x] 项585 数据验证一致性检查（新能力）：`validate --against book.xlsx data.csv` 把列表/整数/小数验证转规则；
+  顺带修复 `in` 规则拼接缺空格的真实缺陷；测试 `validate_uses_xlsx_data_validations_as_rules`。
 - [ ] 项586 --formats 显示自定义码（新能力）：导入回读的自定义格式码不再丢失，CLI 输出原始码；
   验收：CLI + 单测 + gate。
 - [ ] 项587 冻结与筛选检测 CLI（新能力）：CLI 参数 sheet-view 输出冻结与筛选设置；
+  验收：CLI + 单测 + gate。
+- [ ] 项588 数据验证转 validate 规则文本（新能力）：`--validations --checks` 输出可复用的 --check 文本；
   验收：CLI + 单测 + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
@@ -1021,6 +1023,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 597（项585 数据验证一致性检查，feat 级新能力，验收完成；修复 in 规则缺陷）；
+定向与全量 gate/package 通过；发布包 SHA `bd427939…eb3793b`；
+轮首 push 失败（积压 1 提交，本轮不再重试）。
 
 Round 596（项584 冻结与筛选回读 API，feat 级新能力，验收完成）；
 定向与全量 gate/package 通过；发布包 SHA `573a42a2…cae38d41`；

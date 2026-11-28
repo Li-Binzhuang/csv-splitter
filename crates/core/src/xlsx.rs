@@ -2304,6 +2304,11 @@ fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
     era * 146_097 + doe - 719_468
 }
 
+/// Convert a zero-based column index to Excel letters, e.g. 1 -> "B".
+pub fn excel_column_letter(index: usize) -> String {
+    column_name(index)
+}
+
 fn column_name(mut index: usize) -> String {
     let mut out = String::new();
     index += 1;

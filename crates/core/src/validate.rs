@@ -164,7 +164,7 @@ fn split_comparison(text: &str) -> Option<(&str, String)> {
             let rest = &text[at..];
             // ` in ` keeps its operand; the comparison operators keep theirs verbatim.
             let spec = if op == " in " {
-                format!("in {}", rest.trim_start_matches(" in ").trim())
+                format!(" in {}", rest.trim_start_matches(" in ").trim())
             } else {
                 rest.to_string()
             };

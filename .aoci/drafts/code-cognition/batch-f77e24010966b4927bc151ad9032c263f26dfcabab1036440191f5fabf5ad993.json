@@ -1,0 +1,51 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "3685c35901b755f1de3cad6ae88e1e245aadc5003b3921a671777584fb8860fb",
+  "batch_id": "f77e24010966b4927bc151ad9032c263f26dfcabab1036440191f5fabf5ad993",
+  "composite_identity": "d256a9e44e89119847ee6bad8db2166ac7b1abafe6d7f07c4781c50564fc918b",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "5cf4212726fc6e5b70a930c7600ea1038170738d9c7f6158b5728c2da9e9715e",
+  "targets": [
+    {
+      "candidate_id": "db44a4c1f715303e7a9130158e9fc7f0aaf21fbe3fadb8defcdaade5152d88c2",
+      "object_ref": "code:crates/cli/src/commands/validate.rs",
+      "path": "crates/cli/src/commands/validate.rs",
+      "change": "update",
+      "source_sha256": "2c2c5fe1e2870d1d66fa3635d46dea8b91fb0aef0c7952fc2491eee0bbf9023a",
+      "existing_entry": "validate.rs[SD7S]: F:CLI validate 命令：逐行校验并限流报告违规 | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/validate | A:Parser；--rules/--limit/--json；validate_limited；spawn_reporter；truncate_for_display | S:不覆盖输入；违规摘要；错误非零"
+    },
+    {
+      "candidate_id": "67b959c522323e88f943c0a6ad359ab27afe4fbeb8653625c7f70edb9bd246a1",
+      "object_ref": "code:crates/core/src/validate.rs",
+      "path": "crates/core/src/validate.rs",
+      "change": "update",
+      "source_sha256": "19ffb68c9341038887d58924912dc4db380b50ccc3f2078286a41c15342eb20b",
+      "existing_entry": "validate.rs[DQ8L]: F:列约束校验：只报告不改数据，可限制扫描行数 | R:code:crates/core/src/workbook/export.rs | A:检查的是 journal 应用后的值；报告含 rows、checked、partial、truncated、每规则计数与最多一千条明细；限制扫描时 partial 与 truncated 同时置位 | S:限制只查前缀时必须标出 partial，否则读者会把前缀计数当成全量结论"
+    },
+    {
+      "candidate_id": "4bbf9035ec4e9a09f15cfc1a565a0543155e6b883bade17e7021c670275fdb9e",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "c8703420da0d9e67415f5bb31d0831d507148ce0f6d81d7217400ff73b0d9f02",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles；dataValidations 全类型；回读 xlsx_data_validations/formulas/conditional_formats/sheet_view；多 sheet dxfs；保护读回；导入自定义码 | S:不写公式/图表；列表 ≤255；四选一验证源；errorStyle 三态"
+    },
+    {
+      "candidate_id": "4b14cead2af8942f7d7f72808bd476cf98f5afaafa9e53181a619c0dbb3788eb",
+      "object_ref": "code:docs/CAPABILITIES.md",
+      "path": "docs/CAPABILITIES.md",
+      "change": "update",
+      "source_sha256": "89e758f56eecf370fd899a10e2d78ea98a38b85db0c954f43fce1cc7f0494c71",
+      "existing_entry": "CAPABILITIES.md[SD7L]: F:能力清单：CLI/HTTP/MCP 与边界 | R:code:docs/API.md,code:docs/XLSX.md,code:docs/AGENT_API.md,code:docs/FORMULA_CACHE.md | A:pipeline history/attempt；staleReason；filter；gate；MCP 23 工具 | S:history 默认 4MiB 轮转；无 GUI；缓存上限；SSE 轮询"
+    },
+    {
+      "candidate_id": "cdcceb628bb807b0a8b155d667955255d4a22245c869072163ad98adc3a9038c",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "e86d233d2ea42b5e8af782725ece5f2a8913a2aa346fa0195d98f5155ab0086c",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同新功能，边界并入母项，每轮需 feat 增量；584 验收、585–587 待做；Round596 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

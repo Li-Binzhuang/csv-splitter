@@ -72,7 +72,7 @@
 加 `--apply-edits` 会先把表物化到临时文件再分析，让「加公式列 → 按它汇总」一步完成。
 
 校验的检查类型：`not-empty` / `numeric` / `int` / `date` / `unique` / 任意比较（`qty>=0`、`city in a,b`）。
-`validate` **只读不写**：违规行数和每类计数是精确的，违规明细最多 1000 条（超了会明说），
+`validate --against book.xlsx data.csv [--sheet NAME]` 把 xlsx 数据验证（列表、整数/小数区间）转成规则执行；日期/时间与自定义公式暂不转。`validate` **只读不写**：违规行数和每类计数是精确的，违规明细最多 1000 条（超了会明说），
 `unique` 记得住 500 万个不同值（超了也会明说）。
 
 聚合的算子统一是 `count / sum / mean / min / max`；`sum`/`mean` 用 Kahan 补偿求和。
