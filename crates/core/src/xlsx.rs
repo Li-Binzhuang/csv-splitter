@@ -3583,6 +3583,80 @@ pub fn xlsx_set_page_setup(path: &Path, setup: &PageSetupInfo) -> std::io::Resul
     Ok(())
 }
 
+/// Add or replace `<headerFooter>` texts on the first worksheet of an existing xlsx.
+pub fn xlsx_set_header_footer(path: &Path, info: &HeaderFooterInfo) -> std::io::Result<()> {
+    let source = std::fs::File::open(path)?;
+    let mut archive = zip::ZipArchive::new(source).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let temp = path.with_extension("headerfooter.tmp");
+    let target = std::fs::File::create(&temp)?;
+    let mut writer = zip::ZipWriter::new(target);
+    let options = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated)
+        .large_file(true);
+    let mut found_sheet = false;
+    let header_footer_re =
+        Regex::new(r"(?s)<headerFooter\b.*?</headerFooter>|<headerFooter\b[^>]*/>").unwrap();
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index)?;
+        let name = entry.name().to_string();
+        let mut buffer = Vec::new();
+        std::io::Read::read_to_end(&mut entry, &mut buffer)?;
+        if name != "xl/worksheets/sheet1.xml" {
+            writer
+                .start_file(&name, options)
+                .map_err(|error| std::io::Error::other(error.to_string()))?;
+            std::io::Write::write_all(&mut writer, &buffer)?;
+            continue;
+        }
+        found_sheet = true;
+        let mut xml = String::from_utf8_lossy(&buffer).to_string();
+        xml = header_footer_re.replace_all(&xml, "").to_string();
+        let mut block = String::from("<headerFooter");
+        if info.even_header.is_some() || info.even_footer.is_some() {
+            block.push_str(" differentOddEven=\"1\"");
+        }
+        if info.first_header.is_some() || info.first_footer.is_some() {
+            block.push_str(" differentFirst=\"1\"");
+        }
+        block.push('>');
+        for (tag, value) in [
+            ("oddHeader", info.odd_header.as_deref()),
+            ("oddFooter", info.odd_footer.as_deref()),
+            ("evenHeader", info.even_header.as_deref()),
+            ("evenFooter", info.even_footer.as_deref()),
+            ("firstHeader", info.first_header.as_deref()),
+            ("firstFooter", info.first_footer.as_deref()),
+        ] {
+            if let Some(value) = value {
+                block.push_str(&format!("<{tag}>{}</{tag}>", xml_text(value)));
+            }
+        }
+        block.push_str("</headerFooter>");
+        xml = xml.replace("</worksheet>", &format!("{block}</worksheet>"));
+        writer
+            .start_file(&name, options)
+            .map_err(|error| std::io::Error::other(error.to_string()))?;
+        std::io::Write::write_all(&mut writer, xml.as_bytes())?;
+    }
+    writer
+        .finish()
+        .map_err(|error| std::io::Error::other(error.to_string()))?;
+    if !found_sheet {
+        let _ = std::fs::remove_file(&temp);
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "xlsx has no xl/worksheets/sheet1.xml",
+        ));
+    }
+    std::fs::rename(&temp, path)?;
+    Ok(())
+}
+
 /// Add or replace `<pageMargins>` on the first worksheet of an existing xlsx.
 pub fn xlsx_set_page_margins(path: &Path, margins: &PageMargins) -> std::io::Result<()> {
     let source = std::fs::File::open(path)?;
@@ -7190,6 +7264,33 @@ mod tests {
         assert_eq!(read_back.paper_size, Some(9));
         assert_eq!(read_back.fit_to_width, Some(1));
         assert_eq!(read_back.scale, Some(90));
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn header_footer_can_be_set_after_export() {
+        let dir = temp_path("header footer writeback");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("hf-set.xlsx");
+        let sheets = vec![Sheet {
+            name: "one".to_string(),
+            headers: vec!["id".into()],
+            rows: vec![vec!["1".into()]],
+        }];
+        write_sheets_with_formats(&path, &sheets, &[Vec::new()]).unwrap();
+        let info = HeaderFooterInfo {
+            odd_header: Some("&C report".to_string()),
+            odd_footer: Some("&L csvx".to_string()),
+            even_header: Some("even".to_string()),
+            even_footer: None,
+            first_header: None,
+            first_footer: None,
+        };
+        xlsx_set_header_footer(&path, &info).unwrap();
+        let read_back = xlsx_header_footer(&path, None).unwrap();
+        assert_eq!(read_back.odd_header.as_deref(), Some("&C report"));
+        assert_eq!(read_back.odd_footer.as_deref(), Some("&L csvx"));
+        assert_eq!(read_back.even_header.as_deref(), Some("even"));
         std::fs::remove_dir_all(dir).ok();
     }
 
