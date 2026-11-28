@@ -76,7 +76,8 @@ csvx convert data.csv --format xlsx -o data.xlsx \
   --data-validation-blank \
   --protect-sheet \
   --col-width "amount:20" \
-  --protect-sheet-password test
+  --protect-sheet-password test \
+  --data-validation-formula "amount:AND(B2>0,B2<100)"
 ```
 
 - 规则用 `;` 分隔，每条 `列 操作符 值 : 颜色`；

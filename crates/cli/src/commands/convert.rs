@@ -64,6 +64,7 @@ fn parse_data_validations(text: &str) -> Result<Vec<csvx_core::xlsx::DataValidat
         validations.push(csvx_core::xlsx::DataValidation {
             column,
             values,
+            formula: None,
             prompt_title: None,
             prompt_message: None,
             error_title: None,
@@ -73,6 +74,39 @@ fn parse_data_validations(text: &str) -> Result<Vec<csvx_core::xlsx::DataValidat
     }
     if validations.is_empty() {
         return Err("--data-validation needs at least one column:values".to_string());
+    }
+    Ok(validations)
+}
+
+fn parse_validation_formulas(text: &str) -> Result<Vec<csvx_core::xlsx::DataValidation>, String> {
+    let mut validations = Vec::new();
+    for raw in split_format_specs(text) {
+        let (column, formula) = raw
+            .split_once(':')
+            .ok_or_else(|| format!("data validation formula {raw:?} needs column:formula"))?;
+        let column = column.trim().to_string();
+        let formula = formula.trim().to_string();
+        if column.is_empty() || formula.is_empty() {
+            return Err(format!(
+                "data validation formula {raw:?} needs column:formula"
+            ));
+        }
+        if validations
+            .iter()
+            .any(|validation: &csvx_core::xlsx::DataValidation| validation.column == column)
+        {
+            return Err(format!("data validation column {column:?} is repeated"));
+        }
+        validations.push(csvx_core::xlsx::DataValidation {
+            column,
+            values: Vec::new(),
+            formula: Some(formula),
+            prompt_title: None,
+            prompt_message: None,
+            error_title: None,
+            error_message: None,
+            allow_blank: false,
+        });
     }
     Ok(validations)
 }
@@ -291,6 +325,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut data_validation_blank = false;
     let mut protect_sheet = false;
     let mut protect_password: Option<String> = None;
+    let mut data_validation_formula: Option<String> = None;
     let mut column_width: Option<String> = None;
     let mut data_validation_prompt: Option<String> = None;
     let mut data_validation_error: Option<String> = None;
@@ -357,6 +392,13 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             "--data-validation" => match p.value("--data-validation") {
                 Ok(v) => data_validation = Some(v),
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--data-validation-formula" => match p.value("--data-validation-formula") {
+                Ok(v) => data_validation_formula = Some(v),
                 Err(e) => {
                     eprintln!("error: {e}");
                     return 2;
@@ -701,6 +743,30 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             },
             None => Vec::new(),
         };
+        if let Some(text) = data_validation_formula.as_deref() {
+            if !target.eq_ignore_ascii_case("xlsx") {
+                eprintln!("error: --data-validation-formula is only valid with --format xlsx");
+                return 2;
+            }
+            match parse_validation_formulas(text) {
+                Ok(formulas) => {
+                    for formula in formulas {
+                        if data_validations.iter().any(|v| v.column == formula.column) {
+                            eprintln!(
+                                "error: data validation column {:?} is repeated",
+                                formula.column
+                            );
+                            return 2;
+                        }
+                        data_validations.push(formula);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            }
+        }
         let validation_prompts = match data_validation_prompt.as_deref() {
             Some(_) if !target.eq_ignore_ascii_case("xlsx") => {
                 eprintln!("error: --data-validation-prompt is only valid with --format xlsx");

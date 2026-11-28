@@ -42,6 +42,8 @@ pub struct ConditionalRule {
 pub struct DataValidation {
     pub column: String,
     pub values: Vec<String>,
+    /// Custom validation formula used instead of the list, e.g. `AND(A2>0,B2<100)`.
+    pub formula: Option<String>,
     /// Optional input-message title shown when the cell is selected.
     pub prompt_title: Option<String>,
     /// Optional input-message body shown when the cell is selected.
@@ -1309,16 +1311,23 @@ fn data_validations_xml(
                     format!("data validation column not found: {}", validation.column),
                 )
             })?;
-        if validation.values.is_empty() {
+        if validation.formula.is_none() && validation.values.is_empty() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 "data validation needs at least one value",
             ));
         }
-        if validation
-            .values
-            .iter()
-            .any(|value| value.contains(',') || value.contains('"'))
+        if validation.formula.is_some() && !validation.values.is_empty() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "data validation cannot combine a list with a custom formula",
+            ));
+        }
+        if validation.formula.is_none()
+            && validation
+                .values
+                .iter()
+                .any(|value| value.contains(',') || value.contains('"'))
         {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
@@ -1326,7 +1335,7 @@ fn data_validations_xml(
             ));
         }
         let joined = validation.values.join(",");
-        if joined.chars().count() > 255 {
+        if validation.formula.is_none() && joined.chars().count() > 255 {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 "data validation list is longer than Excel's 255-character limit",
@@ -1365,11 +1374,25 @@ fn data_validations_xml(
                 xml_attribute(message)
             ));
         }
-        out.push_str(&format!(
-            "<dataValidation type=\"list\" allowBlank=\"{}\" showErrorMessage=\"1\"{prompt}{error} sqref=\"{column}2:{column}{last_row}\"><formula1>{}</formula1></dataValidation>",
-            if validation.allow_blank { "1" } else { "0" },
-            formula_literal(&joined)
-        ));
+        if let Some(formula) = validation.formula.as_deref() {
+            if formula.trim().is_empty() || formula.chars().count() > 255 {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "data validation formula must be 1-255 characters",
+                ));
+            }
+            out.push_str(&format!(
+                "<dataValidation type=\"custom\" allowBlank=\"{}\" showErrorMessage=\"1\"{prompt}{error} sqref=\"{column}2:{column}{last_row}\"><formula1>{}</formula1></dataValidation>",
+                if validation.allow_blank { "1" } else { "0" },
+                xml_text(formula)
+            ));
+        } else {
+            out.push_str(&format!(
+                "<dataValidation type=\"list\" allowBlank=\"{}\" showErrorMessage=\"1\"{prompt}{error} sqref=\"{column}2:{column}{last_row}\"><formula1>{}</formula1></dataValidation>",
+                if validation.allow_blank { "1" } else { "0" },
+                formula_literal(&joined)
+            ));
+        }
     }
     out.push_str("</dataValidations>");
     Ok(out)
@@ -4028,6 +4051,7 @@ mod tests {
             DataValidation {
                 column: "status".to_string(),
                 values: vec!["good".into(), "ok".into(), "bad".into()],
+                formula: None,
                 prompt_title: None,
                 prompt_message: None,
                 error_title: None,
@@ -4037,6 +4061,7 @@ mod tests {
             DataValidation {
                 column: "id".to_string(),
                 values: vec!["1".into(), "2".into(), "3".into()],
+                formula: None,
                 prompt_title: None,
                 prompt_message: None,
                 error_title: None,
@@ -4059,6 +4084,34 @@ mod tests {
     }
 
     #[test]
+    fn data_validation_custom_formulas_are_written() {
+        let dir = temp_path("validationformula");
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("validation.csv");
+        let output = dir.join("validation.xlsx");
+        std::fs::write(&input, "id,amount\n1,10\n2,-5\n").unwrap();
+        let (tx, _rx) = std::sync::mpsc::channel();
+        let validations = vec![DataValidation {
+            column: "amount".to_string(),
+            values: Vec::new(),
+            formula: Some("AND(B2>0,B2<100)".to_string()),
+            prompt_title: None,
+            prompt_message: None,
+            error_title: None,
+            error_message: None,
+            allow_blank: false,
+        }];
+        csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
+        let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
+        assert!(sheet.contains("type=\"custom\""), "{sheet}");
+        assert!(
+            sheet.contains("<formula1>AND(B2&gt;0,B2&lt;100)</formula1>"),
+            "{sheet}"
+        );
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
     fn data_validation_prompts_are_escaped_attributes() {
         let dir = temp_path("validationprompt");
         std::fs::create_dir_all(&dir).unwrap();
@@ -4069,6 +4122,7 @@ mod tests {
         let validations = vec![DataValidation {
             column: "status".to_string(),
             values: vec!["good".into(), "ok".into()],
+            formula: None,
             prompt_title: Some("Status \"pick\"".to_string()),
             prompt_message: Some("Choose <one> & confirm".to_string()),
             error_title: None,
@@ -4100,6 +4154,7 @@ mod tests {
         let validations = vec![DataValidation {
             column: "status".to_string(),
             values: vec!["good".into(), "ok".into()],
+            formula: None,
             prompt_title: None,
             prompt_message: None,
             error_title: Some("Bad status".to_string()),
@@ -4128,6 +4183,7 @@ mod tests {
         let validations = vec![DataValidation {
             column: "status".to_string(),
             values: vec!["good".into(), "ok".into()],
+            formula: None,
             prompt_title: None,
             prompt_message: None,
             error_title: None,
