@@ -5006,6 +5006,63 @@ fn convert_keeps_raw_custom_number_format_codes() {
 }
 
 #[test]
+fn convert_reports_sheet_view_settings() {
+    let dir = TempDir::new("sheetviewinspect");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,amount\n1,10\n").unwrap();
+    let frozen = dir.join("frozen.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts/a.csv").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            frozen.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let json = Command::new(bin())
+        .args([
+            "convert",
+            frozen.to_str().unwrap(),
+            "--sheet-view",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(json.status.success());
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(stdout.contains("\"frozen_rows\":1"), "{stdout}");
+    assert!(stdout.contains("\"auto_filter\":\"A1:B2\""), "{stdout}");
+
+    let plain = dir.join("plain.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts/a.csv").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            plain.to_str().unwrap(),
+            "--no-freeze",
+            "--no-auto-filter",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let json = Command::new(bin())
+        .args(["convert", plain.to_str().unwrap(), "--sheet-view", "--json"])
+        .output()
+        .unwrap();
+    assert!(json.status.success());
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(stdout.contains("\"frozen_rows\":0"), "{stdout}");
+    assert!(stdout.contains("\"auto_filter\":null"), "{stdout}");
+}
+
+#[test]
 fn convert_formats_report_custom_number_codes() {
     let dir = TempDir::new("formatscustom");
     std::fs::create_dir(dir.join("parts")).unwrap();

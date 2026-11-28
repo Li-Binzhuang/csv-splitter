@@ -532,6 +532,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut validations = false;
     let mut formulas = false;
     let mut conditional_formats = false;
+    let mut sheet_view = false;
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -654,6 +655,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--validations" => validations = true,
             "--formulas" => formulas = true,
             "--conditional-formats" => conditional_formats = true,
+            "--sheet-view" => sheet_view = true,
             "--json" => formats_json = true,
             "--number-format-raw" => match p.value("--number-format-raw") {
                 Ok(v) => number_format_raw = Some(v),
@@ -721,9 +723,85 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         && !validations
         && !formulas
         && !conditional_formats
+        && !sheet_view
     {
         eprintln!("error: --json needs --formats or --protection");
         return 2;
+    }
+
+    if sheet_view {
+        if protection || validations || formulas || conditional_formats || show_formats {
+            eprintln!("error: --sheet-view cannot be combined with other inspection modes");
+            return 2;
+        }
+        let name = input
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if !(name.ends_with(".xlsx") || name.ends_with(".xlsm")) {
+            eprintln!("error: --sheet-view needs an .xlsx/.xlsm input");
+            return 2;
+        }
+        if convert_format.is_some() || out.is_some() {
+            eprintln!("error: --sheet-view cannot be combined with output flags");
+            return 2;
+        }
+        if sheet.is_some() && all_sheets {
+            eprintln!("error: --sheet-view --all-sheets cannot be combined with --sheet");
+            return 2;
+        }
+        let names = if all_sheets {
+            match csvx_core::xlsx::xlsx_sheet_names(&input) {
+                Ok(names) => names,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        } else {
+            vec![sheet.clone().unwrap_or_default()]
+        };
+        let mut entries = Vec::new();
+        for name in &names {
+            let sheet_arg = (!name.is_empty()).then_some(name.as_str());
+            match csvx_core::xlsx::xlsx_sheet_view(&input, sheet_arg) {
+                Ok(view) => entries.push((sheet_arg.unwrap_or("").to_string(), view)),
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        }
+        if formats_json {
+            print!("[");
+            for (index, (sheet_name, view)) in entries.iter().enumerate() {
+                if index > 0 {
+                    print!(",");
+                }
+                print!(
+                    "{{\"sheet\":{},\"frozen_rows\":{},\"frozen_columns\":{},\"auto_filter\":{}}}",
+                    json_string(sheet_name),
+                    view.frozen_rows,
+                    view.frozen_columns,
+                    json_optional(&view.auto_filter),
+                );
+            }
+            println!("]");
+        } else {
+            for (sheet_name, view) in &entries {
+                if all_sheets {
+                    println!("# {sheet_name}");
+                }
+                println!(
+                    "frozen_rows={} frozen_columns={} auto_filter={}",
+                    view.frozen_rows,
+                    view.frozen_columns,
+                    view.auto_filter.as_deref().unwrap_or("")
+                );
+            }
+        }
+        return 0;
     }
 
     if conditional_formats {
