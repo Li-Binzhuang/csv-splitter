@@ -468,6 +468,10 @@
   验收：单测 + gate。
 - [ ] 项508 保护密码（功能级）：保护选项接受密码并写 Excel 密码哈希；
   验收：CLI + 单测 + gate。
+- [ ] 项509 会计对齐 + 货币符号（功能级）：`$* #,##0.00` 对齐渲染；
+  验收：单测 + gate。
+- [ ] 项510 多 sheet 保护密码（功能级）：每 sheet 同一密码哈希；
+  验收：单测 + gate。
 - [x] 项452 highlight + formats 组合（功能级）：CF 与数字格式共存；
   测试 `convert_xlsx_combines_highlight_and_number_formats`。
 - [x] 项453 xlsx 数据验证下拉（功能级）：csv_to_xlsx_with_validations；
@@ -573,9 +577,9 @@
   测试 `blue_rules_share_one_dxf`。
 - [x] 项502 多色 dxf 计数（功能级）：红+蓝+绿各 1 个 dxf；
   测试 `three_colours_create_three_dxfs`。
-- [ ] 项503 dxf 颜色映射表（功能级，合并原 503/504/505/506）：
-  红/蓝/绿/琥珀别名→ARGB；未知色默认红；amber/yellow 共享 dxfId；
-  验收：参数化单测一次覆盖全部颜色 + gate。
+- [x] 项503 dxf 颜色映射表（功能级，合并原 503/504/505/506）：
+  红/蓝/绿/琥珀/黄/未知→ARGB；参数化测试一次覆盖；
+  测试 `dxf_colour_table_maps_every_alias`。
 - [x] 项429 斜杠日期格式导出 round-trip（功能级）：m/d/yyyy、mm/dd/yyyy 写入 numFmt；
   测试 `slash_date_formats_map_into_export_styles`。
 - [x] 项432 斜杠日期 12 小时制（功能级）：m/d/yyyy、mm/dd/yyyy 12 小时；
@@ -869,6 +873,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 525（项503 dxf 映射表，功能级；参数化覆盖 6 种颜色/别名）；
+定向与全量 gate/package 通过；发布包 SHA `536d8ae7…5e40fc5e`；
+轮首 push 成功，本轮不再 push。
 
 Round 524（项451 CF 四组合，功能级；路线图已合并 dxf 逐色项）；
 定向与全量 gate/package 通过；发布包 SHA `60c64b78…478cf235`；

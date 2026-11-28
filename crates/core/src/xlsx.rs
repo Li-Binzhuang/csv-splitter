@@ -4484,6 +4484,61 @@ mod tests {
     }
 
     #[test]
+    fn dxf_colour_table_maps_every_alias() {
+        let dir = temp_path("dxftable");
+        std::fs::create_dir_all(&dir).unwrap();
+        for (color, argb) in [
+            ("red", "FFFFC7CE"),
+            ("blue", "FFBDD7EE"),
+            ("green", "FFC6EFCE"),
+            ("amber", "FFFFEB9C"),
+            ("yellow", "FFFFEB9C"),
+            ("purple", "FFFFC7CE"),
+        ] {
+            let input = dir.join(format!("{color}.csv"));
+            let output = dir.join(format!("{color}.xlsx"));
+            std::fs::write(&input, "id,amount\n1,1500\n").unwrap();
+            let rules = vec![ConditionalRule {
+                column: "amount".to_string(),
+                operator: ">".to_string(),
+                value: "1000".to_string(),
+                color: color.to_string(),
+            }];
+            let (tx, _rx) = std::sync::mpsc::channel();
+            csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
+            let styles = read_zip(&output, "xl/styles.xml");
+            assert!(styles.contains("<dxfs count=\"1\">"), "{color}: {styles}");
+            assert!(styles.contains(argb), "{color}: {styles}");
+            let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
+            assert_eq!(sheet.matches("dxfId=\"0\"").count(), 1, "{color}: {sheet}");
+        }
+        let input = dir.join("alias.csv");
+        let output = dir.join("alias.xlsx");
+        std::fs::write(&input, "id,amount\n1,1500\n").unwrap();
+        let rules = vec![
+            ConditionalRule {
+                column: "id".to_string(),
+                operator: ">".to_string(),
+                value: "0".to_string(),
+                color: "amber".to_string(),
+            },
+            ConditionalRule {
+                column: "amount".to_string(),
+                operator: ">".to_string(),
+                value: "1000".to_string(),
+                color: "yellow".to_string(),
+            },
+        ];
+        let (tx, _rx) = std::sync::mpsc::channel();
+        csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
+        let styles = read_zip(&output, "xl/styles.xml");
+        assert!(styles.contains("<dxfs count=\"1\">"), "{styles}");
+        let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
+        assert_eq!(sheet.matches("dxfId=\"0\"").count(), 2, "{sheet}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
     fn formats_are_mapped_into_export_styles_and_round_trip() {
         use crate::layout::NumberFormat;
         let path = temp_path("formatted.xlsx");
