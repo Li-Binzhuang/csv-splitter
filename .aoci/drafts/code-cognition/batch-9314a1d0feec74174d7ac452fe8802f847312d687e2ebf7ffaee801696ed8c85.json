@@ -1,0 +1,35 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "9c221b0a91f507bf29425d9032c99761e40a5c1e117b126483721b1251a9bad6",
+  "batch_id": "9314a1d0feec74174d7ac452fe8802f847312d687e2ebf7ffaee801696ed8c85",
+  "composite_identity": "6f38631578c3458b52aa3ce26474d364903e6d61327a7fa502e8bfe0a4009156",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "d40ef9fd2c2ebbd020952b5958d6d0cb8fe8b247b7ed7610587e4965681faceb",
+  "targets": [
+    {
+      "candidate_id": "be6415ff2f89b2504bc28f8ceb46d941fd5408e0ed0bfaee29d8aedce138834d",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "1be8c0f94dbbe70a05394723c740a1fb1175717745aea7dff67908bf2d75582a",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert：转码、xlsx/csv/tsv/ndjson/parquet、highlight、number-format、formats、protection 检测、验证、no-freeze、protect-sheet、col-width、密码与粒度 | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs,code:crates/cli/src/commands/preview.rs | A:Parser；--formats/--protection/--validations/--checks/--formulas/--conditional-formats/--highlight-text/--sheet-view/--headers/--merged/--widths/--heights/--visibility/--properties/--page-setup/--print-layout；--print-area 写 definedName；--title/--author/--merge/--hide-sheet 后处理；--number-format/raw | S:不覆盖输入；检测仅 xlsx；后处理仅单文件；重复列/宽度越界退出 2"
+    },
+    {
+      "candidate_id": "d1574ee0a102924e89e244eaeb1f6e45478f0dabc80072d5dab44c65cc53ca52",
+      "object_ref": "code:docs/XLSX.md",
+      "path": "docs/XLSX.md",
+      "change": "update",
+      "source_sha256": "04f514830bc9abe0e9b703fba2c541d1156daa1d63018118828a04102d20dcbe",
+      "existing_entry": "XLSX.md[SD7S]: F:xlsx 互操作现状与边界：导出、多 sheet、导入、report xlsx、日期/条件格式 | R:code:crates/core/src/xlsx.rs,code:crates/cli/src/main.rs,code:docs/CAPABILITIES.md | A:convert 流式导出；目录多 sheet；导入；ISO 日期；--highlight；--data-validation 全类型；--validations/--checks；--formulas；--conditional-formats/--highlight-text；--sheet-view；--headers；--merged；--widths；--heights；--visibility；--properties；--page-setup；--print-layout；--print-area；--title/--author；--merge；--hide-sheet；--protection；--col-width | S:只写值不写公式；验证非 xlsx 退出 2；密码 1–15 ASCII"
+    },
+    {
+      "candidate_id": "30044f50f6e8bce7229c06d0ab83c853c9efc3d61c81c17ade4936b284d1e655",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "b1ec9bf9f2a61687b7f04433b2c05d939ca7df2a2ed18f4321d3d2c6b5f69a34",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同新功能，边界并入母项，每轮需 feat 增量；615 验收、616–618 待做；Round627 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

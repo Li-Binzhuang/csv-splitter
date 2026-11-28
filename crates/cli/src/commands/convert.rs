@@ -554,6 +554,11 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut page_setup = false;
     let mut print_layout = false;
     let mut print_area: Option<String> = None;
+    let mut orientation: Option<String> = None;
+    let mut paper_size: Option<u32> = None;
+    let mut fit_to_width: Option<u32> = None;
+    let mut fit_to_height: Option<u32> = None;
+    let mut scale: Option<u32> = None;
     let mut title: Option<String> = None;
     let mut author: Option<String> = None;
     let mut merges: Vec<String> = Vec::new();
@@ -691,6 +696,61 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--properties" => properties = true,
             "--page-setup" => page_setup = true,
             "--print-layout" => print_layout = true,
+            "--orientation" => match p.value("--orientation") {
+                Ok(v) if v == "portrait" || v == "landscape" => orientation = Some(v),
+                Ok(_) => {
+                    eprintln!("error: --orientation must be portrait or landscape");
+                    return 2;
+                }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--paper-size" => match p
+                .value("--paper-size")
+                .and_then(|v| v.parse::<u32>().map_err(|_| "bad --paper-size".to_string()))
+            {
+                Ok(v) if v > 0 && v <= 118 => paper_size = Some(v),
+                Ok(_) => {
+                    eprintln!("error: --paper-size must be 1-118");
+                    return 2;
+                }
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    return 2;
+                }
+            },
+            "--fit-to-width" => match p.value("--fit-to-width").and_then(|v| {
+                v.parse::<u32>()
+                    .map_err(|_| "bad --fit-to-width".to_string())
+            }) {
+                Ok(v) if v > 0 && v <= 32767 => fit_to_width = Some(v),
+                _ => {
+                    eprintln!("error: --fit-to-width must be 1-32767");
+                    return 2;
+                }
+            },
+            "--fit-to-height" => match p.value("--fit-to-height").and_then(|v| {
+                v.parse::<u32>()
+                    .map_err(|_| "bad --fit-to-height".to_string())
+            }) {
+                Ok(v) if v > 0 && v <= 32767 => fit_to_height = Some(v),
+                _ => {
+                    eprintln!("error: --fit-to-height must be 1-32767");
+                    return 2;
+                }
+            },
+            "--scale" => match p
+                .value("--scale")
+                .and_then(|v| v.parse::<u32>().map_err(|_| "bad --scale".to_string()))
+            {
+                Ok(v) if (10..=400).contains(&v) => scale = Some(v),
+                _ => {
+                    eprintln!("error: --scale must be 10-400");
+                    return 2;
+                }
+            },
             "--print-area" => match p.value("--print-area") {
                 Ok(v) => print_area = Some(v),
                 Err(e) => {
@@ -2953,6 +3013,33 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             None
         };
 
+        let page_setup_value = if orientation.is_some()
+            || paper_size.is_some()
+            || fit_to_width.is_some()
+            || fit_to_height.is_some()
+            || scale.is_some()
+        {
+            if target != "xlsx" {
+                eprintln!(
+                    "error: --orientation/--paper-size/--fit-to-*/--scale need an xlsx output"
+                );
+                return 2;
+            }
+            if input.is_dir() {
+                eprintln!("error: page setup flags apply to single-file xlsx exports");
+                return 2;
+            }
+            Some(csvx_core::xlsx::PageSetupInfo {
+                orientation: orientation.clone(),
+                paper_size,
+                fit_to_width,
+                fit_to_height,
+                scale,
+            })
+        } else {
+            None
+        };
+
         let result = if xlsx_options {
             csvx_core::xlsx::csv_to_xlsx_with_all(
                 &input,
@@ -2998,6 +3085,12 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 }
                 if let Some(area) = print_area_value.as_ref() {
                     if let Err(error) = csvx_core::xlsx::xlsx_set_print_area(&out, area) {
+                        eprintln!("error: {error}");
+                        return 1;
+                    }
+                }
+                if let Some(setup) = page_setup_value.as_ref() {
+                    if let Err(error) = csvx_core::xlsx::xlsx_set_page_setup(&out, setup) {
                         eprintln!("error: {error}");
                         return 1;
                     }

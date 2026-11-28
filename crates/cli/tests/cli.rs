@@ -5190,6 +5190,41 @@ fn convert_reports_row_heights() {
 }
 
 #[test]
+fn convert_writes_page_setup() {
+    let dir = TempDir::new("page_setup_write");
+    let csv = dir.join("data.csv");
+    std::fs::write(&csv, "id\n1\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            csv.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--orientation",
+            "landscape",
+            "--paper-size",
+            "9",
+            "--scale",
+            "85",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let json = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--page-setup", "--json"])
+        .output()
+        .unwrap();
+    assert!(json.status.success());
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(stdout.contains("\"orientation\":\"landscape\""), "{stdout}");
+    assert!(stdout.contains("\"paper_size\":9"), "{stdout}");
+    assert!(stdout.contains("\"scale\":85"), "{stdout}");
+}
+
+#[test]
 fn convert_writes_and_reports_print_area() {
     let dir = TempDir::new("printarea");
     let csv = dir.join("data.csv");
