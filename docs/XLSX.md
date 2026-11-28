@@ -101,6 +101,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
   --page-setup \
   --print-area "A1:B2" \
   --header-footer \
+  --outline \
   --orientation landscape \
   --paper-size 9 \
   --fit-to-width 1 \
@@ -140,6 +141,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 - `--margin-left/right/top/bottom/header/footer` 在单文件 xlsx 导出后写 pageMargins；
 - `--orientation`/`--paper-size`/`--fit-to-width`/`--fit-to-height`/`--scale` 在单文件 xlsx 导出后写 pageSetup；
 - `--header`/`--footer` 在单文件 xlsx 导出后写 oddHeader/oddFooter；
+- `--outline` 读取行/列大纲分组层级（outlineLevel/hidden/collapsed）；
 - `--header-footer` 读取页眉页脚文本（odd/even/first），支持 sheet/all-sheets/json；
 - `--print-area` 在单文件 xlsx 导出后写打印区域 definedName；`--print-layout` 读取打印区域与页边距；
 - `--page-setup` 读取页面方向/纸张/缩放，支持 sheet/all-sheets/json；

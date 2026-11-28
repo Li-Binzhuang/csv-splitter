@@ -554,6 +554,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut page_setup = false;
     let mut print_layout = false;
     let mut header_footer = false;
+    let mut outline = false;
     let mut print_area: Option<String> = None;
     let mut orientation: Option<String> = None;
     let mut paper_size: Option<u32> = None;
@@ -706,6 +707,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--page-setup" => page_setup = true,
             "--print-layout" => print_layout = true,
             "--header-footer" => header_footer = true,
+            "--outline" => outline = true,
             "--header" => match p.value("--header") {
                 Ok(v) if v.chars().count() <= 255 => header_text = Some(v),
                 Ok(_) => {
@@ -959,9 +961,122 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         && !page_setup
         && !print_layout
         && !header_footer
+        && !outline
     {
         eprintln!("error: --json needs --formats or --protection");
         return 2;
+    }
+
+    if outline {
+        if protection
+            || validations
+            || formulas
+            || conditional_formats
+            || sheet_view
+            || show_formats
+            || show_headers
+            || merged_ranges
+            || column_widths
+            || row_heights
+            || sheet_visibility
+            || properties
+            || page_setup
+            || print_layout
+            || header_footer
+        {
+            eprintln!("error: --outline cannot be combined with other inspection modes");
+            return 2;
+        }
+        let name = input
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if !(name.ends_with(".xlsx") || name.ends_with(".xlsm")) {
+            eprintln!("error: --outline needs an .xlsx/.xlsm input");
+            return 2;
+        }
+        if convert_format.is_some() || out.is_some() {
+            eprintln!("error: --outline cannot be combined with output flags");
+            return 2;
+        }
+        if sheet.is_some() && all_sheets {
+            eprintln!("error: --outline --all-sheets cannot be combined with --sheet");
+            return 2;
+        }
+        let names = if all_sheets {
+            match csvx_core::xlsx::xlsx_sheet_names(&input) {
+                Ok(names) => names,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        } else {
+            vec![sheet.clone().unwrap_or_default()]
+        };
+        let mut entries = Vec::new();
+        for name in &names {
+            let sheet_arg = (!name.is_empty()).then_some(name.as_str());
+            match csvx_core::xlsx::xlsx_outline(&input, sheet_arg) {
+                Ok(info) => entries.push((sheet_arg.unwrap_or("").to_string(), info)),
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        }
+        if formats_json {
+            print!("[");
+            for (index, (sheet_name, info)) in entries.iter().enumerate() {
+                if index > 0 {
+                    print!(",");
+                }
+                let groups = |groups: &[csvx_core::xlsx::OutlineGroup]| {
+                    let mut out = String::from("[");
+                    for (position, group) in groups.iter().enumerate() {
+                        if position > 0 {
+                            out.push(',');
+                        }
+                        out.push_str(&format!(
+                            "{{\"index\":{},\"level\":{},\"hidden\":{},\"collapsed\":{}}}",
+                            json_string(&group.index),
+                            group.level,
+                            group.hidden,
+                            group.collapsed
+                        ));
+                    }
+                    out.push(']');
+                    out
+                };
+                print!(
+                    "{{\"sheet\":{},\"rows\":{},\"cols\":{}}}",
+                    json_string(sheet_name),
+                    groups(&info.rows),
+                    groups(&info.cols)
+                );
+            }
+            println!("]");
+        } else {
+            for (sheet_name, info) in &entries {
+                if all_sheets {
+                    println!("# {sheet_name}");
+                }
+                for group in &info.rows {
+                    println!(
+                        "row {} level={} hidden={} collapsed={}",
+                        group.index, group.level, group.hidden, group.collapsed
+                    );
+                }
+                for group in &info.cols {
+                    println!(
+                        "col {} level={} hidden={} collapsed={}",
+                        group.index, group.level, group.hidden, group.collapsed
+                    );
+                }
+            }
+        }
+        return 0;
     }
 
     if header_footer {

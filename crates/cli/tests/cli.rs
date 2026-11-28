@@ -5190,6 +5190,55 @@ fn convert_reports_row_heights() {
 }
 
 #[test]
+fn convert_reports_outline_groups() {
+    let dir = TempDir::new("outlineinspect");
+    let book = dir.join("book.xlsx");
+    let file = std::fs::File::create(&book).unwrap();
+    let mut zip = zip::ZipWriter::new(file);
+    use std::io::Write as _;
+    for (name, body) in [
+        (
+            "xl/workbook.xml",
+            r#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="one" sheetId="1" r:id="rId1"/></sheets></workbook>"#,
+        ),
+        (
+            "xl/_rels/workbook.xml.rels",
+            r#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>"#,
+        ),
+        (
+            "xl/worksheets/sheet1.xml",
+            r#"<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="2" outlineLevel="1" hidden="1"><c r="A2"><v>2</v></c></row></sheetData><cols><col min="2" max="3" outlineLevel="1"/></cols></worksheet>"#,
+        ),
+    ] {
+        zip.start_file(name, zip::write::SimpleFileOptions::default())
+            .unwrap();
+        zip.write_all(body.as_bytes()).unwrap();
+    }
+    zip.finish().unwrap();
+
+    let json = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--outline", "--json"])
+        .output()
+        .unwrap();
+    assert!(json.status.success());
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(
+        stdout.contains("\"rows\":[{\"index\":\"2\",\"level\":1"),
+        "{stdout}"
+    );
+    assert!(stdout.contains("\"cols\":[{\"index\":\"2:3\""), "{stdout}");
+
+    let text = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--outline"])
+        .output()
+        .unwrap();
+    assert!(text.status.success());
+    let stdout = String::from_utf8_lossy(&text.stdout);
+    assert!(stdout.contains("row 2 level=1"), "{stdout}");
+    assert!(stdout.contains("col 2:3 level=1"), "{stdout}");
+}
+
+#[test]
 fn convert_reports_header_footer() {
     let dir = TempDir::new("headerfooterinspect");
     let book = dir.join("book.xlsx");

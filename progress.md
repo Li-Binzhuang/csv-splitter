@@ -688,12 +688,14 @@
   测试 `convert_writes_header_footer`。
 - [x] 项623 大纲分组回读 API（新能力）：`xlsx_outline` 读行/列 outlineLevel/hidden/collapsed；
   测试 `outline_groups_are_read_back`。
-- [ ] 项624 大纲分组检测 CLI（新能力）：outline 检测输出行/列分组层级；
-  验收：CLI + 单测 + gate。
+- [x] 项624 大纲分组检测 CLI（新能力）：`--outline` 输出行/列分组层级与 hidden/collapsed；
+  测试 `convert_reports_outline_groups`。
 - [ ] 项625 大纲分组写出 API（新能力）：写行 outlineLevel/hidden 与折叠；
   验收：单测 + round-trip + gate。
 - [ ] 项626 大纲分组导出 CLI（新能力）：导出时设置行分组层级；
   验收：CLI + 单测 + gate。
+- [ ] 项627 验证提示文本回读 API（新能力）：读取 promptTitle/prompt/error 文本；
+  验收：单测 + round-trip + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
@@ -1099,6 +1101,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 636（项624 大纲分组检测 CLI，feat 级新能力，验收完成）；
+定向与全量 gate/package 通过；发布包 SHA `db8e0a5b…b0eb9d3c`；
+轮首 push 成功，本轮不再 push。
 
 Round 635（项623 大纲分组回读 API，feat 级新能力，验收完成）；
 定向与全量 gate/package 通过；发布包 SHA `3988149b…829eb21e`；

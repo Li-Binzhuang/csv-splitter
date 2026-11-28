@@ -18,7 +18,7 @@
   合并左上值、空行跳过、16384 列 / 1,048,576 总行（1,048,575 数据行）上限；
 - 错误：无缓存公式值、坏共享索引、超行/列均显式报错，不静默造值；
 - 公式：`xlsx_formulas` 读回公式文本与缓存值（不重算）；`--formulas` 检测模式；
-- 分组：`xlsx_outline` 读行/列 outlineLevel；
+- 分组：`xlsx_outline` 读行/列 outlineLevel，`--outline` 检测；
 - 打印：`xlsx_page_setup` 读（`--page-setup`）/`xlsx_set_page_setup` 写页面方向/纸张/缩放，`xlsx_print_layout` 读打印区域与页边距；
 - 表头：`xlsx_header_names` 读回首行列字母与名称，`--headers` 直接检测，`--validations`/`--checks` 复用；
 - 合并：`xlsx_merged_ranges` 读回，`write_sheets_with_merges`/`xlsx_set_merge_cells` 写出，`--merged` 检测/`--merge` 导出；
