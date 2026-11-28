@@ -560,9 +560,11 @@
   测试 `rand_and_randbetween_stay_in_bounds`。
 - [x] 项499 RANDBETWEEN 跨零区间（功能级）：-2..2 采样；
   测试 `rand_and_randbetween_stay_in_bounds`。
-- [ ] 项500 dxf 同色去重验证（功能级）：两条红规则共享 dxfId；
+- [x] 项500 dxf 同色去重验证（功能级）：两条红规则共享 dxfId=0；
+  测试 `same_colour_rules_share_one_dxf`。
+- [ ] 项427 条件格式 dxf 跨规则复用（功能级）：已由项500 覆盖，待标完成。
+- [ ] 项501 RAND 两次调用不同（功能级）：连续两次值不同；
   验收：单测 + gate。
-- [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
 - [ ] 项428 条件格式 dxf 蓝色规则同 id 断言（功能级）：蓝色多规则同 dxfId；
   验收：单测 + gate。
@@ -859,6 +861,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 518（项500 dxf 同色复用，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `68709099…b339e8ae`；
+轮首 push 成功，本轮不再 push。
 
 Round 517（项499 跨零区间，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `55026c35…b4932a49`；
