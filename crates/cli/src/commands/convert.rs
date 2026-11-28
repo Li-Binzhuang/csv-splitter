@@ -549,6 +549,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut merged_ranges = false;
     let mut column_widths = false;
     let mut row_heights = false;
+    let mut sheet_visibility = false;
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -678,6 +679,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--merged" => merged_ranges = true,
             "--widths" => column_widths = true,
             "--heights" => row_heights = true,
+            "--visibility" => sheet_visibility = true,
             "--json" => formats_json = true,
             "--number-format-raw" => match p.value("--number-format-raw") {
                 Ok(v) => number_format_raw = Some(v),
@@ -750,9 +752,66 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         && !merged_ranges
         && !column_widths
         && !row_heights
+        && !sheet_visibility
     {
         eprintln!("error: --json needs --formats or --protection");
         return 2;
+    }
+
+    if sheet_visibility {
+        if protection
+            || validations
+            || formulas
+            || conditional_formats
+            || sheet_view
+            || show_formats
+            || show_headers
+            || merged_ranges
+            || column_widths
+            || row_heights
+        {
+            eprintln!("error: --visibility cannot be combined with other inspection modes");
+            return 2;
+        }
+        let name = input
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if !(name.ends_with(".xlsx") || name.ends_with(".xlsm")) {
+            eprintln!("error: --visibility needs an .xlsx/.xlsm input");
+            return 2;
+        }
+        if convert_format.is_some() || out.is_some() {
+            eprintln!("error: --visibility cannot be combined with output flags");
+            return 2;
+        }
+        let entries = match csvx_core::xlsx::xlsx_sheet_visibility(&input) {
+            Ok(entries) => entries,
+            Err(error) => {
+                eprintln!("error: {error}");
+                return 1;
+            }
+        };
+        if formats_json {
+            print!("[");
+            for (index, entry) in entries.iter().enumerate() {
+                if index > 0 {
+                    print!(",");
+                }
+                print!(
+                    "{{\"sheet\":{},\"state\":{}}}",
+                    json_string(&entry.name),
+                    json_string(&entry.state)
+                );
+            }
+            println!("]");
+        } else {
+            for entry in &entries {
+                println!("{}\t{}", entry.name, entry.state);
+            }
+        }
+        return 0;
     }
 
     if row_heights {

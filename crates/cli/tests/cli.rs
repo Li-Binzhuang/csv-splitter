@@ -5041,6 +5041,42 @@ fn convert_renders_conditional_formats_as_highlight_text() {
 }
 
 #[test]
+fn convert_reports_sheet_visibility() {
+    let dir = TempDir::new("visibilityinspect");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id\n1\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts/a.csv").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let json = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--visibility", "--json"])
+        .output()
+        .unwrap();
+    assert!(json.status.success());
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(stdout.contains("\"state\":\"visible\""), "{stdout}");
+
+    let text = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--visibility"])
+        .output()
+        .unwrap();
+    assert!(text.status.success());
+    let stdout = String::from_utf8_lossy(&text.stdout);
+    assert!(stdout.contains("\tvisible"), "{stdout}");
+}
+
+#[test]
 fn convert_reports_row_heights() {
     let dir = TempDir::new("heightsinspect");
     let book = dir.join("book.xlsx");
