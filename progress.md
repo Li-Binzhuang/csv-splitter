@@ -612,11 +612,13 @@
   测试 `sheet_view_reads_frozen_panes_and_auto_filter`。
 - [x] 项585 数据验证一致性检查（新能力）：`validate --against book.xlsx data.csv` 把列表/整数/小数验证转规则；
   顺带修复 `in` 规则拼接缺空格的真实缺陷；测试 `validate_uses_xlsx_data_validations_as_rules`。
-- [ ] 项586 --formats 显示自定义码（新能力）：导入回读的自定义格式码不再丢失，CLI 输出原始码；
-  验收：CLI + 单测 + gate。
+- [x] 项586 --formats 显示自定义码（新能力）：导入回读自定义码，JSON 增 `custom` 标记；
+  测试 `convert_formats_report_custom_number_codes`。
 - [ ] 项587 冻结与筛选检测 CLI（新能力）：CLI 参数 sheet-view 输出冻结与筛选设置；
   验收：CLI + 单测 + gate。
-- [ ] 项588 数据验证转 validate 规则文本（新能力）：`--validations --checks` 输出可复用的 --check 文本；
+- [ ] 项588 数据验证转 validate 规则文本（新能力）：validations 检测的 checks 模式输出可复用的 check 文本（待实现）；
+  验收：CLI + 单测 + gate。
+- [ ] 项589 条件格式转 highlight 文本（新能力）：conditional-formats 检测的 highlight-text 模式输出可复用 highlight 文本（待实现）；
   验收：CLI + 单测 + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
@@ -1023,6 +1025,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 598（项586 --formats 自定义码显示，feat 级增强，验收完成）；
+定向与全量 gate/package 通过；发布包 SHA `e9635068…7a8c796b`；
+轮首 push 成功（补发 2 提交），本轮不再 push。
 
 Round 597（项585 数据验证一致性检查，feat 级新能力，验收完成；修复 in 规则缺陷）；
 定向与全量 gate/package 通过；发布包 SHA `bd427939…eb3793b`；

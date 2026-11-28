@@ -1124,14 +1124,17 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                     if index > 0 {
                         print!(", ");
                     }
+                    let custom =
+                        matches!(format, Some(csvx_core::layout::NumberFormat::Custom { .. }));
                     let code = format
                         .as_ref()
                         .map(|format| format.name())
                         .unwrap_or_else(|| "plain".into());
                     print!(
-                        "{{\"name\":{},\"format\":{},\"column_index\":{}}}",
+                        "{{\"name\":{},\"format\":{},\"custom\":{},\"column_index\":{}}}",
                         json_string(column),
                         json_string(&code),
+                        custom,
                         index
                     );
                 }

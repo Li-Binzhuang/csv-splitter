@@ -5006,6 +5006,48 @@ fn convert_keeps_raw_custom_number_format_codes() {
 }
 
 #[test]
+fn convert_formats_report_custom_number_codes() {
+    let dir = TempDir::new("formatscustom");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "amount\n1234.5\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts/a.csv").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--number-format-raw",
+            "amount:[$-409]m/d/yyyy",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let json = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--formats", "--json"])
+        .output()
+        .unwrap();
+    assert!(json.status.success());
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(
+        stdout.contains("\"format\":\"[$-409]m/d/yyyy\""),
+        "{stdout}"
+    );
+    assert!(stdout.contains("\"custom\":true"), "{stdout}");
+
+    let text = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--formats"])
+        .output()
+        .unwrap();
+    assert!(text.status.success());
+    let stdout = String::from_utf8_lossy(&text.stdout);
+    assert!(stdout.contains("[$-409]m/d/yyyy"), "{stdout}");
+}
+
+#[test]
 fn validate_uses_xlsx_data_validations_as_rules() {
     let dir = TempDir::new("validateagainst");
     let book = dir.join("book.xlsx");
