@@ -530,6 +530,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut formats_json = false;
     let mut protection = false;
     let mut validations = false;
+    let mut formulas = false;
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -650,6 +651,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--formats" => show_formats = true,
             "--protection" => protection = true,
             "--validations" => validations = true,
+            "--formulas" => formulas = true,
             "--json" => formats_json = true,
             "--number-format-raw" => match p.value("--number-format-raw") {
                 Ok(v) => number_format_raw = Some(v),
@@ -711,9 +713,91 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         return 2;
     };
 
-    if formats_json && !show_formats && !protection && !validations {
+    if formats_json && !show_formats && !protection && !validations && !formulas {
         eprintln!("error: --json needs --formats or --protection");
         return 2;
+    }
+
+    if formulas {
+        if protection || validations || show_formats {
+            eprintln!("error: --formulas cannot be combined with other inspection modes");
+            return 2;
+        }
+        let name = input
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if !(name.ends_with(".xlsx") || name.ends_with(".xlsm")) {
+            eprintln!("error: --formulas needs an .xlsx/.xlsm input");
+            return 2;
+        }
+        if convert_format.is_some() || out.is_some() {
+            eprintln!("error: --formulas cannot be combined with output/conversion flags");
+            return 2;
+        }
+        if sheet.is_some() && all_sheets {
+            eprintln!("error: --formulas --all-sheets cannot be combined with --sheet");
+            return 2;
+        }
+        let names = if all_sheets {
+            match csvx_core::xlsx::xlsx_sheet_names(&input) {
+                Ok(names) => names,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        } else {
+            vec![sheet.clone().unwrap_or_default()]
+        };
+        let mut entries = Vec::new();
+        for name in &names {
+            let sheet_arg = (!name.is_empty()).then_some(name.as_str());
+            match csvx_core::xlsx::xlsx_formulas(&input, sheet_arg) {
+                Ok(found) => {
+                    let sheet_name = sheet_arg.unwrap_or("");
+                    for cell in found {
+                        entries.push((sheet_name.to_string(), cell));
+                    }
+                }
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        }
+        if formats_json {
+            print!("[");
+            for (index, (sheet_name, cell)) in entries.iter().enumerate() {
+                if index > 0 {
+                    print!(",");
+                }
+                print!(
+                    "{{\"sheet\":{},\"cell\":{},\"formula\":{},\"cached_value\":{}}}",
+                    json_string(sheet_name),
+                    json_string(&cell.cell),
+                    json_string(&cell.formula),
+                    json_optional(&cell.cached_value),
+                );
+            }
+            println!("]");
+        } else if entries.is_empty() {
+            println!("no formulas");
+        } else {
+            for (sheet_name, cell) in &entries {
+                if all_sheets {
+                    println!("# {sheet_name}");
+                }
+                println!(
+                    "cell={} formula={} cached_value={}",
+                    cell.cell,
+                    cell.formula,
+                    cell.cached_value.as_deref().unwrap_or("")
+                );
+            }
+        }
+        return 0;
     }
 
     if protection || validations {

@@ -86,7 +86,8 @@ csvx convert data.csv --format xlsx -o data.xlsx \
   --data-validation-range "status:$A$2:$A$10" \
   --data-validation-date "day:2024-01-01,2024-12-31" \
   --data-validation-time "hour:09:00,17:00" \
-  --validations
+  --validations \
+  --formulas
 ```
 
 - 规则用 `;` 分隔，每条 `列 操作符 值 : 颜色`；
@@ -107,6 +108,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 - `--data-validation-date` 写日期区间验证，`列:起始,结束`（ISO 日期，内部转 Excel 序列号）；
 - `--data-validation-time` 写时间区间验证，`列:起始,结束`（`HH:MM`，内部转 0–1 天小数）；
 - `--data-validation-range` 列表源用单元格区域引用，格式 `列:区域`（如 `$A$2:$A$10`），与内联值互斥；
+- `--formulas` 读取 xlsx 的公式文本与缓存值（不做重算），可配 `--sheet`/`--all-sheets`/`--json`；
 - `--validations` 读取 xlsx 的数据验证；日期/时间边界从序列号投影回 ISO/时分秒（列/类型/operator/公式/提示/错误样式），可配 `--sheet`/`--all-sheets`/`--json`；
 - `--protect-sheet` 写工作表保护（对象/场景受限，不设密码）；
 - `--number-format-raw` 原样保留任意自定义格式码到 xlsx `formatCode`（不做渲染解释，≤255 字符）；
