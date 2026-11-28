@@ -1,0 +1,27 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "02dae15462e9f8de662382fc7cbf8fcf8d3c22a3187fca8feb1558dee2299d46",
+  "batch_id": "2f059eb8f62578c7ec90d2dc80640f100fdac8a137f38f2ec0a8810038012f15",
+  "composite_identity": "9d716ecff4fa49522cf3e62b6bff36fbdd1715e32f0e8d8836827e2bfff1c979",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "3d019f02fe5f502d9a92cb9888d6d1c3cc1b1ab9ea0e7ed5a7daef7b7bedfd67",
+  "targets": [
+    {
+      "candidate_id": "b3a31e1c2272988e4cc941289b1131e979dddcbec043d202442a7af5a88e0d90",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "aebbf5cb71c8f29a7dc7d982e980551eae5518377d21770c35866ab34c111a0c",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族/INTL（WEEKNUM 11–17）；查找/小计；UNICHAR/UNICODE；数论；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；进制转换；SKEW/KURT；SLOPE/INTERCEPT/PEARSON/RSQ；DEVSQ/COVAR；FORECAST；ISEVEN/ISODD；FISHER/FISHERINV；SERIESSUM；SUMX；STANDARDIZE；GEOMEAN/HARMEAN；RAND/RANDBETWEEN；复数；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧/VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION/MIRR；BESSELY | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW/RAND 易变；RANDBETWEEN 列引用/嵌套/IF，文本/空边界/#VALUE 与 \u003e2^53 报错"
+    },
+    {
+      "candidate_id": "d56a9c51d78f004b5acfbb736544c23e983802a38a2d1a271bc21785e665bb63",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "f490c0a888ee7b78e542cbdf5e1612fb71d766bd174800af51e50fcf8a4f040b",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；Round510 RANDBETWEEN 空边界与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
