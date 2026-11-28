@@ -554,12 +554,14 @@
   测试 `convert_reports_unprotected_sheet_as_json`。
 - [x] 项553 目录提示 + 列宽 + 密码（功能级）：三特性并存；
   测试 `convert_directory_to_xlsx_combines_prompts_widths_and_password`。
-- [ ] 项554 保护映射与单表一致（功能级）：两 API 对同一表结果相同；
-  验收：单测 + gate。
+- [x] 项554 保护映射与单表一致（功能级）：两 API 对同一表结果相同；
+  测试 `protection_map_matches_single_sheet_reads`。
 - [ ] 项555 保护检测 JSON 未知 sheet（功能级）：JSON 模式错误退出 1；
   验收：CLI + 单测 + gate。
 - [ ] 项556 保护映射与单表 JSON 契约（功能级）：两 API 字段一致；
   验收：单测 + gate。
+- [ ] 项557 目录验证 + CF + 提示 + 密码（功能级）：四特性并存；
+  验收：CLI + 单测 + gate。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
   测试 `convert_reports_sheet_protection`。
 - [x] 项452 highlight + formats 组合（功能级）：CF 与数字格式共存；
@@ -963,6 +965,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 571（项554 保护映射与单表一致，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `f6fe260d…d7d35a74`；
+轮首 push 成功，本轮不再 push。
 
 Round 570（项553 目录提示+列宽+密码，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `350941f3…e0242d91`；
