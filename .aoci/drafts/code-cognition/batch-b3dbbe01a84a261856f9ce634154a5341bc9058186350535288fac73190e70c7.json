@@ -1,0 +1,27 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "1a1cd97af5447f8d760577b548a0e7e1544e8a761141e1e7eca93d3e3ef26da1",
+  "batch_id": "b3dbbe01a84a261856f9ce634154a5341bc9058186350535288fac73190e70c7",
+  "composite_identity": "fe51a4c9286c62b8c2757c931d6f52e81b4918301ce5eae11ea48dac49119144",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "cfd6ee5013542be98411d6ede242aff41bcc2a43a38d04a5999081d5d691d338",
+  "targets": [
+    {
+      "candidate_id": "15872c28a8892bcc5b1eabc49e891913d8cc4d86100df887cb008ec4c4a608a5",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "85575c32076a1e7dbc262f7e38218dca4d7c33117b162ff9a5e8a607a5ed9c83",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族/INTL（WEEKNUM 11–17）；查找/小计；UNICHAR/UNICODE；数论；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；进制转换；SKEW/KURT；SLOPE/INTERCEPT/PEARSON/RSQ；DEVSQ/COVAR；FORECAST；ISEVEN/ISODD；FISHER/FISHERINV；SERIESSUM；SUMX；STANDARDIZE；GEOMEAN/HARMEAN；RAND/RANDBETWEEN；复数；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧/VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION/MIRR；BESSELY | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW/RAND 易变，RAND 无参数且落 [0,1)；RANDBETWEEN 列引用/嵌套/IF、相等边界、负区间，参数个数错，文本/空边界/#VALUE 与 \u003e2^53 报错"
+    },
+    {
+      "candidate_id": "01313466fd285ad7ba1326baa938877b20239760ae377dbf68c15eca2b8ef356",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "4469691a466d78f3b20d9e11c878f6baf846cbbfd417078e904e1079685873b4",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；Round516 RANDBETWEEN 负区间与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
