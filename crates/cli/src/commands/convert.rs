@@ -330,6 +330,21 @@ fn parse_validation_prompts(text: &str) -> Result<Vec<(String, String, String)>,
 }
 
 /// Split `a:fmt;b:fmt` on semicolons that are not inside an accounting `(...)`.
+fn projected_validation_bound(kind: &str, value: &Option<String>) -> Option<String> {
+    let value = value.as_deref()?;
+    let pattern = match kind {
+        "date" => "yyyy-mm-dd",
+        "time" => "hh:mm:ss",
+        _ => return Some(value.to_string()),
+    };
+    Some(
+        csvx_core::layout::NumberFormat::DateTime {
+            pattern: pattern.to_string(),
+        }
+        .render(value),
+    )
+}
+
 fn json_optional(value: &Option<String>) -> String {
     match value {
         Some(value) => json_string(value),
@@ -759,8 +774,8 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                     json_string(&entry.range),
                     json_string(&entry.kind),
                     json_string(&entry.operator),
-                    json_optional(&entry.formula1),
-                    json_optional(&entry.formula2),
+                    json_optional(&projected_validation_bound(&entry.kind, &entry.formula1)),
+                    json_optional(&projected_validation_bound(&entry.kind, &entry.formula2)),
                     entry.allow_blank,
                     json_optional(&entry.prompt_title),
                     json_optional(&entry.prompt_message),
@@ -783,8 +798,12 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                     entry.range,
                     entry.kind,
                     entry.operator,
-                    entry.formula1.as_deref().unwrap_or(""),
-                    entry.formula2.as_deref().unwrap_or(""),
+                    projected_validation_bound(&entry.kind, &entry.formula1)
+                        .as_deref()
+                        .unwrap_or(""),
+                    projected_validation_bound(&entry.kind, &entry.formula2)
+                        .as_deref()
+                        .unwrap_or(""),
                     entry.allow_blank,
                     entry.prompt_title.as_deref().unwrap_or(""),
                     entry.error_style.as_deref().unwrap_or("")

@@ -5006,6 +5006,45 @@ fn convert_keeps_raw_custom_number_format_codes() {
 }
 
 #[test]
+fn convert_reports_date_validations_as_iso() {
+    let dir = TempDir::new("validationdateiso");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "day\n2024-01-01\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts/a.csv").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--data-validation-date",
+            "day:2024-01-01,2024-12-31",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let json = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--validations", "--json"])
+        .output()
+        .unwrap();
+    assert!(json.status.success());
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(stdout.contains("\"formula1\":\"2024-01-01\""), "{stdout}");
+    assert!(!stdout.contains("\"formula1\":\"45292\""), "{stdout}");
+
+    let text = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--validations"])
+        .output()
+        .unwrap();
+    assert!(text.status.success());
+    let stdout = String::from_utf8_lossy(&text.stdout);
+    assert!(stdout.contains("formula1=2024-01-01"), "{stdout}");
+}
+
+#[test]
 fn convert_writes_date_and_time_validation_ranges() {
     let dir = TempDir::new("validationdatetime");
     std::fs::create_dir(dir.join("parts")).unwrap();
