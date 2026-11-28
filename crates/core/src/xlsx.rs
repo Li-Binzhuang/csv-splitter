@@ -3651,6 +3651,33 @@ mod tests {
     }
 
     #[test]
+    fn coloured_formats_map_into_export_styles() {
+        use crate::layout::NumberFormat;
+        let path = temp_path("colored.xlsx");
+        let sheet = Sheet {
+            name: "colored".to_string(),
+            headers: vec!["amount".into(), "rate".into()],
+            rows: vec![vec!["1234.5".into(), "0.125".into()]],
+        };
+        write_sheets_with_formats(
+            &path,
+            &[sheet],
+            &[vec![
+                NumberFormat::parse("[Red]#,##0.00").unwrap(),
+                NumberFormat::parse("[Blue]0.0%").unwrap(),
+            ]],
+        )
+        .unwrap();
+        let styles = read_zip(&path, "xl/styles.xml");
+        assert!(styles.contains("formatCode=\"[Red]#,##0.00\""), "{styles}");
+        assert!(styles.contains("formatCode=\"[Blue]0.0%\""), "{styles}");
+        let sheet = read_zip(&path, "xl/worksheets/sheet1.xml");
+        assert!(sheet.contains("<v>1234.5</v>"), "{sheet}");
+        assert!(sheet.contains("<v>0.125</v>"), "{sheet}");
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
     fn header_freeze_can_be_disabled() {
         use crate::layout::NumberFormat;
         let dir = temp_path("nofreeze");

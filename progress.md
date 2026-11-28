@@ -506,8 +506,10 @@
   测试 `fraction_formats_render_mixed_and_simple_forms`。
 - [x] 项472 数字格式颜色段（功能级）：`[Red]` 等 8 色；
   测试 `coloured_formats_keep_the_excel_code_and_render_the_inner_format`。
-- [ ] 项473 Colored 导出样式（功能级）：xlsx formatCode 保留颜色；
-  验收：单测 + gate。
+- [x] 项473 Colored 导出样式（功能级）：formatCode 保留颜色；
+  测试 `coloured_formats_map_into_export_styles`。
+- [ ] 项474 颜色格式 CLI（功能级）：--number-format 接颜色码；
+  验收：CLI + 单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
 - [ ] 项428 条件格式 dxf 蓝色规则同 id 断言（功能级）：蓝色多规则同 dxfId；
@@ -805,6 +807,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 491（项473 Colored 导出，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `0a089410…333cafab`；
+轮首 push 成功，本轮不再 push。
 
 Round 490（项472 数字格式颜色段，功能级）；
 gate 首跑 2 个测试因 `[h]` 被误判为颜色（已排除 elapsed bracket）；
