@@ -3819,6 +3819,99 @@ pub struct PageMargins {
     pub footer: f64,
 }
 
+/// One row or column group level read from an xlsx worksheet.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OutlineGroup {
+    pub index: String,
+    pub level: u8,
+    pub hidden: bool,
+    pub collapsed: bool,
+}
+
+/// Row and column outline groups read from an xlsx worksheet.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct OutlineInfo {
+    pub rows: Vec<OutlineGroup>,
+    pub cols: Vec<OutlineGroup>,
+}
+
+/// Read row/column outline levels for one worksheet.
+pub fn xlsx_outline(input: &Path, sheet: Option<&str>) -> std::io::Result<OutlineInfo> {
+    let file = std::fs::File::open(input)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let workbook = read_entry(&mut archive, "xl/workbook.xml")?;
+    let rels = read_entry(&mut archive, "xl/_rels/workbook.xml.rels").unwrap_or_default();
+    let sheets = workbook_sheets(&workbook);
+    if sheets.is_empty() {
+        return Err(invalid("xlsx has no worksheets"));
+    }
+    let selected = select_sheet(&sheets, sheet)?;
+    let target = relationship_target(&rels, &selected.rid)
+        .or_else(|| (sheets.len() == 1).then(|| "xl/worksheets/sheet1.xml".to_string()))
+        .ok_or_else(|| {
+            invalid(&format!(
+                "xlsx sheet {:?} has no relationship target",
+                selected.name
+            ))
+        })?;
+    let normalized = if let Some(stripped) = target.strip_prefix('/') {
+        stripped.to_string()
+    } else if target.starts_with("xl/") {
+        target
+    } else {
+        format!("xl/{}", target.trim_start_matches("./"))
+    };
+    let sheet_xml = read_entry(&mut archive, &normalized)?;
+    let row_re = Regex::new(r"<row\b[^>]*>").unwrap();
+    let col_re = Regex::new(r"<col\b[^>]*/>|<col\b[^>]*>").unwrap();
+    let mut rows = Vec::new();
+    for capture in row_re.find_iter(&sheet_xml) {
+        let tag = capture.as_str();
+        let Some(level) = tag_attribute(tag, "outlineLevel").and_then(|v| v.parse::<u8>().ok())
+        else {
+            continue;
+        };
+        let index = tag_attribute(tag, "r").unwrap_or_default();
+        let hidden = tag_attribute(tag, "hidden").as_deref() == Some("1");
+        let collapsed = tag_attribute(tag, "collapsed").as_deref() == Some("1");
+        rows.push(OutlineGroup {
+            index,
+            level,
+            hidden,
+            collapsed,
+        });
+    }
+    let mut cols = Vec::new();
+    for capture in col_re.find_iter(&sheet_xml) {
+        let tag = capture.as_str();
+        let Some(level) = tag_attribute(tag, "outlineLevel").and_then(|v| v.parse::<u8>().ok())
+        else {
+            continue;
+        };
+        let min = tag_attribute(tag, "min").unwrap_or_default();
+        let max = tag_attribute(tag, "max").unwrap_or_default();
+        let index = if min == max {
+            min
+        } else {
+            format!("{min}:{max}")
+        };
+        let hidden = tag_attribute(tag, "hidden").as_deref() == Some("1");
+        let collapsed = tag_attribute(tag, "collapsed").as_deref() == Some("1");
+        cols.push(OutlineGroup {
+            index,
+            level,
+            hidden,
+            collapsed,
+        });
+    }
+    Ok(OutlineInfo { rows, cols })
+}
+
 /// Header/footer texts read back from `<headerFooter>`.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct HeaderFooterInfo {
@@ -7291,6 +7384,46 @@ mod tests {
         assert_eq!(read_back.odd_header.as_deref(), Some("&C report"));
         assert_eq!(read_back.odd_footer.as_deref(), Some("&L csvx"));
         assert_eq!(read_back.even_header.as_deref(), Some("even"));
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn outline_groups_are_read_back() {
+        let dir = temp_path("outline");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("outline.xlsx");
+        let file = std::fs::File::create(&path).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        use std::io::Write as _;
+        for (name, body) in [
+            (
+                "xl/workbook.xml",
+                r#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="one" sheetId="1" r:id="rId1"/></sheets></workbook>"#,
+            ),
+            (
+                "xl/_rels/workbook.xml.rels",
+                r#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>"#,
+            ),
+            (
+                "xl/worksheets/sheet1.xml",
+                r#"<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1"><v>1</v></c></row><row r="2" outlineLevel="1" hidden="1" collapsed="1"><c r="A2"><v>2</v></c></row></sheetData><cols><col min="2" max="3" outlineLevel="1" hidden="1"/><col min="4" max="4" outlineLevel="2"/></cols></worksheet>"#,
+            ),
+        ] {
+            zip.start_file(name, zip::write::SimpleFileOptions::default())
+                .unwrap();
+            zip.write_all(body.as_bytes()).unwrap();
+        }
+        zip.finish().unwrap();
+        let outline = xlsx_outline(&path, None).unwrap();
+        assert_eq!(outline.rows.len(), 1);
+        assert_eq!(outline.rows[0].index, "2");
+        assert_eq!(outline.rows[0].level, 1);
+        assert!(outline.rows[0].hidden);
+        assert!(outline.rows[0].collapsed);
+        assert_eq!(outline.cols.len(), 2);
+        assert_eq!(outline.cols[0].index, "2:3");
+        assert_eq!(outline.cols[1].index, "4");
+        assert_eq!(outline.cols[1].level, 2);
         std::fs::remove_dir_all(dir).ok();
     }
 
