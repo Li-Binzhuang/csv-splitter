@@ -706,6 +706,7 @@ pub fn write_sheets_with_options_and_formats(
         None,
         true,
         true,
+        &[],
     )
 }
 
@@ -727,6 +728,7 @@ pub fn write_sheets_with_options(
         None,
         true,
         true,
+        &[],
     )
 }
 
@@ -743,6 +745,7 @@ pub fn write_sheets_without_auto_filter(output: &Path, sheets: &[Sheet]) -> std:
         None,
         true,
         true,
+        &[],
     )
 }
 
@@ -759,6 +762,7 @@ pub fn write_sheets_without_freeze(output: &Path, sheets: &[Sheet]) -> std::io::
         None,
         true,
         true,
+        &[],
     )
 }
 
@@ -785,12 +789,25 @@ pub fn write_sheets_with_protection_password(
         Some(password),
         true,
         true,
+        &[],
     )
 }
 
 /// Write sheets with worksheet protection on every sheet.
 pub fn write_sheets_with_protection(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, &[], &[], true, true, true, None, true, true)
+    write_sheets_inner(
+        output,
+        sheets,
+        &[],
+        &[],
+        true,
+        true,
+        true,
+        None,
+        true,
+        true,
+        &[],
+    )
 }
 
 /// Write sheets with per-sheet formats, widths, freeze/filter and protection.
@@ -806,6 +823,7 @@ pub fn write_sheets_with_formats_widths_and_protection(
     protect_password: Option<&str>,
     protect_objects: bool,
     protect_scenarios: bool,
+    rules: &[ConditionalRule],
 ) -> std::io::Result<()> {
     write_sheets_inner(
         output,
@@ -818,6 +836,7 @@ pub fn write_sheets_with_formats_widths_and_protection(
         protect_password,
         protect_objects,
         protect_scenarios,
+        rules,
     )
 }
 
@@ -842,6 +861,7 @@ pub fn write_sheets_with_formats_widths_and_options(
         None,
         true,
         true,
+        &[],
     )
 }
 
@@ -864,6 +884,7 @@ pub fn write_sheets_with_formats_and_options(
         None,
         true,
         true,
+        &[],
     )
 }
 
@@ -875,7 +896,17 @@ pub fn write_sheets_with_formats_and_widths(
     widths: &[Vec<(String, f64)>],
 ) -> std::io::Result<()> {
     write_sheets_inner(
-        output, sheets, formats, widths, true, true, false, None, true, true,
+        output,
+        sheets,
+        formats,
+        widths,
+        true,
+        true,
+        false,
+        None,
+        true,
+        true,
+        &[],
     )
 }
 
@@ -898,6 +929,7 @@ pub fn write_sheets_with_widths_and_options(
         None,
         true,
         true,
+        &[],
     )
 }
 
@@ -924,6 +956,7 @@ pub fn write_sheets_with_options_and_password(
         password,
         protect_objects,
         protect_scenarios,
+        &[],
     )
 }
 
@@ -944,6 +977,7 @@ pub fn write_sheets_with_widths(
         None,
         true,
         true,
+        &[],
     )
 }
 
@@ -963,6 +997,7 @@ pub fn write_sheets_with_formats(
         None,
         true,
         true,
+        &[],
     )
 }
 
@@ -978,6 +1013,7 @@ fn write_sheets_inner(
     protect_password: Option<&str>,
     protect_objects: bool,
     protect_scenarios: bool,
+    rules: &[ConditionalRule],
 ) -> std::io::Result<()> {
     if sheets.is_empty() {
         return Err(std::io::Error::new(
@@ -1107,6 +1143,14 @@ fn write_sheets_inner(
                     u8::from(protect_scenarios)
                 )),
             }
+        }
+        if !rules.is_empty() && !sheet.rows.is_empty() && !sheet.headers.is_empty() {
+            let last_row = sheet.rows.len() as u64 + 1;
+            xml.push_str(&conditional_formatting_xml(
+                rules,
+                &sheet.headers,
+                last_row,
+            )?);
         }
         if auto_filter && !sheet.rows.is_empty() && !sheet.headers.is_empty() {
             let last_column = column_name(sheet.headers.len() - 1);

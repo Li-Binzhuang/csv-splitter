@@ -1,0 +1,35 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "e8beaa6debfadeaa55cac6c88e2644a74825e00a0673f388118a7b8646770fd7",
+  "batch_id": "d43f5831680aabeb52b2fcfeee06996fe87b47aa2d738f0c4424ab7e4f5cf96a",
+  "composite_identity": "35f11479b301c56def128bcb724e16cab2a90f5e17309a41dae29c22e24d912c",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "1298c9869c80264d404cdf9ec64929ba3622bf90055039b1e3a4be5f18691fb7",
+  "targets": [
+    {
+      "candidate_id": "8b888275ad67221b0df8e5bb57b2137af819739704611c22d571bbd057cf39da",
+      "object_ref": "code:crates/cli/src/commands/convert.rs",
+      "path": "crates/cli/src/commands/convert.rs",
+      "change": "update",
+      "source_sha256": "3450763f5f0c214d435154c57c337d2c6d4964cb2fd69fd6c26a35338c643dda",
+      "existing_entry": "convert.rs[SD7L]: F:CLI convert：转码、xlsx/csv/tsv/ndjson/parquet、highlight、number-format、formats、protection 检测、no-freeze、no-auto-filter、data-validation、protect-sheet、col-width、密码与粒度 | R:code:crates/cli/src/commands/mod.rs,code:crates/core/src/xlsx.rs | A:Parser；--formats；--protection 四标志（--all-sheets/--json）；--number-format（单文件与目录）；--no-freeze/--no-auto-filter；--data-validation；--protect-sheet；密码；allow-objects/scenarios；--col-width | S:不覆盖输入；--formats/--protection 仅 xlsx；密码 1–15 ASCII；公式 ≤255；重复列/空值/宽度越界退出 2；目录未列出列默认 Plain"
+    },
+    {
+      "candidate_id": "b9391e80300790780f531a50400e96cedd9629faebcc16399db4390bca8e7820",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "b7544b3b94d8f721ddfc798153f5b61f3f5bf578382a3a933538525ee7e5e97d",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles；csv_to_xlsx_with_all；write_sheets 系列含 widths/options/formats+widths/多 sheet 保护与密码/目录密码/对象场景粒度/格式+宽度+保护；dataValidations 列表与 type=custom；allow_blank；prompt/error；条件格式全族/dxf 映射表；Colored；xlsx_sheet_protection 四标志读写一致；autoFilter | S:不写公式/图表；合并不展开；验证列表 ≤255 且禁逗号/引号；自定义公式与列表不能混用"
+    },
+    {
+      "candidate_id": "bdfaaa47059d7f3dd54c8e25cd7393ae927af5e51260005141baed060fe64812",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "de25db5786fb6f13c1654447e6f5802d8103a3c68c0d7087f18655b64d2411c0",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；dxf 逐色项已合并；Round546 保护检测 CLI 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
