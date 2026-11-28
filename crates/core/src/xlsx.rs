@@ -652,7 +652,15 @@ pub fn write_sheets_with_options_and_formats(
     freeze_header: bool,
     auto_filter: bool,
 ) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, formats, &[], freeze_header, auto_filter)
+    write_sheets_inner(
+        output,
+        sheets,
+        formats,
+        &[],
+        freeze_header,
+        auto_filter,
+        false,
+    )
 }
 
 /// Write sheets with explicit freeze and auto-filter choices.
@@ -662,17 +670,17 @@ pub fn write_sheets_with_options(
     freeze_header: bool,
     auto_filter: bool,
 ) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, &[], &[], freeze_header, auto_filter)
+    write_sheets_inner(output, sheets, &[], &[], freeze_header, auto_filter, false)
 }
 
 /// Write sheets without a header auto-filter.
 pub fn write_sheets_without_auto_filter(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, &[], &[], true, false)
+    write_sheets_inner(output, sheets, &[], &[], true, false, false)
 }
 
 /// Write sheets without freezing the header row on any sheet.
 pub fn write_sheets_without_freeze(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, &[], &[], false, true)
+    write_sheets_inner(output, sheets, &[], &[], false, true, false)
 }
 
 /// Write sheets and map each column's display format into an Excel cell style.
@@ -681,6 +689,11 @@ pub fn write_sheets_without_freeze(output: &Path, sheets: &[Sheet]) -> std::io::
 /// entry means plain text/number. The mapping is intentionally the same
 /// `NumberFormat` used by the viewer, so `#,##0.00`, `0.0%`, `$#,##0.00`
 /// and date/time codes do not get invented twice.
+/// Write sheets with worksheet protection on every sheet.
+pub fn write_sheets_with_protection(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
+    write_sheets_inner(output, sheets, &[], &[], true, true, true)
+}
+
 /// Write sheets with formats, widths and freeze/filter choices.
 pub fn write_sheets_with_formats_widths_and_options(
     output: &Path,
@@ -689,8 +702,17 @@ pub fn write_sheets_with_formats_widths_and_options(
     widths: &[Vec<(String, f64)>],
     freeze_header: bool,
     auto_filter: bool,
+    protect: bool,
 ) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, formats, widths, freeze_header, auto_filter)
+    write_sheets_inner(
+        output,
+        sheets,
+        formats,
+        widths,
+        freeze_header,
+        auto_filter,
+        protect,
+    )
 }
 
 /// Write sheets with formats plus freeze/filter choices.
@@ -701,7 +723,15 @@ pub fn write_sheets_with_formats_and_options(
     freeze_header: bool,
     auto_filter: bool,
 ) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, formats, &[], freeze_header, auto_filter)
+    write_sheets_inner(
+        output,
+        sheets,
+        formats,
+        &[],
+        freeze_header,
+        auto_filter,
+        false,
+    )
 }
 
 /// Write sheets with per-sheet formats and widths together.
@@ -711,7 +741,7 @@ pub fn write_sheets_with_formats_and_widths(
     formats: &[Vec<crate::layout::NumberFormat>],
     widths: &[Vec<(String, f64)>],
 ) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, formats, widths, true, true)
+    write_sheets_inner(output, sheets, formats, widths, true, true, false)
 }
 
 /// Write sheets with widths plus freeze/filter choices.
@@ -722,7 +752,15 @@ pub fn write_sheets_with_widths_and_options(
     freeze_header: bool,
     auto_filter: bool,
 ) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, &[], widths, freeze_header, auto_filter)
+    write_sheets_inner(
+        output,
+        sheets,
+        &[],
+        widths,
+        freeze_header,
+        auto_filter,
+        false,
+    )
 }
 
 /// Write sheets with per-sheet column width overrides.
@@ -731,7 +769,7 @@ pub fn write_sheets_with_widths(
     sheets: &[Sheet],
     widths: &[Vec<(String, f64)>],
 ) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, &[], widths, true, true)
+    write_sheets_inner(output, sheets, &[], widths, true, true, false)
 }
 
 pub fn write_sheets_with_formats(
@@ -739,7 +777,7 @@ pub fn write_sheets_with_formats(
     sheets: &[Sheet],
     formats: &[Vec<crate::layout::NumberFormat>],
 ) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, formats, &[], true, true)
+    write_sheets_inner(output, sheets, formats, &[], true, true, false)
 }
 
 fn write_sheets_inner(
@@ -749,6 +787,7 @@ fn write_sheets_inner(
     widths: &[Vec<(String, f64)>],
     freeze_header: bool,
     auto_filter: bool,
+    protect: bool,
 ) -> std::io::Result<()> {
     if sheets.is_empty() {
         return Err(std::io::Error::new(
@@ -864,6 +903,9 @@ fn write_sheets_inner(
             xml.push_str("</row>");
         }
         xml.push_str("</sheetData>");
+        if protect {
+            xml.push_str("<sheetProtection sheet=\"1\" objects=\"1\" scenarios=\"1\"/>");
+        }
         if auto_filter && !sheet.rows.is_empty() && !sheet.headers.is_empty() {
             let last_column = column_name(sheet.headers.len() - 1);
             xml.push_str(&format!(
@@ -4072,6 +4114,34 @@ mod tests {
     }
 
     #[test]
+    fn multi_sheet_protection_is_written_on_every_sheet() {
+        let dir = temp_path("multi protect");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("multi.xlsx");
+        let sheets = vec![
+            Sheet {
+                name: "one".to_string(),
+                headers: vec!["id".into()],
+                rows: vec![vec!["1".into()]],
+            },
+            Sheet {
+                name: "two".to_string(),
+                headers: vec!["id".into()],
+                rows: vec![vec!["2".into()]],
+            },
+        ];
+        write_sheets_with_protection(&path, &sheets).unwrap();
+        for name in ["xl/worksheets/sheet1.xml", "xl/worksheets/sheet2.xml"] {
+            let xml = read_zip(&path, name);
+            assert!(
+                xml.contains("<sheetProtection sheet=\"1\" objects=\"1\" scenarios=\"1\"/>"),
+                "{name}: {xml}"
+            );
+        }
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
     fn multi_sheet_formats_widths_and_no_freeze_coexist() {
         use crate::layout::NumberFormat;
         let dir = temp_path("multiallnofreeze");
@@ -4098,7 +4168,7 @@ mod tests {
             vec![("rate".to_string(), 25.0)],
         ];
         write_sheets_with_formats_widths_and_options(
-            &path, &sheets, &formats, &widths, false, true,
+            &path, &sheets, &formats, &widths, false, true, false,
         )
         .unwrap();
         let styles = read_zip(&path, "xl/styles.xml");
