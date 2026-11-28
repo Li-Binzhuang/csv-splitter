@@ -793,6 +793,34 @@ pub fn write_sheets_with_protection(output: &Path, sheets: &[Sheet]) -> std::io:
     write_sheets_inner(output, sheets, &[], &[], true, true, true, None, true, true)
 }
 
+/// Write sheets with per-sheet formats, widths, freeze/filter and protection.
+#[allow(clippy::too_many_arguments)]
+pub fn write_sheets_with_formats_widths_and_protection(
+    output: &Path,
+    sheets: &[Sheet],
+    formats: &[Vec<crate::layout::NumberFormat>],
+    widths: &[Vec<(String, f64)>],
+    freeze_header: bool,
+    auto_filter: bool,
+    protect: bool,
+    protect_password: Option<&str>,
+    protect_objects: bool,
+    protect_scenarios: bool,
+) -> std::io::Result<()> {
+    write_sheets_inner(
+        output,
+        sheets,
+        formats,
+        widths,
+        freeze_header,
+        auto_filter,
+        protect,
+        protect_password,
+        protect_objects,
+        protect_scenarios,
+    )
+}
+
 /// Write sheets with formats, widths and freeze/filter choices.
 pub fn write_sheets_with_formats_widths_and_options(
     output: &Path,

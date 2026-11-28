@@ -571,10 +571,6 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 eprintln!("error: --highlight needs a single xlsx output, not a directory");
                 return 2;
             }
-            if number_format.is_some() {
-                eprintln!("error: --number-format needs a single xlsx output, not a directory");
-                return 2;
-            }
             if let Err(code) = check_output(Some(&input), &out) {
                 return code;
             }
@@ -633,12 +629,55 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 },
                 None => Vec::new(),
             };
+            let column_formats = match number_format.as_deref() {
+                Some(text) => match parse_column_formats(text) {
+                    Ok(formats) => formats,
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                },
+                None => Vec::new(),
+            };
             let per_sheet = if widths.is_empty() {
                 Vec::new()
             } else {
                 vec![widths; sheets.len()]
             };
-            let result = if protect_password.is_some() || !protect_objects || !protect_scenarios {
+            let per_sheet_formats: Vec<Vec<csvx_core::layout::NumberFormat>> =
+                if column_formats.is_empty() {
+                    Vec::new()
+                } else {
+                    let mut mapped = Vec::new();
+                    for sheet in &sheets {
+                        let mut row = Vec::new();
+                        for header in &sheet.headers {
+                            row.push(
+                                column_formats
+                                    .iter()
+                                    .find(|(column, _)| column == header)
+                                    .map(|(_, format)| format.clone())
+                                    .unwrap_or(csvx_core::layout::NumberFormat::Plain),
+                            );
+                        }
+                        mapped.push(row);
+                    }
+                    mapped
+                };
+            let result = if !per_sheet_formats.is_empty() {
+                csvx_core::xlsx::write_sheets_with_formats_widths_and_protection(
+                    &out,
+                    &sheets,
+                    &per_sheet_formats,
+                    &per_sheet,
+                    !no_freeze,
+                    !no_auto_filter,
+                    protect_sheet,
+                    protect_password.as_deref(),
+                    protect_objects,
+                    protect_scenarios,
+                )
+            } else if protect_password.is_some() || !protect_objects || !protect_scenarios {
                 csvx_core::xlsx::write_sheets_with_options_and_password(
                     &out,
                     &sheets,
