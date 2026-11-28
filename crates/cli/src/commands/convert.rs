@@ -70,6 +70,7 @@ fn parse_data_validations(text: &str) -> Result<Vec<csvx_core::xlsx::DataValidat
             error_title: None,
             error_message: None,
             allow_blank: false,
+            numeric: None,
         });
     }
     if validations.is_empty() {
@@ -106,6 +107,7 @@ fn parse_validation_formulas(text: &str) -> Result<Vec<csvx_core::xlsx::DataVali
             error_title: None,
             error_message: None,
             allow_blank: false,
+            numeric: None,
         });
     }
     Ok(validations)

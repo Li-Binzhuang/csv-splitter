@@ -37,6 +37,21 @@ pub struct ConditionalRule {
     pub color: String,
 }
 
+/// Excel numeric validation kind.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NumericKind {
+    Whole,
+    Decimal,
+}
+
+/// Bounds for a whole/decimal data validation; either bound may be omitted.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NumericValidation {
+    pub kind: NumericKind,
+    pub min: Option<String>,
+    pub max: Option<String>,
+}
+
 /// A list-style Excel data validation (a dropdown of allowed values).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DataValidation {
@@ -54,6 +69,8 @@ pub struct DataValidation {
     pub error_message: Option<String>,
     /// Whether an empty cell passes validation.
     pub allow_blank: bool,
+    /// Whole/decimal range validation; replaces list/custom when present.
+    pub numeric: Option<NumericValidation>,
 }
 
 /// Read a worksheet's header names and their Excel number formats.
@@ -1530,10 +1547,21 @@ fn data_validations_xml(
                     format!("data validation column not found: {}", validation.column),
                 )
             })?;
-        if validation.formula.is_none() && validation.values.is_empty() {
+        if validation.formula.is_none()
+            && validation.values.is_empty()
+            && validation.numeric.is_none()
+        {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 "data validation needs at least one value",
+            ));
+        }
+        if validation.numeric.is_some()
+            && (validation.formula.is_some() || !validation.values.is_empty())
+        {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "numeric data validation cannot combine with a list or custom formula",
             ));
         }
         if validation.formula.is_some() && !validation.values.is_empty() {
@@ -1593,7 +1621,50 @@ fn data_validations_xml(
                 xml_attribute(message)
             ));
         }
-        if let Some(formula) = validation.formula.as_deref() {
+        if let Some(numeric) = validation.numeric.as_ref() {
+            let min = numeric
+                .min
+                .as_deref()
+                .map(str::trim)
+                .filter(|v| !v.is_empty());
+            let max = numeric
+                .max
+                .as_deref()
+                .map(str::trim)
+                .filter(|v| !v.is_empty());
+            if min.is_none() && max.is_none() {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "numeric data validation needs a min or max bound",
+                ));
+            }
+            for bound in [min, max].into_iter().flatten() {
+                if bound.chars().count() > 255 {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        "data validation bound is longer than 255 characters",
+                    ));
+                }
+            }
+            let kind = match numeric.kind {
+                NumericKind::Whole => "whole",
+                NumericKind::Decimal => "decimal",
+            };
+            let (operator, formula1, formula2) = match (min, max) {
+                (Some(min), Some(max)) => ("between", min.to_string(), Some(max.to_string())),
+                (Some(min), None) => ("greaterThanOrEqual", min.to_string(), None),
+                (None, Some(max)) => ("lessThanOrEqual", max.to_string(), None),
+                (None, None) => unreachable!(),
+            };
+            let second = formula2
+                .map(|max| format!("<formula2>{}</formula2>", xml_text(&max)))
+                .unwrap_or_default();
+            out.push_str(&format!(
+                "<dataValidation type=\"{kind}\" operator=\"{operator}\" allowBlank=\"{}\" showErrorMessage=\"1\"{prompt}{error} sqref=\"{column}2:{column}{last_row}\"><formula1>{}</formula1>{second}</dataValidation>",
+                if validation.allow_blank { "1" } else { "0" },
+                xml_text(&formula1)
+            ));
+        } else if let Some(formula) = validation.formula.as_deref() {
             if formula.trim().is_empty() || formula.chars().count() > 255 {
                 return Err(std::io::Error::new(
                     std::io::ErrorKind::InvalidInput,
@@ -4312,6 +4383,78 @@ mod tests {
     }
 
     #[test]
+    fn numeric_data_validations_write_whole_and_decimal_bounds() {
+        let dir = temp_path("numeric validations");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("numeric.xlsx");
+        let sheets = vec![Sheet {
+            name: "one".to_string(),
+            headers: vec!["id".into(), "amount".into()],
+            rows: vec![vec!["1".into(), "10".into()]],
+        }];
+        let validations = vec![
+            DataValidation {
+                column: "amount".to_string(),
+                values: Vec::new(),
+                formula: None,
+                prompt_title: Some("Amount".to_string()),
+                prompt_message: Some("Enter 0-1200".to_string()),
+                error_title: None,
+                error_message: None,
+                allow_blank: true,
+                numeric: Some(NumericValidation {
+                    kind: NumericKind::Whole,
+                    min: Some("0".to_string()),
+                    max: Some("1200".to_string()),
+                }),
+            },
+            DataValidation {
+                column: "id".to_string(),
+                values: Vec::new(),
+                formula: None,
+                prompt_title: None,
+                prompt_message: None,
+                error_title: None,
+                error_message: None,
+                allow_blank: false,
+                numeric: Some(NumericValidation {
+                    kind: NumericKind::Decimal,
+                    min: Some("0.5".to_string()),
+                    max: None,
+                }),
+            },
+        ];
+        write_sheets_with_formats_widths_and_protection(
+            &path,
+            &sheets,
+            &[Vec::new()],
+            &[Vec::new()],
+            true,
+            false,
+            false,
+            None,
+            true,
+            true,
+            &[],
+            &validations,
+        )
+        .unwrap();
+        let sheet = read_zip(&path, "xl/worksheets/sheet1.xml");
+        assert!(
+            sheet.contains("type=\"whole\" operator=\"between\""),
+            "{sheet}"
+        );
+        assert!(sheet.contains("<formula2>1200</formula2>"), "{sheet}");
+        assert!(sheet.contains("promptTitle=\"Amount\""), "{sheet}");
+        assert!(
+            sheet.contains("type=\"decimal\" operator=\"greaterThanOrEqual\""),
+            "{sheet}"
+        );
+        assert!(sheet.contains("<formula1>0.5</formula1>"), "{sheet}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
     fn options_can_disable_freeze_and_filter_with_formats() {
         use crate::layout::NumberFormat;
         let dir = temp_path("options");
@@ -4395,6 +4538,7 @@ mod tests {
                 error_title: None,
                 error_message: None,
                 allow_blank: false,
+                numeric: None,
             },
             DataValidation {
                 column: "id".to_string(),
@@ -4405,6 +4549,7 @@ mod tests {
                 error_title: None,
                 error_message: None,
                 allow_blank: false,
+                numeric: None,
             },
         ];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
@@ -4438,6 +4583,7 @@ mod tests {
             error_title: None,
             error_message: None,
             allow_blank: false,
+            numeric: None,
         }];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
@@ -4466,6 +4612,7 @@ mod tests {
             error_title: None,
             error_message: None,
             allow_blank: false,
+            numeric: None,
         }];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
@@ -4498,6 +4645,7 @@ mod tests {
             error_title: Some("Bad status".to_string()),
             error_message: Some("Pick \"good\" or ok".to_string()),
             allow_blank: false,
+            numeric: None,
         }];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
@@ -4527,6 +4675,7 @@ mod tests {
             error_title: None,
             error_message: None,
             allow_blank: true,
+            numeric: None,
         }];
         csv_to_xlsx_with_validations(&input, &output, Delimiter::Comma, &tx, &validations).unwrap();
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
