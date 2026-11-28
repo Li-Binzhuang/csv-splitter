@@ -1,0 +1,35 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "39c5c448d56d6a8627625bd9a6da0e2ecaf6b61dd7c56e067359f37c8c6dc449",
+  "batch_id": "b0799e2afcf25d4da704a5d5cbfc893c783d176dab4c41e7d0a59f9b7007ecee",
+  "composite_identity": "5313e866ab30eeb35be3955827625e7cad9523f14ded68a8ffca2245f10ae896",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "c36feb52ad67cbbd6d7e302910e2f161f14fe0e31c275689e5da690adfbafffe",
+  "targets": [
+    {
+      "candidate_id": "a82a65e4590aad6d4a593a034c403c7e46f186f79852dc2b1d16d8e0a7d91ebe",
+      "object_ref": "code:crates/core/src/xlsx.rs",
+      "path": "crates/core/src/xlsx.rs",
+      "change": "update",
+      "source_sha256": "9a8e138766dc548ee6e8b19a5f5790b0288fcb0653bb6214f6d4a2888f938bac",
+      "existing_entry": "xlsx.rs[KG7L]: F:最小 OOXML xlsx 导出与只读导入 | R:code:crates/core/src/encoding.rs,code:crates/core/src/csv_reader.rs | A:ZIP 写 workbook/styles；dataValidations 全类型；mergeCells 写出；回读 validations/formulas/conditional_formats/sheet_view/header_names/merged_ranges；dxfs；保护读回；自定义码 | S:不写公式/图表；列表≤255；四选一验证源；merges 需一表一项"
+    },
+    {
+      "candidate_id": "7799dfd9f3391ead6a7cb613e8030aaf6ec0f79f64e6b54ca1ea7377d9f5522f",
+      "object_ref": "code:docs/XLSX_ENGINE.md",
+      "path": "docs/XLSX_ENGINE.md",
+      "change": "update",
+      "source_sha256": "af95d8954fe33d6583a10452f026494fc4d7b685b5a63ffb9651ee92f783277f",
+      "existing_entry": "XLSX_ENGINE.md[SZ7S]: F:XLSX 引擎决策、迁移方案、覆盖矩阵与实测 | R:code:crates/core/src/xlsx.rs,code:docs/DEPLOY.md | A:无官方 Rust 库；calamine MIT；全 sheet；数字格式导出；条件格式；数据验证全类型；公式回读；冻结/筛选与表头回读；合并区域读写与检测；保护矩阵；1M 8.04s/53MB | S:迁移未执行待批准；不新增依赖；导入格式取首数据行；性能仅 release"
+    },
+    {
+      "candidate_id": "56c005d0b068d6b78b407dcb459a05bcf7876c4cbb3c8b1d8209d20d46999718",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "a135e95519c14ececb68a29a192023bfa4f6fe21d2c472cef27412d48c47a541",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同新功能，边界并入母项，每轮需 feat 增量；594 验收、595–597 待做；Round606 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
