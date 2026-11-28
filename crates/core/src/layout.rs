@@ -261,6 +261,8 @@ fn fraction_shape(spec: &str) -> Option<(bool, usize)> {
         "?/?" => Some((false, 1)),
         "# ??/??" => Some((true, 2)),
         "??/??" => Some((false, 2)),
+        "# ????/????" => Some((true, 4)),
+        "????/????" => Some((false, 4)),
         _ => None,
     }
 }
@@ -1126,6 +1128,14 @@ mod tests {
         assert_eq!(wide.render("0.36"), "9/25");
         let narrow = NumberFormat::parse("?/?").unwrap();
         assert_eq!(narrow.render("0.36"), "3/8");
+        let four = NumberFormat::parse("# ????/????").unwrap();
+        assert_eq!(four.name(), "# ????/????");
+        assert_eq!(four.render("1.25"), "1 1/4");
+        assert_eq!(four.render("0.36"), "9/25");
+        let four_simple = NumberFormat::parse("????/????").unwrap();
+        assert_eq!(four_simple.name(), "????/????");
+        assert_eq!(four_simple.render("0.5"), "1/2");
+
         let wide_simple = NumberFormat::parse("??/??").unwrap();
         assert_eq!(wide_simple.name(), "??/??");
         assert_eq!(wide_simple.render("0.36"), "9/25");
