@@ -2381,6 +2381,13 @@ pub fn xlsx_sheet_names(input: &Path) -> std::io::Result<Vec<String>> {
     Ok(sheets.into_iter().map(|sheet| sheet.name).collect())
 }
 
+/// One sheet's name paired with its protection flags.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SheetProtectionEntry {
+    pub name: String,
+    pub protection: SheetProtection,
+}
+
 /// Worksheet protection flags read back from an xlsx sheet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SheetProtection {
@@ -2425,22 +2432,67 @@ pub fn xlsx_sheet_protection(
         format!("xl/{}", target.trim_start_matches("./"))
     };
     let sheet_xml = read_entry(&mut archive, &normalized)?;
+    Ok(protection_from_xml(&sheet_xml))
+}
+
+fn protection_from_xml(sheet_xml: &str) -> SheetProtection {
     let Some(start) = sheet_xml.find("<sheetProtection") else {
-        return Ok(SheetProtection {
+        return SheetProtection {
             protected: false,
             objects_locked: false,
             scenarios_locked: false,
             password_protected: false,
-        });
+        };
     };
     let tail = &sheet_xml[start..];
     let tag = tail.split("/>").next().unwrap_or(tail);
-    Ok(SheetProtection {
+    SheetProtection {
         protected: true,
         objects_locked: !tag.contains("objects=\"0\""),
         scenarios_locked: !tag.contains("scenarios=\"0\""),
         password_protected: tag.contains("password=\""),
-    })
+    }
+}
+
+/// Read protection flags for every worksheet in workbook order.
+pub fn xlsx_protection_map(input: &Path) -> std::io::Result<Vec<SheetProtectionEntry>> {
+    let file = std::fs::File::open(input)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let workbook = read_entry(&mut archive, "xl/workbook.xml")?;
+    let rels = read_entry(&mut archive, "xl/_rels/workbook.xml.rels").unwrap_or_default();
+    let sheets = workbook_sheets(&workbook);
+    if sheets.is_empty() {
+        return Err(invalid("xlsx has no worksheets"));
+    }
+    let mut out = Vec::with_capacity(sheets.len());
+    for sheet in &sheets {
+        let target = relationship_target(&rels, &sheet.rid)
+            .or_else(|| (sheets.len() == 1).then(|| "xl/worksheets/sheet1.xml".to_string()))
+            .ok_or_else(|| {
+                invalid(&format!(
+                    "xlsx sheet {:?} has no relationship target",
+                    sheet.name
+                ))
+            })?;
+        let normalized = if let Some(stripped) = target.strip_prefix('/') {
+            stripped.to_string()
+        } else if target.starts_with("xl/") {
+            target
+        } else {
+            format!("xl/{}", target.trim_start_matches("./"))
+        };
+        let sheet_xml = read_entry(&mut archive, &normalized)?;
+        out.push(SheetProtectionEntry {
+            name: sheet.name.clone(),
+            protection: protection_from_xml(&sheet_xml),
+        });
+    }
+    Ok(out)
 }
 
 /// Report whether the selected sheet carries Excel worksheet protection.
@@ -4515,6 +4567,37 @@ mod tests {
             sheet.contains("<col min=\"2\" max=\"2\" width=\"20\" customWidth=\"1\"/>"),
             "{sheet}"
         );
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn protection_map_reports_every_sheet() {
+        let dir = temp_path("protection map");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("map.xlsx");
+        let sheets = vec![
+            Sheet {
+                name: "one".to_string(),
+                headers: vec!["id".into()],
+                rows: vec![vec!["1".into()]],
+            },
+            Sheet {
+                name: "two".to_string(),
+                headers: vec!["id".into()],
+                rows: vec![vec!["2".into()]],
+            },
+        ];
+        write_sheets_with_protection_password(&path, &sheets, "test").unwrap();
+        let map = xlsx_protection_map(&path).unwrap();
+        assert_eq!(map.len(), 2);
+        assert_eq!(map[0].name, "one");
+        assert_eq!(map[1].name, "two");
+        for entry in &map {
+            assert!(entry.protection.protected);
+            assert!(entry.protection.objects_locked);
+            assert!(entry.protection.scenarios_locked);
+            assert!(entry.protection.password_protected);
+        }
         std::fs::remove_dir_all(dir).ok();
     }
 
