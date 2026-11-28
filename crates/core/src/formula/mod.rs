@@ -7312,6 +7312,9 @@ mod tests {
                 "{value}"
             );
         }
+        let first = eval_str("rand()", &[]);
+        let second = eval_str("rand()", &[]);
+        assert_ne!(first, second, "{first} == {second}");
         assert_eq!(eval_str("rand(1)", &[]), "#VALUE!");
         assert_eq!(eval_str("randbetween(5,5)", &[]), "5");
         for _ in 0..10 {

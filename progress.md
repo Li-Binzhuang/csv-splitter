@@ -562,11 +562,12 @@
   测试 `rand_and_randbetween_stay_in_bounds`。
 - [x] 项500 dxf 同色去重验证（功能级）：两条红规则共享 dxfId=0；
   测试 `same_colour_rules_share_one_dxf`。
-- [ ] 项427 条件格式 dxf 跨规则复用（功能级）：已由项500 覆盖，待标完成。
-- [ ] 项501 RAND 两次调用不同（功能级）：连续两次值不同；
-  验收：单测 + gate。
-  验收：单测 + gate。
+- [x] 项427 条件格式 dxf 跨规则复用（功能级）：由项500 覆盖。
+- [x] 项501 RAND 两次调用不同（功能级）：连续两次值不同；
+  测试 `rand_and_randbetween_stay_in_bounds`。
 - [ ] 项428 条件格式 dxf 蓝色规则同 id 断言（功能级）：蓝色多规则同 dxfId；
+  验收：单测 + gate。
+- [ ] 项502 多色 dxf 计数（功能级）：红+蓝+绿各 1 个 dxf；
   验收：单测 + gate。
 - [x] 项429 斜杠日期格式导出 round-trip（功能级）：m/d/yyyy、mm/dd/yyyy 写入 numFmt；
   测试 `slash_date_formats_map_into_export_styles`。
@@ -861,6 +862,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 519（项501 RAND 不同调用，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `23051d78…c0e36d9f3`；
+轮首 push 成功，本轮不再 push。
 
 Round 518（项500 dxf 同色复用，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `68709099…b339e8ae`；
