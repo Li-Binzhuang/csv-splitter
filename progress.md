@@ -493,11 +493,13 @@
   测试 `convert_xlsx_combines_password_highlight_and_no_freeze`。
 - [x] 项521 多 sheet 保护粒度（功能级）：目录导出支持放行选项；
   测试 `convert_directory_to_xlsx_can_allow_objects`。
-- [ ] 项522 公式验证 + CF + no-auto（功能级）：三特性并存；
-  验收：CLI + 单测 + gate。
+- [x] 项522 公式验证 + CF + no-auto（功能级）：三特性并存；
+  测试 `convert_xlsx_combines_custom_formula_highlight_and_no_auto_filter`。
 - [ ] 项523 保护细节读取（功能级）：返回 objects/scenarios/密码标志；
   验收：单测 + gate。
 - [ ] 项524 目录数字格式（功能级）：多 sheet 应用 --number-format；
+  验收：CLI + 单测 + gate。
+- [ ] 项525 目录格式 + 密码（功能级）：格式与保护叠加；
   验收：CLI + 单测 + gate。
 - [x] 项452 highlight + formats 组合（功能级）：CF 与数字格式共存；
   测试 `convert_xlsx_combines_highlight_and_number_formats`。
@@ -900,6 +902,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 540（项522 公式验证+CF+no-auto，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `3cc7ec7b…fecd7499`；
+轮首 push 成功，本轮不再 push。
 
 Round 539（项521 多 sheet 保护粒度，功能级；新能力）；
 定向与全量 gate/package 通过；发布包 SHA `77c9a2fc…753d3d18`；
