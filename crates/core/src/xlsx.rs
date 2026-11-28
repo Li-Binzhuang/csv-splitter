@@ -217,7 +217,9 @@ fn style_number_formats(styles: &str) -> Vec<Option<crate::layout::NumberFormat>
                 .get(&id)
                 .cloned()
                 .or_else(|| builtin_number_format(id).map(str::to_string))?;
-            crate::layout::NumberFormat::parse(&code).ok()
+            crate::layout::NumberFormat::parse(&code)
+                .or_else(|_| crate::layout::NumberFormat::parse_raw(&code))
+                .ok()
         })
         .collect()
 }
@@ -6015,6 +6017,24 @@ mod tests {
         assert_eq!(columns.len(), 2, "{columns:?}");
         assert_eq!(columns[0].0, "a");
         assert_eq!(columns[1].0, "b");
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn custom_format_codes_survive_import_readback() {
+        use crate::layout::NumberFormat;
+        let path = temp_path("custom-format-import.xlsx");
+        let sheet = Sheet {
+            name: "custom".to_string(),
+            headers: vec!["amount".into()],
+            rows: vec![vec!["1234.5".into()]],
+        };
+        let custom = NumberFormat::parse_raw("[$-409]m/d/yyyy").unwrap();
+        write_sheets_with_formats(&path, &[sheet], &[vec![custom.clone()]]).unwrap();
+        let columns = xlsx_column_formats(&path, None).unwrap();
+        assert_eq!(columns.len(), 1, "{columns:?}");
+        assert_eq!(columns[0].0, "amount");
+        assert_eq!(columns[0].1, Some(custom));
         let _ = std::fs::remove_file(path);
     }
 

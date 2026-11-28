@@ -47,6 +47,7 @@
 | 四位分数 `????/????` | 支持（新增） | `# ????/????` 与 `????/????`，分母上限 9999 |
 
 | 任意 Excel 自定义格式码 | 支持（新增，透传） | `--number-format-raw` 原样写入 formatCode（≤255），不解释、不改写 | `raw_number_format_codes_are_kept_verbatim` |
+| 导入自定义码 | 支持（新增） | `xlsx_column_formats` 对未识别码用 parse_raw 保留原文 | `custom_format_codes_survive_import_readback` |
 | 白名单解析 | 严格模式保留 | `NumberFormat::parse` 对未识别格式仍报错，不静默套用 | `date_time_formats_render_iso_values` |
 
 ## CLI 显示

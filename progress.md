@@ -596,12 +596,14 @@
 - [x] 项577 数据验证日期/时间区间（新能力）：`--data-validation-date/time`，ISO/时间转序列；
   测试 `date_and_time_validations_convert_iso_bounds_to_serials`、
   `convert_writes_date_and_time_validation_ranges`。
-- [ ] 项578 xlsx 导入自定义格式码回读（新能力）：xlsx_column_formats 保留未识别格式码；
-  验收：round-trip + 单测 + gate。
+- [x] 项578 xlsx 导入自定义格式码回读（新能力）：xlsx_column_formats 用 parse_raw 保留未识别码；
+  测试 `custom_format_codes_survive_import_readback`。
 - [ ] 项579 xlsx 公式回读 API（新能力）：读取带公式单元格的公式文本（不是缓存值）；
   验收：单测 + round-trip + gate。
 - [ ] 项580 数据验证日期回读 ISO 投影（新能力）：`--validations` 把日期/时间序列号显示回 ISO；
   验收：CLI + 单测 + gate。
+- [ ] 项581 条件格式回读 API（新能力）：读取 xlsx 条件格式规则（列/操作符/值/颜色/类型）；
+  验收：单测 + round-trip + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
@@ -1007,6 +1009,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 590（项578 xlsx 导入自定义格式码回读，feat 级新能力，验收完成）；
+定向与全量 gate/package 通过；发布包 SHA `5c12ac57…bafe3b04`；
+轮首 push 成功，本轮不再 push。
 
 Round 589（项577 数据验证日期/时间区间，feat 级新能力，验收完成）；
 定向与全量 gate/package 通过；发布包 SHA `9076f259…525507f5`；
