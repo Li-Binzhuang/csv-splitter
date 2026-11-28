@@ -559,6 +559,12 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut fit_to_width: Option<u32> = None;
     let mut fit_to_height: Option<u32> = None;
     let mut scale: Option<u32> = None;
+    let mut margin_left: Option<f64> = None;
+    let mut margin_right: Option<f64> = None;
+    let mut margin_top: Option<f64> = None;
+    let mut margin_bottom: Option<f64> = None;
+    let mut margin_header: Option<f64> = None;
+    let mut margin_footer: Option<f64> = None;
     let mut title: Option<String> = None;
     let mut author: Option<String> = None;
     let mut merges: Vec<String> = Vec::new();
@@ -696,6 +702,66 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--properties" => properties = true,
             "--page-setup" => page_setup = true,
             "--print-layout" => print_layout = true,
+            "--margin-left" => match p.value("--margin-left").and_then(|v| {
+                v.parse::<f64>()
+                    .map_err(|_| "bad --margin-left".to_string())
+            }) {
+                Ok(v) if (0.0..=10.0).contains(&v) => margin_left = Some(v),
+                _ => {
+                    eprintln!("error: --margin-left must be 0-10");
+                    return 2;
+                }
+            },
+            "--margin-right" => match p.value("--margin-right").and_then(|v| {
+                v.parse::<f64>()
+                    .map_err(|_| "bad --margin-right".to_string())
+            }) {
+                Ok(v) if (0.0..=10.0).contains(&v) => margin_right = Some(v),
+                _ => {
+                    eprintln!("error: --margin-right must be 0-10");
+                    return 2;
+                }
+            },
+            "--margin-top" => match p
+                .value("--margin-top")
+                .and_then(|v| v.parse::<f64>().map_err(|_| "bad --margin-top".to_string()))
+            {
+                Ok(v) if (0.0..=10.0).contains(&v) => margin_top = Some(v),
+                _ => {
+                    eprintln!("error: --margin-top must be 0-10");
+                    return 2;
+                }
+            },
+            "--margin-bottom" => match p.value("--margin-bottom").and_then(|v| {
+                v.parse::<f64>()
+                    .map_err(|_| "bad --margin-bottom".to_string())
+            }) {
+                Ok(v) if (0.0..=10.0).contains(&v) => margin_bottom = Some(v),
+                _ => {
+                    eprintln!("error: --margin-bottom must be 0-10");
+                    return 2;
+                }
+            },
+            "--margin-header" => match p.value("--margin-header").and_then(|v| {
+                v.parse::<f64>()
+                    .map_err(|_| "bad --margin-header".to_string())
+            }) {
+                Ok(v) if (0.0..=10.0).contains(&v) => margin_header = Some(v),
+                _ => {
+                    eprintln!("error: --margin-header must be 0-10");
+                    return 2;
+                }
+            },
+            "--margin-footer" => match p.value("--margin-footer").and_then(|v| {
+                v.parse::<f64>()
+                    .map_err(|_| "bad --margin-footer".to_string())
+            }) {
+                Ok(v) if (0.0..=10.0).contains(&v) => margin_footer = Some(v),
+                _ => {
+                    eprintln!("error: --margin-footer must be 0-10");
+                    return 2;
+                }
+            },
             "--orientation" => match p.value("--orientation") {
                 Ok(v) if v == "portrait" || v == "landscape" => orientation = Some(v),
                 Ok(_) => {
@@ -3040,6 +3106,33 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             None
         };
 
+        let margins_value = if margin_left.is_some()
+            || margin_right.is_some()
+            || margin_top.is_some()
+            || margin_bottom.is_some()
+            || margin_header.is_some()
+            || margin_footer.is_some()
+        {
+            if target != "xlsx" {
+                eprintln!("error: --margin-* flags need an xlsx output");
+                return 2;
+            }
+            if input.is_dir() {
+                eprintln!("error: --margin-* flags apply to single-file xlsx exports");
+                return 2;
+            }
+            Some(csvx_core::xlsx::PageMargins {
+                left: margin_left.unwrap_or(0.7),
+                right: margin_right.unwrap_or(0.7),
+                top: margin_top.unwrap_or(0.75),
+                bottom: margin_bottom.unwrap_or(0.75),
+                header: margin_header.unwrap_or(0.3),
+                footer: margin_footer.unwrap_or(0.3),
+            })
+        } else {
+            None
+        };
+
         let result = if xlsx_options {
             csvx_core::xlsx::csv_to_xlsx_with_all(
                 &input,
@@ -3091,6 +3184,12 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 }
                 if let Some(setup) = page_setup_value.as_ref() {
                     if let Err(error) = csvx_core::xlsx::xlsx_set_page_setup(&out, setup) {
+                        eprintln!("error: {error}");
+                        return 1;
+                    }
+                }
+                if let Some(margins) = margins_value.as_ref() {
+                    if let Err(error) = csvx_core::xlsx::xlsx_set_page_margins(&out, margins) {
                         eprintln!("error: {error}");
                         return 1;
                     }

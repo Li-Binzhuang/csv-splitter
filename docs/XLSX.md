@@ -104,6 +104,8 @@ csvx convert data.csv --format xlsx -o data.xlsx \
   --paper-size 9 \
   --fit-to-width 1 \
   --scale 85 \
+  --margin-left 0.5 \
+  --margin-top 0.6 \
   --merge "A1:B1" \
   --hide-sheet Sheet1 \
   --title "Quarterly report" \
@@ -132,6 +134,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 - `--hide-sheet` 在单文件 xlsx 导出后把指定 sheet 设为 hidden（可重复）；
 - `--merge` 在单文件 xlsx 导出后写合并区域（`A1:B1`，可重复/逗号分隔）；目录多 sheet 暂不支持；
 - `--title`/`--author` 在单文件 xlsx 导出后写入 docProps/core.xml（目录多 sheet 暂不支持）；
+- `--margin-left/right/top/bottom/header/footer` 在单文件 xlsx 导出后写 pageMargins；
 - `--orientation`/`--paper-size`/`--fit-to-width`/`--fit-to-height`/`--scale` 在单文件 xlsx 导出后写 pageSetup；
 - `--print-area` 在单文件 xlsx 导出后写打印区域 definedName；`--print-layout` 读取打印区域与页边距；
 - `--page-setup` 读取页面方向/纸张/缩放，支持 sheet/all-sheets/json；
