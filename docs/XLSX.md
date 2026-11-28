@@ -98,6 +98,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
   --heights \
   --visibility \
   --properties \
+  --page-setup \
   --merge "A1:B1" \
   --hide-sheet Sheet1 \
   --title "Quarterly report" \
@@ -126,6 +127,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 - `--hide-sheet` 在单文件 xlsx 导出后把指定 sheet 设为 hidden（可重复）；
 - `--merge` 在单文件 xlsx 导出后写合并区域（`A1:B1`，可重复/逗号分隔）；目录多 sheet 暂不支持；
 - `--title`/`--author` 在单文件 xlsx 导出后写入 docProps/core.xml（目录多 sheet 暂不支持）；
+- `--page-setup` 读取页面方向/纸张/缩放，支持 sheet/all-sheets/json；
 - `--properties` 读取 docProps/core.xml 标题/作者/创建/修改时间；
 - `--visibility` 读取 workbook 每个 sheet 的 visible/hidden/veryHidden 状态；
 - `--heights` 读取 xlsx 显式行高与 customHeight，支持 sheet/all-sheets/json；

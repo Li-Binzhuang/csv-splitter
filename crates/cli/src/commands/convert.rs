@@ -551,6 +551,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut row_heights = false;
     let mut sheet_visibility = false;
     let mut properties = false;
+    let mut page_setup = false;
     let mut title: Option<String> = None;
     let mut author: Option<String> = None;
     let mut merges: Vec<String> = Vec::new();
@@ -686,6 +687,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--heights" => row_heights = true,
             "--visibility" => sheet_visibility = true,
             "--properties" => properties = true,
+            "--page-setup" => page_setup = true,
             "--title" => match p.value("--title") {
                 Ok(v) => title = Some(v),
                 Err(e) => {
@@ -792,9 +794,115 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         && !row_heights
         && !sheet_visibility
         && !properties
+        && !page_setup
     {
         eprintln!("error: --json needs --formats or --protection");
         return 2;
+    }
+
+    if page_setup {
+        if protection
+            || validations
+            || formulas
+            || conditional_formats
+            || sheet_view
+            || show_formats
+            || show_headers
+            || merged_ranges
+            || column_widths
+            || row_heights
+            || sheet_visibility
+            || properties
+        {
+            eprintln!("error: --page-setup cannot be combined with other inspection modes");
+            return 2;
+        }
+        let name = input
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if !(name.ends_with(".xlsx") || name.ends_with(".xlsm")) {
+            eprintln!("error: --page-setup needs an .xlsx/.xlsm input");
+            return 2;
+        }
+        if convert_format.is_some() || out.is_some() {
+            eprintln!("error: --page-setup cannot be combined with output flags");
+            return 2;
+        }
+        if sheet.is_some() && all_sheets {
+            eprintln!("error: --page-setup --all-sheets cannot be combined with --sheet");
+            return 2;
+        }
+        let names = if all_sheets {
+            match csvx_core::xlsx::xlsx_sheet_names(&input) {
+                Ok(names) => names,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        } else {
+            vec![sheet.clone().unwrap_or_default()]
+        };
+        let mut entries = Vec::new();
+        for name in &names {
+            let sheet_arg = (!name.is_empty()).then_some(name.as_str());
+            match csvx_core::xlsx::xlsx_page_setup(&input, sheet_arg) {
+                Ok(setup) => entries.push((sheet_arg.unwrap_or("").to_string(), setup)),
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        }
+        if formats_json {
+            print!("[");
+            for (index, (sheet_name, setup)) in entries.iter().enumerate() {
+                if index > 0 {
+                    print!(",");
+                }
+                let orientation = match setup.orientation.as_deref() {
+                    Some(value) => json_string(value),
+                    None => "null".to_string(),
+                };
+                let field = |value: Option<u32>| match value {
+                    Some(value) => value.to_string(),
+                    None => "null".to_string(),
+                };
+                print!(
+                    "{{\"sheet\":{},\"orientation\":{},\"paper_size\":{},\"fit_to_width\":{},\"fit_to_height\":{},\"scale\":{}}}",
+                    json_string(sheet_name),
+                    orientation,
+                    field(setup.paper_size),
+                    field(setup.fit_to_width),
+                    field(setup.fit_to_height),
+                    field(setup.scale)
+                );
+            }
+            println!("]");
+        } else {
+            for (sheet_name, setup) in &entries {
+                if all_sheets {
+                    println!("# {sheet_name}");
+                }
+                println!(
+                    "orientation={} paper_size={} fit_to_width={} fit_to_height={} scale={}",
+                    setup.orientation.as_deref().unwrap_or(""),
+                    setup.paper_size.map(|v| v.to_string()).unwrap_or_default(),
+                    setup
+                        .fit_to_width
+                        .map(|v| v.to_string())
+                        .unwrap_or_default(),
+                    setup
+                        .fit_to_height
+                        .map(|v| v.to_string())
+                        .unwrap_or_default(),
+                    setup.scale.map(|v| v.to_string()).unwrap_or_default()
+                );
+            }
+        }
+        return 0;
     }
 
     if properties {
