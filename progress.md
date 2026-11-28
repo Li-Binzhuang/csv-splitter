@@ -510,7 +510,9 @@
   测试 `coloured_formats_map_into_export_styles`。
 - [x] 项474 颜色格式 CLI（功能级）：`--number-format "amount:[Red]#,##0.00"`；
   测试 `convert_xlsx_can_use_a_colored_number_format`。
-- [ ] 项475 RANDBETWEEN 嵌套表达式（功能级）：1+1 / 3+4 求值；
+- [x] 项475 RANDBETWEEN 嵌套表达式（功能级）：1+1 / 3+4 求值；
+  测试 `rand_and_randbetween_stay_in_bounds`。
+- [ ] 项476 颜色格式 + 验证 + 保护（功能级）：CLI 三特性共存；
   验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
@@ -809,6 +811,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 493（项475 RANDBETWEEN 嵌套，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `ed56a211…3374ad2d`；
+轮首 push 成功，本轮不再 push。
 
 Round 492（项474 颜色格式 CLI，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `4e115d1d…f346e4d5`；

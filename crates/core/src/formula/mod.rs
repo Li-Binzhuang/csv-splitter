@@ -7300,6 +7300,13 @@ mod tests {
         assert_eq!(eval_str("randbetween(1.5,3)", &[]), "#VALUE!");
         assert_eq!(eval_str("rand(1)", &[]), "#VALUE!");
         assert_eq!(eval_str("randbetween(5,5)", &[]), "5");
+        for _ in 0..10 {
+            let value: f64 = eval_str("randbetween(1+1,3+4)", &[]).parse().unwrap();
+            assert!(
+                (2.0..=7.0).contains(&value) && value.fract() == 0.0,
+                "{value}"
+            );
+        }
         assert_eq!(eval_str("randbetween(\"3\",7)", &[]), "#VALUE!");
         assert_eq!(eval_str("randbetween(3,\"7\")", &[]), "#VALUE!");
         assert_eq!(eval_str("randbetween(-2,-2)", &[]), "-2");

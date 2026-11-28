@@ -1,0 +1,27 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "3a3fb9b8e58ebd7bf4e6ddfe9fe420b46576028e5b32491e0f61c75c2b7a6a72",
+  "batch_id": "655b7cddb47a3fe31a0dbbc0c06d13d41f6e433ea304f552e076f4f7677b9ad5",
+  "composite_identity": "adafb8d646b3ad8007a716b099d24f338ee08c605a91997476eebd8f1781d739",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "81941b8e82920c98c4097fab307209c9da5e734dfa0cc3aabbea84360d87a297",
+  "targets": [
+    {
+      "candidate_id": "2ce601c88e4e525b481eb0de712d683686b48cfc2e58661b52c0f515927fe962",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "d18c7532277f4a3b2b6e31571cb7a9db2011a1f46c7d73702c59511dd478e2ba",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族/INTL（WEEKNUM 11–17）；查找/小计；UNICHAR/UNICODE；数论；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；进制转换；SKEW/KURT；SLOPE/INTERCEPT/PEARSON/RSQ；DEVSQ/COVAR；FORECAST；ISEVEN/ISODD；FISHER/FISHERINV；SERIESSUM；SUMX；STANDARDIZE；GEOMEAN/HARMEAN；RAND/RANDBETWEEN；复数；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧/VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION/MIRR；BESSELY | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW/RAND 易变；RANDBETWEEN 文本参数/#VALUE 与 \u003e2^53 报错"
+    },
+    {
+      "candidate_id": "90a613d1f780ec569834a23091e4d130ca2a708ed36dcc325bacd746e1675ec7",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "bb0b55732c6adf16c59a7241c2bc18e3351b98123759661834d11245a1175cb6",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；Round492 颜色格式 CLI 与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
