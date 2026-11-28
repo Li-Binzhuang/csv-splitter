@@ -4571,6 +4571,23 @@ mod tests {
     }
 
     #[test]
+    fn single_sheet_protection_rejects_unknown_sheets() {
+        let dir = temp_path("protection single unknown");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("map.xlsx");
+        let sheets = vec![Sheet {
+            name: "known".to_string(),
+            headers: vec!["id".into()],
+            rows: vec![vec!["1".into()]],
+        }];
+        write_sheets_with_protection_password(&path, &sheets, "test").unwrap();
+        let error = xlsx_sheet_protection(&path, Some("missing")).unwrap_err();
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
+        assert!(error.to_string().contains("missing"), "{error}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
     fn protection_map_rejects_workbooks_without_sheets() {
         let dir = temp_path("protection map empty");
         std::fs::create_dir_all(&dir).unwrap();
