@@ -4571,6 +4571,27 @@ mod tests {
     }
 
     #[test]
+    fn protection_map_rejects_workbooks_without_sheets() {
+        let dir = temp_path("protection map empty");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("empty.xlsx");
+        let file = std::fs::File::create(&path).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        zip.start_file("xl/workbook.xml", zip::write::SimpleFileOptions::default())
+            .unwrap();
+        use std::io::Write as _;
+        zip.write_all(
+            br#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheets></sheets></workbook>"#,
+        )
+        .unwrap();
+        zip.finish().unwrap();
+        let error = xlsx_protection_map(&path).unwrap_err();
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
+        assert!(error.to_string().contains("no worksheets"), "{error}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
     fn protection_map_rejects_non_xlsx_files() {
         let dir = temp_path("protection map invalid");
         std::fs::create_dir_all(&dir).unwrap();
