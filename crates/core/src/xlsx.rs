@@ -3514,6 +3514,75 @@ fn formula_text(block: &str) -> Option<String> {
     Some(xml_unescape(&block[open + 1..end]))
 }
 
+/// Add or replace `<pageSetup>` on the first worksheet of an existing xlsx.
+pub fn xlsx_set_page_setup(path: &Path, setup: &PageSetupInfo) -> std::io::Result<()> {
+    let source = std::fs::File::open(path)?;
+    let mut archive = zip::ZipArchive::new(source).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let temp = path.with_extension("setup.tmp");
+    let target = std::fs::File::create(&temp)?;
+    let mut writer = zip::ZipWriter::new(target);
+    let options = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated)
+        .large_file(true);
+    let mut found_sheet = false;
+    let setup_re = Regex::new(r"(?s)<pageSetup\b.*?</pageSetup>|<pageSetup\b[^>]*/>").unwrap();
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index)?;
+        let name = entry.name().to_string();
+        let mut buffer = Vec::new();
+        std::io::Read::read_to_end(&mut entry, &mut buffer)?;
+        if name != "xl/worksheets/sheet1.xml" {
+            writer
+                .start_file(&name, options)
+                .map_err(|error| std::io::Error::other(error.to_string()))?;
+            std::io::Write::write_all(&mut writer, &buffer)?;
+            continue;
+        }
+        found_sheet = true;
+        let mut xml = String::from_utf8_lossy(&buffer).to_string();
+        xml = setup_re.replace_all(&xml, "").to_string();
+        let mut tag = String::from("<pageSetup");
+        if let Some(orientation) = setup.orientation.as_deref() {
+            tag.push_str(&format!(" orientation=\"{}\"", xml_attribute(orientation)));
+        }
+        if let Some(paper_size) = setup.paper_size {
+            tag.push_str(&format!(" paperSize=\"{paper_size}\""));
+        }
+        if let Some(fit_to_width) = setup.fit_to_width {
+            tag.push_str(&format!(" fitToWidth=\"{fit_to_width}\""));
+        }
+        if let Some(fit_to_height) = setup.fit_to_height {
+            tag.push_str(&format!(" fitToHeight=\"{fit_to_height}\""));
+        }
+        if let Some(scale) = setup.scale {
+            tag.push_str(&format!(" scale=\"{scale}\""));
+        }
+        tag.push_str("/>");
+        xml = xml.replace("</worksheet>", &format!("{tag}</worksheet>"));
+        writer
+            .start_file(&name, options)
+            .map_err(|error| std::io::Error::other(error.to_string()))?;
+        std::io::Write::write_all(&mut writer, xml.as_bytes())?;
+    }
+    writer
+        .finish()
+        .map_err(|error| std::io::Error::other(error.to_string()))?;
+    if !found_sheet {
+        let _ = std::fs::remove_file(&temp);
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "xlsx has no xl/worksheets/sheet1.xml",
+        ));
+    }
+    std::fs::rename(&temp, path)?;
+    Ok(())
+}
+
 /// Page margins read back from `<pageMargins>`.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PageMargins {
@@ -6836,6 +6905,33 @@ mod tests {
         assert!((margins.left - 0.7).abs() < 1e-9);
         assert!((margins.top - 0.75).abs() < 1e-9);
         assert!((margins.header - 0.3).abs() < 1e-9);
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn page_setup_can_be_set_after_export() {
+        let dir = temp_path("page setup writeback");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("setup-set.xlsx");
+        let sheets = vec![Sheet {
+            name: "one".to_string(),
+            headers: vec!["id".into()],
+            rows: vec![vec!["1".into()]],
+        }];
+        write_sheets_with_formats(&path, &sheets, &[Vec::new()]).unwrap();
+        let setup = PageSetupInfo {
+            orientation: Some("landscape".to_string()),
+            paper_size: Some(9),
+            fit_to_width: Some(1),
+            fit_to_height: None,
+            scale: Some(90),
+        };
+        xlsx_set_page_setup(&path, &setup).unwrap();
+        let read_back = xlsx_page_setup(&path, None).unwrap();
+        assert_eq!(read_back.orientation.as_deref(), Some("landscape"));
+        assert_eq!(read_back.paper_size, Some(9));
+        assert_eq!(read_back.fit_to_width, Some(1));
+        assert_eq!(read_back.scale, Some(90));
         std::fs::remove_dir_all(dir).ok();
     }
 
