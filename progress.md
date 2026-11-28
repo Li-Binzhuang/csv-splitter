@@ -514,7 +514,9 @@
   测试 `rand_and_randbetween_stay_in_bounds`。
 - [x] 项476 颜色格式 + 验证 + 保护（功能级）：CLI 三特性共存；
   测试 `convert_xlsx_combines_colored_format_validation_and_protection`。
-- [ ] 项477 RANDBETWEEN IF 参数（功能级）：条件表达式求值；
+- [x] 项477 RANDBETWEEN IF 参数（功能级）：条件表达式求值；
+  测试 `rand_and_randbetween_stay_in_bounds`。
+- [ ] 项478 颜色+验证+CF+保护四特性（功能级）：同一 sheet 共存；
   验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
@@ -813,6 +815,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 495（项477 RANDBETWEEN IF，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `0f1c5724…004092e9`；
+轮首 push 成功，本轮不再 push。
 
 Round 494（项476 颜色+验证+保护，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `ad2cb39a…f29855d1`；

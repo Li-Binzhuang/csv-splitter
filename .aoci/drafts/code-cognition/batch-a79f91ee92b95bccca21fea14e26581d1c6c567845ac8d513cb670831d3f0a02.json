@@ -1,0 +1,27 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "1b76c37590f5f98d9a87e2cb5147e19826e4eb9c481add2461e1761cc5f605dc",
+  "batch_id": "a79f91ee92b95bccca21fea14e26581d1c6c567845ac8d513cb670831d3f0a02",
+  "composite_identity": "42f69982d8fc168d4b9c06a696e7d15f30dd591e65f1fa7e5f34beef1e45e8a8",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "851753b94b7b4e993648356d1a36a1499313327ac08bcab73fe5ae15b5651d6a",
+  "targets": [
+    {
+      "candidate_id": "b36964a90914ac15e2fb94ff0dc24cbeaefd5afe2668a820abf9c893b36fcabc",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "3929bcbfd1df3c193fadd1503b18b19582dcb5c6be310ac910663b5a6e0e78b2",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族/INTL（WEEKNUM 11–17）；查找/小计；UNICHAR/UNICODE；数论；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；进制转换；SKEW/KURT；SLOPE/INTERCEPT/PEARSON/RSQ；DEVSQ/COVAR；FORECAST；ISEVEN/ISODD；FISHER/FISHERINV；SERIESSUM；SUMX；STANDARDIZE；GEOMEAN/HARMEAN；RAND/RANDBETWEEN；复数；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧/VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION/MIRR；BESSELY | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW/RAND 易变；RANDBETWEEN 支持嵌套表达式，文本参数/#VALUE 与 \u003e2^53 报错"
+    },
+    {
+      "candidate_id": "b4152f9132db0c22855b28641417fd84b445f979a106740df7d8666c7273a285",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "e503b3060f76f83483551afc901a7069d61f2b422673fe55b2da5dd5c009908e",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；Round494 颜色+验证+保护与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}
