@@ -565,11 +565,12 @@
 - [x] 项558 保护映射错误语义（功能级）：非 xlsx 文件返回错误；
   测试 `protection_map_rejects_non_xlsx_files`。
 - [x] 项559 目录验证 + CF + 提示（功能级）：已由项557 覆盖。
-- [ ] 项560 目录全特性 + 列宽（功能级）：全特性加列宽；
-  验收：CLI + 单测 + gate。
+- [x] 项560 目录全特性 + 列宽（功能级）：全特性加列宽；
+  测试 `convert_directory_to_xlsx_combines_all_features_with_widths`。
 - [ ] 项561 保护映射空工作簿（功能级）：无工作表返回错误；
   验收：单测 + gate。
-- [ ] 项562 目录全特性 + 提示 + 密码（功能级）：全特性再加提示；
+- [x] 项562 目录全特性 + 提示 + 密码（功能级）：已由项560 覆盖。
+- [ ] 项563 保护映射 JSON 顺序（功能级）：--all-sheets 顺序与工作簿一致；
   验收：CLI + 单测 + gate。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
   测试 `convert_reports_sheet_protection`。
@@ -974,6 +975,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 576（项560 目录全特性+列宽，功能级；一并覆盖项562）；
+定向与全量 gate/package 通过；发布包 SHA `570a6c24…bdd908a`；
+轮首 push 成功，本轮不再 push。
 
 Round 575（项558 保护映射错误语义，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `87af7f00…600c6f1b`；
