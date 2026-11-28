@@ -19,7 +19,7 @@
 - 错误：无缓存公式值、坏共享索引、超行/列均显式报错，不静默造值；
 - 公式：`xlsx_formulas` 读回公式文本与缓存值（不重算）；`--formulas` 检测模式；
 - 表头：`xlsx_header_names` 读回首行列字母与名称，`--headers` 直接检测，`--validations`/`--checks` 复用；
-- 合并：`xlsx_merged_ranges` 读回 mergeCells 区域；
+- 合并：`xlsx_merged_ranges` 读回 mergeCells 区域，`--merged` 检测；
 - 视图：`xlsx_sheet_view` 读回 frozen_rows/columns 与 autoFilter；`--sheet-view` 检测；
 - 条件格式：`xlsx_conditional_formats` 读回 range/type/operator/value/ARGB；`--highlight-text` 还原规则文本；`--conditional-formats` 检测；多 sheet 写入器含 dxfs；
 - 验证：列表/自定义公式/整数与小数区间（`type=whole|decimal`，between 或单边）；

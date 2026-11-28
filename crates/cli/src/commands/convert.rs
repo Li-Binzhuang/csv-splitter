@@ -546,6 +546,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut validation_checks = false;
     let mut highlight_text = false;
     let mut show_headers = false;
+    let mut merged_ranges = false;
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -672,6 +673,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--checks" => validation_checks = true,
             "--highlight-text" => highlight_text = true,
             "--headers" => show_headers = true,
+            "--merged" => merged_ranges = true,
             "--json" => formats_json = true,
             "--number-format-raw" => match p.value("--number-format-raw") {
                 Ok(v) => number_format_raw = Some(v),
@@ -741,9 +743,92 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         && !conditional_formats
         && !sheet_view
         && !show_headers
+        && !merged_ranges
     {
         eprintln!("error: --json needs --formats or --protection");
         return 2;
+    }
+
+    if merged_ranges {
+        if protection
+            || validations
+            || formulas
+            || conditional_formats
+            || sheet_view
+            || show_formats
+            || show_headers
+        {
+            eprintln!("error: --merged cannot be combined with other inspection modes");
+            return 2;
+        }
+        let name = input
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if !(name.ends_with(".xlsx") || name.ends_with(".xlsm")) {
+            eprintln!("error: --merged needs an .xlsx/.xlsm input");
+            return 2;
+        }
+        if convert_format.is_some() || out.is_some() {
+            eprintln!("error: --merged cannot be combined with output flags");
+            return 2;
+        }
+        if sheet.is_some() && all_sheets {
+            eprintln!("error: --merged --all-sheets cannot be combined with --sheet");
+            return 2;
+        }
+        let names = if all_sheets {
+            match csvx_core::xlsx::xlsx_sheet_names(&input) {
+                Ok(names) => names,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        } else {
+            vec![sheet.clone().unwrap_or_default()]
+        };
+        let mut entries = Vec::new();
+        for name in &names {
+            let sheet_arg = (!name.is_empty()).then_some(name.as_str());
+            match csvx_core::xlsx::xlsx_merged_ranges(&input, sheet_arg) {
+                Ok(ranges) => entries.push((sheet_arg.unwrap_or("").to_string(), ranges)),
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        }
+        if formats_json {
+            print!("[");
+            for (index, (sheet_name, ranges)) in entries.iter().enumerate() {
+                if index > 0 {
+                    print!(",");
+                }
+                print!("{{\"sheet\":{},\"ranges\":[", json_string(sheet_name));
+                for (range_index, range) in ranges.iter().enumerate() {
+                    if range_index > 0 {
+                        print!(",");
+                    }
+                    print!("{}", json_string(range));
+                }
+                print!("]}}");
+            }
+            println!("]");
+        } else if entries.iter().all(|(_, ranges)| ranges.is_empty()) {
+            println!("no merged cells");
+        } else {
+            for (sheet_name, ranges) in &entries {
+                if all_sheets {
+                    println!("# {sheet_name}");
+                }
+                for range in ranges {
+                    println!("{range}");
+                }
+            }
+        }
+        return 0;
     }
 
     if show_headers {
