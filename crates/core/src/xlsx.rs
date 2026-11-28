@@ -4463,6 +4463,27 @@ mod tests {
     }
 
     #[test]
+    fn amber_rules_use_the_yellow_dxf() {
+        let dir = temp_path("dxfamber");
+        std::fs::create_dir_all(&dir).unwrap();
+        let input = dir.join("rules.csv");
+        let output = dir.join("rules.xlsx");
+        std::fs::write(&input, "id,amount\n1,500\n2,1500\n").unwrap();
+        let rules = vec![ConditionalRule {
+            column: "amount".to_string(),
+            operator: ">".to_string(),
+            value: "1000".to_string(),
+            color: "amber".to_string(),
+        }];
+        let (tx, _rx) = std::sync::mpsc::channel();
+        csv_to_xlsx_with_rules(&input, &output, Delimiter::Comma, &tx, &rules).unwrap();
+        let styles = read_zip(&output, "xl/styles.xml");
+        assert!(styles.contains("<dxfs count=\"1\">"), "{styles}");
+        assert!(styles.contains("FFFFEB9C"), "{styles}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
     fn formats_are_mapped_into_export_styles_and_round_trip() {
         use crate::layout::NumberFormat;
         let path = temp_path("formatted.xlsx");
