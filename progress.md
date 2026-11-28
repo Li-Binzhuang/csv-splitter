@@ -674,12 +674,14 @@
   测试 `convert_writes_and_reports_print_area`。
 - [x] 项616 页面设置导出 CLI（新能力）：`--orientation/--paper-size/--fit-to-*/--scale` 后处理 pageSetup；
   测试 `convert_writes_page_setup`。
-- [ ] 项617 页边距写出 API（新能力）：写 pageMargins 四边与页眉页脚；
-  验收：单测 + round-trip + gate。
+- [x] 项617 页边距写出 API（新能力）：`xlsx_set_page_margins` 写 pageMargins 六项；
+  测试 `page_margins_can_be_set_after_export`。
 - [ ] 项618 页眉页脚回读 API（新能力）：读取 oddHeader/oddFooter；
   验收：单测 + round-trip + gate。
 - [ ] 项619 页眉页脚写出 API（新能力）：写 oddHeader/oddFooter；
   验收：单测 + round-trip + gate。
+- [ ] 项620 页边距导出 CLI（新能力）：导出时设置四边与页眉页脚边距；
+  验收：CLI + 单测 + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
@@ -1085,6 +1087,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 629（项617 页边距写出 API，feat 级新能力，验收完成）；
+定向与全量 gate/package 通过；发布包 SHA `1e7bb2d2…e03f45d5`；
+轮首 push 成功，本轮不再 push。
 
 Round 628（项616 页面设置导出 CLI，feat 级新能力，验收完成）；
 定向与全量 gate/package 通过；发布包 SHA `2a105a86…c8de8f082`；

@@ -3583,6 +3583,67 @@ pub fn xlsx_set_page_setup(path: &Path, setup: &PageSetupInfo) -> std::io::Resul
     Ok(())
 }
 
+/// Add or replace `<pageMargins>` on the first worksheet of an existing xlsx.
+pub fn xlsx_set_page_margins(path: &Path, margins: &PageMargins) -> std::io::Result<()> {
+    let source = std::fs::File::open(path)?;
+    let mut archive = zip::ZipArchive::new(source).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let temp = path.with_extension("margins.tmp");
+    let target = std::fs::File::create(&temp)?;
+    let mut writer = zip::ZipWriter::new(target);
+    let options = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated)
+        .large_file(true);
+    let mut found_sheet = false;
+    let margins_re =
+        Regex::new(r"(?s)<pageMargins\b.*?</pageMargins>|<pageMargins\b[^>]*/>").unwrap();
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index)?;
+        let name = entry.name().to_string();
+        let mut buffer = Vec::new();
+        std::io::Read::read_to_end(&mut entry, &mut buffer)?;
+        if name != "xl/worksheets/sheet1.xml" {
+            writer
+                .start_file(&name, options)
+                .map_err(|error| std::io::Error::other(error.to_string()))?;
+            std::io::Write::write_all(&mut writer, &buffer)?;
+            continue;
+        }
+        found_sheet = true;
+        let mut xml = String::from_utf8_lossy(&buffer).to_string();
+        xml = margins_re.replace_all(&xml, "").to_string();
+        let tag = format!(
+            "<pageMargins left=\"{}\" right=\"{}\" top=\"{}\" bottom=\"{}\" header=\"{}\" footer=\"{}\"/>",
+            margins.left, margins.right, margins.top, margins.bottom, margins.header, margins.footer
+        );
+        if xml.contains("</sheetData>") {
+            xml = xml.replace("</sheetData>", &format!("</sheetData>{tag}"));
+        } else {
+            xml = xml.replace("</worksheet>", &format!("{tag}</worksheet>"));
+        }
+        writer
+            .start_file(&name, options)
+            .map_err(|error| std::io::Error::other(error.to_string()))?;
+        std::io::Write::write_all(&mut writer, xml.as_bytes())?;
+    }
+    writer
+        .finish()
+        .map_err(|error| std::io::Error::other(error.to_string()))?;
+    if !found_sheet {
+        let _ = std::fs::remove_file(&temp);
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "xlsx has no xl/worksheets/sheet1.xml",
+        ));
+    }
+    std::fs::rename(&temp, path)?;
+    Ok(())
+}
+
 /// Add or replace the `_xlnm.Print_Area` defined name in an existing xlsx.
 pub fn xlsx_set_print_area(path: &Path, area: &str) -> std::io::Result<()> {
     let area = area.trim();
@@ -6976,6 +7037,34 @@ mod tests {
         xlsx_set_print_area(&path, "A1:C9").unwrap();
         let layout = xlsx_print_layout(&path, None).unwrap();
         assert_eq!(layout.print_area.as_deref(), Some("one!A1:C9"));
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn page_margins_can_be_set_after_export() {
+        let dir = temp_path("margins writeback");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("margins-set.xlsx");
+        let sheets = vec![Sheet {
+            name: "one".to_string(),
+            headers: vec!["id".into()],
+            rows: vec![vec!["1".into()]],
+        }];
+        write_sheets_with_formats(&path, &sheets, &[Vec::new()]).unwrap();
+        let margins = PageMargins {
+            left: 0.5,
+            right: 0.6,
+            top: 0.7,
+            bottom: 0.8,
+            header: 0.2,
+            footer: 0.25,
+        };
+        xlsx_set_page_margins(&path, &margins).unwrap();
+        let layout = xlsx_print_layout(&path, None).unwrap();
+        let read_back = layout.margins.expect("margins");
+        assert!((read_back.left - 0.5).abs() < 1e-9);
+        assert!((read_back.right - 0.6).abs() < 1e-9);
+        assert!((read_back.footer - 0.25).abs() < 1e-9);
         std::fs::remove_dir_all(dir).ok();
     }
 
