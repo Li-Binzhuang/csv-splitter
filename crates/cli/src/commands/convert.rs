@@ -488,6 +488,10 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             eprintln!("error: --protection cannot be combined with output/conversion flags");
             return 2;
         }
+        if sheet.is_some() && all_sheets {
+            eprintln!("error: --protection --all-sheets cannot be combined with --sheet");
+            return 2;
+        }
         let names = if all_sheets {
             match csvx_core::xlsx::xlsx_sheet_names(&input) {
                 Ok(names) => names,

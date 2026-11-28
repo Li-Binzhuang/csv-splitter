@@ -4705,6 +4705,57 @@ fn convert_directory_to_xlsx_combines_widths_validation_and_password() {
 }
 
 #[test]
+fn convert_reports_protection_for_a_single_sheet() {
+    let dir = TempDir::new("protectionone");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id\n1\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "id\n2\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--protect-sheet-password",
+            "test",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--protection",
+            "--sheet",
+            "b",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(!text.contains("# "), "{text}");
+    assert!(text.contains("protected=true"), "{text}");
+
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--protection",
+            "--all-sheets",
+            "--sheet",
+            "b",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(2));
+}
+
+#[test]
 fn convert_protection_rejects_invalid_inputs() {
     let dir = TempDir::new("protectionerrors");
     let csv = dir.join("t.csv");
