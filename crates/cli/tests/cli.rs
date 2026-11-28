@@ -3517,6 +3517,50 @@ fn convert_xlsx_combines_password_validation_and_highlight() {
 }
 
 #[test]
+fn convert_xlsx_custom_validation_keeps_prompts_and_blank() {
+    let dir = TempDir::new("xlsxvalformulaprompt");
+    let input = dir.join("t.csv");
+    let output = dir.join("t.xlsx");
+    std::fs::write(&input, "id,amount\n1,10\n2,-5\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            input.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            output.to_str().unwrap(),
+            "--data-validation-formula",
+            "amount:AND(B2>0,B2<100)",
+            "--data-validation-prompt",
+            "amount:Amount|Enter a positive amount",
+            "--data-validation-error",
+            "amount:Bad amount|Must be 0-100",
+            "--data-validation-blank",
+        ])
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(0));
+    let file = std::fs::File::open(&output).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    let mut sheet = String::new();
+    use std::io::Read as _;
+    archive
+        .by_name("xl/worksheets/sheet1.xml")
+        .unwrap()
+        .read_to_string(&mut sheet)
+        .unwrap();
+    assert!(sheet.contains("type=\"custom\""), "{sheet}");
+    assert!(sheet.contains("allowBlank=\"1\""), "{sheet}");
+    assert!(sheet.contains("promptTitle=\"Amount\""), "{sheet}");
+    assert!(sheet.contains("errorTitle=\"Bad amount\""), "{sheet}");
+    assert!(
+        sheet.contains("<formula1>AND(B2&gt;0,B2&lt;100)</formula1>"),
+        "{sheet}"
+    );
+}
+
+#[test]
 fn convert_xlsx_can_highlight_a_top_rank() {
     let dir = TempDir::new("xlsxtop");
     let input = dir.join("t.csv");
