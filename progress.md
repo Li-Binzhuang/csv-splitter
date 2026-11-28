@@ -528,7 +528,9 @@
   测试 `convert_xlsx_can_set_column_widths`。
 - [x] 项483 多 sheet 列宽（功能级）：write_sheets_with_widths；
   测试 `multi_sheet_widths_apply_per_sheet`。
-- [ ] 项484 目录列宽 CLI（功能级）：多 sheet 转换接 widths；
+- [x] 项484 目录列宽 CLI（功能级）：多 sheet 转换接 widths；
+  测试 `convert_directory_to_xlsx_applies_column_widths`。
+- [ ] 项485 目录列宽 + no-freeze（功能级）：widths 与 pane 关闭共存；
   验收：CLI + 单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
@@ -827,6 +829,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 502（项484 目录列宽 CLI，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `46998685…d6f9558`；
+轮首 push 成功，本轮不再 push。
 
 Round 501（项483 多 sheet 列宽，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `b5180621…5a85b5fb`；

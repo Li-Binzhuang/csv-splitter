@@ -569,7 +569,30 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                     }
                 }
             }
-            let result = if no_freeze || no_auto_filter {
+            let widths = match column_width.as_deref() {
+                Some(text) => match parse_column_widths(text) {
+                    Ok(widths) => widths,
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                },
+                None => Vec::new(),
+            };
+            let per_sheet = if widths.is_empty() {
+                Vec::new()
+            } else {
+                vec![widths; sheets.len()]
+            };
+            let result = if !per_sheet.is_empty() {
+                csvx_core::xlsx::write_sheets_with_widths_and_options(
+                    &out,
+                    &sheets,
+                    &per_sheet,
+                    !no_freeze,
+                    !no_auto_filter,
+                )
+            } else if no_freeze || no_auto_filter {
                 csvx_core::xlsx::write_sheets_with_options(
                     &out,
                     &sheets,

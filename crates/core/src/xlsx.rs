@@ -681,6 +681,17 @@ pub fn write_sheets_without_freeze(output: &Path, sheets: &[Sheet]) -> std::io::
 /// entry means plain text/number. The mapping is intentionally the same
 /// `NumberFormat` used by the viewer, so `#,##0.00`, `0.0%`, `$#,##0.00`
 /// and date/time codes do not get invented twice.
+/// Write sheets with widths plus freeze/filter choices.
+pub fn write_sheets_with_widths_and_options(
+    output: &Path,
+    sheets: &[Sheet],
+    widths: &[Vec<(String, f64)>],
+    freeze_header: bool,
+    auto_filter: bool,
+) -> std::io::Result<()> {
+    write_sheets_inner(output, sheets, &[], widths, freeze_header, auto_filter)
+}
+
 /// Write sheets with per-sheet column width overrides.
 pub fn write_sheets_with_widths(
     output: &Path,
