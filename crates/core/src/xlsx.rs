@@ -2824,6 +2824,83 @@ fn parse_hidden_layout(sheet_xml: &str) -> HiddenLayout {
     layout
 }
 
+fn validate_merge_range(range: &str) -> std::io::Result<()> {
+    let re = Regex::new(r"^[A-Z]{1,3}[0-9]+:[A-Z]{1,3}[0-9]+$").unwrap();
+    if re.is_match(range.trim()) {
+        Ok(())
+    } else {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("merge range {range:?} must look like A1:B2"),
+        ))
+    }
+}
+
+/// Add or replace `<mergeCells>` on the first worksheet of an existing xlsx.
+pub fn xlsx_set_merge_cells(path: &Path, ranges: &[String]) -> std::io::Result<()> {
+    for range in ranges {
+        validate_merge_range(range)?;
+    }
+    let source = std::fs::File::open(path)?;
+    let mut archive = zip::ZipArchive::new(source).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let temp = path.with_extension("merge.tmp");
+    let target = std::fs::File::create(&temp)?;
+    let mut writer = zip::ZipWriter::new(target);
+    let options = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated)
+        .large_file(true);
+    let mut found_sheet = false;
+    let merge_re = Regex::new(r"(?s)<mergeCells\b.*?</mergeCells>|<mergeCells\b[^>]*/>").unwrap();
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index)?;
+        let name = entry.name().to_string();
+        let mut buffer = Vec::new();
+        std::io::Read::read_to_end(&mut entry, &mut buffer)?;
+        if name == "xl/worksheets/sheet1.xml" {
+            found_sheet = true;
+            let mut xml = String::from_utf8_lossy(&buffer).to_string();
+            xml = merge_re.replace_all(&xml, "").to_string();
+            if !ranges.is_empty() {
+                let mut block = format!("<mergeCells count=\"{}\">", ranges.len());
+                for range in ranges {
+                    block.push_str(&format!(
+                        "<mergeCell ref=\"{}\"/>",
+                        xml_attribute(range.trim())
+                    ));
+                }
+                block.push_str("</mergeCells>");
+                xml = xml.replace("</sheetData>", &format!("</sheetData>{block}"));
+            }
+            writer
+                .start_file(&name, options)
+                .map_err(|error| std::io::Error::other(error.to_string()))?;
+            std::io::Write::write_all(&mut writer, xml.as_bytes())?;
+        } else {
+            writer
+                .start_file(&name, options)
+                .map_err(|error| std::io::Error::other(error.to_string()))?;
+            std::io::Write::write_all(&mut writer, &buffer)?;
+        }
+    }
+    writer
+        .finish()
+        .map_err(|error| std::io::Error::other(error.to_string()))?;
+    if !found_sheet {
+        let _ = std::fs::remove_file(&temp);
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "xlsx has no xl/worksheets/sheet1.xml",
+        ));
+    }
+    std::fs::rename(&temp, path)?;
+    Ok(())
+}
+
 /// Add or replace `docProps/core.xml` in an existing xlsx by rewriting its parts.
 pub fn xlsx_set_core_properties(path: &Path, properties: &CoreProperties) -> std::io::Result<()> {
     let source = std::fs::File::open(path)?;
@@ -6461,6 +6538,23 @@ mod tests {
         assert_eq!(sheets[0].state, "visible");
         assert_eq!(sheets[1].name, "secret");
         assert_eq!(sheets[1].state, "hidden");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn merged_ranges_can_be_set_after_export() {
+        let dir = temp_path("merged postprocess");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("merged-set.xlsx");
+        let sheets = vec![Sheet {
+            name: "one".to_string(),
+            headers: vec!["title".into(), "value".into()],
+            rows: vec![vec!["a".into(), "1".into()]],
+        }];
+        write_sheets_with_formats(&path, &sheets, &[Vec::new()]).unwrap();
+        xlsx_set_merge_cells(&path, &["A1:B1".to_string()]).unwrap();
+        let ranges = xlsx_merged_ranges(&path, None).unwrap();
+        assert_eq!(ranges, vec!["A1:B1".to_string()]);
         std::fs::remove_dir_all(dir).ok();
     }
 

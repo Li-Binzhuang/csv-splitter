@@ -98,6 +98,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
   --heights \
   --visibility \
   --properties \
+  --merge "A1:B1" \
   --title "Quarterly report" \
   --author csvx
 ```
@@ -121,6 +122,7 @@ csvx convert data.csv --format xlsx -o data.xlsx \
 - `--data-validation-time` 写时间区间验证，`列:起始,结束`（`HH:MM`，内部转 0–1 天小数）；
 - `--data-validation-range` 列表源用单元格区域引用，格式 `列:区域`（如 `$A$2:$A$10`），与内联值互斥；
 - 与 `--conditional-formats` 同用 `--highlight-text` 可把规则还原成可复用的 `--highlight` 文本（仅 cellIs 与四色）；
+- `--merge` 在单文件 xlsx 导出后写合并区域（`A1:B1`，可重复/逗号分隔）；目录多 sheet 暂不支持；
 - `--title`/`--author` 在单文件 xlsx 导出后写入 docProps/core.xml（目录多 sheet 暂不支持）；
 - `--properties` 读取 docProps/core.xml 标题/作者/创建/修改时间；
 - `--visibility` 读取 workbook 每个 sheet 的 visible/hidden/veryHidden 状态；

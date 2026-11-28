@@ -5232,6 +5232,35 @@ fn convert_reports_column_widths() {
 }
 
 #[test]
+fn convert_writes_merged_ranges() {
+    let dir = TempDir::new("mergedwrite");
+    let csv = dir.join("data.csv");
+    std::fs::write(&csv, "title,value\na,1\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            csv.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--merge",
+            "A1:B1",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let json = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--merged", "--json"])
+        .output()
+        .unwrap();
+    assert!(json.status.success());
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(stdout.contains("\"ranges\":[\"A1:B1\"]"), "{stdout}");
+}
+
+#[test]
 fn convert_reports_merged_cells() {
     let dir = TempDir::new("mergedinspect");
     let book = dir.join("book.xlsx");
