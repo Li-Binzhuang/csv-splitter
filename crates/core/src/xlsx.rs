@@ -736,6 +736,7 @@ pub fn write_sheets_with_options_and_formats(
         &[],
         &[],
         None,
+        &[],
     )
 }
 
@@ -762,6 +763,7 @@ pub fn write_sheets_with_options(
         &[],
         &[],
         None,
+        &[],
     )
 }
 
@@ -783,6 +785,7 @@ pub fn write_sheets_without_auto_filter(output: &Path, sheets: &[Sheet]) -> std:
         &[],
         &[],
         None,
+        &[],
     )
 }
 
@@ -804,6 +807,7 @@ pub fn write_sheets_without_freeze(output: &Path, sheets: &[Sheet]) -> std::io::
         &[],
         &[],
         None,
+        &[],
     )
 }
 
@@ -835,6 +839,7 @@ pub fn write_sheets_with_protection_password(
         &[],
         &[],
         None,
+        &[],
     )
 }
 
@@ -856,6 +861,7 @@ pub fn write_sheets_with_protection(output: &Path, sheets: &[Sheet]) -> std::io:
         &[],
         &[],
         None,
+        &[],
     )
 }
 
@@ -891,6 +897,33 @@ pub fn write_sheets_with_formats_widths_and_protection(
         &[],
         &[],
         None,
+        &[],
+    )
+}
+
+/// Write sheets with per-sheet visibility states (`visible`/`hidden`/`veryHidden`).
+pub fn write_sheets_with_visibility(
+    output: &Path,
+    sheets: &[Sheet],
+    sheet_states: &[String],
+) -> std::io::Result<()> {
+    write_sheets_inner(
+        output,
+        sheets,
+        &[],
+        &[],
+        true,
+        true,
+        false,
+        None,
+        true,
+        true,
+        &[],
+        &[],
+        &[],
+        &[],
+        None,
+        sheet_states,
     )
 }
 
@@ -916,6 +949,7 @@ pub fn write_sheets_with_properties(
         &[],
         &[],
         Some(properties),
+        &[],
     )
 }
 
@@ -941,6 +975,7 @@ pub fn write_sheets_with_merges(
         merges,
         &[],
         None,
+        &[],
     )
 }
 
@@ -966,6 +1001,7 @@ pub fn write_sheets_with_heights(
         &[],
         row_heights,
         None,
+        &[],
     )
 }
 
@@ -995,6 +1031,7 @@ pub fn write_sheets_with_formats_widths_and_options(
         &[],
         &[],
         None,
+        &[],
     )
 }
 
@@ -1022,6 +1059,7 @@ pub fn write_sheets_with_formats_and_options(
         &[],
         &[],
         None,
+        &[],
     )
 }
 
@@ -1048,6 +1086,7 @@ pub fn write_sheets_with_formats_and_widths(
         &[],
         &[],
         None,
+        &[],
     )
 }
 
@@ -1075,6 +1114,7 @@ pub fn write_sheets_with_widths_and_options(
         &[],
         &[],
         None,
+        &[],
     )
 }
 
@@ -1106,6 +1146,7 @@ pub fn write_sheets_with_options_and_password(
         &[],
         &[],
         None,
+        &[],
     )
 }
 
@@ -1131,6 +1172,7 @@ pub fn write_sheets_with_widths(
         &[],
         &[],
         None,
+        &[],
     )
 }
 
@@ -1155,6 +1197,7 @@ pub fn write_sheets_with_formats(
         &[],
         &[],
         None,
+        &[],
     )
 }
 
@@ -1175,6 +1218,7 @@ fn write_sheets_inner(
     merges: &[Vec<String>],
     row_heights: &[Vec<(u64, f64)>],
     properties: Option<&CoreProperties>,
+    sheet_states: &[String],
 ) -> std::io::Result<()> {
     if sheets.is_empty() {
         return Err(std::io::Error::new(
@@ -1205,6 +1249,20 @@ fn write_sheets_inner(
             std::io::ErrorKind::InvalidInput,
             "xlsx row heights need one entry per sheet",
         ));
+    }
+    if !sheet_states.is_empty() && sheet_states.len() != sheets.len() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "xlsx sheet states need one entry per sheet",
+        ));
+    }
+    for state in sheet_states {
+        if !matches!(state.as_str(), "visible" | "hidden" | "veryHidden") {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "xlsx sheet state must be visible, hidden, or veryHidden",
+            ));
+        }
     }
     let flat_formats: Vec<crate::layout::NumberFormat> = formats
         .iter()
@@ -1263,8 +1321,13 @@ fn write_sheets_inner(
             suffix += 1;
         }
         let id = index + 1;
+        let state = sheet_states
+            .get(index)
+            .filter(|state| state.as_str() != "visible")
+            .map(|state| format!(" state=\"{}\"", xml_attr(state)))
+            .unwrap_or_default();
         workbook.push_str(&format!(
-            "<sheet name=\"{}\" sheetId=\"{id}\" r:id=\"rId{}\"/>",
+            "<sheet name=\"{}\" sheetId=\"{id}\"{state} r:id=\"rId{}\"/>",
             xml_attr(&name),
             id + 1
         ));
@@ -6252,6 +6315,36 @@ mod tests {
         assert_eq!(properties.creator.as_deref(), Some("Lead"));
         assert_eq!(properties.created.as_deref(), Some("2026-01-02T03:04:05Z"));
         assert_eq!(properties.modified.as_deref(), Some("2026-02-03T04:05:06Z"));
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn sheet_visibility_states_are_written_and_read_back() {
+        let dir = temp_path("sheet visibility writeback");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("visibility-out.xlsx");
+        let sheets = vec![
+            Sheet {
+                name: "shown".to_string(),
+                headers: vec!["id".into()],
+                rows: vec![vec!["1".into()]],
+            },
+            Sheet {
+                name: "secret".to_string(),
+                headers: vec!["id".into()],
+                rows: vec![vec!["2".into()]],
+            },
+        ];
+        write_sheets_with_visibility(
+            &path,
+            &sheets,
+            &["visible".to_string(), "hidden".to_string()],
+        )
+        .unwrap();
+        let states = xlsx_sheet_visibility(&path).unwrap();
+        assert_eq!(states.len(), 2);
+        assert_eq!(states[0].state, "visible");
+        assert_eq!(states[1].state, "hidden");
         std::fs::remove_dir_all(dir).ok();
     }
 
