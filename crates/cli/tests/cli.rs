@@ -4705,6 +4705,59 @@ fn convert_directory_to_xlsx_combines_widths_validation_and_password() {
 }
 
 #[test]
+fn convert_reports_protection_granularity_json() {
+    let dir = TempDir::new("protectiongranularityjson");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id\n1\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "id\n2\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--protect-sheet-allow-objects",
+            "--protect-sheet-allow-scenarios",
+            "--protect-sheet-password",
+            "test",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let output = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--protection",
+            "--all-sheets",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert_eq!(
+        text.matches("\"objects_locked\":false").count(),
+        2,
+        "{text}"
+    );
+    assert_eq!(
+        text.matches("\"scenarios_locked\":false").count(),
+        2,
+        "{text}"
+    );
+    assert_eq!(
+        text.matches("\"password_protected\":true").count(),
+        2,
+        "{text}"
+    );
+}
+
+#[test]
 fn convert_protection_rejects_unknown_sheet() {
     let dir = TempDir::new("protectionunknown");
     let csv = dir.join("t.csv");
