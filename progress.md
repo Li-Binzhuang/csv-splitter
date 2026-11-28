@@ -628,11 +628,13 @@
   测试 `merged_ranges_are_read_back`。
 - [x] 项593 合并单元格检测 CLI（新能力）：`--merged` 输出 sheet/ranges，支持 sheet/all/json；
   测试 `convert_reports_merged_cells`。
-- [ ] 项594 合并单元格写出（新能力）：xlsx 导出支持指定合并区域；
-  验收：单测 + round-trip + gate。
+- [x] 项594 合并单元格写出（新能力）：`write_sheets_with_merges` 写 mergeCells；
+  测试 `merged_ranges_are_written_and_read_back`。
 - [ ] 项595 隐藏行列回读 API（新能力）：读取 xlsx hidden rows/columns；
   验收：单测 + round-trip + gate。
 - [ ] 项596 列宽回读 API（新能力）：读取 xlsx `<col width>` 与 customWidth；
+  验收：单测 + round-trip + gate。
+- [ ] 项597 行高回读 API（新能力）：读取 xlsx `<row ht>` 与 customHeight；
   验收：单测 + round-trip + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
@@ -1039,6 +1041,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 606（项594 合并单元格写出，feat 级新能力，验收完成）；
+定向与全量 gate/package 通过；发布包 SHA `f41535d5…084166`；
+轮首 push 成功，本轮不再 push。
 
 Round 605（项593 合并单元格检测 CLI，feat 级新能力，验收完成）；
 定向与全量 gate/package 通过；发布包 SHA `408aca22…64f3dd`；

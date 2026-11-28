@@ -733,6 +733,7 @@ pub fn write_sheets_with_options_and_formats(
         true,
         &[],
         &[],
+        &[],
     )
 }
 
@@ -756,6 +757,7 @@ pub fn write_sheets_with_options(
         true,
         &[],
         &[],
+        &[],
     )
 }
 
@@ -774,6 +776,7 @@ pub fn write_sheets_without_auto_filter(output: &Path, sheets: &[Sheet]) -> std:
         true,
         &[],
         &[],
+        &[],
     )
 }
 
@@ -790,6 +793,7 @@ pub fn write_sheets_without_freeze(output: &Path, sheets: &[Sheet]) -> std::io::
         None,
         true,
         true,
+        &[],
         &[],
         &[],
     )
@@ -820,6 +824,7 @@ pub fn write_sheets_with_protection_password(
         true,
         &[],
         &[],
+        &[],
     )
 }
 
@@ -836,6 +841,7 @@ pub fn write_sheets_with_protection(output: &Path, sheets: &[Sheet]) -> std::io:
         None,
         true,
         true,
+        &[],
         &[],
         &[],
     )
@@ -870,6 +876,30 @@ pub fn write_sheets_with_formats_widths_and_protection(
         protect_scenarios,
         rules,
         validations,
+        &[],
+    )
+}
+
+/// Write sheets with merged-cell ranges (`A1:B1`) applied per sheet.
+pub fn write_sheets_with_merges(
+    output: &Path,
+    sheets: &[Sheet],
+    merges: &[Vec<String>],
+) -> std::io::Result<()> {
+    write_sheets_inner(
+        output,
+        sheets,
+        &[],
+        &[],
+        true,
+        true,
+        false,
+        None,
+        true,
+        true,
+        &[],
+        &[],
+        merges,
     )
 }
 
@@ -896,6 +926,7 @@ pub fn write_sheets_with_formats_widths_and_options(
         true,
         &[],
         &[],
+        &[],
     )
 }
 
@@ -918,6 +949,7 @@ pub fn write_sheets_with_formats_and_options(
         None,
         true,
         true,
+        &[],
         &[],
         &[],
     )
@@ -943,6 +975,7 @@ pub fn write_sheets_with_formats_and_widths(
         true,
         &[],
         &[],
+        &[],
     )
 }
 
@@ -965,6 +998,7 @@ pub fn write_sheets_with_widths_and_options(
         None,
         true,
         true,
+        &[],
         &[],
         &[],
     )
@@ -995,6 +1029,7 @@ pub fn write_sheets_with_options_and_password(
         protect_scenarios,
         &[],
         &[],
+        &[],
     )
 }
 
@@ -1015,6 +1050,7 @@ pub fn write_sheets_with_widths(
         None,
         true,
         true,
+        &[],
         &[],
         &[],
     )
@@ -1038,6 +1074,7 @@ pub fn write_sheets_with_formats(
         true,
         &[],
         &[],
+        &[],
     )
 }
 
@@ -1055,6 +1092,7 @@ fn write_sheets_inner(
     protect_scenarios: bool,
     rules: &[ConditionalRule],
     validations: &[DataValidation],
+    merges: &[Vec<String>],
 ) -> std::io::Result<()> {
     if sheets.is_empty() {
         return Err(std::io::Error::new(
@@ -1072,6 +1110,12 @@ fn write_sheets_inner(
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
             "xlsx formats need one entry per sheet",
+        ));
+    }
+    if !merges.is_empty() && merges.len() != sheets.len() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "xlsx merges need one entry per sheet",
         ));
     }
     let flat_formats: Vec<crate::layout::NumberFormat> = formats
@@ -1192,6 +1236,18 @@ fn write_sheets_inner(
                     u8::from(protect_objects),
                     u8::from(protect_scenarios)
                 )),
+            }
+        }
+        if let Some(ranges) = merges.get(index) {
+            if !ranges.is_empty() {
+                xml.push_str(&format!("<mergeCells count=\"{}\">", ranges.len()));
+                for range in ranges {
+                    xml.push_str(&format!(
+                        "<mergeCell ref=\"{}\"/>",
+                        xml_attribute(range.trim())
+                    ));
+                }
+                xml.push_str("</mergeCells>");
             }
         }
         if !rules.is_empty() && !sheet.rows.is_empty() && !sheet.headers.is_empty() {
@@ -5570,6 +5626,27 @@ mod tests {
         let error = xlsx_sheet_protection(&path, Some("missing")).unwrap_err();
         assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
         assert!(error.to_string().contains("missing"), "{error}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn merged_ranges_are_written_and_read_back() {
+        let dir = temp_path("merged writeback");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("merged-out.xlsx");
+        let sheets = vec![Sheet {
+            name: "one".to_string(),
+            headers: vec!["title".into(), "value".into()],
+            rows: vec![vec!["a".into(), "1".into()]],
+        }];
+        write_sheets_with_merges(&path, &sheets, &[vec!["A1:B1".to_string()]]).unwrap();
+        let sheet = read_zip(&path, "xl/worksheets/sheet1.xml");
+        assert!(
+            sheet.contains("<mergeCells count=\"1\"><mergeCell ref=\"A1:B1\"/></mergeCells>"),
+            "{sheet}"
+        );
+        let ranges = xlsx_merged_ranges(&path, None).unwrap();
+        assert_eq!(ranges, vec!["A1:B1".to_string()]);
         std::fs::remove_dir_all(dir).ok();
     }
 
