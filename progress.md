@@ -540,7 +540,9 @@
   测试 `multi_sheet_formats_widths_and_no_freeze_coexist`。
 - [x] 项489 多 sheet 保护（功能级）：每个 sheet 写 sheetProtection；
   测试 `multi_sheet_protection_is_written_on_every_sheet`。
-- [ ] 项490 多 sheet 格式+列宽+保护（功能级）：三特性共存；
+- [x] 项490 多 sheet 格式+列宽+保护（功能级）：三特性共存；
+  测试 `multi_sheet_formats_widths_and_protection_coexist`。
+- [ ] 项491 RANDBETWEEN 单元格上下界（功能级）：A1/B1 引用求值；
   验收：单测 + gate。
 - [ ] 项427 条件格式 dxf 跨规则复用（功能级）：同色多规则同 dxfId；
   验收：单测 + gate。
@@ -839,6 +841,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 508（项490 多 sheet 格式+列宽+保护，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `302a2f31…501d0f95`；
+轮首 push 成功，本轮不再 push。
 
 Round 507（项489 多 sheet 保护，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `469b5ce0…738a7336`；

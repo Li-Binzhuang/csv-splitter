@@ -4114,6 +4114,53 @@ mod tests {
     }
 
     #[test]
+    fn multi_sheet_formats_widths_and_protection_coexist() {
+        use crate::layout::NumberFormat;
+        let dir = temp_path("multi fmt widths protect");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("multi.xlsx");
+        let sheets = vec![
+            Sheet {
+                name: "one".to_string(),
+                headers: vec!["id".into(), "amount".into()],
+                rows: vec![vec!["1".into(), "1234.5".into()]],
+            },
+            Sheet {
+                name: "two".to_string(),
+                headers: vec!["rate".into()],
+                rows: vec![vec!["0.125".into()]],
+            },
+        ];
+        let formats = vec![
+            vec![NumberFormat::Plain, NumberFormat::parse("0.00").unwrap()],
+            vec![NumberFormat::parse("0.0%").unwrap()],
+        ];
+        let widths = vec![
+            vec![("amount".to_string(), 20.0)],
+            vec![("rate".to_string(), 25.0)],
+        ];
+        write_sheets_with_formats_widths_and_options(
+            &path, &sheets, &formats, &widths, true, true, true,
+        )
+        .unwrap();
+        let styles = read_zip(&path, "xl/styles.xml");
+        assert!(styles.contains("formatCode=\"0.00\""), "{styles}");
+        assert!(styles.contains("formatCode=\"0.0%\""), "{styles}");
+        for (name, width) in [
+            ("xl/worksheets/sheet1.xml", "20"),
+            ("xl/worksheets/sheet2.xml", "25"),
+        ] {
+            let xml = read_zip(&path, name);
+            assert!(xml.contains(&format!("width=\"{width}\"")), "{name}: {xml}");
+            assert!(
+                xml.contains("<sheetProtection sheet=\"1\" objects=\"1\" scenarios=\"1\"/>"),
+                "{name}: {xml}"
+            );
+        }
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
     fn multi_sheet_protection_is_written_on_every_sheet() {
         let dir = temp_path("multi protect");
         std::fs::create_dir_all(&dir).unwrap();
