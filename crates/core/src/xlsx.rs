@@ -3514,6 +3514,103 @@ fn formula_text(block: &str) -> Option<String> {
     Some(xml_unescape(&block[open + 1..end]))
 }
 
+/// Page margins read back from `<pageMargins>`.
+#[derive(Clone, Debug, PartialEq)]
+pub struct PageMargins {
+    pub left: f64,
+    pub right: f64,
+    pub top: f64,
+    pub bottom: f64,
+    pub header: f64,
+    pub footer: f64,
+}
+
+/// Print area (from `definedName`) and page margins read back from an xlsx sheet.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct PrintLayout {
+    pub print_area: Option<String>,
+    pub margins: Option<PageMargins>,
+}
+
+/// Read the print area and page margins for one worksheet.
+pub fn xlsx_print_layout(input: &Path, sheet: Option<&str>) -> std::io::Result<PrintLayout> {
+    let file = std::fs::File::open(input)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let workbook = read_entry(&mut archive, "xl/workbook.xml")?;
+    let rels = read_entry(&mut archive, "xl/_rels/workbook.xml.rels").unwrap_or_default();
+    let sheets = workbook_sheets(&workbook);
+    if sheets.is_empty() {
+        return Err(invalid("xlsx has no worksheets"));
+    }
+    let selected = select_sheet(&sheets, sheet)?;
+    let index = sheets
+        .iter()
+        .position(|entry| entry.name == selected.name)
+        .unwrap_or(0);
+    let target = relationship_target(&rels, &selected.rid)
+        .or_else(|| (sheets.len() == 1).then(|| "xl/worksheets/sheet1.xml".to_string()))
+        .ok_or_else(|| {
+            invalid(&format!(
+                "xlsx sheet {:?} has no relationship target",
+                selected.name
+            ))
+        })?;
+    let normalized = if let Some(stripped) = target.strip_prefix('/') {
+        stripped.to_string()
+    } else if target.starts_with("xl/") {
+        target
+    } else {
+        format!("xl/{}", target.trim_start_matches("./"))
+    };
+    let sheet_xml = read_entry(&mut archive, &normalized)?;
+    let print_area = print_area_from_workbook(&workbook, index);
+    Ok(PrintLayout {
+        print_area,
+        margins: parse_page_margins(&sheet_xml),
+    })
+}
+
+fn print_area_from_workbook(workbook: &str, sheet_index: usize) -> Option<String> {
+    let mut rest = workbook;
+    while let Some(start) = rest.find("<definedName ") {
+        let tail = &rest[start..];
+        let open = tail.find('>')?;
+        let tag = &tail[..=open];
+        if tag_attribute(tag, "name").as_deref() == Some("_xlnm.Print_Area")
+            && tag_attribute(tag, "localSheetId")
+                .and_then(|value| value.parse::<usize>().ok())
+                .map(|id| id == sheet_index)
+                .unwrap_or(true)
+        {
+            let end = tail[open + 1..].find("</definedName>")? + open + 1;
+            return Some(xml_unescape(&tail[open + 1..end]).trim().to_string());
+        }
+        rest = &tail[open + 1..];
+    }
+    None
+}
+
+fn parse_page_margins(sheet_xml: &str) -> Option<PageMargins> {
+    let start = sheet_xml.find("<pageMargins ")?;
+    let tail = &sheet_xml[start..];
+    let open = tail.find('>')?;
+    let tag = &tail[..=open];
+    let value = |name: &str| tag_attribute(tag, name).and_then(|value| value.parse::<f64>().ok());
+    Some(PageMargins {
+        left: value("left")?,
+        right: value("right")?,
+        top: value("top")?,
+        bottom: value("bottom")?,
+        header: value("header").unwrap_or(0.0),
+        footer: value("footer").unwrap_or(0.0),
+    })
+}
+
 /// Print/page setup settings read back from `<pageSetup>`.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PageSetupInfo {
@@ -6703,6 +6800,42 @@ mod tests {
         xlsx_set_merge_cells(&path, &["A1:B1".to_string()]).unwrap();
         let ranges = xlsx_merged_ranges(&path, None).unwrap();
         assert_eq!(ranges, vec!["A1:B1".to_string()]);
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn print_area_and_margins_are_read_back() {
+        let dir = temp_path("print layout");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("print.xlsx");
+        let file = std::fs::File::create(&path).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        use std::io::Write as _;
+        for (name, body) in [
+            (
+                "xl/workbook.xml",
+                r#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="one" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm.Print_Area" localSheetId="0">one!$A$1:$C$9</definedName></definedNames></workbook>"#,
+            ),
+            (
+                "xl/_rels/workbook.xml.rels",
+                r#"<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>"#,
+            ),
+            (
+                "xl/worksheets/sheet1.xml",
+                r#"<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1"><v>1</v></c></row></sheetData><pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/></worksheet>"#,
+            ),
+        ] {
+            zip.start_file(name, zip::write::SimpleFileOptions::default())
+                .unwrap();
+            zip.write_all(body.as_bytes()).unwrap();
+        }
+        zip.finish().unwrap();
+        let layout = xlsx_print_layout(&path, None).unwrap();
+        assert_eq!(layout.print_area.as_deref(), Some("one!$A$1:$C$9"));
+        let margins = layout.margins.expect("margins");
+        assert!((margins.left - 0.7).abs() < 1e-9);
+        assert!((margins.top - 0.75).abs() < 1e-9);
+        assert!((margins.header - 0.3).abs() < 1e-9);
         std::fs::remove_dir_all(dir).ok();
     }
 
