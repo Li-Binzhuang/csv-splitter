@@ -4615,6 +4615,52 @@ fn convert_directory_to_xlsx_applies_number_formats() {
 }
 
 #[test]
+fn convert_directory_to_xlsx_keeps_validation_prompts() {
+    let dir = TempDir::new("xlsxdirvalidationprompt");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,amount\n1,10\n").unwrap();
+    std::fs::write(dir.join("parts/b.csv"), "id,amount\n2,20\n").unwrap();
+    let out = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            out.to_str().unwrap(),
+            "--data-validation-formula",
+            "amount:AND(B2>0,B2<100)",
+            "--data-validation-prompt",
+            "amount:Amount|Enter a positive amount",
+            "--data-validation-error",
+            "amount:Bad amount|Must be 0-100",
+            "--data-validation-blank",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let file = std::fs::File::open(&out).unwrap();
+    let mut archive = zip::ZipArchive::new(file).unwrap();
+    use std::io::Read as _;
+    for name in ["xl/worksheets/sheet1.xml", "xl/worksheets/sheet2.xml"] {
+        let mut sheet = String::new();
+        archive
+            .by_name(name)
+            .unwrap()
+            .read_to_string(&mut sheet)
+            .unwrap();
+        assert!(sheet.contains("type=\"custom\""), "{name}: {sheet}");
+        assert!(sheet.contains("allowBlank=\"1\""), "{name}: {sheet}");
+        assert!(sheet.contains("promptTitle=\"Amount\""), "{name}: {sheet}");
+        assert!(
+            sheet.contains("errorTitle=\"Bad amount\""),
+            "{name}: {sheet}"
+        );
+    }
+}
+
+#[test]
 fn convert_directory_to_xlsx_combines_cf_password_without_freeze() {
     let dir = TempDir::new("xlsxdircfpassnofreeze");
     std::fs::create_dir(dir.join("parts")).unwrap();

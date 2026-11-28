@@ -750,6 +750,53 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                     }
                 }
             }
+            let validation_prompts = match data_validation_prompt.as_deref() {
+                Some(text) => match parse_validation_prompts(text) {
+                    Ok(prompts) => prompts,
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                },
+                None => Vec::new(),
+            };
+            for (column, title, message) in validation_prompts {
+                let Some(validation) = validations
+                    .iter_mut()
+                    .find(|validation| validation.column == column)
+                else {
+                    eprintln!("error: data validation prompt column {column:?} has no validation");
+                    return 2;
+                };
+                validation.prompt_title = (!title.is_empty()).then_some(title);
+                validation.prompt_message = (!message.is_empty()).then_some(message);
+            }
+            let validation_errors = match data_validation_error.as_deref() {
+                Some(text) => match parse_validation_prompts(text) {
+                    Ok(errors) => errors,
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        return 2;
+                    }
+                },
+                None => Vec::new(),
+            };
+            for (column, title, message) in validation_errors {
+                let Some(validation) = validations
+                    .iter_mut()
+                    .find(|validation| validation.column == column)
+                else {
+                    eprintln!("error: data validation error column {column:?} has no validation");
+                    return 2;
+                };
+                validation.error_title = (!title.is_empty()).then_some(title);
+                validation.error_message = (!message.is_empty()).then_some(message);
+            }
+            if data_validation_blank {
+                for validation in &mut validations {
+                    validation.allow_blank = true;
+                }
+            }
             let per_sheet = if widths.is_empty() {
                 Vec::new()
             } else {
