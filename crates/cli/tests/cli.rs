@@ -4834,6 +4834,37 @@ fn convert_protection_rejects_unknown_sheet() {
 }
 
 #[test]
+fn convert_reports_unprotected_sheet_as_json() {
+    let dir = TempDir::new("protectiondefaultjson");
+    let csv = dir.join("t.csv");
+    let book = dir.join("book.xlsx");
+    std::fs::write(&csv, "id\n1\n").unwrap();
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            csv.to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let output = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--protection", "--json"])
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("\"protected\":false"), "{text}");
+    assert!(text.contains("\"objects_locked\":false"), "{text}");
+    assert!(text.contains("\"scenarios_locked\":false"), "{text}");
+    assert!(text.contains("\"password_protected\":false"), "{text}");
+}
+
+#[test]
 fn convert_reports_sheet_protection_granularity() {
     let dir = TempDir::new("protectiongranularity");
     std::fs::create_dir(dir.join("parts")).unwrap();
