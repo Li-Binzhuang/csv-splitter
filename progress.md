@@ -569,9 +569,11 @@
   测试 `blue_rules_share_one_dxf`。
 - [x] 项502 多色 dxf 计数（功能级）：红+蓝+绿各 1 个 dxf；
   测试 `three_colours_create_three_dxfs`。
-- [ ] 项503 未知颜色 dxf 默认（功能级）：未知色按红处理；
-  验收：单测 + gate。
+- [x] 项503 未知颜色 dxf 默认（功能级）：未知色按红处理；
+  测试 `unknown_rule_colours_fall_back_to_red`。
 - [ ] 项504 dxf 琥珀色映射（功能级）：amber/yellow 写 FFEB9C；
+  验收：单测 + gate。
+- [ ] 项505 amber/yellow 同 dxf（功能级）：两别名共享 dxfId；
   验收：单测 + gate。
 - [x] 项429 斜杠日期格式导出 round-trip（功能级）：m/d/yyyy、mm/dd/yyyy 写入 numFmt；
   测试 `slash_date_formats_map_into_export_styles`。
@@ -866,6 +868,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 522（项503 未知色默认红，功能级）；
+定向与全量 gate/package 通过；发布包 SHA `66f99aa5…dde81e77`；
+轮首 push 成功，本轮不再 push。
 
 Round 521（项502 三色 dxf，功能级）；
 定向与全量 gate/package 通过；发布包 SHA `f6d54c35…b767d033`；
