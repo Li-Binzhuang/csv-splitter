@@ -735,6 +735,7 @@ pub fn write_sheets_with_options_and_formats(
         &[],
         &[],
         &[],
+        None,
     )
 }
 
@@ -760,6 +761,7 @@ pub fn write_sheets_with_options(
         &[],
         &[],
         &[],
+        None,
     )
 }
 
@@ -780,6 +782,7 @@ pub fn write_sheets_without_auto_filter(output: &Path, sheets: &[Sheet]) -> std:
         &[],
         &[],
         &[],
+        None,
     )
 }
 
@@ -800,6 +803,7 @@ pub fn write_sheets_without_freeze(output: &Path, sheets: &[Sheet]) -> std::io::
         &[],
         &[],
         &[],
+        None,
     )
 }
 
@@ -830,6 +834,7 @@ pub fn write_sheets_with_protection_password(
         &[],
         &[],
         &[],
+        None,
     )
 }
 
@@ -850,6 +855,7 @@ pub fn write_sheets_with_protection(output: &Path, sheets: &[Sheet]) -> std::io:
         &[],
         &[],
         &[],
+        None,
     )
 }
 
@@ -884,6 +890,32 @@ pub fn write_sheets_with_formats_widths_and_protection(
         validations,
         &[],
         &[],
+        None,
+    )
+}
+
+/// Write sheets with document core properties (title/creator/dates).
+pub fn write_sheets_with_properties(
+    output: &Path,
+    sheets: &[Sheet],
+    properties: &CoreProperties,
+) -> std::io::Result<()> {
+    write_sheets_inner(
+        output,
+        sheets,
+        &[],
+        &[],
+        true,
+        true,
+        false,
+        None,
+        true,
+        true,
+        &[],
+        &[],
+        &[],
+        &[],
+        Some(properties),
     )
 }
 
@@ -908,6 +940,7 @@ pub fn write_sheets_with_merges(
         &[],
         merges,
         &[],
+        None,
     )
 }
 
@@ -932,6 +965,7 @@ pub fn write_sheets_with_heights(
         &[],
         &[],
         row_heights,
+        None,
     )
 }
 
@@ -960,6 +994,7 @@ pub fn write_sheets_with_formats_widths_and_options(
         &[],
         &[],
         &[],
+        None,
     )
 }
 
@@ -986,6 +1021,7 @@ pub fn write_sheets_with_formats_and_options(
         &[],
         &[],
         &[],
+        None,
     )
 }
 
@@ -1011,6 +1047,7 @@ pub fn write_sheets_with_formats_and_widths(
         &[],
         &[],
         &[],
+        None,
     )
 }
 
@@ -1037,6 +1074,7 @@ pub fn write_sheets_with_widths_and_options(
         &[],
         &[],
         &[],
+        None,
     )
 }
 
@@ -1067,6 +1105,7 @@ pub fn write_sheets_with_options_and_password(
         &[],
         &[],
         &[],
+        None,
     )
 }
 
@@ -1091,6 +1130,7 @@ pub fn write_sheets_with_widths(
         &[],
         &[],
         &[],
+        None,
     )
 }
 
@@ -1114,6 +1154,7 @@ pub fn write_sheets_with_formats(
         &[],
         &[],
         &[],
+        None,
     )
 }
 
@@ -1133,6 +1174,7 @@ fn write_sheets_inner(
     validations: &[DataValidation],
     merges: &[Vec<String>],
     row_heights: &[Vec<(u64, f64)>],
+    properties: Option<&CoreProperties>,
 ) -> std::io::Result<()> {
     if sheets.is_empty() {
         return Err(std::io::Error::new(
@@ -1186,11 +1228,24 @@ fn write_sheets_inner(
     write_part(
         &mut zip,
         "[Content_Types].xml",
-        &content_types_for(sheets.len()),
+        &content_types_for_with_properties(sheets.len(), properties.is_some()),
         options,
     )?;
-    write_part(&mut zip, "_rels/.rels", root_rels(), options)?;
+    write_part(
+        &mut zip,
+        "_rels/.rels",
+        &root_rels_with_properties(properties.is_some()),
+        options,
+    )?;
     write_part(&mut zip, "xl/styles.xml", &styles, options)?;
+    if let Some(properties) = properties {
+        write_part(
+            &mut zip,
+            "docProps/core.xml",
+            &core_properties_xml(properties),
+            options,
+        )?;
+    }
 
     let mut workbook = String::from(XML_HEADER);
     workbook.push_str("<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><bookViews><workbookView/></bookViews><sheets>");
@@ -1368,6 +1423,55 @@ fn content_types_for(sheets: usize) -> String {
     xml.push_str("</Types>");
     xml
 }
+fn content_types_for_with_properties(sheets: usize, doc_props: bool) -> String {
+    let mut xml = content_types_for(sheets);
+    if doc_props {
+        xml = xml.replace(
+            "</Types>",
+            "<Override PartName=\"/docProps/core.xml\" ContentType=\"application/vnd.openxmlformats-package.core-properties+xml\"/></Types>",
+        );
+    }
+    xml
+}
+
+fn root_rels_with_properties(doc_props: bool) -> String {
+    let mut xml = root_rels().to_string();
+    if doc_props {
+        xml = xml.replace(
+            "</Relationships>",
+            "<Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties\" Target=\"docProps/core.xml\"/></Relationships>",
+        );
+    }
+    xml
+}
+
+fn core_properties_xml(properties: &CoreProperties) -> String {
+    let mut xml = String::from(concat!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>",
+        "<cp:coreProperties xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">"
+    ));
+    if let Some(title) = properties.title.as_deref() {
+        xml.push_str(&format!("<dc:title>{}</dc:title>", xml_text(title)));
+    }
+    if let Some(creator) = properties.creator.as_deref() {
+        xml.push_str(&format!("<dc:creator>{}</dc:creator>", xml_text(creator)));
+    }
+    if let Some(created) = properties.created.as_deref() {
+        xml.push_str(&format!(
+            "<dcterms:created xsi:type=\"dcterms:W3CDTF\">{}</dcterms:created>",
+            xml_text(created)
+        ));
+    }
+    if let Some(modified) = properties.modified.as_deref() {
+        xml.push_str(&format!(
+            "<dcterms:modified xsi:type=\"dcterms:W3CDTF\">{}</dcterms:modified>",
+            xml_text(modified)
+        ));
+    }
+    xml.push_str("</cp:coreProperties>");
+    xml
+}
+
 fn root_rels() -> &'static str {
     concat!(
         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>",
@@ -6099,6 +6203,31 @@ mod tests {
         let layout = xlsx_hidden_layout(&path, None).unwrap();
         assert_eq!(layout.rows, vec![2]);
         assert_eq!(layout.columns, vec!["B".to_string(), "C".to_string()]);
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn core_properties_are_written_and_read_back() {
+        let dir = temp_path("core properties writeback");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("props-out.xlsx");
+        let sheets = vec![Sheet {
+            name: "one".to_string(),
+            headers: vec!["id".into()],
+            rows: vec![vec!["1".into()]],
+        }];
+        let properties = CoreProperties {
+            title: Some("Quarterly".to_string()),
+            creator: Some("csvx".to_string()),
+            created: Some("2026-01-01T00:00:00Z".to_string()),
+            modified: None,
+        };
+        write_sheets_with_properties(&path, &sheets, &properties).unwrap();
+        let read_back = xlsx_core_properties(&path).unwrap();
+        assert_eq!(read_back.title.as_deref(), Some("Quarterly"));
+        assert_eq!(read_back.creator.as_deref(), Some("csvx"));
+        assert_eq!(read_back.created.as_deref(), Some("2026-01-01T00:00:00Z"));
+        assert_eq!(read_back.modified, None);
         std::fs::remove_dir_all(dir).ok();
     }
 

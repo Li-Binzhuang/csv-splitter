@@ -650,11 +650,13 @@
   测试 `convert_reports_sheet_visibility`。
 - [x] 项604 文档属性检测 CLI（新能力）：`--properties` 输出 title/creator/created/modified；
   测试 `convert_reports_core_properties`。
-- [ ] 项605 文档属性写出 API（新能力）：写 docProps/core.xml 标题/作者；
-  验收：单测 + round-trip + gate。
+- [x] 项605 文档属性写出 API（新能力）：`write_sheets_with_properties` 写 docProps/core.xml；
+  测试 `core_properties_are_written_and_read_back`。
 - [ ] 项606 工作表可见性写出（新能力）：xlsx 导出支持 hidden/veryHidden sheet；
   验收：单测 + round-trip + gate。
 - [ ] 项607 文档属性写出 CLI（新能力）：导出时设置 title/author 写 docProps；
+  验收：CLI + 单测 + gate。
+- [ ] 项608 合并区域导出 CLI（新能力）：convert 的 merge 参数写合并单元格；
   验收：CLI + 单测 + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
@@ -1061,6 +1063,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 617（项605 文档属性写出 API，feat 级新能力，验收完成）；
+定向与全量 gate/package 通过；发布包 SHA `76113acf…c3107e61`；
+轮首 push 成功，本轮不再 push。
 
 Round 616（项604 文档属性检测 CLI，feat 级新能力，验收完成）；
 定向与全量 gate/package 通过；发布包 SHA `78e93457…7846b6d3`；
