@@ -1078,7 +1078,16 @@ fn write_sheets_inner(
         .iter()
         .flat_map(|columns| columns.iter().cloned())
         .collect();
-    let (styles, style_map) = styles_xml_for(&flat_formats);
+    let (styles, style_map) = if rules.is_empty() {
+        styles_xml_for(&flat_formats)
+    } else {
+        let pairs: Vec<(String, crate::layout::NumberFormat)> = flat_formats
+            .iter()
+            .cloned()
+            .map(|format| (String::new(), format))
+            .collect();
+        styles_xml_with_rules_and_formats(rules, &pairs)
+    };
     let file = std::fs::File::create(output)?;
     let mut zip = zip::ZipWriter::new(BufWriter::with_capacity(4 * 1024 * 1024, file));
     let options = zip::write::SimpleFileOptions::default()
@@ -2322,6 +2331,124 @@ fn workbook_sheet_name(path: &Path) -> String {
     let name = cleaned.trim_matches('\'').trim();
     let name = if name.is_empty() { "Sheet1" } else { name };
     name.chars().take(31).collect()
+}
+
+/// One conditional-formatting rule read back from an xlsx sheet.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConditionalFormatInfo {
+    /// The sqref range the rule applies to, e.g. `B2:B100`.
+    pub range: String,
+    /// Excel cfRule type such as `cellIs`, `top10`, `aboveAverage`.
+    pub rule_type: String,
+    pub operator: Option<String>,
+    pub value: Option<String>,
+    /// ARGB fill colour taken from the matching dxf, when present.
+    pub color: Option<String>,
+}
+
+/// Read conditional-formatting rules for one worksheet.
+pub fn xlsx_conditional_formats(
+    input: &Path,
+    sheet: Option<&str>,
+) -> std::io::Result<Vec<ConditionalFormatInfo>> {
+    let file = std::fs::File::open(input)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let workbook = read_entry(&mut archive, "xl/workbook.xml")?;
+    let rels = read_entry(&mut archive, "xl/_rels/workbook.xml.rels").unwrap_or_default();
+    let sheets = workbook_sheets(&workbook);
+    if sheets.is_empty() {
+        return Err(invalid("xlsx has no worksheets"));
+    }
+    let selected = select_sheet(&sheets, sheet)?;
+    let target = relationship_target(&rels, &selected.rid)
+        .or_else(|| (sheets.len() == 1).then(|| "xl/worksheets/sheet1.xml".to_string()))
+        .ok_or_else(|| {
+            invalid(&format!(
+                "xlsx sheet {:?} has no relationship target",
+                selected.name
+            ))
+        })?;
+    let normalized = if let Some(stripped) = target.strip_prefix('/') {
+        stripped.to_string()
+    } else if target.starts_with("xl/") {
+        target
+    } else {
+        format!("xl/{}", target.trim_start_matches("./"))
+    };
+    let sheet_xml = read_entry(&mut archive, &normalized)?;
+    let styles = read_entry(&mut archive, "xl/styles.xml").unwrap_or_default();
+    Ok(parse_conditional_formats(&sheet_xml, &styles))
+}
+
+fn parse_conditional_formats(sheet_xml: &str, styles_xml: &str) -> Vec<ConditionalFormatInfo> {
+    let dxf_colors = dxf_colors_from_styles(styles_xml);
+    let mut out = Vec::new();
+    let mut rest = sheet_xml;
+    while let Some(start) = rest.find("<conditionalFormatting ") {
+        let tail = &rest[start..];
+        let Some(open) = tail.find('>') else { break };
+        let tag = &tail[..=open];
+        let range = tag_attribute(tag, "sqref").unwrap_or_default();
+        let body_end = tail[open + 1..]
+            .find("</conditionalFormatting>")
+            .map(|end| open + 1 + end)
+            .unwrap_or(tail.len());
+        let body = &tail[open + 1..body_end];
+        let mut rules_rest = body;
+        while let Some(rule_start) = rules_rest.find("<cfRule ") {
+            let rule_tail = &rules_rest[rule_start..];
+            let Some(rule_open) = rule_tail.find('>') else {
+                break;
+            };
+            let rule_tag = &rule_tail[..=rule_open];
+            let rule_body_end = rule_tail[rule_open + 1..]
+                .find("</cfRule>")
+                .map(|end| rule_open + 1 + end)
+                .unwrap_or(rule_tail.len());
+            let rule_body = &rule_tail[rule_open + 1..rule_body_end];
+            let dxf_id =
+                tag_attribute(rule_tag, "dxfId").and_then(|value| value.parse::<usize>().ok());
+            out.push(ConditionalFormatInfo {
+                range: range.clone(),
+                rule_type: tag_attribute(rule_tag, "type").unwrap_or_else(|| "cellIs".into()),
+                operator: tag_attribute(rule_tag, "operator"),
+                value: element_text(rule_body, "formula"),
+                color: dxf_id.and_then(|id| dxf_colors.get(id).cloned()),
+            });
+            rules_rest = &rule_tail[rule_body_end..];
+        }
+        rest = &tail[body_end..];
+    }
+    out
+}
+
+fn dxf_colors_from_styles(styles_xml: &str) -> Vec<String> {
+    let mut colors = Vec::new();
+    let mut rest = styles_xml;
+    while let Some(start) = rest.find("<dxf>") {
+        let tail = &rest[start..];
+        let Some(end) = tail.find("</dxf>") else {
+            break;
+        };
+        let block = &tail[..end + "</dxf>".len()];
+        let rgb = ["fgColor", "bgColor"].iter().find_map(|name| {
+            let needle = format!("{name} rgb=\"");
+            let start = block.find(&needle)? + needle.len();
+            let rest = &block[start..];
+            let end = rest.find('"')?;
+            Some(rest[..end].to_string())
+        });
+        if let Some(rgb) = rgb {
+            colors.push(rgb);
+        }
+        rest = &tail[end + "</dxf>".len()..];
+    }
+    colors
 }
 
 /// One cell holding an Excel formula, with its cached value when present.
@@ -5225,6 +5352,47 @@ mod tests {
         let error = xlsx_sheet_protection(&path, Some("missing")).unwrap_err();
         assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
         assert!(error.to_string().contains("missing"), "{error}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn conditional_formats_are_read_back_with_colors() {
+        let dir = temp_path("cf readback");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("cf.xlsx");
+        let sheets = vec![Sheet {
+            name: "one".to_string(),
+            headers: vec!["id".into(), "amount".into()],
+            rows: vec![vec!["1".into(), "1200".into()]],
+        }];
+        let rules = vec![ConditionalRule {
+            column: "amount".to_string(),
+            operator: ">".to_string(),
+            value: "1000".to_string(),
+            color: "red".to_string(),
+        }];
+        write_sheets_with_formats_widths_and_protection(
+            &path,
+            &sheets,
+            &[Vec::new()],
+            &[Vec::new()],
+            true,
+            true,
+            false,
+            None,
+            true,
+            true,
+            &rules,
+            &[],
+        )
+        .unwrap();
+        let formats = xlsx_conditional_formats(&path, None).unwrap();
+        assert_eq!(formats.len(), 1, "{formats:?}");
+        assert_eq!(formats[0].range, "B2:B2");
+        assert_eq!(formats[0].rule_type, "cellIs");
+        assert_eq!(formats[0].operator.as_deref(), Some("greaterThan"));
+        assert_eq!(formats[0].value.as_deref(), Some("1000"));
+        assert_eq!(formats[0].color.as_deref(), Some("FFFFC7CE"));
         std::fs::remove_dir_all(dir).ok();
     }
 

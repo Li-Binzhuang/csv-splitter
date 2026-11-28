@@ -18,6 +18,7 @@
   合并左上值、空行跳过、16384 列 / 1,048,576 总行（1,048,575 数据行）上限；
 - 错误：无缓存公式值、坏共享索引、超行/列均显式报错，不静默造值；
 - 公式：`xlsx_formulas` 读回公式文本与缓存值（不重算）；
+- 条件格式：`xlsx_conditional_formats` 读回 range/type/operator/value/ARGB；多 sheet 写入器现含 dxfs；
 - 验证：列表/自定义公式/整数与小数区间（`type=whole|decimal`，between 或单边）；
   errorStyle 三态 stop/warning/information；回读 `xlsx_data_validations`；
   `--validations` 检测模式（sheet/all-sheets/json）；列表源可为内联值或区域引用；
