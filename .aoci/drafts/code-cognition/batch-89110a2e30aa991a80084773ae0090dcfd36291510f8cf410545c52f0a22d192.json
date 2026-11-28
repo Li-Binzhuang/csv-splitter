@@ -1,0 +1,27 @@
+{
+  "version": "code-cognition-batch/v1",
+  "plan_id": "1de5631ff0afeff163b8d8738b361302ac32571fb79006f55518f0cd4ba07ccb",
+  "batch_id": "89110a2e30aa991a80084773ae0090dcfd36291510f8cf410545c52f0a22d192",
+  "composite_identity": "e0a44b949370959a2256ca47be7ecb080d94d18b5a7fd553d0a9e4714cb91498",
+  "scope_policy_identity": "e0f548d87fe5462c412a1c54409871a60ddf2ae5c30609258ff8739fdfcc8e76",
+  "code_volume_path": "aoci.code.txt",
+  "code_volume_sha256": "81bec2bb3cbf7268a85f6116bf5cf01b93535ff23828731c0ba2f6d2a99ae22a",
+  "targets": [
+    {
+      "candidate_id": "7d3ba84632409e5222c45fd736b31cee2373481bdebaa35d332dfcbb38b52795",
+      "object_ref": "code:crates/core/src/formula/mod.rs",
+      "path": "crates/core/src/formula/mod.rs",
+      "change": "update",
+      "source_sha256": "721ae8d9f5c90520309f375836c53471c9c218f87a6497951c9aa8e202d1100c",
+      "existing_entry": "mod.rs[KA8L]: F:公式解析与求值：按行在读时计算，不落盘 | R:code:crates/core/src/workbook/rows.rs,code:crates/core/src/formula/functions.rs | A:grammar 含聚合/条件/区间；TEXT；日期时间族/INTL（WEEKNUM 11–17）；查找/小计；UNICHAR/UNICODE；数论；AGGREGATE；位运算；工程舍入；TYPE/ERROR.TYPE；进制转换；SKEW/KURT；SLOPE/INTERCEPT/PEARSON/RSQ；DEVSQ/COVAR；FORECAST；ISEVEN/ISODD；FISHER/FISHERINV；SERIESSUM；SUMX；STANDARDIZE；GEOMEAN/HARMEAN；RAND/RANDBETWEEN；复数；财务 PMT/FV/PV/NPER/NPV/RATE/IRR/XIRR/EFFECT/NOMINAL/折旧/VDB/XNPV/RRI/IPMT/PPMT/FVSCHEDULE/CUMIPMT/CUMPRINC/PDURATION/MIRR；BESSELY | S:公式列只存 journal；跨行区间无随机访问；整列 median 不支持；NOW/RAND 易变；RANDBETWEEN 支持列引用/嵌套/IF，文本/#VALUE 与 \u003e2^53 报错"
+    },
+    {
+      "candidate_id": "bca77dc6b2f59b19a75cfd2f2b87c309ece7dca9ced8547e74c2fb5a63ea47ba",
+      "object_ref": "code:progress.md",
+      "path": "progress.md",
+      "change": "update",
+      "source_sha256": "2af6ddd73f95a61e218a8a5aa5a59dba20d9d228099892a226b17bbd0a9e7ce9",
+      "existing_entry": "progress.md[XQ5L]: F:csvx 长期迭代进度与下一轮行动 | R:code:docs/ENTRYPOINTS.md,code:docs/MCP_COMPAT.md,code:docs/AGENT_API.md | A:目标/已完成/当前进度/未完成/问题/行动；滚动路线图 ≥3 项且 ≥2 结构不同，格式排列至多 1 席；Round509 RANDBETWEEN 列引用与 SHA | S:每轮更新；商业化暂缓；push 失败不阻塞"
+    }
+  ]
+}

@@ -7323,6 +7323,11 @@ mod tests {
                 "{value}"
             );
         }
+        assert_eq!(eval_str("randbetween(a,b)", &[("a", "2")]), "#VALUE!");
+        assert_eq!(
+            eval_str("randbetween(a,b)", &[("a", "2"), ("b", "")]),
+            "#VALUE!"
+        );
         assert_eq!(eval_str("randbetween(\"3\",7)", &[]), "#VALUE!");
         assert_eq!(eval_str("randbetween(3,\"7\")", &[]), "#VALUE!");
         assert_eq!(eval_str("randbetween(-2,-2)", &[]), "-2");
