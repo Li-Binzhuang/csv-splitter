@@ -2251,6 +2251,124 @@ fn workbook_sheet_name(path: &Path) -> String {
     name.chars().take(31).collect()
 }
 
+/// One worksheet data validation read back from an xlsx file.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DataValidationInfo {
+    pub sheet: String,
+    /// Excel column letters taken from the sqref, e.g. "B".
+    pub column: String,
+    /// Full sqref range, e.g. "B2:B100".
+    pub range: String,
+    pub kind: String,
+    pub operator: String,
+    pub formula1: Option<String>,
+    pub formula2: Option<String>,
+    pub allow_blank: bool,
+    pub prompt_title: Option<String>,
+    pub prompt_message: Option<String>,
+    pub error_title: Option<String>,
+    pub error_message: Option<String>,
+}
+
+/// Read data validations for one worksheet, defaulting to the first sheet.
+pub fn xlsx_data_validations(
+    input: &Path,
+    sheet: Option<&str>,
+) -> std::io::Result<Vec<DataValidationInfo>> {
+    let file = std::fs::File::open(input)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("not a zip/xlsx: {error}"),
+        )
+    })?;
+    let workbook = read_entry(&mut archive, "xl/workbook.xml")?;
+    let rels = read_entry(&mut archive, "xl/_rels/workbook.xml.rels").unwrap_or_default();
+    let sheets = workbook_sheets(&workbook);
+    if sheets.is_empty() {
+        return Err(invalid("xlsx has no worksheets"));
+    }
+    let selected = select_sheet(&sheets, sheet)?;
+    let target = relationship_target(&rels, &selected.rid)
+        .or_else(|| (sheets.len() == 1).then(|| "xl/worksheets/sheet1.xml".to_string()))
+        .ok_or_else(|| {
+            invalid(&format!(
+                "xlsx sheet {:?} has no relationship target",
+                selected.name
+            ))
+        })?;
+    let normalized = if let Some(stripped) = target.strip_prefix('/') {
+        stripped.to_string()
+    } else if target.starts_with("xl/") {
+        target
+    } else {
+        format!("xl/{}", target.trim_start_matches("./"))
+    };
+    let sheet_xml = read_entry(&mut archive, &normalized)?;
+    Ok(parse_data_validations(&sheet_xml, &selected.name))
+}
+
+fn parse_data_validations(sheet_xml: &str, sheet: &str) -> Vec<DataValidationInfo> {
+    let mut out = Vec::new();
+    let mut rest = sheet_xml;
+    while let Some(start) = rest.find("<dataValidation ") {
+        let tail = &rest[start..];
+        let Some(tag_end) = tail.find('>') else {
+            break;
+        };
+        let tag = &tail[..=tag_end];
+        let body_start = tag_end + 1;
+        let (body, next) = if tag.ends_with("/>") {
+            ("", body_start)
+        } else {
+            match tail[body_start..].find("</dataValidation>") {
+                Some(close) => (
+                    &tail[body_start..body_start + close],
+                    body_start + close + "</dataValidation>".len(),
+                ),
+                None => (&tail[body_start..], tail.len()),
+            }
+        };
+        let sqref = tag_attribute(tag, "sqref").unwrap_or_default();
+        let column: String = sqref
+            .chars()
+            .take_while(|ch| ch.is_ascii_alphabetic())
+            .collect();
+        out.push(DataValidationInfo {
+            sheet: sheet.to_string(),
+            column,
+            range: sqref.clone(),
+            kind: tag_attribute(tag, "type").unwrap_or_else(|| "none".to_string()),
+            operator: tag_attribute(tag, "operator").unwrap_or_else(|| "between".to_string()),
+            formula1: element_text(body, "formula1"),
+            formula2: element_text(body, "formula2"),
+            allow_blank: tag_attribute(tag, "allowBlank").as_deref() != Some("0"),
+            prompt_title: tag_attribute(tag, "promptTitle").map(|v| xml_unescape(&v)),
+            prompt_message: tag_attribute(tag, "prompt").map(|v| xml_unescape(&v)),
+            error_title: tag_attribute(tag, "errorTitle").map(|v| xml_unescape(&v)),
+            error_message: tag_attribute(tag, "error").map(|v| xml_unescape(&v)),
+        });
+        rest = &tail[next..];
+    }
+    out
+}
+
+fn tag_attribute(tag: &str, name: &str) -> Option<String> {
+    let needle = format!(" {name}=\"");
+    let start = tag.find(&needle)? + needle.len();
+    let rest = &tag[start..];
+    let end = rest.find('"')?;
+    Some(rest[..end].to_string())
+}
+
+fn element_text(body: &str, name: &str) -> Option<String> {
+    let open = format!("<{name}>");
+    let close = format!("</{name}>");
+    let start = body.find(&open)? + open.len();
+    let end = body[start..].find(&close)? + start;
+    Some(xml_unescape(&body[start..end]))
+}
+
 fn xml_text(value: &str) -> String {
     let mut out = String::with_capacity(value.len());
     for c in value.chars() {
@@ -4379,6 +4497,84 @@ mod tests {
         let sheet = read_zip(&output, "xl/worksheets/sheet1.xml");
         assert!(!sheet.contains("<autoFilter"), "{sheet}");
         assert!(sheet.contains("<pane "), "{sheet}");
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn data_validations_read_back_lists_and_ranges() {
+        let dir = temp_path("validation readback");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("readback.xlsx");
+        let sheets = vec![Sheet {
+            name: "one".to_string(),
+            headers: vec!["status".into(), "amount".into()],
+            rows: vec![vec!["good".into(), "10".into()]],
+        }];
+        let validations = vec![
+            DataValidation {
+                column: "status".to_string(),
+                values: vec!["good".to_string(), "bad".to_string()],
+                formula: None,
+                prompt_title: Some("Status".to_string()),
+                prompt_message: Some("Choose good or bad".to_string()),
+                error_title: Some("Bad".to_string()),
+                error_message: Some("Pick good or bad".to_string()),
+                allow_blank: true,
+                numeric: None,
+            },
+            DataValidation {
+                column: "amount".to_string(),
+                values: Vec::new(),
+                formula: None,
+                prompt_title: None,
+                prompt_message: None,
+                error_title: None,
+                error_message: None,
+                allow_blank: false,
+                numeric: Some(NumericValidation {
+                    kind: NumericKind::Whole,
+                    min: Some("0".to_string()),
+                    max: Some("1200".to_string()),
+                }),
+            },
+        ];
+        write_sheets_with_formats_widths_and_protection(
+            &path,
+            &sheets,
+            &[Vec::new()],
+            &[Vec::new()],
+            true,
+            false,
+            false,
+            None,
+            true,
+            true,
+            &[],
+            &validations,
+        )
+        .unwrap();
+        let read = xlsx_data_validations(&path, None).unwrap();
+        assert_eq!(read.len(), 2, "{read:?}");
+        let list = read
+            .iter()
+            .find(|validation| validation.column == "A")
+            .unwrap();
+        assert_eq!(list.kind, "list");
+        assert_eq!(list.range, "A2:A2");
+        assert_eq!(list.formula1.as_deref(), Some("\"good,bad\""));
+        assert_eq!(list.prompt_title.as_deref(), Some("Status"));
+        assert_eq!(list.prompt_message.as_deref(), Some("Choose good or bad"));
+        assert_eq!(list.error_title.as_deref(), Some("Bad"));
+        assert!(list.allow_blank);
+        let range = read
+            .iter()
+            .find(|validation| validation.column == "B")
+            .unwrap();
+        assert_eq!(range.kind, "whole");
+        assert_eq!(range.operator, "between");
+        assert_eq!(range.formula1.as_deref(), Some("0"));
+        assert_eq!(range.formula2.as_deref(), Some("1200"));
+        assert!(!range.allow_blank);
         std::fs::remove_dir_all(dir).ok();
     }
 
