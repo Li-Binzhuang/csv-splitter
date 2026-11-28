@@ -652,7 +652,7 @@ pub fn write_sheets_with_options_and_formats(
     freeze_header: bool,
     auto_filter: bool,
 ) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, formats, freeze_header, auto_filter)
+    write_sheets_inner(output, sheets, formats, &[], freeze_header, auto_filter)
 }
 
 /// Write sheets with explicit freeze and auto-filter choices.
@@ -662,17 +662,17 @@ pub fn write_sheets_with_options(
     freeze_header: bool,
     auto_filter: bool,
 ) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, &[], freeze_header, auto_filter)
+    write_sheets_inner(output, sheets, &[], &[], freeze_header, auto_filter)
 }
 
 /// Write sheets without a header auto-filter.
 pub fn write_sheets_without_auto_filter(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, &[], true, false)
+    write_sheets_inner(output, sheets, &[], &[], true, false)
 }
 
 /// Write sheets without freezing the header row on any sheet.
 pub fn write_sheets_without_freeze(output: &Path, sheets: &[Sheet]) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, &[], false, true)
+    write_sheets_inner(output, sheets, &[], &[], false, true)
 }
 
 /// Write sheets and map each column's display format into an Excel cell style.
@@ -681,18 +681,28 @@ pub fn write_sheets_without_freeze(output: &Path, sheets: &[Sheet]) -> std::io::
 /// entry means plain text/number. The mapping is intentionally the same
 /// `NumberFormat` used by the viewer, so `#,##0.00`, `0.0%`, `$#,##0.00`
 /// and date/time codes do not get invented twice.
+/// Write sheets with per-sheet column width overrides.
+pub fn write_sheets_with_widths(
+    output: &Path,
+    sheets: &[Sheet],
+    widths: &[Vec<(String, f64)>],
+) -> std::io::Result<()> {
+    write_sheets_inner(output, sheets, &[], widths, true, true)
+}
+
 pub fn write_sheets_with_formats(
     output: &Path,
     sheets: &[Sheet],
     formats: &[Vec<crate::layout::NumberFormat>],
 ) -> std::io::Result<()> {
-    write_sheets_inner(output, sheets, formats, true, true)
+    write_sheets_inner(output, sheets, formats, &[], true, true)
 }
 
 fn write_sheets_inner(
     output: &Path,
     sheets: &[Sheet],
     formats: &[Vec<crate::layout::NumberFormat>],
+    widths: &[Vec<(String, f64)>],
     freeze_header: bool,
     auto_filter: bool,
 ) -> std::io::Result<()> {
@@ -700,6 +710,12 @@ fn write_sheets_inner(
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
             "xlsx needs at least one sheet",
+        ));
+    }
+    if !widths.is_empty() && widths.len() != sheets.len() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "xlsx widths need one entry per sheet",
         ));
     }
     if !formats.is_empty() && formats.len() != sheets.len() {
@@ -769,7 +785,12 @@ fn write_sheets_inner(
         if freeze_header {
             xml.push_str("<sheetViews><sheetView workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/></sheetView></sheetViews>");
         }
-        xml.push_str(&sheet_columns_xml(&sheet.headers, &sheet.rows, &[]));
+        let sheet_widths = widths.get(index).map(Vec::as_slice).unwrap_or(&[]);
+        xml.push_str(&sheet_columns_xml(
+            &sheet.headers,
+            &sheet.rows,
+            sheet_widths,
+        ));
         xml.push_str("<sheetData>");
         xml.push_str("<row r=\"1\">");
         for (column, header) in sheet.headers.iter().enumerate() {
@@ -4003,6 +4024,35 @@ mod tests {
             sheet.contains("<col min=\"2\" max=\"2\" width=\"20\" customWidth=\"1\"/>"),
             "{sheet}"
         );
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn multi_sheet_widths_apply_per_sheet() {
+        let dir = temp_path("multiwidths");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("multi.xlsx");
+        let sheets = vec![
+            Sheet {
+                name: "one".to_string(),
+                headers: vec!["id".into(), "amount".into()],
+                rows: vec![vec!["1".into(), "10".into()]],
+            },
+            Sheet {
+                name: "two".to_string(),
+                headers: vec!["rate".into()],
+                rows: vec![vec!["0.25".into()]],
+            },
+        ];
+        let widths = vec![
+            vec![("amount".to_string(), 18.0)],
+            vec![("rate".to_string(), 25.0)],
+        ];
+        write_sheets_with_widths(&path, &sheets, &widths).unwrap();
+        let one = read_zip(&path, "xl/worksheets/sheet1.xml");
+        assert!(one.contains("width=\"18\""), "{one}");
+        let two = read_zip(&path, "xl/worksheets/sheet2.xml");
+        assert!(two.contains("width=\"25\""), "{two}");
         std::fs::remove_dir_all(dir).ok();
     }
 
