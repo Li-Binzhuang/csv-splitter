@@ -531,6 +531,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut protection = false;
     let mut validations = false;
     let mut formulas = false;
+    let mut conditional_formats = false;
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -652,6 +653,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--protection" => protection = true,
             "--validations" => validations = true,
             "--formulas" => formulas = true,
+            "--conditional-formats" => conditional_formats = true,
             "--json" => formats_json = true,
             "--number-format-raw" => match p.value("--number-format-raw") {
                 Ok(v) => number_format_raw = Some(v),
@@ -713,9 +715,103 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
         return 2;
     };
 
-    if formats_json && !show_formats && !protection && !validations && !formulas {
+    if formats_json
+        && !show_formats
+        && !protection
+        && !validations
+        && !formulas
+        && !conditional_formats
+    {
         eprintln!("error: --json needs --formats or --protection");
         return 2;
+    }
+
+    if conditional_formats {
+        if protection || validations || formulas || show_formats {
+            eprintln!(
+                "error: --conditional-formats cannot be combined with other inspection modes"
+            );
+            return 2;
+        }
+        let name = input
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if !(name.ends_with(".xlsx") || name.ends_with(".xlsm")) {
+            eprintln!("error: --conditional-formats needs an .xlsx/.xlsm input");
+            return 2;
+        }
+        if convert_format.is_some() || out.is_some() {
+            eprintln!("error: --conditional-formats cannot be combined with output flags");
+            return 2;
+        }
+        if sheet.is_some() && all_sheets {
+            eprintln!("error: --conditional-formats --all-sheets cannot be combined with --sheet");
+            return 2;
+        }
+        let names = if all_sheets {
+            match csvx_core::xlsx::xlsx_sheet_names(&input) {
+                Ok(names) => names,
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        } else {
+            vec![sheet.clone().unwrap_or_default()]
+        };
+        let mut entries = Vec::new();
+        for name in &names {
+            let sheet_arg = (!name.is_empty()).then_some(name.as_str());
+            match csvx_core::xlsx::xlsx_conditional_formats(&input, sheet_arg) {
+                Ok(found) => {
+                    let sheet_name = sheet_arg.unwrap_or("");
+                    for rule in found {
+                        entries.push((sheet_name.to_string(), rule));
+                    }
+                }
+                Err(error) => {
+                    eprintln!("error: {error}");
+                    return 1;
+                }
+            }
+        }
+        if formats_json {
+            print!("[");
+            for (index, (sheet_name, rule)) in entries.iter().enumerate() {
+                if index > 0 {
+                    print!(",");
+                }
+                print!(
+                    "{{\"sheet\":{},\"range\":{},\"type\":{},\"operator\":{},\"value\":{},\"color\":{}}}",
+                    json_string(sheet_name),
+                    json_string(&rule.range),
+                    json_string(&rule.rule_type),
+                    json_optional(&rule.operator),
+                    json_optional(&rule.value),
+                    json_optional(&rule.color),
+                );
+            }
+            println!("]");
+        } else if entries.is_empty() {
+            println!("no conditional formats");
+        } else {
+            for (sheet_name, rule) in &entries {
+                if all_sheets {
+                    println!("# {sheet_name}");
+                }
+                println!(
+                    "range={} type={} operator={} value={} color={}",
+                    rule.range,
+                    rule.rule_type,
+                    rule.operator.as_deref().unwrap_or(""),
+                    rule.value.as_deref().unwrap_or(""),
+                    rule.color.as_deref().unwrap_or("")
+                );
+            }
+        }
+        return 0;
     }
 
     if formulas {

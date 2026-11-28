@@ -5006,6 +5006,52 @@ fn convert_keeps_raw_custom_number_format_codes() {
 }
 
 #[test]
+fn convert_reports_conditional_formats() {
+    let dir = TempDir::new("cfinspect");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,amount\n1,1200\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts/a.csv").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--highlight",
+            "amount>1000:red",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let json = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--conditional-formats",
+            "--json",
+        ])
+        .output()
+        .unwrap();
+    assert!(json.status.success());
+    let stdout = String::from_utf8_lossy(&json.stdout);
+    assert!(stdout.contains("\"type\":\"cellIs\""), "{stdout}");
+    assert!(stdout.contains("\"operator\":\"greaterThan\""), "{stdout}");
+    assert!(stdout.contains("\"value\":\"1000\""), "{stdout}");
+    assert!(stdout.contains("\"color\":\"FFFFC7CE\""), "{stdout}");
+
+    let text = Command::new(bin())
+        .args(["convert", book.to_str().unwrap(), "--conditional-formats"])
+        .output()
+        .unwrap();
+    assert!(text.status.success());
+    let stdout = String::from_utf8_lossy(&text.stdout);
+    assert!(stdout.contains("range=B2:B2 type=cellIs"), "{stdout}");
+}
+
+#[test]
 fn convert_reports_formulas_and_cached_values() {
     let dir = TempDir::new("formulasinspect");
     let book = dir.join("book.xlsx");

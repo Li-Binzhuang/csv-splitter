@@ -606,11 +606,13 @@
   顺带修复多 sheet 写入器缺 dxfs 的真实缺陷；测试 `conditional_formats_are_read_back_with_colors`。
 - [x] 项582 公式检测 CLI（新能力）：`--formulas` 输出 sheet/cell/formula/cached_value，支持 sheet/all-sheets/json；
   测试 `convert_reports_formulas_and_cached_values`。
-- [ ] 项583 条件格式检测 CLI（新能力）：CLI 参数 conditional-formats 输出规则（列/类型/颜色）；
-  验收：CLI + 单测 + gate。
+- [x] 项583 条件格式检测 CLI（新能力）：`--conditional-formats` 输出 sheet/range/type/operator/value/ARGB；
+  测试 `convert_reports_conditional_formats`。
 - [ ] 项584 冻结与筛选回读 API（新能力）：读取 xlsx 冻结窗格与 autoFilter 范围；
   验收：单测 + round-trip + gate。
 - [ ] 项585 数据验证一致性检查（新能力）：用 xlsx 数据验证规则校验 CSV 数据，输出违规单元格；
+  验收：CLI + 单测 + gate。
+- [ ] 项586 --formats 显示自定义码（新能力）：导入回读的自定义格式码不再丢失，CLI 输出原始码；
   验收：CLI + 单测 + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
@@ -1017,6 +1019,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 595（项583 条件格式检测 CLI，feat 级新能力，验收完成）；
+定向与全量 gate/package 通过；发布包 SHA `469d15b1…bd4c449e`；
+轮首 push 成功，本轮不再 push。
 
 Round 594（项582 公式检测 CLI，feat 级新能力，验收完成）；
 定向与全量 gate/package 通过；发布包 SHA `86a5a1fa…18384ee`；
