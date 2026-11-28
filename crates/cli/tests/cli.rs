@@ -5006,6 +5006,41 @@ fn convert_keeps_raw_custom_number_format_codes() {
 }
 
 #[test]
+fn convert_renders_conditional_formats_as_highlight_text() {
+    let dir = TempDir::new("cftohighlight");
+    std::fs::create_dir(dir.join("parts")).unwrap();
+    std::fs::write(dir.join("parts/a.csv"), "id,amount\n1,1200\n").unwrap();
+    let book = dir.join("book.xlsx");
+    let status = Command::new(bin())
+        .args([
+            "convert",
+            dir.join("parts/a.csv").to_str().unwrap(),
+            "--format",
+            "xlsx",
+            "--out",
+            book.to_str().unwrap(),
+            "--highlight",
+            "amount>1000:red",
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+
+    let out = Command::new(bin())
+        .args([
+            "convert",
+            book.to_str().unwrap(),
+            "--conditional-formats",
+            "--highlight-text",
+        ])
+        .output()
+        .unwrap();
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("amount>1000:red"), "{stdout}");
+}
+
+#[test]
 fn convert_reports_validation_checks() {
     let dir = TempDir::new("validationchecks");
     std::fs::create_dir(dir.join("parts")).unwrap();

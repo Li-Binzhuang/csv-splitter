@@ -618,12 +618,14 @@
   测试 `convert_reports_sheet_view_settings`。
 - [x] 项588 数据验证转 validate 规则文本（新能力）：`--validations --checks` 用表头名输出 `status in ...`/`amount>=...`；
   测试 `convert_reports_validation_checks`；顺带新增 `xlsx_header_names`。
-- [ ] 项589 条件格式转 highlight 文本（新能力）：conditional-formats 检测的 highlight-text 模式输出可复用 highlight 文本（待实现）；
-  验收：CLI + 单测 + gate。
+- [x] 项589 条件格式转 highlight 文本（新能力）：`--conditional-formats --highlight-text` 输出 `amount>1000:red`；
+  测试 `convert_renders_conditional_formats_as_highlight_text`。
 - [ ] 项590 数据验证检测显示表头名（新能力）：`--validations` 用表头行把列字母映射为列名；
   验收：CLI + 单测 + gate。
 - [ ] 项591 表头检测 CLI（新能力）：headers 检测输出表头行列字母与名称，支持 sheet/all/json；
   验收：CLI + 单测 + gate。
+- [ ] 项592 合并单元格回读 API（新能力）：读取 xlsx mergeCells 区域；
+  验收：单测 + round-trip + gate。
 - [x] 项564 单表保护未知 sheet 错误（功能级）：API 返回 InvalidInput；
   测试 `single_sheet_protection_rejects_unknown_sheets`。
 - [x] 项530 保护检测 CLI（功能级）：xlsx 输入输出保护四标志；
@@ -1029,6 +1031,10 @@
   `BEYOND_EXCEL.md`/`CAPABILITIES.md` 缺口表。
 
 ## 当前进度
+
+Round 601（项589 条件格式转 highlight 文本，feat 级新能力，验收完成）；
+定向与全量 gate/package 通过；发布包 SHA `5f95ac45…bfb850fd`；
+轮首 push 成功（补发 2 提交），本轮不再 push。
 
 Round 600（项588 数据验证转 validate 规则文本，feat 级新能力，验收完成）；
 定向与全量 gate/package 通过；发布包 SHA `a213b6a3…947178b`；

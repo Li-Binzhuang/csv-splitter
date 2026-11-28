@@ -345,6 +345,16 @@ fn projected_validation_bound(kind: &str, value: &Option<String>) -> Option<Stri
     )
 }
 
+fn color_name(argb: &str) -> Option<&'static str> {
+    match argb {
+        "FFFFC7CE" => Some("red"),
+        "FFFFEB9C" => Some("amber"),
+        "FFC6EFCE" => Some("green"),
+        "FFBDD7EE" => Some("blue"),
+        _ => None,
+    }
+}
+
 fn json_optional(value: &Option<String>) -> String {
     match value {
         Some(value) => json_string(value),
@@ -534,6 +544,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
     let mut conditional_formats = false;
     let mut sheet_view = false;
     let mut validation_checks = false;
+    let mut highlight_text = false;
     let mut delim = "comma".to_string();
     let mut quiet = false;
 
@@ -658,6 +669,7 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             "--conditional-formats" => conditional_formats = true,
             "--sheet-view" => sheet_view = true,
             "--checks" => validation_checks = true,
+            "--highlight-text" => highlight_text = true,
             "--json" => formats_json = true,
             "--number-format-raw" => match p.value("--number-format-raw") {
                 Ok(v) => number_format_raw = Some(v),
@@ -857,6 +869,70 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
                 }
             }
         }
+        if highlight_text {
+            let headers = if all_sheets {
+                Vec::new()
+            } else {
+                match csvx_core::xlsx::xlsx_header_names(&input, sheet.as_deref()) {
+                    Ok(headers) => headers,
+                    Err(error) => {
+                        eprintln!("error: {error}");
+                        return 1;
+                    }
+                }
+            };
+            let mut highlights: Vec<String> = Vec::new();
+            for (_, rule) in &entries {
+                let operator = match rule.operator.as_deref() {
+                    Some("greaterThan") => ">",
+                    Some("greaterThanOrEqual") => ">=",
+                    Some("lessThan") => "<",
+                    Some("lessThanOrEqual") => "<=",
+                    Some("equal") => "=",
+                    Some("notEqual") => "!=",
+                    _ => continue,
+                };
+                let Some(value) = rule.value.as_deref() else {
+                    continue;
+                };
+                let Some(color) = rule.color.as_deref().and_then(color_name) else {
+                    continue;
+                };
+                let letter = rule
+                    .range
+                    .split(':')
+                    .next()
+                    .unwrap_or("")
+                    .chars()
+                    .take_while(|ch| ch.is_ascii_alphabetic())
+                    .collect::<String>();
+                let column = headers
+                    .iter()
+                    .find(|(cell, _)| cell == &letter)
+                    .map(|(_, name)| name.as_str())
+                    .unwrap_or(&letter);
+                if column.is_empty() {
+                    continue;
+                }
+                highlights.push(format!("{column}{operator}{value}:{color}"));
+            }
+            if formats_json {
+                print!("[");
+                for (index, item) in highlights.iter().enumerate() {
+                    if index > 0 {
+                        print!(",");
+                    }
+                    print!("{}", json_string(item));
+                }
+                println!("]");
+            } else {
+                for item in highlights {
+                    println!("{item}");
+                }
+            }
+            return 0;
+        }
+
         if formats_json {
             print!("[");
             for (index, (sheet_name, rule)) in entries.iter().enumerate() {
@@ -974,6 +1050,11 @@ pub(crate) fn cmd_convert(args: &[String]) -> i32 {
             }
         }
         return 0;
+    }
+
+    if highlight_text && !conditional_formats {
+        eprintln!("error: --highlight-text is only valid together with --conditional-formats");
+        return 2;
     }
 
     if validation_checks && !validations {
